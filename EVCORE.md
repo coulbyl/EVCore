@@ -57,21 +57,21 @@ Phase 1 : Premier League uniquement.
 
 ### Historique (MVP)
 
-| Source | Données | Accès |
-|---|---|---|
-| **football-data.org** | Fixtures, résultats, standings | API REST — Premier League forever free |
-| **FBref** (scraping Cheerio) | Stats équipes, forme, performance dom/ext | Scraping — 1 req/3s |
-| **Understat** | **xG (Expected Goals)** par match et par équipe | Scraping Node.js |
-| **API-Sports** | Odds historiques 15+ ans | Free 100 req/jour |
+| Source                       | Données                                         | Accès                                  |
+| ---------------------------- | ----------------------------------------------- | -------------------------------------- |
+| **football-data.org**        | Fixtures, résultats, standings                  | API REST — Premier League forever free |
+| **FBref** (scraping Cheerio) | Stats équipes, forme, performance dom/ext       | Scraping — 1 req/3s                    |
+| **Understat**                | **xG (Expected Goals)** par match et par équipe | Scraping Node.js                       |
+| **API-Sports**               | Odds historiques 15+ ans                        | Free 100 req/jour                      |
 
 Minimum 3 saisons historiques avant tout backtest.
 
 ### Live (Phase 2)
 
-| Source | Données | Accès |
-|---|---|---|
-| **API-Football** | Fixtures + odds intégrées, livescores | Free 100 req/jour → payant |
-| **The Odds API** | Odds haute fréquence (5-10 min), 30+ bookmakers | Payant |
+| Source           | Données                                         | Accès                      |
+| ---------------- | ----------------------------------------------- | -------------------------- |
+| **API-Football** | Fixtures + odds intégrées, livescores           | Free 100 req/jour → payant |
+| **The Odds API** | Odds haute fréquence (5-10 min), 30+ bookmakers | Payant                     |
 
 - Snapshot des odds horodaté obligatoire
 - Versioning temporel de chaque snapshot
@@ -84,17 +84,17 @@ Minimum 3 saisons historiques avant tout backtest.
 
 Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par équipe) — un seul modèle les couvre :
 
-| Marché | Description |
-|---|---|
-| **1X2** | Victoire domicile / Nul / Victoire extérieur |
-| **Over/Under 2.5** | Total buts dans le match |
-| **BTTS** | Les deux équipes marquent (Yes/No) |
-| **Double Chance** | 1X, X2, 12 — dérivé des probabilités 1X2 |
+| Marché             | Description                                  |
+| ------------------ | -------------------------------------------- |
+| **1X2**            | Victoire domicile / Nul / Victoire extérieur |
+| **Over/Under 2.5** | Total buts dans le match                     |
+| **BTTS**           | Les deux équipes marquent (Yes/No)           |
+| **Double Chance**  | 1X, X2, 12 — dérivé des probabilités 1X2     |
 
 ### Phase 2
 
-| Marché | Prérequis |
-|---|---|
+| Marché                    | Prérequis                                                              |
+| ------------------------- | ---------------------------------------------------------------------- |
 | **Mi-temps/Fin de match** | Nécessite stats de mi-temps (buts avant 45') — dépend des sources live |
 
 ---
@@ -132,23 +132,23 @@ Pas d’odds au début.
 
 ### Étape 1 — Scoring déterministe (70%)
 
-| Feature | Définition | Fenêtre | Source |
-|---|---|---|---|
-| **Forme récente** | 5 derniers matchs, décroissance exponentielle (facteur 0.8) — poids : 1.0 / 0.8 / 0.64 / 0.51 / 0.41 | Rolling, tout contexte | football-data.org |
-| **xG (Expected Goals)** | xG marqués et encaissés séparés — probabilité réelle de but par tir, bien supérieur à la moyenne buts brute | Rolling 10 derniers matchs | Understat |
-| **Performance dom/ext** | Taux victoire / nul / défaite selon le contexte du match (domicile ou extérieur) | Toute la saison en cours | FBref |
-| **Volatilité ligue** | Écart-type des totaux de buts par match dans la ligue (via distribution de Poisson) | Toute la saison en cours | Understat / FBref |
+| Feature                 | Définition                                                                                                  | Fenêtre                    | Source            |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------- |
+| **Forme récente**       | 5 derniers matchs, décroissance exponentielle (facteur 0.8) — poids : 1.0 / 0.8 / 0.64 / 0.51 / 0.41        | Rolling, tout contexte     | football-data.org |
+| **xG (Expected Goals)** | xG marqués et encaissés séparés — probabilité réelle de but par tir, bien supérieur à la moyenne buts brute | Rolling 10 derniers matchs | Understat         |
+| **Performance dom/ext** | Taux victoire / nul / défaite selon le contexte du match (domicile ou extérieur)                            | Toute la saison en cours   | FBref             |
+| **Volatilité ligue**    | Écart-type des totaux de buts par match dans la ligue (via distribution de Poisson)                         | Toute la saison en cours   | Understat / FBref |
 
 > **Note :** Le xG remplace la moyenne buts brute. Il reflète la qualité des occasions créées et concédées, pas seulement le score final — ce qui réduit le bruit lié aux matchs atypiques et améliore le Brier Score.
 
 **Pondérations initiales (au sein du score déterministe) :**
 
-| Feature | Poids |
-|---|---|
-| Forme récente | 30% |
-| xG (marqués/encaissés) | 30% |
-| Performance domicile/extérieur | 25% |
-| Volatilité ligue | 15% |
+| Feature                        | Poids |
+| ------------------------------ | ----- |
+| Forme récente                  | 30%   |
+| xG (marqués/encaissés)         | 30%   |
+| Performance domicile/extérieur | 25%   |
+| Volatilité ligue               | 15%   |
 
 Ces poids sont ajustables par la boucle d'apprentissage après 50+ paris, dans la limite de 5%/semaine.
 
@@ -275,22 +275,22 @@ Backend décide :
 
 ### Gestion des cas d'erreur données
 
-| Cas | Comportement |
-|---|---|
-| **Match reporté/annulé** | Fixture marquée `POSTPONED` — aucun `ModelRun` généré, paris existants annulés |
-| **Source ETL indisponible** | Job BullMQ retenté 3× avec backoff exponentiel — alerte si échec total |
-| **Odds manquantes** | `decision: NO_BET` automatique — pas d'analyse sans snapshot odds en phase live |
-| **Données insuffisantes** | Moins de 5 matchs joués en saison → feature `forme_recente` exclue du scoring, poids redistribués proportionnellement |
+| Cas                         | Comportement                                                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Match reporté/annulé**    | Fixture marquée `POSTPONED` — aucun `ModelRun` généré, paris existants annulés                                        |
+| **Source ETL indisponible** | Job BullMQ retenté 3× avec backoff exponentiel — alerte si échec total                                                |
+| **Odds manquantes**         | `decision: NO_BET` automatique — pas d'analyse sans snapshot odds en phase live                                       |
+| **Données insuffisantes**   | Moins de 5 matchs joués en saison → feature `forme_recente` exclue du scoring, poids redistribués proportionnellement |
 
 ---
 
 ### Seuils de suspension par marché
 
-| Niveau | Condition | Action |
-|---|---|---|
-| **Alerte** | ROI < -10% sur les 30 derniers paris du marché | Log + notification, aucune action automatique |
-| **Suspension** | ROI < -15% sur un minimum de 50 paris du marché | Gel automatique du marché, révision manuelle obligatoire |
-| **Réactivation** | Décision backend uniquement | Jamais automatique |
+| Niveau           | Condition                                       | Action                                                   |
+| ---------------- | ----------------------------------------------- | -------------------------------------------------------- |
+| **Alerte**       | ROI < -10% sur les 30 derniers paris du marché  | Log + notification, aucune action automatique            |
+| **Suspension**   | ROI < -15% sur un minimum de 50 paris du marché | Gel automatique du marché, révision manuelle obligatoire |
+| **Réactivation** | Décision backend uniquement                     | Jamais automatique                                       |
 
 - La suspension s'applique par marché indépendamment — un marché suspendu n'affecte pas les autres
 - Aucune suspension possible avant 50 paris sur le marché concerné
@@ -413,12 +413,12 @@ Ne rien complexifier avant validation.
 
 ### Jobs principaux
 
-| Job | Déclencheur | Source |
-|---|---|---|
-| `fixtures_sync` | Quotidien | football-data.org |
-| `results_sync` | Post-match | football-data.org |
-| `xg_sync` | Post-match | Understat (scraping) |
-| `stats_sync` | Hebdomadaire | FBref (scraping) |
+| Job             | Déclencheur            | Source                      |
+| --------------- | ---------------------- | --------------------------- |
+| `fixtures_sync` | Quotidien              | football-data.org           |
+| `results_sync`  | Post-match             | football-data.org           |
+| `xg_sync`       | Post-match             | Understat (scraping)        |
+| `stats_sync`    | Hebdomadaire           | FBref (scraping)            |
 | `odds_snapshot` | Pré-match (phase live) | API-Football / The Odds API |
 
 ### Librairies
@@ -453,19 +453,23 @@ LLM non utilisé pour :
 OpenClaw est un composant contraint, pas une boîte noire. Trois risques identifiés et leurs garde-fous :
 
 **Hallucination**
+
 - Les prompts sont strictement structurés — OpenClaw reçoit les données déjà calculées par le moteur déterministe, jamais de question ouverte
 - Chaque output est validé contre un schéma Zod — toute réponse non conforme est rejetée automatiquement
 
 **Manque de reproductibilité**
+
 - `temperature: 0` sur tous les appels de scoring
 - Chaque appel est loggé intégralement : input exact, output exact, timestamp, version du prompt
 - Les propositions OpenClaw sont stockées séparément du score final pour permettre l'audit de sa contribution réelle
 
 **Dérive de confiance (poids réel > 30%)**
+
 - Le plafond de 30% est hard-codé côté backend — OpenClaw ne peut pas le dépasser
 - Son output est un `delta` numérique sur le score, jamais un raisonnement narratif que le système interpréterait librement
 
 **Timing d'introduction**
+
 - OpenClaw n'entre pas dans la boucle avant la fin du MVP
 - Il faut un ROI et un Brier Score de référence mesurés (modèle 100% déterministe) avant d'introduire le LLM — pour pouvoir quantifier sa contribution réelle et le retirer s'il n'apporte rien
 
@@ -480,12 +484,12 @@ OpenClaw est un composant contraint, pas une boîte noire. Trois risques identif
 
 **Événements notifiés :**
 
-| Événement | Canal | Priorité |
-|---|---|---|
-| Opportunité EV détectée (EV ≥ 8%) | Slack | Haute |
-| Marché suspendu automatiquement | Slack + Email | Haute |
-| Échec total job ETL | Slack + Email | Critique |
-| Rapport hebdomadaire ROI/Brier Score | Email | Normale |
+| Événement                            | Canal         | Priorité |
+| ------------------------------------ | ------------- | -------- |
+| Opportunité EV détectée (EV ≥ 8%)    | Slack         | Haute    |
+| Marché suspendu automatiquement      | Slack + Email | Haute    |
+| Échec total job ETL                  | Slack + Email | Critique |
+| Rapport hebdomadaire ROI/Brier Score | Email         | Normale  |
 
 ---
 

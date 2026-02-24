@@ -26,6 +26,9 @@ coverage
 out/
 build
 dist
+generated
+**/generated/
+packages/db/src/generated/
 
 
 # Debug

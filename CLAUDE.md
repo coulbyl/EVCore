@@ -20,10 +20,11 @@ pnpm dev           # Run all apps in dev mode (web :3000, docs :3001)
 pnpm build         # Build all packages and apps
 pnpm lint          # ESLint across all packages
 pnpm format        # Prettier on all .ts, .tsx, .md files
-pnpm check-types   # TypeScript type-checking (no emit)
+pnpm typecheck     # TypeScript type-checking (no emit)
 ```
 
 Scope a command to one package:
+
 ```bash
 pnpm --filter backend dev
 pnpm --filter @repo/ui build
@@ -88,13 +89,13 @@ ModelRun stored + Novu alert
 
 ### Component Responsibilities
 
-| Component | Role | Never |
-|---|---|---|
-| ETL Workers | Collect + normalize data | Infer or fill missing data |
-| PostgreSQL | Historical truth | — |
-| Betting Engine | Probabilistic scoring + EV | Call LLM for raw data |
-| Backend | Validation, risk control, weight approval | Auto-apply adjustments |
-| OpenClaw | Contextual delta only | Be primary data source |
+| Component      | Role                                      | Never                      |
+| -------------- | ----------------------------------------- | -------------------------- |
+| ETL Workers    | Collect + normalize data                  | Infer or fill missing data |
+| PostgreSQL     | Historical truth                          | —                          |
+| Betting Engine | Probabilistic scoring + EV                | Call LLM for raw data      |
+| Backend        | Validation, risk control, weight approval | Auto-apply adjustments     |
+| OpenClaw       | Contextual delta only                     | Be primary data source     |
 
 ---
 
@@ -110,15 +111,15 @@ ModelRun stored + Novu alert
 
 ### Naming
 
-| Element | Convention | Example |
-|---|---|---|
-| Files | kebab-case | `betting-engine.service.ts` |
-| Classes | PascalCase | `BettingEngineService` |
-| Interfaces/Types | PascalCase | `ModelRunOutput` |
-| Variables/functions | camelCase | `calculateEV()` |
-| Constants | UPPER_SNAKE_CASE | `EV_THRESHOLD` |
-| Env vars | UPPER_SNAKE_CASE | `DATABASE_URL` |
-| DB tables | snake_case (Prisma default) | `model_run` |
+| Element             | Convention                  | Example                     |
+| ------------------- | --------------------------- | --------------------------- |
+| Files               | kebab-case                  | `betting-engine.service.ts` |
+| Classes             | PascalCase                  | `BettingEngineService`      |
+| Interfaces/Types    | PascalCase                  | `ModelRunOutput`            |
+| Variables/functions | camelCase                   | `calculateEV()`             |
+| Constants           | UPPER_SNAKE_CASE            | `EV_THRESHOLD`              |
+| Env vars            | UPPER_SNAKE_CASE            | `DATABASE_URL`              |
+| DB tables           | snake_case (Prisma default) | `model_run`                 |
 
 ### NestJS Patterns
 
@@ -200,15 +201,15 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 
 Before adding any feature, verify it belongs to the current phase:
 
-| Feature | Phase |
-|---|---|
-| Historical import, backtest, calibration | MVP |
-| Odds integration, EV simulation, live data | Phase 2 |
-| OpenClaw integration | Phase 2 (after MVP validation) |
-| Grafana dashboards, TimescaleDB | Phase 2 |
-| Kelly criterion, multi-league | Phase 2 |
-| Python worker (scikit-learn calibration) | Phase 3 |
-| ML model (XGBoost), Monte Carlo | Phase 3 |
-| SaaS, multi-tenant | Phase 4 |
+| Feature                                    | Phase                          |
+| ------------------------------------------ | ------------------------------ |
+| Historical import, backtest, calibration   | MVP                            |
+| Odds integration, EV simulation, live data | Phase 2                        |
+| OpenClaw integration                       | Phase 2 (after MVP validation) |
+| Grafana dashboards, TimescaleDB            | Phase 2                        |
+| Kelly criterion, multi-league              | Phase 2                        |
+| Python worker (scikit-learn calibration)   | Phase 3                        |
+| ML model (XGBoost), Monte Carlo            | Phase 3                        |
+| SaaS, multi-tenant                         | Phase 4                        |
 
 If asked to implement something from a future phase, flag it and ask for confirmation.
