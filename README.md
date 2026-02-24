@@ -70,6 +70,14 @@ Start the full stack (backend + DB + Redis + Novu):
 docker compose up -d
 ```
 
+Default service endpoints:
+
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
+- Novu Dashboard: `http://localhost:4000`
+- Novu API: `http://localhost:3010`
+- Novu WS: `http://localhost:3012`
+
 ---
 
 ## Project structure

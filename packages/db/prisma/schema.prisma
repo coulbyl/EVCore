@@ -54,7 +54,7 @@ enum AdjustmentStatus {
 // ─────────────────────────────────────────────
 
 model Competition {
-  id        String   @id @default(uuid(7)) @db.Uuid
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name      String
   code      String   @unique
   country   String
@@ -64,7 +64,7 @@ model Competition {
 }
 
 model Season {
-  id            String      @id @default(uuid(7)) @db.Uuid
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   competitionId String      @db.Uuid
   competition   Competition @relation(fields: [competitionId], references: [id])
   name          String      // e.g. "2022-23"
@@ -77,7 +77,7 @@ model Season {
 }
 
 model Team {
-  id             String      @id @default(uuid(7)) @db.Uuid
+  id             String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   externalId     Int         @unique // football-data.org ID
   name           String
   shortName      String
@@ -90,7 +90,7 @@ model Team {
 }
 
 model Fixture {
-  id            String        @id @default(uuid(7)) @db.Uuid
+  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
   externalId    Int           @unique // football-data.org ID
   seasonId      String        @db.Uuid
   season        Season        @relation(fields: [seasonId], references: [id])
@@ -118,7 +118,7 @@ model Fixture {
 // Rolling stats computed for a team after a given fixture was played.
 // One row per team per fixture (home team stats + away team stats).
 model TeamStats {
-  id               String   @id @default(uuid(7)) @db.Uuid
+  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   teamId           String   @db.Uuid
   team             Team     @relation(fields: [teamId], references: [id])
   afterFixtureId   String   @db.Uuid
@@ -140,7 +140,7 @@ model TeamStats {
 
 // Output of one betting engine analysis for a fixture.
 model ModelRun {
-  id                 String   @id @default(uuid(7)) @db.Uuid
+  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   fixtureId          String   @db.Uuid
   fixture            Fixture  @relation(fields: [fixtureId], references: [id])
   analyzedAt         DateTime @default(now())
@@ -163,7 +163,7 @@ model ModelRun {
 
 // One bet per market per ModelRun.
 model Bet {
-  id            String    @id @default(uuid(7)) @db.Uuid
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   modelRunId    String    @db.Uuid
   modelRun      ModelRun  @relation(fields: [modelRunId], references: [id])
   market        Market
@@ -182,7 +182,7 @@ model Bet {
 // Proposed weight adjustments from the learning loop.
 // Backend decides whether to apply, reject, or freeze (never auto-applied).
 model AdjustmentProposal {
-  id               String           @id @default(uuid(7)) @db.Uuid
+  id               String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
   triggerBetCount  Int              // number of bets that triggered this proposal
   currentWeights   Json             // { recentForm: 0.30, xg: 0.30, ... }
   proposedWeights  Json             // { recentForm: 0.32, xg: 0.28, ... }
@@ -198,7 +198,7 @@ model AdjustmentProposal {
 // Odds snapshots — scaffolded for Phase 2 (live odds integration).
 // Not used in MVP.
 model OddsSnapshot {
-  id         String   @id @default(uuid(7)) @db.Uuid
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   fixtureId  String   @db.Uuid
   fixture    Fixture  @relation(fields: [fixtureId], references: [id])
   bookmaker  String

@@ -24,8 +24,8 @@
 - [~] Conventions IA (CLAUDE.md, copilot-instructions.md)
 - [~] Roadmap (ROADMAP.md)
 - [x] Initialisation monorepo `apps/backend` (NestJS)
-- [ ] Docker Compose (PostgreSQL + Redis + Novu)
-- [ ] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
+- [x] Docker Compose (PostgreSQL + Redis + Novu)
+- [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
 - [ ] Configuration CI/CD (GitHub Actions — lint + type-check + test)
 - [ ] Setup Novu (Slack + Email)
 
