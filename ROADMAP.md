@@ -23,7 +23,7 @@
 - [~] Cahier des charges (EVCORE.md)
 - [~] Conventions IA (CLAUDE.md, copilot-instructions.md)
 - [~] Roadmap (ROADMAP.md)
-- [ ] Initialisation monorepo `apps/backend` (NestJS)
+- [x] Initialisation monorepo `apps/backend` (NestJS)
 - [ ] Docker Compose (PostgreSQL + Redis + Novu)
 - [ ] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
 - [ ] Configuration CI/CD (GitHub Actions — lint + type-check + test)
@@ -34,6 +34,7 @@
 ### Mois 1 — Import, modèle probabiliste, backtest
 
 **Semaine 1 — ETL historique**
+
 - [ ] Worker `fixtures_sync` — football-data.org (3 saisons EPL)
 - [ ] Worker `results_sync` — football-data.org
 - [ ] Worker `xg_sync` — Understat scraping
@@ -42,6 +43,7 @@
 - [ ] Tests unitaires des schémas Zod
 
 **Semaine 2 — Stats rolling**
+
 - [ ] Calcul forme récente (5 matchs, decay 0.8)
 - [ ] Calcul xG rolling (10 matchs)
 - [ ] Calcul performance domicile/extérieur (saison)
@@ -49,6 +51,7 @@
 - [ ] Stockage des stats dans la DB (table dédiée ou colonnes Fixture)
 
 **Semaine 3 — Modèle probabiliste**
+
 - [ ] Modèle de Poisson (jStat) pour prédire buts domicile/extérieur
 - [ ] Génération probabilités 1X2
 - [ ] Dérivation Over/Under 2.5, BTTS, Double Chance depuis les probabilités 1X2
@@ -56,6 +59,7 @@
 - [ ] Tests unitaires avec inputs/outputs connus
 
 **Semaine 4 — Backtest & calibration**
+
 - [ ] Pipeline backtest sur 3 saisons historiques
 - [ ] Calcul Brier Score par saison
 - [ ] Calcul Calibration Error par marché
@@ -67,23 +71,27 @@
 ### Mois 2 — Odds, EV, simulation
 
 **Semaine 5 — Intégration odds historiques**
+
 - [ ] Worker `odds_historical_sync` — API-Sports (3 saisons)
 - [ ] Stockage odds avec timestamp dans la DB
 - [ ] Validation Zod odds
 
 **Semaine 6 — Calcul EV**
+
 - [ ] Implémentation `calculateEV()` avec `decimal.js`
 - [ ] Application du seuil EV ≥ 8% (depuis config)
 - [ ] Génération `ModelRun` complet (features + score + decision)
 - [ ] Tests unitaires EV avec cas limites (EV exactement 8%, en dessous, au dessus)
 
 **Semaine 7 — Simulation value bets**
+
 - [ ] Simulation de placement sur données historiques
 - [ ] Calcul ROI simulé par marché
 - [ ] Calcul drawdown max simulé
 - [ ] Calcul EV moyen simulé
 
 **Semaine 8 — Tracking & contraintes**
+
 - [ ] Implémentation seuil alerte ROI < -10% (30 derniers paris)
 - [ ] Implémentation suspension automatique ROI < -15% (50+ paris)
 - [ ] Alerte Novu sur suspension marché
@@ -94,12 +102,14 @@
 ### Mois 3 — Automatisation, apprentissage, stabilisation
 
 **Semaine 9 — Automatisation quotidienne**
+
 - [ ] Setup Kestra (Docker Compose)
 - [ ] Orchestration des jobs ETL via Kestra (plannings, retries, monitoring)
 - [ ] Gestion erreurs ETL : retry 3×, alerte si échec total
 - [ ] Gestion `POSTPONED` fixtures
 
 **Semaine 10 — Boucle d'apprentissage**
+
 - [ ] Log probabilité estimée vs résultat réel post-match
 - [ ] Calcul erreur calibration par match
 - [ ] Génération `AdjustmentProposal` automatique
@@ -107,12 +117,14 @@
 - [ ] Contraintes : min 50 bets, max 5%/semaine, jamais auto-appliqué
 
 **Semaine 11 — Stabilisation**
+
 - [ ] Tests d'intégration end-to-end (ETL → scoring → decision → log)
 - [ ] Revue complète des Zod schemas
 - [ ] Revue des logs Pino (structure, niveaux)
 - [ ] Hardening Docker Compose (restart policies, volumes, secrets)
 
 **Semaine 12 — Validation MVP**
+
 - [ ] Brier Score de référence mesuré et documenté
 - [ ] ROI simulé de référence mesuré et documenté
 - [ ] Calibration Error de référence documentée
@@ -155,10 +167,10 @@
 
 ## GitHub Milestones
 
-| Milestone | Contenu | Cible |
-|---|---|---|
-| `mvp-foundations` | Setup monorepo, DB, Docker, CI | Avant Mois 1 |
-| `mvp-month-1` | ETL, stats rolling, modèle, backtest | Fin Mois 1 |
-| `mvp-month-2` | Odds, EV, simulation, tracking | Fin Mois 2 |
-| `mvp-month-3` | Automatisation, apprentissage, validation | Fin Mois 3 |
-| `phase-2` | Live, OpenClaw, Grafana | Après MVP |
+| Milestone         | Contenu                                   | Due date     |
+| ----------------- | ----------------------------------------- | ------------ |
+| `mvp-foundations` | Setup monorepo, DB, Docker, CI            | 28 fév 2026  |
+| `mvp-month-1`     | ETL, stats rolling, modèle, backtest      | 14 mars 2026 |
+| `mvp-month-2`     | Odds, EV, simulation, tracking            | 31 mars 2026 |
+| `mvp-month-3`     | Automatisation, apprentissage, validation | 8 avr 2026   |
+| `phase-2`         | Live, OpenClaw, Grafana                   | 31 mai 2026  |

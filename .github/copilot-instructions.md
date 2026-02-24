@@ -44,7 +44,7 @@ EVCore is an autonomous sports betting engine based on Expected Value (EV) mathe
 
 ```ts
 // Always use decimal.js — never native arithmetic
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 function calculateEV(probability: Decimal, odds: Decimal): Decimal {
   return probability.mul(odds).minus(1);
@@ -54,6 +54,7 @@ function calculateEV(probability: Decimal, odds: Decimal): Decimal {
 ## ETL Pattern
 
 Every ingestion job must:
+
 1. Fetch raw data
 2. Validate with Zod schema (reject entirely if invalid — never partial writes)
 3. Log failed payloads with full context
@@ -67,6 +68,7 @@ Every bet decision must log: `fixture_id`, `features` (all 4), `deterministic_sc
 ## Phase Awareness
 
 Do not implement features from future phases without explicit instruction:
+
 - MVP: historical import, backtest, calibration
 - Phase 2: odds, EV live, OpenClaw, Grafana, TimescaleDB
 - Phase 3: Python worker, ML model, Monte Carlo

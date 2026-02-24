@@ -1,135 +1,109 @@
-# Turborepo starter
+# EVCore
 
-This Turborepo starter is maintained by the Turborepo core team.
+> Autonomous value-driven sports betting engine built around Expected Value (EV) mathematics.
 
-## Using this example
+EVCore is a disciplined probabilistic decision system — not a tip generator. It targets long-term ROI through deterministic data scoring, calibrated over time, with the backend always acting as the final authority.
 
-Run the following command:
+**Domain:** evcore.live
 
-```sh
-npx create-turbo@latest
+---
+
+## What it does
+
+- Collects historical football data (fixtures, results, xG) from multiple open sources
+- Computes match probabilities using a Poisson model weighted by 4 deterministic features
+- Identifies value bets where `EV = (probability × odds) − 1 ≥ 8%`
+- Tracks performance metrics (Brier Score, ROI, drawdown) and self-calibrates over time
+- Sends alerts via Slack/Email when EV opportunities or anomalies are detected
+
+**Phase 1 scope:** Premier League only, historical data, no live odds.
+
+---
+
+## Stack
+
+| Layer         | Technology                            |
+| ------------- | ------------------------------------- |
+| Monorepo      | pnpm + Turborepo                      |
+| Backend       | NestJS + TypeScript                   |
+| Database      | PostgreSQL + Prisma                   |
+| Queues        | BullMQ + Redis                        |
+| Orchestration | Kestra                                |
+| Validation    | Zod + class-validator                 |
+| Math          | jStat, decimal.js, simple-statistics  |
+| Notifications | Novu (self-hosted)                    |
+| Infra         | Docker Compose, Nginx, GitHub Actions |
+
+---
+
+## Getting started
+
+**Requirements:** Node.js >= 18, pnpm 9
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start all apps in dev mode
+pnpm dev
+
+# Build all packages
+pnpm build
+
+# Lint
+pnpm lint
+
+# Type-check
+pnpm typecheck
 ```
 
-## What's inside?
+Start a specific app:
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+pnpm --filter backend dev
+pnpm --filter web dev
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Start the full stack (backend + DB + Redis + Novu):
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+docker compose up -d
 ```
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Project structure
 
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+apps/
+  backend/    # NestJS API — Betting Engine, ETL workers, validation
+  web/        # Next.js dashboard
+  docs/       # Next.js documentation
+packages/
+  ui/                # Shared React component library
+  eslint-config/     # Shared ESLint rules
+  typescript-config/ # Shared TypeScript configs
 ```
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## Documentation
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+| File                                                               | Purpose                                                              |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)                                             | Full product specification — architecture, model, stack, constraints |
+| [ROADMAP.md](ROADMAP.md)                                           | Implementation roadmap with milestones and weekly checkboxes         |
+| [CLAUDE.md](CLAUDE.md)                                             | AI coding conventions (Claude Code)                                  |
+| [.github/copilot-instructions.md](.github/copilot-instructions.md) | AI coding conventions (GitHub Copilot)                               |
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+---
 
-```
-cd my-turborepo
+## Milestones
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+| Milestone                                          | Due          |
+| -------------------------------------------------- | ------------ |
+| `mvp-foundations` — Setup monorepo, DB, Docker, CI | 28 fév 2026  |
+| `mvp-month-1` — ETL, model, backtest               | 14 mars 2026 |
+| `mvp-month-2` — Odds, EV, simulation               | 31 mars 2026 |
+| `mvp-month-3` — Automation, learning, validation   | 8 avr 2026   |
+| `phase-2` — Live odds, OpenClaw, Grafana           | 31 mai 2026  |
