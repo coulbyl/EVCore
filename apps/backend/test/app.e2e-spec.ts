@@ -29,4 +29,13 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect({ status: 'ok' });
   });
+
+  it('/health/novu (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/health/novu')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toMatchObject({ status: 'not_configured' });
+      });
+  });
 });

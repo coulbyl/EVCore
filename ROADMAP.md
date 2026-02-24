@@ -26,8 +26,8 @@
 - [x] Initialisation monorepo `apps/backend` (NestJS)
 - [x] Docker Compose (PostgreSQL + Redis + Novu)
 - [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
-- [ ] Configuration CI/CD (GitHub Actions — lint + type-check + test)
-- [ ] Setup Novu (Slack + Email)
+- [x] Configuration CI/CD (GitHub Actions — lint + type-check + test)
+- [x] Setup Novu (Slack + Email)
 
 ---
 

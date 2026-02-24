@@ -78,6 +78,25 @@ Default service endpoints:
 - Novu API: `http://localhost:3010`
 - Novu WS: `http://localhost:3012`
 
+Novu setup (Slack + Email):
+
+1. Open `http://localhost:4000` and create an admin account.
+2. In Novu settings, create an API key and set it in backend env as `NOVU_API_KEY`.
+3. Configure providers:
+   - Email provider (SMTP/Resend/Sendgrid)
+   - Chat provider (Slack)
+4. Create a workflow with trigger identifier `evcore-foundations-notification` and add:
+   - one Email step
+   - one Slack step
+5. Set backend env (example):
+   - `NOVU_API_URL=http://localhost:3010`
+   - `NOVU_API_KEY=<your-api-key>`
+   - `NOVU_WORKFLOW_ID=evcore-foundations-notification`
+   - `NOVU_TEST_EMAIL=<your-email>`
+6. Verify from backend:
+   - `GET /health/novu`
+   - `POST /notifications/test`
+
 ---
 
 ## Project structure
