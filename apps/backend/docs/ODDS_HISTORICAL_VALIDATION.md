@@ -34,7 +34,7 @@ curl -X POST http://localhost:3000/etl/sync/odds-historical/2023
 Réponse attendue:
 
 ```json
-{"status":"ok","season":2023}
+{ "status": "ok", "season": 2023 }
 ```
 
 ### b) Toutes les saisons configurées
@@ -46,7 +46,7 @@ curl -X POST http://localhost:3000/etl/sync/odds-historical
 Réponse attendue:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 ## 3) Vérifications DB (PostgreSQL)

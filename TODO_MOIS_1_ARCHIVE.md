@@ -6,6 +6,7 @@ Milestone: `mvp-month-1`
 ## Objectif
 
 Poser les fondations data + modèle:
+
 - ETL historique EPL,
 - stats rolling,
 - moteur probabiliste (Poisson),

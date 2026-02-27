@@ -11,4 +11,3 @@ Instructions pour les agents de code (Codex/assistants automatisés) dans ce rep
 - Exception autorisée: `.env.example` (template non secret) peut être lu/modifié.
 - Si une action semble nécessiter un secret, demander explicitement à l'utilisateur la valeur à fournir, sans ouvrir les fichiers secrets.
 - Ne jamais inclure de secret dans un commit, log, test snapshot, ou sortie terminal.
-

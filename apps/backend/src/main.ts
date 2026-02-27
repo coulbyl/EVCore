@@ -24,6 +24,8 @@ async function bootstrap() {
   );
 
   await app.listen(port, host);
-  console.log(`🚀 Backend running at ${await app.getUrl()}`);
+  const appUrl = await app.getUrl();
+  console.log(`🚀 Backend running at ${appUrl}`);
+  console.log(`📚 Scalar API reference: ${appUrl}/reference`);
 }
 void bootstrap();
