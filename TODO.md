@@ -21,25 +21,26 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ### Résultats attendus
 
-- [ ] Worker `odds_historical_sync` (3 saisons EPL)
-- [ ] Insertion `OddsSnapshot` idempotente et rejouable
-- [ ] Validation Zod stricte des payloads odds
-- [ ] Tests unitaires des schémas odds + mapping DB
-- [ ] Mettre à jour le .env.example (bien documenté)
+- [x] Worker `odds_historical_sync` (3 saisons EPL)
+- [x] Insertion `OddsSnapshot` idempotente et rejouable
+- [x] Validation Zod stricte des payloads odds
+- [x] Tests unitaires des schémas odds + mapping DB
+- [x] Mettre à jour le .env.example (bien documenté)
+- [x] Endpoints manuels ETL (`/etl/sync/odds-historical`, `/etl/sync/odds-historical/:season`)
 
 ### Implémentation
 
-- [ ] Créer `apps/backend/src/modules/etl/workers/odds-historical-sync.worker.ts`
-- [ ] Ajouter `odds.schema.ts` + `odds.schema.spec.ts`
-- [ ] Ajouter la queue BullMQ et trigger dans `etl.service.ts`
-- [ ] Upsert par clé métier (`fixtureId`, `bookmaker`, `market`, `snapshotAt`)
-- [ ] Logger Pino avec compteurs (`fetched`, `validated`, `inserted`, `skipped`, `failed`)
+- [x] Créer `apps/backend/src/modules/etl/workers/odds-historical-sync.worker.ts`
+- [x] Ajouter `odds.schema.ts` + `odds.schema.spec.ts`
+- [x] Ajouter la queue BullMQ et trigger dans `etl.service.ts`
+- [x] Upsert par clé métier (`fixtureId`, `bookmaker`, `market`, `snapshotAt`)
+- [x] Logger Pino avec compteurs (`fetched`, `inserted`, `skipped`)
 
 ### Critères de validation
 
-- [ ] Worker relançable sans doublons
+- [x] Worker relançable sans doublons
 - [ ] 1 run complet par saison sans crash même avec payload partiel
-- [ ] Tests unitaires passants
+- [x] Tests unitaires passants
 
 ---
 
@@ -117,9 +118,9 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ## Suivi d'exécution (Mois 2)
 
-- [ ] `mvp-month-2` lancé
+- [x] `mvp-month-2` lancé
 - [ ] Semaine 5 terminée
 - [ ] Semaine 6 terminée
 - [ ] Semaine 7 terminée
 - [ ] Semaine 8 terminée
-- [ ] Docs `ROADMAP.md` synchronisées
+- [x] Docs `ROADMAP.md` synchronisées

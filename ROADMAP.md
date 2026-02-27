@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 1 en cours — Semaine 1, 2, 3 et 4 terminées (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 2 en cours — Semaine 1, 2, 3 et 4 terminées + Semaine 5 démarrée (mise à jour le 27 février 2026)**
 
 ---
 
@@ -77,9 +77,11 @@
 
 **Semaine 5 — Intégration odds historiques**
 
-- [ ] Worker `odds_historical_sync` — API-Sports (3 saisons)
-- [ ] Stockage odds avec timestamp dans la DB
-- [ ] Validation Zod odds
+- [x] Worker `odds_historical_sync` — API-Sports (3 saisons)
+- [x] Stockage odds avec timestamp dans la DB
+- [x] Validation Zod odds
+- [x] Endpoints manuels ETL (`/etl/sync/odds-historical`, `/etl/sync/odds-historical/:season`)
+- [~] Exécution complète des 3 saisons en environnement connecté
 
 **Semaine 6 — Calcul EV**
 
