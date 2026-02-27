@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase de setup — documentation et architecture**
+**Statut actuel : Mois 1 en cours — Semaine 1 ETL implémentée (mise à jour le 27 février 2026)**
 
 ---
 
@@ -35,12 +35,13 @@
 
 **Semaine 1 — ETL historique**
 
-- [ ] Worker `fixtures_sync` — football-data.org (3 saisons EPL)
-- [ ] Worker `results_sync` — football-data.org
-- [ ] Worker `xg_sync` — Understat scraping
-- [ ] Worker `stats_sync` — FBref scraping (forme, dom/ext)
-- [ ] Validation Zod sur chaque ingestion
-- [ ] Tests unitaires des schémas Zod
+- [x] Worker `fixtures_sync` — football-data.org (3 saisons EPL)
+- [x] Worker `results_sync` — football-data.org
+- [x] Worker `xg_sync` — Understat scraping
+- [~] Worker `stats_sync` — FBref scraping (extraction + validation OK, insertion TeamStats reportée en Semaine 2)
+- [x] Validation Zod sur chaque ingestion
+- [x] Tests unitaires des schémas Zod
+- [x] Tests unitaires métier ETL (`mapStatus`, dispatch BullMQ + delays)
 
 **Semaine 2 — Stats rolling**
 
