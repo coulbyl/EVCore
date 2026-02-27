@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 1 en cours — Semaine 1, 2 et 3 terminées (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 1 en cours — Semaine 1, 2, 3 et 4 terminées (mise à jour le 27 février 2026)**
 
 ---
 
@@ -66,11 +66,11 @@
 
 **Semaine 4 — Backtest & calibration**
 
-- [ ] Pipeline backtest sur 3 saisons historiques
-- [ ] Calcul Brier Score par saison
-- [ ] Calcul Calibration Error par marché
-- [ ] Rapport de performance (JSON + log Pino)
-- [ ] Alerte Novu si Brier Score > seuil acceptable
+- [x] Pipeline backtest sur 3 saisons historiques (exécution par saison)
+- [x] Calcul Brier Score par saison
+- [x] Calcul Calibration Error par marché
+- [x] Rapport de performance (JSON + log Pino)
+- [ ] Alerte Novu si Brier Score > seuil acceptable (reportée)
 
 ---
 

@@ -19,9 +19,10 @@ qui génère des probabilités, et un backtest qui mesure la qualité du modèle
 - Service fixture: mapping métier des statuts API vers DB testé (`AWARDED -> FINISHED`, etc.).
 - Semaine 2 rolling-stats: calculs + upsert `TeamStats` + endpoints de backfill implémentés.
 - Semaine 3 betting-engine: Poisson + marchés dérivés + score déterministe + persistance `ModelRun` implémentés.
+- Semaine 4 backtest: module `backtest` livré (pipeline saison, Brier Score, Calibration Error, ROI simulé, rapport JSON + logs Pino).
 - Standardisation backend: guide d'écriture (`apps/backend/CODE_GUIDE.md`) + aliases TS (`@`, `@utils`, `@modules`, `@config`).
 - Source de vérité dates: utilitaires centralisés (`date.utils.ts`) avec `date-fns`.
-- Reste principal: Semaine 4 (backtest).
+- Reste principal: automatisation/alerting (Novu) et suite Mois 2.
 
 ```
 football-data.org ──► fixtures_sync ──► Fixture (DB)
@@ -650,9 +651,10 @@ Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
 [x] 11. betting-engine : dérivation Over/Under, BTTS, Double Chance
 [x] 12. betting-engine : score déterministe + ev.constants.ts
 [x] 12b. betting-engine : analyse fixture/saison + persistance ModelRun
-[ ] 13. backtest : pipeline sur 3 saisons
-[ ] 14. backtest : Brier Score + Calibration Error
-[ ] 15. backtest : rapport JSON + log Pino + alerte Novu si BS > seuil
+[x] 13. backtest : pipeline par saison (rejouable sur 3 saisons)
+[x] 14. backtest : Brier Score + Calibration Error
+[x] 15. backtest : rapport JSON + log Pino
+[ ] 15b. backtest : alerte Novu si BS > seuil
 ```
 
 ---
