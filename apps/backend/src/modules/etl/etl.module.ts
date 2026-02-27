@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { FixtureModule } from '../fixture/fixture.module';
 import { EtlService } from './etl.service';
+import { EtlController } from './etl.controller';
 import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { ResultsSyncWorker } from './workers/results-sync.worker';
 import { XgSyncWorker } from './workers/xg-sync.worker';
@@ -22,6 +23,7 @@ import { OddsHistoricalSyncWorker } from './workers/odds-historical-sync.worker'
     ),
     FixtureModule,
   ],
+  controllers: [EtlController],
   providers: [
     EtlService,
     FixturesSyncWorker,
