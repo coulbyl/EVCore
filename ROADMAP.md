@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 1 en cours — Semaine 1 ETL implémentée (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 1 en cours — Semaine 1 terminée, Semaine 2 implémentée (mise à jour le 27 février 2026)**
 
 ---
 
@@ -45,11 +45,12 @@
 
 **Semaine 2 — Stats rolling**
 
-- [ ] Calcul forme récente (5 matchs, decay 0.8)
-- [ ] Calcul xG rolling (10 matchs)
-- [ ] Calcul performance domicile/extérieur (saison)
-- [ ] Calcul volatilité ligue (écart-type Poisson)
-- [ ] Stockage des stats dans la DB (table dédiée ou colonnes Fixture)
+- [x] Calcul forme récente (5 matchs, decay 0.8)
+- [x] Calcul xG rolling (10 matchs)
+- [x] Calcul performance domicile/extérieur (saison)
+- [x] Calcul volatilité ligue (écart-type Poisson)
+- [x] Stockage des stats dans la DB (`TeamStats` via upsert)
+- [x] Trigger manuel backend pour backfill (`POST /rolling-stats/backfill/:season`, `POST /rolling-stats/backfill-all`)
 
 **Semaine 3 — Modèle probabiliste**
 

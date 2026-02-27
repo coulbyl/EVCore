@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EtlService } from './etl.service';
-import { BULLMQ_DEFAULT_JOB_OPTIONS, ETL_CONSTANTS } from '../../config/etl.constants';
+import {
+  BULLMQ_DEFAULT_JOB_OPTIONS,
+  ETL_CONSTANTS,
+} from '../../config/etl.constants';
 import type { Queue } from 'bullmq';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
@@ -35,7 +38,9 @@ describe('EtlService', () => {
   it('dispatches fixtures jobs for each season with football-data staggered delays', async () => {
     await service.triggerFixturesSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
+    expect(fixturesQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
 
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
@@ -54,7 +59,9 @@ describe('EtlService', () => {
   it('dispatches results jobs for each season with football-data staggered delays', async () => {
     await service.triggerResultsSync();
 
-    expect(resultsQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
+    expect(resultsQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
 
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
@@ -92,7 +99,9 @@ describe('EtlService', () => {
   it('dispatches stats jobs for each season with fbref staggered delays', async () => {
     await service.triggerStatsSync();
 
-    expect(statsQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
+    expect(statsQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
 
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
@@ -111,9 +120,15 @@ describe('EtlService', () => {
   it('triggerFullSync enqueues fixtures, results, xg and stats jobs', async () => {
     await service.triggerFullSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
-    expect(resultsQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
+    expect(fixturesQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
+    expect(resultsQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
     expect(xgQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
-    expect(statsQueue.add).toHaveBeenCalledTimes(ETL_CONSTANTS.EPL_SEASONS.length);
+    expect(statsQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
   });
 });

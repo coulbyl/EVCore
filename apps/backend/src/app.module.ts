@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { NovuService } from './novu.service';
 import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
+import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EtlModule } from './modules/etl/etl.module';
     }),
     PrismaModule,
     EtlModule,
+    RollingStatsModule,
   ],
   controllers: [AppController],
   providers: [AppService, NovuService],

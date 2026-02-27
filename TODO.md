@@ -17,7 +17,8 @@ qui génère des probabilités, et un backtest qui mesure la qualité du modèle
 - Validation Zod: schémas et tests unitaires en place.
 - Orchestration: BullMQ configuré + dispatch par saison avec delays progressifs testés.
 - Service fixture: mapping métier des statuts API vers DB testé (`AWARDED -> FINISHED`, etc.).
-- Reste principal: Semaine 2 (rolling stats), Semaine 3 (Poisson), Semaine 4 (backtest).
+- Semaine 2 rolling-stats: calculs + upsert `TeamStats` + endpoints de backfill implémentés.
+- Reste principal: Semaine 3 (Poisson), Semaine 4 (backtest).
 
 ```
 football-data.org ──► fixtures_sync ──► Fixture (DB)
@@ -433,6 +434,15 @@ async computeAndStore(teamId: string, afterFixtureId: string): Promise<void> {
 }
 ```
 
+### Trigger applicatif (backfill)
+
+Le module expose 2 endpoints manuels pour lancer le calcul historique:
+
+- `POST /rolling-stats/backfill/:season` (ex. `2021`)
+- `POST /rolling-stats/backfill-all` (saisons `ETL_CONSTANTS.EPL_SEASONS`)
+
+Le backfill parcourt les fixtures `FINISHED` de la saison et calcule 2 snapshots `TeamStats` par fixture (home + away).
+
 ---
 
 ## Semaine 3 — Modèle probabiliste (Poisson)
@@ -629,10 +639,10 @@ Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
 [x] 3. results_sync + Zod schema + tests Zod → scores en base
 [x] 4. xg_sync + Zod schema + tests Zod → xG en base
 [~] 5. stats_sync + Zod schema + tests Zod → stats brutes (validation OK, persistance TeamStats en Semaine 2)
-[ ] 6. rolling-stats : recentForm + tests unitaires
-[ ] 7. rolling-stats : xG rolling + tests unitaires
-[ ] 8. rolling-stats : dom/ext + volatilité + tests unitaires
-[ ] 9. TeamStats upsert → snapshot par fixture
+[x] 6. rolling-stats : recentForm + tests unitaires
+[x] 7. rolling-stats : xG rolling + tests unitaires
+[x] 8. rolling-stats : dom/ext + volatilité + tests unitaires
+[x] 9. TeamStats upsert → snapshot par fixture (+ backfill manuel)
 [ ] 10. betting-engine : Poisson proba 1X2 + tests inputs/outputs connus
 [ ] 11. betting-engine : dérivation Over/Under, BTTS, Double Chance
 [ ] 12. betting-engine : score déterministe + ev.constants.ts
