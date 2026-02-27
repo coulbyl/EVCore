@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 1 en cours — Semaine 1 terminée, Semaine 2 implémentée (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 1 en cours — Semaine 1 terminée, Semaine 2 implémentée, standards backend renforcés (mise à jour le 27 février 2026)**
 
 ---
 
@@ -23,6 +23,7 @@
 - [~] Cahier des charges (EVCORE.md)
 - [~] Conventions IA (CLAUDE.md, copilot-instructions.md)
 - [~] Roadmap (ROADMAP.md)
+- [x] Guide d'écriture backend (`apps/backend/CODE_GUIDE.md`)
 - [x] Initialisation monorepo `apps/backend` (NestJS)
 - [x] Docker Compose (PostgreSQL + Redis + Novu)
 - [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
@@ -51,6 +52,8 @@
 - [x] Calcul volatilité ligue (écart-type Poisson)
 - [x] Stockage des stats dans la DB (`TeamStats` via upsert)
 - [x] Trigger manuel backend pour backfill (`POST /rolling-stats/backfill/:season`, `POST /rolling-stats/backfill-all`)
+- [x] Helpers rolling-stats extraits dans un util dédié (`rolling-stats.utils.ts`)
+- [x] Source de vérité dates (`date.utils.ts`) + standardisation des conversions Date
 
 **Semaine 3 — Modèle probabiliste**
 

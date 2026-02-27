@@ -6,7 +6,7 @@ import {
   calculateRollingXg,
   calculateDomExtPerf,
   calculateLeagueVolatility,
-} from './rolling-stats.service';
+} from './rolling-stats.utils';
 
 function makeFixture(overrides: Partial<Fixture>): Fixture {
   return {

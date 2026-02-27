@@ -4,15 +4,17 @@ import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
 import { FootballDataResponseSchema } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import { seasonNameFromYear } from '@utils/season.utils';
+import {
+  eplSeasonFallbackEndDate,
+  eplSeasonFallbackStartDate,
+  parseIsoDate,
+} from '@utils/date.utils';
 
 export type FixturesSyncJobData = { season: number };
 
 const logger = pino({ name: 'fixtures-sync-worker' });
-
-function seasonName(year: number): string {
-  return `${year}-${String(year + 1).slice(-2)}`; // e.g. 2021 → "2021-22"
-}
 
 @Processor(BULLMQ_QUEUES.FIXTURES_SYNC)
 export class FixturesSyncWorker extends WorkerHost {
@@ -58,15 +60,15 @@ export class FixturesSyncWorker extends WorkerHost {
 
     // Derive season dates — API may return null on some seasons
     const startDate = data.season.startDate
-      ? new Date(data.season.startDate)
-      : new Date(`${season}-08-01`);
+      ? parseIsoDate(data.season.startDate)
+      : eplSeasonFallbackStartDate(season);
     const endDate = data.season.endDate
-      ? new Date(data.season.endDate)
-      : new Date(`${season + 1}-05-31`);
+      ? parseIsoDate(data.season.endDate)
+      : eplSeasonFallbackEndDate(season);
 
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
-      name: seasonName(season),
+      name: seasonNameFromYear(season),
       startDate,
       endDate,
     });

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from '@/prisma.service';
+import { oneDayWindow } from '@utils/date.utils';
 
 export type FixtureWithTeamNames = Fixture & {
   homeTeam: { name: string; shortName: string };
@@ -131,13 +132,10 @@ export class FixtureRepository {
     homeTeamName: string,
     awayTeamName: string,
   ): Promise<FixtureWithTeamNames | null> {
-    const dayBefore = new Date(date);
-    dayBefore.setDate(dayBefore.getDate() - 1);
-    const dayAfter = new Date(date);
-    dayAfter.setDate(dayAfter.getDate() + 1);
+    const { from, to } = oneDayWindow(date);
 
     const candidates = await this.prisma.client.fixture.findMany({
-      where: { scheduledAt: { gte: dayBefore, lte: dayAfter } },
+      where: { scheduledAt: { gte: from, lte: to } },
       include: {
         homeTeam: { select: { name: true, shortName: true } },
         awayTeam: { select: { name: true, shortName: true } },

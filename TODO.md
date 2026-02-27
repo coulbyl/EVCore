@@ -18,6 +18,8 @@ qui génère des probabilités, et un backtest qui mesure la qualité du modèle
 - Orchestration: BullMQ configuré + dispatch par saison avec delays progressifs testés.
 - Service fixture: mapping métier des statuts API vers DB testé (`AWARDED -> FINISHED`, etc.).
 - Semaine 2 rolling-stats: calculs + upsert `TeamStats` + endpoints de backfill implémentés.
+- Standardisation backend: guide d'écriture (`apps/backend/CODE_GUIDE.md`) + aliases TS (`@`, `@utils`, `@modules`, `@config`).
+- Source de vérité dates: utilitaires centralisés (`date.utils.ts`) avec `date-fns`.
 - Reste principal: Semaine 3 (Poisson), Semaine 4 (backtest).
 
 ```
@@ -664,6 +666,7 @@ pnpm --filter backend add -D @types/jstat
 ```
 
 `bullmq`, `ioredis`, `cheerio`, `zod`, `pino`, `pino-pretty`, `decimal.js` et `@types/cheerio` sont déjà installés/catalogués.
+`date-fns` est aussi installé/catalogué pour centraliser la manipulation des dates.
 
 ---
 

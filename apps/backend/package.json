@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "catalog:",
     "bullmq": "catalog:",
     "cheerio": "catalog:",
+    "date-fns": "catalog:",
     "decimal.js": "catalog:",
     "ioredis": "catalog:",
     "pino": "catalog:",

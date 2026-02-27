@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
 import { FixtureRepository } from './fixture.repository';
 import type { FootballDataFixture } from '../etl/schemas/fixture.schema';
+import { parseIsoDate } from '@utils/date.utils';
 
 type UpsertCompetitionInput = { name: string; code: string; country: string };
 type UpsertSeasonInput = {
@@ -50,7 +51,7 @@ export class FixtureService {
       homeTeamId: homeTeam.id,
       awayTeamId: awayTeam.id,
       matchday: fixture.matchday,
-      scheduledAt: new Date(fixture.utcDate),
+      scheduledAt: parseIsoDate(fixture.utcDate),
       status: dbStatus,
       homeScore: fixture.score.fullTime.home,
       awayScore: fixture.score.fullTime.away,

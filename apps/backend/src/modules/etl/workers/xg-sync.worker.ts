@@ -3,8 +3,9 @@ import { Job } from 'bullmq';
 import pino from 'pino';
 import { UnderstatSeasonSchema } from '../schemas/xg.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { sleep } from '../etl.utils';
+import { parseUnderstatDatetimeUtc } from '@utils/date.utils';
 
 export type XgSyncJobData = { season: number };
 
@@ -70,8 +71,7 @@ export class XgSyncWorker extends WorkerHost {
     let unmatched = 0;
 
     for (const match of parsed.data) {
-      // Understat datetime: "2022-08-06 12:30:00" — treat as UTC
-      const date = new Date(match.datetime.replace(' ', 'T') + 'Z');
+      const date = parseUnderstatDatetimeUtc(match.datetime);
 
       const fixture = await this.fixtureService.findByDateAndTeams(
         date,
