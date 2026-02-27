@@ -18,6 +18,15 @@ type UpsertFixtureChainInput = {
   fixture: FootballDataFixture;
 };
 
+type UpsertOneXTwoOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  homeOdds: number;
+  drawOdds: number;
+  awayOdds: number;
+};
+
 @Injectable()
 export class FixtureService {
   constructor(private readonly fixtureRepository: FixtureRepository) {}
@@ -102,6 +111,12 @@ export class FixtureService {
 
   async findFinishedBySeason(seasonId: string): Promise<Fixture[]> {
     return this.fixtureRepository.findFinishedBySeason(seasonId);
+  }
+
+  async upsertOneXTwoOddsSnapshot(
+    data: UpsertOneXTwoOddsSnapshotInput,
+  ): Promise<{ id: string }> {
+    return this.fixtureRepository.upsertOneXTwoOddsSnapshot(data);
   }
 
   private mapStatus(apiStatus: FootballDataFixture['status']): FixtureStatus {

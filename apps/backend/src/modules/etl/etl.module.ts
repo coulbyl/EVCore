@@ -8,6 +8,7 @@ import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { ResultsSyncWorker } from './workers/results-sync.worker';
 import { XgSyncWorker } from './workers/xg-sync.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
+import { OddsHistoricalSyncWorker } from './workers/odds-historical-sync.worker';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
       { name: BULLMQ_QUEUES.RESULTS_SYNC },
       { name: BULLMQ_QUEUES.XG_SYNC },
       { name: BULLMQ_QUEUES.STATS_SYNC },
+      { name: BULLMQ_QUEUES.ODDS_HISTORICAL_SYNC },
     ),
     FixtureModule,
   ],
@@ -26,6 +28,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
     ResultsSyncWorker,
     XgSyncWorker,
     StatsSyncWorker,
+    OddsHistoricalSyncWorker,
   ],
   exports: [EtlService],
 })

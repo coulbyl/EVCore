@@ -9,6 +9,7 @@ import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { XgSyncJobData } from './workers/xg-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
+import type { OddsHistoricalSyncJobData } from './workers/odds-historical-sync.worker';
 
 type MockQueue<T> = Pick<Queue<T>, 'add'>;
 
@@ -23,12 +24,14 @@ describe('EtlService', () => {
   const resultsQueue = makeQueue<ResultsSyncJobData>();
   const xgQueue = makeQueue<XgSyncJobData>();
   const statsQueue = makeQueue<StatsSyncJobData>();
+  const oddsHistoricalQueue = makeQueue<OddsHistoricalSyncJobData>();
 
   const service = new EtlService(
     fixturesQueue as Queue<FixturesSyncJobData>,
     resultsQueue as Queue<ResultsSyncJobData>,
     xgQueue as Queue<XgSyncJobData>,
     statsQueue as Queue<StatsSyncJobData>,
+    oddsHistoricalQueue as Queue<OddsHistoricalSyncJobData>,
   );
 
   beforeEach(() => {
@@ -130,5 +133,29 @@ describe('EtlService', () => {
     expect(statsQueue.add).toHaveBeenCalledTimes(
       ETL_CONSTANTS.EPL_SEASONS.length,
     );
+    expect(oddsHistoricalQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
+  });
+
+  it('dispatches odds historical jobs for each season with staggered delays', async () => {
+    await service.triggerOddsHistoricalSync();
+
+    expect(oddsHistoricalQueue.add).toHaveBeenCalledTimes(
+      ETL_CONSTANTS.EPL_SEASONS.length,
+    );
+
+    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
+      const season = ETL_CONSTANTS.EPL_SEASONS[i];
+      expect(oddsHistoricalQueue.add).toHaveBeenNthCalledWith(
+        i + 1,
+        `odds-historical-sync-${season}`,
+        { season },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.ODDS_RATE_LIMIT_MS,
+        },
+      );
+    }
   });
 });

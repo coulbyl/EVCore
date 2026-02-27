@@ -14,6 +14,10 @@ export const ETL_CONSTANTS = {
   // FBref: strict anti-scraping — 1 req/3s minimum
   FBREF_RATE_LIMIT_MS: 3_000,
 
+  ODDS_API_BASE: 'https://v3.football.api-sports.io',
+  // API-Sports free tier is limited; keep conservative staggering.
+  ODDS_RATE_LIMIT_MS: 6_000,
+
   EPL_COMPETITION_CODE: 'PL',
   EPL_COMPETITION_NAME: 'Premier League',
   EPL_COMPETITION_COUNTRY: 'England',
@@ -26,6 +30,7 @@ export const BULLMQ_QUEUES = {
   RESULTS_SYNC: 'results-sync',
   XG_SYNC: 'xg-sync',
   STATS_SYNC: 'stats-sync',
+  ODDS_HISTORICAL_SYNC: 'odds-historical-sync',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {

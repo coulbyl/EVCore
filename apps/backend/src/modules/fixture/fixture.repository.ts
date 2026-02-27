@@ -40,13 +40,20 @@ type UpsertFixtureInput = {
   awayScore?: number | null;
 };
 
+type UpsertOneXTwoOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  homeOdds: number;
+  drawOdds: number;
+  awayOdds: number;
+};
+
 @Injectable()
 export class FixtureRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertCompetition(
-    data: UpsertCompetitionInput,
-  ): Promise<{ id: string }> {
+  upsertCompetition(data: UpsertCompetitionInput): Promise<{ id: string }> {
     return this.prisma.client.competition.upsert({
       where: { code: data.code },
       create: data,
@@ -55,7 +62,7 @@ export class FixtureRepository {
     });
   }
 
-  async upsertSeason(data: UpsertSeasonInput): Promise<{ id: string }> {
+  upsertSeason(data: UpsertSeasonInput): Promise<{ id: string }> {
     return this.prisma.client.season.upsert({
       where: {
         competitionId_name: {
@@ -69,7 +76,7 @@ export class FixtureRepository {
     });
   }
 
-  async upsertTeam(data: UpsertTeamInput): Promise<{ id: string }> {
+  upsertTeam(data: UpsertTeamInput): Promise<{ id: string }> {
     return this.prisma.client.team.upsert({
       where: { externalId: data.externalId },
       create: data,
@@ -78,7 +85,7 @@ export class FixtureRepository {
     });
   }
 
-  async upsertFixture(data: UpsertFixtureInput): Promise<{ id: string }> {
+  upsertFixture(data: UpsertFixtureInput): Promise<{ id: string }> {
     return this.prisma.client.fixture.upsert({
       where: { externalId: data.externalId },
       create: data,
@@ -115,14 +122,53 @@ export class FixtureRepository {
     });
   }
 
-  async findByExternalId(externalId: number): Promise<Fixture | null> {
+  findByExternalId(externalId: number): Promise<Fixture | null> {
     return this.prisma.client.fixture.findUnique({ where: { externalId } });
   }
 
-  async findFinishedBySeason(seasonId: string): Promise<Fixture[]> {
+  findFinishedBySeason(seasonId: string): Promise<Fixture[]> {
     return this.prisma.client.fixture.findMany({
       where: { seasonId, status: 'FINISHED' },
       orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
+  async upsertOneXTwoOddsSnapshot(
+    data: UpsertOneXTwoOddsSnapshotInput,
+  ): Promise<{ id: string }> {
+    const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      where: {
+        fixtureId: data.fixtureId,
+        bookmaker: data.bookmaker,
+        market: 'ONE_X_TWO',
+        snapshotAt: data.snapshotAt,
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return this.prisma.client.oddsSnapshot.update({
+        where: { id: existing.id },
+        data: {
+          homeOdds: data.homeOdds,
+          drawOdds: data.drawOdds,
+          awayOdds: data.awayOdds,
+        },
+        select: { id: true },
+      });
+    }
+
+    return this.prisma.client.oddsSnapshot.create({
+      data: {
+        fixtureId: data.fixtureId,
+        bookmaker: data.bookmaker,
+        market: 'ONE_X_TWO',
+        snapshotAt: data.snapshotAt,
+        homeOdds: data.homeOdds,
+        drawOdds: data.drawOdds,
+        awayOdds: data.awayOdds,
+      },
+      select: { id: true },
     });
   }
 

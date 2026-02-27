@@ -10,6 +10,7 @@ import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { XgSyncJobData } from './workers/xg-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
+import type { OddsHistoricalSyncJobData } from './workers/odds-historical-sync.worker';
 
 @Injectable()
 export class EtlService {
@@ -22,6 +23,8 @@ export class EtlService {
     private readonly xgQueue: Queue<XgSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.STATS_SYNC)
     private readonly statsQueue: Queue<StatsSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_SYNC)
+    private readonly oddsHistoricalQueue: Queue<OddsHistoricalSyncJobData>,
   ) {}
 
   async triggerFixturesSync(): Promise<void> {
@@ -73,10 +76,23 @@ export class EtlService {
     }
   }
 
+  async triggerOddsHistoricalSync(): Promise<void> {
+    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
+      const season = ETL_CONSTANTS.EPL_SEASONS[i];
+      const delay = i * ETL_CONSTANTS.ODDS_RATE_LIMIT_MS;
+      await this.oddsHistoricalQueue.add(
+        `odds-historical-sync-${season}`,
+        { season } satisfies OddsHistoricalSyncJobData,
+        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
+      );
+    }
+  }
+
   async triggerFullSync(): Promise<void> {
     await this.triggerFixturesSync();
     await this.triggerResultsSync();
     await this.triggerXgSync();
     await this.triggerStatsSync();
+    await this.triggerOddsHistoricalSync();
   }
 }
