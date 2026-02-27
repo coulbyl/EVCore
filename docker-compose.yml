@@ -147,38 +147,6 @@ services:
       AWS_SECRET_ACCESS_KEY: ${NOVU_AWS_SECRET_ACCESS_KEY:-test}
       NEW_RELIC_ENABLED: false
 
-  novu-ws:
-    image: ghcr.io/novuhq/novu/ws:3.11.0
-    container_name: evcore-novu-ws
-    restart: unless-stopped
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      NODE_ENV: ${NOVU_NODE_ENV:-local}
-      PORT: ${NOVU_WS_PORT:-3012}
-      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME:-root}:${MONGO_INITDB_ROOT_PASSWORD:-secret}@mongodb:27017/novu-db?authSource=admin
-      MONGO_MAX_POOL_SIZE: ${NOVU_MONGO_MAX_POOL_SIZE:-10}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${NOVU_REDIS_PASSWORD:-}
-      JWT_SECRET: ${NOVU_JWT_SECRET:-change-me-in-production}
-      NEW_RELIC_ENABLED: false
-    ports:
-      - "${NOVU_WS_PORT:-3012}:${NOVU_WS_PORT:-3012}"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:$${PORT}/v1/health-check || exit 1",
-        ]
-      interval: 20s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
   novu-dashboard:
     image: ghcr.io/novuhq/novu/dashboard:3.11.0
     container_name: evcore-novu-dashboard
@@ -190,7 +158,6 @@ services:
         condition: service_started
     environment:
       VITE_API_HOSTNAME: ${NOVU_DASHBOARD_API_HOSTNAME:-http://localhost:3010}
-      VITE_WEBSOCKET_HOSTNAME: ${NOVU_DASHBOARD_WS_HOSTNAME:-http://localhost:3012}
       VITE_LEGACY_DASHBOARD_URL: ${NOVU_LEGACY_DASHBOARD_URL:-http://localhost:4000}
       VITE_SELF_HOSTED: "true"
     ports:
