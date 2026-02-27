@@ -158,4 +158,18 @@ describe('EtlService', () => {
       );
     }
   });
+
+  it('dispatches odds historical job for one explicit season', async () => {
+    await service.triggerOddsHistoricalSyncForSeason(2024);
+
+    expect(oddsHistoricalQueue.add).toHaveBeenCalledTimes(1);
+    expect(oddsHistoricalQueue.add).toHaveBeenCalledWith(
+      'odds-historical-sync-2024',
+      { season: 2024 },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: 0,
+      },
+    );
+  });
 });

@@ -79,13 +79,12 @@ export class EtlService {
   async triggerOddsHistoricalSync(): Promise<void> {
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      const delay = i * ETL_CONSTANTS.ODDS_RATE_LIMIT_MS;
-      await this.oddsHistoricalQueue.add(
-        `odds-historical-sync-${season}`,
-        { season } satisfies OddsHistoricalSyncJobData,
-        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-      );
+      await this.enqueueOddsHistoricalSeason(season, i);
     }
+  }
+
+  async triggerOddsHistoricalSyncForSeason(season: number): Promise<void> {
+    await this.enqueueOddsHistoricalSeason(season, 0);
   }
 
   async triggerFullSync(): Promise<void> {
@@ -94,5 +93,17 @@ export class EtlService {
     await this.triggerXgSync();
     await this.triggerStatsSync();
     await this.triggerOddsHistoricalSync();
+  }
+
+  private async enqueueOddsHistoricalSeason(
+    season: number,
+    offset: number,
+  ): Promise<void> {
+    const delay = offset * ETL_CONSTANTS.ODDS_RATE_LIMIT_MS;
+    await this.oddsHistoricalQueue.add(
+      `odds-historical-sync-${season}`,
+      { season } satisfies OddsHistoricalSyncJobData,
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
+    );
   }
 }
