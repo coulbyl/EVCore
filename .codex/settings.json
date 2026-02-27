@@ -1,0 +1,16 @@
+{
+  "security": {
+    "deny_read_globs": [
+      ".env",
+      ".env.*",
+      "apps/backend/.env",
+      "apps/backend/.env.*"
+    ],
+    "deny_edit_globs": [
+      ".env",
+      ".env.*",
+      "apps/backend/.env",
+      "apps/backend/.env.*"
+    ]
+  }
+}
