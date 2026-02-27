@@ -631,7 +631,7 @@ type BacktestReport = {
 };
 ```
 
-Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
+Log Pino en JSON. L'alerte Novu (`brierScore > 0.25`) est planifiée en Semaine 8 (tracking).
 
 ---
 
@@ -654,7 +654,7 @@ Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
 [x] 13. backtest : pipeline par saison (rejouable sur 3 saisons)
 [x] 14. backtest : Brier Score + Calibration Error
 [x] 15. backtest : rapport JSON + log Pino
-[ ] 15b. backtest : alerte Novu si BS > seuil
+[ ] 16. tracking (S8) : alerte Novu si Brier Score > seuil
 ```
 
 ---

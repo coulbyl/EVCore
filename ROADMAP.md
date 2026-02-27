@@ -70,7 +70,6 @@
 - [x] Calcul Brier Score par saison
 - [x] Calcul Calibration Error par marché
 - [x] Rapport de performance (JSON + log Pino)
-- [ ] Alerte Novu si Brier Score > seuil acceptable (reportée)
 
 ---
 
@@ -100,6 +99,7 @@
 
 - [ ] Implémentation seuil alerte ROI < -10% (30 derniers paris)
 - [ ] Implémentation suspension automatique ROI < -15% (50+ paris)
+- [ ] Alerte Novu si Brier Score > seuil acceptable
 - [ ] Alerte Novu sur suspension marché
 - [ ] Rapport hebdomadaire ROI/Brier Score par email (Novu)
 
