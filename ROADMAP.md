@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 1 en cours — Semaine 1 terminée, Semaine 2 implémentée, standards backend renforcés (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 1 en cours — Semaine 1, 2 et 3 terminées (mise à jour le 27 février 2026)**
 
 ---
 
@@ -57,11 +57,12 @@
 
 **Semaine 3 — Modèle probabiliste**
 
-- [ ] Modèle de Poisson (jStat) pour prédire buts domicile/extérieur
-- [ ] Génération probabilités 1X2
-- [ ] Dérivation Over/Under 2.5, BTTS, Double Chance depuis les probabilités 1X2
-- [ ] Score déterministe pondéré (Forme 30% / xG 30% / Dom-Ext 25% / Volatilité 15%)
-- [ ] Tests unitaires avec inputs/outputs connus
+- [x] Modèle de Poisson pour prédire buts domicile/extérieur
+- [x] Génération probabilités 1X2
+- [x] Dérivation Over/Under 2.5, BTTS, Double Chance depuis les probabilités 1X2
+- [x] Score déterministe pondéré (Forme 30% / xG 30% / Dom-Ext 25% / Volatilité 15%)
+- [x] Tests unitaires avec inputs/outputs connus
+- [x] Intégration applicative: analyse fixture/saison + persistance `ModelRun`
 
 **Semaine 4 — Backtest & calibration**
 

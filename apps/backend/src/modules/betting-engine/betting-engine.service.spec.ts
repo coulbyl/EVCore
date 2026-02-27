@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import {
   poissonProba,
@@ -6,6 +6,7 @@ import {
   deriveMarketsFromPoisson,
 } from './betting-engine.utils';
 import { BettingEngineService } from './betting-engine.service';
+import type { PrismaService } from '@/prisma.service';
 
 describe('poissonProba', () => {
   it('returns probabilities that sum close to 1', () => {
@@ -53,11 +54,102 @@ describe('calculateDeterministicScore', () => {
 
 describe('BettingEngineService', () => {
   it('computes 1X2 and derived probabilities together', () => {
-    const service = new BettingEngineService();
+    const service = new BettingEngineService({} as PrismaService);
     const p = service.computeProbabilities(1.4, 1.1);
 
     expect(p.home.plus(p.draw).plus(p.away).toNumber()).toBeCloseTo(1, 3);
     expect(p.over25.plus(p.under25).toNumber()).toBeCloseTo(1, 6);
     expect(p.bttsYes.plus(p.bttsNo).toNumber()).toBeCloseTo(1, 6);
+  });
+
+  it('analyzes and persists a model run when fixture and team stats exist', async () => {
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'fixture-id',
+            seasonId: 'season-id',
+            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+            homeTeamId: 'home-team',
+            awayTeamId: 'away-team',
+            status: 'FINISHED',
+          }),
+          findMany: vi.fn(),
+        },
+        teamStats: {
+          findFirst: vi
+            .fn()
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.7'),
+              xgFor: new Decimal('1.8'),
+              xgAgainst: new Decimal('1.1'),
+              homeWinRate: new Decimal('0.65'),
+              awayWinRate: new Decimal('0.35'),
+              drawRate: new Decimal('0.20'),
+              leagueVolatility: new Decimal('1.5'),
+            })
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.4'),
+              xgFor: new Decimal('1.2'),
+              xgAgainst: new Decimal('1.6'),
+              homeWinRate: new Decimal('0.45'),
+              awayWinRate: new Decimal('0.30'),
+              drawRate: new Decimal('0.25'),
+              leagueVolatility: new Decimal('1.4'),
+            }),
+        },
+        modelRun: {
+          create: vi.fn().mockResolvedValue({ id: 'run-id' }),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(prismaMock);
+    const result = await service.analyzeFixture('fixture-id');
+
+    expect(result.status).toBe('analyzed');
+    if (result.status === 'analyzed') {
+      expect(result.modelRunId).toBe('run-id');
+      expect(
+        result.probabilities.home +
+          result.probabilities.draw +
+          result.probabilities.away,
+      ).toBeCloseTo(1, 3);
+    }
+  });
+
+  it('skips analysis when team stats are missing', async () => {
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'fixture-id',
+            seasonId: 'season-id',
+            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+            homeTeamId: 'home-team',
+            awayTeamId: 'away-team',
+            status: 'FINISHED',
+          }),
+        },
+        teamStats: {
+          findFirst: vi
+            .fn()
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce(null),
+        },
+        modelRun: {
+          create: vi.fn(),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(prismaMock);
+    const result = await service.analyzeFixture('fixture-id');
+
+    expect(result).toEqual({
+      status: 'skipped',
+      fixtureId: 'fixture-id',
+      reason: 'missing_team_stats',
+    });
   });
 });

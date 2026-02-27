@@ -8,3 +8,4 @@ export const FEATURE_WEIGHTS = {
 } as const;
 
 export const EV_THRESHOLD = new Decimal('0.08');
+export const MODEL_SCORE_THRESHOLD = new Decimal('0.60');

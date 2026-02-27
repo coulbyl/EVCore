@@ -18,9 +18,10 @@ qui génère des probabilités, et un backtest qui mesure la qualité du modèle
 - Orchestration: BullMQ configuré + dispatch par saison avec delays progressifs testés.
 - Service fixture: mapping métier des statuts API vers DB testé (`AWARDED -> FINISHED`, etc.).
 - Semaine 2 rolling-stats: calculs + upsert `TeamStats` + endpoints de backfill implémentés.
+- Semaine 3 betting-engine: Poisson + marchés dérivés + score déterministe + persistance `ModelRun` implémentés.
 - Standardisation backend: guide d'écriture (`apps/backend/CODE_GUIDE.md`) + aliases TS (`@`, `@utils`, `@modules`, `@config`).
 - Source de vérité dates: utilitaires centralisés (`date.utils.ts`) avec `date-fns`.
-- Reste principal: Semaine 3 (Poisson), Semaine 4 (backtest).
+- Reste principal: Semaine 4 (backtest).
 
 ```
 football-data.org ──► fixtures_sync ──► Fixture (DB)
@@ -645,9 +646,10 @@ Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
 [x] 7. rolling-stats : xG rolling + tests unitaires
 [x] 8. rolling-stats : dom/ext + volatilité + tests unitaires
 [x] 9. TeamStats upsert → snapshot par fixture (+ backfill manuel)
-[ ] 10. betting-engine : Poisson proba 1X2 + tests inputs/outputs connus
-[ ] 11. betting-engine : dérivation Over/Under, BTTS, Double Chance
-[ ] 12. betting-engine : score déterministe + ev.constants.ts
+[x] 10. betting-engine : Poisson proba 1X2 + tests inputs/outputs connus
+[x] 11. betting-engine : dérivation Over/Under, BTTS, Double Chance
+[x] 12. betting-engine : score déterministe + ev.constants.ts
+[x] 12b. betting-engine : analyse fixture/saison + persistance ModelRun
 [ ] 13. backtest : pipeline sur 3 saisons
 [ ] 14. backtest : Brier Score + Calibration Error
 [ ] 15. backtest : rapport JSON + log Pino + alerte Novu si BS > seuil
@@ -659,10 +661,10 @@ Log Pino en JSON, alerte Novu si `brierScore > 0.25` (seuil critique).
 
 ```bash
 # Runtime
-pnpm --filter backend add jstat simple-statistics
+pnpm --filter backend add simple-statistics
 
 # Types
-pnpm --filter backend add -D @types/jstat
+# (none required here)
 ```
 
 `bullmq`, `ioredis`, `cheerio`, `zod`, `pino`, `pino-pretty`, `decimal.js` et `@types/cheerio` sont déjà installés/catalogués.
