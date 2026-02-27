@@ -27,6 +27,7 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 - [x] Tests unitaires des schémas odds + mapping DB
 - [x] Mettre à jour le .env.example (bien documenté)
 - [x] Endpoints manuels ETL (`/etl/sync/odds-historical`, `/etl/sync/odds-historical/:season`)
+- [x] Runbook de validation run réel (`apps/backend/docs/ODDS_HISTORICAL_VALIDATION.md`)
 
 ### Implémentation
 

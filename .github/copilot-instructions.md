@@ -39,6 +39,8 @@ EVCore is an autonomous sports betting engine based on Expected Value (EV) mathe
 - Never use LLM to fetch, infer, or fill in fixture or odds data
 - Never implement Kelly criterion (Phase 2 only, behind config flag)
 - Probability values must always be in `[0, 1]` — assert at ingestion boundary
+- Never read or expose `.env` / `.env.*` files (except `.env.example`)
+- Never log, commit, or print secrets (API keys, passwords, tokens, DB URLs)
 
 ## EV Formula
 

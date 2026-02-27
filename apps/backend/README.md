@@ -5,6 +5,7 @@ Backend NestJS du projet EVCore (ETL, stats rolling, modèle probabiliste, backt
 ## Références
 
 - Guide d'écriture backend: [CODE_GUIDE.md](./CODE_GUIDE.md)
+- Runbook validation odds historiques: [docs/ODDS_HISTORICAL_VALIDATION.md](./docs/ODDS_HISTORICAL_VALIDATION.md)
 - Spécification produit: [../../EVCORE.md](../../EVCORE.md)
 - Roadmap d'implémentation: [../../ROADMAP.md](../../ROADMAP.md)
 

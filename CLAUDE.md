@@ -138,6 +138,12 @@ ModelRun stored + Novu alert
 - Validate at system boundaries only — trust internal service calls
 - If Zod parse fails on ETL data: reject the entire payload, log with full context, trigger Novu alert
 
+### Secrets handling
+
+- Never read or print secret env files: `.env`, `.env.*` (except `.env.example`)
+- Never exfiltrate, log, or commit API keys, passwords, tokens, or connection strings
+- If a task requires a secret value, ask the user to provide it explicitly instead of opening secret files
+
 ### Arithmetic
 
 - **Never use native `number` for odds, EV, probabilities, or bankroll calculations**
