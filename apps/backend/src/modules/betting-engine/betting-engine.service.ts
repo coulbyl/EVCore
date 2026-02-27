@@ -9,6 +9,11 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { MODEL_SCORE_THRESHOLD } from './ev.constants';
+import type {
+  MatchComputation,
+  MatchupFeatures,
+  TeamStatsInput,
+} from './betting-engine.types';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
@@ -30,13 +35,6 @@ type AnalyzeFixtureResult =
         | 'missing_team_stats';
     };
 
-type MatchupFeatures = {
-  recentForm: Decimal;
-  xg: Decimal;
-  domExtPerf: Decimal;
-  leagueVolat: Decimal;
-};
-
 @Injectable()
 export class BettingEngineService {
   constructor(private readonly prisma: PrismaService) {}
@@ -50,6 +48,18 @@ export class BettingEngineService {
 
   calculateDeterministicScore(features: DeterministicFeatures): Decimal {
     return calculateDeterministicScore(features);
+  }
+
+  computeFromTeamStats(
+    homeStats: TeamStatsInput,
+    awayStats: TeamStatsInput,
+  ): MatchComputation {
+    const features = buildMatchupFeatures(homeStats, awayStats);
+    const deterministicScore = this.calculateDeterministicScore(features);
+    const lambda = deriveLambdas(homeStats, awayStats);
+    const probabilities = this.computeProbabilities(lambda.home, lambda.away);
+
+    return { deterministicScore, probabilities, lambda, features };
   }
 
   async analyzeFixture(fixtureId: string): Promise<AnalyzeFixtureResult> {
@@ -103,11 +113,8 @@ export class BettingEngineService {
       return { status: 'skipped', fixtureId, reason: 'missing_team_stats' };
     }
 
-    const matchupFeatures = buildMatchupFeatures(homeStats, awayStats);
-    const deterministicScore =
-      this.calculateDeterministicScore(matchupFeatures);
-    const lambda = deriveLambdas(homeStats, awayStats);
-    const probabilities = this.computeProbabilities(lambda.home, lambda.away);
+    const { features, deterministicScore, lambda, probabilities } =
+      this.computeFromTeamStats(homeStats, awayStats);
     const decision = deterministicScore.greaterThanOrEqualTo(
       MODEL_SCORE_THRESHOLD,
     )
@@ -122,10 +129,10 @@ export class BettingEngineService {
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
         features: {
-          recentForm: matchupFeatures.recentForm.toNumber(),
-          xg: matchupFeatures.xg.toNumber(),
-          performanceDomExt: matchupFeatures.domExtPerf.toNumber(),
-          volatiliteLigue: matchupFeatures.leagueVolat.toNumber(),
+          recentForm: features.recentForm.toNumber(),
+          xg: features.xg.toNumber(),
+          performanceDomExt: features.domExtPerf.toNumber(),
+          volatiliteLigue: features.leagueVolat.toNumber(),
           lambdaHome: lambda.home,
           lambdaAway: lambda.away,
           probabilities: mapProbabilitiesToNumber(probabilities),
@@ -195,10 +202,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function deriveLambdas(
-  homeStats: Record<string, unknown>,
-  awayStats: Record<string, unknown>,
-) {
+function deriveLambdas(homeStats: TeamStatsInput, awayStats: TeamStatsInput) {
   const homeXgFor = asNumber(homeStats.xgFor);
   const awayXgFor = asNumber(awayStats.xgFor);
   const homeXgAgainst = asNumber(homeStats.xgAgainst);
@@ -216,8 +220,8 @@ function deriveLambdas(
 }
 
 function buildMatchupFeatures(
-  homeStats: Record<string, unknown>,
-  awayStats: Record<string, unknown>,
+  homeStats: TeamStatsInput,
+  awayStats: TeamStatsInput,
 ): MatchupFeatures {
   const recentForm = clamp01(
     (asNumber(homeStats.recentForm) + (1 - asNumber(awayStats.recentForm))) / 2,

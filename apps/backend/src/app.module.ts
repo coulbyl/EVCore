@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
 import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
 import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
+import { BacktestModule } from './modules/backtest/backtest.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BettingEngineModule } from './modules/betting-engine/betting-engine.mod
     EtlModule,
     RollingStatsModule,
     BettingEngineModule,
+    BacktestModule,
   ],
   controllers: [AppController],
   providers: [AppService, NovuService],
