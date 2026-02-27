@@ -7,6 +7,7 @@ import { NovuService } from './novu.service';
 import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
 import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
+import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module
     PrismaModule,
     EtlModule,
     RollingStatsModule,
+    BettingEngineModule,
   ],
   controllers: [AppController],
   providers: [AppService, NovuService],
