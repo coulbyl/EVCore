@@ -21,11 +21,20 @@
   },
   "dependencies": {
     "@evcore/db": "workspace:*",
+    "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
+    "bullmq": "catalog:",
+    "cheerio": "catalog:",
+    "decimal.js": "catalog:",
+    "ioredis": "catalog:",
+    "pino": "catalog:",
+    "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
-    "rxjs": "catalog:"
+    "rxjs": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@evcore/eslint-config": "workspace:*",
