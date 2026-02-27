@@ -26,6 +26,8 @@
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "@scalar/nestjs-api-reference": "catalog:",
     "bullmq": "catalog:",
     "cheerio": "catalog:",
     "date-fns": "catalog:",

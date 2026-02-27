@@ -16,6 +16,10 @@ pnpm install
 pnpm --filter backend dev
 ```
 
+## API Reference
+
+- Scalar (OpenAPI): `http://localhost:3000/reference`
+
 ## Commandes utiles
 
 ```bash
