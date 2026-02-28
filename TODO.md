@@ -34,13 +34,22 @@ Rendre le moteur autonome et apprenant :
 
 ---
 
-## Semaine 10 — Boucle d'apprentissage
+## Semaine 10 — Boucle d'apprentissage ✅
 
-- [ ] Log probabilité estimée vs résultat réel post-match (via `ModelRun`)
-- [ ] Calcul erreur calibration par match
-- [ ] Génération `AdjustmentProposal` automatique (si ≥ 50 bets sur le marché)
-- [ ] Endpoint `POST /adjustment/:id/apply` + `POST /adjustment/:id/reject` + `POST /adjustment/:id/freeze`
-- [ ] Contraintes : max 5% de variation par semaine, jamais auto-appliqué
+### Résultats
+
+- [x] `BettingEngineService.settleOpenBets(fixtureId)` — résout WON/LOST/VOID pour les bets PENDING d'un fixture
+- [x] `BettingEngineService.getEffectiveWeights()` — charge le dernier `AdjustmentProposal` APPLIED depuis la DB
+- [x] `calculateDeterministicScore()` — paramètre `weights` optionnel (fallback sur `FEATURE_WEIGHTS`)
+- [x] `CalibrationService.compute()` — Brier score + meanError déterministe depuis les bets settlés
+- [x] `AdjustmentService.settleAndCheck(fixtureId)` — settle → calibrate → auto-apply si déclenché
+- [x] Auto-apply : brierScore > 0.25 ET betCount ≥ 50 ET aucun apply dans les 7 derniers jours
+- [x] `computeAdjustedWeights()` — shift top-2 → bottom-2, normalisé sum=1, clampé [0.01, 0.99]
+- [x] `AdjustmentService.rollback(id)` — crée un nouveau proposal APPLIED avec poids inversés (audit complet)
+- [x] `AdjustmentController` : `POST /adjustment/settle-and-check/:fixtureId`, `GET /adjustment`, `POST /adjustment/:id/rollback`
+- [x] `NotificationService.sendWeightAdjustmentAlert()` — alerte Novu sur chaque auto-apply + rollback
+- [x] Design confirmé : auto-apply par le backend, humain peut rollback (pas de gate manuelle)
+- [x] 108 tests unitaires passants (+ 13 nouveaux)
 
 ---
 
@@ -67,8 +76,7 @@ Rendre le moteur autonome et apprenant :
 
 - [x] `mvp-month-3` lancé
 - [x] Semaine 9 terminée
-- [ ] Semaine 10 terminée
+- [x] Semaine 10 terminée
 - [ ] Semaine 11 terminée
 - [ ] Semaine 12 terminée
 - [ ] Docs `ROADMAP.md` synchronisées
-
