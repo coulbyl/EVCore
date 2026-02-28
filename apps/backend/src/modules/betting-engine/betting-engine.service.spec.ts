@@ -114,6 +114,9 @@ describe('BettingEngineService', () => {
         marketSuspension: {
           findFirst: vi.fn().mockResolvedValue(null),
         },
+        adjustmentProposal: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
         bet: {
           create: vi.fn(),
         },
@@ -226,6 +229,9 @@ describe('BettingEngineService', () => {
         marketSuspension: {
           findFirst: vi.fn().mockResolvedValue(null),
         },
+        adjustmentProposal: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
         modelRun: {
           create: createModelRun,
         },
@@ -333,6 +339,9 @@ describe('BettingEngineService', () => {
           ]),
         },
         marketSuspension: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        adjustmentProposal: {
           findFirst: vi.fn().mockResolvedValue(null),
         },
         modelRun: {

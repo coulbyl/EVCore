@@ -94,7 +94,7 @@ ModelRun stored + Novu alert
 | ETL Workers    | Collect + normalize data                  | Infer or fill missing data |
 | PostgreSQL     | Historical truth                          | —                          |
 | Betting Engine | Probabilistic scoring + EV                | Call LLM for raw data      |
-| Backend        | Validation, risk control, weight approval | Auto-apply adjustments     |
+| Backend        | Validation, risk control, auto-apply + rollback | Bypass Zod or rate-limit rules |
 | OpenClaw       | Contextual delta only                     | Be primary data source     |
 
 ---
@@ -163,11 +163,12 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 - OpenClaw weight cap: `≤ 0.30` — enforced server-side, never trust frontend or LLM output
 - Weight adjustment: minimum 50 bets on market, maximum 5% change per week
 - Market suspension: automatic at ROI < -15% over 50+ bets — never manual shortcut
-- No auto-apply of `AdjustmentProposal` — backend decision only
+- `AdjustmentProposal` is **auto-applied** by the backend when calibration triggers; humans see the applied proposal and can rollback via `POST /adjustment/:id/rollback`
+- Rollback rate-limit: one auto-apply per 7 days per market (enforced server-side)
 
 ### Decisions that require human approval
 
-- Applying or partially applying an `AdjustmentProposal`
+- Rolling back an auto-applied `AdjustmentProposal`
 - Reactivating a suspended market
 - Changing EV threshold
 - Introducing OpenClaw into the scoring loop (not before MVP validation)

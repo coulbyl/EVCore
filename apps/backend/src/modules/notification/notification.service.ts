@@ -85,6 +85,23 @@ export class NotificationService {
     });
   }
 
+  async sendWeightAdjustmentAlert(payload: {
+    proposalId: string;
+    isRollback: boolean;
+    brierScore?: number;
+    meanError?: number;
+    rolledBackProposalId?: string;
+  }): Promise<void> {
+    await this.trigger('evcore-weight-adjustment', {
+      proposalId: payload.proposalId,
+      isRollback: payload.isRollback,
+      brierScore: payload.brierScore?.toFixed(6),
+      meanError: payload.meanError?.toFixed(6),
+      rolledBackProposalId: payload.rolledBackProposalId,
+      appliedAt: new Date().toISOString(),
+    });
+  }
+
   async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
     await this.trigger('evcore-weekly-report', {
       roiOneXTwo: payload.roiOneXTwo.toFixed(4),

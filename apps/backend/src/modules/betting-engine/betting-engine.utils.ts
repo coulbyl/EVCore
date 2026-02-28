@@ -24,6 +24,13 @@ export type DeterministicFeatures = {
   leagueVolat: Decimal.Value;
 };
 
+export type FeatureWeights = {
+  recentForm: Decimal.Value;
+  xg: Decimal.Value;
+  domExtPerf: Decimal.Value;
+  leagueVolat: Decimal.Value;
+};
+
 export function poissonProba(
   lambdaHome: number,
   lambdaAway: number,
@@ -78,12 +85,13 @@ export function calculateEV(
 
 export function calculateDeterministicScore(
   features: DeterministicFeatures,
+  weights: FeatureWeights = FEATURE_WEIGHTS,
 ): Decimal {
   return new Decimal(features.recentForm)
-    .times(FEATURE_WEIGHTS.recentForm)
-    .plus(new Decimal(features.xg).times(FEATURE_WEIGHTS.xg))
-    .plus(new Decimal(features.domExtPerf).times(FEATURE_WEIGHTS.domExtPerf))
-    .plus(new Decimal(features.leagueVolat).times(FEATURE_WEIGHTS.leagueVolat));
+    .times(weights.recentForm)
+    .plus(new Decimal(features.xg).times(weights.xg))
+    .plus(new Decimal(features.domExtPerf).times(weights.domExtPerf))
+    .plus(new Decimal(features.leagueVolat).times(weights.leagueVolat));
 }
 
 function poissonProbaFromDistributions(

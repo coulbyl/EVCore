@@ -1,17 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { Decision, FixtureStatus, Market, Prisma } from '@evcore/db';
+import {
+  AdjustmentStatus,
+  BetStatus,
+  Decision,
+  FixtureStatus,
+  Market,
+  Prisma,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
   computePoissonMarkets,
   calculateDeterministicScore,
   calculateEV as calcEV,
   type DeterministicFeatures,
+  type FeatureWeights,
 } from './betting-engine.utils';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import {
   DEFAULT_STAKE_PCT,
   EV_THRESHOLD,
+  FEATURE_WEIGHTS,
   MODEL_SCORE_THRESHOLD,
 } from './ev.constants';
 import type {
@@ -61,8 +70,11 @@ export class BettingEngineService {
     return computePoissonMarkets(lambdaHome, lambdaAway);
   }
 
-  calculateDeterministicScore(features: DeterministicFeatures): Decimal {
-    return calculateDeterministicScore(features);
+  calculateDeterministicScore(
+    features: DeterministicFeatures,
+    weights?: FeatureWeights,
+  ): Decimal {
+    return calculateDeterministicScore(features, weights);
   }
 
   calculateEV(probability: Decimal.Value, odds: Decimal.Value): Decimal {
@@ -72,13 +84,83 @@ export class BettingEngineService {
   computeFromTeamStats(
     homeStats: TeamStatsInput,
     awayStats: TeamStatsInput,
+    weights?: FeatureWeights,
   ): MatchComputation {
     const features = buildMatchupFeatures(homeStats, awayStats);
-    const deterministicScore = this.calculateDeterministicScore(features);
+    const deterministicScore = this.calculateDeterministicScore(
+      features,
+      weights,
+    );
     const lambda = deriveLambdas(homeStats, awayStats);
     const probabilities = this.computeProbabilities(lambda.home, lambda.away);
 
     return { deterministicScore, probabilities, lambda, features };
+  }
+
+  async getEffectiveWeights(): Promise<FeatureWeights> {
+    const latest = await this.prisma.client.adjustmentProposal.findFirst({
+      where: { status: AdjustmentStatus.APPLIED },
+      orderBy: { appliedAt: 'desc' },
+      select: { proposedWeights: true },
+    });
+
+    if (!latest) return FEATURE_WEIGHTS;
+
+    const w = latest.proposedWeights as Record<string, unknown>;
+    return {
+      recentForm: new Decimal(
+        String(w['recentForm'] ?? FEATURE_WEIGHTS.recentForm),
+      ),
+      xg: new Decimal(String(w['xg'] ?? FEATURE_WEIGHTS.xg)),
+      domExtPerf: new Decimal(
+        String(w['domExtPerf'] ?? FEATURE_WEIGHTS.domExtPerf),
+      ),
+      leagueVolat: new Decimal(
+        String(w['leagueVolat'] ?? FEATURE_WEIGHTS.leagueVolat),
+      ),
+    };
+  }
+
+  async settleOpenBets(fixtureId: string): Promise<{ settled: number }> {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id: fixtureId },
+      select: { homeScore: true, awayScore: true, status: true },
+    });
+
+    if (!fixture || fixture.status !== FixtureStatus.FINISHED) {
+      return { settled: 0 };
+    }
+
+    const modelRuns = await this.prisma.client.modelRun.findMany({
+      where: { fixtureId },
+      select: { id: true },
+    });
+
+    const modelRunIds = modelRuns.map((r) => r.id);
+    if (modelRunIds.length === 0) return { settled: 0 };
+
+    const bets = await this.prisma.client.bet.findMany({
+      where: { modelRunId: { in: modelRunIds }, status: BetStatus.PENDING },
+      select: { id: true, pick: true },
+    });
+
+    if (bets.length === 0) return { settled: 0 };
+
+    let settled = 0;
+    for (const bet of bets) {
+      const status = resolveOneXTwoBetStatus(
+        bet.pick,
+        fixture.homeScore,
+        fixture.awayScore,
+      );
+      await this.prisma.client.bet.update({
+        where: { id: bet.id },
+        data: { status },
+      });
+      settled++;
+    }
+
+    return { settled };
   }
 
   async analyzeFixture(fixtureId: string): Promise<AnalyzeFixtureResult> {
@@ -132,8 +214,9 @@ export class BettingEngineService {
       return { status: 'skipped', fixtureId, reason: 'missing_team_stats' };
     }
 
+    const weights = await this.getEffectiveWeights();
     const { features, deterministicScore, lambda, probabilities } =
-      this.computeFromTeamStats(homeStats, awayStats);
+      this.computeFromTeamStats(homeStats, awayStats, weights);
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       MODEL_SCORE_THRESHOLD,
     )
@@ -403,4 +486,19 @@ function bookmakerRank(bookmaker: string): number {
   if (bookmaker === 'Bet365') return 1;
   if (bookmaker === 'MarketAvg') return 2;
   return 3;
+}
+
+function resolveOneXTwoBetStatus(
+  pick: string,
+  homeScore: number | null,
+  awayScore: number | null,
+): BetStatus {
+  if (homeScore === null || awayScore === null) return BetStatus.VOID;
+  if (pick === 'HOME')
+    return homeScore > awayScore ? BetStatus.WON : BetStatus.LOST;
+  if (pick === 'AWAY')
+    return awayScore > homeScore ? BetStatus.WON : BetStatus.LOST;
+  if (pick === 'DRAW')
+    return homeScore === awayScore ? BetStatus.WON : BetStatus.LOST;
+  return BetStatus.VOID;
 }

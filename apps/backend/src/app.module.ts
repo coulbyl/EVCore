@@ -11,6 +11,7 @@ import { BettingEngineModule } from './modules/betting-engine/betting-engine.mod
 import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
+import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { RiskModule } from './modules/risk/risk.module';
     BacktestModule,
     NotificationModule,
     RiskModule,
+    AdjustmentModule,
   ],
   controllers: [AppController],
   providers: [AppService, NovuService],
