@@ -9,3 +9,4 @@ export const FEATURE_WEIGHTS = {
 
 export const EV_THRESHOLD = new Decimal('0.08');
 export const MODEL_SCORE_THRESHOLD = new Decimal('0.60');
+export const DEFAULT_STAKE_PCT = new Decimal('0.01');

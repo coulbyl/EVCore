@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 2 en cours — Semaine 1, 2, 3, 4 et 5 terminées (mise à jour le 28 février 2026)**
+**Statut actuel : Mois 2 en cours — Semaines 1→7 terminées, Semaine 8 à venir (mise à jour le 28 février 2026)**
 
 ---
 
@@ -86,17 +86,17 @@
 
 **Semaine 6 — Calcul EV**
 
-- [ ] Implémentation `calculateEV()` avec `decimal.js`
-- [ ] Application du seuil EV ≥ 8% (depuis config)
-- [ ] Génération `ModelRun` complet (features + score + decision)
-- [ ] Tests unitaires EV avec cas limites (EV exactement 8%, en dessous, au dessus)
+- [x] Implémentation `calculateEV()` avec `decimal.js`
+- [x] Application du seuil EV ≥ 8% (depuis config)
+- [x] Génération `ModelRun` complet (features + score + decision)
+- [x] Tests unitaires EV avec cas limites (EV exactement 8%, en dessous, au dessus)
 
 **Semaine 7 — Simulation value bets**
 
-- [ ] Simulation de placement sur données historiques
-- [ ] Calcul ROI simulé par marché
-- [ ] Calcul drawdown max simulé
-- [ ] Calcul EV moyen simulé
+- [x] Simulation de placement sur données historiques
+- [x] Calcul ROI simulé par marché
+- [x] Calcul drawdown max simulé
+- [x] Calcul EV moyen simulé
 
 **Semaine 8 — Tracking & contraintes**
 

@@ -5,10 +5,13 @@ import { FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import type { TeamStatsInput } from '@modules/betting-engine/betting-engine.types';
+import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
+import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
 import {
   brierScoreOneXTwo,
   calibrationError,
   getOneXTwoOutcome,
+  type BacktestMarketPerformance,
   type BacktestReport,
   type CalibrationPoint,
   type OneXTwoPrediction,
@@ -36,6 +39,20 @@ type OneXTwoOdds = {
   home: Decimal;
   draw: Decimal;
   away: Decimal;
+};
+
+type MarketAccumulator = {
+  market: Market;
+  betsPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  stake: Decimal;
+  profit: Decimal;
+  evTotal: Decimal;
+  equity: Decimal;
+  equityPeak: Decimal;
+  maxDrawdown: Decimal;
 };
 
 @Injectable()
@@ -76,6 +93,9 @@ export class BacktestService {
     let skippedCount = 0;
     let roiProfit = new Decimal(0);
     let roiStake = new Decimal(0);
+    let evTotal = new Decimal(0);
+    let evCount = 0;
+    const oneXTwoStats = createMarketAccumulator(Market.ONE_X_TWO);
 
     for (const fixture of fixtures) {
       if (fixture.homeScore === null || fixture.awayScore === null) {
@@ -127,11 +147,34 @@ export class BacktestService {
 
       roiProfit = roiProfit.plus(simulation.profit);
       roiStake = roiStake.plus(1);
+      evTotal = evTotal.plus(simulation.ev);
+      evCount++;
+
+      oneXTwoStats.betsPlaced++;
+      oneXTwoStats.stake = oneXTwoStats.stake.plus(1);
+      oneXTwoStats.profit = oneXTwoStats.profit.plus(simulation.profit);
+      oneXTwoStats.evTotal = oneXTwoStats.evTotal.plus(simulation.ev);
+      if (simulation.result === 'WIN') oneXTwoStats.wins++;
+      if (simulation.result === 'LOSS') oneXTwoStats.losses++;
+
+      oneXTwoStats.equity = oneXTwoStats.equity.plus(simulation.profit);
+      if (oneXTwoStats.equity.greaterThan(oneXTwoStats.equityPeak)) {
+        oneXTwoStats.equityPeak = oneXTwoStats.equity;
+      }
+      const drawdown = oneXTwoStats.equityPeak.minus(oneXTwoStats.equity);
+      if (drawdown.greaterThan(oneXTwoStats.maxDrawdown)) {
+        oneXTwoStats.maxDrawdown = drawdown;
+      }
     }
 
     const roiSimulated = roiStake.greaterThan(0)
       ? roiProfit.div(roiStake)
       : new Decimal(0);
+    const averageEvSimulated =
+      evCount > 0 ? evTotal.div(evCount) : new Decimal(0);
+    const marketPerformance: BacktestMarketPerformance[] = [
+      buildMarketPerformance(oneXTwoStats),
+    ];
 
     const report: BacktestReport = {
       seasonId,
@@ -141,6 +184,9 @@ export class BacktestService {
       brierScore: new Decimal(brierScoreOneXTwo(oneXTwoPredictions)),
       calibrationError: new Decimal(calibrationError(calibrationPoints)),
       roiSimulated,
+      maxDrawdownSimulated: oneXTwoStats.maxDrawdown,
+      averageEvSimulated,
+      marketPerformance,
       reportGeneratedAt: new Date(),
     };
 
@@ -153,6 +199,8 @@ export class BacktestService {
         brierScore: report.brierScore.toNumber(),
         calibrationError: report.calibrationError.toNumber(),
         roiSimulated: report.roiSimulated.toNumber(),
+        maxDrawdownSimulated: report.maxDrawdownSimulated.toNumber(),
+        averageEvSimulated: report.averageEvSimulated.toNumber(),
       },
       'Backtest complete',
     );
@@ -305,29 +353,98 @@ function simulateOneXTwoBet(
   probabilities: { home: number; draw: number; away: number },
   odds: OneXTwoOdds,
   actual: 'HOME' | 'DRAW' | 'AWAY',
-): { placed: boolean; profit: Decimal } {
+): { placed: boolean; ev: Decimal; profit: Decimal; result?: 'WIN' | 'LOSS' } {
   const picks: Array<{
     outcome: 'HOME' | 'DRAW' | 'AWAY';
-    prob: number;
+    prob: Decimal;
     odds: Decimal;
+    ev: Decimal;
   }> = [
-    { outcome: 'HOME', prob: probabilities.home, odds: odds.home },
-    { outcome: 'DRAW', prob: probabilities.draw, odds: odds.draw },
-    { outcome: 'AWAY', prob: probabilities.away, odds: odds.away },
+    {
+      outcome: 'HOME',
+      prob: new Decimal(probabilities.home),
+      odds: odds.home,
+      ev: calculateEV(probabilities.home, odds.home),
+    },
+    {
+      outcome: 'DRAW',
+      prob: new Decimal(probabilities.draw),
+      odds: odds.draw,
+      ev: calculateEV(probabilities.draw, odds.draw),
+    },
+    {
+      outcome: 'AWAY',
+      prob: new Decimal(probabilities.away),
+      odds: odds.away,
+      ev: calculateEV(probabilities.away, odds.away),
+    },
   ];
 
   const bestPick = picks.reduce((best, current) =>
-    current.prob > best.prob ? current : best,
+    current.ev.greaterThan(best.ev) ? current : best,
   );
-  const ev = new Decimal(bestPick.prob).mul(bestPick.odds).minus(1);
 
-  if (ev.lessThanOrEqualTo(0)) {
-    return { placed: false, profit: new Decimal(0) };
+  if (
+    bestPick.ev.lessThan(EV_THRESHOLD) ||
+    bestPick.odds.lessThanOrEqualTo(1) ||
+    !bestPick.prob.isFinite() ||
+    !bestPick.odds.isFinite()
+  ) {
+    return { placed: false, ev: bestPick.ev, profit: new Decimal(0) };
   }
 
   if (bestPick.outcome === actual) {
-    return { placed: true, profit: bestPick.odds.minus(1) };
+    return {
+      placed: true,
+      ev: bestPick.ev,
+      profit: bestPick.odds.minus(1),
+      result: 'WIN',
+    };
   }
 
-  return { placed: true, profit: new Decimal(-1) };
+  return {
+    placed: true,
+    ev: bestPick.ev,
+    profit: new Decimal(-1),
+    result: 'LOSS',
+  };
+}
+
+function createMarketAccumulator(market: Market): MarketAccumulator {
+  return {
+    market,
+    betsPlaced: 0,
+    wins: 0,
+    losses: 0,
+    voids: 0,
+    stake: new Decimal(0),
+    profit: new Decimal(0),
+    evTotal: new Decimal(0),
+    equity: new Decimal(0),
+    equityPeak: new Decimal(0),
+    maxDrawdown: new Decimal(0),
+  };
+}
+
+function buildMarketPerformance(
+  stats: MarketAccumulator,
+): BacktestMarketPerformance {
+  const roi = stats.stake.greaterThan(0)
+    ? stats.profit.div(stats.stake)
+    : new Decimal(0);
+  const averageEv =
+    stats.betsPlaced > 0 ? stats.evTotal.div(stats.betsPlaced) : new Decimal(0);
+
+  return {
+    market: stats.market,
+    betsPlaced: stats.betsPlaced,
+    wins: stats.wins,
+    losses: stats.losses,
+    voids: stats.voids,
+    stake: stats.stake,
+    profit: stats.profit,
+    roi,
+    averageEv,
+    maxDrawdown: stats.maxDrawdown,
+  };
 }

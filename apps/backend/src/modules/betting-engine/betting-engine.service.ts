@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { FixtureStatus, Prisma } from '@evcore/db';
+import { Decision, FixtureStatus, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
   computePoissonMarkets,
   calculateDeterministicScore,
+  calculateEV as calcEV,
   type DeterministicFeatures,
 } from './betting-engine.utils';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
-import { MODEL_SCORE_THRESHOLD } from './ev.constants';
+import {
+  DEFAULT_STAKE_PCT,
+  EV_THRESHOLD,
+  MODEL_SCORE_THRESHOLD,
+} from './ev.constants';
 import type {
   MatchComputation,
   MatchupFeatures,
@@ -35,6 +40,16 @@ type AnalyzeFixtureResult =
         | 'missing_team_stats';
     };
 
+type OneXTwoPick = 'HOME' | 'DRAW' | 'AWAY';
+
+type OneXTwoOddsSnapshot = {
+  bookmaker: string;
+  snapshotAt: Date;
+  homeOdds: Prisma.Decimal;
+  drawOdds: Prisma.Decimal;
+  awayOdds: Prisma.Decimal;
+};
+
 @Injectable()
 export class BettingEngineService {
   constructor(private readonly prisma: PrismaService) {}
@@ -48,6 +63,10 @@ export class BettingEngineService {
 
   calculateDeterministicScore(features: DeterministicFeatures): Decimal {
     return calculateDeterministicScore(features);
+  }
+
+  calculateEV(probability: Decimal.Value, odds: Decimal.Value): Decimal {
+    return calcEV(probability, odds);
   }
 
   computeFromTeamStats(
@@ -115,11 +134,22 @@ export class BettingEngineService {
 
     const { features, deterministicScore, lambda, probabilities } =
       this.computeFromTeamStats(homeStats, awayStats);
-    const decision = deterministicScore.greaterThanOrEqualTo(
+    const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       MODEL_SCORE_THRESHOLD,
     )
-      ? 'BET'
-      : 'NO_BET';
+      ? Decision.BET
+      : Decision.NO_BET;
+
+    const latestOdds = await this.findLatestOneXTwoOddsSnapshot(fixture);
+    const valueBet = latestOdds
+      ? this.selectBestOneXTwoValueBet(probabilities, latestOdds)
+      : null;
+    const decision =
+      deterministicDecision === Decision.BET &&
+      valueBet !== null &&
+      valueBet.ev.greaterThanOrEqualTo(EV_THRESHOLD)
+        ? Decision.BET
+        : Decision.NO_BET;
 
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
@@ -142,6 +172,20 @@ export class BettingEngineService {
       },
       select: { id: true },
     });
+
+    if (decision === Decision.BET && valueBet !== null) {
+      await this.prisma.client.bet.create({
+        data: {
+          modelRunId: modelRun.id,
+          market: Market.ONE_X_TWO,
+          pick: valueBet.pick,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+        },
+      });
+    }
 
     return {
       status: 'analyzed',
@@ -174,6 +218,100 @@ export class BettingEngineService {
     }
 
     return { seasonId, analyzed, skipped };
+  }
+
+  private async findLatestOneXTwoOddsSnapshot(fixture: {
+    id: string;
+    scheduledAt: Date;
+  }): Promise<OneXTwoOddsSnapshot | null> {
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId: fixture.id,
+        market: Market.ONE_X_TWO,
+        snapshotAt: { lte: fixture.scheduledAt },
+        homeOdds: { not: null },
+        drawOdds: { not: null },
+        awayOdds: { not: null },
+      },
+      select: {
+        bookmaker: true,
+        snapshotAt: true,
+        homeOdds: true,
+        drawOdds: true,
+        awayOdds: true,
+      },
+      orderBy: { snapshotAt: 'desc' },
+    });
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const latestSnapshotAt = rows[0].snapshotAt.getTime();
+    const sameSnapshotRows = rows.filter(
+      (row) => row.snapshotAt.getTime() === latestSnapshotAt,
+    );
+    const best = sameSnapshotRows.reduce((currentBest, row) =>
+      bookmakerRank(row.bookmaker) < bookmakerRank(currentBest.bookmaker)
+        ? row
+        : currentBest,
+    );
+
+    if (
+      best.homeOdds === null ||
+      best.drawOdds === null ||
+      best.awayOdds === null
+    ) {
+      return null;
+    }
+
+    return {
+      bookmaker: best.bookmaker,
+      snapshotAt: best.snapshotAt,
+      homeOdds: best.homeOdds,
+      drawOdds: best.drawOdds,
+      awayOdds: best.awayOdds,
+    };
+  }
+
+  private selectBestOneXTwoValueBet(
+    probabilities: MatchProbabilities,
+    oddsSnapshot: OneXTwoOddsSnapshot,
+  ): {
+    pick: OneXTwoPick;
+    probability: Decimal;
+    odds: Decimal;
+    ev: Decimal;
+  } {
+    const candidates: Array<{
+      pick: OneXTwoPick;
+      probability: Decimal;
+      odds: Decimal;
+      ev: Decimal;
+    }> = [
+      {
+        pick: 'HOME',
+        probability: probabilities.home,
+        odds: new Decimal(oddsSnapshot.homeOdds.toString()),
+        ev: this.calculateEV(probabilities.home, oddsSnapshot.homeOdds),
+      },
+      {
+        pick: 'DRAW',
+        probability: probabilities.draw,
+        odds: new Decimal(oddsSnapshot.drawOdds.toString()),
+        ev: this.calculateEV(probabilities.draw, oddsSnapshot.drawOdds),
+      },
+      {
+        pick: 'AWAY',
+        probability: probabilities.away,
+        odds: new Decimal(oddsSnapshot.awayOdds.toString()),
+        ev: this.calculateEV(probabilities.away, oddsSnapshot.awayOdds),
+      },
+    ];
+
+    return candidates.reduce((best, current) =>
+      current.ev.greaterThan(best.ev) ? current : best,
+    );
   }
 }
 
@@ -251,4 +389,11 @@ function buildMatchupFeatures(
 
 function clamp01(value: number): number {
   return clamp(value, 0, 1);
+}
+
+function bookmakerRank(bookmaker: string): number {
+  if (bookmaker === 'Pinnacle') return 0;
+  if (bookmaker === 'Bet365') return 1;
+  if (bookmaker === 'MarketAvg') return 2;
+  return 3;
 }

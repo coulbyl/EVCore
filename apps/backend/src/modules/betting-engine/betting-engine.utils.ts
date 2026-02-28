@@ -67,6 +67,15 @@ export function deriveMarketsFromPoisson(
   return deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo);
 }
 
+// Formule EV canonique — source unique pour le service et le backtest
+// EV = (probabilité estimée × cote décimale) − 1
+export function calculateEV(
+  probability: Decimal.Value,
+  odds: Decimal.Value,
+): Decimal {
+  return new Decimal(probability).mul(odds).minus(1);
+}
+
 export function calculateDeterministicScore(
   features: DeterministicFeatures,
 ): Decimal {

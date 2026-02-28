@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { Market } from '@evcore/db';
 
 export type OneXTwoOutcome = 'HOME' | 'DRAW' | 'AWAY';
 
@@ -22,7 +23,23 @@ export type BacktestReport = {
   brierScore: Decimal;
   calibrationError: Decimal;
   roiSimulated: Decimal;
+  maxDrawdownSimulated: Decimal;
+  averageEvSimulated: Decimal;
+  marketPerformance: BacktestMarketPerformance[];
   reportGeneratedAt: Date;
+};
+
+export type BacktestMarketPerformance = {
+  market: Market;
+  betsPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  stake: Decimal;
+  profit: Decimal;
+  roi: Decimal;
+  averageEv: Decimal;
+  maxDrawdown: Decimal;
 };
 
 export function getOneXTwoOutcome(

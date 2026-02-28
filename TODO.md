@@ -36,27 +36,16 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ---
 
-## Semaine 6 — Calcul EV
+## Semaine 6 — Calcul EV ✅
 
-### Résultats attendus
+### Résultats
 
-- [ ] Fonction `calculateEV(prob, odds)` avec `decimal.js`
-- [ ] Seuil EV configurable (`EV_THRESHOLD`, cible 8%)
-- [ ] `ModelRun` enrichi avec décision EV-aware
-- [ ] Tests unitaires cas limites
-
-### Implémentation
-
-- [ ] Ajouter util EV (module betting-engine)
-- [ ] Brancher EV dans la décision `BET` / `NO_BET`
-- [ ] Persister `probEstimated`, `oddsSnapshot`, `ev`, `stakePct` sur `Bet`
-- [ ] Garder logique déterministe testable sans infra externe
-
-### Critères de validation
-
-- [ ] Cas `EV = seuil`, `EV < seuil`, `EV > seuil` couverts
-- [ ] Aucun calcul EV en `number` natif
-- [ ] Typecheck et tests passants
+- [x] `calculateEV(prob, odds)` — source unique dans `betting-engine.utils.ts`, exportée et réutilisée par le service et le backtest
+- [x] Seuil `EV_THRESHOLD = 0.08` appliqué dans `analyzeFixture()` (double gate : score ≥ 60% ET EV ≥ 8%)
+- [x] `findLatestOneXTwoOddsSnapshot()` — priorité Pinnacle → Bet365 → MarketAvg, filtre pré-match strict
+- [x] `Bet` persisté avec `probEstimated`, `oddsSnapshot`, `ev`, `stakePct` (1%)
+- [x] `selectBestOneXTwoValueBet()` — type de retour corrigé (suppression `| null` mensonger)
+- [x] Tests : EV exact au seuil, EV < seuil (NO_BET + pas de Bet créé), 88 tests passants
 
 ---
 
@@ -64,22 +53,23 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ### Résultats attendus
 
-- [ ] Simulation placement des bets historiques
-- [ ] ROI simulé par marché
-- [ ] Drawdown max
-- [ ] EV moyen
+- [x] Simulation placement des bets historiques (filtre EV ≥ 8% identique au moteur live)
+- [x] ROI simulé par marché (`ONE_X_TWO`)
+- [x] Drawdown max (courbe equity + peak)
+- [x] EV moyen simulé
 
 ### Implémentation
 
-- [ ] Étendre le module `backtest` pour reporter par marché
-- [ ] Ajouter agrégations (`wins`, `losses`, `voids`, `stake`, `profit`)
-- [ ] Ajouter snapshot JSON de rapport comparatif par saison
-- [ ] Couvrir les cas "pas d'odds" et "odds invalides"
+- [x] `loadLatestOneXTwoOddsForFixtures()` — batch query, aucun N+1
+- [x] `findLatestStatsBeforeFixture()` — recherche binaire + tie-break par ID (prévention look-ahead)
+- [x] `simulateOneXTwoBet()` — utilise `calculateEV()` depuis `betting-engine.utils` (source unique)
+- [x] `MarketAccumulator` — agrégations `wins`, `losses`, `voids`, `stake`, `profit`, `maxDrawdown`
+- [x] Cas "pas d'odds" et "odds invalides" (`odds ≤ 1`, `isFinite()`) couverts
 
 ### Critères de validation
 
-- [ ] Rapport stable/reproductible sur re-run
-- [ ] Résultats cohérents avec tests déterministes
+- [x] Rapport déterministe sur re-run (même inputs → mêmes outputs)
+- [x] Tests : bet placé et gagné (ROI=1.1), EV sous seuil → 0 bets (ROI=0)
 
 ---
 
@@ -112,7 +102,7 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 - [x] `mvp-month-2` lancé
 - [x] Semaine 5 terminée
-- [ ] Semaine 6 terminée
-- [ ] Semaine 7 terminée
+- [x] Semaine 6 terminée
+- [x] Semaine 7 terminée
 - [ ] Semaine 8 terminée
 - [x] Docs `ROADMAP.md` synchronisées
