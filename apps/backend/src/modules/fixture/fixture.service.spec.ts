@@ -1,23 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FixtureService } from './fixture.service';
+import { FixtureService, type FixtureInput } from './fixture.service';
 import type { FixtureRepository } from './fixture.repository';
-import type { FootballDataFixture } from '../etl/schemas/fixture.schema';
 
-function buildFixture(
-  status: FootballDataFixture['status'],
-): FootballDataFixture {
+function buildFixture(overrides: Partial<FixtureInput> = {}): FixtureInput {
   return {
-    id: 395086,
-    utcDate: '2022-08-05T19:00:00+00:00',
+    externalId: 867946,
+    homeTeam: {
+      externalId: 52,
+      name: 'Crystal Palace',
+      shortName: 'Crystal Palace',
+    },
+    awayTeam: { externalId: 42, name: 'Arsenal', shortName: 'Arsenal' },
     matchday: 1,
-    status,
-    homeTeam: { id: 57, name: 'Arsenal FC', shortName: 'Arsenal' },
-    awayTeam: { id: 65, name: 'Manchester City FC', shortName: 'Man City' },
-    score: { fullTime: { home: 0, away: 2 } },
+    scheduledAt: new Date('2022-08-05T19:00:00Z'),
+    status: 'SCHEDULED',
+    homeScore: null,
+    awayScore: null,
+    ...overrides,
   };
 }
 
-describe('FixtureService', () => {
+describe('FixtureService.upsertFixtureChain', () => {
   const fixtureRepository = {
     upsertTeam: vi.fn(),
     upsertFixture: vi.fn(),
@@ -40,19 +43,10 @@ describe('FixtureService', () => {
     fixtureRepository.upsertFixture.mockResolvedValue({ id: 'fixture-id' });
   });
 
-  it.each([
-    ['SCHEDULED', 'SCHEDULED'],
-    ['IN_PLAY', 'SCHEDULED'],
-    ['PAUSED', 'SCHEDULED'],
-    ['SUSPENDED', 'SCHEDULED'],
-    ['FINISHED', 'FINISHED'],
-    ['AWARDED', 'FINISHED'],
-    ['POSTPONED', 'POSTPONED'],
-    ['CANCELLED', 'CANCELLED'],
-  ] as const)(
-    'maps api status %s to db status %s via upsertFixtureChain',
-    async (apiStatus, expectedDbStatus) => {
-      const fixture = buildFixture(apiStatus);
+  it.each(['SCHEDULED', 'FINISHED', 'POSTPONED', 'CANCELLED'] as const)(
+    'passes status %s through to the repository unchanged',
+    async (status) => {
+      const fixture = buildFixture({ status });
 
       await service.upsertFixtureChain({
         competitionId: 'competition-id',
@@ -60,20 +54,66 @@ describe('FixtureService', () => {
         fixture,
       });
 
-      expect(fixtureRepository.upsertTeam).toHaveBeenCalledTimes(2);
-      expect(fixtureRepository.upsertFixture).toHaveBeenCalledTimes(1);
       expect(fixtureRepository.upsertFixture).toHaveBeenCalledWith(
-        expect.objectContaining({
-          externalId: fixture.id,
-          seasonId: 'season-id',
-          homeTeamId: 'team-home-id',
-          awayTeamId: 'team-away-id',
-          matchday: fixture.matchday,
-          status: expectedDbStatus,
-          homeScore: fixture.score.fullTime.home,
-          awayScore: fixture.score.fullTime.away,
-        }),
+        expect.objectContaining({ status }),
       );
     },
   );
+
+  it('upserts both home and away teams with correct externalIds', async () => {
+    const fixture = buildFixture();
+
+    await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(fixtureRepository.upsertTeam).toHaveBeenCalledTimes(2);
+    expect(fixtureRepository.upsertTeam).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: fixture.homeTeam.externalId }),
+    );
+    expect(fixtureRepository.upsertTeam).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: fixture.awayTeam.externalId }),
+    );
+  });
+
+  it('passes scores and matchday to the repository', async () => {
+    const fixture = buildFixture({
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 1,
+      matchday: 5,
+    });
+
+    await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(fixtureRepository.upsertFixture).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalId: fixture.externalId,
+        matchday: 5,
+        homeScore: 2,
+        awayScore: 1,
+        status: 'FINISHED',
+      }),
+    );
+  });
+
+  it('passes null scores for unplayed fixtures', async () => {
+    const fixture = buildFixture({ homeScore: null, awayScore: null });
+
+    await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(fixtureRepository.upsertFixture).toHaveBeenCalledWith(
+      expect.objectContaining({ homeScore: null, awayScore: null }),
+    );
+  });
 });

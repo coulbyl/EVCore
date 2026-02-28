@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
 import { FixtureRepository } from './fixture.repository';
-import type { FootballDataFixture } from '../etl/schemas/fixture.schema';
-import { parseIsoDate } from '@utils/date.utils';
 
 type UpsertCompetitionInput = { name: string; code: string; country: string };
 type UpsertSeasonInput = {
@@ -12,10 +10,22 @@ type UpsertSeasonInput = {
   endDate: Date;
 };
 
+// API-agnostic fixture input — mapping from raw API response is done in the worker
+export type FixtureInput = {
+  externalId: number;
+  homeTeam: { externalId: number; name: string; shortName: string };
+  awayTeam: { externalId: number; name: string; shortName: string };
+  matchday: number;
+  scheduledAt: Date;
+  status: FixtureStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
 type UpsertFixtureChainInput = {
   competitionId: string;
   seasonId: string;
-  fixture: FootballDataFixture;
+  fixture: FixtureInput;
 };
 
 type UpsertOneXTwoOddsSnapshotInput = {
@@ -36,34 +46,31 @@ export class FixtureService {
   ): Promise<{ id: string }> {
     const { competitionId, seasonId, fixture } = input;
 
-    // Upsert home and away teams
     const [homeTeam, awayTeam] = await Promise.all([
       this.fixtureRepository.upsertTeam({
-        externalId: fixture.homeTeam.id,
+        externalId: fixture.homeTeam.externalId,
         name: fixture.homeTeam.name,
         shortName: fixture.homeTeam.shortName,
         competitionId,
       }),
       this.fixtureRepository.upsertTeam({
-        externalId: fixture.awayTeam.id,
+        externalId: fixture.awayTeam.externalId,
         name: fixture.awayTeam.name,
         shortName: fixture.awayTeam.shortName,
         competitionId,
       }),
     ]);
 
-    const dbStatus = this.mapStatus(fixture.status);
-
     return this.fixtureRepository.upsertFixture({
-      externalId: fixture.id,
+      externalId: fixture.externalId,
       seasonId,
       homeTeamId: homeTeam.id,
       awayTeamId: awayTeam.id,
       matchday: fixture.matchday,
-      scheduledAt: parseIsoDate(fixture.utcDate),
-      status: dbStatus,
-      homeScore: fixture.score.fullTime.home,
-      awayScore: fixture.score.fullTime.away,
+      scheduledAt: fixture.scheduledAt,
+      status: fixture.status,
+      homeScore: fixture.homeScore,
+      awayScore: fixture.awayScore,
     });
   }
 
@@ -113,23 +120,13 @@ export class FixtureService {
     return this.fixtureRepository.findFinishedBySeason(seasonId);
   }
 
+  findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
+    return this.fixtureRepository.findFinishedWithoutXg(seasonId);
+  }
+
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOneXTwoOddsSnapshot(data);
-  }
-
-  private mapStatus(apiStatus: FootballDataFixture['status']): FixtureStatus {
-    switch (apiStatus) {
-      case 'FINISHED':
-      case 'AWARDED':
-        return 'FINISHED';
-      case 'POSTPONED':
-        return 'POSTPONED';
-      case 'CANCELLED':
-        return 'CANCELLED';
-      default:
-        return 'SCHEDULED';
-    }
   }
 }

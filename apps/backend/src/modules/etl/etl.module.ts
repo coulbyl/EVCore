@@ -7,9 +7,8 @@ import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
 import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { ResultsSyncWorker } from './workers/results-sync.worker';
-import { XgSyncWorker } from './workers/xg-sync.worker';
+import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
-import { OddsHistoricalSyncWorker } from './workers/odds-historical-sync.worker';
 
 @Module({
   imports: [
@@ -17,9 +16,8 @@ import { OddsHistoricalSyncWorker } from './workers/odds-historical-sync.worker'
     BullModule.registerQueue(
       { name: BULLMQ_QUEUES.FIXTURES_SYNC },
       { name: BULLMQ_QUEUES.RESULTS_SYNC },
-      { name: BULLMQ_QUEUES.XG_SYNC },
       { name: BULLMQ_QUEUES.STATS_SYNC },
-      { name: BULLMQ_QUEUES.ODDS_HISTORICAL_SYNC },
+      { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
     ),
     FixtureModule,
   ],
@@ -28,9 +26,8 @@ import { OddsHistoricalSyncWorker } from './workers/odds-historical-sync.worker'
     EtlService,
     FixturesSyncWorker,
     ResultsSyncWorker,
-    XgSyncWorker,
     StatsSyncWorker,
-    OddsHistoricalSyncWorker,
+    OddsCsvImportWorker,
   ],
   exports: [EtlService],
 })

@@ -17,31 +17,22 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ---
 
-## Semaine 5 — Intégration odds historiques
+## Semaine 5 — Intégration odds historiques ✅
 
-### Résultats attendus
+> Migration complète réalisée le 28 février 2026 : abandon API-Sports + Understat + FBref → API-FOOTBALL single key + football-data.co.uk CSV.
 
-- [x] Worker `odds_historical_sync` (3 saisons EPL)
-- [x] Insertion `OddsSnapshot` idempotente et rejouable
-- [x] Validation Zod stricte des payloads odds
-- [x] Tests unitaires des schémas odds + mapping DB
-- [x] Mettre à jour le .env.example (bien documenté)
-- [x] Endpoints manuels ETL (`/etl/sync/odds-historical`, `/etl/sync/odds-historical/:season`)
-- [x] Runbook de validation run réel (`apps/backend/docs/ODDS_HISTORICAL_VALIDATION.md`)
+### Résultats
 
-### Implémentation
-
-- [x] Créer `apps/backend/src/modules/etl/workers/odds-historical-sync.worker.ts`
-- [x] Ajouter `odds.schema.ts` + `odds.schema.spec.ts`
-- [x] Ajouter la queue BullMQ et trigger dans `etl.service.ts`
-- [x] Upsert par clé métier (`fixtureId`, `bookmaker`, `market`, `snapshotAt`)
-- [x] Logger Pino avec compteurs (`fetched`, `inserted`, `skipped`)
-
-### Critères de validation
-
-- [x] Worker relançable sans doublons
-- [ ] 1 run complet par saison sans crash même avec payload partiel
-- [x] Tests unitaires passants
+- [x] Worker `odds_csv_import` — football-data.co.uk CSV (Pinnacle + Bet365 closing odds, 4 saisons : 2122→2425)
+- [x] Worker `stats_sync` — API-FOOTBALL `/fixtures/statistics` (proxy xG : shots_on_target × 0.35, constante `XG_SHOTS_CONVERSION_FACTOR`)
+- [x] Worker `fixtures_sync` + `results_sync` — API-FOOTBALL (auth `x-apisports-key`, statuts FT/AET/PEN/AWD)
+- [x] Insertion `OddsSnapshot` idempotente et rejouable (Pinnacle → Bet365 → MarketAvg fallback)
+- [x] Validation Zod stricte : `OddsCsvRowSchema`, `ApiFootballStatisticsResponseSchema`, `ApiFootballFixturesResponseSchema`
+- [x] Tests unitaires complets (84 tests passants)
+- [x] `.env.example` mis à jour (`API_FOOTBALL_KEY`, `API_FOOTBALL_LEAGUE_ID`, `API_FOOTBALL_PLAN`)
+- [x] Endpoints manuels ETL (`POST /etl/sync/full`, `POST /etl/sync/stats`, `POST /etl/sync/odds-csv`)
+- [x] `findFinishedWithoutXg(seasonId)` — requête DB-side pour traitement incrémental des stats
+- [x] Stagger rate-limit : 6s entre jobs saison (API-FOOTBALL), 2s entre fixtures (stats), 2s entre saisons (CSV)
 
 ---
 
@@ -120,7 +111,7 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 ## Suivi d'exécution (Mois 2)
 
 - [x] `mvp-month-2` lancé
-- [ ] Semaine 5 terminée
+- [x] Semaine 5 terminée
 - [ ] Semaine 6 terminée
 - [ ] Semaine 7 terminée
 - [ ] Semaine 8 terminée

@@ -1,16 +1,31 @@
 import { z } from 'zod';
 
-// Raw team stats scraped from FBref — validated before any DB write
-export const TeamStatsRawSchema = z.object({
-  teamName: z.string().min(1),
-  homeWins: z.number().int().nonnegative(),
-  homeDraws: z.number().int().nonnegative(),
-  homeLosses: z.number().int().nonnegative(),
-  awayWins: z.number().int().nonnegative(),
-  awayDraws: z.number().int().nonnegative(),
-  awayLosses: z.number().int().nonnegative(),
+// Schema for API-FOOTBALL GET /fixtures/statistics?fixture={id}
+// Reference: https://www.api-football.com/documentation-v3#tag/Fixtures/operation/get-fixtures-statistics
+// Returns exactly 2 team objects (home then away) — ordered as listed in the fixture.
+
+const StatisticEntrySchema = z.object({
+  type: z.string(),
+  // Value can be a number, a string (e.g. "72%" for possession), or null when unavailable
+  value: z.union([z.number(), z.string(), z.null()]),
 });
 
-export const SeasonStatsSchema = z.array(TeamStatsRawSchema);
+const TeamStatisticsSchema = z.object({
+  team: z.object({
+    id: z.number().int().positive(),
+    name: z.string(),
+  }),
+  statistics: z.array(StatisticEntrySchema),
+});
 
-export type TeamStatsRaw = z.infer<typeof TeamStatsRawSchema>;
+export const ApiFootballStatisticsResponseSchema = z.object({
+  get: z.literal('fixtures/statistics'),
+  parameters: z.record(z.string(), z.string()),
+  results: z.number().int().nonnegative(),
+  response: z.array(TeamStatisticsSchema),
+});
+
+export type TeamStatistics = z.infer<typeof TeamStatisticsSchema>;
+export type ApiFootballStatisticsResponse = z.infer<
+  typeof ApiFootballStatisticsResponseSchema
+>;

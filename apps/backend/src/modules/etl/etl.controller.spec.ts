@@ -1,92 +1,44 @@
 import { describe, it, expect, vi } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
 import { EtlController } from './etl.controller';
 import type { EtlService } from './etl.service';
 
 describe('EtlController', () => {
-  it('triggers full sync and returns ok', async () => {
-    const triggerFullSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSyncForSeason = vi
-      .fn()
-      .mockResolvedValue(undefined);
-
-    const serviceMock = {
-      triggerFullSync,
-      triggerOddsHistoricalSync,
-      triggerOddsHistoricalSyncForSeason,
+  function makeService(overrides: Partial<EtlService> = {}): EtlService {
+    return {
+      triggerFullSync: vi.fn().mockResolvedValue(undefined),
+      triggerStatsSync: vi.fn().mockResolvedValue(undefined),
+      triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
+      ...overrides,
     } as unknown as EtlService;
+  }
 
-    const controller = new EtlController(serviceMock);
+  it('triggers full sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
 
     await expect(controller.triggerFullSync()).resolves.toEqual({
       status: 'ok',
     });
-    expect(triggerFullSync).toHaveBeenCalledTimes(1);
+    expect(service.triggerFullSync).toHaveBeenCalledTimes(1);
   });
 
-  it('triggers odds historical sync and returns ok', async () => {
-    const triggerFullSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSyncForSeason = vi
-      .fn()
-      .mockResolvedValue(undefined);
+  it('triggers stats sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
 
-    const serviceMock = {
-      triggerFullSync,
-      triggerOddsHistoricalSync,
-      triggerOddsHistoricalSyncForSeason,
-    } as unknown as EtlService;
-
-    const controller = new EtlController(serviceMock);
-
-    await expect(controller.triggerOddsHistoricalSync()).resolves.toEqual({
+    await expect(controller.triggerStatsSync()).resolves.toEqual({
       status: 'ok',
     });
-    expect(triggerOddsHistoricalSync).toHaveBeenCalledTimes(1);
+    expect(service.triggerStatsSync).toHaveBeenCalledTimes(1);
   });
 
-  it('triggers odds historical sync for a single season', async () => {
-    const triggerFullSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSyncForSeason = vi
-      .fn()
-      .mockResolvedValue(undefined);
+  it('triggers odds CSV import and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
 
-    const serviceMock = {
-      triggerFullSync,
-      triggerOddsHistoricalSync,
-      triggerOddsHistoricalSyncForSeason,
-    } as unknown as EtlService;
-
-    const controller = new EtlController(serviceMock);
-
-    await expect(
-      controller.triggerOddsHistoricalSyncForSeason('2023'),
-    ).resolves.toEqual({
+    await expect(controller.triggerOddsCsvImport()).resolves.toEqual({
       status: 'ok',
-      season: 2023,
     });
-    expect(triggerOddsHistoricalSyncForSeason).toHaveBeenCalledWith(2023);
-  });
-
-  it('throws on invalid season format', async () => {
-    const triggerFullSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSync = vi.fn().mockResolvedValue(undefined);
-    const triggerOddsHistoricalSyncForSeason = vi
-      .fn()
-      .mockResolvedValue(undefined);
-
-    const serviceMock = {
-      triggerFullSync,
-      triggerOddsHistoricalSync,
-      triggerOddsHistoricalSyncForSeason,
-    } as unknown as EtlService;
-
-    const controller = new EtlController(serviceMock);
-
-    await expect(
-      controller.triggerOddsHistoricalSyncForSeason('bad'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(service.triggerOddsCsvImport).toHaveBeenCalledTimes(1);
   });
 });

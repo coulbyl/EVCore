@@ -1,106 +1,131 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import * as cheerio from 'cheerio';
+import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
-import { SeasonStatsSchema } from '../schemas/stats.schema';
-import type { TeamStatsRaw } from '../schemas/stats.schema';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
+import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
+import { FixtureService } from '../../fixture/fixture.service';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import { seasonNameFromYear } from '@utils/season.utils';
+import {
+  eplSeasonFallbackEndDate,
+  eplSeasonFallbackStartDate,
+} from '@utils/date.utils';
 
 export type StatsSyncJobData = { season: number };
 
 const logger = pino({ name: 'stats-sync-worker' });
 
-// FBref historical season URL pattern:
-// season 2021 → https://fbref.com/en/comps/9/2021-2022/2021-2022-Premier-League-Stats
-function fbrefUrl(season: number): string {
-  const range = `${season}-${season + 1}`;
-  return `${ETL_CONSTANTS.FBREF_BASE}/${range}/${range}-Premier-League-Stats`;
-}
-
 @Processor(BULLMQ_QUEUES.STATS_SYNC)
 export class StatsSyncWorker extends WorkerHost {
+  constructor(
+    private readonly fixtureService: FixtureService,
+    private readonly config: ConfigService,
+  ) {
+    super();
+  }
+
   async process(job: Job<StatsSyncJobData>): Promise<void> {
     const { season } = job.data;
-    const url = fbrefUrl(season);
+    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
+    const leagueId =
+      this.config.get<string>('API_FOOTBALL_LEAGUE_ID') ??
+      String(ETL_CONSTANTS.EPL_LEAGUE_ID);
 
-    logger.info({ season, url }, 'Starting stats sync');
+    logger.info({ season }, 'Starting stats sync');
 
-    const res = await fetch(url, {
-      // FBref blocks default Node fetch UA — mimic a browser UA
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (compatible; EVCore-ETL/1.0; +https://github.com/coulbyl-studio/evcore)',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
+    // Resolve the internal seasonId (idempotent — same as fixtures-sync)
+    const competition = await this.fixtureService.upsertCompetition({
+      name: ETL_CONSTANTS.EPL_COMPETITION_NAME,
+      code: ETL_CONSTANTS.EPL_COMPETITION_CODE,
+      country: ETL_CONSTANTS.EPL_COMPETITION_COUNTRY,
+    });
+    const seasonRecord = await this.fixtureService.upsertSeason({
+      competitionId: competition.id,
+      name: seasonNameFromYear(season),
+      startDate: eplSeasonFallbackStartDate(season),
+      endDate: eplSeasonFallbackEndDate(season),
     });
 
-    if (!res.ok) {
-      throw new Error(`FBref responded ${res.status} for season ${season}`);
-    }
-
-    const html = await res.text();
-    const $ = cheerio.load(html);
-
-    // FBref home/away split is in the "Home/Away" performance table.
-    // Table id: "stats_squads_homeaway" — rows alternate home/away per team.
-    // NOTE: verify these selectors against actual FBref HTML if scraping breaks.
-    const rows = $('#stats_squads_homeaway tbody tr').toArray();
-
-    const statsMap = new Map<string, Partial<TeamStatsRaw>>();
-
-    for (const row of rows) {
-      const $row = $(row);
-
-      // FBref marks home rows with data-row-type="home", away with "away"
-      const rowType = $row.attr('data-row-type') as 'home' | 'away' | undefined;
-      if (!rowType) continue;
-
-      const teamName = $row.find('[data-stat="team"]').text().trim();
-      if (!teamName) continue;
-
-      const stat = (name: string): number => {
-        const val = $row.find(`[data-stat="${name}"]`).text().trim();
-        const n = parseInt(val, 10);
-        return isNaN(n) ? 0 : n;
-      };
-
-      const existing = statsMap.get(teamName) ?? {};
-
-      if (rowType === 'home') {
-        statsMap.set(teamName, {
-          ...existing,
-          teamName,
-          homeWins: stat('wins'),
-          homeDraws: stat('draws'),
-          homeLosses: stat('losses'),
-        });
-      } else {
-        statsMap.set(teamName, {
-          ...existing,
-          teamName,
-          awayWins: stat('wins'),
-          awayDraws: stat('draws'),
-          awayLosses: stat('losses'),
-        });
-      }
-    }
-
-    const rawEntries = Array.from(statsMap.values());
-    const parsed = SeasonStatsSchema.safeParse(rawEntries);
-
-    if (!parsed.success) {
-      logger.error(
-        { season, issues: parsed.error.issues },
-        'Zod validation failed — rejecting payload',
-      );
-      throw new Error(`Zod validation failed for FBref stats season ${season}`);
-    }
-
-    // Week 1: validate and log only. TeamStats DB writes happen in rolling-stats (Week 2)
-    // once fixtures + results + xG are fully imported and afterFixtureId refs are available.
-    logger.info(
-      { season, teamCount: parsed.data.length, sample: parsed.data[0] },
-      'Stats sync validated — data ready for rolling-stats module',
+    const fixtures = await this.fixtureService.findFinishedWithoutXg(
+      seasonRecord.id,
     );
+
+    logger.info(
+      { season, count: fixtures.length },
+      'Fetching statistics for finished fixtures without xG',
+    );
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const { externalId } of fixtures) {
+      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}&league=${leagueId}&season=${season}`;
+      const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+
+      if (!res.ok) {
+        logger.warn(
+          { externalId, status: res.status },
+          'API-FOOTBALL error — skipping fixture',
+        );
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
+
+      const parsed = ApiFootballStatisticsResponseSchema.safeParse(
+        await res.json(),
+      );
+
+      if (!parsed.success) {
+        logger.warn(
+          { externalId, issues: parsed.error.issues },
+          'Zod validation failed — skipping fixture',
+        );
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
+
+      if (parsed.data.response.length < 2) {
+        logger.warn(
+          { externalId, results: parsed.data.results },
+          'Statistics response has < 2 teams — skipping fixture',
+        );
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
+
+      const [homeStats, awayStats] = parsed.data.response;
+      const homeXg =
+        extractShotsOnTarget(homeStats!.statistics) *
+        ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
+      const awayXg =
+        extractShotsOnTarget(awayStats!.statistics) *
+        ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
+
+      await this.fixtureService.updateXg(externalId, homeXg, awayXg);
+      updated++;
+
+      await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+    }
+
+    logger.info({ season, updated, skipped }, 'Stats sync complete');
   }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function extractShotsOnTarget(
+  statistics: { type: string; value: number | string | null }[],
+): number {
+  const entry = statistics.find((s) => s.type === 'Shots on Goal');
+  if (!entry || entry.value === null || typeof entry.value !== 'number') {
+    return 0;
+  }
+  return entry.value;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

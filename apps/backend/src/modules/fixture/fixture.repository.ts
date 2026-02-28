@@ -133,6 +133,14 @@ export class FixtureRepository {
     });
   }
 
+  findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
+    return this.prisma.client.fixture.findMany({
+      where: { seasonId, status: 'FINISHED', homeXg: null },
+      select: { externalId: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {

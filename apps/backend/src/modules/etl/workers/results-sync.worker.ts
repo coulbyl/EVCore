@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
-import { FootballDataResponseSchema } from '../schemas/fixture.schema';
+import { ApiFootballFixturesResponseSchema } from '../schemas/fixture.schema';
 import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
@@ -10,6 +10,9 @@ import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
 export type ResultsSyncJobData = { season: number };
 
 const logger = pino({ name: 'results-sync-worker' });
+
+// API-FOOTBALL status codes that indicate a finished match
+const FINISHED_STATUSES = new Set(['FT', 'AET', 'PEN', 'AWD']);
 
 @Processor(BULLMQ_QUEUES.RESULTS_SYNC)
 export class ResultsSyncWorker extends WorkerHost {
@@ -22,20 +25,26 @@ export class ResultsSyncWorker extends WorkerHost {
 
   async process(job: Job<ResultsSyncJobData>): Promise<void> {
     const { season } = job.data;
-    const apiKey = this.config.getOrThrow<string>('FOOTBALL_DATA_API_KEY');
-    const url = `${ETL_CONSTANTS.FOOTBALL_DATA_API_BASE}/competitions/${ETL_CONSTANTS.EPL_COMPETITION_CODE}/matches?season=${season}&status=FINISHED`;
+    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
+    const leagueId =
+      this.config.get<string>('API_FOOTBALL_LEAGUE_ID') ??
+      String(ETL_CONSTANTS.EPL_LEAGUE_ID);
+    // Fetch only finished matches (FT + AET + PEN) in one request
+    const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT-AET-PEN`;
 
     logger.info({ season }, 'Starting results sync');
 
-    const res = await fetch(url, { headers: { 'X-Auth-Token': apiKey } });
+    const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
     if (!res.ok) {
       throw new Error(
-        `football-data.org responded ${res.status} for season ${season}`,
+        `API-FOOTBALL responded ${res.status} for season ${season}`,
       );
     }
 
-    const parsed = FootballDataResponseSchema.safeParse(await res.json());
+    const parsed = ApiFootballFixturesResponseSchema.safeParse(
+      await res.json(),
+    );
 
     if (!parsed.success) {
       logger.error(
@@ -45,7 +54,10 @@ export class ResultsSyncWorker extends WorkerHost {
       throw new Error(`Zod validation failed for season ${season}`);
     }
 
-    const finished = parsed.data.matches.filter((m) => m.status === 'FINISHED');
+    const finished = parsed.data.response.filter((item) =>
+      FINISHED_STATUSES.has(item.fixture.status.short),
+    );
+
     logger.info(
       { season, count: finished.length },
       'Processing finished matches',
@@ -54,17 +66,17 @@ export class ResultsSyncWorker extends WorkerHost {
     let updated = 0;
     let skipped = 0;
 
-    for (const match of finished) {
+    for (const item of finished) {
       const result = ResultSchema.safeParse({
-        externalId: match.id,
-        homeScore: match.score.fullTime.home,
-        awayScore: match.score.fullTime.away,
+        externalId: item.fixture.id,
+        homeScore: item.goals.home,
+        awayScore: item.goals.away,
         status: 'FINISHED',
       });
 
       if (!result.success) {
         logger.warn(
-          { externalId: match.id, issues: result.error.issues },
+          { externalId: item.fixture.id, issues: result.error.issues },
           'Invalid result — skipping',
         );
         skipped++;

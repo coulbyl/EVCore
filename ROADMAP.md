@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 2 en cours — Semaine 1, 2, 3 et 4 terminées + Semaine 5 démarrée (mise à jour le 27 février 2026)**
+**Statut actuel : Mois 2 en cours — Semaine 1, 2, 3, 4 et 5 terminées (mise à jour le 28 février 2026)**
 
 ---
 
@@ -36,13 +36,14 @@
 
 **Semaine 1 — ETL historique**
 
-- [x] Worker `fixtures_sync` — football-data.org (3 saisons EPL)
-- [x] Worker `results_sync` — football-data.org
-- [x] Worker `xg_sync` — Understat scraping
-- [~] Worker `stats_sync` — FBref scraping (extraction + validation OK, insertion TeamStats reportée en Semaine 2)
+- [x] Worker `fixtures_sync` — API-FOOTBALL (3 saisons EPL : 2022, 2023, 2024)
+- [x] Worker `results_sync` — API-FOOTBALL (statuts FT/AET/PEN/AWD)
+- [x] Worker `stats_sync` — API-FOOTBALL `/fixtures/statistics` (proxy xG : shots_on_target × 0.35)
+- [x] Worker `odds_csv_import` — football-data.co.uk CSV (Pinnacle + Bet365 closing odds, 4 saisons)
 - [x] Validation Zod sur chaque ingestion
 - [x] Tests unitaires des schémas Zod
 - [x] Tests unitaires métier ETL (`mapStatus`, dispatch BullMQ + delays)
+- [x] Migration API — abandon football-data.org + Understat + FBref → API-FOOTBALL single key
 
 **Semaine 2 — Stats rolling**
 
@@ -77,11 +78,11 @@
 
 **Semaine 5 — Intégration odds historiques**
 
-- [x] Worker `odds_historical_sync` — API-Sports (3 saisons)
-- [x] Stockage odds avec timestamp dans la DB
-- [x] Validation Zod odds
-- [x] Endpoints manuels ETL (`/etl/sync/odds-historical`, `/etl/sync/odds-historical/:season`)
-- [~] Exécution complète des 3 saisons en environnement connecté
+- [x] Worker `odds_csv_import` — football-data.co.uk (Pinnacle + Bet365 closing odds, 4 saisons)
+- [x] Stockage `OddsSnapshot` avec timestamp dans la DB (marché ONE_X_TWO)
+- [x] Validation Zod CSV row (Date DD/MM/YYYY, odds positifs, FTR enum)
+- [x] Endpoints manuels ETL (`POST /etl/sync/full`, `POST /etl/sync/stats`, `POST /etl/sync/odds-csv`)
+- [x] Migration clé unique API-FOOTBALL (abandon The Odds API)
 
 **Semaine 6 — Calcul EV**
 

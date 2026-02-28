@@ -8,9 +8,8 @@ import {
 } from '../../config/etl.constants';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
-import type { XgSyncJobData } from './workers/xg-sync.worker';
+import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
-import type { OddsHistoricalSyncJobData } from './workers/odds-historical-sync.worker';
 
 @Injectable()
 export class EtlService {
@@ -19,19 +18,17 @@ export class EtlService {
     private readonly fixturesQueue: Queue<FixturesSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.RESULTS_SYNC)
     private readonly resultsQueue: Queue<ResultsSyncJobData>,
-    @InjectQueue(BULLMQ_QUEUES.XG_SYNC)
-    private readonly xgQueue: Queue<XgSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.STATS_SYNC)
     private readonly statsQueue: Queue<StatsSyncJobData>,
-    @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_SYNC)
-    private readonly oddsHistoricalQueue: Queue<OddsHistoricalSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
+    private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
   ) {}
 
   async triggerFixturesSync(): Promise<void> {
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      // Stagger jobs by rate limit delay to respect football-data.org free tier
-      const delay = i * ETL_CONSTANTS.FOOTBALL_DATA_RATE_LIMIT_MS;
+      // Stagger jobs by rate limit delay to respect API-FOOTBALL quotas
+      const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
       await this.fixturesQueue.add(
         `fixtures-sync-${season}`,
         { season } satisfies FixturesSyncJobData,
@@ -43,7 +40,7 @@ export class EtlService {
   async triggerResultsSync(): Promise<void> {
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      const delay = i * ETL_CONSTANTS.FOOTBALL_DATA_RATE_LIMIT_MS;
+      const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
       await this.resultsQueue.add(
         `results-sync-${season}`,
         { season } satisfies ResultsSyncJobData,
@@ -52,22 +49,10 @@ export class EtlService {
     }
   }
 
-  async triggerXgSync(): Promise<void> {
-    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
-      const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      const delay = i * ETL_CONSTANTS.UNDERSTAT_RATE_LIMIT_MS;
-      await this.xgQueue.add(
-        `xg-sync-${season}`,
-        { season } satisfies XgSyncJobData,
-        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-      );
-    }
-  }
-
   async triggerStatsSync(): Promise<void> {
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
       const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      const delay = i * ETL_CONSTANTS.FBREF_RATE_LIMIT_MS;
+      const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
       await this.statsQueue.add(
         `stats-sync-${season}`,
         { season } satisfies StatsSyncJobData,
@@ -76,34 +61,23 @@ export class EtlService {
     }
   }
 
-  async triggerOddsHistoricalSync(): Promise<void> {
-    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
-      const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      await this.enqueueOddsHistoricalSeason(season, i);
+  async triggerOddsCsvImport(): Promise<void> {
+    for (let i = 0; i < ETL_CONSTANTS.CSV_ODDS_SEASONS.length; i++) {
+      const seasonCode = ETL_CONSTANTS.CSV_ODDS_SEASONS[i];
+      // Stagger by 2s — football-data.co.uk has no strict rate limit but be polite
+      const delay = i * 2_000;
+      await this.oddsCsvQueue.add(
+        `odds-csv-import-${seasonCode}`,
+        { seasonCode } satisfies OddsCsvImportJobData,
+        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
+      );
     }
-  }
-
-  async triggerOddsHistoricalSyncForSeason(season: number): Promise<void> {
-    await this.enqueueOddsHistoricalSeason(season, 0);
   }
 
   async triggerFullSync(): Promise<void> {
     await this.triggerFixturesSync();
     await this.triggerResultsSync();
-    await this.triggerXgSync();
     await this.triggerStatsSync();
-    await this.triggerOddsHistoricalSync();
-  }
-
-  private async enqueueOddsHistoricalSeason(
-    season: number,
-    offset: number,
-  ): Promise<void> {
-    const delay = offset * ETL_CONSTANTS.ODDS_RATE_LIMIT_MS;
-    await this.oddsHistoricalQueue.add(
-      `odds-historical-sync-${season}`,
-      { season } satisfies OddsHistoricalSyncJobData,
-      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-    );
+    await this.triggerOddsCsvImport();
   }
 }
