@@ -2,20 +2,15 @@
   "permissions": {
     "deny": [
       "Read(.env)",
-      "Read(.env.*)",
       "Read(apps/backend/.env)",
-      "Read(apps/backend/.env.*)",
       "Edit(.env)",
-      "Edit(.env.*)",
       "Edit(apps/backend/.env)",
-      "Edit(apps/backend/.env.*)",
-      "Bash(cat .env*)",
-      "Bash(cat apps/backend/.env*)",
-      "Bash(less .env*)",
-      "Bash(less apps/backend/.env*)",
+      "Bash(cat .env)",
+      "Bash(cat apps/backend/.env)",
+      "Bash(less .env)",
+      "Bash(less apps/backend/.env)",
       "Bash(printenv*)",
-      "Bash(env)",
-      "Bash(env *)"
+      "Bash(env)"
     ]
   }
 }
