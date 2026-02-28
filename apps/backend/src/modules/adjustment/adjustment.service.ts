@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AdjustmentStatus, Market } from '@evcore/db';
+import { AdjustmentStatus, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
@@ -67,8 +67,8 @@ export class AdjustmentService {
     // Rollback = new APPLIED proposal that restores the state before target was applied.
     const newProposal = await this.prisma.client.adjustmentProposal.create({
       data: {
-        currentWeights: target.proposedWeights,
-        proposedWeights: target.currentWeights,
+        currentWeights: target.proposedWeights as Prisma.InputJsonValue,
+        proposedWeights: target.currentWeights as Prisma.InputJsonValue,
         calibrationError: target.calibrationError,
         triggerBetCount: target.triggerBetCount,
         status: AdjustmentStatus.APPLIED,
@@ -165,16 +165,16 @@ function computeAdjustedWeights(
 
   if (meanError.greaterThan(0)) {
     // Overconfident → reduce top-2, increase bottom-2
-    entries[0]!.value = entries[0]!.value.minus(d).clampedTo(0.01, 0.99);
-    entries[1]!.value = entries[1]!.value.minus(d).clampedTo(0.01, 0.99);
-    entries[2]!.value = entries[2]!.value.plus(d).clampedTo(0.01, 0.99);
-    entries[3]!.value = entries[3]!.value.plus(d).clampedTo(0.01, 0.99);
+    entries[0].value = entries[0].value.minus(d).clampedTo(0.01, 0.99);
+    entries[1].value = entries[1].value.minus(d).clampedTo(0.01, 0.99);
+    entries[2].value = entries[2].value.plus(d).clampedTo(0.01, 0.99);
+    entries[3].value = entries[3].value.plus(d).clampedTo(0.01, 0.99);
   } else {
     // Underconfident → increase top-2, reduce bottom-2
-    entries[0]!.value = entries[0]!.value.plus(d).clampedTo(0.01, 0.99);
-    entries[1]!.value = entries[1]!.value.plus(d).clampedTo(0.01, 0.99);
-    entries[2]!.value = entries[2]!.value.minus(d).clampedTo(0.01, 0.99);
-    entries[3]!.value = entries[3]!.value.minus(d).clampedTo(0.01, 0.99);
+    entries[0].value = entries[0].value.plus(d).clampedTo(0.01, 0.99);
+    entries[1].value = entries[1].value.plus(d).clampedTo(0.01, 0.99);
+    entries[2].value = entries[2].value.minus(d).clampedTo(0.01, 0.99);
+    entries[3].value = entries[3].value.minus(d).clampedTo(0.01, 0.99);
   }
 
   // Normalize to sum=1
@@ -190,10 +190,10 @@ function computeAdjustedWeights(
   }
 
   return {
-    recentForm: result['recentForm']!,
-    xg: result['xg']!,
-    domExtPerf: result['domExtPerf']!,
-    leagueVolat: result['leagueVolat']!,
+    recentForm: result['recentForm'],
+    xg: result['xg'],
+    domExtPerf: result['domExtPerf'],
+    leagueVolat: result['leagueVolat'],
   };
 }
 

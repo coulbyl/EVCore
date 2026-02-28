@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatsSyncWorker } from './stats-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
+import type { NotificationService } from '../../notification/notification.service';
 import type { Job } from 'bullmq';
 import { ETL_CONSTANTS } from '../../../config/etl.constants';
 
@@ -46,9 +47,14 @@ describe('StatsSyncWorker', () => {
     get: vi.fn().mockReturnValue(undefined),
   } satisfies Partial<ConfigService>;
 
+  const notification = {
+    sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<NotificationService>;
+
   const worker = new StatsSyncWorker(
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
+    notification as unknown as NotificationService,
   );
 
   beforeEach(() => {
