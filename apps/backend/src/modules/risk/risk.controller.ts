@@ -15,9 +15,7 @@ export class RiskController {
 
   @Post('check/:market')
   @HttpCode(HttpStatus.OK)
-  async checkMarket(
-    @Param('market') market: Market,
-  ): Promise<{
+  async checkMarket(@Param('market') market: Market): Promise<{
     market: Market;
     betCount: number;
     roi: string;

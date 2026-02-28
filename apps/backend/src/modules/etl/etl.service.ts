@@ -43,11 +43,9 @@ export class EtlService implements OnApplicationBootstrap {
     }
 
     const currentSeason =
-      ETL_CONSTANTS.EPL_SEASONS[ETL_CONSTANTS.EPL_SEASONS.length - 1]!;
+      ETL_CONSTANTS.EPL_SEASONS[ETL_CONSTANTS.EPL_SEASONS.length - 1];
     const currentSeasonCode =
-      ETL_CONSTANTS.CSV_ODDS_SEASONS[
-        ETL_CONSTANTS.CSV_ODDS_SEASONS.length - 1
-      ]!;
+      ETL_CONSTANTS.CSV_ODDS_SEASONS[ETL_CONSTANTS.CSV_ODDS_SEASONS.length - 1];
 
     await this.fixturesQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.FIXTURES_SYNC,

@@ -100,10 +100,10 @@ export class StatsSyncWorker extends WorkerHost {
 
       const [homeStats, awayStats] = parsed.data.response;
       const homeXg =
-        extractShotsOnTarget(homeStats!.statistics) *
+        extractShotsOnTarget(homeStats.statistics) *
         ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
       const awayXg =
-        extractShotsOnTarget(awayStats!.statistics) *
+        extractShotsOnTarget(awayStats.statistics) *
         ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
 
       await this.fixtureService.updateXg(externalId, homeXg, awayXg);

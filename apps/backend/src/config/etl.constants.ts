@@ -40,9 +40,9 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
 
 // Cron schedules for daily/weekly ETL automation (BullMQ repeatable jobs)
 export const ETL_CRON_SCHEDULES = {
-  FIXTURES_SYNC: '0 2 * * *',   // 02:00 UTC daily
-  RESULTS_SYNC: '0 3 * * *',    // 03:00 UTC daily
-  STATS_SYNC: '0 4 * * *',      // 04:00 UTC daily
+  FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
+  RESULTS_SYNC: '0 3 * * *', // 03:00 UTC daily
+  STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
 } as const;
 
