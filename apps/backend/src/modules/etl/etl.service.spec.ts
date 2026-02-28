@@ -5,18 +5,28 @@ import {
   ETL_CONSTANTS,
 } from '../../config/etl.constants';
 import type { Queue } from 'bullmq';
+import type { ConfigService } from '@nestjs/config';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 
-type MockQueue<T> = Pick<Queue<T>, 'add'>;
+type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
 
 function makeQueue<T>(): MockQueue<T> {
   return {
     add: vi.fn().mockResolvedValue({}),
+    upsertJobScheduler: vi.fn().mockResolvedValue({}),
   };
 }
+
+// Scheduling disabled in tests — avoids real upsertJobScheduler calls
+const configMock = {
+  get: vi.fn().mockImplementation((key: string, defaultValue?: string) => {
+    if (key === 'ETL_SCHEDULING_ENABLED') return 'false';
+    return defaultValue;
+  }),
+} as unknown as ConfigService;
 
 describe('EtlService', () => {
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
@@ -29,6 +39,7 @@ describe('EtlService', () => {
     resultsQueue as Queue<ResultsSyncJobData>,
     statsQueue as Queue<StatsSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
+    configMock,
   );
 
   beforeEach(() => {

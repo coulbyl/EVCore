@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 2 terminé — Semaines 1→8 terminées, Mois 3 à venir (mise à jour le 28 février 2026)**
+**Statut actuel : Semaine 9 terminée — Automatisation BullMQ opérationnelle (mise à jour le 28 février 2026)**
 
 ---
 
@@ -112,10 +112,14 @@
 
 **Semaine 9 — Automatisation quotidienne**
 
-- [ ] Setup Kestra (Docker Compose)
-- [ ] Orchestration des jobs ETL via Kestra (plannings, retries, monitoring)
-- [ ] Gestion erreurs ETL : retry 3×, alerte si échec total
-- [ ] Gestion `POSTPONED` fixtures
+- [x] BullMQ repeatable jobs (`upsertJobScheduler`) — crons quotidiens/hebdo pour les 4 workers ETL
+- [x] `ETL_CRON_SCHEDULES` + `ETL_SCHEDULER_KEYS` dans `etl.constants.ts` (configurables)
+- [x] `EtlService.onApplicationBootstrap()` — registration idempotente au démarrage
+- [x] `ETL_SCHEDULING_ENABLED` — flag pour désactiver le scheduling en dev/test
+- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte Novu uniquement sur échec définitif (après 3 tentatives)
+- [x] `sendEtlFailureAlert()` dans `NotificationService`
+- [x] Gestion `POSTPONED` fixtures — déjà couverte par le statut pipeline existant
+- [-] Setup Kestra — abandonné au profit de BullMQ natif (infra simplifiée pour MVP)
 
 **Semaine 10 — Boucle d'apprentissage**
 

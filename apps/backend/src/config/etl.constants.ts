@@ -37,3 +37,19 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
   removeOnComplete: { count: 100 },
   removeOnFail: { count: 200 },
 } as const;
+
+// Cron schedules for daily/weekly ETL automation (BullMQ repeatable jobs)
+export const ETL_CRON_SCHEDULES = {
+  FIXTURES_SYNC: '0 2 * * *',   // 02:00 UTC daily
+  RESULTS_SYNC: '0 3 * * *',    // 03:00 UTC daily
+  STATS_SYNC: '0 4 * * *',      // 04:00 UTC daily
+  ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
+} as const;
+
+// Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
+export const ETL_SCHEDULER_KEYS = {
+  FIXTURES_SYNC: 'cron:fixtures-sync',
+  RESULTS_SYNC: 'cron:results-sync',
+  STATS_SYNC: 'cron:stats-sync',
+  ODDS_CSV_IMPORT: 'cron:odds-csv-import',
+} as const;

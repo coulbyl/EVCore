@@ -1,18 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { ConfigService } from '@nestjs/config';
+import pino from 'pino';
 import {
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
+  ETL_CRON_SCHEDULES,
+  ETL_SCHEDULER_KEYS,
 } from '../../config/etl.constants';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 
+const logger = pino({ name: 'etl-service' });
+
 @Injectable()
-export class EtlService {
+export class EtlService implements OnApplicationBootstrap {
+  private readonly schedulingEnabled: boolean;
+
   constructor(
     @InjectQueue(BULLMQ_QUEUES.FIXTURES_SYNC)
     private readonly fixturesQueue: Queue<FixturesSyncJobData>,
@@ -22,7 +30,63 @@ export class EtlService {
     private readonly statsQueue: Queue<StatsSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.schedulingEnabled =
+      config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
+  }
+
+  async onApplicationBootstrap(): Promise<void> {
+    if (!this.schedulingEnabled) {
+      logger.info('ETL scheduling disabled — skipping job scheduler setup');
+      return;
+    }
+
+    const currentSeason =
+      ETL_CONSTANTS.EPL_SEASONS[ETL_CONSTANTS.EPL_SEASONS.length - 1]!;
+    const currentSeasonCode =
+      ETL_CONSTANTS.CSV_ODDS_SEASONS[
+        ETL_CONSTANTS.CSV_ODDS_SEASONS.length - 1
+      ]!;
+
+    await this.fixturesQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.FIXTURES_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.FIXTURES_SYNC },
+      {
+        name: `fixtures-sync-${currentSeason}`,
+        data: { season: currentSeason } satisfies FixturesSyncJobData,
+      },
+    );
+
+    await this.resultsQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.RESULTS_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.RESULTS_SYNC },
+      {
+        name: `results-sync-${currentSeason}`,
+        data: { season: currentSeason } satisfies ResultsSyncJobData,
+      },
+    );
+
+    await this.statsQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.STATS_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.STATS_SYNC },
+      {
+        name: `stats-sync-${currentSeason}`,
+        data: { season: currentSeason } satisfies StatsSyncJobData,
+      },
+    );
+
+    await this.oddsCsvQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT,
+      { pattern: ETL_CRON_SCHEDULES.ODDS_CSV_IMPORT },
+      {
+        name: `odds-csv-import-${currentSeasonCode}`,
+        data: { seasonCode: currentSeasonCode } satisfies OddsCsvImportJobData,
+      },
+    );
+
+    logger.info('ETL job schedulers registered');
+  }
 
   async triggerFixturesSync(): Promise<void> {
     for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {

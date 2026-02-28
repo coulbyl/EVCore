@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { FixtureModule } from '../fixture/fixture.module';
+import { NotificationModule } from '../notification/notification.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
 import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
@@ -20,6 +21,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
     ),
     FixtureModule,
+    NotificationModule,
   ],
   controllers: [EtlController],
   providers: [

@@ -1,9 +1,10 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import pino from 'pino';
 import { OddsCsvRowSchema, type OddsCsvRow } from '../schemas/odds-csv.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import { NotificationService } from '../../notification/notification.service';
 
 export type OddsCsvImportJobData = {
   // Season code in football-data.co.uk format: '2122', '2223', '2324', '2425'
@@ -14,7 +15,10 @@ const logger = pino({ name: 'odds-csv-import-worker' });
 
 @Processor(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
 export class OddsCsvImportWorker extends WorkerHost {
-  constructor(private readonly fixtureService: FixtureService) {
+  constructor(
+    private readonly fixtureService: FixtureService,
+    private readonly notification: NotificationService,
+  ) {
     super();
   }
 
@@ -84,6 +88,29 @@ export class OddsCsvImportWorker extends WorkerHost {
       { seasonCode, imported, skipped, noFixture },
       'Odds CSV import complete',
     );
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job<OddsCsvImportJobData> | undefined, error: Error): void {
+    const isFinalAttempt =
+      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
+
+    if (isFinalAttempt) {
+      logger.error(
+        { jobName: job.name, attempts: job.attemptsMade },
+        'Job permanently failed — sending alert',
+      );
+      void this.notification.sendEtlFailureAlert(
+        BULLMQ_QUEUES.ODDS_CSV_IMPORT,
+        job.name,
+        error.message,
+      );
+    } else {
+      logger.warn(
+        { jobName: job?.name, attempt: job?.attemptsMade },
+        'Job attempt failed — will retry',
+      );
+    }
   }
 }
 

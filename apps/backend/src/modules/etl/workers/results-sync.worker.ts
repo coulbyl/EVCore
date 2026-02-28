@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
@@ -6,6 +6,7 @@ import { ApiFootballFixturesResponseSchema } from '../schemas/fixture.schema';
 import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
+import { NotificationService } from '../../notification/notification.service';
 
 export type ResultsSyncJobData = { season: number };
 
@@ -19,6 +20,7 @@ export class ResultsSyncWorker extends WorkerHost {
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
+    private readonly notification: NotificationService,
   ) {
     super();
   }
@@ -92,5 +94,28 @@ export class ResultsSyncWorker extends WorkerHost {
     }
 
     logger.info({ season, updated, skipped }, 'Results sync complete');
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job<ResultsSyncJobData> | undefined, error: Error): void {
+    const isFinalAttempt =
+      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
+
+    if (isFinalAttempt) {
+      logger.error(
+        { jobName: job.name, attempts: job.attemptsMade },
+        'Job permanently failed — sending alert',
+      );
+      void this.notification.sendEtlFailureAlert(
+        BULLMQ_QUEUES.RESULTS_SYNC,
+        job.name,
+        error.message,
+      );
+    } else {
+      logger.warn(
+        { jobName: job?.name, attempt: job?.attemptsMade },
+        'Job attempt failed — will retry',
+      );
+    }
   }
 }

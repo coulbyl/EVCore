@@ -72,6 +72,19 @@ export class NotificationService {
     });
   }
 
+  async sendEtlFailureAlert(
+    queue: string,
+    jobName: string,
+    errorMessage: string,
+  ): Promise<void> {
+    await this.trigger('evcore-etl-failure', {
+      queue,
+      jobName,
+      errorMessage,
+      failedAt: new Date().toISOString(),
+    });
+  }
+
   async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
     await this.trigger('evcore-weekly-report', {
       roiOneXTwo: payload.roiOneXTwo.toFixed(4),
