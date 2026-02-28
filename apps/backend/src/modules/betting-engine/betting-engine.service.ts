@@ -140,14 +140,21 @@ export class BettingEngineService {
       ? Decision.BET
       : Decision.NO_BET;
 
-    const latestOdds = await this.findLatestOneXTwoOddsSnapshot(fixture);
+    const [latestOdds, suspension] = await Promise.all([
+      this.findLatestOneXTwoOddsSnapshot(fixture),
+      this.prisma.client.marketSuspension.findFirst({
+        where: { market: Market.ONE_X_TWO, active: true },
+        select: { id: true },
+      }),
+    ]);
     const valueBet = latestOdds
       ? this.selectBestOneXTwoValueBet(probabilities, latestOdds)
       : null;
     const decision =
       deterministicDecision === Decision.BET &&
       valueBet !== null &&
-      valueBet.ev.greaterThanOrEqualTo(EV_THRESHOLD)
+      valueBet.ev.greaterThanOrEqualTo(EV_THRESHOLD) &&
+      suspension === null
         ? Decision.BET
         : Decision.NO_BET;
 

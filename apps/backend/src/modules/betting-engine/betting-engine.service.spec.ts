@@ -111,6 +111,9 @@ describe('BettingEngineService', () => {
         oddsSnapshot: {
           findMany: vi.fn().mockResolvedValue([]),
         },
+        marketSuspension: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
         bet: {
           create: vi.fn(),
         },
@@ -220,6 +223,9 @@ describe('BettingEngineService', () => {
             },
           ]),
         },
+        marketSuspension: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
         modelRun: {
           create: createModelRun,
         },
@@ -325,6 +331,9 @@ describe('BettingEngineService', () => {
               awayOdds: new Decimal('3.8'),
             },
           ]),
+        },
+        marketSuspension: {
+          findFirst: vi.fn().mockResolvedValue(null),
         },
         modelRun: {
           create: createModelRun,

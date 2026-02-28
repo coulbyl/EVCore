@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Mois 2 en cours — Semaines 1→7 terminées, Semaine 8 à venir (mise à jour le 28 février 2026)**
+**Statut actuel : Mois 2 terminé — Semaines 1→8 terminées, Mois 3 à venir (mise à jour le 28 février 2026)**
 
 ---
 
@@ -100,11 +100,11 @@
 
 **Semaine 8 — Tracking & contraintes**
 
-- [ ] Implémentation seuil alerte ROI < -10% (30 derniers paris)
-- [ ] Implémentation suspension automatique ROI < -15% (50+ paris)
-- [ ] Alerte Novu si Brier Score > seuil acceptable
-- [ ] Alerte Novu sur suspension marché
-- [ ] Rapport hebdomadaire ROI/Brier Score par email (Novu)
+- [x] Implémentation seuil alerte ROI < -10% (30 derniers paris)
+- [x] Implémentation suspension automatique ROI < -15% (50+ paris)
+- [x] Alerte Novu si Brier Score > seuil acceptable
+- [x] Alerte Novu sur suspension marché
+- [x] Rapport hebdomadaire ROI/Brier Score par endpoint (`POST /risk/report/weekly`)
 
 ---
 

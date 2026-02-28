@@ -9,6 +9,8 @@ import { EtlModule } from './modules/etl/etl.module';
 import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
 import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
 import { BacktestModule } from './modules/backtest/backtest.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { RiskModule } from './modules/risk/risk.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { BacktestModule } from './modules/backtest/backtest.module';
     RollingStatsModule,
     BettingEngineModule,
     BacktestModule,
+    NotificationModule,
+    RiskModule,
   ],
   controllers: [AppController],
   providers: [AppService, NovuService],

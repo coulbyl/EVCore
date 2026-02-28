@@ -7,6 +7,8 @@ import { BettingEngineService } from '@modules/betting-engine/betting-engine.ser
 import type { TeamStatsInput } from '@modules/betting-engine/betting-engine.types';
 import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
+import { NotificationService } from '@modules/notification/notification.service';
+import { RISK_CONSTANTS } from '@modules/risk/risk.constants';
 import {
   brierScoreOneXTwo,
   calibrationError,
@@ -60,6 +62,7 @@ export class BacktestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
+    private readonly notification: NotificationService,
   ) {}
 
   async runBacktest(seasonId: string): Promise<BacktestReport> {
@@ -204,6 +207,15 @@ export class BacktestService {
       },
       'Backtest complete',
     );
+
+    if (
+      report.brierScore.greaterThan(RISK_CONSTANTS.BRIER_SCORE_ALERT_THRESHOLD)
+    ) {
+      await this.notification.sendBrierScoreAlert(
+        seasonId,
+        report.brierScore.toNumber(),
+      );
+    }
 
     return report;
   }

@@ -195,6 +195,21 @@ model AdjustmentProposal {
   updatedAt        DateTime         @updatedAt
 }
 
+// Active suspension of a market triggered automatically by risk rules.
+// Only one active suspension per market at a time (enforced at application layer).
+model MarketSuspension {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  market      Market
+  reason      String    // e.g. "ROI -16.3% over 52 bets — auto-suspended"
+  triggeredBy String    @default("auto") // "auto" | "manual"
+  active      Boolean   @default(true)
+  liftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([market, active])
+}
+
 // Odds snapshots — scaffolded for Phase 2 (live odds integration).
 // Not used in MVP.
 model OddsSnapshot {

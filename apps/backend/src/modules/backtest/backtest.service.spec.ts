@@ -4,6 +4,11 @@ import { Market } from '@evcore/db';
 import { BacktestService } from './backtest.service';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import type { NotificationService } from '@modules/notification/notification.service';
+
+const notificationMock = {
+  sendBrierScoreAlert: vi.fn().mockResolvedValue(undefined),
+} as unknown as NotificationService;
 
 describe('BacktestService', () => {
   it('runs backtest and aggregates analyzed/skipped fixtures', async () => {
@@ -102,7 +107,11 @@ describe('BacktestService', () => {
       }),
     } as unknown as BettingEngineService;
 
-    const service = new BacktestService(prismaMock, bettingMock);
+    const service = new BacktestService(
+      prismaMock,
+      bettingMock,
+      notificationMock,
+    );
     const report = await service.runBacktest('s1');
 
     expect(report.seasonId).toBe('s1');
@@ -220,7 +229,11 @@ describe('BacktestService', () => {
       }),
     } as unknown as BettingEngineService;
 
-    const service = new BacktestService(prismaMock, bettingMock);
+    const service = new BacktestService(
+      prismaMock,
+      bettingMock,
+      notificationMock,
+    );
     const report = await service.runBacktest('s1');
 
     expect(report.analyzedCount).toBe(1);

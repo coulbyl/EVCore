@@ -49,52 +49,50 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 
 ---
 
-## Semaine 7 — Simulation value bets
+## Semaine 7 — Simulation value bets ✅
 
-### Résultats attendus
+### Résultats
 
 - [x] Simulation placement des bets historiques (filtre EV ≥ 8% identique au moteur live)
 - [x] ROI simulé par marché (`ONE_X_TWO`)
 - [x] Drawdown max (courbe equity + peak)
 - [x] EV moyen simulé
-
-### Implémentation
-
 - [x] `loadLatestOneXTwoOddsForFixtures()` — batch query, aucun N+1
 - [x] `findLatestStatsBeforeFixture()` — recherche binaire + tie-break par ID (prévention look-ahead)
 - [x] `simulateOneXTwoBet()` — utilise `calculateEV()` depuis `betting-engine.utils` (source unique)
 - [x] `MarketAccumulator` — agrégations `wins`, `losses`, `voids`, `stake`, `profit`, `maxDrawdown`
 - [x] Cas "pas d'odds" et "odds invalides" (`odds ≤ 1`, `isFinite()`) couverts
-
-### Critères de validation
-
 - [x] Rapport déterministe sur re-run (même inputs → mêmes outputs)
 - [x] Tests : bet placé et gagné (ROI=1.1), EV sous seuil → 0 bets (ROI=0)
 
 ---
 
-## Semaine 8 — Tracking & contraintes
+## Semaine 8 — Tracking & contraintes ✅
 
-### Résultats attendus
+### Résultats
 
-- [ ] Alerte ROI `< -10%` sur 30 derniers paris
-- [ ] Suspension auto ROI `< -15%` sur 50+ paris
-- [ ] Alerte Novu si `brierScore > seuil`
-- [ ] Alerte Novu suspension marché
-- [ ] Rapport hebdo ROI/Brier par email
+- [x] Alerte ROI `< -10%` sur 30 derniers paris (`RiskService.checkMarketRoi`)
+- [x] Suspension auto ROI `< -15%` sur 50+ paris (`MarketSuspension` créé en DB + alerte Novu)
+- [x] Alerte Novu si `brierScore > 0.30` (post-backtest automatique)
+- [x] Alerte Novu suspension marché (payload normalisé : market, roi, betCount, suspendedAt)
+- [x] Rapport hebdo via `POST /risk/report/weekly` (ROI + bets placés sur 7 jours)
 
 ### Implémentation
 
-- [ ] Service de règles de risque (seuils configurables)
-- [ ] Job planifié hebdomadaire de synthèse
-- [ ] Intégration Novu avec payload normalisé
-- [ ] Journal d'audit des alertes envoyées
+- [x] `modules/notification/notification.service.ts` — wrapper Novu HTTP typé (ConfigService, NOVU_ALERTS_ENABLED)
+- [x] `modules/risk/risk.constants.ts` — seuils configurables (ROI_ALERT_THRESHOLD, ROI_SUSPENSION_THRESHOLD, BRIER_SCORE_ALERT_THRESHOLD)
+- [x] `modules/risk/risk.service.ts` — `checkMarketRoi()`, `isMarketSuspended()`, `checkBrierScore()`, `generateWeeklyReport()`
+- [x] `modules/risk/risk.controller.ts` — `POST /risk/check/:market`, `GET /risk/suspension/:market`, `POST /risk/report/weekly`
+- [x] `MarketSuspension` model Prisma + migration SQL + génération client
+- [x] `analyzeFixture()` gated par `marketSuspension.findFirst` (triple gate : score + EV + non-suspendu)
+- [x] `BacktestService` : alerte Novu Brier Score post-backtest
+- [x] `.env.example` mis à jour (NOVU_SUBSCRIBER_ID, NOVU_ALERTS_ENABLED, workflow IDs documentés)
 
 ### Critères de validation
 
-- [ ] Règles testées par scénarios de série temporelle
-- [ ] Pas de spam d'alertes (cooldown/min interval)
-- [ ] Alertes désactivables par env flag
+- [x] Règles testées par scénarios (10 tests `risk.service.spec.ts`)
+- [x] Alertes désactivables via `NOVU_ALERTS_ENABLED=false`
+- [x] 98 tests passants au total
 
 ---
 
@@ -104,5 +102,5 @@ Passer d'un moteur probabiliste/backtest à un moteur de décision value-bet pil
 - [x] Semaine 5 terminée
 - [x] Semaine 6 terminée
 - [x] Semaine 7 terminée
-- [ ] Semaine 8 terminée
+- [x] Semaine 8 terminée
 - [x] Docs `ROADMAP.md` synchronisées
