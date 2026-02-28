@@ -107,17 +107,17 @@ export class BettingEngineService {
     if (!latest) return FEATURE_WEIGHTS;
 
     const w = latest.proposedWeights as Record<string, unknown>;
+    const toDecimal = (val: unknown, fallback: Decimal): Decimal => {
+      if (typeof val === 'string' || typeof val === 'number') {
+        return new Decimal(val);
+      }
+      return fallback;
+    };
     return {
-      recentForm: new Decimal(
-        String(w['recentForm'] ?? FEATURE_WEIGHTS.recentForm),
-      ),
-      xg: new Decimal(String(w['xg'] ?? FEATURE_WEIGHTS.xg)),
-      domExtPerf: new Decimal(
-        String(w['domExtPerf'] ?? FEATURE_WEIGHTS.domExtPerf),
-      ),
-      leagueVolat: new Decimal(
-        String(w['leagueVolat'] ?? FEATURE_WEIGHTS.leagueVolat),
-      ),
+      recentForm: toDecimal(w['recentForm'], FEATURE_WEIGHTS.recentForm),
+      xg: toDecimal(w['xg'], FEATURE_WEIGHTS.xg),
+      domExtPerf: toDecimal(w['domExtPerf'], FEATURE_WEIGHTS.domExtPerf),
+      leagueVolat: toDecimal(w['leagueVolat'], FEATURE_WEIGHTS.leagueVolat),
     };
   }
 

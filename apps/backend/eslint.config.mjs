@@ -14,4 +14,12 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
+  // In spec files, expect(mock.method).toHaveBeenCalled() is standard Vitest
+  // usage and is a systematic false positive for unbound-method.
+  {
+    files: ['**/*.spec.ts', '**/test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
 ];

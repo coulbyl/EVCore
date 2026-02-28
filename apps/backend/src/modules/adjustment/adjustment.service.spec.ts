@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { AdjustmentStatus } from '@evcore/db';
 import { AdjustmentService } from './adjustment.service';
@@ -222,8 +222,8 @@ describe('computeAdjustedWeights (via settleAndCheck)', () => {
     expect(capturedProposedWeights).toBeDefined();
     // recentForm and xg (tied top) should be reduced; leagueVolat (bottom) increased
     const proposed = capturedProposedWeights!;
-    const rf = parseFloat(proposed['recentForm']!);
-    const lv = parseFloat(proposed['leagueVolat']!);
+    const rf = parseFloat(proposed['recentForm']);
+    const lv = parseFloat(proposed['leagueVolat']);
     expect(rf).toBeLessThan(0.3);
     expect(lv).toBeGreaterThan(0.15);
   });
