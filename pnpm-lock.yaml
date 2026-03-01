@@ -233,6 +233,9 @@ importers:
       decimal.js:
         specifier: 'catalog:'
         version: 10.6.0
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.6.1
       ioredis:
         specifier: 'catalog:'
         version: 5.9.3

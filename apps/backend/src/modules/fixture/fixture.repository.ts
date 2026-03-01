@@ -105,7 +105,7 @@ export class FixtureRepository {
     homeScore: number,
     awayScore: number,
   ): Promise<void> {
-    await this.prisma.client.fixture.update({
+    await this.prisma.client.fixture.updateMany({
       where: { externalId },
       data: { homeScore, awayScore, status: 'FINISHED' },
     });

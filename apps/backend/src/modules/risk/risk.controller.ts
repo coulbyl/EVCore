@@ -6,8 +6,13 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
+import { ApiParam } from '@nestjs/swagger';
 import { Market } from '@evcore/db';
 import { RiskService } from './risk.service';
+import { MarketParamDto } from './dto/market-param.dto';
+import { RoiCheckResponseDto } from './dto/roi-check-response.dto';
+import { SuspensionResponseDto } from './dto/suspension-response.dto';
+import { WeeklyReportResponseDto } from './dto/weekly-report-response.dto';
 
 @Controller('risk')
 export class RiskController {
@@ -15,12 +20,10 @@ export class RiskController {
 
   @Post('check/:market')
   @HttpCode(HttpStatus.OK)
-  async checkMarket(@Param('market') market: Market): Promise<{
-    market: Market;
-    betCount: number;
-    roi: string;
-    action: string;
-  }> {
+  @ApiParam({ name: 'market', enum: Market, enumName: 'Market' })
+  async checkMarket(
+    @Param() { market }: MarketParamDto,
+  ): Promise<RoiCheckResponseDto> {
     const result = await this.risk.checkMarketRoi(market);
     return {
       market: result.market,
@@ -31,21 +34,17 @@ export class RiskController {
   }
 
   @Get('suspension/:market')
+  @ApiParam({ name: 'market', enum: Market, enumName: 'Market' })
   async getSuspension(
-    @Param('market') market: Market,
-  ): Promise<{ market: Market; suspended: boolean }> {
+    @Param() { market }: MarketParamDto,
+  ): Promise<SuspensionResponseDto> {
     const suspended = await this.risk.isMarketSuspended(market);
     return { market, suspended };
   }
 
   @Post('report/weekly')
   @HttpCode(HttpStatus.OK)
-  async weeklyReport(): Promise<{
-    roiOneXTwo: string;
-    betsPlaced: number;
-    periodStart: string;
-    periodEnd: string;
-  }> {
+  async weeklyReport(): Promise<WeeklyReportResponseDto> {
     const result = await this.risk.generateWeeklyReport();
     return {
       roiOneXTwo: result.roiOneXTwo.toFixed(4),

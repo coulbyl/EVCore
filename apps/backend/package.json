@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@evcore/db": "workspace:*",
+    "dotenv": "catalog:",
     "@evcore/transactional": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
