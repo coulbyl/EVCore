@@ -89,13 +89,13 @@ ModelRun stored + Novu alert
 
 ### Component Responsibilities
 
-| Component      | Role                                      | Never                      |
-| -------------- | ----------------------------------------- | -------------------------- |
-| ETL Workers    | Collect + normalize data                  | Infer or fill missing data |
-| PostgreSQL     | Historical truth                          | —                          |
-| Betting Engine | Probabilistic scoring + EV                | Call LLM for raw data      |
+| Component      | Role                                            | Never                          |
+| -------------- | ----------------------------------------------- | ------------------------------ |
+| ETL Workers    | Collect + normalize data                        | Infer or fill missing data     |
+| PostgreSQL     | Historical truth                                | —                              |
+| Betting Engine | Probabilistic scoring + EV                      | Call LLM for raw data          |
 | Backend        | Validation, risk control, auto-apply + rollback | Bypass Zod or rate-limit rules |
-| OpenClaw       | Contextual delta only                     | Be primary data source     |
+| OpenClaw       | Contextual delta only                           | Be primary data source         |
 
 ---
 

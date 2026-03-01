@@ -253,6 +253,17 @@ describe('ApiFootballFixturesResponseSchema', () => {
     ).toBe(true);
   });
 
+  it('accepts paging.total = 0 for an empty season response', () => {
+    expect(
+      ApiFootballFixturesResponseSchema.safeParse({
+        ...validResponse,
+        results: 0,
+        response: [],
+        paging: { current: 1, total: 0 },
+      }).success,
+    ).toBe(true);
+  });
+
   it('rejects wrong get value', () => {
     expect(
       ApiFootballFixturesResponseSchema.safeParse({

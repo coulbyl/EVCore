@@ -117,7 +117,7 @@ export class NotificationService {
     payload: NovuPayload,
   ): Promise<void> {
     if (!this.enabled) {
-      logger.info({ workflowId }, 'Novu alerts disabled — skipping');
+      logger.debug({ workflowId }, 'Novu alerts disabled — skipping');
       return;
     }
     if (!this.apiKey) {

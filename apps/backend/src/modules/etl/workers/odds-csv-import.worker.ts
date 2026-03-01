@@ -49,7 +49,12 @@ export class OddsCsvImportWorker extends WorkerHost {
 
       if (!parsed.success) {
         logger.warn(
-          { issues: parsed.error.issues, row: raw },
+          {
+            issues: parsed.error.issues,
+            date: raw['Date'],
+            home: raw['HomeTeam'],
+            away: raw['AwayTeam'],
+          },
           'Invalid CSV row — skipping',
         );
         skipped++;

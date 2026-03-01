@@ -88,16 +88,6 @@ export class StatsSyncWorker extends WorkerHost {
         continue;
       }
 
-      if (parsed.data.response.length < 2) {
-        logger.warn(
-          { externalId, results: parsed.data.results },
-          'Statistics response has < 2 teams — skipping fixture',
-        );
-        skipped++;
-        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
-        continue;
-      }
-
       const [homeStats, awayStats] = parsed.data.response;
       const homeXg =
         extractShotsOnTarget(homeStats.statistics) *

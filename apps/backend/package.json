@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest run --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run test/**/*.e2e-spec.ts"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "dependencies": {
     "@evcore/db": "workspace:*",
@@ -50,6 +50,7 @@
     "@types/express": "catalog:",
     "@types/node": "catalog:",
     "@types/supertest": "catalog:",
+    "@testcontainers/postgresql": "^11.7.2",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",

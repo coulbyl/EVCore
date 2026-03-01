@@ -96,7 +96,7 @@ export const ApiFootballFixturesResponseSchema = z.object({
   results: z.number().int().nonnegative(),
   paging: z.object({
     current: z.number().int().positive(),
-    total: z.number().int().positive(),
+    total: z.number().int().nonnegative(),
   }),
   response: z.array(ApiFootballFixtureSchema),
 });

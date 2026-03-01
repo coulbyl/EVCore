@@ -16,11 +16,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.spec.ts'],
+    dir: './test',
+    include: ['**/*.e2e-spec.ts'],
     setupFiles: ['./test/setup.ts'],
+    globalSetup: ['./test/setup/global-e2e.ts'],
   },
-  plugins: [
-    // Required for NestJS decorator metadata (emitDecoratorMetadata) in tests
-    swc.vite({ module: { type: 'es6' } }),
-  ],
+  plugins: [swc.vite({ module: { type: 'es6' } })],
 });

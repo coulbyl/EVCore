@@ -22,4 +22,14 @@ export default [
       '@typescript-eslint/unbound-method': 'off',
     },
   },
+  {
+    files: ['vitest.config.ts', 'vitest.config.e2e.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['vitest.config.ts', 'vitest.config.e2e.ts'],
+        },
+      },
+    },
+  },
 ];

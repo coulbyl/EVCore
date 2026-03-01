@@ -22,7 +22,8 @@ export const ApiFootballStatisticsResponseSchema = z.object({
   get: z.literal('fixtures/statistics'),
   parameters: z.record(z.string(), z.string()),
   results: z.number().int().nonnegative(),
-  response: z.array(TeamStatisticsSchema),
+  // API always returns exactly 2 team objects (home then away) for a played fixture
+  response: z.array(TeamStatisticsSchema).length(2),
 });
 
 export type TeamStatistics = z.infer<typeof TeamStatisticsSchema>;
