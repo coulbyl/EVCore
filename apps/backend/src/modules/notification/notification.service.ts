@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
 import pino from 'pino';
-import { Market } from '@evcore/db';
+import { Market, NotificationType, type Prisma } from '@evcore/db';
+import { PrismaService } from '@/prisma.service';
 
 const logger = pino({ name: 'notification-service' });
-
-type NovuPayload = Record<string, unknown>;
 
 export type WeeklyReportPayload = {
   roiOneXTwo: number;
@@ -16,23 +17,43 @@ export type WeeklyReportPayload = {
 };
 
 @Injectable()
-export class NotificationService {
-  private readonly apiUrl: string;
-  private readonly apiKey: string | undefined;
-  private readonly subscriberId: string;
-  private readonly enabled: boolean;
+export class NotificationService implements OnModuleInit {
+  private transporter: Transporter | null = null;
+  private readonly smtpEnabled: boolean;
+  private readonly smtpFrom: string;
+  private readonly smtpTo: string;
 
-  constructor(private readonly config: ConfigService) {
-    this.apiUrl = config
-      .get<string>('NOVU_API_URL', 'http://localhost:3010')
-      .replace(/\/$/, '');
-    this.apiKey = config.get<string>('NOVU_API_KEY');
-    this.subscriberId = config.get<string>(
-      'NOVU_SUBSCRIBER_ID',
-      'evcore-admin',
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    this.smtpEnabled = config.get<string>('SMTP_ENABLED', 'false') !== 'false';
+    this.smtpFrom = config.get<string>('SMTP_FROM', 'evcore@localhost');
+    this.smtpTo = config.get<string>('SMTP_TO', '');
+  }
+
+  onModuleInit(): void {
+    if (!this.smtpEnabled) return;
+
+    this.transporter = nodemailer.createTransport({
+      host: this.config.get<string>('SMTP_HOST', 'localhost'),
+      port: this.config.get<number>('SMTP_PORT', 1025),
+      secure: this.config.get<string>('SMTP_SECURE', 'false') !== 'false',
+      auth: this.config.get<string>('SMTP_USER')
+        ? {
+            user: this.config.get<string>('SMTP_USER'),
+            pass: this.config.get<string>('SMTP_PASSWORD'),
+          }
+        : undefined,
+    });
+
+    logger.info(
+      {
+        host: this.config.get('SMTP_HOST'),
+        port: this.config.get('SMTP_PORT'),
+      },
+      'SMTP transporter initialized',
     );
-    this.enabled =
-      config.get<string>('NOVU_ALERTS_ENABLED', 'true') !== 'false';
   }
 
   async sendRoiAlert(
@@ -40,12 +61,14 @@ export class NotificationService {
     roi: number,
     betCount: number,
   ): Promise<void> {
-    await this.trigger('evcore-roi-alert', {
+    const title = `ROI Alert — ${market}`;
+    const body = `ROI ${(roi * 100).toFixed(2)}% over ${betCount} bets (threshold: -10%)`;
+    await this.save(NotificationType.ROI_ALERT, title, body, {
       market,
-      roi: roi.toFixed(4),
+      roi,
       betCount,
-      alertedAt: new Date().toISOString(),
     });
+    await this.sendEmail(title, body);
   }
 
   async sendMarketSuspensionAlert(
@@ -53,23 +76,27 @@ export class NotificationService {
     roi: number,
     betCount: number,
   ): Promise<void> {
-    await this.trigger('evcore-market-suspension', {
+    const title = `Market Suspended — ${market}`;
+    const body = `Market auto-suspended: ROI ${(roi * 100).toFixed(2)}% over ${betCount} bets (threshold: -15%)`;
+    await this.save(NotificationType.MARKET_SUSPENSION, title, body, {
       market,
-      roi: roi.toFixed(4),
+      roi,
       betCount,
-      suspendedAt: new Date().toISOString(),
     });
+    await this.sendEmail(title, body);
   }
 
   async sendBrierScoreAlert(
     seasonId: string,
     brierScore: number,
   ): Promise<void> {
-    await this.trigger('evcore-brier-alert', {
+    const title = `Brier Score Alert — Season ${seasonId}`;
+    const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (${brierScore.toFixed(4)} > 0.30)`;
+    await this.save(NotificationType.BRIER_ALERT, title, body, {
       seasonId,
-      brierScore: brierScore.toFixed(6),
-      alertedAt: new Date().toISOString(),
+      brierScore,
     });
+    await this.sendEmail(title, body);
   }
 
   async sendEtlFailureAlert(
@@ -77,12 +104,14 @@ export class NotificationService {
     jobName: string,
     errorMessage: string,
   ): Promise<void> {
-    await this.trigger('evcore-etl-failure', {
+    const title = `ETL Failure — ${queue}`;
+    const body = `Job "${jobName}" permanently failed: ${errorMessage}`;
+    await this.save(NotificationType.ETL_FAILURE, title, body, {
       queue,
       jobName,
       errorMessage,
-      failedAt: new Date().toISOString(),
     });
+    await this.sendEmail(title, body);
   }
 
   async sendWeightAdjustmentAlert(payload: {
@@ -92,68 +121,113 @@ export class NotificationService {
     meanError?: number;
     rolledBackProposalId?: string;
   }): Promise<void> {
-    await this.trigger('evcore-weight-adjustment', {
-      proposalId: payload.proposalId,
-      isRollback: payload.isRollback,
-      brierScore: payload.brierScore?.toFixed(6),
-      meanError: payload.meanError?.toFixed(6),
-      rolledBackProposalId: payload.rolledBackProposalId,
-      appliedAt: new Date().toISOString(),
+    const action = payload.isRollback ? 'rolled back' : 'auto-applied';
+    const title = `Weight Adjustment ${action} — Proposal ${payload.proposalId}`;
+    const body = payload.isRollback
+      ? `Proposal ${payload.rolledBackProposalId} rolled back by proposal ${payload.proposalId}`
+      : `Weights auto-applied: brierScore=${payload.brierScore?.toFixed(4)}, meanError=${payload.meanError?.toFixed(4)}`;
+    await this.save(NotificationType.WEIGHT_ADJUSTMENT, title, body, {
+      ...payload,
     });
+    await this.sendEmail(title, body);
   }
 
   async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
-    await this.trigger('evcore-weekly-report', {
-      roiOneXTwo: payload.roiOneXTwo.toFixed(4),
+    const title = `Weekly Report — ${payload.periodStart.toISOString().slice(0, 10)} → ${payload.periodEnd.toISOString().slice(0, 10)}`;
+    const body = [
+      `ROI (1X2): ${(payload.roiOneXTwo * 100).toFixed(2)}%`,
+      `Bets placed: ${payload.betsPlaced}`,
+      `Brier score: ${payload.brierScore.toFixed(4)}`,
+    ].join('\n');
+    await this.save(NotificationType.WEEKLY_REPORT, title, body, {
+      roiOneXTwo: payload.roiOneXTwo,
       betsPlaced: payload.betsPlaced,
-      brierScore: payload.brierScore.toFixed(6),
+      brierScore: payload.brierScore,
       periodStart: payload.periodStart.toISOString(),
       periodEnd: payload.periodEnd.toISOString(),
     });
+    await this.sendEmail(title, body);
   }
 
-  private async trigger(
-    workflowId: string,
-    payload: NovuPayload,
+  async list(query: {
+    limit: number;
+    offset: number;
+    unread?: boolean;
+  }): Promise<{
+    data: Awaited<ReturnType<typeof this.prisma.client.notification.findMany>>;
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const where = query.unread === true ? { read: false } : undefined;
+    const [data, total] = await Promise.all([
+      this.prisma.client.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: query.limit,
+        skip: query.offset,
+      }),
+      this.prisma.client.notification.count({ where }),
+    ]);
+    return { data, total, limit: query.limit, offset: query.offset };
+  }
+
+  async markRead(id: string): Promise<void> {
+    await this.prisma.client.notification.update({
+      where: { id },
+      data: { read: true, readAt: new Date() },
+    });
+  }
+
+  async markAllRead(): Promise<void> {
+    await this.prisma.client.notification.updateMany({
+      where: { read: false },
+      data: { read: true, readAt: new Date() },
+    });
+  }
+
+  private async save(
+    type: NotificationType,
+    title: string,
+    body: string,
+    payload: Prisma.InputJsonValue,
   ): Promise<void> {
-    if (!this.enabled) {
-      logger.debug({ workflowId }, 'Novu alerts disabled — skipping');
-      return;
+    try {
+      await this.prisma.client.notification.create({
+        data: { type, title, body, payload },
+      });
+    } catch (error) {
+      logger.error(
+        { type, error: error instanceof Error ? error.message : String(error) },
+        'Failed to persist notification',
+      );
     }
-    if (!this.apiKey) {
-      logger.warn({ workflowId }, 'NOVU_API_KEY not set — skipping');
+  }
+
+  private async sendEmail(subject: string, text: string): Promise<void> {
+    if (!this.smtpEnabled || !this.transporter || !this.smtpTo) {
+      logger.debug(
+        { subject },
+        'SMTP disabled or unconfigured — skipping email',
+      );
       return;
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}/v1/events/trigger`, {
-        method: 'POST',
-        headers: {
-          Authorization: `ApiKey ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: workflowId,
-          to: { subscriberId: this.subscriberId },
-          payload,
-        }),
+      await this.transporter.sendMail({
+        from: this.smtpFrom,
+        to: this.smtpTo,
+        subject: `[EVCore] ${subject}`,
+        text,
       });
-
-      if (!response.ok) {
-        logger.error(
-          { workflowId, httpStatus: response.status },
-          'Novu trigger failed',
-        );
-      } else {
-        logger.info({ workflowId }, 'Novu notification sent');
-      }
+      logger.info({ subject }, 'Email sent');
     } catch (error) {
       logger.error(
         {
-          workflowId,
+          subject,
           error: error instanceof Error ? error.message : String(error),
         },
-        'Novu trigger error',
+        'Failed to send email',
       );
     }
   }

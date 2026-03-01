@@ -49,6 +49,15 @@ enum AdjustmentStatus {
   FROZEN
 }
 
+enum NotificationType {
+  ROI_ALERT
+  MARKET_SUSPENSION
+  BRIER_ALERT
+  WEEKLY_REPORT
+  ETL_FAILURE
+  WEIGHT_ADJUSTMENT
+}
+
 // ─────────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────────
@@ -208,6 +217,21 @@ model MarketSuspension {
   updatedAt   DateTime  @updatedAt
 
   @@index([market, active])
+}
+
+// In-app notifications — persisted for dashboard and future mobile app.
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String
+  payload   Json?            // extra context (market, roi, betCount, etc.)
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([read, createdAt])
+  @@map("notification")
 }
 
 // Odds snapshots — scaffolded for Phase 2 (live odds integration).
