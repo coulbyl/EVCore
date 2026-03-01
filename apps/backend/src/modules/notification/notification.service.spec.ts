@@ -1,36 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ConfigService } from '@nestjs/config';
 import { Market, NotificationType } from '@evcore/db';
 import { NotificationService } from './notification.service';
 import type { PrismaService } from '@/prisma.service';
-
-const { mockSendMail, mockCreateTransport } = vi.hoisted(() => {
-  const mockSendMail = vi.fn().mockResolvedValue({ messageId: 'test' });
-  const mockCreateTransport = vi
-    .fn()
-    .mockReturnValue({ sendMail: mockSendMail });
-  return { mockSendMail, mockCreateTransport };
-});
-
-vi.mock('nodemailer', () => ({
-  default: { createTransport: mockCreateTransport },
-  createTransport: mockCreateTransport,
-}));
-
-function makeConfig(overrides: Record<string, string> = {}): ConfigService {
-  const values: Record<string, string> = {
-    SMTP_ENABLED: 'false',
-    SMTP_FROM: 'evcore@localhost',
-    SMTP_TO: 'admin@example.com',
-    SMTP_HOST: 'localhost',
-    SMTP_PORT: '1025',
-    SMTP_SECURE: 'false',
-    ...overrides,
-  };
-  return {
-    get: (key: string, fallback?: unknown) => values[key] ?? fallback,
-  } as unknown as ConfigService;
-}
+import type { MailService } from '@modules/mail/mail.service';
 
 function makePrisma(): PrismaService {
   return {
@@ -46,17 +18,21 @@ function makePrisma(): PrismaService {
   } as unknown as PrismaService;
 }
 
-describe('NotificationService — persistence', () => {
-  beforeEach(() => {
-    mockCreateTransport.mockReturnValue({
-      sendMail: mockSendMail,
-    } as unknown);
-  });
+function makeMail(): MailService {
+  return {
+    sendRoiAlert: vi.fn().mockResolvedValue(undefined),
+    sendMarketSuspension: vi.fn().mockResolvedValue(undefined),
+    sendBrierAlert: vi.fn().mockResolvedValue(undefined),
+    sendEtlFailure: vi.fn().mockResolvedValue(undefined),
+    sendWeightAdjustment: vi.fn().mockResolvedValue(undefined),
+    sendWeeklyReport: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MailService;
+}
 
+describe('NotificationService — persistence', () => {
   it('persists a ROI alert to the database', async () => {
     const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
+    const service = new NotificationService(prisma, makeMail());
 
     await service.sendRoiAlert(Market.ONE_X_TWO, -0.12, 32);
 
@@ -71,8 +47,7 @@ describe('NotificationService — persistence', () => {
 
   it('persists a Brier Score alert to the database', async () => {
     const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
+    const service = new NotificationService(prisma, makeMail());
 
     await service.sendBrierScoreAlert('season-123', 0.32);
 
@@ -86,8 +61,7 @@ describe('NotificationService — persistence', () => {
 
   it('persists an ETL failure alert to the database', async () => {
     const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
+    const service = new NotificationService(prisma, makeMail());
 
     await service.sendEtlFailureAlert(
       'fixtures-queue',
@@ -104,57 +78,86 @@ describe('NotificationService — persistence', () => {
   });
 });
 
-describe('NotificationService — email', () => {
+describe('NotificationService — mail delegation', () => {
+  let prisma: PrismaService;
+  let mail: MailService;
+  let service: NotificationService;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockCreateTransport.mockReturnValue({
-      sendMail: mockSendMail,
-    } as unknown);
+    prisma = makePrisma();
+    mail = makeMail();
+    service = new NotificationService(prisma, mail);
   });
 
-  it('does NOT send email when SMTP_ENABLED=false', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      prisma,
-      makeConfig({ SMTP_ENABLED: 'false' }),
-    );
-    service.onModuleInit();
-
+  it('delegates to mail.sendRoiAlert with stringified market', async () => {
     await service.sendRoiAlert(Market.ONE_X_TWO, -0.12, 32);
 
-    expect(mockSendMail).not.toHaveBeenCalled();
+    expect(mail.sendRoiAlert).toHaveBeenCalledWith({
+      market: 'ONE_X_TWO',
+      roi: -0.12,
+      betCount: 32,
+    });
   });
 
-  it('sends email when SMTP_ENABLED=true', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      prisma,
-      makeConfig({ SMTP_ENABLED: 'true' }),
-    );
-    service.onModuleInit();
-
-    await service.sendRoiAlert(Market.ONE_X_TWO, -0.12, 32);
-
-    expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        from: 'evcore@localhost',
-        to: 'admin@example.com',
-        subject: expect.stringContaining('ROI Alert'),
-      }),
-    );
-  });
-
-  it('does NOT send email when SMTP_TO is empty', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(
-      prisma,
-      makeConfig({ SMTP_ENABLED: 'true', SMTP_TO: '' }),
-    );
-    service.onModuleInit();
-
+  it('delegates to mail.sendMarketSuspension', async () => {
     await service.sendMarketSuspensionAlert(Market.ONE_X_TWO, -0.16, 55);
 
-    expect(mockSendMail).not.toHaveBeenCalled();
+    expect(mail.sendMarketSuspension).toHaveBeenCalledWith({
+      market: 'ONE_X_TWO',
+      roi: -0.16,
+      betCount: 55,
+    });
+  });
+
+  it('delegates to mail.sendBrierAlert', async () => {
+    await service.sendBrierScoreAlert('2024-2025', 0.2731);
+
+    expect(mail.sendBrierAlert).toHaveBeenCalledWith({
+      seasonId: '2024-2025',
+      brierScore: 0.2731,
+    });
+  });
+
+  it('delegates to mail.sendEtlFailure', async () => {
+    await service.sendEtlFailureAlert('fixtures', 'fetch-ligue1', 'timeout');
+
+    expect(mail.sendEtlFailure).toHaveBeenCalledWith({
+      queue: 'fixtures',
+      jobName: 'fetch-ligue1',
+      errorMessage: 'timeout',
+    });
+  });
+
+  it('delegates to mail.sendWeightAdjustment', async () => {
+    const payload = {
+      proposalId: 'prop-1',
+      isRollback: false,
+      brierScore: 0.26,
+    };
+    await service.sendWeightAdjustmentAlert(payload);
+
+    expect(mail.sendWeightAdjustment).toHaveBeenCalledWith(payload);
+  });
+
+  it('delegates to mail.sendWeeklyReport with ISO date strings', async () => {
+    const start = new Date('2025-03-03');
+    const end = new Date('2025-03-09');
+    await service.sendWeeklyReport({
+      roiOneXTwo: 0.04,
+      betsPlaced: 87,
+      brierScore: 0.22,
+      periodStart: start,
+      periodEnd: end,
+    });
+
+    expect(mail.sendWeeklyReport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roiOneXTwo: 0.04,
+        betsPlaced: 87,
+        periodStart: start.toISOString(),
+        periodEnd: end.toISOString(),
+      }),
+    );
   });
 });
 
@@ -176,9 +179,7 @@ describe('NotificationService — list & mark read', () => {
     ]);
     vi.mocked(prisma.client.notification.count).mockResolvedValue(1);
 
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
-
+    const service = new NotificationService(prisma, makeMail());
     const result = await service.list({ limit: 20, offset: 0, unread: true });
 
     expect(result.total).toBe(1);
@@ -190,8 +191,7 @@ describe('NotificationService — list & mark read', () => {
 
   it('marks a single notification as read', async () => {
     const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
+    const service = new NotificationService(prisma, makeMail());
 
     await service.markRead('notif-id-1');
 
@@ -203,8 +203,7 @@ describe('NotificationService — list & mark read', () => {
 
   it('marks all notifications as read', async () => {
     const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeConfig());
-    service.onModuleInit();
+    const service = new NotificationService(prisma, makeMail());
 
     await service.markAllRead();
 

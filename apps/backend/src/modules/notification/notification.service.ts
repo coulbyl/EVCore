@@ -1,10 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import { Injectable } from '@nestjs/common';
 import pino from 'pino';
 import { Market, NotificationType, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { MailService } from '@modules/mail/mail.service';
 
 const logger = pino({ name: 'notification-service' });
 
@@ -17,44 +15,11 @@ export type WeeklyReportPayload = {
 };
 
 @Injectable()
-export class NotificationService implements OnModuleInit {
-  private transporter: Transporter | null = null;
-  private readonly smtpEnabled: boolean;
-  private readonly smtpFrom: string;
-  private readonly smtpTo: string;
-
+export class NotificationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
-  ) {
-    this.smtpEnabled = config.get<string>('SMTP_ENABLED', 'false') !== 'false';
-    this.smtpFrom = config.get<string>('SMTP_FROM', 'evcore@localhost');
-    this.smtpTo = config.get<string>('SMTP_TO', '');
-  }
-
-  onModuleInit(): void {
-    if (!this.smtpEnabled) return;
-
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('SMTP_HOST', 'localhost'),
-      port: this.config.get<number>('SMTP_PORT', 1025),
-      secure: this.config.get<string>('SMTP_SECURE', 'false') !== 'false',
-      auth: this.config.get<string>('SMTP_USER')
-        ? {
-            user: this.config.get<string>('SMTP_USER'),
-            pass: this.config.get<string>('SMTP_PASSWORD'),
-          }
-        : undefined,
-    });
-
-    logger.info(
-      {
-        host: this.config.get('SMTP_HOST'),
-        port: this.config.get('SMTP_PORT'),
-      },
-      'SMTP transporter initialized',
-    );
-  }
+    private readonly mail: MailService,
+  ) {}
 
   async sendRoiAlert(
     market: Market,
@@ -68,7 +33,7 @@ export class NotificationService implements OnModuleInit {
       roi,
       betCount,
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendRoiAlert({ market: String(market), roi, betCount });
   }
 
   async sendMarketSuspensionAlert(
@@ -83,7 +48,11 @@ export class NotificationService implements OnModuleInit {
       roi,
       betCount,
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendMarketSuspension({
+      market: String(market),
+      roi,
+      betCount,
+    });
   }
 
   async sendBrierScoreAlert(
@@ -91,12 +60,12 @@ export class NotificationService implements OnModuleInit {
     brierScore: number,
   ): Promise<void> {
     const title = `Brier Score Alert — Season ${seasonId}`;
-    const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (${brierScore.toFixed(4)} > 0.30)`;
+    const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (> 0.25)`;
     await this.save(NotificationType.BRIER_ALERT, title, body, {
       seasonId,
       brierScore,
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendBrierAlert({ seasonId, brierScore });
   }
 
   async sendEtlFailureAlert(
@@ -111,7 +80,7 @@ export class NotificationService implements OnModuleInit {
       jobName,
       errorMessage,
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendEtlFailure({ queue, jobName, errorMessage });
   }
 
   async sendWeightAdjustmentAlert(payload: {
@@ -129,7 +98,7 @@ export class NotificationService implements OnModuleInit {
     await this.save(NotificationType.WEIGHT_ADJUSTMENT, title, body, {
       ...payload,
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendWeightAdjustment(payload);
   }
 
   async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
@@ -146,7 +115,13 @@ export class NotificationService implements OnModuleInit {
       periodStart: payload.periodStart.toISOString(),
       periodEnd: payload.periodEnd.toISOString(),
     });
-    await this.sendEmail(title, body);
+    await this.mail.sendWeeklyReport({
+      roiOneXTwo: payload.roiOneXTwo,
+      betsPlaced: payload.betsPlaced,
+      brierScore: payload.brierScore,
+      periodStart: payload.periodStart.toISOString(),
+      periodEnd: payload.periodEnd.toISOString(),
+    });
   }
 
   async list(query: {
@@ -200,34 +175,6 @@ export class NotificationService implements OnModuleInit {
       logger.error(
         { type, error: error instanceof Error ? error.message : String(error) },
         'Failed to persist notification',
-      );
-    }
-  }
-
-  private async sendEmail(subject: string, text: string): Promise<void> {
-    if (!this.smtpEnabled || !this.transporter || !this.smtpTo) {
-      logger.debug(
-        { subject },
-        'SMTP disabled or unconfigured — skipping email',
-      );
-      return;
-    }
-
-    try {
-      await this.transporter.sendMail({
-        from: this.smtpFrom,
-        to: this.smtpTo,
-        subject: `[EVCore] ${subject}`,
-        text,
-      });
-      logger.info({ subject }, 'Email sent');
-    } catch (error) {
-      logger.error(
-        {
-          subject,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        'Failed to send email',
       );
     }
   }

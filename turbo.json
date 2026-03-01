@@ -18,6 +18,11 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["src/generated/prisma/**", "dist/**"]
     },
+    "@evcore/transactional#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["dist/**"]
+    },
     "lint": {
       "dependsOn": ["^build", "^lint"]
     },
