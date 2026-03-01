@@ -13,11 +13,16 @@ import {
   brierScoreOneXTwo,
   calibrationError,
   getOneXTwoOutcome,
+  type AllSeasonsBacktestReport,
   type BacktestMarketPerformance,
   type BacktestReport,
   type CalibrationPoint,
+  type MetricResult,
   type OneXTwoPrediction,
+  type ValidationReport,
+  type ValidationVerdict,
 } from './backtest.report';
+import { BACKTEST_CONSTANTS } from './backtest.constants';
 
 const logger = pino({ name: 'backtest-service' });
 
@@ -218,6 +223,167 @@ export class BacktestService {
     }
 
     return report;
+  }
+
+  async runAllSeasons(): Promise<AllSeasonsBacktestReport> {
+    const seasons = await this.prisma.client.season.findMany({
+      select: { id: true },
+    });
+
+    logger.info(
+      { seasonCount: seasons.length },
+      'Starting all-seasons backtest',
+    );
+
+    const reports: BacktestReport[] = [];
+    for (const season of seasons) {
+      const report = await this.runBacktest(season.id);
+      reports.push(report);
+    }
+
+    const totalFixtures = reports.reduce((sum, r) => sum + r.fixtureCount, 0);
+    const totalAnalyzed = reports.reduce((sum, r) => sum + r.analyzedCount, 0);
+
+    const averageBrierScore =
+      reports.length > 0
+        ? reports
+            .reduce((sum, r) => sum.plus(r.brierScore), new Decimal(0))
+            .div(reports.length)
+        : new Decimal(0);
+
+    const averageCalibrationError =
+      reports.length > 0
+        ? reports
+            .reduce((sum, r) => sum.plus(r.calibrationError), new Decimal(0))
+            .div(reports.length)
+        : new Decimal(0);
+
+    // Weighted aggregate ROI: profit_total / stake_total across all seasons.
+    // stake per season = betsPlaced (1 unit per bet), profit_i = roi_i * betsPlaced_i.
+    const totalBets = reports.reduce(
+      (sum, r) => sum + (r.marketPerformance[0]?.betsPlaced ?? 0),
+      0,
+    );
+    const aggregateRoi =
+      totalBets > 0
+        ? reports
+            .reduce((sum, r) => {
+              const bets = r.marketPerformance[0]?.betsPlaced ?? 0;
+              return sum.plus(r.roiSimulated.mul(bets));
+            }, new Decimal(0))
+            .div(totalBets)
+        : new Decimal(0);
+
+    logger.info(
+      {
+        seasonCount: seasons.length,
+        totalFixtures,
+        totalAnalyzed,
+        averageBrierScore: averageBrierScore.toNumber(),
+        averageCalibrationError: averageCalibrationError.toNumber(),
+        aggregateRoi: aggregateRoi.toNumber(),
+      },
+      'All-seasons backtest complete',
+    );
+
+    return {
+      seasons: reports,
+      totalFixtures,
+      totalAnalyzed,
+      averageBrierScore,
+      averageCalibrationError,
+      aggregateRoi,
+      reportGeneratedAt: new Date(),
+    };
+  }
+
+  async getValidationReport(): Promise<ValidationReport> {
+    const allSeasons = await this.runAllSeasons();
+    const {
+      averageBrierScore,
+      averageCalibrationError,
+      aggregateRoi,
+      totalAnalyzed,
+    } = allSeasons;
+
+    const insufficient =
+      totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
+
+    const brierVerdict: ValidationVerdict = insufficient
+      ? 'INSUFFICIENT_DATA'
+      : averageBrierScore.lessThanOrEqualTo(
+            BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
+          )
+        ? 'PASS'
+        : 'FAIL';
+
+    const calibrationVerdict: ValidationVerdict = insufficient
+      ? 'INSUFFICIENT_DATA'
+      : averageCalibrationError.lessThanOrEqualTo(
+            BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
+          )
+        ? 'PASS'
+        : 'FAIL';
+
+    const roiVerdict: ValidationVerdict = insufficient
+      ? 'INSUFFICIENT_DATA'
+      : aggregateRoi.greaterThanOrEqualTo(
+            BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
+          )
+        ? 'PASS'
+        : 'FAIL';
+
+    const verdicts: ValidationVerdict[] = [
+      brierVerdict,
+      calibrationVerdict,
+      roiVerdict,
+    ];
+    const overallVerdict: ValidationVerdict = verdicts.includes(
+      'INSUFFICIENT_DATA',
+    )
+      ? 'INSUFFICIENT_DATA'
+      : verdicts.includes('FAIL')
+        ? 'FAIL'
+        : 'PASS';
+
+    const brierScore: MetricResult = {
+      value: averageBrierScore,
+      threshold: BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
+      verdict: brierVerdict,
+    };
+    const calibrationError: MetricResult = {
+      value: averageCalibrationError,
+      threshold: BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
+      verdict: calibrationVerdict,
+    };
+    const roi: MetricResult = {
+      value: aggregateRoi,
+      threshold: BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
+      verdict: roiVerdict,
+    };
+
+    logger.info(
+      {
+        totalAnalyzed,
+        brierScore: averageBrierScore.toNumber(),
+        brierVerdict,
+        calibrationError: averageCalibrationError.toNumber(),
+        calibrationVerdict,
+        roi: aggregateRoi.toNumber(),
+        roiVerdict,
+        overallVerdict,
+      },
+      'Validation report generated',
+    );
+
+    return {
+      brierScore,
+      calibrationError,
+      roi,
+      totalAnalyzed,
+      overallVerdict,
+      reportGeneratedAt: new Date(),
+    };
   }
 
   private async loadTeamStatsIndexForSeason(

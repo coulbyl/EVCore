@@ -1,4 +1,4 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { BacktestService } from './backtest.service';
 
 @Controller('backtest')
@@ -8,5 +8,15 @@ export class BacktestController {
   @Post('run/:seasonId')
   runSeason(@Param('seasonId') seasonId: string) {
     return this.backtestService.runBacktest(seasonId);
+  }
+
+  @Post('run-all')
+  runAllSeasons() {
+    return this.backtestService.runAllSeasons();
+  }
+
+  @Get('validation-report')
+  getValidationReport() {
+    return this.backtestService.getValidationReport();
   }
 }

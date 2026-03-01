@@ -1,6 +1,33 @@
 import Decimal from 'decimal.js';
 import { Market } from '@evcore/db';
 
+export type ValidationVerdict = 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
+
+export type MetricResult = {
+  value: Decimal;
+  threshold: Decimal;
+  verdict: ValidationVerdict;
+};
+
+export type AllSeasonsBacktestReport = {
+  seasons: BacktestReport[];
+  totalFixtures: number;
+  totalAnalyzed: number;
+  averageBrierScore: Decimal;
+  averageCalibrationError: Decimal;
+  aggregateRoi: Decimal;
+  reportGeneratedAt: Date;
+};
+
+export type ValidationReport = {
+  brierScore: MetricResult;
+  calibrationError: MetricResult;
+  roi: MetricResult;
+  totalAnalyzed: number;
+  overallVerdict: ValidationVerdict;
+  reportGeneratedAt: Date;
+};
+
 export type OneXTwoOutcome = 'HOME' | 'DRAW' | 'AWAY';
 
 export type OneXTwoPrediction = {
