@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { NovuService } from './novu.service';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -9,20 +8,7 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [
-        AppService,
-        {
-          provide: NovuService,
-          useValue: {
-            healthCheck: vi
-              .fn()
-              .mockResolvedValue({ status: 'not_configured' }),
-            triggerFoundationsTest: vi
-              .fn()
-              .mockResolvedValue({ configured: false }),
-          },
-        },
-      ],
+      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);

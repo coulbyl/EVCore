@@ -4,7 +4,6 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppController } from './../src/app.controller';
 import { AppService } from './../src/app.service';
-import { NovuService } from './../src/novu.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -12,7 +11,7 @@ describe('AppController (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService, NovuService],
+      providers: [AppService],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -31,14 +30,5 @@ describe('AppController (e2e)', () => {
       .get('/health')
       .expect(200)
       .expect({ status: 'ok' });
-  });
-
-  it('/health/novu (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/health/novu')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({ status: 'not_configured' });
-      });
   });
 });

@@ -13,6 +13,9 @@ CREATE TYPE "BetStatus" AS ENUM ('PENDING', 'WON', 'LOST', 'VOID');
 -- CreateEnum
 CREATE TYPE "AdjustmentStatus" AS ENUM ('PENDING', 'APPLIED', 'REJECTED', 'FROZEN');
 
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('ROI_ALERT', 'MARKET_SUSPENSION', 'BRIER_ALERT', 'WEEKLY_REPORT', 'ETL_FAILURE', 'WEIGHT_ADJUSTMENT');
+
 -- CreateTable
 CREATE TABLE "Competition" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
@@ -137,6 +140,34 @@ CREATE TABLE "AdjustmentProposal" (
 );
 
 -- CreateTable
+CREATE TABLE "MarketSuspension" (
+    "id" UUID NOT NULL DEFAULT uuidv7(),
+    "market" "Market" NOT NULL,
+    "reason" TEXT NOT NULL,
+    "triggeredBy" TEXT NOT NULL DEFAULT 'auto',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "liftedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MarketSuspension_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notification" (
+    "id" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "payload" JSONB,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "readAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "OddsSnapshot" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
     "fixtureId" UUID NOT NULL,
@@ -179,6 +210,12 @@ CREATE INDEX "ModelRun_fixtureId_idx" ON "ModelRun"("fixtureId");
 
 -- CreateIndex
 CREATE INDEX "Bet_modelRunId_idx" ON "Bet"("modelRunId");
+
+-- CreateIndex
+CREATE INDEX "MarketSuspension_market_active_idx" ON "MarketSuspension"("market", "active");
+
+-- CreateIndex
+CREATE INDEX "notification_read_createdAt_idx" ON "notification"("read", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "OddsSnapshot_fixtureId_snapshotAt_idx" ON "OddsSnapshot"("fixtureId", "snapshotAt");
