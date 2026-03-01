@@ -1,9 +1,14 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { EtlService } from './etl.service';
 
 @Controller('etl')
 export class EtlController {
   constructor(private readonly etlService: EtlService) {}
+
+  @Get('status')
+  getStatus() {
+    return this.etlService.getQueueStatus();
+  }
 
   @Post('sync/full')
   async triggerFullSync() {

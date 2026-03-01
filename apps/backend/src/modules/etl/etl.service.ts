@@ -136,6 +136,30 @@ export class EtlService implements OnApplicationBootstrap {
     }
   }
 
+  async getQueueStatus(): Promise<Record<string, Record<string, number>>> {
+    const queues = {
+      [BULLMQ_QUEUES.FIXTURES_SYNC]: this.fixturesQueue,
+      [BULLMQ_QUEUES.RESULTS_SYNC]: this.resultsQueue,
+      [BULLMQ_QUEUES.STATS_SYNC]: this.statsQueue,
+      [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
+    };
+
+    const entries = await Promise.all(
+      Object.entries(queues).map(async ([name, queue]) => {
+        const counts = await queue.getJobCounts(
+          'active',
+          'waiting',
+          'completed',
+          'failed',
+          'delayed',
+        );
+        return [name, counts] as const;
+      }),
+    );
+
+    return Object.fromEntries(entries);
+  }
+
   async triggerFullSync(): Promise<void> {
     await this.triggerFixturesSync();
     await this.triggerResultsSync();
