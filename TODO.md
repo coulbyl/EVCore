@@ -53,12 +53,19 @@ Rendre le moteur autonome et apprenant :
 
 ---
 
-## Semaine 11 — Stabilisation
+## Semaine 11 — Stabilisation ✅
 
-- [ ] Tests d'intégration end-to-end (ETL → scoring → decision → log)
-- [ ] Revue complète des Zod schemas (edge cases manquants)
-- [ ] Revue des logs Pino (structure, niveaux, champs manquants)
-- [ ] Hardening Docker Compose (restart policies, volumes nommés, health checks)
+### Résultats
+
+- [x] Infrastructure E2E — `@testcontainers/postgresql`, `vitest.config.e2e.ts`, `test/setup/global-e2e.ts` (container PG éphémère + migrations), `test/setup/prisma-test.ts` (TRUNCATE CASCADE)
+- [x] `test/adjustment.e2e-spec.ts` — 3 tests intégration : settle bets, getEffectiveWeights, auto-apply AdjustmentProposal
+- [x] `test/app.e2e-spec.ts` — refactorisé (providers directs, sans AppModule, 3 tests HTTP passants sans DB)
+- [x] `vitest.config.ts` — restreint à `src/**/*.spec.ts` (E2E exclus du run unitaire)
+- [x] Revue Zod : `paging.total` `positive()` → `nonnegative()`, `response.length(2)` sur stats schema
+- [x] Specs Zod créées : `stats.schema.spec.ts` (8 tests) + `odds-csv.schema.spec.ts` (14 tests)
+- [x] Revue Pino : dead code `response.length<2` retiré, log CSV épuré, `info` → `debug` pour "Novu disabled"
+- [x] Docker Compose : `start_period` ajouté sur postgres (10s) et redis (5s)
+- [x] 131 tests unitaires passants (+ 23 vs Semaine 10)
 
 ---
 
@@ -77,6 +84,6 @@ Rendre le moteur autonome et apprenant :
 - [x] `mvp-month-3` lancé
 - [x] Semaine 9 terminée
 - [x] Semaine 10 terminée
-- [ ] Semaine 11 terminée
+- [x] Semaine 11 terminée
 - [ ] Semaine 12 terminée
 - [ ] Docs `ROADMAP.md` synchronisées

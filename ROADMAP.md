@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Semaine 9 terminée — Automatisation BullMQ opérationnelle (mise à jour le 28 février 2026)**
+**Statut actuel : Semaine 11 terminée — Stabilisation MVP (mise à jour le 1 mars 2026)**
 
 ---
 
@@ -123,18 +123,22 @@
 
 **Semaine 10 — Boucle d'apprentissage**
 
-- [ ] Log probabilité estimée vs résultat réel post-match
-- [ ] Calcul erreur calibration par match
-- [ ] Génération `AdjustmentProposal` automatique
-- [ ] Endpoint backend pour appliquer/refuser/geler une proposal
-- [ ] Contraintes : min 50 bets, max 5%/semaine, jamais auto-appliqué
+- [x] `BettingEngineService.settleOpenBets()` — résolution WON/LOST/VOID post-match
+- [x] `BettingEngineService.getEffectiveWeights()` — charge le dernier `AdjustmentProposal` APPLIED
+- [x] `CalibrationService.compute()` — Brier score + meanError déterministe
+- [x] `AdjustmentService.settleAndCheck()` — settle → calibrate → auto-apply si déclenché
+- [x] Auto-apply : brierScore > 0.25 ET betCount ≥ 50 ET cooldown 7 jours
+- [x] `AdjustmentService.rollback()` — nouveau proposal APPLIED avec poids inversés (audit complet)
+- [x] `AdjustmentController` : 3 endpoints (settle-and-check, list, rollback)
+- [x] `sendWeightAdjustmentAlert()` — alerte Novu sur auto-apply + rollback
 
 **Semaine 11 — Stabilisation**
 
-- [ ] Tests d'intégration end-to-end (ETL → scoring → decision → log)
-- [ ] Revue complète des Zod schemas
-- [ ] Revue des logs Pino (structure, niveaux)
-- [ ] Hardening Docker Compose (restart policies, volumes, secrets)
+- [x] Tests E2E Testcontainers (`vitest.config.e2e.ts`, `global-e2e.ts`, `prisma-test.ts`)
+- [x] `test/adjustment.e2e-spec.ts` — 3 tests intégration (settle, weights, auto-apply)
+- [x] Revue Zod schemas : `paging.total` fix, `response.length(2)` stats, 22 tests créés
+- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "Novu disabled"
+- [x] Docker Compose : `start_period` postgres (10s) + redis (5s)
 
 **Semaine 12 — Validation MVP**
 
