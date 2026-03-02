@@ -91,7 +91,18 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 | **BTTS**           | Les deux équipes marquent (Yes/No)           |
 | **Double Chance**  | 1X, X2, 12 — dérivé des probabilités 1X2     |
 
-### Phase 2
+### Combos-match (Phase 2)
+
+Un pick peut combiner deux marchés sur la même fixture si la probabilité jointe est calculable depuis le modèle de Poisson et que l'EV joint ≥ 8%. Maximum 2 marchés par combo. Référentiel complet et règles de sélection : [COUPON.md](COUPON.md).
+
+| Exemples de combos valides       |
+| -------------------------------- |
+| HOME_WIN + BTTS_YES              |
+| AWAY_WIN + OVER_2_5              |
+| DRAW + BTTS_YES                  |
+| DC_1X / DC_X2 / DC_12 + BTTS_YES |
+
+### Phase 2+
 
 | Marché                    | Prérequis                                                              |
 | ------------------------- | ---------------------------------------------------------------------- |
@@ -124,6 +135,16 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 
 Pas d’odds au début.
 
+## 3.6 Pipeline Phase 2 — Coupon quotidien
+
+Le système génère **un seul coupon combiné par jour** sur toutes les ligues actives. Ce coupon est le résultat final opérationnel du moteur : il est placé tel quel par les utilisateurs. Spécification complète : [COUPON.md](COUPON.md).
+
+```
+odds-live-sync (18:00 UTC)  →  coupon-generator (20:00 UTC)  →  notification
+        ↓                              ↓                              ↓
+  odds en DB               DailyCoupon + Bets persistés      Email + Slack
+```
+
 ---
 
 # 4. Modèle décisionnel
@@ -132,16 +153,35 @@ Pas d’odds au début.
 
 ### Étape 1 — Scoring déterministe (70%)
 
-| Feature                 | Définition                                                                                                  | Fenêtre                    | Source            |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------- |
-| **Forme récente**       | 5 derniers matchs, décroissance exponentielle (facteur 0.8) — poids : 1.0 / 0.8 / 0.64 / 0.51 / 0.41        | Rolling, tout contexte     | football-data.org |
-| **xG (Expected Goals)** | xG marqués et encaissés séparés — probabilité réelle de but par tir, bien supérieur à la moyenne buts brute | Rolling 10 derniers matchs | Understat         |
-| **Performance dom/ext** | Taux victoire / nul / défaite selon le contexte du match (domicile ou extérieur)                            | Toute la saison en cours   | FBref             |
-| **Volatilité ligue**    | Écart-type des totaux de buts par match dans la ligue (via distribution de Poisson)                         | Toute la saison en cours   | Understat / FBref |
+Le score déterministe est la somme pondérée des facteurs **activés**. Tous les facteurs sont calculés en permanence — les facteurs désactivés sont loggés en mode shadow dans `ModelRun.features` sans contribuer au score. Référentiel complet des facteurs et feature flags : [COUPON.md § Facteurs d'analyse](COUPON.md).
+
+**Facteurs core (toujours activés) :**
+
+| Feature                 | Définition                                                                                                  | Fenêtre                    | Source       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- | ------------ |
+| **Forme récente**       | 5 derniers matchs, décroissance exponentielle (facteur 0.8) — poids : 1.0 / 0.8 / 0.64 / 0.51 / 0.41        | Rolling, tout contexte     | API-Football |
+| **xG (Expected Goals)** | xG marqués et encaissés séparés — probabilité réelle de but par tir, bien supérieur à la moyenne buts brute | Rolling 10 derniers matchs | API-Football |
+| **Performance dom/ext** | Taux victoire / nul / défaite selon le contexte du match (domicile ou extérieur)                            | Toute la saison en cours   | API-Football |
+| **Volatilité ligue**    | Écart-type des totaux de buts par match dans la ligue (via distribution de Poisson)                         | Toute la saison en cours   | API-Football |
+
+**Facteurs additionnels activés (Phase 2) :**
+
+| Feature           | Définition                                                                                                    | Source                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **Line movement** | Mouvement de cote Pinnacle entre premier et dernier snapshot. Mouvement > 10% contre notre pick → pick exclu. | OddsSnapshots en DB      |
+| **Injuries**      | Absences joueurs clés (gardien, attaquants). 3+ titulaires absents → fixture exclue.                          | API-Football `/injuries` |
+
+**Facteurs shadow (calculés, non activés, auto-activation possible) :**
+
+| Feature        | Définition                                           | Activation                                        |
+| -------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| **H2H**        | 5 dernières confrontations directes                  | Auto si corrélation Spearman > 0.15 sur 50+ paris |
+| **Congestion** | Jours depuis dernier match, charge calendrier        | Auto si corrélation Spearman > 0.15 sur 50+ paris |
+| **Lineups**    | Compositions officielles (post-hoc, ~1h avant match) | Auto si corrélation Spearman > 0.15 sur 50+ paris |
 
 > **Note :** Le xG remplace la moyenne buts brute. Il reflète la qualité des occasions créées et concédées, pas seulement le score final — ce qui réduit le bruit lié aux matchs atypiques et améliore le Brier Score.
 
-**Pondérations initiales (au sein du score déterministe) :**
+**Pondérations initiales (facteurs core activés) :**
 
 | Feature                        | Poids |
 | ------------------------------ | ----- |
@@ -150,7 +190,7 @@ Pas d’odds au début.
 | Performance domicile/extérieur | 25%   |
 | Volatilité ligue               | 15%   |
 
-Ces poids sont ajustables par la boucle d'apprentissage après 50+ paris, dans la limite de 5%/semaine.
+Ces poids sont ajustables par la boucle d'apprentissage après 50+ paris, dans la limite de 5%/semaine. L'activation d'un nouveau facteur shadow déclenche une redistribution automatique des poids via `AdjustmentProposal`.
 
 ### Étape 2 — Raffinement LLM (30%)
 
@@ -486,7 +526,8 @@ OpenClaw est un composant contraint, pas une boîte noire. Trois risques identif
 
 | Événement                            | Canal         | Priorité |
 | ------------------------------------ | ------------- | -------- |
-| Opportunité EV détectée (EV ≥ 8%)    | Slack         | Haute    |
+| Coupon quotidien généré (≥ 1 leg)    | Email + Slack | Haute    |
+| NO BET du jour (0 opportunité)       | Email + Slack | Normale  |
 | Marché suspendu automatiquement      | Slack + Email | Haute    |
 | Échec total job ETL                  | Slack + Email | Critique |
 | Rapport hebdomadaire ROI/Brier Score | Email         | Normale  |

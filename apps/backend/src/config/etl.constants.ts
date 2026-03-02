@@ -152,6 +152,8 @@ export const API_FOOTBALL_BOOKMAKERS = {
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
+  OVER_UNDER_25: 5,
+  BTTS: 8,
 } as const;
 
 export const BULLMQ_QUEUES = {
@@ -160,6 +162,7 @@ export const BULLMQ_QUEUES = {
   STATS_SYNC: 'stats-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
+  BETTING_ENGINE: 'betting-engine',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {

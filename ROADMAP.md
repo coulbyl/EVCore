@@ -168,6 +168,36 @@
 - [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)
 - [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
+
+**Générateur de coupon quotidien** — spec complète : [COUPON.md](COUPON.md)
+
+**Infrastructure feature flags (shadow scoring)**
+
+- [ ] `feature-flags.constants.ts` — `FEATURE_FLAGS.SCORING` (LINE_MOVEMENT=true, INJURIES=true, H2H=false, CONGESTION=false, LINEUPS=false)
+- [ ] Shadow scoring dans `analyzeFixture()` — tous facteurs calculés, shadow\_\* loggés dans `ModelRun.features`
+- [ ] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync)
+- [ ] `LineMovementService` — delta cote Pinnacle entre premier et dernier snapshot, filtre > 10%
+- [ ] `H2HService` — 5 dernières confrontations, shadow_h2h dans ModelRun (DISABLED par défaut)
+- [ ] `CongestionService` — jours depuis dernier match + charge calendrier depuis fixtures DB (DISABLED par défaut)
+- [ ] `AdjustmentService` étendu — corrélation Spearman shadow features vs outcomes, propose auto-activation si |rho| > 0.15
+
+**Générateur de coupon quotidien**
+
+- [ ] `DailyCoupon` — modèle Prisma (id, date unique, status, legCount, Bets[])
+- [ ] `coupon.constants.ts` — `COUPON_MAX_LEGS=6`, `COUPON_TRIGGER_CRON`, `COUPON_SCHEDULING_ENABLED`
+- [ ] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
+- [ ] Liste blanche combos-match valides (12 combos, exclusions automatiques)
+- [ ] `CouponService.generateDailyCoupon(date)` — sélection qualityScore = EV × deterministicScore
+- [ ] `BettingEngineWorker` — `@Processor('betting-engine')`, 1 job par fixture SCHEDULED
+- [ ] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()`
+- [ ] `NotificationService.sendDailyCoupon()` — email + Slack (coupon ≥ 1 leg)
+- [ ] `NotificationService.sendNoBetToday()` — email + Slack (0 opportunité)
+- [ ] Tests unitaires `CouponService` (sélection, classement, max legs, NO_BET)
+- [ ] Tests unitaires probabilité jointe (valeurs connues depuis Poisson)
+- [ ] Tests unitaires shadow scoring (facteurs désactivés loggés, non pris en compte dans score)
+
+**Suite Phase 2**
+
 - [ ] Marché Mi-temps/Fin de match
 - [ ] OpenClaw integration (LLM delta 30%, Zod-validated, temperature 0)
 - [ ] Grafana dashboards (ROI, Brier Score, drawdown)

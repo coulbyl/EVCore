@@ -11,6 +11,7 @@ import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
+import { CouponModule } from './modules/coupon/coupon.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AdjustmentModule } from './modules/adjustment/adjustment.module';
     NotificationModule,
     RiskModule,
     AdjustmentModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],

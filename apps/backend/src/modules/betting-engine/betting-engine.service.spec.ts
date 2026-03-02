@@ -6,6 +6,10 @@ import {
   calculateDeterministicScore,
   calculateKellyStakePct,
   deriveMarketsFromPoisson,
+  buildPoissonDistributions,
+  computeJointProbability,
+  resolveComboPickBetStatus,
+  COMBO_WHITELIST,
 } from './betting-engine.utils';
 import { BettingEngineService } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
@@ -15,6 +19,62 @@ function makeConfig(kellyEnabled = false): ConfigService {
   return {
     get: vi.fn().mockReturnValue(kellyEnabled ? 'true' : 'false'),
   } as unknown as ConfigService;
+}
+
+// Minimal Prisma mock shared across analyzeFixture tests.
+// Provides just enough responses for a NO_BET path (no odds → no bet).
+function makePrismaMock(
+  overrides: Record<string, unknown> = {},
+): PrismaService {
+  return {
+    client: {
+      fixture: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'fixture-id',
+          seasonId: 'season-id',
+          scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+          homeTeamId: 'home-team',
+          awayTeamId: 'away-team',
+          status: 'FINISHED',
+        }),
+        findMany: vi.fn(),
+      },
+      teamStats: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            recentForm: new Decimal('0.7'),
+            xgFor: new Decimal('1.8'),
+            xgAgainst: new Decimal('1.1'),
+            homeWinRate: new Decimal('0.65'),
+            awayWinRate: new Decimal('0.35'),
+            drawRate: new Decimal('0.20'),
+            leagueVolatility: new Decimal('1.5'),
+          })
+          .mockResolvedValueOnce({
+            recentForm: new Decimal('0.4'),
+            xgFor: new Decimal('1.2'),
+            xgAgainst: new Decimal('1.6'),
+            homeWinRate: new Decimal('0.45'),
+            awayWinRate: new Decimal('0.30'),
+            drawRate: new Decimal('0.25'),
+            leagueVolatility: new Decimal('1.4'),
+          }),
+      },
+      modelRun: { create: vi.fn().mockResolvedValue({ id: 'run-id' }) },
+      oddsSnapshot: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      marketSuspension: {
+        // findMany returns [] = no active suspensions
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+      bet: { create: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+      ...overrides,
+    },
+  } as unknown as PrismaService;
 }
 
 describe('poissonProba', () => {
@@ -73,12 +133,10 @@ describe('calculateKellyStakePct', () => {
   });
 
   it('returns 0 when Kelly is negative (no edge)', () => {
-    // p=0.4, odds=2.0 → K = (0.4×2−1)/(2−1) = −0.2 → clamped to 0
     expect(calculateKellyStakePct(0.4, 2.0, cfg).toNumber()).toBe(0);
   });
 
   it('computes fractional Kelly for known inputs', () => {
-    // p=0.55, odds=2.0 → K = (1.1−1)/1 = 0.1 → fraction=0.25 → 0.025 < cap 0.05
     expect(calculateKellyStakePct(0.55, 2.0, cfg).toNumber()).toBeCloseTo(
       0.025,
       6,
@@ -86,8 +144,103 @@ describe('calculateKellyStakePct', () => {
   });
 
   it('caps stake at maxStake', () => {
-    // p=0.9, odds=3.0 → K = (2.7−1)/2 = 0.85 → 0.25×0.85=0.2125 > 0.05
     expect(calculateKellyStakePct(0.9, 3.0, cfg).toNumber()).toBe(0.05);
+  });
+});
+
+describe('computeJointProbability', () => {
+  it('HOME_WIN + BTTS_YES is lower than HOME_WIN alone and greater than 0', () => {
+    const { distHome, distAway } = buildPoissonDistributions(1.5, 1.2);
+    const joint = computeJointProbability(
+      {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'YES',
+      },
+      distHome,
+      distAway,
+    );
+    const homeOnly = computeJointProbability(
+      {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.ONE_X_TWO,
+        pick2: 'HOME',
+      },
+      distHome,
+      distAway,
+    );
+    expect(joint.toNumber()).toBeGreaterThan(0);
+    expect(joint.toNumber()).toBeLessThan(homeOnly.toNumber());
+  });
+});
+
+describe('COMBO_WHITELIST', () => {
+  it('does not contain HOME+DRAW (impossible combo)', () => {
+    const hasHomeDraw = COMBO_WHITELIST.some(
+      (c) =>
+        c.market1 === Market.ONE_X_TWO &&
+        c.pick1 === 'HOME' &&
+        c.market2 === Market.ONE_X_TWO &&
+        c.pick2 === 'DRAW',
+    );
+    expect(hasHomeDraw).toBe(false);
+  });
+
+  it('does not contain AWAY+HOME (impossible combo)', () => {
+    const hasAwayHome = COMBO_WHITELIST.some(
+      (c) =>
+        c.market1 === Market.ONE_X_TWO &&
+        c.pick1 === 'AWAY' &&
+        c.market2 === Market.ONE_X_TWO &&
+        c.pick2 === 'HOME',
+    );
+    expect(hasAwayHome).toBe(false);
+  });
+});
+
+describe('resolveComboPickBetStatus', () => {
+  it('HOME + BTTS_YES with score 2-1 → WON', () => {
+    const result = resolveComboPickBetStatus(
+      {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'YES',
+      },
+      2,
+      1,
+    );
+    expect(result).toBe('WON');
+  });
+
+  it('HOME + BTTS_YES with score 1-0 → LOST (BTTS fails)', () => {
+    const result = resolveComboPickBetStatus(
+      {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'YES',
+      },
+      1,
+      0,
+    );
+    expect(result).toBe('LOST');
+  });
+
+  it('returns VOID when scores are null', () => {
+    const result = resolveComboPickBetStatus(
+      {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'YES',
+      },
+      null,
+      null,
+    );
+    expect(result).toBe('VOID');
   });
 });
 
@@ -108,60 +261,7 @@ describe('BettingEngineService', () => {
   });
 
   it('analyzes and persists a model run when fixture and team stats exist', async () => {
-    const prismaMock = {
-      client: {
-        fixture: {
-          findUnique: vi.fn().mockResolvedValue({
-            id: 'fixture-id',
-            seasonId: 'season-id',
-            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
-            homeTeamId: 'home-team',
-            awayTeamId: 'away-team',
-            status: 'FINISHED',
-          }),
-          findMany: vi.fn(),
-        },
-        teamStats: {
-          findFirst: vi
-            .fn()
-            .mockResolvedValueOnce({
-              recentForm: new Decimal('0.7'),
-              xgFor: new Decimal('1.8'),
-              xgAgainst: new Decimal('1.1'),
-              homeWinRate: new Decimal('0.65'),
-              awayWinRate: new Decimal('0.35'),
-              drawRate: new Decimal('0.20'),
-              leagueVolatility: new Decimal('1.5'),
-            })
-            .mockResolvedValueOnce({
-              recentForm: new Decimal('0.4'),
-              xgFor: new Decimal('1.2'),
-              xgAgainst: new Decimal('1.6'),
-              homeWinRate: new Decimal('0.45'),
-              awayWinRate: new Decimal('0.30'),
-              drawRate: new Decimal('0.25'),
-              leagueVolatility: new Decimal('1.4'),
-            }),
-        },
-        modelRun: {
-          create: vi.fn().mockResolvedValue({ id: 'run-id' }),
-        },
-        oddsSnapshot: {
-          findMany: vi.fn().mockResolvedValue([]),
-        },
-        marketSuspension: {
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
-        adjustmentProposal: {
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
-        bet: {
-          create: vi.fn(),
-        },
-      },
-    } as unknown as PrismaService;
-
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const service = new BettingEngineService(makePrismaMock(), makeConfig());
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result.status).toBe('analyzed');
@@ -194,15 +294,12 @@ describe('BettingEngineService', () => {
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce(null),
         },
-        modelRun: {
-          create: vi.fn(),
-        },
+        modelRun: { create: vi.fn() },
         oddsSnapshot: {
           findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue(null),
         },
-        bet: {
-          create: vi.fn(),
-        },
+        bet: { create: vi.fn() },
       },
     } as unknown as PrismaService;
 
@@ -263,19 +360,14 @@ describe('BettingEngineService', () => {
               awayOdds: new Decimal('5.4'),
             },
           ]),
+          findFirst: vi.fn().mockResolvedValue(null),
         },
         marketSuspension: {
-          findFirst: vi.fn().mockResolvedValue(null),
+          findMany: vi.fn().mockResolvedValue([]),
         },
-        adjustmentProposal: {
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
-        modelRun: {
-          create: createModelRun,
-        },
-        bet: {
-          create: createBet,
-        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+        modelRun: { create: createModelRun },
+        bet: { create: createBet },
       },
     } as unknown as PrismaService;
 
@@ -375,19 +467,14 @@ describe('BettingEngineService', () => {
               awayOdds: new Decimal('3.8'),
             },
           ]),
+          findFirst: vi.fn().mockResolvedValue(null),
         },
         marketSuspension: {
-          findFirst: vi.fn().mockResolvedValue(null),
+          findMany: vi.fn().mockResolvedValue([]),
         },
-        adjustmentProposal: {
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
-        modelRun: {
-          create: createModelRun,
-        },
-        bet: {
-          create: createBet,
-        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+        modelRun: { create: createModelRun },
+        bet: { create: createBet },
       },
     } as unknown as PrismaService;
 
@@ -424,9 +511,7 @@ describe('BettingEngineService', () => {
 
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          decision: 'NO_BET',
-        }),
+        data: expect.objectContaining({ decision: 'NO_BET' }),
       }),
     );
     expect(createBet).not.toHaveBeenCalled();
@@ -479,19 +564,17 @@ describe('BettingEngineService', () => {
               awayOdds: new Decimal('5.4'),
             },
           ]),
+          findFirst: vi.fn().mockResolvedValue(null),
         },
         marketSuspension: {
-          findFirst: vi.fn().mockResolvedValue(null),
+          findMany: vi.fn().mockResolvedValue([]),
         },
-        adjustmentProposal: {
-          findFirst: vi.fn().mockResolvedValue(null),
-        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
         bet: { create: createBet },
       },
     } as unknown as PrismaService;
 
-    // KELLY_ENABLED=true
     const service = new BettingEngineService(prismaMock, makeConfig(true));
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -519,8 +602,6 @@ describe('BettingEngineService', () => {
     const result = await service.analyzeFixture('fixture-id');
     expect(result.status).toBe('analyzed');
 
-    // Kelly for home: p=0.5, odds=2.16 → K=0.08/1.16≈0.0689 → fraction×K≈0.0172
-    // Flat default stake is 0.01 — Kelly stake must differ
     expect(createBet).toHaveBeenCalledOnce();
     const stakePct: { toNumber(): number } =
       createBet.mock.calls[0][0].data.stakePct;

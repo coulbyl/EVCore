@@ -56,6 +56,19 @@ type UpsertOneXTwoOddsSnapshotInput = {
   awayOdds: number;
 };
 
+export type UpsertOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  homeOdds: number;
+  drawOdds: number;
+  awayOdds: number;
+  overOdds: number | null;
+  underOdds: number | null;
+  bttsYesOdds: number | null;
+  bttsNoOdds: number | null;
+};
+
 @Injectable()
 export class FixtureRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -174,6 +187,64 @@ export class FixtureRepository {
     });
   }
 
+  async upsertOddsSnapshot(
+    data: UpsertOddsSnapshotInput,
+  ): Promise<{ id: string }> {
+    const oneXTwoId = await this.upsertOneXTwoOddsSnapshot({
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      snapshotAt: data.snapshotAt,
+      homeOdds: data.homeOdds,
+      drawOdds: data.drawOdds,
+      awayOdds: data.awayOdds,
+    });
+
+    const upsertNonOneXTwo = async (
+      market: 'OVER_UNDER' | 'BTTS',
+      pick: string,
+      odds: number | null,
+    ): Promise<void> => {
+      if (odds === null) return;
+      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+        where: {
+          fixtureId: data.fixtureId,
+          bookmaker: data.bookmaker,
+          market,
+          pick,
+          snapshotAt: data.snapshotAt,
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        await this.prisma.client.oddsSnapshot.update({
+          where: { id: existing.id },
+          data: { odds },
+        });
+      } else {
+        await this.prisma.client.oddsSnapshot.create({
+          data: {
+            fixtureId: data.fixtureId,
+            bookmaker: data.bookmaker,
+            market,
+            pick,
+            snapshotAt: data.snapshotAt,
+            odds,
+          },
+        });
+      }
+    };
+
+    await Promise.all([
+      upsertNonOneXTwo('OVER_UNDER', 'OVER', data.overOdds),
+      upsertNonOneXTwo('OVER_UNDER', 'UNDER', data.underOdds),
+      upsertNonOneXTwo('BTTS', 'YES', data.bttsYesOdds),
+      upsertNonOneXTwo('BTTS', 'NO', data.bttsNoOdds),
+    ]);
+
+    return oneXTwoId;
+  }
+
+  // Alias kept for backward compatibility with existing tests.
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {

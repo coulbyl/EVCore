@@ -104,13 +104,22 @@ export class OddsLiveSyncWorker extends WorkerHost {
         continue;
       }
 
-      await this.fixtureService.upsertOneXTwoOddsSnapshot({
+      const additionalOdds = extractAdditionalMarketOdds(
+        match.bookmakers,
+        odds.bookmaker,
+      );
+
+      await this.fixtureService.upsertOddsSnapshot({
         fixtureId,
         bookmaker: odds.bookmaker,
         snapshotAt: new Date(match.update),
         homeOdds: odds.homeOdds,
         drawOdds: odds.drawOdds,
         awayOdds: odds.awayOdds,
+        overOdds: additionalOdds.overOdds,
+        underOdds: additionalOdds.underOdds,
+        bttsYesOdds: additionalOdds.bttsYesOdds,
+        bttsNoOdds: additionalOdds.bttsNoOdds,
       });
 
       synced++;
@@ -155,6 +164,45 @@ type OneXTwoOdds = {
   drawOdds: number;
   awayOdds: number;
 };
+
+type AdditionalMarketOdds = {
+  overOdds: number | null;
+  underOdds: number | null;
+  bttsYesOdds: number | null;
+  bttsNoOdds: number | null;
+};
+
+// Extracts Over/Under 2.5 and BTTS odds from the same bookmaker used for 1X2.
+// Returns null for each market when the bookmaker doesn't provide it.
+export function extractAdditionalMarketOdds(
+  bookmakers: OddsBookmaker[],
+  selectedBookmakerName: string,
+): AdditionalMarketOdds {
+  const bk = bookmakers.find((b) => b.name === selectedBookmakerName);
+  if (!bk) {
+    return {
+      overOdds: null,
+      underOdds: null,
+      bttsYesOdds: null,
+      bttsNoOdds: null,
+    };
+  }
+
+  const ouBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.OVER_UNDER_25,
+  );
+  const bttsBet = bk.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.BTTS);
+
+  const overOdds =
+    ouBet?.values.find((v) => v.value === 'Over 2.5')?.odd ?? null;
+  const underOdds =
+    ouBet?.values.find((v) => v.value === 'Under 2.5')?.odd ?? null;
+  const bttsYesOdds =
+    bttsBet?.values.find((v) => v.value === 'Yes')?.odd ?? null;
+  const bttsNoOdds = bttsBet?.values.find((v) => v.value === 'No')?.odd ?? null;
+
+  return { overOdds, underOdds, bttsYesOdds, bttsNoOdds };
+}
 
 // Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365.
 // Returns null if neither bookmaker has Match Winner data.

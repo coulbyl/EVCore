@@ -63,7 +63,7 @@ function bet365Bookmaker(home: string, draw: string, away: string) {
 
 const fixtureService = {
   findScheduledForDate: vi.fn(),
-  upsertOneXTwoOddsSnapshot: vi.fn().mockResolvedValue({ id: 'snap-id' }),
+  upsertOddsSnapshot: vi.fn().mockResolvedValue({ id: 'snap-id' }),
 } satisfies Partial<FixtureService>;
 
 const config = {
@@ -90,7 +90,7 @@ const makeJob = (data: OddsLiveSyncJobData = {}) =>
 beforeEach(() => {
   vi.clearAllMocks();
   config.getOrThrow.mockReturnValue('test-api-key');
-  fixtureService.upsertOneXTwoOddsSnapshot.mockResolvedValue({ id: 'snap-id' });
+  fixtureService.upsertOddsSnapshot.mockResolvedValue({ id: 'snap-id' });
   // Skip the 6s rate-limit sleep so tests don't time out
   vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn) => {
     if (typeof fn === 'function') fn();
@@ -108,7 +108,7 @@ describe('OddsLiveSyncWorker.process', () => {
     await worker.process(makeJob({ date: '2026-03-03' }));
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
   it('upserts a Pinnacle snapshot when Pinnacle is available', async () => {
@@ -129,8 +129,8 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledOnce();
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({
         fixtureId: 'fixture-uuid',
         bookmaker: 'Pinnacle',
@@ -159,7 +159,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ bookmaker: 'Bet365' }),
     );
   });
@@ -183,7 +183,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ bookmaker: 'Pinnacle', homeOdds: 2.08 }),
     );
   });
@@ -197,7 +197,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
   it('skips fixture when Zod validation fails', async () => {
@@ -212,7 +212,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
   it('skips fixture when no odds data in response', async () => {
@@ -227,7 +227,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
   it('skips fixture when neither Pinnacle nor Bet365 has Match Winner data', async () => {
@@ -248,7 +248,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
   it('processes multiple fixtures and counts synced/skipped correctly', async () => {
@@ -273,7 +273,7 @@ describe('OddsLiveSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledOnce();
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
   });
 });
 

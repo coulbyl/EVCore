@@ -172,6 +172,7 @@ These rules reflect the product specification in EVCORE.md and must never be byp
 - Reactivating a suspended market
 - Changing EV threshold
 - Introducing OpenClaw into the scoring loop (not before MVP validation)
+- Manually disabling a factor auto-activé par la boucle d'apprentissage (rollback via `AdjustmentProposal`)
 
 ### What AI must never generate in this codebase
 

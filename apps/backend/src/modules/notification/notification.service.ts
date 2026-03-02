@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import pino from 'pino';
-import { Market, NotificationType, type Prisma } from '@evcore/db';
+import { type Bet, Market, NotificationType, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
 
@@ -220,6 +220,47 @@ export class NotificationService {
       where: { read: false },
       data: { read: true, readAt: new Date() },
     });
+  }
+
+  async sendDailyCoupon(coupon: {
+    id: string;
+    date: Date;
+    legCount: number;
+    bets: Bet[];
+  }): Promise<void> {
+    const dateStr = coupon.date.toISOString().slice(0, 10);
+    const title = `Daily Coupon — ${dateStr} (${coupon.legCount} leg${coupon.legCount !== 1 ? 's' : ''})`;
+    const body = coupon.bets
+      .map((b) =>
+        b.comboMarket
+          ? `${b.market} ${b.pick} + ${b.comboMarket} ${b.comboPick ?? ''}`
+          : `${b.market} ${b.pick}`,
+      )
+      .join('\n');
+    await this.save({
+      type: NotificationType.DAILY_COUPON,
+      title,
+      body,
+      payload: { id: coupon.id, date: dateStr, legCount: coupon.legCount },
+    });
+    await this.mail.sendDailyCoupon({
+      id: coupon.id,
+      date: dateStr,
+      legCount: coupon.legCount,
+    });
+  }
+
+  async sendNoBetToday(date: Date): Promise<void> {
+    const dateStr = date.toISOString().slice(0, 10);
+    const title = `No Bet Today — ${dateStr}`;
+    const body = 'No qualified picks found for today.';
+    await this.save({
+      type: NotificationType.NO_BET_TODAY,
+      title,
+      body,
+      payload: { date: dateStr },
+    });
+    await this.mail.sendNoBetToday({ date: dateStr });
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

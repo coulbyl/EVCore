@@ -106,6 +106,24 @@ export class MailService implements OnModuleInit {
     );
   }
 
+  async sendDailyCoupon(props: {
+    id: string;
+    date: string;
+    legCount: number;
+  }): Promise<void> {
+    const subject = `Daily Coupon — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''})`;
+    const html = `<p>Your daily coupon for <strong>${props.date}</strong> has been generated with <strong>${props.legCount} leg${props.legCount !== 1 ? 's' : ''}</strong>.</p><p>Coupon ID: ${props.id}</p>`;
+    const text = `Daily Coupon — ${props.date}: ${props.legCount} leg(s) selected. ID: ${props.id}`;
+    await this.send(subject, html, text);
+  }
+
+  async sendNoBetToday(props: { date: string }): Promise<void> {
+    const subject = `No Bet Today — ${props.date}`;
+    const html = `<p>No qualified picks found for <strong>${props.date}</strong>. No coupon generated today.</p>`;
+    const text = `No Bet Today — ${props.date}: no qualified picks.`;
+    await this.send(subject, html, text);
+  }
+
   private async send(
     subject: string,
     html: string,

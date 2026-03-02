@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
-import { FixtureRepository } from './fixture.repository';
+import {
+  FixtureRepository,
+  type UpsertOddsSnapshotInput,
+} from './fixture.repository';
 
 type UpsertCompetitionInput = { name: string; code: string; country: string };
 type UpsertSeasonInput = {
@@ -137,6 +140,13 @@ export class FixtureService {
     return this.fixtureRepository.markXgUnavailable(externalId);
   }
 
+  async upsertOddsSnapshot(
+    data: UpsertOddsSnapshotInput,
+  ): Promise<{ id: string }> {
+    return this.fixtureRepository.upsertOddsSnapshot(data);
+  }
+
+  // Alias kept for backward compatibility with existing tests.
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {

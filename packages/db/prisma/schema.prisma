@@ -49,6 +49,12 @@ enum AdjustmentStatus {
   FROZEN
 }
 
+enum CouponStatus {
+  PENDING
+  SETTLED
+  NO_BET
+}
+
 enum NotificationType {
   ROI_ALERT
   MARKET_SUSPENSION
@@ -57,6 +63,8 @@ enum NotificationType {
   ETL_FAILURE
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
+  DAILY_COUPON
+  NO_BET_TODAY
 }
 
 // ─────────────────────────────────────────────
@@ -184,10 +192,31 @@ model Bet {
   ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
   stakePct      Decimal   @db.Decimal(5, 4) // 0.01 = 1% bankroll
   status        BetStatus @default(PENDING)
+  // combo-match fields: null for single-market picks
+  comboMarket   Market?
+  comboPick     String?   // secondary pick (e.g. "YES", "OVER")
+  // coupon link: null until assigned to a DailyCoupon
+  dailyCouponId String?   @db.Uuid
+  dailyCoupon   DailyCoupon? @relation(fields: [dailyCouponId], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@index([modelRunId])
+  @@index([dailyCouponId])
+}
+
+// Daily betting coupon — one per day across all active leagues.
+// Assembles the best N picks (≤ COUPON_MAX_LEGS) selected by qualityScore = EV × deterministicScore.
+model DailyCoupon {
+  id        String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  date      DateTime     @db.Date
+  status    CouponStatus @default(PENDING)
+  legCount  Int
+  bets      Bet[]
+  createdAt DateTime     @default(now())
+
+  @@unique([date])
+  @@map("daily_coupon")
 }
 
 // Proposed weight adjustments from the learning loop.

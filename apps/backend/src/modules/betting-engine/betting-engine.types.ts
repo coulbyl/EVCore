@@ -1,4 +1,5 @@
 import type Decimal from 'decimal.js';
+import type { Market } from '@evcore/db';
 import type {
   DeterministicFeatures,
   computePoissonMarkets,
@@ -31,3 +32,29 @@ export type MatchComputation = {
 };
 
 export type { DeterministicFeatures };
+
+// Full odds snapshot across all supported markets for a given bookmaker+fixture.
+export type FullOddsSnapshot = {
+  bookmaker: string;
+  snapshotAt: Date;
+  homeOdds: Decimal;
+  drawOdds: Decimal;
+  awayOdds: Decimal;
+  overOdds: Decimal | null;
+  underOdds: Decimal | null;
+  bttsYesOdds: Decimal | null;
+  bttsNoOdds: Decimal | null;
+};
+
+// Best pick identified by the betting engine across all markets (single or combo).
+export type ViablePick = {
+  market: Market;
+  pick: string;
+  comboMarket?: Market;
+  comboPick?: string;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+  qualityScore: Decimal; // ev × deterministicScore
+  isCombo: boolean;
+};
