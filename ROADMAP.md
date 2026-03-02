@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 lancée — Bloc 1 (Odds live + ETL multi-ligue) terminé (mise à jour le 2 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 2 (ETL hardening + pipeline live validé) terminé (mise à jour le 2 mars 2026)**
 
 ---
 
@@ -161,6 +161,11 @@
 - [x] ETL multi-ligue (config `COMPETITIONS`, `isActive`, jobs avec `competitionCode`)
 - [x] Odds CSV multi-compétitions (`divisionCode` par ligue, import PL/SA/LL/BL1 configurable)
 - [x] API rolling-stats multi-ligue (`POST /rolling-stats/backfill/:competition/:season`)
+- [x] `getActiveCsvSeasonCodes()` — fenêtre glissante 3 saisons (remplace `CSV_ODDS_SEASONS` hardcodé)
+- [x] ETL controller : endpoints granulaires `/sync/fixtures`, `/sync/results` + Swagger complet
+- [x] `odds-live-sync` : lockDuration 600s + schema odds assoupli (Exact Score > 1000, Asian Handicap = 1.00)
+- [x] `odds-csv-import` : rows sans cotes (saison en cours) skippées en `debug` silencieux
+- [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)
 - [ ] Kelly fractionnelle (0.25) — config flag
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
 - [ ] Marché Mi-temps/Fin de match
