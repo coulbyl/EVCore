@@ -9,6 +9,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # prisma.config.ts calls env("DATABASE_URL") during `prisma generate`.
+      # No actual DB connection is made — a placeholder URL is enough for CI.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/evcore
     steps:
       - name: Checkout
         uses: actions/checkout@v4
