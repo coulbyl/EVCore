@@ -11,6 +11,26 @@ const notificationMock = {
   sendBrierScoreAlert: vi.fn().mockResolvedValue(undefined),
 } as unknown as NotificationService;
 
+// Generates N team-stats rows for a given teamId, all dated before 2023-01-01
+// so they pass the cold-start guard (MIN_PRIOR_TEAM_STATS = 5).
+function makeTeamStatsRows(teamId: string, n: number) {
+  const months = ['08', '09', '10', '11', '12'];
+  return Array.from({ length: n }, (_, i) => ({
+    teamId,
+    afterFixtureId: `af-${teamId}-${i}`,
+    recentForm: new Decimal('0.6'),
+    xgFor: new Decimal('1.5'),
+    xgAgainst: new Decimal('1.2'),
+    homeWinRate: new Decimal('0.55'),
+    awayWinRate: new Decimal('0.32'),
+    drawRate: new Decimal('0.22'),
+    leagueVolatility: new Decimal('1.4'),
+    afterFixture: {
+      scheduledAt: new Date(`2022-${months[i % 5]}-${10 + i}T12:00:00.000Z`),
+    },
+  }));
+}
+
 describe('BacktestService', () => {
   it('runs backtest and aggregates analyzed/skipped fixtures', async () => {
     const prismaMock = {
@@ -38,36 +58,13 @@ describe('BacktestService', () => {
           ]),
         },
         teamStats: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              teamId: 'h1',
-              afterFixtureId: 'af1',
-              recentForm: new Decimal('0.7'),
-              xgFor: new Decimal('1.8'),
-              xgAgainst: new Decimal('1.1'),
-              homeWinRate: new Decimal('0.65'),
-              awayWinRate: new Decimal('0.35'),
-              drawRate: new Decimal('0.20'),
-              leagueVolatility: new Decimal('1.5'),
-              afterFixture: {
-                scheduledAt: new Date('2022-12-31T12:00:00.000Z'),
-              },
-            },
-            {
-              teamId: 'a1',
-              afterFixtureId: 'af1',
-              recentForm: new Decimal('0.4'),
-              xgFor: new Decimal('1.2'),
-              xgAgainst: new Decimal('1.6'),
-              homeWinRate: new Decimal('0.45'),
-              awayWinRate: new Decimal('0.30'),
-              drawRate: new Decimal('0.25'),
-              leagueVolatility: new Decimal('1.4'),
-              afterFixture: {
-                scheduledAt: new Date('2022-12-31T12:00:00.000Z'),
-              },
-            },
-          ]),
+          // 5 entries per team → satisfies MIN_PRIOR_TEAM_STATS cold-start guard
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              ...makeTeamStatsRows('h1', 5),
+              ...makeTeamStatsRows('a1', 5),
+            ]),
         },
         oddsSnapshot: {
           findMany: vi.fn().mockResolvedValue([
@@ -160,36 +157,12 @@ describe('BacktestService', () => {
           ]),
         },
         teamStats: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              teamId: 'h1',
-              afterFixtureId: 'af1',
-              recentForm: new Decimal('0.7'),
-              xgFor: new Decimal('1.8'),
-              xgAgainst: new Decimal('1.1'),
-              homeWinRate: new Decimal('0.65'),
-              awayWinRate: new Decimal('0.35'),
-              drawRate: new Decimal('0.20'),
-              leagueVolatility: new Decimal('1.5'),
-              afterFixture: {
-                scheduledAt: new Date('2022-12-31T12:00:00.000Z'),
-              },
-            },
-            {
-              teamId: 'a1',
-              afterFixtureId: 'af1',
-              recentForm: new Decimal('0.4'),
-              xgFor: new Decimal('1.2'),
-              xgAgainst: new Decimal('1.6'),
-              homeWinRate: new Decimal('0.45'),
-              awayWinRate: new Decimal('0.30'),
-              drawRate: new Decimal('0.25'),
-              leagueVolatility: new Decimal('1.4'),
-              afterFixture: {
-                scheduledAt: new Date('2022-12-31T12:00:00.000Z'),
-              },
-            },
-          ]),
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              ...makeTeamStatsRows('h1', 5),
+              ...makeTeamStatsRows('a1', 5),
+            ]),
         },
         oddsSnapshot: {
           findMany: vi.fn().mockResolvedValue([
@@ -267,31 +240,10 @@ function buildSeasonFixtureMock(seasonId: string) {
   };
 }
 
+// 5 entries per team → satisfies MIN_PRIOR_TEAM_STATS for runAllSeasons tests
 const sharedTeamStats = [
-  {
-    teamId: 'h1',
-    afterFixtureId: 'af1',
-    recentForm: new Decimal('0.7'),
-    xgFor: new Decimal('1.8'),
-    xgAgainst: new Decimal('1.1'),
-    homeWinRate: new Decimal('0.65'),
-    awayWinRate: new Decimal('0.35'),
-    drawRate: new Decimal('0.20'),
-    leagueVolatility: new Decimal('1.5'),
-    afterFixture: { scheduledAt: new Date('2022-12-31T12:00:00.000Z') },
-  },
-  {
-    teamId: 'a1',
-    afterFixtureId: 'af2',
-    recentForm: new Decimal('0.4'),
-    xgFor: new Decimal('1.2'),
-    xgAgainst: new Decimal('1.6'),
-    homeWinRate: new Decimal('0.45'),
-    awayWinRate: new Decimal('0.30'),
-    drawRate: new Decimal('0.25'),
-    leagueVolatility: new Decimal('1.4'),
-    afterFixture: { scheduledAt: new Date('2022-12-31T12:00:00.000Z') },
-  },
+  ...makeTeamStatsRows('h1', 5),
+  ...makeTeamStatsRows('a1', 5),
 ];
 
 function makeBettingMock(): BettingEngineService {
@@ -465,7 +417,7 @@ describe('BacktestService.getValidationReport', () => {
       seasons: [],
       totalFixtures: 100,
       totalAnalyzed: 100,
-      averageBrierScore: new Decimal('0.35'), // above 0.25 threshold → FAIL
+      averageBrierScore: new Decimal('0.70'), // above 0.65 threshold → FAIL
       averageCalibrationError: new Decimal('0.03'),
       aggregateRoi: new Decimal('0.05'),
       reportGeneratedAt: new Date(),

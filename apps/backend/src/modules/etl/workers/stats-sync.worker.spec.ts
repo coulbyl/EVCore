@@ -4,30 +4,25 @@ import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { Job } from 'bullmq';
-import { ETL_CONSTANTS } from '../../../config/etl.constants';
-
 // Minimal valid statistics response for two teams
-function buildStatisticsResponse(
-  homeShotsOnGoal: number | null,
-  awayShotsOnGoal: number | null,
-) {
+function buildStatisticsResponse(homeXg: string | null, awayXg: string | null) {
   return {
     get: 'fixtures/statistics',
-    parameters: { fixture: '12345', league: '39', season: '2022' },
+    parameters: { fixture: '12345' },
     results: 2,
     response: [
       {
         team: { id: 33, name: 'Manchester United' },
         statistics: [
-          { type: 'Shots on Goal', value: homeShotsOnGoal },
-          { type: 'Total Shots', value: 15 },
+          { type: 'Shots on Goal', value: 5 },
+          { type: 'expected_goals', value: homeXg },
         ],
       },
       {
         team: { id: 40, name: 'Liverpool' },
         statistics: [
-          { type: 'Shots on Goal', value: awayShotsOnGoal },
-          { type: 'Total Shots', value: 10 },
+          { type: 'Shots on Goal', value: 3 },
+          { type: 'expected_goals', value: awayXg },
         ],
       },
     ],
@@ -40,6 +35,7 @@ describe('StatsSyncWorker', () => {
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
     findFinishedWithoutXg: vi.fn(),
     updateXg: vi.fn().mockResolvedValue(undefined),
+    markXgUnavailable: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<FixtureService>;
 
   const config = {
@@ -49,6 +45,7 @@ describe('StatsSyncWorker', () => {
 
   const notification = {
     sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
+    sendXgUnavailableReport: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<NotificationService>;
 
   const worker = new StatsSyncWorker(
@@ -64,6 +61,7 @@ describe('StatsSyncWorker', () => {
     });
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
     fixtureService.updateXg.mockResolvedValue(undefined);
+    fixtureService.markXgUnavailable.mockResolvedValue(undefined);
     config.getOrThrow.mockReturnValue('test-api-key');
     config.get.mockReturnValue(undefined);
   });
@@ -82,30 +80,23 @@ describe('StatsSyncWorker', () => {
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
   });
 
-  it('calculates xG proxy from shots on target and calls updateXg', async () => {
+  it('extracts expected_goals from API response and calls updateXg', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
       { externalId: 99999 },
     ]);
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue(buildStatisticsResponse(5, 3)),
+      json: vi.fn().mockResolvedValue(buildStatisticsResponse('0.76', '1.23')),
     });
 
     await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
 
-    const expectedHomeXg = 5 * ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
-    const expectedAwayXg = 3 * ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
-
     expect(fixtureService.updateXg).toHaveBeenCalledOnce();
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(
-      99999,
-      expectedHomeXg,
-      expectedAwayXg,
-    );
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(99999, 0.76, 1.23);
   });
 
-  it('uses 0 xG when shots on goal is null', async () => {
+  it('uses 0 xG when expected_goals field is present but null', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
       { externalId: 11111 },
     ]);
@@ -117,7 +108,41 @@ describe('StatsSyncWorker', () => {
 
     await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
 
+    // Field present with null → 0, no proxy fallback
     expect(fixtureService.updateXg).toHaveBeenCalledWith(11111, 0, 0);
+  });
+
+  it('falls back to shots proxy when expected_goals field is absent', async () => {
+    fixtureService.findFinishedWithoutXg.mockResolvedValue([
+      { externalId: 44444 },
+    ]);
+
+    // Response without expected_goals field (2022-23 first half pattern)
+    const responseWithoutXg = {
+      get: 'fixtures/statistics',
+      parameters: { fixture: '44444' },
+      results: 2,
+      response: [
+        {
+          team: { id: 52, name: 'Crystal Palace' },
+          statistics: [{ type: 'Shots on Goal', value: 2 }],
+        },
+        {
+          team: { id: 42, name: 'Arsenal' },
+          statistics: [{ type: 'Shots on Goal', value: 5 }],
+        },
+      ],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(responseWithoutXg),
+    });
+
+    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+
+    // Proxy: shots_on_goal × 0.35
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.7, 1.75);
   });
 
   it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
@@ -128,6 +153,34 @@ describe('StatsSyncWorker', () => {
     await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
 
     expect(fetch).not.toHaveBeenCalled();
+    expect(fixtureService.updateXg).not.toHaveBeenCalled();
+  });
+
+  it('marks xgUnavailable when statistics response has < 2 teams', async () => {
+    fixtureService.findFinishedWithoutXg.mockResolvedValue([
+      { externalId: 33333 },
+    ]);
+
+    const singleTeamResponse = {
+      get: 'fixtures/statistics',
+      parameters: { fixture: '33333' },
+      results: 1,
+      response: [
+        {
+          team: { id: 33, name: 'Manchester United' },
+          statistics: [{ type: 'Shots on Goal', value: 5 }],
+        },
+      ],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(singleTeamResponse),
+    });
+
+    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+
+    expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
   });
 

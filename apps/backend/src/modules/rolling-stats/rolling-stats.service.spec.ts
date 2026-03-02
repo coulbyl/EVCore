@@ -22,6 +22,7 @@ function makeFixture(overrides: Partial<Fixture>): Fixture {
     awayScore: 0,
     homeXg: new Prisma.Decimal(0),
     awayXg: new Prisma.Decimal(0),
+    xgUnavailable: false,
     createdAt: new Date('2022-08-01T00:00:00.000Z'),
     updatedAt: new Date('2022-08-01T00:00:00.000Z'),
     ...overrides,

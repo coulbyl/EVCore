@@ -114,10 +114,12 @@ export class BacktestService {
       const homeStats = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.homeTeamId) ?? [],
         fixture,
+        BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
       const awayStats = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.awayTeamId) ?? [],
         fixture,
+        BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
 
       if (!homeStats || !awayStats) {
@@ -493,6 +495,7 @@ export class BacktestService {
 function findLatestStatsBeforeFixture(
   stats: TeamStatsIndexEntry[],
   fixture: FixtureForBacktest,
+  minCount = 0,
 ) {
   let lo = 0;
   let hi = stats.length - 1;
@@ -510,7 +513,10 @@ function findLatestStatsBeforeFixture(
     }
   }
 
-  return best >= 0 ? stats[best].stats : null;
+  if (best < 0) return null;
+  // Cold-start guard: skip fixtures where a team has insufficient prior data.
+  if (minCount > 0 && best + 1 < minCount) return null;
+  return stats[best].stats;
 }
 
 function compareEntryToFixture(

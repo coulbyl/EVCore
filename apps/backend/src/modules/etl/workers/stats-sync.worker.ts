@@ -29,9 +29,6 @@ export class StatsSyncWorker extends WorkerHost {
   async process(job: Job<StatsSyncJobData>): Promise<void> {
     const { season } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const leagueId =
-      this.config.get<string>('API_FOOTBALL_LEAGUE_ID') ??
-      String(ETL_CONSTANTS.EPL_LEAGUE_ID);
 
     logger.info({ season }, 'Starting stats sync');
 
@@ -59,9 +56,10 @@ export class StatsSyncWorker extends WorkerHost {
 
     let updated = 0;
     let skipped = 0;
+    const xgUnavailableIds: number[] = [];
 
     for (const { externalId } of fixtures) {
-      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}&league=${leagueId}&season=${season}`;
+      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}`;
       const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
       if (!res.ok) {
@@ -81,20 +79,18 @@ export class StatsSyncWorker extends WorkerHost {
       if (!parsed.success) {
         logger.warn(
           { externalId, issues: parsed.error.issues },
-          'Zod validation failed — skipping fixture',
+          'Zod validation failed — marking xgUnavailable',
         );
+        await this.fixtureService.markXgUnavailable(externalId);
+        xgUnavailableIds.push(externalId);
         skipped++;
         await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
         continue;
       }
 
       const [homeStats, awayStats] = parsed.data.response;
-      const homeXg =
-        extractShotsOnTarget(homeStats.statistics) *
-        ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
-      const awayXg =
-        extractShotsOnTarget(awayStats.statistics) *
-        ETL_CONSTANTS.XG_SHOTS_CONVERSION_FACTOR;
+      const homeXg = extractXg(homeStats.statistics);
+      const awayXg = extractXg(awayStats.statistics);
 
       await this.fixtureService.updateXg(externalId, homeXg, awayXg);
       updated++;
@@ -103,6 +99,13 @@ export class StatsSyncWorker extends WorkerHost {
     }
 
     logger.info({ season, updated, skipped }, 'Stats sync complete');
+
+    if (xgUnavailableIds.length > 0) {
+      await this.notification.sendXgUnavailableReport(
+        seasonNameFromYear(season),
+        xgUnavailableIds,
+      );
+    }
   }
 
   @OnWorkerEvent('failed')
@@ -131,14 +134,29 @@ export class StatsSyncWorker extends WorkerHost {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Returns the xG for a team's statistics array.
+// Priority 1: native expected_goals field (API-Football, available from mid-2022-23 onwards).
+// Priority 2: shots proxy fallback (Shots on Goal × factor) for older fixtures
+//             where the API did not yet track expected_goals.
+function extractXg(
+  statistics: { type: string; value: number | string | null }[],
+): number {
+  const xgEntry = statistics.find((s) => s.type === 'expected_goals');
+  if (xgEntry !== undefined) {
+    if (xgEntry.value === null) return 0;
+    const parsed = parseFloat(String(xgEntry.value));
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return extractShotsOnTarget(statistics) * ETL_CONSTANTS.XG_SHOTS_PROXY_FACTOR;
+}
+
 function extractShotsOnTarget(
   statistics: { type: string; value: number | string | null }[],
 ): number {
   const entry = statistics.find((s) => s.type === 'Shots on Goal');
-  if (!entry || entry.value === null || typeof entry.value !== 'number') {
-    return 0;
-  }
-  return entry.value;
+  if (!entry || entry.value === null) return 0;
+  const parsed = parseInt(String(entry.value), 10);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 function sleep(ms: number): Promise<void> {

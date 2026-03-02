@@ -14,8 +14,9 @@ export const ETL_CONSTANTS = {
   EPL_SEASONS: [2022, 2023, 2024] as const,
   // Delay between /fixtures/statistics calls within a stats-sync job (per fixture)
   STATS_RATE_LIMIT_MS: 2_000,
-  // xG proxy: shots on target × this factor — calibrate after 50+ bets (see EVCORE.md §4.1)
-  XG_SHOTS_CONVERSION_FACTOR: 0.35,
+  // Fallback xG proxy when expected_goals is absent from the API response.
+  // Used for 2022-23 first half where API-Football did not yet track xG.
+  XG_SHOTS_PROXY_FACTOR: 0.35,
 
   // --- football-data.co.uk CSV — historical odds one-shot import ---
   // Closing odds (Pinnacle + Bet365) for EV backtest. Free, no auth required.

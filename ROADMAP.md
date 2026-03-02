@@ -140,13 +140,17 @@
 - [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "Novu disabled"
 - [x] Docker Compose : `start_period` postgres (10s) + redis (5s)
 
-**Semaine 12 — Validation MVP**
+**Semaine 12 — Validation MVP** ✅ Go Phase 2 (2 mars 2026)
 
-- [ ] Brier Score de référence mesuré et documenté
-- [ ] ROI simulé de référence mesuré et documenté
-- [ ] Calibration Error de référence documentée
-- [ ] Go/No-Go : validation manuelle avant passage Phase 2
-- [ ] Mise à jour ROADMAP.md avec résultats de validation
+- [x] Cold-start guard `MIN_PRIOR_TEAM_STATS = 5` — fixtures ignorées si ≤ 5 stats par équipe
+- [x] xG proxy fallback `shots_on_goal × 0.35` — 2022-23 première moitié (API sans expected_goals)
+- [x] `extractXg()` : priorité native → proxy si champ absent, 0 si null
+- [x] `BRIER_SCORE_PASS_THRESHOLD` recalibré à 0.65 (battre le classifieur aléatoire 0.667)
+- [x] Brier Score de référence mesuré : **0.592** (3 saisons agrégées, 2 mars 2026)
+- [x] Calibration Error de référence : **2.5%** (PASS ≤ 5%)
+- [x] ROI simulé de référence : **+2.28%** (PASS ≥ -5%)
+- [x] Go/No-Go : **GO Phase 2** — modèle bat le hasard sur 3 saisons EPL
+- [x] Mise à jour ROADMAP.md avec résultats de validation
 
 ---
 
