@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   AdjustmentStatus,
   BetStatus,
@@ -12,6 +13,7 @@ import {
   computePoissonMarkets,
   calculateDeterministicScore,
   calculateEV as calcEV,
+  calculateKellyStakePct,
   type DeterministicFeatures,
   type FeatureWeights,
 } from './betting-engine.utils';
@@ -21,6 +23,8 @@ import {
   DEFAULT_STAKE_PCT,
   EV_THRESHOLD,
   FEATURE_WEIGHTS,
+  KELLY_FRACTION,
+  KELLY_MAX_STAKE_PCT,
   MODEL_SCORE_THRESHOLD,
 } from './ev.constants';
 import type {
@@ -61,7 +65,14 @@ type OneXTwoOddsSnapshot = {
 
 @Injectable()
 export class BettingEngineService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly kellyEnabled: boolean;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    config: ConfigService,
+  ) {
+    this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
+  }
 
   computeProbabilities(
     lambdaHome: number,
@@ -264,6 +275,13 @@ export class BettingEngineService {
     });
 
     if (decision === Decision.BET && valueBet !== null) {
+      const stakePct = this.kellyEnabled
+        ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
+            fraction: KELLY_FRACTION,
+            maxStake: KELLY_MAX_STAKE_PCT,
+          })
+        : DEFAULT_STAKE_PCT;
+
       await this.prisma.client.bet.create({
         data: {
           modelRunId: modelRun.id,
@@ -272,7 +290,7 @@ export class BettingEngineService {
           probEstimated: toPrismaDecimal(valueBet.probability, 4),
           oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
           ev: toPrismaDecimal(valueBet.ev, 4),
-          stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
         },
       });
     }

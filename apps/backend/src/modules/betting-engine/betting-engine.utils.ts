@@ -84,6 +84,24 @@ export function calculateEV(
   return new Decimal(probability).mul(odds).minus(1);
 }
 
+// Fractional Kelly stake sizing.
+// Kelly formula for decimal odds: K = (p × odds − 1) / (odds − 1)
+// stakePct = fraction × K, capped at maxStake.
+// Returns 0 for negative or undefined Kelly (redundant guard — EV ≥ threshold
+// ensures positive Kelly, but odds = 1 would cause division by zero).
+export function calculateKellyStakePct(
+  probability: Decimal.Value,
+  odds: Decimal.Value,
+  { fraction, maxStake }: { fraction: Decimal.Value; maxStake: Decimal.Value },
+): Decimal {
+  const p = new Decimal(probability);
+  const o = new Decimal(odds);
+  if (o.lte(1)) return new Decimal(0);
+  const kelly = p.times(o).minus(1).dividedBy(o.minus(1));
+  if (kelly.lte(0)) return new Decimal(0);
+  return Decimal.min(new Decimal(fraction).times(kelly), new Decimal(maxStake));
+}
+
 export function calculateDeterministicScore(
   features: DeterministicFeatures,
   weights: FeatureWeights = FEATURE_WEIGHTS,

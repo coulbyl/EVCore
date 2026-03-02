@@ -166,7 +166,7 @@
 - [x] `odds-live-sync` : lockDuration 600s + schema odds assoupli (Exact Score > 1000, Asian Handicap = 1.00)
 - [x] `odds-csv-import` : rows sans cotes (saison en cours) skippées en `debug` silencieux
 - [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)
-- [ ] Kelly fractionnelle (0.25) — config flag
+- [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
 - [ ] Marché Mi-temps/Fin de match
 - [ ] OpenClaw integration (LLM delta 30%, Zod-validated, temperature 0)
