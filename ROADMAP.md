@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Semaine 11 terminée — Stabilisation MVP (mise à jour le 1 mars 2026)**
+**Statut actuel : Phase 2 lancée — Bloc 1 (Odds live + ETL multi-ligue) terminé (mise à jour le 2 mars 2026)**
 
 ---
 
@@ -156,10 +156,13 @@
 
 ## Phase 2 (après validation MVP)
 
-- [ ] Sources live : API-Football + The Odds API
-- [ ] Snapshot odds horodaté pré-match
+- [x] Sources live : API-Football (worker `odds-live-sync`, Pinnacle → Bet365 fallback)
+- [x] Snapshot odds horodaté pré-match (`OddsSnapshot` live par fixture)
+- [x] ETL multi-ligue (config `COMPETITIONS`, `isActive`, jobs avec `competitionCode`)
+- [x] Odds CSV multi-compétitions (`divisionCode` par ligue, import PL/SA/LL/BL1 configurable)
+- [x] API rolling-stats multi-ligue (`POST /rolling-stats/backfill/:competition/:season`)
 - [ ] Kelly fractionnelle (0.25) — config flag
-- [ ] Multi-ligues (Serie A, La Liga, Ligue 1)
+- [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
 - [ ] Marché Mi-temps/Fin de match
 - [ ] OpenClaw integration (LLM delta 30%, Zod-validated, temperature 0)
 - [ ] Grafana dashboards (ROI, Brier Score, drawdown)
