@@ -130,9 +130,18 @@ export const ETL_CONSTANTS = {
   // --- football-data.co.uk CSV — historical odds one-shot import ---
   // Closing odds (Pinnacle + Bet365) for EV backtest. Free, no auth required.
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
-  // Season codes in football-data.co.uk format (YYZZ)
-  CSV_ODDS_SEASONS: ['2122', '2223', '2324', '2425'] as const,
 } as const;
+
+// Returns the last DEFAULT_ACTIVE_SEASONS_COUNT season codes in football-data.co.uk
+// format (YYZZ), derived dynamically from activeSeasons() — same window as fixtures.
+// Example: 2026-03 → ['2324', '2425', '2526']
+export function getActiveCsvSeasonCodes(now: Date = new Date()): string[] {
+  return activeSeasons(
+    DEFAULT_SEASON_START_MONTH,
+    DEFAULT_ACTIVE_SEASONS_COUNT,
+    now,
+  ).map((y) => `${String(y).slice(2)}${String(y + 1).slice(2)}`);
+}
 
 // Bookmaker IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BOOKMAKERS = {

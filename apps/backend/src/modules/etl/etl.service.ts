@@ -11,6 +11,7 @@ import {
   ETL_SCHEDULER_KEYS,
   getActiveCompetitionPlans,
   getActiveCsvCompetitions,
+  getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
@@ -36,7 +37,7 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_LIVE_SYNC)
     private readonly oddsLiveQueue: Queue<OddsLiveSyncJobData>,
-    private readonly config: ConfigService,
+    config: ConfigService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
@@ -48,8 +49,8 @@ export class EtlService implements OnApplicationBootstrap {
       return;
     }
 
-    const currentSeasonCode =
-      ETL_CONSTANTS.CSV_ODDS_SEASONS[ETL_CONSTANTS.CSV_ODDS_SEASONS.length - 1];
+    const csvSeasonCodes = getActiveCsvSeasonCodes();
+    const currentSeasonCode = csvSeasonCodes[csvSeasonCodes.length - 1];
     const activePlans = getActiveCompetitionPlans();
 
     await Promise.all(
@@ -122,66 +123,77 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerFixturesSync(): Promise<void> {
-    const activePlans = getActiveCompetitionPlans();
-    for (const { competition, seasons } of activePlans) {
-      for (let i = 0; i < seasons.length; i++) {
-        const season = seasons[i];
-        // Stagger jobs by rate limit delay to respect API-FOOTBALL quotas
-        const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
-        await this.fixturesQueue.add(
-          `fixtures-sync-${competition.code}-${season}`,
-          {
-            season,
-            competitionCode: competition.code,
-          } satisfies FixturesSyncJobData,
-          { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-        );
-      }
+    // Flatten all (competition × season) pairs so the stagger index is global,
+    // not per-competition — prevents simultaneous API calls when multiple leagues are active.
+    const jobs = getActiveCompetitionPlans().flatMap(
+      ({ competition, seasons }) =>
+        seasons.map((season) => ({
+          season,
+          competitionCode: competition.code,
+        })),
+    );
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      await this.fixturesQueue.add(
+        `fixtures-sync-${job.competitionCode}-${job.season}`,
+        job satisfies FixturesSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   }
 
   async triggerResultsSync(): Promise<void> {
-    const activePlans = getActiveCompetitionPlans();
-    for (const { competition, seasons } of activePlans) {
-      for (let i = 0; i < seasons.length; i++) {
-        const season = seasons[i];
-        const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
-        await this.resultsQueue.add(
-          `results-sync-${competition.code}-${season}`,
-          {
-            season,
-            competitionCode: competition.code,
-          } satisfies ResultsSyncJobData,
-          { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-        );
-      }
+    const jobs = getActiveCompetitionPlans().flatMap(
+      ({ competition, seasons }) =>
+        seasons.map((season) => ({
+          season,
+          competitionCode: competition.code,
+        })),
+    );
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      await this.resultsQueue.add(
+        `results-sync-${job.competitionCode}-${job.season}`,
+        job satisfies ResultsSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   }
 
   async triggerStatsSync(): Promise<void> {
-    const activePlans = getActiveCompetitionPlans();
-    for (const { competition, seasons } of activePlans) {
-      for (let i = 0; i < seasons.length; i++) {
-        const season = seasons[i];
-        const delay = i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS;
-        await this.statsQueue.add(
-          `stats-sync-${competition.code}-${season}`,
-          {
-            season,
-            competitionCode: competition.code,
-          } satisfies StatsSyncJobData,
-          { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-        );
-      }
+    const jobs = getActiveCompetitionPlans().flatMap(
+      ({ competition, seasons }) =>
+        seasons.map((season) => ({
+          season,
+          competitionCode: competition.code,
+        })),
+    );
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      await this.statsQueue.add(
+        `stats-sync-${job.competitionCode}-${job.season}`,
+        job satisfies StatsSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   }
 
   async triggerOddsCsvImport(): Promise<void> {
     const csvCompetitions = getActiveCsvCompetitions();
 
+    const csvSeasonCodes = getActiveCsvSeasonCodes();
     for (const competition of csvCompetitions) {
-      for (let i = 0; i < ETL_CONSTANTS.CSV_ODDS_SEASONS.length; i++) {
-        const seasonCode = ETL_CONSTANTS.CSV_ODDS_SEASONS[i];
+      for (let i = 0; i < csvSeasonCodes.length; i++) {
+        const seasonCode = csvSeasonCodes[i];
         // Stagger by 2s — football-data.co.uk has no strict rate limit but be polite
         const delay = i * 2_000;
         await this.oddsCsvQueue.add(

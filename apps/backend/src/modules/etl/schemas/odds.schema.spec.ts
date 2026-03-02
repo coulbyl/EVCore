@@ -152,7 +152,7 @@ describe('ApiFootballOddsResponseSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects odds <= 1', () => {
+  it('accepts odds of exactly 1.00 (valid for Asian Handicap bets)', () => {
     const result = ApiFootballOddsResponseSchema.safeParse(
       buildOddsResponse({
         bookmakers: [
@@ -164,6 +164,28 @@ describe('ApiFootballOddsResponseSchema', () => {
                 id: 1,
                 name: 'Match Winner',
                 values: [{ value: 'Home', odd: '1.00' }],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects odds of 0.00 (not a valid odd)', () => {
+    const result = ApiFootballOddsResponseSchema.safeParse(
+      buildOddsResponse({
+        bookmakers: [
+          {
+            id: 4,
+            name: 'Pinnacle',
+            bets: [
+              {
+                id: 1,
+                name: 'Match Winner',
+                values: [{ value: 'Home', odd: '0.00' }],
               },
             ],
           },

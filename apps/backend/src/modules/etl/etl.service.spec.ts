@@ -5,6 +5,7 @@ import {
   ETL_CONSTANTS,
   getActiveCompetitionPlans,
   getActiveCsvCompetitions,
+  getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
 import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
@@ -38,8 +39,8 @@ describe('EtlService', () => {
     0,
   );
   const csvCompetitions = getActiveCsvCompetitions();
-  const totalCsvJobs =
-    csvCompetitions.length * ETL_CONSTANTS.CSV_ODDS_SEASONS.length;
+  const csvSeasonCodes = getActiveCsvSeasonCodes();
+  const totalCsvJobs = csvCompetitions.length * csvSeasonCodes.length;
 
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
   const resultsQueue = makeQueue<ResultsSyncJobData>();
@@ -136,9 +137,9 @@ describe('EtlService', () => {
 
     let callIndex = 0;
     for (const competition of csvCompetitions) {
-      for (let i = 0; i < ETL_CONSTANTS.CSV_ODDS_SEASONS.length; i++) {
+      for (let i = 0; i < csvSeasonCodes.length; i++) {
         callIndex++;
-        const seasonCode = ETL_CONSTANTS.CSV_ODDS_SEASONS[i];
+        const seasonCode = csvSeasonCodes[i];
         expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
           callIndex,
           `odds-csv-import-${competition.code}-${seasonCode}`,

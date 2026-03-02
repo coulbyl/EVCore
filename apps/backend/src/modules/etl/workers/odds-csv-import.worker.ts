@@ -51,6 +51,18 @@ export class OddsCsvImportWorker extends WorkerHost {
     let noFixture = 0;
 
     for (const raw of rows) {
+      // Rows for unplayed matches or matches where closing odds are not yet
+      // published have all odds columns set to "0" or empty. This is normal
+      // for the current season CSV — skip silently instead of logging a warn.
+      if (hasNoClosingOdds(raw)) {
+        logger.debug(
+          { date: raw['Date'], home: raw['HomeTeam'], away: raw['AwayTeam'] },
+          'No closing odds available yet — skipping row',
+        );
+        skipped++;
+        continue;
+      }
+
       const parsed = OddsCsvRowSchema.safeParse(raw);
 
       if (!parsed.success) {
@@ -139,6 +151,14 @@ export class OddsCsvImportWorker extends WorkerHost {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Returns true when all closing odds columns are absent or "0".
+// This is the normal state for current-season rows where the bookmaker
+// has not yet published closing odds — not a data quality issue.
+function hasNoClosingOdds(raw: Record<string, string>): boolean {
+  const cols = ['PSCH', 'PSCD', 'PSCA', 'B365CH', 'B365CD', 'B365CA'];
+  return cols.every((col) => !raw[col] || raw[col] === '0');
+}
 
 function parseCsv(text: string): Record<string, string>[] {
   const lines = text.trim().split('\n');

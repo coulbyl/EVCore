@@ -23,7 +23,9 @@ export type OddsLiveSyncJobData = { date?: string };
 
 const logger = pino({ name: 'odds-live-sync-worker' });
 
-@Processor(BULLMQ_QUEUES.ODDS_LIVE_SYNC)
+// lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
+// each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
+@Processor(BULLMQ_QUEUES.ODDS_LIVE_SYNC, { lockDuration: 600_000 })
 export class OddsLiveSyncWorker extends WorkerHost {
   constructor(
     private readonly fixtureService: FixtureService,

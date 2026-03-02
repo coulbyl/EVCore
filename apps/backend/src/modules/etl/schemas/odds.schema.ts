@@ -3,14 +3,17 @@ import { z } from 'zod';
 // The API-Football /odds endpoint returns all available bet types per bookmaker.
 // We accept any bet type at the schema level and filter for Match Winner in the worker.
 const BetValueSchema = z.object({
-  value: z.string().min(1),
+  // API-Football returns strings ("Home", "Draw", "Away") for Match Winner
+  // but numbers (e.g. 2.5) for bet types like Over/Under or Asian Handicap.
+  // Coerce to string so the schema accepts all bet types without error.
+  value: z.union([z.string(), z.number()]).transform(String),
+  // Exact Score odds can exceed 1000 (e.g. "1250.00"), Asian Handicap can be
+  // exactly "1.00" — validate only that the value is a positive decimal.
   odd: z
     .string()
     .regex(/^\d+(\.\d+)?$/)
     .transform(Number)
-    .refine((v) => v > 1 && v < 1000, {
-      message: 'odd must be in sensible decimal range (1, 1000)',
-    }),
+    .refine((v) => v > 0, { message: 'odd must be a positive number' }),
 });
 
 const AnyBetSchema = z.object({

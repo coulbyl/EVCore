@@ -41,3 +41,6 @@ yarn-error.log*
 *.pem
 api-football-doc/
 packages/db/reports/
+
+# Local API samples — for analysis only, never commit
+*-sample.json
