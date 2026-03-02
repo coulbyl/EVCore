@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 2 (ETL hardening + pipeline live validé) terminé (mise à jour le 2 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 3 (Daily Coupon Generator) terminé (mise à jour le 2 mars 2026)**
 
 ---
 
@@ -169,40 +169,66 @@
 - [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
 
-**Générateur de coupon quotidien** — spec complète : [COUPON.md](COUPON.md)
+### Bloc 3 — Daily Coupon Generator ✅ (2 mars 2026)
 
-**Infrastructure feature flags (shadow scoring)**
+**Feature flags + shadow scoring**
 
-- [ ] `feature-flags.constants.ts` — `FEATURE_FLAGS.SCORING` (LINE_MOVEMENT=true, INJURIES=true, H2H=false, CONGESTION=false, LINEUPS=false)
-- [ ] Shadow scoring dans `analyzeFixture()` — tous facteurs calculés, shadow\_\* loggés dans `ModelRun.features`
-- [ ] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync)
-- [ ] `LineMovementService` — delta cote Pinnacle entre premier et dernier snapshot, filtre > 10%
-- [ ] `H2HService` — 5 dernières confrontations, shadow_h2h dans ModelRun (DISABLED par défaut)
-- [ ] `CongestionService` — jours depuis dernier match + charge calendrier depuis fixtures DB (DISABLED par défaut)
-- [ ] `AdjustmentService` étendu — corrélation Spearman shadow features vs outcomes, propose auto-activation si |rho| > 0.15
+- [x] `feature-flags.constants.ts` — `FEATURE_FLAGS.SCORING` (LINE_MOVEMENT=true, INJURIES/H2H/CONGESTION/LINEUPS=false shadow)
+- [x] Shadow scoring dans `analyzeFixture()` — facteurs calculés mais non pris en compte, shadow\_\* loggés dans `ModelRun.features`
+- [x] Filtre line movement — delta cote > 10% sur 7 jours → fixture exclue (depuis `OddsSnapshot` DB)
 
-**Générateur de coupon quotidien**
+**Coupon quotidien** — spec : [COUPON.md](COUPON.md)
 
-- [ ] `DailyCoupon` — modèle Prisma (id, date unique, status, legCount, Bets[])
-- [ ] `coupon.constants.ts` — `COUPON_MAX_LEGS=6`, `COUPON_TRIGGER_CRON`, `COUPON_SCHEDULING_ENABLED`
-- [ ] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
-- [ ] Liste blanche combos-match valides (12 combos, exclusions automatiques)
-- [ ] `CouponService.generateDailyCoupon(date)` — sélection qualityScore = EV × deterministicScore
-- [ ] `BettingEngineWorker` — `@Processor('betting-engine')`, 1 job par fixture SCHEDULED
-- [ ] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()`
-- [ ] `NotificationService.sendDailyCoupon()` — email + Slack (coupon ≥ 1 leg)
-- [ ] `NotificationService.sendNoBetToday()` — email + Slack (0 opportunité)
-- [ ] Tests unitaires `CouponService` (sélection, classement, max legs, NO_BET)
-- [ ] Tests unitaires probabilité jointe (valeurs connues depuis Poisson)
-- [ ] Tests unitaires shadow scoring (facteurs désactivés loggés, non pris en compte dans score)
+- [x] `DailyCoupon` — modèle Prisma (id, date unique, status, legCount, Bets[] FK)
+- [x] `coupon.constants.ts` — `COUPON_MAX_LEGS=6`, `COUPON_CRON_SCHEDULE` (20h00 UTC), `COUPON_SCHEDULER_KEY`
+- [x] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
+- [x] `COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)
+- [x] `CouponService.generateDailyCoupon(date)` — sélection `qualityScore = EV × deterministicScore`, garde d'idempotence
+- [x] Anti-corrélation — max 1 bet par fixture (meilleur qualityScore conservé)
+- [x] `CouponWorker` — `@Processor('betting-engine')`, lockDuration 5 min
+- [x] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()` (flag `COUPON_SCHEDULING_ENABLED`)
+- [x] `NotificationService.sendDailyCoupon()` — email (coupon ≥ 1 leg)
+- [x] `NotificationService.sendNoBetToday()` — email (0 opportunité EV+)
+- [x] `upsertOddsSnapshot()` multi-marché (1X2 + Over/Under 2.5 + BTTS) dans `fixture.repository.ts`
+- [x] `extractAdditionalMarketOdds()` dans `odds-live-sync.worker.ts`
+- [x] Tests unitaires `CouponService` (6 cas : NO_BET, PENDING, max legs, tri qualityScore, idempotence)
+- [x] Tests unitaires `computeJointProbability`, `COMBO_WHITELIST`, `resolveComboPickBetStatus`
+- [x] 204 tests passants, lint ✓, typecheck ✓
 
-**Suite Phase 2**
+---
 
-- [ ] Marché Mi-temps/Fin de match
-- [ ] OpenClaw integration (LLM delta 30%, Zod-validated, temperature 0)
-- [ ] Grafana dashboards (ROI, Brier Score, drawdown)
-- [ ] TimescaleDB (odds snapshots haute fréquence)
-- [ ] Multi-bookmakers
+### Bloc 4 — Shadow Data Collection + AdjustmentService étendu
+
+**Shadow services (données réelles, score non activé)**
+
+- [ ] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
+- [ ] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
+- [ ] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
+
+**Boucle d'auto-activation**
+
+- [ ] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
+- [ ] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
+- [ ] Rollback d'une auto-activation via `POST /adjustment/:id/rollback` (existant)
+
+---
+
+### Bloc 5 — Coupon settlement + résultats live
+
+- [ ] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
+- [ ] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
+- [ ] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
+- [ ] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
+
+---
+
+### Bloc 6 — Suite Phase 2
+
+- [ ] Marché Mi-temps/Fin de match (HT/FT combo)
+- [ ] OpenClaw integration (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en production
+- [ ] Grafana dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
+- [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)
+- [ ] Multi-bookmakers (Betclic, Unibet via odds-api ou scraping)
 
 ---
 
