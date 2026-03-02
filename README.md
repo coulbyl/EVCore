@@ -4,98 +4,74 @@
 
 EVCore is a disciplined probabilistic decision system — not a tip generator. It targets long-term ROI through deterministic data scoring, calibrated over time, with the backend always acting as the final authority.
 
-**Domain:** evcore.live
+**Status:** Phase 2 in progress — live odds pipeline operational, daily coupon generator active.
 
 ---
 
 ## What it does
 
-- Collects historical football data (fixtures, results, xG) from multiple open sources
+- Collects live and historical football data (fixtures, results, xG, odds) via API-Football
 - Computes match probabilities using a Poisson model weighted by 4 deterministic features
-- Identifies value bets where `EV = (probability × odds) − 1 ≥ 8%`
+- Evaluates all markets (1X2, Over/Under 2.5, BTTS, Double Chance, 12 combo-match pairs) for value bets where `EV ≥ 8%`
+- Applies fractional Kelly (0.25×) for stake sizing
+- Generates a daily coupon of up to 6 legs ranked by `qualityScore = EV × deterministicScore`
+- Filters picks with adverse line movement (> 10% odds drop over 7 days)
 - Tracks performance metrics (Brier Score, ROI, drawdown) and self-calibrates over time
-- Sends alerts via Slack/Email when EV opportunities or anomalies are detected
+- Sends alerts via Email when opportunities, anomalies, or auto-calibrations are detected
 
-**Phase 1 scope:** Premier League only, historical data, no live odds.
+**Validated on 3 EPL seasons:** Brier Score 0.592 (< 0.65 threshold), Calibration Error 2.5%, simulated ROI +2.28%.
 
 ---
 
 ## Stack
 
-| Layer         | Technology                            |
-| ------------- | ------------------------------------- |
-| Monorepo      | pnpm + Turborepo                      |
-| Backend       | NestJS + TypeScript                   |
-| Database      | PostgreSQL + Prisma                   |
-| Queues        | BullMQ + Redis                        |
-| Orchestration | Kestra                                |
-| Validation    | Zod + class-validator                 |
-| Math          | jStat, decimal.js, simple-statistics  |
-| Notifications | Novu (self-hosted)                    |
-| Infra         | Docker Compose, Nginx, GitHub Actions |
+| Layer         | Technology                           |
+| ------------- | ------------------------------------ |
+| Monorepo      | pnpm + Turborepo                     |
+| Backend       | NestJS + TypeScript (strict)         |
+| Database      | PostgreSQL + Prisma                  |
+| Queues        | BullMQ + Redis                       |
+| Validation    | Zod (external data) + class-validator (DTOs) |
+| Math          | decimal.js, Poisson model            |
+| Notifications | Nodemailer (SMTP) + in-app DB        |
+| Infra         | Docker Compose, GitHub Actions       |
 
 ---
 
 ## Getting started
 
-**Requirements:** Node.js >= 18, pnpm 9
+**Requirements:** Node.js >= 18, pnpm 9, Docker
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Start all apps in dev mode
-pnpm dev
-
-# Build all packages
-pnpm build
-
-# Lint
-pnpm lint
-
-# Type-check
-pnpm typecheck
-```
-
-Start a specific app:
-
-```bash
-pnpm --filter backend dev
-pnpm --filter web dev
-```
-
-Start the full stack (backend + DB + Redis + Novu):
-
-```bash
+# Start infrastructure (PostgreSQL + Redis + Mailpit)
 docker compose up -d
+
+# Apply DB migrations
+pnpm --filter @evcore/db db:migrate -- --name init
+
+# Start backend in dev mode
+pnpm --filter backend dev
+```
+
+Run all quality checks:
+
+```bash
+pnpm lint        # ESLint across all packages
+pnpm typecheck   # TypeScript (no emit)
+pnpm --filter backend test  # Vitest unit tests (204 tests)
 ```
 
 Default service endpoints:
 
-- PostgreSQL: `localhost:5432`
-- Redis: `localhost:6379`
-- Novu Dashboard: `http://localhost:4000`
-- Novu API: `http://localhost:3010`
-- Novu WS: `http://localhost:3012`
-
-Novu setup (Slack + Email):
-
-1. Open `http://localhost:4000` and create an admin account.
-2. In Novu settings, create an API key and set it in backend env as `NOVU_API_KEY`.
-3. Configure providers:
-   - Email provider (SMTP/Resend/Sendgrid)
-   - Chat provider (Slack)
-4. Create a workflow with trigger identifier `evcore-foundations-notification` and add:
-   - one Email step
-   - one Slack step
-5. Set backend env (example):
-   - `NOVU_API_URL=http://localhost:3010`
-   - `NOVU_API_KEY=<your-api-key>`
-   - `NOVU_WORKFLOW_ID=evcore-foundations-notification`
-   - `NOVU_TEST_EMAIL=<your-email>`
-6. Verify from backend:
-   - `GET /health/novu`
-   - `POST /notifications/test`
+| Service    | URL                       |
+| ---------- | ------------------------- |
+| Backend    | `http://localhost:3000`   |
+| PostgreSQL | `localhost:5432`          |
+| Redis      | `localhost:6379`          |
+| Mailpit UI | `http://localhost:8025`   |
 
 ---
 
@@ -103,34 +79,76 @@ Novu setup (Slack + Email):
 
 ```
 apps/
-  backend/    # NestJS API — Betting Engine, ETL workers, validation
-  web/        # Next.js dashboard
-  docs/       # Next.js documentation
+  backend/    # NestJS API — Betting Engine, ETL workers, coupon generator
+  web/        # Next.js dashboard (in progress)
 packages/
-  ui/                # Shared React component library
+  db/                # Prisma schema + generated client (@evcore/db)
+  transactional/     # React Email templates (@evcore/transactional)
+  ui/                # Shared React component library (@repo/ui)
   eslint-config/     # Shared ESLint rules
   typescript-config/ # Shared TypeScript configs
+```
+
+### Backend modules
+
+| Module             | Role                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `etl/`             | BullMQ workers: fixtures, results, stats, odds (live + CSV)  |
+| `betting-engine/`  | Poisson model, EV calculation, pick selection, settlement    |
+| `coupon/`          | Daily coupon generation, anti-correlation, scheduling        |
+| `adjustment/`      | Calibration, auto-apply AdjustmentProposal, rollback         |
+| `risk/`            | ROI alerts, market suspension, Brier alerts, weekly report   |
+| `notification/`    | Email (SMTP) + in-app notifications                          |
+| `fixture/`         | Fixture + OddsSnapshot storage                               |
+| `rolling-stats/`   | Rolling form, xG, dom/ext performance, league volatility     |
+
+---
+
+## Environment variables
+
+Key variables (see `.env.example` for the full list):
+
+```
+DATABASE_URL=postgresql://...
+REDIS_HOST=localhost
+REDIS_PORT=6379
+API_FOOTBALL_KEY=<your-key>
+
+# Email (dev: Mailpit on port 1025)
+SMTP_ENABLED=true
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_FROM=evcore@localhost
+SMTP_TO=admin@localhost
+
+# Feature flags
+KELLY_ENABLED=false
+ETL_SCHEDULING_ENABLED=false
+COUPON_SCHEDULING_ENABLED=false
 ```
 
 ---
 
 ## Documentation
 
-| File                                                               | Purpose                                                              |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| [EVCORE.md](EVCORE.md)                                             | Full product specification — architecture, model, stack, constraints |
-| [ROADMAP.md](ROADMAP.md)                                           | Implementation roadmap with milestones and weekly checkboxes         |
-| [CLAUDE.md](CLAUDE.md)                                             | AI coding conventions (Claude Code)                                  |
-| [.github/copilot-instructions.md](.github/copilot-instructions.md) | AI coding conventions (GitHub Copilot)                               |
+| File               | Purpose                                                              |
+| ------------------ | -------------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)   | Full product specification — architecture, model, constraints  |
+| [ROADMAP.md](ROADMAP.md) | Implementation roadmap — phase-by-phase checklist              |
+| [TODO.md](TODO.md)       | Current work plan and upcoming blocs                           |
+| [COUPON.md](COUPON.md)   | Daily coupon generator specification                           |
+| [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                            |
 
 ---
 
-## Milestones
+## Phase status
 
-| Milestone                                          | Due          |
-| -------------------------------------------------- | ------------ |
-| `mvp-foundations` — Setup monorepo, DB, Docker, CI | 28 fév 2026  |
-| `mvp-month-1` — ETL, model, backtest               | 14 mars 2026 |
-| `mvp-month-2` — Odds, EV, simulation               | 31 mars 2026 |
-| `mvp-month-3` — Automation, learning, validation   | 8 avr 2026   |
-| `phase-2` — Live odds, OpenClaw, Grafana           | 31 mai 2026  |
+| Phase | Status | Key deliverable |
+| ----- | ------ | --------------- |
+| MVP Phase 1 | ✅ Complete | Backtest validated — Brier 0.592, ROI +2.28% |
+| Phase 2 Bloc 1 | ✅ Complete | Live odds pipeline, multi-league ETL |
+| Phase 2 Bloc 2 | ✅ Complete | ETL hardening, Kelly fractional |
+| Phase 2 Bloc 3 | ✅ Complete | Daily coupon generator (204 tests) |
+| Phase 2 Bloc 4 | 🔲 Next | Shadow data collection, auto-activation loop |
+| Phase 2 Bloc 5 | 🔲 Planned | Coupon settlement, result notifications |
+| Phase 2 Bloc 6 | 🔲 Planned | OpenClaw (LLM delta), Grafana, TimescaleDB |
