@@ -4,15 +4,20 @@ import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
 import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import {
+  ETL_CONSTANTS,
+  BULLMQ_QUEUES,
+  getCompetitionByCodeOrThrow,
+} from '@config/etl.constants';
+import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
-  eplSeasonFallbackEndDate,
-  eplSeasonFallbackStartDate,
+  seasonFallbackEndDate,
+  seasonFallbackStartDate,
 } from '@utils/date.utils';
 
-export type StatsSyncJobData = { season: number };
+export type StatsSyncJobData = { season: number; competitionCode: string };
 
 const logger = pino({ name: 'stats-sync-worker' });
 
@@ -27,22 +32,23 @@ export class StatsSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
-    const { season } = job.data;
+    const { season, competitionCode } = job.data;
+    const competitionMeta = getCompetitionByCodeOrThrow(competitionCode);
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
-    logger.info({ season }, 'Starting stats sync');
+    logger.info({ competitionCode, season }, 'Starting stats sync');
 
     // Resolve the internal seasonId (idempotent — same as fixtures-sync)
     const competition = await this.fixtureService.upsertCompetition({
-      name: ETL_CONSTANTS.EPL_COMPETITION_NAME,
-      code: ETL_CONSTANTS.EPL_COMPETITION_CODE,
-      country: ETL_CONSTANTS.EPL_COMPETITION_COUNTRY,
+      name: competitionMeta.name,
+      code: competitionMeta.code,
+      country: competitionMeta.country,
     });
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
       name: seasonNameFromYear(season),
-      startDate: eplSeasonFallbackStartDate(season),
-      endDate: eplSeasonFallbackEndDate(season),
+      startDate: seasonFallbackStartDate(season),
+      endDate: seasonFallbackEndDate(season),
     });
 
     const fixtures = await this.fixtureService.findFinishedWithoutXg(
@@ -157,8 +163,4 @@ function extractShotsOnTarget(
   if (!entry || entry.value === null) return 0;
   const parsed = parseInt(String(entry.value), 10);
   return isNaN(parsed) ? 0 : parsed;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

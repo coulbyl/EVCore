@@ -28,6 +28,7 @@ type WeightEntry = { key: keyof FeatureWeights; value: Decimal };
 
 @Injectable()
 export class AdjustmentService {
+  // eslint-disable-next-line max-params -- Nest DI constructor wiring for core services.
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,

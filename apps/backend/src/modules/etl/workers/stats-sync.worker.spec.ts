@@ -75,7 +75,9 @@ describe('StatsSyncWorker', () => {
       .fn()
       .mockResolvedValue({ ok: false, status: 429, json: vi.fn() });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
   });
@@ -90,7 +92,9 @@ describe('StatsSyncWorker', () => {
       json: vi.fn().mockResolvedValue(buildStatisticsResponse('0.76', '1.23')),
     });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     expect(fixtureService.updateXg).toHaveBeenCalledOnce();
     expect(fixtureService.updateXg).toHaveBeenCalledWith(99999, 0.76, 1.23);
@@ -106,7 +110,9 @@ describe('StatsSyncWorker', () => {
       json: vi.fn().mockResolvedValue(buildStatisticsResponse(null, null)),
     });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     // Field present with null → 0, no proxy fallback
     expect(fixtureService.updateXg).toHaveBeenCalledWith(11111, 0, 0);
@@ -139,7 +145,9 @@ describe('StatsSyncWorker', () => {
       json: vi.fn().mockResolvedValue(responseWithoutXg),
     });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     // Proxy: shots_on_goal × 0.35
     expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.7, 1.75);
@@ -150,7 +158,9 @@ describe('StatsSyncWorker', () => {
 
     global.fetch = vi.fn();
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     expect(fetch).not.toHaveBeenCalled();
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
@@ -178,7 +188,9 @@ describe('StatsSyncWorker', () => {
       json: vi.fn().mockResolvedValue(singleTeamResponse),
     });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
@@ -206,7 +218,9 @@ describe('StatsSyncWorker', () => {
       json: vi.fn().mockResolvedValue(singleTeamResponse),
     });
 
-    await worker.process({ data: { season: 2022 } } as Job<{ season: number }>);
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL' },
+    } as Job<{ season: number; competitionCode: string }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
   });

@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { FixtureStatus } from '@evcore/db';
 import Decimal from 'decimal.js';
 import pino from 'pino';
-import { ETL_CONSTANTS } from '@config/etl.constants';
+import {
+  ACTIVE_COMPETITIONS,
+  getCompetitionSeasons,
+} from '@config/etl.constants';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -33,11 +36,12 @@ export class RollingStatsService {
 
   async backfillSeasonYear(
     year: number,
+    competitionCode: string,
   ): Promise<{ seasonId: string; fixtureCount: number; upsertCount: number }> {
     const season = await this.prisma.client.season.findFirst({
       where: {
         name: seasonNameFromYear(year),
-        competition: { code: ETL_CONSTANTS.EPL_COMPETITION_CODE },
+        competition: { code: competitionCode },
       },
       select: { id: true },
     });
@@ -51,6 +55,7 @@ export class RollingStatsService {
 
   async backfillAllConfiguredSeasons(): Promise<
     Array<{
+      competitionCode: string;
       year: number;
       seasonId: string;
       fixtureCount: number;
@@ -58,15 +63,19 @@ export class RollingStatsService {
     }>
   > {
     const results: Array<{
+      competitionCode: string;
       year: number;
       seasonId: string;
       fixtureCount: number;
       upsertCount: number;
     }> = [];
 
-    for (const year of ETL_CONSTANTS.EPL_SEASONS) {
-      const result = await this.backfillSeasonYear(year);
-      results.push({ year, ...result });
+    for (const competition of ACTIVE_COMPETITIONS) {
+      const seasons = getCompetitionSeasons(competition);
+      for (const year of seasons) {
+        const result = await this.backfillSeasonYear(year, competition.code);
+        results.push({ competitionCode: competition.code, year, ...result });
+      }
     }
 
     return results;

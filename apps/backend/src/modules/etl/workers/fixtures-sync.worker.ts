@@ -12,16 +12,20 @@ import {
   FixtureService,
   type FixtureInput,
 } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import {
+  ETL_CONSTANTS,
+  BULLMQ_QUEUES,
+  getCompetitionByCodeOrThrow,
+} from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
-  eplSeasonFallbackEndDate,
-  eplSeasonFallbackStartDate,
+  seasonFallbackEndDate,
+  seasonFallbackStartDate,
   parseIsoDate,
 } from '@utils/date.utils';
 
-export type FixturesSyncJobData = { season: number };
+export type FixturesSyncJobData = { season: number; competitionCode: string };
 
 const logger = pino({ name: 'fixtures-sync-worker' });
 
@@ -36,14 +40,13 @@ export class FixturesSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<FixturesSyncJobData>): Promise<void> {
-    const { season } = job.data;
+    const { season, competitionCode } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const leagueId =
-      this.config.get<string>('API_FOOTBALL_LEAGUE_ID') ??
-      String(ETL_CONSTANTS.EPL_LEAGUE_ID);
+    const competition = getCompetitionByCodeOrThrow(competitionCode);
+    const leagueId = String(competition.leagueId);
     const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
 
-    logger.info({ season }, 'Starting fixtures sync');
+    logger.info({ competitionCode, season }, 'Starting fixtures sync');
 
     const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
@@ -67,18 +70,18 @@ export class FixturesSyncWorker extends WorkerHost {
 
     const { data } = parsed;
 
-    const competition = await this.fixtureService.upsertCompetition({
-      name: ETL_CONSTANTS.EPL_COMPETITION_NAME,
-      code: ETL_CONSTANTS.EPL_COMPETITION_CODE,
-      country: ETL_CONSTANTS.EPL_COMPETITION_COUNTRY,
+    const competitionRecord = await this.fixtureService.upsertCompetition({
+      name: competition.name,
+      code: competition.code,
+      country: competition.country,
     });
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
     const seasonRecord = await this.fixtureService.upsertSeason({
-      competitionId: competition.id,
+      competitionId: competitionRecord.id,
       name: seasonNameFromYear(season),
-      startDate: eplSeasonFallbackStartDate(season),
-      endDate: eplSeasonFallbackEndDate(season),
+      startDate: seasonFallbackStartDate(season),
+      endDate: seasonFallbackEndDate(season),
     });
 
     logger.info(
@@ -89,7 +92,7 @@ export class FixturesSyncWorker extends WorkerHost {
     for (const item of data.response) {
       const fixture = mapApiFootballFixture(item);
       await this.fixtureService.upsertFixtureChain({
-        competitionId: competition.id,
+        competitionId: competitionRecord.id,
         seasonId: seasonRecord.id,
         fixture,
       });

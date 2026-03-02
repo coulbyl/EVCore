@@ -27,4 +27,10 @@ export class EtlController {
     await this.etlService.triggerOddsCsvImport();
     return { status: 'ok' as const };
   }
+
+  @Post('sync/odds-live')
+  async triggerOddsLiveSync() {
+    await this.etlService.triggerOddsLiveSync();
+    return { status: 'ok' as const };
+  }
 }

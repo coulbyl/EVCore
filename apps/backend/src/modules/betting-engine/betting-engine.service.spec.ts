@@ -25,7 +25,11 @@ describe('poissonProba', () => {
 describe('deriveMarketsFromPoisson', () => {
   it('returns coherent derived market probabilities', () => {
     const oneXTwo = poissonProba(1.6, 1.1);
-    const derived = deriveMarketsFromPoisson(1.6, 1.1, oneXTwo);
+    const derived = deriveMarketsFromPoisson({
+      lambdaHome: 1.6,
+      lambdaAway: 1.1,
+      oneXTwo,
+    });
 
     expect(derived.over25.plus(derived.under25).toNumber()).toBeCloseTo(1, 6);
     expect(derived.bttsYes.plus(derived.bttsNo).toNumber()).toBeCloseTo(1, 6);

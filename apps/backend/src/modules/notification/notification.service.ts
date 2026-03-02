@@ -6,6 +6,13 @@ import { MailService } from '@modules/mail/mail.service';
 
 const logger = pino({ name: 'notification-service' });
 
+type SaveNotificationInput = {
+  type: NotificationType;
+  title: string;
+  body: string;
+  payload: Prisma.InputJsonValue;
+};
+
 export type WeeklyReportPayload = {
   roiOneXTwo: number;
   betsPlaced: number;
@@ -28,10 +35,15 @@ export class NotificationService {
   ): Promise<void> {
     const title = `ROI Alert — ${market}`;
     const body = `ROI ${(roi * 100).toFixed(2)}% over ${betCount} bets (threshold: -10%)`;
-    await this.save(NotificationType.ROI_ALERT, title, body, {
-      market,
-      roi,
-      betCount,
+    await this.save({
+      type: NotificationType.ROI_ALERT,
+      title,
+      body,
+      payload: {
+        market,
+        roi,
+        betCount,
+      },
     });
     await this.mail.sendRoiAlert({ market: String(market), roi, betCount });
   }
@@ -43,10 +55,15 @@ export class NotificationService {
   ): Promise<void> {
     const title = `Market Suspended — ${market}`;
     const body = `Market auto-suspended: ROI ${(roi * 100).toFixed(2)}% over ${betCount} bets (threshold: -15%)`;
-    await this.save(NotificationType.MARKET_SUSPENSION, title, body, {
-      market,
-      roi,
-      betCount,
+    await this.save({
+      type: NotificationType.MARKET_SUSPENSION,
+      title,
+      body,
+      payload: {
+        market,
+        roi,
+        betCount,
+      },
     });
     await this.mail.sendMarketSuspension({
       market: String(market),
@@ -61,9 +78,14 @@ export class NotificationService {
   ): Promise<void> {
     const title = `Brier Score Alert — Season ${seasonId}`;
     const body = `Brier score ${brierScore.toFixed(4)} exceeds alert threshold (> 0.25)`;
-    await this.save(NotificationType.BRIER_ALERT, title, body, {
-      seasonId,
-      brierScore,
+    await this.save({
+      type: NotificationType.BRIER_ALERT,
+      title,
+      body,
+      payload: {
+        seasonId,
+        brierScore,
+      },
     });
     await this.mail.sendBrierAlert({ seasonId, brierScore });
   }
@@ -75,10 +97,15 @@ export class NotificationService {
   ): Promise<void> {
     const title = `ETL Failure — ${queue}`;
     const body = `Job "${jobName}" permanently failed: ${errorMessage}`;
-    await this.save(NotificationType.ETL_FAILURE, title, body, {
-      queue,
-      jobName,
-      errorMessage,
+    await this.save({
+      type: NotificationType.ETL_FAILURE,
+      title,
+      body,
+      payload: {
+        queue,
+        jobName,
+        errorMessage,
+      },
     });
     await this.mail.sendEtlFailure({ queue, jobName, errorMessage });
   }
@@ -95,8 +122,13 @@ export class NotificationService {
     const body = payload.isRollback
       ? `Proposal ${payload.rolledBackProposalId} rolled back by proposal ${payload.proposalId}`
       : `Weights auto-applied: brierScore=${payload.brierScore?.toFixed(4)}, meanError=${payload.meanError?.toFixed(4)}`;
-    await this.save(NotificationType.WEIGHT_ADJUSTMENT, title, body, {
-      ...payload,
+    await this.save({
+      type: NotificationType.WEIGHT_ADJUSTMENT,
+      title,
+      body,
+      payload: {
+        ...payload,
+      },
     });
     await this.mail.sendWeightAdjustment(payload);
   }
@@ -108,10 +140,15 @@ export class NotificationService {
     const unavailableCount = externalIds.length;
     const title = `Stats Sync — ${unavailableCount} fixtures sans xG (${season})`;
     const body = `${unavailableCount} fixtures marquées xgUnavailable : ${externalIds.join(', ')}`;
-    await this.save(NotificationType.XG_UNAVAILABLE_REPORT, title, body, {
-      season,
-      unavailableCount,
-      externalIds,
+    await this.save({
+      type: NotificationType.XG_UNAVAILABLE_REPORT,
+      title,
+      body,
+      payload: {
+        season,
+        unavailableCount,
+        externalIds,
+      },
     });
     await this.mail.sendXgUnavailableReport({
       season,
@@ -127,12 +164,17 @@ export class NotificationService {
       `Bets placed: ${payload.betsPlaced}`,
       `Brier score: ${payload.brierScore.toFixed(4)}`,
     ].join('\n');
-    await this.save(NotificationType.WEEKLY_REPORT, title, body, {
-      roiOneXTwo: payload.roiOneXTwo,
-      betsPlaced: payload.betsPlaced,
-      brierScore: payload.brierScore,
-      periodStart: payload.periodStart.toISOString(),
-      periodEnd: payload.periodEnd.toISOString(),
+    await this.save({
+      type: NotificationType.WEEKLY_REPORT,
+      title,
+      body,
+      payload: {
+        roiOneXTwo: payload.roiOneXTwo,
+        betsPlaced: payload.betsPlaced,
+        brierScore: payload.brierScore,
+        periodStart: payload.periodStart.toISOString(),
+        periodEnd: payload.periodEnd.toISOString(),
+      },
     });
     await this.mail.sendWeeklyReport({
       roiOneXTwo: payload.roiOneXTwo,
@@ -180,12 +222,8 @@ export class NotificationService {
     });
   }
 
-  private async save(
-    type: NotificationType,
-    title: string,
-    body: string,
-    payload: Prisma.InputJsonValue,
-  ): Promise<void> {
+  private async save(input: SaveNotificationInput): Promise<void> {
+    const { type, title, body, payload } = input;
     try {
       await this.prisma.client.notification.create({
         data: { type, title, body, payload },

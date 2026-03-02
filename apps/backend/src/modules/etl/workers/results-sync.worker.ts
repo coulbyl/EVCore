@@ -5,10 +5,14 @@ import pino from 'pino';
 import { ApiFootballFixturesResponseSchema } from '../schemas/fixture.schema';
 import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
+import {
+  ETL_CONSTANTS,
+  BULLMQ_QUEUES,
+  getCompetitionByCodeOrThrow,
+} from '../../../config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 
-export type ResultsSyncJobData = { season: number };
+export type ResultsSyncJobData = { season: number; competitionCode: string };
 
 const logger = pino({ name: 'results-sync-worker' });
 
@@ -26,15 +30,14 @@ export class ResultsSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<ResultsSyncJobData>): Promise<void> {
-    const { season } = job.data;
+    const { season, competitionCode } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const leagueId =
-      this.config.get<string>('API_FOOTBALL_LEAGUE_ID') ??
-      String(ETL_CONSTANTS.EPL_LEAGUE_ID);
+    const competition = getCompetitionByCodeOrThrow(competitionCode);
+    const leagueId = String(competition.leagueId);
     // Fetch only finished matches (FT + AET + PEN) in one request
     const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT-AET-PEN`;
 
-    logger.info({ season }, 'Starting results sync');
+    logger.info({ competitionCode, season }, 'Starting results sync');
 
     const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 

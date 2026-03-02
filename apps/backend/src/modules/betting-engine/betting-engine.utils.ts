@@ -60,12 +60,13 @@ export function computePoissonMarkets(
   return { ...oneXTwo, ...derived };
 }
 
-export function deriveMarketsFromPoisson(
-  lambdaHome: number,
-  lambdaAway: number,
-  oneXTwo: ThreeWayProba,
-  maxGoals = 10,
-): DerivedMarketsProba {
+export function deriveMarketsFromPoisson(input: {
+  lambdaHome: number;
+  lambdaAway: number;
+  oneXTwo: ThreeWayProba;
+  maxGoals?: number;
+}): DerivedMarketsProba {
+  const { lambdaHome, lambdaAway, oneXTwo, maxGoals = 10 } = input;
   const { homeDist, awayDist } = normalizedPoissonDistributions(
     lambdaHome,
     lambdaAway,

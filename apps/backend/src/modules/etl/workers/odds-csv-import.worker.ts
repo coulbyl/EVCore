@@ -7,8 +7,11 @@ import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 
 export type OddsCsvImportJobData = {
+  competitionCode: string;
   // Season code in football-data.co.uk format: '2122', '2223', '2324', '2425'
   seasonCode: string;
+  // Division code in football-data.co.uk format: E0, I1, SP1, D1...
+  divisionCode: string;
 };
 
 const logger = pino({ name: 'odds-csv-import-worker' });
@@ -23,10 +26,13 @@ export class OddsCsvImportWorker extends WorkerHost {
   }
 
   async process(job: Job<OddsCsvImportJobData>): Promise<void> {
-    const { seasonCode } = job.data;
-    const url = `${ETL_CONSTANTS.CSV_ODDS_BASE}/${seasonCode}/E0.csv`;
+    const { competitionCode, seasonCode, divisionCode } = job.data;
+    const url = `${ETL_CONSTANTS.CSV_ODDS_BASE}/${seasonCode}/${divisionCode}.csv`;
 
-    logger.info({ seasonCode, url }, 'Starting odds CSV import');
+    logger.info(
+      { competitionCode, seasonCode, divisionCode, url },
+      'Starting odds CSV import',
+    );
 
     const res = await fetch(url);
     if (!res.ok) {
@@ -64,15 +70,21 @@ export class OddsCsvImportWorker extends WorkerHost {
       const row = parsed.data;
       const matchDate = parseDdMmYyyy(row.Date);
 
-      const fixture = await this.fixtureService.findByDateAndTeams(
-        matchDate,
-        row.HomeTeam,
-        row.AwayTeam,
-      );
+      const fixture = await this.fixtureService.findByDateAndTeams({
+        date: matchDate,
+        homeTeamName: row.HomeTeam,
+        awayTeamName: row.AwayTeam,
+        competitionCode,
+      });
 
       if (!fixture) {
         logger.warn(
-          { date: row.Date, home: row.HomeTeam, away: row.AwayTeam },
+          {
+            competitionCode,
+            date: row.Date,
+            home: row.HomeTeam,
+            away: row.AwayTeam,
+          },
           'No fixture found — skipping row',
         );
         noFixture++;
@@ -90,7 +102,14 @@ export class OddsCsvImportWorker extends WorkerHost {
     }
 
     logger.info(
-      { seasonCode, imported, skipped, noFixture },
+      {
+        competitionCode,
+        seasonCode,
+        divisionCode,
+        imported,
+        skipped,
+        noFixture,
+      },
       'Odds CSV import complete',
     );
   }

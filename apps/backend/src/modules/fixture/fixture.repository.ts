@@ -8,6 +8,13 @@ export type FixtureWithTeamNames = Fixture & {
   awayTeam: { name: string; shortName: string };
 };
 
+type FindByDateAndTeamsInput = {
+  date: Date;
+  homeTeamName: string;
+  awayTeamName: string;
+  competitionCode?: string;
+};
+
 type UpsertCompetitionInput = {
   name: string;
   code: string;
@@ -133,6 +140,20 @@ export class FixtureRepository {
     });
   }
 
+  findScheduledForDate(
+    date: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    const start = new Date(date);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setUTCHours(23, 59, 59, 999);
+    return this.prisma.client.fixture.findMany({
+      where: { status: 'SCHEDULED', scheduledAt: { gte: start, lte: end } },
+      select: { id: true, externalId: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.prisma.client.fixture.findMany({
       where: {
@@ -194,14 +215,18 @@ export class FixtureRepository {
 
   // Used by xg-sync to match Understat entries to DB fixtures via date (±1 day) + team names.
   async findByDateAndTeams(
-    date: Date,
-    homeTeamName: string,
-    awayTeamName: string,
+    input: FindByDateAndTeamsInput,
   ): Promise<FixtureWithTeamNames | null> {
+    const { date, homeTeamName, awayTeamName, competitionCode } = input;
     const { from, to } = oneDayWindow(date);
 
     const candidates = await this.prisma.client.fixture.findMany({
-      where: { scheduledAt: { gte: from, lte: to } },
+      where: {
+        scheduledAt: { gte: from, lte: to },
+        ...(competitionCode
+          ? { season: { competition: { code: competitionCode } } }
+          : {}),
+      },
       include: {
         homeTeam: { select: { name: true, shortName: true } },
         awayTeam: { select: { name: true, shortName: true } },

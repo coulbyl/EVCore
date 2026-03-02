@@ -37,6 +37,13 @@ type UpsertOneXTwoOddsSnapshotInput = {
   awayOdds: number;
 };
 
+type FindByDateAndTeamsInput = {
+  date: Date;
+  homeTeamName: string;
+  awayTeamName: string;
+  competitionCode?: string;
+};
+
 @Injectable()
 export class FixtureService {
   constructor(private readonly fixtureRepository: FixtureRepository) {}
@@ -84,12 +91,8 @@ export class FixtureService {
     return this.fixtureRepository.upsertSeason(data);
   }
 
-  findByDateAndTeams(date: Date, homeTeamName: string, awayTeamName: string) {
-    return this.fixtureRepository.findByDateAndTeams(
-      date,
-      homeTeamName,
-      awayTeamName,
-    );
+  findByDateAndTeams(input: FindByDateAndTeamsInput) {
+    return this.fixtureRepository.findByDateAndTeams(input);
   }
 
   async updateScores(
@@ -118,6 +121,12 @@ export class FixtureService {
 
   async findFinishedBySeason(seasonId: string): Promise<Fixture[]> {
     return this.fixtureRepository.findFinishedBySeason(seasonId);
+  }
+
+  findScheduledForDate(
+    date: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    return this.fixtureRepository.findScheduledForDate(date);
   }
 
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {

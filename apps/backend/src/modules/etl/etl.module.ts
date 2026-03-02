@@ -10,6 +10,7 @@ import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { ResultsSyncWorker } from './workers/results-sync.worker';
 import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
+import { OddsLiveSyncWorker } from './workers/odds-live-sync.worker';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
       { name: BULLMQ_QUEUES.RESULTS_SYNC },
       { name: BULLMQ_QUEUES.STATS_SYNC },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
+      { name: BULLMQ_QUEUES.ODDS_LIVE_SYNC },
     ),
     FixtureModule,
     NotificationModule,
@@ -30,6 +32,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
     ResultsSyncWorker,
     StatsSyncWorker,
     OddsCsvImportWorker,
+    OddsLiveSyncWorker,
   ],
   exports: [EtlService],
 })

@@ -3,6 +3,8 @@ import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
+  getActiveCompetitionPlans,
+  getActiveCsvCompetitions,
 } from '../../config/etl.constants';
 import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
@@ -10,6 +12,7 @@ import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
+import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 
 type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
 
@@ -29,16 +32,27 @@ const configMock = {
 } as unknown as ConfigService;
 
 describe('EtlService', () => {
+  const activePlans = getActiveCompetitionPlans();
+  const totalSeasonJobs = activePlans.reduce(
+    (sum, plan) => sum + plan.seasons.length,
+    0,
+  );
+  const csvCompetitions = getActiveCsvCompetitions();
+  const totalCsvJobs =
+    csvCompetitions.length * ETL_CONSTANTS.CSV_ODDS_SEASONS.length;
+
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
   const resultsQueue = makeQueue<ResultsSyncJobData>();
   const statsQueue = makeQueue<StatsSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
+  const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
 
   const service = new EtlService(
     fixturesQueue as Queue<FixturesSyncJobData>,
     resultsQueue as Queue<ResultsSyncJobData>,
     statsQueue as Queue<StatsSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
+    oddsLiveQueue as Queue<OddsLiveSyncJobData>,
     configMock,
   );
 
@@ -49,101 +63,106 @@ describe('EtlService', () => {
   it('dispatches fixtures jobs for each season with API-FOOTBALL staggered delays', async () => {
     await service.triggerFixturesSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
+    expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
-      const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      expect(fixturesQueue.add).toHaveBeenNthCalledWith(
-        i + 1,
-        `fixtures-sync-${season}`,
-        { season },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-        },
-      );
+    let callIndex = 0;
+    for (const plan of activePlans) {
+      for (let i = 0; i < plan.seasons.length; i++) {
+        callIndex++;
+        const season = plan.seasons[i];
+        expect(fixturesQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `fixtures-sync-${plan.competition.code}-${season}`,
+          { season, competitionCode: plan.competition.code },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          },
+        );
+      }
     }
   });
 
   it('dispatches results jobs for each season with API-FOOTBALL staggered delays', async () => {
     await service.triggerResultsSync();
 
-    expect(resultsQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
+    expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
-      const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      expect(resultsQueue.add).toHaveBeenNthCalledWith(
-        i + 1,
-        `results-sync-${season}`,
-        { season },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-        },
-      );
+    let callIndex = 0;
+    for (const plan of activePlans) {
+      for (let i = 0; i < plan.seasons.length; i++) {
+        callIndex++;
+        const season = plan.seasons[i];
+        expect(resultsQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `results-sync-${plan.competition.code}-${season}`,
+          { season, competitionCode: plan.competition.code },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          },
+        );
+      }
     }
   });
 
   it('dispatches stats jobs for each season with API-FOOTBALL staggered delays', async () => {
     await service.triggerStatsSync();
 
-    expect(statsQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
+    expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    for (let i = 0; i < ETL_CONSTANTS.EPL_SEASONS.length; i++) {
-      const season = ETL_CONSTANTS.EPL_SEASONS[i];
-      expect(statsQueue.add).toHaveBeenNthCalledWith(
-        i + 1,
-        `stats-sync-${season}`,
-        { season },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-        },
-      );
+    let callIndex = 0;
+    for (const plan of activePlans) {
+      for (let i = 0; i < plan.seasons.length; i++) {
+        callIndex++;
+        const season = plan.seasons[i];
+        expect(statsQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `stats-sync-${plan.competition.code}-${season}`,
+          { season, competitionCode: plan.competition.code },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          },
+        );
+      }
     }
   });
 
   it('dispatches odds CSV import jobs for each season code with 2s staggered delays', async () => {
     await service.triggerOddsCsvImport();
 
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.CSV_ODDS_SEASONS.length,
-    );
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
 
-    for (let i = 0; i < ETL_CONSTANTS.CSV_ODDS_SEASONS.length; i++) {
-      const seasonCode = ETL_CONSTANTS.CSV_ODDS_SEASONS[i];
-      expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
-        i + 1,
-        `odds-csv-import-${seasonCode}`,
-        { seasonCode },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: i * 2_000,
-        },
-      );
+    let callIndex = 0;
+    for (const competition of csvCompetitions) {
+      for (let i = 0; i < ETL_CONSTANTS.CSV_ODDS_SEASONS.length; i++) {
+        callIndex++;
+        const seasonCode = ETL_CONSTANTS.CSV_ODDS_SEASONS[i];
+        expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `odds-csv-import-${competition.code}-${seasonCode}`,
+          {
+            competitionCode: competition.code,
+            seasonCode,
+            divisionCode: competition.csvDivisionCode,
+          },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: i * 2_000,
+          },
+        );
+      }
     }
   });
 
-  it('triggerFullSync enqueues fixtures, results, stats, and odds CSV jobs', async () => {
+  it('triggerFullSync enqueues fixtures, results, stats, odds CSV, and odds live jobs', async () => {
     await service.triggerFullSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
-    expect(resultsQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
-    expect(statsQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.EPL_SEASONS.length,
-    );
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
-      ETL_CONSTANTS.CSV_ODDS_SEASONS.length,
-    );
+    expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
+    expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
   });
 });

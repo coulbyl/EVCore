@@ -41,6 +41,7 @@ export function nestJsConfig(options = {}) {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-floating-promises": "warn",
         "@typescript-eslint/no-unsafe-argument": "warn",
+        "max-params": ["error", 3],
         "prettier/prettier": ["error", { endOfLine: "auto" }],
       },
     },

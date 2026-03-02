@@ -48,7 +48,7 @@ export const ApiFootballFixtureSchema = z.object({
     id: z.number().int().positive(),
     referee: z.string().nullable(),
     timezone: z.string(),
-    date: z.string().datetime({ offset: true }),
+    date: z.iso.datetime({ offset: true }),
     timestamp: z.number().int(),
     periods: z.object({
       first: z.number().int().nullable(),
