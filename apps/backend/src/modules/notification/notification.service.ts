@@ -101,6 +101,25 @@ export class NotificationService {
     await this.mail.sendWeightAdjustment(payload);
   }
 
+  async sendXgUnavailableReport(
+    season: string,
+    externalIds: number[],
+  ): Promise<void> {
+    const unavailableCount = externalIds.length;
+    const title = `Stats Sync — ${unavailableCount} fixtures sans xG (${season})`;
+    const body = `${unavailableCount} fixtures marquées xgUnavailable : ${externalIds.join(', ')}`;
+    await this.save(NotificationType.XG_UNAVAILABLE_REPORT, title, body, {
+      season,
+      unavailableCount,
+      externalIds,
+    });
+    await this.mail.sendXgUnavailableReport({
+      season,
+      unavailableCount,
+      externalIds,
+    });
+  }
+
   async sendWeeklyReport(payload: WeeklyReportPayload): Promise<void> {
     const title = `Weekly Report — ${payload.periodStart.toISOString().slice(0, 10)} → ${payload.periodEnd.toISOString().slice(0, 10)}`;
     const body = [

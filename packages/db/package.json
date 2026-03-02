@@ -21,6 +21,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
+    "db:stats": "tsx scripts/db-stats.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
@@ -33,6 +34,7 @@
     "@evcore/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "dotenv": "catalog:",
+    "tsx": "catalog:",
     "eslint": "catalog:",
     "prisma": "catalog:",
     "typescript": "catalog:"

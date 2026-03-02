@@ -10,12 +10,14 @@ import {
   renderRoiAlert,
   renderWeightAdjustment,
   renderWeeklyReport,
+  renderXgUnavailableReport,
   type BrierAlertProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type RoiAlertProps,
   type WeightAdjustmentProps,
   type WeeklyReportProps,
+  type XgUnavailableReportProps,
 } from '@evcore/transactional';
 
 const logger = pino({ name: 'mail-service' });
@@ -91,6 +93,17 @@ export class MailService implements OnModuleInit {
     const period = `${props.periodStart.slice(0, 10)} → ${props.periodEnd.slice(0, 10)}`;
     const { html, text } = await renderWeeklyReport(props);
     await this.send(`Weekly Report — ${period}`, html, text);
+  }
+
+  async sendXgUnavailableReport(
+    props: XgUnavailableReportProps,
+  ): Promise<void> {
+    const { html, text } = await renderXgUnavailableReport(props);
+    await this.send(
+      `Stats Sync — ${props.unavailableCount} fixtures sans xG (${props.season})`,
+      html,
+      text,
+    );
   }
 
   private async send(

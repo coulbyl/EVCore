@@ -56,6 +56,7 @@ enum NotificationType {
   WEEKLY_REPORT
   ETL_FAILURE
   WEIGHT_ADJUSTMENT
+  XG_UNAVAILABLE_REPORT
 }
 
 // ─────────────────────────────────────────────
@@ -112,8 +113,9 @@ model Fixture {
   status        FixtureStatus @default(SCHEDULED)
   homeScore     Int?
   awayScore     Int?
-  homeXg        Decimal?      @db.Decimal(5, 3) // from Understat
-  awayXg        Decimal?      @db.Decimal(5, 3) // from Understat
+  homeXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
+  awayXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
+  xgUnavailable Boolean       @default(false)   // true = API returned no stats, skip on retry
   modelRuns     ModelRun[]
   teamStats     TeamStats[]
   oddsSnapshots OddsSnapshot[] // scaffolded for Phase 2

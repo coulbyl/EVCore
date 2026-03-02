@@ -41,3 +41,9 @@ export type WeeklyReportProps = {
   periodStart: string;
   periodEnd: string;
 };
+
+export type XgUnavailableReportProps = {
+  season: string; // e.g. "2022-23"
+  unavailableCount: number;
+  externalIds: number[];
+};

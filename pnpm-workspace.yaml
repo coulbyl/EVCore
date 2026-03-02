@@ -43,6 +43,7 @@ catalog:
 
   # Utilities
   dotenv: "^16.0.0"
+  tsx: "^4.19.4"
 
   # NestJS backend
   "@nestjs/common": "^11.0.1"

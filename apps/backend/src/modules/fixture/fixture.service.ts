@@ -124,6 +124,10 @@ export class FixtureService {
     return this.fixtureRepository.findFinishedWithoutXg(seasonId);
   }
 
+  async markXgUnavailable(externalId: number): Promise<void> {
+    return this.fixtureRepository.markXgUnavailable(externalId);
+  }
+
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {

@@ -135,9 +135,21 @@ export class FixtureRepository {
 
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.prisma.client.fixture.findMany({
-      where: { seasonId, status: 'FINISHED', homeXg: null },
+      where: {
+        seasonId,
+        status: 'FINISHED',
+        homeXg: null,
+        xgUnavailable: false,
+      },
       select: { externalId: true },
       orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
+  async markXgUnavailable(externalId: number): Promise<void> {
+    await this.prisma.client.fixture.updateMany({
+      where: { externalId },
+      data: { xgUnavailable: true },
     });
   }
 
