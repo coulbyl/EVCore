@@ -1,56 +1,73 @@
-# EVCore — TODO Phase 2 : Live odds, bankroll, observabilité
+# EVCore — TODO Phase 2
 
-> Plan de travail courant après validation MVP.
-> Références: [ROADMAP.md](ROADMAP.md), [EVCORE.md](EVCORE.md)
-> Archives: [TODO_MOIS_1_ARCHIVE.md](TODO_MOIS_1_ARCHIVE.md), [TODO_MOIS_2_ARCHIVE.md](TODO_MOIS_2_ARCHIVE.md)
-
----
-
-## Objectif Phase 2
-
-Transformer le MVP validé en moteur live exploitable en production :
-
-- odds live pré-match fiables,
-- multi-ligue propre et activable par configuration,
-- bankroll management (Kelly fractionnelle),
-- observabilité produit (dashboard + alerting).
+> Plan de travail courant. Source de vérité détaillée : [ROADMAP.md](ROADMAP.md)
+> Archives : [TODO_MOIS_1_ARCHIVE.md](TODO_MOIS_1_ARCHIVE.md), [TODO_MOIS_2_ARCHIVE.md](TODO_MOIS_2_ARCHIVE.md)
 
 ---
 
-## Bloc 1 — Odds live + ETL multi-ligue ✅
+## Blocs terminés ✅
 
-### Résultats
-
-- [x] Worker `odds-live-sync` (API-Football `/odds?fixture=...`)
-- [x] Priorité bookmaker: Pinnacle (`id=4`) puis Bet365 (`id=8`)
-- [x] Snapshot live enregistré dans `OddsSnapshot`
-- [x] ETL full multi-ligue: jobs/schedulers nommés par `competitionCode`
-- [x] `odds-csv-import` multi-compétitions (`divisionCode` par ligue)
-- [x] Route breaking change: `POST /rolling-stats/backfill/:competition/:season`
-- [x] Helpers date renommés génériques (`seasonFallbackStartDate/EndDate`)
-- [x] Règle qualité `max-params <= 3` activée (exceptions DI Nest documentées)
-- [x] Lint + typecheck + tests backend passants (184 tests)
+| Bloc | Contenu | Tests |
+| ---- | ------- | ----- |
+| Bloc 1 | Odds live (odds-live-sync), ETL multi-ligue, multi-compétitions CSV | 184 |
+| Bloc 2 | ETL hardening, pipeline live validé prod, Kelly fractionnelle (`KELLY_ENABLED`) | 200 |
+| Bloc 3 | Daily Coupon Generator (COMBO_WHITELIST, CouponService, CouponWorker, shadow scoring, line movement) | 204 |
 
 ---
 
-## Bloc 2 — Kelly fractionnelle (0.25)
+## Bloc 4 — Shadow Data Collection + auto-activation *(suivant)*
 
-- [ ] Ajouter config `KELLY_ENABLED` + `KELLY_FRACTION=0.25`
-- [ ] Implémenter sizing Kelly fractionnelle dans le moteur de décision
-- [ ] Ajouter garde-fous bankroll (cap mise max, min EV conservé)
-- [ ] Tests unitaires Kelly: edge cases (probabilités extrêmes, cotes faibles, stake cap)
+### Shadow services (données collectées, scores non intégrés au moteur)
 
-## Bloc 3 — Observabilité & pilotage risque
+- [ ] ETL worker `injuries-sync`
+  - Appel `/injuries?fixture=:id` pour chaque fixture SCHEDULED post-fixtures-sync
+  - Stockage dans `ModelRun.features.shadow_injuries` (count blessés clés par équipe)
+  - Zod schema + tests unitaires worker
+- [ ] `H2HService`
+  - 5 dernières confrontations directes depuis fixtures DB (pas d'appel API)
+  - Score H2H : ratio victoires côté favori, loggé en `shadow_h2h`
+  - `FEATURE_FLAGS.SCORING.H2H = false` (shadow seulement)
+- [ ] `CongestionService`
+  - Jours depuis dernier match + nombre de fixtures dans les 4 prochains jours
+  - Score congestion normalisé, loggé en `shadow_congestion`
+  - `FEATURE_FLAGS.SCORING.CONGESTION = false` (shadow seulement)
 
-- [ ] Dashboard Grafana (ROI, Brier, calibration, drawdown, volume bets)
-- [ ] Exposer métriques nécessaires (ou agrégats API) pour dashboard
-- [ ] Alerting hebdo/quotidien avec seuils explicites et runbook court
+### Boucle d'auto-activation
+
+- [ ] `AdjustmentService.computeShadowCorrelations()` — corrélation Spearman entre chaque `shadow_*` et les outcomes réels sur les 50+ derniers bets settlés
+- [ ] Auto-activation si |rho| > 0.15 : `FEATURE_FLAGS.SCORING.<feature> = true`, `AdjustmentProposal` appliqué automatiquement
+- [ ] Rollback via `POST /adjustment/:id/rollback` (existant)
+- [ ] Tests unitaires corrélation Spearman (cas limites : < 50 bets, rho faible, rho fort)
 
 ---
 
-## Suivi d'exécution (Phase 2)
+## Bloc 5 — Coupon settlement + résultats live
+
+- [ ] `CouponService.settleExpiredCoupons(date)` — settle les DailyCoupon PENDING dont tous les bets sont WON/LOST/VOID
+  - `DailyCoupon.status` → WON (tous WON), LOST (≥ 1 LOST), SETTLED (VOID uniquement)
+  - Déclenché post `AdjustmentService.settleAndCheck()` ou par cron séparé
+- [ ] `NotificationService.sendCouponResult(couponId)` — email récap résultat coupon
+- [ ] Endpoint `POST /coupon/:id/settle` (manuel, pour tests en prod)
+- [ ] Tests unitaires `settleExpiredCoupons`
+
+---
+
+## Bloc 6 — Suite Phase 2
+
+- [ ] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
+- [ ] **OpenClaw** (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en prod (≥ 30 jours de coupons)
+- [ ] **Grafana** dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
+- [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
+- [ ] **Multi-bookmakers** (Betclic, Unibet)
+
+---
+
+## Suivi
 
 - [x] Bloc 1 terminé
-- [ ] Bloc 2 lancé
-- [ ] Bloc 3 lancé
-- [x] Docs `ROADMAP.md` synchronisées
+- [x] Bloc 2 terminé
+- [x] Bloc 3 terminé
+- [ ] Bloc 4 en cours
+- [ ] Bloc 5 à faire
+- [ ] Bloc 6 à faire
+- [x] ROADMAP.md synchronisée (2 mars 2026)
