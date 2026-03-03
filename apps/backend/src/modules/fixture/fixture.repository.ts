@@ -16,9 +16,14 @@ type FindByDateAndTeamsInput = {
 };
 
 type UpsertCompetitionInput = {
+  leagueId: number;
   name: string;
   code: string;
   country: string;
+  isActive: boolean;
+  csvDivisionCode?: string;
+  seasonStartMonth?: number;
+  activeSeasonsCount?: number;
 };
 
 type UpsertSeasonInput = {
@@ -88,7 +93,15 @@ export class FixtureRepository {
     return this.prisma.client.competition.upsert({
       where: { code: data.code },
       create: data,
-      update: { name: data.name, country: data.country },
+      update: {
+        leagueId: data.leagueId,
+        name: data.name,
+        country: data.country,
+        isActive: data.isActive,
+        csvDivisionCode: data.csvDivisionCode,
+        seasonStartMonth: data.seasonStartMonth,
+        activeSeasonsCount: data.activeSeasonsCount,
+      },
       select: { id: true },
     });
   }

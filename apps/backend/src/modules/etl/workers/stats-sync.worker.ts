@@ -40,9 +40,14 @@ export class StatsSyncWorker extends WorkerHost {
 
     // Resolve the internal seasonId (idempotent — same as fixtures-sync)
     const competition = await this.fixtureService.upsertCompetition({
+      leagueId: competitionMeta.leagueId,
       name: competitionMeta.name,
       code: competitionMeta.code,
       country: competitionMeta.country,
+      isActive: competitionMeta.isActive,
+      csvDivisionCode: competitionMeta.csvDivisionCode,
+      seasonStartMonth: competitionMeta.seasonStartMonth,
+      activeSeasonsCount: competitionMeta.activeSeasonsCount,
     });
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,

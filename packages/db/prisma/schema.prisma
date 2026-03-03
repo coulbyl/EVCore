@@ -76,13 +76,18 @@ enum NotificationType {
 // ─────────────────────────────────────────────
 
 model Competition {
-  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  name      String
-  code      String   @unique
-  country   String
-  seasons   Season[]
-  teams     Team[]
-  createdAt DateTime @default(now())
+  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  leagueId           Int      @unique
+  code               String   @unique
+  name               String
+  country            String
+  isActive           Boolean
+  csvDivisionCode    String?
+  seasonStartMonth   Int?
+  activeSeasonsCount Int?
+  seasons            Season[]
+  teams              Team[]
+  createdAt          DateTime @default(now())
 
   @@map("competition")
 }

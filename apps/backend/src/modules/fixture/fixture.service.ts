@@ -5,7 +5,16 @@ import {
   type UpsertOddsSnapshotInput,
 } from './fixture.repository';
 
-type UpsertCompetitionInput = { name: string; code: string; country: string };
+type UpsertCompetitionInput = {
+  leagueId: number;
+  code: string;
+  name: string;
+  country: string;
+  isActive: boolean;
+  csvDivisionCode?: string;
+  seasonStartMonth?: number;
+  activeSeasonsCount?: number;
+};
 type UpsertSeasonInput = {
   competitionId: string;
   name: string;

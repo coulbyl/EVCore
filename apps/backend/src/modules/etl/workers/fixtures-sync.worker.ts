@@ -81,9 +81,14 @@ export class FixturesSyncWorker extends WorkerHost {
     const { data } = parsed;
 
     const competitionRecord = await this.fixtureService.upsertCompetition({
+      leagueId: competition.leagueId,
       name: competition.name,
       code: competition.code,
       country: competition.country,
+      isActive: competition.isActive,
+      csvDivisionCode: competition.csvDivisionCode,
+      seasonStartMonth: competition.seasonStartMonth,
+      activeSeasonsCount: competition.activeSeasonsCount,
     });
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback

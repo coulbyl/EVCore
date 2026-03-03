@@ -47,9 +47,14 @@ export class InjuriesSyncWorker extends WorkerHost {
     logger.info({ competitionCode, season }, 'Starting injuries sync');
 
     const competitionRecord = await this.fixtureService.upsertCompetition({
+      leagueId: competition.leagueId,
       name: competition.name,
       code: competition.code,
       country: competition.country,
+      isActive: competition.isActive,
+      csvDivisionCode: competition.csvDivisionCode,
+      seasonStartMonth: competition.seasonStartMonth,
+      activeSeasonsCount: competition.activeSeasonsCount,
     });
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,

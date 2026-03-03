@@ -54,6 +54,12 @@
 
 ## Bloc 6 — Suite Phase 2
 
+- [x] **Configuration compétitions en base (source de vérité DB)**
+  - [x] `Competition` enrichie: `leagueId`, `isActive`, `csvDivisionCode`, `seasonStartMonth`, `activeSeasonsCount`
+  - [x] Migration SQL + backfill des 10 compétitions
+  - [x] Seed Prisma `src/seed.ts` (createMany, skip si table non vide)
+  - [x] ETL workers alignés pour persister ces champs à l'upsert
+
 - [x] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
   - [x] Fondations backend HT/FT: `Market.HALF_TIME_FULL_TIME`, scores mi-temps (`homeHtScore/awayHtScore`), settlement HT/FT
   - [x] Probas HT/FT dérivées du modèle Poisson (`htft` sur 9 issues)
@@ -75,6 +81,13 @@
   - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
 - [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
 - [ ] **Multi-bookmakers** (Betclic, Unibet)
+
+### Reprise — prochaines actions prioritaires
+
+- [ ] Basculer l'ETL sur lecture DB des compétitions actives (retirer la dépendance au static `COMPETITIONS` dans `etl.constants.ts`)
+- [ ] Ajouter un endpoint/admin script pour activer/désactiver une compétition (`isActive`) sans redéploiement
+- [ ] Ajouter des tests ETL sur le chargement dynamique des compétitions (cas: aucune active, vague 1/2/3)
+- [ ] Exécuter migration + seed sur l'environnement de pré-prod, puis valider les jobs planifiés
 
 ---
 
