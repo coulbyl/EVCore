@@ -77,6 +77,7 @@ export type UpsertOddsSnapshotInput = {
   underOdds: number | null;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
+  htftOdds: Record<string, number>;
 };
 
 @Injectable()
@@ -234,7 +235,7 @@ export class FixtureRepository {
     });
 
     const upsertNonOneXTwo = async (
-      market: 'OVER_UNDER' | 'BTTS',
+      market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
       pick: string,
       odds: number | null,
     ): Promise<void> => {
@@ -273,6 +274,9 @@ export class FixtureRepository {
       upsertNonOneXTwo('OVER_UNDER', 'UNDER', data.underOdds),
       upsertNonOneXTwo('BTTS', 'YES', data.bttsYesOdds),
       upsertNonOneXTwo('BTTS', 'NO', data.bttsNoOdds),
+      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
+        upsertNonOneXTwo('HALF_TIME_FULL_TIME', pick, odds),
+      ),
     ]);
 
     return oneXTwoId;

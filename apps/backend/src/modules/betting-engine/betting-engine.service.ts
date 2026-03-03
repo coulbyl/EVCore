@@ -16,11 +16,13 @@ import {
   calculateKellyStakePct,
   buildPoissonDistributions,
   COMBO_WHITELIST,
+  HALF_TIME_FULL_TIME_PICKS,
   computeJointProbability,
   resolveComboPickBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
   type ComboPick,
+  type HalfTimeFullTimePick,
   type DeterministicFeatures,
   type FeatureWeights,
 } from './betting-engine.utils';
@@ -55,7 +57,7 @@ type AnalyzeFixtureResult =
       modelRunId: string;
       decision: 'BET' | 'NO_BET';
       deterministicScore: number;
-      probabilities: Record<string, number>;
+      probabilities: Record<string, number | Record<string, number>>;
       betId: string | null;
       qualityScore: number | null;
     }
@@ -505,52 +507,71 @@ export class BettingEngineService {
       return null;
     }
 
-    const [overRow, underRow, bttsYesRow, bttsNoRow] = await Promise.all([
-      this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId,
-          bookmaker: best.bookmaker,
-          market: Market.OVER_UNDER,
-          pick: 'OVER',
-          snapshotAt: { lte: cutoff },
-        },
-        select: { odds: true },
-        orderBy: { snapshotAt: 'desc' },
-      }),
-      this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId,
-          bookmaker: best.bookmaker,
-          market: Market.OVER_UNDER,
-          pick: 'UNDER',
-          snapshotAt: { lte: cutoff },
-        },
-        select: { odds: true },
-        orderBy: { snapshotAt: 'desc' },
-      }),
-      this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId,
-          bookmaker: best.bookmaker,
-          market: Market.BTTS,
-          pick: 'YES',
-          snapshotAt: { lte: cutoff },
-        },
-        select: { odds: true },
-        orderBy: { snapshotAt: 'desc' },
-      }),
-      this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId,
-          bookmaker: best.bookmaker,
-          market: Market.BTTS,
-          pick: 'NO',
-          snapshotAt: { lte: cutoff },
-        },
-        select: { odds: true },
-        orderBy: { snapshotAt: 'desc' },
-      }),
-    ]);
+    const [overRow, underRow, bttsYesRow, bttsNoRow, htftRows] =
+      await Promise.all([
+        this.prisma.client.oddsSnapshot.findFirst({
+          where: {
+            fixtureId,
+            bookmaker: best.bookmaker,
+            market: Market.OVER_UNDER,
+            pick: 'OVER',
+            snapshotAt: { lte: cutoff },
+          },
+          select: { odds: true },
+          orderBy: { snapshotAt: 'desc' },
+        }),
+        this.prisma.client.oddsSnapshot.findFirst({
+          where: {
+            fixtureId,
+            bookmaker: best.bookmaker,
+            market: Market.OVER_UNDER,
+            pick: 'UNDER',
+            snapshotAt: { lte: cutoff },
+          },
+          select: { odds: true },
+          orderBy: { snapshotAt: 'desc' },
+        }),
+        this.prisma.client.oddsSnapshot.findFirst({
+          where: {
+            fixtureId,
+            bookmaker: best.bookmaker,
+            market: Market.BTTS,
+            pick: 'YES',
+            snapshotAt: { lte: cutoff },
+          },
+          select: { odds: true },
+          orderBy: { snapshotAt: 'desc' },
+        }),
+        this.prisma.client.oddsSnapshot.findFirst({
+          where: {
+            fixtureId,
+            bookmaker: best.bookmaker,
+            market: Market.BTTS,
+            pick: 'NO',
+            snapshotAt: { lte: cutoff },
+          },
+          select: { odds: true },
+          orderBy: { snapshotAt: 'desc' },
+        }),
+        this.prisma.client.oddsSnapshot.findMany({
+          where: {
+            fixtureId,
+            bookmaker: best.bookmaker,
+            market: Market.HALF_TIME_FULL_TIME,
+            snapshotAt: { lte: cutoff },
+          },
+          select: { pick: true, odds: true },
+          orderBy: { snapshotAt: 'desc' },
+        }),
+      ]);
+
+    const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
+    for (const row of htftRows) {
+      if (!row.pick || !row.odds) continue;
+      if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {
+        htftOdds[row.pick] = new Decimal(row.odds.toString());
+      }
+    }
 
     return {
       bookmaker: best.bookmaker,
@@ -566,6 +587,7 @@ export class BettingEngineService {
       bttsNoOdds: bttsNoRow?.odds
         ? new Decimal(bttsNoRow.odds.toString())
         : null,
+      htftOdds,
     };
   }
 
@@ -663,6 +685,24 @@ export class BettingEngineService {
       });
     }
 
+    // Singles HALF_TIME_FULL_TIME
+    for (const pick of HALF_TIME_FULL_TIME_PICKS) {
+      const pickOdds = odds.htftOdds[pick] ?? null;
+      if (pickOdds === null) continue;
+
+      const probability = probabilities.htft[pick];
+      const ev = calcEV(probability, pickOdds);
+      candidates.push({
+        market: Market.HALF_TIME_FULL_TIME,
+        pick,
+        probability,
+        odds: pickOdds,
+        ev,
+        qualityScore: ev.mul(deterministicScore),
+        isCombo: false,
+      });
+    }
+
     // Combos from COMBO_WHITELIST
     for (const combo of COMBO_WHITELIST) {
       const p1Odds = getPickOddsFromSnapshot(combo.market1, combo.pick1, odds);
@@ -705,7 +745,7 @@ export class BettingEngineService {
 
 function mapProbabilitiesToNumber(
   probabilities: MatchProbabilities,
-): Record<string, number> {
+): Record<string, number | Record<string, number>> {
   return {
     home: probabilities.home.toNumber(),
     draw: probabilities.draw.toNumber(),
@@ -717,6 +757,12 @@ function mapProbabilitiesToNumber(
     dc1X: probabilities.dc1X.toNumber(),
     dcX2: probabilities.dcX2.toNumber(),
     dc12: probabilities.dc12.toNumber(),
+    htft: Object.fromEntries(
+      Object.entries(probabilities.htft).map(([pick, value]) => [
+        pick,
+        value.toNumber(),
+      ]),
+    ),
   };
 }
 
@@ -805,6 +851,11 @@ function getPickOddsFromSnapshot(
     if (pick === 'YES') return odds.bttsYesOdds;
     if (pick === 'NO') return odds.bttsNoOdds;
   }
+  if (market === Market.HALF_TIME_FULL_TIME) {
+    if (isHalfTimeFullTimePick(pick)) {
+      return odds.htftOdds[pick] ?? null;
+    }
+  }
   return null;
 }
 
@@ -812,4 +863,8 @@ function getPickOddsFromSnapshot(
 // Used for line movement comparison.
 function getPickOdds(pick: ViablePick, odds: FullOddsSnapshot): Decimal | null {
   return getPickOddsFromSnapshot(pick.market, pick.pick, odds);
+}
+
+function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
+  return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
 }

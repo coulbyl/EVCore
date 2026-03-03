@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   OddsLiveSyncWorker,
+  extractAdditionalMarketOdds,
   extractOneXTwoOdds,
 } from './odds-live-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
@@ -35,6 +36,49 @@ function pinnacleBookmaker(home: string, draw: string, away: string) {
           { value: 'Home', odd: home },
           { value: 'Draw', odd: draw },
           { value: 'Away', odd: away },
+        ],
+      },
+    ],
+  };
+}
+
+function pinnacleWithAdditionalMarkets() {
+  return {
+    id: 4,
+    name: 'Pinnacle',
+    bets: [
+      {
+        id: 1,
+        name: 'Match Winner',
+        values: [
+          { value: 'Home', odd: 2.1 },
+          { value: 'Draw', odd: 3.4 },
+          { value: 'Away', odd: 4.2 },
+        ],
+      },
+      {
+        id: 5,
+        name: 'Goals Over/Under',
+        values: [
+          { value: 'Over 2.5', odd: 1.85 },
+          { value: 'Under 2.5', odd: 2 },
+        ],
+      },
+      {
+        id: 8,
+        name: 'Both Teams Score',
+        values: [
+          { value: 'Yes', odd: 1.7 },
+          { value: 'No', odd: 2.05 },
+        ],
+      },
+      {
+        id: 18,
+        name: 'Half Time / Full Time',
+        values: [
+          { value: 'Home/Home', odd: 3.2 },
+          { value: 'Draw/Home', odd: 5.6 },
+          { value: 'Away/Away', odd: 6.1 },
         ],
       },
     ],
@@ -137,6 +181,7 @@ describe('OddsLiveSyncWorker.process', () => {
         homeOdds: 2.1,
         drawOdds: 3.4,
         awayOdds: 4.2,
+        htftOdds: {},
       }),
     );
   });
@@ -333,5 +378,22 @@ describe('extractOneXTwoOdds', () => {
       ],
     };
     expect(extractOneXTwoOdds([bk as never])).toBeNull();
+  });
+});
+
+describe('extractAdditionalMarketOdds', () => {
+  it('extracts OU/BTTS and HT/FT odds for selected bookmaker', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.overOdds).toBe(1.85);
+    expect(additional.underOdds).toBe(2);
+    expect(additional.bttsYesOdds).toBe(1.7);
+    expect(additional.bttsNoOdds).toBe(2.05);
+    expect(additional.htftOdds).toEqual({
+      HOME_HOME: 3.2,
+      DRAW_HOME: 5.6,
+      AWAY_AWAY: 6.1,
+    });
   });
 });

@@ -16,6 +16,7 @@ export type DerivedMarketsProba = {
   dc1X: Decimal;
   dcX2: Decimal;
   dc12: Decimal;
+  htft: Record<HalfTimeFullTimePick, Decimal>;
 };
 
 export type DeterministicFeatures = {
@@ -163,6 +164,10 @@ function deriveMarketsFromDistributions(
   // Uses the same truncated+normalized distributions for coherence with 1X2.
   const bttsYes = (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0));
   const bttsNo = 1 - bttsYes;
+  const htft = computeHalfTimeFullTimeFromMatchDistributions(
+    homeDist,
+    awayDist,
+  );
 
   return {
     over25: new Decimal(over25),
@@ -172,7 +177,67 @@ function deriveMarketsFromDistributions(
     dc1X: oneXTwo.home.plus(oneXTwo.draw),
     dcX2: oneXTwo.draw.plus(oneXTwo.away),
     dc12: oneXTwo.home.plus(oneXTwo.away),
+    htft,
   };
+}
+
+function computeHalfTimeFullTimeFromMatchDistributions(
+  homeDist: number[],
+  awayDist: number[],
+): Record<HalfTimeFullTimePick, Decimal> {
+  const maxGoals = Math.max(0, homeDist.length - 1, awayDist.length - 1);
+  const factorialCache = buildFactorialCache(maxGoals);
+  const lambdaHome = expectedGoalsFromDistribution(homeDist);
+  const lambdaAway = expectedGoalsFromDistribution(awayDist);
+
+  const homeHalfDist = normalizedPoissonDistribution(
+    lambdaHome / 2,
+    maxGoals,
+    factorialCache,
+  );
+  const awayHalfDist = normalizedPoissonDistribution(
+    lambdaAway / 2,
+    maxGoals,
+    factorialCache,
+  );
+  // First-half and second-half are modeled as independent, identically distributed.
+  const homeSecondDist = homeHalfDist;
+  const awaySecondDist = awayHalfDist;
+
+  const totals = Object.fromEntries(
+    HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, 0]),
+  ) as Record<HalfTimeFullTimePick, number>;
+
+  for (let h1 = 0; h1 < homeHalfDist.length; h1++) {
+    for (let a1 = 0; a1 < awayHalfDist.length; a1++) {
+      const pHalf = (homeHalfDist[h1] ?? 0) * (awayHalfDist[a1] ?? 0);
+      if (pHalf <= 0) continue;
+
+      const halfOutcome = outcomeFromScores(h1, a1);
+
+      for (let h2 = 0; h2 < homeSecondDist.length; h2++) {
+        for (let a2 = 0; a2 < awaySecondDist.length; a2++) {
+          const p =
+            pHalf * (homeSecondDist[h2] ?? 0) * (awaySecondDist[a2] ?? 0);
+          if (p <= 0) continue;
+
+          const fullOutcome = outcomeFromScores(h1 + h2, a1 + a2);
+          const pick = `${halfOutcome}_${fullOutcome}`;
+          if (isHalfTimeFullTimePick(pick)) {
+            totals[pick] += p;
+          }
+        }
+      }
+    }
+  }
+
+  return Object.fromEntries(
+    HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, new Decimal(totals[pick])]),
+  ) as Record<HalfTimeFullTimePick, Decimal>;
+}
+
+function expectedGoalsFromDistribution(distribution: number[]): number {
+  return distribution.reduce((sum, p, goals) => sum + goals * p, 0);
 }
 
 function normalizedPoissonDistributions(
@@ -280,6 +345,7 @@ export const HALF_TIME_FULL_TIME_PICKS = [
   'AWAY_DRAW',
   'AWAY_AWAY',
 ] as const;
+export type HalfTimeFullTimePick = (typeof HALF_TIME_FULL_TIME_PICKS)[number];
 
 type ResolveHalfTimeFullTimeInput = {
   pick: string;
@@ -442,4 +508,8 @@ function outcomeFromScores(
   if (homeScore > awayScore) return 'HOME';
   if (homeScore < awayScore) return 'AWAY';
   return 'DRAW';
+}
+
+function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
+  return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
 }

@@ -61,7 +61,7 @@ Run all quality checks:
 ```bash
 pnpm lint        # ESLint across all packages
 pnpm typecheck   # TypeScript (no emit)
-pnpm --filter backend test  # Vitest unit tests (229 tests)
+pnpm --filter backend test  # Vitest unit tests (231 tests)
 ```
 
 Default service endpoints:
@@ -143,12 +143,12 @@ COUPON_SCHEDULING_ENABLED=false
 
 ## Phase status
 
-| Phase          | Status      | Key deliverable                              |
-| -------------- | ----------- | -------------------------------------------- |
-| MVP Phase 1    | ✅ Complete | Backtest validated — Brier 0.592, ROI +2.28% |
-| Phase 2 Bloc 1 | ✅ Complete | Live odds pipeline, multi-league ETL         |
-| Phase 2 Bloc 2 | ✅ Complete | ETL hardening, Kelly fractional              |
-| Phase 2 Bloc 3 | ✅ Complete | Daily coupon generator (204 tests)           |
-| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop |
-| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications      |
-| Phase 2 Bloc 6 | 🚧 In progress | HT/FT foundations, OpenClaw, Grafana, TimescaleDB |
+| Phase          | Status         | Key deliverable                                   |
+| -------------- | -------------- | ------------------------------------------------- |
+| MVP Phase 1    | ✅ Complete    | Backtest validated — Brier 0.592, ROI +2.28%      |
+| Phase 2 Bloc 1 | ✅ Complete    | Live odds pipeline, multi-league ETL              |
+| Phase 2 Bloc 2 | ✅ Complete    | ETL hardening, Kelly fractional                   |
+| Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                |
+| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop      |
+| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications           |
+| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw, Grafana, TimescaleDB |

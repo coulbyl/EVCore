@@ -54,8 +54,11 @@
 
 ## Bloc 6 — Suite Phase 2
 
-- [ ] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
+- [x] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
   - [x] Fondations backend HT/FT: `Market.HALF_TIME_FULL_TIME`, scores mi-temps (`homeHtScore/awayHtScore`), settlement HT/FT
+  - [x] Probas HT/FT dérivées du modèle Poisson (`htft` sur 9 issues)
+  - [x] Ingestion odds live HT/FT (`Half Time / Full Time`) + persistance `OddsSnapshot`
+  - [x] Sélection EV/qualityScore étendue au marché HT/FT
 - [ ] **OpenClaw** (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en prod (≥ 30 jours de coupons)
 - [ ] **Grafana** dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
 - [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)

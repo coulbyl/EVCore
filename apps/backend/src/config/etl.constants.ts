@@ -154,6 +154,7 @@ export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
   OVER_UNDER_25: 5,
   BTTS: 8,
+  HALF_TIME_FULL_TIME: 18,
 } as const;
 
 export const BULLMQ_QUEUES = {
