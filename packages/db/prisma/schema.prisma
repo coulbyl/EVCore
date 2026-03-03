@@ -33,6 +33,7 @@ enum Market {
   OVER_UNDER
   BTTS
   DOUBLE_CHANCE
+  HALF_TIME_FULL_TIME
 }
 
 enum BetStatus {
@@ -124,6 +125,8 @@ model Fixture {
   status        FixtureStatus @default(SCHEDULED)
   homeScore     Int?
   awayScore     Int?
+  homeHtScore   Int?
+  awayHtScore   Int?
   homeXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
   awayXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
   xgUnavailable Boolean       @default(false)   // true = API returned no stats, skip on retry

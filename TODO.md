@@ -55,6 +55,7 @@
 ## Bloc 6 — Suite Phase 2
 
 - [ ] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
+  - [x] Fondations backend HT/FT: `Market.HALF_TIME_FULL_TIME`, scores mi-temps (`homeHtScore/awayHtScore`), settlement HT/FT
 - [ ] **OpenClaw** (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en prod (≥ 30 jours de coupons)
 - [ ] **Grafana** dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
 - [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
@@ -69,5 +70,5 @@
 - [x] Bloc 3 terminé
 - [ ] Bloc 4 en cours
 - [x] Bloc 5 terminé
-- [ ] Bloc 6 à faire
+- [ ] Bloc 6 en cours
 - [x] ROADMAP.md synchronisée (2 mars 2026)

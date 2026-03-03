@@ -76,6 +76,8 @@ export class ResultsSyncWorker extends WorkerHost {
         externalId: item.fixture.id,
         homeScore: item.goals.home,
         awayScore: item.goals.away,
+        homeHtScore: item.score.halftime.home,
+        awayHtScore: item.score.halftime.away,
         status: 'FINISHED',
       });
 
@@ -92,6 +94,8 @@ export class ResultsSyncWorker extends WorkerHost {
         result.data.externalId,
         result.data.homeScore,
         result.data.awayScore,
+        result.data.homeHtScore,
+        result.data.awayHtScore,
       );
       updated++;
     }

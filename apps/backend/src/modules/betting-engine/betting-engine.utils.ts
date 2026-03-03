@@ -269,6 +269,18 @@ export type ComboPick = {
   pick2: string;
 };
 
+export const HALF_TIME_FULL_TIME_PICKS = [
+  'HOME_HOME',
+  'HOME_DRAW',
+  'HOME_AWAY',
+  'DRAW_HOME',
+  'DRAW_DRAW',
+  'DRAW_AWAY',
+  'AWAY_HOME',
+  'AWAY_DRAW',
+  'AWAY_AWAY',
+] as const;
+
 // Validated combo pairs — only combinations that are logically consistent and
 // have positive expected correlation. Impossible combos (HOME+DRAW, etc.) are absent.
 export const COMBO_WHITELIST: readonly ComboPick[] = [
@@ -378,6 +390,36 @@ export function resolveComboPickBetStatus(
   return ok1 && ok2 ? BetStatus.WON : BetStatus.LOST;
 }
 
+// Resolve the outcome of a HALF_TIME_FULL_TIME bet against half-time and full-time scores.
+// eslint-disable-next-line max-params -- Domain-specific score tuple is explicit and avoids temporary objects.
+export function resolveHalfTimeFullTimeBetStatus(
+  pick: string,
+  homeHtScore: number | null,
+  awayHtScore: number | null,
+  homeScore: number | null,
+  awayScore: number | null,
+): BetStatus {
+  if (
+    homeHtScore === null ||
+    awayHtScore === null ||
+    homeScore === null ||
+    awayScore === null
+  ) {
+    return BetStatus.VOID;
+  }
+
+  const [expectedHalf, expectedFull] = pick.split('_');
+  if (!expectedHalf || !expectedFull) return BetStatus.VOID;
+
+  const halfOutcome = outcomeFromScores(homeHtScore, awayHtScore);
+  const fullOutcome = outcomeFromScores(homeScore, awayScore);
+  if (!halfOutcome || !fullOutcome) return BetStatus.VOID;
+
+  return expectedHalf === halfOutcome && expectedFull === fullOutcome
+    ? BetStatus.WON
+    : BetStatus.LOST;
+}
+
 // Resolve the outcome of a single-market bet (1X2, OVER_UNDER, BTTS, DOUBLE_CHANCE).
 export function resolvePickBetStatus(
   pick: string,
@@ -388,4 +430,13 @@ export function resolvePickBetStatus(
   const condition = PICK_CONDITIONS[pick];
   if (!condition) return BetStatus.VOID;
   return condition(homeScore, awayScore) ? BetStatus.WON : BetStatus.LOST;
+}
+
+function outcomeFromScores(
+  homeScore: number,
+  awayScore: number,
+): 'HOME' | 'DRAW' | 'AWAY' {
+  if (homeScore > awayScore) return 'HOME';
+  if (homeScore < awayScore) return 'AWAY';
+  return 'DRAW';
 }

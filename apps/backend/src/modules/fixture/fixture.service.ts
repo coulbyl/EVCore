@@ -23,6 +23,8 @@ export type FixtureInput = {
   status: FixtureStatus;
   homeScore: number | null;
   awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
 };
 
 type UpsertFixtureChainInput = {
@@ -81,6 +83,8 @@ export class FixtureService {
       status: fixture.status,
       homeScore: fixture.homeScore,
       awayScore: fixture.awayScore,
+      homeHtScore: fixture.homeHtScore,
+      awayHtScore: fixture.awayHtScore,
     });
   }
 
@@ -98,15 +102,20 @@ export class FixtureService {
     return this.fixtureRepository.findByDateAndTeams(input);
   }
 
+  // eslint-disable-next-line max-params -- Service mirrors repository contract for explicit result values.
   async updateScores(
     externalId: number,
     homeScore: number,
     awayScore: number,
+    homeHtScore: number | null,
+    awayHtScore: number | null,
   ): Promise<void> {
     return this.fixtureRepository.updateScores(
       externalId,
       homeScore,
       awayScore,
+      homeHtScore,
+      awayHtScore,
     );
   }
 

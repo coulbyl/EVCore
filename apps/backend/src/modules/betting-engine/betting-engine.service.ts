@@ -18,6 +18,7 @@ import {
   COMBO_WHITELIST,
   computeJointProbability,
   resolveComboPickBetStatus,
+  resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
   type ComboPick,
   type DeterministicFeatures,
@@ -142,7 +143,13 @@ export class BettingEngineService {
   async settleOpenBets(fixtureId: string): Promise<{ settled: number }> {
     const fixture = await this.prisma.client.fixture.findUnique({
       where: { id: fixtureId },
-      select: { homeScore: true, awayScore: true, status: true },
+      select: {
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+        status: true,
+      },
     });
 
     if (!fixture || fixture.status !== FixtureStatus.FINISHED) {
@@ -183,6 +190,14 @@ export class BettingEngineService {
         };
         status = resolveComboPickBetStatus(
           combo,
+          fixture.homeScore,
+          fixture.awayScore,
+        );
+      } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
+        status = resolveHalfTimeFullTimeBetStatus(
+          bet.pick,
+          fixture.homeHtScore,
+          fixture.awayHtScore,
           fixture.homeScore,
           fixture.awayScore,
         );

@@ -133,7 +133,7 @@ describe('ResultsSyncWorker', () => {
       { headers: { 'x-apisports-key': 'test-api-key' } },
     );
     expect(fixtureService.updateScores).toHaveBeenCalledTimes(1);
-    expect(fixtureService.updateScores).toHaveBeenCalledWith(1001, 2, 1);
+    expect(fixtureService.updateScores).toHaveBeenCalledWith(1001, 2, 1, 1, 1);
   });
 
   it('throws on non-ok API response', async () => {

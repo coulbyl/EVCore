@@ -164,6 +164,8 @@ function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
     status: mapStatus(item.fixture.status.short),
     homeScore: item.goals.home,
     awayScore: item.goals.away,
+    homeHtScore: item.score.halftime.home,
+    awayHtScore: item.score.halftime.away,
   };
 }
 

@@ -225,6 +225,7 @@
 ### Bloc 6 — Suite Phase 2
 
 - [ ] Marché Mi-temps/Fin de match (HT/FT combo)
+  - [x] Fondations HT/FT backend: enum marché, stockage score mi-temps, settlement dédié (`resolveHalfTimeFullTimeBetStatus`)
 - [ ] OpenClaw integration (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en production
 - [ ] Grafana dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
 - [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)

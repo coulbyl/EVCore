@@ -5,6 +5,8 @@ export const ResultSchema = z.object({
   externalId: z.number().int().positive(),
   homeScore: z.number().int().nonnegative(),
   awayScore: z.number().int().nonnegative(),
+  homeHtScore: z.number().int().nonnegative().nullable(),
+  awayHtScore: z.number().int().nonnegative().nullable(),
   status: z.literal('FINISHED'),
 });
 
