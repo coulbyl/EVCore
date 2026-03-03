@@ -90,13 +90,13 @@ export class ResultsSyncWorker extends WorkerHost {
         continue;
       }
 
-      await this.fixtureService.updateScores(
-        result.data.externalId,
-        result.data.homeScore,
-        result.data.awayScore,
-        result.data.homeHtScore,
-        result.data.awayHtScore,
-      );
+      await this.fixtureService.updateScores({
+        externalId: result.data.externalId,
+        homeScore: result.data.homeScore,
+        awayScore: result.data.awayScore,
+        homeHtScore: result.data.homeHtScore,
+        awayHtScore: result.data.awayHtScore,
+      });
       updated++;
     }
 

@@ -49,6 +49,14 @@ type UpsertFixtureInput = {
   awayHtScore?: number | null;
 };
 
+type UpdateScoresInput = {
+  externalId: number;
+  homeScore: number;
+  awayScore: number;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 type UpsertOneXTwoOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -124,21 +132,14 @@ export class FixtureRepository {
     });
   }
 
-  // eslint-disable-next-line max-params -- Score update carries full-time and half-time values explicitly.
-  async updateScores(
-    externalId: number,
-    homeScore: number,
-    awayScore: number,
-    homeHtScore: number | null,
-    awayHtScore: number | null,
-  ): Promise<void> {
+  async updateScores(input: UpdateScoresInput): Promise<void> {
     await this.prisma.client.fixture.updateMany({
-      where: { externalId },
+      where: { externalId: input.externalId },
       data: {
-        homeScore,
-        awayScore,
-        homeHtScore,
-        awayHtScore,
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+        homeHtScore: input.homeHtScore,
+        awayHtScore: input.awayHtScore,
         status: 'FINISHED',
       },
     });

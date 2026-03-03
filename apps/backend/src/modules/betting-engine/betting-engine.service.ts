@@ -194,13 +194,13 @@ export class BettingEngineService {
           fixture.awayScore,
         );
       } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
-        status = resolveHalfTimeFullTimeBetStatus(
-          bet.pick,
-          fixture.homeHtScore,
-          fixture.awayHtScore,
-          fixture.homeScore,
-          fixture.awayScore,
-        );
+        status = resolveHalfTimeFullTimeBetStatus({
+          pick: bet.pick,
+          homeHtScore: fixture.homeHtScore,
+          awayHtScore: fixture.awayHtScore,
+          homeScore: fixture.homeScore,
+          awayScore: fixture.awayScore,
+        });
       } else {
         status = resolvePickBetStatus(
           bet.pick,

@@ -49,6 +49,14 @@ type FindByDateAndTeamsInput = {
   competitionCode?: string;
 };
 
+type UpdateScoresInput = {
+  externalId: number;
+  homeScore: number;
+  awayScore: number;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 @Injectable()
 export class FixtureService {
   constructor(private readonly fixtureRepository: FixtureRepository) {}
@@ -102,21 +110,8 @@ export class FixtureService {
     return this.fixtureRepository.findByDateAndTeams(input);
   }
 
-  // eslint-disable-next-line max-params -- Service mirrors repository contract for explicit result values.
-  async updateScores(
-    externalId: number,
-    homeScore: number,
-    awayScore: number,
-    homeHtScore: number | null,
-    awayHtScore: number | null,
-  ): Promise<void> {
-    return this.fixtureRepository.updateScores(
-      externalId,
-      homeScore,
-      awayScore,
-      homeHtScore,
-      awayHtScore,
-    );
+  async updateScores(input: UpdateScoresInput): Promise<void> {
+    return this.fixtureRepository.updateScores(input);
   }
 
   async updateXg(

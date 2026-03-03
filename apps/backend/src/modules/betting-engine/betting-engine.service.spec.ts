@@ -261,23 +261,35 @@ describe('resolveComboPickBetStatus', () => {
 
 describe('resolveHalfTimeFullTimeBetStatus', () => {
   it('returns WON when both half-time and full-time outcomes match', () => {
-    const result = resolveHalfTimeFullTimeBetStatus('HOME_HOME', 1, 0, 2, 1);
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'HOME_HOME',
+      homeHtScore: 1,
+      awayHtScore: 0,
+      homeScore: 2,
+      awayScore: 1,
+    });
     expect(result).toBe('WON');
   });
 
   it('returns LOST when half-time/full-time pick does not match', () => {
-    const result = resolveHalfTimeFullTimeBetStatus('DRAW_HOME', 1, 0, 2, 1);
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'DRAW_HOME',
+      homeHtScore: 1,
+      awayHtScore: 0,
+      homeScore: 2,
+      awayScore: 1,
+    });
     expect(result).toBe('LOST');
   });
 
   it('returns VOID when half-time scores are missing', () => {
-    const result = resolveHalfTimeFullTimeBetStatus(
-      'HOME_HOME',
-      null,
-      null,
-      2,
-      1,
-    );
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'HOME_HOME',
+      homeHtScore: null,
+      awayHtScore: null,
+      homeScore: 2,
+      awayScore: 1,
+    });
     expect(result).toBe('VOID');
   });
 });

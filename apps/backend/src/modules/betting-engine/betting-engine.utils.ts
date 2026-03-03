@@ -281,6 +281,14 @@ export const HALF_TIME_FULL_TIME_PICKS = [
   'AWAY_AWAY',
 ] as const;
 
+type ResolveHalfTimeFullTimeInput = {
+  pick: string;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
 // Validated combo pairs — only combinations that are logically consistent and
 // have positive expected correlation. Impossible combos (HOME+DRAW, etc.) are absent.
 export const COMBO_WHITELIST: readonly ComboPick[] = [
@@ -391,28 +399,23 @@ export function resolveComboPickBetStatus(
 }
 
 // Resolve the outcome of a HALF_TIME_FULL_TIME bet against half-time and full-time scores.
-// eslint-disable-next-line max-params -- Domain-specific score tuple is explicit and avoids temporary objects.
 export function resolveHalfTimeFullTimeBetStatus(
-  pick: string,
-  homeHtScore: number | null,
-  awayHtScore: number | null,
-  homeScore: number | null,
-  awayScore: number | null,
+  input: ResolveHalfTimeFullTimeInput,
 ): BetStatus {
   if (
-    homeHtScore === null ||
-    awayHtScore === null ||
-    homeScore === null ||
-    awayScore === null
+    input.homeHtScore === null ||
+    input.awayHtScore === null ||
+    input.homeScore === null ||
+    input.awayScore === null
   ) {
     return BetStatus.VOID;
   }
 
-  const [expectedHalf, expectedFull] = pick.split('_');
+  const [expectedHalf, expectedFull] = input.pick.split('_');
   if (!expectedHalf || !expectedFull) return BetStatus.VOID;
 
-  const halfOutcome = outcomeFromScores(homeHtScore, awayHtScore);
-  const fullOutcome = outcomeFromScores(homeScore, awayScore);
+  const halfOutcome = outcomeFromScores(input.homeHtScore, input.awayHtScore);
+  const fullOutcome = outcomeFromScores(input.homeScore, input.awayScore);
   if (!halfOutcome || !fullOutcome) return BetStatus.VOID;
 
   return expectedHalf === halfOutcome && expectedFull === fullOutcome
