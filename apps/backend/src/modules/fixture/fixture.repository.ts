@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus } from '@evcore/db';
+import { Fixture, FixtureStatus, Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { oneDayWindow } from '@utils/date.utils';
 
@@ -262,22 +262,15 @@ export class FixtureRepository {
       odds: number | null,
     ): Promise<void> => {
       if (odds === null) return;
-      const existing = await this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId: data.fixtureId,
-          bookmaker: data.bookmaker,
-          market,
-          pick,
-          snapshotAt: data.snapshotAt,
-        },
-        select: { id: true },
-      });
-      if (existing) {
-        await this.prisma.client.oddsSnapshot.update({
-          where: { id: existing.id },
-          data: { odds },
-        });
-      } else {
+      const where = {
+        fixtureId: data.fixtureId,
+        bookmaker: data.bookmaker,
+        market,
+        pick,
+        snapshotAt: data.snapshotAt,
+      } as const;
+
+      try {
         await this.prisma.client.oddsSnapshot.create({
           data: {
             fixtureId: data.fixtureId,
@@ -287,6 +280,20 @@ export class FixtureRepository {
             snapshotAt: data.snapshotAt,
             odds,
           },
+        });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+
+        const existing = await this.prisma.client.oddsSnapshot.findFirst({
+          where,
+          select: { id: true },
+        });
+
+        if (!existing) throw error;
+
+        await this.prisma.client.oddsSnapshot.update({
+          where: { id: existing.id },
+          data: { odds },
         });
       }
     };
@@ -308,17 +315,36 @@ export class FixtureRepository {
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
-    const existing = await this.prisma.client.oddsSnapshot.findFirst({
-      where: {
-        fixtureId: data.fixtureId,
-        bookmaker: data.bookmaker,
-        market: 'ONE_X_TWO',
-        snapshotAt: data.snapshotAt,
-      },
-      select: { id: true },
-    });
+    const where = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      market: 'ONE_X_TWO' as const,
+      snapshotAt: data.snapshotAt,
+    };
 
-    if (existing) {
+    try {
+      return await this.prisma.client.oddsSnapshot.create({
+        data: {
+          fixtureId: data.fixtureId,
+          bookmaker: data.bookmaker,
+          market: 'ONE_X_TWO',
+          snapshotAt: data.snapshotAt,
+          homeOdds: data.homeOdds,
+          drawOdds: data.drawOdds,
+          awayOdds: data.awayOdds,
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+
+      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+        where,
+        select: { id: true },
+      });
+
+      if (!existing) throw error;
+
       return this.prisma.client.oddsSnapshot.update({
         where: { id: existing.id },
         data: {
@@ -329,19 +355,6 @@ export class FixtureRepository {
         select: { id: true },
       });
     }
-
-    return this.prisma.client.oddsSnapshot.create({
-      data: {
-        fixtureId: data.fixtureId,
-        bookmaker: data.bookmaker,
-        market: 'ONE_X_TWO',
-        snapshotAt: data.snapshotAt,
-        homeOdds: data.homeOdds,
-        drawOdds: data.drawOdds,
-        awayOdds: data.awayOdds,
-      },
-      select: { id: true },
-    });
   }
 
   // Used by xg-sync to match Understat entries to DB fixtures via date (±1 day) + team names.
@@ -382,4 +395,11 @@ function normalizeTeamName(name: string): string {
     .replace(/\b(fc|afc|cf|sc)\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }

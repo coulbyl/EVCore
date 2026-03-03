@@ -138,6 +138,10 @@ model Fixture {
 
   @@index([seasonId, matchday])
   @@index([scheduledAt])
+  @@index([status, scheduledAt])
+  @@index([seasonId, status, scheduledAt])
+  @@index([homeTeamId, status, scheduledAt])
+  @@index([awayTeamId, status, scheduledAt])
 }
 
 // Rolling stats computed for a team after a given fixture was played.
@@ -184,6 +188,7 @@ model ModelRun {
   createdAt          DateTime @default(now())
 
   @@index([fixtureId])
+  @@index([fixtureId, analyzedAt])
 }
 
 // One bet per market per ModelRun.
@@ -209,6 +214,8 @@ model Bet {
 
   @@index([modelRunId])
   @@index([dailyCouponId])
+  @@index([market, status, createdAt])
+  @@index([status, updatedAt])
 }
 
 // Daily betting coupon — one per day across all active leagues.
@@ -239,6 +246,9 @@ model AdjustmentProposal {
   notes            String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+
+  @@index([status, appliedAt])
+  @@index([createdAt])
 }
 
 // Active suspension of a market triggered automatically by risk rules.

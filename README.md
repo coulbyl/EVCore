@@ -145,26 +145,26 @@ ODDS_SNAPSHOT_RETENTION_DAYS=30
 
 ## Documentation
 
-| File                     | Purpose                                                       |
-| ------------------------ | ------------------------------------------------------------- |
-| [EVCORE.md](EVCORE.md)   | Full product specification — architecture, model, constraints |
-| [ROADMAP.md](ROADMAP.md) | Implementation roadmap — phase-by-phase checklist             |
-| [TODO.md](TODO.md)       | Current work plan and upcoming blocs                          |
-| [COUPON.md](COUPON.md)   | Daily coupon generator specification                          |
-| [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria  |
-| [GRAFANA.md](GRAFANA.md) | Grafana policy — stand-by post-prod + activation criteria    |
-| [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                           |
+| File                       | Purpose                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)     | Full product specification — architecture, model, constraints |
+| [ROADMAP.md](ROADMAP.md)   | Implementation roadmap — phase-by-phase checklist             |
+| [TODO.md](TODO.md)         | Current work plan and upcoming blocs                          |
+| [COUPON.md](COUPON.md)     | Daily coupon generator specification                          |
+| [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria    |
+| [GRAFANA.md](GRAFANA.md)   | Grafana policy — stand-by post-prod + activation criteria     |
+| [CLAUDE.md](CLAUDE.md)     | AI coding conventions (Claude Code)                           |
 
 ---
 
 ## Phase status
 
-| Phase          | Status         | Key deliverable                                   |
-| -------------- | -------------- | ------------------------------------------------- |
-| MVP Phase 1    | ✅ Complete    | Backtest validated — Brier 0.592, ROI +2.28%      |
-| Phase 2 Bloc 1 | ✅ Complete    | Live odds pipeline, multi-league ETL              |
-| Phase 2 Bloc 2 | ✅ Complete    | ETL hardening, Kelly fractional                   |
-| Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                |
-| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop      |
-| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications           |
+| Phase          | Status         | Key deliverable                                                          |
+| -------------- | -------------- | ------------------------------------------------------------------------ |
+| MVP Phase 1    | ✅ Complete    | Backtest validated — Brier 0.592, ROI +2.28%                             |
+| Phase 2 Bloc 1 | ✅ Complete    | Live odds pipeline, multi-league ETL                                     |
+| Phase 2 Bloc 2 | ✅ Complete    | ETL hardening, Kelly fractional                                          |
+| Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                                       |
+| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop                             |
+| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications                                  |
 | Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB |
