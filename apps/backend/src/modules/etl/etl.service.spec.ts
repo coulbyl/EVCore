@@ -14,6 +14,7 @@ import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
+import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
 
 type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
 
@@ -45,6 +46,7 @@ describe('EtlService', () => {
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
   const resultsQueue = makeQueue<ResultsSyncJobData>();
   const statsQueue = makeQueue<StatsSyncJobData>();
+  const injuriesQueue = makeQueue<InjuriesSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
   const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
 
@@ -52,6 +54,7 @@ describe('EtlService', () => {
     fixturesQueue as Queue<FixturesSyncJobData>,
     resultsQueue as Queue<ResultsSyncJobData>,
     statsQueue as Queue<StatsSyncJobData>,
+    injuriesQueue as Queue<InjuriesSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
     oddsLiveQueue as Queue<OddsLiveSyncJobData>,
     configMock,
@@ -130,6 +133,29 @@ describe('EtlService', () => {
     }
   });
 
+  it('dispatches injuries jobs for each season with API-FOOTBALL staggered delays', async () => {
+    await service.triggerInjuriesSync();
+
+    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+
+    let callIndex = 0;
+    for (const plan of activePlans) {
+      for (let i = 0; i < plan.seasons.length; i++) {
+        callIndex++;
+        const season = plan.seasons[i];
+        expect(injuriesQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `injuries-sync-${plan.competition.code}-${season}`,
+          { season, competitionCode: plan.competition.code },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          },
+        );
+      }
+    }
+  });
+
   it('dispatches odds CSV import jobs for each season code with 2s staggered delays', async () => {
     await service.triggerOddsCsvImport();
 
@@ -157,12 +183,13 @@ describe('EtlService', () => {
     }
   });
 
-  it('triggerFullSync enqueues fixtures, results, stats, odds CSV, and odds live jobs', async () => {
+  it('triggerFullSync enqueues fixtures, results, stats, injuries, odds CSV, and odds live jobs', async () => {
     await service.triggerFullSync();
 
     expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
     expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
   });

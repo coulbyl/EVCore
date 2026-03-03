@@ -24,6 +24,8 @@ import {
   type FeatureWeights,
 } from './betting-engine.utils';
 import { PrismaService } from '@/prisma.service';
+import { H2HService } from './h2h.service';
+import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import {
   DEFAULT_STAKE_PCT,
@@ -69,9 +71,12 @@ type AnalyzeFixtureResult =
 export class BettingEngineService {
   private readonly kellyEnabled: boolean;
 
+  // eslint-disable-next-line max-params -- Explicit service injection keeps scoring dependencies transparent.
   constructor(
     private readonly prisma: PrismaService,
     config: ConfigService,
+    private readonly h2hService: H2HService,
+    private readonly congestionService: CongestionService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
   }
@@ -286,6 +291,25 @@ export class BettingEngineService {
         )
       : null;
 
+    const favoriteTeamId = probabilities.home.greaterThanOrEqualTo(
+      probabilities.away,
+    )
+      ? fixture.homeTeamId
+      : fixture.awayTeamId;
+    const shadowH2h = await this.h2hService.computeH2HScore({
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      favoriteTeamId,
+      fixtureDate: fixture.scheduledAt,
+      limit: 5,
+    });
+    const shadowCongestion =
+      await this.congestionService.computeCongestionScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+      });
+
     // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
     let shadowLineMovement: number | null = null;
     if (
@@ -341,8 +365,8 @@ export class BettingEngineService {
           lambdaAway: lambda.away,
           probabilities: mapProbabilitiesToNumber(probabilities),
           shadow_lineMovement: shadowLineMovement,
-          shadow_h2h: null,
-          shadow_congestion: null,
+          shadow_h2h: shadowH2h,
+          shadow_congestion: shadowCongestion,
           shadow_lineups: null,
           shadow_injuries: null,
         },

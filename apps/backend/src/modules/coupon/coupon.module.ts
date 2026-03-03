@@ -7,6 +7,7 @@ import { BettingEngineModule } from '@modules/betting-engine/betting-engine.modu
 import { FixtureModule } from '@modules/fixture/fixture.module';
 import { NotificationModule } from '@modules/notification/notification.module';
 import { CouponRepository } from './coupon.repository';
+import { CouponController } from './coupon.controller';
 import { CouponService } from './coupon.service';
 import { CouponWorker } from './coupon.worker';
 
@@ -19,6 +20,7 @@ import { CouponWorker } from './coupon.worker';
     FixtureModule,
     NotificationModule,
   ],
+  controllers: [CouponController],
   providers: [CouponRepository, CouponService, CouponWorker],
   exports: [CouponService],
 })

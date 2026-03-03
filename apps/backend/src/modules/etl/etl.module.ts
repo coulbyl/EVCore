@@ -11,6 +11,7 @@ import { ResultsSyncWorker } from './workers/results-sync.worker';
 import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
 import { OddsLiveSyncWorker } from './workers/odds-live-sync.worker';
+import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OddsLiveSyncWorker } from './workers/odds-live-sync.worker';
       { name: BULLMQ_QUEUES.FIXTURES_SYNC },
       { name: BULLMQ_QUEUES.RESULTS_SYNC },
       { name: BULLMQ_QUEUES.STATS_SYNC },
+      { name: BULLMQ_QUEUES.INJURIES_SYNC },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
       { name: BULLMQ_QUEUES.ODDS_LIVE_SYNC },
     ),
@@ -31,6 +33,7 @@ import { OddsLiveSyncWorker } from './workers/odds-live-sync.worker';
     FixturesSyncWorker,
     ResultsSyncWorker,
     StatsSyncWorker,
+    InjuriesSyncWorker,
     OddsCsvImportWorker,
     OddsLiveSyncWorker,
   ],

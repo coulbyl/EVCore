@@ -4,9 +4,9 @@
 export const FEATURE_FLAGS = {
   SCORING: {
     LINE_MOVEMENT: true, // filter picks with >10% adverse odds movement over 7 days
-    INJURIES: false, // ETL not implemented — shadow value: null
-    H2H: false, // H2HService not implemented — shadow value: null
-    CONGESTION: false, // CongestionService not implemented — shadow value: null
+    INJURIES: false, // shadow collected by injuries-sync worker
+    H2H: false, // shadow value computed in BettingEngineService
+    CONGESTION: false, // shadow value computed in BettingEngineService
     LINEUPS: false, // post-hoc only — shadow value: null
   },
 } as const;

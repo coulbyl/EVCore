@@ -180,6 +180,26 @@ export class FixtureRepository {
     });
   }
 
+  findScheduledBySeason(seasonId: string): Promise<
+    {
+      id: string;
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: { seasonId, status: 'SCHEDULED' },
+      select: {
+        id: true,
+        externalId: true,
+        homeTeam: { select: { externalId: true } },
+        awayTeam: { select: { externalId: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   async markXgUnavailable(externalId: number): Promise<void> {
     await this.prisma.client.fixture.updateMany({
       where: { externalId },

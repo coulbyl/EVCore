@@ -49,6 +49,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'injuries-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 12,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-csv-import': {
           active: 0,
           waiting: 0,
@@ -77,7 +84,7 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger full ETL sync',
     description:
-      'Enqueues all five ETL workers in sequence: fixtures → results → stats → ' +
+      'Enqueues all ETL workers in sequence: fixtures → results → stats → injuries → ' +
       'odds-csv → odds-live. Jobs are staggered to respect API rate limits. ' +
       'Use for initial backfill or after a long downtime.',
   })
@@ -131,6 +138,21 @@ export class EtlController {
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerStatsSync() {
     await this.etlService.triggerStatsSync();
+    return { status: 'ok' as const };
+  }
+
+  @Post('sync/injuries')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger injuries shadow sync',
+    description:
+      'Enqueues one injuries-sync job per active competition × current season. ' +
+      'Fetches injuries from API-Football for scheduled fixtures and stores ' +
+      '`shadow_injuries` into the latest ModelRun.features per fixture.',
+  })
+  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  async triggerInjuriesSync() {
+    await this.etlService.triggerInjuriesSync();
     return { status: 'ok' as const };
   }
 

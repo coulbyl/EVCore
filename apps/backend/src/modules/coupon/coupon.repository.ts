@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CouponStatus } from '@evcore/db';
+import { BetStatus, CouponStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 @Injectable()
@@ -32,6 +32,49 @@ export class CouponRepository {
     return this.prisma.client.dailyCoupon.findFirst({
       where: { date: { gte: start, lte: end } },
       select: { id: true, status: true },
+    });
+  }
+
+  findPendingCouponsUntil(date: Date): Promise<
+    {
+      id: string;
+      status: CouponStatus;
+      bets: { id: string; status: BetStatus }[];
+    }[]
+  > {
+    return this.prisma.client.dailyCoupon.findMany({
+      where: {
+        status: CouponStatus.PENDING,
+        date: { lte: date },
+      },
+      select: {
+        id: true,
+        status: true,
+        bets: { select: { id: true, status: true } },
+      },
+      orderBy: { date: 'asc' },
+    });
+  }
+
+  findCouponById(couponId: string): Promise<{
+    id: string;
+    status: CouponStatus;
+    bets: { id: string; status: BetStatus }[];
+  } | null> {
+    return this.prisma.client.dailyCoupon.findUnique({
+      where: { id: couponId },
+      select: {
+        id: true,
+        status: true,
+        bets: { select: { id: true, status: true } },
+      },
+    });
+  }
+
+  async updateStatus(couponId: string, status: CouponStatus): Promise<void> {
+    await this.prisma.client.dailyCoupon.update({
+      where: { id: couponId },
+      data: { status },
     });
   }
 }

@@ -3,6 +3,7 @@ import { AdjustmentStatus, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import { CouponService } from '@modules/coupon/coupon.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import {
   CalibrationService,
@@ -22,9 +23,33 @@ type SettleAndCheckResult = {
   settled: number;
   calibration: CalibrationResult | null;
   proposalId: string | null;
+  shadowCorrelations: ShadowCorrelationsResult | null;
+  shadowProposalId: string | null;
 };
 
 type WeightEntry = { key: keyof FeatureWeights; value: Decimal };
+type ShadowFeatureKey = 'shadow_h2h' | 'shadow_congestion' | 'shadow_injuries';
+type ShadowCorrelation = {
+  feature: ShadowFeatureKey;
+  rho: number;
+  sampleSize: number;
+};
+type ShadowCorrelationsResult = {
+  betCount: number;
+  correlations: ShadowCorrelation[];
+};
+type SettledBetWithFeatures = {
+  status: 'WON' | 'LOST';
+  modelRun: { features: unknown };
+};
+
+const SHADOW_FEATURE_KEYS: readonly ShadowFeatureKey[] = [
+  'shadow_h2h',
+  'shadow_congestion',
+  'shadow_injuries',
+];
+const SHADOW_ACTIVATION_RHO_THRESHOLD = 0.15;
+const SHADOW_CORRELATION_LOOKBACK = 200;
 
 @Injectable()
 export class AdjustmentService {
@@ -32,12 +57,14 @@ export class AdjustmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
+    private readonly couponService: CouponService,
     private readonly calibration: CalibrationService,
     private readonly notification: NotificationService,
   ) {}
 
   async settleAndCheck(fixtureId: string): Promise<SettleAndCheckResult> {
     const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
+    await this.couponService.settleExpiredCoupons(new Date());
 
     const calibrationResult =
       await this.calibration.computeForMarket(CALIBRATION_MARKET);
@@ -47,16 +74,41 @@ export class AdjustmentService {
       !calibrationResult.needsAdjustment ||
       calibrationResult.betCount < MIN_BET_COUNT
     ) {
-      return { settled, calibration: calibrationResult, proposalId: null };
+      const shadowCorrelations = await this.computeShadowCorrelations();
+      const shadowProposalId =
+        shadowCorrelations === null
+          ? null
+          : await this.autoActivateShadowFeatures(shadowCorrelations);
+      return {
+        settled,
+        calibration: calibrationResult,
+        proposalId: null,
+        shadowCorrelations,
+        shadowProposalId,
+      };
     }
 
     const recentApply = await this.findRecentApply();
     if (recentApply !== null) {
-      return { settled, calibration: calibrationResult, proposalId: null };
+      const shadowCorrelations = await this.computeShadowCorrelations();
+      return {
+        settled,
+        calibration: calibrationResult,
+        proposalId: null,
+        shadowCorrelations,
+        shadowProposalId: null,
+      };
     }
 
     const proposalId = await this.autoApply(calibrationResult);
-    return { settled, calibration: calibrationResult, proposalId };
+    const shadowCorrelations = await this.computeShadowCorrelations();
+    return {
+      settled,
+      calibration: calibrationResult,
+      proposalId,
+      shadowCorrelations,
+      shadowProposalId: null,
+    };
   }
 
   async rollback(proposalId: string): Promise<{ newProposalId: string }> {
@@ -139,6 +191,100 @@ export class AdjustmentService {
 
     return proposal.id;
   }
+
+  async computeShadowCorrelations(): Promise<ShadowCorrelationsResult | null> {
+    const settledBets = await this.prisma.client.bet.findMany({
+      where: { status: { in: ['WON', 'LOST'] } },
+      select: {
+        status: true,
+        modelRun: { select: { features: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: SHADOW_CORRELATION_LOOKBACK,
+    });
+
+    if (settledBets.length < MIN_BET_COUNT) return null;
+
+    const correlations = SHADOW_FEATURE_KEYS.map((feature) =>
+      this.computeFeatureCorrelation(
+        feature,
+        settledBets as SettledBetWithFeatures[],
+      ),
+    );
+
+    return { betCount: settledBets.length, correlations };
+  }
+
+  private computeFeatureCorrelation(
+    feature: ShadowFeatureKey,
+    settledBets: SettledBetWithFeatures[],
+  ): ShadowCorrelation {
+    const values: number[] = [];
+    const outcomes: number[] = [];
+
+    for (const bet of settledBets) {
+      const features = toObjectRecord(bet.modelRun.features);
+      if (features === null) continue;
+
+      const maybeValue = extractShadowFeatureValue(features, feature);
+      if (maybeValue === null) continue;
+
+      values.push(maybeValue);
+      outcomes.push(bet.status === 'WON' ? 1 : 0);
+    }
+
+    if (values.length < MIN_BET_COUNT) {
+      return { feature, rho: 0, sampleSize: values.length };
+    }
+
+    return {
+      feature,
+      rho: spearmanRho(values, outcomes),
+      sampleSize: values.length,
+    };
+  }
+
+  private async autoActivateShadowFeatures(
+    correlations: ShadowCorrelationsResult,
+  ): Promise<string | null> {
+    const candidates = correlations.correlations.filter(
+      (item) =>
+        Math.abs(item.rho) > SHADOW_ACTIVATION_RHO_THRESHOLD &&
+        item.sampleSize >= MIN_BET_COUNT,
+    );
+
+    if (candidates.length === 0) return null;
+
+    const recentApply = await this.findRecentApply();
+    if (recentApply !== null) return null;
+
+    const currentWeights = await this.bettingEngine.getEffectiveWeights();
+    const currentWeightsJson = weightsToJson(currentWeights);
+    const featureList = candidates
+      .map((c) => `${c.feature} (rho=${c.rho.toFixed(3)}, n=${c.sampleSize})`)
+      .join(', ');
+
+    // Runtime constants are immutable; we persist activation intent in APPLIED proposal notes.
+    const proposal = await this.prisma.client.adjustmentProposal.create({
+      data: {
+        currentWeights: currentWeightsJson,
+        proposedWeights: currentWeightsJson,
+        calibrationError: 0,
+        triggerBetCount: correlations.betCount,
+        status: AdjustmentStatus.APPLIED,
+        appliedAt: new Date(),
+        notes: `Shadow auto-activation: ${featureList}`,
+      },
+      select: { id: true },
+    });
+
+    await this.notification.sendWeightAdjustmentAlert({
+      proposalId: proposal.id,
+      isRollback: false,
+    });
+
+    return proposal.id;
+  }
 }
 
 /**
@@ -205,4 +351,85 @@ function weightsToJson(w: FeatureWeights): Record<string, string> {
     domExtPerf: new Decimal(w.domExtPerf).toFixed(6),
     leagueVolat: new Decimal(w.leagueVolat).toFixed(6),
   };
+}
+
+function extractShadowFeatureValue(
+  features: Record<string, unknown>,
+  feature: ShadowFeatureKey,
+): number | null {
+  const raw = features[feature];
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+
+  if (
+    feature === 'shadow_injuries' &&
+    typeof raw === 'object' &&
+    raw !== null &&
+    !Array.isArray(raw)
+  ) {
+    const total = (raw as Record<string, unknown>)['total'];
+    if (typeof total === 'number' && Number.isFinite(total)) return total;
+  }
+
+  return null;
+}
+
+function toObjectRecord(value: unknown): Record<string, unknown> | null {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.getPrototypeOf(value) !== Object.prototype
+  ) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function spearmanRho(values: number[], outcomes: number[]): number {
+  if (values.length !== outcomes.length || values.length < 2) return 0;
+
+  const rankX = averageRanks(values);
+  const rankY = averageRanks(outcomes);
+  return pearson(rankX, rankY);
+}
+
+function averageRanks(values: number[]): number[] {
+  const indexed = values
+    .map((value, index) => ({ value, index }))
+    .sort((a, b) => a.value - b.value);
+
+  const ranks = new Array<number>(values.length);
+  let i = 0;
+  while (i < indexed.length) {
+    let j = i + 1;
+    while (j < indexed.length && indexed[j].value === indexed[i].value) j++;
+    const avgRank = (i + 1 + j) / 2;
+    for (let k = i; k < j; k++) {
+      ranks[indexed[k].index] = avgRank;
+    }
+    i = j;
+  }
+  return ranks;
+}
+
+function pearson(x: number[], y: number[]): number {
+  const n = x.length;
+  if (n !== y.length || n < 2) return 0;
+
+  const meanX = x.reduce((sum, v) => sum + v, 0) / n;
+  const meanY = y.reduce((sum, v) => sum + v, 0) / n;
+
+  let num = 0;
+  let denX = 0;
+  let denY = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - meanX;
+    const dy = y[i] - meanY;
+    num += dx * dy;
+    denX += dx * dx;
+    denY += dy * dy;
+  }
+
+  if (denX === 0 || denY === 0) return 0;
+  return num / Math.sqrt(denX * denY);
 }

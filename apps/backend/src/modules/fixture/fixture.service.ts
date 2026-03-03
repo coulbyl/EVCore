@@ -136,6 +136,17 @@ export class FixtureService {
     return this.fixtureRepository.findFinishedWithoutXg(seasonId);
   }
 
+  findScheduledBySeason(seasonId: string): Promise<
+    {
+      id: string;
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }[]
+  > {
+    return this.fixtureRepository.findScheduledBySeason(seasonId);
+  }
+
   async markXgUnavailable(externalId: number): Promise<void> {
     return this.fixtureRepository.markXgUnavailable(externalId);
   }

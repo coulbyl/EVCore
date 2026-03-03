@@ -111,6 +111,7 @@ export class MailService implements OnModuleInit {
     date: string;
     legCount: number;
   }): Promise<void> {
+    // TODO: consider rendering a prettier email with more details about the coupon and picks
     const subject = `Daily Coupon — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''})`;
     const html = `<p>Your daily coupon for <strong>${props.date}</strong> has been generated with <strong>${props.legCount} leg${props.legCount !== 1 ? 's' : ''}</strong>.</p><p>Coupon ID: ${props.id}</p>`;
     const text = `Daily Coupon — ${props.date}: ${props.legCount} leg(s) selected. ID: ${props.id}`;
@@ -118,9 +119,23 @@ export class MailService implements OnModuleInit {
   }
 
   async sendNoBetToday(props: { date: string }): Promise<void> {
+    // TODO: consider rendering a prettier email with more details about the coupon and picks
+
     const subject = `No Bet Today — ${props.date}`;
     const html = `<p>No qualified picks found for <strong>${props.date}</strong>. No coupon generated today.</p>`;
     const text = `No Bet Today — ${props.date}: no qualified picks.`;
+    await this.send(subject, html, text);
+  }
+
+  async sendCouponResult(props: {
+    couponId: string;
+    status: 'WON' | 'LOST' | 'SETTLED';
+  }): Promise<void> {
+    // TODO: consider rendering a prettier email with more details about the coupon and picks
+
+    const subject = `Coupon Result — ${props.status}`;
+    const html = `<p>Coupon <strong>${props.couponId}</strong> settled with status <strong>${props.status}</strong>.</p>`;
+    const text = `Coupon Result — ${props.couponId}: ${props.status}`;
     await this.send(subject, html, text);
   }
 

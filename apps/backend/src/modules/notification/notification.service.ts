@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import pino from 'pino';
-import { type Bet, Market, NotificationType, type Prisma } from '@evcore/db';
+import {
+  type Bet,
+  CouponStatus,
+  Market,
+  NotificationType,
+  type Prisma,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
 
@@ -261,6 +267,42 @@ export class NotificationService {
       payload: { date: dateStr },
     });
     await this.mail.sendNoBetToday({ date: dateStr });
+  }
+
+  async sendCouponResult(couponId: string): Promise<void> {
+    const coupon = await this.prisma.client.dailyCoupon.findUnique({
+      where: { id: couponId },
+      select: { id: true, status: true, legCount: true },
+    });
+
+    if (!coupon) {
+      logger.warn(
+        { couponId },
+        'Coupon not found — skipping coupon result alert',
+      );
+      return;
+    }
+
+    if (
+      coupon.status !== CouponStatus.WON &&
+      coupon.status !== CouponStatus.LOST &&
+      coupon.status !== CouponStatus.SETTLED
+    ) {
+      return;
+    }
+
+    const title = `Coupon Result — ${coupon.status}`;
+    const body = `Coupon ${coupon.id} settled as ${coupon.status} (${coupon.legCount} leg${coupon.legCount !== 1 ? 's' : ''}).`;
+    await this.save({
+      type: NotificationType.COUPON_RESULT,
+      title,
+      body,
+      payload: { couponId: coupon.id, status: coupon.status },
+    });
+    await this.mail.sendCouponResult({
+      couponId: coupon.id,
+      status: coupon.status,
+    });
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

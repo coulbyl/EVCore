@@ -3,7 +3,9 @@ import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { FixtureService } from '../../fixture/fixture.service';
+import type { Queue } from 'bullmq';
 import { FixturesSyncWorker } from './fixtures-sync.worker';
+import type { InjuriesSyncJobData } from './injuries-sync.worker';
 
 function buildFixturesResponse(leagueId: number, season: number) {
   return {
@@ -84,6 +86,9 @@ describe('FixturesSyncWorker', () => {
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
     notification as unknown as NotificationService,
+    {
+      add: vi.fn().mockResolvedValue({}),
+    } as unknown as Queue<InjuriesSyncJobData>,
   );
 
   beforeEach(() => {
@@ -94,6 +99,34 @@ describe('FixturesSyncWorker', () => {
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
     fixtureService.upsertFixtureChain.mockResolvedValue({ id: 'fixture-id' });
     config.getOrThrow.mockReturnValue('test-api-key');
+  });
+
+  it('enqueues injuries-sync after fixtures sync completes', async () => {
+    const injuriesQueue = {
+      add: vi.fn().mockResolvedValue({}),
+    } as unknown as Queue<InjuriesSyncJobData>;
+
+    const localWorker = new FixturesSyncWorker(
+      fixtureService as unknown as FixtureService,
+      config as unknown as ConfigService,
+      notification as unknown as NotificationService,
+      injuriesQueue,
+    );
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
+    });
+
+    await localWorker.process({
+      data: { competitionCode: 'SA', season: 2024 },
+    } as Job<{ competitionCode: string; season: number }>);
+
+    expect(injuriesQueue.add).toHaveBeenCalledWith(
+      'injuries-sync-SA-2024',
+      { competitionCode: 'SA', season: 2024 },
+      expect.any(Object),
+    );
   });
 
   it('uses competitionCode to resolve league and upserts competition metadata', async () => {

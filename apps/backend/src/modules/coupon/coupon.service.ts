@@ -185,4 +185,54 @@ export class CouponService implements OnApplicationBootstrap {
   async generateForTomorrow(): Promise<void> {
     return this.generateDailyCoupon(tomorrowUtc());
   }
+
+  async settleExpiredCoupons(date: Date): Promise<{ settledCount: number }> {
+    const cutoff = new Date(date);
+    cutoff.setUTCHours(23, 59, 59, 999);
+    const coupons = await this.couponRepository.findPendingCouponsUntil(cutoff);
+
+    let settledCount = 0;
+    for (const coupon of coupons) {
+      const nextStatus = resolveCouponStatus(coupon.bets);
+      if (nextStatus === null) continue;
+
+      await this.couponRepository.updateStatus(coupon.id, nextStatus);
+      await this.notificationService.sendCouponResult(coupon.id);
+      settledCount++;
+    }
+
+    return { settledCount };
+  }
+
+  async settleCouponById(couponId: string): Promise<{
+    couponId: string;
+    status: CouponStatus;
+    settled: boolean;
+  }> {
+    const coupon = await this.couponRepository.findCouponById(couponId);
+    if (!coupon) {
+      throw new Error(`Coupon not found: ${couponId}`);
+    }
+
+    const nextStatus = resolveCouponStatus(coupon.bets);
+    if (nextStatus === null) {
+      return { couponId, status: coupon.status, settled: false };
+    }
+
+    await this.couponRepository.updateStatus(couponId, nextStatus);
+    await this.notificationService.sendCouponResult(couponId);
+    return { couponId, status: nextStatus, settled: true };
+  }
+}
+
+function resolveCouponStatus(
+  bets: { status: BetStatus }[],
+): CouponStatus | null {
+  if (bets.length === 0) return CouponStatus.NO_BET;
+  if (bets.some((bet) => bet.status === BetStatus.PENDING)) return null;
+  if (bets.some((bet) => bet.status === BetStatus.LOST))
+    return CouponStatus.LOST;
+  if (bets.every((bet) => bet.status === BetStatus.WON))
+    return CouponStatus.WON;
+  return CouponStatus.SETTLED;
 }

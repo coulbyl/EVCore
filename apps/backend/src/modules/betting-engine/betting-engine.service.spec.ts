@@ -14,11 +14,25 @@ import {
 import { BettingEngineService } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
+import type { H2HService } from './h2h.service';
+import type { CongestionService } from './congestion.service';
 
 function makeConfig(kellyEnabled = false): ConfigService {
   return {
     get: vi.fn().mockReturnValue(kellyEnabled ? 'true' : 'false'),
   } as unknown as ConfigService;
+}
+
+function makeH2hServiceMock(score: number | null = null): H2HService {
+  return {
+    computeH2HScore: vi.fn().mockResolvedValue(score),
+  } as unknown as H2HService;
+}
+
+function makeCongestionServiceMock(score = 0): CongestionService {
+  return {
+    computeCongestionScore: vi.fn().mockResolvedValue(score),
+  } as unknown as CongestionService;
 }
 
 // Minimal Prisma mock shared across analyzeFixture tests.
@@ -246,13 +260,23 @@ describe('resolveComboPickBetStatus', () => {
 
 describe('BettingEngineService', () => {
   it('calculates EV using decimal arithmetic', () => {
-    const service = new BettingEngineService({} as PrismaService, makeConfig());
+    const service = new BettingEngineService(
+      {} as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const ev = service.calculateEV(new Decimal('0.54'), new Decimal('2.0'));
     expect(ev.toNumber()).toBeCloseTo(0.08, 8);
   });
 
   it('computes 1X2 and derived probabilities together', () => {
-    const service = new BettingEngineService({} as PrismaService, makeConfig());
+    const service = new BettingEngineService(
+      {} as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const p = service.computeProbabilities(1.4, 1.1);
 
     expect(p.home.plus(p.draw).plus(p.away).toNumber()).toBeCloseTo(1, 3);
@@ -261,7 +285,12 @@ describe('BettingEngineService', () => {
   });
 
   it('analyzes and persists a model run when fixture and team stats exist', async () => {
-    const service = new BettingEngineService(makePrismaMock(), makeConfig());
+    const service = new BettingEngineService(
+      makePrismaMock(),
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result.status).toBe('analyzed');
@@ -303,7 +332,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result).toEqual({
@@ -371,7 +405,14 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const h2hService = makeH2hServiceMock(0.6);
+    const congestionService = makeCongestionServiceMock(0.2);
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      h2hService,
+      congestionService,
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
@@ -406,6 +447,10 @@ describe('BettingEngineService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           decision: 'BET',
+          features: expect.objectContaining({
+            shadow_h2h: 0.6,
+            shadow_congestion: 0.2,
+          }),
         }),
       }),
     );
@@ -478,7 +523,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
@@ -575,7 +625,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig(true));
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(true),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },

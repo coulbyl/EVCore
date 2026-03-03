@@ -201,24 +201,24 @@
 
 **Shadow services (données réelles, score non activé)**
 
-- [ ] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
-- [ ] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
-- [ ] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
+- [x] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
+- [x] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
+- [x] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
 
 **Boucle d'auto-activation**
 
-- [ ] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
-- [ ] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
+- [x] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
+- [x] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
 - [ ] Rollback d'une auto-activation via `POST /adjustment/:id/rollback` (existant)
 
 ---
 
 ### Bloc 5 — Coupon settlement + résultats live
 
-- [ ] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
-- [ ] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
-- [ ] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
-- [ ] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
+- [x] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
+- [x] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
+- [x] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
+- [x] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
 
 ---
 

@@ -18,6 +18,7 @@ import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
+import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
 
 const logger = pino({ name: 'etl-service' });
 
@@ -33,6 +34,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly resultsQueue: Queue<ResultsSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.STATS_SYNC)
     private readonly statsQueue: Queue<StatsSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.INJURIES_SYNC)
+    private readonly injuriesQueue: Queue<InjuriesSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_LIVE_SYNC)
@@ -90,6 +93,18 @@ export class EtlService implements OnApplicationBootstrap {
               season: currentSeason,
               competitionCode: competition.code,
             } satisfies StatsSyncJobData,
+          },
+        );
+
+        await this.injuriesQueue.upsertJobScheduler(
+          `${ETL_SCHEDULER_KEYS.INJURIES_SYNC}:${competition.code}`,
+          { pattern: ETL_CRON_SCHEDULES.INJURIES_SYNC },
+          {
+            name: `injuries-sync-${competition.code}-${currentSeason}`,
+            data: {
+              season: currentSeason,
+              competitionCode: competition.code,
+            } satisfies InjuriesSyncJobData,
           },
         );
 
@@ -187,6 +202,27 @@ export class EtlService implements OnApplicationBootstrap {
     }
   }
 
+  async triggerInjuriesSync(): Promise<void> {
+    const jobs = getActiveCompetitionPlans().flatMap(
+      ({ competition, seasons }) =>
+        seasons.map((season) => ({
+          season,
+          competitionCode: competition.code,
+        })),
+    );
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      await this.injuriesQueue.add(
+        `injuries-sync-${job.competitionCode}-${job.season}`,
+        job satisfies InjuriesSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
+  }
+
   async triggerOddsCsvImport(): Promise<void> {
     const csvCompetitions = getActiveCsvCompetitions();
 
@@ -222,6 +258,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.FIXTURES_SYNC]: this.fixturesQueue,
       [BULLMQ_QUEUES.RESULTS_SYNC]: this.resultsQueue,
       [BULLMQ_QUEUES.STATS_SYNC]: this.statsQueue,
+      [BULLMQ_QUEUES.INJURIES_SYNC]: this.injuriesQueue,
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
       [BULLMQ_QUEUES.ODDS_LIVE_SYNC]: this.oddsLiveQueue,
     };
@@ -246,6 +283,7 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerFixturesSync();
     await this.triggerResultsSync();
     await this.triggerStatsSync();
+    await this.triggerInjuriesSync();
     await this.triggerOddsCsvImport();
     await this.triggerOddsLiveSync();
   }

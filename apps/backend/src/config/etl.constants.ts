@@ -160,6 +160,7 @@ export const BULLMQ_QUEUES = {
   FIXTURES_SYNC: 'fixtures-sync',
   RESULTS_SYNC: 'results-sync',
   STATS_SYNC: 'stats-sync',
+  INJURIES_SYNC: 'injuries-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
   BETTING_ENGINE: 'betting-engine',
@@ -177,6 +178,7 @@ export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
   RESULTS_SYNC: '0 3 * * *', // 03:00 UTC daily
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
+  INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ODDS_LIVE_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
 } as const;
@@ -186,6 +188,7 @@ export const ETL_SCHEDULER_KEYS = {
   FIXTURES_SYNC: 'cron:fixtures-sync',
   RESULTS_SYNC: 'cron:results-sync',
   STATS_SYNC: 'cron:stats-sync',
+  INJURIES_SYNC: 'cron:injuries-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_LIVE_SYNC: 'cron:odds-live-sync',
 } as const;

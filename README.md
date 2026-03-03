@@ -25,16 +25,16 @@ EVCore is a disciplined probabilistic decision system — not a tip generator. I
 
 ## Stack
 
-| Layer         | Technology                           |
-| ------------- | ------------------------------------ |
-| Monorepo      | pnpm + Turborepo                     |
-| Backend       | NestJS + TypeScript (strict)         |
-| Database      | PostgreSQL + Prisma                  |
-| Queues        | BullMQ + Redis                       |
+| Layer         | Technology                                   |
+| ------------- | -------------------------------------------- |
+| Monorepo      | pnpm + Turborepo                             |
+| Backend       | NestJS + TypeScript (strict)                 |
+| Database      | PostgreSQL + Prisma                          |
+| Queues        | BullMQ + Redis                               |
 | Validation    | Zod (external data) + class-validator (DTOs) |
-| Math          | decimal.js, Poisson model            |
-| Notifications | Nodemailer (SMTP) + in-app DB        |
-| Infra         | Docker Compose, GitHub Actions       |
+| Math          | decimal.js, Poisson model                    |
+| Notifications | Nodemailer (SMTP) + in-app DB                |
+| Infra         | Docker Compose, GitHub Actions               |
 
 ---
 
@@ -66,12 +66,12 @@ pnpm --filter backend test  # Vitest unit tests (204 tests)
 
 Default service endpoints:
 
-| Service    | URL                       |
-| ---------- | ------------------------- |
-| Backend    | `http://localhost:3000`   |
-| PostgreSQL | `localhost:5432`          |
-| Redis      | `localhost:6379`          |
-| Mailpit UI | `http://localhost:8025`   |
+| Service    | URL                     |
+| ---------- | ----------------------- |
+| Backend    | `http://localhost:3000` |
+| PostgreSQL | `localhost:5432`        |
+| Redis      | `localhost:6379`        |
+| Mailpit UI | `http://localhost:8025` |
 
 ---
 
@@ -91,16 +91,16 @@ packages/
 
 ### Backend modules
 
-| Module             | Role                                                         |
-| ------------------ | ------------------------------------------------------------ |
-| `etl/`             | BullMQ workers: fixtures, results, stats, odds (live + CSV)  |
-| `betting-engine/`  | Poisson model, EV calculation, pick selection, settlement    |
-| `coupon/`          | Daily coupon generation, anti-correlation, scheduling        |
-| `adjustment/`      | Calibration, auto-apply AdjustmentProposal, rollback         |
-| `risk/`            | ROI alerts, market suspension, Brier alerts, weekly report   |
-| `notification/`    | Email (SMTP) + in-app notifications                          |
-| `fixture/`         | Fixture + OddsSnapshot storage                               |
-| `rolling-stats/`   | Rolling form, xG, dom/ext performance, league volatility     |
+| Module            | Role                                                        |
+| ----------------- | ----------------------------------------------------------- |
+| `etl/`            | BullMQ workers: fixtures, results, stats, odds (live + CSV) |
+| `betting-engine/` | Poisson model, EV calculation, pick selection, settlement   |
+| `coupon/`         | Daily coupon generation, anti-correlation, scheduling       |
+| `adjustment/`     | Calibration, auto-apply AdjustmentProposal, rollback        |
+| `risk/`           | ROI alerts, market suspension, Brier alerts, weekly report  |
+| `notification/`   | Email (SMTP) + in-app notifications                         |
+| `fixture/`        | Fixture + OddsSnapshot storage                              |
+| `rolling-stats/`  | Rolling form, xG, dom/ext performance, league volatility    |
 
 ---
 
@@ -131,24 +131,24 @@ COUPON_SCHEDULING_ENABLED=false
 
 ## Documentation
 
-| File               | Purpose                                                              |
-| ------------------ | -------------------------------------------------------------------- |
-| [EVCORE.md](EVCORE.md)   | Full product specification — architecture, model, constraints  |
-| [ROADMAP.md](ROADMAP.md) | Implementation roadmap — phase-by-phase checklist              |
-| [TODO.md](TODO.md)       | Current work plan and upcoming blocs                           |
-| [COUPON.md](COUPON.md)   | Daily coupon generator specification                           |
-| [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                            |
+| File                     | Purpose                                                       |
+| ------------------------ | ------------------------------------------------------------- |
+| [EVCORE.md](EVCORE.md)   | Full product specification — architecture, model, constraints |
+| [ROADMAP.md](ROADMAP.md) | Implementation roadmap — phase-by-phase checklist             |
+| [TODO.md](TODO.md)       | Current work plan and upcoming blocs                          |
+| [COUPON.md](COUPON.md)   | Daily coupon generator specification                          |
+| [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                           |
 
 ---
 
 ## Phase status
 
-| Phase | Status | Key deliverable |
-| ----- | ------ | --------------- |
-| MVP Phase 1 | ✅ Complete | Backtest validated — Brier 0.592, ROI +2.28% |
-| Phase 2 Bloc 1 | ✅ Complete | Live odds pipeline, multi-league ETL |
-| Phase 2 Bloc 2 | ✅ Complete | ETL hardening, Kelly fractional |
-| Phase 2 Bloc 3 | ✅ Complete | Daily coupon generator (204 tests) |
-| Phase 2 Bloc 4 | 🔲 Next | Shadow data collection, auto-activation loop |
-| Phase 2 Bloc 5 | 🔲 Planned | Coupon settlement, result notifications |
-| Phase 2 Bloc 6 | 🔲 Planned | OpenClaw (LLM delta), Grafana, TimescaleDB |
+| Phase          | Status      | Key deliverable                              |
+| -------------- | ----------- | -------------------------------------------- |
+| MVP Phase 1    | ✅ Complete | Backtest validated — Brier 0.592, ROI +2.28% |
+| Phase 2 Bloc 1 | ✅ Complete | Live odds pipeline, multi-league ETL         |
+| Phase 2 Bloc 2 | ✅ Complete | ETL hardening, Kelly fractional              |
+| Phase 2 Bloc 3 | ✅ Complete | Daily coupon generator (204 tests)           |
+| Phase 2 Bloc 4 | 🔲 Next     | Shadow data collection, auto-activation loop |
+| Phase 2 Bloc 5 | 🔲 Planned  | Coupon settlement, result notifications      |
+| Phase 2 Bloc 6 | 🔲 Planned  | OpenClaw (LLM delta), Grafana, TimescaleDB   |
