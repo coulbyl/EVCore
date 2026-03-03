@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 3 (Daily Coupon Generator) terminé (mise à jour le 2 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 3 mars 2026)**
 
 ---
 
@@ -229,10 +229,16 @@
   - [x] Probas HT/FT (9 issues) dérivées du modèle Poisson
   - [x] Ingestion odds live HT/FT + stockage `OddsSnapshot` (`HALF_TIME_FULL_TIME`)
   - [x] Sélection EV/qualityScore étendue au marché HT/FT dans `BettingEngineService`
+- [x] Stabilité first prod sans TimescaleDB
+  - [x] Cleanup automatique `OddsSnapshot` via worker ETL `odds-snapshot-retention` (rétention configurable)
+  - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)
+  - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées
+  - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + warning seuil quota)
 - [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
   - Activation après 30+ jours prod stables, d'abord en shadow mode
   - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
-- [ ] Grafana dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
+- [ ] Grafana dashboards — `STAND-BY POST-PROD` (voir `GRAFANA.md`)
+  - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
 - [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)
 - [ ] Multi-bookmakers (Betclic, Unibet via odds-api ou scraping)
 

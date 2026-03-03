@@ -57,6 +57,7 @@ function makeDeps(
 
   const fixtureService: FixtureService = {
     findScheduledForDate: vi.fn().mockResolvedValue([]),
+    findScheduledInRange: vi.fn().mockResolvedValue([]),
     ...overrides.fixtureService,
   } as unknown as FixtureService;
 
@@ -284,6 +285,46 @@ describe('CouponService.generateDailyCoupon', () => {
 
     expect(deps.couponRepository.create).not.toHaveBeenCalled();
     expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
+  });
+
+  it('supports multi-day windows (2-3 days) via range query', async () => {
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledInRange: vi
+          .fn()
+          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+      },
+      prisma: {
+        client: {
+          bet: {
+            findMany: vi
+              .fn()
+              .mockResolvedValueOnce([
+                {
+                  id: 'bet-1',
+                  ev: new Decimal('0.15'),
+                  modelRun: {
+                    deterministicScore: new Decimal('0.70'),
+                    fixtureId: 'f-1',
+                  },
+                },
+              ])
+              .mockResolvedValueOnce([
+                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
+              ]),
+          },
+        },
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateCouponWindow({ startDate: TEST_DATE, days: 3 });
+
+    expect(deps.fixtureService.findScheduledInRange).toHaveBeenCalledTimes(1);
+    expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
+    expect(deps.couponRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
+    );
   });
 });
 

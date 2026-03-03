@@ -8,6 +8,7 @@ describe('EtlController', () => {
       triggerFullSync: vi.fn().mockResolvedValue(undefined),
       triggerStatsSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
+      triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
       ...overrides,
     } as unknown as EtlService;
   }
@@ -40,5 +41,17 @@ describe('EtlController', () => {
       status: 'ok',
     });
     expect(service.triggerOddsCsvImport).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers odds snapshot retention and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerOddsSnapshotRetention({ retentionDays: 45 }),
+    ).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerOddsSnapshotRetention).toHaveBeenCalledWith(45);
   });
 });

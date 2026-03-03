@@ -96,6 +96,23 @@ export type ActiveCompetitionPlan = {
   seasons: readonly number[];
 };
 
+export type ApiFootballDailyCallsEstimateInput = {
+  activeCompetitionPlans: readonly ActiveCompetitionPlan[];
+  avgScheduledFixturesPerLeaguePerDay: number;
+  avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
+};
+
+export type ApiFootballDailyCallsEstimate = {
+  leagueCount: number;
+  seasonJobCount: number;
+  fixturesSyncCalls: number;
+  resultsSyncCalls: number;
+  statsSyncCalls: number;
+  injuriesSyncCalls: number;
+  oddsLiveSyncCalls: number;
+  totalCalls: number;
+};
+
 export function getActiveCompetitionPlans(
   now: Date = new Date(),
 ): readonly ActiveCompetitionPlan[] {
@@ -103,6 +120,52 @@ export function getActiveCompetitionPlans(
     competition,
     seasons: getCompetitionSeasons(competition, now),
   }));
+}
+
+export function estimateApiFootballDailyCalls(
+  input: ApiFootballDailyCallsEstimateInput,
+): ApiFootballDailyCallsEstimate {
+  const leagueCount = input.activeCompetitionPlans.length;
+  const seasonJobCount = input.activeCompetitionPlans.reduce(
+    (sum, plan) => sum + plan.seasons.length,
+    0,
+  );
+
+  const avgScheduled = Math.max(
+    0,
+    Math.floor(input.avgScheduledFixturesPerLeaguePerDay),
+  );
+  const avgFinishedWithoutXg = Math.max(
+    0,
+    Math.floor(input.avgFinishedFixturesWithoutXgPerLeaguePerDay),
+  );
+
+  // Daily calls by worker class:
+  // - fixtures/results are season-level calls
+  // - stats/injuries/odds-live are fixture-level calls
+  const fixturesSyncCalls = seasonJobCount;
+  const resultsSyncCalls = seasonJobCount;
+  const statsSyncCalls = leagueCount * avgFinishedWithoutXg;
+  const injuriesSyncCalls = leagueCount * avgScheduled;
+  const oddsLiveSyncCalls = leagueCount * avgScheduled;
+
+  const totalCalls =
+    fixturesSyncCalls +
+    resultsSyncCalls +
+    statsSyncCalls +
+    injuriesSyncCalls +
+    oddsLiveSyncCalls;
+
+  return {
+    leagueCount,
+    seasonJobCount,
+    fixturesSyncCalls,
+    resultsSyncCalls,
+    statsSyncCalls,
+    injuriesSyncCalls,
+    oddsLiveSyncCalls,
+    totalCalls,
+  };
 }
 
 export function getActiveCsvCompetitions(): readonly (CompetitionConfig & {
@@ -164,6 +227,7 @@ export const BULLMQ_QUEUES = {
   INJURIES_SYNC: 'injuries-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
+  ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   BETTING_ENGINE: 'betting-engine',
 } as const;
 
@@ -182,6 +246,7 @@ export const ETL_CRON_SCHEDULES = {
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ODDS_LIVE_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
+  ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -192,4 +257,5 @@ export const ETL_SCHEDULER_KEYS = {
   INJURIES_SYNC: 'cron:injuries-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_LIVE_SYNC: 'cron:odds-live-sync',
+  ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
 } as const;

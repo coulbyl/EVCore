@@ -136,6 +136,13 @@ export class FixtureService {
     return this.fixtureRepository.findScheduledForDate(date);
   }
 
+  findScheduledInRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    return this.fixtureRepository.findScheduledInRange(startDate, endDate);
+  }
+
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.fixtureRepository.findFinishedWithoutXg(seasonId);
   }
@@ -153,6 +160,10 @@ export class FixtureService {
 
   async markXgUnavailable(externalId: number): Promise<void> {
     return this.fixtureRepository.markXgUnavailable(externalId);
+  }
+
+  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
+    return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
   }
 
   async upsertOddsSnapshot(

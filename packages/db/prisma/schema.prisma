@@ -288,4 +288,6 @@ model OddsSnapshot {
   createdAt  DateTime @default(now())
 
   @@index([fixtureId, snapshotAt])
+  @@index([fixtureId, bookmaker, market, pick, snapshotAt])
+  @@index([snapshotAt])
 }

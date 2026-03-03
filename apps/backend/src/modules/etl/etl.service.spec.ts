@@ -15,6 +15,7 @@ import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
+import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 
 type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
 
@@ -49,6 +50,7 @@ describe('EtlService', () => {
   const injuriesQueue = makeQueue<InjuriesSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
   const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
+  const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
 
   const service = new EtlService(
     fixturesQueue as Queue<FixturesSyncJobData>,
@@ -57,6 +59,7 @@ describe('EtlService', () => {
     injuriesQueue as Queue<InjuriesSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
     oddsLiveQueue as Queue<OddsLiveSyncJobData>,
+    oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
   );
 
@@ -192,5 +195,15 @@ describe('EtlService', () => {
     expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
     expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
+  });
+
+  it('dispatches odds snapshot retention cleanup job', async () => {
+    await service.triggerOddsSnapshotRetention(30);
+
+    expect(oddsSnapshotRetentionQueue.add).toHaveBeenCalledWith(
+      'odds-snapshot-retention',
+      { retentionDays: 30 },
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   });
 });

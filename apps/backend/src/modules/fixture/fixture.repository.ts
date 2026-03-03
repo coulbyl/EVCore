@@ -182,6 +182,21 @@ export class FixtureRepository {
     });
   }
 
+  findScheduledInRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    const start = new Date(startDate);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setUTCHours(23, 59, 59, 999);
+    return this.prisma.client.fixture.findMany({
+      where: { status: 'SCHEDULED', scheduledAt: { gte: start, lte: end } },
+      select: { id: true, externalId: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.prisma.client.fixture.findMany({
       where: {
@@ -220,6 +235,13 @@ export class FixtureRepository {
       where: { externalId },
       data: { xgUnavailable: true },
     });
+  }
+
+  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
+    const result = await this.prisma.client.oddsSnapshot.deleteMany({
+      where: { snapshotAt: { lt: cutoff } },
+    });
+    return result.count;
   }
 
   async upsertOddsSnapshot(

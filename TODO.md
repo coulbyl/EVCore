@@ -59,10 +59,15 @@
   - [x] Probas HT/FT dérivées du modèle Poisson (`htft` sur 9 issues)
   - [x] Ingestion odds live HT/FT (`Half Time / Full Time`) + persistance `OddsSnapshot`
   - [x] Sélection EV/qualityScore étendue au marché HT/FT
+- [x] **Stabilité first prod (sans TimescaleDB)**
+  - [x] Cleanup automatique `OddsSnapshot` (job ETL `odds-snapshot-retention`, rétention configurable)
+  - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées de matchs
+  - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + alerte de budget au boot)
 - [ ] **OpenClaw** — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
   - Activation après 30+ jours prod stables, d'abord en shadow mode
   - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
-- [ ] **Grafana** dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
+- [ ] **Grafana** — `STAND-BY POST-PROD` (voir `GRAFANA.md`)
+  - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
 - [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
 - [ ] **Multi-bookmakers** (Betclic, Unibet)
 

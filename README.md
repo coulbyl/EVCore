@@ -14,7 +14,7 @@ EVCore is a disciplined probabilistic decision system — not a tip generator. I
 - Computes match probabilities using a Poisson model weighted by 4 deterministic features
 - Evaluates all markets (1X2, Over/Under 2.5, BTTS, Double Chance, 12 combo-match pairs) for value bets where `EV ≥ 8%`
 - Applies fractional Kelly (0.25×) for stake sizing
-- Generates a daily coupon of up to 6 legs ranked by `qualityScore = EV × deterministicScore`
+- Generates a coupon (daily or 2-3 day window) of up to 6 legs ranked by `qualityScore = EV × deterministicScore`
 - Filters picks with adverse line movement (> 10% odds drop over 7 days)
 - Tracks performance metrics (Brier Score, ROI, drawdown) and self-calibrates over time
 - Sends alerts via Email when opportunities, anomalies, or auto-calibrations are detected
@@ -113,6 +113,10 @@ DATABASE_URL=postgresql://...
 REDIS_HOST=localhost
 REDIS_PORT=6379
 API_FOOTBALL_KEY=<your-key>
+API_FOOTBALL_DAILY_QUOTA=7500
+API_FOOTBALL_QUOTA_ALERT_PCT=80
+API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE=10
+API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE=2
 
 # Email (dev: Mailpit on port 1025)
 SMTP_ENABLED=true
@@ -125,7 +129,17 @@ SMTP_TO=admin@localhost
 KELLY_ENABLED=false
 ETL_SCHEDULING_ENABLED=false
 COUPON_SCHEDULING_ENABLED=false
+ODDS_SNAPSHOT_RETENTION_DAYS=30
 ```
+
+### Rate-limit / quota tuning (10 leagues first prod)
+
+- Keep `API_FOOTBALL_RATE_LIMIT_MS=6000` to avoid spikes.
+- Use 10 active leagues with realistic assumptions:
+  - `API_FOOTBALL_AVG_DAILY_FIXTURES_PER_LEAGUE=10`
+  - `API_FOOTBALL_AVG_DAILY_STATS_FIXTURES_PER_LEAGUE=2`
+- Estimated daily API calls: about `280/day` (`~3.7%` of a `7500/day` quota).
+- The backend logs this estimate on startup and emits a warning when it crosses `API_FOOTBALL_QUOTA_ALERT_PCT`.
 
 ---
 
@@ -138,6 +152,7 @@ COUPON_SCHEDULING_ENABLED=false
 | [TODO.md](TODO.md)       | Current work plan and upcoming blocs                          |
 | [COUPON.md](COUPON.md)   | Daily coupon generator specification                          |
 | [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria  |
+| [GRAFANA.md](GRAFANA.md) | Grafana policy — stand-by post-prod + activation criteria    |
 | [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                           |
 
 ---
@@ -152,4 +167,4 @@ COUPON_SCHEDULING_ENABLED=false
 | Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                |
 | Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop      |
 | Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications           |
-| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw stand-by post-prod, Grafana, TimescaleDB |
+| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB |
