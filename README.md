@@ -137,6 +137,7 @@ COUPON_SCHEDULING_ENABLED=false
 | [ROADMAP.md](ROADMAP.md) | Implementation roadmap — phase-by-phase checklist             |
 | [TODO.md](TODO.md)       | Current work plan and upcoming blocs                          |
 | [COUPON.md](COUPON.md)   | Daily coupon generator specification                          |
+| [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria  |
 | [CLAUDE.md](CLAUDE.md)   | AI coding conventions (Claude Code)                           |
 
 ---
@@ -151,4 +152,4 @@ COUPON_SCHEDULING_ENABLED=false
 | Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                |
 | Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop      |
 | Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications           |
-| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw, Grafana, TimescaleDB |
+| Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw stand-by post-prod, Grafana, TimescaleDB |

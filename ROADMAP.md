@@ -229,7 +229,9 @@
   - [x] Probas HT/FT (9 issues) dérivées du modèle Poisson
   - [x] Ingestion odds live HT/FT + stockage `OddsSnapshot` (`HALF_TIME_FULL_TIME`)
   - [x] Sélection EV/qualityScore étendue au marché HT/FT dans `BettingEngineService`
-- [ ] OpenClaw integration (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en production
+- [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
+  - Activation après 30+ jours prod stables, d'abord en shadow mode
+  - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
 - [ ] Grafana dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
 - [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)
 - [ ] Multi-bookmakers (Betclic, Unibet via odds-api ou scraping)
