@@ -83,6 +83,8 @@ model Competition {
   seasons   Season[]
   teams     Team[]
   createdAt DateTime @default(now())
+
+  @@map("competition")
 }
 
 model Season {
@@ -96,6 +98,7 @@ model Season {
   createdAt     DateTime    @default(now())
 
   @@unique([competitionId, name])
+  @@map("season")
 }
 
 model Team {
@@ -109,6 +112,8 @@ model Team {
   awayFixtures   Fixture[]   @relation("AwayTeam")
   stats          TeamStats[]
   createdAt      DateTime    @default(now())
+
+  @@map("team")
 }
 
 model Fixture {
@@ -142,6 +147,7 @@ model Fixture {
   @@index([seasonId, status, scheduledAt])
   @@index([homeTeamId, status, scheduledAt])
   @@index([awayTeamId, status, scheduledAt])
+  @@map("fixture")
 }
 
 // Rolling stats computed for a team after a given fixture was played.
@@ -165,6 +171,7 @@ model TeamStats {
   createdAt        DateTime @default(now())
 
   @@unique([teamId, afterFixtureId])
+  @@map("team_stats")
 }
 
 // Output of one betting engine analysis for a fixture.
@@ -189,6 +196,7 @@ model ModelRun {
 
   @@index([fixtureId])
   @@index([fixtureId, analyzedAt])
+  @@map("model_run")
 }
 
 // One bet per market per ModelRun.
@@ -216,6 +224,7 @@ model Bet {
   @@index([dailyCouponId])
   @@index([market, status, createdAt])
   @@index([status, updatedAt])
+  @@map("bet")
 }
 
 // Daily betting coupon — one per day across all active leagues.
@@ -249,6 +258,7 @@ model AdjustmentProposal {
 
   @@index([status, appliedAt])
   @@index([createdAt])
+  @@map("adjustment_proposal")
 }
 
 // Active suspension of a market triggered automatically by risk rules.
@@ -264,6 +274,7 @@ model MarketSuspension {
   updatedAt   DateTime  @updatedAt
 
   @@index([market, active])
+  @@map("market_suspension")
 }
 
 // In-app notifications — persisted for dashboard and future mobile app.
@@ -300,4 +311,5 @@ model OddsSnapshot {
   @@index([fixtureId, snapshotAt])
   @@index([fixtureId, bookmaker, market, pick, snapshotAt])
   @@index([snapshotAt])
+  @@map("odds_snapshot")
 }
