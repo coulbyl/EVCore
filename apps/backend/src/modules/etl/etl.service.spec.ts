@@ -72,21 +72,25 @@ describe('EtlService', () => {
 
     expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(fixturesQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `fixtures-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(fixturesQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `fixtures-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -95,21 +99,25 @@ describe('EtlService', () => {
 
     expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(resultsQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `results-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(resultsQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `results-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -118,21 +126,25 @@ describe('EtlService', () => {
 
     expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(statsQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `stats-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(statsQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `stats-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -141,21 +153,25 @@ describe('EtlService', () => {
 
     expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(injuriesQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `injuries-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(injuriesQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `injuries-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 

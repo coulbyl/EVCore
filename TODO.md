@@ -63,6 +63,11 @@
   - [x] Cleanup automatique `OddsSnapshot` (job ETL `odds-snapshot-retention`, rétention configurable)
   - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées de matchs
   - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + alerte de budget au boot)
+- [~] **Activation 10 ligues (A + B)**
+  - [x] Vague 1 active: `PL`, `SA`, `LL`, `BL1`, `L1`
+  - [ ] Vague 2 à activer: `CH`, `I2`, `SP2`
+  - [ ] Vague 3 à activer: `D2`, `F2`
+  - [ ] Validation post-vague: ETL success rate, couverture odds, quota API, délai coupon
 - [ ] **OpenClaw** — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
   - Activation après 30+ jours prod stables, d'abord en shadow mode
   - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe

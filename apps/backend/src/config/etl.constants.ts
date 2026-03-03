@@ -20,6 +20,7 @@ export type CompetitionConfig = {
 };
 
 export const COMPETITIONS = {
+  // Wave 1 (active now)
   PL: {
     leagueId: 39,
     code: 'PL',
@@ -33,7 +34,7 @@ export const COMPETITIONS = {
     code: 'SA',
     name: 'Serie A',
     country: 'Italy',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'I1',
   },
   LL: {
@@ -41,7 +42,7 @@ export const COMPETITIONS = {
     code: 'LL',
     name: 'La Liga',
     country: 'Spain',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'SP1',
   },
   BL1: {
@@ -49,8 +50,60 @@ export const COMPETITIONS = {
     code: 'BL1',
     name: 'Bundesliga',
     country: 'Germany',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'D1',
+  },
+  L1: {
+    leagueId: 61,
+    code: 'L1',
+    name: 'Ligue 1',
+    country: 'France',
+    isActive: true,
+    csvDivisionCode: 'F1',
+  },
+
+  // Wave 2 (enable after ETL stability checks)
+  CH: {
+    leagueId: 40,
+    code: 'CH',
+    name: 'Championship',
+    country: 'England',
+    isActive: false,
+    csvDivisionCode: 'E1',
+  },
+  I2: {
+    leagueId: 136,
+    code: 'I2',
+    name: 'Serie B',
+    country: 'Italy',
+    isActive: false,
+    csvDivisionCode: 'I2',
+  },
+  SP2: {
+    leagueId: 141,
+    code: 'SP2',
+    name: 'Segunda Division',
+    country: 'Spain',
+    isActive: false,
+    csvDivisionCode: 'SP2',
+  },
+
+  // Wave 3 (enable after wave 2 validation)
+  D2: {
+    leagueId: 79,
+    code: 'D2',
+    name: '2. Bundesliga',
+    country: 'Germany',
+    isActive: false,
+    csvDivisionCode: 'D2',
+  },
+  F2: {
+    leagueId: 62,
+    code: 'F2',
+    name: 'Ligue 2',
+    country: 'France',
+    isActive: false,
+    csvDivisionCode: 'F2',
   },
 } as const satisfies Record<string, CompetitionConfig>;
 
