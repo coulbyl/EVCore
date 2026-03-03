@@ -71,4 +71,4 @@
 - [ ] Bloc 4 en cours
 - [x] Bloc 5 terminé
 - [ ] Bloc 6 en cours
-- [x] ROADMAP.md synchronisée (2 mars 2026)
+- [x] ROADMAP.md synchronisée (3 mars 2026)

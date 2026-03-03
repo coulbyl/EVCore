@@ -4,7 +4,7 @@
 
 EVCore is a disciplined probabilistic decision system — not a tip generator. It targets long-term ROI through deterministic data scoring, calibrated over time, with the backend always acting as the final authority.
 
-**Status:** Phase 2 in progress — live odds pipeline operational, daily coupon generator active.
+**Status:** Phase 2 in progress — coupon settlement completed, Bloc 6 (HT/FT foundations) started.
 
 ---
 
@@ -61,7 +61,7 @@ Run all quality checks:
 ```bash
 pnpm lint        # ESLint across all packages
 pnpm typecheck   # TypeScript (no emit)
-pnpm --filter backend test  # Vitest unit tests (204 tests)
+pnpm --filter backend test  # Vitest unit tests (229 tests)
 ```
 
 Default service endpoints:
@@ -149,6 +149,6 @@ COUPON_SCHEDULING_ENABLED=false
 | Phase 2 Bloc 1 | ✅ Complete | Live odds pipeline, multi-league ETL         |
 | Phase 2 Bloc 2 | ✅ Complete | ETL hardening, Kelly fractional              |
 | Phase 2 Bloc 3 | ✅ Complete | Daily coupon generator (204 tests)           |
-| Phase 2 Bloc 4 | 🔲 Next     | Shadow data collection, auto-activation loop |
-| Phase 2 Bloc 5 | 🔲 Planned  | Coupon settlement, result notifications      |
-| Phase 2 Bloc 6 | 🔲 Planned  | OpenClaw (LLM delta), Grafana, TimescaleDB   |
+| Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop |
+| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications      |
+| Phase 2 Bloc 6 | 🚧 In progress | HT/FT foundations, OpenClaw, Grafana, TimescaleDB |
