@@ -1,0 +1,106 @@
+name: evcore-prod
+
+# ── Usage ────────────────────────────────────────────────────────────────────
+# Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
+# The VPS only pulls and runs — no build step on the server.
+#
+# 1. Copy apps/backend/.env.example → apps/backend/.env and fill values
+# 2. First deploy — run migrations before starting backend:
+#      docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate
+# 3. Start all services:
+#      docker compose -f docker-compose.prod.yml up -d
+# 4. After a new push to main: GitHub Actions handles pull + migrate + restart automatically
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# GHCR_OWNER: GitHub username or org (e.g. "myuser")
+# Set it in the .env file on the server: GHCR_OWNER=myuser
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:18-alpine
+    container_name: evcore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-evcore}
+      POSTGRES_USER: ${POSTGRES_USER:-evcore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Not exposed to host — backend accesses via internal Docker network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evcore} -d ${POSTGRES_DB:-evcore}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: evcore-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    # Not exposed to host — backend accesses via internal Docker network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    container_name: evcore-backend
+    image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - apps/backend/.env
+    environment:
+      NODE_ENV: production
+      # Override DB/Redis to use Docker service names (internal network)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Migration runner (one-shot, exits after completion) ─────────────────────
+  # Run with: docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate
+  backend-migrate:
+    container_name: evcore-migrate
+    image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
+    # Override CMD to run prisma migrate deploy then exit
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "Running Prisma migrations..." && \
+        cd /app/node_modules/@evcore/db && \
+        /app/node_modules/.bin/prisma migrate deploy && \
+        echo "Migrations complete."
+    env_file:
+      - apps/backend/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
+  redis_data:
