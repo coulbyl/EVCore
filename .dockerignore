@@ -1,0 +1,40 @@
+# Dependencies
+**/node_modules
+
+# Build outputs
+**/dist
+**/coverage
+**/.turbo
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files (never in image)
+.env
+.env.*
+!.env.example
+
+# Dev tools
+**/*.spec.ts
+**/test
+**/__tests__
+**/.eslintrc*
+**/.prettierrc*
+**/vitest.config.*
+**/jest.config.*
+
+# Docs & misc
+**/*.md
+!CLAUDE.md
+**/docs
+.github
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+**/*.log
+**/logs

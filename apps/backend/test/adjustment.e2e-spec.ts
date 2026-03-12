@@ -193,7 +193,13 @@ describe('Adjustment flow (e2e)', () => {
     const n = counter++;
 
     const competition = await prisma.competition.create({
-      data: { name: `Premier League ${n}`, code: `EPL-${n}`, country: 'EN' },
+      data: {
+        leagueId: 10_000 + n,
+        name: `Premier League ${n}`,
+        code: `EPL-${n}`,
+        country: 'EN',
+        isActive: true,
+      },
       select: { id: true },
     });
 

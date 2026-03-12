@@ -9,16 +9,45 @@ import {
   buildPoissonDistributions,
   computeJointProbability,
   resolveComboPickBetStatus,
+  resolveHalfTimeFullTimeBetStatus,
   COMBO_WHITELIST,
 } from './betting-engine.utils';
 import { BettingEngineService } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
+import type { H2HService } from './h2h.service';
+import type { CongestionService } from './congestion.service';
+
+function makeHtftProbabilities(defaultValue = '0.111111') {
+  return {
+    HOME_HOME: new Decimal(defaultValue),
+    HOME_DRAW: new Decimal(defaultValue),
+    HOME_AWAY: new Decimal(defaultValue),
+    DRAW_HOME: new Decimal(defaultValue),
+    DRAW_DRAW: new Decimal(defaultValue),
+    DRAW_AWAY: new Decimal(defaultValue),
+    AWAY_HOME: new Decimal(defaultValue),
+    AWAY_DRAW: new Decimal(defaultValue),
+    AWAY_AWAY: new Decimal(defaultValue),
+  };
+}
 
 function makeConfig(kellyEnabled = false): ConfigService {
   return {
     get: vi.fn().mockReturnValue(kellyEnabled ? 'true' : 'false'),
   } as unknown as ConfigService;
+}
+
+function makeH2hServiceMock(score: number | null = null): H2HService {
+  return {
+    computeH2HScore: vi.fn().mockResolvedValue(score),
+  } as unknown as H2HService;
+}
+
+function makeCongestionServiceMock(score = 0): CongestionService {
+  return {
+    computeCongestionScore: vi.fn().mockResolvedValue(score),
+  } as unknown as CongestionService;
 }
 
 // Minimal Prisma mock shared across analyzeFixture tests.
@@ -109,6 +138,11 @@ describe('deriveMarketsFromPoisson', () => {
       oneXTwo.draw.plus(oneXTwo.away).toNumber(),
       8,
     );
+    const htftSum = Object.values(derived.htft).reduce(
+      (sum, p) => sum.plus(p),
+      new Decimal(0),
+    );
+    expect(htftSum.toNumber()).toBeCloseTo(1, 6);
   });
 });
 
@@ -244,15 +278,60 @@ describe('resolveComboPickBetStatus', () => {
   });
 });
 
+describe('resolveHalfTimeFullTimeBetStatus', () => {
+  it('returns WON when both half-time and full-time outcomes match', () => {
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'HOME_HOME',
+      homeHtScore: 1,
+      awayHtScore: 0,
+      homeScore: 2,
+      awayScore: 1,
+    });
+    expect(result).toBe('WON');
+  });
+
+  it('returns LOST when half-time/full-time pick does not match', () => {
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'DRAW_HOME',
+      homeHtScore: 1,
+      awayHtScore: 0,
+      homeScore: 2,
+      awayScore: 1,
+    });
+    expect(result).toBe('LOST');
+  });
+
+  it('returns VOID when half-time scores are missing', () => {
+    const result = resolveHalfTimeFullTimeBetStatus({
+      pick: 'HOME_HOME',
+      homeHtScore: null,
+      awayHtScore: null,
+      homeScore: 2,
+      awayScore: 1,
+    });
+    expect(result).toBe('VOID');
+  });
+});
+
 describe('BettingEngineService', () => {
   it('calculates EV using decimal arithmetic', () => {
-    const service = new BettingEngineService({} as PrismaService, makeConfig());
+    const service = new BettingEngineService(
+      {} as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const ev = service.calculateEV(new Decimal('0.54'), new Decimal('2.0'));
     expect(ev.toNumber()).toBeCloseTo(0.08, 8);
   });
 
   it('computes 1X2 and derived probabilities together', () => {
-    const service = new BettingEngineService({} as PrismaService, makeConfig());
+    const service = new BettingEngineService(
+      {} as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const p = service.computeProbabilities(1.4, 1.1);
 
     expect(p.home.plus(p.draw).plus(p.away).toNumber()).toBeCloseTo(1, 3);
@@ -261,16 +340,20 @@ describe('BettingEngineService', () => {
   });
 
   it('analyzes and persists a model run when fixture and team stats exist', async () => {
-    const service = new BettingEngineService(makePrismaMock(), makeConfig());
+    const service = new BettingEngineService(
+      makePrismaMock(),
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.modelRunId).toBe('run-id');
+      const probabilities = result.probabilities as Record<string, number>;
       expect(
-        result.probabilities.home +
-          result.probabilities.draw +
-          result.probabilities.away,
+        probabilities.home + probabilities.draw + probabilities.away,
       ).toBeCloseTo(1, 3);
     }
   });
@@ -303,7 +386,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result).toEqual({
@@ -371,7 +459,14 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const h2hService = makeH2hServiceMock(0.6);
+    const congestionService = makeCongestionServiceMock(0.2);
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      h2hService,
+      congestionService,
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
@@ -386,6 +481,7 @@ describe('BettingEngineService', () => {
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
+        htft: makeHtftProbabilities(),
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -406,6 +502,10 @@ describe('BettingEngineService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           decision: 'BET',
+          features: expect.objectContaining({
+            shadow_h2h: 0.6,
+            shadow_congestion: 0.2,
+          }),
         }),
       }),
     );
@@ -478,7 +578,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig());
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
@@ -493,6 +598,7 @@ describe('BettingEngineService', () => {
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
+        htft: makeHtftProbabilities(),
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -575,7 +681,12 @@ describe('BettingEngineService', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BettingEngineService(prismaMock, makeConfig(true));
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(true),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
@@ -590,6 +701,7 @@ describe('BettingEngineService', () => {
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
+        htft: makeHtftProbabilities(),
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -607,5 +719,128 @@ describe('BettingEngineService', () => {
       createBet.mock.calls[0][0].data.stakePct;
     expect(stakePct.toNumber()).toBeCloseTo(0.0172, 3);
     expect(stakePct.toNumber()).not.toBeCloseTo(0.01, 4);
+  });
+
+  it('can select HALF_TIME_FULL_TIME when it has the best viable EV', async () => {
+    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
+    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
+    const snapshotAt = new Date('2023-01-01T11:00:00.000Z');
+
+    const oddsSnapshotFindMany = vi.fn().mockImplementation((args: unknown) => {
+      const market = (args as { where?: { market?: Market } }).where?.market;
+      if (market === Market.ONE_X_TWO) {
+        return Promise.resolve([
+          {
+            bookmaker: 'Pinnacle',
+            snapshotAt,
+            homeOdds: new Decimal('1.20'),
+            drawOdds: new Decimal('1.20'),
+            awayOdds: new Decimal('1.20'),
+          },
+        ]);
+      }
+      if (market === Market.HALF_TIME_FULL_TIME) {
+        return Promise.resolve([
+          { pick: 'HOME_HOME', odds: new Decimal('2.00') },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'fixture-id',
+            seasonId: 'season-id',
+            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+            homeTeamId: 'home-team',
+            awayTeamId: 'away-team',
+            status: 'FINISHED',
+          }),
+        },
+        teamStats: {
+          findFirst: vi
+            .fn()
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.7'),
+              xgFor: new Decimal('1.8'),
+              xgAgainst: new Decimal('1.1'),
+              homeWinRate: new Decimal('0.65'),
+              awayWinRate: new Decimal('0.35'),
+              drawRate: new Decimal('0.20'),
+              leagueVolatility: new Decimal('1.5'),
+            })
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.4'),
+              xgFor: new Decimal('1.2'),
+              xgAgainst: new Decimal('1.6'),
+              homeWinRate: new Decimal('0.45'),
+              awayWinRate: new Decimal('0.30'),
+              drawRate: new Decimal('0.25'),
+              leagueVolatility: new Decimal('1.4'),
+            }),
+        },
+        oddsSnapshot: {
+          findMany: oddsSnapshotFindMany,
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        marketSuspension: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+        modelRun: { create: createModelRun },
+        bet: { create: createBet },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      deterministicScore: new Decimal('0.7'),
+      lambda: { home: 1.4, away: 1.1 },
+      probabilities: {
+        home: new Decimal('0.3'),
+        draw: new Decimal('0.3'),
+        away: new Decimal('0.4'),
+        over25: new Decimal('0.4'),
+        under25: new Decimal('0.6'),
+        bttsYes: new Decimal('0.5'),
+        bttsNo: new Decimal('0.5'),
+        dc1X: new Decimal('0.6'),
+        dcX2: new Decimal('0.7'),
+        dc12: new Decimal('0.7'),
+        htft: {
+          ...makeHtftProbabilities('0.01'),
+          HOME_HOME: new Decimal('0.65'),
+        },
+      },
+      features: {
+        recentForm: new Decimal('0.7'),
+        xg: new Decimal('0.7'),
+        domExtPerf: new Decimal('0.6'),
+        leagueVolat: new Decimal('0.4'),
+      },
+    });
+
+    const result = await service.analyzeFixture('fixture-id');
+    expect(result.status).toBe('analyzed');
+    if (result.status === 'analyzed') {
+      expect(result.decision).toBe('BET');
+    }
+
+    expect(createBet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          market: Market.HALF_TIME_FULL_TIME,
+          pick: 'HOME_HOME',
+        }),
+      }),
+    );
   });
 });

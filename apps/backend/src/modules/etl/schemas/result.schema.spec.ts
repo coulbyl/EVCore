@@ -5,6 +5,8 @@ const validResult = {
   externalId: 395086,
   homeScore: 1,
   awayScore: 2,
+  homeHtScore: 1,
+  awayHtScore: 1,
   status: 'FINISHED' as const,
 };
 
@@ -15,8 +17,23 @@ describe('ResultSchema', () => {
 
   it('accepts a 0-0 result', () => {
     expect(
-      ResultSchema.safeParse({ ...validResult, homeScore: 0, awayScore: 0 })
-        .success,
+      ResultSchema.safeParse({
+        ...validResult,
+        homeScore: 0,
+        awayScore: 0,
+        homeHtScore: 0,
+        awayHtScore: 0,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts null half-time scores when provider omits them', () => {
+    expect(
+      ResultSchema.safeParse({
+        ...validResult,
+        homeHtScore: null,
+        awayHtScore: null,
+      }).success,
     ).toBe(true);
   });
 

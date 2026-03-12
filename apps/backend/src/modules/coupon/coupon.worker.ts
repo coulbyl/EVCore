@@ -6,7 +6,7 @@ import { NotificationService } from '@modules/notification/notification.service'
 import { tomorrowUtc } from '@utils/date.utils';
 import { CouponService } from './coupon.service';
 
-export type CouponJobData = { date?: string };
+export type CouponJobData = { date?: string; days?: number };
 
 const logger = pino({ name: 'coupon-worker' });
 
@@ -22,11 +22,12 @@ export class CouponWorker extends WorkerHost {
 
   async process(job: Job<CouponJobData>): Promise<void> {
     const date = job.data.date ? new Date(job.data.date) : tomorrowUtc();
+    const days = job.data.days ?? 1;
     logger.info(
-      { date: date.toISOString().slice(0, 10) },
-      'Processing daily coupon job',
+      { date: date.toISOString().slice(0, 10), days },
+      'Processing coupon job',
     );
-    await this.couponService.generateDailyCoupon(date);
+    await this.couponService.generateCouponWindow({ startDate: date, days });
   }
 
   @OnWorkerEvent('failed')

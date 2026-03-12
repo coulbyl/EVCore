@@ -2,6 +2,8 @@ import Decimal from 'decimal.js';
 
 // Maximum number of legs in a daily coupon.
 export const COUPON_MAX_LEGS = 6;
+export const COUPON_WINDOW_MIN_DAYS = 1;
+export const COUPON_WINDOW_MAX_DAYS = 3;
 
 // Daily coupon generation cron — 20:00 UTC (picks for the next day).
 export const COUPON_CRON_SCHEDULE = '0 20 * * *';

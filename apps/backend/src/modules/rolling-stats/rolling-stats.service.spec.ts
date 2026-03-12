@@ -20,6 +20,8 @@ function makeFixture(overrides: Partial<Fixture>): Fixture {
     status: 'FINISHED',
     homeScore: 0,
     awayScore: 0,
+    homeHtScore: null,
+    awayHtScore: null,
     homeXg: new Prisma.Decimal(0),
     awayXg: new Prisma.Decimal(0),
     xgUnavailable: false,

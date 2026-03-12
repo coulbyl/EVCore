@@ -16,6 +16,8 @@ function buildFixture(overrides: Partial<FixtureInput> = {}): FixtureInput {
     status: 'SCHEDULED',
     homeScore: null,
     awayScore: null,
+    homeHtScore: null,
+    awayHtScore: null,
     ...overrides,
   };
 }
@@ -83,6 +85,8 @@ describe('FixtureService.upsertFixtureChain', () => {
       status: 'FINISHED',
       homeScore: 2,
       awayScore: 1,
+      homeHtScore: 1,
+      awayHtScore: 0,
       matchday: 5,
     });
 
@@ -98,13 +102,20 @@ describe('FixtureService.upsertFixtureChain', () => {
         matchday: 5,
         homeScore: 2,
         awayScore: 1,
+        homeHtScore: 1,
+        awayHtScore: 0,
         status: 'FINISHED',
       }),
     );
   });
 
   it('passes null scores for unplayed fixtures', async () => {
-    const fixture = buildFixture({ homeScore: null, awayScore: null });
+    const fixture = buildFixture({
+      homeScore: null,
+      awayScore: null,
+      homeHtScore: null,
+      awayHtScore: null,
+    });
 
     await service.upsertFixtureChain({
       competitionId: 'competition-id',
@@ -113,7 +124,12 @@ describe('FixtureService.upsertFixtureChain', () => {
     });
 
     expect(fixtureRepository.upsertFixture).toHaveBeenCalledWith(
-      expect.objectContaining({ homeScore: null, awayScore: null }),
+      expect.objectContaining({
+        homeScore: null,
+        awayScore: null,
+        homeHtScore: null,
+        awayHtScore: null,
+      }),
     );
   });
 });

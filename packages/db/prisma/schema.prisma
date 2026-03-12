@@ -33,6 +33,7 @@ enum Market {
   OVER_UNDER
   BTTS
   DOUBLE_CHANCE
+  HALF_TIME_FULL_TIME
 }
 
 enum BetStatus {
@@ -51,6 +52,8 @@ enum AdjustmentStatus {
 
 enum CouponStatus {
   PENDING
+  WON
+  LOST
   SETTLED
   NO_BET
 }
@@ -65,6 +68,7 @@ enum NotificationType {
   XG_UNAVAILABLE_REPORT
   DAILY_COUPON
   NO_BET_TODAY
+  COUPON_RESULT
 }
 
 // ─────────────────────────────────────────────
@@ -72,13 +76,20 @@ enum NotificationType {
 // ─────────────────────────────────────────────
 
 model Competition {
-  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  name      String
-  code      String   @unique
-  country   String
-  seasons   Season[]
-  teams     Team[]
-  createdAt DateTime @default(now())
+  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  leagueId           Int      @unique
+  code               String   @unique
+  name               String
+  country            String
+  isActive           Boolean
+  csvDivisionCode    String?
+  seasonStartMonth   Int?
+  activeSeasonsCount Int?
+  seasons            Season[]
+  teams              Team[]
+  createdAt          DateTime @default(now())
+
+  @@map("competition")
 }
 
 model Season {
@@ -92,6 +103,7 @@ model Season {
   createdAt     DateTime    @default(now())
 
   @@unique([competitionId, name])
+  @@map("season")
 }
 
 model Team {
@@ -105,6 +117,8 @@ model Team {
   awayFixtures   Fixture[]   @relation("AwayTeam")
   stats          TeamStats[]
   createdAt      DateTime    @default(now())
+
+  @@map("team")
 }
 
 model Fixture {
@@ -121,6 +135,8 @@ model Fixture {
   status        FixtureStatus @default(SCHEDULED)
   homeScore     Int?
   awayScore     Int?
+  homeHtScore   Int?
+  awayHtScore   Int?
   homeXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
   awayXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
   xgUnavailable Boolean       @default(false)   // true = API returned no stats, skip on retry
@@ -132,6 +148,11 @@ model Fixture {
 
   @@index([seasonId, matchday])
   @@index([scheduledAt])
+  @@index([status, scheduledAt])
+  @@index([seasonId, status, scheduledAt])
+  @@index([homeTeamId, status, scheduledAt])
+  @@index([awayTeamId, status, scheduledAt])
+  @@map("fixture")
 }
 
 // Rolling stats computed for a team after a given fixture was played.
@@ -155,6 +176,7 @@ model TeamStats {
   createdAt        DateTime @default(now())
 
   @@unique([teamId, afterFixtureId])
+  @@map("team_stats")
 }
 
 // Output of one betting engine analysis for a fixture.
@@ -178,6 +200,8 @@ model ModelRun {
   createdAt          DateTime @default(now())
 
   @@index([fixtureId])
+  @@index([fixtureId, analyzedAt])
+  @@map("model_run")
 }
 
 // One bet per market per ModelRun.
@@ -203,6 +227,9 @@ model Bet {
 
   @@index([modelRunId])
   @@index([dailyCouponId])
+  @@index([market, status, createdAt])
+  @@index([status, updatedAt])
+  @@map("bet")
 }
 
 // Daily betting coupon — one per day across all active leagues.
@@ -233,6 +260,10 @@ model AdjustmentProposal {
   notes            String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+
+  @@index([status, appliedAt])
+  @@index([createdAt])
+  @@map("adjustment_proposal")
 }
 
 // Active suspension of a market triggered automatically by risk rules.
@@ -248,6 +279,7 @@ model MarketSuspension {
   updatedAt   DateTime  @updatedAt
 
   @@index([market, active])
+  @@map("market_suspension")
 }
 
 // In-app notifications — persisted for dashboard and future mobile app.
@@ -282,4 +314,7 @@ model OddsSnapshot {
   createdAt  DateTime @default(now())
 
   @@index([fixtureId, snapshotAt])
+  @@index([fixtureId, bookmaker, market, pick, snapshotAt])
+  @@index([snapshotAt])
+  @@map("odds_snapshot")
 }

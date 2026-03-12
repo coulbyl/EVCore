@@ -1,5 +1,10 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import {
+  Processor,
+  WorkerHost,
+  OnWorkerEvent,
+  InjectQueue,
+} from '@nestjs/bullmq';
+import { Job, Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import pino from 'pino';
 import { FixtureStatus } from '@evcore/db';
@@ -15,6 +20,7 @@ import {
 import {
   ETL_CONSTANTS,
   BULLMQ_QUEUES,
+  BULLMQ_DEFAULT_JOB_OPTIONS,
   getCompetitionByCodeOrThrow,
 } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
@@ -24,6 +30,7 @@ import {
   seasonFallbackStartDate,
   parseIsoDate,
 } from '@utils/date.utils';
+import type { InjuriesSyncJobData } from './injuries-sync.worker';
 
 export type FixturesSyncJobData = { season: number; competitionCode: string };
 
@@ -31,10 +38,13 @@ const logger = pino({ name: 'fixtures-sync-worker' });
 
 @Processor(BULLMQ_QUEUES.FIXTURES_SYNC)
 export class FixturesSyncWorker extends WorkerHost {
+  // eslint-disable-next-line max-params -- Queue injection is explicit for ETL chaining clarity.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
+    @InjectQueue(BULLMQ_QUEUES.INJURIES_SYNC)
+    private readonly injuriesQueue: Queue<InjuriesSyncJobData>,
   ) {
     super();
   }
@@ -71,9 +81,14 @@ export class FixturesSyncWorker extends WorkerHost {
     const { data } = parsed;
 
     const competitionRecord = await this.fixtureService.upsertCompetition({
+      leagueId: competition.leagueId,
       name: competition.name,
       code: competition.code,
       country: competition.country,
+      isActive: competition.isActive,
+      csvDivisionCode: competition.csvDivisionCode,
+      seasonStartMonth: competition.seasonStartMonth,
+      activeSeasonsCount: competition.activeSeasonsCount,
     });
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
@@ -101,6 +116,12 @@ export class FixturesSyncWorker extends WorkerHost {
     logger.info(
       { season, fixtureCount: data.response.length },
       'Fixtures sync complete',
+    );
+
+    await this.injuriesQueue.add(
+      `injuries-sync-${competitionCode}-${season}`,
+      { competitionCode, season } satisfies InjuriesSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   }
 
@@ -148,6 +169,8 @@ function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
     status: mapStatus(item.fixture.status.short),
     homeScore: item.goals.home,
     awayScore: item.goals.away,
+    homeHtScore: item.score.halftime.home,
+    awayHtScore: item.score.halftime.away,
   };
 }
 

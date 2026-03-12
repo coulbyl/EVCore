@@ -33,6 +33,9 @@ function makeDeps(
 ) {
   const couponRepository: CouponRepository = {
     findByDate: vi.fn().mockResolvedValue(null),
+    findPendingCouponsUntil: vi.fn().mockResolvedValue([]),
+    findCouponById: vi.fn().mockResolvedValue(null),
+    updateStatus: vi.fn().mockResolvedValue(undefined),
     create: vi.fn().mockResolvedValue({ id: 'coupon-id' }),
     linkBets: vi.fn().mockResolvedValue(undefined),
     ...overrides.couponRepository,
@@ -54,12 +57,14 @@ function makeDeps(
 
   const fixtureService: FixtureService = {
     findScheduledForDate: vi.fn().mockResolvedValue([]),
+    findScheduledInRange: vi.fn().mockResolvedValue([]),
     ...overrides.fixtureService,
   } as unknown as FixtureService;
 
   const notificationService: NotificationService = {
     sendNoBetToday: vi.fn().mockResolvedValue(undefined),
     sendDailyCoupon: vi.fn().mockResolvedValue(undefined),
+    sendCouponResult: vi.fn().mockResolvedValue(undefined),
     ...overrides.notificationService,
   } as unknown as NotificationService;
 
@@ -281,6 +286,46 @@ describe('CouponService.generateDailyCoupon', () => {
     expect(deps.couponRepository.create).not.toHaveBeenCalled();
     expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
   });
+
+  it('supports multi-day windows (2-3 days) via range query', async () => {
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledInRange: vi
+          .fn()
+          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+      },
+      prisma: {
+        client: {
+          bet: {
+            findMany: vi
+              .fn()
+              .mockResolvedValueOnce([
+                {
+                  id: 'bet-1',
+                  ev: new Decimal('0.15'),
+                  modelRun: {
+                    deterministicScore: new Decimal('0.70'),
+                    fixtureId: 'f-1',
+                  },
+                },
+              ])
+              .mockResolvedValueOnce([
+                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
+              ]),
+          },
+        },
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateCouponWindow({ startDate: TEST_DATE, days: 3 });
+
+    expect(deps.fixtureService.findScheduledInRange).toHaveBeenCalledTimes(1);
+    expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
+    expect(deps.couponRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
+    );
+  });
 });
 
 describe('CouponService.onApplicationBootstrap', () => {
@@ -304,5 +349,91 @@ describe('CouponService.onApplicationBootstrap', () => {
     await service.onApplicationBootstrap();
 
     expect(queue.upsertJobScheduler).not.toHaveBeenCalled();
+  });
+});
+
+describe('CouponService settlement', () => {
+  it('settles pending coupons with resolved bets and emits result notification', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findPendingCouponsUntil: vi.fn().mockResolvedValue([
+          {
+            id: 'c-won',
+            status: CouponStatus.PENDING,
+            bets: [{ id: 'b1', status: 'WON' }],
+          },
+          {
+            id: 'c-lost',
+            status: CouponStatus.PENDING,
+            bets: [
+              { id: 'b2', status: 'WON' },
+              { id: 'b3', status: 'LOST' },
+            ],
+          },
+          {
+            id: 'c-settled',
+            status: CouponStatus.PENDING,
+            bets: [
+              { id: 'b4', status: 'VOID' },
+              { id: 'b5', status: 'VOID' },
+            ],
+          },
+          {
+            id: 'c-pending',
+            status: CouponStatus.PENDING,
+            bets: [{ id: 'b6', status: 'PENDING' }],
+          },
+        ]),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.settleExpiredCoupons(TEST_DATE);
+
+    expect(result).toEqual({ settledCount: 3 });
+    expect(deps.couponRepository.updateStatus).toHaveBeenCalledWith(
+      'c-won',
+      CouponStatus.WON,
+    );
+    expect(deps.couponRepository.updateStatus).toHaveBeenCalledWith(
+      'c-lost',
+      CouponStatus.LOST,
+    );
+    expect(deps.couponRepository.updateStatus).toHaveBeenCalledWith(
+      'c-settled',
+      CouponStatus.SETTLED,
+    );
+    expect(deps.notificationService.sendCouponResult).toHaveBeenCalledTimes(3);
+  });
+
+  it('settles a coupon manually by id when all bets are resolved', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findCouponById: vi.fn().mockResolvedValue({
+          id: 'coupon-id',
+          status: CouponStatus.PENDING,
+          bets: [
+            { id: 'b1', status: 'WON' },
+            { id: 'b2', status: 'WON' },
+          ],
+        }),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.settleCouponById('coupon-id');
+
+    expect(result).toEqual({
+      couponId: 'coupon-id',
+      status: CouponStatus.WON,
+      settled: true,
+    });
+    expect(deps.couponRepository.updateStatus).toHaveBeenCalledWith(
+      'coupon-id',
+      CouponStatus.WON,
+    );
+    expect(deps.notificationService.sendCouponResult).toHaveBeenCalledWith(
+      'coupon-id',
+    );
   });
 });

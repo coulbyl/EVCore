@@ -5,7 +5,16 @@ import {
   type UpsertOddsSnapshotInput,
 } from './fixture.repository';
 
-type UpsertCompetitionInput = { name: string; code: string; country: string };
+type UpsertCompetitionInput = {
+  leagueId: number;
+  code: string;
+  name: string;
+  country: string;
+  isActive: boolean;
+  csvDivisionCode?: string;
+  seasonStartMonth?: number;
+  activeSeasonsCount?: number;
+};
 type UpsertSeasonInput = {
   competitionId: string;
   name: string;
@@ -23,6 +32,8 @@ export type FixtureInput = {
   status: FixtureStatus;
   homeScore: number | null;
   awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
 };
 
 type UpsertFixtureChainInput = {
@@ -45,6 +56,14 @@ type FindByDateAndTeamsInput = {
   homeTeamName: string;
   awayTeamName: string;
   competitionCode?: string;
+};
+
+type UpdateScoresInput = {
+  externalId: number;
+  homeScore: number;
+  awayScore: number;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
 };
 
 @Injectable()
@@ -81,6 +100,8 @@ export class FixtureService {
       status: fixture.status,
       homeScore: fixture.homeScore,
       awayScore: fixture.awayScore,
+      homeHtScore: fixture.homeHtScore,
+      awayHtScore: fixture.awayHtScore,
     });
   }
 
@@ -98,16 +119,8 @@ export class FixtureService {
     return this.fixtureRepository.findByDateAndTeams(input);
   }
 
-  async updateScores(
-    externalId: number,
-    homeScore: number,
-    awayScore: number,
-  ): Promise<void> {
-    return this.fixtureRepository.updateScores(
-      externalId,
-      homeScore,
-      awayScore,
-    );
+  async updateScores(input: UpdateScoresInput): Promise<void> {
+    return this.fixtureRepository.updateScores(input);
   }
 
   async updateXg(
@@ -132,12 +145,34 @@ export class FixtureService {
     return this.fixtureRepository.findScheduledForDate(date);
   }
 
+  findScheduledInRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    return this.fixtureRepository.findScheduledInRange(startDate, endDate);
+  }
+
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.fixtureRepository.findFinishedWithoutXg(seasonId);
   }
 
+  findScheduledBySeason(seasonId: string): Promise<
+    {
+      id: string;
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }[]
+  > {
+    return this.fixtureRepository.findScheduledBySeason(seasonId);
+  }
+
   async markXgUnavailable(externalId: number): Promise<void> {
     return this.fixtureRepository.markXgUnavailable(externalId);
+  }
+
+  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
+    return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
   }
 
   async upsertOddsSnapshot(

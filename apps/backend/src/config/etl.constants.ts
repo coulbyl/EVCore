@@ -20,6 +20,7 @@ export type CompetitionConfig = {
 };
 
 export const COMPETITIONS = {
+  // Wave 1 (active now)
   PL: {
     leagueId: 39,
     code: 'PL',
@@ -33,7 +34,7 @@ export const COMPETITIONS = {
     code: 'SA',
     name: 'Serie A',
     country: 'Italy',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'I1',
   },
   LL: {
@@ -41,7 +42,7 @@ export const COMPETITIONS = {
     code: 'LL',
     name: 'La Liga',
     country: 'Spain',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'SP1',
   },
   BL1: {
@@ -49,8 +50,60 @@ export const COMPETITIONS = {
     code: 'BL1',
     name: 'Bundesliga',
     country: 'Germany',
-    isActive: false,
+    isActive: true,
     csvDivisionCode: 'D1',
+  },
+  L1: {
+    leagueId: 61,
+    code: 'L1',
+    name: 'Ligue 1',
+    country: 'France',
+    isActive: true,
+    csvDivisionCode: 'F1',
+  },
+
+  // Wave 2 (enable after ETL stability checks)
+  CH: {
+    leagueId: 40,
+    code: 'CH',
+    name: 'Championship',
+    country: 'England',
+    isActive: false,
+    csvDivisionCode: 'E1',
+  },
+  I2: {
+    leagueId: 136,
+    code: 'I2',
+    name: 'Serie B',
+    country: 'Italy',
+    isActive: false,
+    csvDivisionCode: 'I2',
+  },
+  SP2: {
+    leagueId: 141,
+    code: 'SP2',
+    name: 'Segunda Division',
+    country: 'Spain',
+    isActive: false,
+    csvDivisionCode: 'SP2',
+  },
+
+  // Wave 3 (enable after wave 2 validation)
+  D2: {
+    leagueId: 79,
+    code: 'D2',
+    name: '2. Bundesliga',
+    country: 'Germany',
+    isActive: false,
+    csvDivisionCode: 'D2',
+  },
+  F2: {
+    leagueId: 62,
+    code: 'F2',
+    name: 'Ligue 2',
+    country: 'France',
+    isActive: false,
+    csvDivisionCode: 'F2',
   },
 } as const satisfies Record<string, CompetitionConfig>;
 
@@ -96,6 +149,23 @@ export type ActiveCompetitionPlan = {
   seasons: readonly number[];
 };
 
+export type ApiFootballDailyCallsEstimateInput = {
+  activeCompetitionPlans: readonly ActiveCompetitionPlan[];
+  avgScheduledFixturesPerLeaguePerDay: number;
+  avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
+};
+
+export type ApiFootballDailyCallsEstimate = {
+  leagueCount: number;
+  seasonJobCount: number;
+  fixturesSyncCalls: number;
+  resultsSyncCalls: number;
+  statsSyncCalls: number;
+  injuriesSyncCalls: number;
+  oddsLiveSyncCalls: number;
+  totalCalls: number;
+};
+
 export function getActiveCompetitionPlans(
   now: Date = new Date(),
 ): readonly ActiveCompetitionPlan[] {
@@ -103,6 +173,52 @@ export function getActiveCompetitionPlans(
     competition,
     seasons: getCompetitionSeasons(competition, now),
   }));
+}
+
+export function estimateApiFootballDailyCalls(
+  input: ApiFootballDailyCallsEstimateInput,
+): ApiFootballDailyCallsEstimate {
+  const leagueCount = input.activeCompetitionPlans.length;
+  const seasonJobCount = input.activeCompetitionPlans.reduce(
+    (sum, plan) => sum + plan.seasons.length,
+    0,
+  );
+
+  const avgScheduled = Math.max(
+    0,
+    Math.floor(input.avgScheduledFixturesPerLeaguePerDay),
+  );
+  const avgFinishedWithoutXg = Math.max(
+    0,
+    Math.floor(input.avgFinishedFixturesWithoutXgPerLeaguePerDay),
+  );
+
+  // Daily calls by worker class:
+  // - fixtures/results are season-level calls
+  // - stats/injuries/odds-live are fixture-level calls
+  const fixturesSyncCalls = seasonJobCount;
+  const resultsSyncCalls = seasonJobCount;
+  const statsSyncCalls = leagueCount * avgFinishedWithoutXg;
+  const injuriesSyncCalls = leagueCount * avgScheduled;
+  const oddsLiveSyncCalls = leagueCount * avgScheduled;
+
+  const totalCalls =
+    fixturesSyncCalls +
+    resultsSyncCalls +
+    statsSyncCalls +
+    injuriesSyncCalls +
+    oddsLiveSyncCalls;
+
+  return {
+    leagueCount,
+    seasonJobCount,
+    fixturesSyncCalls,
+    resultsSyncCalls,
+    statsSyncCalls,
+    injuriesSyncCalls,
+    oddsLiveSyncCalls,
+    totalCalls,
+  };
 }
 
 export function getActiveCsvCompetitions(): readonly (CompetitionConfig & {
@@ -154,14 +270,17 @@ export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
   OVER_UNDER_25: 5,
   BTTS: 8,
+  HALF_TIME_FULL_TIME: 18,
 } as const;
 
 export const BULLMQ_QUEUES = {
   FIXTURES_SYNC: 'fixtures-sync',
   RESULTS_SYNC: 'results-sync',
   STATS_SYNC: 'stats-sync',
+  INJURIES_SYNC: 'injuries-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
+  ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   BETTING_ENGINE: 'betting-engine',
 } as const;
 
@@ -177,8 +296,10 @@ export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
   RESULTS_SYNC: '0 3 * * *', // 03:00 UTC daily
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
+  INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ODDS_LIVE_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
+  ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -186,6 +307,8 @@ export const ETL_SCHEDULER_KEYS = {
   FIXTURES_SYNC: 'cron:fixtures-sync',
   RESULTS_SYNC: 'cron:results-sync',
   STATS_SYNC: 'cron:stats-sync',
+  INJURIES_SYNC: 'cron:injuries-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_LIVE_SYNC: 'cron:odds-live-sync',
+  ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
 } as const;

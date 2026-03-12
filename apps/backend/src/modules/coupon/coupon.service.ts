@@ -17,11 +17,18 @@ import {
   COUPON_MAX_LEGS,
   COUPON_CRON_SCHEDULE,
   COUPON_SCHEDULER_KEY,
+  COUPON_WINDOW_MAX_DAYS,
+  COUPON_WINDOW_MIN_DAYS,
 } from '@config/coupon.constants';
 import { tomorrowUtc } from '@utils/date.utils';
 import { CouponRepository } from './coupon.repository';
 
 const logger = pino({ name: 'coupon-service' });
+
+type CouponWindowInput = {
+  startDate: Date;
+  days?: number;
+};
 
 @Injectable()
 export class CouponService implements OnApplicationBootstrap {
@@ -62,29 +69,58 @@ export class CouponService implements OnApplicationBootstrap {
   }
 
   async generateDailyCoupon(date: Date): Promise<void> {
+    return this.generateCouponWindow({ startDate: date, days: 1 });
+  }
+
+  async generateCouponWindow(input: CouponWindowInput): Promise<void> {
+    const days = input.days ?? 1;
+    if (
+      !Number.isInteger(days) ||
+      days < COUPON_WINDOW_MIN_DAYS ||
+      days > COUPON_WINDOW_MAX_DAYS
+    ) {
+      throw new Error(
+        `Coupon window days must be an integer between ${COUPON_WINDOW_MIN_DAYS} and ${COUPON_WINDOW_MAX_DAYS}`,
+      );
+    }
+
+    const startDate = startOfUtcDay(input.startDate);
+    const endDate = addUtcDays(startDate, days - 1);
+
     // Guard idempotence — one coupon per calendar day.
-    const existing = await this.couponRepository.findByDate(date);
+    const existing = await this.couponRepository.findByDate(startDate);
     if (existing) {
       logger.info(
-        { date: date.toISOString().slice(0, 10), couponId: existing.id },
+        {
+          date: startDate.toISOString().slice(0, 10),
+          days,
+          couponId: existing.id,
+        },
         'Coupon already exists for this date — skipping',
       );
       return;
     }
 
-    const fixtures = await this.fixtureService.findScheduledForDate(date);
+    const fixtures =
+      days === 1
+        ? await this.fixtureService.findScheduledForDate(startDate)
+        : await this.fixtureService.findScheduledInRange(startDate, endDate);
 
     if (fixtures.length === 0) {
       logger.info(
-        { date: date.toISOString().slice(0, 10) },
+        {
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: endDate.toISOString().slice(0, 10),
+          days,
+        },
         'No scheduled fixtures — generating NO_BET coupon',
       );
       const coupon = await this.couponRepository.create({
-        date,
+        date: startDate,
         status: CouponStatus.NO_BET,
         legCount: 0,
       });
-      await this.notificationService.sendNoBetToday(date);
+      await this.notificationService.sendNoBetToday(startDate);
       logger.info({ couponId: coupon.id }, 'NO_BET coupon created');
       return;
     }
@@ -141,11 +177,11 @@ export class CouponService implements OnApplicationBootstrap {
 
     if (selected.length === 0) {
       const coupon = await this.couponRepository.create({
-        date,
+        date: startDate,
         status: CouponStatus.NO_BET,
         legCount: 0,
       });
-      await this.notificationService.sendNoBetToday(date);
+      await this.notificationService.sendNoBetToday(startDate);
       logger.info(
         { couponId: coupon.id },
         'NO_BET coupon created — no picks passed EV threshold',
@@ -154,7 +190,7 @@ export class CouponService implements OnApplicationBootstrap {
     }
 
     const coupon = await this.couponRepository.create({
-      date,
+      date: startDate,
       status: CouponStatus.PENDING,
       legCount: selected.length,
     });
@@ -170,7 +206,7 @@ export class CouponService implements OnApplicationBootstrap {
 
     await this.notificationService.sendDailyCoupon({
       id: coupon.id,
-      date,
+      date: startDate,
       legCount: selected.length,
       bets: fullBets,
     });
@@ -182,7 +218,70 @@ export class CouponService implements OnApplicationBootstrap {
   }
 
   // Convenience method — generates coupon for tomorrow (used by tests / manual trigger).
-  async generateForTomorrow(): Promise<void> {
-    return this.generateDailyCoupon(tomorrowUtc());
+  async generateForTomorrow(days = 1): Promise<void> {
+    return this.generateCouponWindow({ startDate: tomorrowUtc(), days });
   }
+
+  async settleExpiredCoupons(date: Date): Promise<{ settledCount: number }> {
+    const cutoff = new Date(date);
+    cutoff.setUTCHours(23, 59, 59, 999);
+    const coupons = await this.couponRepository.findPendingCouponsUntil(cutoff);
+
+    let settledCount = 0;
+    for (const coupon of coupons) {
+      const nextStatus = resolveCouponStatus(coupon.bets);
+      if (nextStatus === null) continue;
+
+      await this.couponRepository.updateStatus(coupon.id, nextStatus);
+      await this.notificationService.sendCouponResult(coupon.id);
+      settledCount++;
+    }
+
+    return { settledCount };
+  }
+
+  async settleCouponById(couponId: string): Promise<{
+    couponId: string;
+    status: CouponStatus;
+    settled: boolean;
+  }> {
+    const coupon = await this.couponRepository.findCouponById(couponId);
+    if (!coupon) {
+      throw new Error(`Coupon not found: ${couponId}`);
+    }
+
+    const nextStatus = resolveCouponStatus(coupon.bets);
+    if (nextStatus === null) {
+      return { couponId, status: coupon.status, settled: false };
+    }
+
+    await this.couponRepository.updateStatus(couponId, nextStatus);
+    await this.notificationService.sendCouponResult(couponId);
+    return { couponId, status: nextStatus, settled: true };
+  }
+}
+
+function startOfUtcDay(date: Date): Date {
+  const value = new Date(date);
+  value.setUTCHours(0, 0, 0, 0);
+  return value;
+}
+
+function addUtcDays(date: Date, days: number): Date {
+  const value = new Date(date);
+  value.setUTCDate(value.getUTCDate() + days);
+  value.setUTCHours(23, 59, 59, 999);
+  return value;
+}
+
+function resolveCouponStatus(
+  bets: { status: BetStatus }[],
+): CouponStatus | null {
+  if (bets.length === 0) return CouponStatus.NO_BET;
+  if (bets.some((bet) => bet.status === BetStatus.PENDING)) return null;
+  if (bets.some((bet) => bet.status === BetStatus.LOST))
+    return CouponStatus.LOST;
+  if (bets.every((bet) => bet.status === BetStatus.WON))
+    return CouponStatus.WON;
+  return CouponStatus.SETTLED;
 }

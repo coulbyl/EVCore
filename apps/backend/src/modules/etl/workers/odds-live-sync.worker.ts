@@ -120,6 +120,7 @@ export class OddsLiveSyncWorker extends WorkerHost {
         underOdds: additionalOdds.underOdds,
         bttsYesOdds: additionalOdds.bttsYesOdds,
         bttsNoOdds: additionalOdds.bttsNoOdds,
+        htftOdds: additionalOdds.htftOdds,
       });
 
       synced++;
@@ -170,6 +171,7 @@ type AdditionalMarketOdds = {
   underOdds: number | null;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
+  htftOdds: Record<string, number>;
 };
 
 // Extracts Over/Under 2.5 and BTTS odds from the same bookmaker used for 1X2.
@@ -185,6 +187,7 @@ export function extractAdditionalMarketOdds(
       underOdds: null,
       bttsYesOdds: null,
       bttsNoOdds: null,
+      htftOdds: {},
     };
   }
 
@@ -200,8 +203,9 @@ export function extractAdditionalMarketOdds(
   const bttsYesOdds =
     bttsBet?.values.find((v) => v.value === 'Yes')?.odd ?? null;
   const bttsNoOdds = bttsBet?.values.find((v) => v.value === 'No')?.odd ?? null;
+  const htftOdds = extractHalfTimeFullTimeOdds(bk);
 
-  return { overOdds, underOdds, bttsYesOdds, bttsNoOdds };
+  return { overOdds, underOdds, bttsYesOdds, bttsNoOdds, htftOdds };
 }
 
 // Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365.
@@ -238,4 +242,52 @@ export function extractOneXTwoOdds(
   }
 
   return null;
+}
+
+function extractHalfTimeFullTimeOdds(
+  bookmaker: OddsBookmaker,
+): Record<string, number> {
+  const htftBet = bookmaker.bets.find(
+    (bet) =>
+      bet.id === API_FOOTBALL_BET_IDS.HALF_TIME_FULL_TIME ||
+      normalizeLabel(bet.name) === 'HALFTIME/FULLTIME',
+  );
+  if (!htftBet) return {};
+
+  const odds: Record<string, number> = {};
+  for (const value of htftBet.values) {
+    const mapped = mapHalfTimeFullTimePick(value.value);
+    if (!mapped) continue;
+    odds[mapped] = value.odd;
+  }
+  return odds;
+}
+
+function mapHalfTimeFullTimePick(value: string): string | null {
+  switch (normalizeLabel(value)) {
+    case 'HOME/HOME':
+      return 'HOME_HOME';
+    case 'HOME/DRAW':
+      return 'HOME_DRAW';
+    case 'HOME/AWAY':
+      return 'HOME_AWAY';
+    case 'DRAW/HOME':
+      return 'DRAW_HOME';
+    case 'DRAW/DRAW':
+      return 'DRAW_DRAW';
+    case 'DRAW/AWAY':
+      return 'DRAW_AWAY';
+    case 'AWAY/HOME':
+      return 'AWAY_HOME';
+    case 'AWAY/DRAW':
+      return 'AWAY_DRAW';
+    case 'AWAY/AWAY':
+      return 'AWAY_AWAY';
+    default:
+      return null;
+  }
+}
+
+function normalizeLabel(value: string): string {
+  return value.trim().replace(/\s+/g, '').toUpperCase();
 }

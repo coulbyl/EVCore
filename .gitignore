@@ -44,3 +44,4 @@ packages/db/reports/
 
 # Local API samples — for analysis only, never commit
 *-sample.json
+pr-desc.md

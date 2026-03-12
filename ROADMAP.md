@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 3 (Daily Coupon Generator) terminé (mise à jour le 2 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 3 mars 2026)**
 
 ---
 
@@ -201,32 +201,44 @@
 
 **Shadow services (données réelles, score non activé)**
 
-- [ ] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
-- [ ] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
-- [ ] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
+- [x] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
+- [x] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
+- [x] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
 
 **Boucle d'auto-activation**
 
-- [ ] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
-- [ ] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
+- [x] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
+- [x] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
 - [ ] Rollback d'une auto-activation via `POST /adjustment/:id/rollback` (existant)
 
 ---
 
 ### Bloc 5 — Coupon settlement + résultats live
 
-- [ ] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
-- [ ] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
-- [ ] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
-- [ ] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
+- [x] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
+- [x] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
+- [x] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
+- [x] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
 
 ---
 
 ### Bloc 6 — Suite Phase 2
 
-- [ ] Marché Mi-temps/Fin de match (HT/FT combo)
-- [ ] OpenClaw integration (LLM delta ≤ 30%, Zod-validated, temperature 0) — après validation Bloc 3 en production
-- [ ] Grafana dashboards (ROI, Brier Score, drawdown, qualityScore distribution)
+- [x] Marché Mi-temps/Fin de match (HT/FT combo)
+  - [x] Fondations HT/FT backend: enum marché, stockage score mi-temps, settlement dédié (`resolveHalfTimeFullTimeBetStatus`)
+  - [x] Probas HT/FT (9 issues) dérivées du modèle Poisson
+  - [x] Ingestion odds live HT/FT + stockage `OddsSnapshot` (`HALF_TIME_FULL_TIME`)
+  - [x] Sélection EV/qualityScore étendue au marché HT/FT dans `BettingEngineService`
+- [x] Stabilité first prod sans TimescaleDB
+  - [x] Cleanup automatique `OddsSnapshot` via worker ETL `odds-snapshot-retention` (rétention configurable)
+  - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)
+  - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées
+  - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + warning seuil quota)
+- [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
+  - Activation après 30+ jours prod stables, d'abord en shadow mode
+  - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
+- [ ] Grafana dashboards — `STAND-BY POST-PROD` (voir `GRAFANA.md`)
+  - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
 - [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)
 - [ ] Multi-bookmakers (Betclic, Unibet via odds-api ou scraping)
 

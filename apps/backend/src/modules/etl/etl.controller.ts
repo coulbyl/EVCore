@@ -9,6 +9,7 @@ import {
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EtlService } from './etl.service';
 import { OddsLiveSyncBodyDto } from './dto/odds-live-sync-body.dto';
+import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
 
 @ApiTags('ETL')
 @Controller('etl')
@@ -49,6 +50,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'injuries-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 12,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-csv-import': {
           active: 0,
           waiting: 0,
@@ -60,6 +68,13 @@ export class EtlController {
           active: 0,
           waiting: 0,
           completed: 5,
+          failed: 0,
+          delayed: 0,
+        },
+        'odds-snapshot-retention': {
+          active: 0,
+          waiting: 0,
+          completed: 1,
           failed: 0,
           delayed: 0,
         },
@@ -77,7 +92,7 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger full ETL sync',
     description:
-      'Enqueues all five ETL workers in sequence: fixtures → results → stats → ' +
+      'Enqueues all ETL workers in sequence: fixtures → results → stats → injuries → ' +
       'odds-csv → odds-live. Jobs are staggered to respect API rate limits. ' +
       'Use for initial backfill or after a long downtime.',
   })
@@ -134,6 +149,21 @@ export class EtlController {
     return { status: 'ok' as const };
   }
 
+  @Post('sync/injuries')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger injuries shadow sync',
+    description:
+      'Enqueues one injuries-sync job per active competition × current season. ' +
+      'Fetches injuries from API-Football for scheduled fixtures and stores ' +
+      '`shadow_injuries` into the latest ModelRun.features per fixture.',
+  })
+  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  async triggerInjuriesSync() {
+    await this.etlService.triggerInjuriesSync();
+    return { status: 'ok' as const };
+  }
+
   @Post('sync/odds-csv')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -162,8 +192,26 @@ export class EtlController {
   })
   @ApiBody({ type: OddsLiveSyncBodyDto, required: false })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerOddsLiveSync(@Body() body: OddsLiveSyncBodyDto) {
+  async triggerOddsLiveSync(@Body() body: OddsLiveSyncBodyDto = {}) {
     await this.etlService.triggerOddsLiveSync(body.date);
+    return { status: 'ok' as const };
+  }
+
+  @Post('sync/odds-retention')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger odds snapshot retention cleanup',
+    description:
+      'Enqueues an odds-snapshot-retention maintenance job that deletes ' +
+      'OddsSnapshot rows older than the configured retention window. ' +
+      'By default it uses ODDS_SNAPSHOT_RETENTION_DAYS, but you can override per run.',
+  })
+  @ApiBody({ type: OddsSnapshotRetentionBodyDto, required: false })
+  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  async triggerOddsSnapshotRetention(
+    @Body() body: OddsSnapshotRetentionBodyDto = {},
+  ) {
+    await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
     return { status: 'ok' as const };
   }
 }

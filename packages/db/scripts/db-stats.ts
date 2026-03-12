@@ -34,8 +34,8 @@ async function main() {
              COUNT(f.id)                                        AS total,
              COUNT(f.id) FILTER (WHERE f.status = 'FINISHED')  AS finished,
              COUNT(f.id) FILTER (WHERE f."homeXg" IS NOT NULL) AS with_xg
-      FROM   "Fixture" f
-      JOIN   "Season"  s ON s.id = f."seasonId"
+      FROM   "fixture" f
+      JOIN   "season"  s ON s.id = f."seasonId"
       GROUP  BY s.name
       ORDER  BY s.name
     `,

@@ -2,6 +2,7 @@ import type Decimal from 'decimal.js';
 import type { Market } from '@evcore/db';
 import type {
   DeterministicFeatures,
+  HalfTimeFullTimePick,
   computePoissonMarkets,
 } from './betting-engine.utils';
 
@@ -44,6 +45,7 @@ export type FullOddsSnapshot = {
   underOdds: Decimal | null;
   bttsYesOdds: Decimal | null;
   bttsNoOdds: Decimal | null;
+  htftOdds: Partial<Record<HalfTimeFullTimePick, Decimal>>;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

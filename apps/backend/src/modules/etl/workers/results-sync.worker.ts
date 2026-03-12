@@ -76,6 +76,8 @@ export class ResultsSyncWorker extends WorkerHost {
         externalId: item.fixture.id,
         homeScore: item.goals.home,
         awayScore: item.goals.away,
+        homeHtScore: item.score.halftime.home,
+        awayHtScore: item.score.halftime.away,
         status: 'FINISHED',
       });
 
@@ -88,11 +90,13 @@ export class ResultsSyncWorker extends WorkerHost {
         continue;
       }
 
-      await this.fixtureService.updateScores(
-        result.data.externalId,
-        result.data.homeScore,
-        result.data.awayScore,
-      );
+      await this.fixtureService.updateScores({
+        externalId: result.data.externalId,
+        homeScore: result.data.homeScore,
+        awayScore: result.data.awayScore,
+        homeHtScore: result.data.homeHtScore,
+        awayHtScore: result.data.awayHtScore,
+      });
       updated++;
     }
 

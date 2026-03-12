@@ -4,6 +4,7 @@ import { AdjustmentStatus } from '@evcore/db';
 import { AdjustmentService } from './adjustment.service';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import type { CouponService } from '@modules/coupon/coupon.service';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { CalibrationService } from './calibration.service';
 import { MIN_BET_COUNT } from './adjustment.constants';
@@ -23,6 +24,10 @@ function makeService({
   recentApply = null as { id: string } | null,
   createProposal = vi.fn().mockResolvedValue({ id: 'proposal-id' }),
   computeForMarket = vi.fn().mockResolvedValue(null),
+  settledBets = [] as {
+    status: 'WON' | 'LOST';
+    modelRun: { features: Record<string, unknown> };
+  }[],
 } = {}) {
   const bettingEngine = {
     settleOpenBets: vi.fn().mockResolvedValue({ settled }),
@@ -32,6 +37,10 @@ function makeService({
   const calibrationService = {
     computeForMarket,
   } as unknown as CalibrationService;
+
+  const couponService = {
+    settleExpiredCoupons: vi.fn().mockResolvedValue({ settledCount: 0 }),
+  } as unknown as CouponService;
 
   const notification = {
     sendWeightAdjustmentAlert: vi.fn().mockResolvedValue(undefined),
@@ -45,6 +54,9 @@ function makeService({
         findMany: vi.fn().mockResolvedValue([]),
         findUniqueOrThrow: vi.fn(),
       },
+      bet: {
+        findMany: vi.fn().mockResolvedValue(settledBets),
+      },
     },
   } as unknown as PrismaService;
 
@@ -53,6 +65,7 @@ function makeService({
   return new AdjustmentService(
     prismaMock,
     bettingEngine,
+    couponService,
     calibrationService,
     notification,
   );
@@ -68,6 +81,7 @@ describe('AdjustmentService.settleAndCheck', () => {
     expect(result.settled).toBe(3);
     expect(result.proposalId).toBeNull();
     expect(result.calibration).toBeNull();
+    expect(result.shadowProposalId).toBeNull();
   });
 
   it('returns no proposal when needsAdjustment=false', async () => {
@@ -176,6 +190,7 @@ describe('AdjustmentService.rollback', () => {
     const service = new AdjustmentService(
       prismaMock,
       {} as BettingEngineService,
+      { settleExpiredCoupons: vi.fn() } as unknown as CouponService,
       {} as CalibrationService,
       notification,
     );
@@ -226,5 +241,88 @@ describe('computeAdjustedWeights (via settleAndCheck)', () => {
     const lv = parseFloat(proposed['leagueVolat']);
     expect(rf).toBeLessThan(0.3);
     expect(lv).toBeGreaterThan(0.15);
+  });
+});
+
+describe('AdjustmentService shadow correlations', () => {
+  it('returns no shadow correlations when settled bets are below 50', async () => {
+    const settledBets = Array.from({ length: 49 }, (_, i) => ({
+      status: i % 2 === 0 ? ('WON' as const) : ('LOST' as const),
+      modelRun: {
+        features: { shadow_h2h: i % 3, shadow_congestion: i % 4 },
+      },
+    }));
+
+    const service = makeService({
+      computeForMarket: vi.fn().mockResolvedValue(null),
+      settledBets,
+    });
+
+    const correlations = await service.computeShadowCorrelations();
+    expect(correlations).toBeNull();
+  });
+
+  it('does not auto-activate when rho is weak', async () => {
+    const createProposal = vi.fn().mockResolvedValue({ id: 'proposal-id' });
+    const settledBets = Array.from({ length: 60 }, (_, i) => ({
+      status: i % 2 === 0 ? ('WON' as const) : ('LOST' as const),
+      modelRun: {
+        features: {
+          shadow_h2h: 0.5,
+          shadow_congestion: 0.5,
+          shadow_injuries: { total: 1 },
+        },
+      },
+    }));
+
+    const service = makeService({
+      computeForMarket: vi.fn().mockResolvedValue(null),
+      createProposal,
+      settledBets,
+      recentApply: null,
+    });
+
+    const result = await service.settleAndCheck('fixture-id');
+    expect(result.shadowCorrelations).not.toBeNull();
+    expect(result.shadowProposalId).toBeNull();
+    expect(createProposal).not.toHaveBeenCalled();
+  });
+
+  it('auto-activates shadow feature when |rho| > 0.15 on 50+ samples', async () => {
+    const createProposal = vi
+      .fn()
+      .mockResolvedValue({ id: 'shadow-proposal-id' });
+    const settledBets = Array.from({ length: 60 }, (_, i) => {
+      const won = i < 30;
+      return {
+        status: won ? ('WON' as const) : ('LOST' as const),
+        modelRun: {
+          features: {
+            shadow_h2h: won ? 1 : 0,
+            shadow_congestion: won ? 0 : 1,
+            shadow_injuries: { total: won ? 0 : 3 },
+          },
+        },
+      };
+    });
+
+    const service = makeService({
+      computeForMarket: vi.fn().mockResolvedValue(null),
+      createProposal,
+      settledBets,
+      recentApply: null,
+    });
+
+    const result = await service.settleAndCheck('fixture-id');
+    expect(result.shadowCorrelations).not.toBeNull();
+    expect(result.shadowProposalId).toBe('shadow-proposal-id');
+    expect(createProposal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: AdjustmentStatus.APPLIED,
+          notes: expect.stringContaining('Shadow auto-activation'),
+        }),
+      }),
+    );
   });
 });

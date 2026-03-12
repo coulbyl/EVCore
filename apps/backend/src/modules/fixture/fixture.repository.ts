@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus } from '@evcore/db';
+import { Fixture, FixtureStatus, Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { oneDayWindow } from '@utils/date.utils';
 
@@ -16,9 +16,14 @@ type FindByDateAndTeamsInput = {
 };
 
 type UpsertCompetitionInput = {
+  leagueId: number;
   name: string;
   code: string;
   country: string;
+  isActive: boolean;
+  csvDivisionCode?: string;
+  seasonStartMonth?: number;
+  activeSeasonsCount?: number;
 };
 
 type UpsertSeasonInput = {
@@ -45,6 +50,16 @@ type UpsertFixtureInput = {
   status: FixtureStatus;
   homeScore?: number | null;
   awayScore?: number | null;
+  homeHtScore?: number | null;
+  awayHtScore?: number | null;
+};
+
+type UpdateScoresInput = {
+  externalId: number;
+  homeScore: number;
+  awayScore: number;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
 };
 
 type UpsertOneXTwoOddsSnapshotInput = {
@@ -67,6 +82,7 @@ export type UpsertOddsSnapshotInput = {
   underOdds: number | null;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
+  htftOdds: Record<string, number>;
 };
 
 @Injectable()
@@ -77,7 +93,15 @@ export class FixtureRepository {
     return this.prisma.client.competition.upsert({
       where: { code: data.code },
       create: data,
-      update: { name: data.name, country: data.country },
+      update: {
+        leagueId: data.leagueId,
+        name: data.name,
+        country: data.country,
+        isActive: data.isActive,
+        csvDivisionCode: data.csvDivisionCode,
+        seasonStartMonth: data.seasonStartMonth,
+        activeSeasonsCount: data.activeSeasonsCount,
+      },
       select: { id: true },
     });
   }
@@ -115,19 +139,23 @@ export class FixtureRepository {
         status: data.status,
         homeScore: data.homeScore,
         awayScore: data.awayScore,
+        homeHtScore: data.homeHtScore,
+        awayHtScore: data.awayHtScore,
       },
       select: { id: true },
     });
   }
 
-  async updateScores(
-    externalId: number,
-    homeScore: number,
-    awayScore: number,
-  ): Promise<void> {
+  async updateScores(input: UpdateScoresInput): Promise<void> {
     await this.prisma.client.fixture.updateMany({
-      where: { externalId },
-      data: { homeScore, awayScore, status: 'FINISHED' },
+      where: { externalId: input.externalId },
+      data: {
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+        homeHtScore: input.homeHtScore,
+        awayHtScore: input.awayHtScore,
+        status: 'FINISHED',
+      },
     });
   }
 
@@ -167,6 +195,21 @@ export class FixtureRepository {
     });
   }
 
+  findScheduledInRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ id: string; externalId: number }[]> {
+    const start = new Date(startDate);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setUTCHours(23, 59, 59, 999);
+    return this.prisma.client.fixture.findMany({
+      where: { status: 'SCHEDULED', scheduledAt: { gte: start, lte: end } },
+      select: { id: true, externalId: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   findFinishedWithoutXg(seasonId: string): Promise<{ externalId: number }[]> {
     return this.prisma.client.fixture.findMany({
       where: {
@@ -180,11 +223,38 @@ export class FixtureRepository {
     });
   }
 
+  findScheduledBySeason(seasonId: string): Promise<
+    {
+      id: string;
+      externalId: number;
+      homeTeam: { externalId: number };
+      awayTeam: { externalId: number };
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: { seasonId, status: 'SCHEDULED' },
+      select: {
+        id: true,
+        externalId: true,
+        homeTeam: { select: { externalId: true } },
+        awayTeam: { select: { externalId: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   async markXgUnavailable(externalId: number): Promise<void> {
     await this.prisma.client.fixture.updateMany({
       where: { externalId },
       data: { xgUnavailable: true },
     });
+  }
+
+  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
+    const result = await this.prisma.client.oddsSnapshot.deleteMany({
+      where: { snapshotAt: { lt: cutoff } },
+    });
+    return result.count;
   }
 
   async upsertOddsSnapshot(
@@ -200,27 +270,20 @@ export class FixtureRepository {
     });
 
     const upsertNonOneXTwo = async (
-      market: 'OVER_UNDER' | 'BTTS',
+      market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
       pick: string,
       odds: number | null,
     ): Promise<void> => {
       if (odds === null) return;
-      const existing = await this.prisma.client.oddsSnapshot.findFirst({
-        where: {
-          fixtureId: data.fixtureId,
-          bookmaker: data.bookmaker,
-          market,
-          pick,
-          snapshotAt: data.snapshotAt,
-        },
-        select: { id: true },
-      });
-      if (existing) {
-        await this.prisma.client.oddsSnapshot.update({
-          where: { id: existing.id },
-          data: { odds },
-        });
-      } else {
+      const where = {
+        fixtureId: data.fixtureId,
+        bookmaker: data.bookmaker,
+        market,
+        pick,
+        snapshotAt: data.snapshotAt,
+      } as const;
+
+      try {
         await this.prisma.client.oddsSnapshot.create({
           data: {
             fixtureId: data.fixtureId,
@@ -231,6 +294,20 @@ export class FixtureRepository {
             odds,
           },
         });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+
+        const existing = await this.prisma.client.oddsSnapshot.findFirst({
+          where,
+          select: { id: true },
+        });
+
+        if (!existing) throw error;
+
+        await this.prisma.client.oddsSnapshot.update({
+          where: { id: existing.id },
+          data: { odds },
+        });
       }
     };
 
@@ -239,6 +316,9 @@ export class FixtureRepository {
       upsertNonOneXTwo('OVER_UNDER', 'UNDER', data.underOdds),
       upsertNonOneXTwo('BTTS', 'YES', data.bttsYesOdds),
       upsertNonOneXTwo('BTTS', 'NO', data.bttsNoOdds),
+      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
+        upsertNonOneXTwo('HALF_TIME_FULL_TIME', pick, odds),
+      ),
     ]);
 
     return oneXTwoId;
@@ -248,17 +328,36 @@ export class FixtureRepository {
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
-    const existing = await this.prisma.client.oddsSnapshot.findFirst({
-      where: {
-        fixtureId: data.fixtureId,
-        bookmaker: data.bookmaker,
-        market: 'ONE_X_TWO',
-        snapshotAt: data.snapshotAt,
-      },
-      select: { id: true },
-    });
+    const where = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      market: 'ONE_X_TWO' as const,
+      snapshotAt: data.snapshotAt,
+    };
 
-    if (existing) {
+    try {
+      return await this.prisma.client.oddsSnapshot.create({
+        data: {
+          fixtureId: data.fixtureId,
+          bookmaker: data.bookmaker,
+          market: 'ONE_X_TWO',
+          snapshotAt: data.snapshotAt,
+          homeOdds: data.homeOdds,
+          drawOdds: data.drawOdds,
+          awayOdds: data.awayOdds,
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+
+      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+        where,
+        select: { id: true },
+      });
+
+      if (!existing) throw error;
+
       return this.prisma.client.oddsSnapshot.update({
         where: { id: existing.id },
         data: {
@@ -269,19 +368,6 @@ export class FixtureRepository {
         select: { id: true },
       });
     }
-
-    return this.prisma.client.oddsSnapshot.create({
-      data: {
-        fixtureId: data.fixtureId,
-        bookmaker: data.bookmaker,
-        market: 'ONE_X_TWO',
-        snapshotAt: data.snapshotAt,
-        homeOdds: data.homeOdds,
-        drawOdds: data.drawOdds,
-        awayOdds: data.awayOdds,
-      },
-      select: { id: true },
-    });
   }
 
   // Used by xg-sync to match Understat entries to DB fixtures via date (±1 day) + team names.
@@ -322,4 +408,11 @@ function normalizeTeamName(name: string): string {
     .replace(/\b(fc|afc|cf|sc)\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }

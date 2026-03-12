@@ -14,6 +14,8 @@ import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
+import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
+import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 
 type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
 
@@ -45,15 +47,19 @@ describe('EtlService', () => {
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
   const resultsQueue = makeQueue<ResultsSyncJobData>();
   const statsQueue = makeQueue<StatsSyncJobData>();
+  const injuriesQueue = makeQueue<InjuriesSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
   const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
+  const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
 
   const service = new EtlService(
     fixturesQueue as Queue<FixturesSyncJobData>,
     resultsQueue as Queue<ResultsSyncJobData>,
     statsQueue as Queue<StatsSyncJobData>,
+    injuriesQueue as Queue<InjuriesSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
     oddsLiveQueue as Queue<OddsLiveSyncJobData>,
+    oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
   );
 
@@ -66,21 +72,25 @@ describe('EtlService', () => {
 
     expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(fixturesQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `fixtures-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(fixturesQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `fixtures-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -89,21 +99,25 @@ describe('EtlService', () => {
 
     expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(resultsQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `results-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(resultsQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `results-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -112,21 +126,52 @@ describe('EtlService', () => {
 
     expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
     let callIndex = 0;
-    for (const plan of activePlans) {
-      for (let i = 0; i < plan.seasons.length; i++) {
-        callIndex++;
-        const season = plan.seasons[i];
-        expect(statsQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `stats-sync-${plan.competition.code}-${season}`,
-          { season, competitionCode: plan.competition.code },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-          },
-        );
-      }
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(statsQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `stats-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
+  });
+
+  it('dispatches injuries jobs for each season with API-FOOTBALL staggered delays', async () => {
+    await service.triggerInjuriesSync();
+
+    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+
+    const expectedJobs = activePlans.flatMap((plan) =>
+      plan.seasons.map((season) => ({
+        competitionCode: plan.competition.code,
+        season,
+      })),
+    );
+
+    let callIndex = 0;
+    for (const job of expectedJobs) {
+      callIndex++;
+      expect(injuriesQueue.add).toHaveBeenNthCalledWith(
+        callIndex,
+        `injuries-sync-${job.competitionCode}-${job.season}`,
+        { season: job.season, competitionCode: job.competitionCode },
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
     }
   });
 
@@ -157,13 +202,24 @@ describe('EtlService', () => {
     }
   });
 
-  it('triggerFullSync enqueues fixtures, results, stats, odds CSV, and odds live jobs', async () => {
+  it('triggerFullSync enqueues fixtures, results, stats, injuries, odds CSV, and odds live jobs', async () => {
     await service.triggerFullSync();
 
     expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
     expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
+  });
+
+  it('dispatches odds snapshot retention cleanup job', async () => {
+    await service.triggerOddsSnapshotRetention(30);
+
+    expect(oddsSnapshotRetentionQueue.add).toHaveBeenCalledWith(
+      'odds-snapshot-retention',
+      { retentionDays: 30 },
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   });
 });
