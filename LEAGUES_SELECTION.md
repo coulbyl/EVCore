@@ -20,22 +20,27 @@ Pour ton modèle actuel (Poisson + EV + odds snapshots + coupon multi-jours), je
 ## Pourquoi ces 10 ligues sont les plus adaptées à EVCore
 
 1. Cohérence "A + B" par pays
+
 - Tu gardes les 5 grands championnats européens + leur division B.
 - Avantage: même structure de calendrier, même logique de features, même pipeline ETL.
 
 2. Qualité/poids compétitif des ligues A
+
 - Les associations UEFA 5-year placent Angleterre, Italie, Espagne, Allemagne, France en tête.
 - Ça valide que ce sont les championnats les plus "structurants" pour ton scope européen.
 
 3. Couverture data historique exploitable
+
 - football-data.co.uk fournit ces divisions majeures avec historiques, odds match/goal/AH et stats match.
 - Les codes CSV sont directement exploitables dans ta logique `csvDivisionCode`.
 
 4. Compatibilité forte avec ton modèle
+
 - Ton modèle dépend d'un volume stable de fixtures + odds + résultats.
 - Ces ligues offrent une cadence saisonnière régulière (août-mai), idéale pour rolling stats, calibration et coupon windows 2-3 jours.
 
 5. Liquidité marché (pragmatique EV)
+
 - Les ligues A sont très liquides (prix plus robustes).
 - Les ligues B gardent une bonne profondeur tout en laissant souvent plus d'inefficiences que les ligues A.
 
@@ -52,6 +57,7 @@ Pour ton modèle actuel (Poisson + EV + odds snapshots + coupon multi-jours), je
 3. Phase 3 (2 semaines): `D2, F2`
 
 KPIs à suivre à chaque phase:
+
 - taux de jobs ETL réussis
 - taux de fixtures avec odds valides
 - délai moyen de génération coupon

@@ -1,7 +1,6 @@
 import "dotenv/config";
 import { prisma } from "./client";
 
-
 const COMPETITIONS = [
   {
     leagueId: 39,
