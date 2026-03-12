@@ -144,9 +144,14 @@ describe('FixturesSyncWorker', () => {
       { headers: { 'x-apisports-key': 'test-api-key' } },
     );
     expect(fixtureService.upsertCompetition).toHaveBeenCalledWith({
+      leagueId: 135,
       name: 'Serie A',
       code: 'SA',
       country: 'Italy',
+      isActive: true,
+      csvDivisionCode: 'I1',
+      seasonStartMonth: undefined,
+      activeSeasonsCount: undefined,
     });
     expect(fixtureService.upsertSeason).toHaveBeenCalledWith(
       expect.objectContaining({
