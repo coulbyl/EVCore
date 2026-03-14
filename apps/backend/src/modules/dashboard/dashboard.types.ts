@@ -41,6 +41,7 @@ export type CouponSnapshot = {
 
 export type OpportunityRow = {
   id: string;
+  fixtureId: string;
   fixture: string;
   competition: string;
   kickoff: string;

@@ -282,7 +282,7 @@ export default function Home() {
               <OpportunitiesTable
                 rows={opportunities}
                 selectedId={selectedRow?.id ?? null}
-                onSelect={setSelectedRow}
+                onSelectAction={setSelectedRow}
               />
               <RecentCouponsCard snapshots={coupons} />
             </section>

@@ -1,14 +1,46 @@
+"use client";
+
+import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { Badge, Code, SectionHeader } from "@evcore/ui";
 import type { OpportunityRow } from "../types/dashboard";
+
+function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(fixtureId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={fixtureId}
+      className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+    >
+      <span>{fixtureId.slice(0, 8)}</span>
+      {copied ? (
+        <Check size={10} className="text-success" />
+      ) : (
+        <Copy size={10} />
+      )}
+    </button>
+  );
+}
 
 export function OpportunitiesTable({
   rows,
   selectedId,
-  onSelect,
+  onSelectAction,
 }: {
   rows: OpportunityRow[];
   selectedId: string | null;
-  onSelect: (row: OpportunityRow) => void;
+  onSelectAction: (row: OpportunityRow) => void;
 }) {
   return (
     <div className="rounded-[1.8rem] border border-border bg-panel-strong p-6 ev-shell-shadow">
@@ -33,15 +65,18 @@ export function OpportunitiesTable({
             {rows.map((row) => (
               <tr
                 key={row.id}
-                onClick={() => onSelect(row)}
+                onClick={() => onSelectAction(row)}
                 className={`cursor-pointer transition-colors ${selectedId === row.id ? "bg-accent/8 ring-1 ring-inset ring-accent/20" : "hover:bg-[#f5f7fb]"}`}
               >
                 <td className="px-5 py-4.5">
                   <div className="font-medium text-slate-700">
                     {row.fixture}
                   </div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
-                    {row.competition} • {row.kickoff}
+                  <div className="mt-1 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <span>
+                      {row.competition} • {row.kickoff}
+                    </span>
+                    <CopyFixtureId fixtureId={row.fixtureId} />
                   </div>
                 </td>
                 <td className="px-5 py-4.5 text-slate-500">{row.market}</td>

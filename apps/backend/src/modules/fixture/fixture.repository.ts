@@ -159,6 +159,33 @@ export class FixtureRepository {
     });
   }
 
+  async setResultById(
+    id: string,
+    scores: {
+      homeScore: number;
+      awayScore: number;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    },
+  ): Promise<{ id: string } | null> {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!fixture) return null;
+    await this.prisma.client.fixture.update({
+      where: { id },
+      data: {
+        homeScore: scores.homeScore,
+        awayScore: scores.awayScore,
+        homeHtScore: scores.homeHtScore,
+        awayHtScore: scores.awayHtScore,
+        status: 'FINISHED',
+      },
+    });
+    return { id };
+  }
+
   async updateXg(
     externalId: number,
     homeXg: number,

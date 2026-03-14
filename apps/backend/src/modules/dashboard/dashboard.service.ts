@@ -207,6 +207,7 @@ export class DashboardService {
       const fixture = bet.modelRun.fixture;
       return {
         id: bet.id,
+        fixtureId: fixture.id,
         fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
         competition: fixture.season.competition.name,
         kickoff: formatTimeUtc(fixture.scheduledAt),
