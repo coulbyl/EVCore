@@ -175,6 +175,93 @@ export default function Home() {
   const [selectedRow, setSelectedRow] = useState<OpportunityRow | null>(null);
   const fixture =
     selectedRow !== null ? rowToFixturePanel(selectedRow) : apiFixture;
+  const lostBets = Math.max(0, pnl.settledBets - pnl.wonBets);
+  const winRatePct = Number.parseFloat(pnl.winRate.replace(",", "."));
+  const lossRate =
+    Number.isFinite(winRatePct) && winRatePct >= 0 && winRatePct <= 100
+      ? `${(100 - winRatePct).toFixed(1)}%`
+      : "—";
+  const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
+  const roiPct = Number.parseFloat(pnl.roi.replace(",", "."));
+
+  type PerfTone = "neutral" | "success" | "warning" | "danger";
+  const performanceToneStyles: Record<
+    PerfTone,
+    { card: string; label: string; value: string; sub: string }
+  > = {
+    neutral: {
+      card: "border-border bg-slate-50",
+      label: "text-slate-500",
+      value: "text-slate-900",
+      sub: "text-slate-400",
+    },
+    success: {
+      card: "border-emerald-200 bg-emerald-50",
+      label: "text-emerald-700",
+      value: "text-emerald-800",
+      sub: "text-emerald-600",
+    },
+    warning: {
+      card: "border-amber-200 bg-amber-50",
+      label: "text-amber-700",
+      value: "text-amber-800",
+      sub: "text-amber-600",
+    },
+    danger: {
+      card: "border-rose-200 bg-rose-50",
+      label: "text-rose-700",
+      value: "text-rose-800",
+      sub: "text-rose-600",
+    },
+  };
+
+  const performanceStats: Array<{
+    label: string;
+    value: string;
+    sub: string;
+    tone: PerfTone;
+  }> = [
+    {
+      label: "Bets settlés",
+      value: String(pnl.settledBets),
+      sub: `${pnl.wonBets + lostBets} clôturés`,
+      tone: "neutral",
+    },
+    {
+      label: "Bets gagnés",
+      value: String(pnl.wonBets),
+      sub: `${pnl.winRate} de réussite`,
+      tone: pnl.wonBets > 0 ? "success" : "neutral",
+    },
+    {
+      label: "Bets perdus",
+      value: String(lostBets),
+      sub: `${lossRate} d'échec`,
+      tone: lostBets === 0 ? "neutral" : lostBets >= pnl.wonBets ? "danger" : "warning",
+    },
+    {
+      label: "Gain net",
+      value: pnl.netUnits,
+      sub: "unités de stake",
+      tone:
+        Number.isFinite(netUnits) && netUnits < 0
+          ? "danger"
+          : Number.isFinite(netUnits) && netUnits > 0
+            ? "success"
+            : "warning",
+    },
+    {
+      label: "ROI",
+      value: pnl.roi,
+      sub: "sur capital misé",
+      tone:
+        Number.isFinite(roiPct) && roiPct < 0
+          ? "danger"
+          : Number.isFinite(roiPct) && roiPct > 0
+            ? "success"
+            : "warning",
+    },
+  ];
 
   return (
     <Page className="flex h-full flex-col">
@@ -204,38 +291,28 @@ export default function Home() {
                 </span>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                {
-                  label: "Bets settlés",
-                  value: String(pnl.settledBets),
-                  sub: `${pnl.wonBets} gagnés`,
-                },
-                {
-                  label: "Taux de réussite",
-                  value: pnl.winRate,
-                  sub: "WON / settlés",
-                },
-                {
-                  label: "Gain net",
-                  value: pnl.netUnits,
-                  sub: "unités de stake",
-                },
-                { label: "ROI", value: pnl.roi, sub: "sur capital misé" },
-              ].map((stat) => (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {performanceStats.map((stat) => {
+                const tone = performanceToneStyles[stat.tone];
+                return (
                 <div
                   key={stat.label}
-                  className="rounded-2xl border border-border bg-slate-50 px-4 py-3"
+                  className={`rounded-2xl border px-4 py-3 ${tone.card}`}
                 >
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <p
+                    className={`text-[0.68rem] font-semibold uppercase tracking-[0.2em] ${tone.label}`}
+                  >
                     {stat.label}
                   </p>
-                  <p className="mt-1 text-[1.4rem] font-semibold tracking-tight text-slate-900">
+                  <p
+                    className={`mt-1 text-[1.4rem] font-semibold tracking-tight ${tone.value}`}
+                  >
                     {stat.value}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">{stat.sub}</p>
+                  <p className={`mt-0.5 text-xs ${tone.sub}`}>{stat.sub}</p>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
