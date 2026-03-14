@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Badge, Code, SectionHeader } from "@evcore/ui";
+import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import type { OpportunityRow } from "../types/dashboard";
 
 function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
@@ -59,6 +60,7 @@ export function OpportunitiesTable({
               <th className="px-5 py-3.5 font-medium">EV</th>
               <th className="px-5 py-3.5 font-medium">Qualité</th>
               <th className="px-5 py-3.5 font-medium">Décision</th>
+              <th className="px-5 py-3.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-white">
@@ -103,6 +105,15 @@ export function OpportunitiesTable({
                   <Badge tone={row.decision === "BET" ? "success" : "danger"}>
                     {row.decision}
                   </Badge>
+                </td>
+                <td
+                  className="px-3 py-4.5"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <SettleFixtureDialog
+                    fixtureId={row.fixtureId}
+                    fixtureName={row.fixture}
+                  />
                 </td>
               </tr>
             ))}

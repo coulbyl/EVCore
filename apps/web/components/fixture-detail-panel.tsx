@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { Check, Copy, Info } from "lucide-react";
 import { Badge, Code, SectionHeader } from "@evcore/ui";
+import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import type { FixturePanel } from "../types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {
@@ -113,11 +114,17 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
           <p className="text-[1.72rem] font-semibold leading-tight text-slate-900">
             {fixture.fixture}
           </p>
-          <div className="mt-2 flex items-center gap-2 text-sm text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span>
               {fixture.competition} • Début {fixture.startTime}
             </span>
             <CopyFixtureId fixtureId={fixture.fixtureId} />
+            {fixture.fixtureId && (
+              <SettleFixtureDialog
+                fixtureId={fixture.fixtureId}
+                fixtureName={fixture.fixture}
+              />
+            )}
           </div>
         </div>
         <div className="rounded-[1.25rem] border border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef4f8_100%)] p-4">
