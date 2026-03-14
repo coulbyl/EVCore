@@ -1,4 +1,5 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
@@ -102,6 +103,7 @@ export class CouponService implements OnApplicationBootstrap {
         'No scheduled fixtures — generating NO_BET coupon',
       );
       const coupon = await this.couponRepository.create({
+        code: generateCouponCode(startDate),
         date: startDate,
         status: CouponStatus.NO_BET,
         legCount: 0,
@@ -127,6 +129,7 @@ export class CouponService implements OnApplicationBootstrap {
 
     if (generatedBetIds.length === 0) {
       const coupon = await this.couponRepository.create({
+        code: generateCouponCode(startDate),
         date: startDate,
         status: CouponStatus.NO_BET,
         legCount: 0,
@@ -184,6 +187,7 @@ export class CouponService implements OnApplicationBootstrap {
 
     if (selected.length === 0) {
       const coupon = await this.couponRepository.create({
+        code: generateCouponCode(startDate),
         date: startDate,
         status: CouponStatus.NO_BET,
         legCount: 0,
@@ -196,16 +200,12 @@ export class CouponService implements OnApplicationBootstrap {
       return;
     }
 
-    const coupon = await this.couponRepository.create({
+    const coupon = await this.couponRepository.createPendingCouponWithBets({
+      code: generateCouponCode(startDate),
       date: startDate,
-      status: CouponStatus.PENDING,
       legCount: selected.length,
+      betIds: selected.map((b) => b.id),
     });
-
-    await this.couponRepository.linkBets(
-      coupon.id,
-      selected.map((b) => b.id),
-    );
 
     const fullBets = await this.prisma.client.bet.findMany({
       where: { id: { in: selected.map((b) => b.id) } },
@@ -296,6 +296,12 @@ function addUtcDays(date: Date, days: number): Date {
   value.setUTCDate(value.getUTCDate() + days);
   value.setUTCHours(23, 59, 59, 999);
   return value;
+}
+
+function generateCouponCode(date: Date): string {
+  const dateStr = date.toISOString().slice(0, 10);
+  const suffix = randomBytes(3).toString('hex').toUpperCase();
+  return `CPN-${dateStr}-${suffix}`;
 }
 
 function resolveCouponStatus(

@@ -237,6 +237,7 @@ model Bet {
 // Assembles the best N picks (≤ COUPON_MAX_LEGS) selected by qualityScore = EV × deterministicScore.
 model DailyCoupon {
   id        String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  code      String       @unique
   date      DateTime     @db.Date
   status    CouponStatus @default(PENDING)
   legCount  Int

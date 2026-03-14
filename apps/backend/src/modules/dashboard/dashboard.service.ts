@@ -173,14 +173,30 @@ export class DashboardService {
           : 0;
       return {
         id: coupon.id,
-        code: `CPN-${coupon.date.toISOString().slice(0, 10)}-${coupon.id.slice(-6).toUpperCase()}`,
+        code: coupon.code,
         status:
           coupon.status === 'WON' || coupon.status === 'LOST'
             ? coupon.status
             : 'PENDING',
-        legs: coupon.legCount,
+        legs: coupon.bets.length,
         ev: formatSigned(avgEv, 2),
         window: couponWindow(coupon.date, now),
+        selections: coupon.bets.map((bet) => {
+          const comboParts = [bet.pick];
+          if (bet.comboMarket && bet.comboPick) {
+            comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
+          }
+
+          return {
+            id: bet.id,
+            fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
+            scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
+            market: bet.market,
+            pick: comboParts.join(' + '),
+            odds: toNumber(bet.oddsSnapshot).toFixed(2),
+            ev: formatSigned(toNumber(bet.ev), 3),
+          };
+        }),
       };
     });
   }

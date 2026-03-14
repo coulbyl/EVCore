@@ -26,6 +26,15 @@ export type CouponSnapshot = {
   legs: number;
   ev: string;
   window: string;
+  selections: Array<{
+    id: string;
+    fixture: string;
+    scheduledAt: string;
+    market: string;
+    pick: string;
+    odds: string;
+    ev: string;
+  }>;
 };
 
 export type OpportunityRow = {

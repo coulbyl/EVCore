@@ -7,13 +7,14 @@ export class CouponRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: {
+    code: string;
     date: Date;
     status: CouponStatus;
     legCount: number;
-  }): Promise<{ id: string }> {
+  }): Promise<{ id: string; code: string }> {
     return this.prisma.client.dailyCoupon.create({
       data,
-      select: { id: true },
+      select: { id: true, code: true },
     });
   }
 
@@ -21,6 +22,40 @@ export class CouponRepository {
     await this.prisma.client.bet.updateMany({
       where: { id: { in: betIds } },
       data: { dailyCouponId: couponId },
+    });
+  }
+
+  async createPendingCouponWithBets(input: {
+    code: string;
+    date: Date;
+    legCount: number;
+    betIds: string[];
+  }): Promise<{ id: string; code: string }> {
+    const { code, date, legCount, betIds } = input;
+
+    return this.prisma.client.$transaction(async (tx) => {
+      const coupon = await tx.dailyCoupon.create({
+        data: {
+          code,
+          date,
+          status: CouponStatus.PENDING,
+          legCount,
+        },
+        select: { id: true, code: true },
+      });
+
+      const { count } = await tx.bet.updateMany({
+        where: { id: { in: betIds } },
+        data: { dailyCouponId: coupon.id },
+      });
+
+      if (count !== betIds.length) {
+        throw new Error(
+          `Failed linking coupon bets atomically: expected ${betIds.length}, linked ${count}`,
+        );
+      }
+
+      return coupon;
     });
   }
 

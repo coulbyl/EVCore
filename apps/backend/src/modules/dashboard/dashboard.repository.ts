@@ -88,10 +88,33 @@ export class DashboardRepository {
         take: 25,
       }),
       this.prisma.client.dailyCoupon.findMany({
-        where: { legCount: { gt: 0 } },
+        where: { bets: { some: {} } },
         orderBy: { date: 'desc' },
         take: 8,
-        include: { bets: { select: { ev: true } } },
+        include: {
+          bets: {
+            select: {
+              id: true,
+              market: true,
+              pick: true,
+              comboMarket: true,
+              comboPick: true,
+              oddsSnapshot: true,
+              ev: true,
+              modelRun: {
+                select: {
+                  fixture: {
+                    select: {
+                      scheduledAt: true,
+                      homeTeam: { select: { name: true } },
+                      awayTeam: { select: { name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       }),
       this.prisma.client.bet.findMany({
         where: {

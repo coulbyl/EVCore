@@ -15,7 +15,8 @@
     "@evcore/ui": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@evcore/eslint-config": "workspace:*",
