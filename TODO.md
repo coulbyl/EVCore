@@ -123,6 +123,18 @@
   - [ ] SSR pour les vues stables
   - [ ] refresh manuel ou polling léger pour les données qui bougent
 
+### ⚡ PRIORITAIRE — Section P&L Dashboard
+
+- [ ] **Backend** — query bets settlés (WON/LOST) dans `DashboardRepository`
+  - [ ] ROI : `(gains - mises) / mises × 100`
+  - [ ] Taux de réussite : `bets WON / bets settlés`
+  - [ ] Gain net en unités de stake
+  - [ ] Compteur bets settlés / total
+- [ ] **Types** — ajouter `pnlSummary` à `DashboardSummary` (backend + frontend)
+- [ ] **Frontend** — section P&L sur le dashboard (valeurs à zéro jusqu'aux premiers résultats)
+
+---
+
 ### Écran 1 — Dashboard
 
 - [ ] Afficher l'état ETL global:
