@@ -210,7 +210,10 @@ export class DashboardService {
         kickoff: formatTimeUtc(fixture.scheduledAt),
         market: bet.market,
         pick: bet.pick,
-        odds: toNumber(bet.oddsSnapshot).toFixed(2),
+        odds:
+          bet.oddsSnapshot != null
+            ? toNumber(bet.oddsSnapshot).toFixed(2)
+            : '-',
         ev: formatSigned(toNumber(bet.ev), 3),
         quality: String(toQualityScore(bet.modelRun.finalScore)),
         deterministic: toNumber(bet.modelRun.deterministicScore).toFixed(2),
@@ -271,7 +274,10 @@ export class DashboardService {
         },
         {
           label: 'Cotes',
-          value: toNumber(bet.oddsSnapshot).toFixed(2),
+          value:
+            bet.oddsSnapshot != null
+              ? toNumber(bet.oddsSnapshot).toFixed(2)
+              : '-',
           tone: 'neutral',
         },
       ],

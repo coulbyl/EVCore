@@ -118,7 +118,6 @@ export class DashboardRepository {
       }),
       this.prisma.client.bet.findMany({
         where: {
-          oddsSnapshot: { not: null },
           modelRun: {
             analyzedAt: { gte: rolling24hStart },
             fixture: { status: FixtureStatus.SCHEDULED },
