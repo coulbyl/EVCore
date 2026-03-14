@@ -214,33 +214,6 @@ export default function Home() {
 
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-5 ev-shell-shadow">
         <div className="space-y-5">
-          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-            {kpis.map((item) => (
-              <StatCard
-                key={item.label}
-                label={item.label}
-                value={item.value}
-                tone={item.tone}
-                delta={renderKpiDelta(item.delta)}
-              />
-            ))}
-          </section>
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.72fr)_minmax(330px,0.88fr)]">
-            <section className="space-y-5">
-              <OpportunitiesTable
-                rows={opportunities}
-                selectedId={selectedRow?.id ?? null}
-                onSelect={setSelectedRow}
-              />
-              <RecentCouponsCard snapshots={coupons} />
-            </section>
-
-            <aside className="space-y-5">
-              <FixtureDetailPanel fixture={fixture} />
-            </aside>
-          </div>
-
           <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -291,6 +264,32 @@ export default function Home() {
               ))}
             </div>
           </section>
+
+          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+            {kpis.map((item) => (
+              <StatCard
+                key={item.label}
+                label={item.label}
+                value={item.value}
+                tone={item.tone}
+                delta={renderKpiDelta(item.delta)}
+              />
+            ))}
+          </section>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.72fr)_minmax(330px,0.88fr)]">
+            <section className="space-y-5">
+              <OpportunitiesTable
+                rows={opportunities}
+                selectedId={selectedRow?.id ?? null}
+                onSelect={setSelectedRow}
+              />
+              <RecentCouponsCard snapshots={coupons} />
+            </section>
+            <aside className="space-y-5">
+              <FixtureDetailPanel fixture={fixture} />
+            </aside>
+          </div>
 
           <section className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
