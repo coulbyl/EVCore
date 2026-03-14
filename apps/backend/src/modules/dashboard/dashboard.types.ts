@@ -1,7 +1,9 @@
+export type KpiDelta = string | { bet: number; noBet: number };
+
 export type KpiCard = {
   label: string;
   value: string;
-  delta: string;
+  delta: KpiDelta;
   tone: 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
 };
 

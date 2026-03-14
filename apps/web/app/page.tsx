@@ -14,9 +14,22 @@ import { FixtureDetailPanel } from "../components/fixture-detail-panel";
 import { OpportunitiesTable } from "../components/opportunities-table";
 import { RecentCouponsCard } from "../components/recent-coupons-card";
 import { useDashboardSummary } from "../hooks/use-dashboard-summary";
-import type { DashboardSummary } from "../types/dashboard";
+import type { DashboardSummary, KpiDelta } from "../types/dashboard";
 
-function renderKpiDelta(delta: string) {
+function renderKpiDelta(delta: KpiDelta) {
+  if (typeof delta === "object") {
+    return (
+      <div className="flex items-center gap-2 px-2">
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          {delta.bet} BET
+        </span>
+        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+          {delta.noBet} NO_BET
+        </span>
+      </div>
+    );
+  }
+
   if (
     (delta.startsWith("+") || delta.startsWith("-")) &&
     (delta.includes("vs") || delta.includes("hier"))
@@ -59,20 +72,6 @@ function renderKpiDelta(delta: string) {
     );
   }
 
-  if (delta.includes("BET") && delta.includes("NO_BET")) {
-    const [betRaw, , noBetRaw] = delta.split(" ");
-    return (
-      <div className="flex items-center gap-2 px-2">
-        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-          {betRaw} BET
-        </span>
-        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-          {noBetRaw} NO_BET
-        </span>
-      </div>
-    );
-  }
-
   return <p className="px-2 text-sm text-slate-500">{delta}</p>;
 }
 
@@ -100,7 +99,7 @@ const EMPTY_SUMMARY: DashboardSummary = {
     {
       label: "Scorings du jour",
       value: "0",
-      delta: "0 BET / 0 NO_BET",
+      delta: "0 analysés",
       tone: "warning",
     },
     {

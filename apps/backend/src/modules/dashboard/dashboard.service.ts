@@ -67,7 +67,6 @@ export class DashboardService {
       decisionMap.set(row.decision, row._count._all);
     }
     const betCount = decisionMap.get(Decision.BET) ?? 0;
-    const noBetCount = decisionMap.get(Decision.NO_BET) ?? 0;
     const coveragePct =
       data.scheduledToday > 0
         ? (data.fixturesWithOddsToday / data.scheduledToday) * 100
@@ -88,8 +87,8 @@ export class DashboardService {
       },
       {
         label: 'Scorings du jour',
-        value: String(data.modelRunsToday),
-        delta: `${betCount} BET / ${noBetCount} NO_BET`,
+        value: String(betCount),
+        delta: `${data.modelRunsToday} analysés`,
         tone: 'warning',
       },
       {
