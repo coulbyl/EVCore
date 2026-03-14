@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
-import { Info } from "lucide-react";
+import { Check, Copy, Info } from "lucide-react";
 import { Badge, Code, SectionHeader } from "@evcore/ui";
 import type { FixturePanel } from "../types/dashboard";
 
@@ -76,6 +77,31 @@ function MetricRow({
   );
 }
 
+function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
+  const [copied, setCopied] = useState(false);
+  if (!fixtureId) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void navigator.clipboard.writeText(fixtureId).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+      title={fixtureId}
+      className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+    >
+      <span>{fixtureId.slice(0, 8)}</span>
+      {copied ? (
+        <Check size={10} className="text-success" />
+      ) : (
+        <Copy size={10} />
+      )}
+    </button>
+  );
+}
+
 export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
   const previewNotes = fixture.notes.slice(0, 2);
 
@@ -87,9 +113,12 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
           <p className="text-[1.72rem] font-semibold leading-tight text-slate-900">
             {fixture.fixture}
           </p>
-          <p className="mt-2 text-sm text-muted">
-            {fixture.competition} • Début {fixture.startTime}
-          </p>
+          <div className="mt-2 flex items-center gap-2 text-sm text-muted">
+            <span>
+              {fixture.competition} • Début {fixture.startTime}
+            </span>
+            <CopyFixtureId fixtureId={fixture.fixtureId} />
+          </div>
         </div>
         <div className="rounded-[1.25rem] border border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef4f8_100%)] p-4">
           <div className="flex flex-wrap items-center gap-2">

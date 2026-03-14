@@ -229,6 +229,7 @@ export class DashboardService {
     const bet = uniqueTopBets[0];
     if (!bet) {
       return {
+        fixtureId: '',
         fixture: 'Aucun match',
         competition: '-',
         startTime: '--:--',
@@ -247,6 +248,7 @@ export class DashboardService {
 
     const fixture = bet.modelRun.fixture;
     return {
+      fixtureId: fixture.id,
       fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
       competition: fixture.season.competition.name,
       startTime: formatTimeUtc(fixture.scheduledAt),

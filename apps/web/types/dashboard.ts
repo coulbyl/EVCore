@@ -55,6 +55,7 @@ export type OpportunityRow = {
 };
 
 export type FixturePanel = {
+  fixtureId: string;
   fixture: string;
   competition: string;
   startTime: string;

@@ -24,6 +24,7 @@ import type {
 
 function rowToFixturePanel(row: OpportunityRow): FixturePanel {
   return {
+    fixtureId: row.fixtureId,
     fixture: row.fixture,
     competition: row.competition,
     startTime: row.kickoff,
@@ -142,6 +143,7 @@ const EMPTY_SUMMARY: DashboardSummary = {
   couponSnapshots: [],
   topOpportunities: [],
   selectedFixture: {
+    fixtureId: "",
     fixture: "Aucun match",
     competition: "-",
     startTime: "--:--",
