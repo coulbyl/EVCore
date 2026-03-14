@@ -237,7 +237,12 @@ export default function Home() {
       label: "Bets perdus",
       value: String(lostBets),
       sub: `${lossRate} d'échec`,
-      tone: lostBets === 0 ? "neutral" : lostBets >= pnl.wonBets ? "danger" : "warning",
+      tone:
+        lostBets === 0
+          ? "neutral"
+          : lostBets >= pnl.wonBets
+            ? "danger"
+            : "warning",
     },
     {
       label: "Gain net",
@@ -295,22 +300,22 @@ export default function Home() {
               {performanceStats.map((stat) => {
                 const tone = performanceToneStyles[stat.tone];
                 return (
-                <div
-                  key={stat.label}
-                  className={`rounded-2xl border px-4 py-3 ${tone.card}`}
-                >
-                  <p
-                    className={`text-[0.68rem] font-semibold uppercase tracking-[0.2em] ${tone.label}`}
+                  <div
+                    key={stat.label}
+                    className={`rounded-2xl border px-4 py-3 ${tone.card}`}
                   >
-                    {stat.label}
-                  </p>
-                  <p
-                    className={`mt-1 text-[1.4rem] font-semibold tracking-tight ${tone.value}`}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className={`mt-0.5 text-xs ${tone.sub}`}>{stat.sub}</p>
-                </div>
+                    <p
+                      className={`text-[0.68rem] font-semibold uppercase tracking-[0.2em] ${tone.label}`}
+                    >
+                      {stat.label}
+                    </p>
+                    <p
+                      className={`mt-1 text-[1.4rem] font-semibold tracking-tight ${tone.value}`}
+                    >
+                      {stat.value}
+                    </p>
+                    <p className={`mt-0.5 text-xs ${tone.sub}`}>{stat.sub}</p>
+                  </div>
                 );
               })}
             </div>

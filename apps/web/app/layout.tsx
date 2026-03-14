@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { PageShell } from "@evcore/ui";
+import { AppShell } from "../components/app-shell";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -24,17 +24,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const navItems = [
-    { label: "Tableau de bord", href: "#", active: true },
-    { label: "Coupons", href: "#" },
-    { label: "Audit", href: "#" },
-  ];
-
   return (
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
-          <PageShell navItems={navItems}>{children}</PageShell>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
