@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Page,
-  PageContent,
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderTitle,
-  StatCard,
-} from "@evcore/ui";
+import { Badge, Page, PageContent, StatCard } from "@evcore/ui";
+import { AppPageHeader } from "../components/app-page-header";
 import { FixtureDetailPanel } from "../components/fixture-detail-panel";
 import { OpportunitiesTable } from "../components/opportunities-table";
 import { RecentCouponsCard } from "../components/recent-coupons-card";
@@ -186,33 +178,13 @@ export default function Home() {
 
   return (
     <Page className="flex h-full flex-col">
-      <PageHeader className="sticky top-0 z-20 mb-4 shrink-0 backdrop-blur supports-[backdrop-filter]:bg-panel-strong/95">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Console
-            </span>
-            <span className="text-sm text-slate-300">/</span>
-            <span className="text-sm font-medium text-slate-500">
-              Tableau de bord
-            </span>
-          </div>
-          <PageHeaderTitle className="mt-3 text-[2rem] font-semibold tracking-tight text-slate-900">
-            Console EVCore
-          </PageHeaderTitle>
-          <p className="mt-1 text-sm text-slate-500">Espace opérateur V1</p>
-        </div>
-        <PageHeaderActions className="text-sm text-slate-500">
-          <span>14 mars 2026</span>
-          <span className="text-slate-300">|</span>
-          <span className="font-medium text-slate-700">
-            Backend : {isError ? "indisponible" : "OK"}
-          </span>
-          <Button tone="secondary" onClick={() => void refetch()}>
-            {isFetching ? "Chargement..." : "Rafraîchir"}
-          </Button>
-        </PageHeaderActions>
-      </PageHeader>
+      <AppPageHeader
+        currentPageLabel="Tableau de bord"
+        subtitle="Tableau de bord"
+        backendLabel={isError ? "indisponible" : "OK"}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
+      />
 
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-5 ev-shell-shadow">
         <div className="space-y-5">

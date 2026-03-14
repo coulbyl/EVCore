@@ -102,6 +102,7 @@ export class DashboardRepository {
               comboPick: true,
               oddsSnapshot: true,
               ev: true,
+              status: true,
               modelRun: {
                 select: {
                   fixture: {

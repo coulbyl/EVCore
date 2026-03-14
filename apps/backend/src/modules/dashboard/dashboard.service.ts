@@ -192,6 +192,12 @@ export class DashboardService {
             id: bet.id,
             fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
             scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
+            status:
+              bet.status === 'WON' ||
+              bet.status === 'LOST' ||
+              bet.status === 'VOID'
+                ? bet.status
+                : 'PENDING',
             market: bet.market,
             pick: comboParts.join(' + '),
             odds: toNumber(bet.oddsSnapshot).toFixed(2),

@@ -70,7 +70,9 @@ function combinedOdds(selections: CouponSnapshot["selections"]): string {
 // Status config
 // ---------------------------------------------------------------------------
 
-type Status = CouponSnapshot["status"];
+type CouponStatus = CouponSnapshot["status"];
+type SelectionStatus = CouponSnapshot["selections"][number]["status"];
+type Status = CouponStatus | SelectionStatus;
 
 const STATUS_CFG: Record<
   Status,
@@ -93,6 +95,12 @@ const STATUS_CFG: Record<
     dot: "bg-amber-400",
     badge: "border-amber-200 bg-amber-50 text-amber-700",
     headerBadge: "border-amber-400/40 bg-amber-400/20 text-amber-300",
+  },
+  VOID: {
+    label: "VOID",
+    dot: "bg-slate-400",
+    badge: "border-slate-200 bg-slate-100 text-slate-600",
+    headerBadge: "border-slate-400/40 bg-slate-400/20 text-slate-300",
   },
 };
 
@@ -166,10 +174,11 @@ function SelectionCard({
 }: {
   selection: CouponSnapshot["selections"][number];
   index: number;
-  status: Status;
+  status: SelectionStatus;
 }) {
   const isWon = status === "WON";
   const isLost = status === "LOST";
+  const legCfg = STATUS_CFG[status];
 
   const marketLabel = fmtMarket(selection.market);
   const pickLabel = fmtPick(selection.pick, selection.market);
@@ -181,9 +190,16 @@ function SelectionCard({
         <p className="text-[0.78rem] text-slate-500 truncate">
           ⚽ {selection.fixture}
         </p>
-        <span className="shrink-0 font-mono text-[0.72rem] text-slate-400">
-          {selection.scheduledAt}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-mono text-[0.72rem] text-slate-400">
+            {selection.scheduledAt}
+          </span>
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${legCfg.badge}`}
+          >
+            {legCfg.label}
+          </span>
+        </div>
       </div>
 
       {/* Row 2 : leg counter + market */}
@@ -312,7 +328,7 @@ function CouponDrawerContent({
               key={sel.id}
               selection={sel}
               index={i}
-              status={coupon.status}
+              status={sel.status}
             />
           ))
         ) : (

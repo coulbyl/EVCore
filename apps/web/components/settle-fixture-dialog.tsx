@@ -199,7 +199,9 @@ export function SettleFixtureDialog({
                 }
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
               >
-                {state === "loading" && <Loader2 size={14} className="animate-spin" />}
+                {state === "loading" && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
                 Enregistrer et settler
               </button>
             </form>
