@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { CouponStatus } from '@evcore/db';

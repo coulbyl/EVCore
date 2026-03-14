@@ -783,8 +783,16 @@ export class BettingEngineService {
     // unreliable, so combos are disabled for that fixture.
     if (!lambdaFloorHit) {
       for (const combo of COMBO_WHITELIST) {
-        const p1Odds = getPickOddsFromSnapshot(combo.market1, combo.pick1, odds);
-        const p2Odds = getPickOddsFromSnapshot(combo.market2, combo.pick2, odds);
+        const p1Odds = getPickOddsFromSnapshot(
+          combo.market1,
+          combo.pick1,
+          odds,
+        );
+        const p2Odds = getPickOddsFromSnapshot(
+          combo.market2,
+          combo.pick2,
+          odds,
+        );
         if (p1Odds === null || p2Odds === null) continue;
 
         const jointProbability = computeJointProbability(
