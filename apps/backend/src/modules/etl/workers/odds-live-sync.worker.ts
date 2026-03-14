@@ -1,7 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import {
   ApiFootballOddsResponseSchema,
   type OddsBookmaker,
@@ -21,7 +21,7 @@ import { sleep } from '@utils/async.utils';
 // When absent, defaults to tomorrow (standard daily cron use case).
 export type OddsLiveSyncJobData = { date?: string };
 
-const logger = pino({ name: 'odds-live-sync-worker' });
+const logger = createLogger('odds-live-sync-worker');
 
 // lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
@@ -71,7 +71,22 @@ export class OddsLiveSyncWorker extends WorkerHost {
         continue;
       }
 
-      const parsed = ApiFootballOddsResponseSchema.safeParse(await res.json());
+      const body: unknown = await res.json();
+
+      if (isQuotaExceededError(body)) {
+        logger.error(
+          { externalId },
+          'API-Football daily quota exceeded — aborting job',
+        );
+        await this.notification.sendEtlFailureAlert(
+          BULLMQ_QUEUES.ODDS_LIVE_SYNC,
+          'odds-live-sync',
+          'API-Football daily quota exceeded',
+        );
+        throw new Error('API-Football daily quota exceeded');
+      }
+
+      const parsed = ApiFootballOddsResponseSchema.safeParse(body);
 
       if (!parsed.success) {
         logger.warn(
@@ -290,4 +305,15 @@ function mapHalfTimeFullTimePick(value: string): string | null {
 
 function normalizeLabel(value: string): string {
   return value.trim().replace(/\s+/g, '').toUpperCase();
+}
+
+function isQuotaExceededError(body: unknown): boolean {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'errors' in body &&
+    typeof (body as Record<string, unknown>)['errors'] === 'object' &&
+    !Array.isArray((body as Record<string, unknown>)['errors']) &&
+    (body as Record<string, unknown>)['errors'] !== null
+  );
 }

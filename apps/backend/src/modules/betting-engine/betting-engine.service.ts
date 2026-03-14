@@ -10,11 +10,11 @@ import {
 } from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
+  buildPoissonDistributions,
   computePoissonMarkets,
   calculateDeterministicScore,
   calculateEV as calcEV,
   calculateKellyStakePct,
-  buildPoissonDistributions,
   COMBO_WHITELIST,
   HALF_TIME_FULL_TIME_PICKS,
   computeJointProbability,
@@ -30,7 +30,11 @@ import { PrismaService } from '@/prisma.service';
 import { H2HService } from './h2h.service';
 import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
+import { createLogger } from '@utils/logger';
 import {
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MAX_FACTOR,
+  COMBO_CORRELATION_MIN_FACTOR,
   DEFAULT_STAKE_PCT,
   EV_THRESHOLD,
   FEATURE_WEIGHTS,
@@ -49,6 +53,9 @@ import type {
 } from './betting-engine.types';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
+
+const logger = createLogger('betting-engine-service');
+const MIN_LAMBDA = 0.05;
 
 type AnalyzeFixtureResult =
   | {
@@ -231,10 +238,17 @@ export class BettingEngineService {
         homeTeamId: true,
         awayTeamId: true,
         status: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+        season: { select: { competition: { select: { code: true } } } },
       },
     });
 
     if (!fixture) {
+      logger.info(
+        { fixtureId, reason: 'fixture_not_found' },
+        'Fixture skipped',
+      );
       return { status: 'skipped', fixtureId, reason: 'fixture_not_found' };
     }
 
@@ -242,6 +256,10 @@ export class BettingEngineService {
       fixture.status === FixtureStatus.POSTPONED ||
       fixture.status === FixtureStatus.CANCELLED
     ) {
+      logger.info(
+        { fixtureId, status: fixture.status, reason: 'fixture_not_playable' },
+        'Fixture skipped',
+      );
       return { status: 'skipped', fixtureId, reason: 'fixture_not_playable' };
     }
 
@@ -269,12 +287,43 @@ export class BettingEngineService {
     ]);
 
     if (!homeStats || !awayStats) {
+      logger.info(
+        {
+          fixtureId,
+          competitionCode: getFixtureCompetitionCode(fixture),
+          homeTeam: getFixtureHomeTeamName(fixture),
+          awayTeam: getFixtureAwayTeamName(fixture),
+          hasHomeStats: homeStats !== null,
+          hasAwayStats: awayStats !== null,
+          reason: 'missing_team_stats',
+        },
+        'Fixture skipped',
+      );
       return { status: 'skipped', fixtureId, reason: 'missing_team_stats' };
     }
 
     const weights = await this.getEffectiveWeights();
     const { features, deterministicScore, lambda, probabilities } =
       this.computeFromTeamStats(homeStats, awayStats, weights);
+    const lambdaFloorHit =
+      lambda.home <= MIN_LAMBDA + Number.EPSILON ||
+      lambda.away <= MIN_LAMBDA + Number.EPSILON;
+
+    if (lambdaFloorHit) {
+      logger.warn(
+        {
+          fixtureId,
+          competitionCode: getFixtureCompetitionCode(fixture),
+          homeTeam: getFixtureHomeTeamName(fixture),
+          awayTeam: getFixtureAwayTeamName(fixture),
+          lambdaHome: lambda.home,
+          lambdaAway: lambda.away,
+          homeStats: summarizeTeamStats(homeStats),
+          awayStats: summarizeTeamStats(awayStats),
+        },
+        'Lambda floor hit',
+      );
+    }
 
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       MODEL_SCORE_THRESHOLD,
@@ -304,9 +353,11 @@ export class BettingEngineService {
           deterministicScore,
           distHome,
           distAway,
+          lambdaFloorHit,
           suspendedMarkets,
         )
       : null;
+    const initialValueBet = valueBet;
 
     const favoriteTeamId = probabilities.home.greaterThanOrEqualTo(
       probabilities.away,
@@ -365,6 +416,29 @@ export class BettingEngineService {
       deterministicDecision === Decision.BET && valueBet !== null
         ? Decision.BET
         : Decision.NO_BET;
+
+    logger.info(
+      {
+        fixtureId,
+        competitionCode: getFixtureCompetitionCode(fixture),
+        homeTeam: getFixtureHomeTeamName(fixture),
+        awayTeam: getFixtureAwayTeamName(fixture),
+        deterministicScore: deterministicScore.toNumber(),
+        deterministicDecision,
+        lambdaHome: lambda.home,
+        lambdaAway: lambda.away,
+        hasOdds: latestOdds !== null,
+        initialCandidate: initialValueBet
+          ? summarizePick(initialValueBet)
+          : null,
+        finalCandidate: valueBet ? summarizePick(valueBet) : null,
+        lineMovement: shadowLineMovement,
+        h2hScore: shadowH2h,
+        congestionScore: shadowCongestion,
+        decision,
+      },
+      'Fixture analysis complete',
+    );
 
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
@@ -591,13 +665,14 @@ export class BettingEngineService {
     };
   }
 
-  // eslint-disable-next-line max-params -- Six domain parameters; grouping into an object would obscure intent.
+  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
   private selectBestViablePick(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,
     deterministicScore: Decimal,
     distHome: number[],
     distAway: number[],
+    lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
   ): ViablePick | null {
     const candidates: ViablePick[] = [];
@@ -703,26 +778,48 @@ export class BettingEngineService {
       });
     }
 
-    // Combos from COMBO_WHITELIST
-    for (const combo of COMBO_WHITELIST) {
-      const p1Odds = getPickOddsFromSnapshot(combo.market1, combo.pick1, odds);
-      const p2Odds = getPickOddsFromSnapshot(combo.market2, combo.pick2, odds);
-      if (p1Odds === null || p2Odds === null) continue;
+    // Combos from COMBO_WHITELIST. When lambdas collapse to the floor, Poisson
+    // scoreline mass becomes unrealistic and combo joint probabilities become
+    // unreliable, so combos are disabled for that fixture.
+    if (!lambdaFloorHit) {
+      for (const combo of COMBO_WHITELIST) {
+        const p1Odds = getPickOddsFromSnapshot(
+          combo.market1,
+          combo.pick1,
+          odds,
+        );
+        const p2Odds = getPickOddsFromSnapshot(
+          combo.market2,
+          combo.pick2,
+          odds,
+        );
+        if (p1Odds === null || p2Odds === null) continue;
 
-      const prob = computeJointProbability(combo, distHome, distAway);
-      const oddsCombo = p1Odds.mul(p2Odds); // independent approximation
-      const ev = calcEV(prob, oddsCombo);
-      candidates.push({
-        market: combo.market1,
-        pick: combo.pick1,
-        comboMarket: combo.market2,
-        comboPick: combo.pick2,
-        probability: prob,
-        odds: oddsCombo,
-        ev,
-        qualityScore: ev.mul(deterministicScore),
-        isCombo: true,
-      });
+        const jointProbability = computeJointProbability(
+          combo,
+          distHome,
+          distAway,
+        );
+        const oddsCombo = estimateComboOdds({
+          combo,
+          probabilities,
+          jointProbability,
+          odds1: p1Odds,
+          odds2: p2Odds,
+        });
+        const ev = calcEV(jointProbability, oddsCombo);
+        candidates.push({
+          market: combo.market1,
+          pick: combo.pick1,
+          comboMarket: combo.market2,
+          comboPick: combo.pick2,
+          probability: jointProbability,
+          odds: oddsCombo,
+          ev,
+          qualityScore: ev.mul(deterministicScore),
+          isCombo: true,
+        });
+      }
     }
 
     // Filter: EV >= threshold and no suspended market
@@ -867,4 +964,139 @@ function getPickOdds(pick: ViablePick, odds: FullOddsSnapshot): Decimal | null {
 
 function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
   return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
+}
+
+function getModelProbabilityForPick(
+  market: Market,
+  pick: string,
+  probabilities: MatchProbabilities,
+): Decimal | null {
+  if (market === Market.ONE_X_TWO) {
+    if (pick === 'HOME') return probabilities.home;
+    if (pick === 'DRAW') return probabilities.draw;
+    if (pick === 'AWAY') return probabilities.away;
+  }
+  if (market === Market.DOUBLE_CHANCE) {
+    if (pick === '1X') return probabilities.dc1X;
+    if (pick === 'X2') return probabilities.dcX2;
+    if (pick === '12') return probabilities.dc12;
+  }
+  if (market === Market.OVER_UNDER) {
+    if (pick === 'OVER') return probabilities.over25;
+    if (pick === 'UNDER') return probabilities.under25;
+  }
+  if (market === Market.BTTS) {
+    if (pick === 'YES') return probabilities.bttsYes;
+    if (pick === 'NO') return probabilities.bttsNo;
+  }
+  if (market === Market.HALF_TIME_FULL_TIME && isHalfTimeFullTimePick(pick)) {
+    return probabilities.htft[pick];
+  }
+  return null;
+}
+
+export function estimateComboOdds(input: {
+  combo: ComboPick;
+  probabilities: MatchProbabilities;
+  jointProbability: Decimal;
+  odds1: Decimal;
+  odds2: Decimal;
+}): Decimal {
+  const { combo, probabilities, jointProbability, odds1, odds2 } = input;
+  const probability1 = getModelProbabilityForPick(
+    combo.market1,
+    combo.pick1,
+    probabilities,
+  );
+  const probability2 = getModelProbabilityForPick(
+    combo.market2,
+    combo.pick2,
+    probabilities,
+  );
+
+  const rawProduct = odds1.mul(odds2);
+  if (
+    probability1 === null ||
+    probability2 === null ||
+    jointProbability.lte(0) ||
+    probability1.lte(0) ||
+    probability2.lte(0)
+  ) {
+    return rawProduct;
+  }
+
+  const independentProbability = probability1.mul(probability2);
+  if (independentProbability.lte(0)) {
+    return rawProduct;
+  }
+
+  const correlationFactor = independentProbability
+    .div(jointProbability)
+    .pow(COMBO_CORRELATION_ALPHA);
+  const clampedFactor = Decimal.min(
+    COMBO_CORRELATION_MAX_FACTOR,
+    Decimal.max(COMBO_CORRELATION_MIN_FACTOR, correlationFactor),
+  );
+
+  return rawProduct.mul(clampedFactor);
+}
+
+function summarizePick(pick: ViablePick): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  qualityScore: number;
+} {
+  return {
+    market: pick.market,
+    pick: pick.pick,
+    comboMarket: pick.comboMarket,
+    comboPick: pick.comboPick,
+    probability: pick.probability.toNumber(),
+    odds: pick.odds.toNumber(),
+    ev: pick.ev.toNumber(),
+    qualityScore: pick.qualityScore.toNumber(),
+  };
+}
+
+function summarizeTeamStats(stats: TeamStatsInput): {
+  recentForm: number;
+  xgFor: number;
+  xgAgainst: number;
+  homeWinRate: number;
+  awayWinRate: number;
+  drawRate: number;
+  leagueVolatility: number;
+} {
+  return {
+    recentForm: asNumber(stats.recentForm),
+    xgFor: asNumber(stats.xgFor),
+    xgAgainst: asNumber(stats.xgAgainst),
+    homeWinRate: asNumber(stats.homeWinRate),
+    awayWinRate: asNumber(stats.awayWinRate),
+    drawRate: asNumber(stats.drawRate),
+    leagueVolatility: asNumber(stats.leagueVolatility),
+  };
+}
+
+function getFixtureCompetitionCode(fixture: {
+  season?: { competition?: { code?: string } };
+}): string | null {
+  return fixture.season?.competition?.code ?? null;
+}
+
+function getFixtureHomeTeamName(fixture: {
+  homeTeam?: { name?: string };
+}): string | null {
+  return fixture.homeTeam?.name ?? null;
+}
+
+function getFixtureAwayTeamName(fixture: {
+  awayTeam?: { name?: string };
+}): string | null {
+  return fixture.awayTeam?.name ?? null;
 }

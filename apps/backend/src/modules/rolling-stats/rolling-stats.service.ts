@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { FixtureStatus } from '@evcore/db';
 import Decimal from 'decimal.js';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import {
-  ACTIVE_COMPETITIONS,
-  getCompetitionSeasons,
+  DEFAULT_SEASON_START_MONTH,
+  DEFAULT_ACTIVE_SEASONS_COUNT,
 } from '@config/etl.constants';
+import { activeSeasons } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -18,7 +19,7 @@ import {
   type MatchResult,
 } from './rolling-stats.utils';
 
-const logger = pino({ name: 'rolling-stats-service' });
+const logger = createLogger('rolling-stats-service');
 
 export type FeatureSnapshot = {
   recentForm: Decimal;
@@ -53,6 +54,42 @@ export class RollingStatsService {
     return this.backfillSeason(season.id);
   }
 
+  async backfillLeague(competitionCode: string): Promise<
+    Array<{
+      year: number;
+      seasonId: string;
+      fixtureCount: number;
+      upsertCount: number;
+    }>
+  > {
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode, isActive: true },
+      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+    });
+    if (!competition) {
+      throw new Error(`competition not found: ${competitionCode}`);
+    }
+
+    const seasons = activeSeasons(
+      competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
+      competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+    );
+
+    const results: Array<{
+      year: number;
+      seasonId: string;
+      fixtureCount: number;
+      upsertCount: number;
+    }> = [];
+
+    for (const year of seasons) {
+      const result = await this.backfillSeasonYear(year, competition.code);
+      results.push({ year, ...result });
+    }
+
+    return results;
+  }
+
   async backfillAllConfiguredSeasons(): Promise<
     Array<{
       competitionCode: string;
@@ -70,8 +107,16 @@ export class RollingStatsService {
       upsertCount: number;
     }> = [];
 
-    for (const competition of ACTIVE_COMPETITIONS) {
-      const seasons = getCompetitionSeasons(competition);
+    const competitions = await this.prisma.client.competition.findMany({
+      where: { isActive: true },
+      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+    });
+
+    for (const competition of competitions) {
+      const seasons = activeSeasons(
+        competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
+        competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+      );
       for (const year of seasons) {
         const result = await this.backfillSeasonYear(year, competition.code);
         results.push({ competitionCode: competition.code, year, ...result });

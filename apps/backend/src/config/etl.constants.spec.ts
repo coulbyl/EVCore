@@ -3,19 +3,9 @@ import { estimateApiFootballDailyCalls } from './etl.constants';
 
 describe('estimateApiFootballDailyCalls', () => {
   it('estimates daily API calls for a 10-league setup', () => {
-    const plans = Array.from({ length: 10 }, (_, index) => ({
-      competition: {
-        leagueId: index + 1,
-        code: `L${index + 1}`,
-        name: `League ${index + 1}`,
-        country: 'Test',
-        isActive: true,
-      },
-      seasons: [2023, 2024, 2025],
-    }));
-
     const estimate = estimateApiFootballDailyCalls({
-      activeCompetitionPlans: plans,
+      leagueCount: 10,
+      seasonJobCount: 30,
       avgScheduledFixturesPerLeaguePerDay: 10,
       avgFinishedFixturesWithoutXgPerLeaguePerDay: 2,
     });

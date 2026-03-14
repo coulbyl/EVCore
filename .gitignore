@@ -35,12 +35,14 @@ packages/db/src/generated/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+apps/backend/logs/
 
 # Misc
 .DS_Store
 *.pem
 api-football-doc/
 packages/db/reports/
+combo-labs.txt
 
 # Local API samples — for analysis only, never commit
 *-sample.json

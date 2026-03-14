@@ -2,18 +2,20 @@ import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
+import { activeSeasons } from '@utils/date.utils';
 import {
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
+  DEFAULT_SEASON_START_MONTH,
+  DEFAULT_ACTIVE_SEASONS_COUNT,
   ETL_CONSTANTS,
   ETL_CRON_SCHEDULES,
   ETL_SCHEDULER_KEYS,
   estimateApiFootballDailyCalls,
-  getActiveCompetitionPlans,
-  getActiveCsvCompetitions,
   getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
+import { PrismaService } from '@/prisma.service';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
@@ -22,7 +24,33 @@ import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 
-const logger = pino({ name: 'etl-service' });
+const logger = createLogger('etl-service');
+
+type CompetitionRow = {
+  leagueId: number;
+  code: string;
+  name: string;
+  country: string;
+  csvDivisionCode: string | null;
+  seasonStartMonth: number | null;
+  activeSeasonsCount: number | null;
+};
+
+type CompetitionPlan = {
+  competition: CompetitionRow;
+  seasons: readonly number[];
+};
+
+function computeSeasons(
+  competition: CompetitionRow,
+  now = new Date(),
+): readonly number[] {
+  return activeSeasons(
+    competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
+    competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+    now,
+  );
+}
 
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
@@ -31,6 +59,7 @@ export class EtlService implements OnApplicationBootstrap {
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
   private readonly avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
+  private competitionPlans: CompetitionPlan[] = [];
 
   // eslint-disable-next-line max-params -- Explicit queue injection keeps queue wiring transparent.
   constructor(
@@ -49,6 +78,7 @@ export class EtlService implements OnApplicationBootstrap {
     @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     config: ConfigService,
+    private readonly prisma: PrismaService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
@@ -75,14 +105,30 @@ export class EtlService implements OnApplicationBootstrap {
       return;
     }
 
+    const competitions = await this.prisma.client.competition.findMany({
+      where: { isActive: true },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    this.competitionPlans = competitions.map((c) => ({
+      competition: c,
+      seasons: computeSeasons(c),
+    }));
+
     const csvSeasonCodes = getActiveCsvSeasonCodes();
     const currentSeasonCode = csvSeasonCodes[csvSeasonCodes.length - 1];
-    const activePlans = getActiveCompetitionPlans();
 
-    this.logApiFootballBudget(activePlans);
+    this.logApiFootballBudget(this.competitionPlans);
 
     await Promise.all(
-      activePlans.map(async ({ competition, seasons }) => {
+      this.competitionPlans.map(async ({ competition, seasons }) => {
         const currentSeason = seasons[seasons.length - 1];
 
         await this.fixturesQueue.upsertJobScheduler(
@@ -93,6 +139,7 @@ export class EtlService implements OnApplicationBootstrap {
             data: {
               season: currentSeason,
               competitionCode: competition.code,
+              leagueId: competition.leagueId,
             } satisfies FixturesSyncJobData,
           },
         );
@@ -105,6 +152,7 @@ export class EtlService implements OnApplicationBootstrap {
             data: {
               season: currentSeason,
               competitionCode: competition.code,
+              leagueId: competition.leagueId,
             } satisfies ResultsSyncJobData,
           },
         );
@@ -117,6 +165,7 @@ export class EtlService implements OnApplicationBootstrap {
             data: {
               season: currentSeason,
               competitionCode: competition.code,
+              leagueId: competition.leagueId,
             } satisfies StatsSyncJobData,
           },
         );
@@ -129,6 +178,7 @@ export class EtlService implements OnApplicationBootstrap {
             data: {
               season: currentSeason,
               competitionCode: competition.code,
+              leagueId: competition.leagueId,
             } satisfies InjuriesSyncJobData,
           },
         );
@@ -171,11 +221,10 @@ export class EtlService implements OnApplicationBootstrap {
     logger.info('ETL job schedulers registered');
   }
 
-  private logApiFootballBudget(
-    activePlans: ReturnType<typeof getActiveCompetitionPlans>,
-  ): void {
+  private logApiFootballBudget(plans: CompetitionPlan[]): void {
     const estimate = estimateApiFootballDailyCalls({
-      activeCompetitionPlans: activePlans,
+      leagueCount: plans.length,
+      seasonJobCount: plans.reduce((s, p) => s + p.seasons.length, 0),
       avgScheduledFixturesPerLeaguePerDay:
         this.avgScheduledFixturesPerLeaguePerDay,
       avgFinishedFixturesWithoutXgPerLeaguePerDay:
@@ -222,12 +271,12 @@ export class EtlService implements OnApplicationBootstrap {
   async triggerFixturesSync(): Promise<void> {
     // Flatten all (competition × season) pairs so the stagger index is global,
     // not per-competition — prevents simultaneous API calls when multiple leagues are active.
-    const jobs = getActiveCompetitionPlans().flatMap(
-      ({ competition, seasons }) =>
-        seasons.map((season) => ({
-          season,
-          competitionCode: competition.code,
-        })),
+    const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
+      seasons.map((season) => ({
+        season,
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+      })),
     );
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
@@ -243,12 +292,12 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerResultsSync(): Promise<void> {
-    const jobs = getActiveCompetitionPlans().flatMap(
-      ({ competition, seasons }) =>
-        seasons.map((season) => ({
-          season,
-          competitionCode: competition.code,
-        })),
+    const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
+      seasons.map((season) => ({
+        season,
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+      })),
     );
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
@@ -264,12 +313,12 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerStatsSync(): Promise<void> {
-    const jobs = getActiveCompetitionPlans().flatMap(
-      ({ competition, seasons }) =>
-        seasons.map((season) => ({
-          season,
-          competitionCode: competition.code,
-        })),
+    const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
+      seasons.map((season) => ({
+        season,
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+      })),
     );
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
@@ -285,12 +334,12 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerInjuriesSync(): Promise<void> {
-    const jobs = getActiveCompetitionPlans().flatMap(
-      ({ competition, seasons }) =>
-        seasons.map((season) => ({
-          season,
-          competitionCode: competition.code,
-        })),
+    const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
+      seasons.map((season) => ({
+        season,
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+      })),
     );
     for (let i = 0; i < jobs.length; i++) {
       const job = jobs[i];
@@ -306,7 +355,11 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerOddsCsvImport(): Promise<void> {
-    const csvCompetitions = getActiveCsvCompetitions();
+    const csvCompetitions = this.competitionPlans
+      .filter((p) => p.competition.csvDivisionCode != null)
+      .map(
+        (p) => p.competition as CompetitionRow & { csvDivisionCode: string },
+      );
 
     const csvSeasonCodes = getActiveCsvSeasonCodes();
     for (const competition of csvCompetitions) {
@@ -368,6 +421,134 @@ export class EtlService implements OnApplicationBootstrap {
     );
 
     return Object.fromEntries(entries);
+  }
+
+  async triggerFixturesSyncForLeague(competitionCode: string): Promise<void> {
+    const competition = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    if (!competition)
+      throw new Error(`Unknown competition: ${competitionCode}`);
+    const seasons = computeSeasons(competition);
+    for (let i = 0; i < seasons.length; i++) {
+      await this.fixturesQueue.add(
+        `fixtures-sync-${competitionCode}-${seasons[i]}`,
+        {
+          season: seasons[i],
+          competitionCode,
+          leagueId: competition.leagueId,
+        } satisfies FixturesSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
+  }
+
+  async triggerResultsSyncForLeague(competitionCode: string): Promise<void> {
+    const competition = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    if (!competition)
+      throw new Error(`Unknown competition: ${competitionCode}`);
+    const seasons = computeSeasons(competition);
+    for (let i = 0; i < seasons.length; i++) {
+      await this.resultsQueue.add(
+        `results-sync-${competitionCode}-${seasons[i]}`,
+        {
+          season: seasons[i],
+          competitionCode,
+          leagueId: competition.leagueId,
+        } satisfies ResultsSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
+  }
+
+  async triggerStatsSyncForLeague(competitionCode: string): Promise<void> {
+    const competition = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    if (!competition)
+      throw new Error(`Unknown competition: ${competitionCode}`);
+    const seasons = computeSeasons(competition);
+    for (let i = 0; i < seasons.length; i++) {
+      await this.statsQueue.add(
+        `stats-sync-${competitionCode}-${seasons[i]}`,
+        {
+          season: seasons[i],
+          competitionCode,
+          leagueId: competition.leagueId,
+        } satisfies StatsSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
+  }
+
+  async triggerInjuriesSyncForLeague(competitionCode: string): Promise<void> {
+    const competition = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    if (!competition)
+      throw new Error(`Unknown competition: ${competitionCode}`);
+    const seasons = computeSeasons(competition);
+    for (let i = 0; i < seasons.length; i++) {
+      await this.injuriesQueue.add(
+        `injuries-sync-${competitionCode}-${seasons[i]}`,
+        {
+          season: seasons[i],
+          competitionCode,
+          leagueId: competition.leagueId,
+        } satisfies InjuriesSyncJobData,
+        {
+          ...BULLMQ_DEFAULT_JOB_OPTIONS,
+          delay: i * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+        },
+      );
+    }
   }
 
   async triggerFullSync(): Promise<void> {

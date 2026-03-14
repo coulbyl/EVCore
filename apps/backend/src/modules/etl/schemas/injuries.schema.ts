@@ -10,19 +10,21 @@ const InjuryItemSchema = z.object({
   }),
   player: z.object({
     id: z.number().int().positive().nullable().optional(),
-    name: z.string().min(1),
+    name: z.string().min(1).nullable(),
+    type: z.string().nullable().optional(),
+    reason: z.string().nullable().optional(),
   }),
   fixture: z.object({
     id: z.number().int().positive(),
   }),
-  type: z.string(),
-  reason: z.string().nullable().optional(),
 });
 
 export const ApiFootballInjuriesResponseSchema = z.object({
   get: z.literal('injuries'),
   parameters: z.record(z.string(), z.string()),
-  errors: z.array(z.unknown()).optional(),
+  errors: z
+    .union([z.array(z.unknown()), z.record(z.string(), z.unknown())])
+    .optional(),
   results: z.number().int().nonnegative(),
   paging: z
     .object({

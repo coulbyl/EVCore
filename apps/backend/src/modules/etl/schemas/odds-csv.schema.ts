@@ -12,6 +12,14 @@ const positiveOdd = z.coerce
     message: 'odd must be in range (1, 1000)',
   });
 
+// Pinnacle odds are degraded since 2025-07-23 — football-data.co.uk sends 0
+// instead of leaving the column empty. Treat 0 as absent rather than failing
+// the whole row.
+const pinnacleOdd = z.preprocess(
+  (v) => (Number(v) === 0 ? undefined : v),
+  positiveOdd.optional(),
+);
+
 export const OddsCsvRowSchema = z
   .object({
     Date: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Expected DD/MM/YYYY'),
@@ -32,9 +40,9 @@ export const OddsCsvRowSchema = z
     B365CA: positiveOdd.optional(),
 
     // Pinnacle closing odds — industry benchmark for true probability
-    PSCH: positiveOdd.optional(),
-    PSCD: positiveOdd.optional(),
-    PSCA: positiveOdd.optional(),
+    PSCH: pinnacleOdd,
+    PSCD: pinnacleOdd,
+    PSCA: pinnacleOdd,
 
     // Market average closing
     AvgCH: positiveOdd.optional(),

@@ -1,7 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -10,7 +10,7 @@ export type OddsSnapshotRetentionJobData = {
   retentionDays?: number;
 };
 
-const logger = pino({ name: 'odds-snapshot-retention-worker' });
+const logger = createLogger('odds-snapshot-retention-worker');
 
 @Processor(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
 export class OddsSnapshotRetentionWorker extends WorkerHost {

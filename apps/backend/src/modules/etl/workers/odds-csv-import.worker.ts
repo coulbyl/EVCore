@@ -1,6 +1,6 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { OddsCsvRowSchema, type OddsCsvRow } from '../schemas/odds-csv.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
@@ -14,7 +14,7 @@ export type OddsCsvImportJobData = {
   divisionCode: string;
 };
 
-const logger = pino({ name: 'odds-csv-import-worker' });
+const logger = createLogger('odds-csv-import-worker');
 
 @Processor(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
 export class OddsCsvImportWorker extends WorkerHost {

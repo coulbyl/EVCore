@@ -31,14 +31,18 @@ describe('RollingStatsController', () => {
     expect(service.backfillSeasonYear).toHaveBeenCalledWith(2024, 'PL');
   });
 
-  it('rejects unknown competition code', async () => {
-    const service = makeService();
+  it('rejects unknown competition code (service throws, controller wraps as BadRequestException)', async () => {
+    const service = makeService({
+      backfillSeasonYear: vi
+        .fn()
+        .mockRejectedValue(new Error('competition not found: UNKNOWN')),
+    });
     const controller = new RollingStatsController(service);
 
     await expect(
       controller.backfillSeason('unknown', '2024'),
     ).rejects.toBeInstanceOf(BadRequestException);
-    expect(service.backfillSeasonYear).not.toHaveBeenCalled();
+    expect(service.backfillSeasonYear).toHaveBeenCalledWith(2024, 'UNKNOWN');
   });
 
   it('rejects invalid season year', async () => {

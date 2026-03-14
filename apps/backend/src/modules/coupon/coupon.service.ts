@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { BetStatus, CouponStatus } from '@evcore/db';
 import Decimal from 'decimal.js';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -23,7 +23,7 @@ import {
 import { tomorrowUtc } from '@utils/date.utils';
 import { CouponRepository } from './coupon.repository';
 
-const logger = pino({ name: 'coupon-service' });
+const logger = createLogger('coupon-service');
 
 type CouponWindowInput = {
   startDate: Date;
@@ -87,20 +87,6 @@ export class CouponService implements OnApplicationBootstrap {
     const startDate = startOfUtcDay(input.startDate);
     const endDate = addUtcDays(startDate, days - 1);
 
-    // Guard idempotence — one coupon per calendar day.
-    const existing = await this.couponRepository.findByDate(startDate);
-    if (existing) {
-      logger.info(
-        {
-          date: startDate.toISOString().slice(0, 10),
-          days,
-          couponId: existing.id,
-        },
-        'Coupon already exists for this date — skipping',
-      );
-      return;
-    }
-
     const fixtures =
       days === 1
         ? await this.fixtureService.findScheduledForDate(startDate)
@@ -125,17 +111,38 @@ export class CouponService implements OnApplicationBootstrap {
       return;
     }
 
-    // Analyze all scheduled fixtures for the day.
-    for (const { id: fixtureId } of fixtures) {
-      await this.bettingEngineService.analyzeFixture(fixtureId);
+    // Analyze all scheduled fixtures for the day and keep only bets generated
+    // by this execution. A coupon is an autonomous betting opportunity and
+    // must not mix in stale pending bets from previous runs on the same fixtures.
+    const analyzed = await Promise.all(
+      fixtures.map(({ id: fixtureId }) =>
+        this.bettingEngineService.analyzeFixture(fixtureId),
+      ),
+    );
+    const generatedBetIds = analyzed.flatMap((result) =>
+      result.status === 'analyzed' && result.betId !== null
+        ? [result.betId]
+        : [],
+    );
+
+    if (generatedBetIds.length === 0) {
+      const coupon = await this.couponRepository.create({
+        date: startDate,
+        status: CouponStatus.NO_BET,
+        legCount: 0,
+      });
+      await this.notificationService.sendNoBetToday(startDate);
+      logger.info(
+        { couponId: coupon.id },
+        'NO_BET coupon created — current analysis generated no bets',
+      );
+      return;
     }
 
-    // Collect PENDING bets linked to these fixtures via ModelRun.
-    const fixtureIds = fixtures.map((f) => f.id);
     const bets = await this.prisma.client.bet.findMany({
       where: {
+        id: { in: generatedBetIds },
         status: BetStatus.PENDING,
-        modelRun: { fixtureId: { in: fixtureIds } },
       },
       select: {
         id: true,
@@ -202,6 +209,19 @@ export class CouponService implements OnApplicationBootstrap {
 
     const fullBets = await this.prisma.client.bet.findMany({
       where: { id: { in: selected.map((b) => b.id) } },
+      include: {
+        modelRun: {
+          select: {
+            fixture: {
+              select: {
+                scheduledAt: true,
+                homeTeam: { select: { name: true } },
+                awayTeam: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     await this.notificationService.sendDailyCoupon({
@@ -258,6 +278,10 @@ export class CouponService implements OnApplicationBootstrap {
     await this.couponRepository.updateStatus(couponId, nextStatus);
     await this.notificationService.sendCouponResult(couponId);
     return { couponId, status: nextStatus, settled: true };
+  }
+
+  async getCouponById(couponId: string) {
+    return this.couponRepository.findCouponById(couponId);
   }
 }
 

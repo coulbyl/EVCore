@@ -9,6 +9,17 @@ export type MetricResult = {
   verdict: ValidationVerdict;
 };
 
+export type CompetitionBacktestSummary = {
+  competitionId: string;
+  competitionCode: string;
+  competitionName: string;
+  seasonCount: number;
+  totalAnalyzed: number;
+  averageBrierScore: Decimal;
+  averageCalibrationError: Decimal;
+  aggregateRoi: Decimal;
+};
+
 export type AllSeasonsBacktestReport = {
   seasons: BacktestReport[];
   totalFixtures: number;
@@ -16,6 +27,7 @@ export type AllSeasonsBacktestReport = {
   averageBrierScore: Decimal;
   averageCalibrationError: Decimal;
   aggregateRoi: Decimal;
+  byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
 };
 
@@ -25,6 +37,7 @@ export type ValidationReport = {
   roi: MetricResult;
   totalAnalyzed: number;
   overallVerdict: ValidationVerdict;
+  byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
 };
 

@@ -12,7 +12,10 @@ import {
   resolveHalfTimeFullTimeBetStatus,
   COMBO_WHITELIST,
 } from './betting-engine.utils';
-import { BettingEngineService } from './betting-engine.service';
+import {
+  BettingEngineService,
+  estimateComboOdds,
+} from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
@@ -314,6 +317,70 @@ describe('resolveHalfTimeFullTimeBetStatus', () => {
 });
 
 describe('BettingEngineService', () => {
+  it('shortens combo odds when model joint probability exceeds independence', () => {
+    const probabilities = {
+      home: new Decimal('0.62'),
+      draw: new Decimal('0.22'),
+      away: new Decimal('0.16'),
+      over25: new Decimal('0.48'),
+      under25: new Decimal('0.52'),
+      bttsYes: new Decimal('0.39'),
+      bttsNo: new Decimal('0.61'),
+      dc1X: new Decimal('0.84'),
+      dcX2: new Decimal('0.38'),
+      dc12: new Decimal('0.78'),
+      htft: makeHtftProbabilities('0.01'),
+    };
+    const estimatedOdds = estimateComboOdds({
+      combo: {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'NO',
+      },
+      probabilities,
+      jointProbability: new Decimal('0.44'),
+      odds1: new Decimal('1.55'),
+      odds2: new Decimal('2.18'),
+    });
+
+    expect(estimatedOdds.toNumber()).toBeLessThan(1.55 * 2.18);
+    expect(estimatedOdds.toNumber()).toBeGreaterThan(2.7);
+    expect(estimatedOdds.toNumber()).toBeLessThan(3.1);
+  });
+
+  it('extends combo odds when model joint probability is below independence', () => {
+    const probabilities = {
+      home: new Decimal('0.62'),
+      draw: new Decimal('0.22'),
+      away: new Decimal('0.16'),
+      over25: new Decimal('0.48'),
+      under25: new Decimal('0.52'),
+      bttsYes: new Decimal('0.39'),
+      bttsNo: new Decimal('0.61'),
+      dc1X: new Decimal('0.84'),
+      dcX2: new Decimal('0.38'),
+      dc12: new Decimal('0.78'),
+      htft: makeHtftProbabilities('0.01'),
+    };
+    const estimatedOdds = estimateComboOdds({
+      combo: {
+        market1: Market.ONE_X_TWO,
+        pick1: 'HOME',
+        market2: Market.BTTS,
+        pick2: 'YES',
+      },
+      probabilities,
+      jointProbability: new Decimal('0.20'),
+      odds1: new Decimal('1.55'),
+      odds2: new Decimal('1.63'),
+    });
+
+    expect(estimatedOdds.toNumber()).toBeGreaterThan(1.55 * 1.63);
+    expect(estimatedOdds.toNumber()).toBeGreaterThan(2.7);
+    expect(estimatedOdds.toNumber()).toBeLessThan(3.0);
+  });
+
   it('calculates EV using decimal arithmetic', () => {
     const service = new BettingEngineService(
       {} as PrismaService,

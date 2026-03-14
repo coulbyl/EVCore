@@ -1,14 +1,10 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import {
-  ETL_CONSTANTS,
-  BULLMQ_QUEUES,
-  getCompetitionByCodeOrThrow,
-} from '@config/etl.constants';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -16,27 +12,40 @@ import {
   seasonFallbackEndDate,
   seasonFallbackStartDate,
 } from '@utils/date.utils';
+import { PrismaService } from '@/prisma.service';
 
-export type StatsSyncJobData = { season: number; competitionCode: string };
+export type StatsSyncJobData = {
+  season: number;
+  competitionCode: string;
+  leagueId: number;
+};
 
-const logger = pino({ name: 'stats-sync-worker' });
+const logger = createLogger('stats-sync-worker');
 
 @Processor(BULLMQ_QUEUES.STATS_SYNC)
 export class StatsSyncWorker extends WorkerHost {
+  // eslint-disable-next-line max-params -- Prisma required to resolve competition from DB.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
     const { season, competitionCode } = job.data;
-    const competitionMeta = getCompetitionByCodeOrThrow(competitionCode);
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info({ competitionCode, season }, 'Starting stats sync');
+
+    const competitionMeta = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode },
+    });
+    if (!competitionMeta) {
+      throw new Error(`Competition not found in DB: ${competitionCode}`);
+    }
 
     // Resolve the internal seasonId (idempotent — same as fixtures-sync)
     const competition = await this.fixtureService.upsertCompetition({
@@ -45,9 +54,9 @@ export class StatsSyncWorker extends WorkerHost {
       code: competitionMeta.code,
       country: competitionMeta.country,
       isActive: competitionMeta.isActive,
-      csvDivisionCode: competitionMeta.csvDivisionCode,
-      seasonStartMonth: competitionMeta.seasonStartMonth,
-      activeSeasonsCount: competitionMeta.activeSeasonsCount,
+      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
+      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
+      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
     });
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
@@ -103,6 +112,18 @@ export class StatsSyncWorker extends WorkerHost {
       const homeXg = extractXg(homeStats.statistics);
       const awayXg = extractXg(awayStats.statistics);
 
+      if (homeXg === null || awayXg === null) {
+        logger.warn(
+          { externalId },
+          'xG unavailable in statistics payload — marking fixture unavailable',
+        );
+        await this.fixtureService.markXgUnavailable(externalId);
+        xgUnavailableIds.push(externalId);
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
+
       await this.fixtureService.updateXg(externalId, homeXg, awayXg);
       updated++;
 
@@ -151,12 +172,12 @@ export class StatsSyncWorker extends WorkerHost {
 //             where the API did not yet track expected_goals.
 function extractXg(
   statistics: { type: string; value: number | string | null }[],
-): number {
+): number | null {
   const xgEntry = statistics.find((s) => s.type === 'expected_goals');
   if (xgEntry !== undefined) {
-    if (xgEntry.value === null) return 0;
+    if (xgEntry.value === null) return null;
     const parsed = parseFloat(String(xgEntry.value));
-    return isNaN(parsed) ? 0 : parsed;
+    return isNaN(parsed) ? null : parsed;
   }
   return extractShotsOnTarget(statistics) * ETL_CONSTANTS.XG_SHOTS_PROXY_FACTOR;
 }

@@ -1,20 +1,20 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { ApiFootballFixturesResponseSchema } from '../schemas/fixture.schema';
 import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import {
-  ETL_CONSTANTS,
-  BULLMQ_QUEUES,
-  getCompetitionByCodeOrThrow,
-} from '../../../config/etl.constants';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 
-export type ResultsSyncJobData = { season: number; competitionCode: string };
+export type ResultsSyncJobData = {
+  season: number;
+  competitionCode: string;
+  leagueId: number;
+};
 
-const logger = pino({ name: 'results-sync-worker' });
+const logger = createLogger('results-sync-worker');
 
 // API-FOOTBALL status codes that indicate a finished match
 const FINISHED_STATUSES = new Set(['FT', 'AET', 'PEN', 'AWD']);
@@ -30,10 +30,9 @@ export class ResultsSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<ResultsSyncJobData>): Promise<void> {
-    const { season, competitionCode } = job.data;
+    const { season, competitionCode, leagueId: leagueIdNum } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const competition = getCompetitionByCodeOrThrow(competitionCode);
-    const leagueId = String(competition.leagueId);
+    const leagueId = String(leagueIdNum);
     // Fetch only finished matches (FT + AET + PEN) in one request
     const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT-AET-PEN`;
 

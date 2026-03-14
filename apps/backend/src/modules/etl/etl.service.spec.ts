@@ -3,12 +3,11 @@ import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
-  getActiveCompetitionPlans,
-  getActiveCsvCompetitions,
   getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
 import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
+import type { PrismaService } from '@/prisma.service';
 import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
 import type { ResultsSyncJobData } from './workers/results-sync.worker';
 import type { StatsSyncJobData } from './workers/stats-sync.worker';
@@ -34,16 +33,56 @@ const configMock = {
   }),
 } as unknown as ConfigService;
 
-describe('EtlService', () => {
-  const activePlans = getActiveCompetitionPlans();
-  const totalSeasonJobs = activePlans.reduce(
-    (sum, plan) => sum + plan.seasons.length,
-    0,
-  );
-  const csvCompetitions = getActiveCsvCompetitions();
-  const csvSeasonCodes = getActiveCsvSeasonCodes();
-  const totalCsvJobs = csvCompetitions.length * csvSeasonCodes.length;
+const prismaMock = {} as unknown as PrismaService;
 
+// Test competition plans — used instead of DB at test time
+type CompetitionRow = {
+  leagueId: number;
+  code: string;
+  name: string;
+  country: string;
+  csvDivisionCode: string | null;
+  seasonStartMonth: number | null;
+  activeSeasonsCount: number | null;
+};
+
+const TEST_COMPETITIONS: CompetitionRow[] = [
+  {
+    leagueId: 39,
+    code: 'PL',
+    name: 'Premier League',
+    country: 'England',
+    csvDivisionCode: 'E0',
+    seasonStartMonth: null,
+    activeSeasonsCount: null,
+  },
+  {
+    leagueId: 135,
+    code: 'SA',
+    name: 'Serie A',
+    country: 'Italy',
+    csvDivisionCode: 'I1',
+    seasonStartMonth: null,
+    activeSeasonsCount: null,
+  },
+];
+const TEST_SEASONS = [2022, 2023, 2024];
+const TEST_PLANS = TEST_COMPETITIONS.map((c) => ({
+  competition: c,
+  seasons: TEST_SEASONS,
+}));
+
+const totalSeasonJobs = TEST_PLANS.reduce(
+  (sum, plan) => sum + plan.seasons.length,
+  0,
+);
+const csvCompetitions = TEST_PLANS.filter(
+  (p) => p.competition.csvDivisionCode != null,
+).map((p) => p.competition as CompetitionRow & { csvDivisionCode: string });
+const csvSeasonCodes = getActiveCsvSeasonCodes();
+const totalCsvJobs = csvCompetitions.length * csvSeasonCodes.length;
+
+describe('EtlService', () => {
   const fixturesQueue = makeQueue<FixturesSyncJobData>();
   const resultsQueue = makeQueue<ResultsSyncJobData>();
   const statsQueue = makeQueue<StatsSyncJobData>();
@@ -61,7 +100,12 @@ describe('EtlService', () => {
     oddsLiveQueue as Queue<OddsLiveSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
+    prismaMock,
   );
+
+  // Inject test plans directly — scheduling is disabled so onApplicationBootstrap
+  // returns early without populating competitionPlans from DB.
+  service['competitionPlans'] = TEST_PLANS;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -72,9 +116,10 @@ describe('EtlService', () => {
 
     expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    const expectedJobs = activePlans.flatMap((plan) =>
+    const expectedJobs = TEST_PLANS.flatMap((plan) =>
       plan.seasons.map((season) => ({
         competitionCode: plan.competition.code,
+        leagueId: plan.competition.leagueId,
         season,
       })),
     );
@@ -85,7 +130,11 @@ describe('EtlService', () => {
       expect(fixturesQueue.add).toHaveBeenNthCalledWith(
         callIndex,
         `fixtures-sync-${job.competitionCode}-${job.season}`,
-        { season: job.season, competitionCode: job.competitionCode },
+        {
+          season: job.season,
+          competitionCode: job.competitionCode,
+          leagueId: job.leagueId,
+        },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
           delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
@@ -99,9 +148,10 @@ describe('EtlService', () => {
 
     expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    const expectedJobs = activePlans.flatMap((plan) =>
+    const expectedJobs = TEST_PLANS.flatMap((plan) =>
       plan.seasons.map((season) => ({
         competitionCode: plan.competition.code,
+        leagueId: plan.competition.leagueId,
         season,
       })),
     );
@@ -112,7 +162,11 @@ describe('EtlService', () => {
       expect(resultsQueue.add).toHaveBeenNthCalledWith(
         callIndex,
         `results-sync-${job.competitionCode}-${job.season}`,
-        { season: job.season, competitionCode: job.competitionCode },
+        {
+          season: job.season,
+          competitionCode: job.competitionCode,
+          leagueId: job.leagueId,
+        },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
           delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
@@ -126,9 +180,10 @@ describe('EtlService', () => {
 
     expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    const expectedJobs = activePlans.flatMap((plan) =>
+    const expectedJobs = TEST_PLANS.flatMap((plan) =>
       plan.seasons.map((season) => ({
         competitionCode: plan.competition.code,
+        leagueId: plan.competition.leagueId,
         season,
       })),
     );
@@ -139,7 +194,11 @@ describe('EtlService', () => {
       expect(statsQueue.add).toHaveBeenNthCalledWith(
         callIndex,
         `stats-sync-${job.competitionCode}-${job.season}`,
-        { season: job.season, competitionCode: job.competitionCode },
+        {
+          season: job.season,
+          competitionCode: job.competitionCode,
+          leagueId: job.leagueId,
+        },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
           delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
@@ -153,9 +212,10 @@ describe('EtlService', () => {
 
     expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
 
-    const expectedJobs = activePlans.flatMap((plan) =>
+    const expectedJobs = TEST_PLANS.flatMap((plan) =>
       plan.seasons.map((season) => ({
         competitionCode: plan.competition.code,
+        leagueId: plan.competition.leagueId,
         season,
       })),
     );
@@ -166,7 +226,11 @@ describe('EtlService', () => {
       expect(injuriesQueue.add).toHaveBeenNthCalledWith(
         callIndex,
         `injuries-sync-${job.competitionCode}-${job.season}`,
-        { season: job.season, competitionCode: job.competitionCode },
+        {
+          season: job.season,
+          competitionCode: job.competitionCode,
+          leagueId: job.leagueId,
+        },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
           delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,

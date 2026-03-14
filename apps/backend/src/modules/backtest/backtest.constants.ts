@@ -18,4 +18,8 @@ export const BACKTEST_CONSTANTS = {
   // team has fewer than this many prior data points are skipped to avoid
   // cold-start noise (first ~5 matchdays of a season have unreliable stats).
   MIN_PRIOR_TEAM_STATS: 5,
+  // Minimum simulated bets required for a season's ROI to be included in the
+  // aggregate. Seasons with fewer bets are statistically unreliable (high
+  // variance — a single loss can produce ROI = -100%).
+  MIN_BETS_FOR_ROI: 10,
 } as const;

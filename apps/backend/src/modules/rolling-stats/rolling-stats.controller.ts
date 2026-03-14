@@ -1,6 +1,5 @@
 import { BadRequestException, Controller, Param, Post } from '@nestjs/common';
 import { RollingStatsService } from './rolling-stats.service';
-import { getCompetitionByCodeOrThrow } from '@config/etl.constants';
 
 @Controller('rolling-stats')
 export class RollingStatsController {
@@ -12,13 +11,6 @@ export class RollingStatsController {
     @Param('season') season: string,
   ) {
     const competitionCode = competition.toUpperCase();
-    try {
-      getCompetitionByCodeOrThrow(competitionCode);
-    } catch {
-      throw new BadRequestException(
-        `competition must be a known code (received: ${competition})`,
-      );
-    }
 
     const year = Number.parseInt(season, 10);
 
@@ -26,11 +18,29 @@ export class RollingStatsController {
       throw new BadRequestException('season must be a valid year (e.g. 2021)');
     }
 
-    const result = await this.rollingStatsService.backfillSeasonYear(
-      year,
-      competitionCode,
-    );
-    return { status: 'ok', ...result };
+    try {
+      const result = await this.rollingStatsService.backfillSeasonYear(
+        year,
+        competitionCode,
+      );
+      return { status: 'ok', ...result };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(message);
+    }
+  }
+
+  @Post('backfill-league/:competition')
+  async backfillLeague(@Param('competition') competition: string) {
+    const competitionCode = competition.toUpperCase();
+    try {
+      const seasons =
+        await this.rollingStatsService.backfillLeague(competitionCode);
+      return { status: 'ok', competitionCode, seasons };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(message);
+    }
   }
 
   @Post('backfill-all')

@@ -118,15 +118,15 @@ describe('ResultsSyncWorker', () => {
     fixtureService.updateScores.mockResolvedValue(undefined);
   });
 
-  it('uses competitionCode to resolve league and updates only finished fixtures', async () => {
+  it('uses leagueId from job data to build API URL and updates only finished fixtures', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(buildResultsResponse(140, 2024)),
     });
 
     await worker.process({
-      data: { competitionCode: 'LL', season: 2024 },
-    } as Job<{ competitionCode: string; season: number }>);
+      data: { competitionCode: 'LL', season: 2024, leagueId: 140 },
+    } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
     expect(fetch).toHaveBeenCalledWith(
       'https://v3.football.api-sports.io/fixtures?league=140&season=2024&status=FT-AET-PEN',
@@ -147,8 +147,8 @@ describe('ResultsSyncWorker', () => {
 
     await expect(
       worker.process({
-        data: { competitionCode: 'LL', season: 2024 },
-      } as Job<{ competitionCode: string; season: number }>),
+        data: { competitionCode: 'LL', season: 2024, leagueId: 140 },
+      } as Job<{ competitionCode: string; season: number; leagueId: number }>),
     ).rejects.toThrow('API-FOOTBALL responded 500 for season 2024');
   });
 });
