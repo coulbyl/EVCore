@@ -44,7 +44,7 @@ export class DashboardService {
       { start: startOfUtcDay(yesterday), end: endOfUtcDay(yesterday) },
       yesterday,
     );
-    const uniqueTopBets = uniqueBetsByFixture(data.topBets).slice(0, 3);
+    const uniqueTopBets = uniqueBetsByFixture(data.topBets).slice(0, 4);
 
     return {
       dashboardKpis: this.buildKpis(data),
