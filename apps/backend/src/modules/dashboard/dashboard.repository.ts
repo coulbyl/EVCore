@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FixtureStatus, NotificationType } from '@evcore/db';
+import { BetStatus, FixtureStatus, NotificationType } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 @Injectable()
@@ -30,6 +30,7 @@ export class DashboardRepository {
       latestOddsSnapshot,
       latestTeamStats,
       latestCoupon,
+      settledBets,
     ] = await Promise.all([
       this.prisma.client.fixture.count({
         where: {
@@ -159,6 +160,14 @@ export class DashboardRepository {
         orderBy: { createdAt: 'desc' },
         select: { createdAt: true },
       }),
+      this.prisma.client.bet.findMany({
+        where: { status: { in: [BetStatus.WON, BetStatus.LOST] } },
+        select: {
+          status: true,
+          stakePct: true,
+          oddsSnapshot: true,
+        },
+      }),
     ]);
 
     return {
@@ -177,6 +186,7 @@ export class DashboardRepository {
       latestOddsSnapshot,
       latestTeamStats,
       latestCoupon,
+      settledBets,
     };
   }
 }

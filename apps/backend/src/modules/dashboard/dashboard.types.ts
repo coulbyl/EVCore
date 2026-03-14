@@ -74,6 +74,14 @@ export type ActivityItem = {
   message: string;
 };
 
+export type PnlSummary = {
+  settledBets: number;
+  wonBets: number;
+  winRate: string;
+  netUnits: string;
+  roi: string;
+};
+
 export type DashboardSummary = {
   dashboardKpis: KpiCard[];
   workerStatuses: WorkerStatus[];
@@ -82,4 +90,5 @@ export type DashboardSummary = {
   topOpportunities: OpportunityRow[];
   selectedFixture: FixturePanel;
   activityFeed: ActivityItem[];
+  pnlSummary: PnlSummary;
 };

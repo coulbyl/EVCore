@@ -157,6 +157,13 @@ const EMPTY_SUMMARY: DashboardSummary = {
     ],
   },
   activityFeed: [],
+  pnlSummary: {
+    settledBets: 0,
+    wonBets: 0,
+    winRate: "0.0%",
+    netUnits: "+0.000",
+    roi: "+0.0%",
+  },
 };
 
 export default function Home() {
@@ -168,6 +175,7 @@ export default function Home() {
     selectedFixture: apiFixture,
     workerStatuses: workers,
     activeAlerts: alerts,
+    pnlSummary: pnl,
   } = data ?? EMPTY_SUMMARY;
 
   const [selectedRow, setSelectedRow] = useState<OpportunityRow | null>(null);
@@ -232,6 +240,57 @@ export default function Home() {
               <FixtureDetailPanel fixture={fixture} />
             </aside>
           </div>
+
+          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  Performance globale
+                </p>
+                <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
+                  Gains &amp; pertes
+                </h2>
+              </div>
+              {pnl.settledBets === 0 && (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                  En attente de résultats
+                </span>
+              )}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  label: "Bets settlés",
+                  value: String(pnl.settledBets),
+                  sub: `${pnl.wonBets} gagnés`,
+                },
+                {
+                  label: "Taux de réussite",
+                  value: pnl.winRate,
+                  sub: "WON / settlés",
+                },
+                {
+                  label: "Gain net",
+                  value: pnl.netUnits,
+                  sub: "unités de stake",
+                },
+                { label: "ROI", value: pnl.roi, sub: "sur capital misé" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-border bg-slate-50 px-4 py-3"
+                >
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    {stat.label}
+                  </p>
+                  <p className="mt-1 text-[1.4rem] font-semibold tracking-tight text-slate-900">
+                    {stat.value}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">{stat.sub}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <section className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">

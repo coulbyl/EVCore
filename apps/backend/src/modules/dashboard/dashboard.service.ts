@@ -22,6 +22,7 @@ import type {
   DashboardSummary,
   CouponSnapshot,
   OpportunityRow,
+  PnlSummary,
   WorkerStatus,
   FixturePanel,
 } from './dashboard.types';
@@ -54,6 +55,7 @@ export class DashboardService {
       topOpportunities: this.buildTopOpportunities(uniqueTopBets),
       selectedFixture: this.buildSelectedFixture(uniqueTopBets),
       activityFeed: this.buildActivityFeed(data.activityNotifications),
+      pnlSummary: this.buildPnlSummary(data.settledBets),
     };
   }
 
@@ -292,6 +294,32 @@ export class DashboardService {
       level: notificationLevel(n.type),
       message: n.title,
     }));
+  }
+
+  private buildPnlSummary(settled: SummaryData['settledBets']): PnlSummary {
+    const won = settled.filter((b) => b.status === 'WON');
+    const lost = settled.filter((b) => b.status === 'LOST');
+    const settledCount = won.length + lost.length;
+
+    const totalStaked = settled.reduce(
+      (acc, b) => acc + toNumber(b.stakePct),
+      0,
+    );
+    const totalReturned = won.reduce(
+      (acc, b) => acc + toNumber(b.stakePct) * toNumber(b.oddsSnapshot ?? 1),
+      0,
+    );
+    const netUnits = totalReturned - totalStaked;
+    const roi = totalStaked > 0 ? (netUnits / totalStaked) * 100 : 0;
+    const winRate = settledCount > 0 ? (won.length / settledCount) * 100 : 0;
+
+    return {
+      settledBets: settledCount,
+      wonBets: won.length,
+      winRate: `${winRate.toFixed(1)}%`,
+      netUnits: formatSigned(netUnits, 3),
+      roi: `${formatSigned(roi, 1)}%`,
+    };
   }
 
   private sanitizeAlertDetail(body: string): string {
