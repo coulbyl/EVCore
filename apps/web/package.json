@@ -11,6 +11,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.5",
     "@evcore/ui": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
@@ -22,7 +23,9 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@tailwindcss/postcss": "^4.1.13",
     "eslint": "catalog:",
+    "tailwindcss": "^4.1.13",
     "typescript": "catalog:"
   }
 }

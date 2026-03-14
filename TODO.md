@@ -91,6 +91,179 @@
 
 ---
 
+## Bloc 7 — App Web V1 (Dashboard / Coupons / Audit)
+
+> Objectif: rendre `apps/web` réellement exploitable comme interface d'observation EVCore, sans attendre une UI complète de prod.
+
+### Direction visuelle retenue
+
+- [ ] Partir d'une esthétique "console opérateur" proche de `possible-design-with-shadcn-ui.png`
+- [ ] Conserver la structure générale:
+  - [ ] sidebar sombre fixe
+  - [ ] surface de travail claire
+  - [ ] cartes KPI en tête
+  - [ ] grand panneau central pour charts + tables
+  - [ ] colonne droite pour détails et activité
+- [ ] Adapter cette base au produit EVCore, pas en faire un admin panel générique
+- [ ] Réduire l'effet template:
+  - [ ] moins de bleu par défaut
+  - [ ] statuts métier plus visibles
+  - [ ] densité de données plus assumée
+- [ ] Prioriser desktop/tableau de bord opérateur, puis responsive mobile
+
+### Cadrage produit
+
+- [ ] Positionner `apps/web` comme console opérateur EVCore, pas comme vitrine marketing
+- [ ] Remplacer totalement le scaffold Next.js actuel (`page.tsx`, metadata, assets par défaut)
+- [ ] Définir une navigation simple à 3 écrans:
+  - [ ] `Dashboard`
+  - [ ] `Coupons`
+  - [ ] `Audit`
+- [ ] Fixer une règle de data loading V1:
+  - [ ] SSR pour les vues stables
+  - [ ] refresh manuel ou polling léger pour les données qui bougent
+
+### Écran 1 — Dashboard
+
+- [ ] Afficher l'état ETL global:
+  - [ ] queues/job status
+  - [ ] dernière exécution par worker
+  - [ ] alertes actives / anomalies récentes
+- [ ] Afficher les métriques d'activité:
+  - [ ] nombre de fixtures `SCHEDULED` aujourd'hui / demain
+  - [ ] nombre de fixtures avec odds
+  - [ ] nombre de `modelRuns`
+  - [ ] nombre de bets `BET` / `NO_BET`
+- [ ] Afficher les derniers coupons générés:
+  - [ ] date
+  - [ ] statut
+  - [ ] nombre de legs
+  - [ ] lien vers le détail coupon
+
+### Écran 2 — Coupons
+
+- [ ] Lister les coupons récents
+  - [ ] filtre par date
+  - [ ] filtre par statut
+  - [ ] pagination simple
+- [ ] Afficher le détail d'un coupon:
+  - [ ] legs
+  - [ ] marchés / picks
+  - [ ] odds / probability / EV / qualityScore
+  - [ ] source batch d'analyse
+- [ ] Rendre visible le concept métier important:
+  - [ ] plusieurs coupons peuvent exister pour une même date
+  - [ ] chaque coupon est un pari potentiel autonome
+
+### Écran 3 — Audit
+
+- [ ] Vue fixtures du jour / date choisie
+- [ ] Faire de l'écran `Audit` l'équivalent web complet de `db-stats`
+- [ ] Reprendre toutes les sections utiles de `packages/db/scripts/db-stats.ts`
+  - [ ] snapshot DB global
+  - [ ] breakdown par ligue
+  - [ ] scheduled fixtures audit
+  - [ ] coupon eligibility audit
+  - [ ] zero-xG audit
+  - [ ] coupons / bets / modelRuns / notifications selon pertinence opérateur
+- [ ] Afficher par fixture:
+  - [ ] ligue
+  - [ ] équipes
+  - [ ] `BET` / `NO_BET`
+  - [ ] deterministicScore
+  - [ ] meilleur candidat
+  - [ ] raison principale du rejet si `NO_BET`
+- [ ] Exposer les signaux de diagnostic utiles:
+  - [ ] `hasOdds`
+  - [ ] `lineMovement`
+  - [ ] `h2hScore`
+  - [ ] `congestionScore`
+  - [ ] `lambdaFloorHit`
+- [ ] Prévoir un accès lisible aux logs d'analyse utiles sans afficher du JSON brut illisible
+
+### Backend/API nécessaires pour la V1 web
+
+- [ ] Hypothèse V1: aucune authentification, toutes les routes web nécessaires sont publiques
+- [ ] Ajouter un endpoint résumé pour le `Dashboard`
+  - [ ] agrège ETL + fixtures + bets + coupons
+- [ ] Ajouter un endpoint liste des coupons
+- [ ] Ajouter un endpoint détail coupon avec legs
+- [ ] Ajouter un endpoint audit fixtures/date
+- [ ] Ajouter des endpoints backend dédiés pour chaque section de `db-stats`
+  - [ ] éviter le rendu d'un fichier texte brut
+  - [ ] exposer des réponses JSON stables pour le frontend
+- [ ] Prévoir éventuellement un endpoint agrégé `audit/overview` pour limiter les allers-retours frontend
+- [ ] Standardiser les DTO de réponse pour la web app
+- [ ] Éviter d'exposer les structures internes Prisma brutes
+- [ ] Ajouter les tests unitaires/controller sur ces endpoints
+
+### App Web — architecture
+
+- [ ] Définir une arborescence claire dans `apps/web/app`
+  - [ ] `/dashboard`
+  - [ ] `/coupons`
+  - [ ] `/coupons/[id]`
+  - [ ] `/audit`
+- [ ] Mettre en place un client API léger côté web
+- [ ] Centraliser:
+  - [ ] types de réponse
+  - [ ] helpers de formatage dates / cotes / EV
+  - [ ] états `loading / empty / error`
+- [ ] Prévoir une base de filtres URL-driven (`searchParams`) pour audit et coupons
+
+### `packages/ui` + Tailwind CSS
+
+- [ ] Faire de `packages/ui` la base de composants partagés de la web app
+- [ ] Ajouter Tailwind CSS proprement pour `apps/web` et `packages/ui`
+- [ ] Définir la stratégie de partage UI:
+  - [ ] composants structurels dans `packages/ui`
+  - [ ] composition métier dans `apps/web`
+- [ ] Créer un socle minimum de composants UI réutilisables:
+  - [ ] `PageShell`
+  - [ ] `TopNav`
+  - [ ] `StatCard`
+  - [ ] `DataTable`
+  - [ ] `EmptyState`
+  - [ ] `Badge`
+  - [ ] `FilterBar`
+  - [ ] `SectionHeader`
+- [ ] Revoir les composants existants `packages/ui`
+  - [ ] enlever les résidus `create-turbo`
+  - [ ] nettoyer `Card`
+  - [ ] vérifier `Code` / `Button`
+- [ ] Définir un thème visuel EVCore:
+  - [ ] variables de couleur
+  - [ ] fond clair texturé / panneaux nets / sidebar sombre
+  - [ ] typographie UI + typo mono pour chiffres, cotes, EV et logs
+  - [ ] spacing
+  - [ ] états de statut (`BET`, `NO_BET`, `PENDING`, `WON`, `LOST`)
+- [ ] Définir les conventions visuelles principales:
+  - [ ] `BET` en vert contrôlé
+  - [ ] `NO_BET` en rouge sec
+  - [ ] `PENDING` en ambre
+  - [ ] `WARN` en orange
+  - [ ] `INFO` en bleu discret
+- [ ] S'assurer que les composants `packages/ui` sont compatibles App Router / SSR
+
+### Qualité / DX
+
+- [ ] Ajouter lint/typecheck dédiés `apps/web`
+- [ ] Ajouter tests minimums sur les composants critiques
+- [ ] Ajouter doc de lancement `apps/web`
+- [ ] Éviter de committer les artefacts `.next/` et `.turbo/`
+
+### Ordre d'exécution recommandé
+
+- [ ] 1. Nettoyer le scaffold `apps/web`
+- [ ] 2. Poser Tailwind + base `packages/ui`
+- [ ] 3. Ajouter les endpoints backend nécessaires
+- [ ] 4. Implémenter `Dashboard`
+- [ ] 5. Implémenter `Coupons`
+- [ ] 6. Implémenter `Audit`
+- [ ] 7. Finitions UX, empty states, erreurs, responsive
+
+---
+
 ## Suivi
 
 - [x] Bloc 1 terminé
@@ -99,4 +272,5 @@
 - [ ] Bloc 4 en cours
 - [x] Bloc 5 terminé
 - [ ] Bloc 6 en cours
+- [ ] Bloc 7 planifié
 - [x] ROADMAP.md synchronisée (3 mars 2026)

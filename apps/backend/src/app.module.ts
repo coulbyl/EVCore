@@ -12,6 +12,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { CouponModule } from './modules/coupon/coupon.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CouponModule } from './modules/coupon/coupon.module';
     RiskModule,
     AdjustmentModule,
     CouponModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

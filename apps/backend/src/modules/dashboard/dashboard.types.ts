@@ -1,0 +1,74 @@
+export type KpiCard = {
+  label: string;
+  value: string;
+  delta: string;
+  tone: 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
+};
+
+export type WorkerStatus = {
+  worker: string;
+  lastRun: string;
+  status: 'healthy' | 'watch' | 'late';
+  detail: string;
+};
+
+export type AlertItem = {
+  id: string;
+  title: string;
+  detail: string;
+  severity: 'high' | 'medium' | 'low';
+};
+
+export type CouponSnapshot = {
+  id: string;
+  code: string;
+  status: 'PENDING' | 'WON' | 'LOST';
+  legs: number;
+  ev: string;
+  window: string;
+};
+
+export type OpportunityRow = {
+  id: string;
+  fixture: string;
+  competition: string;
+  kickoff: string;
+  market: string;
+  pick: string;
+  odds: string;
+  ev: string;
+  quality: string;
+  deterministic: string;
+  decision: 'BET' | 'NO_BET';
+};
+
+export type FixturePanel = {
+  fixture: string;
+  competition: string;
+  startTime: string;
+  market: string;
+  pick: string;
+  modelConfidence: string;
+  notes: string[];
+  metrics: Array<{
+    label: string;
+    value: string;
+    tone?: 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
+  }>;
+};
+
+export type ActivityItem = {
+  time: string;
+  level: 'INFO' | 'WARN' | 'BET' | 'ALERT';
+  message: string;
+};
+
+export type DashboardSummary = {
+  dashboardKpis: KpiCard[];
+  workerStatuses: WorkerStatus[];
+  activeAlerts: AlertItem[];
+  couponSnapshots: CouponSnapshot[];
+  topOpportunities: OpportunityRow[];
+  selectedFixture: FixturePanel;
+  activityFeed: ActivityItem[];
+};
