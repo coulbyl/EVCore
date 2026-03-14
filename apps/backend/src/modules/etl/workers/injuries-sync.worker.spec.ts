@@ -32,6 +32,21 @@ function buildInjuriesResponse(fixtureId: number) {
   };
 }
 
+const PL_COMPETITION_ROW = {
+  id: 'comp-pl',
+  leagueId: 39,
+  code: 'PL',
+  name: 'Premier League',
+  country: 'England',
+  isActive: true,
+  csvDivisionCode: 'E0',
+  seasonStartMonth: null,
+  activeSeasonsCount: null,
+  includeInBacktest: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 describe('InjuriesSyncWorker', () => {
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
@@ -45,6 +60,9 @@ describe('InjuriesSyncWorker', () => {
 
   const prisma = {
     client: {
+      competition: {
+        findFirst: vi.fn().mockResolvedValue(PL_COMPETITION_ROW),
+      },
       modelRun: {
         findFirst: vi.fn(),
         update: vi.fn().mockResolvedValue({}),
@@ -70,6 +88,7 @@ describe('InjuriesSyncWorker', () => {
     });
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
     config.getOrThrow.mockReturnValue('test-api-key');
+    prisma.client.competition.findFirst.mockResolvedValue(PL_COMPETITION_ROW);
   });
 
   it('stores shadow_injuries in latest model run features', async () => {
@@ -93,8 +112,8 @@ describe('InjuriesSyncWorker', () => {
     });
 
     await worker.process({
-      data: { season: 2025, competitionCode: 'PL' },
-    } as Job<{ season: number; competitionCode: string }>);
+      data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(prisma.client.modelRun.update).toHaveBeenCalledWith({
       where: { id: 'run-1' },
@@ -124,8 +143,8 @@ describe('InjuriesSyncWorker', () => {
     });
 
     await worker.process({
-      data: { season: 2025, competitionCode: 'PL' },
-    } as Job<{ season: number; competitionCode: string }>);
+      data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(prisma.client.modelRun.update).not.toHaveBeenCalled();
   });
@@ -143,20 +162,21 @@ describe('InjuriesSyncWorker', () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 });
 
     await worker.process({
-      data: { season: 2025, competitionCode: 'PL' },
-    } as Job<{ season: number; competitionCode: string }>);
+      data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(prisma.client.modelRun.findFirst).not.toHaveBeenCalled();
   });
 
-  it('throws when competitionCode is unknown', async () => {
+  it('throws when competitionCode is not found in DB', async () => {
+    prisma.client.competition.findFirst.mockResolvedValue(null);
     global.fetch = vi.fn();
 
     await expect(
       worker.process({
-        data: { season: 2025, competitionCode: 'UNKNOWN' },
-      } as Job<{ season: number; competitionCode: string }>),
-    ).rejects.toThrow('Unknown competition code: UNKNOWN');
+        data: { season: 2025, competitionCode: 'UNKNOWN', leagueId: 0 },
+      } as Job<{ season: number; competitionCode: string; leagueId: number }>),
+    ).rejects.toThrow('Competition not found in DB: UNKNOWN');
 
     expect(fetch).not.toHaveBeenCalled();
   });

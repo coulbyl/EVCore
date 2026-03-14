@@ -92,7 +92,7 @@ export const ApiFootballFixtureSchema = z.object({
 export const ApiFootballFixturesResponseSchema = z.object({
   get: z.literal('fixtures'),
   parameters: z.record(z.string(), z.string()),
-  errors: z.array(z.unknown()),
+  errors: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]),
   results: z.number().int().nonnegative(),
   paging: z.object({
     current: z.number().int().positive(),

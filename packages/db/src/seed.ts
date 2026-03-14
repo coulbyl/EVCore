@@ -47,7 +47,7 @@ const COMPETITIONS = [
     code: "CH",
     name: "Championship",
     country: "England",
-    isActive: false,
+    isActive: true,
     csvDivisionCode: "E1",
   },
   {
@@ -55,7 +55,8 @@ const COMPETITIONS = [
     code: "I2",
     name: "Serie B",
     country: "Italy",
-    isActive: false,
+    isActive: true,
+    includeInBacktest: false,
     csvDivisionCode: "I2",
   },
   {
@@ -63,7 +64,8 @@ const COMPETITIONS = [
     code: "SP2",
     name: "Segunda Division",
     country: "Spain",
-    isActive: false,
+    isActive: true,
+    includeInBacktest: false,
     csvDivisionCode: "SP2",
   },
   {
@@ -71,7 +73,8 @@ const COMPETITIONS = [
     code: "D2",
     name: "2. Bundesliga",
     country: "Germany",
-    isActive: false,
+    isActive: true,
+    includeInBacktest: false,
     csvDivisionCode: "D2",
   },
   {
@@ -79,26 +82,25 @@ const COMPETITIONS = [
     code: "F2",
     name: "Ligue 2",
     country: "France",
-    isActive: false,
+    isActive: true,
+    includeInBacktest: false,
     csvDivisionCode: "F2",
   },
 ];
 
 async function seedCompetitions() {
-  const existingCompetitions = await prisma.competition.count();
-
-  if (existingCompetitions > 0) {
-    console.log(
-      `[db:seed] competitions skipped: table already has ${existingCompetitions} row(s)`,
-    );
-    return;
+  for (const competition of COMPETITIONS) {
+    await prisma.competition.upsert({
+      where: { leagueId: competition.leagueId },
+      update: {
+        isActive: competition.isActive,
+        includeInBacktest: competition.includeInBacktest ?? true,
+      },
+      create: competition,
+    });
   }
 
-  const result = await prisma.competition.createMany({
-    data: COMPETITIONS,
-  });
-
-  console.log(`[db:seed] competitions created: ${result.count}`);
+  console.log(`[db:seed] competitions upserted: ${COMPETITIONS.length}`);
 }
 
 async function main() {

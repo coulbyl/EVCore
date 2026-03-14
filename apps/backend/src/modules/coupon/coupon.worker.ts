@@ -1,6 +1,6 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { NotificationService } from '@modules/notification/notification.service';
 import { tomorrowUtc } from '@utils/date.utils';
@@ -8,7 +8,7 @@ import { CouponService } from './coupon.service';
 
 export type CouponJobData = { date?: string; days?: number };
 
-const logger = pino({ name: 'coupon-worker' });
+const logger = createLogger('coupon-worker');
 
 // lockDuration: 5 min — analyzeFixture may take several seconds per fixture.
 @Processor(BULLMQ_QUEUES.BETTING_ENGINE, { lockDuration: 300_000 })

@@ -1,13 +1,9 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { FixtureService } from '../../fixture/fixture.service';
-import {
-  ETL_CONSTANTS,
-  BULLMQ_QUEUES,
-  getCompetitionByCodeOrThrow,
-} from '@config/etl.constants';
+import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
@@ -17,9 +13,13 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { ApiFootballInjuriesResponseSchema } from '../schemas/injuries.schema';
 
-export type InjuriesSyncJobData = { season: number; competitionCode: string };
+export type InjuriesSyncJobData = {
+  season: number;
+  competitionCode: string;
+  leagueId: number;
+};
 
-const logger = pino({ name: 'injuries-sync-worker' });
+const logger = createLogger('injuries-sync-worker');
 
 type ShadowInjuries = {
   home: number;
@@ -41,20 +41,26 @@ export class InjuriesSyncWorker extends WorkerHost {
 
   async process(job: Job<InjuriesSyncJobData>): Promise<void> {
     const { season, competitionCode } = job.data;
-    const competition = getCompetitionByCodeOrThrow(competitionCode);
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info({ competitionCode, season }, 'Starting injuries sync');
 
+    const competitionMeta = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode },
+    });
+    if (!competitionMeta) {
+      throw new Error(`Competition not found in DB: ${competitionCode}`);
+    }
+
     const competitionRecord = await this.fixtureService.upsertCompetition({
-      leagueId: competition.leagueId,
-      name: competition.name,
-      code: competition.code,
-      country: competition.country,
-      isActive: competition.isActive,
-      csvDivisionCode: competition.csvDivisionCode,
-      seasonStartMonth: competition.seasonStartMonth,
-      activeSeasonsCount: competition.activeSeasonsCount,
+      leagueId: competitionMeta.leagueId,
+      name: competitionMeta.name,
+      code: competitionMeta.code,
+      country: competitionMeta.country,
+      isActive: competitionMeta.isActive,
+      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
+      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
+      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
     });
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,

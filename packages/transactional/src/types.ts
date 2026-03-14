@@ -47,3 +47,22 @@ export type XgUnavailableReportProps = {
   unavailableCount: number;
   externalIds: number[];
 };
+
+export type DailyCouponLeg = {
+  homeTeam: string;
+  awayTeam: string;
+  scheduledAt: string;
+  market: string;
+  pick: string;
+  odds: number | null;
+  ev: number;
+  comboMarket: string | null;
+  comboPick: string | null;
+};
+
+export type DailyCouponProps = {
+  couponId: string;
+  date: string;
+  legCount: number;
+  legs: DailyCouponLeg[];
+};

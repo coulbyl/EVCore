@@ -5,11 +5,6 @@ import { BacktestService } from './backtest.service';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
-import type { NotificationService } from '@modules/notification/notification.service';
-
-const notificationMock = {
-  sendBrierScoreAlert: vi.fn().mockResolvedValue(undefined),
-} as unknown as NotificationService;
 
 // Generates N team-stats rows for a given teamId, all dated before 2023-01-01
 // so they pass the cold-start guard (MIN_PRIOR_TEAM_STATS = 5).
@@ -105,11 +100,7 @@ describe('BacktestService', () => {
       }),
     } as unknown as BettingEngineService;
 
-    const service = new BacktestService(
-      prismaMock,
-      bettingMock,
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, bettingMock);
     const report = await service.runBacktest('s1');
 
     expect(report.seasonId).toBe('s1');
@@ -203,11 +194,7 @@ describe('BacktestService', () => {
       }),
     } as unknown as BettingEngineService;
 
-    const service = new BacktestService(
-      prismaMock,
-      bettingMock,
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, bettingMock);
     const report = await service.runBacktest('s1');
 
     expect(report.analyzedCount).toBe(1);
@@ -278,7 +265,16 @@ describe('BacktestService.runAllSeasons', () => {
     const prismaMock = {
       client: {
         season: {
-          findMany: vi.fn().mockResolvedValue([{ id: 's1' }, { id: 's2' }]),
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 's1',
+              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
+            },
+            {
+              id: 's2',
+              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
+            },
+          ]),
         },
         fixture: {
           findMany: vi
@@ -293,11 +289,7 @@ describe('BacktestService.runAllSeasons', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BacktestService(
-      prismaMock,
-      makeBettingMock(),
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, makeBettingMock());
     const report = await service.runAllSeasons();
 
     expect(report.seasons).toHaveLength(2);
@@ -318,11 +310,7 @@ describe('BacktestService.runAllSeasons', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BacktestService(
-      prismaMock,
-      makeBettingMock(),
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, makeBettingMock());
     const report = await service.runAllSeasons();
 
     expect(report.seasons).toHaveLength(0);
@@ -344,11 +332,7 @@ describe('BacktestService.getValidationReport', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BacktestService(
-      prismaMock,
-      makeBettingMock(),
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, makeBettingMock());
     const report = await service.getValidationReport();
 
     expect(report.overallVerdict).toBe('INSUFFICIENT_DATA');
@@ -370,11 +354,7 @@ describe('BacktestService.getValidationReport', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BacktestService(
-      prismaMock,
-      makeBettingMock(),
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, makeBettingMock());
 
     vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
       seasons: [],
@@ -383,6 +363,7 @@ describe('BacktestService.getValidationReport', () => {
       averageBrierScore: new Decimal('0.20'),
       averageCalibrationError: new Decimal('0.03'),
       aggregateRoi: new Decimal('0.05'),
+      byCompetition: [],
       reportGeneratedAt: new Date(),
     });
 
@@ -407,11 +388,7 @@ describe('BacktestService.getValidationReport', () => {
       },
     } as unknown as PrismaService;
 
-    const service = new BacktestService(
-      prismaMock,
-      makeBettingMock(),
-      notificationMock,
-    );
+    const service = new BacktestService(prismaMock, makeBettingMock());
 
     vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
       seasons: [],
@@ -420,6 +397,7 @@ describe('BacktestService.getValidationReport', () => {
       averageBrierScore: new Decimal('0.70'), // above 0.65 threshold → FAIL
       averageCalibrationError: new Decimal('0.03'),
       aggregateRoi: new Decimal('0.05'),
+      byCompetition: [],
       reportGeneratedAt: new Date(),
     });
 

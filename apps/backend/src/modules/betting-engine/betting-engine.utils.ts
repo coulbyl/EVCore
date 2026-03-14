@@ -424,12 +424,13 @@ export const COMBO_WHITELIST: readonly ComboPick[] = [
     market2: Market.BTTS,
     pick2: 'YES',
   },
-  {
-    market1: Market.OVER_UNDER,
-    pick1: 'OVER',
-    market2: Market.BTTS,
-    pick2: 'YES',
-  },
+  // NOTE: {OVER_UNDER/OVER + BTTS/YES} is intentionally excluded.
+  // Over 2.5 and BTTS Yes are near-tautological on the same match: virtually
+  // every Over-2.5 game also satisfies BTTS Yes (except 0-3+ or 3-0+ scores).
+  // The Poisson joint probability correctly captures this near-perfect correlation,
+  // making the combo appear to have massive EV vs the bookmaker's naive product
+  // odds — but the edge is an artifact of the independence assumption in the
+  // bookmaker's pricing, not a genuine model signal.
 ] as const;
 
 // Joint probability over all goal-score combinations (h, a) satisfying both pick conditions.

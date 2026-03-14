@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import {
   type Bet,
   CouponStatus,
@@ -10,7 +10,7 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
 
-const logger = pino({ name: 'notification-service' });
+const logger = createLogger('notification-service');
 
 type SaveNotificationInput = {
   type: NotificationType;
@@ -232,7 +232,15 @@ export class NotificationService {
     id: string;
     date: Date;
     legCount: number;
-    bets: Bet[];
+    bets: (Bet & {
+      modelRun: {
+        fixture: {
+          scheduledAt: Date;
+          homeTeam: { name: string };
+          awayTeam: { name: string };
+        };
+      };
+    })[];
   }): Promise<void> {
     const dateStr = coupon.date.toISOString().slice(0, 10);
     const title = `Daily Coupon — ${dateStr} (${coupon.legCount} leg${coupon.legCount !== 1 ? 's' : ''})`;
@@ -253,6 +261,21 @@ export class NotificationService {
       id: coupon.id,
       date: dateStr,
       legCount: coupon.legCount,
+      legs: coupon.bets.map((b) => ({
+        homeTeam: b.modelRun.fixture.homeTeam.name,
+        awayTeam: b.modelRun.fixture.awayTeam.name,
+        scheduledAt:
+          b.modelRun.fixture.scheduledAt
+            .toISOString()
+            .replace('T', ' ')
+            .slice(0, 16) + ' UTC',
+        market: b.market,
+        pick: b.pick,
+        odds: b.oddsSnapshot !== null ? Number(b.oddsSnapshot) : null,
+        ev: Number(b.ev),
+        comboMarket: b.comboMarket ?? null,
+        comboPick: b.comboPick ?? null,
+      })),
     });
   }
 

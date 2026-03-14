@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import type { TeamStatsInput } from '@modules/betting-engine/betting-engine.types';
 import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import { calculateEV } from '@modules/betting-engine/betting-engine.utils';
-import { NotificationService } from '@modules/notification/notification.service';
-import { RISK_CONSTANTS } from '@modules/risk/risk.constants';
 import {
   brierScoreOneXTwo,
   calibrationError,
@@ -17,6 +15,7 @@ import {
   type BacktestMarketPerformance,
   type BacktestReport,
   type CalibrationPoint,
+  type CompetitionBacktestSummary,
   type MetricResult,
   type OneXTwoPrediction,
   type ValidationReport,
@@ -24,7 +23,7 @@ import {
 } from './backtest.report';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
 
-const logger = pino({ name: 'backtest-service' });
+const logger = createLogger('backtest-service');
 
 type FixtureForBacktest = {
   id: string;
@@ -67,7 +66,6 @@ export class BacktestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
-    private readonly notification: NotificationService,
   ) {}
 
   async runBacktest(seasonId: string): Promise<BacktestReport> {
@@ -79,6 +77,7 @@ export class BacktestService {
         status: FixtureStatus.FINISHED,
         homeScore: { not: null },
         awayScore: { not: null },
+        xgUnavailable: false,
       },
       select: {
         id: true,
@@ -215,21 +214,16 @@ export class BacktestService {
       'Backtest complete',
     );
 
-    if (
-      report.brierScore.greaterThan(RISK_CONSTANTS.BRIER_SCORE_ALERT_THRESHOLD)
-    ) {
-      await this.notification.sendBrierScoreAlert(
-        seasonId,
-        report.brierScore.toNumber(),
-      );
-    }
-
     return report;
   }
 
   async runAllSeasons(): Promise<AllSeasonsBacktestReport> {
     const seasons = await this.prisma.client.season.findMany({
-      select: { id: true },
+      where: { competition: { includeInBacktest: true } },
+      select: {
+        id: true,
+        competition: { select: { id: true, code: true, name: true } },
+      },
     });
 
     logger.info(
@@ -261,20 +255,28 @@ export class BacktestService {
         : new Decimal(0);
 
     // Weighted aggregate ROI: profit_total / stake_total across all seasons.
-    // stake per season = betsPlaced (1 unit per bet), profit_i = roi_i * betsPlaced_i.
-    const totalBets = reports.reduce(
+    // Seasons with fewer than MIN_BETS_FOR_ROI bets are excluded — a single
+    // loss in a 1-bet season produces ROI = -100%, which is noise not signal.
+    const roiReports = reports.filter(
+      (r) =>
+        (r.marketPerformance[0]?.betsPlaced ?? 0) >=
+        BACKTEST_CONSTANTS.MIN_BETS_FOR_ROI,
+    );
+    const totalBets = roiReports.reduce(
       (sum, r) => sum + (r.marketPerformance[0]?.betsPlaced ?? 0),
       0,
     );
     const aggregateRoi =
       totalBets > 0
-        ? reports
+        ? roiReports
             .reduce((sum, r) => {
               const bets = r.marketPerformance[0]?.betsPlaced ?? 0;
               return sum.plus(r.roiSimulated.mul(bets));
             }, new Decimal(0))
             .div(totalBets)
         : new Decimal(0);
+
+    const byCompetition = buildCompetitionBreakdown(seasons, reports);
 
     logger.info(
       {
@@ -284,6 +286,7 @@ export class BacktestService {
         averageBrierScore: averageBrierScore.toNumber(),
         averageCalibrationError: averageCalibrationError.toNumber(),
         aggregateRoi: aggregateRoi.toNumber(),
+        competitionCount: byCompetition.length,
       },
       'All-seasons backtest complete',
     );
@@ -295,6 +298,7 @@ export class BacktestService {
       averageBrierScore,
       averageCalibrationError,
       aggregateRoi,
+      byCompetition,
       reportGeneratedAt: new Date(),
     };
   }
@@ -306,6 +310,7 @@ export class BacktestService {
       averageCalibrationError,
       aggregateRoi,
       totalAnalyzed,
+      byCompetition,
     } = allSeasons;
 
     const insufficient =
@@ -384,6 +389,7 @@ export class BacktestService {
       roi,
       totalAnalyzed,
       overallVerdict,
+      byCompetition,
       reportGeneratedAt: new Date(),
     };
   }
@@ -490,6 +496,81 @@ export class BacktestService {
 
     return latest;
   }
+}
+
+type SeasonWithCompetition = {
+  id: string;
+  competition: { id: string; code: string; name: string };
+};
+
+function buildCompetitionBreakdown(
+  seasons: SeasonWithCompetition[],
+  reports: BacktestReport[],
+): CompetitionBacktestSummary[] {
+  type Entry = {
+    competition: SeasonWithCompetition['competition'];
+    reports: BacktestReport[];
+  };
+  const byId = new Map<string, Entry>();
+
+  for (let i = 0; i < seasons.length; i++) {
+    const season = seasons[i];
+    const report = reports[i];
+    if (!season || !report) continue;
+    const entry = byId.get(season.competition.id) ?? {
+      competition: season.competition,
+      reports: [],
+    };
+    entry.reports.push(report);
+    byId.set(season.competition.id, entry);
+  }
+
+  return Array.from(byId.values()).map(
+    ({ competition, reports: compReports }) => {
+      const analyzed = compReports.reduce((s, r) => s + r.analyzedCount, 0);
+      const avgBrier =
+        compReports.length > 0
+          ? compReports
+              .reduce((s, r) => s.plus(r.brierScore), new Decimal(0))
+              .div(compReports.length)
+          : new Decimal(0);
+      const avgCal =
+        compReports.length > 0
+          ? compReports
+              .reduce((s, r) => s.plus(r.calibrationError), new Decimal(0))
+              .div(compReports.length)
+          : new Decimal(0);
+      const roiCompReports = compReports.filter(
+        (r) =>
+          (r.marketPerformance[0]?.betsPlaced ?? 0) >=
+          BACKTEST_CONSTANTS.MIN_BETS_FOR_ROI,
+      );
+      const totalBets = roiCompReports.reduce(
+        (s, r) => s + (r.marketPerformance[0]?.betsPlaced ?? 0),
+        0,
+      );
+      const roi =
+        totalBets > 0
+          ? roiCompReports
+              .reduce((s, r) => {
+                const bets = r.marketPerformance[0]?.betsPlaced ?? 0;
+                return s.plus(r.roiSimulated.mul(bets));
+              }, new Decimal(0))
+              .div(totalBets)
+          : new Decimal(0);
+
+      return {
+        competitionId: competition.id,
+        competitionCode: competition.code,
+        competitionName: competition.name,
+        seasonCount: compReports.length,
+        totalAnalyzed: analyzed,
+        averageBrierScore: avgBrier,
+        averageCalibrationError: avgCal,
+        aggregateRoi: roi,
+      };
+    },
+  );
 }
 
 function findLatestStatsBeforeFixture(

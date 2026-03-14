@@ -60,19 +60,30 @@ describe('calculateRecentForm', () => {
 });
 
 describe('calculateRollingXg', () => {
-  it('returns zeroes when no xg data exists', () => {
+  it('falls back to goal averages when no xg data exists', () => {
     const fixtures = [
       makeFixture({
         homeTeamId: 'team-a',
         awayTeamId: 'team-b',
+        homeScore: 2,
+        awayScore: 1,
+        homeXg: null,
+        awayXg: null,
+      }),
+      makeFixture({
+        id: 'fixture-2',
+        homeTeamId: 'team-c',
+        awayTeamId: 'team-a',
+        homeScore: 0,
+        awayScore: 3,
         homeXg: null,
         awayXg: null,
       }),
     ];
 
     const { xgFor, xgAgainst } = calculateRollingXg(fixtures, 'team-a');
-    expect(xgFor.toNumber()).toBe(0);
-    expect(xgAgainst.toNumber()).toBe(0);
+    expect(xgFor.toNumber()).toBe(2.5);
+    expect(xgAgainst.toNumber()).toBe(0.5);
   });
 
   it('computes rolling averages from the latest 10 fixtures only', () => {

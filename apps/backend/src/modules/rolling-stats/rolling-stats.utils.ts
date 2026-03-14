@@ -38,7 +38,7 @@ export function calculateRollingXg(
   const lastTen = withXg.slice(-MAX_ROLLING_XG_MATCHES);
 
   if (lastTen.length === 0) {
-    return { xgFor: new Decimal(0), xgAgainst: new Decimal(0) };
+    return calculateRollingGoalsProxy(fixtures, teamId);
   }
 
   const totals = lastTen.reduce(
@@ -54,6 +54,43 @@ export function calculateRollingXg(
       return {
         for: acc.for.plus(xgFor),
         against: acc.against.plus(xgAgainst),
+      };
+    },
+    { for: new Decimal(0), against: new Decimal(0) },
+  );
+
+  return {
+    xgFor: totals.for.div(lastTen.length),
+    xgAgainst: totals.against.div(lastTen.length),
+  };
+}
+
+function calculateRollingGoalsProxy(
+  fixtures: Fixture[],
+  teamId: string,
+): { xgFor: Decimal; xgAgainst: Decimal } {
+  const withScore = fixtures.filter(
+    (fixture) => fixture.homeScore !== null && fixture.awayScore !== null,
+  );
+  const lastTen = withScore.slice(-MAX_ROLLING_XG_MATCHES);
+
+  if (lastTen.length === 0) {
+    return { xgFor: new Decimal(0), xgAgainst: new Decimal(0) };
+  }
+
+  const totals = lastTen.reduce(
+    (acc, fixture) => {
+      const isHome = fixture.homeTeamId === teamId;
+      const goalsFor = new Decimal(
+        isHome ? (fixture.homeScore ?? 0) : (fixture.awayScore ?? 0),
+      );
+      const goalsAgainst = new Decimal(
+        isHome ? (fixture.awayScore ?? 0) : (fixture.homeScore ?? 0),
+      );
+
+      return {
+        for: acc.for.plus(goalsFor),
+        against: acc.against.plus(goalsAgainst),
       };
     },
     { for: new Decimal(0), against: new Decimal(0) },

@@ -2,9 +2,10 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import {
   renderBrierAlert,
+  renderDailyCoupon,
   renderEtlFailure,
   renderMarketSuspension,
   renderRoiAlert,
@@ -12,6 +13,7 @@ import {
   renderWeeklyReport,
   renderXgUnavailableReport,
   type BrierAlertProps,
+  type DailyCouponLeg,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type RoiAlertProps,
@@ -20,7 +22,7 @@ import {
   type XgUnavailableReportProps,
 } from '@evcore/transactional';
 
-const logger = pino({ name: 'mail-service' });
+const logger = createLogger('mail-service');
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -110,11 +112,15 @@ export class MailService implements OnModuleInit {
     id: string;
     date: string;
     legCount: number;
+    legs: DailyCouponLeg[];
   }): Promise<void> {
-    // TODO: consider rendering a prettier email with more details about the coupon and picks
-    const subject = `Daily Coupon — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''})`;
-    const html = `<p>Your daily coupon for <strong>${props.date}</strong> has been generated with <strong>${props.legCount} leg${props.legCount !== 1 ? 's' : ''}</strong>.</p><p>Coupon ID: ${props.id}</p>`;
-    const text = `Daily Coupon — ${props.date}: ${props.legCount} leg(s) selected. ID: ${props.id}`;
+    const subject = `Coupon EVCore — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''})`;
+    const { html, text } = await renderDailyCoupon({
+      couponId: props.id,
+      date: props.date,
+      legCount: props.legCount,
+      legs: props.legs,
+    });
     await this.send(subject, html, text);
   }
 

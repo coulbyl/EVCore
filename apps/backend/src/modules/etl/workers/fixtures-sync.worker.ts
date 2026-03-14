@@ -6,7 +6,7 @@ import {
 } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { FixtureStatus } from '@evcore/db';
 import {
   ApiFootballFixturesResponseSchema,
@@ -21,9 +21,9 @@ import {
   ETL_CONSTANTS,
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
-  getCompetitionByCodeOrThrow,
 } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
+import { PrismaService } from '@/prisma.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
   seasonFallbackEndDate,
@@ -32,9 +32,13 @@ import {
 } from '@utils/date.utils';
 import type { InjuriesSyncJobData } from './injuries-sync.worker';
 
-export type FixturesSyncJobData = { season: number; competitionCode: string };
+export type FixturesSyncJobData = {
+  season: number;
+  competitionCode: string;
+  leagueId: number;
+};
 
-const logger = pino({ name: 'fixtures-sync-worker' });
+const logger = createLogger('fixtures-sync-worker');
 
 @Processor(BULLMQ_QUEUES.FIXTURES_SYNC)
 export class FixturesSyncWorker extends WorkerHost {
@@ -43,6 +47,7 @@ export class FixturesSyncWorker extends WorkerHost {
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
+    private readonly prisma: PrismaService,
     @InjectQueue(BULLMQ_QUEUES.INJURIES_SYNC)
     private readonly injuriesQueue: Queue<InjuriesSyncJobData>,
   ) {
@@ -50,10 +55,9 @@ export class FixturesSyncWorker extends WorkerHost {
   }
 
   async process(job: Job<FixturesSyncJobData>): Promise<void> {
-    const { season, competitionCode } = job.data;
+    const { season, competitionCode, leagueId: leagueIdNum } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const competition = getCompetitionByCodeOrThrow(competitionCode);
-    const leagueId = String(competition.leagueId);
+    const leagueId = String(leagueIdNum);
     const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
 
     logger.info({ competitionCode, season }, 'Starting fixtures sync');
@@ -80,15 +84,22 @@ export class FixturesSyncWorker extends WorkerHost {
 
     const { data } = parsed;
 
+    const competitionMeta = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+    });
+    if (!competitionMeta) {
+      throw new Error(`Competition not found in DB: ${competitionCode}`);
+    }
+
     const competitionRecord = await this.fixtureService.upsertCompetition({
-      leagueId: competition.leagueId,
-      name: competition.name,
-      code: competition.code,
-      country: competition.country,
-      isActive: competition.isActive,
-      csvDivisionCode: competition.csvDivisionCode,
-      seasonStartMonth: competition.seasonStartMonth,
-      activeSeasonsCount: competition.activeSeasonsCount,
+      leagueId: competitionMeta.leagueId,
+      name: competitionMeta.name,
+      code: competitionMeta.code,
+      country: competitionMeta.country,
+      isActive: competitionMeta.isActive,
+      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
+      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
+      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
     });
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
@@ -120,7 +131,11 @@ export class FixturesSyncWorker extends WorkerHost {
 
     await this.injuriesQueue.add(
       `injuries-sync-${competitionCode}-${season}`,
-      { competitionCode, season } satisfies InjuriesSyncJobData,
+      {
+        competitionCode,
+        season,
+        leagueId: leagueIdNum,
+      } satisfies InjuriesSyncJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   }

@@ -82,6 +82,7 @@ model Competition {
   name               String
   country            String
   isActive           Boolean
+  includeInBacktest  Boolean  @default(true)
   csvDivisionCode    String?
   seasonStartMonth   Int?
   activeSeasonsCount Int?
@@ -242,7 +243,7 @@ model DailyCoupon {
   bets      Bet[]
   createdAt DateTime     @default(now())
 
-  @@unique([date])
+  @@index([date])
   @@map("daily_coupon")
 }
 

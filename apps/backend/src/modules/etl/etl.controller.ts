@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -119,6 +120,17 @@ export class EtlController {
     return { status: 'ok' as const };
   }
 
+  @Post('sync/fixtures/:competition')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Trigger fixtures sync for one league' })
+  async triggerFixturesSyncForLeague(
+    @Param('competition') competition: string,
+  ) {
+    const code = this.resolveCode(competition);
+    await this.etlService.triggerFixturesSyncForLeague(code);
+    return { status: 'ok' as const, competitionCode: code };
+  }
+
   @Post('sync/results')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -131,6 +143,15 @@ export class EtlController {
   async triggerResultsSync() {
     await this.etlService.triggerResultsSync();
     return { status: 'ok' as const };
+  }
+
+  @Post('sync/results/:competition')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Trigger results sync for one league' })
+  async triggerResultsSyncForLeague(@Param('competition') competition: string) {
+    const code = this.resolveCode(competition);
+    await this.etlService.triggerResultsSyncForLeague(code);
+    return { status: 'ok' as const, competitionCode: code };
   }
 
   @Post('sync/stats')
@@ -149,6 +170,15 @@ export class EtlController {
     return { status: 'ok' as const };
   }
 
+  @Post('sync/stats/:competition')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Trigger stats sync for one league' })
+  async triggerStatsSyncForLeague(@Param('competition') competition: string) {
+    const code = this.resolveCode(competition);
+    await this.etlService.triggerStatsSyncForLeague(code);
+    return { status: 'ok' as const, competitionCode: code };
+  }
+
   @Post('sync/injuries')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -162,6 +192,17 @@ export class EtlController {
   async triggerInjuriesSync() {
     await this.etlService.triggerInjuriesSync();
     return { status: 'ok' as const };
+  }
+
+  @Post('sync/injuries/:competition')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Trigger injuries sync for one league' })
+  async triggerInjuriesSyncForLeague(
+    @Param('competition') competition: string,
+  ) {
+    const code = this.resolveCode(competition);
+    await this.etlService.triggerInjuriesSyncForLeague(code);
+    return { status: 'ok' as const, competitionCode: code };
   }
 
   @Post('sync/odds-csv')
@@ -213,5 +254,9 @@ export class EtlController {
   ) {
     await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
     return { status: 'ok' as const };
+  }
+
+  private resolveCode(competition: string): string {
+    return competition.toUpperCase();
   }
 }

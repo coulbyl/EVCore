@@ -7,150 +7,9 @@ import { activeSeasons } from '@utils/date.utils';
 export const DEFAULT_SEASON_START_MONTH = 7; // August (0-indexed)
 export const DEFAULT_ACTIVE_SEASONS_COUNT = 3;
 
-export type CompetitionConfig = {
-  leagueId: number;
-  code: string;
-  name: string;
-  country: string;
-  isActive: boolean;
-  // football-data.co.uk division code used for odds CSV import (e.g. E0, I1, SP1, D1)
-  csvDivisionCode?: string;
-  seasonStartMonth?: number;
-  activeSeasonsCount?: number;
-};
-
-export const COMPETITIONS = {
-  // Wave 1 (active now)
-  PL: {
-    leagueId: 39,
-    code: 'PL',
-    name: 'Premier League',
-    country: 'England',
-    isActive: true,
-    csvDivisionCode: 'E0',
-  },
-  SA: {
-    leagueId: 135,
-    code: 'SA',
-    name: 'Serie A',
-    country: 'Italy',
-    isActive: true,
-    csvDivisionCode: 'I1',
-  },
-  LL: {
-    leagueId: 140,
-    code: 'LL',
-    name: 'La Liga',
-    country: 'Spain',
-    isActive: true,
-    csvDivisionCode: 'SP1',
-  },
-  BL1: {
-    leagueId: 78,
-    code: 'BL1',
-    name: 'Bundesliga',
-    country: 'Germany',
-    isActive: true,
-    csvDivisionCode: 'D1',
-  },
-  L1: {
-    leagueId: 61,
-    code: 'L1',
-    name: 'Ligue 1',
-    country: 'France',
-    isActive: true,
-    csvDivisionCode: 'F1',
-  },
-
-  // Wave 2 (enable after ETL stability checks)
-  CH: {
-    leagueId: 40,
-    code: 'CH',
-    name: 'Championship',
-    country: 'England',
-    isActive: false,
-    csvDivisionCode: 'E1',
-  },
-  I2: {
-    leagueId: 136,
-    code: 'I2',
-    name: 'Serie B',
-    country: 'Italy',
-    isActive: false,
-    csvDivisionCode: 'I2',
-  },
-  SP2: {
-    leagueId: 141,
-    code: 'SP2',
-    name: 'Segunda Division',
-    country: 'Spain',
-    isActive: false,
-    csvDivisionCode: 'SP2',
-  },
-
-  // Wave 3 (enable after wave 2 validation)
-  D2: {
-    leagueId: 79,
-    code: 'D2',
-    name: '2. Bundesliga',
-    country: 'Germany',
-    isActive: false,
-    csvDivisionCode: 'D2',
-  },
-  F2: {
-    leagueId: 62,
-    code: 'F2',
-    name: 'Ligue 2',
-    country: 'France',
-    isActive: false,
-    csvDivisionCode: 'F2',
-  },
-} as const satisfies Record<string, CompetitionConfig>;
-
-export const ACTIVE_COMPETITIONS: readonly CompetitionConfig[] = Object.values(
-  COMPETITIONS,
-).filter((competition) => competition.isActive);
-
-if (ACTIVE_COMPETITIONS.length === 0) {
-  throw new Error(
-    'No active competition configured. Set COMPETITIONS.<code>.isActive = true.',
-  );
-}
-
-const COMPETITIONS_BY_CODE: Readonly<Record<string, CompetitionConfig>> =
-  Object.fromEntries(
-    Object.values(COMPETITIONS).map((competition) => [
-      competition.code,
-      competition,
-    ]),
-  );
-
-export function getCompetitionByCodeOrThrow(code: string): CompetitionConfig {
-  const competition = COMPETITIONS_BY_CODE[code];
-  if (!competition) {
-    throw new Error(`Unknown competition code: ${code}`);
-  }
-  return competition;
-}
-
-export function getCompetitionSeasons(
-  competition: CompetitionConfig,
-  now: Date = new Date(),
-): readonly number[] {
-  return activeSeasons(
-    competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-    competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
-    now,
-  );
-}
-
-export type ActiveCompetitionPlan = {
-  competition: CompetitionConfig;
-  seasons: readonly number[];
-};
-
 export type ApiFootballDailyCallsEstimateInput = {
-  activeCompetitionPlans: readonly ActiveCompetitionPlan[];
+  leagueCount: number;
+  seasonJobCount: number;
   avgScheduledFixturesPerLeaguePerDay: number;
   avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
 };
@@ -166,23 +25,10 @@ export type ApiFootballDailyCallsEstimate = {
   totalCalls: number;
 };
 
-export function getActiveCompetitionPlans(
-  now: Date = new Date(),
-): readonly ActiveCompetitionPlan[] {
-  return ACTIVE_COMPETITIONS.map((competition) => ({
-    competition,
-    seasons: getCompetitionSeasons(competition, now),
-  }));
-}
-
 export function estimateApiFootballDailyCalls(
   input: ApiFootballDailyCallsEstimateInput,
 ): ApiFootballDailyCallsEstimate {
-  const leagueCount = input.activeCompetitionPlans.length;
-  const seasonJobCount = input.activeCompetitionPlans.reduce(
-    (sum, plan) => sum + plan.seasons.length,
-    0,
-  );
+  const { leagueCount, seasonJobCount } = input;
 
   const avgScheduled = Math.max(
     0,
@@ -219,17 +65,6 @@ export function estimateApiFootballDailyCalls(
     oddsLiveSyncCalls,
     totalCalls,
   };
-}
-
-export function getActiveCsvCompetitions(): readonly (CompetitionConfig & {
-  csvDivisionCode: string;
-})[] {
-  return ACTIVE_COMPETITIONS.filter(
-    (
-      competition,
-    ): competition is CompetitionConfig & { csvDivisionCode: string } =>
-      competition.csvDivisionCode !== undefined,
-  );
 }
 
 export const ETL_CONSTANTS = {

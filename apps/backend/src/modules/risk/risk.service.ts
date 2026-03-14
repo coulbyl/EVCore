@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Market } from '@evcore/db';
 import Decimal from 'decimal.js';
-import pino from 'pino';
+import { createLogger } from '@utils/logger';
 import { PrismaService } from '@/prisma.service';
 import {
   NotificationService,
@@ -9,7 +9,7 @@ import {
 } from '@modules/notification/notification.service';
 import { RISK_CONSTANTS } from './risk.constants';
 
-const logger = pino({ name: 'risk-service' });
+const logger = createLogger('risk-service');
 
 export type RoiCheckResult = {
   market: Market;

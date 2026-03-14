@@ -28,3 +28,14 @@ pnpm --filter backend typecheck
 pnpm --filter backend test
 pnpm --filter backend test:e2e
 ```
+
+## Données xG
+
+- `stats-sync` marque maintenant les fixtures `xG unavailable` quand l'API renvoie `expected_goals: null`.
+- Le calcul `rolling-stats` bascule sur un proxy par buts quand la couverture xG historique manque.
+- Pour nettoyer les faux `0/0` historiques côté DB, utiliser:
+
+```bash
+pnpm --filter @evcore/db db:reset-zero-xg --codes=I2,F2,SP2,D2
+pnpm --filter @evcore/db db:reset-zero-xg --apply --codes=I2,F2,SP2,D2
+```
