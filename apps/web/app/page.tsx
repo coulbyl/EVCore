@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Badge,
   Button,
@@ -14,7 +15,34 @@ import { FixtureDetailPanel } from "../components/fixture-detail-panel";
 import { OpportunitiesTable } from "../components/opportunities-table";
 import { RecentCouponsCard } from "../components/recent-coupons-card";
 import { useDashboardSummary } from "../hooks/use-dashboard-summary";
-import type { DashboardSummary, KpiDelta } from "../types/dashboard";
+import type {
+  DashboardSummary,
+  FixturePanel,
+  KpiDelta,
+  OpportunityRow,
+} from "../types/dashboard";
+
+function rowToFixturePanel(row: OpportunityRow): FixturePanel {
+  return {
+    fixture: row.fixture,
+    competition: row.competition,
+    startTime: row.kickoff,
+    market: row.market,
+    pick: row.pick,
+    modelConfidence:
+      "Sélection calculée à partir des dernières exécutions du modèle.",
+    notes: [
+      `score qualité ${row.quality}`,
+      `déterministe ${row.deterministic}`,
+    ],
+    metrics: [
+      { label: "EV", value: row.ev, tone: "accent" },
+      { label: "Qualité", value: row.quality, tone: "success" },
+      { label: "Déterministe", value: row.deterministic, tone: "warning" },
+      { label: "Cotes", value: row.odds, tone: "neutral" },
+    ],
+  };
+}
 
 function renderKpiDelta(delta: KpiDelta) {
   if (typeof delta === "object") {
@@ -137,10 +165,14 @@ export default function Home() {
     dashboardKpis: kpis,
     topOpportunities: opportunities,
     couponSnapshots: coupons,
-    selectedFixture: fixture,
+    selectedFixture: apiFixture,
     workerStatuses: workers,
     activeAlerts: alerts,
   } = data ?? EMPTY_SUMMARY;
+
+  const [selectedRow, setSelectedRow] = useState<OpportunityRow | null>(null);
+  const fixture =
+    selectedRow !== null ? rowToFixturePanel(selectedRow) : apiFixture;
 
   return (
     <Page className="flex h-full flex-col">
@@ -188,7 +220,11 @@ export default function Home() {
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.72fr)_minmax(330px,0.88fr)]">
             <section className="space-y-5">
-              <OpportunitiesTable rows={opportunities} />
+              <OpportunitiesTable
+                rows={opportunities}
+                selectedId={selectedRow?.id ?? null}
+                onSelect={setSelectedRow}
+              />
               <RecentCouponsCard snapshots={coupons} />
             </section>
 

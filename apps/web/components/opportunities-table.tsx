@@ -1,7 +1,15 @@
 import { Badge, Code, SectionHeader } from "@evcore/ui";
 import type { OpportunityRow } from "../types/dashboard";
 
-export function OpportunitiesTable({ rows }: { rows: OpportunityRow[] }) {
+export function OpportunitiesTable({
+  rows,
+  selectedId,
+  onSelect,
+}: {
+  rows: OpportunityRow[];
+  selectedId: string | null;
+  onSelect: (row: OpportunityRow) => void;
+}) {
   return (
     <div className="rounded-[1.8rem] border border-border bg-panel-strong p-6 ev-shell-shadow">
       <SectionHeader
@@ -23,7 +31,11 @@ export function OpportunitiesTable({ rows }: { rows: OpportunityRow[] }) {
           </thead>
           <tbody className="divide-y divide-border bg-white">
             {rows.map((row) => (
-              <tr key={row.id} className="transition-colors hover:bg-[#f5f7fb]">
+              <tr
+                key={row.id}
+                onClick={() => onSelect(row)}
+                className={`cursor-pointer transition-colors ${selectedId === row.id ? "bg-accent/8 ring-1 ring-inset ring-accent/20" : "hover:bg-[#f5f7fb]"}`}
+              >
                 <td className="px-5 py-4.5">
                   <div className="font-medium text-slate-700">
                     {row.fixture}
