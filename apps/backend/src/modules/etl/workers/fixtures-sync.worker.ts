@@ -33,6 +33,7 @@ import {
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
 import type { LeagueSyncJobData } from './league-sync.worker';
+import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 
 export type FixturesSyncJobData = {
   season: number;
@@ -50,6 +51,7 @@ export class FixturesSyncWorker {
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly rollingStatsService: RollingStatsService,
     @InjectQueue(BULLMQ_QUEUES.LEAGUE_SYNC)
     private readonly leagueSyncQueue: Queue<LeagueSyncJobData>,
   ) {}
@@ -122,19 +124,29 @@ export class FixturesSyncWorker {
       'Upserting fixtures',
     );
 
+    let rollingStatsRefreshNeeded = false;
+
     for (const item of data.response) {
       const fixture = mapApiFootballFixture(item);
-      await this.fixtureService.upsertFixtureChain({
+      const result = await this.fixtureService.upsertFixtureChain({
         competitionId: competitionRecord.id,
         seasonId: seasonRecord.id,
         fixture,
       });
+
+      if (result.affectsRollingStats) {
+        rollingStatsRefreshNeeded = true;
+      }
     }
 
     logger.info(
       { season, fixtureCount: data.response.length },
       'Fixtures sync complete',
     );
+
+    if (rollingStatsRefreshNeeded) {
+      await this.rollingStatsService.refreshSeason(seasonRecord.id);
+    }
 
     await this.leagueSyncQueue.add(
       `injuries-sync-${competitionCode}-${season}`,

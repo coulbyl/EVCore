@@ -56,3 +56,90 @@ describe('FixtureRepository scheduled fixture queries', () => {
     });
   });
 });
+
+describe('FixtureRepository.upsertFixture', () => {
+  const findUnique = vi.fn();
+  const upsert = vi.fn();
+  const transaction = vi.fn();
+
+  const prisma = {
+    client: {
+      fixture: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      $transaction: transaction,
+    },
+  } as unknown as PrismaService;
+
+  const repository = new FixtureRepository(prisma);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    transaction.mockImplementation(async (callback: (tx: any) => unknown) =>
+      callback({
+        fixture: {
+          findUnique,
+          upsert,
+        },
+      }),
+    );
+  });
+
+  it('marks a newly finished fixture as affecting rolling-stats', async () => {
+    findUnique.mockResolvedValue(null);
+    upsert.mockResolvedValue({ id: 'fixture-id' });
+
+    const result = await repository.upsertFixture({
+      externalId: 123,
+      seasonId: 'season-id',
+      homeTeamId: 'home-id',
+      awayTeamId: 'away-id',
+      matchday: 1,
+      scheduledAt: new Date('2024-08-05T19:00:00.000Z'),
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 1,
+      homeHtScore: 1,
+      awayHtScore: 0,
+    });
+
+    expect(result).toEqual({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
+  });
+
+  it('does not flag unchanged scheduled fixtures as affecting rolling-stats', async () => {
+    findUnique.mockResolvedValue({
+      id: 'fixture-id',
+      scheduledAt: new Date('2024-08-05T19:00:00.000Z'),
+      status: 'SCHEDULED',
+      homeScore: null,
+      awayScore: null,
+      homeHtScore: null,
+      awayHtScore: null,
+    });
+    upsert.mockResolvedValue({ id: 'fixture-id' });
+
+    const result = await repository.upsertFixture({
+      externalId: 123,
+      seasonId: 'season-id',
+      homeTeamId: 'home-id',
+      awayTeamId: 'away-id',
+      matchday: 1,
+      scheduledAt: new Date('2024-08-05T19:00:00.000Z'),
+      status: 'SCHEDULED',
+      homeScore: null,
+      awayScore: null,
+      homeHtScore: null,
+      awayHtScore: null,
+    });
+
+    expect(result).toEqual({
+      id: 'fixture-id',
+      changed: false,
+      affectsRollingStats: false,
+    });
+  });
+});

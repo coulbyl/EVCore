@@ -54,6 +54,12 @@ type UpsertFixtureInput = {
   awayHtScore?: number | null;
 };
 
+export type UpsertFixtureResult = {
+  id: string;
+  changed: boolean;
+  affectsRollingStats: boolean;
+};
+
 type UpdateScoresInput = {
   externalId: number;
   homeScore: number;
@@ -157,20 +163,42 @@ export class FixtureRepository {
     });
   }
 
-  upsertFixture(data: UpsertFixtureInput): Promise<{ id: string }> {
-    return this.prisma.client.fixture.upsert({
-      where: { externalId: data.externalId },
-      create: data,
-      update: {
-        matchday: data.matchday,
-        scheduledAt: data.scheduledAt,
-        status: data.status,
-        homeScore: data.homeScore,
-        awayScore: data.awayScore,
-        homeHtScore: data.homeHtScore,
-        awayHtScore: data.awayHtScore,
-      },
-      select: { id: true },
+  async upsertFixture(data: UpsertFixtureInput): Promise<UpsertFixtureResult> {
+    return this.prisma.client.$transaction(async (tx) => {
+      const existing = await tx.fixture.findUnique({
+        where: { externalId: data.externalId },
+        select: {
+          id: true,
+          scheduledAt: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          homeHtScore: true,
+          awayHtScore: true,
+        },
+      });
+
+      const saved = await tx.fixture.upsert({
+        where: { externalId: data.externalId },
+        create: data,
+        update: {
+          matchday: data.matchday,
+          scheduledAt: data.scheduledAt,
+          status: data.status,
+          homeScore: data.homeScore,
+          awayScore: data.awayScore,
+          homeHtScore: data.homeHtScore,
+          awayHtScore: data.awayHtScore,
+        },
+        select: { id: true },
+      });
+
+      const changed = hasFixtureStateChanged(existing, data);
+      return {
+        id: saved.id,
+        changed,
+        affectsRollingStats: fixtureStateAffectsRollingStats(existing, data),
+      };
     });
   }
 
@@ -519,6 +547,53 @@ export class FixtureRepository {
       ) ?? null
     );
   }
+}
+
+function hasFixtureStateChanged(
+  existing: {
+    scheduledAt: Date;
+    status: FixtureStatus;
+    homeScore: number | null;
+    awayScore: number | null;
+    homeHtScore: number | null;
+    awayHtScore: number | null;
+  } | null,
+  next: UpsertFixtureInput,
+): boolean {
+  if (!existing) {
+    return true;
+  }
+
+  return (
+    existing.scheduledAt.getTime() !== next.scheduledAt.getTime() ||
+    existing.status !== next.status ||
+    existing.homeScore !== next.homeScore ||
+    existing.awayScore !== next.awayScore ||
+    existing.homeHtScore !== next.homeHtScore ||
+    existing.awayHtScore !== next.awayHtScore
+  );
+}
+
+function fixtureStateAffectsRollingStats(
+  existing: {
+    scheduledAt: Date;
+    status: FixtureStatus;
+    homeScore: number | null;
+    awayScore: number | null;
+    homeHtScore: number | null;
+    awayHtScore: number | null;
+  } | null,
+  next: UpsertFixtureInput,
+): boolean {
+  if (next.status !== 'FINISHED') {
+    return false;
+  }
+
+  if (!existing) {
+    return true;
+  }
+
+  return hasFixtureStateChanged(existing, next);
 }
 
 function normalizeTeamName(name: string): string {

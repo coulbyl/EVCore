@@ -22,6 +22,7 @@ type GlobalSyncType =
   | 'odds-retention';
 
 type SyncBody = OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto;
+type RollingStatsSyncBody = { mode?: 'refresh' | 'rebuild' };
 type GlobalSyncHandler = (service: EtlService, body: SyncBody) => Promise<void>;
 type LeagueSyncHandler = (
   service: EtlService,
@@ -183,6 +184,46 @@ export class EtlController {
     return this.okForLeague(competitionCode, (code) =>
       this.triggerLeagueSync(type, code),
     );
+  }
+
+  @Post('sync/rolling-stats/:competitionCode/:season')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger rolling-stats season run',
+    description:
+      'Runs rolling-stats manually for one competition season. Default mode is refresh ' +
+      '(incremental/idempotent). Use `mode: "rebuild"` only for forced reconstruction.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string', enum: ['refresh', 'rebuild'] },
+      },
+    },
+    required: false,
+  })
+  async triggerRollingStatsSeason(
+    @Param('competitionCode') competitionCode: string,
+    @Param('season') season: string,
+    @Body() body: RollingStatsSyncBody = {},
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const year = Number.parseInt(season, 10);
+
+    if (Number.isNaN(year) || year < 1900 || year > 2100) {
+      throw new BadRequestException('season must be a valid year (e.g. 2021)');
+    }
+
+    const mode = body.mode ?? 'refresh';
+    if (mode !== 'refresh' && mode !== 'rebuild') {
+      throw new BadRequestException(
+        'mode must be either "refresh" or "rebuild"',
+      );
+    }
+
+    await this.etlService.triggerRollingStatsSeason(code, year, mode);
+    return { status: 'ok' as const, competitionCode: code, season: year, mode };
   }
 
   private resolveCode(competition: string): string {

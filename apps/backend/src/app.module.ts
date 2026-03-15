@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
-import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
 import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
 import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
@@ -28,7 +27,6 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     }),
     PrismaModule,
     EtlModule,
-    RollingStatsModule,
     BettingEngineModule,
     BacktestModule,
     NotificationModule,

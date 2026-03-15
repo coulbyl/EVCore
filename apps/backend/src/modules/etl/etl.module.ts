@@ -6,6 +6,7 @@ import { BettingEngineModule } from '../betting-engine/betting-engine.module';
 import { CouponModule } from '../coupon/coupon.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
+import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
 import { LeagueSyncWorker } from './workers/league-sync.worker';
@@ -31,6 +32,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
     CouponModule,
     FixtureModule,
     NotificationModule,
+    RollingStatsModule,
   ],
   controllers: [EtlController],
   providers: [

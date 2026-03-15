@@ -17,6 +17,7 @@ describe('EtlController', () => {
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
       triggerOddsLiveSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
+      triggerRollingStatsSeason: vi.fn().mockResolvedValue(undefined),
       ...overrides,
     } as unknown as EtlService;
   }
@@ -91,6 +92,54 @@ describe('EtlController', () => {
 
     await expect(
       controller.triggerSyncForCompetition('settlement', 'PL'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('triggers rolling-stats refresh via ETL and normalizes the competition code', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerRollingStatsSeason('pl', '2024'),
+    ).resolves.toEqual({
+      status: 'ok',
+      competitionCode: 'PL',
+      season: 2024,
+      mode: 'refresh',
+    });
+    expect(service.triggerRollingStatsSeason).toHaveBeenCalledWith(
+      'PL',
+      2024,
+      'refresh',
+    );
+  });
+
+  it('triggers rolling-stats rebuild via ETL', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerRollingStatsSeason('pl', '2024', { mode: 'rebuild' }),
+    ).resolves.toEqual({
+      status: 'ok',
+      competitionCode: 'PL',
+      season: 2024,
+      mode: 'rebuild',
+    });
+    expect(service.triggerRollingStatsSeason).toHaveBeenCalledWith(
+      'PL',
+      2024,
+      'rebuild',
+    );
+  });
+
+  it('rejects invalid rolling-stats mode', async () => {
+    const controller = new EtlController(makeService());
+
+    await expect(
+      controller.triggerRollingStatsSeason('PL', '2024', {
+        mode: 'invalid' as 'refresh',
+      }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

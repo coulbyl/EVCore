@@ -42,7 +42,11 @@ describe('FixtureService.upsertFixtureChain', () => {
     fixtureRepository.upsertTeam
       .mockResolvedValueOnce({ id: 'team-home-id' })
       .mockResolvedValueOnce({ id: 'team-away-id' });
-    fixtureRepository.upsertFixture.mockResolvedValue({ id: 'fixture-id' });
+    fixtureRepository.upsertFixture.mockResolvedValue({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: false,
+    });
   });
 
   it.each(['SCHEDULED', 'FINISHED', 'POSTPONED', 'CANCELLED'] as const)(
@@ -131,5 +135,30 @@ describe('FixtureService.upsertFixtureChain', () => {
         awayHtScore: null,
       }),
     );
+  });
+
+  it('returns repository change metadata to the caller', async () => {
+    const fixture = buildFixture({
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 1,
+    });
+    fixtureRepository.upsertFixture.mockResolvedValueOnce({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
+
+    const result = await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(result).toEqual({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
   });
 });

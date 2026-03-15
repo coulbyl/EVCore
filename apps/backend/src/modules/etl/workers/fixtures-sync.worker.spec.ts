@@ -6,6 +6,7 @@ import type { PrismaService } from '@/prisma.service';
 import type { Queue } from 'bullmq';
 import { FixturesSyncWorker } from './fixtures-sync.worker';
 import type { LeagueSyncJobData } from './league-sync.worker';
+import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 
 function buildFixturesResponse(leagueId: number, season: number) {
   return {
@@ -67,6 +68,20 @@ function buildFixturesResponse(leagueId: number, season: number) {
   };
 }
 
+function buildFinishedFixturesResponse(leagueId: number, season: number) {
+  const response = buildFixturesResponse(leagueId, season) as any;
+  response.response[0].fixture.status = {
+    long: 'Match Finished',
+    short: 'FT',
+    elapsed: 90,
+    extra: null,
+  };
+  response.response[0].goals = { home: 2, away: 1 };
+  response.response[0].score.halftime = { home: 1, away: 1 };
+  response.response[0].score.fulltime = { home: 2, away: 1 };
+  return response;
+}
+
 const SA_COMPETITION_ROW = {
   id: 'comp-sa',
   leagueId: 135,
@@ -88,8 +103,24 @@ describe('FixturesSyncWorker', () => {
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
-    upsertFixtureChain: vi.fn().mockResolvedValue({ id: 'fixture-id' }),
+    upsertFixtureChain: vi.fn().mockResolvedValue({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: false,
+    }),
   } satisfies Partial<FixtureService>;
+
+  const rollingStatsService = {
+    refreshSeason: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 1,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+  } satisfies Partial<RollingStatsService>;
 
   const config = {
     getOrThrow: vi.fn().mockReturnValue('test-api-key'),
@@ -107,6 +138,7 @@ describe('FixturesSyncWorker', () => {
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
     prisma as unknown as PrismaService,
+    rollingStatsService as unknown as RollingStatsService,
     {
       add: vi.fn().mockResolvedValue({}),
     } as unknown as Queue<LeagueSyncJobData>,
@@ -120,7 +152,20 @@ describe('FixturesSyncWorker', () => {
       id: 'competition-id',
     });
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
-    fixtureService.upsertFixtureChain.mockResolvedValue({ id: 'fixture-id' });
+    fixtureService.upsertFixtureChain.mockResolvedValue({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: false,
+    });
+    rollingStatsService.refreshSeason.mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 1,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    });
     config.getOrThrow.mockReturnValue('test-api-key');
     prisma.client.competition.findUnique.mockResolvedValue(SA_COMPETITION_ROW);
   });
@@ -138,6 +183,7 @@ describe('FixturesSyncWorker', () => {
       fixtureService as unknown as FixtureService,
       config as unknown as ConfigService,
       prisma as unknown as PrismaService,
+      rollingStatsService as unknown as RollingStatsService,
       injuriesQueue,
     );
 
@@ -161,6 +207,7 @@ describe('FixturesSyncWorker', () => {
       },
       expect.any(Object),
     );
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('uses leagueId from job data to build API URL and upserts competition metadata', async () => {
@@ -194,6 +241,7 @@ describe('FixturesSyncWorker', () => {
       }),
     );
     expect(fixtureService.upsertFixtureChain).toHaveBeenCalledTimes(1);
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('throws when API responds with non-ok status', async () => {
@@ -234,6 +282,7 @@ describe('FixturesSyncWorker', () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(fixtureService.upsertFixtureChain).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('uses full-season fetch for backfill jobs', async () => {
@@ -260,5 +309,41 @@ describe('FixturesSyncWorker', () => {
       'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
       { headers: { 'x-apisports-key': 'test-api-key' } },
     );
+  });
+
+  it('refreshes rolling-stats when a fixture is newly finished', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(buildFinishedFixturesResponse(135, 2024)),
+    });
+    fixtureService.upsertFixtureChain.mockResolvedValueOnce({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
+
+    await worker.process({
+      data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
+    } as Job<{ competitionCode: string; season: number; leagueId: number }>);
+
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
+  });
+
+  it('refreshes rolling-stats when a finished fixture score changes', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(buildFinishedFixturesResponse(135, 2024)),
+    });
+    fixtureService.upsertFixtureChain.mockResolvedValueOnce({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
+
+    await worker.process({
+      data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
+    } as Job<{ competitionCode: string; season: number; leagueId: number }>);
+
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 });

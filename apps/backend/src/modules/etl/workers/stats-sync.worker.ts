@@ -17,6 +17,7 @@ import {
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
+import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 
 export type StatsSyncJobData = {
   season: number;
@@ -34,6 +35,7 @@ export class StatsSyncWorker {
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
     private readonly prisma: PrismaService,
+    private readonly rollingStatsService: RollingStatsService,
   ) {}
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
@@ -131,6 +133,10 @@ export class StatsSyncWorker {
     }
 
     logger.info({ season, updated, skipped }, 'Stats sync complete');
+
+    if (updated > 0) {
+      await this.rollingStatsService.refreshSeason(seasonRecord.id);
+    }
 
     if (xgUnavailableIds.length > 0) {
       await this.notification.sendXgUnavailableReport(

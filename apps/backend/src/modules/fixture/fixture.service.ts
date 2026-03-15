@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
 import {
   FixtureRepository,
+  type UpsertFixtureResult,
   type UpsertOddsSnapshotInput,
 } from './fixture.repository';
 
@@ -88,7 +89,7 @@ export class FixtureService {
 
   async upsertFixtureChain(
     input: UpsertFixtureChainInput,
-  ): Promise<{ id: string }> {
+  ): Promise<UpsertFixtureResult> {
     const { competitionId, seasonId, fixture } = input;
 
     const [homeTeam, awayTeam] = await Promise.all([

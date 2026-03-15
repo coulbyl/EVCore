@@ -16,6 +16,7 @@ import {
   getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
 import { PrismaService } from '@/prisma.service';
+import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
@@ -106,6 +107,7 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly rollingStatsService: RollingStatsService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
@@ -392,6 +394,22 @@ export class EtlService implements OnApplicationBootstrap {
       { retentionDays } satisfies OddsSnapshotRetentionJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
+  }
+
+  async triggerRollingStatsSeason(
+    competitionCode: string,
+    season: number,
+    mode: 'refresh' | 'rebuild' = 'refresh',
+  ): Promise<void> {
+    if (mode === 'rebuild') {
+      await this.rollingStatsService.backfillSeasonYear(
+        season,
+        competitionCode,
+      );
+      return;
+    }
+
+    await this.rollingStatsService.refreshSeasonYear(season, competitionCode);
   }
 
   async getQueueStatus(): Promise<Record<string, Record<string, number>>> {

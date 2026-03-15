@@ -16,6 +16,7 @@ import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
+import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
 type MockQueue<T> = Pick<
   Queue<T>,
@@ -90,6 +91,26 @@ describe('EtlService', () => {
     },
   };
   const prismaMock = prismaMockRaw as unknown as PrismaService;
+  const rollingStatsServiceMock = {
+    refreshSeasonYear: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 10,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+    backfillSeasonYear: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 10,
+      upsertCount: 20,
+      teamStatsWritten: 20,
+      createdCount: 20,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+  } as unknown as RollingStatsService;
 
   const service = new EtlService(
     leagueSyncQueue as Queue<LeagueSyncJobData>,
@@ -99,6 +120,7 @@ describe('EtlService', () => {
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
     prismaMock,
+    rollingStatsServiceMock,
   );
 
   beforeEach(() => {
@@ -106,6 +128,26 @@ describe('EtlService', () => {
     prismaMockRaw.client.competition.findMany.mockResolvedValue(
       TEST_COMPETITIONS,
     );
+  });
+
+  it('triggers rolling-stats refresh for one season', async () => {
+    await service.triggerRollingStatsSeason('PL', 2024);
+
+    expect(rollingStatsServiceMock.refreshSeasonYear).toHaveBeenCalledWith(
+      2024,
+      'PL',
+    );
+    expect(rollingStatsServiceMock.backfillSeasonYear).not.toHaveBeenCalled();
+  });
+
+  it('triggers rolling-stats rebuild for one season', async () => {
+    await service.triggerRollingStatsSeason('PL', 2024, 'rebuild');
+
+    expect(rollingStatsServiceMock.backfillSeasonYear).toHaveBeenCalledWith(
+      2024,
+      'PL',
+    );
+    expect(rollingStatsServiceMock.refreshSeasonYear).not.toHaveBeenCalled();
   });
 
   it('dispatches fixtures jobs only for the current season', async () => {
