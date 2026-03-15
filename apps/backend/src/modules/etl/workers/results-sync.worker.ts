@@ -1,13 +1,13 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { ApiFootballFixturesResponseSchema } from '../schemas/fixture.schema';
 import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
-import { NotificationService } from '../../notification/notification.service';
+import { ETL_CONSTANTS } from '../../../config/etl.constants';
 import { PrismaService } from '@/prisma.service';
+import { loadActiveCompetition } from './etl-worker.utils';
 
 export type ResultsSyncJobData = {
   season: number;
@@ -20,29 +20,24 @@ const logger = createLogger('results-sync-worker');
 // API-FOOTBALL status codes that indicate a finished match
 const FINISHED_STATUSES = new Set(['FT', 'AET', 'PEN', 'AWD']);
 
-@Processor(BULLMQ_QUEUES.RESULTS_SYNC)
-export class ResultsSyncWorker extends WorkerHost {
+@Injectable()
+export class ResultsSyncWorker {
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
-    private readonly notification: NotificationService,
     private readonly prisma: PrismaService,
-  ) {
-    super();
-  }
+  ) {}
 
   async process(job: Job<ResultsSyncJobData>): Promise<void> {
     const { season, competitionCode, leagueId: leagueIdNum } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
     const leagueId = String(leagueIdNum);
 
-    const competitionMeta = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
-    });
+    const competitionMeta = await loadActiveCompetition(
+      this.prisma,
+      competitionCode,
+    );
     if (!competitionMeta) {
-      throw new Error(`Competition not found in DB: ${competitionCode}`);
-    }
-    if (!competitionMeta.isActive) {
       logger.info(
         { competitionCode, season },
         'Competition inactive — skipping results sync job',
@@ -117,28 +112,5 @@ export class ResultsSyncWorker extends WorkerHost {
     }
 
     logger.info({ season, updated, skipped }, 'Results sync complete');
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job<ResultsSyncJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.RESULTS_SYNC,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
   }
 }

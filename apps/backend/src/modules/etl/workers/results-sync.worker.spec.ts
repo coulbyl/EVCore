@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
-import type { NotificationService } from '../../notification/notification.service';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import { ResultsSyncWorker } from './results-sync.worker';
@@ -118,10 +117,6 @@ describe('ResultsSyncWorker', () => {
     getOrThrow: vi.fn().mockReturnValue('test-api-key'),
   } satisfies Partial<ConfigService>;
 
-  const notification = {
-    sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
-  } satisfies Partial<NotificationService>;
-
   const prisma = {
     client: {
       competition: {
@@ -133,7 +128,6 @@ describe('ResultsSyncWorker', () => {
   const worker = new ResultsSyncWorker(
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
-    notification as unknown as NotificationService,
     prisma as unknown as PrismaService,
   );
 

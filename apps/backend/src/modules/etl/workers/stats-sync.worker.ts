@@ -1,10 +1,10 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
+import { ETL_CONSTANTS } from '@config/etl.constants';
 import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -13,6 +13,10 @@ import {
   seasonFallbackStartDate,
 } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
+import {
+  loadActiveCompetition,
+  toUpsertCompetitionInput,
+} from './etl-worker.utils';
 
 export type StatsSyncJobData = {
   season: number;
@@ -22,17 +26,15 @@ export type StatsSyncJobData = {
 
 const logger = createLogger('stats-sync-worker');
 
-@Processor(BULLMQ_QUEUES.STATS_SYNC)
-export class StatsSyncWorker extends WorkerHost {
+@Injectable()
+export class StatsSyncWorker {
   // eslint-disable-next-line max-params -- Prisma required to resolve competition from DB.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
     private readonly prisma: PrismaService,
-  ) {
-    super();
-  }
+  ) {}
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
     const { season, competitionCode } = job.data;
@@ -40,13 +42,11 @@ export class StatsSyncWorker extends WorkerHost {
 
     logger.info({ competitionCode, season }, 'Starting stats sync');
 
-    const competitionMeta = await this.prisma.client.competition.findFirst({
-      where: { code: competitionCode },
-    });
+    const competitionMeta = await loadActiveCompetition(
+      this.prisma,
+      competitionCode,
+    );
     if (!competitionMeta) {
-      throw new Error(`Competition not found in DB: ${competitionCode}`);
-    }
-    if (!competitionMeta.isActive) {
       logger.info(
         { competitionCode, season },
         'Competition inactive — skipping stats sync job',
@@ -55,16 +55,9 @@ export class StatsSyncWorker extends WorkerHost {
     }
 
     // Resolve the internal seasonId (idempotent — same as fixtures-sync)
-    const competition = await this.fixtureService.upsertCompetition({
-      leagueId: competitionMeta.leagueId,
-      name: competitionMeta.name,
-      code: competitionMeta.code,
-      country: competitionMeta.country,
-      isActive: competitionMeta.isActive,
-      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
-      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
-      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
-    });
+    const competition = await this.fixtureService.upsertCompetition(
+      toUpsertCompetitionInput(competitionMeta),
+    );
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
       name: seasonNameFromYear(season),
@@ -143,29 +136,6 @@ export class StatsSyncWorker extends WorkerHost {
       await this.notification.sendXgUnavailableReport(
         seasonNameFromYear(season),
         xgUnavailableIds,
-      );
-    }
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job<StatsSyncJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.STATS_SYNC,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
       );
     }
   }

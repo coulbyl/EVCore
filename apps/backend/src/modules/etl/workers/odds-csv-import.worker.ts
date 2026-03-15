@@ -5,6 +5,7 @@ import { OddsCsvRowSchema, type OddsCsvRow } from '../schemas/odds-csv.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type OddsCsvImportJobData = {
   competitionCode: string;
@@ -128,25 +129,13 @@ export class OddsCsvImportWorker extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<OddsCsvImportJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.ODDS_CSV_IMPORT,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
+    notifyOnWorkerFailure({
+      notification: this.notification,
+      queueName: BULLMQ_QUEUES.ODDS_CSV_IMPORT,
+      job,
+      error,
+      logger,
+    });
   }
 }
 

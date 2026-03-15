@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
-import type { NotificationService } from '../../notification/notification.service';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import type { Queue } from 'bullmq';
 import { FixturesSyncWorker } from './fixtures-sync.worker';
-import type { InjuriesSyncJobData } from './injuries-sync.worker';
+import type { LeagueSyncJobData } from './league-sync.worker';
 
 function buildFixturesResponse(leagueId: number, season: number) {
   return {
@@ -94,10 +93,6 @@ describe('FixturesSyncWorker', () => {
     getOrThrow: vi.fn().mockReturnValue('test-api-key'),
   } satisfies Partial<ConfigService>;
 
-  const notification = {
-    sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
-  } satisfies Partial<NotificationService>;
-
   const prisma = {
     client: {
       competition: {
@@ -109,11 +104,10 @@ describe('FixturesSyncWorker', () => {
   const worker = new FixturesSyncWorker(
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
-    notification as unknown as NotificationService,
     prisma as unknown as PrismaService,
     {
       add: vi.fn().mockResolvedValue({}),
-    } as unknown as Queue<InjuriesSyncJobData>,
+    } as unknown as Queue<LeagueSyncJobData>,
   );
 
   beforeEach(() => {
@@ -130,12 +124,11 @@ describe('FixturesSyncWorker', () => {
   it('enqueues injuries-sync after fixtures sync completes', async () => {
     const injuriesQueue = {
       add: vi.fn().mockResolvedValue({}),
-    } as unknown as Queue<InjuriesSyncJobData>;
+    } as unknown as Queue<LeagueSyncJobData>;
 
     const localWorker = new FixturesSyncWorker(
       fixtureService as unknown as FixtureService,
       config as unknown as ConfigService,
-      notification as unknown as NotificationService,
       prisma as unknown as PrismaService,
       injuriesQueue,
     );
@@ -151,7 +144,12 @@ describe('FixturesSyncWorker', () => {
 
     expect(injuriesQueue.add).toHaveBeenCalledWith(
       'injuries-sync-SA-2024',
-      { competitionCode: 'SA', season: 2024, leagueId: 135 },
+      {
+        syncType: 'injuries',
+        competitionCode: 'SA',
+        season: 2024,
+        leagueId: 135,
+      },
       expect.any(Object),
     );
   });

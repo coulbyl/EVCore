@@ -1,10 +1,6 @@
-import {
-  Processor,
-  WorkerHost,
-  OnWorkerEvent,
-  InjectQueue,
-} from '@nestjs/bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Job, Queue } from 'bullmq';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { FixtureStatus } from '@evcore/db';
@@ -22,7 +18,6 @@ import {
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
 } from '@config/etl.constants';
-import { NotificationService } from '../../notification/notification.service';
 import { PrismaService } from '@/prisma.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
@@ -30,7 +25,11 @@ import {
   seasonFallbackStartDate,
   parseIsoDate,
 } from '@utils/date.utils';
-import type { InjuriesSyncJobData } from './injuries-sync.worker';
+import {
+  loadActiveCompetition,
+  toUpsertCompetitionInput,
+} from './etl-worker.utils';
+import type { LeagueSyncJobData } from './league-sync.worker';
 
 export type FixturesSyncJobData = {
   season: number;
@@ -40,19 +39,16 @@ export type FixturesSyncJobData = {
 
 const logger = createLogger('fixtures-sync-worker');
 
-@Processor(BULLMQ_QUEUES.FIXTURES_SYNC)
-export class FixturesSyncWorker extends WorkerHost {
+@Injectable()
+export class FixturesSyncWorker {
   // eslint-disable-next-line max-params -- Queue injection is explicit for ETL chaining clarity.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
-    private readonly notification: NotificationService,
     private readonly prisma: PrismaService,
-    @InjectQueue(BULLMQ_QUEUES.INJURIES_SYNC)
-    private readonly injuriesQueue: Queue<InjuriesSyncJobData>,
-  ) {
-    super();
-  }
+    @InjectQueue(BULLMQ_QUEUES.LEAGUE_SYNC)
+    private readonly leagueSyncQueue: Queue<LeagueSyncJobData>,
+  ) {}
 
   async process(job: Job<FixturesSyncJobData>): Promise<void> {
     const { season, competitionCode, leagueId: leagueIdNum } = job.data;
@@ -61,13 +57,11 @@ export class FixturesSyncWorker extends WorkerHost {
 
     logger.info({ competitionCode, season }, 'Starting fixtures sync');
 
-    const competitionMeta = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
-    });
+    const competitionMeta = await loadActiveCompetition(
+      this.prisma,
+      competitionCode,
+    );
     if (!competitionMeta) {
-      throw new Error(`Competition not found in DB: ${competitionCode}`);
-    }
-    if (!competitionMeta.isActive) {
       logger.info(
         { competitionCode, season },
         'Competition inactive — skipping fixtures sync job',
@@ -98,16 +92,9 @@ export class FixturesSyncWorker extends WorkerHost {
     }
 
     const { data } = parsed;
-    const competitionRecord = await this.fixtureService.upsertCompetition({
-      leagueId: competitionMeta.leagueId,
-      name: competitionMeta.name,
-      code: competitionMeta.code,
-      country: competitionMeta.country,
-      isActive: competitionMeta.isActive,
-      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
-      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
-      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
-    });
+    const competitionRecord = await this.fixtureService.upsertCompetition(
+      toUpsertCompetitionInput(competitionMeta),
+    );
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
     const seasonRecord = await this.fixtureService.upsertSeason({
@@ -136,38 +123,16 @@ export class FixturesSyncWorker extends WorkerHost {
       'Fixtures sync complete',
     );
 
-    await this.injuriesQueue.add(
+    await this.leagueSyncQueue.add(
       `injuries-sync-${competitionCode}-${season}`,
       {
+        syncType: 'injuries',
         competitionCode,
         season,
         leagueId: leagueIdNum,
-      } satisfies InjuriesSyncJobData,
+      } satisfies LeagueSyncJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job<FixturesSyncJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.FIXTURES_SYNC,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
   }
 }
 

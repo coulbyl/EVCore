@@ -17,6 +17,20 @@ import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body
 export class EtlController {
   constructor(private readonly etlService: EtlService) {}
 
+  private async ok(trigger: () => Promise<void>) {
+    await trigger();
+    return { status: 'ok' as const };
+  }
+
+  private async okForLeague(
+    competition: string,
+    trigger: (competitionCode: string) => Promise<void>,
+  ) {
+    const code = this.resolveCode(competition);
+    await trigger(code);
+    return { status: 'ok' as const, competitionCode: code };
+  }
+
   // ─── Status ───────────────────────────────────────────────────────────────
 
   @Get('status')
@@ -30,31 +44,10 @@ export class EtlController {
     description: 'Job counts per queue.',
     schema: {
       example: {
-        'fixtures-sync': {
+        'league-sync': {
           active: 0,
           waiting: 0,
-          completed: 12,
-          failed: 0,
-          delayed: 0,
-        },
-        'results-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 12,
-          failed: 0,
-          delayed: 0,
-        },
-        'stats-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 12,
-          failed: 0,
-          delayed: 0,
-        },
-        'injuries-sync': {
-          active: 0,
-          waiting: 0,
-          completed: 12,
+          completed: 48,
           failed: 0,
           delayed: 0,
         },
@@ -93,14 +86,14 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger full ETL sync',
     description:
-      'Enqueues all ETL workers in sequence: fixtures → results → stats → injuries → ' +
-      'odds-csv → odds-live. Jobs are staggered to respect API rate limits. ' +
-      'Use for initial backfill or after a long downtime.',
+      'Enqueues the unified league-sync pipeline in sequence: fixtures → results → ' +
+      'stats → injuries, then odds-csv and odds-live. Routine fixtures/results/injuries ' +
+      'runs target the current season; stats still scans active seasons. Jobs are staggered ' +
+      'to respect API rate limits. Use for initial backfill or after a long downtime.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerFullSync() {
-    await this.etlService.triggerFullSync();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerFullSync());
   }
 
   // ─── Granular triggers ────────────────────────────────────────────────────
@@ -110,14 +103,13 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger fixtures sync',
     description:
-      'Enqueues one fixtures-sync job per active competition × current season. ' +
+      'Enqueues one league-sync fixtures job per active competition × current season. ' +
       'Fetches scheduled fixtures from API-Football and upserts them into the DB. ' +
       'Run this before results-sync or stats-sync to ensure fixture records exist.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerFixturesSync() {
-    await this.etlService.triggerFixturesSync();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerFixturesSync());
   }
 
   @Post('sync/fixtures/:competition')
@@ -126,9 +118,9 @@ export class EtlController {
   async triggerFixturesSyncForLeague(
     @Param('competition') competition: string,
   ) {
-    const code = this.resolveCode(competition);
-    await this.etlService.triggerFixturesSyncForLeague(code);
-    return { status: 'ok' as const, competitionCode: code };
+    return this.okForLeague(competition, (code) =>
+      this.etlService.triggerFixturesSyncForLeague(code),
+    );
   }
 
   @Post('sync/results')
@@ -136,22 +128,21 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger results sync',
     description:
-      'Enqueues one results-sync job per active competition × current season. ' +
+      'Enqueues one league-sync results job per active competition × current season. ' +
       'Updates fixture statuses (FT, AET, PEN, AWD, POSTPONED) and final scores.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerResultsSync() {
-    await this.etlService.triggerResultsSync();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerResultsSync());
   }
 
   @Post('sync/results/:competition')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Trigger results sync for one league' })
   async triggerResultsSyncForLeague(@Param('competition') competition: string) {
-    const code = this.resolveCode(competition);
-    await this.etlService.triggerResultsSyncForLeague(code);
-    return { status: 'ok' as const, competitionCode: code };
+    return this.okForLeague(competition, (code) =>
+      this.etlService.triggerResultsSyncForLeague(code),
+    );
   }
 
   @Post('sync/stats')
@@ -159,24 +150,23 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger stats sync',
     description:
-      'Enqueues one stats-sync job per active competition × current season. ' +
+      'Enqueues one league-sync stats job per active competition × active season. ' +
       'Fetches per-fixture statistics (xG, shots on target) for finished fixtures ' +
       'that have no xG data yet. Uses shots_on_target × 0.35 as a proxy when ' +
       'expected_goals is absent from the API response.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerStatsSync() {
-    await this.etlService.triggerStatsSync();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerStatsSync());
   }
 
   @Post('sync/stats/:competition')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Trigger stats sync for one league' })
   async triggerStatsSyncForLeague(@Param('competition') competition: string) {
-    const code = this.resolveCode(competition);
-    await this.etlService.triggerStatsSyncForLeague(code);
-    return { status: 'ok' as const, competitionCode: code };
+    return this.okForLeague(competition, (code) =>
+      this.etlService.triggerStatsSyncForLeague(code),
+    );
   }
 
   @Post('sync/injuries')
@@ -184,14 +174,13 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger injuries shadow sync',
     description:
-      'Enqueues one injuries-sync job per active competition × current season. ' +
+      'Enqueues one league-sync injuries job per active competition × current season. ' +
       'Fetches injuries from API-Football for scheduled fixtures and stores ' +
       '`shadow_injuries` into the latest ModelRun.features per fixture.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerInjuriesSync() {
-    await this.etlService.triggerInjuriesSync();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerInjuriesSync());
   }
 
   @Post('sync/injuries/:competition')
@@ -200,9 +189,9 @@ export class EtlController {
   async triggerInjuriesSyncForLeague(
     @Param('competition') competition: string,
   ) {
-    const code = this.resolveCode(competition);
-    await this.etlService.triggerInjuriesSyncForLeague(code);
-    return { status: 'ok' as const, competitionCode: code };
+    return this.okForLeague(competition, (code) =>
+      this.etlService.triggerInjuriesSyncForLeague(code),
+    );
   }
 
   @Post('sync/odds-csv')
@@ -210,15 +199,14 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger historical odds CSV import',
     description:
-      'Enqueues one odds-csv-import job per active competition for the last ' +
-      '3 seasons (sliding window, same as fixtures). Downloads Pinnacle + Bet365 ' +
+      'Enqueues one odds-csv-import job per active competition for the current ' +
+      'CSV season only. Downloads Pinnacle + Bet365 ' +
       'closing odds from football-data.co.uk and upserts OddsSnapshot records. ' +
       'Rows with missing odds (0) are silently skipped.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerOddsCsvImport() {
-    await this.etlService.triggerOddsCsvImport();
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerOddsCsvImport());
   }
 
   @Post('sync/odds-live')
@@ -234,8 +222,7 @@ export class EtlController {
   @ApiBody({ type: OddsLiveSyncBodyDto, required: false })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerOddsLiveSync(@Body() body: OddsLiveSyncBodyDto = {}) {
-    await this.etlService.triggerOddsLiveSync(body.date);
-    return { status: 'ok' as const };
+    return this.ok(() => this.etlService.triggerOddsLiveSync(body.date));
   }
 
   @Post('sync/odds-retention')
@@ -252,8 +239,9 @@ export class EtlController {
   async triggerOddsSnapshotRetention(
     @Body() body: OddsSnapshotRetentionBodyDto = {},
   ) {
-    await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
-    return { status: 'ok' as const };
+    return this.ok(() =>
+      this.etlService.triggerOddsSnapshotRetention(body.retentionDays),
+    );
   }
 
   private resolveCode(competition: string): string {

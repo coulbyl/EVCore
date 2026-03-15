@@ -109,10 +109,7 @@ export const API_FOOTBALL_BET_IDS = {
 } as const;
 
 export const BULLMQ_QUEUES = {
-  FIXTURES_SYNC: 'fixtures-sync',
-  RESULTS_SYNC: 'results-sync',
-  STATS_SYNC: 'stats-sync',
-  INJURIES_SYNC: 'injuries-sync',
+  LEAGUE_SYNC: 'league-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
@@ -139,10 +136,7 @@ export const ETL_CRON_SCHEDULES = {
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
 export const ETL_SCHEDULER_KEYS = {
-  FIXTURES_SYNC: 'cron:fixtures-sync',
-  RESULTS_SYNC: 'cron:results-sync',
-  STATS_SYNC: 'cron:stats-sync',
-  INJURIES_SYNC: 'cron:injuries-sync',
+  LEAGUE_SYNC: 'cron:league-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_LIVE_SYNC: 'cron:odds-live-sync',
   ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',

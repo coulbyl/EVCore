@@ -6,6 +6,7 @@ import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
+import { LeagueSyncWorker } from './workers/league-sync.worker';
 import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { ResultsSyncWorker } from './workers/results-sync.worker';
 import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
@@ -18,10 +19,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
   imports: [
     ConfigModule,
     BullModule.registerQueue(
-      { name: BULLMQ_QUEUES.FIXTURES_SYNC },
-      { name: BULLMQ_QUEUES.RESULTS_SYNC },
-      { name: BULLMQ_QUEUES.STATS_SYNC },
-      { name: BULLMQ_QUEUES.INJURIES_SYNC },
+      { name: BULLMQ_QUEUES.LEAGUE_SYNC },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
       { name: BULLMQ_QUEUES.ODDS_LIVE_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
@@ -32,6 +30,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
   controllers: [EtlController],
   providers: [
     EtlService,
+    LeagueSyncWorker,
     FixturesSyncWorker,
     ResultsSyncWorker,
     StatsSyncWorker,

@@ -1,10 +1,9 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
-import { NotificationService } from '../../notification/notification.service';
+import { ETL_CONSTANTS } from '@config/etl.constants';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
   seasonFallbackEndDate,
@@ -12,6 +11,10 @@ import {
 } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import { ApiFootballInjuriesResponseSchema } from '../schemas/injuries.schema';
+import {
+  loadActiveCompetition,
+  toUpsertCompetitionInput,
+} from './etl-worker.utils';
 
 export type InjuriesSyncJobData = {
   season: number;
@@ -27,17 +30,13 @@ type ShadowInjuries = {
   total: number;
 };
 
-@Processor(BULLMQ_QUEUES.INJURIES_SYNC)
-export class InjuriesSyncWorker extends WorkerHost {
-  // eslint-disable-next-line max-params -- Prisma + services are required to persist shadow data.
+@Injectable()
+export class InjuriesSyncWorker {
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly notification: NotificationService,
-  ) {
-    super();
-  }
+  ) {}
 
   async process(job: Job<InjuriesSyncJobData>): Promise<void> {
     const { season, competitionCode } = job.data;
@@ -45,13 +44,11 @@ export class InjuriesSyncWorker extends WorkerHost {
 
     logger.info({ competitionCode, season }, 'Starting injuries sync');
 
-    const competitionMeta = await this.prisma.client.competition.findFirst({
-      where: { code: competitionCode },
-    });
+    const competitionMeta = await loadActiveCompetition(
+      this.prisma,
+      competitionCode,
+    );
     if (!competitionMeta) {
-      throw new Error(`Competition not found in DB: ${competitionCode}`);
-    }
-    if (!competitionMeta.isActive) {
       logger.info(
         { competitionCode, season },
         'Competition inactive — skipping injuries sync job',
@@ -59,16 +56,9 @@ export class InjuriesSyncWorker extends WorkerHost {
       return;
     }
 
-    const competitionRecord = await this.fixtureService.upsertCompetition({
-      leagueId: competitionMeta.leagueId,
-      name: competitionMeta.name,
-      code: competitionMeta.code,
-      country: competitionMeta.country,
-      isActive: competitionMeta.isActive,
-      csvDivisionCode: competitionMeta.csvDivisionCode ?? undefined,
-      seasonStartMonth: competitionMeta.seasonStartMonth ?? undefined,
-      activeSeasonsCount: competitionMeta.activeSeasonsCount ?? undefined,
-    });
+    const competitionRecord = await this.fixtureService.upsertCompetition(
+      toUpsertCompetitionInput(competitionMeta),
+    );
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
       name: seasonNameFromYear(season),
@@ -140,30 +130,6 @@ export class InjuriesSyncWorker extends WorkerHost {
       'Injuries sync complete',
     );
   }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job<InjuriesSyncJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.INJURIES_SYNC,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
-  }
-
   private async updateLatestModelRunShadowInjuries(
     fixtureId: string,
     shadowInjuries: ShadowInjuries,

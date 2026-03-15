@@ -16,6 +16,7 @@ import {
 import { NotificationService } from '../../notification/notification.service';
 import { tomorrowUtc, formatDateUtc } from '@utils/date.utils';
 import { sleep } from '@utils/async.utils';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 // Passing date as job data makes the worker testable and supports backfill.
 // When absent, defaults to tomorrow (standard daily cron use case).
@@ -150,25 +151,13 @@ export class OddsLiveSyncWorker extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<OddsLiveSyncJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.ODDS_LIVE_SYNC,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
+    notifyOnWorkerFailure({
+      notification: this.notification,
+      queueName: BULLMQ_QUEUES.ODDS_LIVE_SYNC,
+      job,
+      error,
+      logger,
+    });
   }
 }
 
