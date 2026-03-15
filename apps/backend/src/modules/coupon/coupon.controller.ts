@@ -7,16 +7,33 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CouponService } from './coupon.service';
 import { tomorrowUtc } from '@utils/date.utils';
 import { GenerateCouponDto } from './dto/generate-coupon.dto';
+import { CouponPeriodQueryDto } from './dto/coupon-period-query.dto';
 
 @ApiTags('Coupon')
 @Controller('coupon')
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'List coupons by period',
+    description:
+      'Returns coupon snapshots for a UTC date period. Defaults to current UTC week when no query params are provided.',
+  })
+  list(@Query() queryDto: CouponPeriodQueryDto) {
+    return this.couponService.listCouponsByPeriod({
+      from: queryDto.from,
+      to: queryDto.to,
+      query: queryDto.query,
+      status: queryDto.status,
+    });
+  }
 
   @Post('generate')
   @HttpCode(HttpStatus.OK)

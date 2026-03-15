@@ -1,6 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, CouponStatus } from '@evcore/db';
+import { BetStatus, CouponStatus, Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+
+const couponBetSelect = {
+  id: true,
+  market: true,
+  pick: true,
+  ev: true,
+  oddsSnapshot: true,
+  comboMarket: true,
+  comboPick: true,
+  status: true,
+  modelRun: {
+    select: {
+      fixture: {
+        select: {
+          id: true,
+          scheduledAt: true,
+          homeTeam: { select: { name: true } },
+          awayTeam: { select: { name: true } },
+        },
+      },
+    },
+  },
+} as const;
 
 @Injectable()
 export class CouponRepository {
@@ -19,9 +42,10 @@ export class CouponRepository {
   }
 
   async linkBets(couponId: string, betIds: string[]): Promise<void> {
-    await this.prisma.client.bet.updateMany({
-      where: { id: { in: betIds } },
-      data: { dailyCouponId: couponId },
+    if (betIds.length === 0) return;
+    await this.prisma.client.couponLeg.createMany({
+      data: betIds.map((betId) => ({ couponId, betId })),
+      skipDuplicates: true,
     });
   }
 
@@ -44,15 +68,17 @@ export class CouponRepository {
         select: { id: true, code: true },
       });
 
-      const { count } = await tx.bet.updateMany({
-        where: { id: { in: betIds } },
-        data: { dailyCouponId: coupon.id },
-      });
+      if (betIds.length > 0) {
+        const result = await tx.couponLeg.createMany({
+          data: betIds.map((betId) => ({ couponId: coupon.id, betId })),
+          skipDuplicates: true,
+        });
 
-      if (count !== betIds.length) {
-        throw new Error(
-          `Failed linking coupon bets atomically: expected ${betIds.length}, linked ${count}`,
-        );
+        if (result.count !== betIds.length) {
+          throw new Error(
+            `Failed linking coupon bets atomically: expected ${betIds.length}, linked ${result.count}`,
+          );
+        }
       }
 
       return coupon;
@@ -73,14 +99,14 @@ export class CouponRepository {
     });
   }
 
-  findPendingCouponsUntil(date: Date): Promise<
+  async findPendingCouponsUntil(date: Date): Promise<
     {
       id: string;
       status: CouponStatus;
       bets: { id: string; status: BetStatus }[];
     }[]
   > {
-    return this.prisma.client.dailyCoupon.findMany({
+    const coupons = await this.prisma.client.dailyCoupon.findMany({
       where: {
         status: CouponStatus.PENDING,
         date: { lte: date },
@@ -88,13 +114,50 @@ export class CouponRepository {
       select: {
         id: true,
         status: true,
-        bets: { select: { id: true, status: true } },
+        couponLegs: {
+          select: { bet: { select: { id: true, status: true } } },
+        },
       },
       orderBy: { date: 'asc' },
     });
+
+    return coupons.map((coupon) => ({
+      id: coupon.id,
+      status: coupon.status,
+      bets: coupon.couponLegs.map((leg) => leg.bet),
+    }));
   }
 
-  findCouponById(couponId: string): Promise<{
+  async findPendingCouponsByFixture(fixtureId: string): Promise<
+    {
+      id: string;
+      status: CouponStatus;
+      bets: { id: string; status: BetStatus }[];
+    }[]
+  > {
+    const coupons = await this.prisma.client.dailyCoupon.findMany({
+      where: {
+        status: CouponStatus.PENDING,
+        couponLegs: { some: { bet: { fixtureId } } },
+      },
+      select: {
+        id: true,
+        status: true,
+        couponLegs: {
+          select: { bet: { select: { id: true, status: true } } },
+        },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    return coupons.map((coupon) => ({
+      id: coupon.id,
+      status: coupon.status,
+      bets: coupon.couponLegs.map((leg) => leg.bet),
+    }));
+  }
+
+  async findCouponById(couponId: string): Promise<{
     id: string;
     date: Date;
     status: CouponStatus;
@@ -118,7 +181,7 @@ export class CouponRepository {
       };
     }[];
   } | null> {
-    return this.prisma.client.dailyCoupon.findUnique({
+    const coupon = await this.prisma.client.dailyCoupon.findUnique({
       where: { id: couponId },
       select: {
         id: true,
@@ -126,31 +189,26 @@ export class CouponRepository {
         status: true,
         legCount: true,
         createdAt: true,
-        bets: {
+        couponLegs: {
           select: {
-            id: true,
-            market: true,
-            pick: true,
-            ev: true,
-            oddsSnapshot: true,
-            comboMarket: true,
-            comboPick: true,
-            status: true,
-            modelRun: {
-              select: {
-                fixture: {
-                  select: {
-                    scheduledAt: true,
-                    homeTeam: { select: { name: true } },
-                    awayTeam: { select: { name: true } },
-                  },
-                },
-              },
+            bet: {
+              select: couponBetSelect,
             },
           },
         },
       },
     });
+
+    if (!coupon) return null;
+
+    return {
+      id: coupon.id,
+      date: coupon.date,
+      status: coupon.status,
+      legCount: coupon.legCount,
+      createdAt: coupon.createdAt,
+      bets: coupon.couponLegs.map((leg) => leg.bet),
+    };
   }
 
   async updateStatus(couponId: string, status: CouponStatus): Promise<void> {
@@ -158,5 +216,136 @@ export class CouponRepository {
       where: { id: couponId },
       data: { status },
     });
+  }
+
+  async findCouponsByDateRange(input: {
+    from: Date;
+    to: Date;
+    query?: string;
+    status?: 'PENDING' | 'WON' | 'LOST';
+    limit?: number;
+  }): Promise<
+    {
+      id: string;
+      code: string;
+      date: Date;
+      status: CouponStatus;
+      bets: {
+        id: string;
+        market: string;
+        pick: string;
+        comboMarket: string | null;
+        comboPick: string | null;
+        oddsSnapshot: unknown;
+        ev: unknown;
+        status: BetStatus;
+        modelRun: {
+          fixture: {
+            id: string;
+            scheduledAt: Date;
+            homeTeam: { name: string };
+            awayTeam: { name: string };
+          };
+        };
+      }[];
+    }[]
+  > {
+    const { from, to, query, status, limit = 200 } = input;
+    const trimmedQuery = query?.trim();
+
+    const where: Prisma.DailyCouponWhereInput = {
+      date: { gte: from, lte: to },
+      couponLegs: { some: {} },
+    };
+
+    if (status === 'WON' || status === 'LOST') {
+      where.status = status;
+    } else if (status === 'PENDING') {
+      where.status = { notIn: ['WON', 'LOST'] };
+    }
+
+    if (trimmedQuery) {
+      where.OR = [
+        {
+          code: {
+            contains: trimmedQuery,
+            mode: 'insensitive',
+          },
+        },
+        {
+          couponLegs: {
+            some: {
+              bet: {
+                OR: [
+                  {
+                    pick: {
+                      contains: trimmedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    comboPick: {
+                      contains: trimmedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    modelRun: {
+                      fixture: {
+                        OR: [
+                          {
+                            homeTeam: {
+                              name: {
+                                contains: trimmedQuery,
+                                mode: 'insensitive',
+                              },
+                            },
+                          },
+                          {
+                            awayTeam: {
+                              name: {
+                                contains: trimmedQuery,
+                                mode: 'insensitive',
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const coupons = await this.prisma.client.dailyCoupon.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+      select: {
+        id: true,
+        code: true,
+        date: true,
+        status: true,
+        couponLegs: {
+          select: {
+            bet: {
+              select: couponBetSelect,
+            },
+          },
+        },
+      },
+    });
+
+    return coupons.map((coupon) => ({
+      id: coupon.id,
+      code: coupon.code,
+      date: coupon.date,
+      status: coupon.status,
+      bets: coupon.couponLegs.map((leg) => leg.bet),
+    }));
   }
 }

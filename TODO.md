@@ -89,6 +89,16 @@
 - [ ] Ajouter des tests ETL sur le chargement dynamique des compétitions (cas: aucune active, vague 1/2/3)
 - [ ] Exécuter migration + seed sur l'environnement de pré-prod, puis valider les jobs planifiés
 
+### Migration canonique coupons (mars 2026)
+
+- [x] Ajouter relation pivot `coupon_leg` (coupon ↔ bet) + backfill depuis `bet.dailyCouponId`
+- [x] Passer les lectures/écritures coupon backend sur `coupon_leg`
+- [x] Canonicaliser les bets avec `fixtureId + pickKey` (unique DB) pour éviter les doublons de pick
+- [x] Adapter la génération de coupon pour réutiliser le bet existant (`upsert`) au lieu de créer un nouveau leg
+- [x] Ajouter migration de réconciliation (`20260314192000_reconcile_preexisting_schema`) pour éviter `migrate reset` sur base existante
+- [ ] Vérifier en pré-prod les compteurs post-migration (nombre coupons, legs par coupon, statuts WON/LOST/PENDING)
+- [ ] Planifier la suppression finale de `bet.dailyCouponId` après stabilisation
+
 ---
 
 ## Bloc 7 — App Web V1 (Dashboard / Coupons / Audit)

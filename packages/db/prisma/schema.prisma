@@ -142,6 +142,7 @@ model Fixture {
   awayXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
   xgUnavailable Boolean       @default(false)   // true = API returned no stats, skip on retry
   modelRuns     ModelRun[]
+  bets          Bet[]
   teamStats     TeamStats[]
   oddsSnapshots OddsSnapshot[] // scaffolded for Phase 2
   createdAt     DateTime      @default(now())
@@ -210,8 +211,11 @@ model Bet {
   id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   modelRunId    String    @db.Uuid
   modelRun      ModelRun  @relation(fields: [modelRunId], references: [id])
+  fixtureId     String    @db.Uuid
+  fixture       Fixture   @relation(fields: [fixtureId], references: [id])
   market        Market
   pick          String    // HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12
+  pickKey       String    // canonical key: "<market>|<pick>|<comboMarket?>|<comboPick?>"
   probEstimated Decimal   @db.Decimal(5, 4)
   oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no live odds)
   ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
@@ -223,13 +227,16 @@ model Bet {
   // coupon link: null until assigned to a DailyCoupon
   dailyCouponId String?   @db.Uuid
   dailyCoupon   DailyCoupon? @relation(fields: [dailyCouponId], references: [id])
+  couponLegs    CouponLeg[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@index([modelRunId])
+  @@index([fixtureId])
   @@index([dailyCouponId])
   @@index([market, status, createdAt])
   @@index([status, updatedAt])
+  @@unique([fixtureId, pickKey])
   @@map("bet")
 }
 
@@ -242,10 +249,24 @@ model DailyCoupon {
   status    CouponStatus @default(PENDING)
   legCount  Int
   bets      Bet[]
+  couponLegs CouponLeg[]
   createdAt DateTime     @default(now())
 
   @@index([date])
   @@map("daily_coupon")
+}
+
+// Join table between coupons and canonical bets.
+model CouponLeg {
+  couponId  String     @db.Uuid
+  betId     String     @db.Uuid
+  coupon    DailyCoupon @relation(fields: [couponId], references: [id])
+  bet       Bet        @relation(fields: [betId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@id([couponId, betId])
+  @@index([betId])
+  @@map("coupon_leg")
 }
 
 // Proposed weight adjustments from the learning loop.

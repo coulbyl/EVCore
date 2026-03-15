@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { BetStatus, CouponStatus } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
+import { toNumber } from '@utils/prisma.utils';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -21,7 +22,7 @@ import {
   COUPON_WINDOW_MAX_DAYS,
   COUPON_WINDOW_MIN_DAYS,
 } from '@config/coupon.constants';
-import { tomorrowUtc } from '@utils/date.utils';
+import { formatTimeUtc, tomorrowUtc } from '@utils/date.utils';
 import { CouponRepository } from './coupon.repository';
 
 const logger = createLogger('coupon-service');
@@ -29,6 +30,28 @@ const logger = createLogger('coupon-service');
 type CouponWindowInput = {
   startDate: Date;
   days?: number;
+};
+
+type CouponSelectionSnapshot = {
+  id: string;
+  fixtureId: string;
+  fixture: string;
+  scheduledAt: string;
+  status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
+  market: string;
+  pick: string;
+  odds: string;
+  ev: string;
+};
+
+type CouponPeriodSnapshot = {
+  id: string;
+  code: string;
+  status: 'PENDING' | 'WON' | 'LOST';
+  legs: number;
+  ev: string;
+  window: string;
+  selections: CouponSelectionSnapshot[];
 };
 
 @Injectable()
@@ -260,6 +283,25 @@ export class CouponService implements OnApplicationBootstrap {
     return { settledCount };
   }
 
+  async settlePendingCouponsByFixture(
+    fixtureId: string,
+  ): Promise<{ settledCount: number }> {
+    const coupons =
+      await this.couponRepository.findPendingCouponsByFixture(fixtureId);
+
+    let settledCount = 0;
+    for (const coupon of coupons) {
+      const nextStatus = resolveCouponStatus(coupon.bets);
+      if (nextStatus === null) continue;
+
+      await this.couponRepository.updateStatus(coupon.id, nextStatus);
+      await this.notificationService.sendCouponResult(coupon.id);
+      settledCount++;
+    }
+
+    return { settledCount };
+  }
+
   async settleCouponById(couponId: string): Promise<{
     couponId: string;
     status: CouponStatus;
@@ -283,11 +325,98 @@ export class CouponService implements OnApplicationBootstrap {
   async getCouponById(couponId: string) {
     return this.couponRepository.findCouponById(couponId);
   }
+
+  async listCouponsByPeriod(input: {
+    from?: string;
+    to?: string;
+    query?: string;
+    status?: 'PENDING' | 'WON' | 'LOST';
+    now?: Date;
+  }): Promise<{
+    period: { from: string; to: string };
+    coupons: CouponPeriodSnapshot[];
+  }> {
+    const now = input.now ?? new Date();
+    const defaultRange = currentUtcWeekRange(now);
+
+    const fromDate = input.from
+      ? startOfUtcDay(new Date(input.from))
+      : defaultRange.from;
+    const toDate = input.to ? endOfUtcDay(new Date(input.to)) : defaultRange.to;
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      throw new Error('Invalid coupon period dates');
+    }
+    if (fromDate.getTime() > toDate.getTime()) {
+      throw new Error('Invalid coupon period: from must be <= to');
+    }
+
+    const coupons = await this.couponRepository.findCouponsByDateRange({
+      from: fromDate,
+      to: toDate,
+      query: input.query,
+      status: input.status,
+    });
+
+    return {
+      period: {
+        from: fromDate.toISOString().slice(0, 10),
+        to: toDate.toISOString().slice(0, 10),
+      },
+      coupons: coupons.map((coupon) => {
+        const avgEv =
+          coupon.bets.length > 0
+            ? coupon.bets.reduce((acc, bet) => acc + toNumber(bet.ev), 0) /
+              coupon.bets.length
+            : 0;
+
+        return {
+          id: coupon.id,
+          code: coupon.code,
+          status:
+            coupon.status === 'WON' || coupon.status === 'LOST'
+              ? coupon.status
+              : 'PENDING',
+          legs: coupon.bets.length,
+          ev: formatSigned(avgEv, 2),
+          window: couponWindow(coupon.date, now),
+          selections: coupon.bets.map((bet) => {
+            const comboParts = [bet.pick];
+            if (bet.comboMarket && bet.comboPick) {
+              comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
+            }
+            return {
+              id: bet.id,
+              fixtureId: bet.modelRun.fixture.id,
+              fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
+              scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
+              status:
+                bet.status === 'WON' ||
+                bet.status === 'LOST' ||
+                bet.status === 'VOID'
+                  ? bet.status
+                  : 'PENDING',
+              market: bet.market,
+              pick: comboParts.join(' + '),
+              odds: toNumber(bet.oddsSnapshot).toFixed(2),
+              ev: formatSigned(toNumber(bet.ev), 3),
+            };
+          }),
+        };
+      }),
+    };
+  }
 }
 
 function startOfUtcDay(date: Date): Date {
   const value = new Date(date);
   value.setUTCHours(0, 0, 0, 0);
+  return value;
+}
+
+function endOfUtcDay(date: Date): Date {
+  const value = new Date(date);
+  value.setUTCHours(23, 59, 59, 999);
   return value;
 }
 
@@ -314,4 +443,29 @@ function resolveCouponStatus(
   if (bets.every((bet) => bet.status === BetStatus.WON))
     return CouponStatus.WON;
   return CouponStatus.SETTLED;
+}
+
+function currentUtcWeekRange(now: Date): { from: Date; to: Date } {
+  const day = now.getUTCDay(); // 0..6 (Sun..Sat)
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const from = new Date(now);
+  from.setUTCDate(now.getUTCDate() + diffToMonday);
+  from.setUTCHours(0, 0, 0, 0);
+
+  const to = new Date(from);
+  to.setUTCDate(from.getUTCDate() + 6);
+  to.setUTCHours(23, 59, 59, 999);
+  return { from, to };
+}
+
+function formatSigned(value: number, digits: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}`;
+}
+
+function couponWindow(couponDate: Date, now: Date): string {
+  const couponDay = startOfUtcDay(couponDate).getTime();
+  const currentDay = startOfUtcDay(now).getTime();
+  if (couponDay === currentDay) return "Aujourd'hui";
+  if (couponDay > currentDay) return 'À venir';
+  return 'Soldé';
 }

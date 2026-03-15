@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CheckCircle, ClipboardCheck, Loader2, X } from "lucide-react";
+import { Button } from "@evcore/ui";
 import { declareFixtureResult } from "../lib/dashboard-api";
 
 type State = "idle" | "loading" | "success" | "error";
@@ -42,10 +43,12 @@ export function SettleFixtureDialog({
   fixtureId,
   fixtureName,
   onSettled,
+  triggerSize = "sm",
 }: {
   fixtureId: string;
   fixtureName: string;
   onSettled?: () => void;
+  triggerSize?: "xs" | "sm";
 }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>("idle");
@@ -97,13 +100,14 @@ export function SettleFixtureDialog({
       }}
     >
       <Dialog.Trigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-xl border border-border bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 focus:outline-none"
+        <Button
+          tone="secondary"
+          size={triggerSize}
+          className="gap-1.5 text-xs!"
         >
-          <ClipboardCheck size={13} />
+          <ClipboardCheck size={triggerSize === "xs" ? 10 : 13} />
           Déclarer résultat
-        </button>
+        </Button>
       </Dialog.Trigger>
 
       <Dialog.Portal>

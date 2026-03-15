@@ -30,6 +30,7 @@ export type CouponSnapshot = {
   window: string;
   selections: Array<{
     id: string;
+    fixtureId?: string;
     fixture: string;
     scheduledAt: string;
     status: "PENDING" | "WON" | "LOST" | "VOID";
@@ -94,4 +95,12 @@ export type DashboardSummary = {
   selectedFixture: FixturePanel;
   activityFeed: ActivityItem[];
   pnlSummary: PnlSummary;
+};
+
+export type CouponPeriodResponse = {
+  period: {
+    from: string;
+    to: string;
+  };
+  coupons: CouponSnapshot[];
 };

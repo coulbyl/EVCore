@@ -35,10 +35,13 @@ function makeDeps(
   const couponRepository: CouponRepository = {
     findLatestByDate: vi.fn().mockResolvedValue(null),
     findPendingCouponsUntil: vi.fn().mockResolvedValue([]),
+    findPendingCouponsByFixture: vi.fn().mockResolvedValue([]),
     findCouponById: vi.fn().mockResolvedValue(null),
     updateStatus: vi.fn().mockResolvedValue(undefined),
     create: vi.fn().mockResolvedValue({ id: 'coupon-id' }),
-    linkBets: vi.fn().mockResolvedValue(undefined),
+    createPendingCouponWithBets: vi
+      .fn()
+      .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST' }),
     ...overrides.couponRepository,
   } as unknown as CouponRepository;
 
@@ -120,7 +123,9 @@ describe('CouponService.generateDailyCoupon', () => {
     expect(deps.notificationService.sendNoBetToday).toHaveBeenCalledWith(
       TEST_DATE,
     );
-    expect(deps.couponRepository.linkBets).not.toHaveBeenCalled();
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).not.toHaveBeenCalled();
   });
 
   it('creates a NO_BET coupon when no picks pass EV threshold', async () => {
@@ -189,12 +194,9 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
-    );
-    expect(deps.couponRepository.linkBets).toHaveBeenCalledWith('coupon-id', [
-      'bet-1',
-    ]);
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 1 }));
     expect(deps.notificationService.sendDailyCoupon).toHaveBeenCalled();
   });
 
@@ -246,9 +248,9 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 6 }),
-    );
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 6 }));
   });
 
   it('sorts picks by qualityScore DESC', async () => {
@@ -303,10 +305,13 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    // linkBets should have bet-b first (higher qualityScore)
-    const [, linkedBets] = (
-      deps.couponRepository.linkBets as ReturnType<typeof vi.fn>
-    ).mock.calls[0] as [string, string[]];
+    // selected betIds should be sorted by qualityScore DESC
+    const [callInput] = (
+      deps.couponRepository.createPendingCouponWithBets as ReturnType<
+        typeof vi.fn
+      >
+    ).mock.calls[0] as [{ betIds: string[] }];
+    const linkedBets = callInput.betIds;
     expect(linkedBets[0]).toBe('bet-b');
     expect(linkedBets[1]).toBe('bet-a');
   });
@@ -358,9 +363,9 @@ describe('CouponService.generateDailyCoupon', () => {
 
     expect(deps.fixtureService.findScheduledInRange).toHaveBeenCalledTimes(1);
     expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
-    );
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 1 }));
   });
 
   it('ignores stale pending bets and only selects bets from the current analysis batch', async () => {
@@ -417,9 +422,13 @@ describe('CouponService.generateDailyCoupon', () => {
         }),
       }),
     );
-    expect(deps.couponRepository.linkBets).toHaveBeenCalledWith('coupon-id', [
-      'bet-new',
-    ]);
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        betIds: ['bet-new'],
+      }),
+    );
   });
 });
 

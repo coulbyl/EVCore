@@ -23,7 +23,7 @@ export class DashboardRepository {
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
-      recentCoupons,
+      recentCouponsRaw,
       topBets,
       activityNotifications,
       latestFixture,
@@ -89,27 +89,31 @@ export class DashboardRepository {
         take: 25,
       }),
       this.prisma.client.dailyCoupon.findMany({
-        where: { bets: { some: {} } },
+        where: { couponLegs: { some: {} } },
         orderBy: { date: 'desc' },
         take: 8,
         include: {
-          bets: {
+          couponLegs: {
             select: {
-              id: true,
-              market: true,
-              pick: true,
-              comboMarket: true,
-              comboPick: true,
-              oddsSnapshot: true,
-              ev: true,
-              status: true,
-              modelRun: {
+              bet: {
                 select: {
-                  fixture: {
+                  id: true,
+                  market: true,
+                  pick: true,
+                  comboMarket: true,
+                  comboPick: true,
+                  oddsSnapshot: true,
+                  ev: true,
+                  status: true,
+                  modelRun: {
                     select: {
-                      scheduledAt: true,
-                      homeTeam: { select: { name: true } },
-                      awayTeam: { select: { name: true } },
+                      fixture: {
+                        select: {
+                          scheduledAt: true,
+                          homeTeam: { select: { name: true } },
+                          awayTeam: { select: { name: true } },
+                        },
+                      },
                     },
                   },
                 },
@@ -170,6 +174,14 @@ export class DashboardRepository {
         },
       }),
     ]);
+
+    const recentCoupons = recentCouponsRaw.map((coupon) => ({
+      id: coupon.id,
+      code: coupon.code,
+      date: coupon.date,
+      status: coupon.status,
+      bets: coupon.couponLegs.map((leg) => leg.bet),
+    }));
 
     return {
       scheduledToday,

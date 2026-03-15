@@ -165,16 +165,8 @@ export class BettingEngineService {
       return { settled: 0 };
     }
 
-    const modelRuns = await this.prisma.client.modelRun.findMany({
-      where: { fixtureId },
-      select: { id: true },
-    });
-
-    const modelRunIds = modelRuns.map((r) => r.id);
-    if (modelRunIds.length === 0) return { settled: 0 };
-
     const bets = await this.prisma.client.bet.findMany({
-      where: { modelRunId: { in: modelRunIds }, status: BetStatus.PENDING },
+      where: { fixtureId, status: BetStatus.PENDING },
       select: {
         id: true,
         market: true,
@@ -478,8 +470,34 @@ export class BettingEngineService {
           })
         : DEFAULT_STAKE_PCT;
 
-      const createdBet = await this.prisma.client.bet.create({
-        data: {
+      const pickKey = buildBetPickKey({
+        market: valueBet.market,
+        pick: valueBet.pick,
+        comboMarket: valueBet.comboMarket ?? null,
+        comboPick: valueBet.comboPick ?? null,
+      });
+
+      const canonicalBet = await this.prisma.client.bet.upsert({
+        where: {
+          fixtureId_pickKey: {
+            fixtureId,
+            pickKey,
+          },
+        },
+        create: {
+          modelRunId: modelRun.id,
+          fixtureId,
+          market: valueBet.market,
+          pick: valueBet.pick,
+          pickKey,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
+        },
+        update: {
           modelRunId: modelRun.id,
           market: valueBet.market,
           pick: valueBet.pick,
@@ -493,7 +511,7 @@ export class BettingEngineService {
         select: { id: true },
       });
 
-      betId = createdBet.id;
+      betId = canonicalBet.id;
       qualityScore = valueBet.qualityScore.toNumber();
     }
 
@@ -1061,6 +1079,20 @@ function summarizePick(pick: ViablePick): {
     ev: pick.ev.toNumber(),
     qualityScore: pick.qualityScore.toNumber(),
   };
+}
+
+function buildBetPickKey(input: {
+  market: Market;
+  pick: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+}): string {
+  return [
+    input.market,
+    input.pick,
+    input.comboMarket ?? '-',
+    input.comboPick ?? '-',
+  ].join('|');
 }
 
 function summarizeTeamStats(stats: TeamStatsInput): {

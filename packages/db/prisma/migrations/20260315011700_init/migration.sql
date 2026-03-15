@@ -27,6 +27,7 @@ CREATE TABLE "competition" (
     "name" TEXT NOT NULL,
     "country" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL,
+    "includeInBacktest" BOOLEAN NOT NULL DEFAULT true,
     "csvDivisionCode" TEXT,
     "seasonStartMonth" INTEGER,
     "activeSeasonsCount" INTEGER,
@@ -120,8 +121,10 @@ CREATE TABLE "model_run" (
 CREATE TABLE "bet" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
     "modelRunId" UUID NOT NULL,
+    "fixtureId" UUID NOT NULL,
     "market" "Market" NOT NULL,
     "pick" TEXT NOT NULL,
+    "pickKey" TEXT NOT NULL,
     "probEstimated" DECIMAL(5,4) NOT NULL,
     "oddsSnapshot" DECIMAL(6,3),
     "ev" DECIMAL(6,4) NOT NULL,
@@ -139,12 +142,22 @@ CREATE TABLE "bet" (
 -- CreateTable
 CREATE TABLE "daily_coupon" (
     "id" UUID NOT NULL DEFAULT uuidv7(),
+    "code" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "status" "CouponStatus" NOT NULL DEFAULT 'PENDING',
     "legCount" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "daily_coupon_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "coupon_leg" (
+    "couponId" UUID NOT NULL,
+    "betId" UUID NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "coupon_leg_pkey" PRIMARY KEY ("couponId","betId")
 );
 
 -- CreateTable
@@ -255,6 +268,9 @@ CREATE INDEX "model_run_fixtureId_analyzedAt_idx" ON "model_run"("fixtureId", "a
 CREATE INDEX "bet_modelRunId_idx" ON "bet"("modelRunId");
 
 -- CreateIndex
+CREATE INDEX "bet_fixtureId_idx" ON "bet"("fixtureId");
+
+-- CreateIndex
 CREATE INDEX "bet_dailyCouponId_idx" ON "bet"("dailyCouponId");
 
 -- CreateIndex
@@ -264,7 +280,16 @@ CREATE INDEX "bet_market_status_createdAt_idx" ON "bet"("market", "status", "cre
 CREATE INDEX "bet_status_updatedAt_idx" ON "bet"("status", "updatedAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "daily_coupon_date_key" ON "daily_coupon"("date");
+CREATE UNIQUE INDEX "bet_fixtureId_pickKey_key" ON "bet"("fixtureId", "pickKey");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "daily_coupon_code_key" ON "daily_coupon"("code");
+
+-- CreateIndex
+CREATE INDEX "daily_coupon_date_idx" ON "daily_coupon"("date");
+
+-- CreateIndex
+CREATE INDEX "coupon_leg_betId_idx" ON "coupon_leg"("betId");
 
 -- CreateIndex
 CREATE INDEX "adjustment_proposal_status_appliedAt_idx" ON "adjustment_proposal"("status", "appliedAt");
@@ -315,7 +340,16 @@ ALTER TABLE "model_run" ADD CONSTRAINT "model_run_fixtureId_fkey" FOREIGN KEY ("
 ALTER TABLE "bet" ADD CONSTRAINT "bet_modelRunId_fkey" FOREIGN KEY ("modelRunId") REFERENCES "model_run"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "bet" ADD CONSTRAINT "bet_fixtureId_fkey" FOREIGN KEY ("fixtureId") REFERENCES "fixture"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "bet" ADD CONSTRAINT "bet_dailyCouponId_fkey" FOREIGN KEY ("dailyCouponId") REFERENCES "daily_coupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "coupon_leg" ADD CONSTRAINT "coupon_leg_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "daily_coupon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "coupon_leg" ADD CONSTRAINT "coupon_leg_betId_fkey" FOREIGN KEY ("betId") REFERENCES "bet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "odds_snapshot" ADD CONSTRAINT "odds_snapshot_fixtureId_fkey" FOREIGN KEY ("fixtureId") REFERENCES "fixture"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
