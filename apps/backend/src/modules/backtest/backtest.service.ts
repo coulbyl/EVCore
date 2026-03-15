@@ -1020,8 +1020,11 @@ function aggregateMarketPerformance(
 function bookmakerRank(bookmaker: string): number {
   if (bookmaker === 'Pinnacle') return 0;
   if (bookmaker === 'Bet365') return 1;
-  if (bookmaker === 'MarketAvg') return 2;
-  return 3;
+  if (bookmaker === 'Unibet') return 2;
+  if (bookmaker === 'Marathonbet') return 3;
+  if (bookmaker === 'Bwin') return 4;
+  if (bookmaker === 'MarketAvg') return 5;
+  return 6;
 }
 
 function getOddsBucketLabel(odds: Decimal): string {

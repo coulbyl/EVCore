@@ -108,6 +108,17 @@ export type UpsertOddsSnapshotInput = {
   htftOdds: Record<string, number>;
 };
 
+export type UpsertSecondaryMarketOddsInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  overOdds: number | null;
+  underOdds: number | null;
+  bttsYesOdds: number | null;
+  bttsNoOdds: number | null;
+  htftOdds: Record<string, number>;
+};
+
 type PendingSettlementFixture = {
   id: string;
   externalId: number;
@@ -393,6 +404,46 @@ export class FixtureRepository {
     });
   }
 
+  private async upsertNonOneXTwo(
+    data: { fixtureId: string; bookmaker: string; snapshotAt: Date },
+    market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
+    pick: string,
+    odds: number | null,
+  ): Promise<void> {
+    if (odds === null) return;
+    const where = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      market,
+      pick,
+      snapshotAt: data.snapshotAt,
+    } as const;
+
+    try {
+      await this.prisma.client.oddsSnapshot.create({
+        data: {
+          fixtureId: data.fixtureId,
+          bookmaker: data.bookmaker,
+          market,
+          pick,
+          snapshotAt: data.snapshotAt,
+          odds,
+        },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) throw error;
+      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+        where,
+        select: { id: true },
+      });
+      if (!existing) throw error;
+      await this.prisma.client.oddsSnapshot.update({
+        where: { id: existing.id },
+        data: { odds },
+      });
+    }
+  }
+
   async upsertOddsSnapshot(
     data: UpsertOddsSnapshotInput,
   ): Promise<{ id: string }> {
@@ -405,59 +456,31 @@ export class FixtureRepository {
       awayOdds: data.awayOdds,
     });
 
-    const upsertNonOneXTwo = async (
-      market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
-      pick: string,
-      odds: number | null,
-    ): Promise<void> => {
-      if (odds === null) return;
-      const where = {
-        fixtureId: data.fixtureId,
-        bookmaker: data.bookmaker,
-        market,
-        pick,
-        snapshotAt: data.snapshotAt,
-      } as const;
-
-      try {
-        await this.prisma.client.oddsSnapshot.create({
-          data: {
-            fixtureId: data.fixtureId,
-            bookmaker: data.bookmaker,
-            market,
-            pick,
-            snapshotAt: data.snapshotAt,
-            odds,
-          },
-        });
-      } catch (error) {
-        if (!isUniqueConstraintError(error)) throw error;
-
-        const existing = await this.prisma.client.oddsSnapshot.findFirst({
-          where,
-          select: { id: true },
-        });
-
-        if (!existing) throw error;
-
-        await this.prisma.client.oddsSnapshot.update({
-          where: { id: existing.id },
-          data: { odds },
-        });
-      }
-    };
-
     await Promise.all([
-      upsertNonOneXTwo('OVER_UNDER', 'OVER', data.overOdds),
-      upsertNonOneXTwo('OVER_UNDER', 'UNDER', data.underOdds),
-      upsertNonOneXTwo('BTTS', 'YES', data.bttsYesOdds),
-      upsertNonOneXTwo('BTTS', 'NO', data.bttsNoOdds),
+      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'OVER', data.overOdds),
+      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'UNDER', data.underOdds),
+      this.upsertNonOneXTwo(data, 'BTTS', 'YES', data.bttsYesOdds),
+      this.upsertNonOneXTwo(data, 'BTTS', 'NO', data.bttsNoOdds),
       ...Object.entries(data.htftOdds).map(([pick, odds]) =>
-        upsertNonOneXTwo('HALF_TIME_FULL_TIME', pick, odds),
+        this.upsertNonOneXTwo(data, 'HALF_TIME_FULL_TIME', pick, odds),
       ),
     ]);
 
     return oneXTwoId;
+  }
+
+  async upsertSecondaryMarketOdds(
+    data: UpsertSecondaryMarketOddsInput,
+  ): Promise<void> {
+    await Promise.all([
+      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'OVER', data.overOdds),
+      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'UNDER', data.underOdds),
+      this.upsertNonOneXTwo(data, 'BTTS', 'YES', data.bttsYesOdds),
+      this.upsertNonOneXTwo(data, 'BTTS', 'NO', data.bttsNoOdds),
+      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(data, 'HALF_TIME_FULL_TIME', pick, odds),
+      ),
+    ]);
   }
 
   // Alias kept for backward compatibility with existing tests.

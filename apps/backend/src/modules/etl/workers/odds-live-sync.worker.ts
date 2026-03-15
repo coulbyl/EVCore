@@ -113,12 +113,14 @@ export class OddsLiveSyncWorker extends WorkerHost {
       if (!odds) {
         logger.warn(
           { externalId },
-          'No Pinnacle/Bet365 Match Winner odds — skipping fixture',
+          'No priority bookmaker Match Winner odds — skipping fixture',
         );
         skipped++;
         await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
         continue;
       }
+
+      const snapshotAt = new Date(match.update);
 
       const additionalOdds = extractAdditionalMarketOdds(
         match.bookmakers,
@@ -128,7 +130,7 @@ export class OddsLiveSyncWorker extends WorkerHost {
       await this.fixtureService.upsertOddsSnapshot({
         fixtureId,
         bookmaker: odds.bookmaker,
-        snapshotAt: new Date(match.update),
+        snapshotAt,
         homeOdds: odds.homeOdds,
         drawOdds: odds.drawOdds,
         awayOdds: odds.awayOdds,
@@ -138,6 +140,40 @@ export class OddsLiveSyncWorker extends WorkerHost {
         bttsNoOdds: additionalOdds.bttsNoOdds,
         htftOdds: additionalOdds.htftOdds,
       });
+
+      // Store secondary market odds from all other priority bookmakers.
+      // Each bookmaker's OVER_UNDER/BTTS/HTFT data is stored independently
+      // so the engine can pick the best available per market.
+      const SECONDARY_IDS = [
+        API_FOOTBALL_BOOKMAKERS.PINNACLE,
+        API_FOOTBALL_BOOKMAKERS.BET365,
+        API_FOOTBALL_BOOKMAKERS.UNIBET,
+        API_FOOTBALL_BOOKMAKERS.MARATHONBET,
+        API_FOOTBALL_BOOKMAKERS.BWIN,
+      ];
+      for (const id of SECONDARY_IDS) {
+        const bk = match.bookmakers.find((b) => b.id === id);
+        if (!bk || bk.name === odds.bookmaker) continue;
+        const secondary = extractAdditionalMarketOdds(
+          match.bookmakers,
+          bk.name,
+        );
+        const hasData =
+          secondary.overOdds !== null ||
+          secondary.bttsYesOdds !== null ||
+          Object.keys(secondary.htftOdds).length > 0;
+        if (!hasData) continue;
+        await this.fixtureService.upsertSecondaryMarketOdds({
+          fixtureId,
+          bookmaker: bk.name,
+          snapshotAt,
+          overOdds: secondary.overOdds,
+          underOdds: secondary.underOdds,
+          bttsYesOdds: secondary.bttsYesOdds,
+          bttsNoOdds: secondary.bttsNoOdds,
+          htftOdds: secondary.htftOdds,
+        });
+      }
 
       synced++;
       await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
@@ -212,14 +248,17 @@ export function extractAdditionalMarketOdds(
   return { overOdds, underOdds, bttsYesOdds, bttsNoOdds, htftOdds };
 }
 
-// Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365.
-// Returns null if neither bookmaker has Match Winner data.
+// Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365 → Unibet → Marathonbet → Bwin.
+// Returns null if no bookmaker has Match Winner data.
 export function extractOneXTwoOdds(
   bookmakers: OddsBookmaker[],
 ): OneXTwoOdds | null {
   const PRIORITY_IDS = [
     API_FOOTBALL_BOOKMAKERS.PINNACLE,
     API_FOOTBALL_BOOKMAKERS.BET365,
+    API_FOOTBALL_BOOKMAKERS.UNIBET,
+    API_FOOTBALL_BOOKMAKERS.MARATHONBET,
+    API_FOOTBALL_BOOKMAKERS.BWIN,
   ] as const;
 
   for (const bookmakerId of PRIORITY_IDS) {

@@ -98,6 +98,9 @@ export function getActiveCsvSeasonCodes(now: Date = new Date()): string[] {
 export const API_FOOTBALL_BOOKMAKERS = {
   PINNACLE: 4,
   BET365: 8,
+  UNIBET: 16,
+  MARATHONBET: 2,
+  BWIN: 6,
 } as const;
 
 // Bet type IDs in the API-Football odds endpoint

@@ -4,6 +4,7 @@ import {
   FixtureRepository,
   type UpsertFixtureResult,
   type UpsertOddsSnapshotInput,
+  type UpsertSecondaryMarketOddsInput,
 } from './fixture.repository';
 
 type UpsertCompetitionInput = {
@@ -229,6 +230,12 @@ export class FixtureService {
     data: UpsertOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOddsSnapshot(data);
+  }
+
+  async upsertSecondaryMarketOdds(
+    data: UpsertSecondaryMarketOddsInput,
+  ): Promise<void> {
+    return this.fixtureRepository.upsertSecondaryMarketOdds(data);
   }
 
   // Alias kept for backward compatibility with existing tests.
