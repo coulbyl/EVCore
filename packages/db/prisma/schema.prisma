@@ -112,6 +112,7 @@ model Team {
   externalId     Int         @unique // football-data.org ID
   name           String
   shortName      String
+  logoUrl        String?
   competitionId  String      @db.Uuid
   competition    Competition @relation(fields: [competitionId], references: [id])
   homeFixtures   Fixture[]   @relation("HomeTeam")

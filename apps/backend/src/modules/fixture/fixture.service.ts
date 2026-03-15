@@ -26,8 +26,18 @@ type UpsertSeasonInput = {
 // API-agnostic fixture input — mapping from raw API response is done in the worker
 export type FixtureInput = {
   externalId: number;
-  homeTeam: { externalId: number; name: string; shortName: string };
-  awayTeam: { externalId: number; name: string; shortName: string };
+  homeTeam: {
+    externalId: number;
+    name: string;
+    shortName: string;
+    logoUrl: string;
+  };
+  awayTeam: {
+    externalId: number;
+    name: string;
+    shortName: string;
+    logoUrl: string;
+  };
   matchday: number;
   scheduledAt: Date;
   status: FixtureStatus;
@@ -97,12 +107,14 @@ export class FixtureService {
         externalId: fixture.homeTeam.externalId,
         name: fixture.homeTeam.name,
         shortName: fixture.homeTeam.shortName,
+        logoUrl: fixture.homeTeam.logoUrl,
         competitionId,
       }),
       this.fixtureRepository.upsertTeam({
         externalId: fixture.awayTeam.externalId,
         name: fixture.awayTeam.name,
         shortName: fixture.awayTeam.shortName,
+        logoUrl: fixture.awayTeam.logoUrl,
         competitionId,
       }),
     ]);

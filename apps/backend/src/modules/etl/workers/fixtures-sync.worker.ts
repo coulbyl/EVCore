@@ -171,11 +171,13 @@ function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
       externalId: item.teams.home.id,
       name: item.teams.home.name,
       shortName: item.teams.home.name, // API-FOOTBALL has no shortName; name is used as fallback
+      logoUrl: item.teams.home.logo,
     },
     awayTeam: {
       externalId: item.teams.away.id,
       name: item.teams.away.name,
       shortName: item.teams.away.name,
+      logoUrl: item.teams.away.logo,
     },
     matchday: parseMatchday(item.league.round),
     scheduledAt: parseIsoDate(item.fixture.date),

@@ -4,8 +4,8 @@ import { PrismaService } from '@/prisma.service';
 import { oneDayWindow } from '@utils/date.utils';
 
 export type FixtureWithTeamNames = Fixture & {
-  homeTeam: { name: string; shortName: string };
-  awayTeam: { name: string; shortName: string };
+  homeTeam: { name: string; shortName: string; logoUrl: string | null };
+  awayTeam: { name: string; shortName: string; logoUrl: string | null };
 };
 
 type FindByDateAndTeamsInput = {
@@ -37,6 +37,7 @@ type UpsertTeamInput = {
   externalId: number;
   name: string;
   shortName: string;
+  logoUrl: string;
   competitionId: string;
 };
 
@@ -158,7 +159,11 @@ export class FixtureRepository {
     return this.prisma.client.team.upsert({
       where: { externalId: data.externalId },
       create: data,
-      update: { name: data.name, shortName: data.shortName },
+      update: {
+        name: data.name,
+        shortName: data.shortName,
+        logoUrl: data.logoUrl,
+      },
       select: { id: true },
     });
   }
@@ -532,8 +537,8 @@ export class FixtureRepository {
           : {}),
       },
       include: {
-        homeTeam: { select: { name: true, shortName: true } },
-        awayTeam: { select: { name: true, shortName: true } },
+        homeTeam: { select: { name: true, shortName: true, logoUrl: true } },
+        awayTeam: { select: { name: true, shortName: true, logoUrl: true } },
       },
     });
 
