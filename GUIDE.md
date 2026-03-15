@@ -44,7 +44,7 @@ Toujours respecter cet ordre. Chaque étape dépend de la précédente.
 
 ```
 POST /etl/sync/fixtures     ← les fixtures doivent exister avant tout
-POST /etl/sync/results      ← marque les fixtures FT/POSTPONED
+POST /etl/sync/settlement   ← refresh des fixtures avec bets pending + settlement
 POST /etl/sync/stats        ← xG, shots (2s de délai par fixture — prévoir ~2h pour 3 saisons × 10 ligues)
 POST /etl/sync/odds-csv     ← odds historiques Pinnacle/Bet365 depuis football-data.co.uk
 POST /etl/sync/odds-live    ← cotes pré-match J+1 (corps JSON optionnel : { "date": "YYYY-MM-DD" })
@@ -164,9 +164,9 @@ L'API renvoie HTTP 200 avec `errors: { requests: "..." }`. Le worker `odds-live-
 
 Le worker `stats-sync` ne convertit plus `expected_goals: null` en `0`. Le fixture est marqué comme xG indisponible pour éviter de polluer les `teamStats` et les lambdas du moteur.
 
-### `results-sync` — 3 jobs en `failed`
+### `pending-bets-settlement-sync` — jobs en `failed`
 
-Après un redémarrage à froid, certains jobs peuvent échouer si la table n'existe pas encore. Relancer `POST /etl/sync/results` une fois la DB prête.
+Après un redémarrage à froid, certains jobs peuvent échouer si la table n'existe pas encore. Relancer `POST /etl/sync/settlement` une fois la DB prête.
 
 ### Pinnacle odds à 0 (depuis juillet 2025)
 

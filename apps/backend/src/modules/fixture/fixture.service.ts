@@ -66,6 +66,16 @@ type UpdateScoresInput = {
   awayHtScore: number | null;
 };
 
+type SyncFixtureStateInput = {
+  externalId: number;
+  scheduledAt: Date;
+  status: FixtureStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 @Injectable()
 export class FixtureService {
   constructor(private readonly fixtureRepository: FixtureRepository) {}
@@ -123,6 +133,10 @@ export class FixtureService {
     return this.fixtureRepository.updateScores(input);
   }
 
+  async syncFixtureState(input: SyncFixtureStateInput): Promise<void> {
+    return this.fixtureRepository.syncFixtureState(input);
+  }
+
   async updateXg(
     externalId: number,
     homeXg: number,
@@ -160,6 +174,7 @@ export class FixtureService {
     {
       id: string;
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }[]
@@ -173,6 +188,22 @@ export class FixtureService {
 
   async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
     return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
+  }
+
+  findPendingSettlementFixtures(): Promise<
+    {
+      id: string;
+      externalId: number;
+      scheduledAt: Date;
+      season: {
+        competition: {
+          leagueId: number;
+          code: string;
+        };
+      };
+    }[]
+  > {
+    return this.fixtureRepository.findPendingSettlementFixtures();
   }
 
   async upsertOddsSnapshot(

@@ -19,6 +19,7 @@ import { PrismaService } from '@/prisma.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
+import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -27,7 +28,6 @@ import type {
 const logger = createLogger('etl-service');
 const LEAGUE_SEASON_SYNC_KINDS: LeagueSyncType[] = [
   'fixtures',
-  'results',
   'stats',
   'injuries',
 ];
@@ -96,6 +96,8 @@ export class EtlService implements OnApplicationBootstrap {
   constructor(
     @InjectQueue(BULLMQ_QUEUES.LEAGUE_SYNC)
     private readonly leagueSyncQueue: Queue<LeagueSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT)
+    private readonly pendingBetsSettlementQueue: Queue<PendingBetsSettlementJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_LIVE_SYNC)
@@ -130,15 +132,6 @@ export class EtlService implements OnApplicationBootstrap {
         syncType: 'fixtures',
         jobName: (competitionCode, season) =>
           `fixtures-sync-${competitionCode}-${season}`,
-        scheduledSeasons: 'current',
-      },
-      results: {
-        queue: this.leagueSyncQueue,
-        schedulerKey: `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:results`,
-        cronPattern: ETL_CRON_SCHEDULES.RESULTS_SYNC,
-        syncType: 'results',
-        jobName: (competitionCode, season) =>
-          `results-sync-${competitionCode}-${season}`,
         scheduledSeasons: 'current',
       },
       stats: {
@@ -209,6 +202,15 @@ export class EtlService implements OnApplicationBootstrap {
       {
         name: 'odds-live-sync',
         data: {} satisfies OddsLiveSyncJobData,
+      },
+    );
+
+    await this.pendingBetsSettlementQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.PENDING_BETS_SETTLEMENT,
+      { pattern: ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT },
+      {
+        name: 'pending-bets-settlement-sync',
+        data: {} satisfies PendingBetsSettlementJobData,
       },
     );
 
@@ -309,7 +311,7 @@ export class EtlService implements OnApplicationBootstrap {
       },
       breakdown: {
         fixturesSync: estimate.fixturesSyncCalls,
-        resultsSync: estimate.resultsSyncCalls,
+        settlementSync: estimate.settlementSyncCalls,
         statsSync: estimate.statsSyncCalls,
         injuriesSync: estimate.injuriesSyncCalls,
         oddsLiveSync: estimate.oddsLiveSyncCalls,
@@ -331,8 +333,12 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerLeagueSeasonSync('fixtures');
   }
 
-  async triggerResultsSync(): Promise<void> {
-    await this.triggerLeagueSeasonSync('results');
+  async triggerPendingBetsSettlementSync(): Promise<void> {
+    await this.pendingBetsSettlementQueue.add(
+      'pending-bets-settlement-sync',
+      {} satisfies PendingBetsSettlementJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   }
 
   async triggerStatsSync(): Promise<void> {
@@ -391,6 +397,7 @@ export class EtlService implements OnApplicationBootstrap {
   async getQueueStatus(): Promise<Record<string, Record<string, number>>> {
     const queues = {
       [BULLMQ_QUEUES.LEAGUE_SYNC]: this.leagueSyncQueue,
+      [BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT]: this.pendingBetsSettlementQueue,
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
       [BULLMQ_QUEUES.ODDS_LIVE_SYNC]: this.oddsLiveQueue,
       [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
@@ -416,10 +423,6 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerLeagueSeasonSyncForLeague('fixtures', competitionCode);
   }
 
-  async triggerResultsSyncForLeague(competitionCode: string): Promise<void> {
-    await this.triggerLeagueSeasonSyncForLeague('results', competitionCode);
-  }
-
   async triggerStatsSyncForLeague(competitionCode: string): Promise<void> {
     await this.triggerLeagueSeasonSyncForLeague('stats', competitionCode);
   }
@@ -430,7 +433,7 @@ export class EtlService implements OnApplicationBootstrap {
 
   async triggerFullSync(): Promise<void> {
     await this.triggerFixturesSync();
-    await this.triggerResultsSync();
+    await this.triggerPendingBetsSettlementSync();
     await this.triggerStatsSync();
     await this.triggerInjuriesSync();
     await this.triggerOddsCsvImport();

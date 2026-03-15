@@ -18,7 +18,7 @@ export type ApiFootballDailyCallsEstimate = {
   leagueCount: number;
   seasonJobCount: number;
   fixturesSyncCalls: number;
-  resultsSyncCalls: number;
+  settlementSyncCalls: number;
   statsSyncCalls: number;
   injuriesSyncCalls: number;
   oddsLiveSyncCalls: number;
@@ -40,17 +40,17 @@ export function estimateApiFootballDailyCalls(
   );
 
   // Daily calls by worker class:
-  // - fixtures/results are season-level calls
-  // - stats/injuries/odds-live are fixture-level calls
+  // - fixtures are season-level calls
+  // - settlement/stats/injuries/odds-live are fixture-level calls
   const fixturesSyncCalls = seasonJobCount;
-  const resultsSyncCalls = seasonJobCount;
+  const settlementSyncCalls = Math.max(1, Math.floor(leagueCount / 2));
   const statsSyncCalls = leagueCount * avgFinishedWithoutXg;
   const injuriesSyncCalls = leagueCount * avgScheduled;
   const oddsLiveSyncCalls = leagueCount * avgScheduled;
 
   const totalCalls =
     fixturesSyncCalls +
-    resultsSyncCalls +
+    settlementSyncCalls +
     statsSyncCalls +
     injuriesSyncCalls +
     oddsLiveSyncCalls;
@@ -59,7 +59,7 @@ export function estimateApiFootballDailyCalls(
     leagueCount,
     seasonJobCount,
     fixturesSyncCalls,
-    resultsSyncCalls,
+    settlementSyncCalls,
     statsSyncCalls,
     injuriesSyncCalls,
     oddsLiveSyncCalls,
@@ -110,6 +110,7 @@ export const API_FOOTBALL_BET_IDS = {
 
 export const BULLMQ_QUEUES = {
   LEAGUE_SYNC: 'league-sync',
+  PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_LIVE_SYNC: 'odds-live-sync',
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
@@ -126,7 +127,7 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
 // Cron schedules for daily/weekly ETL automation (BullMQ repeatable jobs)
 export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
-  RESULTS_SYNC: '0 3 * * *', // 03:00 UTC daily
+  PENDING_BETS_SETTLEMENT: '*/30 * * * *', // every 30 minutes
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
@@ -137,6 +138,7 @@ export const ETL_CRON_SCHEDULES = {
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
 export const ETL_SCHEDULER_KEYS = {
   LEAGUE_SYNC: 'cron:league-sync',
+  PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ODDS_LIVE_SYNC: 'cron:odds-live-sync',
   ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',

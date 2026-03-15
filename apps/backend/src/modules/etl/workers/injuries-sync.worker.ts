@@ -69,11 +69,14 @@ export class InjuriesSyncWorker {
     const fixtures = await this.fixtureService.findScheduledBySeason(
       seasonRecord.id,
     );
+    const targetFixtures = fixtures.filter((fixture) =>
+      isWithinTodayAndTomorrowUtc(fixture.scheduledAt),
+    );
 
     let updated = 0;
     let skipped = 0;
 
-    for (const fixture of fixtures) {
+    for (const fixture of targetFixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/injuries?fixture=${fixture.externalId}`;
       const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
@@ -123,7 +126,7 @@ export class InjuriesSyncWorker {
       {
         competitionCode,
         season,
-        fixtures: fixtures.length,
+        fixtures: targetFixtures.length,
         updated,
         skipped,
       },
@@ -185,4 +188,18 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
     !Array.isArray(value) &&
     Object.getPrototypeOf(value) === Object.prototype
   );
+}
+
+function isWithinTodayAndTomorrowUtc(
+  scheduledAt: Date,
+  now = new Date(),
+): boolean {
+  const start = new Date(now);
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  end.setUTCHours(23, 59, 59, 999);
+
+  return scheduledAt >= start && scheduledAt <= end;
 }

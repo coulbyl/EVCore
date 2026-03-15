@@ -62,6 +62,16 @@ type UpdateScoresInput = {
   awayHtScore: number | null;
 };
 
+type SyncFixtureStateInput = {
+  externalId: number;
+  scheduledAt: Date;
+  status: FixtureStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 type UpsertOneXTwoOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -83,6 +93,18 @@ export type UpsertOddsSnapshotInput = {
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
+};
+
+type PendingSettlementFixture = {
+  id: string;
+  externalId: number;
+  scheduledAt: Date;
+  season: {
+    competition: {
+      leagueId: number;
+      code: string;
+    };
+  };
 };
 
 @Injectable()
@@ -155,6 +177,20 @@ export class FixtureRepository {
         homeHtScore: input.homeHtScore,
         awayHtScore: input.awayHtScore,
         status: 'FINISHED',
+      },
+    });
+  }
+
+  async syncFixtureState(input: SyncFixtureStateInput): Promise<void> {
+    await this.prisma.client.fixture.updateMany({
+      where: { externalId: input.externalId },
+      data: {
+        scheduledAt: input.scheduledAt,
+        status: input.status,
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+        homeHtScore: input.homeHtScore,
+        awayHtScore: input.awayHtScore,
       },
     });
   }
@@ -262,6 +298,7 @@ export class FixtureRepository {
     {
       id: string;
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }[]
@@ -271,6 +308,7 @@ export class FixtureRepository {
       select: {
         id: true,
         externalId: true,
+        scheduledAt: true,
         homeTeam: { select: { externalId: true } },
         awayTeam: { select: { externalId: true } },
       },
@@ -290,6 +328,30 @@ export class FixtureRepository {
       where: { snapshotAt: { lt: cutoff } },
     });
     return result.count;
+  }
+
+  findPendingSettlementFixtures(): Promise<PendingSettlementFixture[]> {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        bets: { some: { status: 'PENDING' } },
+      },
+      select: {
+        id: true,
+        externalId: true,
+        scheduledAt: true,
+        season: {
+          select: {
+            competition: {
+              select: {
+                leagueId: true,
+                code: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
   }
 
   async upsertOddsSnapshot(

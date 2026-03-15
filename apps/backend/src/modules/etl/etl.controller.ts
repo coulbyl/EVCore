@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -11,6 +12,14 @@ import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EtlService } from './etl.service';
 import { OddsLiveSyncBodyDto } from './dto/odds-live-sync-body.dto';
 import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
+
+type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
+type GlobalSyncType =
+  | LeagueSyncType
+  | 'settlement'
+  | 'odds-csv'
+  | 'odds-live'
+  | 'odds-retention';
 
 @ApiTags('ETL')
 @Controller('etl')
@@ -51,6 +60,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'pending-bets-settlement-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 8,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-csv-import': {
           active: 0,
           waiting: 0,
@@ -86,10 +102,11 @@ export class EtlController {
   @ApiOperation({
     summary: 'Trigger full ETL sync',
     description:
-      'Enqueues the unified league-sync pipeline in sequence: fixtures → results → ' +
-      'stats → injuries, then odds-csv and odds-live. Routine fixtures/results/injuries ' +
-      'runs target the current season; stats still scans active seasons. Jobs are staggered ' +
-      'to respect API rate limits. Use for initial backfill or after a long downtime.',
+      'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
+      'stats → injuries, then odds-csv and odds-live. Routine fixtures/injuries ' +
+      'runs target the current season; stats still scans active seasons. Settlement ' +
+      'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
+      'or after a long downtime.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   async triggerFullSync() {
@@ -98,153 +115,124 @@ export class EtlController {
 
   // ─── Granular triggers ────────────────────────────────────────────────────
 
-  @Post('sync/fixtures')
+  @Post('sync/:type')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Trigger fixtures sync',
+    summary: 'Trigger ETL sync by type',
     description:
-      'Enqueues one league-sync fixtures job per active competition × current season. ' +
-      'Fetches scheduled fixtures from API-Football and upserts them into the DB. ' +
-      'Run this before results-sync or stats-sync to ensure fixture records exist.',
+      'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
+      'settlement, odds-csv, odds-live, odds-retention. For league-scoped runs, use ' +
+      '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
+  })
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { type: 'object', properties: { date: { type: 'string' } } },
+        { type: 'object', properties: { retentionDays: { type: 'number' } } },
+      ],
+    },
+    required: false,
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerFixturesSync() {
-    return this.ok(() => this.etlService.triggerFixturesSync());
-  }
-
-  @Post('sync/fixtures/:competition')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger fixtures sync for one league' })
-  async triggerFixturesSyncForLeague(
-    @Param('competition') competition: string,
+  async triggerSync(
+    @Param('type') type: string,
+    @Body() body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
   ) {
-    return this.okForLeague(competition, (code) =>
-      this.etlService.triggerFixturesSyncForLeague(code),
-    );
+    return this.ok(() => this.triggerGlobalSync(type, body));
   }
 
-  @Post('sync/results')
+  @Post('sync/:type/:competitionCode')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Trigger results sync',
+    summary: 'Trigger league-scoped ETL sync',
     description:
-      'Enqueues one league-sync results job per active competition × current season. ' +
-      'Updates fixture statuses (FT, AET, PEN, AWD, POSTPONED) and final scores.',
+      'Triggers a league-scoped ETL flow for one competition code. Supported types: ' +
+      'fixtures, stats, injuries. Example competition codes: PL, SA, LL.',
   })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerResultsSync() {
-    return this.ok(() => this.etlService.triggerResultsSync());
-  }
-
-  @Post('sync/results/:competition')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger results sync for one league' })
-  async triggerResultsSyncForLeague(@Param('competition') competition: string) {
-    return this.okForLeague(competition, (code) =>
-      this.etlService.triggerResultsSyncForLeague(code),
-    );
-  }
-
-  @Post('sync/stats')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger stats sync',
-    description:
-      'Enqueues one league-sync stats job per active competition × active season. ' +
-      'Fetches per-fixture statistics (xG, shots on target) for finished fixtures ' +
-      'that have no xG data yet. Uses shots_on_target × 0.35 as a proxy when ' +
-      'expected_goals is absent from the API response.',
-  })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerStatsSync() {
-    return this.ok(() => this.etlService.triggerStatsSync());
-  }
-
-  @Post('sync/stats/:competition')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger stats sync for one league' })
-  async triggerStatsSyncForLeague(@Param('competition') competition: string) {
-    return this.okForLeague(competition, (code) =>
-      this.etlService.triggerStatsSyncForLeague(code),
-    );
-  }
-
-  @Post('sync/injuries')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger injuries shadow sync',
-    description:
-      'Enqueues one league-sync injuries job per active competition × current season. ' +
-      'Fetches injuries from API-Football for scheduled fixtures and stores ' +
-      '`shadow_injuries` into the latest ModelRun.features per fixture.',
-  })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerInjuriesSync() {
-    return this.ok(() => this.etlService.triggerInjuriesSync());
-  }
-
-  @Post('sync/injuries/:competition')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger injuries sync for one league' })
-  async triggerInjuriesSyncForLeague(
-    @Param('competition') competition: string,
+  async triggerSyncForCompetition(
+    @Param('type') type: string,
+    @Param('competitionCode') competitionCode: string,
   ) {
-    return this.okForLeague(competition, (code) =>
-      this.etlService.triggerInjuriesSyncForLeague(code),
-    );
-  }
-
-  @Post('sync/odds-csv')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger historical odds CSV import',
-    description:
-      'Enqueues one odds-csv-import job per active competition for the current ' +
-      'CSV season only. Downloads Pinnacle + Bet365 ' +
-      'closing odds from football-data.co.uk and upserts OddsSnapshot records. ' +
-      'Rows with missing odds (0) are silently skipped.',
-  })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerOddsCsvImport() {
-    return this.ok(() => this.etlService.triggerOddsCsvImport());
-  }
-
-  @Post('sync/odds-live')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger live odds snapshot',
-    description:
-      'Enqueues an odds-live-sync job that fetches pre-match odds from API-Football ' +
-      'for every scheduled fixture on the target date. Bookmaker priority: Pinnacle → Bet365 ' +
-      '(Match Winner market only). Fixtures without eligible odds are skipped without error. ' +
-      'Omit the body to target tomorrow UTC (standard daily cron behaviour).',
-  })
-  @ApiBody({ type: OddsLiveSyncBodyDto, required: false })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerOddsLiveSync(@Body() body: OddsLiveSyncBodyDto = {}) {
-    return this.ok(() => this.etlService.triggerOddsLiveSync(body.date));
-  }
-
-  @Post('sync/odds-retention')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger odds snapshot retention cleanup',
-    description:
-      'Enqueues an odds-snapshot-retention maintenance job that deletes ' +
-      'OddsSnapshot rows older than the configured retention window. ' +
-      'By default it uses ODDS_SNAPSHOT_RETENTION_DAYS, but you can override per run.',
-  })
-  @ApiBody({ type: OddsSnapshotRetentionBodyDto, required: false })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerOddsSnapshotRetention(
-    @Body() body: OddsSnapshotRetentionBodyDto = {},
-  ) {
-    return this.ok(() =>
-      this.etlService.triggerOddsSnapshotRetention(body.retentionDays),
+    return this.okForLeague(competitionCode, (code) =>
+      this.triggerLeagueSync(type, code),
     );
   }
 
   private resolveCode(competition: string): string {
     return competition.toUpperCase();
   }
+
+  private async triggerGlobalSync(
+    type: string,
+    body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto,
+  ): Promise<void> {
+    switch (this.resolveGlobalType(type)) {
+      case 'fixtures':
+        await this.etlService.triggerFixturesSync();
+        return;
+      case 'stats':
+        await this.etlService.triggerStatsSync();
+        return;
+      case 'injuries':
+        await this.etlService.triggerInjuriesSync();
+        return;
+      case 'settlement':
+        await this.etlService.triggerPendingBetsSettlementSync();
+        return;
+      case 'odds-csv':
+        await this.etlService.triggerOddsCsvImport();
+        return;
+      case 'odds-live':
+        await this.etlService.triggerOddsLiveSync(body.date);
+        return;
+      case 'odds-retention':
+        await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
+        return;
+    }
+  }
+
+  private async triggerLeagueSync(
+    type: string,
+    competitionCode: string,
+  ): Promise<void> {
+    switch (this.resolveLeagueType(type)) {
+      case 'fixtures':
+        await this.etlService.triggerFixturesSyncForLeague(competitionCode);
+        return;
+      case 'stats':
+        await this.etlService.triggerStatsSyncForLeague(competitionCode);
+        return;
+      case 'injuries':
+        await this.etlService.triggerInjuriesSyncForLeague(competitionCode);
+        return;
+    }
+  }
+
+  private resolveGlobalType(type: string): GlobalSyncType {
+    if (isGlobalSyncType(type)) return type;
+    throw new BadRequestException(`Unsupported ETL sync type: ${type}`);
+  }
+
+  private resolveLeagueType(type: string): LeagueSyncType {
+    if (isLeagueSyncType(type)) return type;
+    throw new BadRequestException(
+      `Unsupported league-scoped ETL sync type: ${type}`,
+    );
+  }
+}
+
+function isGlobalSyncType(type: string): type is GlobalSyncType {
+  return (
+    type === 'fixtures' ||
+    type === 'stats' ||
+    type === 'injuries' ||
+    type === 'settlement' ||
+    type === 'odds-csv' ||
+    type === 'odds-live' ||
+    type === 'odds-retention'
+  );
+}
+
+function isLeagueSyncType(type: string): type is LeagueSyncType {
+  return type === 'fixtures' || type === 'stats' || type === 'injuries';
 }

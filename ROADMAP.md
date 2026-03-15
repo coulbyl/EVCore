@@ -162,7 +162,7 @@
 - [x] Odds CSV multi-compétitions (`divisionCode` par ligue, import PL/SA/LL/BL1 configurable)
 - [x] API rolling-stats multi-ligue (`POST /rolling-stats/backfill/:competition/:season`)
 - [x] `getActiveCsvSeasonCodes()` — fenêtre glissante 3 saisons (remplace `CSV_ODDS_SEASONS` hardcodé)
-- [x] ETL controller : endpoints granulaires `/sync/fixtures`, `/sync/results` + Swagger complet
+- [x] ETL controller : endpoints granulaires `/sync/fixtures`, `/sync/settlement` + Swagger complet
 - [x] `odds-live-sync` : lockDuration 600s + schema odds assoupli (Exact Score > 1000, Asian Handicap = 1.00)
 - [x] `odds-csv-import` : rows sans cotes (saison en cours) skippées en `debug` silencieux
 - [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)

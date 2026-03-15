@@ -15,6 +15,7 @@ import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
+import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 
 type MockQueue<T> = Pick<
   Queue<T>,
@@ -76,6 +77,7 @@ const totalStatsJobs = TEST_COMPETITIONS.length * TEST_SEASONS.length;
 
 describe('EtlService', () => {
   const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
+  const pendingBetsSettlementQueue = makeQueue<PendingBetsSettlementJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
   const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
@@ -91,6 +93,7 @@ describe('EtlService', () => {
 
   const service = new EtlService(
     leagueSyncQueue as Queue<LeagueSyncJobData>,
+    pendingBetsSettlementQueue as Queue<PendingBetsSettlementJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
     oddsLiveQueue as Queue<OddsLiveSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
@@ -128,27 +131,14 @@ describe('EtlService', () => {
     });
   });
 
-  it('dispatches results jobs only for the current season', async () => {
-    await service.triggerResultsSync();
+  it('dispatches one pending bets settlement job', async () => {
+    await service.triggerPendingBetsSettlementSync();
 
-    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
-
-    TEST_COMPETITIONS.forEach((competition, index) => {
-      expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
-        index + 1,
-        `results-sync-${competition.code}-${CURRENT_SEASON}`,
-        {
-          syncType: 'results',
-          season: CURRENT_SEASON,
-          competitionCode: competition.code,
-          leagueId: competition.leagueId,
-        },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: index * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-        },
-      );
-    });
+    expect(pendingBetsSettlementQueue.add).toHaveBeenCalledWith(
+      'pending-bets-settlement-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   });
 
   it('dispatches stats jobs for all active seasons', async () => {
@@ -231,9 +221,6 @@ describe('EtlService', () => {
     await expect(service.triggerFixturesSyncForLeague('LL')).rejects.toThrow(
       'Unknown or inactive competition: LL',
     );
-    await expect(service.triggerResultsSyncForLeague('LL')).rejects.toThrow(
-      'Unknown or inactive competition: LL',
-    );
     await expect(service.triggerStatsSyncForLeague('LL')).rejects.toThrow(
       'Unknown or inactive competition: LL',
     );
@@ -289,8 +276,9 @@ describe('EtlService', () => {
     await service.triggerFullSync();
 
     expect(leagueSyncQueue.add).toHaveBeenCalledTimes(
-      TEST_COMPETITIONS.length * 3 + totalStatsJobs,
+      TEST_COMPETITIONS.length * 2 + totalStatsJobs,
     );
+    expect(pendingBetsSettlementQueue.add).toHaveBeenCalledOnce();
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
     expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
   });

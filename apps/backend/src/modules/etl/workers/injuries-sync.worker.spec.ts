@@ -47,6 +47,11 @@ const PL_COMPETITION_ROW = {
 };
 
 describe('InjuriesSyncWorker', () => {
+  const TODAY_FIXTURE_DATE = new Date();
+  TODAY_FIXTURE_DATE.setUTCHours(12, 0, 0, 0);
+  const FAR_FIXTURE_DATE = new Date(TODAY_FIXTURE_DATE);
+  FAR_FIXTURE_DATE.setUTCDate(FAR_FIXTURE_DATE.getUTCDate() + 4);
+
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
@@ -90,6 +95,7 @@ describe('InjuriesSyncWorker', () => {
       {
         id: 'fixture-1',
         externalId: 999,
+        scheduledAt: TODAY_FIXTURE_DATE,
         homeTeam: { externalId: 111 },
         awayTeam: { externalId: 222 },
       },
@@ -125,6 +131,7 @@ describe('InjuriesSyncWorker', () => {
       {
         id: 'fixture-1',
         externalId: 999,
+        scheduledAt: TODAY_FIXTURE_DATE,
         homeTeam: { externalId: 111 },
         awayTeam: { externalId: 222 },
       },
@@ -148,6 +155,7 @@ describe('InjuriesSyncWorker', () => {
       {
         id: 'fixture-1',
         externalId: 999,
+        scheduledAt: TODAY_FIXTURE_DATE,
         homeTeam: { externalId: 111 },
         awayTeam: { externalId: 222 },
       },
@@ -189,5 +197,44 @@ describe('InjuriesSyncWorker', () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(prisma.client.modelRun.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('ignores scheduled fixtures beyond tomorrow UTC', async () => {
+    fixtureService.findScheduledBySeason.mockResolvedValue([
+      {
+        id: 'fixture-near',
+        externalId: 999,
+        scheduledAt: TODAY_FIXTURE_DATE,
+        homeTeam: { externalId: 111 },
+        awayTeam: { externalId: 222 },
+      },
+      {
+        id: 'fixture-far',
+        externalId: 1000,
+        scheduledAt: FAR_FIXTURE_DATE,
+        homeTeam: { externalId: 111 },
+        awayTeam: { externalId: 222 },
+      },
+    ]);
+
+    prisma.client.modelRun.findFirst.mockResolvedValue({
+      id: 'run-1',
+      features: { shadow_lineMovement: 0.05 },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(buildInjuriesResponse(999)),
+    });
+
+    await worker.process({
+      data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://v3.football.api-sports.io/injuries?fixture=999',
+      { headers: { 'x-apisports-key': 'test-api-key' } },
+    );
   });
 });

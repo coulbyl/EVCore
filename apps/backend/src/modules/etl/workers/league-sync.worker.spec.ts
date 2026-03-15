@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Job } from 'bullmq';
 import { LeagueSyncWorker, type LeagueSyncJobData } from './league-sync.worker';
 import type { FixturesSyncWorker } from './fixtures-sync.worker';
-import type { ResultsSyncWorker } from './results-sync.worker';
 import type { StatsSyncWorker } from './stats-sync.worker';
 import type { InjuriesSyncWorker } from './injuries-sync.worker';
 
@@ -10,9 +9,6 @@ describe('LeagueSyncWorker', () => {
   const fixturesSyncWorker = {
     process: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<FixturesSyncWorker>;
-  const resultsSyncWorker = {
-    process: vi.fn().mockResolvedValue(undefined),
-  } satisfies Partial<ResultsSyncWorker>;
   const statsSyncWorker = {
     process: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<StatsSyncWorker>;
@@ -26,7 +22,6 @@ describe('LeagueSyncWorker', () => {
     vi.clearAllMocks();
     Object.assign(worker, {
       fixturesSyncWorker,
-      resultsSyncWorker,
       statsSyncWorker,
       injuriesSyncWorker,
     });
@@ -45,24 +40,8 @@ describe('LeagueSyncWorker', () => {
     await worker.process(job);
 
     expect(fixturesSyncWorker.process).toHaveBeenCalledWith(job);
-    expect(resultsSyncWorker.process).not.toHaveBeenCalled();
     expect(statsSyncWorker.process).not.toHaveBeenCalled();
     expect(injuriesSyncWorker.process).not.toHaveBeenCalled();
-  });
-
-  it('dispatches results jobs to ResultsSyncWorker', async () => {
-    const job = {
-      data: {
-        syncType: 'results',
-        competitionCode: 'PL',
-        season: 2025,
-        leagueId: 39,
-      },
-    } as Job<LeagueSyncJobData>;
-
-    await worker.process(job);
-
-    expect(resultsSyncWorker.process).toHaveBeenCalledWith(job);
   });
 
   it('dispatches stats jobs to StatsSyncWorker', async () => {
