@@ -51,6 +51,12 @@ type UpsertOneXTwoOddsSnapshotInput = {
   awayOdds: number;
 };
 
+type HasOneXTwoOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+};
+
 type FindByDateAndTeamsInput = {
   date: Date;
   homeTeamName: string;
@@ -217,5 +223,11 @@ export class FixtureService {
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOneXTwoOddsSnapshot(data);
+  }
+
+  async hasOneXTwoOddsSnapshot(
+    input: HasOneXTwoOddsSnapshotInput,
+  ): Promise<boolean> {
+    return this.fixtureRepository.hasOneXTwoOddsSnapshot(input);
   }
 }

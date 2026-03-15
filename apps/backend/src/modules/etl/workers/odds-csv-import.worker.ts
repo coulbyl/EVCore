@@ -50,6 +50,7 @@ export class OddsCsvImportWorker extends WorkerHost {
     let imported = 0;
     let skipped = 0;
     let noFixture = 0;
+    let alreadyImported = 0;
 
     for (const raw of rows) {
       // Rows for unplayed matches or matches where closing odds are not yet
@@ -109,6 +110,17 @@ export class OddsCsvImportWorker extends WorkerHost {
       const snapshots = buildSnapshots(row, fixture.id, snapshotAt);
 
       for (const snap of snapshots) {
+        const exists = await this.fixtureService.hasOneXTwoOddsSnapshot({
+          fixtureId: snap.fixtureId,
+          bookmaker: snap.bookmaker,
+          snapshotAt: snap.snapshotAt,
+        });
+
+        if (exists) {
+          alreadyImported++;
+          continue;
+        }
+
         await this.fixtureService.upsertOneXTwoOddsSnapshot(snap);
         imported++;
       }
@@ -122,6 +134,7 @@ export class OddsCsvImportWorker extends WorkerHost {
         imported,
         skipped,
         noFixture,
+        alreadyImported,
       },
       'Odds CSV import complete',
     );

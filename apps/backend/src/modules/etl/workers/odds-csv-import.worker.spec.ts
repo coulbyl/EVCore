@@ -37,6 +37,7 @@ const CSV_ROW = [
 describe('OddsCsvImportWorker', () => {
   const fixtureService = {
     findByDateAndTeams: vi.fn(),
+    hasOneXTwoOddsSnapshot: vi.fn().mockResolvedValue(false),
     upsertOneXTwoOddsSnapshot: vi.fn().mockResolvedValue({ id: 'snapshot-id' }),
   } satisfies Partial<FixtureService>;
 
@@ -51,6 +52,7 @@ describe('OddsCsvImportWorker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    fixtureService.hasOneXTwoOddsSnapshot.mockResolvedValue(false);
     fixtureService.upsertOneXTwoOddsSnapshot.mockResolvedValue({
       id: 'snapshot-id',
     });
@@ -85,6 +87,31 @@ describe('OddsCsvImportWorker', () => {
     expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ bookmaker: 'Pinnacle' }),
     );
+    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ bookmaker: 'Bet365' }),
+    );
+  });
+
+  it('skips bookmaker snapshots already imported for the fixture', async () => {
+    fixtureService.findByDateAndTeams.mockResolvedValue({ id: 'fixture-id' });
+    fixtureService.hasOneXTwoOddsSnapshot
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: vi.fn().mockResolvedValue(`${CSV_HEADER}\n${CSV_ROW}`),
+    });
+
+    await worker.process({
+      data: { competitionCode: 'SA', seasonCode: '2425', divisionCode: 'I1' },
+    } as Job<{
+      competitionCode: string;
+      seasonCode: string;
+      divisionCode: string;
+    }>);
+
+    expect(fixtureService.hasOneXTwoOddsSnapshot).toHaveBeenCalledTimes(2);
+    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledTimes(1);
     expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ bookmaker: 'Bet365' }),
     );

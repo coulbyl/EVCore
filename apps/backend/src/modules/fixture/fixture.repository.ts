@@ -81,6 +81,12 @@ type UpsertOneXTwoOddsSnapshotInput = {
   awayOdds: number;
 };
 
+type HasOneXTwoOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+};
+
 export type UpsertOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -465,6 +471,22 @@ export class FixtureRepository {
         select: { id: true },
       });
     }
+  }
+
+  async hasOneXTwoOddsSnapshot(
+    input: HasOneXTwoOddsSnapshotInput,
+  ): Promise<boolean> {
+    const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      where: {
+        fixtureId: input.fixtureId,
+        bookmaker: input.bookmaker,
+        market: 'ONE_X_TWO',
+        snapshotAt: input.snapshotAt,
+      },
+      select: { id: true },
+    });
+
+    return existing !== null;
   }
 
   // Used by xg-sync to match Understat entries to DB fixtures via date (±1 day) + team names.
