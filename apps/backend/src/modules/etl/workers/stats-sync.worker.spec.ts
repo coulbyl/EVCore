@@ -193,6 +193,23 @@ describe('StatsSyncWorker', () => {
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
   });
 
+  it('skips the job when the competition is inactive', async () => {
+    prisma.client.competition.findFirst.mockResolvedValue({
+      ...PL_COMPETITION_ROW,
+      isActive: false,
+    });
+
+    global.fetch = vi.fn();
+
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+
+    expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
+    expect(fixtureService.findFinishedWithoutXg).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('marks xgUnavailable when statistics response has < 2 teams', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
       { externalId: 33333 },

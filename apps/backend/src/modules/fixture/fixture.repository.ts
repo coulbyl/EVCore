@@ -216,7 +216,11 @@ export class FixtureRepository {
     const end = new Date(date);
     end.setUTCHours(23, 59, 59, 999);
     return this.prisma.client.fixture.findMany({
-      where: { status: 'SCHEDULED', scheduledAt: { gte: start, lte: end } },
+      where: {
+        status: 'SCHEDULED',
+        scheduledAt: { gte: start, lte: end },
+        season: { competition: { isActive: true } },
+      },
       select: { id: true, externalId: true },
       orderBy: { scheduledAt: 'asc' },
     });
@@ -231,7 +235,11 @@ export class FixtureRepository {
     const end = new Date(endDate);
     end.setUTCHours(23, 59, 59, 999);
     return this.prisma.client.fixture.findMany({
-      where: { status: 'SCHEDULED', scheduledAt: { gte: start, lte: end } },
+      where: {
+        status: 'SCHEDULED',
+        scheduledAt: { gte: start, lte: end },
+        season: { competition: { isActive: true } },
+      },
       select: { id: true, externalId: true },
       orderBy: { scheduledAt: 'asc' },
     });

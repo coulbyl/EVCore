@@ -51,6 +51,13 @@ export class InjuriesSyncWorker extends WorkerHost {
     if (!competitionMeta) {
       throw new Error(`Competition not found in DB: ${competitionCode}`);
     }
+    if (!competitionMeta.isActive) {
+      logger.info(
+        { competitionCode, season },
+        'Competition inactive — skipping injuries sync job',
+      );
+      return;
+    }
 
     const competitionRecord = await this.fixtureService.upsertCompetition({
       leagueId: competitionMeta.leagueId,

@@ -212,4 +212,20 @@ describe('FixturesSyncWorker', () => {
       } as Job<{ competitionCode: string; season: number; leagueId: number }>),
     ).rejects.toThrow('Competition not found in DB: UNKNOWN');
   });
+
+  it('skips the job when the competition is inactive', async () => {
+    prisma.client.competition.findUnique.mockResolvedValue({
+      ...SA_COMPETITION_ROW,
+      isActive: false,
+    });
+    global.fetch = vi.fn();
+
+    await worker.process({
+      data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
+    } as Job<{ competitionCode: string; season: number; leagueId: number }>);
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
+    expect(fixtureService.upsertFixtureChain).not.toHaveBeenCalled();
+  });
 });

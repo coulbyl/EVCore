@@ -58,9 +58,24 @@ export class FixturesSyncWorker extends WorkerHost {
     const { season, competitionCode, leagueId: leagueIdNum } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
     const leagueId = String(leagueIdNum);
-    const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
 
     logger.info({ competitionCode, season }, 'Starting fixtures sync');
+
+    const competitionMeta = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+    });
+    if (!competitionMeta) {
+      throw new Error(`Competition not found in DB: ${competitionCode}`);
+    }
+    if (!competitionMeta.isActive) {
+      logger.info(
+        { competitionCode, season },
+        'Competition inactive — skipping fixtures sync job',
+      );
+      return;
+    }
+
+    const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
 
     const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
@@ -83,14 +98,6 @@ export class FixturesSyncWorker extends WorkerHost {
     }
 
     const { data } = parsed;
-
-    const competitionMeta = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
-    });
-    if (!competitionMeta) {
-      throw new Error(`Competition not found in DB: ${competitionCode}`);
-    }
-
     const competitionRecord = await this.fixtureService.upsertCompetition({
       leagueId: competitionMeta.leagueId,
       name: competitionMeta.name,

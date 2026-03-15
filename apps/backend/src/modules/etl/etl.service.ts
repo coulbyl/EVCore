@@ -52,6 +52,13 @@ function computeSeasons(
   );
 }
 
+function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
+  return {
+    competition,
+    seasons: computeSeasons(competition),
+  };
+}
+
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
@@ -105,22 +112,8 @@ export class EtlService implements OnApplicationBootstrap {
       return;
     }
 
-    const competitions = await this.prisma.client.competition.findMany({
-      where: { isActive: true },
-      select: {
-        leagueId: true,
-        code: true,
-        name: true,
-        country: true,
-        csvDivisionCode: true,
-        seasonStartMonth: true,
-        activeSeasonsCount: true,
-      },
-    });
-    this.competitionPlans = competitions.map((c) => ({
-      competition: c,
-      seasons: computeSeasons(c),
-    }));
+    await this.refreshCompetitionPlans();
+    await this.cleanupInactiveSchedulers();
 
     const csvSeasonCodes = getActiveCsvSeasonCodes();
     const currentSeasonCode = csvSeasonCodes[csvSeasonCodes.length - 1];
@@ -221,6 +214,67 @@ export class EtlService implements OnApplicationBootstrap {
     logger.info('ETL job schedulers registered');
   }
 
+  private async refreshCompetitionPlans(): Promise<void> {
+    const competitions = await this.prisma.client.competition.findMany({
+      where: { isActive: true },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        activeSeasonsCount: true,
+      },
+    });
+    this.competitionPlans = competitions.map(toCompetitionPlan);
+  }
+
+  private async cleanupInactiveSchedulers(): Promise<void> {
+    const competitions = await this.prisma.client.competition.findMany({
+      select: {
+        code: true,
+        isActive: true,
+        csvDivisionCode: true,
+      },
+    });
+
+    const inactiveCompetitionCodes = competitions
+      .filter((competition) => !competition.isActive)
+      .map((competition) => competition.code);
+    const nonCsvCompetitionCodes = competitions
+      .filter(
+        (competition) =>
+          !competition.isActive || competition.csvDivisionCode == null,
+      )
+      .map((competition) => competition.code);
+
+    await Promise.all(
+      inactiveCompetitionCodes.flatMap((competitionCode) => [
+        this.fixturesQueue.removeJobScheduler(
+          `${ETL_SCHEDULER_KEYS.FIXTURES_SYNC}:${competitionCode}`,
+        ),
+        this.resultsQueue.removeJobScheduler(
+          `${ETL_SCHEDULER_KEYS.RESULTS_SYNC}:${competitionCode}`,
+        ),
+        this.statsQueue.removeJobScheduler(
+          `${ETL_SCHEDULER_KEYS.STATS_SYNC}:${competitionCode}`,
+        ),
+        this.injuriesQueue.removeJobScheduler(
+          `${ETL_SCHEDULER_KEYS.INJURIES_SYNC}:${competitionCode}`,
+        ),
+      ]),
+    );
+
+    await Promise.all(
+      nonCsvCompetitionCodes.map((competitionCode) =>
+        this.oddsCsvQueue.removeJobScheduler(
+          `${ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT}:${competitionCode}`,
+        ),
+      ),
+    );
+  }
+
   private logApiFootballBudget(plans: CompetitionPlan[]): void {
     const estimate = estimateApiFootballDailyCalls({
       leagueCount: plans.length,
@@ -269,6 +323,7 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerFixturesSync(): Promise<void> {
+    await this.refreshCompetitionPlans();
     // Flatten all (competition × season) pairs so the stagger index is global,
     // not per-competition — prevents simultaneous API calls when multiple leagues are active.
     const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
@@ -292,6 +347,7 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerResultsSync(): Promise<void> {
+    await this.refreshCompetitionPlans();
     const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
       seasons.map((season) => ({
         season,
@@ -313,6 +369,7 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerStatsSync(): Promise<void> {
+    await this.refreshCompetitionPlans();
     const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
       seasons.map((season) => ({
         season,
@@ -334,6 +391,7 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerInjuriesSync(): Promise<void> {
+    await this.refreshCompetitionPlans();
     const jobs = this.competitionPlans.flatMap(({ competition, seasons }) =>
       seasons.map((season) => ({
         season,
@@ -355,6 +413,7 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerOddsCsvImport(): Promise<void> {
+    await this.refreshCompetitionPlans();
     const csvCompetitions = this.competitionPlans
       .filter((p) => p.competition.csvDivisionCode != null)
       .map(
@@ -424,8 +483,8 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerFixturesSyncForLeague(competitionCode: string): Promise<void> {
-    const competition = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode, isActive: true },
       select: {
         leagueId: true,
         code: true,
@@ -437,7 +496,7 @@ export class EtlService implements OnApplicationBootstrap {
       },
     });
     if (!competition)
-      throw new Error(`Unknown competition: ${competitionCode}`);
+      throw new Error(`Unknown or inactive competition: ${competitionCode}`);
     const seasons = computeSeasons(competition);
     for (let i = 0; i < seasons.length; i++) {
       await this.fixturesQueue.add(
@@ -456,8 +515,8 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerResultsSyncForLeague(competitionCode: string): Promise<void> {
-    const competition = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode, isActive: true },
       select: {
         leagueId: true,
         code: true,
@@ -469,7 +528,7 @@ export class EtlService implements OnApplicationBootstrap {
       },
     });
     if (!competition)
-      throw new Error(`Unknown competition: ${competitionCode}`);
+      throw new Error(`Unknown or inactive competition: ${competitionCode}`);
     const seasons = computeSeasons(competition);
     for (let i = 0; i < seasons.length; i++) {
       await this.resultsQueue.add(
@@ -488,8 +547,8 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerStatsSyncForLeague(competitionCode: string): Promise<void> {
-    const competition = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode, isActive: true },
       select: {
         leagueId: true,
         code: true,
@@ -501,7 +560,7 @@ export class EtlService implements OnApplicationBootstrap {
       },
     });
     if (!competition)
-      throw new Error(`Unknown competition: ${competitionCode}`);
+      throw new Error(`Unknown or inactive competition: ${competitionCode}`);
     const seasons = computeSeasons(competition);
     for (let i = 0; i < seasons.length; i++) {
       await this.statsQueue.add(
@@ -520,8 +579,8 @@ export class EtlService implements OnApplicationBootstrap {
   }
 
   async triggerInjuriesSyncForLeague(competitionCode: string): Promise<void> {
-    const competition = await this.prisma.client.competition.findUnique({
-      where: { code: competitionCode },
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode, isActive: true },
       select: {
         leagueId: true,
         code: true,
@@ -533,7 +592,7 @@ export class EtlService implements OnApplicationBootstrap {
       },
     });
     if (!competition)
-      throw new Error(`Unknown competition: ${competitionCode}`);
+      throw new Error(`Unknown or inactive competition: ${competitionCode}`);
     const seasons = computeSeasons(competition);
     for (let i = 0; i < seasons.length; i++) {
       await this.injuriesQueue.add(

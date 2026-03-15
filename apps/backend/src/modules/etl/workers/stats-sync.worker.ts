@@ -46,6 +46,13 @@ export class StatsSyncWorker extends WorkerHost {
     if (!competitionMeta) {
       throw new Error(`Competition not found in DB: ${competitionCode}`);
     }
+    if (!competitionMeta.isActive) {
+      logger.info(
+        { competitionCode, season },
+        'Competition inactive — skipping stats sync job',
+      );
+      return;
+    }
 
     // Resolve the internal seasonId (idempotent — same as fixtures-sync)
     const competition = await this.fixtureService.upsertCompetition({

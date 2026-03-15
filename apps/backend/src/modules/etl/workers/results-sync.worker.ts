@@ -7,6 +7,7 @@ import { ResultSchema } from '../schemas/result.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '../../../config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
+import { PrismaService } from '@/prisma.service';
 
 export type ResultsSyncJobData = {
   season: number;
@@ -25,6 +26,7 @@ export class ResultsSyncWorker extends WorkerHost {
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
     private readonly notification: NotificationService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -33,6 +35,21 @@ export class ResultsSyncWorker extends WorkerHost {
     const { season, competitionCode, leagueId: leagueIdNum } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
     const leagueId = String(leagueIdNum);
+
+    const competitionMeta = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
+    });
+    if (!competitionMeta) {
+      throw new Error(`Competition not found in DB: ${competitionCode}`);
+    }
+    if (!competitionMeta.isActive) {
+      logger.info(
+        { competitionCode, season },
+        'Competition inactive — skipping results sync job',
+      );
+      return;
+    }
+
     // Fetch only finished matches (FT + AET + PEN) in one request
     const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}&status=FT-AET-PEN`;
 

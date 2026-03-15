@@ -3,6 +3,7 @@ import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { FixtureService } from '../../fixture/fixture.service';
+import type { PrismaService } from '@/prisma.service';
 import { ResultsSyncWorker } from './results-sync.worker';
 
 function buildResultsResponse(leagueId: number, season: number) {
@@ -94,6 +95,21 @@ function buildResultsResponse(leagueId: number, season: number) {
 }
 
 describe('ResultsSyncWorker', () => {
+  const LL_COMPETITION_ROW = {
+    id: 'comp-ll',
+    leagueId: 140,
+    code: 'LL',
+    name: 'La Liga',
+    country: 'Spain',
+    isActive: true,
+    csvDivisionCode: 'SP1',
+    seasonStartMonth: null,
+    activeSeasonsCount: null,
+    includeInBacktest: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const fixtureService = {
     updateScores: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<FixtureService>;
@@ -106,16 +122,26 @@ describe('ResultsSyncWorker', () => {
     sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<NotificationService>;
 
+  const prisma = {
+    client: {
+      competition: {
+        findUnique: vi.fn().mockResolvedValue(LL_COMPETITION_ROW),
+      },
+    },
+  };
+
   const worker = new ResultsSyncWorker(
     fixtureService as unknown as FixtureService,
     config as unknown as ConfigService,
     notification as unknown as NotificationService,
+    prisma as unknown as PrismaService,
   );
 
   beforeEach(() => {
     vi.clearAllMocks();
     config.getOrThrow.mockReturnValue('test-api-key');
     fixtureService.updateScores.mockResolvedValue(undefined);
+    prisma.client.competition.findUnique.mockResolvedValue(LL_COMPETITION_ROW);
   });
 
   it('uses leagueId from job data to build API URL and updates only finished fixtures', async () => {
@@ -150,5 +176,33 @@ describe('ResultsSyncWorker', () => {
         data: { competitionCode: 'LL', season: 2024, leagueId: 140 },
       } as Job<{ competitionCode: string; season: number; leagueId: number }>),
     ).rejects.toThrow('API-FOOTBALL responded 500 for season 2024');
+  });
+
+  it('throws when competitionCode is not found in DB', async () => {
+    prisma.client.competition.findUnique.mockResolvedValue(null);
+    global.fetch = vi.fn();
+
+    await expect(
+      worker.process({
+        data: { competitionCode: 'UNKNOWN', season: 2024, leagueId: 140 },
+      } as Job<{ competitionCode: string; season: number; leagueId: number }>),
+    ).rejects.toThrow('Competition not found in DB: UNKNOWN');
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('skips the job when the competition is inactive', async () => {
+    prisma.client.competition.findUnique.mockResolvedValue({
+      ...LL_COMPETITION_ROW,
+      isActive: false,
+    });
+    global.fetch = vi.fn();
+
+    await worker.process({
+      data: { competitionCode: 'LL', season: 2024, leagueId: 140 },
+    } as Job<{ competitionCode: string; season: number; leagueId: number }>);
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(fixtureService.updateScores).not.toHaveBeenCalled();
   });
 });
