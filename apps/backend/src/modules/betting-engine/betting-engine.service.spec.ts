@@ -1108,7 +1108,12 @@ describe('BettingEngineService', () => {
       }
       if (market === Market.HALF_TIME_FULL_TIME) {
         return Promise.resolve([
-          { pick: 'HOME_HOME', odds: new Decimal('2.00') },
+          {
+            bookmaker: 'Pinnacle',
+            snapshotAt,
+            pick: 'HOME_HOME',
+            odds: new Decimal('2.00'),
+          },
         ]);
       }
       return Promise.resolve([]);

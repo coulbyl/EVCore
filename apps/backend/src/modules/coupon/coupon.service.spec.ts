@@ -34,6 +34,7 @@ function makeDeps(
 ) {
   const couponRepository: CouponRepository = {
     findLatestByDate: vi.fn().mockResolvedValue(null),
+    findCouponsForDate: vi.fn().mockResolvedValue([]),
     findPendingCouponsUntil: vi.fn().mockResolvedValue([]),
     findPendingCouponsByFixture: vi.fn().mockResolvedValue([]),
     findCouponById: vi.fn().mockResolvedValue(null),
@@ -119,7 +120,7 @@ afterEach(() => {
 });
 
 describe('CouponService.generateDailyCoupon', () => {
-  it('creates a NO_BET coupon when no fixtures are scheduled', async () => {
+  it('sends no-bet notification when no fixtures are scheduled', async () => {
     const deps = makeDeps({
       fixtureService: { findScheduledForDate: vi.fn().mockResolvedValue([]) },
     });
@@ -127,18 +128,16 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.NO_BET, legCount: 0 }),
-    );
     expect(deps.notificationService.sendNoBetToday).toHaveBeenCalledWith(
       TEST_DATE,
     );
+    expect(deps.couponRepository.create).not.toHaveBeenCalled();
     expect(
       deps.couponRepository.createPendingCouponWithBets,
     ).not.toHaveBeenCalled();
   });
 
-  it('creates a NO_BET coupon when no picks pass EV threshold', async () => {
+  it('sends no-bet notification when no picks pass EV threshold', async () => {
     const deps = makeDeps({
       fixtureService: {
         findScheduledForDate: vi
@@ -153,10 +152,8 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.NO_BET }),
-    );
     expect(deps.notificationService.sendNoBetToday).toHaveBeenCalled();
+    expect(deps.couponRepository.create).not.toHaveBeenCalled();
   });
 
   it('creates a PENDING coupon when viable picks exist', async () => {
