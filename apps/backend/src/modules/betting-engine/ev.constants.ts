@@ -9,6 +9,25 @@ export const FEATURE_WEIGHTS = {
 
 export const EV_THRESHOLD = new Decimal('0.08');
 export const MODEL_SCORE_THRESHOLD = new Decimal('0.60');
+export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal('5.0');
+export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal('6.0');
+
+// Odds window for selectable picks. Picks outside [MIN, MAX] are rejected
+// regardless of EV. The lower bound eliminates over-confident short-priced
+// favorites (historically negative ROI at <1.80); the upper bound eliminates
+// long shots where probability overestimation inflates EV artificially.
+export const MIN_SELECTION_ODDS = new Decimal('1.80');
+export const MAX_SELECTION_ODDS = new Decimal('4.0');
+
+// Home advantage correction applied to Poisson lambdas before probability
+// computation. Home teams score ~12% more, away teams ~12% less than their
+// season xG average — consistent with published football Poisson literature.
+// Symmetric: HOME_ADVANTAGE_LAMBDA_FACTOR × AWAY_DISADVANTAGE_LAMBDA_FACTOR ≈ 1.
+export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.12;
+export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.88;
+export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
+export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
+export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
 
 // Flat stake used when KELLY_ENABLED=false (default — safe fallback)
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');

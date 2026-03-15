@@ -82,6 +82,32 @@
 - [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
 - [ ] **Multi-bookmakers** (Betclic, Unibet)
 
+### Corrections moteur — session 2026-03-15 ✅
+
+- [x] Fix `triggerOddsCsvImport` : importe toutes les saisons CSV (pas juste `.at(-1)`)
+- [x] Alias map équipes CSV → DB (`CSV_TEAM_ALIASES`) — couverture BL1 : 6% → 99%
+- [x] `MAX_SELECTION_ODDS = 4.0` + `MIN_SELECTION_ODDS = 1.80` dans `ev.constants.ts`
+- [x] Home advantage correction : `×1.12 home`, `×0.88 away` dans `deriveLambdas`
+- [x] Fix reporting backtest : `totalBets` découplé du filtre `MIN_BETS_FOR_ROI`
+- [x] `IN_PROGRESS` ajouté à `FixtureStatus` (migration Prisma + workers mis à jour)
+- [x] Fix `MAX_SELECTION_ODDS` pour combos : filtre sur legs individuels, pas odds combinées
+
+**Résultats backtest post-corrections (3 saisons, 4 ligues, 103 bets) :**
+Brier 0.594 ✅ | Calibration 3.15% ✅ | ROI +17.9% ✅ | Profit +13.89 unités
+SA +58% | LL +21% | PL +0.8% | BL1 -11.5% (28 bets, variance normale)
+
+---
+
+### Bugs ouverts — à traiter en priorité
+
+- [ ] **Idempotence coupon** : `generateCouponWindow` ne vérifie pas si un coupon existe déjà pour la date → 13 coupons dupliqués le 2026-03-15. Ajouter un guard en début de méthode via `couponRepository`.
+
+- [ ] **OVER_UNDER/BTTS liés au bookmaker 1X2** : quand Pinnacle est absent sur le 1X2, Bet365 est sélectionné et les requêtes OVER_UNDER/BTTS utilisent `bookmaker: best.bookmaker` (Bet365) → null. Ces marchés doivent être interrogés avec leur propre hiérarchie bookmaker, indépendamment du winner 1X2. (Bet365 : 3811 fixtures 1X2 / 0 OVER_UNDER — Pinnacle : 3534 / 38 OVER_UNDER)
+
+- [ ] **Settlement coupons** : après fin des matchs du 2026-03-15 (Barça-Séville encore SCHEDULED), lancer `POST /etl/sync/settlement` puis nettoyer les 13 coupons dupliqués manuellement.
+
+---
+
 ### Reprise — prochaines actions prioritaires
 
 - [ ] Basculer l'ETL sur lecture DB des compétitions actives (retirer la dépendance au static `COMPETITIONS` dans `etl.constants.ts`)

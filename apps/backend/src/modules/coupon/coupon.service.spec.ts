@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/require-await */
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
 import { CouponStatus } from '@evcore/db';
 import { CouponService } from './coupon.service';
@@ -107,6 +107,16 @@ function makeService(
 }
 
 const TEST_DATE = new Date('2025-08-01T00:00:00.000Z');
+const TEST_KICKOFF = new Date('2025-08-01T16:00:00.000Z');
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2025-08-01T12:00:00.000Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('CouponService.generateDailyCoupon', () => {
   it('creates a NO_BET coupon when no fixtures are scheduled', async () => {
@@ -133,7 +143,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledForDate: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       // analyzeFixture returns NO_BET → no bet created → bet query returns []
     });
@@ -152,7 +164,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledForDate: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
@@ -205,6 +219,9 @@ describe('CouponService.generateDailyCoupon', () => {
     const fixtures = Array.from({ length: 8 }, (_, i) => ({
       id: `f-${i}`,
       externalId: i + 1,
+      scheduledAt: new Date(
+        `2025-08-01T${String(12 + i).padStart(2, '0')}:00:00.000Z`,
+      ),
     }));
     const bets = fixtures.map((f, i) => ({
       id: `bet-${i}`,
@@ -255,8 +272,12 @@ describe('CouponService.generateDailyCoupon', () => {
 
   it('sorts picks by qualityScore DESC', async () => {
     const fixtures = [
-      { id: 'f-a', externalId: 1 },
-      { id: 'f-b', externalId: 2 },
+      {
+        id: 'f-a',
+        externalId: 1,
+        scheduledAt: new Date('2025-08-01T15:00:00.000Z'),
+      },
+      { id: 'f-b', externalId: 2, scheduledAt: TEST_KICKOFF },
     ];
     // f-b has higher qualityScore than f-a
     const bets = [
@@ -321,7 +342,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledInRange: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
@@ -373,7 +396,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledForDate: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
@@ -428,6 +453,48 @@ describe('CouponService.generateDailyCoupon', () => {
       expect.objectContaining({
         betIds: ['bet-new'],
       }),
+    );
+  });
+
+  it('excludes fixtures that started more than 30 minutes ago', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-08-01T16:31:00.000Z'));
+
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi.fn().mockResolvedValue([
+          {
+            id: 'stale-fixture',
+            externalId: 1,
+            scheduledAt: new Date('2025-08-01T16:00:00.000Z'),
+          },
+          {
+            id: 'fresh-fixture',
+            externalId: 2,
+            scheduledAt: new Date('2025-08-01T16:15:00.000Z'),
+          },
+        ]),
+      },
+      bettingEngineService: {
+        analyzeFixture: vi.fn().mockResolvedValue({
+          status: 'analyzed',
+          fixtureId: 'fresh-fixture',
+          modelRunId: 'run-fresh',
+          decision: 'NO_BET',
+          deterministicScore: 0.5,
+          probabilities: {},
+          betId: null,
+          qualityScore: null,
+        }),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(1);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledWith(
+      'fresh-fixture',
     );
   });
 });
@@ -539,5 +606,266 @@ describe('CouponService settlement', () => {
     expect(deps.notificationService.sendCouponResult).toHaveBeenCalledWith(
       'coupon-id',
     );
+  });
+});
+
+describe('CouponService listCouponsByPeriod', () => {
+  it('includes probEstimated in coupon selections', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findCouponsByDateRange: vi.fn().mockResolvedValue([
+          {
+            id: 'coupon-1',
+            code: 'CPN-TEST',
+            date: new Date('2026-03-15T00:00:00.000Z'),
+            status: 'PENDING',
+            bets: [
+              {
+                id: 'bet-1',
+                market: 'OVER_UNDER',
+                pick: 'UNDER',
+                comboMarket: null,
+                comboPick: null,
+                probEstimated: new Decimal('0.4123'),
+                oddsSnapshot: new Decimal('3.26'),
+                ev: new Decimal('0.328'),
+                status: 'PENDING',
+                modelRun: {
+                  features: {
+                    lambdaHome: 1.18,
+                    lambdaAway: 1.07,
+                    candidatePicks: [
+                      {
+                        market: 'OVER_UNDER',
+                        pick: 'UNDER',
+                        probability: 0.4123,
+                        odds: 3.26,
+                        ev: 0.328,
+                        qualityScore: 0.2296,
+                      },
+                      {
+                        market: 'BTTS',
+                        pick: 'NO',
+                        probability: 0.488,
+                        odds: 2.45,
+                        ev: 0.1956,
+                        qualityScore: 0.1369,
+                      },
+                    ],
+                    evaluatedPicks: [
+                      {
+                        market: 'OVER_UNDER',
+                        pick: 'UNDER',
+                        probability: 0.4123,
+                        odds: 3.26,
+                        ev: 0.328,
+                        qualityScore: 0.2296,
+                        status: 'viable',
+                      },
+                      {
+                        market: 'ONE_X_TWO',
+                        pick: 'HOME',
+                        probability: 0.39,
+                        odds: 2.25,
+                        ev: -0.1225,
+                        qualityScore: -0.0858,
+                        status: 'rejected',
+                        rejectionReason: 'ev_below_threshold',
+                      },
+                    ],
+                  },
+                  fixture: {
+                    id: 'fixture-1',
+                    scheduledAt: new Date('2026-03-15T16:30:00.000Z'),
+                    homeTeam: { name: 'Liverpool' },
+                    awayTeam: { name: 'Tottenham' },
+                  },
+                },
+              },
+            ],
+          },
+        ]),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.listCouponsByPeriod({
+      from: '2026-03-15',
+      to: '2026-03-15',
+    });
+
+    expect(result.coupons[0]?.selections[0]).toMatchObject({
+      probEstimated: '41.2%',
+      lambdaHome: '1.18',
+      lambdaAway: '1.07',
+      expectedTotalGoals: '2.25',
+      odds: '3.26',
+      ev: '+0.328',
+      candidatePicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+        },
+        {
+          market: 'BTTS',
+          pick: 'NO',
+          probability: '0.4880',
+          odds: '2.45',
+          ev: '+0.1956',
+          qualityScore: '0.1369',
+        },
+      ],
+      evaluatedPicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+          status: 'viable',
+        },
+        {
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: '0.3900',
+          odds: '2.25',
+          ev: '-0.1225',
+          qualityScore: '-0.0858',
+          status: 'rejected',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    });
+  });
+
+  it('includes candidate picks in coupon detail', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findCouponById: vi.fn().mockResolvedValue({
+          id: 'coupon-1',
+          date: new Date('2026-03-15T00:00:00.000Z'),
+          status: 'PENDING',
+          legCount: 1,
+          createdAt: new Date('2026-03-15T13:34:21.466Z'),
+          bets: [
+            {
+              id: 'bet-1',
+              market: 'OVER_UNDER',
+              pick: 'UNDER',
+              comboMarket: null,
+              comboPick: null,
+              probEstimated: new Decimal('0.4123'),
+              oddsSnapshot: new Decimal('3.26'),
+              ev: new Decimal('0.3280'),
+              status: 'PENDING',
+              modelRun: {
+                features: {
+                  lambdaHome: 1.18,
+                  lambdaAway: 1.07,
+                  candidatePicks: [
+                    {
+                      market: 'OVER_UNDER',
+                      pick: 'UNDER',
+                      probability: 0.4123,
+                      odds: 3.26,
+                      ev: 0.328,
+                      qualityScore: 0.2296,
+                    },
+                    {
+                      market: 'ONE_X_TWO',
+                      pick: 'HOME',
+                      probability: 0.51,
+                      odds: 2.15,
+                      ev: 0.0965,
+                      qualityScore: 0.0676,
+                    },
+                  ],
+                  evaluatedPicks: [
+                    {
+                      market: 'OVER_UNDER',
+                      pick: 'UNDER',
+                      probability: 0.4123,
+                      odds: 3.26,
+                      ev: 0.328,
+                      qualityScore: 0.2296,
+                      status: 'viable',
+                    },
+                    {
+                      market: 'BTTS',
+                      pick: 'YES',
+                      probability: 0.44,
+                      odds: 2.1,
+                      ev: -0.076,
+                      qualityScore: -0.0532,
+                      status: 'rejected',
+                      rejectionReason: 'ev_below_threshold',
+                    },
+                  ],
+                },
+                fixture: {
+                  scheduledAt: new Date('2026-03-15T16:30:00.000Z'),
+                  homeTeam: { name: 'Liverpool' },
+                  awayTeam: { name: 'Tottenham' },
+                },
+              },
+            },
+          ],
+        }),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.getCouponById('coupon-1');
+
+    expect(result?.bets[0]).toMatchObject({
+      probEstimated: '0.4123',
+      lambdaHome: '1.18',
+      lambdaAway: '1.07',
+      expectedTotalGoals: '2.25',
+      candidatePicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+        },
+        {
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: '0.5100',
+          odds: '2.15',
+          ev: '+0.0965',
+          qualityScore: '0.0676',
+        },
+      ],
+      evaluatedPicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+          status: 'viable',
+        },
+        {
+          market: 'BTTS',
+          pick: 'YES',
+          probability: '0.4400',
+          odds: '2.10',
+          ev: '-0.0760',
+          qualityScore: '-0.0532',
+          status: 'rejected',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    });
   });
 });

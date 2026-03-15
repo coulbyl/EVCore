@@ -572,6 +572,20 @@ describe('BettingEngineService', () => {
           features: expect.objectContaining({
             shadow_h2h: 0.6,
             shadow_congestion: 0.2,
+            candidatePicks: expect.arrayContaining([
+              expect.objectContaining({
+                market: Market.ONE_X_TWO,
+                pick: 'HOME',
+                probability: 0.5,
+              }),
+            ]),
+            evaluatedPicks: expect.arrayContaining([
+              expect.objectContaining({
+                market: Market.ONE_X_TWO,
+                pick: 'HOME',
+                status: 'viable',
+              }),
+            ]),
           }),
         }),
       }),
@@ -629,9 +643,9 @@ describe('BettingEngineService', () => {
             {
               bookmaker: 'Pinnacle',
               snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
-              homeOdds: new Decimal('2.158'),
-              drawOdds: new Decimal('2.2'),
-              awayOdds: new Decimal('3.8'),
+              homeOdds: new Decimal('2.158'), // EV = (0.5 × 2.158) - 1 = 0.079 < 0.08
+              drawOdds: new Decimal('2.2'), // EV = (0.3 × 2.2) - 1 = -0.34 < 0.08
+              awayOdds: new Decimal('3.8'), // EV = (0.2 × 3.8) - 1 = -0.24 < 0.08
             },
           ]),
           findFirst: vi.fn().mockResolvedValue(null),
@@ -688,6 +702,292 @@ describe('BettingEngineService', () => {
       }),
     );
     expect(createBet).not.toHaveBeenCalled();
+  });
+
+  it('rejects 1X2 AWAY picks above MAX_SELECTION_ODDS cap', async () => {
+    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
+    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'fixture-id',
+            seasonId: 'season-id',
+            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+            homeTeamId: 'home-team',
+            awayTeamId: 'away-team',
+            status: 'FINISHED',
+          }),
+        },
+        teamStats: {
+          findFirst: vi
+            .fn()
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.7'),
+              xgFor: new Decimal('1.8'),
+              xgAgainst: new Decimal('1.1'),
+              homeWinRate: new Decimal('0.65'),
+              awayWinRate: new Decimal('0.35'),
+              drawRate: new Decimal('0.20'),
+              leagueVolatility: new Decimal('1.5'),
+            })
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.4'),
+              xgFor: new Decimal('1.2'),
+              xgAgainst: new Decimal('1.6'),
+              homeWinRate: new Decimal('0.45'),
+              awayWinRate: new Decimal('0.30'),
+              drawRate: new Decimal('0.25'),
+              leagueVolatility: new Decimal('1.4'),
+            }),
+        },
+        oddsSnapshot: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              bookmaker: 'Pinnacle',
+              snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
+              homeOdds: new Decimal('1.9'),
+              drawOdds: new Decimal('3.6'),
+              awayOdds: new Decimal('8.5'), // above MAX_SELECTION_ODDS=4.0
+            },
+          ]),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        marketSuspension: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+        modelRun: { create: createModelRun },
+        bet: { upsert: createBet },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      deterministicScore: new Decimal('0.7'),
+      lambda: { home: 1.0, away: 1.7 },
+      probabilities: {
+        home: new Decimal('0.18'),
+        draw: new Decimal('0.17'),
+        away: new Decimal('0.65'),
+        over25: new Decimal('0.52'),
+        under25: new Decimal('0.48'),
+        bttsYes: new Decimal('0.49'),
+        bttsNo: new Decimal('0.51'),
+        dc1X: new Decimal('0.35'),
+        dcX2: new Decimal('0.82'),
+        dc12: new Decimal('0.83'),
+        htft: makeHtftProbabilities('0.111111'),
+      },
+      features: {
+        recentForm: new Decimal('0.3'),
+        xg: new Decimal('0.35'),
+        domExtPerf: new Decimal('0.3'),
+        leagueVolat: new Decimal('0.3'),
+      },
+    });
+
+    const result = await service.analyzeFixture('fixture-id');
+
+    expect(result.status).toBe('analyzed');
+    if (result.status === 'analyzed') {
+      expect(result.decision).toBe('NO_BET');
+    }
+    expect(createBet).not.toHaveBeenCalled();
+  });
+
+  it('rejects 1X2 DRAW picks above MAX_SELECTION_ODDS cap', async () => {
+    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
+    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'fixture-id',
+            seasonId: 'season-id',
+            scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+            homeTeamId: 'home-team',
+            awayTeamId: 'away-team',
+            status: 'FINISHED',
+          }),
+        },
+        teamStats: {
+          findFirst: vi
+            .fn()
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.7'),
+              xgFor: new Decimal('1.8'),
+              xgAgainst: new Decimal('1.1'),
+              homeWinRate: new Decimal('0.65'),
+              awayWinRate: new Decimal('0.35'),
+              drawRate: new Decimal('0.20'),
+              leagueVolatility: new Decimal('1.5'),
+            })
+            .mockResolvedValueOnce({
+              recentForm: new Decimal('0.4'),
+              xgFor: new Decimal('1.2'),
+              xgAgainst: new Decimal('1.6'),
+              homeWinRate: new Decimal('0.45'),
+              awayWinRate: new Decimal('0.30'),
+              drawRate: new Decimal('0.25'),
+              leagueVolatility: new Decimal('1.4'),
+            }),
+        },
+        oddsSnapshot: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              bookmaker: 'Pinnacle',
+              snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
+              homeOdds: new Decimal('1.9'),
+              drawOdds: new Decimal('7.2'), // above MAX_SELECTION_ODDS=4.0
+              awayOdds: new Decimal('2.2'),
+            },
+          ]),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        marketSuspension: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+        modelRun: { create: createModelRun },
+        bet: { upsert: createBet },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      deterministicScore: new Decimal('0.7'),
+      lambda: { home: 1.2, away: 1.2 },
+      probabilities: {
+        home: new Decimal('0.22'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.44'),
+        over25: new Decimal('0.44'),
+        under25: new Decimal('0.56'),
+        bttsYes: new Decimal('0.47'),
+        bttsNo: new Decimal('0.53'),
+        dc1X: new Decimal('0.60'),
+        dcX2: new Decimal('0.74'),
+        dc12: new Decimal('0.66'),
+        htft: makeHtftProbabilities('0.111111'),
+      },
+      features: {
+        recentForm: new Decimal('0.3'),
+        xg: new Decimal('0.35'),
+        domExtPerf: new Decimal('0.3'),
+        leagueVolat: new Decimal('0.3'),
+      },
+    });
+
+    const result = await service.analyzeFixture('fixture-id');
+
+    expect(result.status).toBe('analyzed');
+    if (result.status === 'analyzed') {
+      expect(result.decision).toBe('NO_BET');
+    }
+    expect(createBet).not.toHaveBeenCalled();
+  });
+
+  it('selectBestViablePickForBacktest returns null when all picks exceed MAX_SELECTION_ODDS', () => {
+    const service = new BettingEngineService(
+      {} as unknown as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    const htft = makeHtftProbabilities('0.111111');
+    const { distHome, distAway } = buildPoissonDistributions(1.2, 1.0);
+
+    const result = service.selectBestViablePickForBacktest({
+      probabilities: {
+        home: new Decimal('0.20'),
+        draw: new Decimal('0.25'),
+        away: new Decimal('0.55'),
+        over25: new Decimal('0.45'),
+        under25: new Decimal('0.55'),
+        bttsYes: new Decimal('0.47'),
+        bttsNo: new Decimal('0.53'),
+        dc1X: new Decimal('0.45'),
+        dcX2: new Decimal('0.80'),
+        dc12: new Decimal('0.75'),
+        htft,
+      },
+      odds: {
+        bookmaker: 'Pinnacle',
+        snapshotAt: new Date(),
+        homeOdds: new Decimal('6.5'), // all above cap=4.0
+        drawOdds: new Decimal('5.2'),
+        awayOdds: new Decimal('4.5'),
+        overOdds: null,
+        underOdds: null,
+        bttsYesOdds: null,
+        bttsNoOdds: null,
+        htftOdds: {},
+      },
+      deterministicScore: new Decimal('0.75'),
+      distHome,
+      distAway,
+      lambdaFloorHit: false,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('selectBestViablePickForBacktest returns null when all picks are below MIN_SELECTION_ODDS', () => {
+    const service = new BettingEngineService(
+      {} as unknown as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    const htft = makeHtftProbabilities('0.111111');
+    const { distHome, distAway } = buildPoissonDistributions(2.0, 0.5);
+
+    const result = service.selectBestViablePickForBacktest({
+      probabilities: {
+        home: new Decimal('0.75'),
+        draw: new Decimal('0.15'),
+        away: new Decimal('0.10'),
+        over25: new Decimal('0.55'),
+        under25: new Decimal('0.45'),
+        bttsYes: new Decimal('0.40'),
+        bttsNo: new Decimal('0.60'),
+        dc1X: new Decimal('0.90'),
+        dcX2: new Decimal('0.25'),
+        dc12: new Decimal('0.85'),
+        htft,
+      },
+      odds: {
+        bookmaker: 'Pinnacle',
+        snapshotAt: new Date(),
+        homeOdds: new Decimal('1.30'), // below MIN_SELECTION_ODDS=1.80
+        drawOdds: new Decimal('1.50'), // below MIN_SELECTION_ODDS=1.80
+        awayOdds: new Decimal('1.60'), // below MIN_SELECTION_ODDS=1.80
+        overOdds: null,
+        underOdds: null,
+        bttsYesOdds: null,
+        bttsNoOdds: null,
+        htftOdds: {},
+      },
+      deterministicScore: new Decimal('0.80'),
+      distHome,
+      distAway,
+      lambdaFloorHit: false,
+    });
+
+    expect(result).toBeNull();
   });
 
   it('uses Kelly stake size instead of flat stake when KELLY_ENABLED=true', async () => {

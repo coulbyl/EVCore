@@ -174,14 +174,14 @@ export class FixtureService {
 
   findScheduledForDate(
     date: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     return this.fixtureRepository.findScheduledForDate(date);
   }
 
   findScheduledInRange(
     startDate: Date,
     endDate: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     return this.fixtureRepository.findScheduledInRange(startDate, endDate);
   }
 

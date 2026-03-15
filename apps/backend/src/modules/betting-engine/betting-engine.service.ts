@@ -40,11 +40,21 @@ import {
   FEATURE_WEIGHTS,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
+  AWAY_DISADVANTAGE_LAMBDA_FACTOR,
+  HOME_ADVANTAGE_LAMBDA_FACTOR,
+  MAX_SELECTION_ODDS,
+  MIN_SELECTION_ODDS,
   MODEL_SCORE_THRESHOLD,
+  ONE_X_TWO_AWAY_MAX_ODDS,
+  ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_DRAW_MAX_ODDS,
+  ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
 import type {
+  EvaluatedPick,
   FullOddsSnapshot,
   MatchComputation,
   MatchupFeatures,
@@ -123,6 +133,25 @@ export class BettingEngineService {
     const probabilities = this.computeProbabilities(lambda.home, lambda.away);
 
     return { deterministicScore, probabilities, lambda, features };
+  }
+
+  selectBestViablePickForBacktest(input: {
+    probabilities: MatchProbabilities;
+    odds: FullOddsSnapshot;
+    deterministicScore: Decimal;
+    distHome: number[];
+    distAway: number[];
+    lambdaFloorHit: boolean;
+  }): ViablePick | null {
+    return this.selectBestViablePick(
+      input.probabilities,
+      input.odds,
+      input.deterministicScore,
+      input.distHome,
+      input.distAway,
+      input.lambdaFloorHit,
+      new Set<Market>(),
+    );
   }
 
   async getEffectiveWeights(): Promise<FeatureWeights> {
@@ -246,7 +275,8 @@ export class BettingEngineService {
 
     if (
       fixture.status === FixtureStatus.POSTPONED ||
-      fixture.status === FixtureStatus.CANCELLED
+      fixture.status === FixtureStatus.CANCELLED ||
+      fixture.status === FixtureStatus.IN_PROGRESS
     ) {
       logger.info(
         { fixtureId, status: fixture.status, reason: 'fixture_not_playable' },
@@ -338,8 +368,8 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
-    let valueBet = latestOdds
-      ? this.selectBestViablePick(
+    const evaluatedPicks: EvaluatedPick[] = latestOdds
+      ? this.listEvaluatedPicks(
           probabilities,
           latestOdds,
           deterministicScore,
@@ -348,7 +378,12 @@ export class BettingEngineService {
           lambdaFloorHit,
           suspendedMarkets,
         )
-      : null;
+      : [];
+    const candidatePicks = evaluatedPicks.filter(
+      (pick): pick is ViablePick => pick.rejectionReason === undefined,
+    );
+
+    let valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
 
     const favoriteTeamId = probabilities.home.greaterThanOrEqualTo(
@@ -452,6 +487,8 @@ export class BettingEngineService {
           shadow_congestion: shadowCongestion,
           shadow_lineups: null,
           shadow_injuries: null,
+          candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
+          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks.slice(0, 10)),
         },
         openclawRaw: Prisma.JsonNull,
         validatedByBackend: true,
@@ -693,6 +730,52 @@ export class BettingEngineService {
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
   ): ViablePick | null {
+    const viable = this.listViablePicks(
+      probabilities,
+      odds,
+      deterministicScore,
+      distHome,
+      distAway,
+      lambdaFloorHit,
+      suspendedMarkets,
+    );
+
+    return viable[0] ?? null;
+  }
+
+  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  private listViablePicks(
+    probabilities: MatchProbabilities,
+    odds: FullOddsSnapshot,
+    deterministicScore: Decimal,
+    distHome: number[],
+    distAway: number[],
+    lambdaFloorHit: boolean,
+    suspendedMarkets: Set<Market>,
+  ): ViablePick[] {
+    return this.listEvaluatedPicks(
+      probabilities,
+      odds,
+      deterministicScore,
+      distHome,
+      distAway,
+      lambdaFloorHit,
+      suspendedMarkets,
+    )
+      .filter((pick): pick is ViablePick => pick.rejectionReason === undefined)
+      .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
+  }
+
+  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  private listEvaluatedPicks(
+    probabilities: MatchProbabilities,
+    odds: FullOddsSnapshot,
+    deterministicScore: Decimal,
+    distHome: number[],
+    distAway: number[],
+    lambdaFloorHit: boolean,
+    suspendedMarkets: Set<Market>,
+  ): EvaluatedPick[] {
     const candidates: ViablePick[] = [];
 
     // Singles 1X2
@@ -721,7 +804,13 @@ export class BettingEngineService {
         probability: c.probability,
         odds: c.pickOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.ONE_X_TWO,
+          c.pick,
+          c.pickOdds,
+        ),
         isCombo: false,
       });
     }
@@ -735,7 +824,13 @@ export class BettingEngineService {
         probability: probabilities.over25,
         odds: odds.overOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.OVER_UNDER,
+          'OVER',
+          odds.overOdds,
+        ),
         isCombo: false,
       });
     }
@@ -747,7 +842,13 @@ export class BettingEngineService {
         probability: probabilities.under25,
         odds: odds.underOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.OVER_UNDER,
+          'UNDER',
+          odds.underOdds,
+        ),
         isCombo: false,
       });
     }
@@ -761,7 +862,13 @@ export class BettingEngineService {
         probability: probabilities.bttsYes,
         odds: odds.bttsYesOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.BTTS,
+          'YES',
+          odds.bttsYesOdds,
+        ),
         isCombo: false,
       });
     }
@@ -773,7 +880,13 @@ export class BettingEngineService {
         probability: probabilities.bttsNo,
         odds: odds.bttsNoOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.BTTS,
+          'NO',
+          odds.bttsNoOdds,
+        ),
         isCombo: false,
       });
     }
@@ -791,7 +904,13 @@ export class BettingEngineService {
         probability,
         odds: pickOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.HALF_TIME_FULL_TIME,
+          pick,
+          pickOdds,
+        ),
         isCombo: false,
       });
     }
@@ -812,6 +931,11 @@ export class BettingEngineService {
           odds,
         );
         if (p1Odds === null || p2Odds === null) continue;
+        if (
+          p1Odds.greaterThan(MAX_SELECTION_ODDS) ||
+          p2Odds.greaterThan(MAX_SELECTION_ODDS)
+        )
+          continue;
 
         const jointProbability = computeJointProbability(
           combo,
@@ -834,25 +958,28 @@ export class BettingEngineService {
           probability: jointProbability,
           odds: oddsCombo,
           ev,
-          qualityScore: ev.mul(deterministicScore),
+          qualityScore: buildQualityScore(
+            ev,
+            deterministicScore,
+            combo.market1,
+            combo.pick1,
+            oddsCombo,
+          ),
           isCombo: true,
         });
       }
     }
 
     // Filter: EV >= threshold and no suspended market
-    const viable = candidates.filter(
-      (c) =>
-        c.ev.greaterThanOrEqualTo(EV_THRESHOLD) &&
-        !suspendedMarkets.has(c.market) &&
-        (c.comboMarket === undefined || !suspendedMarkets.has(c.comboMarket)),
-    );
+    const evaluated = candidates.map((candidate) => {
+      const rejectionReason = getPickRejectionReason(
+        candidate,
+        suspendedMarkets,
+      );
+      return rejectionReason ? { ...candidate, rejectionReason } : candidate;
+    });
 
-    if (viable.length === 0) return null;
-
-    return viable.reduce((best, c) =>
-      c.qualityScore.greaterThan(best.qualityScore) ? c : best,
-    );
+    return evaluated.sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
   }
 }
 
@@ -900,9 +1027,12 @@ function deriveLambdas(homeStats: TeamStatsInput, awayStats: TeamStatsInput) {
     (homeXgFor + awayXgFor + homeXgAgainst + awayXgAgainst) / 4,
   );
 
+  const rawHome = (homeXgFor * awayXgAgainst) / leagueAvg;
+  const rawAway = (awayXgFor * homeXgAgainst) / leagueAvg;
+
   return {
-    home: clamp((homeXgFor * awayXgAgainst) / leagueAvg, 0.05, 5),
-    away: clamp((awayXgFor * homeXgAgainst) / leagueAvg, 0.05, 5),
+    home: clamp(rawHome * HOME_ADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
+    away: clamp(rawAway * AWAY_DISADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
   };
 }
 
@@ -1079,6 +1209,122 @@ function summarizePick(pick: ViablePick): {
     ev: pick.ev.toNumber(),
     qualityScore: pick.qualityScore.toNumber(),
   };
+}
+
+function summarizePicks(picks: ViablePick[]): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  qualityScore: number;
+}[] {
+  return picks.map((pick) => summarizePick(pick));
+}
+
+function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  qualityScore: number;
+  status: 'viable' | 'rejected';
+  rejectionReason?: string;
+}[] {
+  return picks.map((pick) => ({
+    ...summarizePick(pick),
+    status: pick.rejectionReason ? 'rejected' : 'viable',
+    ...(pick.rejectionReason ? { rejectionReason: pick.rejectionReason } : {}),
+  }));
+}
+
+function getPickRejectionReason(
+  pick: ViablePick,
+  suspendedMarkets: Set<Market>,
+): EvaluatedPick['rejectionReason'] {
+  if (pick.ev.lessThan(EV_THRESHOLD)) {
+    return 'ev_below_threshold';
+  }
+
+  if (pick.odds.lessThan(MIN_SELECTION_ODDS)) {
+    return 'odds_below_floor';
+  }
+
+  // For combos, individual leg odds are already filtered upstream — only apply
+  // the cap to single picks where the pick odds IS the leg odds.
+  if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
+    return 'odds_above_cap';
+  }
+
+  if (
+    suspendedMarkets.has(pick.market) ||
+    (pick.comboMarket !== undefined && suspendedMarkets.has(pick.comboMarket))
+  ) {
+    return 'market_suspended';
+  }
+
+  return undefined;
+}
+
+// eslint-disable-next-line max-params -- Five domain parameters; no meaningful grouping possible without obscuring intent.
+function buildQualityScore(
+  ev: Decimal,
+  deterministicScore: Decimal,
+  market: Market,
+  pick: string,
+  odds?: Decimal,
+): Decimal {
+  return ev
+    .mul(deterministicScore)
+    .mul(getOneXTwoLongshotPenalty(market, pick, odds ?? new Decimal(0)));
+}
+
+function getOneXTwoLongshotPenalty(
+  market: Market,
+  pick: string,
+  odds: Decimal,
+): Decimal {
+  if (market !== Market.ONE_X_TWO) {
+    return new Decimal(1);
+  }
+
+  if (pick === 'AWAY' && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+    return progressiveLongshotPenalty({
+      threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+      odds,
+      floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+    });
+  }
+
+  if (pick === 'DRAW' && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+    return progressiveLongshotPenalty({
+      threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+      odds,
+      floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+    });
+  }
+
+  return new Decimal(1);
+}
+
+function progressiveLongshotPenalty(input: {
+  threshold: Decimal;
+  odds: Decimal;
+  floor: Decimal;
+}): Decimal {
+  const { threshold, odds, floor } = input;
+  if (odds.lte(0)) {
+    return floor;
+  }
+
+  const ratio = threshold.div(odds);
+  const progressive = ratio.pow(ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT);
+  return Decimal.max(floor, Decimal.min(new Decimal(1), progressive));
 }
 
 function buildBetPickKey(input: {

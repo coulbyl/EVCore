@@ -6,6 +6,7 @@ const couponBetSelect = {
   id: true,
   market: true,
   pick: true,
+  probEstimated: true,
   ev: true,
   oddsSnapshot: true,
   comboMarket: true,
@@ -13,6 +14,7 @@ const couponBetSelect = {
   status: true,
   modelRun: {
     select: {
+      features: true,
       fixture: {
         select: {
           id: true,
@@ -99,6 +101,30 @@ export class CouponRepository {
     });
   }
 
+  async findCouponsForDate(
+    date: Date,
+  ): Promise<{ id: string; status: CouponStatus; betIds: string[] }[]> {
+    const start = new Date(date);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setUTCHours(23, 59, 59, 999);
+
+    const coupons = await this.prisma.client.dailyCoupon.findMany({
+      where: { date: { gte: start, lte: end } },
+      select: {
+        id: true,
+        status: true,
+        couponLegs: { select: { betId: true } },
+      },
+    });
+
+    return coupons.map((c) => ({
+      id: c.id,
+      status: c.status,
+      betIds: c.couponLegs.map((l) => l.betId).sort(),
+    }));
+  }
+
   async findPendingCouponsUntil(date: Date): Promise<
     {
       id: string;
@@ -167,12 +193,14 @@ export class CouponRepository {
       id: string;
       market: string;
       pick: string;
+      probEstimated: unknown;
       ev: unknown;
       oddsSnapshot: unknown;
       comboMarket: string | null;
       comboPick: string | null;
       status: BetStatus;
       modelRun: {
+        features: unknown;
         fixture: {
           scheduledAt: Date;
           homeTeam: { name: string };
@@ -236,10 +264,12 @@ export class CouponRepository {
         pick: string;
         comboMarket: string | null;
         comboPick: string | null;
+        probEstimated: unknown;
         oddsSnapshot: unknown;
         ev: unknown;
         status: BetStatus;
         modelRun: {
+          features: unknown;
           fixture: {
             id: string;
             scheduledAt: Date;

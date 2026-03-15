@@ -169,6 +169,14 @@ function mapStatus(status: ApiFootballStatus): FixtureStatus {
     case 'CANC':
     case 'ABD':
       return 'CANCELLED';
+    case '1H':
+    case 'HT':
+    case '2H':
+    case 'ET':
+    case 'BT':
+    case 'P':
+    case 'INT':
+      return 'IN_PROGRESS';
     default:
       return 'SCHEDULED';
   }

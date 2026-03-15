@@ -98,9 +98,12 @@ describe('EtlService', () => {
       seasons: [],
       totalFixtures: 0,
       totalAnalyzed: 0,
+      totalBets: 0,
       averageBrierScore: new Decimal(0),
       averageCalibrationError: new Decimal(0),
       aggregateRoi: new Decimal(0),
+      aggregateProfit: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
       byCompetition: [],
       reportGeneratedAt: new Date(),
     }),
@@ -121,6 +124,9 @@ describe('EtlService', () => {
         verdict: 'INSUFFICIENT_DATA',
       },
       totalAnalyzed: 0,
+      totalBets: 0,
+      aggregateProfit: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
       overallVerdict: 'INSUFFICIENT_DATA',
       byCompetition: [],
       reportGeneratedAt: new Date(),
@@ -296,27 +302,33 @@ describe('EtlService', () => {
     });
   });
 
-  it('dispatches odds CSV import jobs only for the current CSV season', async () => {
+  it('dispatches odds CSV import jobs for all active CSV seasons', async () => {
     await service.triggerOddsCsvImport();
 
-    const currentCsvSeasonCode = getActiveCsvSeasonCodes().at(-1);
-    expect(currentCsvSeasonCode).toBeDefined();
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
+    const allCsvSeasonCodes = getActiveCsvSeasonCodes();
+    expect(allCsvSeasonCodes.length).toBeGreaterThan(0);
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
+      TEST_COMPETITIONS.length * allCsvSeasonCodes.length,
+    );
 
-    TEST_COMPETITIONS.forEach((competition, index) => {
-      expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
-        index + 1,
-        `odds-csv-import-${competition.code}-${currentCsvSeasonCode}`,
-        {
-          competitionCode: competition.code,
-          seasonCode: currentCsvSeasonCode,
-          divisionCode: competition.csvDivisionCode,
-        },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: 0,
-        },
-      );
+    TEST_COMPETITIONS.forEach((competition, competitionIndex) => {
+      allCsvSeasonCodes.forEach((seasonCode, seasonIndex) => {
+        const callIndex =
+          competitionIndex * allCsvSeasonCodes.length + seasonIndex + 1;
+        expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
+          callIndex,
+          `odds-csv-import-${competition.code}-${seasonCode}`,
+          {
+            competitionCode: competition.code,
+            seasonCode,
+            divisionCode: competition.csvDivisionCode,
+          },
+          {
+            ...BULLMQ_DEFAULT_JOB_OPTIONS,
+            delay: seasonIndex * 2_000,
+          },
+        );
+      });
     });
   });
 
@@ -427,7 +439,9 @@ describe('EtlService', () => {
       TEST_COMPETITIONS.length * 2 + totalStatsJobs,
     );
     expect(pendingBetsSettlementQueue.add).toHaveBeenCalledOnce();
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
+      TEST_COMPETITIONS.length * getActiveCsvSeasonCodes().length,
+    );
     expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
   });
 

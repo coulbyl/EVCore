@@ -5,6 +5,7 @@ import { BacktestService } from './backtest.service';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import type { ViablePick } from '@modules/betting-engine/betting-engine.types';
 
 // Generates N team-stats rows for a given teamId, all dated before 2023-01-01
 // so they pass the cold-start guard (MIN_PRIOR_TEAM_STATS = 5).
@@ -38,6 +39,8 @@ describe('BacktestService', () => {
               scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
               homeTeamId: 'h1',
               awayTeamId: 'a1',
+              homeHtScore: 1,
+              awayHtScore: 0,
               homeScore: 2,
               awayScore: 1,
             },
@@ -47,6 +50,8 @@ describe('BacktestService', () => {
               scheduledAt: new Date('2023-01-08T12:00:00.000Z'),
               homeTeamId: 'h2',
               awayTeamId: 'a2',
+              homeHtScore: 0,
+              awayHtScore: 0,
               homeScore: 0,
               awayScore: 0,
             },
@@ -65,10 +70,14 @@ describe('BacktestService', () => {
           findMany: vi.fn().mockResolvedValue([
             {
               fixtureId: 'f1',
+              bookmaker: 'Pinnacle',
+              market: Market.ONE_X_TWO,
+              pick: null,
               snapshotAt: new Date('2022-12-31T10:00:00.000Z'),
               homeOdds: new Decimal('2.1'),
               drawOdds: new Decimal('3.4'),
               awayOdds: new Decimal('4.2'),
+              odds: null,
             },
           ]),
         },
@@ -98,6 +107,15 @@ describe('BacktestService', () => {
           leagueVolat: new Decimal('0.4'),
         },
       }),
+      selectBestViablePickForBacktest: vi.fn().mockReturnValue({
+        market: Market.ONE_X_TWO,
+        pick: 'HOME',
+        probability: new Decimal('0.6'),
+        odds: new Decimal('2.1'),
+        ev: new Decimal('0.26'),
+        qualityScore: new Decimal('0.1716'),
+        isCombo: false,
+      } satisfies ViablePick),
     } as unknown as BettingEngineService;
 
     const service = new BacktestService(prismaMock, bettingMock);
@@ -142,6 +160,8 @@ describe('BacktestService', () => {
               scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
               homeTeamId: 'h1',
               awayTeamId: 'a1',
+              homeHtScore: 0,
+              awayHtScore: 0,
               homeScore: 1,
               awayScore: 0,
             },
@@ -159,10 +179,14 @@ describe('BacktestService', () => {
           findMany: vi.fn().mockResolvedValue([
             {
               fixtureId: 'f1',
+              bookmaker: 'Pinnacle',
+              market: Market.ONE_X_TWO,
+              pick: null,
               snapshotAt: new Date('2022-12-31T10:00:00.000Z'),
               homeOdds: new Decimal('1.7'),
               drawOdds: new Decimal('3.1'),
               awayOdds: new Decimal('4.0'),
+              odds: null,
             },
           ]),
         },
@@ -171,7 +195,7 @@ describe('BacktestService', () => {
 
     const bettingMock = {
       computeFromTeamStats: vi.fn().mockReturnValue({
-        deterministicScore: new Decimal('0.66'),
+        deterministicScore: new Decimal('0.50'),
         lambda: { home: 1.4, away: 1.1 },
         probabilities: {
           home: new Decimal('0.55'),
@@ -192,6 +216,7 @@ describe('BacktestService', () => {
           leagueVolat: new Decimal('0.4'),
         },
       }),
+      selectBestViablePickForBacktest: vi.fn(),
     } as unknown as BettingEngineService;
 
     const service = new BacktestService(prismaMock, bettingMock);
@@ -201,13 +226,7 @@ describe('BacktestService', () => {
     expect(report.roiSimulated.toNumber()).toBeCloseTo(0, 6);
     expect(report.averageEvSimulated.toNumber()).toBeCloseTo(0, 6);
     expect(report.maxDrawdownSimulated.toNumber()).toBeCloseTo(0, 6);
-    expect(report.marketPerformance[0]).toMatchObject({
-      market: Market.ONE_X_TWO,
-      betsPlaced: 0,
-      wins: 0,
-      losses: 0,
-      voids: 0,
-    });
+    expect(report.marketPerformance).toEqual([]);
   });
 });
 
@@ -222,6 +241,8 @@ function buildSeasonFixtureMock(seasonId: string) {
     scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
     homeTeamId: 'h1',
     awayTeamId: 'a1',
+    homeHtScore: 1,
+    awayHtScore: 0,
     homeScore: 2,
     awayScore: 1,
   };
@@ -257,6 +278,15 @@ function makeBettingMock(): BettingEngineService {
         leagueVolat: new Decimal('0.4'),
       },
     }),
+    selectBestViablePickForBacktest: vi.fn().mockReturnValue({
+      market: Market.ONE_X_TWO,
+      pick: 'HOME',
+      probability: new Decimal('0.6'),
+      odds: new Decimal('2.1'),
+      ev: new Decimal('0.26'),
+      qualityScore: new Decimal('0.1716'),
+      isCombo: false,
+    } satisfies ViablePick),
   } as unknown as BettingEngineService;
 }
 
@@ -360,9 +390,12 @@ describe('BacktestService.getValidationReport', () => {
       seasons: [],
       totalFixtures: 100,
       totalAnalyzed: 100,
+      totalBets: 25,
       averageBrierScore: new Decimal('0.20'),
       averageCalibrationError: new Decimal('0.03'),
       aggregateRoi: new Decimal('0.05'),
+      aggregateProfit: new Decimal('1.25'),
+      averageEvSimulated: new Decimal('0.12'),
       byCompetition: [],
       reportGeneratedAt: new Date(),
     });
@@ -453,9 +486,12 @@ describe('BacktestService.getValidationReport', () => {
       seasons: [],
       totalFixtures: 100,
       totalAnalyzed: 100,
+      totalBets: 25,
       averageBrierScore: new Decimal('0.70'), // above 0.65 threshold → FAIL
       averageCalibrationError: new Decimal('0.03'),
       aggregateRoi: new Decimal('0.05'),
+      aggregateProfit: new Decimal('1.25'),
+      averageEvSimulated: new Decimal('0.12'),
       byCompetition: [],
       reportGeneratedAt: new Date(),
     });

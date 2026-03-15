@@ -31,7 +31,7 @@ describe('FixtureRepository scheduled fixture queries', () => {
         },
         season: { competition: { isActive: true } },
       },
-      select: { id: true, externalId: true },
+      select: { id: true, externalId: true, scheduledAt: true },
       orderBy: { scheduledAt: 'asc' },
     });
   });
@@ -51,7 +51,7 @@ describe('FixtureRepository scheduled fixture queries', () => {
         },
         season: { competition: { isActive: true } },
       },
-      select: { id: true, externalId: true },
+      select: { id: true, externalId: true, scheduledAt: true },
       orderBy: { scheduledAt: 'asc' },
     });
   });
@@ -75,7 +75,7 @@ describe('FixtureRepository.upsertFixture', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    transaction.mockImplementation(async (callback: (tx: any) => unknown) =>
+    transaction.mockImplementation((callback: (tx: any) => unknown) =>
       callback({
         fixture: {
           findUnique,

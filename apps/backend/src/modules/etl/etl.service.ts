@@ -361,9 +361,7 @@ export class EtlService implements OnApplicationBootstrap {
         (p) => p.competition as CompetitionRow & { csvDivisionCode: string },
       );
 
-    const csvSeasonCodes = [getActiveCsvSeasonCodes().at(-1)].filter(
-      (seasonCode): seasonCode is string => seasonCode != null,
-    );
+    const csvSeasonCodes = getActiveCsvSeasonCodes();
     for (const competition of csvCompetitions) {
       for (let i = 0; i < csvSeasonCodes.length; i++) {
         const seasonCode = csvSeasonCodes[i];

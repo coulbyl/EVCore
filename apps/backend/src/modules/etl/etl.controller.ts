@@ -8,8 +8,16 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import { EtlService } from './etl.service';
+import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
 import { OddsLiveSyncBodyDto } from './dto/odds-live-sync-body.dto';
 import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
 
@@ -48,6 +56,22 @@ const LEAGUE_SYNC_HANDLERS: Record<LeagueSyncType, LeagueSyncHandler> = {
   injuries: (service, competitionCode) =>
     service.triggerInjuriesSyncForLeague(competitionCode),
 };
+
+const GLOBAL_SYNC_TYPE_VALUES = [
+  'fixtures',
+  'stats',
+  'injuries',
+  'settlement',
+  'odds-csv',
+  'odds-live',
+  'odds-retention',
+] as const satisfies readonly GlobalSyncType[];
+
+const LEAGUE_SYNC_TYPE_VALUES = [
+  'fixtures',
+  'stats',
+  'injuries',
+] as const satisfies readonly LeagueSyncType[];
 
 @ApiTags('ETL')
 @Controller('etl')
@@ -143,49 +167,6 @@ export class EtlController {
 
   // ─── Granular triggers ────────────────────────────────────────────────────
 
-  @Post('sync/:type')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger ETL sync by type',
-    description:
-      'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, odds-csv, odds-live, odds-retention. For league-scoped runs, use ' +
-      '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
-  })
-  @ApiBody({
-    schema: {
-      oneOf: [
-        { type: 'object', properties: { date: { type: 'string' } } },
-        { type: 'object', properties: { retentionDays: { type: 'number' } } },
-      ],
-    },
-    required: false,
-  })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerSync(
-    @Param('type') type: string,
-    @Body() body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
-  ) {
-    return this.ok(() => this.triggerGlobalSync(type, body));
-  }
-
-  @Post('sync/:type/:competitionCode')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger league-scoped ETL sync',
-    description:
-      'Triggers a league-scoped ETL flow for one competition code. Supported types: ' +
-      'fixtures, stats, injuries. Example competition codes: PL, SA, LL.',
-  })
-  async triggerSyncForCompetition(
-    @Param('type') type: string,
-    @Param('competitionCode') competitionCode: string,
-  ) {
-    return this.okForLeague(competitionCode, (code) =>
-      this.triggerLeagueSync(type, code),
-    );
-  }
-
   @Post('sync/rolling-stats/:competitionCode/:season')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -193,6 +174,17 @@ export class EtlController {
     description:
       'Runs rolling-stats manually for one competition season. Default mode is refresh ' +
       '(incremental/idempotent). Use `mode: "rebuild"` only for forced reconstruction.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description:
+      'Competition code. Free-form on purpose because supported competitions can evolve over time.',
+    example: 'PL',
+  })
+  @ApiParam({
+    name: 'season',
+    description: 'Season year.',
+    example: '2024',
   })
   @ApiBody({
     schema: {
@@ -202,6 +194,28 @@ export class EtlController {
       },
     },
     required: false,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid season year or rolling-stats mode.',
+    type: EtlErrorResponseDto,
+    schema: {
+      oneOf: [
+        {
+          example: {
+            message: 'season must be a valid year (e.g. 2021)',
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+        {
+          example: {
+            message: 'mode must be either "refresh" or "rebuild"',
+            error: 'Bad Request',
+            statusCode: 400,
+          },
+        },
+      ],
+    },
   })
   async triggerRollingStatsSeason(
     @Param('competitionCode') competitionCode: string,
@@ -248,6 +262,88 @@ export class EtlController {
   async triggerBacktestSeason(@Param('seasonId') seasonId: string) {
     await this.etlService.triggerBacktestSeason(seasonId);
     return { status: 'ok' as const, seasonId };
+  }
+
+  @Post('sync/:type')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger ETL sync by type',
+    description:
+      'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
+      'settlement, odds-csv, odds-live, odds-retention. For league-scoped runs, use ' +
+      '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
+  })
+  @ApiParam({
+    name: 'type',
+    enum: GLOBAL_SYNC_TYPE_VALUES,
+    description: 'Global ETL sync type.',
+  })
+  @ApiBody({
+    schema: {
+      oneOf: [
+        { type: 'object', properties: { date: { type: 'string' } } },
+        { type: 'object', properties: { retentionDays: { type: 'number' } } },
+      ],
+    },
+    required: false,
+  })
+  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  @ApiBadRequestResponse({
+    description: 'Unsupported ETL sync type.',
+    type: EtlErrorResponseDto,
+    schema: {
+      example: {
+        message: 'Unsupported ETL sync type: unknown-job',
+        error: 'Bad Request',
+        statusCode: 400,
+      },
+    },
+  })
+  async triggerSync(
+    @Param('type') type: string,
+    @Body() body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
+  ) {
+    return this.ok(() => this.triggerGlobalSync(type, body));
+  }
+
+  @Post('sync/:type/:competitionCode')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger league-scoped ETL sync',
+    description:
+      'Triggers a league-scoped ETL flow for one competition code. Supported types: ' +
+      'fixtures, stats, injuries. Example competition codes: PL, SA, LL.',
+  })
+  @ApiParam({
+    name: 'type',
+    enum: LEAGUE_SYNC_TYPE_VALUES,
+    description: 'League-scoped ETL sync type.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description:
+      'Competition code. Free-form on purpose because supported competitions can evolve over time.',
+    example: 'PL',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Unsupported league-scoped ETL sync type. Only fixtures, stats and injuries are allowed here.',
+    type: EtlErrorResponseDto,
+    schema: {
+      example: {
+        message: 'Unsupported league-scoped ETL sync type: odds-csv',
+        error: 'Bad Request',
+        statusCode: 400,
+      },
+    },
+  })
+  async triggerSyncForCompetition(
+    @Param('type') type: string,
+    @Param('competitionCode') competitionCode: string,
+  ) {
+    return this.okForLeague(competitionCode, (code) =>
+      this.triggerLeagueSync(type, code),
+    );
   }
 
   private resolveCode(competition: string): string {

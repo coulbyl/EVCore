@@ -15,18 +15,26 @@ export type CompetitionBacktestSummary = {
   competitionName: string;
   seasonCount: number;
   totalAnalyzed: number;
+  totalBets: number;
   averageBrierScore: Decimal;
   averageCalibrationError: Decimal;
   aggregateRoi: Decimal;
+  aggregateProfit: Decimal;
+  averageEvSimulated: Decimal;
+  maxDrawdownSimulated: Decimal;
+  marketPerformance: BacktestMarketPerformance[];
 };
 
 export type AllSeasonsBacktestReport = {
   seasons: BacktestReport[];
   totalFixtures: number;
   totalAnalyzed: number;
+  totalBets: number;
   averageBrierScore: Decimal;
   averageCalibrationError: Decimal;
   aggregateRoi: Decimal;
+  aggregateProfit: Decimal;
+  averageEvSimulated: Decimal;
   byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
 };
@@ -36,6 +44,9 @@ export type ValidationReport = {
   calibrationError: MetricResult;
   roi: MetricResult;
   totalAnalyzed: number;
+  totalBets: number;
+  aggregateProfit: Decimal;
+  averageEvSimulated: Decimal;
   overallVerdict: ValidationVerdict;
   byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
@@ -69,6 +80,32 @@ export type BacktestReport = {
   reportGeneratedAt: Date;
 };
 
+export type BacktestPickPerformance = {
+  pick: string;
+  betsPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  stake: Decimal;
+  profit: Decimal;
+  roi: Decimal;
+  averageOdds: Decimal;
+  averageEv: Decimal;
+};
+
+export type BacktestOddsBucketPerformance = {
+  bucket: string;
+  betsPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  stake: Decimal;
+  profit: Decimal;
+  roi: Decimal;
+  averageOdds: Decimal;
+  averageEv: Decimal;
+};
+
 export type BacktestMarketPerformance = {
   market: Market;
   betsPlaced: number;
@@ -78,8 +115,11 @@ export type BacktestMarketPerformance = {
   stake: Decimal;
   profit: Decimal;
   roi: Decimal;
+  averageOdds: Decimal;
   averageEv: Decimal;
   maxDrawdown: Decimal;
+  pickBreakdown: BacktestPickPerformance[];
+  oddsBuckets: BacktestOddsBucketPerformance[];
 };
 
 export function getOneXTwoOutcome(

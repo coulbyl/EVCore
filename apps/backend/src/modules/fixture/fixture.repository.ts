@@ -285,7 +285,7 @@ export class FixtureRepository {
 
   findScheduledForDate(
     date: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     const start = new Date(date);
     start.setUTCHours(0, 0, 0, 0);
     const end = new Date(date);
@@ -296,7 +296,7 @@ export class FixtureRepository {
         scheduledAt: { gte: start, lte: end },
         season: { competition: { isActive: true } },
       },
-      select: { id: true, externalId: true },
+      select: { id: true, externalId: true, scheduledAt: true },
       orderBy: { scheduledAt: 'asc' },
     });
   }
@@ -304,7 +304,7 @@ export class FixtureRepository {
   findScheduledInRange(
     startDate: Date,
     endDate: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     const start = new Date(startDate);
     start.setUTCHours(0, 0, 0, 0);
     const end = new Date(endDate);
@@ -315,7 +315,7 @@ export class FixtureRepository {
         scheduledAt: { gte: start, lte: end },
         season: { competition: { isActive: true } },
       },
-      select: { id: true, externalId: true },
+      select: { id: true, externalId: true, scheduledAt: true },
       orderBy: { scheduledAt: 'asc' },
     });
   }

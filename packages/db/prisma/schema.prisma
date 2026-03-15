@@ -18,6 +18,7 @@ datasource db {
 
 enum FixtureStatus {
   SCHEDULED
+  IN_PROGRESS
   FINISHED
   POSTPONED
   CANCELLED

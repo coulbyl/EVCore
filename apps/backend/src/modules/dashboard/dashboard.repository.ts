@@ -34,19 +34,19 @@ export class DashboardRepository {
     ] = await Promise.all([
       this.prisma.client.fixture.count({
         where: {
-          status: FixtureStatus.SCHEDULED,
+          status: { in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS] },
           scheduledAt: { gte: todayStart, lte: todayEnd },
         },
       }),
       this.prisma.client.fixture.count({
         where: {
-          status: FixtureStatus.SCHEDULED,
+          status: { in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS] },
           scheduledAt: { gte: yesterdayStart, lte: yesterdayEnd },
         },
       }),
       this.prisma.client.fixture.count({
         where: {
-          status: FixtureStatus.SCHEDULED,
+          status: { in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS] },
           scheduledAt: { gte: todayStart, lte: todayEnd },
           oddsSnapshots: { some: {} },
         },
@@ -126,7 +126,11 @@ export class DashboardRepository {
         where: {
           modelRun: {
             analyzedAt: { gte: rolling24hStart },
-            fixture: { status: FixtureStatus.SCHEDULED },
+            fixture: {
+              status: {
+                in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
+              },
+            },
           },
         },
         orderBy: { ev: 'desc' },
