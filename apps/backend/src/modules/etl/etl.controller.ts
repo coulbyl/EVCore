@@ -21,6 +21,33 @@ type GlobalSyncType =
   | 'odds-live'
   | 'odds-retention';
 
+type SyncBody = OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto;
+type GlobalSyncHandler = (service: EtlService, body: SyncBody) => Promise<void>;
+type LeagueSyncHandler = (
+  service: EtlService,
+  competitionCode: string,
+) => Promise<void>;
+
+const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
+  fixtures: (service) => service.triggerFixturesSync(),
+  stats: (service) => service.triggerStatsSync(),
+  injuries: (service) => service.triggerInjuriesSync(),
+  settlement: (service) => service.triggerPendingBetsSettlementSync(),
+  'odds-csv': (service) => service.triggerOddsCsvImport(),
+  'odds-live': (service, body) => service.triggerOddsLiveSync(body.date),
+  'odds-retention': (service, body) =>
+    service.triggerOddsSnapshotRetention(body.retentionDays),
+};
+
+const LEAGUE_SYNC_HANDLERS: Record<LeagueSyncType, LeagueSyncHandler> = {
+  fixtures: (service, competitionCode) =>
+    service.triggerFixturesSyncForLeague(competitionCode),
+  stats: (service, competitionCode) =>
+    service.triggerStatsSyncForLeague(competitionCode),
+  injuries: (service, competitionCode) =>
+    service.triggerInjuriesSyncForLeague(competitionCode),
+};
+
 @ApiTags('ETL')
 @Controller('etl')
 export class EtlController {
@@ -162,50 +189,17 @@ export class EtlController {
     return competition.toUpperCase();
   }
 
-  private async triggerGlobalSync(
-    type: string,
-    body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto,
-  ): Promise<void> {
-    switch (this.resolveGlobalType(type)) {
-      case 'fixtures':
-        await this.etlService.triggerFixturesSync();
-        return;
-      case 'stats':
-        await this.etlService.triggerStatsSync();
-        return;
-      case 'injuries':
-        await this.etlService.triggerInjuriesSync();
-        return;
-      case 'settlement':
-        await this.etlService.triggerPendingBetsSettlementSync();
-        return;
-      case 'odds-csv':
-        await this.etlService.triggerOddsCsvImport();
-        return;
-      case 'odds-live':
-        await this.etlService.triggerOddsLiveSync(body.date);
-        return;
-      case 'odds-retention':
-        await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
-        return;
-    }
+  private async triggerGlobalSync(type: string, body: SyncBody): Promise<void> {
+    const syncType = this.resolveGlobalType(type);
+    await GLOBAL_SYNC_HANDLERS[syncType](this.etlService, body);
   }
 
   private async triggerLeagueSync(
     type: string,
     competitionCode: string,
   ): Promise<void> {
-    switch (this.resolveLeagueType(type)) {
-      case 'fixtures':
-        await this.etlService.triggerFixturesSyncForLeague(competitionCode);
-        return;
-      case 'stats':
-        await this.etlService.triggerStatsSyncForLeague(competitionCode);
-        return;
-      case 'injuries':
-        await this.etlService.triggerInjuriesSyncForLeague(competitionCode);
-        return;
-    }
+    const syncType = this.resolveLeagueType(type);
+    await LEAGUE_SYNC_HANDLERS[syncType](this.etlService, competitionCode);
   }
 
   private resolveGlobalType(type: string): GlobalSyncType {
@@ -222,17 +216,9 @@ export class EtlController {
 }
 
 function isGlobalSyncType(type: string): type is GlobalSyncType {
-  return (
-    type === 'fixtures' ||
-    type === 'stats' ||
-    type === 'injuries' ||
-    type === 'settlement' ||
-    type === 'odds-csv' ||
-    type === 'odds-live' ||
-    type === 'odds-retention'
-  );
+  return type in GLOBAL_SYNC_HANDLERS;
 }
 
 function isLeagueSyncType(type: string): type is LeagueSyncType {
-  return type === 'fixtures' || type === 'stats' || type === 'injuries';
+  return type in LEAGUE_SYNC_HANDLERS;
 }

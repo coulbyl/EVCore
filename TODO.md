@@ -88,6 +88,9 @@
 - [ ] Ajouter un endpoint/admin script pour activer/désactiver une compétition (`isActive`) sans redéploiement
 - [ ] Ajouter des tests ETL sur le chargement dynamique des compétitions (cas: aucune active, vague 1/2/3)
 - [ ] Exécuter migration + seed sur l'environnement de pré-prod, puis valider les jobs planifiés
+- [ ] Enrichir les métriques/dashboard ETL
+  - [ ] exposer des métriques métier en plus des compteurs BullMQ (`fixturesChecked`, `updated`, `alreadyImported`, `betsSettled`, `couponsSettled`)
+  - [ ] afficher ces métriques dans le dashboard opérateur pour détecter les workers qui tournent "à vide"
 
 ### Migration canonique coupons (mars 2026)
 
