@@ -378,6 +378,65 @@ describe('BacktestService.getValidationReport', () => {
     );
   });
 
+  it('reuses the cached all-seasons report when validation is requested twice', async () => {
+    const prismaMock = {
+      client: {
+        season: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 's1',
+              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
+            },
+          ]),
+        },
+        fixture: {
+          findMany: vi.fn().mockResolvedValue([buildSeasonFixtureMock('s1')]),
+        },
+        teamStats: {
+          findMany: vi.fn().mockResolvedValue(sharedTeamStats),
+        },
+        oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+
+    await service.getValidationReport();
+    await service.getValidationReport();
+
+    expect(prismaMock.client.season.findMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.client.fixture.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshValidationReport recomputes all seasons and updates the cache', async () => {
+    const prismaMock = {
+      client: {
+        season: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 's1',
+              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
+            },
+          ]),
+        },
+        fixture: {
+          findMany: vi.fn().mockResolvedValue([buildSeasonFixtureMock('s1')]),
+        },
+        teamStats: {
+          findMany: vi.fn().mockResolvedValue(sharedTeamStats),
+        },
+        oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+
+    const report = await service.refreshValidationReport();
+
+    expect(report).toEqual(service.getLatestValidationReport());
+    expect(service.getLatestAllSeasonsReport()).not.toBeNull();
+  });
+
   it('returns FAIL when Brier Score exceeds threshold', async () => {
     const prismaMock = {
       client: {

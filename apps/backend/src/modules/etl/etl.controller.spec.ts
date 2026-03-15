@@ -17,6 +17,8 @@ describe('EtlController', () => {
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
       triggerOddsLiveSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
+      triggerBacktestAllSeasons: vi.fn().mockResolvedValue(undefined),
+      triggerBacktestSeason: vi.fn().mockResolvedValue(undefined),
       triggerRollingStatsSeason: vi.fn().mockResolvedValue(undefined),
       ...overrides,
     } as unknown as EtlService;
@@ -141,5 +143,28 @@ describe('EtlController', () => {
         mode: 'invalid' as 'refresh',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('triggers all-seasons backtest via ETL', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(controller.triggerBacktest()).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerBacktestAllSeasons).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers one-season backtest via ETL', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(controller.triggerBacktestSeason('season-1')).resolves.toEqual(
+      {
+        status: 'ok',
+        seasonId: 'season-1',
+      },
+    );
+    expect(service.triggerBacktestSeason).toHaveBeenCalledWith('season-1');
   });
 });

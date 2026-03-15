@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { BettingEngineModule } from '../betting-engine/betting-engine.module';
+import { BacktestModule } from '../backtest/backtest.module';
 import { CouponModule } from '../coupon/coupon.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
@@ -28,6 +29,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
       { name: BULLMQ_QUEUES.ODDS_LIVE_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
     ),
+    BacktestModule,
     BettingEngineModule,
     CouponModule,
     FixtureModule,

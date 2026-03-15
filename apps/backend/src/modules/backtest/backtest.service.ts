@@ -63,6 +63,9 @@ type MarketAccumulator = {
 
 @Injectable()
 export class BacktestService {
+  private latestAllSeasonsReport: AllSeasonsBacktestReport | null = null;
+  private latestValidationReport: ValidationReport | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
@@ -291,7 +294,7 @@ export class BacktestService {
       'All-seasons backtest complete',
     );
 
-    return {
+    const report: AllSeasonsBacktestReport = {
       seasons: reports,
       totalFixtures,
       totalAnalyzed,
@@ -301,10 +304,20 @@ export class BacktestService {
       byCompetition,
       reportGeneratedAt: new Date(),
     };
+
+    this.latestAllSeasonsReport = report;
+    this.latestValidationReport = null;
+
+    return report;
   }
 
   async getValidationReport(): Promise<ValidationReport> {
-    const allSeasons = await this.runAllSeasons();
+    if (this.latestValidationReport) {
+      return this.latestValidationReport;
+    }
+
+    const allSeasons =
+      this.latestAllSeasonsReport ?? (await this.runAllSeasons());
     const {
       averageBrierScore,
       averageCalibrationError,
@@ -383,7 +396,7 @@ export class BacktestService {
       'Validation report generated',
     );
 
-    return {
+    const report: ValidationReport = {
       brierScore,
       calibrationError,
       roi,
@@ -392,6 +405,23 @@ export class BacktestService {
       byCompetition,
       reportGeneratedAt: new Date(),
     };
+
+    this.latestValidationReport = report;
+
+    return report;
+  }
+
+  async refreshValidationReport(): Promise<ValidationReport> {
+    await this.runAllSeasons();
+    return this.getValidationReport();
+  }
+
+  getLatestValidationReport(): ValidationReport | null {
+    return this.latestValidationReport;
+  }
+
+  getLatestAllSeasonsReport(): AllSeasonsBacktestReport | null {
+    return this.latestAllSeasonsReport;
   }
 
   private async loadTeamStatsIndexForSeason(

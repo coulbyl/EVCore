@@ -226,6 +226,30 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, season: year, mode };
   }
 
+  @Post('sync/backtest')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger all-seasons backtest run',
+    description:
+      'Runs the full backtest across all included seasons and refreshes the cached validation report.',
+  })
+  async triggerBacktest() {
+    await this.etlService.triggerBacktestAllSeasons();
+    return { status: 'ok' as const };
+  }
+
+  @Post('sync/backtest/:seasonId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger one-season backtest run',
+    description:
+      'Runs a targeted backtest for one seasonId. Useful for investigation without recalculating all seasons.',
+  })
+  async triggerBacktestSeason(@Param('seasonId') seasonId: string) {
+    await this.etlService.triggerBacktestSeason(seasonId);
+    return { status: 'ok' as const, seasonId };
+  }
+
   private resolveCode(competition: string): string {
     return competition.toUpperCase();
   }

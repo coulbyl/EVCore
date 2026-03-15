@@ -16,6 +16,7 @@ import {
   getActiveCsvSeasonCodes,
 } from '../../config/etl.constants';
 import { PrismaService } from '@/prisma.service';
+import { BacktestService } from '../backtest/backtest.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
@@ -107,6 +108,7 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly backtestService: BacktestService,
     private readonly rollingStatsService: RollingStatsService,
   ) {
     this.schedulingEnabled =
@@ -410,6 +412,15 @@ export class EtlService implements OnApplicationBootstrap {
     }
 
     await this.rollingStatsService.refreshSeasonYear(season, competitionCode);
+  }
+
+  async triggerBacktestAllSeasons(): Promise<void> {
+    await this.backtestService.runAllSeasons();
+    await this.backtestService.getValidationReport();
+  }
+
+  async triggerBacktestSeason(seasonId: string): Promise<void> {
+    await this.backtestService.runBacktest(seasonId);
   }
 
   async getQueueStatus(): Promise<Record<string, Record<string, number>>> {

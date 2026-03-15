@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Decimal from 'decimal.js';
 import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
@@ -16,6 +17,7 @@ import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
+import type { BacktestService } from '../backtest/backtest.service';
 import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
 type MockQueue<T> = Pick<
@@ -91,6 +93,52 @@ describe('EtlService', () => {
     },
   };
   const prismaMock = prismaMockRaw as unknown as PrismaService;
+  const backtestServiceMock = {
+    runAllSeasons: vi.fn().mockResolvedValue({
+      seasons: [],
+      totalFixtures: 0,
+      totalAnalyzed: 0,
+      averageBrierScore: new Decimal(0),
+      averageCalibrationError: new Decimal(0),
+      aggregateRoi: new Decimal(0),
+      byCompetition: [],
+      reportGeneratedAt: new Date(),
+    }),
+    getValidationReport: vi.fn().mockResolvedValue({
+      brierScore: {
+        value: new Decimal(0),
+        threshold: new Decimal(0.65),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      calibrationError: {
+        value: new Decimal(0),
+        threshold: new Decimal(0.05),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      roi: {
+        value: new Decimal(0),
+        threshold: new Decimal(-0.05),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      totalAnalyzed: 0,
+      overallVerdict: 'INSUFFICIENT_DATA',
+      byCompetition: [],
+      reportGeneratedAt: new Date(),
+    }),
+    runBacktest: vi.fn().mockResolvedValue({
+      seasonId: 'season-1',
+      fixtureCount: 0,
+      analyzedCount: 0,
+      skippedCount: 0,
+      brierScore: new Decimal(0),
+      calibrationError: new Decimal(0),
+      roiSimulated: new Decimal(0),
+      maxDrawdownSimulated: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
+      marketPerformance: [],
+      reportGeneratedAt: new Date(),
+    }),
+  } as unknown as BacktestService;
   const rollingStatsServiceMock = {
     refreshSeasonYear: vi.fn().mockResolvedValue({
       seasonId: 'season-id',
@@ -120,6 +168,7 @@ describe('EtlService', () => {
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
     prismaMock,
+    backtestServiceMock,
     rollingStatsServiceMock,
   );
 
@@ -148,6 +197,19 @@ describe('EtlService', () => {
       'PL',
     );
     expect(rollingStatsServiceMock.refreshSeasonYear).not.toHaveBeenCalled();
+  });
+
+  it('triggers the all-seasons backtest and refreshes validation cache', async () => {
+    await service.triggerBacktestAllSeasons();
+
+    expect(backtestServiceMock.runAllSeasons).toHaveBeenCalledTimes(1);
+    expect(backtestServiceMock.getValidationReport).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers one-season backtest', async () => {
+    await service.triggerBacktestSeason('season-1');
+
+    expect(backtestServiceMock.runBacktest).toHaveBeenCalledWith('season-1');
   });
 
   it('dispatches fixtures jobs only for the current season', async () => {

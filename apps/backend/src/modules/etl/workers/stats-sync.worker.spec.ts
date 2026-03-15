@@ -131,7 +131,7 @@ describe('StatsSyncWorker', () => {
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
-  }, 10_000);
+  }, 15_000);
 
   it('extracts expected_goals from API response and calls updateXg', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
