@@ -456,6 +456,9 @@ export class EtlService implements OnApplicationBootstrap {
           season,
           competitionCode: competition.code,
           leagueId: competition.leagueId,
+          ...(kind === 'fixtures'
+            ? ({ syncScope: 'routine' } satisfies Partial<LeagueSyncJobData>)
+            : {}),
         } satisfies LeagueSyncJobData,
       },
     );
@@ -474,6 +477,9 @@ export class EtlService implements OnApplicationBootstrap {
         season,
         competitionCode: competition.code,
         leagueId: competition.leagueId,
+        ...(kind === 'fixtures'
+          ? ({ syncScope: 'routine' } satisfies Partial<LeagueSyncJobData>)
+          : {}),
       }));
     });
     await this.enqueueLeagueSeasonJobs(kind, jobs);
@@ -489,6 +495,9 @@ export class EtlService implements OnApplicationBootstrap {
       season,
       competitionCode,
       leagueId: competition.leagueId,
+      ...(kind === 'fixtures'
+        ? ({ syncScope: 'backfill' } satisfies Partial<LeagueSyncJobData>)
+        : {}),
     }));
     await this.enqueueLeagueSeasonJobs(kind, jobs);
   }

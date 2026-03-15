@@ -22,6 +22,7 @@ export type LeagueSyncJobData = {
   season: number;
   competitionCode: string;
   leagueId: number;
+  syncScope?: 'routine' | 'backfill';
 };
 
 const logger = createLogger('league-sync-worker');

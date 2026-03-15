@@ -21,8 +21,11 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
+  endOfUtcDay,
+  formatDateUtc,
   seasonFallbackEndDate,
   seasonFallbackStartDate,
+  startOfUtcDay,
   parseIsoDate,
 } from '@utils/date.utils';
 import {
@@ -35,6 +38,7 @@ export type FixturesSyncJobData = {
   season: number;
   competitionCode: string;
   leagueId: number;
+  syncScope?: 'routine' | 'backfill';
 };
 
 const logger = createLogger('fixtures-sync-worker');
@@ -51,7 +55,12 @@ export class FixturesSyncWorker {
   ) {}
 
   async process(job: Job<FixturesSyncJobData>): Promise<void> {
-    const { season, competitionCode, leagueId: leagueIdNum } = job.data;
+    const {
+      season,
+      competitionCode,
+      leagueId: leagueIdNum,
+      syncScope = 'routine',
+    } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
     const leagueId = String(leagueIdNum);
 
@@ -69,7 +78,11 @@ export class FixturesSyncWorker {
       return;
     }
 
-    const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${leagueId}&season=${season}`;
+    const url = buildFixturesUrl({
+      leagueId,
+      season,
+      syncScope,
+    });
 
     const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
 
@@ -130,6 +143,7 @@ export class FixturesSyncWorker {
         competitionCode,
         season,
         leagueId: leagueIdNum,
+        syncScope,
       } satisfies LeagueSyncJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
@@ -186,4 +200,21 @@ function mapStatus(status: ApiFootballStatus): FixtureStatus {
       // NS, TBD, 1H, HT, 2H, ET, BT, P, INT, SUSP → SCHEDULED
       return 'SCHEDULED';
   }
+}
+
+function buildFixturesUrl(input: {
+  leagueId: string;
+  season: number;
+  syncScope: 'routine' | 'backfill';
+}): string {
+  const base = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${input.leagueId}&season=${input.season}`;
+
+  if (input.syncScope === 'backfill') {
+    return base;
+  }
+
+  const from = startOfUtcDay(new Date());
+  const to = endOfUtcDay(new Date(from.getTime() + 24 * 60 * 60 * 1000));
+
+  return `${base}&from=${formatDateUtc(from)}&to=${formatDateUtc(to)}`;
 }

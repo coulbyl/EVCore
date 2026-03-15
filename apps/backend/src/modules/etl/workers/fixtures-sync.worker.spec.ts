@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
@@ -83,6 +83,8 @@ const SA_COMPETITION_ROW = {
 };
 
 describe('FixturesSyncWorker', () => {
+  const MOCK_NOW = new Date('2026-03-15T10:00:00Z');
+
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
@@ -112,6 +114,8 @@ describe('FixturesSyncWorker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(MOCK_NOW);
     fixtureService.upsertCompetition.mockResolvedValue({
       id: 'competition-id',
     });
@@ -119,6 +123,10 @@ describe('FixturesSyncWorker', () => {
     fixtureService.upsertFixtureChain.mockResolvedValue({ id: 'fixture-id' });
     config.getOrThrow.mockReturnValue('test-api-key');
     prisma.client.competition.findUnique.mockResolvedValue(SA_COMPETITION_ROW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('enqueues injuries-sync after fixtures sync completes', async () => {
@@ -149,6 +157,7 @@ describe('FixturesSyncWorker', () => {
         competitionCode: 'SA',
         season: 2024,
         leagueId: 135,
+        syncScope: 'routine',
       },
       expect.any(Object),
     );
@@ -165,7 +174,7 @@ describe('FixturesSyncWorker', () => {
     } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
     expect(fetch).toHaveBeenCalledWith(
-      'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
+      'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-16',
       { headers: { 'x-apisports-key': 'test-api-key' } },
     );
     expect(fixtureService.upsertCompetition).toHaveBeenCalledWith({
@@ -225,5 +234,31 @@ describe('FixturesSyncWorker', () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(fixtureService.upsertFixtureChain).not.toHaveBeenCalled();
+  });
+
+  it('uses full-season fetch for backfill jobs', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
+    });
+
+    await worker.process({
+      data: {
+        competitionCode: 'SA',
+        season: 2024,
+        leagueId: 135,
+        syncScope: 'backfill',
+      },
+    } as Job<{
+      competitionCode: string;
+      season: number;
+      leagueId: number;
+      syncScope: 'routine' | 'backfill';
+    }>);
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
+      { headers: { 'x-apisports-key': 'test-api-key' } },
+    );
   });
 });

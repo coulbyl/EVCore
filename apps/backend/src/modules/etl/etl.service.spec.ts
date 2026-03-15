@@ -122,6 +122,7 @@ describe('EtlService', () => {
           season: CURRENT_SEASON,
           competitionCode: competition.code,
           leagueId: competition.leagueId,
+          syncScope: 'routine',
         },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
@@ -264,6 +265,49 @@ describe('EtlService', () => {
         season: 2025,
         competitionCode: 'LL',
         leagueId: 140,
+      },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+      },
+    );
+  });
+
+  it('keeps manual league fixtures backfill across active seasons', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue({
+      leagueId: 140,
+      code: 'LL',
+      name: 'La Liga',
+      country: 'Spain',
+      csvDivisionCode: 'SP1',
+      seasonStartMonth: null,
+      activeSeasonsCount: 2,
+    });
+
+    await service.triggerFixturesSyncForLeague('LL');
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(2);
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      1,
+      'fixtures-sync-LL-2024',
+      {
+        syncType: 'fixtures',
+        season: 2024,
+        competitionCode: 'LL',
+        leagueId: 140,
+        syncScope: 'backfill',
+      },
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
+    );
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      2,
+      'fixtures-sync-LL-2025',
+      {
+        syncType: 'fixtures',
+        season: 2025,
+        competitionCode: 'LL',
+        leagueId: 140,
+        syncScope: 'backfill',
       },
       {
         ...BULLMQ_DEFAULT_JOB_OPTIONS,
