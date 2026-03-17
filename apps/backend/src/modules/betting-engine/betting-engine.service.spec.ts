@@ -468,7 +468,7 @@ describe('BettingEngineService', () => {
     });
   });
 
-  it('places a bet when deterministic score passes and EV is exactly threshold', async () => {
+  it('places a bet when deterministic score and quality score both pass', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
     const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
@@ -510,7 +510,7 @@ describe('BettingEngineService', () => {
             {
               bookmaker: 'Pinnacle',
               snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
-              homeOdds: new Decimal('2.16'),
+              homeOdds: new Decimal('2.20'),
               drawOdds: new Decimal('2.7'),
               awayOdds: new Decimal('5.4'),
             },
@@ -1032,7 +1032,7 @@ describe('BettingEngineService', () => {
             {
               bookmaker: 'Pinnacle',
               snapshotAt: new Date('2023-01-01T11:00:00.000Z'),
-              homeOdds: new Decimal('2.16'),
+              homeOdds: new Decimal('2.20'),
               drawOdds: new Decimal('2.7'),
               awayOdds: new Decimal('5.4'),
             },
@@ -1084,7 +1084,7 @@ describe('BettingEngineService', () => {
     expect(createBet).toHaveBeenCalledOnce();
     const stakePct: { toNumber(): number } =
       createBet.mock.calls[0][0].create.stakePct;
-    expect(stakePct.toNumber()).toBeCloseTo(0.0172, 3);
+    expect(stakePct.toNumber()).toBeCloseTo(0.0208, 3);
     expect(stakePct.toNumber()).not.toBeCloseTo(0.01, 4);
   });
 

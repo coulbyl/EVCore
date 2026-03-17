@@ -19,7 +19,7 @@ import { PrismaService } from '@/prisma.service';
 import { BacktestService } from '../backtest/backtest.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
-import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
+import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type {
@@ -102,8 +102,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly pendingBetsSettlementQueue: Queue<PendingBetsSettlementJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
-    @InjectQueue(BULLMQ_QUEUES.ODDS_LIVE_SYNC)
-    private readonly oddsLiveQueue: Queue<OddsLiveSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC)
+    private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     config: ConfigService,
@@ -200,12 +200,12 @@ export class EtlService implements OnApplicationBootstrap {
       }),
     );
 
-    await this.oddsLiveQueue.upsertJobScheduler(
-      ETL_SCHEDULER_KEYS.ODDS_LIVE_SYNC,
-      { pattern: ETL_CRON_SCHEDULES.ODDS_LIVE_SYNC },
+    await this.oddsPrematchQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.ODDS_PREMATCH_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC },
       {
-        name: 'odds-live-sync',
-        data: {} satisfies OddsLiveSyncJobData,
+        name: 'odds-prematch-sync',
+        data: {} satisfies OddsPrematchSyncJobData,
       },
     );
 
@@ -380,10 +380,10 @@ export class EtlService implements OnApplicationBootstrap {
     }
   }
 
-  async triggerOddsLiveSync(date?: string): Promise<void> {
-    await this.oddsLiveQueue.add(
-      'odds-live-sync',
-      { date } satisfies OddsLiveSyncJobData,
+  async triggerOddsPrematchSync(date?: string): Promise<void> {
+    await this.oddsPrematchQueue.add(
+      'odds-prematch-sync',
+      { date } satisfies OddsPrematchSyncJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   }
@@ -426,7 +426,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.LEAGUE_SYNC]: this.leagueSyncQueue,
       [BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT]: this.pendingBetsSettlementQueue,
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
-      [BULLMQ_QUEUES.ODDS_LIVE_SYNC]: this.oddsLiveQueue,
+      [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
     };
 
@@ -464,7 +464,7 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerStatsSync();
     await this.triggerInjuriesSync();
     await this.triggerOddsCsvImport();
-    await this.triggerOddsLiveSync();
+    await this.triggerOddsPrematchSync();
   }
 
   private async upsertLeagueSeasonScheduler(

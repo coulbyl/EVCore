@@ -13,7 +13,7 @@ import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
-import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
+import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
@@ -82,7 +82,7 @@ describe('EtlService', () => {
   const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
   const pendingBetsSettlementQueue = makeQueue<PendingBetsSettlementJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
-  const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
+  const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
   const prismaMockRaw = {
     client: {
@@ -170,7 +170,7 @@ describe('EtlService', () => {
     leagueSyncQueue as Queue<LeagueSyncJobData>,
     pendingBetsSettlementQueue as Queue<PendingBetsSettlementJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
-    oddsLiveQueue as Queue<OddsLiveSyncJobData>,
+    oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
     prismaMock,
@@ -432,7 +432,7 @@ describe('EtlService', () => {
     );
   });
 
-  it('triggerFullSync enqueues the fused league jobs, current CSV import, and live odds sync', async () => {
+  it('triggerFullSync enqueues the fused league jobs, current CSV import, and prematch odds sync', async () => {
     await service.triggerFullSync();
 
     expect(leagueSyncQueue.add).toHaveBeenCalledTimes(
@@ -442,7 +442,7 @@ describe('EtlService', () => {
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
       TEST_COMPETITIONS.length * getActiveCsvSeasonCodes().length,
     );
-    expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
+    expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
   });
 
   it('dispatches odds snapshot retention cleanup job', async () => {

@@ -219,7 +219,7 @@ model Bet {
   pick          String    // HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12
   pickKey       String    // canonical key: "<market>|<pick>|<comboMarket?>|<comboPick?>"
   probEstimated Decimal   @db.Decimal(5, 4)
-  oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no live odds)
+  oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
   ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
   stakePct      Decimal   @db.Decimal(5, 4) // 0.01 = 1% bankroll
   status        BetStatus @default(PENDING)
@@ -322,7 +322,7 @@ model Notification {
   @@map("notification")
 }
 
-// Odds snapshots — scaffolded for Phase 2 (live odds integration).
+// Odds snapshots — scaffolded for Phase 2 (prematch odds integration).
 // Not used in MVP.
 model OddsSnapshot {
   id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid

@@ -67,5 +67,6 @@ export type EvaluatedPick = ViablePick & {
     | 'filtered_longshot'
     | 'market_suspended'
     | 'odds_above_cap'
-    | 'odds_below_floor';
+    | 'odds_below_floor'
+    | 'quality_score_below_threshold';
 };

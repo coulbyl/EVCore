@@ -18,7 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { EtlService } from './etl.service';
 import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
-import { OddsLiveSyncBodyDto } from './dto/odds-live-sync-body.dto';
+import { OddsPrematchSyncBodyDto } from './dto/odds-prematch-sync-body.dto';
 import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
 
 type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
@@ -26,10 +26,10 @@ type GlobalSyncType =
   | LeagueSyncType
   | 'settlement'
   | 'odds-csv'
-  | 'odds-live'
+  | 'odds-prematch'
   | 'odds-retention';
 
-type SyncBody = OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto;
+type SyncBody = OddsPrematchSyncBodyDto & OddsSnapshotRetentionBodyDto;
 type RollingStatsSyncBody = { mode?: 'refresh' | 'rebuild' };
 type GlobalSyncHandler = (service: EtlService, body: SyncBody) => Promise<void>;
 type LeagueSyncHandler = (
@@ -43,7 +43,8 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   injuries: (service) => service.triggerInjuriesSync(),
   settlement: (service) => service.triggerPendingBetsSettlementSync(),
   'odds-csv': (service) => service.triggerOddsCsvImport(),
-  'odds-live': (service, body) => service.triggerOddsLiveSync(body.date),
+  'odds-prematch': (service, body) =>
+    service.triggerOddsPrematchSync(body.date),
   'odds-retention': (service, body) =>
     service.triggerOddsSnapshotRetention(body.retentionDays),
 };
@@ -63,7 +64,7 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'injuries',
   'settlement',
   'odds-csv',
-  'odds-live',
+  'odds-prematch',
   'odds-retention',
 ] as const satisfies readonly GlobalSyncType[];
 
@@ -126,7 +127,7 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
-        'odds-live-sync': {
+        'odds-prematch-sync': {
           active: 0,
           waiting: 0,
           completed: 5,
@@ -155,7 +156,7 @@ export class EtlController {
     summary: 'Trigger full ETL sync',
     description:
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
-      'stats → injuries, then odds-csv and odds-live. Routine fixtures/injuries ' +
+      'stats → injuries, then odds-csv and odds-prematch. Routine fixtures/injuries ' +
       'runs target the current season; stats still scans active seasons. Settlement ' +
       'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
       'or after a long downtime.',
@@ -270,7 +271,7 @@ export class EtlController {
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, odds-csv, odds-live, odds-retention. For league-scoped runs, use ' +
+      'settlement, odds-csv, odds-prematch, odds-retention. For league-scoped runs, use ' +
       '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({
@@ -301,7 +302,7 @@ export class EtlController {
   })
   async triggerSync(
     @Param('type') type: string,
-    @Body() body: OddsLiveSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
+    @Body() body: OddsPrematchSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
   ) {
     return this.ok(() => this.triggerGlobalSync(type, body));
   }

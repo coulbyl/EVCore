@@ -9,7 +9,6 @@ import type {
   TeamStatsInput,
   ViablePick,
 } from '@modules/betting-engine/betting-engine.types';
-import { MODEL_SCORE_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import {
   buildPoissonDistributions,
   resolveComboPickBetStatus,
@@ -33,6 +32,7 @@ import {
   type ValidationVerdict,
 } from './backtest.report';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
+import { MODEL_SCORE_THRESHOLD } from '@modules/betting-engine/ev.constants';
 
 const logger = createLogger('backtest-service');
 

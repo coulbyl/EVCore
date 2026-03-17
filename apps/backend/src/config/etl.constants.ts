@@ -41,7 +41,7 @@ export function estimateApiFootballDailyCalls(
 
   // Daily calls by worker class:
   // - fixtures are season-level calls
-  // - settlement/stats/injuries/odds-live are fixture-level calls
+  // - settlement/stats/injuries/odds-prematch are fixture-level calls
   const fixturesSyncCalls = seasonJobCount;
   const settlementSyncCalls = Math.max(1, Math.floor(leagueCount / 2));
   const statsSyncCalls = leagueCount * avgFinishedWithoutXg;
@@ -115,7 +115,7 @@ export const BULLMQ_QUEUES = {
   LEAGUE_SYNC: 'league-sync',
   PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
-  ODDS_LIVE_SYNC: 'odds-live-sync',
+  ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   BETTING_ENGINE: 'betting-engine',
 } as const;
@@ -134,7 +134,7 @@ export const ETL_CRON_SCHEDULES = {
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
-  ODDS_LIVE_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
+  ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
   ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
 } as const;
 
@@ -143,6 +143,6 @@ export const ETL_SCHEDULER_KEYS = {
   LEAGUE_SYNC: 'cron:league-sync',
   PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
-  ODDS_LIVE_SYNC: 'cron:odds-live-sync',
+  ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
 } as const;

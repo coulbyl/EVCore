@@ -9,6 +9,12 @@ export const FEATURE_WEIGHTS = {
 
 export const EV_THRESHOLD = new Decimal('0.08');
 export const MODEL_SCORE_THRESHOLD = new Decimal('0.60');
+// Minimum quality score (EV × deterministicScore × longshotPenalty) required
+// for a pick to be selected, given that the fixture already passed
+// MODEL_SCORE_THRESHOLD. Eliminates low-EV picks that barely clear the EV
+// floor with a high score, while keeping high-EV picks from fixtures just above
+// the score threshold. At score=0.60, requires EV >= 0.10 to pass.
+export const MIN_QUALITY_SCORE = new Decimal('0.06');
 export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal('5.0');
 export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal('6.0');
 

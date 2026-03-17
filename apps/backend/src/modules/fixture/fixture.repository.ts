@@ -404,6 +404,7 @@ export class FixtureRepository {
     });
   }
 
+  // eslint-disable-next-line max-params -- Four domain parameters; no meaningful grouping possible.
   private async upsertNonOneXTwo(
     data: { fixtureId: string; bookmaker: string; snapshotAt: Date },
     market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',

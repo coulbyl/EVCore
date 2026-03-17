@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "FixtureStatus" AS ENUM ('SCHEDULED', 'FINISHED', 'POSTPONED', 'CANCELLED');
+CREATE TYPE "FixtureStatus" AS ENUM ('SCHEDULED', 'IN_PROGRESS', 'FINISHED', 'POSTPONED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "Decision" AS ENUM ('BET', 'NO_BET');
@@ -54,6 +54,7 @@ CREATE TABLE "team" (
     "externalId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "shortName" TEXT NOT NULL,
+    "logoUrl" TEXT,
     "competitionId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

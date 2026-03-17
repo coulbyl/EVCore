@@ -9,7 +9,7 @@
 
 | Bloc   | Contenu                                                                                              | Tests |
 | ------ | ---------------------------------------------------------------------------------------------------- | ----- |
-| Bloc 1 | Odds live (odds-live-sync), ETL multi-ligue, multi-compétitions CSV                                  | 184   |
+| Bloc 1 | Odds pre-match (odds-prematch-sync), ETL multi-ligue, multi-compétitions CSV                            | 184   |
 | Bloc 2 | ETL hardening, pipeline live validé prod, Kelly fractionnelle (`KELLY_ENABLED`)                      | 200   |
 | Bloc 3 | Daily Coupon Generator (COMBO_WHITELIST, CouponService, CouponWorker, shadow scoring, line movement) | 204   |
 
@@ -63,7 +63,7 @@
 - [x] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
   - [x] Fondations backend HT/FT: `Market.HALF_TIME_FULL_TIME`, scores mi-temps (`homeHtScore/awayHtScore`), settlement HT/FT
   - [x] Probas HT/FT dérivées du modèle Poisson (`htft` sur 9 issues)
-  - [x] Ingestion odds live HT/FT (`Half Time / Full Time`) + persistance `OddsSnapshot`
+  - [x] Ingestion odds pre-match HT/FT (`Half Time / Full Time`) + persistance `OddsSnapshot`
   - [x] Sélection EV/qualityScore étendue au marché HT/FT
 - [x] **Stabilité first prod (sans TimescaleDB)**
   - [x] Cleanup automatique `OddsSnapshot` (job ETL `odds-snapshot-retention`, rétention configurable)

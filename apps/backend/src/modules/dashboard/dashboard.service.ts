@@ -113,7 +113,7 @@ export class DashboardService {
         formatTime: formatTimeUtc,
       }),
       buildWorkerStatus({
-        worker: 'odds-live-sync',
+        worker: 'odds-prematch-sync',
         lastRun: data.latestOddsSnapshot?.snapshotAt ?? null,
         healthyMinutes: 10,
         watchMinutes: 30,

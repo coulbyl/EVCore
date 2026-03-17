@@ -15,7 +15,7 @@ import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { PendingBetsSettlementWorker } from './workers/pending-bets-settlement.worker';
 import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
-import { OddsLiveSyncWorker } from './workers/odds-live-sync.worker';
+import { OddsPrematchSyncWorker } from './workers/odds-prematch-sync.worker';
 import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.worker';
 
@@ -26,7 +26,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
       { name: BULLMQ_QUEUES.LEAGUE_SYNC },
       { name: BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
-      { name: BULLMQ_QUEUES.ODDS_LIVE_SYNC },
+      { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
     ),
     BacktestModule,
@@ -45,7 +45,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
     StatsSyncWorker,
     InjuriesSyncWorker,
     OddsCsvImportWorker,
-    OddsLiveSyncWorker,
+    OddsPrematchSyncWorker,
     OddsSnapshotRetentionWorker,
   ],
   exports: [EtlService],

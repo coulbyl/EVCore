@@ -20,14 +20,14 @@ import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 // Passing date as job data makes the worker testable and supports backfill.
 // When absent, defaults to tomorrow (standard daily cron use case).
-export type OddsLiveSyncJobData = { date?: string };
+export type OddsPrematchSyncJobData = { date?: string };
 
-const logger = createLogger('odds-live-sync-worker');
+const logger = createLogger('odds-prematch-sync-worker');
 
 // lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
-@Processor(BULLMQ_QUEUES.ODDS_LIVE_SYNC, { lockDuration: 600_000 })
-export class OddsLiveSyncWorker extends WorkerHost {
+@Processor(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC, { lockDuration: 600_000 })
+export class OddsPrematchSyncWorker extends WorkerHost {
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly config: ConfigService,
@@ -36,12 +36,12 @@ export class OddsLiveSyncWorker extends WorkerHost {
     super();
   }
 
-  async process(job: Job<OddsLiveSyncJobData>): Promise<void> {
+  async process(job: Job<OddsPrematchSyncJobData>): Promise<void> {
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
     const targetDate = job.data.date ? new Date(job.data.date) : tomorrowUtc();
     const dateLabel = formatDateUtc(targetDate);
 
-    logger.info({ date: dateLabel }, 'Starting odds live sync');
+    logger.info({ date: dateLabel }, 'Starting odds prematch sync');
 
     const fixtures = await this.fixtureService.findScheduledForDate(targetDate);
 
@@ -52,7 +52,7 @@ export class OddsLiveSyncWorker extends WorkerHost {
 
     logger.info(
       { count: fixtures.length, date: dateLabel },
-      'Fetching live odds per fixture',
+      'Fetching prematch odds per fixture',
     );
 
     let synced = 0;
@@ -80,8 +80,8 @@ export class OddsLiveSyncWorker extends WorkerHost {
           'API-Football daily quota exceeded — aborting job',
         );
         await this.notification.sendEtlFailureAlert(
-          BULLMQ_QUEUES.ODDS_LIVE_SYNC,
-          'odds-live-sync',
+          BULLMQ_QUEUES.ODDS_PREMATCH_SYNC,
+          'odds-prematch-sync',
           'API-Football daily quota exceeded',
         );
         throw new Error('API-Football daily quota exceeded');
@@ -181,15 +181,15 @@ export class OddsLiveSyncWorker extends WorkerHost {
 
     logger.info(
       { synced, skipped, date: dateLabel },
-      'Odds live sync complete',
+      'Odds prematch sync complete',
     );
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job<OddsLiveSyncJobData> | undefined, error: Error): void {
+  onFailed(job: Job<OddsPrematchSyncJobData> | undefined, error: Error): void {
     notifyOnWorkerFailure({
       notification: this.notification,
-      queueName: BULLMQ_QUEUES.ODDS_LIVE_SYNC,
+      queueName: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC,
       job,
       error,
       logger,

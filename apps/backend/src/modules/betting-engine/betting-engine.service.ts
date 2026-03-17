@@ -44,6 +44,7 @@ import {
   HOME_ADVANTAGE_LAMBDA_FACTOR,
   MAX_SELECTION_ODDS,
   MIN_SELECTION_ODDS,
+  MIN_QUALITY_SCORE,
   MODEL_SCORE_THRESHOLD,
   ONE_X_TWO_AWAY_MAX_ODDS,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
@@ -1301,6 +1302,10 @@ function getPickRejectionReason(
 ): EvaluatedPick['rejectionReason'] {
   if (pick.ev.lessThan(EV_THRESHOLD)) {
     return 'ev_below_threshold';
+  }
+
+  if (pick.qualityScore.lessThan(MIN_QUALITY_SCORE)) {
+    return 'quality_score_below_threshold';
   }
 
   if (pick.odds.lessThan(MIN_SELECTION_ODDS)) {

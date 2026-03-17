@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  OddsLiveSyncWorker,
+  OddsPrematchSyncWorker,
   extractAdditionalMarketOdds,
   extractOneXTwoOdds,
-} from './odds-live-sync.worker';
+} from './odds-prematch-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { Job } from 'bullmq';
-import type { OddsLiveSyncJobData } from './odds-live-sync.worker';
+import type { OddsPrematchSyncJobData } from './odds-prematch-sync.worker';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -118,18 +118,18 @@ const notification = {
   sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
 } satisfies Partial<NotificationService>;
 
-const worker = new OddsLiveSyncWorker(
+const worker = new OddsPrematchSyncWorker(
   fixtureService as unknown as FixtureService,
   config as unknown as ConfigService,
   notification as unknown as NotificationService,
 );
 
-const makeJob = (data: OddsLiveSyncJobData = {}) =>
+const makeJob = (data: OddsPrematchSyncJobData = {}) =>
   ({
     data,
     opts: { attempts: 3 },
     attemptsMade: 0,
-  }) as Job<OddsLiveSyncJobData>;
+  }) as Job<OddsPrematchSyncJobData>;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -144,7 +144,7 @@ beforeEach(() => {
 
 // ─── Worker.process ───────────────────────────────────────────────────────────
 
-describe('OddsLiveSyncWorker.process', () => {
+describe('OddsPrematchSyncWorker.process', () => {
   it('does nothing when no scheduled fixtures for the date', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([]);
     global.fetch = vi.fn();

@@ -15,7 +15,7 @@ describe('EtlController', () => {
       triggerInjuriesSyncForLeague: vi.fn().mockResolvedValue(undefined),
       triggerPendingBetsSettlementSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
-      triggerOddsLiveSync: vi.fn().mockResolvedValue(undefined),
+      triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
       triggerBacktestAllSeasons: vi.fn().mockResolvedValue(undefined),
       triggerBacktestSeason: vi.fn().mockResolvedValue(undefined),
@@ -62,6 +62,18 @@ describe('EtlController', () => {
       status: 'ok',
     });
     expect(service.triggerOddsCsvImport).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers odds prematch sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerSync('odds-prematch', { date: '2026-03-10' }),
+    ).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerOddsPrematchSync).toHaveBeenCalledWith('2026-03-10');
   });
 
   it('triggers odds snapshot retention and returns ok', async () => {
