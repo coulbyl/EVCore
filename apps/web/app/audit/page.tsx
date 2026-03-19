@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
 import { TableCard } from "../../components/table-card";
-import { FixtureName, formatPickForDisplay } from "../../components/coupon-detail";
+import { FixtureName, FixtureStatusBadge, formatPickForDisplay } from "../../components/coupon-detail";
 import { useAuditFixtures } from "../../hooks/use-audit-fixtures";
 import { useAuditOverview } from "../../hooks/use-audit-overview";
 import type { AuditOverview } from "../../types/audit";
@@ -28,36 +28,6 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" }) {
   return (
     <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">
       NO_BET
-    </span>
-  );
-}
-
-function FixtureStatusBadge({ status }: { status: string }) {
-  const lower = status.toLowerCase();
-  if (lower === "finished") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">
-        terminé
-      </span>
-    );
-  }
-  if (lower === "in_progress") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-blue-600">
-        en cours
-      </span>
-    );
-  }
-  if (lower === "postponed" || lower === "cancelled") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-rose-600">
-        {lower === "postponed" ? "reporté" : "annulé"}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-amber-700">
-      planifié
     </span>
   );
 }

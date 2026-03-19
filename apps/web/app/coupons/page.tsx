@@ -233,18 +233,9 @@ export default function CouponsPage() {
                 </div>
               )}
             </TableCard>
-
-            <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Historique
-              </p>
-              <div className="mt-4 rounded-2xl border border-dashed border-border px-4 py-8 text-sm text-slate-400">
-                Zone réservée aux métriques d&apos;historique des coupons.
-              </div>
-            </section>
           </div>
 
-          <aside className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:sticky xl:top-0 xl:self-start">
+          <aside className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:sticky xl:top-0">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
               Détail coupon
             </p>

@@ -64,6 +64,39 @@ export function formatPickForDisplay(pick: string, market: string): string {
   return formatted;
 }
 
+export function FixtureStatusBadge({ status }: { status: string }) {
+  const s = status.toLowerCase();
+  if (s === "finished")
+    return (
+      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-slate-500">
+        terminé
+      </span>
+    );
+  if (s === "in_progress")
+    return (
+      <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-blue-600">
+        en cours
+      </span>
+    );
+  if (s === "postponed")
+    return (
+      <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-rose-600">
+        reporté
+      </span>
+    );
+  if (s === "cancelled")
+    return (
+      <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-rose-600">
+        annulé
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] text-amber-700">
+      planifié
+    </span>
+  );
+}
+
 // --- components ---
 
 export function CouponDetailEmpty() {
@@ -209,9 +242,12 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
           homeLogo={selection.homeLogo}
           awayLogo={selection.awayLogo}
         />
-        <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
-          {selection.scheduledAt} • {selection.market}
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            {selection.scheduledAt} • {selection.market}
+          </p>
+          <FixtureStatusBadge status={selection.fixtureStatus} />
+        </div>
         <div className="mt-2 flex items-start justify-between gap-3">
           <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
             {formatPickForDisplay(selection.pick, selection.market)}

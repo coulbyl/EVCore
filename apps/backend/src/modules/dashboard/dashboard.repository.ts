@@ -110,6 +110,7 @@ export class DashboardRepository {
                       fixture: {
                         select: {
                           scheduledAt: true,
+                          status: true,
                           homeTeam: { select: { name: true, logoUrl: true } },
                           awayTeam: { select: { name: true, logoUrl: true } },
                         },

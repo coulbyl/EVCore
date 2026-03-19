@@ -7,6 +7,19 @@
 
 ## Web — ce qui reste
 
+### Coupons ✅
+- [x] Composants réutilisables (`coupon-detail.tsx`) avec logos équipes
+- [x] RecentCouponsCard drawer utilise les composants partagés
+- [x] `formatPickForDisplay` — bare UNDER/OVER corrigé
+- [x] Suppression section Historique (placeholder vide)
+- [x] Aside "Détail coupon" full height
+
+### Dashboard ✅
+- [x] P&L redesign (3 stat cards + barre win/loss)
+- [x] OpportunitiesTable : colonnes Marché/Décision supprimées, logos, CopyPick
+- [x] FixtureDetailPanel : redesign complet (bet-slip card, metric grid HoverCard)
+- [x] Layout : pipeline + alertes déplacés dans l'aside
+
 ### Écran Audit (`/audit`)
 
 Shell vide. Objectif : équivalent web de `db-stats.ts`, orienté opérateur.
@@ -21,7 +34,6 @@ Shell vide. Objectif : équivalent web de `db-stats.ts`, orienté opérateur.
 - [ ] Table fixtures avec colonnes : ligue · équipes · statut · décision · score · pick candidat · raison rejet
 - [ ] Section snapshot DB (counts + breakdown ligue) — reprendre structure `db-stats`
 - [ ] Signaux de diagnostic visibles par fixture (expandable row ou side panel)
-- [ ] Logs d'analyse lisibles (pas de JSON brut)
 
 ### Divers
 

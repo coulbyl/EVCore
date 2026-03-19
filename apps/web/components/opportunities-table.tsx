@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { TableCard } from "./table-card";
-import { formatPickForDisplay, FixtureName } from "./coupon-detail";
+import { formatPickForDisplay, FixtureName, FixtureStatusBadge } from "./coupon-detail";
 
 import type { OpportunityRow } from "../types/dashboard";
 
@@ -97,10 +97,11 @@ export function OpportunitiesTable({
                   homeLogo={row.homeLogo}
                   awayLogo={row.awayLogo}
                 />
-                <div className="mt-1 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                  <span>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
                     {row.competition} • {row.kickoff}
                   </span>
+                  <FixtureStatusBadge status={row.fixtureStatus} />
                   <CopyFixtureId fixtureId={row.fixtureId} />
                 </div>
               </td>

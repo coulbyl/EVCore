@@ -35,6 +35,7 @@ const couponBetSelect = {
         select: {
           id: true,
           scheduledAt: true,
+          status: true,
           homeTeam: { select: { name: true, logoUrl: true } },
           awayTeam: { select: { name: true, logoUrl: true } },
         },
@@ -267,6 +268,7 @@ export class CouponRepository {
         features: unknown;
         fixture: {
           scheduledAt: Date;
+          status: string;
           homeTeam: { name: string; logoUrl: string | null };
           awayTeam: { name: string; logoUrl: string | null };
         };
@@ -337,6 +339,7 @@ export class CouponRepository {
           fixture: {
             id: string;
             scheduledAt: Date;
+            status: string;
             homeTeam: { name: string; logoUrl: string | null };
             awayTeam: { name: string; logoUrl: string | null };
           };

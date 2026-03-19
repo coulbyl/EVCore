@@ -194,6 +194,7 @@ export class DashboardService {
             homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
             awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
             scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
+            fixtureStatus: bet.modelRun.fixture.status,
             status:
               bet.status === 'WON' ||
               bet.status === 'LOST' ||
@@ -221,6 +222,7 @@ export class DashboardService {
         awayLogo: fixture.awayTeam.logoUrl ?? null,
         competition: fixture.season.competition.name,
         kickoff: formatTimeUtc(fixture.scheduledAt),
+        fixtureStatus: fixture.status,
         market: bet.market,
         pick: bet.pick,
         odds:
