@@ -5,6 +5,7 @@ import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
 import { TableCard } from "../../components/table-card";
 import { FixtureName, FixtureStatusBadge } from "../../components/coupon-detail";
+import { InfoTooltip } from "../../components/info-tooltip";
 import { formatPickForDisplay } from "../../helpers/coupon";
 import { useAuditFixtures } from "../../hooks/use-audit-fixtures";
 import { useAuditOverview } from "../../hooks/use-audit-overview";
@@ -18,28 +19,47 @@ function todayIso() {
 // Fixtures table
 // ---------------------------------------------------------------------------
 
+const DIAG_HINTS = {
+  lambdaFloor:
+    "Lambda plancher Poisson — les buts attendus (λ) d'une équipe ont atteint le minimum autorisé, signe que ses stats historiques sont insuffisantes. L'EV calculé est moins fiable dans ce cas.",
+  lineMovement:
+    "Mouvement de ligne — variation relative des cotes sur les 7 derniers jours (positif = cotes raccourcies = mouvement adverse). Si > seuil configuré, le pick est exclu. Null si pas de snapshot historique.",
+  h2h:
+    "Score H2H — ratio de victoires du favori sur les 5 derniers matchs directs entre les deux équipes. 0 = jamais gagné, 1 = toujours gagné, null = pas d'historique disponible.",
+  congestion:
+    "Score de congestion — pénalité de fatigue combinant le repos depuis le dernier match (< 3 j) et la densité du calendrier à venir (4 j). 0 = aucun stress, 1 = calendrier très chargé.",
+} as const;
+
 function DiagnosticsPanel({ d }: { d: AuditDiagnostics }) {
   function fmt(v: number | null) {
     return v === null ? "—" : v.toFixed(3);
   }
   return (
-    <div className="flex flex-wrap items-center gap-4 px-4 py-2.5 text-xs">
-      <span className="text-slate-400 uppercase tracking-[0.12em] text-[0.6rem] font-semibold">Signaux</span>
-      <span className={`flex items-center gap-1 font-mono ${d.lambdaFloorHit ? "text-rose-500" : "text-slate-400"}`}>
+    <div className="flex flex-wrap items-center gap-5 px-4 py-2.5 text-xs">
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        Signaux
+      </span>
+      <span className="flex items-center gap-1.5">
         <span className="text-slate-400">λ-floor</span>
-        {d.lambdaFloorHit ? "⚠ hit" : "ok"}
+        <InfoTooltip label="Lambda plancher" description={DIAG_HINTS.lambdaFloor} side="top" />
+        <span className={`font-mono font-semibold ${d.lambdaFloorHit ? "text-rose-500" : "text-slate-500"}`}>
+          {d.lambdaFloorHit ? "⚠ hit" : "ok"}
+        </span>
       </span>
-      <span className="flex items-center gap-1 font-mono text-slate-600">
+      <span className="flex items-center gap-1.5">
         <span className="text-slate-400">line-mv</span>
-        {fmt(d.lineMovement)}
+        <InfoTooltip label="Mouvement de ligne" description={DIAG_HINTS.lineMovement} side="top" />
+        <span className="font-mono text-slate-600">{fmt(d.lineMovement)}</span>
       </span>
-      <span className="flex items-center gap-1 font-mono text-slate-600">
+      <span className="flex items-center gap-1.5">
         <span className="text-slate-400">h2h</span>
-        {fmt(d.h2hScore)}
+        <InfoTooltip label="Score H2H" description={DIAG_HINTS.h2h} side="top" />
+        <span className="font-mono text-slate-600">{fmt(d.h2hScore)}</span>
       </span>
-      <span className="flex items-center gap-1 font-mono text-slate-600">
+      <span className="flex items-center gap-1.5">
         <span className="text-slate-400">congestion</span>
-        {fmt(d.congestionScore)}
+        <InfoTooltip label="Congestion" description={DIAG_HINTS.congestion} side="top" />
+        <span className="font-mono text-slate-600">{fmt(d.congestionScore)}</span>
       </span>
     </div>
   );

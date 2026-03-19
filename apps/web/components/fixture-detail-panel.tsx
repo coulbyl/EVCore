@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import * as HoverCard from "@radix-ui/react-hover-card";
-import { Check, Copy, Info } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import { FixtureName } from "./coupon-detail";
+import { InfoTooltip } from "./info-tooltip";
 import { formatPickForDisplay } from "../helpers/coupon";
 import type { FixturePanel } from "../types/dashboard";
 
@@ -44,33 +44,7 @@ function MetricRow({
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
             {label}
           </p>
-          {hint ? (
-            <HoverCard.Root openDelay={200} closeDelay={100}>
-              <HoverCard.Trigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
-                  aria-label={`En savoir plus sur ${label}`}
-                >
-                  <Info size={11} strokeWidth={2} />
-                </button>
-              </HoverCard.Trigger>
-              <HoverCard.Portal>
-                <HoverCard.Content
-                  side="right"
-                  align="start"
-                  sideOffset={8}
-                  className="z-50 w-64 rounded-2xl border border-border bg-white p-4 shadow-lg"
-                >
-                  <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {label}
-                  </p>
-                  <p className="text-sm leading-6 text-slate-700">{hint}</p>
-                  <HoverCard.Arrow className="fill-white" />
-                </HoverCard.Content>
-              </HoverCard.Portal>
-            </HoverCard.Root>
-          ) : null}
+          {hint ? <InfoTooltip label={label} description={hint} /> : null}
         </div>
         <p className="mt-1 text-[1.2rem] font-semibold tracking-tight text-slate-950">
           {value}
