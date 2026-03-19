@@ -13,27 +13,28 @@
 - [x] `formatPickForDisplay` — bare UNDER/OVER corrigé
 - [x] Suppression section Historique (placeholder vide)
 - [x] Aside "Détail coupon" full height
+- [x] Labels PENDING intelligents (PLANIFIÉ / EN COURS / EN ATTENTE) basés sur `fixtureStatus`
 
 ### Dashboard ✅
 - [x] P&L redesign (3 stat cards + barre win/loss)
 - [x] OpportunitiesTable : colonnes Marché/Décision supprimées, logos, CopyPick
 - [x] FixtureDetailPanel : redesign complet (bet-slip card, metric grid HoverCard)
 - [x] Layout : pipeline + alertes déplacés dans l'aside
+- [x] `FixtureStatusBadge` affiché dans OpportunitiesTable
 
-### Écran Audit (`/audit`)
+### Helpers ✅
+- [x] `helpers/coupon.ts` — tous les helpers purs coupon/selection (labels, badges, dots)
+- [x] `helpers/fixture.ts` — `fixtureStatusLabel` + `fixtureStatusBadgeClass`
+- [x] Tous les callers importent directement depuis `helpers/` (pas de re-exports)
 
-Shell vide. Objectif : équivalent web de `db-stats.ts`, orienté opérateur.
-
-**Backend**
-- [ ] Endpoint `GET /audit/fixtures?date=` — fixtures du jour avec par fixture : ligue, équipes, statut, `BET`/`NO_BET`, `deterministicScore`, meilleur candidat, raison rejet si `NO_BET`
-- [ ] Exposer les signaux de diagnostic : `hasOdds`, `lineMovement`, `h2hScore`, `congestionScore`, `lambdaFloorHit`
-- [ ] Endpoint `GET /audit/overview` — snapshot DB global : counts fixtures/bets/modelRuns/coupons, breakdown par ligue, zero-xG audit, coupon eligibility
-
-**Frontend**
-- [ ] Sélecteur de date (défaut : aujourd'hui)
-- [ ] Table fixtures avec colonnes : ligue · équipes · statut · décision · score · pick candidat · raison rejet
-- [ ] Section snapshot DB (counts + breakdown ligue) — reprendre structure `db-stats`
-- [ ] Signaux de diagnostic visibles par fixture (expandable row ou side panel)
+### Écran Audit (`/audit`) ✅
+- [x] Endpoint `GET /audit/fixtures?date=`
+- [x] Endpoint `GET /audit/overview`
+- [x] Sélecteur de date (défaut : aujourd'hui)
+- [x] Table fixtures avec colonnes : ligue · équipes · statut · décision · score · pick · cotes
+- [x] Section snapshot DB (counts + breakdown ligue + bets/coupons par statut)
+- [ ] Exposer signaux de diagnostic : `hasOdds`, `lineMovement`, `h2hScore`, `congestionScore`, `lambdaFloorHit`
+- [ ] Signaux visibles par fixture (expandable row ou side panel)
 
 ### Divers
 
