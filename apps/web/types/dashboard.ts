@@ -47,6 +47,8 @@ export type OpportunityRow = {
   id: string;
   fixtureId: string;
   fixture: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   competition: string;
   kickoff: string;
   market: string;
@@ -61,6 +63,8 @@ export type OpportunityRow = {
 export type FixturePanel = {
   fixtureId: string;
   fixture: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   competition: string;
   startTime: string;
   market: string;

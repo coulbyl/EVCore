@@ -89,6 +89,16 @@ async function main() {
       }[];
     }[];
   };
+  type CouponLegAuditRow = {
+    bet: {
+      fixtureId: string;
+      market: string;
+      pick: string;
+      comboMarket: string | null;
+      comboPick: string | null;
+    };
+    coupon: { code: string; status: string };
+  };
 
   const [
     fixturesByStatus,
@@ -115,6 +125,7 @@ async function main() {
     unreadNotifications,
     couponAuditFixtures,
     couponAuditEligibilityFixtures,
+    couponAuditLegs,
   ] = await Promise.all([
     prisma.fixture.groupBy({ by: ["status"], _count: { id: true } }),
 
@@ -264,6 +275,23 @@ async function main() {
       },
       orderBy: [{ scheduledAt: "asc" }],
     }) as Promise<CouponAuditFixtureRow[]>,
+    prisma.couponLeg.findMany({
+      where: {
+        coupon: { date: { gte: couponAuditStart, lte: couponAuditEnd } },
+      },
+      select: {
+        bet: {
+          select: {
+            fixtureId: true,
+            market: true,
+            pick: true,
+            comboMarket: true,
+            comboPick: true,
+          },
+        },
+        coupon: { select: { code: true, status: true } },
+      },
+    }) as Promise<CouponLegAuditRow[]>,
   ]);
 
   const couponAuditTeamIds = Array.from(
@@ -290,6 +318,29 @@ async function main() {
     if (!teamStatsCoverage.has(row.teamId)) {
       teamStatsCoverage.add(row.teamId);
     }
+  }
+
+  // Map fixtureId → coupon info (a fixture can only be in one coupon)
+  const fixtureCouponMap = new Map<
+    string,
+    {
+      code: string;
+      status: string;
+      market: string;
+      pick: string;
+      comboMarket: string | null;
+      comboPick: string | null;
+    }
+  >();
+  for (const leg of couponAuditLegs) {
+    fixtureCouponMap.set(leg.bet.fixtureId, {
+      code: leg.coupon.code,
+      status: leg.coupon.status,
+      market: leg.bet.market,
+      pick: leg.bet.pick,
+      comboMarket: leg.bet.comboMarket,
+      comboPick: leg.bet.comboPick,
+    });
   }
 
   const dateLabel = now.toISOString().replace("T", " ").slice(0, 19) + " UTC";
@@ -494,7 +545,9 @@ async function main() {
   w();
 
   w("── Coupon eligibility audit ────────────────────────────");
-  w(`  Period: ${auditPeriod} — ${couponAuditEligibilityFixtures.length} fixtures`);
+  w(
+    `  Period: ${auditPeriod} — ${couponAuditEligibilityFixtures.length} fixtures`,
+  );
 
   if (couponAuditEligibilityFixtures.length === 0) {
     w("  None");
@@ -523,7 +576,7 @@ async function main() {
           const hasAwayStats = teamStatsCoverage.has(f.awayTeamId);
           const hasOdds = f.oddsSnapshots.length > 0;
           const latestRun = f.modelRuns[0] ?? null;
-          const latestBet = latestRun?.bets[0] ?? null;
+          const couponEntry = fixtureCouponMap.get(f.id) ?? null;
           const stats =
             hasHomeStats && hasAwayStats
               ? "✅ stats"
@@ -532,13 +585,25 @@ async function main() {
                 : "❌ stats";
           const odds = hasOdds ? "✅ odds" : "❌ odds";
           const run = latestRun ? `run:${latestRun.decision}` : "run:—";
-          const bet = latestBet
-            ? latestBet.comboMarket
-              ? `bet:${latestBet.market}+${latestBet.comboMarket}`
-              : `bet:${latestBet.market}`
-            : "bet:—";
+          // coupon column: shows which coupon this fixture's bet belongs to,
+          // or "not-selected" when model said BET but fixture wasn't picked
+          // (Option B exclusion or rank cutoff), or "—" if no run / NO_BET
+          let couponCol: string;
+          if (couponEntry) {
+            const pick = couponEntry.comboMarket
+              ? `${couponEntry.pick}/${couponEntry.comboPick}`
+              : couponEntry.pick;
+            const market = couponEntry.comboMarket
+              ? `${couponEntry.market}+${couponEntry.comboMarket}`
+              : couponEntry.market;
+            couponCol = `coupon:${couponEntry.code} [${market}:${pick}]`;
+          } else if (latestRun?.decision === "BET") {
+            couponCol = "not-selected";
+          } else {
+            couponCol = "—";
+          }
           w(
-            `      ${time}  ${f.homeTeam.name} vs ${f.awayTeam.name.padEnd(24)}  ${stats}  ${odds}  ${run.padEnd(14)}  ${bet}`,
+            `      ${time}  ${f.homeTeam.name} vs ${f.awayTeam.name.padEnd(24)}  ${stats}  ${odds}  ${run.padEnd(14)}  ${couponCol}`,
           );
         }
       }

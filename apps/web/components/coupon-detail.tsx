@@ -47,7 +47,7 @@ function selectionCardClass(status: "PENDING" | "WON" | "LOST" | "VOID"): string
   return "border-border bg-white";
 }
 
-function formatPickForDisplay(pick: string, market: string): string {
+export function formatPickForDisplay(pick: string, market: string): string {
   // Combo picks embed the market ("HOME + OVER_UNDER UNDER") — replace inline
   const formatted = pick
     .replace("OVER_UNDER UNDER", "UNDER 2.5")
@@ -144,26 +144,32 @@ function TeamLogo({ src, name }: { src: string | null; name: string }) {
   );
 }
 
-function FixtureName({
+export function FixtureName({
   fixture,
   homeLogo,
   awayLogo,
+  className = "text-sm font-semibold text-slate-800",
+  logoPosition = "start",
 }: {
   fixture: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  className?: string;
+  logoPosition?: "start" | "end";
 }) {
   const [home, away] = fixture.split(" vs ");
   if (!home || !away) {
-    return <p className="text-sm font-semibold text-slate-800">{fixture}</p>;
+    return <p className={className}>{fixture}</p>;
   }
   return (
-    <p className="flex flex-wrap items-center gap-1 text-sm font-semibold text-slate-800">
-      <TeamLogo src={homeLogo} name={home} />
+    <p className={`flex flex-wrap items-center gap-1.5 ${className}`}>
+      {logoPosition === "start" && <TeamLogo src={homeLogo} name={home} />}
       <span>{home}</span>
+      {logoPosition === "end" && <TeamLogo src={homeLogo} name={home} />}
       <span className="font-normal text-slate-400">vs</span>
-      <TeamLogo src={awayLogo} name={away} />
+      {logoPosition === "start" && <TeamLogo src={awayLogo} name={away} />}
       <span>{away}</span>
+      {logoPosition === "end" && <TeamLogo src={awayLogo} name={away} />}
     </p>
   );
 }

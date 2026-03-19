@@ -217,6 +217,8 @@ export class DashboardService {
         id: bet.id,
         fixtureId: fixture.id,
         fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
+        homeLogo: fixture.homeTeam.logoUrl ?? null,
+        awayLogo: fixture.awayTeam.logoUrl ?? null,
         competition: fixture.season.competition.name,
         kickoff: formatTimeUtc(fixture.scheduledAt),
         market: bet.market,
@@ -239,6 +241,8 @@ export class DashboardService {
       return {
         fixtureId: '',
         fixture: 'Aucun match',
+        homeLogo: null,
+        awayLogo: null,
         competition: '-',
         startTime: '--:--',
         market: '-',
@@ -258,6 +262,8 @@ export class DashboardService {
     return {
       fixtureId: fixture.id,
       fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
+      homeLogo: fixture.homeTeam.logoUrl ?? null,
+      awayLogo: fixture.awayTeam.logoUrl ?? null,
       competition: fixture.season.competition.name,
       startTime: formatTimeUtc(fixture.scheduledAt),
       market: bet.market,

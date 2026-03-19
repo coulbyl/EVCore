@@ -3,8 +3,9 @@
 import { useState } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { Check, Copy, Info } from "lucide-react";
-import { Badge, Code, SectionHeader } from "@evcore/ui";
+
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
+import { FixtureName, formatPickForDisplay } from "./coupon-detail";
 import type { FixturePanel } from "../types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {
@@ -104,66 +105,74 @@ function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
 }
 
 export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
-  const previewNotes = fixture.notes.slice(0, 2);
+  const cotes = fixture.metrics.find((m) => m.label === "Cotes");
+  const coreMetrics = fixture.metrics.filter((m) => m.label !== "Cotes");
 
   return (
-    <div className="rounded-[1.7rem] border border-border bg-panel-strong p-6 ev-shell-shadow">
-      <SectionHeader title="Match clé" subtitle="Synthèse modèle" />
-      <div className="mt-5 space-y-5">
+    <div className="rounded-[1.7rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[1.72rem] font-semibold leading-tight text-slate-900">
-            {fixture.fixture}
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+            Match clé
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-            <span>
-              {fixture.competition} • Début {fixture.startTime}
-            </span>
-            <CopyFixtureId fixtureId={fixture.fixtureId} />
-            {fixture.fixtureId && (
-              <SettleFixtureDialog
-                fixtureId={fixture.fixtureId}
-                fixtureName={fixture.fixture}
-              />
-            )}
-          </div>
-        </div>
-        <div className="rounded-[1.25rem] border border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef4f8_100%)] p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="accent">Sélection</Badge>
-            <Code className="rounded-md bg-white px-2 py-1 text-xs">
-              {fixture.market}
-            </Code>
-          </div>
-          <p className="mt-2.5 text-base font-semibold tracking-tight text-slate-900">
-            {fixture.pick}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {fixture.modelConfidence}
+          <p className="mt-0.5 text-xs text-slate-500">
+            {fixture.competition} • {fixture.startTime}
           </p>
         </div>
-        <div className="grid gap-2">
-          {fixture.metrics.map((metric) => (
-            <MetricRow
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              tone={metric.tone}
+        <div className="flex items-center gap-1.5">
+          <CopyFixtureId fixtureId={fixture.fixtureId} />
+          {fixture.fixtureId && (
+            <SettleFixtureDialog
+              fixtureId={fixture.fixtureId}
+              fixtureName={fixture.fixture}
             />
-          ))}
+          )}
         </div>
-        <div className="space-y-2.5">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
-            Notes de décision
-          </p>
-          {previewNotes.map((note) => (
-            <div
-              key={note}
-              className="rounded-2xl border border-border bg-slate-50 px-4 py-3 text-sm text-slate-600"
-            >
-              {note}
+      </div>
+
+      {/* Fixture name */}
+      <FixtureName
+        fixture={fixture.fixture}
+        homeLogo={fixture.homeLogo}
+        awayLogo={fixture.awayLogo}
+        className="mt-4 text-[1.4rem] font-semibold leading-snug text-slate-900"
+      />
+
+      {/* Pick + cote */}
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+        <div className="flex items-stretch">
+          <div className="flex-1 px-4 py-4">
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Sélection
+            </p>
+            <p className="mt-1.5 text-[1.05rem] font-bold tracking-tight text-white">
+              {formatPickForDisplay(fixture.pick, fixture.market)}
+            </p>
+          </div>
+          {cotes && (
+            <div className="flex flex-col items-center justify-center border-l border-slate-800 bg-slate-800/60 px-5">
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Cote
+              </p>
+              <p className="mt-0.5 text-[1.75rem] font-bold tabular-nums leading-none text-white">
+                {cotes.value}
+              </p>
             </div>
-          ))}
+          )}
         </div>
+      </div>
+
+      {/* Metrics */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {coreMetrics.map((metric) => (
+          <MetricRow
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            tone={metric.tone}
+          />
+        ))}
       </div>
     </div>
   );

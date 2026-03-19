@@ -18,6 +18,8 @@ function rowToFixturePanel(row: OpportunityRow): FixturePanel {
   return {
     fixtureId: row.fixtureId,
     fixture: row.fixture,
+    homeLogo: row.homeLogo,
+    awayLogo: row.awayLogo,
     competition: row.competition,
     startTime: row.kickoff,
     market: row.market,
@@ -137,6 +139,8 @@ const EMPTY_SUMMARY: DashboardSummary = {
   selectedFixture: {
     fixtureId: "",
     fixture: "Aucun match",
+    homeLogo: null,
+    awayLogo: null,
     competition: "-",
     startTime: "--:--",
     market: "-",
@@ -176,97 +180,12 @@ export default function Home() {
   const fixture =
     selectedRow !== null ? rowToFixturePanel(selectedRow) : apiFixture;
   const lostBets = Math.max(0, pnl.settledBets - pnl.wonBets);
-  const winRatePct = Number.parseFloat(pnl.winRate.replace(",", "."));
-  const lossRate =
-    Number.isFinite(winRatePct) && winRatePct >= 0 && winRatePct <= 100
-      ? `${(100 - winRatePct).toFixed(1)}%`
-      : "—";
   const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
   const roiPct = Number.parseFloat(pnl.roi.replace(",", "."));
-
-  type PerfTone = "neutral" | "success" | "warning" | "danger";
-  const performanceToneStyles: Record<
-    PerfTone,
-    { card: string; label: string; value: string; sub: string }
-  > = {
-    neutral: {
-      card: "border-border bg-slate-50",
-      label: "text-slate-500",
-      value: "text-slate-900",
-      sub: "text-slate-400",
-    },
-    success: {
-      card: "border-emerald-200 bg-emerald-50",
-      label: "text-emerald-700",
-      value: "text-emerald-800",
-      sub: "text-emerald-600",
-    },
-    warning: {
-      card: "border-amber-200 bg-amber-50",
-      label: "text-amber-700",
-      value: "text-amber-800",
-      sub: "text-amber-600",
-    },
-    danger: {
-      card: "border-rose-200 bg-rose-50",
-      label: "text-rose-700",
-      value: "text-rose-800",
-      sub: "text-rose-600",
-    },
-  };
-
-  const performanceStats: Array<{
-    label: string;
-    value: string;
-    sub: string;
-    tone: PerfTone;
-  }> = [
-    {
-      label: "Bets settlés",
-      value: String(pnl.settledBets),
-      sub: `${pnl.wonBets + lostBets} clôturés`,
-      tone: "neutral",
-    },
-    {
-      label: "Bets gagnés",
-      value: String(pnl.wonBets),
-      sub: `${pnl.winRate} de réussite`,
-      tone: pnl.wonBets > 0 ? "success" : "neutral",
-    },
-    {
-      label: "Bets perdus",
-      value: String(lostBets),
-      sub: `${lossRate} d'échec`,
-      tone:
-        lostBets === 0
-          ? "neutral"
-          : lostBets >= pnl.wonBets
-            ? "danger"
-            : "warning",
-    },
-    {
-      label: "Gain net",
-      value: pnl.netUnits,
-      sub: "unités de stake",
-      tone:
-        Number.isFinite(netUnits) && netUnits < 0
-          ? "danger"
-          : Number.isFinite(netUnits) && netUnits > 0
-            ? "success"
-            : "warning",
-    },
-    {
-      label: "ROI",
-      value: pnl.roi,
-      sub: "sur capital misé",
-      tone:
-        Number.isFinite(roiPct) && roiPct < 0
-          ? "danger"
-          : Number.isFinite(roiPct) && roiPct > 0
-            ? "success"
-            : "warning",
-    },
-  ];
+  const winBarPct =
+    pnl.settledBets > 0
+      ? Math.round((pnl.wonBets / pnl.settledBets) * 100)
+      : 0;
 
   return (
     <Page className="flex h-full flex-col">
@@ -296,28 +215,44 @@ export default function Home() {
                 </span>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {performanceStats.map((stat) => {
-                const tone = performanceToneStyles[stat.tone];
-                return (
-                  <div
-                    key={stat.label}
-                    className={`rounded-2xl border px-4 py-3 ${tone.card}`}
-                  >
-                    <p
-                      className={`text-[0.68rem] font-semibold uppercase tracking-[0.2em] ${tone.label}`}
-                    >
-                      {stat.label}
-                    </p>
-                    <p
-                      className={`mt-1 text-[1.4rem] font-semibold tracking-tight ${tone.value}`}
-                    >
-                      {stat.value}
-                    </p>
-                    <p className={`mt-0.5 text-xs ${tone.sub}`}>{stat.sub}</p>
-                  </div>
-                );
-              })}
+
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className={`rounded-2xl border px-4 py-3 ${Number.isFinite(roiPct) && roiPct > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(roiPct) && roiPct < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">ROI</p>
+                <p className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(roiPct) && roiPct > 0 ? "text-emerald-700" : Number.isFinite(roiPct) && roiPct < 0 ? "text-rose-700" : "text-slate-700"}`}>
+                  {pnl.roi}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">sur capital misé</p>
+              </div>
+
+              <div className={`rounded-2xl border px-4 py-3 ${Number.isFinite(netUnits) && netUnits > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(netUnits) && netUnits < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Gain net</p>
+                <p className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(netUnits) && netUnits > 0 ? "text-emerald-700" : Number.isFinite(netUnits) && netUnits < 0 ? "text-rose-700" : "text-slate-700"}`}>
+                  {pnl.netUnits}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">unités de stake</p>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-slate-50 px-4 py-3">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Réussite</p>
+                <p className="mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight text-slate-700">
+                  {pnl.winRate}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">{pnl.settledBets} bets settlés</p>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-emerald-600">{pnl.wonBets} gagnés</span>
+                <span className="text-xs font-semibold text-rose-500">{lostBets} perdus</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-rose-100">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${winBarPct}%` }}
+                />
+              </div>
             </div>
           </section>
 
