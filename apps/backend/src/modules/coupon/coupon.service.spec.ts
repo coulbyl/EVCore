@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { CouponStatus } from '@evcore/db';
+import { CouponStatus, Market } from '@evcore/db';
 import { CouponService } from './coupon.service';
 import type { CouponRepository } from './coupon.repository';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
@@ -10,6 +10,27 @@ import type { NotificationService } from '@modules/notification/notification.ser
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bullmq';
+
+function makeValueBet(
+  fixtureId: string,
+  qualityScore: string,
+  modelRunId = `run-${fixtureId}`,
+) {
+  return {
+    fixtureId,
+    modelRunId,
+    market: Market.ONE_X_TWO,
+    pick: 'HOME',
+    pickKey: 'ONE_X_TWO:HOME',
+    comboMarket: null,
+    comboPick: null,
+    probability: new Decimal('0.55'),
+    odds: new Decimal('2.20'),
+    ev: new Decimal('0.21'),
+    stakePct: new Decimal('0.01'),
+    qualityScore: new Decimal(qualityScore),
+  };
+}
 
 function makeQueue(): Queue {
   return {
@@ -35,6 +56,7 @@ function makeDeps(
   const couponRepository: CouponRepository = {
     findLatestByDate: vi.fn().mockResolvedValue(null),
     findCouponsForDate: vi.fn().mockResolvedValue([]),
+    findPendingFixtureIdsForWindow: vi.fn().mockResolvedValue(new Set()),
     findPendingCouponsUntil: vi.fn().mockResolvedValue([]),
     findPendingCouponsByFixture: vi.fn().mockResolvedValue([]),
     findCouponById: vi.fn().mockResolvedValue(null),
@@ -42,7 +64,7 @@ function makeDeps(
     create: vi.fn().mockResolvedValue({ id: 'coupon-id' }),
     createPendingCouponWithBets: vi
       .fn()
-      .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST' }),
+      .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
     ...overrides.couponRepository,
   } as unknown as CouponRepository;
 
@@ -54,8 +76,7 @@ function makeDeps(
       decision: 'NO_BET',
       deterministicScore: 0.5,
       probabilities: {},
-      betId: null,
-      qualityScore: null,
+      valueBet: null,
     }),
     ...overrides.bettingEngineService,
   } as unknown as BettingEngineService;
@@ -173,32 +194,15 @@ describe('CouponService.generateDailyCoupon', () => {
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-1',
-          qualityScore: 0.084,
+          valueBet: makeValueBet('f-1', '0.084'),
         }),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              // First call: collect bets for coupon selection
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-1',
-                  ev: new Decimal('0.12'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              // Second call: fetch full bets for notification
-              .mockResolvedValueOnce([
-                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
-              ]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi.fn().mockResolvedValue({
+          id: 'coupon-id',
+          code: 'CPN-TEST',
+          betIds: ['bet-1'],
+        }),
       },
     });
     const service = makeService(deps);
@@ -220,14 +224,6 @@ describe('CouponService.generateDailyCoupon', () => {
         `2025-08-01T${String(12 + i).padStart(2, '0')}:00:00.000Z`,
       ),
     }));
-    const bets = fixtures.map((f, i) => ({
-      id: `bet-${i}`,
-      ev: new Decimal((0.1 + i * 0.01).toFixed(4)),
-      modelRun: {
-        deterministicScore: new Decimal('0.70'),
-        fixtureId: f.id,
-      },
-    }));
 
     const deps = makeDeps({
       fixtureService: {
@@ -243,19 +239,13 @@ describe('CouponService.generateDailyCoupon', () => {
             decision: 'BET',
             deterministicScore: 0.7,
             probabilities: {},
-            betId: `bet-${fixtureId.split('-')[1]}`,
-            qualityScore: 0.1,
+            valueBet: makeValueBet(fixtureId, '0.084'),
           })),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce(bets)
-              .mockResolvedValueOnce(bets.slice(-6)),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
@@ -276,19 +266,6 @@ describe('CouponService.generateDailyCoupon', () => {
       },
       { id: 'f-b', externalId: 2, scheduledAt: TEST_KICKOFF },
     ];
-    // f-b has higher qualityScore than f-a
-    const bets = [
-      {
-        id: 'bet-a',
-        ev: new Decimal('0.10'),
-        modelRun: { deterministicScore: new Decimal('0.60'), fixtureId: 'f-a' },
-      },
-      {
-        id: 'bet-b',
-        ev: new Decimal('0.20'),
-        modelRun: { deterministicScore: new Decimal('0.80'), fixtureId: 'f-b' },
-      },
-    ];
 
     const deps = makeDeps({
       fixtureService: {
@@ -304,34 +281,32 @@ describe('CouponService.generateDailyCoupon', () => {
             decision: 'BET',
             deterministicScore: fixtureId === 'f-a' ? 0.6 : 0.8,
             probabilities: {},
-            betId: fixtureId === 'f-a' ? 'bet-a' : 'bet-b',
-            qualityScore: fixtureId === 'f-a' ? 0.06 : 0.16,
+            // f-b has higher qualityScore (0.16) than f-a (0.06)
+            valueBet: makeValueBet(
+              fixtureId,
+              fixtureId === 'f-a' ? '0.06' : '0.16',
+            ),
           })),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce(bets)
-              .mockResolvedValueOnce([bets[1], bets[0]]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    // selected betIds should be sorted by qualityScore DESC
+    // bets should be passed in qualityScore DESC order (f-b first)
     const [callInput] = (
       deps.couponRepository.createPendingCouponWithBets as ReturnType<
         typeof vi.fn
       >
-    ).mock.calls[0] as [{ betIds: string[] }];
-    const linkedBets = callInput.betIds;
-    expect(linkedBets[0]).toBe('bet-b');
-    expect(linkedBets[1]).toBe('bet-a');
+    ).mock.calls[0] as [{ bets: { fixtureId: string }[] }];
+    const linkedBets = callInput.bets;
+    expect(linkedBets[0]?.fixtureId).toBe('f-b');
+    expect(linkedBets[1]?.fixtureId).toBe('f-a');
   });
 
   it('supports multi-day windows (2-3 days) via range query', async () => {
@@ -351,30 +326,13 @@ describe('CouponService.generateDailyCoupon', () => {
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-1',
-          qualityScore: 0.105,
+          valueBet: makeValueBet('f-1', '0.105'),
         }),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-1',
-                  ev: new Decimal('0.15'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              .mockResolvedValueOnce([
-                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
-              ]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
@@ -388,67 +346,55 @@ describe('CouponService.generateDailyCoupon', () => {
     ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 1 }));
   });
 
-  it('ignores stale pending bets and only selects bets from the current analysis batch', async () => {
+  it('excludes fixtures already assigned to an existing PENDING coupon', async () => {
+    // f-1 is already in a PENDING coupon; f-2 is available
     const deps = makeDeps({
       fixtureService: {
-        findScheduledForDate: vi
+        findScheduledForDate: vi.fn().mockResolvedValue([
+          { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          {
+            id: 'f-2',
+            externalId: 2,
+            scheduledAt: new Date('2025-08-01T17:00:00.000Z'),
+          },
+        ]),
+      },
+      couponRepository: {
+        findPendingFixtureIdsForWindow: vi
           .fn()
-          .mockResolvedValue([
-            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
-          ]),
+          .mockResolvedValue(new Set(['f-1'])),
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
           status: 'analyzed',
-          fixtureId: 'f-1',
-          modelRunId: 'run-new',
+          fixtureId: 'f-2',
+          modelRunId: 'run-2',
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-new',
-          qualityScore: 0.105,
+          valueBet: makeValueBet('f-2', '0.105'),
         }),
-      },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-new',
-                  ev: new Decimal('0.15'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              .mockResolvedValueOnce([
-                { id: 'bet-new', market: 'BTTS', pick: 'NO' },
-              ]),
-          },
-        },
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.prisma.client.bet.findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        where: expect.objectContaining({
-          id: { in: ['bet-new'] },
-          status: 'PENDING',
-        }),
-      }),
+    // Only f-2 should be analyzed (f-1 was excluded)
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(1);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledWith(
+      'f-2',
     );
     expect(
       deps.couponRepository.createPendingCouponWithBets,
     ).toHaveBeenCalledWith(
       expect.objectContaining({
-        betIds: ['bet-new'],
+        bets: expect.arrayContaining([
+          expect.objectContaining({ fixtureId: 'f-2' }),
+        ]),
       }),
     );
   });
@@ -480,8 +426,7 @@ describe('CouponService.generateDailyCoupon', () => {
           decision: 'NO_BET',
           deterministicScore: 0.5,
           probabilities: {},
-          betId: null,
-          qualityScore: null,
+          valueBet: null,
         }),
       },
     });

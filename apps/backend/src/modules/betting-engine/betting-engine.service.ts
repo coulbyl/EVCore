@@ -68,6 +68,21 @@ export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 const logger = createLogger('betting-engine-service');
 const MIN_LAMBDA = 0.05;
 
+export type BetCandidate = {
+  fixtureId: string;
+  modelRunId: string;
+  market: Market;
+  pick: string;
+  pickKey: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+  stakePct: Decimal;
+  qualityScore: Decimal;
+};
+
 type AnalyzeFixtureResult =
   | {
       status: 'analyzed';
@@ -76,8 +91,7 @@ type AnalyzeFixtureResult =
       decision: 'BET' | 'NO_BET';
       deterministicScore: number;
       probabilities: Record<string, number | Record<string, number>>;
-      betId: string | null;
-      qualityScore: number | null;
+      valueBet: BetCandidate | null;
     }
   | {
       status: 'skipped';
@@ -497,8 +511,7 @@ export class BettingEngineService {
       select: { id: true },
     });
 
-    let betId: string | null = null;
-    let qualityScore: number | null = null;
+    let betCandidate: BetCandidate | null = null;
 
     if (decision === Decision.BET && valueBet !== null) {
       const stakePct = this.kellyEnabled
@@ -515,42 +528,20 @@ export class BettingEngineService {
         comboPick: valueBet.comboPick ?? null,
       });
 
-      const canonicalBet = await this.prisma.client.bet.upsert({
-        where: {
-          fixtureId_pickKey: {
-            fixtureId,
-            pickKey,
-          },
-        },
-        create: {
-          modelRunId: modelRun.id,
-          fixtureId,
-          market: valueBet.market,
-          pick: valueBet.pick,
-          pickKey,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-        },
-        update: {
-          modelRunId: modelRun.id,
-          market: valueBet.market,
-          pick: valueBet.pick,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-        },
-        select: { id: true },
-      });
-
-      betId = canonicalBet.id;
-      qualityScore = valueBet.qualityScore.toNumber();
+      betCandidate = {
+        fixtureId,
+        modelRunId: modelRun.id,
+        market: valueBet.market,
+        pick: valueBet.pick,
+        pickKey,
+        comboMarket: valueBet.comboMarket ?? null,
+        comboPick: valueBet.comboPick ?? null,
+        probability: valueBet.probability,
+        odds: valueBet.odds,
+        ev: valueBet.ev,
+        stakePct,
+        qualityScore: valueBet.qualityScore,
+      };
     }
 
     return {
@@ -560,8 +551,7 @@ export class BettingEngineService {
       decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
-      betId,
-      qualityScore,
+      valueBet: betCandidate,
     };
   }
 

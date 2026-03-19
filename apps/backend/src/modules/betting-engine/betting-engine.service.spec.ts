@@ -470,7 +470,6 @@ describe('BettingEngineService', () => {
 
   it('places a bet when deterministic score and quality score both pass', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
       client: {
         fixture: {
@@ -522,7 +521,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -563,6 +561,11 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.decision).toBe('BET');
+      expect(result.valueBet).toMatchObject({
+        modelRunId: 'run-id',
+        market: Market.ONE_X_TWO,
+        pick: 'HOME',
+      });
     }
 
     expect(createModelRun).toHaveBeenCalledWith(
@@ -590,20 +593,10 @@ describe('BettingEngineService', () => {
         }),
       }),
     );
-    expect(createBet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({
-          modelRunId: 'run-id',
-          market: Market.ONE_X_TWO,
-          pick: 'HOME',
-        }),
-      }),
-    );
   });
 
   it('keeps NO_BET when EV is below threshold', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
       client: {
         fixture: {
@@ -655,7 +648,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -694,6 +686,7 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.decision).toBe('NO_BET');
+      expect(result.valueBet).toBeNull();
     }
 
     expect(createModelRun).toHaveBeenCalledWith(
@@ -701,12 +694,10 @@ describe('BettingEngineService', () => {
         data: expect.objectContaining({ decision: 'NO_BET' }),
       }),
     );
-    expect(createBet).not.toHaveBeenCalled();
   });
 
   it('rejects 1X2 AWAY picks above MAX_SELECTION_ODDS cap', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
       client: {
         fixture: {
@@ -758,7 +749,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -797,13 +787,12 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.decision).toBe('NO_BET');
+      expect(result.valueBet).toBeNull();
     }
-    expect(createBet).not.toHaveBeenCalled();
   });
 
   it('rejects 1X2 DRAW picks above MAX_SELECTION_ODDS cap', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
       client: {
         fixture: {
@@ -855,7 +844,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -894,8 +882,8 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.decision).toBe('NO_BET');
+      expect(result.valueBet).toBeNull();
     }
-    expect(createBet).not.toHaveBeenCalled();
   });
 
   it('selectBestViablePickForBacktest returns null when all picks exceed MAX_SELECTION_ODDS', () => {
@@ -992,7 +980,6 @@ describe('BettingEngineService', () => {
 
   it('uses Kelly stake size instead of flat stake when KELLY_ENABLED=true', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const prismaMock = {
       client: {
         fixture: {
@@ -1044,7 +1031,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -1080,17 +1066,15 @@ describe('BettingEngineService', () => {
 
     const result = await service.analyzeFixture('fixture-id');
     expect(result.status).toBe('analyzed');
-
-    expect(createBet).toHaveBeenCalledOnce();
-    const stakePct: { toNumber(): number } =
-      createBet.mock.calls[0][0].create.stakePct;
-    expect(stakePct.toNumber()).toBeCloseTo(0.0208, 3);
-    expect(stakePct.toNumber()).not.toBeCloseTo(0.01, 4);
+    if (result.status === 'analyzed') {
+      expect(result.valueBet).not.toBeNull();
+      expect(result.valueBet?.stakePct.toNumber()).toBeCloseTo(0.0208, 3);
+      expect(result.valueBet?.stakePct.toNumber()).not.toBeCloseTo(0.01, 4);
+    }
   });
 
   it('can select HALF_TIME_FULL_TIME when it has the best viable EV', async () => {
     const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
-    const createBet = vi.fn().mockResolvedValue({ id: 'bet-id' });
     const snapshotAt = new Date('2023-01-01T11:00:00.000Z');
 
     const oddsSnapshotFindMany = vi.fn().mockImplementation((args: unknown) => {
@@ -1162,7 +1146,6 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: createBet },
       },
     } as unknown as PrismaService;
 
@@ -1204,15 +1187,10 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.decision).toBe('BET');
+      expect(result.valueBet).toMatchObject({
+        market: Market.HALF_TIME_FULL_TIME,
+        pick: 'HOME_HOME',
+      });
     }
-
-    expect(createBet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        create: expect.objectContaining({
-          market: Market.HALF_TIME_FULL_TIME,
-          pick: 'HOME_HOME',
-        }),
-      }),
-    );
   });
 });

@@ -1,6 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, CouponStatus, Prisma } from '@evcore/db';
+import { BetStatus, CouponStatus, Market, Prisma } from '@evcore/db';
+import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
+import { toPrismaDecimal } from '@utils/prisma.utils';
+
+type BetCreateData = {
+  fixtureId: string;
+  modelRunId: string;
+  market: Market;
+  pick: string;
+  pickKey: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+  stakePct: Decimal;
+};
 
 const couponBetSelect = {
   id: true,
@@ -55,9 +71,9 @@ export class CouponRepository {
     code: string;
     date: Date;
     legCount: number;
-    betIds: string[];
-  }): Promise<{ id: string; code: string }> {
-    const { code, date, legCount, betIds } = input;
+    bets: BetCreateData[];
+  }): Promise<{ id: string; code: string; betIds: string[] }> {
+    const { code, date, legCount, bets } = input;
 
     return this.prisma.client.$transaction(async (tx) => {
       const coupon = await tx.dailyCoupon.create({
@@ -69,6 +85,27 @@ export class CouponRepository {
         },
         select: { id: true, code: true },
       });
+
+      const betIds: string[] = [];
+      for (const bet of bets) {
+        const created = await tx.bet.create({
+          data: {
+            modelRunId: bet.modelRunId,
+            fixtureId: bet.fixtureId,
+            market: bet.market,
+            pick: bet.pick,
+            pickKey: bet.pickKey,
+            comboMarket: bet.comboMarket,
+            comboPick: bet.comboPick,
+            probEstimated: toPrismaDecimal(bet.probability, 4),
+            oddsSnapshot: toPrismaDecimal(bet.odds, 3),
+            ev: toPrismaDecimal(bet.ev, 4),
+            stakePct: toPrismaDecimal(bet.stakePct, 4),
+          },
+          select: { id: true },
+        });
+        betIds.push(created.id);
+      }
 
       if (betIds.length > 0) {
         const result = await tx.couponLeg.createMany({
@@ -83,8 +120,35 @@ export class CouponRepository {
         }
       }
 
-      return coupon;
+      return { ...coupon, betIds };
     });
+  }
+
+  async findPendingFixtureIdsForWindow(
+    start: Date,
+    end: Date,
+  ): Promise<Set<string>> {
+    const coupons = await this.prisma.client.dailyCoupon.findMany({
+      where: {
+        status: CouponStatus.PENDING,
+        date: { gte: start, lte: end },
+      },
+      select: {
+        couponLegs: {
+          select: {
+            bet: { select: { fixtureId: true } },
+          },
+        },
+      },
+    });
+
+    const fixtureIds = new Set<string>();
+    for (const coupon of coupons) {
+      for (const leg of coupon.couponLegs) {
+        fixtureIds.add(leg.bet.fixtureId);
+      }
+    }
+    return fixtureIds;
   }
 
   findLatestByDate(
