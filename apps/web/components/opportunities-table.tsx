@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { TableCard } from "./table-card";
-import { formatPickForDisplay, FixtureName, FixtureStatusBadge } from "./coupon-detail";
+import { FixtureName, FixtureStatusBadge } from "./coupon-detail";
+import { formatPickForDisplay } from "../helpers/coupon";
 
 import type { OpportunityRow } from "../types/dashboard";
 

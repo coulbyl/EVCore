@@ -3,12 +3,9 @@
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import type { CouponSnapshot } from "../types/dashboard";
+import { CouponDetailLeg, CouponDetailStats } from "./coupon-detail";
 import {
-  CouponDetailLeg,
-  CouponDetailStats,
   combinedOdds,
-} from "./coupon-detail";
-import {
   couponStatusLabel,
   couponStatusBadgeClass,
   couponStatusDotClass,

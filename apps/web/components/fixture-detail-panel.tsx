@@ -5,7 +5,8 @@ import * as HoverCard from "@radix-ui/react-hover-card";
 import { Check, Copy, Info } from "lucide-react";
 
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
-import { FixtureName, formatPickForDisplay } from "./coupon-detail";
+import { FixtureName } from "./coupon-detail";
+import { formatPickForDisplay } from "../helpers/coupon";
 import type { FixturePanel } from "../types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {

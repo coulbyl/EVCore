@@ -13,15 +13,6 @@ import {
 } from "../helpers/coupon";
 import { fixtureStatusLabel, fixtureStatusBadgeClass } from "../helpers/fixture";
 
-// Re-export helpers so existing callers keep working
-export {
-  couponStatusLabel,
-  couponStatusBadgeClass,
-  couponModeLabel,
-  combinedOdds,
-  formatPickForDisplay,
-};
-
 // ---------------------------------------------------------------------------
 // FixtureStatusBadge
 // ---------------------------------------------------------------------------

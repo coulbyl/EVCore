@@ -4,12 +4,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
 import { TableCard } from "../../components/table-card";
-import {
-  CouponDetail,
-  CouponDetailEmpty,
-  couponStatusBadgeClass,
-  couponStatusLabel,
-} from "../../components/coupon-detail";
+import { CouponDetail, CouponDetailEmpty } from "../../components/coupon-detail";
+import { couponStatusBadgeClass, couponStatusLabel } from "../../helpers/coupon";
 import { useCouponsByPeriod } from "../../hooks/use-coupons-by-period";
 
 function currentWeekInputRange(now = new Date()): { from: string; to: string } {
