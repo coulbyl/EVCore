@@ -8,46 +8,12 @@ import {
   CouponDetailStats,
   combinedOdds,
 } from "./coupon-detail";
-
-
-
-// ---------------------------------------------------------------------------
-// Status config
-// ---------------------------------------------------------------------------
-
-type CouponStatus = CouponSnapshot["status"];
-type SelectionStatus = CouponSnapshot["selections"][number]["status"];
-type Status = CouponStatus | SelectionStatus;
-
-const STATUS_CFG: Record<
-  Status,
-  { label: string; dot: string; badge: string; headerBadge: string }
-> = {
-  WON: {
-    label: "GAGNÉ",
-    dot: "bg-emerald-400",
-    badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    headerBadge: "border-emerald-400/40 bg-emerald-400/20 text-emerald-300",
-  },
-  LOST: {
-    label: "PERDU",
-    dot: "bg-rose-400",
-    badge: "border-rose-200 bg-rose-50 text-rose-700",
-    headerBadge: "border-rose-400/40 bg-rose-400/20 text-rose-300",
-  },
-  PENDING: {
-    label: "EN COURS",
-    dot: "bg-amber-400",
-    badge: "border-amber-200 bg-amber-50 text-amber-700",
-    headerBadge: "border-amber-400/40 bg-amber-400/20 text-amber-300",
-  },
-  VOID: {
-    label: "VOID",
-    dot: "bg-slate-400",
-    badge: "border-slate-200 bg-slate-100 text-slate-600",
-    headerBadge: "border-slate-400/40 bg-slate-400/20 text-slate-300",
-  },
-};
+import {
+  couponStatusLabel,
+  couponStatusBadgeClass,
+  couponStatusDotClass,
+  couponStatusHeaderBadgeClass,
+} from "../helpers/coupon";
 
 function evColor(ev: string) {
   const n = parseFloat(ev);
@@ -67,7 +33,6 @@ function CouponRow({
   coupon: CouponSnapshot;
   onOpen: () => void;
 }) {
-  const cfg = STATUS_CFG[coupon.status];
   return (
     <button
       type="button"
@@ -76,14 +41,14 @@ function CouponRow({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className={`mt-px size-2 shrink-0 rounded-full ${cfg.dot}`} />
+          <span className={`mt-px size-2 shrink-0 rounded-full ${couponStatusDotClass(coupon.status)}`} />
           <span className="truncate font-mono text-[11px] text-slate-400">
             {coupon.code}
           </span>
           <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${cfg.badge}`}
+            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(coupon.status)}`}
           >
-            {cfg.label}
+            {couponStatusLabel(coupon.status, coupon.selections)}
           </span>
         </div>
         <span className="shrink-0 text-slate-300 transition-transform duration-150 group-hover:translate-x-0.5">
@@ -120,7 +85,6 @@ function CouponDrawerContent({
   coupon: CouponSnapshot;
   onClose: () => void;
 }) {
-  const cfg = STATUS_CFG[coupon.status];
   const isCombined = coupon.selections.length > 1;
   const odds = isCombined
     ? combinedOdds(coupon.selections.map((s) => s.odds))
@@ -162,10 +126,10 @@ function CouponDrawerContent({
         {/* Status + window */}
         <div className="mt-3 flex items-center gap-2.5">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${cfg.headerBadge}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
           >
-            <span className={`size-1.5 rounded-full ${cfg.dot}`} />
-            {cfg.label}
+            <span className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`} />
+            {couponStatusLabel(coupon.status, coupon.selections)}
           </span>
           <span className="text-xs text-slate-400">{coupon.window}</span>
         </div>
