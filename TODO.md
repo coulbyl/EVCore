@@ -33,8 +33,8 @@
 - [x] Sélecteur de date (défaut : aujourd'hui)
 - [x] Table fixtures avec colonnes : ligue · équipes · statut · décision · score · pick · cotes
 - [x] Section snapshot DB (counts + breakdown ligue + bets/coupons par statut)
-- [ ] Exposer signaux de diagnostic : `hasOdds`, `lineMovement`, `h2hScore`, `congestionScore`, `lambdaFloorHit`
-- [ ] Signaux visibles par fixture (expandable row ou side panel)
+- [x] Signaux de diagnostic par fixture : `lambdaFloorHit`, `lineMovement`, `h2hScore`, `congestionScore`
+- [x] Expandable row avec tooltips explicatifs par signal (InfoTooltip partagé)
 
 ### Divers
 
