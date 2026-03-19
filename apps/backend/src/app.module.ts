@@ -12,6 +12,7 @@ import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AdjustmentModule,
     CouponModule,
     DashboardModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -337,8 +337,8 @@ export class CouponRepository {
           fixture: {
             id: string;
             scheduledAt: Date;
-            homeTeam: { name: string };
-            awayTeam: { name: string };
+            homeTeam: { name: string; logoUrl: string | null };
+            awayTeam: { name: string; logoUrl: string | null };
           };
         };
       }[];
