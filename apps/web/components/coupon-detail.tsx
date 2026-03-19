@@ -4,9 +4,18 @@ import { SettleFixtureDialog } from "./settle-fixture-dialog";
 
 // --- helpers ---
 
-export function couponStatusLabel(status: "PENDING" | "WON" | "LOST"): string {
+export function couponStatusLabel(
+  status: "PENDING" | "WON" | "LOST",
+  selections?: Array<{ fixtureStatus: string }>,
+): string {
   if (status === "WON") return "GAGNÉ";
   if (status === "LOST") return "PERDU";
+  if (selections && selections.length > 0) {
+    const fs = selections.map((s) => s.fixtureStatus.toLowerCase());
+    if (fs.some((s) => s === "in_progress")) return "EN COURS";
+    if (fs.every((s) => s === "finished")) return "EN ATTENTE";
+    return "PLANIFIÉ";
+  }
   return "EN COURS";
 }
 
@@ -120,9 +129,10 @@ type CouponDetailHeaderProps = {
   code: string;
   legs: number;
   status: "PENDING" | "WON" | "LOST";
+  selections?: Array<{ fixtureStatus: string }>;
 };
 
-export function CouponDetailHeader({ code, legs, status }: CouponDetailHeaderProps) {
+export function CouponDetailHeader({ code, legs, status, selections }: CouponDetailHeaderProps) {
   return (
     <div className="border-b border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-4 py-3">
       <div className="flex items-center justify-between gap-2">
@@ -134,7 +144,7 @@ export function CouponDetailHeader({ code, legs, status }: CouponDetailHeaderPro
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(status)}`}
           >
-            {couponStatusLabel(status)}
+            {couponStatusLabel(status, selections)}
           </span>
         </div>
       </div>
@@ -291,7 +301,7 @@ export function CouponDetail({ coupon, onSettled }: CouponDetailProps) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-white">
-      <CouponDetailHeader code={coupon.code} legs={coupon.legs} status={coupon.status} />
+      <CouponDetailHeader code={coupon.code} legs={coupon.legs} status={coupon.status} selections={coupon.selections} />
       <CouponDetailStats
         selectionCount={coupon.selections.length}
         isCombined={isCombined}

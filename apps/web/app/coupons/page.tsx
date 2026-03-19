@@ -220,7 +220,7 @@ export default function CouponsPage() {
                             <span
                               className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(coupon.status)}`}
                             >
-                              {couponStatusLabel(coupon.status)}
+                              {couponStatusLabel(coupon.status, coupon.selections)}
                             </span>
                           </td>
                           <td className="px-5 py-4.5 font-semibold text-slate-700">
