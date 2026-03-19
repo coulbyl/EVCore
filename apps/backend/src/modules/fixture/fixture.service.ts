@@ -15,7 +15,6 @@ type UpsertCompetitionInput = {
   isActive: boolean;
   csvDivisionCode?: string;
   seasonStartMonth?: number;
-  activeSeasonsCount?: number;
 };
 type UpsertSeasonInput = {
   competitionId: string;

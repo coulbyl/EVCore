@@ -46,7 +46,6 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
-  activeSeasonsCount: number | null;
 };
 
 const TEST_COMPETITIONS: CompetitionRow[] = [
@@ -57,7 +56,6 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'England',
     csvDivisionCode: 'E0',
     seasonStartMonth: null,
-    activeSeasonsCount: null,
   },
   {
     leagueId: 135,
@@ -66,7 +64,6 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'Italy',
     csvDivisionCode: 'I1',
     seasonStartMonth: null,
-    activeSeasonsCount: null,
   },
 ];
 
@@ -329,7 +326,7 @@ describe('EtlService', () => {
     expect(leagueSyncQueue.add).not.toHaveBeenCalled();
   });
 
-  it('keeps manual league stats backfill across active seasons', async () => {
+  it('dispatches one stats job for current season on manual per-league sync', async () => {
     prismaMockRaw.client.competition.findFirst.mockResolvedValue({
       leagueId: 140,
       code: 'LL',
@@ -337,40 +334,24 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
-      activeSeasonsCount: 2,
     });
 
     await service.triggerStatsSyncForLeague('LL');
 
-    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(2);
-    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
-      1,
-      'stats-sync-LL-2024',
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(1);
+    expect(leagueSyncQueue.add).toHaveBeenCalledWith(
+      `stats-sync-LL-${CURRENT_SEASON}`,
       {
         syncType: 'stats',
-        season: 2024,
+        season: CURRENT_SEASON,
         competitionCode: 'LL',
         leagueId: 140,
       },
       { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
     );
-    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
-      2,
-      'stats-sync-LL-2025',
-      {
-        syncType: 'stats',
-        season: 2025,
-        competitionCode: 'LL',
-        leagueId: 140,
-      },
-      {
-        ...BULLMQ_DEFAULT_JOB_OPTIONS,
-        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-      },
-    );
   });
 
-  it('keeps manual league fixtures backfill across active seasons', async () => {
+  it('dispatches one fixtures backfill job for current season on manual per-league sync', async () => {
     prismaMockRaw.client.competition.findFirst.mockResolvedValue({
       leagueId: 140,
       code: 'LL',
@@ -378,38 +359,21 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
-      activeSeasonsCount: 2,
     });
 
     await service.triggerFixturesSyncForLeague('LL');
 
-    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(2);
-    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
-      1,
-      'fixtures-sync-LL-2024',
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(1);
+    expect(leagueSyncQueue.add).toHaveBeenCalledWith(
+      `fixtures-sync-LL-${CURRENT_SEASON}`,
       {
         syncType: 'fixtures',
-        season: 2024,
+        season: CURRENT_SEASON,
         competitionCode: 'LL',
         leagueId: 140,
         syncScope: 'backfill',
       },
       { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
-    );
-    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
-      2,
-      'fixtures-sync-LL-2025',
-      {
-        syncType: 'fixtures',
-        season: 2025,
-        competitionCode: 'LL',
-        leagueId: 140,
-        syncScope: 'backfill',
-      },
-      {
-        ...BULLMQ_DEFAULT_JOB_OPTIONS,
-        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-      },
     );
   });
 

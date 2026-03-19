@@ -91,7 +91,6 @@ const SA_COMPETITION_ROW = {
   isActive: true,
   csvDivisionCode: 'I1',
   seasonStartMonth: null,
-  activeSeasonsCount: null,
   includeInBacktest: true,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -232,7 +231,6 @@ describe('FixturesSyncWorker', () => {
       isActive: true,
       csvDivisionCode: 'I1',
       seasonStartMonth: undefined,
-      activeSeasonsCount: undefined,
     });
     expect(fixtureService.upsertSeason).toHaveBeenCalledWith(
       expect.objectContaining({

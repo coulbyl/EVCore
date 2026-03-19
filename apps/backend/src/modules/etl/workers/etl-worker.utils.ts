@@ -10,7 +10,6 @@ export type CompetitionMeta = {
   isActive: boolean;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
-  activeSeasonsCount: number | null;
 };
 
 export type UpsertCompetitionInput = {
@@ -21,7 +20,6 @@ export type UpsertCompetitionInput = {
   isActive: boolean;
   csvDivisionCode?: string;
   seasonStartMonth?: number;
-  activeSeasonsCount?: number;
 };
 
 export async function loadActiveCompetition(
@@ -44,7 +42,6 @@ export async function loadActiveCompetition(
       isActive: true,
       csvDivisionCode: true,
       seasonStartMonth: true,
-      activeSeasonsCount: true,
     },
   });
 
@@ -66,7 +63,6 @@ export function toUpsertCompetitionInput(
     isActive: competition.isActive,
     csvDivisionCode: competition.csvDivisionCode ?? undefined,
     seasonStartMonth: competition.seasonStartMonth ?? undefined,
-    activeSeasonsCount: competition.activeSeasonsCount ?? undefined,
   };
 }
 

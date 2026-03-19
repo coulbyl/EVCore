@@ -40,7 +40,6 @@ const PL_COMPETITION_ROW = {
   isActive: true,
   csvDivisionCode: 'E0',
   seasonStartMonth: null,
-  activeSeasonsCount: null,
   includeInBacktest: true,
   createdAt: new Date(),
   updatedAt: new Date(),

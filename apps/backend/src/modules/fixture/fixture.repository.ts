@@ -23,7 +23,6 @@ type UpsertCompetitionInput = {
   isActive: boolean;
   csvDivisionCode?: string;
   seasonStartMonth?: number;
-  activeSeasonsCount?: number;
 };
 
 type UpsertSeasonInput = {
@@ -146,7 +145,6 @@ export class FixtureRepository {
         isActive: data.isActive,
         csvDivisionCode: data.csvDivisionCode,
         seasonStartMonth: data.seasonStartMonth,
-        activeSeasonsCount: data.activeSeasonsCount,
       },
       select: { id: true },
     });

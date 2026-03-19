@@ -245,7 +245,7 @@ export class RollingStatsService {
   > {
     const competition = await this.prisma.client.competition.findFirst({
       where: { code: competitionCode, isActive: true },
-      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+      select: { code: true, seasonStartMonth: true },
     });
     if (!competition) {
       throw new Error(`competition not found: ${competitionCode}`);
@@ -253,7 +253,7 @@ export class RollingStatsService {
 
     const seasons = activeSeasons(
       competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-      competition.activeSeasonsCount ?? 1,
+      1,
     );
 
     const results: Array<{ year: number } & RollingStatsRunResult> = [];
@@ -280,13 +280,13 @@ export class RollingStatsService {
 
     const competitions = await this.prisma.client.competition.findMany({
       where: { isActive: true },
-      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+      select: { code: true, seasonStartMonth: true },
     });
 
     for (const competition of competitions) {
       const seasons = activeSeasons(
         competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-        competition.activeSeasonsCount ?? 1,
+        1,
       );
       for (const year of seasons) {
         const result = await this.backfillSeasonYear(year, competition.code);
@@ -321,7 +321,7 @@ export class RollingStatsService {
   ): Promise<Array<{ year: number } & RollingStatsRunResult>> {
     const competition = await this.prisma.client.competition.findFirst({
       where: { code: competitionCode, isActive: true },
-      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+      select: { code: true, seasonStartMonth: true },
     });
     if (!competition) {
       throw new Error(`competition not found: ${competitionCode}`);
@@ -329,7 +329,7 @@ export class RollingStatsService {
 
     const seasons = activeSeasons(
       competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-      competition.activeSeasonsCount ?? 1,
+      1,
     );
 
     const results: Array<{ year: number } & RollingStatsRunResult> = [];
@@ -351,13 +351,13 @@ export class RollingStatsService {
 
     const competitions = await this.prisma.client.competition.findMany({
       where: { isActive: true },
-      select: { code: true, seasonStartMonth: true, activeSeasonsCount: true },
+      select: { code: true, seasonStartMonth: true },
     });
 
     for (const competition of competitions) {
       const seasons = activeSeasons(
         competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-        competition.activeSeasonsCount ?? 1,
+        1,
       );
       for (const year of seasons) {
         const result = await this.refreshSeasonYear(year, competition.code);

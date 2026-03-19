@@ -41,7 +41,6 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
-  activeSeasonsCount: number | null;
 };
 
 type CompetitionPlan = {
@@ -69,7 +68,7 @@ function computeSeasons(
 ): readonly number[] {
   return activeSeasons(
     competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-    competition.activeSeasonsCount ?? 1,
+    1,
     now,
   );
 }
@@ -239,7 +238,6 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
-        activeSeasonsCount: true,
       },
     });
     this.competitionPlans = competitions.map(toCompetitionPlan);
@@ -573,7 +571,6 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
-        activeSeasonsCount: true,
       },
     });
     if (!competition) {
