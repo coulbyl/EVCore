@@ -9,7 +9,7 @@
 
 | Bloc   | Contenu                                                                                              | Tests |
 | ------ | ---------------------------------------------------------------------------------------------------- | ----- |
-| Bloc 1 | Odds pre-match (odds-prematch-sync), ETL multi-ligue, multi-compétitions CSV                            | 184   |
+| Bloc 1 | Odds pre-match (odds-prematch-sync), ETL multi-ligue, multi-compétitions CSV                         | 184   |
 | Bloc 2 | ETL hardening, pipeline live validé prod, Kelly fractionnelle (`KELLY_ENABLED`)                      | 200   |
 | Bloc 3 | Daily Coupon Generator (COMBO_WHITELIST, CouponService, CouponWorker, shadow scoring, line movement) | 204   |
 

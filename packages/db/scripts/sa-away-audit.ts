@@ -134,7 +134,10 @@ async function main() {
 
   const upcomingTeamIds = Array.from(
     new Set(
-      relevantUpcoming.flatMap((fixture) => [fixture.homeTeamId, fixture.awayTeamId]),
+      relevantUpcoming.flatMap((fixture) => [
+        fixture.homeTeamId,
+        fixture.awayTeamId,
+      ]),
     ),
   );
   const upcomingFixtureIds = relevantUpcoming.map((fixture) => fixture.id);
@@ -202,11 +205,14 @@ async function main() {
       homeTeam: fixture.homeTeam.name,
       awayTeam: fixture.awayTeam.name,
       hasHomeStats:
-        homeStatsAt !== null && homeStatsAt.getTime() < fixture.scheduledAt.getTime(),
+        homeStatsAt !== null &&
+        homeStatsAt.getTime() < fixture.scheduledAt.getTime(),
       hasAwayStats:
-        awayStatsAt !== null && awayStatsAt.getTime() < fixture.scheduledAt.getTime(),
+        awayStatsAt !== null &&
+        awayStatsAt.getTime() < fixture.scheduledAt.getTime(),
       hasOneXTwoOdds:
-        latestOddsAt !== null && latestOddsAt.getTime() <= fixture.scheduledAt.getTime(),
+        latestOddsAt !== null &&
+        latestOddsAt.getTime() <= fixture.scheduledAt.getTime(),
       latestRunDecision: latestRun?.decision ?? null,
       latestRunAt: latestRun?.analyzedAt ?? null,
     };
@@ -226,14 +232,20 @@ async function main() {
     const leagueFixtures = fixtures.filter(
       (fixture) => fixture.season.competition.code === code,
     );
-    const finished = leagueFixtures.filter((fixture) => fixture.status === "FINISHED");
+    const finished = leagueFixtures.filter(
+      (fixture) => fixture.status === "FINISHED",
+    );
     const scheduled = leagueFixtures.filter(
       (fixture) => fixture.status === "SCHEDULED",
     );
     const upcoming = fixtureAudit.filter((fixture) => fixture.code === code);
     const withXg = finished.filter((fixture) => hasXg(fixture)).length;
-    const xgUnavailable = leagueFixtures.filter((fixture) => fixture.xgUnavailable).length;
-    const withModelRun = leagueFixtures.filter((fixture) => fixture.modelRuns.length > 0).length;
+    const xgUnavailable = leagueFixtures.filter(
+      (fixture) => fixture.xgUnavailable,
+    ).length;
+    const withModelRun = leagueFixtures.filter(
+      (fixture) => fixture.modelRuns.length > 0,
+    ).length;
     const analyzableUpcoming = upcoming.filter(
       (fixture) =>
         fixture.hasHomeStats && fixture.hasAwayStats && fixture.hasOneXTwoOdds,
@@ -256,7 +268,9 @@ async function main() {
     w(`  fixtures total         : ${leagueFixtures.length}`);
     w(`  finished               : ${finished.length}`);
     w(`  scheduled              : ${scheduled.length}`);
-    w(`  xG coverage finished   : ${withXg}/${finished.length} (${pct(withXg, finished.length)})`);
+    w(
+      `  xG coverage finished   : ${withXg}/${finished.length} (${pct(withXg, finished.length)})`,
+    );
     w(`  xgUnavailable flags    : ${xgUnavailable}`);
     w(`  fixtures with modelRun : ${withModelRun}`);
     w(`  upcoming ${UPCOMING_WINDOW_DAYS}d    : ${upcoming.length}`);
@@ -286,7 +300,9 @@ async function main() {
     w();
 
     w("  Upcoming fixture audit");
-    w("  DATE        TIME   EXT_ID    SEASON     HOME vs AWAY                           STATS        ODDS       RUN");
+    w(
+      "  DATE        TIME   EXT_ID    SEASON     HOME vs AWAY                           STATS        ODDS       RUN",
+    );
     for (const fixture of upcoming) {
       const statsLabel =
         fixture.hasHomeStats && fixture.hasAwayStats
@@ -308,9 +324,15 @@ async function main() {
   }
 
   w("Notes");
-  w("  - `analyzable upcoming` means: home stats + away stats + 1X2 odds all exist before kickoff.");
-  w("  - This audit checks data availability for the engine path, not backtest output.");
-  w("  - If a league has upcoming fixtures but analyzable=0, the model effectively cannot pass there today.");
+  w(
+    "  - `analyzable upcoming` means: home stats + away stats + 1X2 odds all exist before kickoff.",
+  );
+  w(
+    "  - This audit checks data availability for the engine path, not backtest output.",
+  );
+  w(
+    "  - If a league has upcoming fixtures but analyzable=0, the model effectively cannot pass there today.",
+  );
   w();
 
   const output = `${lines.join("\n")}\n`;
