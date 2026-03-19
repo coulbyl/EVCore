@@ -22,10 +22,11 @@ async function main() {
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayEnd = new Date(now);
   todayEnd.setUTCHours(23, 59, 59, 999);
-  const couponAuditDate = new Date("2026-03-14T00:00:00.000Z");
-  const couponAuditStart = new Date(couponAuditDate);
+  const couponAuditStartDate = new Date("2026-03-19T00:00:00.000Z");
+  const couponAuditEndDate = new Date("2026-03-22T00:00:00.000Z");
+  const couponAuditStart = new Date(couponAuditStartDate);
   couponAuditStart.setUTCHours(0, 0, 0, 0);
-  const couponAuditEnd = new Date(couponAuditDate);
+  const couponAuditEnd = new Date(couponAuditEndDate);
   couponAuditEnd.setUTCHours(23, 59, 59, 999);
 
   type LeagueRow = {
@@ -454,48 +455,94 @@ async function main() {
   w(`  Total  : ${notifications}`);
   w(`  Unread : ${unreadNotifications}`);
   w();
+  // ── Coupon audit — group by date then league ────────────────────────────────
+  const auditPeriod = `${couponAuditStartDate.toISOString().slice(0, 10)} → ${couponAuditEndDate.toISOString().slice(0, 10)}`;
+
   w("── Scheduled fixtures audit ────────────────────────────");
-  w(
-    `  Date  : ${couponAuditDate.toISOString().slice(0, 10)} (${couponAuditFixtures.length} fixtures)`,
-  );
+  w(`  Period: ${auditPeriod} — ${couponAuditFixtures.length} fixtures`);
+
   if (couponAuditFixtures.length === 0) {
     w("  None");
   } else {
-    for (const fixture of couponAuditFixtures) {
-      const time = fixture.scheduledAt.toISOString().slice(11, 16);
-      const code = fixture.season.competition.code;
-      const competition = fixture.season.competition.name;
-      w(
-        `  ${time}  ${code.padEnd(4)}  ${fixture.homeTeam.name} vs ${fixture.awayTeam.name} (${competition})`,
-      );
+    // Group by date
+    const byDate = new Map<string, typeof couponAuditFixtures>();
+    for (const f of couponAuditFixtures) {
+      const day = f.scheduledAt.toISOString().slice(0, 10);
+      if (!byDate.has(day)) byDate.set(day, []);
+      byDate.get(day)!.push(f);
+    }
+    for (const [day, fixtures] of byDate) {
+      w();
+      w(`  ── ${day} ──`);
+      // Group by league within the day
+      const byLeague = new Map<string, typeof fixtures>();
+      for (const f of fixtures) {
+        const key = `${f.season.competition.code}|${f.season.competition.name}`;
+        if (!byLeague.has(key)) byLeague.set(key, []);
+        byLeague.get(key)!.push(f);
+      }
+      for (const [key, leagueFixtures] of byLeague) {
+        const [code, name] = key.split("|") as [string, string];
+        w(`    [${code}] ${name}`);
+        for (const f of leagueFixtures) {
+          const time = f.scheduledAt.toISOString().slice(11, 16);
+          w(`      ${time}  ${f.homeTeam.name} vs ${f.awayTeam.name}`);
+        }
+      }
     }
   }
   w();
+
   w("── Coupon eligibility audit ────────────────────────────");
-  for (const fixture of couponAuditEligibilityFixtures) {
-    const time = fixture.scheduledAt.toISOString().slice(11, 16);
-    const code = fixture.season.competition.code;
-    const hasHomeStats = teamStatsCoverage.has(fixture.homeTeamId);
-    const hasAwayStats = teamStatsCoverage.has(fixture.awayTeamId);
-    const hasOdds = fixture.oddsSnapshots.length > 0;
-    const latestRun = fixture.modelRuns[0] ?? null;
-    const latestBet = latestRun?.bets[0] ?? null;
-    const statsLabel =
-      hasHomeStats && hasAwayStats
-        ? "stats:yes"
-        : hasHomeStats || hasAwayStats
-          ? "stats:partial"
-          : "stats:no";
-    const oddsLabel = hasOdds ? "odds:yes" : "odds:no";
-    const runLabel = latestRun ? `run:${latestRun.decision}` : "run:none";
-    const betLabel = latestBet
-      ? latestBet.comboMarket
-        ? `bet:${latestBet.market}+${latestBet.comboMarket}`
-        : `bet:${latestBet.market}`
-      : "bet:none";
-    w(
-      `  ${time}  ${code.padEnd(4)}  ${fixture.homeTeam.name} vs ${fixture.awayTeam.name}  ${statsLabel.padEnd(13)} ${oddsLabel.padEnd(8)} ${runLabel.padEnd(10)} ${betLabel}`,
-    );
+  w(`  Period: ${auditPeriod} — ${couponAuditEligibilityFixtures.length} fixtures`);
+
+  if (couponAuditEligibilityFixtures.length === 0) {
+    w("  None");
+  } else {
+    const byDate2 = new Map<string, typeof couponAuditEligibilityFixtures>();
+    for (const f of couponAuditEligibilityFixtures) {
+      const day = f.scheduledAt.toISOString().slice(0, 10);
+      if (!byDate2.has(day)) byDate2.set(day, []);
+      byDate2.get(day)!.push(f);
+    }
+    for (const [day, fixtures] of byDate2) {
+      w();
+      w(`  ── ${day} ──`);
+      const byLeague = new Map<string, typeof fixtures>();
+      for (const f of fixtures) {
+        const key = `${f.season.competition.code}|${f.season.competition.name}`;
+        if (!byLeague.has(key)) byLeague.set(key, []);
+        byLeague.get(key)!.push(f);
+      }
+      for (const [key, leagueFixtures] of byLeague) {
+        const [code, name] = key.split("|") as [string, string];
+        w(`    [${code}] ${name}`);
+        for (const f of leagueFixtures) {
+          const time = f.scheduledAt.toISOString().slice(11, 16);
+          const hasHomeStats = teamStatsCoverage.has(f.homeTeamId);
+          const hasAwayStats = teamStatsCoverage.has(f.awayTeamId);
+          const hasOdds = f.oddsSnapshots.length > 0;
+          const latestRun = f.modelRuns[0] ?? null;
+          const latestBet = latestRun?.bets[0] ?? null;
+          const stats =
+            hasHomeStats && hasAwayStats
+              ? "✅ stats"
+              : hasHomeStats || hasAwayStats
+                ? "⚠️  stats"
+                : "❌ stats";
+          const odds = hasOdds ? "✅ odds" : "❌ odds";
+          const run = latestRun ? `run:${latestRun.decision}` : "run:—";
+          const bet = latestBet
+            ? latestBet.comboMarket
+              ? `bet:${latestBet.market}+${latestBet.comboMarket}`
+              : `bet:${latestBet.market}`
+            : "bet:—";
+          w(
+            `      ${time}  ${f.homeTeam.name} vs ${f.awayTeam.name.padEnd(24)}  ${stats}  ${odds}  ${run.padEnd(14)}  ${bet}`,
+          );
+        }
+      }
+    }
   }
   w();
   w("═══════════════════════════════════════════════════════");
