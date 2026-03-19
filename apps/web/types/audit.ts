@@ -1,3 +1,10 @@
+export type AuditDiagnostics = {
+  lambdaFloorHit: boolean;
+  lineMovement: number | null;
+  h2hScore: number | null;
+  congestionScore: number | null;
+};
+
 export type AuditFixtureRow = {
   fixtureId: string;
   fixture: string;
@@ -15,6 +22,7 @@ export type AuditFixtureRow = {
     market: string | null;
     pick: string | null;
     ev: string | null;
+    diagnostics: AuditDiagnostics;
   } | null;
 };
 

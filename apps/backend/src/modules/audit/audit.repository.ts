@@ -36,6 +36,7 @@ export class AuditRepository {
             decision: true,
             deterministicScore: true,
             finalScore: true,
+            features: true,
             analyzedAt: true,
             bets: {
               select: { market: true, pick: true, ev: true },

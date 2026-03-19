@@ -3,7 +3,20 @@ import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import { AuditRepository } from './audit.repository';
-import type { AuditFixtureRow, AuditOverview } from './audit.types';
+import type { AuditDiagnostics, AuditFixtureRow, AuditOverview } from './audit.types';
+
+function extractDiagnostics(features: unknown): AuditDiagnostics {
+  if (features === null || typeof features !== 'object') {
+    return { lambdaFloorHit: false, lineMovement: null, h2hScore: null, congestionScore: null };
+  }
+  const f = features as Record<string, unknown>;
+  return {
+    lambdaFloorHit: f['lambdaFloorHit'] === true,
+    lineMovement: typeof f['shadow_lineMovement'] === 'number' ? f['shadow_lineMovement'] : null,
+    h2hScore: typeof f['shadow_h2h'] === 'number' ? f['shadow_h2h'] : null,
+    congestionScore: typeof f['shadow_congestion'] === 'number' ? f['shadow_congestion'] : null,
+  };
+}
 
 @Injectable()
 export class AuditService {
@@ -37,6 +50,7 @@ export class AuditService {
               market: bet?.market ?? null,
               pick: bet?.pick ?? null,
               ev: bet ? formatSigned(toNumber(bet.ev), 3) : null,
+              diagnostics: extractDiagnostics(run.features),
             }
           : null,
       };

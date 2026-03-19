@@ -497,6 +497,7 @@ export class BettingEngineService {
           lambdaHome: lambda.home,
           lambdaAway: lambda.away,
           probabilities: mapProbabilitiesToNumber(probabilities),
+          lambdaFloorHit,
           shadow_lineMovement: shadowLineMovement,
           shadow_h2h: shadowH2h,
           shadow_congestion: shadowCongestion,

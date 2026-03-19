@@ -8,7 +8,7 @@ import { FixtureName, FixtureStatusBadge } from "../../components/coupon-detail"
 import { formatPickForDisplay } from "../../helpers/coupon";
 import { useAuditFixtures } from "../../hooks/use-audit-fixtures";
 import { useAuditOverview } from "../../hooks/use-audit-overview";
-import type { AuditOverview } from "../../types/audit";
+import type { AuditDiagnostics, AuditOverview } from "../../types/audit";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -17,6 +17,33 @@ function todayIso() {
 // ---------------------------------------------------------------------------
 // Fixtures table
 // ---------------------------------------------------------------------------
+
+function DiagnosticsPanel({ d }: { d: AuditDiagnostics }) {
+  function fmt(v: number | null) {
+    return v === null ? "—" : v.toFixed(3);
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-4 px-4 py-2.5 text-xs">
+      <span className="text-slate-400 uppercase tracking-[0.12em] text-[0.6rem] font-semibold">Signaux</span>
+      <span className={`flex items-center gap-1 font-mono ${d.lambdaFloorHit ? "text-rose-500" : "text-slate-400"}`}>
+        <span className="text-slate-400">λ-floor</span>
+        {d.lambdaFloorHit ? "⚠ hit" : "ok"}
+      </span>
+      <span className="flex items-center gap-1 font-mono text-slate-600">
+        <span className="text-slate-400">line-mv</span>
+        {fmt(d.lineMovement)}
+      </span>
+      <span className="flex items-center gap-1 font-mono text-slate-600">
+        <span className="text-slate-400">h2h</span>
+        {fmt(d.h2hScore)}
+      </span>
+      <span className="flex items-center gap-1 font-mono text-slate-600">
+        <span className="text-slate-400">congestion</span>
+        {fmt(d.congestionScore)}
+      </span>
+    </div>
+  );
+}
 
 function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" }) {
   if (decision === "BET") {
@@ -35,6 +62,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" }) {
 
 function AuditFixturesSection({ date }: { date: string }) {
   const { data: fixtures = [], isFetching } = useAuditFixtures(date);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const betCount = fixtures.filter(
     (f) => f.modelRun?.decision === "BET",
@@ -56,7 +84,7 @@ function AuditFixturesSection({ date }: { date: string }) {
           Aucune fixture pour cette date.
         </div>
       ) : (
-        <div className="max-h-[32rem] overflow-y-auto">
+        <div className="max-h-128 overflow-y-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="sticky top-0 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-500">
               <tr>
@@ -68,67 +96,94 @@ function AuditFixturesSection({ date }: { date: string }) {
                 <th className="px-4 py-3 font-medium">Décision</th>
                 <th className="px-4 py-3 font-medium">Det.</th>
                 <th className="px-4 py-3 font-medium">Pick candidat</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-white">
-              {fixtures.map((row) => (
-                <tr key={row.fixtureId} className="hover:bg-slate-50/60">
-                  <td className="px-4 py-3">
-                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[0.65rem] text-slate-600">
-                      {row.competitionCode}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-slate-500">
-                    {row.scheduledAt}
-                  </td>
-                  <td className="px-4 py-3">
-                    <FixtureName
-                      fixture={row.fixture}
-                      homeLogo={row.homeLogo}
-                      awayLogo={row.awayLogo}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <FixtureStatusBadge status={row.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.hasOdds ? (
-                      <span className="text-emerald-600">✓</span>
-                    ) : (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.modelRun ? (
-                      <DecisionBadge decision={row.modelRun.decision} />
-                    ) : (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-slate-500">
-                    {row.modelRun?.deterministicScore ?? (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.modelRun?.pick ? (
-                      <span className="text-sm font-medium text-slate-700">
-                        {formatPickForDisplay(
-                          row.modelRun.pick,
-                          row.modelRun.market ?? "",
+              {fixtures.map((row) => {
+                const isExpanded = expandedId === row.fixtureId;
+                const hasDiagnostics = row.modelRun !== null;
+                return (
+                  <>
+                    <tr
+                      key={row.fixtureId}
+                      onClick={() =>
+                        hasDiagnostics
+                          ? setExpandedId(isExpanded ? null : row.fixtureId)
+                          : undefined
+                      }
+                      className={`transition-colors ${hasDiagnostics ? "cursor-pointer" : ""} ${isExpanded ? "bg-slate-50" : "hover:bg-slate-50/60"}`}
+                    >
+                      <td className="px-4 py-3">
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[0.65rem] text-slate-600">
+                          {row.competitionCode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-slate-500">
+                        {row.scheduledAt}
+                      </td>
+                      <td className="px-4 py-3">
+                        <FixtureName
+                          fixture={row.fixture}
+                          homeLogo={row.homeLogo}
+                          awayLogo={row.awayLogo}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <FixtureStatusBadge status={row.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.hasOdds ? (
+                          <span className="text-emerald-600">✓</span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
                         )}
-                        {row.modelRun.ev && (
-                          <span className="ml-1.5 text-xs text-slate-400">
-                            EV {row.modelRun.ev}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.modelRun ? (
+                          <DecisionBadge decision={row.modelRun.decision} />
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-slate-500">
+                        {row.modelRun?.deterministicScore ?? (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.modelRun?.pick ? (
+                          <span className="text-sm font-medium text-slate-700">
+                            {formatPickForDisplay(
+                              row.modelRun.pick,
+                              row.modelRun.market ?? "",
+                            )}
+                            {row.modelRun.ev && (
+                              <span className="ml-1.5 text-xs text-slate-400">
+                                EV {row.modelRun.ev}
+                              </span>
+                            )}
                           </span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
                         )}
-                      </span>
-                    ) : (
-                      <span className="text-slate-300">—</span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {hasDiagnostics && (
+                          <span className="text-[0.7rem]">{isExpanded ? "▲" : "▼"}</span>
+                        )}
+                      </td>
+                    </tr>
+                    {isExpanded && row.modelRun && (
+                      <tr key={`${row.fixtureId}-diag`} className="bg-slate-50">
+                        <td colSpan={9} className="border-t border-slate-100">
+                          <DiagnosticsPanel d={row.modelRun.diagnostics} />
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                </tr>
-              ))}
+                  </>
+                );
+              })}
             </tbody>
           </table>
         </div>
