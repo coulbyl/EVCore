@@ -4,11 +4,10 @@ import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
-  DEFAULT_ACTIVE_SEASONS_COUNT,
   DEFAULT_SEASON_START_MONTH,
-  getActiveCsvSeasonCodes,
+  getCurrentCsvSeasonCode,
 } from '../../config/etl.constants';
-import { activeSeasons } from '@utils/date.utils';
+import { currentSeason } from '@utils/date.utils';
 import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
@@ -71,12 +70,8 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
   },
 ];
 
-const TEST_SEASONS = activeSeasons(
-  DEFAULT_SEASON_START_MONTH,
-  DEFAULT_ACTIVE_SEASONS_COUNT,
-);
-const CURRENT_SEASON = TEST_SEASONS[TEST_SEASONS.length - 1];
-const totalStatsJobs = TEST_COMPETITIONS.length * TEST_SEASONS.length;
+const CURRENT_SEASON = currentSeason(DEFAULT_SEASON_START_MONTH);
+const totalStatsJobs = TEST_COMPETITIONS.length;
 
 describe('EtlService', () => {
   const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
@@ -252,25 +247,21 @@ describe('EtlService', () => {
     );
   });
 
-  it('dispatches stats jobs for all active seasons', async () => {
+  it('dispatches stats jobs only for the current season', async () => {
     await service.triggerStatsSync();
 
     expect(leagueSyncQueue.add).toHaveBeenCalledTimes(totalStatsJobs);
 
-    const expectedJobs = TEST_COMPETITIONS.flatMap((competition) =>
-      TEST_SEASONS.map((season) => ({
-        syncType: 'stats' as const,
-        season,
-        competitionCode: competition.code,
-        leagueId: competition.leagueId,
-      })),
-    );
-
-    expectedJobs.forEach((job, index) => {
+    TEST_COMPETITIONS.forEach((competition, index) => {
       expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
         index + 1,
-        `stats-sync-${job.competitionCode}-${job.season}`,
-        job,
+        `stats-sync-${competition.code}-${CURRENT_SEASON}`,
+        {
+          syncType: 'stats' as const,
+          season: CURRENT_SEASON,
+          competitionCode: competition.code,
+          leagueId: competition.leagueId,
+        },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
           delay: index * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
@@ -302,33 +293,23 @@ describe('EtlService', () => {
     });
   });
 
-  it('dispatches odds CSV import jobs for all active CSV seasons', async () => {
+  it('dispatches odds CSV import jobs only for the current season', async () => {
     await service.triggerOddsCsvImport();
 
-    const allCsvSeasonCodes = getActiveCsvSeasonCodes();
-    expect(allCsvSeasonCodes.length).toBeGreaterThan(0);
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
-      TEST_COMPETITIONS.length * allCsvSeasonCodes.length,
-    );
+    const seasonCode = getCurrentCsvSeasonCode();
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
 
-    TEST_COMPETITIONS.forEach((competition, competitionIndex) => {
-      allCsvSeasonCodes.forEach((seasonCode, seasonIndex) => {
-        const callIndex =
-          competitionIndex * allCsvSeasonCodes.length + seasonIndex + 1;
-        expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `odds-csv-import-${competition.code}-${seasonCode}`,
-          {
-            competitionCode: competition.code,
-            seasonCode,
-            divisionCode: competition.csvDivisionCode,
-          },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: seasonIndex * 2_000,
-          },
-        );
-      });
+    TEST_COMPETITIONS.forEach((competition, index) => {
+      expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
+        index + 1,
+        `odds-csv-import-${competition.code}-${seasonCode}`,
+        {
+          competitionCode: competition.code,
+          seasonCode,
+          divisionCode: competition.csvDivisionCode,
+        },
+        BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
     });
   });
 
@@ -435,13 +416,12 @@ describe('EtlService', () => {
   it('triggerFullSync enqueues the fused league jobs, current CSV import, and prematch odds sync', async () => {
     await service.triggerFullSync();
 
+    // fixtures (current) + stats (current) + injuries (current) = 3 jobs per competition
     expect(leagueSyncQueue.add).toHaveBeenCalledTimes(
-      TEST_COMPETITIONS.length * 2 + totalStatsJobs,
+      TEST_COMPETITIONS.length * 3,
     );
     expect(pendingBetsSettlementQueue.add).toHaveBeenCalledOnce();
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(
-      TEST_COMPETITIONS.length * getActiveCsvSeasonCodes().length,
-    );
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
     expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
   });
 

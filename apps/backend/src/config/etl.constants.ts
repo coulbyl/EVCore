@@ -1,11 +1,10 @@
 // ETL configuration constants — never hardcode these inline
 
-import { activeSeasons } from '@utils/date.utils';
+import { currentSeason } from '@utils/date.utils';
 
-// Defaults shared by leagues with standard Europe-like calendar.
-// Override only when a league has a different season rhythm.
+// Default season start month for leagues with a standard Europe-like calendar.
+// Override per competition via the DB `seasonStartMonth` field.
 export const DEFAULT_SEASON_START_MONTH = 7; // August (0-indexed)
-export const DEFAULT_ACTIVE_SEASONS_COUNT = 3;
 
 export type ApiFootballDailyCallsEstimateInput = {
   leagueCount: number;
@@ -83,15 +82,18 @@ export const ETL_CONSTANTS = {
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
 } as const;
 
-// Returns the last DEFAULT_ACTIVE_SEASONS_COUNT season codes in football-data.co.uk
-// format (YYZZ), derived dynamically from activeSeasons() — same window as fixtures.
-// Example: 2026-03 → ['2324', '2425', '2526']
-export function getActiveCsvSeasonCodes(now: Date = new Date()): string[] {
-  return activeSeasons(
-    DEFAULT_SEASON_START_MONTH,
-    DEFAULT_ACTIVE_SEASONS_COUNT,
-    now,
-  ).map((y) => `${String(y).slice(2)}${String(y + 1).slice(2)}`);
+// Returns the current season code in football-data.co.uk format (YYZZ).
+// Example: 2026-03 → '2526'
+export function getCurrentCsvSeasonCode(now: Date = new Date()): string {
+  const year = currentSeason(DEFAULT_SEASON_START_MONTH, now);
+  return `${String(year).slice(2)}${String(year + 1).slice(2)}`;
+}
+
+// Returns season codes for an explicit list of start-years in football-data.co.uk
+// format (YYZZ). Used by backtest endpoints to import historical odds.
+// Example: [2022, 2023] → ['2223', '2324']
+export function csvSeasonCodes(years: number[]): string[] {
+  return years.map((y) => `${String(y).slice(2)}${String(y + 1).slice(2)}`);
 }
 
 // Bookmaker IDs in the API-Football odds endpoint

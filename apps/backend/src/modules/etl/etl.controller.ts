@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -241,6 +242,34 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, season: year, mode };
   }
 
+  @Post('sync/odds-csv/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Import historical CSV odds for specific seasons',
+    description:
+      'Imports Pinnacle/Bet365 closing odds from football-data.co.uk for the given ' +
+      'competition and season start-years. Designed for backtest data population. ' +
+      'Example: `?seasons=2022,2023,2024` imports seasons 2022-23, 2023-24 and 2024-25.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'Competition code (e.g. PL, SA).',
+    example: 'PL',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerOddsCsvBackfill(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerOddsCsvImportForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
   @Post('sync/backtest')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -349,6 +378,23 @@ export class EtlController {
 
   private resolveCode(competition: string): string {
     return competition.toUpperCase();
+  }
+
+  private resolveSeasonYears(seasonsParam: string | undefined): number[] {
+    if (!seasonsParam?.trim()) {
+      throw new BadRequestException(
+        'seasons query param is required (e.g. ?seasons=2022,2023)',
+      );
+    }
+    const years = seasonsParam
+      .split(',')
+      .map((s) => Number.parseInt(s.trim(), 10));
+    if (years.some((y) => Number.isNaN(y) || y < 1900 || y > 2100)) {
+      throw new BadRequestException(
+        'seasons must be comma-separated valid years (e.g. ?seasons=2022,2023)',
+      );
+    }
+    return years;
   }
 
   private async triggerGlobalSync(type: string, body: SyncBody): Promise<void> {

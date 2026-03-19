@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { FixtureStatus, Prisma, type Fixture } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
-import {
-  DEFAULT_SEASON_START_MONTH,
-  DEFAULT_ACTIVE_SEASONS_COUNT,
-} from '@config/etl.constants';
+import { DEFAULT_SEASON_START_MONTH } from '@config/etl.constants';
 import { activeSeasons } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
@@ -256,7 +253,7 @@ export class RollingStatsService {
 
     const seasons = activeSeasons(
       competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-      competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+      competition.activeSeasonsCount ?? 1,
     );
 
     const results: Array<{ year: number } & RollingStatsRunResult> = [];
@@ -289,7 +286,7 @@ export class RollingStatsService {
     for (const competition of competitions) {
       const seasons = activeSeasons(
         competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-        competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+        competition.activeSeasonsCount ?? 1,
       );
       for (const year of seasons) {
         const result = await this.backfillSeasonYear(year, competition.code);
@@ -332,7 +329,7 @@ export class RollingStatsService {
 
     const seasons = activeSeasons(
       competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-      competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+      competition.activeSeasonsCount ?? 1,
     );
 
     const results: Array<{ year: number } & RollingStatsRunResult> = [];
@@ -360,7 +357,7 @@ export class RollingStatsService {
     for (const competition of competitions) {
       const seasons = activeSeasons(
         competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-        competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+        competition.activeSeasonsCount ?? 1,
       );
       for (const year of seasons) {
         const result = await this.refreshSeasonYear(year, competition.code);

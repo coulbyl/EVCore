@@ -8,12 +8,12 @@ import {
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
   DEFAULT_SEASON_START_MONTH,
-  DEFAULT_ACTIVE_SEASONS_COUNT,
   ETL_CONSTANTS,
   ETL_CRON_SCHEDULES,
   ETL_SCHEDULER_KEYS,
   estimateApiFootballDailyCalls,
-  getActiveCsvSeasonCodes,
+  getCurrentCsvSeasonCode,
+  csvSeasonCodes,
 } from '../../config/etl.constants';
 import { PrismaService } from '@/prisma.service';
 import { BacktestService } from '../backtest/backtest.service';
@@ -69,7 +69,7 @@ function computeSeasons(
 ): readonly number[] {
   return activeSeasons(
     competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
-    competition.activeSeasonsCount ?? DEFAULT_ACTIVE_SEASONS_COUNT,
+    competition.activeSeasonsCount ?? 1,
     now,
   );
 }
@@ -145,7 +145,7 @@ export class EtlService implements OnApplicationBootstrap {
         syncType: 'stats',
         jobName: (competitionCode, season) =>
           `stats-sync-${competitionCode}-${season}`,
-        scheduledSeasons: 'active',
+        scheduledSeasons: 'current',
       },
       injuries: {
         queue: this.leagueSyncQueue,
@@ -168,8 +168,7 @@ export class EtlService implements OnApplicationBootstrap {
     await this.refreshCompetitionPlans();
     await this.cleanupInactiveSchedulers();
 
-    const csvSeasonCodes = getActiveCsvSeasonCodes();
-    const currentSeasonCode = csvSeasonCodes[csvSeasonCodes.length - 1];
+    const currentSeasonCode = getCurrentCsvSeasonCode();
 
     this.logApiFootballBudget(this.competitionPlans);
 
@@ -355,28 +354,47 @@ export class EtlService implements OnApplicationBootstrap {
 
   async triggerOddsCsvImport(): Promise<void> {
     await this.refreshCompetitionPlans();
+    const seasonCode = getCurrentCsvSeasonCode();
     const csvCompetitions = this.competitionPlans
       .filter((p) => p.competition.csvDivisionCode != null)
       .map(
         (p) => p.competition as CompetitionRow & { csvDivisionCode: string },
       );
 
-    const csvSeasonCodes = getActiveCsvSeasonCodes();
     for (const competition of csvCompetitions) {
-      for (let i = 0; i < csvSeasonCodes.length; i++) {
-        const seasonCode = csvSeasonCodes[i];
-        // Stagger by 2s — football-data.co.uk has no strict rate limit but be polite
-        const delay = i * 2_000;
-        await this.oddsCsvQueue.add(
-          `odds-csv-import-${competition.code}-${seasonCode}`,
-          {
-            competitionCode: competition.code,
-            seasonCode,
-            divisionCode: competition.csvDivisionCode,
-          } satisfies OddsCsvImportJobData,
-          { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay },
-        );
-      }
+      await this.oddsCsvQueue.add(
+        `odds-csv-import-${competition.code}-${seasonCode}`,
+        {
+          competitionCode: competition.code,
+          seasonCode,
+          divisionCode: competition.csvDivisionCode,
+        } satisfies OddsCsvImportJobData,
+        BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
+    }
+  }
+
+  async triggerOddsCsvImportForSeasons(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const competition = await this.loadActiveCompetition(competitionCode);
+    if (!competition.csvDivisionCode) {
+      throw new Error(
+        `Competition ${competitionCode} has no CSV division code configured`,
+      );
+    }
+    const codes = csvSeasonCodes(seasons);
+    for (const [i, seasonCode] of codes.entries()) {
+      await this.oddsCsvQueue.add(
+        `odds-csv-import-${competitionCode}-${seasonCode}`,
+        {
+          competitionCode,
+          seasonCode,
+          divisionCode: competition.csvDivisionCode,
+        } satisfies OddsCsvImportJobData,
+        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: i * 2_000 },
+      );
     }
   }
 
