@@ -32,6 +32,8 @@ export type CouponSnapshot = {
     id: string;
     fixtureId?: string;
     fixture: string;
+    homeLogo: string | null;
+    awayLogo: string | null;
     scheduledAt: string;
     status: "PENDING" | "WON" | "LOST" | "VOID";
     market: string;

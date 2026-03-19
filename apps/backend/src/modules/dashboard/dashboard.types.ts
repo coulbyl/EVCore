@@ -31,6 +31,8 @@ export type CouponSnapshot = {
   selections: Array<{
     id: string;
     fixture: string;
+    homeLogo: string | null;
+    awayLogo: string | null;
     scheduledAt: string;
     status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
     market: string;

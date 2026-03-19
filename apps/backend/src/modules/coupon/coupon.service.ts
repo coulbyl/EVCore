@@ -39,6 +39,8 @@ type CouponSelectionSnapshot = {
   id: string;
   fixtureId: string;
   fixture: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   scheduledAt: string;
   status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
   market: string;
@@ -402,6 +404,8 @@ export class CouponService implements OnApplicationBootstrap {
               id: bet.id,
               fixtureId: bet.modelRun.fixture.id,
               fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
+              homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
+              awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
               scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
               status:
                 bet.status === 'WON' ||

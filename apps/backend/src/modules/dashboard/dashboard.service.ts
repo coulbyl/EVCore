@@ -191,6 +191,8 @@ export class DashboardService {
           return {
             id: bet.id,
             fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
+            homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
+            awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
             scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
             status:
               bet.status === 'WON' ||
