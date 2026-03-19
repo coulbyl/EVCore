@@ -26,10 +26,19 @@ export function combinedOdds(odds: string[]): string {
   return Number.isFinite(product) ? product.toFixed(2) : "—";
 }
 
-function selectionStatusLabel(status: "PENDING" | "WON" | "LOST" | "VOID"): string {
+function selectionStatusLabel(
+  status: "PENDING" | "WON" | "LOST" | "VOID",
+  fixtureStatus?: string,
+): string {
   if (status === "WON") return "GAGNÉ";
   if (status === "LOST") return "PERDU";
   if (status === "VOID") return "VOID";
+  if (fixtureStatus) {
+    const fs = fixtureStatus.toLowerCase();
+    if (fs === "in_progress") return "EN COURS";
+    if (fs === "finished") return "EN ATTENTE";
+    return "PLANIFIÉ";
+  }
   return "EN COURS";
 }
 
@@ -232,7 +241,7 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}
           >
-            {selectionStatusLabel(selection.status)}
+            {selectionStatusLabel(selection.status, selection.fixtureStatus)}
           </span>
         </div>
       </div>
@@ -242,12 +251,9 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
           homeLogo={selection.homeLogo}
           awayLogo={selection.awayLogo}
         />
-        <div className="mt-1 flex items-center gap-2">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            {selection.scheduledAt} • {selection.market}
-          </p>
-          <FixtureStatusBadge status={selection.fixtureStatus} />
-        </div>
+        <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+          {selection.scheduledAt} • {selection.market}
+        </p>
         <div className="mt-2 flex items-start justify-between gap-3">
           <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
             {formatPickForDisplay(selection.pick, selection.market)}
