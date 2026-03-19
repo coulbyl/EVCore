@@ -151,7 +151,7 @@ describe('StatsSyncWorker', () => {
     expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
-  it('marks xG unavailable when expected_goals field is present but null', async () => {
+  it('falls back to shots proxy when expected_goals field is present but null', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
       { externalId: 11111 },
     ]);
@@ -165,9 +165,14 @@ describe('StatsSyncWorker', () => {
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(11111);
-    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+    // Proxy: shots_on_goal × 0.35 — home: 5×0.35=1.75, away: 3×0.35≈1.05
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(
+      11111,
+      expect.closeTo(1.75),
+      expect.closeTo(1.05),
+    );
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
   it('falls back to shots proxy when expected_goals field is absent', async () => {

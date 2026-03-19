@@ -157,11 +157,11 @@ function extractXg(
   statistics: { type: string; value: number | string | null }[],
 ): number | null {
   const xgEntry = statistics.find((s) => s.type === 'expected_goals');
-  if (xgEntry !== undefined) {
-    if (xgEntry.value === null) return null;
+  if (xgEntry !== undefined && xgEntry.value !== null) {
     const parsed = parseFloat(String(xgEntry.value));
     return isNaN(parsed) ? null : parsed;
   }
+  // Field absent or null (e.g. lower divisions) → fall back to shots proxy
   return extractShotsOnTarget(statistics) * ETL_CONSTANTS.XG_SHOTS_PROXY_FACTOR;
 }
 
