@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, type FormEvent } from "react";
+import { Fragment, Suspense, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
@@ -125,9 +125,8 @@ function AuditFixturesSection({ date }: { date: string }) {
                 const isExpanded = expandedId === row.fixtureId;
                 const hasDiagnostics = row.modelRun !== null;
                 return (
-                  <>
+                  <Fragment key={row.fixtureId}>
                     <tr
-                      key={row.fixtureId}
                       onClick={() =>
                         hasDiagnostics
                           ? setExpandedId(isExpanded ? null : row.fixtureId)
@@ -202,7 +201,7 @@ function AuditFixturesSection({ date }: { date: string }) {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
