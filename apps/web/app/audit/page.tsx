@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { Suspense, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
 import { TableCard } from "../../components/table-card";
@@ -414,17 +415,20 @@ function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function AuditPage() {
-  const defaultDate = useMemo(() => todayIso(), []);
-  const [formDate, setFormDate] = useState(defaultDate);
-  const [activeDate, setActiveDate] = useState(defaultDate);
+function AuditPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const today = useMemo(() => todayIso(), []);
+
+  const activeDate = searchParams.get("date") ?? today;
+  const [formDate, setFormDate] = useState(activeDate);
 
   const { data: overview, isFetching: overviewFetching, isError, refetch } =
     useAuditOverview();
 
   function applyDate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setActiveDate(formDate);
+    router.replace(`/audit?date=${formDate}`);
   }
 
   return (
@@ -506,5 +510,13 @@ export default function AuditPage() {
         </div>
       </PageContent>
     </Page>
+  );
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense>
+      <AuditPageContent />
+    </Suspense>
   );
 }

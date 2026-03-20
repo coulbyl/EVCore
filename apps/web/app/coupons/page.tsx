@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { Suspense, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "../../components/app-page-header";
 import { TableCard } from "../../components/table-card";
@@ -27,21 +28,26 @@ function currentWeekInputRange(now = new Date()): { from: string; to: string } {
 
 type CouponFilterStatus = "" | "PENDING" | "WON" | "LOST";
 
-export default function CouponsPage() {
+function CouponsPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const defaultRange = useMemo(() => currentWeekInputRange(), []);
-  const defaultFilters = useMemo(
-    () => ({ ...defaultRange, query: "", status: "" as CouponFilterStatus }),
-    [defaultRange],
-  );
-  const [formFilters, setFormFilters] = useState(defaultFilters);
-  const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+
+  const activeFilters = useMemo(() => ({
+    from: searchParams.get("from") ?? defaultRange.from,
+    to: searchParams.get("to") ?? defaultRange.to,
+    query: searchParams.get("query") ?? "",
+    status: (searchParams.get("status") ?? "") as CouponFilterStatus,
+  }), [searchParams, defaultRange]);
+
+  const [formFilters, setFormFilters] = useState(activeFilters);
   const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
 
   const { data, isFetching, isError, refetch } = useCouponsByPeriod({
-    from: appliedFilters.from,
-    to: appliedFilters.to,
-    query: appliedFilters.query,
-    status: appliedFilters.status || undefined,
+    from: activeFilters.from,
+    to: activeFilters.to,
+    query: activeFilters.query,
+    status: activeFilters.status || undefined,
   });
   const coupons = data?.coupons ?? [];
   const selectedCoupon =
@@ -49,8 +55,13 @@ export default function CouponsPage() {
 
   function applyPeriodFilter(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setAppliedFilters(formFilters);
+    const params = new URLSearchParams();
+    params.set("from", formFilters.from);
+    params.set("to", formFilters.to);
+    if (formFilters.query.trim()) params.set("query", formFilters.query);
+    if (formFilters.status) params.set("status", formFilters.status);
     setSelectedCouponId(null);
+    router.replace(`/coupons?${params.toString()}`);
   }
 
   return (
@@ -152,18 +163,18 @@ export default function CouponsPage() {
               </form>
               <p className="mt-2 text-xs text-slate-400">
                 Période active (backend):{" "}
-                {data?.period.from ?? appliedFilters.from} →{" "}
-                {data?.period.to ?? appliedFilters.to}
-                {appliedFilters.query.trim() ? (
-                  <span> • recherche: “{appliedFilters.query.trim()}”</span>
+                {data?.period.from ?? activeFilters.from} →{" "}
+                {data?.period.to ?? activeFilters.to}
+                {activeFilters.query.trim() ? (
+                  <span> • recherche: “{activeFilters.query.trim()}”</span>
                 ) : null}
-                {appliedFilters.status ? (
+                {activeFilters.status ? (
                   <span>
                     {" "}
                     • statut:{" "}
-                    {appliedFilters.status === "PENDING"
+                    {activeFilters.status === "PENDING"
                       ? "En cours"
-                      : appliedFilters.status === "WON"
+                      : activeFilters.status === "WON"
                         ? "Gagné"
                         : "Perdu"}
                   </span>
@@ -247,5 +258,13 @@ export default function CouponsPage() {
         </div>
       </PageContent>
     </Page>
+  );
+}
+
+export default function CouponsPage() {
+  return (
+    <Suspense>
+      <CouponsPageContent />
+    </Suspense>
   );
 }
