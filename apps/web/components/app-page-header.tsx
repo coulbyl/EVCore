@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Button,
   PageHeader,
@@ -22,11 +23,16 @@ export function AppPageHeader({
   onRefresh,
   isRefreshing = false,
 }: AppPageHeaderProps) {
-  const todayLabel = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
+  const [todayLabel, setTodayLabel] = useState<string>("");
+  useEffect(() => {
+    setTodayLabel(
+      new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date()),
+    );
+  }, []);
 
   return (
     <PageHeader className="sticky top-0 z-20 mb-4 shrink-0 backdrop-blur supports-[backdrop-filter]:bg-panel-strong/95">
