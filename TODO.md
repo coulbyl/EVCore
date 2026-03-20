@@ -39,5 +39,7 @@
 ### Divers
 
 - [ ] `/coupons/[id]` — page dédiée pour un coupon (deep link, partage)
-- [ ] Filtres URL-driven (`searchParams`) sur Coupons et Audit
+- [x] Filtres URL-driven (`searchParams`) sur Coupons et Audit
+- [x] Fix hydration mismatch (`AppPageHeader` date déférée au client)
+- [x] Fix React key warning (expandable rows audit — `Fragment` avec `key`)
 - [ ] Lint/typecheck/tests dédiés `apps/web`
