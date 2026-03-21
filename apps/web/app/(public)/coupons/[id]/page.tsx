@@ -192,7 +192,7 @@ function CouponPageBody({
               <button
                 key={selection.id}
                 onClick={() => setSelectedIndex(index)}
-                className={`w-full text-left transition-colors ${
+                className={`w-full cursor-pointer text-left transition-colors ${
                   index === selectedIndex
                     ? "border-l-2 border-l-accent bg-accent/5"
                     : "border-l-2 border-l-transparent hover:bg-slate-50"
