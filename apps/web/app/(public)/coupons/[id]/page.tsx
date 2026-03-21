@@ -118,7 +118,7 @@ function SelectionDiagnosticsCard({
         </span>
       </div>
 
-      <div className="max-h-[60vh] space-y-5 overflow-y-auto px-4 py-4">
+      <div className="space-y-5 px-4 py-4">
         <div>
           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
             {t.modelInputs}
@@ -180,27 +180,30 @@ function CouponPageBody({
   const activeLeg = coupon.selections[selectedIndex];
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-      <div className="lg:sticky lg:top-6 lg:self-start">
-        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+    <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
+      {/* Left — scrolls independently */}
+      <div className="flex min-h-0 flex-col overflow-hidden">
+        <p className="mb-2 shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
           {t.summary}
         </p>
-        <div className="overflow-hidden rounded-2xl border border-border bg-white">
-          <CouponDetailHeader
-            code={coupon.code}
-            legs={coupon.legs}
-            status={coupon.status}
-            selections={coupon.selections}
-            locale={locale}
-          />
-          <CouponDetailStats
-            selectionCount={coupon.selections.length}
-            isCombined={isCombined}
-            odds={odds}
-            ev={coupon.ev}
-            locale={locale}
-          />
-          <div className="max-h-112 divide-y divide-border overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-white">
+          <div className="shrink-0">
+            <CouponDetailHeader
+              code={coupon.code}
+              legs={coupon.legs}
+              status={coupon.status}
+              selections={coupon.selections}
+              locale={locale}
+            />
+            <CouponDetailStats
+              selectionCount={coupon.selections.length}
+              isCombined={isCombined}
+              odds={odds}
+              ev={coupon.ev}
+              locale={locale}
+            />
+          </div>
+          <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
             {coupon.selections.map((selection, index) => (
               <button
                 key={selection.id}
@@ -218,13 +221,16 @@ function CouponPageBody({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+      {/* Right — scrolls independently */}
+      <div className="flex min-h-0 flex-col overflow-hidden">
+        <p className="mb-2 shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
           {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
         </p>
-        {activeLeg ? (
-          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} locale={locale} />
-        ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {activeLeg ? (
+            <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} locale={locale} />
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -285,8 +291,8 @@ export default function CouponDetailPage({
   const { data: coupon, isFetching, isError, refetch } = useCouponById(id);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+    <div className="flex h-screen flex-col bg-slate-50">
+      <header className="shrink-0 border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-500">
@@ -314,7 +320,7 @@ export default function CouponDetailPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto min-h-0 w-full max-w-6xl flex-1 px-6 py-8">
         {isFetching && !coupon ? (
           <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-16 text-center text-sm text-slate-400">
             {t.loading}
