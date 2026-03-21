@@ -44,6 +44,7 @@ type CouponSelectionSnapshot = {
   scheduledAt: string;
   fixtureStatus: string;
   score: string | null;
+  htScore: string | null;
   status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
   market: string;
   pick: string;
@@ -361,7 +362,9 @@ export class CouponService implements OnApplicationBootstrap {
         from: fromDate.toISOString().slice(0, 10),
         to: toDate.toISOString().slice(0, 10),
       },
-      coupons: coupons.map((coupon) => this.toCouponPeriodSnapshot(coupon, now)),
+      coupons: coupons.map((coupon) =>
+        this.toCouponPeriodSnapshot(coupon, now),
+      ),
     };
   }
 
@@ -389,6 +392,8 @@ export class CouponService implements OnApplicationBootstrap {
             status: string;
             homeScore: number | null;
             awayScore: number | null;
+            homeHtScore: number | null;
+            awayHtScore: number | null;
             homeTeam: { name: string; logoUrl: string | null };
             awayTeam: { name: string; logoUrl: string | null };
           };
@@ -431,6 +436,11 @@ export class CouponService implements OnApplicationBootstrap {
             bet.modelRun.fixture.homeScore !== null &&
             bet.modelRun.fixture.awayScore !== null
               ? `${bet.modelRun.fixture.homeScore} - ${bet.modelRun.fixture.awayScore}`
+              : null,
+          htScore:
+            bet.modelRun.fixture.homeHtScore !== null &&
+            bet.modelRun.fixture.awayHtScore !== null
+              ? `${bet.modelRun.fixture.homeHtScore} - ${bet.modelRun.fixture.awayHtScore}`
               : null,
           status:
             bet.status === 'WON' ||

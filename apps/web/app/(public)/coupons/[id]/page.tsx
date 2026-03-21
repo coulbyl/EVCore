@@ -9,19 +9,39 @@ import {
   CouponDetailStats,
   CouponDetailLeg,
 } from "@/components/coupon-detail";
-import { combinedOdds, selectionStatusLabel, selectionStatusBadgeClass } from "@/helpers/coupon";
+import {
+  combinedOdds,
+  selectionStatusLabel,
+  selectionStatusBadgeClass,
+} from "@/helpers/coupon";
 import type { CouponSnapshot } from "@/types/dashboard";
-import { locales, getLocale, formatPickLabel, formatSelectionPickLabel, type Translations } from "./locales";
+import {
+  locales,
+  getLocale,
+  formatPickLabel,
+  formatSelectionPickLabel,
+  type Translations,
+} from "./locales";
 
 // ---------------------------------------------------------------------------
 // Diagnostic helpers
 // ---------------------------------------------------------------------------
 
-function DiagStat({ label, value }: { label: string; value: string | null | undefined }) {
+function DiagStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
   return (
     <div className="flex flex-col gap-0.5">
-      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-      <p className="font-mono text-sm font-semibold text-slate-700">{value ?? "—"}</p>
+      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="font-mono text-sm font-semibold text-slate-700">
+        {value ?? "—"}
+      </p>
     </div>
   );
 }
@@ -31,13 +51,18 @@ function UnifiedPicksTable({
   evaluatedPicks,
   t,
 }: {
-  candidatePicks?: NonNullable<CouponSnapshot["selections"][number]["candidatePicks"]>;
-  evaluatedPicks?: NonNullable<CouponSnapshot["selections"][number]["evaluatedPicks"]>;
+  candidatePicks?: NonNullable<
+    CouponSnapshot["selections"][number]["candidatePicks"]
+  >;
+  evaluatedPicks?: NonNullable<
+    CouponSnapshot["selections"][number]["evaluatedPicks"]
+  >;
   t: Translations;
 }) {
   const hasCandidates = candidatePicks && candidatePicks.length > 0;
   const hasEvaluated = evaluatedPicks && evaluatedPicks.length > 0;
-  if (!hasCandidates && !hasEvaluated) return <p className="text-xs text-slate-400">{t.noPicks}</p>;
+  if (!hasCandidates && !hasEvaluated)
+    return <p className="text-xs text-slate-400">{t.noPicks}</p>;
 
   return (
     <div className="overflow-x-auto">
@@ -57,7 +82,10 @@ function UnifiedPicksTable({
           {hasCandidates && (
             <>
               <tr>
-                <td colSpan={7} className="pb-1 pt-3 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <td
+                  colSpan={7}
+                  className="pb-1 pt-3 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400"
+                >
                   {t.candidatePicks(candidatePicks.length)}
                 </td>
               </tr>
@@ -67,12 +95,26 @@ function UnifiedPicksTable({
                   : formatPickLabel(p.market, p.pick, t);
                 return (
                   <tr key={`c-${i}`} className="align-middle">
-                    <td className="py-2 pr-3 font-medium text-slate-700">{pickLabel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.probability}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.odds}</td>
-                    <td className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>{p.ev}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.qualityScore}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">--</td>
+                    <td className="py-2 pr-3 font-medium text-slate-700">
+                      {pickLabel}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.probability}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.odds}
+                    </td>
+                    <td
+                      className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}
+                    >
+                      {p.ev}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.qualityScore}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      --
+                    </td>
                     <td className="py-2 tabular-nums text-slate-600">--</td>
                   </tr>
                 );
@@ -82,7 +124,10 @@ function UnifiedPicksTable({
           {hasEvaluated && (
             <>
               <tr>
-                <td colSpan={7} className="pb-1 pt-3 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <td
+                  colSpan={7}
+                  className="pb-1 pt-3 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400"
+                >
                   {t.evaluatedPicks(evaluatedPicks.length)}
                 </td>
               </tr>
@@ -93,18 +138,36 @@ function UnifiedPicksTable({
                 const isViable = p.status === "viable";
                 return (
                   <tr key={`e-${i}`} className="align-middle">
-                    <td className="py-2 pr-3 font-medium text-slate-700">{pickLabel}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.probability}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.odds}</td>
-                    <td className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>{p.ev}</td>
-                    <td className="py-2 pr-3 tabular-nums text-slate-600">{p.qualityScore}</td>
+                    <td className="py-2 pr-3 font-medium text-slate-700">
+                      {pickLabel}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.probability}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.odds}
+                    </td>
+                    <td
+                      className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}
+                    >
+                      {p.ev}
+                    </td>
+                    <td className="py-2 pr-3 tabular-nums text-slate-600">
+                      {p.qualityScore}
+                    </td>
                     <td className="py-2 pr-3">
-                      <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}>
-                        {t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status}
+                      <span
+                        className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}
+                      >
+                        {t.pickStatuses[p.status as "viable" | "rejected"] ??
+                          p.status}
                       </span>
                     </td>
                     <td className="py-2 text-[0.65rem] text-slate-400">
-                      {p.rejectionReason ? (t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason) : "--"}
+                      {p.rejectionReason
+                        ? (t.rejectionReasons[p.rejectionReason] ??
+                          p.rejectionReason)
+                        : "--"}
                     </td>
                   </tr>
                 );
@@ -132,13 +195,34 @@ function SelectionDiagnosticsCard({
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
         <p className="min-w-0 truncate text-xs text-slate-500">
-          <span className="font-semibold text-slate-700">{t.leg} {index + 1}</span>
-          {" — "}{selection.fixture}
-          {" · "}<span className="font-medium text-slate-700">{formatSelectionPickLabel(selection.pick, selection.market, t)}</span>
-          {selection.score ? <span className="ml-2 font-bold text-slate-600">{selection.score}</span> : null}
+          <span className="font-semibold text-slate-700">
+            {t.leg} {index + 1}
+          </span>
+          {" — "}
+          {selection.fixture}
+          {" · "}
+          <span className="font-medium text-slate-700">
+            {formatSelectionPickLabel(selection.pick, selection.market, t)}
+          </span>
+          {selection.score ? (
+            <span className="ml-2 font-bold text-slate-600">
+              {selection.score}
+            </span>
+          ) : null}
+          {selection.htScore ? (
+            <span className="ml-1 text-[0.65rem] font-medium text-slate-400">
+              ({t.ht} {selection.htScore})
+            </span>
+          ) : null}
         </p>
-        <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}>
-          {selectionStatusLabel(selection.status, selection.fixtureStatus, locale)}
+        <span
+          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}
+        >
+          {selectionStatusLabel(
+            selection.status,
+            selection.fixtureStatus,
+            locale,
+          )}
         </span>
       </div>
 
@@ -151,11 +235,15 @@ function SelectionDiagnosticsCard({
             <DiagStat label={t.probEstimated} value={selection.probEstimated} />
             <DiagStat label={t.lambdaHome} value={selection.lambdaHome} />
             <DiagStat label={t.lambdaAway} value={selection.lambdaAway} />
-            <DiagStat label={t.expectedGoals} value={selection.expectedTotalGoals} />
+            <DiagStat
+              label={t.expectedGoals}
+              value={selection.expectedTotalGoals}
+            />
           </div>
         </div>
 
-        {(selection.candidatePicks?.length || selection.evaluatedPicks?.length) ? (
+        {selection.candidatePicks?.length ||
+        selection.evaluatedPicks?.length ? (
           <UnifiedPicksTable
             candidatePicks={selection.candidatePicks}
             evaluatedPicks={selection.evaluatedPicks}
@@ -194,7 +282,9 @@ function CouponPageBody({
       {/* Left — scrolls independently */}
       <div className="flex min-h-0 flex-col overflow-hidden">
         <div className="mb-2 flex shrink-0 items-center justify-between">
-          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">{t.summary}</p>
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            {t.summary}
+          </p>
           <CopyButton
             getText={() => formatCouponText(coupon, t, locale)}
             label={t.copyCoupon}
@@ -226,7 +316,10 @@ function CouponPageBody({
                 role="button"
                 tabIndex={0}
                 onClick={() => setSelectedIndex(index)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedIndex(index); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    setSelectedIndex(index);
+                }}
                 className={`w-full cursor-pointer text-left transition-colors ${
                   index === selectedIndex
                     ? "border-l-2 border-l-accent bg-accent/5"
@@ -238,8 +331,14 @@ function CouponPageBody({
                   index={index}
                   onSettled={onSettled}
                   locale={locale}
-                  pickLabel={formatSelectionPickLabel(selection.pick, selection.market, t)}
-                  marketLabel={t.marketLabels[selection.market] ?? selection.market}
+                  pickLabel={formatSelectionPickLabel(
+                    selection.pick,
+                    selection.market,
+                    t,
+                  )}
+                  marketLabel={
+                    t.marketLabels[selection.market] ?? selection.market
+                  }
                 />
               </div>
             ))}
@@ -255,7 +354,9 @@ function CouponPageBody({
           </p>
           {activeLeg && (
             <CopyButton
-              getText={() => formatDiagnosticsText(activeLeg, selectedIndex, t, locale)}
+              getText={() =>
+                formatDiagnosticsText(activeLeg, selectedIndex, t, locale)
+              }
               label={t.copyDiagnostics}
               copiedLabel={t.copied}
               className="cursor-pointer rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-500 hover:bg-slate-50"
@@ -264,7 +365,12 @@ function CouponPageBody({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {activeLeg ? (
-            <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} locale={locale} />
+            <SelectionDiagnosticsCard
+              selection={activeLeg}
+              index={selectedIndex}
+              t={t}
+              locale={locale}
+            />
           ) : null}
         </div>
       </div>
@@ -282,10 +388,20 @@ function formatLegText(
   t: Translations,
   locale: "fr" | "en",
 ): string {
-  const pickLabel = formatSelectionPickLabel(selection.pick, selection.market, t);
+  const pickLabel = formatSelectionPickLabel(
+    selection.pick,
+    selection.market,
+    t,
+  );
   const marketLabel = t.marketLabels[selection.market] ?? selection.market;
-  const statusLabel = selectionStatusLabel(selection.status, selection.fixtureStatus, locale);
-  const scoreStr = selection.score ? ` (${selection.score})` : "";
+  const statusLabel = selectionStatusLabel(
+    selection.status,
+    selection.fixtureStatus,
+    locale,
+  );
+  const scoreStr = selection.score
+    ? ` (${selection.score}${selection.htScore ? ` · ${t.ht} ${selection.htScore}` : ""})`
+    : "";
   const oddsLabel = locale === "fr" ? "Cote" : "Odds";
   return [
     `${t.leg} ${index + 1} — ${selection.fixture}`,
@@ -301,10 +417,20 @@ function formatDiagnosticsText(
   t: Translations,
   locale: "fr" | "en",
 ): string {
-  const pickLabel = formatSelectionPickLabel(selection.pick, selection.market, t);
+  const pickLabel = formatSelectionPickLabel(
+    selection.pick,
+    selection.market,
+    t,
+  );
   const marketLabel = t.marketLabels[selection.market] ?? selection.market;
-  const statusLabel = selectionStatusLabel(selection.status, selection.fixtureStatus, locale);
-  const scoreStr = selection.score ? ` · ${selection.score}` : "";
+  const statusLabel = selectionStatusLabel(
+    selection.status,
+    selection.fixtureStatus,
+    locale,
+  );
+  const scoreStr = selection.score
+    ? ` · ${selection.score}${selection.htScore ? ` (${t.ht} ${selection.htScore})` : ""}`
+    : "";
   const lines: string[] = [
     `EVCore — ${t.engineDiagnostics} — ${t.leg} ${index + 1}`,
     `${selection.fixture} · ${marketLabel} · ${pickLabel}`,
@@ -317,7 +443,16 @@ function formatDiagnosticsText(
     `${t.expectedGoals}: ${selection.expectedTotalGoals ?? "—"}`,
   ];
 
-  const formatPickRow = (p: { market: string; pick: string; comboMarket?: string; comboPick?: string; probability: string; odds: string; ev: string; qualityScore: string }) => {
+  const formatPickRow = (p: {
+    market: string;
+    pick: string;
+    comboMarket?: string;
+    comboPick?: string;
+    probability: string;
+    odds: string;
+    ev: string;
+    qualityScore: string;
+  }) => {
     const label = p.comboMarket
       ? `${formatPickLabel(p.market, p.pick, t)} + ${formatPickLabel(p.comboMarket, p.comboPick ?? "", t)}`
       : formatPickLabel(p.market, p.pick, t);
@@ -332,9 +467,14 @@ function formatDiagnosticsText(
   if (selection.evaluatedPicks?.length) {
     lines.push("", t.evaluatedPicks(selection.evaluatedPicks.length));
     for (const p of selection.evaluatedPicks) {
-      const statusLabel = t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status;
-      const reason = p.rejectionReason ? (t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason) : "";
-      lines.push(`${formatPickRow(p)}  ${statusLabel}${reason ? `  (${reason})` : ""}`);
+      const statusLabel =
+        t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status;
+      const reason = p.rejectionReason
+        ? (t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason)
+        : "";
+      lines.push(
+        `${formatPickRow(p)}  ${statusLabel}${reason ? `  (${reason})` : ""}`,
+      );
     }
   }
 
@@ -363,7 +503,12 @@ function formatCouponText(
 // CopyButton — reusable inline copy button
 // ---------------------------------------------------------------------------
 
-function CopyButton({ getText, label, copiedLabel, className }: {
+function CopyButton({
+  getText,
+  label,
+  copiedLabel,
+  className,
+}: {
   getText: () => string;
   label: string;
   copiedLabel: string;
@@ -380,8 +525,14 @@ function CopyButton({ getText, label, copiedLabel, className }: {
 
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); handleCopy(); }}
-      className={className ?? "cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleCopy();
+      }}
+      className={
+        className ??
+        "cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+      }
     >
       {copied ? copiedLabel : label}
     </button>
@@ -408,7 +559,10 @@ function ShareButton({
       text: `${coupon.selections.length > 1 ? `${coupon.selections.length}-leg combo` : "Single"} · ${coupon.ev} EV`,
       url,
     };
-    if (typeof navigator.share === "function" && navigator.canShare(shareData)) {
+    if (
+      typeof navigator.share === "function" &&
+      navigator.canShare(shareData)
+    ) {
       await navigator.share(shareData);
     } else {
       await navigator.clipboard.writeText(url);
@@ -494,7 +648,9 @@ export default function CouponDetailPage({
             {coupon && (
               <>
                 <span className="text-slate-300">/</span>
-                <span className="font-mono text-sm font-semibold text-slate-700">{coupon.code}</span>
+                <span className="font-mono text-sm font-semibold text-slate-700">
+                  {coupon.code}
+                </span>
               </>
             )}
           </div>
@@ -522,7 +678,12 @@ export default function CouponDetailPage({
             {t.notFound}
           </div>
         ) : coupon ? (
-          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} t={t} locale={getLocale(searchParams.get("lang"))} />
+          <CouponPageBody
+            coupon={coupon}
+            onSettled={() => void refetch()}
+            t={t}
+            locale={getLocale(searchParams.get("lang"))}
+          />
         ) : (
           <CouponDetailEmpty />
         )}

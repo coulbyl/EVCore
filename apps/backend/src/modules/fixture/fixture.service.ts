@@ -209,7 +209,7 @@ export class FixtureService {
     return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
   }
 
-  findPendingSettlementFixtures(): Promise<
+  findPendingSettlementFixtures(now: Date): Promise<
     {
       id: string;
       externalId: number;
@@ -222,7 +222,7 @@ export class FixtureService {
       };
     }[]
   > {
-    return this.fixtureRepository.findPendingSettlementFixtures();
+    return this.fixtureRepository.findPendingSettlementFixtures(now);
   }
 
   async upsertOddsSnapshot(

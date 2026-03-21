@@ -9,7 +9,7 @@ export class DashboardRepository {
   async getSummaryData(
     today: { start: Date; end: Date },
     yesterday: { start: Date; end: Date },
-    rolling24hStart: Date,
+    _rolling24hStart: Date,
   ) {
     const { start: todayStart, end: todayEnd } = today;
     const { start: yesterdayStart, end: yesterdayEnd } = yesterday;

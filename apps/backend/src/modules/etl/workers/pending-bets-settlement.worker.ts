@@ -38,7 +38,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   }
 
   async process(_job: Job<PendingBetsSettlementJobData>): Promise<void> {
-    const fixtures = await this.fixtureService.findPendingSettlementFixtures();
+    const fixtures = await this.fixtureService.findPendingSettlementFixtures(
+      new Date(),
+    );
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info(

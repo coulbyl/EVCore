@@ -11,7 +11,10 @@ import {
   selectionCardClass,
   formatPickForDisplay,
 } from "../helpers/coupon";
-import { fixtureStatusLabel, fixtureStatusBadgeClass } from "../helpers/fixture";
+import {
+  fixtureStatusLabel,
+  fixtureStatusBadgeClass,
+} from "../helpers/fixture";
 
 type Locale = "fr" | "en";
 
@@ -19,7 +22,13 @@ type Locale = "fr" | "en";
 // FixtureStatusBadge
 // ---------------------------------------------------------------------------
 
-export function FixtureStatusBadge({ status, locale = "fr" }: { status: string; locale?: Locale }) {
+export function FixtureStatusBadge({
+  status,
+  locale = "fr",
+}: {
+  status: string;
+  locale?: Locale;
+}) {
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(status)}`}
@@ -49,7 +58,13 @@ type CouponDetailHeaderProps = {
   locale?: Locale;
 };
 
-export function CouponDetailHeader({ code, legs, status, selections, locale = "fr" }: CouponDetailHeaderProps) {
+export function CouponDetailHeader({
+  code,
+  legs,
+  status,
+  selections,
+  locale = "fr",
+}: CouponDetailHeaderProps) {
   return (
     <div className="border-b border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-4 py-3">
       <div className="flex items-center justify-between gap-2">
@@ -77,12 +92,31 @@ type CouponDetailStatsProps = {
   locale?: Locale;
 };
 
-const STATS_LABELS: Record<Locale, { selections: string; combinedOdds: string; singleOdds: string; ev: string }> = {
-  fr: { selections: "Sélections", combinedOdds: "Cote combinée", singleOdds: "Cote", ev: "EV coupon" },
-  en: { selections: "Selections", combinedOdds: "Combined odds", singleOdds: "Odds", ev: "Coupon EV" },
+const STATS_LABELS: Record<
+  Locale,
+  { selections: string; combinedOdds: string; singleOdds: string; ev: string }
+> = {
+  fr: {
+    selections: "Sélections",
+    combinedOdds: "Cote combinée",
+    singleOdds: "Cote",
+    ev: "EV coupon",
+  },
+  en: {
+    selections: "Selections",
+    combinedOdds: "Combined odds",
+    singleOdds: "Odds",
+    ev: "Coupon EV",
+  },
 };
 
-export function CouponDetailStats({ selectionCount, isCombined, odds, ev, locale = "fr" }: CouponDetailStatsProps) {
+export function CouponDetailStats({
+  selectionCount,
+  isCombined,
+  odds,
+  ev,
+  locale = "fr",
+}: CouponDetailStatsProps) {
   const l = STATS_LABELS[locale];
   return (
     <div className="grid grid-cols-3 border-b border-border bg-slate-50 px-3 py-3 text-sm">
@@ -91,7 +125,9 @@ export function CouponDetailStats({ selectionCount, isCombined, odds, ev, locale
         <p className="font-semibold text-slate-700">{selectionCount}</p>
       </div>
       <div>
-        <p className="text-xs text-slate-400">{isCombined ? l.combinedOdds : l.singleOdds}</p>
+        <p className="text-xs text-slate-400">
+          {isCombined ? l.combinedOdds : l.singleOdds}
+        </p>
         <p className="font-semibold text-slate-700">{odds}</p>
       </div>
       <div>
@@ -155,7 +191,15 @@ type CouponDetailLegProps = {
   copyButton?: React.ReactNode;
 };
 
-export function CouponDetailLeg({ selection, index, onSettled, locale = "fr", pickLabel, marketLabel, copyButton }: CouponDetailLegProps) {
+export function CouponDetailLeg({
+  selection,
+  index,
+  onSettled,
+  locale = "fr",
+  pickLabel,
+  marketLabel,
+  copyButton,
+}: CouponDetailLegProps) {
   return (
     <div className="px-3 py-3">
       <div className="flex items-center justify-between gap-2">
@@ -175,11 +219,17 @@ export function CouponDetailLeg({ selection, index, onSettled, locale = "fr", pi
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}
           >
-            {selectionStatusLabel(selection.status, selection.fixtureStatus, locale)}
+            {selectionStatusLabel(
+              selection.status,
+              selection.fixtureStatus,
+              locale,
+            )}
           </span>
         </div>
       </div>
-      <div className={`mt-2 rounded-xl border px-3 py-2 ${selectionCardClass(selection.status)}`}>
+      <div
+        className={`mt-2 rounded-xl border px-3 py-2 ${selectionCardClass(selection.status)}`}
+      >
         <FixtureName
           fixture={selection.fixture}
           homeLogo={selection.homeLogo}
@@ -187,13 +237,17 @@ export function CouponDetailLeg({ selection, index, onSettled, locale = "fr", pi
         />
         <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
           {selection.scheduledAt} • {marketLabel ?? selection.market}
-          {(selection.status === "WON" || selection.status === "LOST") && selection.score ? (
-            <span className="ml-2 font-bold text-slate-600">{selection.score}</span>
+          {(selection.status === "WON" || selection.status === "LOST") &&
+          selection.score ? (
+            <span className="ml-2 font-bold text-slate-600">
+              {selection.score}
+            </span>
           ) : null}
         </p>
         <div className="mt-2 flex items-start justify-between gap-3">
           <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-            {pickLabel ?? formatPickForDisplay(selection.pick, selection.market)}
+            {pickLabel ??
+              formatPickForDisplay(selection.pick, selection.market)}
           </p>
           <div className="text-right">
             <p
@@ -207,7 +261,9 @@ export function CouponDetailLeg({ selection, index, onSettled, locale = "fr", pi
             >
               {selection.odds}
             </p>
-            <p className="text-[0.7rem] font-semibold text-slate-500">EV {selection.ev}</p>
+            <p className="text-[0.7rem] font-semibold text-slate-500">
+              EV {selection.ev}
+            </p>
           </div>
         </div>
       </div>
@@ -221,7 +277,11 @@ type CouponDetailProps = {
   locale?: Locale;
 };
 
-export function CouponDetail({ coupon, onSettled, locale = "fr" }: CouponDetailProps) {
+export function CouponDetail({
+  coupon,
+  onSettled,
+  locale = "fr",
+}: CouponDetailProps) {
   const isCombined = coupon.selections.length > 1;
   const odds = isCombined
     ? combinedOdds(coupon.selections.map((s) => s.odds))
@@ -229,7 +289,13 @@ export function CouponDetail({ coupon, onSettled, locale = "fr" }: CouponDetailP
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-white">
-      <CouponDetailHeader code={coupon.code} legs={coupon.legs} status={coupon.status} selections={coupon.selections} locale={locale} />
+      <CouponDetailHeader
+        code={coupon.code}
+        legs={coupon.legs}
+        status={coupon.status}
+        selections={coupon.selections}
+        locale={locale}
+      />
       <CouponDetailStats
         selectionCount={coupon.selections.length}
         isCombined={isCombined}

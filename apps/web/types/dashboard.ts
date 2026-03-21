@@ -37,6 +37,7 @@ export type CouponSnapshot = {
     scheduledAt: string;
     fixtureStatus: string;
     score: string | null;
+    htScore?: string | null;
     status: "PENDING" | "WON" | "LOST" | "VOID";
     market: string;
     pick: string;

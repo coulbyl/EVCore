@@ -38,6 +38,8 @@ const couponBetSelect = {
           status: true,
           homeScore: true,
           awayScore: true,
+          homeHtScore: true,
+          awayHtScore: true,
           homeTeam: { select: { name: true, logoUrl: true } },
           awayTeam: { select: { name: true, logoUrl: true } },
         },
@@ -275,6 +277,8 @@ export class CouponRepository {
           status: string;
           homeScore: number | null;
           awayScore: number | null;
+          homeHtScore: number | null;
+          awayHtScore: number | null;
           homeTeam: { name: string; logoUrl: string | null };
           awayTeam: { name: string; logoUrl: string | null };
         };
@@ -350,6 +354,8 @@ export class CouponRepository {
             status: string;
             homeScore: number | null;
             awayScore: number | null;
+            homeHtScore: number | null;
+            awayHtScore: number | null;
             homeTeam: { name: string; logoUrl: string | null };
             awayTeam: { name: string; logoUrl: string | null };
           };

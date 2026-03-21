@@ -14,6 +14,7 @@ export const locales = {
     summary: "Résumé",
     engineDiagnostics: "Diagnostics moteur",
     leg: "Sélection",
+    ht: "MT",
     noPicks: "Aucun pick.",
     tableHeaders: {
       marketPick: "Marché / Pick",
@@ -109,6 +110,7 @@ export const locales = {
     summary: "Summary",
     engineDiagnostics: "Engine diagnostics",
     leg: "Leg",
+    ht: "HT",
     noPicks: "No picks.",
     tableHeaders: {
       marketPick: "Market / Pick",
@@ -193,7 +195,11 @@ export const locales = {
   },
 } satisfies Record<Locale, unknown>;
 
-export function formatPickLabel(market: string, pick: string, t: Translations): string {
+export function formatPickLabel(
+  market: string,
+  pick: string,
+  t: Translations,
+): string {
   const key = `${market}_${pick}`;
   return t.pickLabels[key] ?? `${market} ${pick}`;
 }
@@ -201,7 +207,11 @@ export function formatPickLabel(market: string, pick: string, t: Translations): 
 // Translates a raw selection.pick string which can be:
 //   single: "HOME"  (with market="ONE_X_TWO")     → looks up ONE_X_TWO_HOME
 //   combo:  "ONE_X_TWO HOME + BTTS NO"            → splits on " + ", each part is "{MARKET} {PICK}"
-export function formatSelectionPickLabel(pick: string, market: string, t: Translations): string {
+export function formatSelectionPickLabel(
+  pick: string,
+  market: string,
+  t: Translations,
+): string {
   const parts = pick.split(" + ");
   return parts
     .map((part) => {

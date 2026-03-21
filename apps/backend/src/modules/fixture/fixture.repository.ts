@@ -378,10 +378,24 @@ export class FixtureRepository {
     return result.count;
   }
 
-  findPendingSettlementFixtures(): Promise<PendingSettlementFixture[]> {
+  findPendingSettlementFixtures(
+    now: Date,
+  ): Promise<PendingSettlementFixture[]> {
     return this.prisma.client.fixture.findMany({
       where: {
-        bets: { some: { status: 'PENDING' } },
+        OR: [
+          // fixtures with pending bets — always process regardless of scheduledAt
+          { bets: { some: { status: 'PENDING' } } },
+          // NO_BET fixtures analyzed by the model that have passed their kick-off
+          // (no Bet records created, but need score + status synced for future calibration)
+          {
+            modelRuns: { some: {} },
+            status: {
+              in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
+            },
+            scheduledAt: { lt: now },
+          },
+        ],
       },
       select: {
         id: true,
