@@ -77,9 +77,7 @@ export async function fetchCouponById(
 export async function fetchAuditFixtures(
   date: string,
 ): Promise<AuditFixtureRow[]> {
-  const response = await fetch(
-    `${BACKEND_URL}/audit/fixtures?date=${date}`,
-  );
+  const response = await fetch(`${BACKEND_URL}/audit/fixtures?date=${date}`);
   if (!response.ok) {
     throw new Error(`Impossible de charger les fixtures (${response.status})`);
   }

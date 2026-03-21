@@ -183,9 +183,7 @@ export default function Home() {
   const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
   const roiPct = Number.parseFloat(pnl.roi.replace(",", "."));
   const winBarPct =
-    pnl.settledBets > 0
-      ? Math.round((pnl.wonBets / pnl.settledBets) * 100)
-      : 0;
+    pnl.settledBets > 0 ? Math.round((pnl.wonBets / pnl.settledBets) * 100) : 0;
 
   return (
     <Page className="flex h-full flex-col">
@@ -217,35 +215,57 @@ export default function Home() {
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className={`rounded-2xl border px-4 py-3 ${Number.isFinite(roiPct) && roiPct > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(roiPct) && roiPct < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">ROI</p>
-                <p className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(roiPct) && roiPct > 0 ? "text-emerald-700" : Number.isFinite(roiPct) && roiPct < 0 ? "text-rose-700" : "text-slate-700"}`}>
+              <div
+                className={`rounded-2xl border px-4 py-3 ${Number.isFinite(roiPct) && roiPct > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(roiPct) && roiPct < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
+              >
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  ROI
+                </p>
+                <p
+                  className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(roiPct) && roiPct > 0 ? "text-emerald-700" : Number.isFinite(roiPct) && roiPct < 0 ? "text-rose-700" : "text-slate-700"}`}
+                >
                   {pnl.roi}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">sur capital misé</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  sur capital misé
+                </p>
               </div>
 
-              <div className={`rounded-2xl border px-4 py-3 ${Number.isFinite(netUnits) && netUnits > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(netUnits) && netUnits < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Gain net</p>
-                <p className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(netUnits) && netUnits > 0 ? "text-emerald-700" : Number.isFinite(netUnits) && netUnits < 0 ? "text-rose-700" : "text-slate-700"}`}>
+              <div
+                className={`rounded-2xl border px-4 py-3 ${Number.isFinite(netUnits) && netUnits > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(netUnits) && netUnits < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
+              >
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Gain net
+                </p>
+                <p
+                  className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(netUnits) && netUnits > 0 ? "text-emerald-700" : Number.isFinite(netUnits) && netUnits < 0 ? "text-rose-700" : "text-slate-700"}`}
+                >
                   {pnl.netUnits}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400">unités de stake</p>
               </div>
 
               <div className="rounded-2xl border border-border bg-slate-50 px-4 py-3">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">Réussite</p>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Réussite
+                </p>
                 <p className="mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight text-slate-700">
                   {pnl.winRate}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">{pnl.settledBets} bets settlés</p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {pnl.settledBets} bets settlés
+                </p>
               </div>
             </div>
 
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-emerald-600">{pnl.wonBets} gagnés</span>
-                <span className="text-xs font-semibold text-rose-500">{lostBets} perdus</span>
+                <span className="text-xs font-semibold text-emerald-600">
+                  {pnl.wonBets} gagnés
+                </span>
+                <span className="text-xs font-semibold text-rose-500">
+                  {lostBets} perdus
+                </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-rose-100">
                 <div

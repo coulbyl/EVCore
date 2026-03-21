@@ -8,6 +8,7 @@
 ## Web — ce qui reste
 
 ### Coupons ✅
+
 - [x] Composants réutilisables (`coupon-detail.tsx`) avec logos équipes
 - [x] RecentCouponsCard drawer utilise les composants partagés
 - [x] `formatPickForDisplay` — bare UNDER/OVER corrigé
@@ -16,6 +17,7 @@
 - [x] Labels PENDING intelligents (PLANIFIÉ / EN COURS / EN ATTENTE) basés sur `fixtureStatus`
 
 ### Dashboard ✅
+
 - [x] P&L redesign (3 stat cards + barre win/loss)
 - [x] OpportunitiesTable : colonnes Marché/Décision supprimées, logos, CopyPick
 - [x] FixtureDetailPanel : redesign complet (bet-slip card, metric grid HoverCard)
@@ -23,11 +25,13 @@
 - [x] `FixtureStatusBadge` affiché dans OpportunitiesTable
 
 ### Helpers ✅
+
 - [x] `helpers/coupon.ts` — tous les helpers purs coupon/selection (labels, badges, dots)
 - [x] `helpers/fixture.ts` — `fixtureStatusLabel` + `fixtureStatusBadgeClass`
 - [x] Tous les callers importent directement depuis `helpers/` (pas de re-exports)
 
 ### Écran Audit (`/audit`) ✅
+
 - [x] Endpoint `GET /audit/fixtures?date=`
 - [x] Endpoint `GET /audit/overview`
 - [x] Sélecteur de date (défaut : aujourd'hui)

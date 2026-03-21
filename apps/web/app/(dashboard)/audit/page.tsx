@@ -69,7 +69,9 @@ function AuditPicksTable({
   return (
     <div>
       <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-        {isEvaluated ? `Picks évalués (${picks.length})` : `Picks candidats (${picks.length})`}
+        {isEvaluated
+          ? `Picks évalués (${picks.length})`
+          : `Picks candidats (${picks.length})`}
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -92,14 +94,28 @@ function AuditPicksTable({
               const isViable = !isEvaluated || p.status === "viable";
               return (
                 <tr key={i} className="align-middle">
-                  <td className="py-2 pr-3 font-medium text-slate-700">{pickLabel}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.probability}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.odds}</td>
-                  <td className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>{p.ev}</td>
-                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.qualityScore}</td>
+                  <td className="py-2 pr-3 font-medium text-slate-700">
+                    {pickLabel}
+                  </td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">
+                    {p.probability}
+                  </td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">
+                    {p.odds}
+                  </td>
+                  <td
+                    className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}
+                  >
+                    {p.ev}
+                  </td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">
+                    {p.qualityScore}
+                  </td>
                   {isEvaluated && (
                     <td className="py-2 pr-3">
-                      <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}
+                      >
                         {isViable ? "Viable" : "Rejeté"}
                       </span>
                     </td>
@@ -119,18 +135,16 @@ function AuditPicksTable({
   );
 }
 
-function ExpandedModelRunPanel({
-  row,
-}: {
-  row: AuditFixtureRow;
-}) {
+function ExpandedModelRunPanel({ row }: { row: AuditFixtureRow }) {
   const run = row.modelRun;
   return (
     <div className="space-y-4 px-4 py-4">
       {/* Score */}
       {row.score && (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-base font-bold text-slate-700">{row.score}</span>
+          <span className="font-mono text-base font-bold text-slate-700">
+            {row.score}
+          </span>
           {row.htScore && (
             <span className="text-xs text-slate-400">(MT {row.htScore})</span>
           )}
@@ -335,13 +349,17 @@ function AuditFixturesSection({ date }: { date: string }) {
                       </td>
                       <td className="px-4 py-3">
                         {row.modelRun?.pick ? (
-                          <span className={`text-sm font-medium ${row.modelRun.betStatus === "WON" ? "text-emerald-600" : row.modelRun.betStatus === "LOST" ? "text-rose-500" : "text-slate-700"}`}>
+                          <span
+                            className={`text-sm font-medium ${row.modelRun.betStatus === "WON" ? "text-emerald-600" : row.modelRun.betStatus === "LOST" ? "text-rose-500" : "text-slate-700"}`}
+                          >
                             {formatPickForDisplay(
                               row.modelRun.pick,
                               row.modelRun.market ?? "",
                             )}
                             {row.modelRun.ev && (
-                              <span className={`ml-1.5 text-xs font-semibold ${row.modelRun.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>
+                              <span
+                                className={`ml-1.5 text-xs font-semibold ${row.modelRun.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}
+                              >
                                 EV {row.modelRun.ev}
                               </span>
                             )}

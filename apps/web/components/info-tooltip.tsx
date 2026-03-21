@@ -9,7 +9,11 @@ type InfoTooltipProps = {
   side?: "top" | "right" | "bottom" | "left";
 };
 
-export function InfoTooltip({ label, description, side = "right" }: InfoTooltipProps) {
+export function InfoTooltip({
+  label,
+  description,
+  side = "right",
+}: InfoTooltipProps) {
   return (
     <HoverCard.Root openDelay={200} closeDelay={100}>
       <HoverCard.Trigger asChild>

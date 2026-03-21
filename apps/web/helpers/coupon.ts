@@ -8,12 +8,33 @@ type Locale = "fr" | "en";
 // Coupon-level
 // ---------------------------------------------------------------------------
 
-const COUPON_STATUS_LABELS: Record<Locale, {
-  WON: string; LOST: string;
-  PENDING_in_progress: string; PENDING_finished: string; PENDING_scheduled: string; PENDING_default: string;
-}> = {
-  fr: { WON: "GAGNÉ", LOST: "PERDU", PENDING_in_progress: "EN COURS", PENDING_finished: "EN ATTENTE", PENDING_scheduled: "PLANIFIÉ", PENDING_default: "EN COURS" },
-  en: { WON: "WON", LOST: "LOST", PENDING_in_progress: "IN PROGRESS", PENDING_finished: "PENDING", PENDING_scheduled: "SCHEDULED", PENDING_default: "IN PROGRESS" },
+const COUPON_STATUS_LABELS: Record<
+  Locale,
+  {
+    WON: string;
+    LOST: string;
+    PENDING_in_progress: string;
+    PENDING_finished: string;
+    PENDING_scheduled: string;
+    PENDING_default: string;
+  }
+> = {
+  fr: {
+    WON: "GAGNÉ",
+    LOST: "PERDU",
+    PENDING_in_progress: "EN COURS",
+    PENDING_finished: "EN ATTENTE",
+    PENDING_scheduled: "PLANIFIÉ",
+    PENDING_default: "EN COURS",
+  },
+  en: {
+    WON: "WON",
+    LOST: "LOST",
+    PENDING_in_progress: "IN PROGRESS",
+    PENDING_finished: "PENDING",
+    PENDING_scheduled: "SCHEDULED",
+    PENDING_default: "IN PROGRESS",
+  },
 };
 
 export function couponStatusLabel(
@@ -34,7 +55,8 @@ export function couponStatusLabel(
 }
 
 export function couponStatusBadgeClass(status: CouponStatus): string {
-  if (status === "WON") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "WON")
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (status === "LOST") return "border-rose-200 bg-rose-50 text-rose-700";
   return "border-amber-200 bg-amber-50 text-amber-700";
 }
@@ -46,8 +68,10 @@ export function couponStatusDotClass(status: CouponStatus): string {
 }
 
 export function couponStatusHeaderBadgeClass(status: CouponStatus): string {
-  if (status === "WON") return "border-emerald-400/40 bg-emerald-400/20 text-emerald-300";
-  if (status === "LOST") return "border-rose-400/40 bg-rose-400/20 text-rose-300";
+  if (status === "WON")
+    return "border-emerald-400/40 bg-emerald-400/20 text-emerald-300";
+  if (status === "LOST")
+    return "border-rose-400/40 bg-rose-400/20 text-rose-300";
   return "border-amber-400/40 bg-amber-400/20 text-amber-300";
 }
 
@@ -66,12 +90,36 @@ export function combinedOdds(odds: string[]): string {
 // Selection-level (bet)
 // ---------------------------------------------------------------------------
 
-const SELECTION_STATUS_LABELS: Record<Locale, {
-  WON: string; LOST: string; VOID: string;
-  PENDING_in_progress: string; PENDING_finished: string; PENDING_scheduled: string; PENDING_default: string;
-}> = {
-  fr: { WON: "GAGNÉ", LOST: "PERDU", VOID: "VOID", PENDING_in_progress: "EN COURS", PENDING_finished: "EN ATTENTE", PENDING_scheduled: "PLANIFIÉ", PENDING_default: "EN COURS" },
-  en: { WON: "WON", LOST: "LOST", VOID: "VOID", PENDING_in_progress: "IN PROGRESS", PENDING_finished: "PENDING", PENDING_scheduled: "SCHEDULED", PENDING_default: "IN PROGRESS" },
+const SELECTION_STATUS_LABELS: Record<
+  Locale,
+  {
+    WON: string;
+    LOST: string;
+    VOID: string;
+    PENDING_in_progress: string;
+    PENDING_finished: string;
+    PENDING_scheduled: string;
+    PENDING_default: string;
+  }
+> = {
+  fr: {
+    WON: "GAGNÉ",
+    LOST: "PERDU",
+    VOID: "VOID",
+    PENDING_in_progress: "EN COURS",
+    PENDING_finished: "EN ATTENTE",
+    PENDING_scheduled: "PLANIFIÉ",
+    PENDING_default: "EN COURS",
+  },
+  en: {
+    WON: "WON",
+    LOST: "LOST",
+    VOID: "VOID",
+    PENDING_in_progress: "IN PROGRESS",
+    PENDING_finished: "PENDING",
+    PENDING_scheduled: "SCHEDULED",
+    PENDING_default: "IN PROGRESS",
+  },
 };
 
 export function selectionStatusLabel(
@@ -93,7 +141,8 @@ export function selectionStatusLabel(
 }
 
 export function selectionStatusBadgeClass(status: SelectionStatus): string {
-  if (status === "WON") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "WON")
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (status === "LOST") return "border-rose-200 bg-rose-50 text-rose-700";
   if (status === "VOID") return "border-slate-200 bg-slate-100 text-slate-600";
   return "border-amber-200 bg-amber-50 text-amber-700";
@@ -117,7 +166,10 @@ export function formatPickForDisplay(pick: string, market: string): string {
     .replace("OVER_UNDER_25 UNDER", "UNDER 2.5")
     .replace("OVER_UNDER_25 OVER", "OVER 2.5");
 
-  if (formatted === pick && (market === "OVER_UNDER" || market === "OVER_UNDER_25")) {
+  if (
+    formatted === pick &&
+    (market === "OVER_UNDER" || market === "OVER_UNDER_25")
+  ) {
     if (pick === "UNDER") return "UNDER 2.5";
     if (pick === "OVER") return "OVER 2.5";
   }

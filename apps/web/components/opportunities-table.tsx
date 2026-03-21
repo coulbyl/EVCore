@@ -56,7 +56,11 @@ function CopyPick({ row }: { row: OpportunityRow }) {
       title={text}
       className="ml-1.5 inline-flex items-center rounded p-0.5 text-slate-300 hover:text-slate-500"
     >
-      {copied ? <Check size={11} className="text-success" /> : <Copy size={11} />}
+      {copied ? (
+        <Check size={11} className="text-success" />
+      ) : (
+        <Copy size={11} />
+      )}
     </button>
   );
 }

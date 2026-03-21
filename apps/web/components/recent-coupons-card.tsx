@@ -38,7 +38,9 @@ function CouponRow({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className={`mt-px size-2 shrink-0 rounded-full ${couponStatusDotClass(coupon.status)}`} />
+          <span
+            className={`mt-px size-2 shrink-0 rounded-full ${couponStatusDotClass(coupon.status)}`}
+          />
           <span className="truncate font-mono text-[11px] text-slate-400">
             {coupon.code}
           </span>
@@ -73,7 +75,6 @@ function CouponRow({
 // ---------------------------------------------------------------------------
 // Drawer — ticket style
 // ---------------------------------------------------------------------------
-
 
 function CouponDrawerContent({
   coupon,
@@ -125,7 +126,9 @@ function CouponDrawerContent({
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
           >
-            <span className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`} />
+            <span
+              className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`}
+            />
             {couponStatusLabel(coupon.status, coupon.selections)}
           </span>
           <span className="text-xs text-slate-400">{coupon.window}</span>

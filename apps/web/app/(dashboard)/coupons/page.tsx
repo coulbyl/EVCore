@@ -34,12 +34,15 @@ function CouponsPageContent() {
   const router = useRouter();
   const defaultRange = useMemo(() => currentWeekInputRange(), []);
 
-  const activeFilters = useMemo(() => ({
-    from: searchParams.get("from") ?? defaultRange.from,
-    to: searchParams.get("to") ?? defaultRange.to,
-    query: searchParams.get("query") ?? "",
-    status: (searchParams.get("status") ?? "") as CouponFilterStatus,
-  }), [searchParams, defaultRange]);
+  const activeFilters = useMemo(
+    () => ({
+      from: searchParams.get("from") ?? defaultRange.from,
+      to: searchParams.get("to") ?? defaultRange.to,
+      query: searchParams.get("query") ?? "",
+      status: (searchParams.get("status") ?? "") as CouponFilterStatus,
+    }),
+    [searchParams, defaultRange],
+  );
 
   const [formFilters, setFormFilters] = useState(activeFilters);
   const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
@@ -236,7 +239,10 @@ function CouponsPageContent() {
                             <span
                               className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(coupon.status)}`}
                             >
-                              {couponStatusLabel(coupon.status, coupon.selections)}
+                              {couponStatusLabel(
+                                coupon.status,
+                                coupon.selections,
+                              )}
                             </span>
                           </td>
                           <td className="px-5 py-4.5 font-semibold text-slate-700">
