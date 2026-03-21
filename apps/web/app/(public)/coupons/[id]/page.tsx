@@ -118,7 +118,7 @@ function SelectionDiagnosticsCard({
         </span>
       </div>
 
-      <div className="space-y-5 px-4 py-4">
+      <div className="max-h-[60vh] space-y-5 overflow-y-auto px-4 py-4">
         <div>
           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
             {t.modelInputs}
@@ -200,7 +200,7 @@ function CouponPageBody({
             ev={coupon.ev}
             locale={locale}
           />
-          <div className="divide-y divide-border">
+          <div className="max-h-112 divide-y divide-border overflow-y-auto">
             {coupon.selections.map((selection, index) => (
               <button
                 key={selection.id}
