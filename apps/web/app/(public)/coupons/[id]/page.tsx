@@ -1,11 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useCouponById } from "@/hooks/use-coupon-by-id";
 import {
-  CouponDetail,
   CouponDetailEmpty,
+  CouponDetailHeader,
+  CouponDetailStats,
+  CouponDetailLeg,
 } from "@/components/coupon-detail";
+import { combinedOdds } from "@/helpers/coupon";
 import type { CouponSnapshot } from "@/types/dashboard";
 import { formatPickForDisplay } from "@/helpers/coupon";
 
@@ -142,6 +145,79 @@ function SelectionDiagnosticsCard({
 }
 
 // ---------------------------------------------------------------------------
+// Interactive body — leg selection drives the diagnostics panel
+// ---------------------------------------------------------------------------
+
+function CouponPageBody({
+  coupon,
+  onSettled,
+}: {
+  coupon: NonNullable<ReturnType<typeof useCouponById>["data"]>;
+  onSettled: () => void;
+}) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const isCombined = coupon.selections.length > 1;
+  const odds = isCombined
+    ? combinedOdds(coupon.selections.map((s) => s.odds))
+    : (coupon.selections[0]?.odds ?? "—");
+  const activeLeg = coupon.selections[selectedIndex];
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
+      {/* Left: coupon summary + clickable legs */}
+      <div className="lg:sticky lg:top-6 lg:self-start">
+        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Résumé
+        </p>
+        <div className="overflow-hidden rounded-2xl border border-border bg-white">
+          <CouponDetailHeader
+            code={coupon.code}
+            legs={coupon.legs}
+            status={coupon.status}
+            selections={coupon.selections}
+          />
+          <CouponDetailStats
+            selectionCount={coupon.selections.length}
+            isCombined={isCombined}
+            odds={odds}
+            ev={coupon.ev}
+          />
+          <div className="divide-y divide-border">
+            {coupon.selections.map((selection, index) => (
+              <button
+                key={selection.id}
+                onClick={() => setSelectedIndex(index)}
+                className={`w-full text-left transition-colors ${
+                  index === selectedIndex
+                    ? "border-l-2 border-l-accent bg-accent/5"
+                    : "border-l-2 border-l-transparent hover:bg-slate-50"
+                }`}
+              >
+                <CouponDetailLeg
+                  selection={selection}
+                  index={index}
+                  onSettled={onSettled}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: diagnostics for selected leg */}
+      <div>
+        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Diagnostics moteur — Leg {selectedIndex + 1}
+        </p>
+        {activeLeg ? (
+          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -192,29 +268,7 @@ export default function CouponDetailPage({
             Coupon introuvable.
           </div>
         ) : coupon ? (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-            {/* Left: coupon summary — sticky on desktop */}
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Résumé
-              </p>
-              <CouponDetail coupon={coupon} onSettled={() => void refetch()} />
-            </div>
-
-            {/* Right: diagnostics per leg */}
-            <div className="space-y-4">
-              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Diagnostics moteur
-              </p>
-              {coupon.selections.map((selection, index) => (
-                <SelectionDiagnosticsCard
-                  key={selection.id}
-                  selection={selection}
-                  index={index}
-                />
-              ))}
-            </div>
-          </div>
+          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} />
         ) : (
           <CouponDetailEmpty />
         )}
