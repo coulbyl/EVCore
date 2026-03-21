@@ -128,11 +128,11 @@ export class DashboardRepository {
       this.prisma.client.bet.findMany({
         where: {
           modelRun: {
-            analyzedAt: { gte: rolling24hStart },
             fixture: {
               status: {
                 in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
               },
+              scheduledAt: { gte: todayStart },
             },
           },
         },

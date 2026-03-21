@@ -240,14 +240,6 @@ function CouponPageBody({
                   locale={locale}
                   pickLabel={formatSelectionPickLabel(selection.pick, selection.market, t)}
                   marketLabel={t.marketLabels[selection.market] ?? selection.market}
-                  copyButton={
-                    <CopyButton
-                      getText={() => formatLegText(selection, index, t, locale)}
-                      label={t.copyLeg}
-                      copiedLabel={t.copied}
-                      className="cursor-pointer rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-500 hover:bg-slate-50"
-                    />
-                  }
                 />
               </div>
             ))}
@@ -311,9 +303,12 @@ function formatDiagnosticsText(
 ): string {
   const pickLabel = formatSelectionPickLabel(selection.pick, selection.market, t);
   const marketLabel = t.marketLabels[selection.market] ?? selection.market;
+  const statusLabel = selectionStatusLabel(selection.status, selection.fixtureStatus, locale);
+  const scoreStr = selection.score ? ` · ${selection.score}` : "";
   const lines: string[] = [
     `EVCore — ${t.engineDiagnostics} — ${t.leg} ${index + 1}`,
     `${selection.fixture} · ${marketLabel} · ${pickLabel}`,
+    `${statusLabel}${scoreStr}`,
     "",
     t.modelInputs,
     `${t.probEstimated}: ${selection.probEstimated ?? "—"}`,
