@@ -36,6 +36,8 @@ const couponBetSelect = {
           id: true,
           scheduledAt: true,
           status: true,
+          homeScore: true,
+          awayScore: true,
           homeTeam: { select: { name: true, logoUrl: true } },
           awayTeam: { select: { name: true, logoUrl: true } },
         },
@@ -250,6 +252,7 @@ export class CouponRepository {
 
   async findCouponById(couponId: string): Promise<{
     id: string;
+    code: string;
     date: Date;
     status: CouponStatus;
     legCount: number;
@@ -267,8 +270,11 @@ export class CouponRepository {
       modelRun: {
         features: unknown;
         fixture: {
+          id: string;
           scheduledAt: Date;
           status: string;
+          homeScore: number | null;
+          awayScore: number | null;
           homeTeam: { name: string; logoUrl: string | null };
           awayTeam: { name: string; logoUrl: string | null };
         };
@@ -279,6 +285,7 @@ export class CouponRepository {
       where: { id: couponId },
       select: {
         id: true,
+        code: true,
         date: true,
         status: true,
         legCount: true,
@@ -297,6 +304,7 @@ export class CouponRepository {
 
     return {
       id: coupon.id,
+      code: coupon.code,
       date: coupon.date,
       status: coupon.status,
       legCount: coupon.legCount,
@@ -340,6 +348,8 @@ export class CouponRepository {
             id: string;
             scheduledAt: Date;
             status: string;
+            homeScore: number | null;
+            awayScore: number | null;
             homeTeam: { name: string; logoUrl: string | null };
             awayTeam: { name: string; logoUrl: string | null };
           };

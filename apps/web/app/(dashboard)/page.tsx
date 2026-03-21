@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { Badge, Page, PageContent, StatCard } from "@evcore/ui";
-import { AppPageHeader } from "../components/app-page-header";
-import { FixtureDetailPanel } from "../components/fixture-detail-panel";
-import { OpportunitiesTable } from "../components/opportunities-table";
-import { RecentCouponsCard } from "../components/recent-coupons-card";
-import { useDashboardSummary } from "../hooks/use-dashboard-summary";
+import { AppPageHeader } from "@/components/app-page-header";
+import { FixtureDetailPanel } from "@/components/fixture-detail-panel";
+import { OpportunitiesTable } from "@/components/opportunities-table";
+import { RecentCouponsCard } from "@/components/recent-coupons-card";
+import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
 import type {
   DashboardSummary,
   FixturePanel,
   KpiDelta,
   OpportunityRow,
-} from "../types/dashboard";
+} from "@/types/dashboard";
 
 function rowToFixturePanel(row: OpportunityRow): FixturePanel {
   return {

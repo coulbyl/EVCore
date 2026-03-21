@@ -3,14 +3,14 @@
 import { Fragment, Suspense, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Badge, Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "../../components/app-page-header";
-import { TableCard } from "../../components/table-card";
-import { FixtureName, FixtureStatusBadge } from "../../components/coupon-detail";
-import { InfoTooltip } from "../../components/info-tooltip";
-import { formatPickForDisplay } from "../../helpers/coupon";
-import { useAuditFixtures } from "../../hooks/use-audit-fixtures";
-import { useAuditOverview } from "../../hooks/use-audit-overview";
-import type { AuditDiagnostics, AuditOverview } from "../../types/audit";
+import { AppPageHeader } from "@/components/app-page-header";
+import { TableCard } from "@/components/table-card";
+import { FixtureName, FixtureStatusBadge } from "@/components/coupon-detail";
+import { InfoTooltip } from "@/components/info-tooltip";
+import { formatPickForDisplay } from "@/helpers/coupon";
+import { useAuditFixtures } from "@/hooks/use-audit-fixtures";
+import { useAuditOverview } from "@/hooks/use-audit-overview";
+import type { AuditDiagnostics, AuditOverview } from "@/types/audit";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);

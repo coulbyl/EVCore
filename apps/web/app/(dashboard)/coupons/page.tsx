@@ -1,13 +1,14 @@
 "use client";
 
 import { Suspense, useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "../../components/app-page-header";
-import { TableCard } from "../../components/table-card";
-import { CouponDetail, CouponDetailEmpty } from "../../components/coupon-detail";
-import { couponStatusBadgeClass, couponStatusLabel } from "../../helpers/coupon";
-import { useCouponsByPeriod } from "../../hooks/use-coupons-by-period";
+import { AppPageHeader } from "@/components/app-page-header";
+import { TableCard } from "@/components/table-card";
+import { CouponDetail, CouponDetailEmpty } from "@/components/coupon-detail";
+import { couponStatusBadgeClass, couponStatusLabel } from "@/helpers/coupon";
+import { useCouponsByPeriod } from "@/hooks/use-coupons-by-period";
 
 function currentWeekInputRange(now = new Date()): { from: string; to: string } {
   const day = now.getUTCDay();
@@ -218,7 +219,15 @@ function CouponsPageContent() {
                           }`}
                         >
                           <td className="px-5 py-4.5 font-mono text-slate-600">
-                            {coupon.code}
+                            <Link
+                              href={`/coupons/${coupon.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-accent hover:underline"
+                            >
+                              {coupon.code}
+                            </Link>
                           </td>
                           <td className="px-5 py-4.5 text-slate-500">
                             {coupon.legs}

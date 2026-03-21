@@ -36,11 +36,39 @@ export type CouponSnapshot = {
     awayLogo: string | null;
     scheduledAt: string;
     fixtureStatus: string;
+    score: string | null;
     status: "PENDING" | "WON" | "LOST" | "VOID";
     market: string;
     pick: string;
     odds: string;
     ev: string;
+    // Diagnostic fields (populated by GET /coupon/:id)
+    probEstimated?: string;
+    lambdaHome?: string | null;
+    lambdaAway?: string | null;
+    expectedTotalGoals?: string | null;
+    candidatePicks?: Array<{
+      market: string;
+      pick: string;
+      comboMarket?: string;
+      comboPick?: string;
+      probability: string;
+      odds: string;
+      ev: string;
+      qualityScore: string;
+    }>;
+    evaluatedPicks?: Array<{
+      market: string;
+      pick: string;
+      comboMarket?: string;
+      comboPick?: string;
+      probability: string;
+      odds: string;
+      ev: string;
+      qualityScore: string;
+      status: "viable" | "rejected";
+      rejectionReason?: string;
+    }>;
   }>;
 };
 

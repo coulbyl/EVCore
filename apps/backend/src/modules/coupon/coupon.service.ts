@@ -43,6 +43,7 @@ type CouponSelectionSnapshot = {
   awayLogo: string | null;
   scheduledAt: string;
   fixtureStatus: string;
+  score: string | null;
   status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
   market: string;
   pick: string;
@@ -317,28 +318,10 @@ export class CouponService implements OnApplicationBootstrap {
     return { couponId, status: nextStatus, settled: true };
   }
 
-  async getCouponById(couponId: string) {
+  async getCouponById(couponId: string): Promise<CouponPeriodSnapshot | null> {
     const coupon = await this.couponRepository.findCouponById(couponId);
     if (!coupon) return null;
-
-    return {
-      ...coupon,
-      bets: coupon.bets.map((bet) => {
-        const diagnostics = extractBetDiagnostics(bet.modelRun.features);
-        return {
-          ...bet,
-          probEstimated: toNumber(bet.probEstimated).toFixed(4),
-          ev: toNumber(bet.ev).toFixed(4),
-          oddsSnapshot: toNumber(bet.oddsSnapshot).toFixed(2),
-          ...diagnostics,
-          lambdaHome: formatNullableNumber(diagnostics.lambdaHome),
-          lambdaAway: formatNullableNumber(diagnostics.lambdaAway),
-          expectedTotalGoals: formatNullableNumber(
-            diagnostics.expectedTotalGoals,
-          ),
-        };
-      }),
-    };
+    return this.toCouponPeriodSnapshot(coupon, new Date());
   }
 
   async listCouponsByPeriod(input: {
@@ -378,57 +361,95 @@ export class CouponService implements OnApplicationBootstrap {
         from: fromDate.toISOString().slice(0, 10),
         to: toDate.toISOString().slice(0, 10),
       },
-      coupons: coupons.map((coupon) => {
-        const avgEv =
-          coupon.bets.length > 0
-            ? coupon.bets.reduce((acc, bet) => acc + toNumber(bet.ev), 0) /
-              coupon.bets.length
-            : 0;
+      coupons: coupons.map((coupon) => this.toCouponPeriodSnapshot(coupon, now)),
+    };
+  }
 
+  private toCouponPeriodSnapshot(
+    coupon: {
+      id: string;
+      code: string;
+      date: Date;
+      status: CouponStatus;
+      bets: {
+        id: string;
+        market: string;
+        pick: string;
+        comboMarket: string | null;
+        comboPick: string | null;
+        probEstimated: unknown;
+        oddsSnapshot: unknown;
+        ev: unknown;
+        status: BetStatus;
+        modelRun: {
+          features: unknown;
+          fixture: {
+            id: string;
+            scheduledAt: Date;
+            status: string;
+            homeScore: number | null;
+            awayScore: number | null;
+            homeTeam: { name: string; logoUrl: string | null };
+            awayTeam: { name: string; logoUrl: string | null };
+          };
+        };
+      }[];
+    },
+    now: Date,
+  ): CouponPeriodSnapshot {
+    const avgEv =
+      coupon.bets.length > 0
+        ? coupon.bets.reduce((acc, bet) => acc + toNumber(bet.ev), 0) /
+          coupon.bets.length
+        : 0;
+
+    return {
+      id: coupon.id,
+      code: coupon.code,
+      status:
+        coupon.status === 'WON' || coupon.status === 'LOST'
+          ? coupon.status
+          : 'PENDING',
+      legs: coupon.bets.length,
+      ev: formatSigned(avgEv, 2),
+      window: couponWindow(coupon.date, now),
+      selections: coupon.bets.map((bet) => {
+        const diagnostics = extractBetDiagnostics(bet.modelRun.features);
+        const comboParts = [bet.pick];
+        if (bet.comboMarket && bet.comboPick) {
+          comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
+        }
         return {
-          id: coupon.id,
-          code: coupon.code,
+          id: bet.id,
+          fixtureId: bet.modelRun.fixture.id,
+          fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
+          homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
+          awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
+          scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
+          fixtureStatus: bet.modelRun.fixture.status,
+          score:
+            bet.modelRun.fixture.homeScore !== null &&
+            bet.modelRun.fixture.awayScore !== null
+              ? `${bet.modelRun.fixture.homeScore} - ${bet.modelRun.fixture.awayScore}`
+              : null,
           status:
-            coupon.status === 'WON' || coupon.status === 'LOST'
-              ? coupon.status
+            bet.status === 'WON' ||
+            bet.status === 'LOST' ||
+            bet.status === 'VOID'
+              ? bet.status
               : 'PENDING',
-          legs: coupon.bets.length,
-          ev: formatSigned(avgEv, 2),
-          window: couponWindow(coupon.date, now),
-          selections: coupon.bets.map((bet) => {
-            const diagnostics = extractBetDiagnostics(bet.modelRun.features);
-            const comboParts = [bet.pick];
-            if (bet.comboMarket && bet.comboPick) {
-              comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
-            }
-            return {
-              id: bet.id,
-              fixtureId: bet.modelRun.fixture.id,
-              fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
-              homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
-              awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
-              scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
-              fixtureStatus: bet.modelRun.fixture.status,
-              status:
-                bet.status === 'WON' ||
-                bet.status === 'LOST' ||
-                bet.status === 'VOID'
-                  ? bet.status
-                  : 'PENDING',
-              market: bet.market,
-              pick: comboParts.join(' + '),
-              probEstimated: `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`,
-              lambdaHome: formatNullableNumber(diagnostics.lambdaHome),
-              lambdaAway: formatNullableNumber(diagnostics.lambdaAway),
-              expectedTotalGoals: formatNullableNumber(
-                diagnostics.expectedTotalGoals,
-              ),
-              odds: toNumber(bet.oddsSnapshot).toFixed(2),
-              ev: formatSigned(toNumber(bet.ev), 3),
-              candidatePicks: diagnostics.candidatePicks,
-              evaluatedPicks: diagnostics.evaluatedPicks,
-            };
-          }),
+          market: bet.market,
+          pick: comboParts.join(' + '),
+          probEstimated: `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`,
+          lambdaHome: formatNullableNumber(diagnostics.lambdaHome),
+          lambdaAway: formatNullableNumber(diagnostics.lambdaAway),
+          expectedTotalGoals: formatNullableNumber(
+            diagnostics.expectedTotalGoals,
+          ),
+          odds: toNumber(bet.oddsSnapshot).toFixed(2),
+          ev: formatSigned(toNumber(bet.ev), 3),
+          candidatePicks: diagnostics.candidatePicks,
+          evaluatedPicks: diagnostics.evaluatedPicks,
         };
       }),
     };

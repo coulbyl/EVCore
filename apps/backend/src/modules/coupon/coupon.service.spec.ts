@@ -764,8 +764,8 @@ describe('CouponService listCouponsByPeriod', () => {
 
     const result = await service.getCouponById('coupon-1');
 
-    expect(result?.bets[0]).toMatchObject({
-      probEstimated: '0.4123',
+    expect(result?.selections[0]).toMatchObject({
+      probEstimated: '41.2%',
       lambdaHome: '1.18',
       lambdaAway: '1.07',
       expectedTotalGoals: '2.25',

@@ -35,6 +35,7 @@ export type CouponSnapshot = {
     awayLogo: string | null;
     scheduledAt: string;
     fixtureStatus: string;
+    score: string | null;
     status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
     market: string;
     pick: string;

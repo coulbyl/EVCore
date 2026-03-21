@@ -177,6 +177,9 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
         />
         <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
           {selection.scheduledAt} • {selection.market}
+          {(selection.status === "WON" || selection.status === "LOST") && selection.score ? (
+            <span className="ml-2 font-bold text-slate-600">{selection.score}</span>
+          ) : null}
         </p>
         <div className="mt-2 flex items-start justify-between gap-3">
           <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">

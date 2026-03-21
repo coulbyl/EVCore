@@ -111,6 +111,8 @@ export class DashboardRepository {
                         select: {
                           scheduledAt: true,
                           status: true,
+                          homeScore: true,
+                          awayScore: true,
                           homeTeam: { select: { name: true, logoUrl: true } },
                           awayTeam: { select: { name: true, logoUrl: true } },
                         },

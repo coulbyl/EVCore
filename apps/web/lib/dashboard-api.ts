@@ -1,5 +1,6 @@
 import type {
   CouponPeriodResponse,
+  CouponSnapshot,
   DashboardSummary,
 } from "../types/dashboard";
 import type { AuditFixtureRow, AuditOverview } from "../types/audit";
@@ -60,6 +61,17 @@ export async function fetchCouponsByPeriod(params: {
   }
 
   return (await response.json()) as CouponPeriodResponse;
+}
+
+export async function fetchCouponById(
+  id: string,
+): Promise<CouponSnapshot | null> {
+  const response = await fetch(`${BACKEND_URL}/coupon/${id}`);
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Impossible de charger le coupon (${response.status})`);
+  }
+  return (await response.json()) as CouponSnapshot;
 }
 
 export async function fetchAuditFixtures(
