@@ -10,7 +10,7 @@ import {
 } from "@/components/coupon-detail";
 import { combinedOdds } from "@/helpers/coupon";
 import type { CouponSnapshot } from "@/types/dashboard";
-import { formatPickForDisplay } from "@/helpers/coupon";
+import { formatPickForDisplay, selectionStatusLabel, selectionStatusBadgeClass } from "@/helpers/coupon";
 
 // ---------------------------------------------------------------------------
 // Diagnostic helpers
@@ -96,11 +96,16 @@ function SelectionDiagnosticsCard({
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       {/* Card header */}
-      <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
-        <p className="text-xs font-semibold text-slate-500">
-          Leg {index + 1} —{" "}
-          <span className="font-normal text-slate-400">{selection.fixture}</span>
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+        <p className="min-w-0 truncate text-xs text-slate-500">
+          <span className="font-semibold text-slate-700">Leg {index + 1}</span>
+          {" — "}{selection.fixture}
+          {" · "}<span className="font-medium text-slate-700">{formatPickForDisplay(selection.pick, selection.market)}</span>
+          {selection.score ? <span className="ml-2 font-bold text-slate-600">{selection.score}</span> : null}
         </p>
+        <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}>
+          {selectionStatusLabel(selection.status, selection.fixtureStatus)}
+        </span>
       </div>
 
       <div className="px-4 py-4 space-y-5">
