@@ -25,6 +25,11 @@ import {
   COUPON_WINDOW_MIN_DAYS,
 } from '@config/coupon.constants';
 import { formatTimeUtc, tomorrowUtc } from '@utils/date.utils';
+import {
+  extractModelRunFeatureDiagnostics,
+  type PickSnapshot,
+  type EvaluatedPickSnapshot,
+} from '@utils/model-run.utils';
 import { CouponRepository } from './coupon.repository';
 
 const logger = createLogger('coupon-service');
@@ -54,24 +59,8 @@ type CouponSelectionSnapshot = {
   expectedTotalGoals: string | null;
   odds: string;
   ev: string;
-  candidatePicks: CouponCandidateSnapshot[];
-  evaluatedPicks: CouponEvaluatedPickSnapshot[];
-};
-
-type CouponCandidateSnapshot = {
-  market: string;
-  pick: string;
-  comboMarket?: string;
-  comboPick?: string;
-  probability: string;
-  odds: string;
-  ev: string;
-  qualityScore: string;
-};
-
-type CouponEvaluatedPickSnapshot = CouponCandidateSnapshot & {
-  status: 'viable' | 'rejected';
-  rejectionReason?: string;
+  candidatePicks: PickSnapshot[];
+  evaluatedPicks: EvaluatedPickSnapshot[];
 };
 
 type CouponPeriodSnapshot = {
@@ -419,7 +408,9 @@ export class CouponService implements OnApplicationBootstrap {
       ev: formatSigned(avgEv, 2),
       window: couponWindow(coupon.date, now),
       selections: coupon.bets.map((bet) => {
-        const diagnostics = extractBetDiagnostics(bet.modelRun.features);
+        const diagnostics = extractModelRunFeatureDiagnostics(
+          bet.modelRun.features,
+        );
         const comboParts = [bet.pick];
         if (bet.comboMarket && bet.comboPick) {
           comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
@@ -451,11 +442,9 @@ export class CouponService implements OnApplicationBootstrap {
           market: bet.market,
           pick: comboParts.join(' + '),
           probEstimated: `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`,
-          lambdaHome: formatNullableNumber(diagnostics.lambdaHome),
-          lambdaAway: formatNullableNumber(diagnostics.lambdaAway),
-          expectedTotalGoals: formatNullableNumber(
-            diagnostics.expectedTotalGoals,
-          ),
+          lambdaHome: diagnostics.lambdaHome,
+          lambdaAway: diagnostics.lambdaAway,
+          expectedTotalGoals: diagnostics.expectedTotalGoals,
           odds: toNumber(bet.oddsSnapshot).toFixed(2),
           ev: formatSigned(toNumber(bet.ev), 3),
           candidatePicks: diagnostics.candidatePicks,
@@ -476,138 +465,6 @@ function endOfUtcDay(date: Date): Date {
   const value = new Date(date);
   value.setUTCHours(23, 59, 59, 999);
   return value;
-}
-
-function extractBetDiagnostics(features: unknown): {
-  lambdaHome: number | null;
-  lambdaAway: number | null;
-  expectedTotalGoals: number | null;
-  candidatePicks: CouponCandidateSnapshot[];
-  evaluatedPicks: CouponEvaluatedPickSnapshot[];
-} {
-  if (!features || typeof features !== 'object') {
-    return {
-      lambdaHome: null,
-      lambdaAway: null,
-      expectedTotalGoals: null,
-      candidatePicks: [],
-      evaluatedPicks: [],
-    };
-  }
-
-  const lambdaHome = readFiniteNumber(features, 'lambdaHome');
-  const lambdaAway = readFiniteNumber(features, 'lambdaAway');
-
-  return {
-    lambdaHome,
-    lambdaAway,
-    expectedTotalGoals:
-      lambdaHome !== null && lambdaAway !== null
-        ? lambdaHome + lambdaAway
-        : null,
-    candidatePicks: readCandidatePicks(features),
-    evaluatedPicks: readEvaluatedPicks(features),
-  };
-}
-
-function readFiniteNumber(value: object, key: string): number | null {
-  const entry = value as Record<string, unknown>;
-  const raw = entry[key];
-  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
-    return null;
-  }
-  return raw;
-}
-
-function formatNullableNumber(value: number | null): string | null {
-  return value === null ? null : value.toFixed(2);
-}
-
-function readCandidatePicks(features: object): CouponCandidateSnapshot[] {
-  const entry = features as Record<string, unknown>;
-  const raw = entry['candidatePicks'];
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw.flatMap((candidate) =>
-    candidate && typeof candidate === 'object'
-      ? readPickSnapshot(candidate as Record<string, unknown>)
-      : [],
-  );
-}
-
-function readEvaluatedPicks(features: object): CouponEvaluatedPickSnapshot[] {
-  const entry = features as Record<string, unknown>;
-  const raw = entry['evaluatedPicks'];
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw.flatMap((candidate) => {
-    if (!candidate || typeof candidate !== 'object') {
-      return [];
-    }
-
-    const record = candidate as Record<string, unknown>;
-    const status = readString(record, 'status');
-    if (status !== 'viable' && status !== 'rejected') {
-      return [];
-    }
-
-    return readPickSnapshot(record).map((pick) => {
-      const rejectionReason = readString(record, 'rejectionReason');
-      return {
-        ...pick,
-        status,
-        ...(rejectionReason ? { rejectionReason } : {}),
-      };
-    });
-  });
-}
-
-function readPickSnapshot(
-  record: Record<string, unknown>,
-): CouponCandidateSnapshot[] {
-  const market = readString(record, 'market');
-  const pick = readString(record, 'pick');
-  const probability = readFiniteNumber(record, 'probability');
-  const odds = readFiniteNumber(record, 'odds');
-  const ev = readFiniteNumber(record, 'ev');
-  const qualityScore = readFiniteNumber(record, 'qualityScore');
-
-  if (
-    market === null ||
-    pick === null ||
-    probability === null ||
-    odds === null ||
-    ev === null ||
-    qualityScore === null
-  ) {
-    return [];
-  }
-
-  const comboMarket = readString(record, 'comboMarket');
-  const comboPick = readString(record, 'comboPick');
-
-  return [
-    {
-      market,
-      pick,
-      ...(comboMarket ? { comboMarket } : {}),
-      ...(comboPick ? { comboPick } : {}),
-      probability: probability.toFixed(4),
-      odds: odds.toFixed(2),
-      ev: formatSigned(ev, 4),
-      qualityScore: qualityScore.toFixed(4),
-    },
-  ];
-}
-
-function readString(value: object, key: string): string | null {
-  const entry = value as Record<string, unknown>;
-  const raw = entry[key];
-  return typeof raw === 'string' && raw.length > 0 ? raw : null;
 }
 
 function addUtcDays(date: Date, days: number): Date {

@@ -10,7 +10,13 @@ import { InfoTooltip } from "@/components/info-tooltip";
 import { formatPickForDisplay } from "@/helpers/coupon";
 import { useAuditFixtures } from "@/hooks/use-audit-fixtures";
 import { useAuditOverview } from "@/hooks/use-audit-overview";
-import type { AuditDiagnostics, AuditOverview } from "@/types/audit";
+import type {
+  AuditDiagnostics,
+  AuditEvaluatedPickSnapshot,
+  AuditOverview,
+  AuditPickSnapshot,
+  AuditFixtureRow,
+} from "@/types/audit";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -25,11 +31,147 @@ const DIAG_HINTS = {
     "Lambda plancher Poisson — les buts attendus (λ) d'une équipe ont atteint le minimum autorisé, signe que ses stats historiques sont insuffisantes. L'EV calculé est moins fiable dans ce cas.",
   lineMovement:
     "Mouvement de ligne — variation relative des cotes sur les 7 derniers jours (positif = cotes raccourcies = mouvement adverse). Si > seuil configuré, le pick est exclu. Null si pas de snapshot historique.",
-  h2h:
-    "Score H2H — ratio de victoires du favori sur les 5 derniers matchs directs entre les deux équipes. 0 = jamais gagné, 1 = toujours gagné, null = pas d'historique disponible.",
+  h2h: "Score H2H — ratio de victoires du favori sur les 5 derniers matchs directs entre les deux équipes. 0 = jamais gagné, 1 = toujours gagné, null = pas d'historique disponible.",
   congestion:
     "Score de congestion — pénalité de fatigue combinant le repos depuis le dernier match (< 3 j) et la densité du calendrier à venir (4 j). 0 = aucun stress, 1 = calendrier très chargé.",
 } as const;
+
+function DiagStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  return (
+    <div>
+      <p className="mb-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="font-mono text-sm font-semibold text-slate-700">
+        {value ?? "—"}
+      </p>
+    </div>
+  );
+}
+
+function AuditPicksTable({
+  candidatePicks,
+  evaluatedPicks,
+}: {
+  candidatePicks: AuditPickSnapshot[];
+  evaluatedPicks: AuditEvaluatedPickSnapshot[];
+}) {
+  const picks = evaluatedPicks.length > 0 ? evaluatedPicks : candidatePicks;
+  const isEvaluated = evaluatedPicks.length > 0;
+  if (picks.length === 0) return null;
+
+  return (
+    <div>
+      <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+        {isEvaluated ? `Picks évalués (${picks.length})` : `Picks candidats (${picks.length})`}
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-slate-100 text-left text-[0.6rem] font-semibold uppercase tracking-widest text-slate-400">
+              <th className="pb-2 pr-3">Marché / Pick</th>
+              <th className="pb-2 pr-3">Prob.</th>
+              <th className="pb-2 pr-3">Cote</th>
+              <th className="pb-2 pr-3">EV</th>
+              <th className="pb-2 pr-3">Qualité</th>
+              {isEvaluated && <th className="pb-2 pr-3">Statut</th>}
+              {isEvaluated && <th className="pb-2">Raison</th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {(picks as AuditEvaluatedPickSnapshot[]).map((p, i) => {
+              const pickLabel = p.comboMarket
+                ? `${formatPickForDisplay(p.pick, p.market)} + ${formatPickForDisplay(p.comboPick ?? "", p.comboMarket)}`
+                : formatPickForDisplay(p.pick, p.market);
+              const isViable = !isEvaluated || p.status === "viable";
+              return (
+                <tr key={i} className="align-middle">
+                  <td className="py-2 pr-3 font-medium text-slate-700">{pickLabel}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.probability}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.odds}</td>
+                  <td className={`py-2 pr-3 tabular-nums font-semibold ${p.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>{p.ev}</td>
+                  <td className="py-2 pr-3 tabular-nums text-slate-600">{p.qualityScore}</td>
+                  {isEvaluated && (
+                    <td className="py-2 pr-3">
+                      <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}>
+                        {isViable ? "Viable" : "Rejeté"}
+                      </span>
+                    </td>
+                  )}
+                  {isEvaluated && (
+                    <td className="py-2 text-[0.65rem] text-slate-400">
+                      {p.rejectionReason ?? "—"}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ExpandedModelRunPanel({
+  row,
+}: {
+  row: AuditFixtureRow;
+}) {
+  const run = row.modelRun;
+  return (
+    <div className="space-y-4 px-4 py-4">
+      {/* Score */}
+      {row.score && (
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-base font-bold text-slate-700">{row.score}</span>
+          {row.htScore && (
+            <span className="text-xs text-slate-400">(MT {row.htScore})</span>
+          )}
+        </div>
+      )}
+
+      {run && (
+        <>
+          {/* Model inputs */}
+          <div>
+            <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Entrées modèle
+            </p>
+            <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 sm:grid-cols-4">
+              <DiagStat label="Prob. estimée" value={run.probEstimated} />
+              <DiagStat label="λ V1" value={run.lambdaHome} />
+              <DiagStat label="λ V2" value={run.lambdaAway} />
+              <DiagStat label="Buts attendus" value={run.expectedTotalGoals} />
+            </div>
+          </div>
+
+          {/* Picks */}
+          {(run.candidatePicks.length > 0 || run.evaluatedPicks.length > 0) && (
+            <AuditPicksTable
+              candidatePicks={run.candidatePicks}
+              evaluatedPicks={run.evaluatedPicks}
+            />
+          )}
+
+          {/* Signals */}
+          <div>
+            <p className="mb-1 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Signaux
+            </p>
+            <DiagnosticsPanel d={run.diagnostics} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function DiagnosticsPanel({ d }: { d: AuditDiagnostics }) {
   function fmt(v: number | null) {
@@ -42,25 +184,45 @@ function DiagnosticsPanel({ d }: { d: AuditDiagnostics }) {
       </span>
       <span className="flex items-center gap-1.5">
         <span className="text-slate-400">λ-floor</span>
-        <InfoTooltip label="Lambda plancher" description={DIAG_HINTS.lambdaFloor} side="top" />
-        <span className={`font-mono font-semibold ${d.lambdaFloorHit ? "text-rose-500" : "text-slate-500"}`}>
+        <InfoTooltip
+          label="Lambda plancher"
+          description={DIAG_HINTS.lambdaFloor}
+          side="top"
+        />
+        <span
+          className={`font-mono font-semibold ${d.lambdaFloorHit ? "text-rose-500" : "text-slate-500"}`}
+        >
           {d.lambdaFloorHit ? "⚠ hit" : "ok"}
         </span>
       </span>
       <span className="flex items-center gap-1.5">
         <span className="text-slate-400">line-mv</span>
-        <InfoTooltip label="Mouvement de ligne" description={DIAG_HINTS.lineMovement} side="top" />
+        <InfoTooltip
+          label="Mouvement de ligne"
+          description={DIAG_HINTS.lineMovement}
+          side="top"
+        />
         <span className="font-mono text-slate-600">{fmt(d.lineMovement)}</span>
       </span>
       <span className="flex items-center gap-1.5">
         <span className="text-slate-400">h2h</span>
-        <InfoTooltip label="Score H2H" description={DIAG_HINTS.h2h} side="top" />
+        <InfoTooltip
+          label="Score H2H"
+          description={DIAG_HINTS.h2h}
+          side="top"
+        />
         <span className="font-mono text-slate-600">{fmt(d.h2hScore)}</span>
       </span>
       <span className="flex items-center gap-1.5">
         <span className="text-slate-400">congestion</span>
-        <InfoTooltip label="Congestion" description={DIAG_HINTS.congestion} side="top" />
-        <span className="font-mono text-slate-600">{fmt(d.congestionScore)}</span>
+        <InfoTooltip
+          label="Congestion"
+          description={DIAG_HINTS.congestion}
+          side="top"
+        />
+        <span className="font-mono text-slate-600">
+          {fmt(d.congestionScore)}
+        </span>
       </span>
     </div>
   );
@@ -190,14 +352,16 @@ function AuditFixturesSection({ date }: { date: string }) {
                       </td>
                       <td className="px-4 py-3 text-slate-400">
                         {hasDiagnostics && (
-                          <span className="text-[0.7rem]">{isExpanded ? "▲" : "▼"}</span>
+                          <span className="text-[0.7rem]">
+                            {isExpanded ? "▲" : "▼"}
+                          </span>
                         )}
                       </td>
                     </tr>
-                    {isExpanded && row.modelRun && (
+                    {isExpanded && (
                       <tr key={`${row.fixtureId}-diag`} className="bg-slate-50">
                         <td colSpan={9} className="border-t border-slate-100">
-                          <DiagnosticsPanel d={row.modelRun.diagnostics} />
+                          <ExpandedModelRunPanel row={row} />
                         </td>
                       </tr>
                     )}
@@ -216,13 +380,7 @@ function AuditFixturesSection({ date }: { date: string }) {
 // Overview section
 // ---------------------------------------------------------------------------
 
-function CountCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
+function CountCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-border bg-slate-50 px-4 py-3">
       <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -395,7 +553,9 @@ function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Suspensions actives</span>
+                <span className="text-xs text-slate-500">
+                  Suspensions actives
+                </span>
                 <span
                   className={`font-semibold tabular-nums ${overview.activeSuspensions > 0 ? "text-rose-600" : "text-slate-700"}`}
                 >
@@ -422,8 +582,12 @@ function AuditPageContent() {
   const activeDate = searchParams.get("date") ?? today;
   const [formDate, setFormDate] = useState(activeDate);
 
-  const { data: overview, isFetching: overviewFetching, isError, refetch } =
-    useAuditOverview();
+  const {
+    data: overview,
+    isFetching: overviewFetching,
+    isError,
+    refetch,
+  } = useAuditOverview();
 
   function applyDate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -447,10 +611,7 @@ function AuditPageContent() {
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
               Filtres
             </p>
-            <form
-              className="mt-3 flex items-end gap-3"
-              onSubmit={applyDate}
-            >
+            <form className="mt-3 flex items-end gap-3" onSubmit={applyDate}>
               <label className="rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
                 <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
                   Date

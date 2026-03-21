@@ -5,6 +5,22 @@ export type AuditDiagnostics = {
   congestionScore: number | null;
 };
 
+export type AuditPickSnapshot = {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: string;
+  odds: string;
+  ev: string;
+  qualityScore: string;
+};
+
+export type AuditEvaluatedPickSnapshot = AuditPickSnapshot & {
+  status: 'viable' | 'rejected';
+  rejectionReason?: string;
+};
+
 export type AuditFixtureRow = {
   fixtureId: string;
   fixture: string;
@@ -14,6 +30,8 @@ export type AuditFixtureRow = {
   competitionCode: string;
   scheduledAt: string;
   status: string;
+  score: string | null;
+  htScore: string | null;
   hasOdds: boolean;
   modelRun: {
     decision: 'BET' | 'NO_BET';
@@ -21,7 +39,13 @@ export type AuditFixtureRow = {
     finalScore: string;
     market: string | null;
     pick: string | null;
+    probEstimated: string | null;
     ev: string | null;
+    lambdaHome: string | null;
+    lambdaAway: string | null;
+    expectedTotalGoals: string | null;
+    candidatePicks: AuditPickSnapshot[];
+    evaluatedPicks: AuditEvaluatedPickSnapshot[];
     diagnostics: AuditDiagnostics;
   } | null;
 };

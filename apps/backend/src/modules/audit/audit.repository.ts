@@ -23,6 +23,10 @@ export class AuditRepository {
         id: true,
         scheduledAt: true,
         status: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
         homeTeam: { select: { name: true, logoUrl: true } },
         awayTeam: { select: { name: true, logoUrl: true } },
         season: {
@@ -39,7 +43,12 @@ export class AuditRepository {
             features: true,
             analyzedAt: true,
             bets: {
-              select: { market: true, pick: true, ev: true },
+              select: {
+                market: true,
+                pick: true,
+                ev: true,
+                probEstimated: true,
+              },
               orderBy: { ev: 'desc' },
               take: 1,
             },

@@ -2,19 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
+import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import { AuditRepository } from './audit.repository';
-import type { AuditDiagnostics, AuditFixtureRow, AuditOverview } from './audit.types';
+import type {
+  AuditDiagnostics,
+  AuditFixtureRow,
+  AuditOverview,
+} from './audit.types';
 
 function extractDiagnostics(features: unknown): AuditDiagnostics {
   if (features === null || typeof features !== 'object') {
-    return { lambdaFloorHit: false, lineMovement: null, h2hScore: null, congestionScore: null };
+    return {
+      lambdaFloorHit: false,
+      lineMovement: null,
+      h2hScore: null,
+      congestionScore: null,
+    };
   }
   const f = features as Record<string, unknown>;
   return {
     lambdaFloorHit: f['lambdaFloorHit'] === true,
-    lineMovement: typeof f['shadow_lineMovement'] === 'number' ? f['shadow_lineMovement'] : null,
+    lineMovement:
+      typeof f['shadow_lineMovement'] === 'number'
+        ? f['shadow_lineMovement']
+        : null,
     h2hScore: typeof f['shadow_h2h'] === 'number' ? f['shadow_h2h'] : null,
-    congestionScore: typeof f['shadow_congestion'] === 'number' ? f['shadow_congestion'] : null,
+    congestionScore:
+      typeof f['shadow_congestion'] === 'number'
+        ? f['shadow_congestion']
+        : null,
   };
 }
 
@@ -41,17 +57,38 @@ export class AuditService {
         competitionCode: f.season.competition.code,
         scheduledAt: formatTimeUtc(f.scheduledAt),
         status: f.status,
+        score:
+          f.homeScore !== null && f.awayScore !== null
+            ? `${f.homeScore} - ${f.awayScore}`
+            : null,
+        htScore:
+          f.homeHtScore !== null && f.awayHtScore !== null
+            ? `${f.homeHtScore} - ${f.awayHtScore}`
+            : null,
         hasOdds: f.oddsSnapshots.length > 0,
         modelRun: run
-          ? {
-              decision: run.decision as 'BET' | 'NO_BET',
-              deterministicScore: toNumber(run.deterministicScore).toFixed(2),
-              finalScore: toNumber(run.finalScore).toFixed(3),
-              market: bet?.market ?? null,
-              pick: bet?.pick ?? null,
-              ev: bet ? formatSigned(toNumber(bet.ev), 3) : null,
-              diagnostics: extractDiagnostics(run.features),
-            }
+          ? (() => {
+              const featureDiag = extractModelRunFeatureDiagnostics(
+                run.features,
+              );
+              return {
+                decision: run.decision as 'BET' | 'NO_BET',
+                deterministicScore: toNumber(run.deterministicScore).toFixed(2),
+                finalScore: toNumber(run.finalScore).toFixed(3),
+                market: bet?.market ?? null,
+                pick: bet?.pick ?? null,
+                probEstimated: bet
+                  ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`
+                  : null,
+                ev: bet ? formatSigned(toNumber(bet.ev), 3) : null,
+                lambdaHome: featureDiag.lambdaHome,
+                lambdaAway: featureDiag.lambdaAway,
+                expectedTotalGoals: featureDiag.expectedTotalGoals,
+                candidatePicks: featureDiag.candidatePicks,
+                evaluatedPicks: featureDiag.evaluatedPicks,
+                diagnostics: extractDiagnostics(run.features),
+              };
+            })()
           : null,
       };
     });
