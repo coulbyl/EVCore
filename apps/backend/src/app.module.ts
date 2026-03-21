@@ -5,13 +5,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma.module';
 import { EtlModule } from './modules/etl/etl.module';
-import { RollingStatsModule } from './modules/rolling-stats/rolling-stats.module';
 import { BettingEngineModule } from './modules/betting-engine/betting-engine.module';
 import { BacktestModule } from './modules/backtest/backtest.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RiskModule } from './modules/risk/risk.module';
 import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { CouponModule } from './modules/coupon/coupon.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -27,13 +28,14 @@ import { CouponModule } from './modules/coupon/coupon.module';
     }),
     PrismaModule,
     EtlModule,
-    RollingStatsModule,
     BettingEngineModule,
     BacktestModule,
     NotificationModule,
     RiskModule,
     AdjustmentModule,
     CouponModule,
+    DashboardModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,169 +1,353 @@
-import { describe, it, expect } from 'vitest';
-import type { Fixture } from '@evcore/db';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@evcore/db';
-import {
-  calculateRecentForm,
-  calculateRollingXg,
-  calculateDomExtPerf,
-  calculateLeagueVolatility,
-} from './rolling-stats.utils';
+import { RollingStatsService } from './rolling-stats.service';
 
-function makeFixture(overrides: Partial<Fixture>): Fixture {
+function decimal(value: number): Prisma.Decimal {
+  return new Prisma.Decimal(value);
+}
+
+function makeFixture(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'fixture-id',
-    externalId: 1,
-    seasonId: 'season-id',
-    homeTeamId: 'home',
-    awayTeamId: 'away',
-    matchday: 1,
-    scheduledAt: new Date('2022-08-01T00:00:00.000Z'),
-    status: 'FINISHED',
-    homeScore: 0,
+    id: 'fixture-1',
+    seasonId: 'season-1',
+    homeTeamId: 'team-a',
+    awayTeamId: 'team-b',
+    scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
+    homeScore: 1,
     awayScore: 0,
-    homeHtScore: null,
-    awayHtScore: null,
-    homeXg: new Prisma.Decimal(0),
-    awayXg: new Prisma.Decimal(0),
-    xgUnavailable: false,
-    createdAt: new Date('2022-08-01T00:00:00.000Z'),
-    updatedAt: new Date('2022-08-01T00:00:00.000Z'),
+    homeXg: decimal(1.2),
+    awayXg: decimal(0.8),
     ...overrides,
   };
 }
 
-describe('calculateRecentForm', () => {
-  it('returns 0 when there is no history', () => {
-    expect(calculateRecentForm([]).toNumber()).toBe(0);
+describe('RollingStatsService', () => {
+  const fixtureFindMany = vi.fn();
+  const fixtureFindUnique = vi.fn();
+  const teamStatsFindMany = vi.fn();
+  const teamStatsCreateMany = vi.fn();
+  const teamStatsUpdate = vi.fn();
+  const transaction = vi.fn();
+
+  const prismaService = {
+    client: {
+      fixture: {
+        findMany: fixtureFindMany,
+        findUnique: fixtureFindUnique,
+      },
+      teamStats: {
+        findMany: teamStatsFindMany,
+        createMany: teamStatsCreateMany,
+        update: teamStatsUpdate,
+      },
+      $transaction: transaction,
+    },
+  };
+
+  beforeEach(() => {
+    fixtureFindMany.mockReset();
+    fixtureFindUnique.mockReset();
+    teamStatsFindMany.mockReset();
+    teamStatsCreateMany.mockReset();
+    teamStatsUpdate.mockReset();
+    transaction.mockReset();
+    teamStatsCreateMany.mockResolvedValue({ count: 0 });
+    transaction.mockResolvedValue([]);
   });
 
-  it('normalizes a perfect recent run to 1', () => {
-    expect(calculateRecentForm(['W', 'W', 'W', 'W', 'W']).toNumber()).toBe(1);
-  });
-
-  it('weights recent results higher than old ones', () => {
-    const betterRecent = calculateRecentForm([
-      'L',
-      'L',
-      'L',
-      'W',
-      'W',
-    ]).toNumber();
-    const worseRecent = calculateRecentForm([
-      'W',
-      'W',
-      'L',
-      'L',
-      'L',
-    ]).toNumber();
-    expect(betterRecent).toBeGreaterThan(worseRecent);
-  });
-});
-
-describe('calculateRollingXg', () => {
-  it('falls back to goal averages when no xg data exists', () => {
-    const fixtures = [
+  it('builds season stats from one fixture scan and writes only missing rows', async () => {
+    fixtureFindMany.mockResolvedValue([
       makeFixture({
+        id: 'fixture-b',
+        scheduledAt: new Date('2024-08-01T15:00:00.000Z'),
+      }),
+      makeFixture({
+        id: 'fixture-a',
+        scheduledAt: new Date('2024-08-01T15:00:00.000Z'),
+      }),
+    ]);
+    teamStatsFindMany.mockResolvedValue([]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const result = await service.backfillSeason('season-1');
+
+    expect(fixtureFindMany).toHaveBeenCalledTimes(1);
+    expect(fixtureFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { seasonId: 'season-1', status: 'FINISHED' },
+        orderBy: [{ scheduledAt: 'asc' }, { id: 'asc' }],
+      }),
+    );
+    expect(teamStatsFindMany).toHaveBeenCalledTimes(1);
+    expect(teamStatsCreateMany).toHaveBeenCalledTimes(1);
+    expect(teamStatsCreateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skipDuplicates: true,
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            teamId: 'team-a',
+            afterFixtureId: 'fixture-b',
+          }),
+          expect.objectContaining({
+            teamId: 'team-b',
+            afterFixtureId: 'fixture-b',
+          }),
+        ]),
+      }),
+    );
+    expect(transaction).not.toHaveBeenCalled();
+    expect(result.fixtureCount).toBe(2);
+    expect(result.teamStatsWritten).toBe(4);
+    expect(result.createdCount).toBe(4);
+    expect(result.updatedCount).toBe(0);
+  });
+
+  it('skips unchanged rows and updates changed ones', async () => {
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({
+        id: 'fixture-1',
+        homeScore: 1,
+        awayScore: 0,
+        homeXg: decimal(1.5),
+        awayXg: decimal(0.5),
+      }),
+    ]);
+    teamStatsFindMany.mockResolvedValue([
+      {
+        teamId: 'team-a',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(1),
+        xgFor: decimal(1.5),
+        xgAgainst: decimal(0.5),
+        homeWinRate: decimal(1),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-b',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(0),
+        xgFor: decimal(0.4),
+        xgAgainst: decimal(1.5),
+        homeWinRate: decimal(0),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const result = await service.backfillSeason('season-1');
+
+    expect(teamStatsCreateMany).not.toHaveBeenCalled();
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(teamStatsUpdate).toHaveBeenCalledTimes(1);
+    expect(teamStatsUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          teamId_afterFixtureId: {
+            teamId: 'team-b',
+            afterFixtureId: 'fixture-1',
+          },
+        },
+      }),
+    );
+    expect(result.teamStatsWritten).toBe(1);
+    expect(result.createdCount).toBe(0);
+    expect(result.updatedCount).toBe(1);
+  });
+
+  it('computes stats for one team without refetching fixtures per team/fixture pair', async () => {
+    fixtureFindUnique.mockResolvedValue({
+      id: 'fixture-2',
+      seasonId: 'season-1',
+      scheduledAt: new Date('2024-08-08T12:00:00.000Z'),
+    });
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({
+        id: 'fixture-1',
+        scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
         homeTeamId: 'team-a',
         awayTeamId: 'team-b',
-        homeScore: 2,
-        awayScore: 1,
-        homeXg: null,
-        awayXg: null,
+        homeScore: 1,
+        awayScore: 0,
+        homeXg: decimal(1.1),
+        awayXg: decimal(0.6),
       }),
       makeFixture({
         id: 'fixture-2',
-        homeTeamId: 'team-c',
-        awayTeamId: 'team-a',
-        homeScore: 0,
-        awayScore: 3,
-        homeXg: null,
-        awayXg: null,
-      }),
-    ];
-
-    const { xgFor, xgAgainst } = calculateRollingXg(fixtures, 'team-a');
-    expect(xgFor.toNumber()).toBe(2.5);
-    expect(xgAgainst.toNumber()).toBe(0.5);
-  });
-
-  it('computes rolling averages from the latest 10 fixtures only', () => {
-    const fixtures = Array.from({ length: 12 }, (_, i) =>
-      makeFixture({
-        id: `f-${i}`,
-        homeTeamId: i % 2 === 0 ? 'team-a' : 'team-b',
-        awayTeamId: i % 2 === 0 ? 'team-b' : 'team-a',
-        homeXg: new Prisma.Decimal(i + 1),
-        awayXg: new Prisma.Decimal(i + 2),
-      }),
-    );
-
-    const { xgFor, xgAgainst } = calculateRollingXg(fixtures, 'team-a');
-
-    expect(xgFor.toNumber()).toBeCloseTo(8, 6);
-    expect(xgAgainst.toNumber()).toBeCloseTo(8, 6);
-  });
-});
-
-describe('calculateDomExtPerf', () => {
-  it('computes home/away win rates and global draw rate', () => {
-    const fixtures = [
-      makeFixture({
-        homeTeamId: 'team-a',
-        awayTeamId: 'team-b',
-        homeScore: 2,
-        awayScore: 1,
-      }),
-      makeFixture({
+        scheduledAt: new Date('2024-08-08T12:00:00.000Z'),
         homeTeamId: 'team-c',
         awayTeamId: 'team-a',
         homeScore: 0,
         awayScore: 2,
+        homeXg: decimal(0.7),
+        awayXg: decimal(1.8),
       }),
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const stats = await service.computeStats('team-a', 'fixture-2');
+
+    expect(fixtureFindUnique).toHaveBeenCalledTimes(1);
+    expect(fixtureFindMany).toHaveBeenCalledTimes(1);
+    expect(stats.recentForm.toNumber()).toBeGreaterThan(0);
+    expect(stats.xgFor.toNumber()).toBeCloseTo(1.45, 6);
+    expect(stats.xgAgainst.toNumber()).toBeCloseTo(0.65, 6);
+  });
+
+  it('refreshSeason does nothing when every finished fixture already has both rows', async () => {
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({ id: 'fixture-1' }),
       makeFixture({
-        homeTeamId: 'team-a',
+        id: 'fixture-2',
+        scheduledAt: new Date('2024-08-08T12:00:00.000Z'),
+        homeTeamId: 'team-c',
         awayTeamId: 'team-d',
-        homeScore: 1,
+      }),
+    ]);
+    teamStatsFindMany.mockResolvedValue([
+      {
+        teamId: 'team-a',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(1),
+        xgFor: decimal(1.2),
+        xgAgainst: decimal(0.8),
+        homeWinRate: decimal(1),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-b',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(0),
+        xgFor: decimal(0.8),
+        xgAgainst: decimal(1.2),
+        homeWinRate: decimal(0),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-c',
+        afterFixtureId: 'fixture-2',
+        recentForm: decimal(0),
+        xgFor: decimal(1.2),
+        xgAgainst: decimal(0.8),
+        homeWinRate: decimal(1),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-d',
+        afterFixtureId: 'fixture-2',
+        recentForm: decimal(0),
+        xgFor: decimal(0.8),
+        xgAgainst: decimal(1.2),
+        homeWinRate: decimal(0),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const result = await service.refreshSeason('season-1');
+
+    expect(teamStatsCreateMany).not.toHaveBeenCalled();
+    expect(teamStatsUpdate).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+    expect(result.teamStatsWritten).toBe(0);
+  });
+
+  it('refreshSeason recalculates only from the first incomplete fixture onward', async () => {
+    fixtureFindMany.mockResolvedValue([
+      makeFixture({
+        id: 'fixture-1',
+        scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-b',
+      }),
+      makeFixture({
+        id: 'fixture-2',
+        scheduledAt: new Date('2024-08-08T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-c',
+        homeScore: 2,
         awayScore: 1,
       }),
       makeFixture({
-        homeTeamId: 'team-e',
+        id: 'fixture-3',
+        scheduledAt: new Date('2024-08-15T12:00:00.000Z'),
+        homeTeamId: 'team-d',
         awayTeamId: 'team-a',
-        homeScore: 1,
-        awayScore: 1,
+        homeScore: 0,
+        awayScore: 0,
       }),
-    ];
+    ]);
+    teamStatsFindMany.mockResolvedValue([
+      {
+        teamId: 'team-a',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(1),
+        xgFor: decimal(1.2),
+        xgAgainst: decimal(0.8),
+        homeWinRate: decimal(1),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-b',
+        afterFixtureId: 'fixture-1',
+        recentForm: decimal(0),
+        xgFor: decimal(0.8),
+        xgAgainst: decimal(1.2),
+        homeWinRate: decimal(0),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+      {
+        teamId: 'team-a',
+        afterFixtureId: 'fixture-2',
+        recentForm: decimal(1),
+        xgFor: decimal(1.2),
+        xgAgainst: decimal(0.8),
+        homeWinRate: decimal(1),
+        awayWinRate: decimal(0),
+        drawRate: decimal(0),
+        leagueVolatility: decimal(0),
+      },
+    ]);
 
-    const { homeWinRate, awayWinRate, drawRate } = calculateDomExtPerf(
-      fixtures,
-      'team-a',
+    const service = new RollingStatsService(prismaService as never);
+    const result = await service.refreshSeason('season-1');
+
+    expect(teamStatsCreateMany).toHaveBeenCalledTimes(1);
+    expect(teamStatsCreateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            teamId: 'team-c',
+            afterFixtureId: 'fixture-2',
+          }),
+          expect.objectContaining({
+            teamId: 'team-d',
+            afterFixtureId: 'fixture-3',
+          }),
+          expect.objectContaining({
+            teamId: 'team-a',
+            afterFixtureId: 'fixture-3',
+          }),
+        ]),
+      }),
     );
-
-    expect(homeWinRate.toNumber()).toBeCloseTo(0.5, 6);
-    expect(awayWinRate.toNumber()).toBeCloseTo(0.5, 6);
-    expect(drawRate.toNumber()).toBeCloseTo(0.5, 6);
-  });
-});
-
-describe('calculateLeagueVolatility', () => {
-  it('returns 0 when there are fewer than 2 finished fixtures', () => {
-    const fixtures = [
-      makeFixture({ homeScore: 1, awayScore: 0 }),
-      makeFixture({ homeScore: null, awayScore: null }),
-    ];
-
-    expect(calculateLeagueVolatility(fixtures).toNumber()).toBe(0);
-  });
-
-  it('computes population standard deviation of total goals', () => {
-    const fixtures = [
-      makeFixture({ homeScore: 1, awayScore: 0 }), // total 1
-      makeFixture({ homeScore: 2, awayScore: 1 }), // total 3
-      makeFixture({ homeScore: 4, awayScore: 1 }), // total 5
-    ];
-
-    expect(calculateLeagueVolatility(fixtures).toNumber()).toBeCloseTo(
-      1.632993,
-      6,
-    );
+    expect(result.createdCount).toBe(3);
+    expect(result.updatedCount).toBe(1);
+    expect(result.teamStatsWritten).toBe(4);
   });
 });

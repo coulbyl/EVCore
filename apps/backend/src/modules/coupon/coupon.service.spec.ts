@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await */
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { CouponStatus } from '@evcore/db';
+import { CouponStatus, Market } from '@evcore/db';
 import { CouponService } from './coupon.service';
 import type { CouponRepository } from './coupon.repository';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
@@ -10,6 +10,27 @@ import type { NotificationService } from '@modules/notification/notification.ser
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bullmq';
+
+function makeValueBet(
+  fixtureId: string,
+  qualityScore: string,
+  modelRunId = `run-${fixtureId}`,
+) {
+  return {
+    fixtureId,
+    modelRunId,
+    market: Market.ONE_X_TWO,
+    pick: 'HOME',
+    pickKey: 'ONE_X_TWO:HOME',
+    comboMarket: null,
+    comboPick: null,
+    probability: new Decimal('0.55'),
+    odds: new Decimal('2.20'),
+    ev: new Decimal('0.21'),
+    stakePct: new Decimal('0.01'),
+    qualityScore: new Decimal(qualityScore),
+  };
+}
 
 function makeQueue(): Queue {
   return {
@@ -34,11 +55,16 @@ function makeDeps(
 ) {
   const couponRepository: CouponRepository = {
     findLatestByDate: vi.fn().mockResolvedValue(null),
+    findCouponsForDate: vi.fn().mockResolvedValue([]),
+    findPendingFixtureIdsForWindow: vi.fn().mockResolvedValue(new Set()),
     findPendingCouponsUntil: vi.fn().mockResolvedValue([]),
+    findPendingCouponsByFixture: vi.fn().mockResolvedValue([]),
     findCouponById: vi.fn().mockResolvedValue(null),
     updateStatus: vi.fn().mockResolvedValue(undefined),
     create: vi.fn().mockResolvedValue({ id: 'coupon-id' }),
-    linkBets: vi.fn().mockResolvedValue(undefined),
+    createPendingCouponWithBets: vi
+      .fn()
+      .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
     ...overrides.couponRepository,
   } as unknown as CouponRepository;
 
@@ -50,8 +76,7 @@ function makeDeps(
       decision: 'NO_BET',
       deterministicScore: 0.5,
       probabilities: {},
-      betId: null,
-      qualityScore: null,
+      valueBet: null,
     }),
     ...overrides.bettingEngineService,
   } as unknown as BettingEngineService;
@@ -104,9 +129,19 @@ function makeService(
 }
 
 const TEST_DATE = new Date('2025-08-01T00:00:00.000Z');
+const TEST_KICKOFF = new Date('2025-08-01T16:00:00.000Z');
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2025-08-01T12:00:00.000Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('CouponService.generateDailyCoupon', () => {
-  it('creates a NO_BET coupon when no fixtures are scheduled', async () => {
+  it('sends no-bet notification when no fixtures are scheduled', async () => {
     const deps = makeDeps({
       fixtureService: { findScheduledForDate: vi.fn().mockResolvedValue([]) },
     });
@@ -114,21 +149,23 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.NO_BET, legCount: 0 }),
-    );
     expect(deps.notificationService.sendNoBetToday).toHaveBeenCalledWith(
       TEST_DATE,
     );
-    expect(deps.couponRepository.linkBets).not.toHaveBeenCalled();
+    expect(deps.couponRepository.create).not.toHaveBeenCalled();
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).not.toHaveBeenCalled();
   });
 
-  it('creates a NO_BET coupon when no picks pass EV threshold', async () => {
+  it('sends no-bet notification when no picks pass EV threshold', async () => {
     const deps = makeDeps({
       fixtureService: {
         findScheduledForDate: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       // analyzeFixture returns NO_BET → no bet created → bet query returns []
     });
@@ -136,10 +173,8 @@ describe('CouponService.generateDailyCoupon', () => {
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.NO_BET }),
-    );
     expect(deps.notificationService.sendNoBetToday).toHaveBeenCalled();
+    expect(deps.couponRepository.create).not.toHaveBeenCalled();
   });
 
   it('creates a PENDING coupon when viable picks exist', async () => {
@@ -147,7 +182,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledForDate: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
@@ -157,44 +194,24 @@ describe('CouponService.generateDailyCoupon', () => {
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-1',
-          qualityScore: 0.084,
+          valueBet: makeValueBet('f-1', '0.084'),
         }),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              // First call: collect bets for coupon selection
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-1',
-                  ev: new Decimal('0.12'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              // Second call: fetch full bets for notification
-              .mockResolvedValueOnce([
-                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
-              ]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi.fn().mockResolvedValue({
+          id: 'coupon-id',
+          code: 'CPN-TEST',
+          betIds: ['bet-1'],
+        }),
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
-    );
-    expect(deps.couponRepository.linkBets).toHaveBeenCalledWith('coupon-id', [
-      'bet-1',
-    ]);
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 1 }));
     expect(deps.notificationService.sendDailyCoupon).toHaveBeenCalled();
   });
 
@@ -203,14 +220,9 @@ describe('CouponService.generateDailyCoupon', () => {
     const fixtures = Array.from({ length: 8 }, (_, i) => ({
       id: `f-${i}`,
       externalId: i + 1,
-    }));
-    const bets = fixtures.map((f, i) => ({
-      id: `bet-${i}`,
-      ev: new Decimal((0.1 + i * 0.01).toFixed(4)),
-      modelRun: {
-        deterministicScore: new Decimal('0.70'),
-        fixtureId: f.id,
-      },
+      scheduledAt: new Date(
+        `2025-08-01T${String(12 + i).padStart(2, '0')}:00:00.000Z`,
+      ),
     }));
 
     const deps = makeDeps({
@@ -227,47 +239,32 @@ describe('CouponService.generateDailyCoupon', () => {
             decision: 'BET',
             deterministicScore: 0.7,
             probabilities: {},
-            betId: `bet-${fixtureId.split('-')[1]}`,
-            qualityScore: 0.1,
+            valueBet: makeValueBet(fixtureId, '0.084'),
           })),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce(bets)
-              .mockResolvedValueOnce(bets.slice(-6)),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 6 }),
-    );
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 6 }));
   });
 
   it('sorts picks by qualityScore DESC', async () => {
     const fixtures = [
-      { id: 'f-a', externalId: 1 },
-      { id: 'f-b', externalId: 2 },
-    ];
-    // f-b has higher qualityScore than f-a
-    const bets = [
       {
-        id: 'bet-a',
-        ev: new Decimal('0.10'),
-        modelRun: { deterministicScore: new Decimal('0.60'), fixtureId: 'f-a' },
+        id: 'f-a',
+        externalId: 1,
+        scheduledAt: new Date('2025-08-01T15:00:00.000Z'),
       },
-      {
-        id: 'bet-b',
-        ev: new Decimal('0.20'),
-        modelRun: { deterministicScore: new Decimal('0.80'), fixtureId: 'f-b' },
-      },
+      { id: 'f-b', externalId: 2, scheduledAt: TEST_KICKOFF },
     ];
 
     const deps = makeDeps({
@@ -284,31 +281,32 @@ describe('CouponService.generateDailyCoupon', () => {
             decision: 'BET',
             deterministicScore: fixtureId === 'f-a' ? 0.6 : 0.8,
             probabilities: {},
-            betId: fixtureId === 'f-a' ? 'bet-a' : 'bet-b',
-            qualityScore: fixtureId === 'f-a' ? 0.06 : 0.16,
+            // f-b has higher qualityScore (0.16) than f-a (0.06)
+            valueBet: makeValueBet(
+              fixtureId,
+              fixtureId === 'f-a' ? '0.06' : '0.16',
+            ),
           })),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce(bets)
-              .mockResolvedValueOnce([bets[1], bets[0]]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    // linkBets should have bet-b first (higher qualityScore)
-    const [, linkedBets] = (
-      deps.couponRepository.linkBets as ReturnType<typeof vi.fn>
-    ).mock.calls[0] as [string, string[]];
-    expect(linkedBets[0]).toBe('bet-b');
-    expect(linkedBets[1]).toBe('bet-a');
+    // bets should be passed in qualityScore DESC order (f-b first)
+    const [callInput] = (
+      deps.couponRepository.createPendingCouponWithBets as ReturnType<
+        typeof vi.fn
+      >
+    ).mock.calls[0] as [{ bets: { fixtureId: string }[] }];
+    const linkedBets = callInput.bets;
+    expect(linkedBets[0]?.fixtureId).toBe('f-b');
+    expect(linkedBets[1]?.fixtureId).toBe('f-a');
   });
 
   it('supports multi-day windows (2-3 days) via range query', async () => {
@@ -316,7 +314,9 @@ describe('CouponService.generateDailyCoupon', () => {
       fixtureService: {
         findScheduledInRange: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
@@ -326,30 +326,13 @@ describe('CouponService.generateDailyCoupon', () => {
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-1',
-          qualityScore: 0.105,
+          valueBet: makeValueBet('f-1', '0.105'),
         }),
       },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-1',
-                  ev: new Decimal('0.15'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              .mockResolvedValueOnce([
-                { id: 'bet-1', market: 'ONE_X_TWO', pick: 'HOME' },
-              ]),
-          },
-        },
+      couponRepository: {
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
     });
     const service = makeService(deps);
@@ -358,68 +341,103 @@ describe('CouponService.generateDailyCoupon', () => {
 
     expect(deps.fixtureService.findScheduledInRange).toHaveBeenCalledTimes(1);
     expect(deps.fixtureService.findScheduledForDate).not.toHaveBeenCalled();
-    expect(deps.couponRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: CouponStatus.PENDING, legCount: 1 }),
-    );
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(expect.objectContaining({ legCount: 1 }));
   });
 
-  it('ignores stale pending bets and only selects bets from the current analysis batch', async () => {
+  it('excludes fixtures already assigned to an existing PENDING coupon', async () => {
+    // f-1 is already in a PENDING coupon; f-2 is available
     const deps = makeDeps({
       fixtureService: {
-        findScheduledForDate: vi
+        findScheduledForDate: vi.fn().mockResolvedValue([
+          { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          {
+            id: 'f-2',
+            externalId: 2,
+            scheduledAt: new Date('2025-08-01T17:00:00.000Z'),
+          },
+        ]),
+      },
+      couponRepository: {
+        findPendingFixtureIdsForWindow: vi
           .fn()
-          .mockResolvedValue([{ id: 'f-1', externalId: 1 }]),
+          .mockResolvedValue(new Set(['f-1'])),
+        createPendingCouponWithBets: vi
+          .fn()
+          .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST', betIds: [] }),
       },
       bettingEngineService: {
         analyzeFixture: vi.fn().mockResolvedValue({
           status: 'analyzed',
-          fixtureId: 'f-1',
-          modelRunId: 'run-new',
+          fixtureId: 'f-2',
+          modelRunId: 'run-2',
           decision: 'BET',
           deterministicScore: 0.7,
           probabilities: {},
-          betId: 'bet-new',
-          qualityScore: 0.105,
+          valueBet: makeValueBet('f-2', '0.105'),
         }),
-      },
-      prisma: {
-        client: {
-          bet: {
-            findMany: vi
-              .fn()
-              .mockResolvedValueOnce([
-                {
-                  id: 'bet-new',
-                  ev: new Decimal('0.15'),
-                  modelRun: {
-                    deterministicScore: new Decimal('0.70'),
-                    fixtureId: 'f-1',
-                  },
-                },
-              ])
-              .mockResolvedValueOnce([
-                { id: 'bet-new', market: 'BTTS', pick: 'NO' },
-              ]),
-          },
-        },
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.prisma.client.bet.findMany).toHaveBeenNthCalledWith(
-      1,
+    // Only f-2 should be analyzed (f-1 was excluded)
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(1);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledWith(
+      'f-2',
+    );
+    expect(
+      deps.couponRepository.createPendingCouponWithBets,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          id: { in: ['bet-new'] },
-          status: 'PENDING',
-        }),
+        bets: expect.arrayContaining([
+          expect.objectContaining({ fixtureId: 'f-2' }),
+        ]),
       }),
     );
-    expect(deps.couponRepository.linkBets).toHaveBeenCalledWith('coupon-id', [
-      'bet-new',
-    ]);
+  });
+
+  it('excludes fixtures that started more than 30 minutes ago', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-08-01T16:31:00.000Z'));
+
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi.fn().mockResolvedValue([
+          {
+            id: 'stale-fixture',
+            externalId: 1,
+            scheduledAt: new Date('2025-08-01T16:00:00.000Z'),
+          },
+          {
+            id: 'fresh-fixture',
+            externalId: 2,
+            scheduledAt: new Date('2025-08-01T16:15:00.000Z'),
+          },
+        ]),
+      },
+      bettingEngineService: {
+        analyzeFixture: vi.fn().mockResolvedValue({
+          status: 'analyzed',
+          fixtureId: 'fresh-fixture',
+          modelRunId: 'run-fresh',
+          decision: 'NO_BET',
+          deterministicScore: 0.5,
+          probabilities: {},
+          valueBet: null,
+        }),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(1);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledWith(
+      'fresh-fixture',
+    );
   });
 });
 
@@ -530,5 +548,266 @@ describe('CouponService settlement', () => {
     expect(deps.notificationService.sendCouponResult).toHaveBeenCalledWith(
       'coupon-id',
     );
+  });
+});
+
+describe('CouponService listCouponsByPeriod', () => {
+  it('includes probEstimated in coupon selections', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findCouponsByDateRange: vi.fn().mockResolvedValue([
+          {
+            id: 'coupon-1',
+            code: 'CPN-TEST',
+            date: new Date('2026-03-15T00:00:00.000Z'),
+            status: 'PENDING',
+            bets: [
+              {
+                id: 'bet-1',
+                market: 'OVER_UNDER',
+                pick: 'UNDER',
+                comboMarket: null,
+                comboPick: null,
+                probEstimated: new Decimal('0.4123'),
+                oddsSnapshot: new Decimal('3.26'),
+                ev: new Decimal('0.328'),
+                status: 'PENDING',
+                modelRun: {
+                  features: {
+                    lambdaHome: 1.18,
+                    lambdaAway: 1.07,
+                    candidatePicks: [
+                      {
+                        market: 'OVER_UNDER',
+                        pick: 'UNDER',
+                        probability: 0.4123,
+                        odds: 3.26,
+                        ev: 0.328,
+                        qualityScore: 0.2296,
+                      },
+                      {
+                        market: 'BTTS',
+                        pick: 'NO',
+                        probability: 0.488,
+                        odds: 2.45,
+                        ev: 0.1956,
+                        qualityScore: 0.1369,
+                      },
+                    ],
+                    evaluatedPicks: [
+                      {
+                        market: 'OVER_UNDER',
+                        pick: 'UNDER',
+                        probability: 0.4123,
+                        odds: 3.26,
+                        ev: 0.328,
+                        qualityScore: 0.2296,
+                        status: 'viable',
+                      },
+                      {
+                        market: 'ONE_X_TWO',
+                        pick: 'HOME',
+                        probability: 0.39,
+                        odds: 2.25,
+                        ev: -0.1225,
+                        qualityScore: -0.0858,
+                        status: 'rejected',
+                        rejectionReason: 'ev_below_threshold',
+                      },
+                    ],
+                  },
+                  fixture: {
+                    id: 'fixture-1',
+                    scheduledAt: new Date('2026-03-15T16:30:00.000Z'),
+                    homeTeam: { name: 'Liverpool' },
+                    awayTeam: { name: 'Tottenham' },
+                  },
+                },
+              },
+            ],
+          },
+        ]),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.listCouponsByPeriod({
+      from: '2026-03-15',
+      to: '2026-03-15',
+    });
+
+    expect(result.coupons[0]?.selections[0]).toMatchObject({
+      probEstimated: '41.2%',
+      lambdaHome: '1.18',
+      lambdaAway: '1.07',
+      expectedTotalGoals: '2.25',
+      odds: '3.26',
+      ev: '+0.328',
+      candidatePicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+        },
+        {
+          market: 'BTTS',
+          pick: 'NO',
+          probability: '0.4880',
+          odds: '2.45',
+          ev: '+0.1956',
+          qualityScore: '0.1369',
+        },
+      ],
+      evaluatedPicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+          status: 'viable',
+        },
+        {
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: '0.3900',
+          odds: '2.25',
+          ev: '-0.1225',
+          qualityScore: '-0.0858',
+          status: 'rejected',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    });
+  });
+
+  it('includes candidate picks in coupon detail', async () => {
+    const deps = makeDeps({
+      couponRepository: {
+        findCouponById: vi.fn().mockResolvedValue({
+          id: 'coupon-1',
+          date: new Date('2026-03-15T00:00:00.000Z'),
+          status: 'PENDING',
+          legCount: 1,
+          createdAt: new Date('2026-03-15T13:34:21.466Z'),
+          bets: [
+            {
+              id: 'bet-1',
+              market: 'OVER_UNDER',
+              pick: 'UNDER',
+              comboMarket: null,
+              comboPick: null,
+              probEstimated: new Decimal('0.4123'),
+              oddsSnapshot: new Decimal('3.26'),
+              ev: new Decimal('0.3280'),
+              status: 'PENDING',
+              modelRun: {
+                features: {
+                  lambdaHome: 1.18,
+                  lambdaAway: 1.07,
+                  candidatePicks: [
+                    {
+                      market: 'OVER_UNDER',
+                      pick: 'UNDER',
+                      probability: 0.4123,
+                      odds: 3.26,
+                      ev: 0.328,
+                      qualityScore: 0.2296,
+                    },
+                    {
+                      market: 'ONE_X_TWO',
+                      pick: 'HOME',
+                      probability: 0.51,
+                      odds: 2.15,
+                      ev: 0.0965,
+                      qualityScore: 0.0676,
+                    },
+                  ],
+                  evaluatedPicks: [
+                    {
+                      market: 'OVER_UNDER',
+                      pick: 'UNDER',
+                      probability: 0.4123,
+                      odds: 3.26,
+                      ev: 0.328,
+                      qualityScore: 0.2296,
+                      status: 'viable',
+                    },
+                    {
+                      market: 'BTTS',
+                      pick: 'YES',
+                      probability: 0.44,
+                      odds: 2.1,
+                      ev: -0.076,
+                      qualityScore: -0.0532,
+                      status: 'rejected',
+                      rejectionReason: 'ev_below_threshold',
+                    },
+                  ],
+                },
+                fixture: {
+                  scheduledAt: new Date('2026-03-15T16:30:00.000Z'),
+                  homeTeam: { name: 'Liverpool' },
+                  awayTeam: { name: 'Tottenham' },
+                },
+              },
+            },
+          ],
+        }),
+      },
+    });
+    const service = makeService(deps);
+
+    const result = await service.getCouponById('coupon-1');
+
+    expect(result?.selections[0]).toMatchObject({
+      probEstimated: '41.2%',
+      lambdaHome: '1.18',
+      lambdaAway: '1.07',
+      expectedTotalGoals: '2.25',
+      candidatePicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+        },
+        {
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: '0.5100',
+          odds: '2.15',
+          ev: '+0.0965',
+          qualityScore: '0.0676',
+        },
+      ],
+      evaluatedPicks: [
+        {
+          market: 'OVER_UNDER',
+          pick: 'UNDER',
+          probability: '0.4123',
+          odds: '3.26',
+          ev: '+0.3280',
+          qualityScore: '0.2296',
+          status: 'viable',
+        },
+        {
+          market: 'BTTS',
+          pick: 'YES',
+          probability: '0.4400',
+          odds: '2.10',
+          ev: '-0.0760',
+          qualityScore: '-0.0532',
+          status: 'rejected',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    });
   });
 });

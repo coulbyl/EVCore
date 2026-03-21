@@ -13,10 +13,10 @@ describe('estimateApiFootballDailyCalls', () => {
     expect(estimate.leagueCount).toBe(10);
     expect(estimate.seasonJobCount).toBe(30);
     expect(estimate.fixturesSyncCalls).toBe(30);
-    expect(estimate.resultsSyncCalls).toBe(30);
+    expect(estimate.settlementSyncCalls).toBe(5);
     expect(estimate.statsSyncCalls).toBe(20);
     expect(estimate.injuriesSyncCalls).toBe(100);
     expect(estimate.oddsLiveSyncCalls).toBe(100);
-    expect(estimate.totalCalls).toBe(280);
+    expect(estimate.totalCalls).toBe(255);
   });
 });

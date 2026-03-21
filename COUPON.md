@@ -191,14 +191,14 @@ Tous les paramètres sont centralisés dans `config/` — jamais hardcodés.
 | `COUPON_SCHEDULING_ENABLED` | `true`                   | env var               |
 | `COUPON_TRIGGER_CRON`       | `0 20 * * *` (20:00 UTC) | `coupon.constants.ts` |
 
-> Le coupon est généré à 20:00 UTC, après le `odds-live-sync` (18:00 UTC), pour garantir que toutes les odds sont disponibles.
+> Le coupon est généré à 20:00 UTC, après le `odds-prematch-sync` (18:00 UTC), pour garantir que toutes les odds sont disponibles.
 
 ---
 
 ## Intégration dans le pipeline
 
 ```
-odds-live-sync (18:00 UTC)
+odds-prematch-sync (18:00 UTC)
     ↓ odds snapshottées pour les fixtures SCHEDULED J+1
 coupon-generator (20:00 UTC)
     ↓ scan ligues actives → fixtures du lendemain

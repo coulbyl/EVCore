@@ -5,6 +5,7 @@ import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type OddsSnapshotRetentionJobData = {
   retentionDays?: number;
@@ -55,24 +56,12 @@ export class OddsSnapshotRetentionWorker extends WorkerHost {
     job: Job<OddsSnapshotRetentionJobData> | undefined,
     error: Error,
   ): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
+    notifyOnWorkerFailure({
+      notification: this.notification,
+      queueName: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION,
+      job,
+      error,
+      logger,
+    });
   }
 }

@@ -1,11 +1,10 @@
 // ETL configuration constants — never hardcode these inline
 
-import { activeSeasons } from '@utils/date.utils';
+import { currentSeason } from '@utils/date.utils';
 
-// Defaults shared by leagues with standard Europe-like calendar.
-// Override only when a league has a different season rhythm.
+// Default season start month for leagues with a standard Europe-like calendar.
+// Override per competition via the DB `seasonStartMonth` field.
 export const DEFAULT_SEASON_START_MONTH = 7; // August (0-indexed)
-export const DEFAULT_ACTIVE_SEASONS_COUNT = 3;
 
 export type ApiFootballDailyCallsEstimateInput = {
   leagueCount: number;
@@ -18,7 +17,7 @@ export type ApiFootballDailyCallsEstimate = {
   leagueCount: number;
   seasonJobCount: number;
   fixturesSyncCalls: number;
-  resultsSyncCalls: number;
+  settlementSyncCalls: number;
   statsSyncCalls: number;
   injuriesSyncCalls: number;
   oddsLiveSyncCalls: number;
@@ -40,17 +39,17 @@ export function estimateApiFootballDailyCalls(
   );
 
   // Daily calls by worker class:
-  // - fixtures/results are season-level calls
-  // - stats/injuries/odds-live are fixture-level calls
+  // - fixtures are season-level calls
+  // - settlement/stats/injuries/odds-prematch are fixture-level calls
   const fixturesSyncCalls = seasonJobCount;
-  const resultsSyncCalls = seasonJobCount;
+  const settlementSyncCalls = Math.max(1, Math.floor(leagueCount / 2));
   const statsSyncCalls = leagueCount * avgFinishedWithoutXg;
   const injuriesSyncCalls = leagueCount * avgScheduled;
   const oddsLiveSyncCalls = leagueCount * avgScheduled;
 
   const totalCalls =
     fixturesSyncCalls +
-    resultsSyncCalls +
+    settlementSyncCalls +
     statsSyncCalls +
     injuriesSyncCalls +
     oddsLiveSyncCalls;
@@ -59,7 +58,7 @@ export function estimateApiFootballDailyCalls(
     leagueCount,
     seasonJobCount,
     fixturesSyncCalls,
-    resultsSyncCalls,
+    settlementSyncCalls,
     statsSyncCalls,
     injuriesSyncCalls,
     oddsLiveSyncCalls,
@@ -83,21 +82,27 @@ export const ETL_CONSTANTS = {
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
 } as const;
 
-// Returns the last DEFAULT_ACTIVE_SEASONS_COUNT season codes in football-data.co.uk
-// format (YYZZ), derived dynamically from activeSeasons() — same window as fixtures.
-// Example: 2026-03 → ['2324', '2425', '2526']
-export function getActiveCsvSeasonCodes(now: Date = new Date()): string[] {
-  return activeSeasons(
-    DEFAULT_SEASON_START_MONTH,
-    DEFAULT_ACTIVE_SEASONS_COUNT,
-    now,
-  ).map((y) => `${String(y).slice(2)}${String(y + 1).slice(2)}`);
+// Returns the current season code in football-data.co.uk format (YYZZ).
+// Example: 2026-03 → '2526'
+export function getCurrentCsvSeasonCode(now: Date = new Date()): string {
+  const year = currentSeason(DEFAULT_SEASON_START_MONTH, now);
+  return `${String(year).slice(2)}${String(year + 1).slice(2)}`;
+}
+
+// Returns season codes for an explicit list of start-years in football-data.co.uk
+// format (YYZZ). Used by backtest endpoints to import historical odds.
+// Example: [2022, 2023] → ['2223', '2324']
+export function csvSeasonCodes(years: number[]): string[] {
+  return years.map((y) => `${String(y).slice(2)}${String(y + 1).slice(2)}`);
 }
 
 // Bookmaker IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BOOKMAKERS = {
   PINNACLE: 4,
   BET365: 8,
+  UNIBET: 16,
+  MARATHONBET: 2,
+  BWIN: 6,
 } as const;
 
 // Bet type IDs in the API-Football odds endpoint
@@ -109,12 +114,10 @@ export const API_FOOTBALL_BET_IDS = {
 } as const;
 
 export const BULLMQ_QUEUES = {
-  FIXTURES_SYNC: 'fixtures-sync',
-  RESULTS_SYNC: 'results-sync',
-  STATS_SYNC: 'stats-sync',
-  INJURIES_SYNC: 'injuries-sync',
+  LEAGUE_SYNC: 'league-sync',
+  PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
-  ODDS_LIVE_SYNC: 'odds-live-sync',
+  ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   BETTING_ENGINE: 'betting-engine',
 } as const;
@@ -129,21 +132,19 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
 // Cron schedules for daily/weekly ETL automation (BullMQ repeatable jobs)
 export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
-  RESULTS_SYNC: '0 3 * * *', // 03:00 UTC daily
+  PENDING_BETS_SETTLEMENT: '*/30 * * * *', // every 30 minutes
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
-  ODDS_LIVE_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
+  ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
   ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
 export const ETL_SCHEDULER_KEYS = {
-  FIXTURES_SYNC: 'cron:fixtures-sync',
-  RESULTS_SYNC: 'cron:results-sync',
-  STATS_SYNC: 'cron:stats-sync',
-  INJURIES_SYNC: 'cron:injuries-sync',
+  LEAGUE_SYNC: 'cron:league-sync',
+  PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
-  ODDS_LIVE_SYNC: 'cron:odds-live-sync',
+  ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
 } as const;

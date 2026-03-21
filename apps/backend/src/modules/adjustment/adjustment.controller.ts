@@ -1,9 +1,72 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { IsInt, IsOptional, Min } from 'class-validator';
+import { PrismaService } from '@/prisma.service';
 import { AdjustmentService } from './adjustment.service';
+
+class SetFixtureResultDto {
+  @IsInt()
+  @Min(0)
+  homeScore!: number;
+
+  @IsInt()
+  @Min(0)
+  awayScore!: number;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  homeHtScore?: number;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  awayHtScore?: number;
+}
 
 @Controller('adjustment')
 export class AdjustmentController {
-  constructor(private readonly adjustment: AdjustmentService) {}
+  constructor(
+    private readonly adjustment: AdjustmentService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /**
+   * PATCH /adjustment/fixture/:id/result
+   * Record a match result manually, then settle open bets and run calibration.
+   */
+  @Patch('fixture/:id/result')
+  async setFixtureResult(
+    @Param('id') id: string,
+    @Body() dto: SetFixtureResultDto,
+  ) {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!fixture) throw new NotFoundException(`Fixture ${id} not found`);
+
+    await this.prisma.client.fixture.update({
+      where: { id },
+      data: {
+        homeScore: dto.homeScore,
+        awayScore: dto.awayScore,
+        homeHtScore: dto.homeHtScore ?? null,
+        awayHtScore: dto.awayHtScore ?? null,
+        status: 'FINISHED',
+      },
+    });
+
+    const settle = await this.adjustment.settleAndCheck(id);
+    return { fixtureId: id, ...settle };
+  }
 
   /**
    * POST /adjustment/settle-and-check/:fixtureId

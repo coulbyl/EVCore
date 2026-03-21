@@ -1,5 +1,7 @@
 # GUIDE.md — Lancer et opérer EVCore
 
+docker exec -i evcore-postgres psql -U postgres -d evcore < /home/fannancoulibaly/lab/coulbyl-studio/evcore/backups/evcore_20260319_212751.sql
+
 > Guide opérationnel basé sur les incidents et découvertes de la session du 13 mars 2026.
 
 ---
@@ -43,15 +45,18 @@ pnpm --filter @evcore/db db:seed
 Toujours respecter cet ordre. Chaque étape dépend de la précédente.
 
 ```
-POST /etl/sync/fixtures     ← les fixtures doivent exister avant tout
-POST /etl/sync/results      ← marque les fixtures FT/POSTPONED
-POST /etl/sync/stats        ← xG, shots (2s de délai par fixture — prévoir ~2h pour 3 saisons × 10 ligues)
-POST /etl/sync/odds-csv     ← odds historiques Pinnacle/Bet365 depuis football-data.co.uk
-POST /etl/sync/odds-live    ← cotes pré-match J+1 (corps JSON optionnel : { "date": "YYYY-MM-DD" })
-POST /etl/sync/injuries     ← shadow scoring blessures (SCHEDULED fixtures uniquement)
+POST /etl/sync/fixtures            ← routine today+tomorrow UTC, ou /fixtures/:competitionCode pour backfill ligue
+POST /etl/sync/settlement          ← refresh des fixtures avec bets pending + settlement coupon/bets
+POST /etl/sync/stats               ← xG, shots (2s de délai par fixture — prévoir ~2h pour 3 saisons × 10 ligues)
+POST /etl/sync/odds-csv            ← odds historiques Pinnacle/Bet365 depuis football-data.co.uk
+POST /etl/sync/odds-live           ← cotes pré-match J+1 (corps JSON optionnel : { "date": "YYYY-MM-DD" })
+POST /etl/sync/injuries            ← shadow scoring blessures sur la fenêtre today+tomorrow UTC
 ```
 
 > **Raccourci** : `POST /etl/sync/full` enchaîne tout automatiquement.
+
+> **Routes ETL réduites** : l'API expose maintenant `POST /etl/sync/:type` et
+> `POST /etl/sync/:type/:competitionCode` (pour `fixtures`, `stats`, `injuries`).
 
 Surveiller la progression :
 
@@ -164,9 +169,14 @@ L'API renvoie HTTP 200 avec `errors: { requests: "..." }`. Le worker `odds-live-
 
 Le worker `stats-sync` ne convertit plus `expected_goals: null` en `0`. Le fixture est marqué comme xG indisponible pour éviter de polluer les `teamStats` et les lambdas du moteur.
 
-### `results-sync` — 3 jobs en `failed`
+### `pending-bets-settlement-sync` — jobs en `failed`
 
-Après un redémarrage à froid, certains jobs peuvent échouer si la table n'existe pas encore. Relancer `POST /etl/sync/results` une fois la DB prête.
+Après un redémarrage à froid, certains jobs peuvent échouer si la table n'existe pas encore. Relancer `POST /etl/sync/settlement` une fois la DB prête.
+
+### `injuries-sync` trop bavard
+
+Le worker `injuries-sync` est maintenant limité à la fenêtre UTC `today + tomorrow`.
+Il ne parcourt plus toutes les fixtures `SCHEDULED` de la saison courante.
 
 ### Pinnacle odds à 0 (depuis juillet 2025)
 

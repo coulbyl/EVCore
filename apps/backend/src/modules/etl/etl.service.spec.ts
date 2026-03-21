@@ -1,31 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Decimal from 'decimal.js';
 import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
-  getActiveCsvSeasonCodes,
+  DEFAULT_SEASON_START_MONTH,
+  getCurrentCsvSeasonCode,
 } from '../../config/etl.constants';
+import { currentSeason } from '@utils/date.utils';
 import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
-import type { FixturesSyncJobData } from './workers/fixtures-sync.worker';
-import type { ResultsSyncJobData } from './workers/results-sync.worker';
-import type { StatsSyncJobData } from './workers/stats-sync.worker';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
-import type { OddsLiveSyncJobData } from './workers/odds-live-sync.worker';
-import type { InjuriesSyncJobData } from './workers/injuries-sync.worker';
+import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
+import type { LeagueSyncJobData } from './workers/league-sync.worker';
+import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
+import type { BacktestService } from '../backtest/backtest.service';
+import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
-type MockQueue<T> = Pick<Queue<T>, 'add' | 'upsertJobScheduler'>;
+type MockQueue<T> = Pick<
+  Queue<T>,
+  'add' | 'upsertJobScheduler' | 'removeJobScheduler'
+>;
 
 function makeQueue<T>(): MockQueue<T> {
   return {
     add: vi.fn().mockResolvedValue({}),
     upsertJobScheduler: vi.fn().mockResolvedValue({}),
+    removeJobScheduler: vi.fn().mockResolvedValue(undefined),
   };
 }
 
-// Scheduling disabled in tests — avoids real upsertJobScheduler calls
 const configMock = {
   get: vi.fn().mockImplementation((key: string, defaultValue?: string) => {
     if (key === 'ETL_SCHEDULING_ENABLED') return 'false';
@@ -33,9 +39,6 @@ const configMock = {
   }),
 } as unknown as ConfigService;
 
-const prismaMock = {} as unknown as PrismaService;
-
-// Test competition plans — used instead of DB at test time
 type CompetitionRow = {
   leagueId: number;
   code: string;
@@ -43,7 +46,6 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
-  activeSeasonsCount: number | null;
 };
 
 const TEST_COMPETITIONS: CompetitionRow[] = [
@@ -54,7 +56,6 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'England',
     csvDivisionCode: 'E0',
     seasonStartMonth: null,
-    activeSeasonsCount: null,
   },
   {
     leagueId: 135,
@@ -63,218 +64,329 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'Italy',
     csvDivisionCode: 'I1',
     seasonStartMonth: null,
-    activeSeasonsCount: null,
   },
 ];
-const TEST_SEASONS = [2022, 2023, 2024];
-const TEST_PLANS = TEST_COMPETITIONS.map((c) => ({
-  competition: c,
-  seasons: TEST_SEASONS,
-}));
 
-const totalSeasonJobs = TEST_PLANS.reduce(
-  (sum, plan) => sum + plan.seasons.length,
-  0,
-);
-const csvCompetitions = TEST_PLANS.filter(
-  (p) => p.competition.csvDivisionCode != null,
-).map((p) => p.competition as CompetitionRow & { csvDivisionCode: string });
-const csvSeasonCodes = getActiveCsvSeasonCodes();
-const totalCsvJobs = csvCompetitions.length * csvSeasonCodes.length;
+const CURRENT_SEASON = currentSeason(DEFAULT_SEASON_START_MONTH);
+const totalStatsJobs = TEST_COMPETITIONS.length;
 
 describe('EtlService', () => {
-  const fixturesQueue = makeQueue<FixturesSyncJobData>();
-  const resultsQueue = makeQueue<ResultsSyncJobData>();
-  const statsQueue = makeQueue<StatsSyncJobData>();
-  const injuriesQueue = makeQueue<InjuriesSyncJobData>();
+  const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
+  const pendingBetsSettlementQueue = makeQueue<PendingBetsSettlementJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
-  const oddsLiveQueue = makeQueue<OddsLiveSyncJobData>();
+  const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
+  const prismaMockRaw = {
+    client: {
+      competition: {
+        findMany: vi.fn().mockResolvedValue(TEST_COMPETITIONS),
+        findFirst: vi.fn(),
+      },
+    },
+  };
+  const prismaMock = prismaMockRaw as unknown as PrismaService;
+  const backtestServiceMock = {
+    runAllSeasons: vi.fn().mockResolvedValue({
+      seasons: [],
+      totalFixtures: 0,
+      totalAnalyzed: 0,
+      totalBets: 0,
+      averageBrierScore: new Decimal(0),
+      averageCalibrationError: new Decimal(0),
+      aggregateRoi: new Decimal(0),
+      aggregateProfit: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
+      byCompetition: [],
+      reportGeneratedAt: new Date(),
+    }),
+    getValidationReport: vi.fn().mockResolvedValue({
+      brierScore: {
+        value: new Decimal(0),
+        threshold: new Decimal(0.65),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      calibrationError: {
+        value: new Decimal(0),
+        threshold: new Decimal(0.05),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      roi: {
+        value: new Decimal(0),
+        threshold: new Decimal(-0.05),
+        verdict: 'INSUFFICIENT_DATA',
+      },
+      totalAnalyzed: 0,
+      totalBets: 0,
+      aggregateProfit: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
+      overallVerdict: 'INSUFFICIENT_DATA',
+      byCompetition: [],
+      reportGeneratedAt: new Date(),
+    }),
+    runBacktest: vi.fn().mockResolvedValue({
+      seasonId: 'season-1',
+      fixtureCount: 0,
+      analyzedCount: 0,
+      skippedCount: 0,
+      brierScore: new Decimal(0),
+      calibrationError: new Decimal(0),
+      roiSimulated: new Decimal(0),
+      maxDrawdownSimulated: new Decimal(0),
+      averageEvSimulated: new Decimal(0),
+      marketPerformance: [],
+      reportGeneratedAt: new Date(),
+    }),
+  } as unknown as BacktestService;
+  const rollingStatsServiceMock = {
+    refreshSeasonYear: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 10,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+    backfillSeasonYear: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 10,
+      upsertCount: 20,
+      teamStatsWritten: 20,
+      createdCount: 20,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+  } as unknown as RollingStatsService;
 
   const service = new EtlService(
-    fixturesQueue as Queue<FixturesSyncJobData>,
-    resultsQueue as Queue<ResultsSyncJobData>,
-    statsQueue as Queue<StatsSyncJobData>,
-    injuriesQueue as Queue<InjuriesSyncJobData>,
+    leagueSyncQueue as Queue<LeagueSyncJobData>,
+    pendingBetsSettlementQueue as Queue<PendingBetsSettlementJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
-    oddsLiveQueue as Queue<OddsLiveSyncJobData>,
+    oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
     prismaMock,
+    backtestServiceMock,
+    rollingStatsServiceMock,
   );
-
-  // Inject test plans directly — scheduling is disabled so onApplicationBootstrap
-  // returns early without populating competitionPlans from DB.
-  service['competitionPlans'] = TEST_PLANS;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMockRaw.client.competition.findMany.mockResolvedValue(
+      TEST_COMPETITIONS,
+    );
   });
 
-  it('dispatches fixtures jobs for each season with API-FOOTBALL staggered delays', async () => {
+  it('triggers rolling-stats refresh for one season', async () => {
+    await service.triggerRollingStatsSeason('PL', 2024);
+
+    expect(rollingStatsServiceMock.refreshSeasonYear).toHaveBeenCalledWith(
+      2024,
+      'PL',
+    );
+    expect(rollingStatsServiceMock.backfillSeasonYear).not.toHaveBeenCalled();
+  });
+
+  it('triggers rolling-stats rebuild for one season', async () => {
+    await service.triggerRollingStatsSeason('PL', 2024, 'rebuild');
+
+    expect(rollingStatsServiceMock.backfillSeasonYear).toHaveBeenCalledWith(
+      2024,
+      'PL',
+    );
+    expect(rollingStatsServiceMock.refreshSeasonYear).not.toHaveBeenCalled();
+  });
+
+  it('triggers the all-seasons backtest and refreshes validation cache', async () => {
+    await service.triggerBacktestAllSeasons();
+
+    expect(backtestServiceMock.runAllSeasons).toHaveBeenCalledTimes(1);
+    expect(backtestServiceMock.getValidationReport).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers one-season backtest', async () => {
+    await service.triggerBacktestSeason('season-1');
+
+    expect(backtestServiceMock.runBacktest).toHaveBeenCalledWith('season-1');
+  });
+
+  it('dispatches fixtures jobs only for the current season', async () => {
     await service.triggerFixturesSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
 
-    const expectedJobs = TEST_PLANS.flatMap((plan) =>
-      plan.seasons.map((season) => ({
-        competitionCode: plan.competition.code,
-        leagueId: plan.competition.leagueId,
-        season,
-      })),
-    );
-
-    let callIndex = 0;
-    for (const job of expectedJobs) {
-      callIndex++;
-      expect(fixturesQueue.add).toHaveBeenNthCalledWith(
-        callIndex,
-        `fixtures-sync-${job.competitionCode}-${job.season}`,
+    TEST_COMPETITIONS.forEach((competition, index) => {
+      expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+        index + 1,
+        `fixtures-sync-${competition.code}-${CURRENT_SEASON}`,
         {
-          season: job.season,
-          competitionCode: job.competitionCode,
-          leagueId: job.leagueId,
+          syncType: 'fixtures',
+          season: CURRENT_SEASON,
+          competitionCode: competition.code,
+          leagueId: competition.leagueId,
+          syncScope: 'routine',
         },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          delay: index * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
         },
       );
-    }
+    });
   });
 
-  it('dispatches results jobs for each season with API-FOOTBALL staggered delays', async () => {
-    await service.triggerResultsSync();
+  it('dispatches one pending bets settlement job', async () => {
+    await service.triggerPendingBetsSettlementSync();
 
-    expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
-
-    const expectedJobs = TEST_PLANS.flatMap((plan) =>
-      plan.seasons.map((season) => ({
-        competitionCode: plan.competition.code,
-        leagueId: plan.competition.leagueId,
-        season,
-      })),
+    expect(pendingBetsSettlementQueue.add).toHaveBeenCalledWith(
+      'pending-bets-settlement-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
     );
-
-    let callIndex = 0;
-    for (const job of expectedJobs) {
-      callIndex++;
-      expect(resultsQueue.add).toHaveBeenNthCalledWith(
-        callIndex,
-        `results-sync-${job.competitionCode}-${job.season}`,
-        {
-          season: job.season,
-          competitionCode: job.competitionCode,
-          leagueId: job.leagueId,
-        },
-        {
-          ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
-        },
-      );
-    }
   });
 
-  it('dispatches stats jobs for each season with API-FOOTBALL staggered delays', async () => {
+  it('dispatches stats jobs only for the current season', async () => {
     await service.triggerStatsSync();
 
-    expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(totalStatsJobs);
 
-    const expectedJobs = TEST_PLANS.flatMap((plan) =>
-      plan.seasons.map((season) => ({
-        competitionCode: plan.competition.code,
-        leagueId: plan.competition.leagueId,
-        season,
-      })),
-    );
-
-    let callIndex = 0;
-    for (const job of expectedJobs) {
-      callIndex++;
-      expect(statsQueue.add).toHaveBeenNthCalledWith(
-        callIndex,
-        `stats-sync-${job.competitionCode}-${job.season}`,
+    TEST_COMPETITIONS.forEach((competition, index) => {
+      expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+        index + 1,
+        `stats-sync-${competition.code}-${CURRENT_SEASON}`,
         {
-          season: job.season,
-          competitionCode: job.competitionCode,
-          leagueId: job.leagueId,
+          syncType: 'stats' as const,
+          season: CURRENT_SEASON,
+          competitionCode: competition.code,
+          leagueId: competition.leagueId,
         },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          delay: index * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
         },
       );
-    }
+    });
   });
 
-  it('dispatches injuries jobs for each season with API-FOOTBALL staggered delays', async () => {
+  it('dispatches injuries jobs only for the current season', async () => {
     await service.triggerInjuriesSync();
 
-    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
 
-    const expectedJobs = TEST_PLANS.flatMap((plan) =>
-      plan.seasons.map((season) => ({
-        competitionCode: plan.competition.code,
-        leagueId: plan.competition.leagueId,
-        season,
-      })),
-    );
-
-    let callIndex = 0;
-    for (const job of expectedJobs) {
-      callIndex++;
-      expect(injuriesQueue.add).toHaveBeenNthCalledWith(
-        callIndex,
-        `injuries-sync-${job.competitionCode}-${job.season}`,
+    TEST_COMPETITIONS.forEach((competition, index) => {
+      expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+        index + 1,
+        `injuries-sync-${competition.code}-${CURRENT_SEASON}`,
         {
-          season: job.season,
-          competitionCode: job.competitionCode,
-          leagueId: job.leagueId,
+          syncType: 'injuries',
+          season: CURRENT_SEASON,
+          competitionCode: competition.code,
+          leagueId: competition.leagueId,
         },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,
-          delay: (callIndex - 1) * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+          delay: index * ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
         },
       );
-    }
+    });
   });
 
-  it('dispatches odds CSV import jobs for each season code with 2s staggered delays', async () => {
+  it('dispatches odds CSV import jobs only for the current season', async () => {
     await service.triggerOddsCsvImport();
 
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
+    const seasonCode = getCurrentCsvSeasonCode();
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
 
-    let callIndex = 0;
-    for (const competition of csvCompetitions) {
-      for (let i = 0; i < csvSeasonCodes.length; i++) {
-        callIndex++;
-        const seasonCode = csvSeasonCodes[i];
-        expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
-          callIndex,
-          `odds-csv-import-${competition.code}-${seasonCode}`,
-          {
-            competitionCode: competition.code,
-            seasonCode,
-            divisionCode: competition.csvDivisionCode,
-          },
-          {
-            ...BULLMQ_DEFAULT_JOB_OPTIONS,
-            delay: i * 2_000,
-          },
-        );
-      }
-    }
+    TEST_COMPETITIONS.forEach((competition, index) => {
+      expect(oddsCsvQueue.add).toHaveBeenNthCalledWith(
+        index + 1,
+        `odds-csv-import-${competition.code}-${seasonCode}`,
+        {
+          competitionCode: competition.code,
+          seasonCode,
+          divisionCode: competition.csvDivisionCode,
+        },
+        BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
+    });
   });
 
-  it('triggerFullSync enqueues fixtures, results, stats, injuries, odds CSV, and odds live jobs', async () => {
+  it('rejects one-league sync for inactive competitions', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue(null);
+
+    await expect(service.triggerFixturesSyncForLeague('LL')).rejects.toThrow(
+      'Unknown or inactive competition: LL',
+    );
+    await expect(service.triggerStatsSyncForLeague('LL')).rejects.toThrow(
+      'Unknown or inactive competition: LL',
+    );
+    await expect(service.triggerInjuriesSyncForLeague('LL')).rejects.toThrow(
+      'Unknown or inactive competition: LL',
+    );
+
+    expect(leagueSyncQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('dispatches one stats job for current season on manual per-league sync', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue({
+      leagueId: 140,
+      code: 'LL',
+      name: 'La Liga',
+      country: 'Spain',
+      csvDivisionCode: 'SP1',
+      seasonStartMonth: null,
+    });
+
+    await service.triggerStatsSyncForLeague('LL');
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(1);
+    expect(leagueSyncQueue.add).toHaveBeenCalledWith(
+      `stats-sync-LL-${CURRENT_SEASON}`,
+      {
+        syncType: 'stats',
+        season: CURRENT_SEASON,
+        competitionCode: 'LL',
+        leagueId: 140,
+      },
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
+    );
+  });
+
+  it('dispatches one fixtures backfill job for current season on manual per-league sync', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue({
+      leagueId: 140,
+      code: 'LL',
+      name: 'La Liga',
+      country: 'Spain',
+      csvDivisionCode: 'SP1',
+      seasonStartMonth: null,
+    });
+
+    await service.triggerFixturesSyncForLeague('LL');
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(1);
+    expect(leagueSyncQueue.add).toHaveBeenCalledWith(
+      `fixtures-sync-LL-${CURRENT_SEASON}`,
+      {
+        syncType: 'fixtures',
+        season: CURRENT_SEASON,
+        competitionCode: 'LL',
+        leagueId: 140,
+        syncScope: 'backfill',
+      },
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
+    );
+  });
+
+  it('triggerFullSync enqueues the fused league jobs, current CSV import, and prematch odds sync', async () => {
     await service.triggerFullSync();
 
-    expect(fixturesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
-    expect(resultsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
-    expect(statsQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
-    expect(injuriesQueue.add).toHaveBeenCalledTimes(totalSeasonJobs);
-    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(totalCsvJobs);
-    expect(oddsLiveQueue.add).toHaveBeenCalledOnce();
+    // fixtures (current) + stats (current) + injuries (current) = 3 jobs per competition
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(
+      TEST_COMPETITIONS.length * 3,
+    );
+    expect(pendingBetsSettlementQueue.add).toHaveBeenCalledOnce();
+    expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
+    expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
   });
 
   it('dispatches odds snapshot retention cleanup job', async () => {

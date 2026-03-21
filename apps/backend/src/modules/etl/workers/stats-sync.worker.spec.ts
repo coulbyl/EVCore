@@ -5,6 +5,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { PrismaService } from '@/prisma.service';
 import type { Job } from 'bullmq';
+import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 
 // Minimal valid statistics response for two teams
 function buildStatisticsResponse(homeXg: string | null, awayXg: string | null) {
@@ -40,7 +41,6 @@ const PL_COMPETITION_ROW = {
   isActive: true,
   csvDivisionCode: 'E0',
   seasonStartMonth: null,
-  activeSeasonsCount: null,
   includeInBacktest: true,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -65,6 +65,18 @@ describe('StatsSyncWorker', () => {
     sendXgUnavailableReport: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<NotificationService>;
 
+  const rollingStatsService = {
+    refreshSeason: vi.fn().mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 1,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    }),
+  } satisfies Partial<RollingStatsService>;
+
   const prisma = {
     client: {
       competition: {
@@ -78,6 +90,7 @@ describe('StatsSyncWorker', () => {
     config as unknown as ConfigService,
     notification as unknown as NotificationService,
     prisma as unknown as PrismaService,
+    rollingStatsService as unknown as RollingStatsService,
   );
 
   beforeEach(() => {
@@ -88,6 +101,15 @@ describe('StatsSyncWorker', () => {
     fixtureService.upsertSeason.mockResolvedValue({ id: 'season-id' });
     fixtureService.updateXg.mockResolvedValue(undefined);
     fixtureService.markXgUnavailable.mockResolvedValue(undefined);
+    rollingStatsService.refreshSeason.mockResolvedValue({
+      seasonId: 'season-id',
+      fixtureCount: 1,
+      upsertCount: 2,
+      teamStatsWritten: 2,
+      createdCount: 2,
+      updatedCount: 0,
+      durationMs: 1,
+    });
     config.getOrThrow.mockReturnValue('test-api-key');
     config.get.mockReturnValue(undefined);
     prisma.client.competition.findFirst.mockResolvedValue(PL_COMPETITION_ROW);
@@ -107,7 +129,8 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
-  });
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+  }, 15_000);
 
   it('extracts expected_goals from API response and calls updateXg', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
@@ -125,9 +148,10 @@ describe('StatsSyncWorker', () => {
 
     expect(fixtureService.updateXg).toHaveBeenCalledOnce();
     expect(fixtureService.updateXg).toHaveBeenCalledWith(99999, 0.76, 1.23);
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
-  it('marks xG unavailable when expected_goals field is present but null', async () => {
+  it('falls back to shots proxy when expected_goals field is present but null', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([
       { externalId: 11111 },
     ]);
@@ -141,8 +165,14 @@ describe('StatsSyncWorker', () => {
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(fixtureService.updateXg).not.toHaveBeenCalled();
-    expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(11111);
+    // Proxy: shots_on_goal × 0.35 — home: 5×0.35=1.75, away: 3×0.35≈1.05
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(
+      11111,
+      expect.closeTo(1.75),
+      expect.closeTo(1.05),
+    );
+    expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
   it('falls back to shots proxy when expected_goals field is absent', async () => {
@@ -178,6 +208,7 @@ describe('StatsSyncWorker', () => {
 
     // Proxy: shots_on_goal × 0.35
     expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.7, 1.75);
+    expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
   it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
@@ -191,6 +222,25 @@ describe('StatsSyncWorker', () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
+  });
+
+  it('skips the job when the competition is inactive', async () => {
+    prisma.client.competition.findFirst.mockResolvedValue({
+      ...PL_COMPETITION_ROW,
+      isActive: false,
+    });
+
+    global.fetch = vi.fn();
+
+    await worker.process({
+      data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
+    } as Job<{ season: number; competitionCode: string; leagueId: number }>);
+
+    expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
+    expect(fixtureService.findFinishedWithoutXg).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('marks xgUnavailable when statistics response has < 2 teams', async () => {
@@ -221,6 +271,7 @@ describe('StatsSyncWorker', () => {
 
     expect(fixtureService.markXgUnavailable).toHaveBeenCalledWith(33333);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('skips fixture when statistics response has < 2 teams', async () => {
@@ -250,5 +301,6 @@ describe('StatsSyncWorker', () => {
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
+    expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 });

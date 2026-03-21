@@ -40,6 +40,41 @@ export function formatDateUtc(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+export function startOfUtcDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+}
+
+export function endOfUtcDay(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
+}
+
+// Returns HH:mm (UTC).
+export function formatTimeUtc(date: Date): string {
+  const hh = String(date.getUTCHours()).padStart(2, '0');
+  const mm = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+// Returns HH:mm:ss (UTC).
+export function formatTimeWithSecondsUtc(date: Date): string {
+  const hh = String(date.getUTCHours()).padStart(2, '0');
+  const mm = String(date.getUTCMinutes()).padStart(2, '0');
+  const ss = String(date.getUTCSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
 // Returns the starting year of the season currently in progress for a competition
 // whose new season starts on `seasonStartMonth` (0-indexed, e.g. 7 = August).
 // If the current UTC month is before the start month, the season started last year.

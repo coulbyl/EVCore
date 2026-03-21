@@ -3,7 +3,24 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./*": "./src/*.tsx"
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/globals.css",
+    "./badge": "./src/components/badge.tsx",
+    "./button": "./src/components/button.tsx",
+    "./card": "./src/components/card.tsx",
+    "./code": "./src/components/code.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./empty-state": "./src/components/empty-state.tsx",
+    "./globals.css": "./src/styles/globals.css",
+    "./styles/theme.css": "./src/styles/theme.css",
+    "./lib/utils": "./src/lib/utils.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./page-shell": "./src/components/page-shell.tsx",
+    "./section-header": "./src/components/section-header.tsx",
+    "./stat-card": "./src/components/stat-card.tsx",
+    "./top-nav": "./src/components/top-nav.tsx",
+    "./cn": "./src/utils/cn.ts",
+    "./utils/*": "./src/utils/*.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -17,10 +34,14 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",
+    "tailwindcss": "^4.1.13",
     "typescript": "catalog:"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwind-merge": "^3.3.1"
   }
 }

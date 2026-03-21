@@ -65,7 +65,7 @@ const COMPETITIONS = [
     name: "Segunda Division",
     country: "Spain",
     isActive: true,
-    includeInBacktest: false,
+    includeInBacktest: true,
     csvDivisionCode: "SP2",
   },
   {
@@ -85,6 +85,15 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: false,
     csvDivisionCode: "F2",
+  },
+  {
+    leagueId: 2,
+    code: "UCL",
+    name: "Champions League",
+    country: "Europe",
+    isActive: false,
+    includeInBacktest: false,
+    csvDivisionCode: null,
   },
 ];
 

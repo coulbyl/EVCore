@@ -1,102 +1,49 @@
-# EVCore — TODO Phase 2
+# EVCore — TODO
 
-> Plan de travail courant. Source de vérité détaillée : [ROADMAP.md](ROADMAP.md)
 > Archives : [TODO_MOIS_1_ARCHIVE.md](TODO_MOIS_1_ARCHIVE.md), [TODO_MOIS_2_ARCHIVE.md](TODO_MOIS_2_ARCHIVE.md)
+> Blocs 1–6 terminés (voir archives). Phase 2 moteur validée.
 
 ---
 
-## Blocs terminés ✅
+## Web — ce qui reste
 
-| Bloc   | Contenu                                                                                              | Tests |
-| ------ | ---------------------------------------------------------------------------------------------------- | ----- |
-| Bloc 1 | Odds live (odds-live-sync), ETL multi-ligue, multi-compétitions CSV                                  | 184   |
-| Bloc 2 | ETL hardening, pipeline live validé prod, Kelly fractionnelle (`KELLY_ENABLED`)                      | 200   |
-| Bloc 3 | Daily Coupon Generator (COMBO_WHITELIST, CouponService, CouponWorker, shadow scoring, line movement) | 204   |
+### Coupons ✅
 
----
+- [x] Composants réutilisables (`coupon-detail.tsx`) avec logos équipes
+- [x] RecentCouponsCard drawer utilise les composants partagés
+- [x] `formatPickForDisplay` — bare UNDER/OVER corrigé
+- [x] Suppression section Historique (placeholder vide)
+- [x] Aside "Détail coupon" full height
+- [x] Labels PENDING intelligents (PLANIFIÉ / EN COURS / EN ATTENTE) basés sur `fixtureStatus`
 
-## Bloc 4 — Shadow Data Collection + auto-activation _(suivant)_
+### Dashboard ✅
 
-### Shadow services (données collectées, scores non intégrés au moteur)
+- [x] P&L redesign (3 stat cards + barre win/loss)
+- [x] OpportunitiesTable : colonnes Marché/Décision supprimées, logos, CopyPick
+- [x] FixtureDetailPanel : redesign complet (bet-slip card, metric grid HoverCard)
+- [x] Layout : pipeline + alertes déplacés dans l'aside
+- [x] `FixtureStatusBadge` affiché dans OpportunitiesTable
 
-- [x] ETL worker `injuries-sync`
-  - Appel `/injuries?fixture=:id` pour chaque fixture SCHEDULED post-fixtures-sync
-  - Stockage dans `ModelRun.features.shadow_injuries` (count blessés clés par équipe)
-  - Zod schema + tests unitaires worker
-- [x] `H2HService`
-  - 5 dernières confrontations directes depuis fixtures DB (pas d'appel API)
-  - Score H2H : ratio victoires côté favori, loggé en `shadow_h2h`
-  - `FEATURE_FLAGS.SCORING.H2H = false` (shadow seulement)
-- [x] `CongestionService`
-  - Jours depuis dernier match + nombre de fixtures dans les 4 prochains jours
-  - Score congestion normalisé, loggé en `shadow_congestion`
-  - `FEATURE_FLAGS.SCORING.CONGESTION = false` (shadow seulement)
+### Helpers ✅
 
-### Boucle d'auto-activation
+- [x] `helpers/coupon.ts` — tous les helpers purs coupon/selection (labels, badges, dots)
+- [x] `helpers/fixture.ts` — `fixtureStatusLabel` + `fixtureStatusBadgeClass`
+- [x] Tous les callers importent directement depuis `helpers/` (pas de re-exports)
 
-- [x] `AdjustmentService.computeShadowCorrelations()` — corrélation Spearman entre chaque `shadow_*` et les outcomes réels sur les 50+ derniers bets settlés
-- [x] Auto-activation si |rho| > 0.15 : `FEATURE_FLAGS.SCORING.<feature> = true`, `AdjustmentProposal` appliqué automatiquement
-- [ ] Rollback via `POST /adjustment/:id/rollback` (existant)
-- [x] Tests unitaires corrélation Spearman (cas limites : < 50 bets, rho faible, rho fort)
+### Écran Audit (`/audit`) ✅
 
----
+- [x] Endpoint `GET /audit/fixtures?date=`
+- [x] Endpoint `GET /audit/overview`
+- [x] Sélecteur de date (défaut : aujourd'hui)
+- [x] Table fixtures avec colonnes : ligue · équipes · statut · décision · score · pick · cotes
+- [x] Section snapshot DB (counts + breakdown ligue + bets/coupons par statut)
+- [x] Signaux de diagnostic par fixture : `lambdaFloorHit`, `lineMovement`, `h2hScore`, `congestionScore`
+- [x] Expandable row avec tooltips explicatifs par signal (InfoTooltip partagé)
 
-## Bloc 5 — Coupon settlement + résultats live
+### Divers
 
-- [x] `CouponService.settleExpiredCoupons(date)` — settle les DailyCoupon PENDING dont tous les bets sont WON/LOST/VOID
-  - `DailyCoupon.status` → WON (tous WON), LOST (≥ 1 LOST), SETTLED (VOID uniquement)
-  - Déclenché post `AdjustmentService.settleAndCheck()` ou par cron séparé
-- [x] `NotificationService.sendCouponResult(couponId)` — email récap résultat coupon
-- [x] Endpoint `POST /coupon/:id/settle` (manuel, pour tests en prod)
-- [x] Tests unitaires `settleExpiredCoupons`
-
----
-
-## Bloc 6 — Suite Phase 2
-
-- [x] **Configuration compétitions en base (source de vérité DB)**
-  - [x] `Competition` enrichie: `leagueId`, `isActive`, `csvDivisionCode`, `seasonStartMonth`, `activeSeasonsCount`
-  - [x] Migration SQL + backfill des 10 compétitions
-  - [x] Seed Prisma `src/seed.ts` (createMany, skip si table non vide)
-  - [x] ETL workers alignés pour persister ces champs à l'upsert
-
-- [x] **Marché Mi-temps/Fin de match** (HT/FT combo, nouveau bet type)
-  - [x] Fondations backend HT/FT: `Market.HALF_TIME_FULL_TIME`, scores mi-temps (`homeHtScore/awayHtScore`), settlement HT/FT
-  - [x] Probas HT/FT dérivées du modèle Poisson (`htft` sur 9 issues)
-  - [x] Ingestion odds live HT/FT (`Half Time / Full Time`) + persistance `OddsSnapshot`
-  - [x] Sélection EV/qualityScore étendue au marché HT/FT
-- [x] **Stabilité first prod (sans TimescaleDB)**
-  - [x] Cleanup automatique `OddsSnapshot` (job ETL `odds-snapshot-retention`, rétention configurable)
-  - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées de matchs
-  - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + alerte de budget au boot)
-- [~] **Activation 10 ligues (A + B)**
-  - [x] Vague 1 active: `PL`, `SA`, `LL`, `BL1`, `L1`
-  - [ ] Vague 2 à activer: `CH`, `I2`, `SP2`
-  - [ ] Vague 3 à activer: `D2`, `F2`
-  - [ ] Validation post-vague: ETL success rate, couverture odds, quota API, délai coupon
-- [ ] **OpenClaw** — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
-  - Activation après 30+ jours prod stables, d'abord en shadow mode
-  - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
-- [ ] **Grafana** — `STAND-BY POST-PROD` (voir `GRAFANA.md`)
-  - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
-- [ ] **TimescaleDB** (odds snapshots haute fréquence, remplacement OddsSnapshot Postgres)
-- [ ] **Multi-bookmakers** (Betclic, Unibet)
-
-### Reprise — prochaines actions prioritaires
-
-- [ ] Basculer l'ETL sur lecture DB des compétitions actives (retirer la dépendance au static `COMPETITIONS` dans `etl.constants.ts`)
-- [ ] Ajouter un endpoint/admin script pour activer/désactiver une compétition (`isActive`) sans redéploiement
-- [ ] Ajouter des tests ETL sur le chargement dynamique des compétitions (cas: aucune active, vague 1/2/3)
-- [ ] Exécuter migration + seed sur l'environnement de pré-prod, puis valider les jobs planifiés
-
----
-
-## Suivi
-
-- [x] Bloc 1 terminé
-- [x] Bloc 2 terminé
-- [x] Bloc 3 terminé
-- [ ] Bloc 4 en cours
-- [x] Bloc 5 terminé
-- [ ] Bloc 6 en cours
-- [x] ROADMAP.md synchronisée (3 mars 2026)
+- [ ] `/coupons/[id]` — page dédiée pour un coupon (deep link, partage)
+- [x] Filtres URL-driven (`searchParams`) sur Coupons et Audit
+- [x] Fix hydration mismatch (`AppPageHeader` date déférée au client)
+- [x] Fix React key warning (expandable rows audit — `Fragment` avec `key`)
+- [ ] Lint/typecheck/tests dédiés `apps/web`

@@ -58,8 +58,10 @@ describe('Adjustment flow (e2e)', () => {
       data: [
         {
           modelRunId,
+          fixtureId: fixture.id,
           market: Market.ONE_X_TWO,
           pick: 'HOME',
+          pickKey: createPickKey(Market.ONE_X_TWO, 'HOME'),
           probEstimated: 0.62,
           oddsSnapshot: 2.1,
           ev: 0.302,
@@ -68,8 +70,10 @@ describe('Adjustment flow (e2e)', () => {
         },
         {
           modelRunId,
+          fixtureId: fixture.id,
           market: Market.ONE_X_TWO,
           pick: 'DRAW',
+          pickKey: createPickKey(Market.ONE_X_TWO, 'DRAW'),
           probEstimated: 0.21,
           oddsSnapshot: 3.3,
           ev: -0.307,
@@ -78,8 +82,10 @@ describe('Adjustment flow (e2e)', () => {
         },
         {
           modelRunId,
+          fixtureId: fixture.id,
           market: Market.ONE_X_TWO,
           pick: 'UNKNOWN',
+          pickKey: createPickKey(Market.ONE_X_TWO, 'UNKNOWN'),
           probEstimated: 0.17,
           oddsSnapshot: 6.2,
           ev: 0.054,
@@ -148,8 +154,10 @@ describe('Adjustment flow (e2e)', () => {
     await prisma.bet.create({
       data: {
         modelRunId,
+        fixtureId: fixture.id,
         market: Market.ONE_X_TWO,
         pick: 'HOME',
+        pickKey: createPickKey(Market.ONE_X_TWO, 'HOME'),
         probEstimated: 0.65,
         oddsSnapshot: 1.8,
         ev: 0.17,
@@ -162,8 +170,10 @@ describe('Adjustment flow (e2e)', () => {
     await prisma.bet.createMany({
       data: Array.from({ length: 50 }, () => ({
         modelRunId: degradedModelRunId,
+        fixtureId: fixture.id,
         market: Market.ONE_X_TWO,
         pick: 'DRAW',
+        pickKey: createPickKey(Market.ONE_X_TWO, 'DRAW'),
         probEstimated: 0.9,
         oddsSnapshot: 3.2,
         ev: 1.88,
@@ -276,5 +286,9 @@ describe('Adjustment flow (e2e)', () => {
     });
 
     return row.id;
+  }
+
+  function createPickKey(market: Market, pick: string): string {
+    return [market, pick, '-', '-'].join('|');
   }
 });

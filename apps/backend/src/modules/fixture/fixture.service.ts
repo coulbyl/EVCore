@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Fixture, FixtureStatus } from '@evcore/db';
 import {
   FixtureRepository,
+  type UpsertFixtureResult,
   type UpsertOddsSnapshotInput,
+  type UpsertSecondaryMarketOddsInput,
 } from './fixture.repository';
 
 type UpsertCompetitionInput = {
@@ -13,7 +15,6 @@ type UpsertCompetitionInput = {
   isActive: boolean;
   csvDivisionCode?: string;
   seasonStartMonth?: number;
-  activeSeasonsCount?: number;
 };
 type UpsertSeasonInput = {
   competitionId: string;
@@ -25,8 +26,18 @@ type UpsertSeasonInput = {
 // API-agnostic fixture input — mapping from raw API response is done in the worker
 export type FixtureInput = {
   externalId: number;
-  homeTeam: { externalId: number; name: string; shortName: string };
-  awayTeam: { externalId: number; name: string; shortName: string };
+  homeTeam: {
+    externalId: number;
+    name: string;
+    shortName: string;
+    logoUrl: string;
+  };
+  awayTeam: {
+    externalId: number;
+    name: string;
+    shortName: string;
+    logoUrl: string;
+  };
   matchday: number;
   scheduledAt: Date;
   status: FixtureStatus;
@@ -51,6 +62,12 @@ type UpsertOneXTwoOddsSnapshotInput = {
   awayOdds: number;
 };
 
+type HasOneXTwoOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+};
+
 type FindByDateAndTeamsInput = {
   date: Date;
   homeTeamName: string;
@@ -66,13 +83,23 @@ type UpdateScoresInput = {
   awayHtScore: number | null;
 };
 
+type SyncFixtureStateInput = {
+  externalId: number;
+  scheduledAt: Date;
+  status: FixtureStatus;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 @Injectable()
 export class FixtureService {
   constructor(private readonly fixtureRepository: FixtureRepository) {}
 
   async upsertFixtureChain(
     input: UpsertFixtureChainInput,
-  ): Promise<{ id: string }> {
+  ): Promise<UpsertFixtureResult> {
     const { competitionId, seasonId, fixture } = input;
 
     const [homeTeam, awayTeam] = await Promise.all([
@@ -80,12 +107,14 @@ export class FixtureService {
         externalId: fixture.homeTeam.externalId,
         name: fixture.homeTeam.name,
         shortName: fixture.homeTeam.shortName,
+        logoUrl: fixture.homeTeam.logoUrl,
         competitionId,
       }),
       this.fixtureRepository.upsertTeam({
         externalId: fixture.awayTeam.externalId,
         name: fixture.awayTeam.name,
         shortName: fixture.awayTeam.shortName,
+        logoUrl: fixture.awayTeam.logoUrl,
         competitionId,
       }),
     ]);
@@ -123,6 +152,10 @@ export class FixtureService {
     return this.fixtureRepository.updateScores(input);
   }
 
+  async syncFixtureState(input: SyncFixtureStateInput): Promise<void> {
+    return this.fixtureRepository.syncFixtureState(input);
+  }
+
   async updateXg(
     externalId: number,
     homeXg: number,
@@ -141,14 +174,14 @@ export class FixtureService {
 
   findScheduledForDate(
     date: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     return this.fixtureRepository.findScheduledForDate(date);
   }
 
   findScheduledInRange(
     startDate: Date,
     endDate: Date,
-  ): Promise<{ id: string; externalId: number }[]> {
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
     return this.fixtureRepository.findScheduledInRange(startDate, endDate);
   }
 
@@ -160,6 +193,7 @@ export class FixtureService {
     {
       id: string;
       externalId: number;
+      scheduledAt: Date;
       homeTeam: { externalId: number };
       awayTeam: { externalId: number };
     }[]
@@ -175,10 +209,32 @@ export class FixtureService {
     return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
   }
 
+  findPendingSettlementFixtures(now: Date): Promise<
+    {
+      id: string;
+      externalId: number;
+      scheduledAt: Date;
+      season: {
+        competition: {
+          leagueId: number;
+          code: string;
+        };
+      };
+    }[]
+  > {
+    return this.fixtureRepository.findPendingSettlementFixtures(now);
+  }
+
   async upsertOddsSnapshot(
     data: UpsertOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOddsSnapshot(data);
+  }
+
+  async upsertSecondaryMarketOdds(
+    data: UpsertSecondaryMarketOddsInput,
+  ): Promise<void> {
+    return this.fixtureRepository.upsertSecondaryMarketOdds(data);
   }
 
   // Alias kept for backward compatibility with existing tests.
@@ -186,5 +242,11 @@ export class FixtureService {
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOneXTwoOddsSnapshot(data);
+  }
+
+  async hasOneXTwoOddsSnapshot(
+    input: HasOneXTwoOddsSnapshotInput,
+  ): Promise<boolean> {
+    return this.fixtureRepository.hasOneXTwoOddsSnapshot(input);
   }
 }

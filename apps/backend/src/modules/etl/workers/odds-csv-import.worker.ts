@@ -5,6 +5,7 @@ import { OddsCsvRowSchema, type OddsCsvRow } from '../schemas/odds-csv.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS, BULLMQ_QUEUES } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type OddsCsvImportJobData = {
   competitionCode: string;
@@ -49,6 +50,7 @@ export class OddsCsvImportWorker extends WorkerHost {
     let imported = 0;
     let skipped = 0;
     let noFixture = 0;
+    let alreadyImported = 0;
 
     for (const raw of rows) {
       // Rows for unplayed matches or matches where closing odds are not yet
@@ -84,8 +86,8 @@ export class OddsCsvImportWorker extends WorkerHost {
 
       const fixture = await this.fixtureService.findByDateAndTeams({
         date: matchDate,
-        homeTeamName: row.HomeTeam,
-        awayTeamName: row.AwayTeam,
+        homeTeamName: resolveTeamName(row.HomeTeam),
+        awayTeamName: resolveTeamName(row.AwayTeam),
         competitionCode,
       });
 
@@ -108,6 +110,17 @@ export class OddsCsvImportWorker extends WorkerHost {
       const snapshots = buildSnapshots(row, fixture.id, snapshotAt);
 
       for (const snap of snapshots) {
+        const exists = await this.fixtureService.hasOneXTwoOddsSnapshot({
+          fixtureId: snap.fixtureId,
+          bookmaker: snap.bookmaker,
+          snapshotAt: snap.snapshotAt,
+        });
+
+        if (exists) {
+          alreadyImported++;
+          continue;
+        }
+
         await this.fixtureService.upsertOneXTwoOddsSnapshot(snap);
         imported++;
       }
@@ -121,6 +134,7 @@ export class OddsCsvImportWorker extends WorkerHost {
         imported,
         skipped,
         noFixture,
+        alreadyImported,
       },
       'Odds CSV import complete',
     );
@@ -128,26 +142,58 @@ export class OddsCsvImportWorker extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<OddsCsvImportJobData> | undefined, error: Error): void {
-    const isFinalAttempt =
-      job !== undefined && job.attemptsMade >= (job.opts.attempts ?? 1);
-
-    if (isFinalAttempt) {
-      logger.error(
-        { jobName: job.name, attempts: job.attemptsMade },
-        'Job permanently failed — sending alert',
-      );
-      void this.notification.sendEtlFailureAlert(
-        BULLMQ_QUEUES.ODDS_CSV_IMPORT,
-        job.name,
-        error.message,
-      );
-    } else {
-      logger.warn(
-        { jobName: job?.name, attempt: job?.attemptsMade },
-        'Job attempt failed — will retry',
-      );
-    }
+    notifyOnWorkerFailure({
+      notification: this.notification,
+      queueName: BULLMQ_QUEUES.ODDS_CSV_IMPORT,
+      job,
+      error,
+      logger,
+    });
   }
+}
+
+// ─── Team name aliases ────────────────────────────────────────────────────────
+
+// football-data.co.uk uses abbreviated/shortened team names that don't match
+// the canonical names stored from API-Football. This map translates CSV names
+// to their DB equivalents before lookup.
+const CSV_TEAM_ALIASES: Record<string, string> = {
+  // PL (E0)
+  'Man City': 'Manchester City',
+  'Man United': 'Manchester United',
+  "Nott'm Forest": 'Nottingham Forest',
+  'Sheffield United': 'Sheffield Utd',
+  // SA (I1)
+  Milan: 'AC Milan',
+  Roma: 'AS Roma',
+  Verona: 'Hellas Verona',
+  // LL (SP1)
+  'Ath Bilbao': 'Athletic Club',
+  'Ath Madrid': 'Atletico Madrid',
+  Betis: 'Real Betis',
+  Celta: 'Celta Vigo',
+  Sociedad: 'Real Sociedad',
+  Vallecano: 'Rayo Vallecano',
+  // BL1 (D1)
+  'Bayern Munich': 'Bayern München',
+  'FC Koln': '1. FC Köln',
+  Dortmund: 'Borussia Dortmund',
+  "M'gladbach": 'Borussia Mönchengladbach',
+  'Ein Frankfurt': 'Eintracht Frankfurt',
+  Heidenheim: '1. FC Heidenheim',
+  Hoffenheim: '1899 Hoffenheim',
+  Leverkusen: 'Bayer Leverkusen',
+  Mainz: 'FSV Mainz 05',
+  Stuttgart: 'VfB Stuttgart',
+  Wolfsburg: 'VfL Wolfsburg',
+  Augsburg: 'FC Augsburg',
+  Freiburg: 'SC Freiburg',
+  Bochum: 'VfL Bochum',
+  Darmstadt: 'SV Darmstadt 98',
+};
+
+function resolveTeamName(csvName: string): string {
+  return CSV_TEAM_ALIASES[csvName] ?? csvName;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

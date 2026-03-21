@@ -9,8 +9,14 @@ function buildFixture(overrides: Partial<FixtureInput> = {}): FixtureInput {
       externalId: 52,
       name: 'Crystal Palace',
       shortName: 'Crystal Palace',
+      logoUrl: 'https://media.api-sports.io/football/teams/52.png',
     },
-    awayTeam: { externalId: 42, name: 'Arsenal', shortName: 'Arsenal' },
+    awayTeam: {
+      externalId: 42,
+      name: 'Arsenal',
+      shortName: 'Arsenal',
+      logoUrl: 'https://media.api-sports.io/football/teams/42.png',
+    },
     matchday: 1,
     scheduledAt: new Date('2022-08-05T19:00:00Z'),
     status: 'SCHEDULED',
@@ -42,7 +48,11 @@ describe('FixtureService.upsertFixtureChain', () => {
     fixtureRepository.upsertTeam
       .mockResolvedValueOnce({ id: 'team-home-id' })
       .mockResolvedValueOnce({ id: 'team-away-id' });
-    fixtureRepository.upsertFixture.mockResolvedValue({ id: 'fixture-id' });
+    fixtureRepository.upsertFixture.mockResolvedValue({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: false,
+    });
   });
 
   it.each(['SCHEDULED', 'FINISHED', 'POSTPONED', 'CANCELLED'] as const)(
@@ -77,6 +87,23 @@ describe('FixtureService.upsertFixtureChain', () => {
     );
     expect(fixtureRepository.upsertTeam).toHaveBeenCalledWith(
       expect.objectContaining({ externalId: fixture.awayTeam.externalId }),
+    );
+  });
+
+  it('passes team logos to the repository', async () => {
+    const fixture = buildFixture();
+
+    await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(fixtureRepository.upsertTeam).toHaveBeenCalledWith(
+      expect.objectContaining({ logoUrl: fixture.homeTeam.logoUrl }),
+    );
+    expect(fixtureRepository.upsertTeam).toHaveBeenCalledWith(
+      expect.objectContaining({ logoUrl: fixture.awayTeam.logoUrl }),
     );
   });
 
@@ -131,5 +158,30 @@ describe('FixtureService.upsertFixtureChain', () => {
         awayHtScore: null,
       }),
     );
+  });
+
+  it('returns repository change metadata to the caller', async () => {
+    const fixture = buildFixture({
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 1,
+    });
+    fixtureRepository.upsertFixture.mockResolvedValueOnce({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
+
+    const result = await service.upsertFixtureChain({
+      competitionId: 'competition-id',
+      seasonId: 'season-id',
+      fixture,
+    });
+
+    expect(result).toEqual({
+      id: 'fixture-id',
+      changed: true,
+      affectsRollingStats: true,
+    });
   });
 });

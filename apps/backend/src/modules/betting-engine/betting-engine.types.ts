@@ -60,3 +60,13 @@ export type ViablePick = {
   qualityScore: Decimal; // ev × deterministicScore
   isCombo: boolean;
 };
+
+export type EvaluatedPick = ViablePick & {
+  rejectionReason?:
+    | 'ev_below_threshold'
+    | 'filtered_longshot'
+    | 'market_suspended'
+    | 'odds_above_cap'
+    | 'odds_below_floor'
+    | 'quality_score_below_threshold';
+};

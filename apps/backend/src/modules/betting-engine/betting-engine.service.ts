@@ -40,11 +40,22 @@ import {
   FEATURE_WEIGHTS,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
+  AWAY_DISADVANTAGE_LAMBDA_FACTOR,
+  HOME_ADVANTAGE_LAMBDA_FACTOR,
+  MAX_SELECTION_ODDS,
+  MIN_SELECTION_ODDS,
+  MIN_QUALITY_SCORE,
   MODEL_SCORE_THRESHOLD,
+  ONE_X_TWO_AWAY_MAX_ODDS,
+  ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_DRAW_MAX_ODDS,
+  ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
 import type {
+  EvaluatedPick,
   FullOddsSnapshot,
   MatchComputation,
   MatchupFeatures,
@@ -57,6 +68,21 @@ export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 const logger = createLogger('betting-engine-service');
 const MIN_LAMBDA = 0.05;
 
+export type BetCandidate = {
+  fixtureId: string;
+  modelRunId: string;
+  market: Market;
+  pick: string;
+  pickKey: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+  probability: Decimal;
+  odds: Decimal;
+  ev: Decimal;
+  stakePct: Decimal;
+  qualityScore: Decimal;
+};
+
 type AnalyzeFixtureResult =
   | {
       status: 'analyzed';
@@ -65,8 +91,7 @@ type AnalyzeFixtureResult =
       decision: 'BET' | 'NO_BET';
       deterministicScore: number;
       probabilities: Record<string, number | Record<string, number>>;
-      betId: string | null;
-      qualityScore: number | null;
+      valueBet: BetCandidate | null;
     }
   | {
       status: 'skipped';
@@ -125,6 +150,25 @@ export class BettingEngineService {
     return { deterministicScore, probabilities, lambda, features };
   }
 
+  selectBestViablePickForBacktest(input: {
+    probabilities: MatchProbabilities;
+    odds: FullOddsSnapshot;
+    deterministicScore: Decimal;
+    distHome: number[];
+    distAway: number[];
+    lambdaFloorHit: boolean;
+  }): ViablePick | null {
+    return this.selectBestViablePick(
+      input.probabilities,
+      input.odds,
+      input.deterministicScore,
+      input.distHome,
+      input.distAway,
+      input.lambdaFloorHit,
+      new Set<Market>(),
+    );
+  }
+
   async getEffectiveWeights(): Promise<FeatureWeights> {
     const latest = await this.prisma.client.adjustmentProposal.findFirst({
       where: { status: AdjustmentStatus.APPLIED },
@@ -165,16 +209,8 @@ export class BettingEngineService {
       return { settled: 0 };
     }
 
-    const modelRuns = await this.prisma.client.modelRun.findMany({
-      where: { fixtureId },
-      select: { id: true },
-    });
-
-    const modelRunIds = modelRuns.map((r) => r.id);
-    if (modelRunIds.length === 0) return { settled: 0 };
-
     const bets = await this.prisma.client.bet.findMany({
-      where: { modelRunId: { in: modelRunIds }, status: BetStatus.PENDING },
+      where: { fixtureId, status: BetStatus.PENDING },
       select: {
         id: true,
         market: true,
@@ -254,7 +290,8 @@ export class BettingEngineService {
 
     if (
       fixture.status === FixtureStatus.POSTPONED ||
-      fixture.status === FixtureStatus.CANCELLED
+      fixture.status === FixtureStatus.CANCELLED ||
+      fixture.status === FixtureStatus.IN_PROGRESS
     ) {
       logger.info(
         { fixtureId, status: fixture.status, reason: 'fixture_not_playable' },
@@ -346,8 +383,8 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
-    let valueBet = latestOdds
-      ? this.selectBestViablePick(
+    const evaluatedPicks: EvaluatedPick[] = latestOdds
+      ? this.listEvaluatedPicks(
           probabilities,
           latestOdds,
           deterministicScore,
@@ -356,7 +393,12 @@ export class BettingEngineService {
           lambdaFloorHit,
           suspendedMarkets,
         )
-      : null;
+      : [];
+    const candidatePicks = evaluatedPicks.filter(
+      (pick): pick is ViablePick => pick.rejectionReason === undefined,
+    );
+
+    let valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
 
     const favoriteTeamId = probabilities.home.greaterThanOrEqualTo(
@@ -455,11 +497,14 @@ export class BettingEngineService {
           lambdaHome: lambda.home,
           lambdaAway: lambda.away,
           probabilities: mapProbabilitiesToNumber(probabilities),
+          lambdaFloorHit,
           shadow_lineMovement: shadowLineMovement,
           shadow_h2h: shadowH2h,
           shadow_congestion: shadowCongestion,
           shadow_lineups: null,
           shadow_injuries: null,
+          candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
+          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks.slice(0, 10)),
         },
         openclawRaw: Prisma.JsonNull,
         validatedByBackend: true,
@@ -467,8 +512,7 @@ export class BettingEngineService {
       select: { id: true },
     });
 
-    let betId: string | null = null;
-    let qualityScore: number | null = null;
+    let betCandidate: BetCandidate | null = null;
 
     if (decision === Decision.BET && valueBet !== null) {
       const stakePct = this.kellyEnabled
@@ -478,23 +522,27 @@ export class BettingEngineService {
           })
         : DEFAULT_STAKE_PCT;
 
-      const createdBet = await this.prisma.client.bet.create({
-        data: {
-          modelRunId: modelRun.id,
-          market: valueBet.market,
-          pick: valueBet.pick,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-        },
-        select: { id: true },
+      const pickKey = buildBetPickKey({
+        market: valueBet.market,
+        pick: valueBet.pick,
+        comboMarket: valueBet.comboMarket ?? null,
+        comboPick: valueBet.comboPick ?? null,
       });
 
-      betId = createdBet.id;
-      qualityScore = valueBet.qualityScore.toNumber();
+      betCandidate = {
+        fixtureId,
+        modelRunId: modelRun.id,
+        market: valueBet.market,
+        pick: valueBet.pick,
+        pickKey,
+        comboMarket: valueBet.comboMarket ?? null,
+        comboPick: valueBet.comboPick ?? null,
+        probability: valueBet.probability,
+        odds: valueBet.odds,
+        ev: valueBet.ev,
+        stakePct,
+        qualityScore: valueBet.qualityScore,
+      };
     }
 
     return {
@@ -504,8 +552,7 @@ export class BettingEngineService {
       decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
-      betId,
-      qualityScore,
+      valueBet: betCandidate,
     };
   }
 
@@ -538,6 +585,32 @@ export class BettingEngineService {
     scheduledAt: Date;
   }): Promise<FullOddsSnapshot | null> {
     return this.findLatestOddsSnapshot(fixture.id, fixture.scheduledAt);
+  }
+
+  private async findBestBookmakerForMarket(
+    fixtureId: string,
+    market: Market,
+    cutoff: Date,
+  ): Promise<string | null> {
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId,
+        market,
+        odds: { not: null },
+        snapshotAt: { lte: cutoff },
+      },
+      select: { bookmaker: true, snapshotAt: true },
+      orderBy: { snapshotAt: 'desc' },
+    });
+    if (rows.length === 0) return null;
+    const latestTs = rows[0].snapshotAt.getTime();
+    const seen = new Set<string>();
+    const atLatest = rows
+      .filter((r) => r.snapshotAt.getTime() === latestTs)
+      .filter((r) => (seen.has(r.bookmaker) ? false : seen.add(r.bookmaker)));
+    return atLatest.reduce((a, b) =>
+      bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
+    ).bookmaker;
   }
 
   private async findLatestOddsSnapshot(
@@ -581,62 +654,85 @@ export class BettingEngineService {
       return null;
     }
 
+    // Resolve the best available bookmaker for each secondary market
+    // independently — their coverage differs from 1X2 (e.g. Pinnacle covers
+    // OVER_UNDER while Bet365 may not).
+    const [ouBookmaker, bttsBookmaker, htftBookmaker] = await Promise.all([
+      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
+      this.findBestBookmakerForMarket(
+        fixtureId,
+        Market.HALF_TIME_FULL_TIME,
+        cutoff,
+      ),
+    ]);
+
     const [overRow, underRow, bttsYesRow, bttsNoRow, htftRows] =
       await Promise.all([
-        this.prisma.client.oddsSnapshot.findFirst({
-          where: {
-            fixtureId,
-            bookmaker: best.bookmaker,
-            market: Market.OVER_UNDER,
-            pick: 'OVER',
-            snapshotAt: { lte: cutoff },
-          },
-          select: { odds: true },
-          orderBy: { snapshotAt: 'desc' },
-        }),
-        this.prisma.client.oddsSnapshot.findFirst({
-          where: {
-            fixtureId,
-            bookmaker: best.bookmaker,
-            market: Market.OVER_UNDER,
-            pick: 'UNDER',
-            snapshotAt: { lte: cutoff },
-          },
-          select: { odds: true },
-          orderBy: { snapshotAt: 'desc' },
-        }),
-        this.prisma.client.oddsSnapshot.findFirst({
-          where: {
-            fixtureId,
-            bookmaker: best.bookmaker,
-            market: Market.BTTS,
-            pick: 'YES',
-            snapshotAt: { lte: cutoff },
-          },
-          select: { odds: true },
-          orderBy: { snapshotAt: 'desc' },
-        }),
-        this.prisma.client.oddsSnapshot.findFirst({
-          where: {
-            fixtureId,
-            bookmaker: best.bookmaker,
-            market: Market.BTTS,
-            pick: 'NO',
-            snapshotAt: { lte: cutoff },
-          },
-          select: { odds: true },
-          orderBy: { snapshotAt: 'desc' },
-        }),
-        this.prisma.client.oddsSnapshot.findMany({
-          where: {
-            fixtureId,
-            bookmaker: best.bookmaker,
-            market: Market.HALF_TIME_FULL_TIME,
-            snapshotAt: { lte: cutoff },
-          },
-          select: { pick: true, odds: true },
-          orderBy: { snapshotAt: 'desc' },
-        }),
+        ouBookmaker
+          ? this.prisma.client.oddsSnapshot.findFirst({
+              where: {
+                fixtureId,
+                bookmaker: ouBookmaker,
+                market: Market.OVER_UNDER,
+                pick: 'OVER',
+                snapshotAt: { lte: cutoff },
+              },
+              select: { odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
+        ouBookmaker
+          ? this.prisma.client.oddsSnapshot.findFirst({
+              where: {
+                fixtureId,
+                bookmaker: ouBookmaker,
+                market: Market.OVER_UNDER,
+                pick: 'UNDER',
+                snapshotAt: { lte: cutoff },
+              },
+              select: { odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
+        bttsBookmaker
+          ? this.prisma.client.oddsSnapshot.findFirst({
+              where: {
+                fixtureId,
+                bookmaker: bttsBookmaker,
+                market: Market.BTTS,
+                pick: 'YES',
+                snapshotAt: { lte: cutoff },
+              },
+              select: { odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
+        bttsBookmaker
+          ? this.prisma.client.oddsSnapshot.findFirst({
+              where: {
+                fixtureId,
+                bookmaker: bttsBookmaker,
+                market: Market.BTTS,
+                pick: 'NO',
+                snapshotAt: { lte: cutoff },
+              },
+              select: { odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
+        htftBookmaker
+          ? this.prisma.client.oddsSnapshot.findMany({
+              where: {
+                fixtureId,
+                bookmaker: htftBookmaker,
+                market: Market.HALF_TIME_FULL_TIME,
+                snapshotAt: { lte: cutoff },
+              },
+              select: { pick: true, odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : [],
       ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
@@ -675,6 +771,52 @@ export class BettingEngineService {
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
   ): ViablePick | null {
+    const viable = this.listViablePicks(
+      probabilities,
+      odds,
+      deterministicScore,
+      distHome,
+      distAway,
+      lambdaFloorHit,
+      suspendedMarkets,
+    );
+
+    return viable[0] ?? null;
+  }
+
+  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  private listViablePicks(
+    probabilities: MatchProbabilities,
+    odds: FullOddsSnapshot,
+    deterministicScore: Decimal,
+    distHome: number[],
+    distAway: number[],
+    lambdaFloorHit: boolean,
+    suspendedMarkets: Set<Market>,
+  ): ViablePick[] {
+    return this.listEvaluatedPicks(
+      probabilities,
+      odds,
+      deterministicScore,
+      distHome,
+      distAway,
+      lambdaFloorHit,
+      suspendedMarkets,
+    )
+      .filter((pick): pick is ViablePick => pick.rejectionReason === undefined)
+      .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
+  }
+
+  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  private listEvaluatedPicks(
+    probabilities: MatchProbabilities,
+    odds: FullOddsSnapshot,
+    deterministicScore: Decimal,
+    distHome: number[],
+    distAway: number[],
+    lambdaFloorHit: boolean,
+    suspendedMarkets: Set<Market>,
+  ): EvaluatedPick[] {
     const candidates: ViablePick[] = [];
 
     // Singles 1X2
@@ -703,7 +845,13 @@ export class BettingEngineService {
         probability: c.probability,
         odds: c.pickOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.ONE_X_TWO,
+          c.pick,
+          c.pickOdds,
+        ),
         isCombo: false,
       });
     }
@@ -717,7 +865,13 @@ export class BettingEngineService {
         probability: probabilities.over25,
         odds: odds.overOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.OVER_UNDER,
+          'OVER',
+          odds.overOdds,
+        ),
         isCombo: false,
       });
     }
@@ -729,7 +883,13 @@ export class BettingEngineService {
         probability: probabilities.under25,
         odds: odds.underOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.OVER_UNDER,
+          'UNDER',
+          odds.underOdds,
+        ),
         isCombo: false,
       });
     }
@@ -743,7 +903,13 @@ export class BettingEngineService {
         probability: probabilities.bttsYes,
         odds: odds.bttsYesOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.BTTS,
+          'YES',
+          odds.bttsYesOdds,
+        ),
         isCombo: false,
       });
     }
@@ -755,7 +921,13 @@ export class BettingEngineService {
         probability: probabilities.bttsNo,
         odds: odds.bttsNoOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.BTTS,
+          'NO',
+          odds.bttsNoOdds,
+        ),
         isCombo: false,
       });
     }
@@ -773,7 +945,13 @@ export class BettingEngineService {
         probability,
         odds: pickOdds,
         ev,
-        qualityScore: ev.mul(deterministicScore),
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.HALF_TIME_FULL_TIME,
+          pick,
+          pickOdds,
+        ),
         isCombo: false,
       });
     }
@@ -794,6 +972,11 @@ export class BettingEngineService {
           odds,
         );
         if (p1Odds === null || p2Odds === null) continue;
+        if (
+          p1Odds.greaterThan(MAX_SELECTION_ODDS) ||
+          p2Odds.greaterThan(MAX_SELECTION_ODDS)
+        )
+          continue;
 
         const jointProbability = computeJointProbability(
           combo,
@@ -816,25 +999,28 @@ export class BettingEngineService {
           probability: jointProbability,
           odds: oddsCombo,
           ev,
-          qualityScore: ev.mul(deterministicScore),
+          qualityScore: buildQualityScore(
+            ev,
+            deterministicScore,
+            combo.market1,
+            combo.pick1,
+            oddsCombo,
+          ),
           isCombo: true,
         });
       }
     }
 
     // Filter: EV >= threshold and no suspended market
-    const viable = candidates.filter(
-      (c) =>
-        c.ev.greaterThanOrEqualTo(EV_THRESHOLD) &&
-        !suspendedMarkets.has(c.market) &&
-        (c.comboMarket === undefined || !suspendedMarkets.has(c.comboMarket)),
-    );
+    const evaluated = candidates.map((candidate) => {
+      const rejectionReason = getPickRejectionReason(
+        candidate,
+        suspendedMarkets,
+      );
+      return rejectionReason ? { ...candidate, rejectionReason } : candidate;
+    });
 
-    if (viable.length === 0) return null;
-
-    return viable.reduce((best, c) =>
-      c.qualityScore.greaterThan(best.qualityScore) ? c : best,
-    );
+    return evaluated.sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
   }
 }
 
@@ -882,9 +1068,12 @@ function deriveLambdas(homeStats: TeamStatsInput, awayStats: TeamStatsInput) {
     (homeXgFor + awayXgFor + homeXgAgainst + awayXgAgainst) / 4,
   );
 
+  const rawHome = (homeXgFor * awayXgAgainst) / leagueAvg;
+  const rawAway = (awayXgFor * homeXgAgainst) / leagueAvg;
+
   return {
-    home: clamp((homeXgFor * awayXgAgainst) / leagueAvg, 0.05, 5),
-    away: clamp((awayXgFor * homeXgAgainst) / leagueAvg, 0.05, 5),
+    home: clamp(rawHome * HOME_ADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
+    away: clamp(rawAway * AWAY_DISADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
   };
 }
 
@@ -925,8 +1114,11 @@ function clamp01(value: number): number {
 function bookmakerRank(bookmaker: string): number {
   if (bookmaker === 'Pinnacle') return 0;
   if (bookmaker === 'Bet365') return 1;
-  if (bookmaker === 'MarketAvg') return 2;
-  return 3;
+  if (bookmaker === 'Unibet') return 2;
+  if (bookmaker === 'Marathonbet') return 3;
+  if (bookmaker === 'Bwin') return 4;
+  if (bookmaker === 'MarketAvg') return 5;
+  return 6;
 }
 
 // Returns odds for a pick within a FullOddsSnapshot (single-market, no combo).
@@ -1061,6 +1253,140 @@ function summarizePick(pick: ViablePick): {
     ev: pick.ev.toNumber(),
     qualityScore: pick.qualityScore.toNumber(),
   };
+}
+
+function summarizePicks(picks: ViablePick[]): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  qualityScore: number;
+}[] {
+  return picks.map((pick) => summarizePick(pick));
+}
+
+function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  qualityScore: number;
+  status: 'viable' | 'rejected';
+  rejectionReason?: string;
+}[] {
+  return picks.map((pick) => ({
+    ...summarizePick(pick),
+    status: pick.rejectionReason ? 'rejected' : 'viable',
+    ...(pick.rejectionReason ? { rejectionReason: pick.rejectionReason } : {}),
+  }));
+}
+
+function getPickRejectionReason(
+  pick: ViablePick,
+  suspendedMarkets: Set<Market>,
+): EvaluatedPick['rejectionReason'] {
+  if (pick.ev.lessThan(EV_THRESHOLD)) {
+    return 'ev_below_threshold';
+  }
+
+  if (pick.qualityScore.lessThan(MIN_QUALITY_SCORE)) {
+    return 'quality_score_below_threshold';
+  }
+
+  if (pick.odds.lessThan(MIN_SELECTION_ODDS)) {
+    return 'odds_below_floor';
+  }
+
+  // For combos, individual leg odds are already filtered upstream — only apply
+  // the cap to single picks where the pick odds IS the leg odds.
+  if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
+    return 'odds_above_cap';
+  }
+
+  if (
+    suspendedMarkets.has(pick.market) ||
+    (pick.comboMarket !== undefined && suspendedMarkets.has(pick.comboMarket))
+  ) {
+    return 'market_suspended';
+  }
+
+  return undefined;
+}
+
+// eslint-disable-next-line max-params -- Five domain parameters; no meaningful grouping possible without obscuring intent.
+function buildQualityScore(
+  ev: Decimal,
+  deterministicScore: Decimal,
+  market: Market,
+  pick: string,
+  odds?: Decimal,
+): Decimal {
+  return ev
+    .mul(deterministicScore)
+    .mul(getOneXTwoLongshotPenalty(market, pick, odds ?? new Decimal(0)));
+}
+
+function getOneXTwoLongshotPenalty(
+  market: Market,
+  pick: string,
+  odds: Decimal,
+): Decimal {
+  if (market !== Market.ONE_X_TWO) {
+    return new Decimal(1);
+  }
+
+  if (pick === 'AWAY' && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+    return progressiveLongshotPenalty({
+      threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+      odds,
+      floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+    });
+  }
+
+  if (pick === 'DRAW' && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+    return progressiveLongshotPenalty({
+      threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+      odds,
+      floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+    });
+  }
+
+  return new Decimal(1);
+}
+
+function progressiveLongshotPenalty(input: {
+  threshold: Decimal;
+  odds: Decimal;
+  floor: Decimal;
+}): Decimal {
+  const { threshold, odds, floor } = input;
+  if (odds.lte(0)) {
+    return floor;
+  }
+
+  const ratio = threshold.div(odds);
+  const progressive = ratio.pow(ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT);
+  return Decimal.max(floor, Decimal.min(new Decimal(1), progressive));
+}
+
+function buildBetPickKey(input: {
+  market: Market;
+  pick: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+}): string {
+  return [
+    input.market,
+    input.pick,
+    input.comboMarket ?? '-',
+    input.comboPick ?? '-',
+  ].join('|');
 }
 
 function summarizeTeamStats(stats: TeamStatsInput): {

@@ -64,6 +64,7 @@ export class AdjustmentService {
 
   async settleAndCheck(fixtureId: string): Promise<SettleAndCheckResult> {
     const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
+    await this.couponService.settlePendingCouponsByFixture(fixtureId);
     await this.couponService.settleExpiredCoupons(new Date());
 
     const calibrationResult =

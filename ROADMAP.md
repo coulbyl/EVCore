@@ -81,7 +81,7 @@
 - [x] Worker `odds_csv_import` — football-data.co.uk (Pinnacle + Bet365 closing odds, 4 saisons)
 - [x] Stockage `OddsSnapshot` avec timestamp dans la DB (marché ONE_X_TWO)
 - [x] Validation Zod CSV row (Date DD/MM/YYYY, odds positifs, FTR enum)
-- [x] Endpoints manuels ETL (`POST /etl/sync/full`, `POST /etl/sync/stats`, `POST /etl/sync/odds-csv`)
+- [x] Endpoints manuels ETL (`POST /etl/sync/full`, `POST /etl/sync/:type`, `POST /etl/sync/:type/:competitionCode`)
 - [x] Migration clé unique API-FOOTBALL (abandon The Odds API)
 
 **Semaine 6 — Calcul EV**
@@ -162,9 +162,10 @@
 - [x] Odds CSV multi-compétitions (`divisionCode` par ligue, import PL/SA/LL/BL1 configurable)
 - [x] API rolling-stats multi-ligue (`POST /rolling-stats/backfill/:competition/:season`)
 - [x] `getActiveCsvSeasonCodes()` — fenêtre glissante 3 saisons (remplace `CSV_ODDS_SEASONS` hardcodé)
-- [x] ETL controller : endpoints granulaires `/sync/fixtures`, `/sync/results` + Swagger complet
+- [x] ETL controller : endpoints paramétrés `/sync/:type`, `/sync/:type/:competitionCode` + Swagger complet
 - [x] `odds-live-sync` : lockDuration 600s + schema odds assoupli (Exact Score > 1000, Asian Handicap = 1.00)
 - [x] `odds-csv-import` : rows sans cotes (saison en cours) skippées en `debug` silencieux
+- [x] `odds-csv-import` incrémental : snapshots closing déjà présents skippés sans upsert
 - [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)
 - [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
@@ -201,7 +202,7 @@
 
 **Shadow services (données réelles, score non activé)**
 
-- [x] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED (déclenché post fixtures-sync), stocké en `ModelRun.features.shadow_injuries`
+- [x] ETL worker `injuries-sync` — API-Football `/injuries` par fixture SCHEDULED proche (today+tomorrow UTC), stocké en `ModelRun.features.shadow_injuries`
 - [x] `H2HService` — 5 dernières confrontations depuis fixtures DB, `shadow_h2h` dans ModelRun (DISABLED par défaut)
 - [x] `CongestionService` — jours depuis dernier match + fixtures dans les 4 prochains jours, `shadow_congestion` (DISABLED)
 
@@ -218,6 +219,7 @@
 - [x] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
 - [x] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
 - [x] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
+- [x] Remplacement de `results-sync` par `pending-bets-settlement-sync` ciblé sur les fixtures avec bets PENDING
 - [x] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
 
 ---

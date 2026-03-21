@@ -39,6 +39,9 @@ function makeService({
   } as unknown as CalibrationService;
 
   const couponService = {
+    settlePendingCouponsByFixture: vi
+      .fn()
+      .mockResolvedValue({ settledCount: 0 }),
     settleExpiredCoupons: vi.fn().mockResolvedValue({ settledCount: 0 }),
   } as unknown as CouponService;
 
