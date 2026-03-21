@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCouponById } from "@/hooks/use-coupon-by-id";
 import {
   CouponDetailEmpty,
@@ -8,9 +9,9 @@ import {
   CouponDetailStats,
   CouponDetailLeg,
 } from "@/components/coupon-detail";
-import { combinedOdds } from "@/helpers/coupon";
+import { combinedOdds, formatPickForDisplay, selectionStatusLabel, selectionStatusBadgeClass } from "@/helpers/coupon";
 import type { CouponSnapshot } from "@/types/dashboard";
-import { formatPickForDisplay, selectionStatusLabel, selectionStatusBadgeClass } from "@/helpers/coupon";
+import { locales, getLocale, type Translations } from "./locales";
 
 // ---------------------------------------------------------------------------
 // Diagnostic helpers
@@ -28,22 +29,24 @@ function DiagStat({ label, value }: { label: string; value: string | null | unde
 function PicksTable({
   picks,
   showStatus,
+  t,
 }: {
   picks: NonNullable<CouponSnapshot["selections"][number]["evaluatedPicks"]>;
   showStatus: boolean;
+  t: Translations;
 }) {
-  if (picks.length === 0) return <p className="text-xs text-slate-400">Aucun pick.</p>;
+  if (picks.length === 0) return <p className="text-xs text-slate-400">{t.noPicks}</p>;
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-slate-100 text-left text-[0.6rem] font-semibold uppercase tracking-widest text-slate-400">
-            <th className="pb-2 pr-3">Marché / Pick</th>
-            <th className="pb-2 pr-3">Prob.</th>
-            <th className="pb-2 pr-3">Cote</th>
-            <th className="pb-2 pr-3">EV</th>
-            <th className="pb-2 pr-3">Qualité</th>
-            {showStatus && <th className="pb-2">Statut</th>}
+            <th className="pb-2 pr-3">{t.tableHeaders.marketPick}</th>
+            <th className="pb-2 pr-3">{t.tableHeaders.prob}</th>
+            <th className="pb-2 pr-3">{t.tableHeaders.odds}</th>
+            <th className="pb-2 pr-3">{t.tableHeaders.ev}</th>
+            <th className="pb-2 pr-3">{t.tableHeaders.quality}</th>
+            {showStatus && <th className="pb-2">{t.tableHeaders.status}</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
@@ -89,16 +92,17 @@ function PicksTable({
 function SelectionDiagnosticsCard({
   selection,
   index,
+  t,
 }: {
   selection: CouponSnapshot["selections"][number];
   index: number;
+  t: Translations;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      {/* Card header */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
         <p className="min-w-0 truncate text-xs text-slate-500">
-          <span className="font-semibold text-slate-700">Leg {index + 1}</span>
+          <span className="font-semibold text-slate-700">{t.leg} {index + 1}</span>
           {" — "}{selection.fixture}
           {" · "}<span className="font-medium text-slate-700">{formatPickForDisplay(selection.pick, selection.market)}</span>
           {selection.score ? <span className="ml-2 font-bold text-slate-600">{selection.score}</span> : null}
@@ -108,40 +112,38 @@ function SelectionDiagnosticsCard({
         </span>
       </div>
 
-      <div className="px-4 py-4 space-y-5">
-        {/* Model inputs */}
+      <div className="space-y-5 px-4 py-4">
         <div>
           <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Entrées modèle
+            {t.modelInputs}
           </p>
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 sm:grid-cols-4">
-            <DiagStat label="Prob. estimée" value={selection.probEstimated} />
-            <DiagStat label="λ Home" value={selection.lambdaHome} />
-            <DiagStat label="λ Away" value={selection.lambdaAway} />
-            <DiagStat label="E[Buts]" value={selection.expectedTotalGoals} />
+            <DiagStat label={t.probEstimated} value={selection.probEstimated} />
+            <DiagStat label={t.lambdaHome} value={selection.lambdaHome} />
+            <DiagStat label={t.lambdaAway} value={selection.lambdaAway} />
+            <DiagStat label={t.expectedGoals} value={selection.expectedTotalGoals} />
           </div>
         </div>
 
-        {/* Candidate picks */}
         {selection.candidatePicks && selection.candidatePicks.length > 0 && (
           <div>
             <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Picks candidats ({selection.candidatePicks.length})
+              {t.candidatePicks(selection.candidatePicks.length)}
             </p>
             <PicksTable
               picks={selection.candidatePicks as NonNullable<CouponSnapshot["selections"][number]["evaluatedPicks"]>}
               showStatus={false}
+              t={t}
             />
           </div>
         )}
 
-        {/* Evaluated picks */}
         {selection.evaluatedPicks && selection.evaluatedPicks.length > 0 && (
           <div>
             <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Picks évalués ({selection.evaluatedPicks.length})
+              {t.evaluatedPicks(selection.evaluatedPicks.length)}
             </p>
-            <PicksTable picks={selection.evaluatedPicks} showStatus={true} />
+            <PicksTable picks={selection.evaluatedPicks} showStatus={true} t={t} />
           </div>
         )}
       </div>
@@ -150,15 +152,17 @@ function SelectionDiagnosticsCard({
 }
 
 // ---------------------------------------------------------------------------
-// Interactive body — leg selection drives the diagnostics panel
+// Interactive body
 // ---------------------------------------------------------------------------
 
 function CouponPageBody({
   coupon,
   onSettled,
+  t,
 }: {
   coupon: NonNullable<ReturnType<typeof useCouponById>["data"]>;
   onSettled: () => void;
+  t: Translations;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const isCombined = coupon.selections.length > 1;
@@ -169,10 +173,9 @@ function CouponPageBody({
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-      {/* Left: coupon summary + clickable legs */}
       <div className="lg:sticky lg:top-6 lg:self-start">
         <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Résumé
+          {t.summary}
         </p>
         <div className="overflow-hidden rounded-2xl border border-border bg-white">
           <CouponDetailHeader
@@ -198,26 +201,61 @@ function CouponPageBody({
                     : "border-l-2 border-l-transparent hover:bg-slate-50"
                 }`}
               >
-                <CouponDetailLeg
-                  selection={selection}
-                  index={index}
-                  onSettled={onSettled}
-                />
+                <CouponDetailLeg selection={selection} index={index} onSettled={onSettled} />
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right: diagnostics for selected leg */}
       <div>
         <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Diagnostics moteur — Leg {selectedIndex + 1}
+          {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
         </p>
         {activeLeg ? (
-          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} />
+          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Language switcher
+// ---------------------------------------------------------------------------
+
+function LangSwitcher() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const current = getLocale(searchParams.get("lang"));
+
+  function switchTo(lang: "fr" | "en") {
+    const params = new URLSearchParams(searchParams.toString());
+    if (lang === "fr") {
+      params.delete("lang");
+    } else {
+      params.set("lang", lang);
+    }
+    const qs = params.toString();
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`);
+  }
+
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
+      {(["fr", "en"] as const).map((lang) => (
+        <button
+          key={lang}
+          onClick={() => switchTo(lang)}
+          className={`rounded-md px-2.5 py-1 uppercase transition-colors ${
+            current === lang
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-400 hover:text-slate-600"
+          }`}
+        >
+          {lang}
+        </button>
+      ))}
     </div>
   );
 }
@@ -232,11 +270,12 @@ export default function CouponDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const t = locales[getLocale(searchParams.get("lang"))];
   const { data: coupon, isFetching, isError, refetch } = useCouponById(id);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Public header */}
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -244,7 +283,7 @@ export default function CouponDetailPage({
               EVCore
             </span>
             <span className="text-slate-300">/</span>
-            <span className="text-sm text-slate-500">Coupon</span>
+            <span className="text-sm text-slate-500">{t.coupon}</span>
             {coupon && (
               <>
                 <span className="text-slate-300">/</span>
@@ -252,28 +291,30 @@ export default function CouponDetailPage({
               </>
             )}
           </div>
-          <button
-            onClick={() => void refetch()}
-            disabled={isFetching}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          >
-            {isFetching ? "Chargement…" : "Rafraîchir"}
-          </button>
+          <div className="flex items-center gap-3">
+            <LangSwitcher />
+            <button
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {isFetching ? t.loading : t.refresh}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Main */}
       <main className="mx-auto max-w-6xl px-6 py-8">
         {isFetching && !coupon ? (
           <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-16 text-center text-sm text-slate-400">
-            Chargement…
+            {t.loading}
           </div>
         ) : isError || coupon === null ? (
           <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-16 text-center text-sm text-slate-400">
-            Coupon introuvable.
+            {t.notFound}
           </div>
         ) : coupon ? (
-          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} />
+          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} t={t} />
         ) : (
           <CouponDetailEmpty />
         )}
