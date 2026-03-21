@@ -150,16 +150,20 @@ type CouponDetailLegProps = {
   index: number;
   onSettled?: () => void;
   locale?: Locale;
+  pickLabel?: string;
+  marketLabel?: string;
+  copyButton?: React.ReactNode;
 };
 
-export function CouponDetailLeg({ selection, index, onSettled, locale = "fr" }: CouponDetailLegProps) {
+export function CouponDetailLeg({ selection, index, onSettled, locale = "fr", pickLabel, marketLabel, copyButton }: CouponDetailLegProps) {
   return (
     <div className="px-3 py-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Leg {index + 1}
+          {locale === "en" ? "Leg" : "Sélection"} {index + 1}
         </p>
         <div className="flex items-center gap-2">
+          {copyButton}
           {selection.status === "PENDING" && selection.fixtureId ? (
             <SettleFixtureDialog
               fixtureId={selection.fixtureId}
@@ -182,14 +186,14 @@ export function CouponDetailLeg({ selection, index, onSettled, locale = "fr" }: 
           awayLogo={selection.awayLogo}
         />
         <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
-          {selection.scheduledAt} • {selection.market}
+          {selection.scheduledAt} • {marketLabel ?? selection.market}
           {(selection.status === "WON" || selection.status === "LOST") && selection.score ? (
             <span className="ml-2 font-bold text-slate-600">{selection.score}</span>
           ) : null}
         </p>
         <div className="mt-2 flex items-start justify-between gap-3">
           <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-            {formatPickForDisplay(selection.pick, selection.market)}
+            {pickLabel ?? formatPickForDisplay(selection.pick, selection.market)}
           </p>
           <div className="text-right">
             <p

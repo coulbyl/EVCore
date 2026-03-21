@@ -4,6 +4,11 @@ export const locales = {
   fr: {
     coupon: "Coupon",
     refresh: "Rafraîchir",
+    share: "Partager",
+    copyCoupon: "Copier le coupon",
+    copyLeg: "Copier",
+    copyDiagnostics: "Copier les diagnostics",
+    copied: "Copié !",
     loading: "Chargement…",
     notFound: "Coupon introuvable.",
     summary: "Résumé",
@@ -17,6 +22,7 @@ export const locales = {
       ev: "EV",
       quality: "Qualité",
       status: "Statut",
+      reason: "Raison",
     },
     modelInputs: "Entrées modèle",
     probEstimated: "Prob. estimée",
@@ -36,6 +42,13 @@ export const locales = {
       quality_score_below_threshold: "Score qualité insuffisant",
       market_suspended: "Marché suspendu",
       filtered_longshot: "Longshot filtré",
+    } as Record<string, string>,
+    marketLabels: {
+      ONE_X_TWO: "Résultat",
+      MATCH_WINNER: "Vainqueur",
+      BTTS: "Les deux marquent",
+      OVER_UNDER: "Plus/Moins 2.5",
+      OVER_UNDER_25: "Plus/Moins 2.5",
     } as Record<string, string>,
     // Shared component labels
     selectionCount: "Sélections",
@@ -86,6 +99,11 @@ export const locales = {
   en: {
     coupon: "Coupon",
     refresh: "Refresh",
+    share: "Share",
+    copyCoupon: "Copy coupon",
+    copyLeg: "Copy",
+    copyDiagnostics: "Copy diagnostics",
+    copied: "Copied!",
     loading: "Loading…",
     notFound: "Coupon not found.",
     summary: "Summary",
@@ -99,6 +117,7 @@ export const locales = {
       ev: "EV",
       quality: "Quality",
       status: "Status",
+      reason: "Reason",
     },
     modelInputs: "Model inputs",
     probEstimated: "Est. probability",
@@ -118,6 +137,13 @@ export const locales = {
       quality_score_below_threshold: "Quality score too low",
       market_suspended: "Market suspended",
       filtered_longshot: "Longshot filtered",
+    } as Record<string, string>,
+    marketLabels: {
+      ONE_X_TWO: "Result",
+      MATCH_WINNER: "Match Winner",
+      BTTS: "Both Teams Score",
+      OVER_UNDER: "Over/Under 2.5",
+      OVER_UNDER_25: "Over/Under 2.5",
     } as Record<string, string>,
     // Shared component labels
     selectionCount: "Selections",
@@ -170,6 +196,26 @@ export const locales = {
 export function formatPickLabel(market: string, pick: string, t: Translations): string {
   const key = `${market}_${pick}`;
   return t.pickLabels[key] ?? `${market} ${pick}`;
+}
+
+// Translates a raw selection.pick string which can be:
+//   single: "HOME"  (with market="ONE_X_TWO")     → looks up ONE_X_TWO_HOME
+//   combo:  "ONE_X_TWO HOME + BTTS NO"            → splits on " + ", each part is "{MARKET} {PICK}"
+export function formatSelectionPickLabel(pick: string, market: string, t: Translations): string {
+  const parts = pick.split(" + ");
+  return parts
+    .map((part) => {
+      const tokens = part.trim().split(" ");
+      if (tokens.length === 1) {
+        // Plain pick value — use the selection's market
+        return formatPickLabel(market, tokens[0] ?? part, t);
+      }
+      // "MARKET PICK" format embedded in the string
+      const pickValue = tokens[tokens.length - 1] ?? "";
+      const marketValue = tokens.slice(0, -1).join("_");
+      return formatPickLabel(marketValue, pickValue, t);
+    })
+    .join(" + ");
 }
 
 export type Translations = (typeof locales)["fr"];
