@@ -341,7 +341,7 @@ function AuditFixturesSection({ date }: { date: string }) {
                               row.modelRun.market ?? "",
                             )}
                             {row.modelRun.ev && (
-                              <span className="ml-1.5 text-xs text-slate-400">
+                              <span className={`ml-1.5 text-xs font-semibold ${row.modelRun.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}>
                                 EV {row.modelRun.ev}
                               </span>
                             )}
