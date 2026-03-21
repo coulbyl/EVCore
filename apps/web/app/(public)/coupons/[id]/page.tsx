@@ -11,7 +11,7 @@ import {
 } from "@/components/coupon-detail";
 import { combinedOdds, formatPickForDisplay, selectionStatusLabel, selectionStatusBadgeClass } from "@/helpers/coupon";
 import type { CouponSnapshot } from "@/types/dashboard";
-import { locales, getLocale, type Translations } from "./locales";
+import { locales, getLocale, formatPickLabel, type Translations } from "./locales";
 
 // ---------------------------------------------------------------------------
 // Diagnostic helpers
@@ -52,8 +52,8 @@ function PicksTable({
         <tbody className="divide-y divide-slate-50">
           {picks.map((p, i) => {
             const pickLabel = p.comboMarket
-              ? `${p.market} ${p.pick} + ${p.comboMarket} ${p.comboPick ?? ""}`
-              : formatPickForDisplay(p.pick, p.market);
+              ? `${formatPickLabel(p.market, p.pick, t)} + ${formatPickLabel(p.comboMarket, p.comboPick ?? "", t)}`
+              : formatPickLabel(p.market, p.pick, t);
             const isViable = !showStatus || ("status" in p && p.status === "viable");
             return (
               <tr key={i} className="align-middle">
@@ -66,20 +66,22 @@ function PicksTable({
                 <td className="py-2 pr-3 tabular-nums text-slate-600">{p.qualityScore}</td>
                 {showStatus && (
                   <td className="py-2">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${
-                        isViable
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-rose-200 bg-rose-50 text-rose-600"
-                      }`}
-                    >
-                      {"status" in p ? (t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status) : ""}
-                    </span>
-                    {"rejectionReason" in p && p.rejectionReason ? (
-                      <span className="ml-1.5 text-slate-400">
-                        {t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason}
+                    <div className="flex flex-col items-start gap-1">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${
+                          isViable
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-600"
+                        }`}
+                      >
+                        {"status" in p ? (t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status) : ""}
                       </span>
-                    ) : null}
+                      {"rejectionReason" in p && p.rejectionReason ? (
+                        <span className="text-[0.65rem] text-slate-400">
+                          {t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason}
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                 )}
               </tr>

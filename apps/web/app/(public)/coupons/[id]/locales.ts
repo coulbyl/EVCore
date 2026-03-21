@@ -68,6 +68,20 @@ export const locales = {
       cancelled: "Annulé",
       default: "Planifié",
     },
+    pickLabels: {
+      ONE_X_TWO_HOME: "1X2 Domicile",
+      ONE_X_TWO_DRAW: "1X2 Nul",
+      ONE_X_TWO_AWAY: "1X2 Extérieur",
+      MATCH_WINNER_HOME: "Victoire Domicile",
+      MATCH_WINNER_DRAW: "Match Nul",
+      MATCH_WINNER_AWAY: "Victoire Extérieur",
+      BTTS_YES: "Les 2 équipes marquent",
+      BTTS_NO: "Les 2 ne marquent pas",
+      OVER_UNDER_OVER: "Plus de 2.5",
+      OVER_UNDER_UNDER: "Moins de 2.5",
+      OVER_UNDER_25_OVER: "Plus de 2.5",
+      OVER_UNDER_25_UNDER: "Moins de 2.5",
+    } as Record<string, string>,
   },
   en: {
     coupon: "Coupon",
@@ -136,8 +150,27 @@ export const locales = {
       cancelled: "Cancelled",
       default: "Scheduled",
     },
+    pickLabels: {
+      ONE_X_TWO_HOME: "1X2 Home",
+      ONE_X_TWO_DRAW: "1X2 Draw",
+      ONE_X_TWO_AWAY: "1X2 Away",
+      MATCH_WINNER_HOME: "Home win",
+      MATCH_WINNER_DRAW: "Draw",
+      MATCH_WINNER_AWAY: "Away win",
+      BTTS_YES: "Both teams score",
+      BTTS_NO: "BTTS No",
+      OVER_UNDER_OVER: "Over 2.5",
+      OVER_UNDER_UNDER: "Under 2.5",
+      OVER_UNDER_25_OVER: "Over 2.5",
+      OVER_UNDER_25_UNDER: "Under 2.5",
+    } as Record<string, string>,
   },
 } satisfies Record<Locale, unknown>;
+
+export function formatPickLabel(market: string, pick: string, t: Translations): string {
+  const key = `${market}_${pick}`;
+  return t.pickLabels[key] ?? `${market} ${pick}`;
+}
 
 export type Translations = (typeof locales)["fr"];
 
