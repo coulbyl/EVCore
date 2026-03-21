@@ -13,16 +13,18 @@ import {
 } from "../helpers/coupon";
 import { fixtureStatusLabel, fixtureStatusBadgeClass } from "../helpers/fixture";
 
+type Locale = "fr" | "en";
+
 // ---------------------------------------------------------------------------
 // FixtureStatusBadge
 // ---------------------------------------------------------------------------
 
-export function FixtureStatusBadge({ status }: { status: string }) {
+export function FixtureStatusBadge({ status, locale = "fr" }: { status: string; locale?: Locale }) {
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(status)}`}
     >
-      {fixtureStatusLabel(status)}
+      {fixtureStatusLabel(status, locale)}
     </span>
   );
 }
@@ -44,21 +46,22 @@ type CouponDetailHeaderProps = {
   legs: number;
   status: "PENDING" | "WON" | "LOST";
   selections?: Array<{ fixtureStatus: string }>;
+  locale?: Locale;
 };
 
-export function CouponDetailHeader({ code, legs, status, selections }: CouponDetailHeaderProps) {
+export function CouponDetailHeader({ code, legs, status, selections, locale = "fr" }: CouponDetailHeaderProps) {
   return (
     <div className="border-b border-border bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-4 py-3">
       <div className="flex items-center justify-between gap-2">
         <p className="font-mono text-xs text-slate-500">{code}</p>
         <div className="flex items-center gap-1.5">
           <span className="rounded-full border border-slate-900 bg-slate-900 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.06em] text-white">
-            {couponModeLabel(legs)}
+            {couponModeLabel(legs, locale)}
           </span>
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(status)}`}
           >
-            {couponStatusLabel(status, selections)}
+            {couponStatusLabel(status, selections, locale)}
           </span>
         </div>
       </div>
@@ -71,26 +74,28 @@ type CouponDetailStatsProps = {
   isCombined: boolean;
   odds: string;
   ev: string;
+  locale?: Locale;
 };
 
-export function CouponDetailStats({
-  selectionCount,
-  isCombined,
-  odds,
-  ev,
-}: CouponDetailStatsProps) {
+const STATS_LABELS: Record<Locale, { selections: string; combinedOdds: string; singleOdds: string; ev: string }> = {
+  fr: { selections: "Sélections", combinedOdds: "Cote combinée", singleOdds: "Cote", ev: "EV coupon" },
+  en: { selections: "Selections", combinedOdds: "Combined odds", singleOdds: "Odds", ev: "Coupon EV" },
+};
+
+export function CouponDetailStats({ selectionCount, isCombined, odds, ev, locale = "fr" }: CouponDetailStatsProps) {
+  const l = STATS_LABELS[locale];
   return (
     <div className="grid grid-cols-3 border-b border-border bg-slate-50 px-3 py-3 text-sm">
       <div>
-        <p className="text-xs text-slate-400">Sélections</p>
+        <p className="text-xs text-slate-400">{l.selections}</p>
         <p className="font-semibold text-slate-700">{selectionCount}</p>
       </div>
       <div>
-        <p className="text-xs text-slate-400">{isCombined ? "Cote combinée" : "Cote"}</p>
+        <p className="text-xs text-slate-400">{isCombined ? l.combinedOdds : l.singleOdds}</p>
         <p className="font-semibold text-slate-700">{odds}</p>
       </div>
       <div>
-        <p className="text-xs text-slate-400">EV coupon</p>
+        <p className="text-xs text-slate-400">{l.ev}</p>
         <p className="font-semibold text-slate-700">{ev}</p>
       </div>
     </div>
@@ -144,9 +149,10 @@ type CouponDetailLegProps = {
   selection: CouponSnapshot["selections"][number];
   index: number;
   onSettled?: () => void;
+  locale?: Locale;
 };
 
-export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLegProps) {
+export function CouponDetailLeg({ selection, index, onSettled, locale = "fr" }: CouponDetailLegProps) {
   return (
     <div className="px-3 py-3">
       <div className="flex items-center justify-between gap-2">
@@ -165,7 +171,7 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}
           >
-            {selectionStatusLabel(selection.status, selection.fixtureStatus)}
+            {selectionStatusLabel(selection.status, selection.fixtureStatus, locale)}
           </span>
         </div>
       </div>
@@ -208,9 +214,10 @@ export function CouponDetailLeg({ selection, index, onSettled }: CouponDetailLeg
 type CouponDetailProps = {
   coupon: CouponSnapshot;
   onSettled?: () => void;
+  locale?: Locale;
 };
 
-export function CouponDetail({ coupon, onSettled }: CouponDetailProps) {
+export function CouponDetail({ coupon, onSettled, locale = "fr" }: CouponDetailProps) {
   const isCombined = coupon.selections.length > 1;
   const odds = isCombined
     ? combinedOdds(coupon.selections.map((s) => s.odds))
@@ -218,12 +225,13 @@ export function CouponDetail({ coupon, onSettled }: CouponDetailProps) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-white">
-      <CouponDetailHeader code={coupon.code} legs={coupon.legs} status={coupon.status} selections={coupon.selections} />
+      <CouponDetailHeader code={coupon.code} legs={coupon.legs} status={coupon.status} selections={coupon.selections} locale={locale} />
       <CouponDetailStats
         selectionCount={coupon.selections.length}
         isCombined={isCombined}
         odds={odds}
         ev={coupon.ev}
+        locale={locale}
       />
       <div className="max-h-140 divide-y divide-border overflow-y-auto">
         {coupon.selections.map((selection, index) => (
@@ -232,6 +240,7 @@ export function CouponDetail({ coupon, onSettled }: CouponDetailProps) {
             selection={selection}
             index={index}
             onSettled={onSettled}
+            locale={locale}
           />
         ))}
       </div>

@@ -1,10 +1,14 @@
-export function fixtureStatusLabel(status: string): string {
+type Locale = "fr" | "en";
+
+const FIXTURE_STATUS_LABELS: Record<Locale, Record<string, string>> = {
+  fr: { finished: "Terminé", in_progress: "En cours", postponed: "Reporté", cancelled: "Annulé", default: "Planifié" },
+  en: { finished: "Finished", in_progress: "In progress", postponed: "Postponed", cancelled: "Cancelled", default: "Scheduled" },
+};
+
+export function fixtureStatusLabel(status: string, locale: Locale = "fr"): string {
   const s = status.toLowerCase();
-  if (s === "finished") return "terminé";
-  if (s === "in_progress") return "en cours";
-  if (s === "postponed") return "reporté";
-  if (s === "cancelled") return "annulé";
-  return "planifié";
+  const labels = FIXTURE_STATUS_LABELS[locale];
+  return labels[s] ?? labels["default"] ?? s;
 }
 
 export function fixtureStatusBadgeClass(status: string): string {

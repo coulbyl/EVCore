@@ -73,10 +73,12 @@ function PicksTable({
                           : "border-rose-200 bg-rose-50 text-rose-600"
                       }`}
                     >
-                      {"status" in p ? p.status : ""}
+                      {"status" in p ? (t.pickStatuses[p.status as "viable" | "rejected"] ?? p.status) : ""}
                     </span>
                     {"rejectionReason" in p && p.rejectionReason ? (
-                      <span className="ml-1.5 text-slate-400">{p.rejectionReason}</span>
+                      <span className="ml-1.5 text-slate-400">
+                        {t.rejectionReasons[p.rejectionReason] ?? p.rejectionReason}
+                      </span>
                     ) : null}
                   </td>
                 )}
@@ -93,10 +95,12 @@ function SelectionDiagnosticsCard({
   selection,
   index,
   t,
+  locale,
 }: {
   selection: CouponSnapshot["selections"][number];
   index: number;
   t: Translations;
+  locale: "fr" | "en";
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -108,7 +112,7 @@ function SelectionDiagnosticsCard({
           {selection.score ? <span className="ml-2 font-bold text-slate-600">{selection.score}</span> : null}
         </p>
         <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${selectionStatusBadgeClass(selection.status)}`}>
-          {selectionStatusLabel(selection.status, selection.fixtureStatus)}
+          {selectionStatusLabel(selection.status, selection.fixtureStatus, locale)}
         </span>
       </div>
 
@@ -159,10 +163,12 @@ function CouponPageBody({
   coupon,
   onSettled,
   t,
+  locale,
 }: {
   coupon: NonNullable<ReturnType<typeof useCouponById>["data"]>;
   onSettled: () => void;
   t: Translations;
+  locale: "fr" | "en";
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const isCombined = coupon.selections.length > 1;
@@ -183,12 +189,14 @@ function CouponPageBody({
             legs={coupon.legs}
             status={coupon.status}
             selections={coupon.selections}
+            locale={locale}
           />
           <CouponDetailStats
             selectionCount={coupon.selections.length}
             isCombined={isCombined}
             odds={odds}
             ev={coupon.ev}
+            locale={locale}
           />
           <div className="divide-y divide-border">
             {coupon.selections.map((selection, index) => (
@@ -201,7 +209,7 @@ function CouponPageBody({
                     : "border-l-2 border-l-transparent hover:bg-slate-50"
                 }`}
               >
-                <CouponDetailLeg selection={selection} index={index} onSettled={onSettled} />
+                <CouponDetailLeg selection={selection} index={index} onSettled={onSettled} locale={locale} />
               </button>
             ))}
           </div>
@@ -213,7 +221,7 @@ function CouponPageBody({
           {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
         </p>
         {activeLeg ? (
-          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} />
+          <SelectionDiagnosticsCard selection={activeLeg} index={selectedIndex} t={t} locale={locale} />
         ) : null}
       </div>
     </div>
@@ -314,7 +322,7 @@ export default function CouponDetailPage({
             {t.notFound}
           </div>
         ) : coupon ? (
-          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} t={t} />
+          <CouponPageBody coupon={coupon} onSettled={() => void refetch()} t={t} locale={getLocale(searchParams.get("lang"))} />
         ) : (
           <CouponDetailEmpty />
         )}

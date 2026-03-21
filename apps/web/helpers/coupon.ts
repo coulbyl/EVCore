@@ -2,24 +2,35 @@
 
 type CouponStatus = "PENDING" | "WON" | "LOST";
 type SelectionStatus = "PENDING" | "WON" | "LOST" | "VOID";
+type Locale = "fr" | "en";
 
 // ---------------------------------------------------------------------------
 // Coupon-level
 // ---------------------------------------------------------------------------
 
+const COUPON_STATUS_LABELS: Record<Locale, {
+  WON: string; LOST: string;
+  PENDING_in_progress: string; PENDING_finished: string; PENDING_scheduled: string; PENDING_default: string;
+}> = {
+  fr: { WON: "GAGNÉ", LOST: "PERDU", PENDING_in_progress: "EN COURS", PENDING_finished: "EN ATTENTE", PENDING_scheduled: "PLANIFIÉ", PENDING_default: "EN COURS" },
+  en: { WON: "WON", LOST: "LOST", PENDING_in_progress: "IN PROGRESS", PENDING_finished: "PENDING", PENDING_scheduled: "SCHEDULED", PENDING_default: "IN PROGRESS" },
+};
+
 export function couponStatusLabel(
   status: CouponStatus,
   selections?: Array<{ fixtureStatus: string }>,
+  locale: Locale = "fr",
 ): string {
-  if (status === "WON") return "GAGNÉ";
-  if (status === "LOST") return "PERDU";
+  const l = COUPON_STATUS_LABELS[locale];
+  if (status === "WON") return l.WON;
+  if (status === "LOST") return l.LOST;
   if (selections && selections.length > 0) {
     const fs = selections.map((s) => s.fixtureStatus.toLowerCase());
-    if (fs.some((s) => s === "in_progress")) return "EN COURS";
-    if (fs.every((s) => s === "finished")) return "EN ATTENTE";
-    return "PLANIFIÉ";
+    if (fs.some((s) => s === "in_progress")) return l.PENDING_in_progress;
+    if (fs.every((s) => s === "finished")) return l.PENDING_finished;
+    return l.PENDING_scheduled;
   }
-  return "EN COURS";
+  return l.PENDING_default;
 }
 
 export function couponStatusBadgeClass(status: CouponStatus): string {
@@ -40,7 +51,8 @@ export function couponStatusHeaderBadgeClass(status: CouponStatus): string {
   return "border-amber-400/40 bg-amber-400/20 text-amber-300";
 }
 
-export function couponModeLabel(legs: number): "Simple" | "Combiné" {
+export function couponModeLabel(legs: number, locale: Locale = "fr"): string {
+  if (locale === "en") return legs > 1 ? "Combined" : "Single";
   return legs > 1 ? "Combiné" : "Simple";
 }
 
@@ -54,20 +66,30 @@ export function combinedOdds(odds: string[]): string {
 // Selection-level (bet)
 // ---------------------------------------------------------------------------
 
+const SELECTION_STATUS_LABELS: Record<Locale, {
+  WON: string; LOST: string; VOID: string;
+  PENDING_in_progress: string; PENDING_finished: string; PENDING_scheduled: string; PENDING_default: string;
+}> = {
+  fr: { WON: "GAGNÉ", LOST: "PERDU", VOID: "VOID", PENDING_in_progress: "EN COURS", PENDING_finished: "EN ATTENTE", PENDING_scheduled: "PLANIFIÉ", PENDING_default: "EN COURS" },
+  en: { WON: "WON", LOST: "LOST", VOID: "VOID", PENDING_in_progress: "IN PROGRESS", PENDING_finished: "PENDING", PENDING_scheduled: "SCHEDULED", PENDING_default: "IN PROGRESS" },
+};
+
 export function selectionStatusLabel(
   status: SelectionStatus,
   fixtureStatus?: string,
+  locale: Locale = "fr",
 ): string {
-  if (status === "WON") return "GAGNÉ";
-  if (status === "LOST") return "PERDU";
-  if (status === "VOID") return "VOID";
+  const l = SELECTION_STATUS_LABELS[locale];
+  if (status === "WON") return l.WON;
+  if (status === "LOST") return l.LOST;
+  if (status === "VOID") return l.VOID;
   if (fixtureStatus) {
     const fs = fixtureStatus.toLowerCase();
-    if (fs === "in_progress") return "EN COURS";
-    if (fs === "finished") return "EN ATTENTE";
-    return "PLANIFIÉ";
+    if (fs === "in_progress") return l.PENDING_in_progress;
+    if (fs === "finished") return l.PENDING_finished;
+    return l.PENDING_scheduled;
   }
-  return "EN COURS";
+  return l.PENDING_default;
 }
 
 export function selectionStatusBadgeClass(status: SelectionStatus): string {
