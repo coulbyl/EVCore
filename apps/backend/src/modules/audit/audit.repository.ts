@@ -48,6 +48,7 @@ export class AuditRepository {
                 pick: true,
                 ev: true,
                 probEstimated: true,
+                status: true,
               },
               orderBy: { ev: 'desc' },
               take: 1,

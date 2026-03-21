@@ -335,7 +335,7 @@ function AuditFixturesSection({ date }: { date: string }) {
                       </td>
                       <td className="px-4 py-3">
                         {row.modelRun?.pick ? (
-                          <span className="text-sm font-medium text-slate-700">
+                          <span className={`text-sm font-medium ${row.modelRun.betStatus === "WON" ? "text-emerald-600" : row.modelRun.betStatus === "LOST" ? "text-rose-500" : "text-slate-700"}`}>
                             {formatPickForDisplay(
                               row.modelRun.pick,
                               row.modelRun.market ?? "",

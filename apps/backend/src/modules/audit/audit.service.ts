@@ -77,6 +77,11 @@ export class AuditService {
                 finalScore: toNumber(run.finalScore).toFixed(3),
                 market: bet?.market ?? null,
                 pick: bet?.pick ?? null,
+                betStatus: bet
+                  ? bet.status === 'WON' || bet.status === 'LOST'
+                    ? bet.status
+                    : 'PENDING'
+                  : null,
                 probEstimated: bet
                   ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`
                   : null,

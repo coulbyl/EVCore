@@ -39,6 +39,7 @@ export type AuditFixtureRow = {
     finalScore: string;
     market: string | null;
     pick: string | null;
+    betStatus: 'WON' | 'LOST' | 'PENDING' | null;
     probEstimated: string | null;
     ev: string | null;
     lambdaHome: string | null;
