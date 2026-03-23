@@ -8,7 +8,24 @@ export const FEATURE_WEIGHTS = {
 } as const;
 
 export const EV_THRESHOLD = new Decimal('0.08');
-export const MODEL_SCORE_THRESHOLD = new Decimal('0.60');
+
+// EV soft alert — log a warning when the selected pick EV exceeds this value.
+// High EV against an efficient bookmaker (Pinnacle) often signals a calibration
+// anomaly (biased λ, xG proxy error) rather than a genuine edge.
+export const EV_MAX_SOFT_ALERT = new Decimal('0.60');
+
+// EV hard cap — reject any pick with EV above this value.
+// An EV > 0.90 is implausible against a sharp market (Pinnacle) and
+// invariably reflects a lambda or xG estimation error (audit 2026-03-22:
+// Burgos EV=0.942 lost 4-0, confirming the anomaly signal).
+export const EV_HARD_CAP = new Decimal('0.90');
+
+// Minimum directional probability for 1X2 HOME and AWAY picks.
+// Prevents selecting V1 when P(home win) < threshold and V2 when
+// P(away win) < threshold — avoids backing the team the model itself
+// considers unlikely to win (e.g. Guingamp V1 at P=36%).
+export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
+
 // Minimum quality score (EV × deterministicScore × longshotPenalty) required
 // for a pick to be selected, given that the fixture already passed
 // MODEL_SCORE_THRESHOLD. Eliminates low-EV picks that barely clear the EV
@@ -19,18 +36,68 @@ export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal('5.0');
 export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal('6.0');
 
 // Odds window for selectable picks. Picks outside [MIN, MAX] are rejected
-// regardless of EV. The lower bound eliminates over-confident short-priced
-// favorites (historically negative ROI at <1.80); the upper bound eliminates
-// long shots where probability overestimation inflates EV artificially.
-export const MIN_SELECTION_ODDS = new Decimal('1.80');
+// regardless of EV. The lower bound allows short-priced picks with genuine EV
+// (audit 2026-03-22: Roma V1 at 1.52 blocked, would have won); EV and quality
+// filters downstream still prevent weak short-priced selections.
+// The upper bound eliminates long shots where probability overestimation inflates EV.
+export const MIN_SELECTION_ODDS = new Decimal('1.45');
 export const MAX_SELECTION_ODDS = new Decimal('4.0');
 
 // Home advantage correction applied to Poisson lambdas before probability
-// computation. Home teams score ~12% more, away teams ~12% less than their
-// season xG average — consistent with published football Poisson literature.
+// computation. Academic literature (Dixon-Coles, Karlis-Ntzoufras) measures
+// home advantage at 5-8%. Raised from 0.93→0.95 after audit 2026-03-22
+// revealed systematic away-team λ underestimation (Hertha 1.11→5, Alaves
+// 0.76→4, Kiel 0.98→3 across 3 independent fixtures).
 // Symmetric: HOME_ADVANTAGE_LAMBDA_FACTOR × AWAY_DISADVANTAGE_LAMBDA_FACTOR ≈ 1.
-export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.12;
-export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.88;
+export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05;
+export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
+
+// MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
+// decision. Differentiated by market efficiency tier (audit finding: the flat
+// 0.60 threshold blocked 7 winning picks on secondary-market fixtures).
+//
+// Tier A — efficient markets (well-calibrated bookmakers, high liquidity):
+const MODEL_SCORE_THRESHOLD_A = new Decimal('0.55');
+// Tier B — secondary markets (noisier, lower liquidity, more EV available):
+const MODEL_SCORE_THRESHOLD_B = new Decimal('0.45');
+// Default fallback for unmapped competition codes:
+const MODEL_SCORE_THRESHOLD_DEFAULT = new Decimal('0.60');
+
+const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
+  // Tier A — efficient markets
+  PL: MODEL_SCORE_THRESHOLD_A,
+  SA: MODEL_SCORE_THRESHOLD_A,
+  BL1: MODEL_SCORE_THRESHOLD_A,
+  LL: MODEL_SCORE_THRESHOLD_A,
+  L1: MODEL_SCORE_THRESHOLD_A,
+  // Tier B — secondary / lower-division markets
+  CH: MODEL_SCORE_THRESHOLD_B,
+  D2: MODEL_SCORE_THRESHOLD_B,
+  F2: MODEL_SCORE_THRESHOLD_B,
+  SP2: MODEL_SCORE_THRESHOLD_A,
+  I2: MODEL_SCORE_THRESHOLD_B,
+  // Tier C — European competitions (decided in prior session)
+  LDC: MODEL_SCORE_THRESHOLD_B,
+  UEL: MODEL_SCORE_THRESHOLD_B,
+  UECL: MODEL_SCORE_THRESHOLD_B,
+};
+
+export function getModelScoreThreshold(
+  competitionCode: string | null,
+): Decimal {
+  if (
+    competitionCode !== null &&
+    competitionCode in MODEL_SCORE_THRESHOLD_MAP
+  ) {
+    return MODEL_SCORE_THRESHOLD_MAP[competitionCode];
+  }
+  return MODEL_SCORE_THRESHOLD_DEFAULT;
+}
+
+// Kept for backward-compatibility with existing tests that import this name.
+// Points to the default (unmapped) threshold — prefer getModelScoreThreshold()
+// in production code.
+export const MODEL_SCORE_THRESHOLD = MODEL_SCORE_THRESHOLD_DEFAULT;
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;

@@ -63,10 +63,12 @@ export type ViablePick = {
 
 export type EvaluatedPick = ViablePick & {
   rejectionReason?:
+    | 'ev_above_hard_cap'
     | 'ev_below_threshold'
     | 'filtered_longshot'
     | 'market_suspended'
     | 'odds_above_cap'
     | 'odds_below_floor'
+    | 'probability_too_low'
     | 'quality_score_below_threshold';
 };

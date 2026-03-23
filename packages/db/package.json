@@ -23,6 +23,7 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:stats": "tsx scripts/db-stats.ts",
+    "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
     "db:audit:sa-away": "tsx scripts/sa-away-audit.ts",
     "db:reset-zero-xg": "tsx scripts/reset-zero-xg.ts",
     "lint": "eslint . --max-warnings 0",

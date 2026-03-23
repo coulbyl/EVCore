@@ -36,16 +36,19 @@ import {
   COMBO_CORRELATION_MAX_FACTOR,
   COMBO_CORRELATION_MIN_FACTOR,
   DEFAULT_STAKE_PCT,
+  EV_HARD_CAP,
+  EV_MAX_SOFT_ALERT,
   EV_THRESHOLD,
   FEATURE_WEIGHTS,
+  getModelScoreThreshold,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
   AWAY_DISADVANTAGE_LAMBDA_FACTOR,
   HOME_ADVANTAGE_LAMBDA_FACTOR,
   MAX_SELECTION_ODDS,
+  MIN_PICK_DIRECTION_PROBABILITY,
   MIN_SELECTION_ODDS,
   MIN_QUALITY_SCORE,
-  MODEL_SCORE_THRESHOLD,
   ONE_X_TWO_AWAY_MAX_ODDS,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_MAX_ODDS,
@@ -363,7 +366,7 @@ export class BettingEngineService {
     }
 
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
-      MODEL_SCORE_THRESHOLD,
+      getModelScoreThreshold(getFixtureCompetitionCode(fixture)),
     )
       ? Decision.BET
       : Decision.NO_BET;
@@ -452,6 +455,22 @@ export class BettingEngineService {
           }
         }
       }
+    }
+
+    if (valueBet !== null && valueBet.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
+      logger.warn(
+        {
+          fixtureId,
+          competitionCode: getFixtureCompetitionCode(fixture),
+          homeTeam: getFixtureHomeTeamName(fixture),
+          awayTeam: getFixtureAwayTeamName(fixture),
+          market: valueBet.market,
+          pick: valueBet.pick,
+          ev: valueBet.ev.toNumber(),
+          evSoftAlertThreshold: EV_MAX_SOFT_ALERT.toNumber(),
+        },
+        'EV soft alert: high EV may indicate calibration anomaly (biased lambda or xG proxy error)',
+      );
     }
 
     const decision =
@@ -1016,6 +1035,7 @@ export class BettingEngineService {
       const rejectionReason = getPickRejectionReason(
         candidate,
         suspendedMarkets,
+        probabilities,
       );
       return rejectionReason ? { ...candidate, rejectionReason } : candidate;
     });
@@ -1290,7 +1310,27 @@ function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
 function getPickRejectionReason(
   pick: ViablePick,
   suspendedMarkets: Set<Market>,
+  probabilities: MatchProbabilities,
 ): EvaluatedPick['rejectionReason'] {
+  if (pick.ev.greaterThan(EV_HARD_CAP)) {
+    return 'ev_above_hard_cap';
+  }
+
+  if (pick.market === Market.ONE_X_TWO) {
+    if (
+      pick.pick === 'HOME' &&
+      probabilities.home.lessThan(MIN_PICK_DIRECTION_PROBABILITY)
+    ) {
+      return 'probability_too_low';
+    }
+    if (
+      pick.pick === 'AWAY' &&
+      probabilities.away.lessThan(MIN_PICK_DIRECTION_PROBABILITY)
+    ) {
+      return 'probability_too_low';
+    }
+  }
+
   if (pick.ev.lessThan(EV_THRESHOLD)) {
     return 'ev_below_threshold';
   }

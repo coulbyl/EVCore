@@ -165,11 +165,11 @@ describe('StatsSyncWorker', () => {
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    // Proxy: shots_on_goal × 0.35 — home: 5×0.35=1.75, away: 3×0.35≈1.05
+    // Proxy: shots_on_goal × 0.40 — home: 5×0.40=2.00, away: 3×0.40=1.20
     expect(fixtureService.updateXg).toHaveBeenCalledWith(
       11111,
-      expect.closeTo(1.75),
-      expect.closeTo(1.05),
+      expect.closeTo(2.0),
+      expect.closeTo(1.2),
     );
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
@@ -206,8 +206,8 @@ describe('StatsSyncWorker', () => {
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    // Proxy: shots_on_goal × 0.35
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.7, 1.75);
+    // Proxy: shots_on_goal × 0.40 — home: 2×0.40=0.80, away: 5×0.40=2.00
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.8, 2.0);
     expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 

@@ -75,7 +75,7 @@ export const ETL_CONSTANTS = {
   STATS_RATE_LIMIT_MS: 2_000,
   // Fallback xG proxy when expected_goals is absent from the API response.
   // Used for 2022-23 first half where API-Football did not yet track xG.
-  XG_SHOTS_PROXY_FACTOR: 0.35,
+  XG_SHOTS_PROXY_FACTOR: 0.4,
 
   // --- football-data.co.uk CSV — historical odds one-shot import ---
   // Closing odds (Pinnacle + Bet365) for EV backtest. Free, no auth required.
