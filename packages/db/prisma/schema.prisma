@@ -86,6 +86,7 @@ model Competition {
   includeInBacktest  Boolean  @default(true)
   csvDivisionCode    String?
   seasonStartMonth   Int?
+  apiSeasonOverride  Int?
   seasons            Season[]
   teams              Team[]
   createdAt          DateTime @default(now())

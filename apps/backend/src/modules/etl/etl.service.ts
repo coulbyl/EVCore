@@ -41,6 +41,7 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
+  apiSeasonOverride: number | null;
 };
 
 type CompetitionPlan = {
@@ -66,6 +67,9 @@ function computeSeasons(
   competition: CompetitionRow,
   now = new Date(),
 ): readonly number[] {
+  if (competition.apiSeasonOverride !== null) {
+    return [competition.apiSeasonOverride];
+  }
   return activeSeasons(
     competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
     1,
@@ -238,6 +242,7 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
+        apiSeasonOverride: true,
       },
     });
     this.competitionPlans = competitions.map(toCompetitionPlan);
@@ -571,6 +576,7 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
+        apiSeasonOverride: true,
       },
     });
     if (!competition) {

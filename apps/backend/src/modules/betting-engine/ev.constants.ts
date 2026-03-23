@@ -80,6 +80,13 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   LDC: MODEL_SCORE_THRESHOLD_B,
   UEL: MODEL_SCORE_THRESHOLD_B,
   UECL: MODEL_SCORE_THRESHOLD_B,
+  // Tier D — international competitions (conservative default — limited team
+  // data, high variance, no historical backtest baseline yet).
+  WCQE: MODEL_SCORE_THRESHOLD_DEFAULT,
+  FRI: MODEL_SCORE_THRESHOLD_DEFAULT,
+  UNL: MODEL_SCORE_THRESHOLD_DEFAULT,
+  CAN: MODEL_SCORE_THRESHOLD_DEFAULT,
+  COPA: MODEL_SCORE_THRESHOLD_DEFAULT,
 };
 
 export function getModelScoreThreshold(

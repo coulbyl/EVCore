@@ -46,6 +46,7 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
+  apiSeasonOverride: number | null;
 };
 
 const TEST_COMPETITIONS: CompetitionRow[] = [
@@ -56,6 +57,7 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'England',
     csvDivisionCode: 'E0',
     seasonStartMonth: null,
+    apiSeasonOverride: null,
   },
   {
     leagueId: 135,
@@ -64,6 +66,7 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'Italy',
     csvDivisionCode: 'I1',
     seasonStartMonth: null,
+    apiSeasonOverride: null,
   },
 ];
 
@@ -334,6 +337,7 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
+      apiSeasonOverride: null,
     });
 
     await service.triggerStatsSyncForLeague('LL');
@@ -359,6 +363,7 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
+      apiSeasonOverride: null,
     });
 
     await service.triggerFixturesSyncForLeague('LL');

@@ -95,6 +95,39 @@ const COMPETITIONS = [
     includeInBacktest: false,
     csvDivisionCode: null,
   },
+  // International competitions — apiSeasonOverride bypasses the standard
+  // seasonStartMonth logic (API Football uses non-calendar season numbering
+  // for international tournaments).
+  {
+    leagueId: 32,
+    code: "WCQE",
+    name: "World Cup Qualification - Europe",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2024,
+  },
+  {
+    leagueId: 10,
+    code: "FRI",
+    name: "International Friendlies",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2026,
+  },
+  {
+    leagueId: 5,
+    code: "UNL",
+    name: "UEFA Nations League",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2024,
+  },
 ];
 
 async function seedCompetitions() {
