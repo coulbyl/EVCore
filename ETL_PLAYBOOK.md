@@ -1,7 +1,7 @@
 # ETL_PLAYBOOK.md — Référence des endpoints ETL
 
 Backend : `http://localhost:3001`
-Swagger : `http://localhost:3001/api`
+Swagger : `http://localhost:3001/reference`
 
 ---
 
@@ -16,7 +16,7 @@ Retourne les compteurs BullMQ (active / waiting / completed / failed / delayed) 
 
 ```
 GET /health
-GET /health/novu
+GET /health/smtp
 ```
 
 ---
@@ -184,11 +184,11 @@ POST /etl/sync/rolling-stats/:competitionCode/:season
 
 ## Compétitions internationales — cas particuliers
 
-| Code | leagueId | apiSeasonOverride | xG dispo | Notes |
-|------|----------|-------------------|----------|-------|
-| WCQE | 32 | 2024 | Non (proxy shots) | Pas de `expected_goals` dans l'API |
-| FRI | 10 | 2026 | Non (proxy shots) | Idem |
-| UNL | 5 | 2024 | Non (proxy shots) | Idem |
+| Code | leagueId | apiSeasonOverride | xG dispo          | Notes                              |
+| ---- | -------- | ----------------- | ----------------- | ---------------------------------- |
+| WCQE | 32       | 2024              | Non (proxy shots) | Pas de `expected_goals` dans l'API |
+| FRI  | 10       | 2026              | Non (proxy shots) | Idem                               |
+| UNL  | 5        | 2024              | Non (proxy shots) | Idem                               |
 
 Pour ces compétitions, `expected_goals` est toujours `null` dans l'API Football.
 Le worker applique le proxy `shots_on_target × 0.35` (constante `XG_SHOTS_PROXY_FACTOR`).

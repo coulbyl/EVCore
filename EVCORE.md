@@ -517,10 +517,10 @@ OpenClaw est un composant contraint, pas une boîte noire. Trois risques identif
 
 ## 14.4 Notifications & Alertes
 
-- **Novu** (open source, self-hosted) — système de notification multi-canal
-  - Canaux : Slack + Email (MVP), push possible en Phase 2
-  - Retry logic + templates paramétrés
-  - Déployé via Docker Compose avec le reste de la stack
+- **Nodemailer** (SMTP) — email transactionnel (alertes moteur, rapports hebdomadaires)
+  - Kill-switch `SMTP_ENABLED` — désactivé par défaut en dev, Mailpit en local (port 1025/8025)
+  - En prod : `SMTP_HOST/PORT/USER/PASSWORD` (Gmail, SES, etc.)
+- **In-app** — notifications PostgreSQL consultables via `GET /notifications`
 
 **Événements notifiés :**
 

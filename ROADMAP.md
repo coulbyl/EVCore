@@ -25,10 +25,10 @@
 - [~] Roadmap (ROADMAP.md)
 - [x] Guide d'écriture backend (`apps/backend/CODE_GUIDE.md`)
 - [x] Initialisation monorepo `apps/backend` (NestJS)
-- [x] Docker Compose (PostgreSQL + Redis + Novu)
+- [x] Docker Compose (PostgreSQL + Redis + Mailpit)
 - [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
 - [x] Configuration CI/CD (GitHub Actions — lint + type-check + test)
-- [x] Setup Novu (Slack + Email)
+- [x] Setup Nodemailer + Mailpit (Email)
 
 ---
 
@@ -102,8 +102,8 @@
 
 - [x] Implémentation seuil alerte ROI < -10% (30 derniers paris)
 - [x] Implémentation suspension automatique ROI < -15% (50+ paris)
-- [x] Alerte Novu si Brier Score > seuil acceptable
-- [x] Alerte Novu sur suspension marché
+- [x] Alerte notification si Brier Score > seuil acceptable
+- [x] Alerte notification sur suspension marché
 - [x] Rapport hebdomadaire ROI/Brier Score par endpoint (`POST /risk/report/weekly`)
 
 ---
@@ -116,7 +116,7 @@
 - [x] `ETL_CRON_SCHEDULES` + `ETL_SCHEDULER_KEYS` dans `etl.constants.ts` (configurables)
 - [x] `EtlService.onApplicationBootstrap()` — registration idempotente au démarrage
 - [x] `ETL_SCHEDULING_ENABLED` — flag pour désactiver le scheduling en dev/test
-- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte Novu uniquement sur échec définitif (après 3 tentatives)
+- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte notification uniquement sur échec définitif (après 3 tentatives)
 - [x] `sendEtlFailureAlert()` dans `NotificationService`
 - [x] Gestion `POSTPONED` fixtures — déjà couverte par le statut pipeline existant
 - [-] Setup Kestra — abandonné au profit de BullMQ natif (infra simplifiée pour MVP)
@@ -130,14 +130,14 @@
 - [x] Auto-apply : brierScore > 0.25 ET betCount ≥ 50 ET cooldown 7 jours
 - [x] `AdjustmentService.rollback()` — nouveau proposal APPLIED avec poids inversés (audit complet)
 - [x] `AdjustmentController` : 3 endpoints (settle-and-check, list, rollback)
-- [x] `sendWeightAdjustmentAlert()` — alerte Novu sur auto-apply + rollback
+- [x] `sendWeightAdjustmentAlert()` — alerte notification sur auto-apply + rollback
 
 **Semaine 11 — Stabilisation**
 
 - [x] Tests E2E Testcontainers (`vitest.config.e2e.ts`, `global-e2e.ts`, `prisma-test.ts`)
 - [x] `test/adjustment.e2e-spec.ts` — 3 tests intégration (settle, weights, auto-apply)
 - [x] Revue Zod schemas : `paging.total` fix, `response.length(2)` stats, 22 tests créés
-- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "Novu disabled"
+- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "SMTP disabled"
 - [x] Docker Compose : `start_period` postgres (10s) + redis (5s)
 
 **Semaine 12 — Validation MVP** ✅ Go Phase 2 (2 mars 2026)

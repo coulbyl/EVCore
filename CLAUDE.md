@@ -59,7 +59,7 @@ apps/backend/src/
     etl/               # Data ingestion workers (BullMQ)
     model-run/         # ModelRun storage + audit
     adjustment/        # AdjustmentProposal + learning loop
-    notification/      # Novu integration
+    notification/      # Email (Nodemailer) + in-app notifications
   common/
     guards/
     interceptors/
@@ -84,7 +84,7 @@ OpenClaw (LLM delta, capped 30%) — Phase 2 only
         ↓
 Backend Validation (authority)
         ↓
-ModelRun stored + Novu alert
+ModelRun stored + notification alert
 ```
 
 ### Component Responsibilities
@@ -136,7 +136,7 @@ ModelRun stored + Novu alert
 - **Zod** for all external data (ETL ingestion, third-party API responses, OpenClaw output)
 - **class-validator** for all NestJS DTO (inbound HTTP requests)
 - Validate at system boundaries only — trust internal service calls
-- If Zod parse fails on ETL data: reject the entire payload, log with full context, trigger Novu alert
+- If Zod parse fails on ETL data: reject the entire payload, log with full context, trigger notification alert
 
 ### Secrets handling
 

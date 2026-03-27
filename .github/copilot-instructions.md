@@ -6,10 +6,10 @@ EVCore is an autonomous sports betting engine based on Expected Value (EV) mathe
 
 - **Runtime**: Node.js >= 18, TypeScript (strict)
 - **Backend**: NestJS + Prisma + PostgreSQL
-- **Queues**: BullMQ + Redis, orchestrated by Kestra
+- **Queues**: BullMQ + Redis
 - **Validation**: Zod (external data) + class-validator (NestJS DTOs)
 - **Math**: `decimal.js` for odds/EV, `jStat` for Poisson distributions
-- **Notifications**: Novu (self-hosted)
+- **Notifications**: Nodemailer (SMTP) + in-app (PostgreSQL)
 - **Monorepo**: pnpm + Turborepo
 
 ## Architecture Rules
@@ -61,7 +61,7 @@ Every ingestion job must:
 2. Validate with Zod schema (reject entirely if invalid — never partial writes)
 3. Log failed payloads with full context
 4. Write to DB only after successful validation
-5. Trigger Novu alert on total failure
+5. Trigger notification alert on total failure
 
 ## ModelRun Output
 
