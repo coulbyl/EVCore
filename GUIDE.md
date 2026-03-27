@@ -1,7 +1,5 @@
 # GUIDE.md — Lancer et opérer EVCore
 
-docker exec -i evcore-postgres psql -U postgres -d evcore < /home/fannancoulibaly/lab/coulbyl-studio/evcore/backups/evcore_20260321_152841.sql
-
 > Guide opérationnel basé sur les incidents et découvertes de la session du 13 mars 2026.
 
 ---
@@ -202,7 +200,7 @@ Activer une ligue dans le seed sans mettre à jour `etl.constants.ts` = les work
 ```bash
 pnpm --filter backend lint        # ESLint (--max-warnings 0)
 pnpm --filter backend typecheck   # tsc --noEmit
-pnpm --filter backend test        # Vitest (237 tests)
+pnpm --filter backend test        # Vitest (279 tests)
 ```
 
 ---
