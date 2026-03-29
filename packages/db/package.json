@@ -26,6 +26,7 @@
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
     "db:audit:sa-away": "tsx scripts/sa-away-audit.ts",
     "db:reset-zero-xg": "tsx scripts/reset-zero-xg.ts",
+    "db:audit:fri-xg": "tsx scripts/fri-xg-audit.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

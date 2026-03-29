@@ -44,15 +44,3 @@ sur une compétition donnée sur les 7 derniers jours.
 Voir item 1 — couvert par `getLeagueEvThreshold()`.
 `LEAGUE_MIN_ODDS_COVERAGE` non implémenté : couvert indirectement par la hausse du seuil EV.
 EL1 (5 fixtures avec odds) : laissé à EV_THRESHOLD (0.08) — win rate 50% sur l'échantillon actuel.
-
----
-
-## Observation — FRI / sélections nationales (2026-03-27)
-
-Le moteur ne génère pas de model run pour les fixtures FRI quand les équipes n'ont pas de stats dans la saison FRI 2026-27, même si elles ont des stats dans d'autres compétitions de sélections (WCQE, UNL).
-
-**Cause** : `analyzeFixture` filtre les `team_stats` par `afterFixture.seasonId = fixture.seasonId`. Norway a 14 stats (8 WCQE + 6 UNL, saison 2024-25) → 0 stats FRI 2026-27 → skip `missing_team_stats`.
-
-**Impact** : coupon NO_BET sur FRI tant que les équipes n'ont pas de fixtures FRI terminées dans la saison en cours. Se résoudra naturellement au fil de la saison.
-
-**Option à étudier** : lookup cross-compétition pour les sélections nationales — chercher les stats dans toutes les compétitions pour un même `teamId` (FRI + WCQE + UNL = même national team). Nécessite une décision de design avant d'implémenter.
