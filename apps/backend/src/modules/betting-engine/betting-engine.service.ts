@@ -46,9 +46,11 @@ import {
   AWAY_DISADVANTAGE_LAMBDA_FACTOR,
   HOME_ADVANTAGE_LAMBDA_FACTOR,
   MAX_SELECTION_ODDS,
+  MIN_DRAW_DIRECTION_PROBABILITY,
   MIN_PICK_DIRECTION_PROBABILITY,
   MIN_SELECTION_ODDS,
   MIN_QUALITY_SCORE,
+  getLeagueEvThreshold,
   ONE_X_TWO_AWAY_MAX_ODDS,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_MAX_ODDS,
@@ -386,6 +388,7 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
+    const competitionCode = getFixtureCompetitionCode(fixture);
     const evaluatedPicks: EvaluatedPick[] = latestOdds
       ? this.listEvaluatedPicks(
           probabilities,
@@ -395,6 +398,7 @@ export class BettingEngineService {
           distAway,
           lambdaFloorHit,
           suspendedMarkets,
+          competitionCode,
         )
       : [];
     const candidatePicks = evaluatedPicks.filter(
@@ -780,7 +784,7 @@ export class BettingEngineService {
     };
   }
 
-  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
   private selectBestViablePick(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,
@@ -789,6 +793,7 @@ export class BettingEngineService {
     distAway: number[],
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
+    competitionCode: string | null = null,
   ): ViablePick | null {
     const viable = this.listViablePicks(
       probabilities,
@@ -798,12 +803,13 @@ export class BettingEngineService {
       distAway,
       lambdaFloorHit,
       suspendedMarkets,
+      competitionCode,
     );
 
     return viable[0] ?? null;
   }
 
-  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
   private listViablePicks(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,
@@ -812,6 +818,7 @@ export class BettingEngineService {
     distAway: number[],
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
+    competitionCode: string | null = null,
   ): ViablePick[] {
     return this.listEvaluatedPicks(
       probabilities,
@@ -821,12 +828,13 @@ export class BettingEngineService {
       distAway,
       lambdaFloorHit,
       suspendedMarkets,
+      competitionCode,
     )
       .filter((pick): pick is ViablePick => pick.rejectionReason === undefined)
       .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
   }
 
-  // eslint-disable-next-line max-params -- Seven domain parameters; grouping into an object would obscure intent.
+  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
   private listEvaluatedPicks(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,
@@ -835,7 +843,9 @@ export class BettingEngineService {
     distAway: number[],
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
+    competitionCode: string | null = null,
   ): EvaluatedPick[] {
+    const minEv = getLeagueEvThreshold(competitionCode);
     const candidates: ViablePick[] = [];
 
     // Singles 1X2
@@ -1030,12 +1040,13 @@ export class BettingEngineService {
       }
     }
 
-    // Filter: EV >= threshold and no suspended market
+    // Filter: EV >= league threshold and no suspended market
     const evaluated = candidates.map((candidate) => {
       const rejectionReason = getPickRejectionReason(
         candidate,
         suspendedMarkets,
         probabilities,
+        minEv,
       );
       return rejectionReason ? { ...candidate, rejectionReason } : candidate;
     });
@@ -1307,10 +1318,12 @@ function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
   }));
 }
 
+// eslint-disable-next-line max-params -- Four domain parameters; minEv is derived from competition context and kept explicit for testability.
 function getPickRejectionReason(
   pick: ViablePick,
   suspendedMarkets: Set<Market>,
   probabilities: MatchProbabilities,
+  minEv: Decimal = EV_THRESHOLD,
 ): EvaluatedPick['rejectionReason'] {
   if (pick.ev.greaterThan(EV_HARD_CAP)) {
     return 'ev_above_hard_cap';
@@ -1329,9 +1342,19 @@ function getPickRejectionReason(
     ) {
       return 'probability_too_low';
     }
+    // Combo picks with DRAW as primary leg (e.g. NUL + MOINS 2.5) passed the EV
+    // floor via high combo odds while P(draw) was 19-27% — audit 2026-03-28: 0/3.
+    // Require a minimum draw probability before accepting DRAW-based combos.
+    if (
+      pick.pick === 'DRAW' &&
+      pick.isCombo &&
+      probabilities.draw.lessThan(MIN_DRAW_DIRECTION_PROBABILITY)
+    ) {
+      return 'probability_too_low';
+    }
   }
 
-  if (pick.ev.lessThan(EV_THRESHOLD)) {
+  if (pick.ev.lessThan(minEv)) {
     return 'ev_below_threshold';
   }
 

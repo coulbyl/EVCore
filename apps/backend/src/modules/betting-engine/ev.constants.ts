@@ -26,6 +26,13 @@ export const EV_HARD_CAP = new Decimal('0.90');
 // considers unlikely to win (e.g. Guingamp V1 at P=36%).
 export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
 
+// Minimum directional probability for DRAW-based combo picks (e.g. NUL + MOINS 2.5).
+// Combos with DRAW as primary leg repeatedly cleared the EV floor only via high
+// combo odds while P(draw) was 19-27% — audit 2026-03-21/28 showed 0/3 win rate.
+// Raises the bar without disabling the market: the learning loop will adjust further
+// once 50 settled bets are available per market.
+export const MIN_DRAW_DIRECTION_PROBABILITY = new Decimal('0.28');
+
 // Minimum quality score (EV × deterministicScore × longshotPenalty) required
 // for a pick to be selected, given that the fixture already passed
 // MODEL_SCORE_THRESHOLD. Eliminates low-EV picks that barely clear the EV
@@ -107,6 +114,27 @@ export function getModelScoreThreshold(
 // Points to the default (unmapped) threshold — prefer getModelScoreThreshold()
 // in production code.
 export const MODEL_SCORE_THRESHOLD = MODEL_SCORE_THRESHOLD_DEFAULT;
+
+// Per-league EV threshold overrides.
+// Leagues with sparse xG data or thin odds coverage require a stronger signal
+// before a BET decision is made. Leagues not in this map use EV_THRESHOLD (0.08).
+// Audit 2026-03-20/28: FRI (4% xG coverage) → 0/1, WCQE → 0/4, EL2/F2 → 0/8.
+const LEAGUE_EV_THRESHOLD_MAP: Record<string, Decimal> = {
+  // Tier D international — sparse xG (FRI 4%, WCQE ~9% zero-xG records)
+  WCQE: new Decimal('0.15'),
+  FRI: new Decimal('0.15'),
+  UNL: new Decimal('0.12'),
+  // Lower divisions — sparser odds coverage, higher xG noise
+  EL2: new Decimal('0.10'),
+  F2: new Decimal('0.10'),
+};
+
+export function getLeagueEvThreshold(competitionCode: string | null): Decimal {
+  if (competitionCode !== null && competitionCode in LEAGUE_EV_THRESHOLD_MAP) {
+    return LEAGUE_EV_THRESHOLD_MAP[competitionCode];
+  }
+  return EV_THRESHOLD;
+}
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
