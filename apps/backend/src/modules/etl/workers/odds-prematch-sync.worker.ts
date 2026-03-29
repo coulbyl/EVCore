@@ -60,7 +60,38 @@ export class OddsPrematchSyncWorker extends WorkerHost {
 
     for (const { id: fixtureId, externalId } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
-      const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+      let res: Response;
+      try {
+        res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+      } catch (err) {
+        const cause =
+          err instanceof Error
+            ? (err.cause as Record<string, unknown> | undefined)
+            : undefined;
+        const code = cause?.['code'];
+        if (
+          code === 'ETIMEDOUT' ||
+          code === 'ECONNRESET' ||
+          code === 'ENOTFOUND'
+        ) {
+          logger.warn(
+            { externalId, code },
+            'Transient network error — skipping fixture',
+          );
+          skipped++;
+          await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+          continue;
+        }
+        logger.error(
+          {
+            externalId,
+            message: err instanceof Error ? err.message : String(err),
+            cause,
+          },
+          'Unexpected network error — aborting job',
+        );
+        throw err;
+      }
 
       if (!res.ok) {
         logger.warn(
