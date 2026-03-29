@@ -14,6 +14,7 @@ import {
 } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import {
+  fetchOrSkip,
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
@@ -82,7 +83,19 @@ export class StatsSyncWorker {
 
     for (const { externalId } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures/statistics?fixture=${externalId}`;
-      const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+      const res = await fetchOrSkip(url, {
+        headers: { 'x-apisports-key': apiKey },
+      });
+
+      if (res === null) {
+        logger.warn(
+          { externalId },
+          'Transient network error — skipping fixture',
+        );
+        skipped++;
+        await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
+        continue;
+      }
 
       if (!res.ok) {
         logger.warn(

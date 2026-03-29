@@ -12,6 +12,7 @@ import {
 import { PrismaService } from '@/prisma.service';
 import { ApiFootballInjuriesResponseSchema } from '../schemas/injuries.schema';
 import {
+  fetchOrSkip,
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
@@ -78,7 +79,18 @@ export class InjuriesSyncWorker {
 
     for (const fixture of targetFixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/injuries?fixture=${fixture.externalId}`;
-      const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+      const res = await fetchOrSkip(url, {
+        headers: { 'x-apisports-key': apiKey },
+      });
+
+      if (res === null) {
+        logger.warn(
+          { fixtureExternalId: fixture.externalId },
+          'Transient network error — skipping fixture',
+        );
+        skipped++;
+        continue;
+      }
 
       if (!res.ok) {
         logger.warn(

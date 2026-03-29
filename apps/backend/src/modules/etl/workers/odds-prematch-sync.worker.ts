@@ -16,7 +16,7 @@ import {
 import { NotificationService } from '../../notification/notification.service';
 import { tomorrowUtc, formatDateUtc } from '@utils/date.utils';
 import { sleep } from '@utils/async.utils';
-import { notifyOnWorkerFailure } from './etl-worker.utils';
+import { fetchOrSkip, notifyOnWorkerFailure } from './etl-worker.utils';
 
 // Passing date as job data makes the worker testable and supports backfill.
 // When absent, defaults to tomorrow (standard daily cron use case).
@@ -60,37 +60,18 @@ export class OddsPrematchSyncWorker extends WorkerHost {
 
     for (const { id: fixtureId, externalId } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
-      let res: Response;
-      try {
-        res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
-      } catch (err) {
-        const cause =
-          err instanceof Error
-            ? (err.cause as Record<string, unknown> | undefined)
-            : undefined;
-        const code = cause?.['code'];
-        if (
-          code === 'ETIMEDOUT' ||
-          code === 'ECONNRESET' ||
-          code === 'ENOTFOUND'
-        ) {
-          logger.warn(
-            { externalId, code },
-            'Transient network error — skipping fixture',
-          );
-          skipped++;
-          await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
-          continue;
-        }
-        logger.error(
-          {
-            externalId,
-            message: err instanceof Error ? err.message : String(err),
-            cause,
-          },
-          'Unexpected network error — aborting job',
+      const res = await fetchOrSkip(url, {
+        headers: { 'x-apisports-key': apiKey },
+      });
+
+      if (res === null) {
+        logger.warn(
+          { externalId },
+          'Transient network error — skipping fixture',
         );
-        throw err;
+        skipped++;
+        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        continue;
       }
 
       if (!res.ok) {

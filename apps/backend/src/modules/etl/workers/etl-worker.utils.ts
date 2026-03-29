@@ -77,6 +77,51 @@ type WorkerFailureContext<T> = {
   };
 };
 
+const TRANSIENT_NETWORK_CODES = [
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'ENOTFOUND',
+] as const;
+
+function getNetworkErrorCode(err: unknown): string | undefined {
+  if (!(err instanceof Error)) return undefined;
+  return (err.cause as Record<string, unknown> | undefined)?.['code'] as
+    | string
+    | undefined;
+}
+
+/**
+ * Wraps fetch() with transient network error handling.
+ * Returns null when the error is transient (ETIMEDOUT / ECONNRESET / ENOTFOUND)
+ * so callers can skip the current item and continue their loop.
+ * Re-throws all other errors so BullMQ can handle retries at job level.
+ */
+export async function fetchOrSkip(
+  url: string,
+  options: RequestInit,
+): Promise<Response | null> {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    const code = getNetworkErrorCode(err);
+    if (
+      code !== undefined &&
+      (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
+    ) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+export function isTransientNetworkError(err: unknown): boolean {
+  const code = getNetworkErrorCode(err);
+  return (
+    code !== undefined &&
+    (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
+  );
+}
+
 export function notifyOnWorkerFailure<T>({
   notification,
   queueName,
