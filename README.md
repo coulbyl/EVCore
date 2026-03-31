@@ -68,8 +68,6 @@ Useful maintenance commands:
 
 ```bash
 pnpm --filter @evcore/db db:stats
-pnpm --filter @evcore/db db:reset-zero-xg --codes=I2,F2,SP2,D2
-pnpm --filter @evcore/db db:reset-zero-xg --apply --codes=I2,F2,SP2,D2
 ```
 
 Default service endpoints:
@@ -114,7 +112,6 @@ packages/
 
 - `stats-sync` now treats `expected_goals: null` as unavailable data, not as `0`.
 - When historical xG coverage is missing, rolling stats fall back to recent goals instead of persisting misleading `0/0` xG snapshots.
-- The `db:reset-zero-xg` script can reset legacy `homeXg=0 && awayXg=0` fixtures to `null` so a future `stats-sync` can retry them.
 
 ---
 

@@ -80,6 +80,8 @@ export const ETL_CONSTANTS = {
   // --- football-data.co.uk CSV — historical odds one-shot import ---
   // Closing odds (Pinnacle + Bet365) for EV backtest. Free, no auth required.
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
+  // World Football Elo Ratings export used by the FRI fallback reference model.
+  ELO_RATINGS_WORLD_TSV_URL: 'https://eloratings.net/World.tsv',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).
@@ -116,9 +118,11 @@ export const API_FOOTBALL_BET_IDS = {
 export const BULLMQ_QUEUES = {
   LEAGUE_SYNC: 'league-sync',
   PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
+  STALE_SCHEDULED_SYNC: 'stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
+  ELO_SYNC: 'elo-sync',
   BETTING_ENGINE: 'betting-engine',
 } as const;
 
@@ -133,9 +137,11 @@ export const BULLMQ_DEFAULT_JOB_OPTIONS = {
 export const ETL_CRON_SCHEDULES = {
   FIXTURES_SYNC: '0 2 * * *', // 02:00 UTC daily
   PENDING_BETS_SETTLEMENT: '*/30 * * * *', // every 30 minutes
+  STALE_SCHEDULED_SYNC: '15 7 * * *', // 07:15 UTC daily — reconcile past fixtures still marked SCHEDULED
   STATS_SYNC: '0 4 * * *', // 04:00 UTC daily
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
+  ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
   ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
   ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
 } as const;
@@ -144,7 +150,9 @@ export const ETL_CRON_SCHEDULES = {
 export const ETL_SCHEDULER_KEYS = {
   LEAGUE_SYNC: 'cron:league-sync',
   PENDING_BETS_SETTLEMENT: 'cron:pending-bets-settlement',
+  STALE_SCHEDULED_SYNC: 'cron:stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
+  ELO_SYNC: 'cron:elo-sync',
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
 } as const;

@@ -18,6 +18,8 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
 import { OddsPrematchSyncWorker } from './workers/odds-prematch-sync.worker';
 import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.worker';
+import { EloSyncWorker } from './workers/elo-sync.worker';
+import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
     BullModule.registerQueue(
       { name: BULLMQ_QUEUES.LEAGUE_SYNC },
       { name: BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT },
+      { name: BULLMQ_QUEUES.STALE_SCHEDULED_SYNC },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
+      { name: BULLMQ_QUEUES.ELO_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
     ),
@@ -42,9 +46,11 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
     LeagueSyncWorker,
     FixturesSyncWorker,
     PendingBetsSettlementWorker,
+    StaleScheduledSyncWorker,
     StatsSyncWorker,
     InjuriesSyncWorker,
     OddsCsvImportWorker,
+    EloSyncWorker,
     OddsPrematchSyncWorker,
     OddsSnapshotRetentionWorker,
   ],

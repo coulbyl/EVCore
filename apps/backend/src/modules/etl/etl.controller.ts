@@ -26,7 +26,9 @@ type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
   | LeagueSyncType
   | 'settlement'
+  | 'stale-scheduled'
   | 'odds-csv'
+  | 'elo'
   | 'odds-prematch'
   | 'odds-retention';
 
@@ -43,7 +45,9 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   stats: (service) => service.triggerStatsSync(),
   injuries: (service) => service.triggerInjuriesSync(),
   settlement: (service) => service.triggerPendingBetsSettlementSync(),
+  'stale-scheduled': (service) => service.triggerStaleScheduledSync(),
   'odds-csv': (service) => service.triggerOddsCsvImport(),
+  elo: (service) => service.triggerEloSync(),
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
   'odds-retention': (service, body) =>
@@ -64,7 +68,9 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'stats',
   'injuries',
   'settlement',
+  'stale-scheduled',
   'odds-csv',
+  'elo',
   'odds-prematch',
   'odds-retention',
 ] as const satisfies readonly GlobalSyncType[];
@@ -121,10 +127,24 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'stale-scheduled-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 3,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-csv-import': {
           active: 0,
           waiting: 0,
           completed: 3,
+          failed: 0,
+          delayed: 0,
+        },
+        'elo-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 1,
           failed: 0,
           delayed: 0,
         },
@@ -300,7 +320,7 @@ export class EtlController {
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, odds-csv, odds-prematch, odds-retention. For league-scoped runs, use ' +
+      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, odds-retention. For league-scoped runs, use ' +
       '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({

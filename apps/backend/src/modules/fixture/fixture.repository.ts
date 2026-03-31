@@ -130,6 +130,12 @@ type PendingSettlementFixture = {
   };
 };
 
+type PastScheduledFixture = {
+  id: string;
+  externalId: number;
+  scheduledAt: Date;
+};
+
 @Injectable()
 export class FixtureRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -411,6 +417,28 @@ export class FixtureRepository {
             },
           },
         },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
+  findPastScheduledFixtures(
+    now: Date,
+    lookbackDays: number,
+  ): Promise<PastScheduledFixture[]> {
+    const from = new Date(now);
+    from.setUTCDate(from.getUTCDate() - lookbackDays);
+
+    return this.prisma.client.fixture.findMany({
+      where: {
+        status: FixtureStatus.SCHEDULED,
+        scheduledAt: { gte: from, lt: now },
+        season: { competition: { isActive: true } },
+      },
+      select: {
+        id: true,
+        externalId: true,
+        scheduledAt: true,
       },
       orderBy: { scheduledAt: 'asc' },
     });

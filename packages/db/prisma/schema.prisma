@@ -322,6 +322,21 @@ model Notification {
   @@map("notification")
 }
 
+model NationalTeamEloRating {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  teamName   String
+  eloCode    String
+  rating     Int
+  source     String   @default("eloratings.net")
+  snapshotAt DateTime
+  syncedAt   DateTime @default(now())
+
+  @@unique([teamName, snapshotAt])
+  @@index([snapshotAt])
+  @@index([teamName, snapshotAt])
+  @@map("national_team_elo_rating")
+}
+
 // Odds snapshots — scaffolded for Phase 2 (prematch odds integration).
 // Not used in MVP.
 model OddsSnapshot {

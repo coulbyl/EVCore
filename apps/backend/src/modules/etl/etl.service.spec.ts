@@ -12,6 +12,8 @@ import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
+import type { EloSyncJobData } from './workers/elo-sync.worker';
+import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
@@ -76,7 +78,9 @@ const totalStatsJobs = TEST_COMPETITIONS.length;
 describe('EtlService', () => {
   const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
   const pendingBetsSettlementQueue = makeQueue<PendingBetsSettlementJobData>();
+  const staleScheduledSyncQueue = makeQueue<StaleScheduledSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
+  const eloSyncQueue = makeQueue<EloSyncJobData>();
   const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
   const prismaMockRaw = {
@@ -164,7 +168,9 @@ describe('EtlService', () => {
   const service = new EtlService(
     leagueSyncQueue as Queue<LeagueSyncJobData>,
     pendingBetsSettlementQueue as Queue<PendingBetsSettlementJobData>,
+    staleScheduledSyncQueue as Queue<StaleScheduledSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
+    eloSyncQueue as Queue<EloSyncJobData>,
     oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
@@ -247,6 +253,16 @@ describe('EtlService', () => {
     );
   });
 
+  it('dispatches one stale scheduled sync job', async () => {
+    await service.triggerStaleScheduledSync();
+
+    expect(staleScheduledSyncQueue.add).toHaveBeenCalledWith(
+      'stale-scheduled-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  });
+
   it('dispatches stats jobs only for the current season', async () => {
     await service.triggerStatsSync();
 
@@ -268,6 +284,16 @@ describe('EtlService', () => {
         },
       );
     });
+  });
+
+  it('dispatches the Elo sync job', async () => {
+    await service.triggerEloSync();
+
+    expect(eloSyncQueue.add).toHaveBeenCalledWith(
+      'elo-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   });
 
   it('dispatches injuries jobs only for the current season', async () => {

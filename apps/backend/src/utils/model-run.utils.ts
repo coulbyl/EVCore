@@ -1,4 +1,5 @@
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
+import type { PredictionSource } from '@modules/betting-engine/betting-engine.types';
 
 export type PickSnapshot = {
   market: string;
@@ -17,6 +18,7 @@ export type EvaluatedPickSnapshot = PickSnapshot & {
 };
 
 export type ModelRunFeatureDiagnostics = {
+  predictionSource: PredictionSource | null;
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
@@ -29,6 +31,7 @@ export function extractModelRunFeatureDiagnostics(
 ): ModelRunFeatureDiagnostics {
   if (!features || typeof features !== 'object') {
     return {
+      predictionSource: null,
       lambdaHome: null,
       lambdaAway: null,
       expectedTotalGoals: null,
@@ -39,8 +42,10 @@ export function extractModelRunFeatureDiagnostics(
 
   const lh = readFiniteNumber(features, 'lambdaHome');
   const la = readFiniteNumber(features, 'lambdaAway');
+  const predictionSource = readPredictionSource(features);
 
   return {
+    predictionSource,
     lambdaHome: lh !== null ? lh.toFixed(2) : null,
     lambdaAway: la !== null ? la.toFixed(2) : null,
     expectedTotalGoals:
@@ -63,6 +68,19 @@ function readString(value: object, key: string): string | null {
   const entry = value as Record<string, unknown>;
   const raw = entry[key];
   return typeof raw === 'string' && raw.length > 0 ? raw : null;
+}
+
+function readPredictionSource(value: object): PredictionSource | null {
+  const raw = readString(value, 'predictionSource');
+  if (
+    raw === 'POISSON_MAIN' ||
+    raw === 'FRI_ELO_REAL' ||
+    raw === 'FRI_ELO_INTERNAL' ||
+    raw === 'ODDS_DEVIG'
+  ) {
+    return raw;
+  }
+  return null;
 }
 
 function readPickSnapshot(record: Record<string, unknown>): PickSnapshot[] {

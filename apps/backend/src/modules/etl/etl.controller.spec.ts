@@ -14,7 +14,9 @@ describe('EtlController', () => {
       triggerInjuriesSync: vi.fn().mockResolvedValue(undefined),
       triggerInjuriesSyncForLeague: vi.fn().mockResolvedValue(undefined),
       triggerPendingBetsSettlementSync: vi.fn().mockResolvedValue(undefined),
+      triggerStaleScheduledSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
+      triggerEloSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
       triggerBacktestAllSeasons: vi.fn().mockResolvedValue(undefined),
@@ -54,6 +56,16 @@ describe('EtlController', () => {
     expect(service.triggerPendingBetsSettlementSync).toHaveBeenCalledTimes(1);
   });
 
+  it('triggers stale scheduled sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(controller.triggerSync('stale-scheduled')).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerStaleScheduledSync).toHaveBeenCalledTimes(1);
+  });
+
   it('triggers odds CSV import and returns ok', async () => {
     const service = makeService();
     const controller = new EtlController(service);
@@ -74,6 +86,16 @@ describe('EtlController', () => {
       status: 'ok',
     });
     expect(service.triggerOddsPrematchSync).toHaveBeenCalledWith('2026-03-10');
+  });
+
+  it('triggers Elo sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(controller.triggerSync('elo')).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerEloSync).toHaveBeenCalledTimes(1);
   });
 
   it('triggers odds snapshot retention and returns ok', async () => {

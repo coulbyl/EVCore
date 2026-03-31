@@ -80,10 +80,8 @@ Si le dataset contient des fixtures avec `homeXg=0` et `awayXg=0` écrits à tor
 
 ```bash
 # audit sans écrire
-pnpm --filter @evcore/db db:reset-zero-xg --codes=I2,F2,SP2,D2
 
 # application réelle
-pnpm --filter @evcore/db db:reset-zero-xg --apply --codes=I2,F2,SP2,D2
 ```
 
 Ensuite relancer le recalcul des rolling stats :

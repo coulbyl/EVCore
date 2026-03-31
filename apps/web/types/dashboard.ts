@@ -1,5 +1,11 @@
 export type KpiDelta = string | { bet: number; noBet: number };
 
+export type PredictionSource =
+  | "POISSON_MAIN"
+  | "FRI_ELO_REAL"
+  | "FRI_ELO_INTERNAL"
+  | "ODDS_DEVIG";
+
 export type KpiCard = {
   label: string;
   value: string;
@@ -45,6 +51,7 @@ export type CouponSnapshot = {
     ev: string;
     // Diagnostic fields (populated by GET /coupon/:id)
     probEstimated?: string;
+    predictionSource?: PredictionSource | null;
     lambdaHome?: string | null;
     lambdaAway?: string | null;
     expectedTotalGoals?: string | null;

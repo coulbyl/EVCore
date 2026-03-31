@@ -119,6 +119,13 @@ function readBool(features: unknown, key: string): boolean {
   return entry[key] === true;
 }
 
+function readString(features: unknown, key: string): string | null {
+  if (!features || typeof features !== "object") return null;
+  const entry = features as Record<string, unknown>;
+  const value = entry[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -227,6 +234,7 @@ async function main(): Promise<void> {
 
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
+    const predictionSource = readString(feat, "predictionSource");
     const floorHit = readBool(feat, "lambdaFloorHit");
     const shadowLine = readNumber(feat, "shadow_lineMovement");
     const shadowH2h = readNumber(feat, "shadow_h2h");
@@ -262,6 +270,9 @@ async function main(): Promise<void> {
     w();
     w("Entrées modèle");
     w(`  Score det / final  : ${detScore} / ${finalScore}`);
+    if (predictionSource !== null) {
+      w(`  Source prédiction  : ${predictionSource}`);
+    }
     if (bet) {
       w(`  Prob. estimée      : ${betProb}`);
     }
@@ -349,6 +360,7 @@ async function main(): Promise<void> {
         : "—";
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
+    const predictionSource = readString(feat, "predictionSource");
     const evaluatedPicks = readPicks(feat, "evaluatedPicks");
     const detScore = run.deterministicScore
       ? Number(run.deterministicScore).toFixed(3)
@@ -363,6 +375,9 @@ async function main(): Promise<void> {
     w(
       `  [${comp}]  ${home} vs ${away}  ${score}  score=${detScore}→${finalScore}${lambdaInfo}`,
     );
+    if (predictionSource !== null) {
+      w(`    Source prédiction  : ${predictionSource}`);
+    }
 
     if (evaluatedPicks.length > 0) {
       for (const p of evaluatedPicks) {

@@ -225,6 +225,13 @@ export class FixtureService {
     return this.fixtureRepository.findPendingSettlementFixtures(now);
   }
 
+  findPastScheduledFixtures(
+    now: Date,
+    lookbackDays: number,
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
+    return this.fixtureRepository.findPastScheduledFixtures(now, lookbackDays);
+  }
+
   async upsertOddsSnapshot(
     data: UpsertOddsSnapshotInput,
   ): Promise<{ id: string }> {

@@ -23,10 +23,10 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:stats": "tsx scripts/db-stats.ts",
+    "db:scheduled": "tsx scripts/scheduled-fixtures-report.ts",
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
-    "db:audit:sa-away": "tsx scripts/sa-away-audit.ts",
-    "db:reset-zero-xg": "tsx scripts/reset-zero-xg.ts",
     "db:audit:fri-xg": "tsx scripts/fri-xg-audit.ts",
+    "db:audit:fri-elo": "tsx scripts/fri-elo-audit.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

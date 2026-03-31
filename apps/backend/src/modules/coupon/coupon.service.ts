@@ -30,6 +30,7 @@ import {
   type PickSnapshot,
   type EvaluatedPickSnapshot,
 } from '@utils/model-run.utils';
+import type { PredictionSource } from '@modules/betting-engine/betting-engine.types';
 import { CouponRepository } from './coupon.repository';
 
 const logger = createLogger('coupon-service');
@@ -54,6 +55,7 @@ type CouponSelectionSnapshot = {
   market: string;
   pick: string;
   probEstimated: string;
+  predictionSource: PredictionSource | null;
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
@@ -442,6 +444,7 @@ export class CouponService implements OnApplicationBootstrap {
           market: bet.market,
           pick: comboParts.join(' + '),
           probEstimated: `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`,
+          predictionSource: diagnostics.predictionSource,
           lambdaHome: diagnostics.lambdaHome,
           lambdaAway: diagnostics.lambdaAway,
           expectedTotalGoals: diagnostics.expectedTotalGoals,
