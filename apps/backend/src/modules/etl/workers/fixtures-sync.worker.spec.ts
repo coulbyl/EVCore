@@ -249,7 +249,7 @@ describe('FixturesSyncWorker', () => {
       worker.process({
         data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
       } as Job<{ competitionCode: string; season: number; leagueId: number }>),
-    ).rejects.toThrow('API-FOOTBALL responded 429 for season 2024');
+    ).rejects.toThrow('API-FOOTBALL responded 429 for SA season 2024');
   });
 
   it('throws when competitionCode is not found in DB', async () => {

@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 3 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 31 mars 2026)**
 
 ---
 
@@ -236,6 +236,32 @@
   - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)
   - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées
   - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + warning seuil quota)
+- [x] Fallback FRI hors pipeline Poisson principal
+  - [x] Branche dédiée `competitionCode === 'FRI'` avant le guard `missing_team_stats`
+  - [x] Source primaire `FRI_ELO_REAL` pour sélections nationales seniors mappées
+  - [x] Fallback `ODDS_DEVIG` sur cotes 1X2 complètes si Elo indisponible
+  - [x] `NO_BET` explicite si aucune source probabiliste exploitable
+  - [x] V1 limitée au marché `ONE_X_TWO`
+  - [x] Persistance `predictionSource`, `fallbackReason`, diagnostics Elo/odds et `eloSnapshotAt`
+- [x] Référence Elo synchronisée en base
+  - [x] Worker ETL `elo-sync` depuis `https://eloratings.net/World.tsv`
+  - [x] Stockage DB `national_team_elo_rating`
+  - [x] Consommation runtime du dernier snapshot Elo par le moteur FRI
+  - [x] Conservation du dernier snapshot uniquement
+- [x] Audit FRI Elo aligné sur la donnée de prod
+  - [x] `fri-elo-audit.ts` lit le dernier snapshot DB au lieu d'un TSV local
+  - [x] Génération d'un report texte dans `packages/db/reports/`
+  - [x] Benchmark `FRI_ELO_REAL` / `FRI_ELO_INTERNAL` / `ODDS_DEVIG`
+- [x] Hygiène des fixtures passées encore `SCHEDULED`
+  - [x] Worker ETL `stale-scheduled-sync`
+  - [x] Endpoint manuel `POST /etl/sync/stale-scheduled`
+  - [x] Réconciliation des fixtures passées récentes encore `SCHEDULED`
+- [x] Reporting opérationnel complémentaire
+  - [x] `scheduled-fixtures-report.ts` pour volumétrie `SCHEDULED` par date et compétition
+- [x] Nettoyage scripts DB obsolètes
+  - [x] Suppression `reset-zero-xg.ts`
+  - [x] Suppression `sa-away-audit.ts`
+  - [x] Suppression `fri-xg-audit.ts`
 - [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
   - Activation après 30+ jours prod stables, d'abord en shadow mode
   - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe

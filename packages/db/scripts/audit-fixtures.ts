@@ -126,6 +126,24 @@ function readString(features: unknown, key: string): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function readNullableBool(features: unknown, key: string): boolean | null {
+  if (!features || typeof features !== "object") return null;
+  const entry = features as Record<string, unknown>;
+  const value = entry[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+function getModelScoreThreshold(code: string): number {
+  if (["PL", "SA", "BL1", "LL", "L1", "SP2"].includes(code)) return 0.55;
+  if (
+    ["CH", "D2", "F2", "I2", "EL1", "EL2", "LDC", "UEL", "UECL"].includes(code)
+  ) {
+    return 0.45;
+  }
+  if (code === "FRI") return 0.45;
+  return 0.6;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -246,6 +264,7 @@ async function main(): Promise<void> {
       ? Number(run.deterministicScore).toFixed(3)
       : "—";
     const finalScore = run.finalScore ? Number(run.finalScore).toFixed(3) : "—";
+    const modelThreshold = getModelScoreThreshold(comp).toFixed(2);
 
     const betPickLabel = bet
       ? pickLabel(bet.market, bet.pick, bet.comboMarket, bet.comboPick)
@@ -270,6 +289,7 @@ async function main(): Promise<void> {
     w();
     w("Entrées modèle");
     w(`  Score det / final  : ${detScore} / ${finalScore}`);
+    w(`  Seuil modèle       : ${modelThreshold}`);
     if (predictionSource !== null) {
       w(`  Source prédiction  : ${predictionSource}`);
     }
@@ -361,11 +381,19 @@ async function main(): Promise<void> {
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
     const predictionSource = readString(feat, "predictionSource");
+    const fallbackReason = readString(feat, "fallbackReason");
     const evaluatedPicks = readPicks(feat, "evaluatedPicks");
+    const isSenior = readNullableBool(feat, "isSeniorNationalFixture");
+    const hasMarketOdds = readNullableBool(feat, "hasMarketOdds");
+    const hasPinnacleOdds = readNullableBool(feat, "hasPinnacleOdds");
+    const hasHomeElo = readNullableBool(feat, "hasHomeElo");
+    const hasAwayElo = readNullableBool(feat, "hasAwayElo");
     const detScore = run.deterministicScore
       ? Number(run.deterministicScore).toFixed(3)
       : "—";
     const finalScore = run.finalScore ? Number(run.finalScore).toFixed(3) : "—";
+    const finalScoreNum = run.finalScore ? Number(run.finalScore) : null;
+    const modelThreshold = getModelScoreThreshold(comp);
 
     w();
     const lambdaInfo =
@@ -375,8 +403,23 @@ async function main(): Promise<void> {
     w(
       `  [${comp}]  ${home} vs ${away}  ${score}  score=${detScore}→${finalScore}${lambdaInfo}`,
     );
+    w(`    Seuil modèle       : ${modelThreshold.toFixed(2)}`);
     if (predictionSource !== null) {
       w(`    Source prédiction  : ${predictionSource}`);
+    }
+    if (fallbackReason !== null) {
+      w(`    Raison fallback    : ${fallbackReason}`);
+    }
+    if (
+      isSenior !== null ||
+      hasMarketOdds !== null ||
+      hasPinnacleOdds !== null ||
+      hasHomeElo !== null ||
+      hasAwayElo !== null
+    ) {
+      w(
+        `    Contexte source    : senior=${isSenior ?? "?"}  marketOdds=${hasMarketOdds ?? "?"}  pinnacle=${hasPinnacleOdds ?? "?"}  eloHome=${hasHomeElo ?? "?"}  eloAway=${hasAwayElo ?? "?"}`,
+      );
     }
 
     if (evaluatedPicks.length > 0) {
@@ -389,7 +432,9 @@ async function main(): Promise<void> {
         ).padEnd(26);
         const statusLabel =
           p.status === "viable"
-            ? "Viable"
+            ? finalScoreNum !== null && finalScoreNum < modelThreshold
+              ? `Viable pick-level, mais NO_BET (score modèle < ${modelThreshold.toFixed(2)})`
+              : "Viable"
             : `Rejeté  (${p.rejectionReason ? rejectionLabel(p.rejectionReason) : "?"})`;
         w(
           `    ${label}  EV: ${fmtSigned(p.ev, 4)}  P: ${(p.probability * 100).toFixed(1)}%  ${statusLabel}`,

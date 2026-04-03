@@ -92,7 +92,7 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier D — international competitions (conservative default — limited team
   // data, high variance, no historical backtest baseline yet).
   WCQE: MODEL_SCORE_THRESHOLD_DEFAULT,
-  FRI: MODEL_SCORE_THRESHOLD_DEFAULT,
+  FRI: new Decimal('0.45'),
   UNL: MODEL_SCORE_THRESHOLD_DEFAULT,
   CAN: MODEL_SCORE_THRESHOLD_DEFAULT,
   COPA: MODEL_SCORE_THRESHOLD_DEFAULT,

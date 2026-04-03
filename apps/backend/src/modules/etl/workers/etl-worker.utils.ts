@@ -90,6 +90,14 @@ function getNetworkErrorCode(err: unknown): string | undefined {
     | undefined;
 }
 
+export function getTransientNetworkErrorCode(err: unknown): string | undefined {
+  const code = getNetworkErrorCode(err);
+  return code !== undefined &&
+    (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
+    ? code
+    : undefined;
+}
+
 /**
  * Wraps fetch() with transient network error handling.
  * Returns null when the error is transient (ETIMEDOUT / ECONNRESET / ENOTFOUND)
@@ -103,11 +111,7 @@ export async function fetchOrSkip(
   try {
     return await fetch(url, options);
   } catch (err) {
-    const code = getNetworkErrorCode(err);
-    if (
-      code !== undefined &&
-      (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
-    ) {
+    if (getTransientNetworkErrorCode(err) !== undefined) {
       return null;
     }
     throw err;
@@ -115,11 +119,22 @@ export async function fetchOrSkip(
 }
 
 export function isTransientNetworkError(err: unknown): boolean {
-  const code = getNetworkErrorCode(err);
-  return (
-    code !== undefined &&
-    (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
-  );
+  return getTransientNetworkErrorCode(err) !== undefined;
+}
+
+export async function fetchOrSkipWithMeta(
+  url: string,
+  options: RequestInit,
+): Promise<{ response: Response | null; transientErrorCode?: string }> {
+  try {
+    return { response: await fetch(url, options) };
+  } catch (err) {
+    const transientErrorCode = getTransientNetworkErrorCode(err);
+    if (transientErrorCode !== undefined) {
+      return { response: null, transientErrorCode };
+    }
+    throw err;
+  }
 }
 
 export function notifyOnWorkerFailure<T>({
@@ -134,7 +149,11 @@ export function notifyOnWorkerFailure<T>({
 
   if (isFinalAttempt) {
     logger.error(
-      { jobName: job.name, attempts: job.attemptsMade },
+      {
+        jobName: job.name,
+        attempts: job.attemptsMade,
+        errorMessage: error.message,
+      },
       'Job permanently failed — sending alert',
     );
     void notification.sendEtlFailureAlert(queueName, job.name, error.message);
@@ -142,7 +161,11 @@ export function notifyOnWorkerFailure<T>({
   }
 
   logger.warn(
-    { jobName: job?.name, attempt: job?.attemptsMade },
+    {
+      jobName: job?.name,
+      attempt: job?.attemptsMade,
+      errorMessage: error.message,
+    },
     'Job attempt failed — will retry',
   );
 }

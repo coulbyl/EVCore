@@ -640,10 +640,23 @@ export class BettingEngineService {
     } else if (pinnacleOdds !== null) {
       probabilities = devigOneXTwoOdds(pinnacleOdds);
       predictionSource = 'ODDS_DEVIG';
-    } else if (marketOdds === null) {
-      fallbackReason = 'missing_1x2_odds';
     } else {
-      fallbackReason = 'missing_reference_probs';
+      if (marketOdds === null) {
+        fallbackReason = 'missing_market_odds';
+      } else if (!isSenior) {
+        fallbackReason = 'non_senior_fixture';
+      } else if (eloHome === null || eloAway === null) {
+        fallbackReason =
+          eloHome === null && eloAway === null
+            ? 'missing_both_elo_mappings'
+            : eloHome === null
+              ? 'missing_home_elo_mapping'
+              : 'missing_away_elo_mapping';
+      } else if (pinnacleOdds === null) {
+        fallbackReason = 'missing_pinnacle_odds';
+      } else {
+        fallbackReason = 'missing_reference_probs';
+      }
     }
 
     const deterministicScore =
@@ -677,6 +690,27 @@ export class BettingEngineService {
         ? Decision.BET
         : Decision.NO_BET;
 
+    if (deterministicScore.isZero()) {
+      logger.warn(
+        {
+          fixtureId,
+          competitionCode,
+          homeTeam: homeTeamName,
+          awayTeam: awayTeamName,
+          isSenior,
+          fallbackReason,
+          hasMarketOdds: marketOdds !== null,
+          bestBookmaker: marketOdds?.offeredBy ?? null,
+          hasPinnacleOdds: pinnacleOdds !== null,
+          eloSnapshotAt: realEloSnapshot.snapshotAt?.toISOString() ?? null,
+          hasHomeElo: eloHome !== null,
+          hasAwayElo: eloAway !== null,
+          predictionSource,
+        },
+        'FRI fixture resolved to zero score',
+      );
+    }
+
     logger.info(
       {
         fixtureId,
@@ -703,6 +737,11 @@ export class BettingEngineService {
         features: {
           predictionSource,
           fallbackReason,
+          isSeniorNationalFixture: isSenior,
+          hasMarketOdds: marketOdds !== null,
+          hasPinnacleOdds: pinnacleOdds !== null,
+          hasHomeElo: eloHome !== null,
+          hasAwayElo: eloAway !== null,
           devigBookmaker: pinnacleOdds?.bookmaker ?? null,
           offeredBookmakers: marketOdds?.offeredBy ?? null,
           eloHome,

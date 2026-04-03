@@ -29,6 +29,7 @@ import {
   parseIsoDate,
 } from '@utils/date.utils';
 import {
+  fetchOrSkip,
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
@@ -86,11 +87,28 @@ export class FixturesSyncWorker {
       syncScope,
     });
 
-    const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+    logger.info(
+      { competitionCode, season, syncScope, url },
+      'Fetching fixtures from API-FOOTBALL',
+    );
+
+    const res = await fetchOrSkip(url, {
+      headers: { 'x-apisports-key': apiKey },
+    });
+
+    if (res === null) {
+      throw new Error(
+        `Transient network error while fetching fixtures for ${competitionCode} season ${season}`,
+      );
+    }
 
     if (!res.ok) {
+      logger.error(
+        { competitionCode, season, syncScope, url, status: res.status },
+        'API-FOOTBALL returned non-ok response during fixtures sync',
+      );
       throw new Error(
-        `API-FOOTBALL responded ${res.status} for season ${season}`,
+        `API-FOOTBALL responded ${res.status} for ${competitionCode} season ${season}`,
       );
     }
 
@@ -100,10 +118,18 @@ export class FixturesSyncWorker {
 
     if (!parsed.success) {
       logger.error(
-        { season, issues: parsed.error.issues },
+        {
+          competitionCode,
+          season,
+          syncScope,
+          url,
+          issues: parsed.error.issues,
+        },
         'Zod validation failed — rejecting payload',
       );
-      throw new Error(`Zod validation failed for season ${season}`);
+      throw new Error(
+        `Zod validation failed for ${competitionCode} season ${season}`,
+      );
     }
 
     const { data } = parsed;

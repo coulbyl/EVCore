@@ -11,7 +11,7 @@ const transport = pino.transport({
       level: LOG_LEVEL,
       options: {
         colorize: true,
-        translateTime: 'SYS:HH:mm:ss',
+        translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
         ignore: 'pid,hostname',
         messageFormat: '{msg}',
         singleLine: false,
@@ -28,7 +28,10 @@ const transport = pino.transport({
   ],
 });
 
-const root = pino({ level: LOG_LEVEL }, transport);
+const root = pino(
+  { level: LOG_LEVEL, timestamp: pino.stdTimeFunctions.isoTime },
+  transport,
+);
 
 export function createLogger(name: string): pino.Logger {
   return root.child({ name });

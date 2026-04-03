@@ -399,7 +399,7 @@ describe('CouponService.generateDailyCoupon', () => {
     );
   });
 
-  it('excludes fixtures that started more than 30 minutes ago', async () => {
+  it('analyzes all scheduled fixtures returned by the repository', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-08-01T16:31:00.000Z'));
 
@@ -419,22 +419,37 @@ describe('CouponService.generateDailyCoupon', () => {
         ]),
       },
       bettingEngineService: {
-        analyzeFixture: vi.fn().mockResolvedValue({
-          status: 'analyzed',
-          fixtureId: 'fresh-fixture',
-          modelRunId: 'run-fresh',
-          decision: 'NO_BET',
-          deterministicScore: 0.5,
-          probabilities: {},
-          valueBet: null,
-        }),
+        analyzeFixture: vi
+          .fn()
+          .mockResolvedValueOnce({
+            status: 'analyzed',
+            fixtureId: 'stale-fixture',
+            modelRunId: 'run-stale',
+            decision: 'NO_BET',
+            deterministicScore: 0.5,
+            probabilities: {},
+            valueBet: null,
+          })
+          .mockResolvedValueOnce({
+            status: 'analyzed',
+            fixtureId: 'fresh-fixture',
+            modelRunId: 'run-fresh',
+            decision: 'NO_BET',
+            deterministicScore: 0.5,
+            probabilities: {},
+            valueBet: null,
+          }),
       },
     });
     const service = makeService(deps);
 
     await service.generateDailyCoupon(TEST_DATE);
 
-    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(1);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledTimes(2);
+    expect(deps.bettingEngineService.analyzeFixture).toHaveBeenNthCalledWith(
+      1,
+      'stale-fixture',
+    );
     expect(deps.bettingEngineService.analyzeFixture).toHaveBeenCalledWith(
       'fresh-fixture',
     );

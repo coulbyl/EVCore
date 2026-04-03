@@ -1,6 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
+import { execFile } from 'node:child_process';
 import { createLogger } from '@utils/logger';
 import {
   ApiFootballOddsResponseSchema,
@@ -16,13 +17,15 @@ import {
 import { NotificationService } from '../../notification/notification.service';
 import { tomorrowUtc, formatDateUtc } from '@utils/date.utils';
 import { sleep } from '@utils/async.utils';
-import { fetchOrSkip, notifyOnWorkerFailure } from './etl-worker.utils';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 // Passing date as job data makes the worker testable and supports backfill.
 // When absent, defaults to tomorrow (standard daily cron use case).
 export type OddsPrematchSyncJobData = { date?: string };
 
 const logger = createLogger('odds-prematch-sync-worker');
+const ODDS_FETCH_ATTEMPTS = 2;
+const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 
 // lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
@@ -60,23 +63,53 @@ export class OddsPrematchSyncWorker extends WorkerHost {
 
     for (const { id: fixtureId, externalId } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
-      const res = await fetchOrSkip(url, {
-        headers: { 'x-apisports-key': apiKey },
-      });
+      const fetchStartedAt = performance.now();
+      let res: CurlJsonResponse | null = null;
+      let transientErrorCode: string | undefined;
+
+      for (let attempt = 1; attempt <= ODDS_FETCH_ATTEMPTS; attempt++) {
+        const result = await fetchJsonViaCurl(url, apiKey);
+        res = result.response;
+        transientErrorCode = result.transientErrorCode;
+
+        if (res !== null) {
+          break;
+        }
+
+        if (attempt < ODDS_FETCH_ATTEMPTS) {
+          logger.warn(
+            {
+              externalId,
+              networkCode: transientErrorCode ?? 'UNKNOWN',
+              attempt,
+              nextAttempt: attempt + 1,
+              url,
+            },
+            'Transient network error while fetching odds — retrying fixture immediately',
+          );
+        }
+      }
+
+      const durationMs = Math.round(performance.now() - fetchStartedAt);
 
       if (res === null) {
         logger.warn(
-          { externalId },
-          'Transient network error — skipping fixture',
+          {
+            externalId,
+            networkCode: transientErrorCode ?? 'UNKNOWN',
+            durationMs,
+            url,
+          },
+          'Provider timeout persisted across retries — skipping fixture',
         );
         skipped++;
         await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
         continue;
       }
 
-      if (!res.ok) {
+      if (res.status < 200 || res.status >= 300) {
         logger.warn(
-          { externalId, status: res.status },
+          { externalId, status: res.status, durationMs, url },
           'API-FOOTBALL error — skipping fixture',
         );
         skipped++;
@@ -84,7 +117,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         continue;
       }
 
-      const body: unknown = await res.json();
+      const body: unknown = res.body;
 
       if (isQuotaExceededError(body)) {
         logger.error(
@@ -225,6 +258,93 @@ type AdditionalMarketOdds = {
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
 };
+
+type CurlJsonResponse = {
+  status: number;
+  body: unknown;
+};
+
+type CurlJsonResult = {
+  response: CurlJsonResponse | null;
+  transientErrorCode?: string;
+};
+
+async function fetchJsonViaCurl(
+  url: string,
+  apiKey: string,
+): Promise<CurlJsonResult> {
+  try {
+    const stdout = await runCurlJsonRequest(url, apiKey);
+    const lastMarker = stdout.lastIndexOf(`\n${CURL_HTTP_CODE_MARKER}:`);
+    if (lastMarker === -1) {
+      throw new Error('curl output missing HTTP code marker');
+    }
+
+    const bodyText = stdout.slice(0, lastMarker);
+    const statusText = stdout
+      .slice(lastMarker + `\n${CURL_HTTP_CODE_MARKER}:`.length)
+      .trim();
+    const status = Number.parseInt(statusText, 10);
+
+    if (Number.isNaN(status)) {
+      throw new Error(`curl returned invalid HTTP code: ${statusText}`);
+    }
+
+    let body: unknown = null;
+    if (bodyText.trim().length > 0) {
+      body = JSON.parse(bodyText);
+    }
+
+    return { response: { status, body } };
+  } catch (error) {
+    const transientErrorCode = getCurlTransientErrorCode(error);
+    if (transientErrorCode !== undefined) {
+      return { response: null, transientErrorCode };
+    }
+    throw error;
+  }
+}
+
+function runCurlJsonRequest(url: string, apiKey: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'curl',
+      [
+        '--silent',
+        '--show-error',
+        '--location',
+        '--write-out',
+        `\n${CURL_HTTP_CODE_MARKER}:%{http_code}`,
+        '-H',
+        `x-apisports-key: ${apiKey}`,
+        url,
+      ],
+      (error, stdout) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      },
+    );
+  });
+}
+
+function getCurlTransientErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+
+  const message = error.message.toLowerCase();
+  if (message.includes('timed out')) return 'ETIMEDOUT';
+  if (message.includes('could not resolve host')) return 'ENOTFOUND';
+  if (message.includes('connection reset')) return 'ECONNRESET';
+
+  const exitCode = 'code' in error ? (error.code as number | undefined) : null;
+  if (exitCode === 28) return 'ETIMEDOUT';
+  if (exitCode === 6) return 'ENOTFOUND';
+  if (exitCode === 56) return 'ECONNRESET';
+
+  return undefined;
+}
 
 // Extracts Over/Under 2.5 and BTTS odds from the same bookmaker used for 1X2.
 // Returns null for each market when the bookmaker doesn't provide it.

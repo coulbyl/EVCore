@@ -34,8 +34,6 @@ import type { PredictionSource } from '@modules/betting-engine/betting-engine.ty
 import { CouponRepository } from './coupon.repository';
 
 const logger = createLogger('coupon-service');
-const COUPON_LATE_KICKOFF_GRACE_MS = 30 * 60 * 1000;
-
 type CouponWindowInput = {
   startDate: Date;
   days?: number;
@@ -136,12 +134,7 @@ export class CouponService implements OnApplicationBootstrap {
       days === 1
         ? await this.fixtureService.findScheduledForDate(startDate)
         : await this.fixtureService.findScheduledInRange(startDate, endDate);
-    const now = new Date();
-    const eligibleFixtures = fixtures.filter(
-      (fixture) =>
-        fixture.scheduledAt.getTime() + COUPON_LATE_KICKOFF_GRACE_MS >
-        now.getTime(),
-    );
+    const eligibleFixtures = fixtures;
 
     if (eligibleFixtures.length === 0) {
       logger.info(
