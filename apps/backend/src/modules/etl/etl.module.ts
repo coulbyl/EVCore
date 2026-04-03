@@ -20,6 +20,7 @@ import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.worker';
 import { EloSyncWorker } from './workers/elo-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
+import { AdjustmentModule } from '../adjustment/adjustment.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker'
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
     ),
+    AdjustmentModule,
     BacktestModule,
     BettingEngineModule,
     CouponModule,

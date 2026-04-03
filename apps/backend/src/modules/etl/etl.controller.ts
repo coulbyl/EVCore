@@ -262,6 +262,34 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, season: year, mode };
   }
 
+  @Post('sync/fixtures/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Backfill historical fixtures for specific seasons',
+    description:
+      'Enqueues fixtures sync jobs (syncScope=backfill) for each requested season year. ' +
+      'Use before odds-csv backfill and backtest when a league has no historical data. ' +
+      'Example: `?seasons=2022,2023,2024` imports 2022-23, 2023-24 and 2024-25.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'Competition code (e.g. BL1, LL).',
+    example: 'BL1',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerFixturesBackfill(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerFixturesBackfillForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
   @Post('sync/odds-csv/:competitionCode/backfill')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

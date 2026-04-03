@@ -14,7 +14,8 @@ import { FixtureService } from '../../fixture/fixture.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { CouponService } from '../../coupon/coupon.service';
 import { NotificationService } from '../../notification/notification.service';
-import { notifyOnWorkerFailure } from './etl-worker.utils';
+import { AdjustmentService } from '../../adjustment/adjustment.service';
+import { fetchOrSkip, notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
 
@@ -29,10 +30,12 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   @Inject(ConfigService)
   private config!: ConfigService;
 
+  // eslint-disable-next-line max-params -- Settlement worker needs adjustment service for learning loop.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly bettingEngineService: BettingEngineService,
     private readonly couponService: CouponService,
+    private readonly adjustmentService: AdjustmentService,
   ) {
     super();
   }
@@ -51,65 +54,92 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     let finishedFixtures = 0;
     let settledBets = 0;
     let settledCoupons = 0;
+    let failedFixtures = 0;
+    let skippedFixtures = 0;
 
     for (const fixture of fixtures) {
-      const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
-      const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
+      try {
+        const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
+        const res = await fetchOrSkip(url, {
+          headers: { 'x-apisports-key': apiKey },
+        });
 
-      if (!res.ok) {
-        throw new Error(
-          `API-FOOTBALL responded ${res.status} for fixture ${fixture.externalId}`,
+        if (res === null) {
+          skippedFixtures++;
+          logger.warn(
+            { externalId: fixture.externalId },
+            'Transient network error while fetching fixture settlement state — skipping fixture',
+          );
+          continue;
+        }
+
+        if (!res.ok) {
+          failedFixtures++;
+          logger.error(
+            { externalId: fixture.externalId, status: res.status },
+            'API-FOOTBALL returned non-ok response during settlement sync',
+          );
+          continue;
+        }
+
+        const parsed = ApiFootballFixturesResponseSchema.safeParse(
+          await res.json(),
         );
-      }
 
-      const parsed = ApiFootballFixturesResponseSchema.safeParse(
-        await res.json(),
-      );
+        if (!parsed.success) {
+          failedFixtures++;
+          logger.error(
+            { externalId: fixture.externalId, issues: parsed.error.issues },
+            'Zod validation failed during settlement sync — skipping fixture',
+          );
+          continue;
+        }
 
-      if (!parsed.success) {
+        const apiFixture = parsed.data.response[0];
+        if (!apiFixture) {
+          skippedFixtures++;
+          logger.warn(
+            { externalId: fixture.externalId },
+            'Fixture not returned by API-FOOTBALL during settlement sync',
+          );
+          continue;
+        }
+
+        const nextState = mapFixtureState(apiFixture);
+        await this.fixtureService.syncFixtureState({
+          externalId: fixture.externalId,
+          scheduledAt: nextState.scheduledAt,
+          status: nextState.status,
+          homeScore: nextState.homeScore,
+          awayScore: nextState.awayScore,
+          homeHtScore: nextState.homeHtScore,
+          awayHtScore: nextState.awayHtScore,
+        });
+
+        if (nextState.status !== 'FINISHED') {
+          continue;
+        }
+
+        finishedFixtures++;
+
+        const { settled } = await this.bettingEngineService.settleOpenBets(
+          fixture.id,
+        );
+        settledBets += settled;
+
+        const { settledCount } =
+          await this.couponService.settlePendingCouponsByFixture(fixture.id);
+        settledCoupons += settledCount;
+      } catch (error) {
+        failedFixtures++;
         logger.error(
-          { externalId: fixture.externalId, issues: parsed.error.issues },
-          'Zod validation failed — rejecting settlement payload',
-        );
-        throw new Error(
-          `Zod validation failed for fixture ${fixture.externalId}`,
+          {
+            externalId: fixture.externalId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'Unexpected error during settlement sync — skipping fixture',
         );
       }
-
-      const apiFixture = parsed.data.response[0];
-      if (!apiFixture) {
-        logger.warn(
-          { externalId: fixture.externalId },
-          'Fixture not returned by API-FOOTBALL during settlement sync',
-        );
-        continue;
-      }
-
-      const nextState = mapFixtureState(apiFixture);
-      await this.fixtureService.syncFixtureState({
-        externalId: fixture.externalId,
-        scheduledAt: nextState.scheduledAt,
-        status: nextState.status,
-        homeScore: nextState.homeScore,
-        awayScore: nextState.awayScore,
-        homeHtScore: nextState.homeHtScore,
-        awayHtScore: nextState.awayHtScore,
-      });
-
-      if (nextState.status !== 'FINISHED') {
-        continue;
-      }
-
-      finishedFixtures++;
-
-      const { settled } = await this.bettingEngineService.settleOpenBets(
-        fixture.id,
-      );
-      settledBets += settled;
-
-      const { settledCount } =
-        await this.couponService.settlePendingCouponsByFixture(fixture.id);
-      settledCoupons += settledCount;
     }
 
     const { settledCount: expiredCouponsSettled } =
@@ -121,9 +151,19 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         finishedFixtures,
         settledBets,
         settledCoupons: settledCoupons + expiredCouponsSettled,
+        failedFixtures,
+        skippedFixtures,
       },
       'Pending bets settlement sync complete',
     );
+
+    if (settledBets > 0) {
+      const calibration = await this.adjustmentService.runCalibrationCheck();
+      logger.info(
+        { calibration },
+        'Calibration check complete after settlement',
+      );
+    }
   }
 
   @OnWorkerEvent('failed')

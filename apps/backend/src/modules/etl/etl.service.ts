@@ -513,6 +513,21 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerLeagueSeasonSyncForLeague('fixtures', competitionCode);
   }
 
+  async triggerFixturesBackfillForSeasons(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const competition = await this.loadActiveCompetition(competitionCode);
+    const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
+      syncType: 'fixtures',
+      season,
+      competitionCode,
+      leagueId: competition.leagueId,
+      syncScope: 'backfill',
+    }));
+    await this.enqueueLeagueSeasonJobs('fixtures', jobs);
+  }
+
   async triggerStatsSyncForLeague(competitionCode: string): Promise<void> {
     await this.triggerLeagueSeasonSyncForLeague('stats', competitionCode);
   }

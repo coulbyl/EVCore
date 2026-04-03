@@ -5,6 +5,7 @@ import type { FixtureService } from '../../fixture/fixture.service';
 import type { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import type { CouponService } from '../../coupon/coupon.service';
 import type { NotificationService } from '../../notification/notification.service';
+import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 function buildFixtureResponse(status: 'NS' | 'FT') {
@@ -87,10 +88,20 @@ describe('PendingBetsSettlementWorker', () => {
     getOrThrow: vi.fn().mockReturnValue('test-api-key'),
   } satisfies Partial<ConfigService>;
 
+  const adjustmentService = {
+    runCalibrationCheck: vi.fn().mockResolvedValue({
+      calibration: null,
+      proposalId: null,
+      shadowCorrelations: null,
+      shadowProposalId: null,
+    }),
+  } satisfies Partial<AdjustmentService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
     couponService as unknown as CouponService,
+    adjustmentService as unknown as AdjustmentService,
   );
 
   beforeEach(() => {
@@ -166,6 +177,63 @@ describe('PendingBetsSettlementWorker', () => {
 
     await expect(
       worker.process({ data: {} } as Job<Record<string, never>>),
-    ).rejects.toThrow('API-FOOTBALL responded 500 for fixture 999');
+    ).resolves.toBeUndefined();
+
+    expect(fixtureService.syncFixtureState).not.toHaveBeenCalled();
+    expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
+    expect(couponService.settlePendingCouponsByFixture).not.toHaveBeenCalled();
+    expect(couponService.settleExpiredCoupons).toHaveBeenCalledOnce();
+  });
+
+  it('skips transient network errors and continues processing', async () => {
+    fixtureService.findPendingSettlementFixtures.mockResolvedValue([
+      {
+        id: 'fixture-1',
+        externalId: 999,
+        scheduledAt: new Date('2025-03-15T20:00:00Z'),
+        season: {
+          competition: {
+            leagueId: 39,
+            code: 'PL',
+          },
+        },
+      },
+      {
+        id: 'fixture-2',
+        externalId: 1000,
+        scheduledAt: new Date('2025-03-15T21:00:00Z'),
+        season: {
+          competition: {
+            leagueId: 39,
+            code: 'PL',
+          },
+        },
+      },
+    ]);
+    global.fetch = vi
+      .fn()
+      .mockRejectedValueOnce(
+        Object.assign(new Error('timeout'), { cause: { code: 'ETIMEDOUT' } }),
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue(buildFixtureResponse('FT')),
+      });
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledOnce();
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledWith({
+      externalId: 1000,
+      scheduledAt: new Date('2025-03-15T20:00:00.000Z'),
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 1,
+      homeHtScore: 1,
+      awayHtScore: 0,
+    });
+    expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
+      'fixture-2',
+    );
   });
 });
