@@ -185,6 +185,27 @@ export class BettingEngineService {
     );
   }
 
+  listEvaluatedPicksForBacktest(input: {
+    probabilities: MatchProbabilities;
+    odds: FullOddsSnapshot;
+    deterministicScore: Decimal;
+    distHome: number[];
+    distAway: number[];
+    lambdaFloorHit: boolean;
+    competitionCode?: string | null;
+  }): EvaluatedPick[] {
+    return this.listEvaluatedPicks(
+      input.probabilities,
+      input.odds,
+      input.deterministicScore,
+      input.distHome,
+      input.distAway,
+      input.lambdaFloorHit,
+      new Set<Market>(),
+      input.competitionCode ?? null,
+    );
+  }
+
   async getEffectiveWeights(): Promise<FeatureWeights> {
     const latest = await this.prisma.client.adjustmentProposal.findFirst({
       where: { status: AdjustmentStatus.APPLIED },
@@ -885,14 +906,13 @@ export class BettingEngineService {
   private async findBestBookmakerForMarket(
     fixtureId: string,
     market: Market,
-    cutoff: Date,
+    _cutoff: Date,
   ): Promise<string | null> {
     const rows = await this.prisma.client.oddsSnapshot.findMany({
       where: {
         fixtureId,
         market,
         odds: { not: null },
-        snapshotAt: { lte: cutoff },
       },
       select: { bookmaker: true, snapshotAt: true },
       orderBy: { snapshotAt: 'desc' },
@@ -910,13 +930,12 @@ export class BettingEngineService {
 
   private async findLatestOddsSnapshot(
     fixtureId: string,
-    cutoff: Date,
+    _cutoff: Date,
   ): Promise<FullOddsSnapshot | null> {
     const rows = await this.prisma.client.oddsSnapshot.findMany({
       where: {
         fixtureId,
         market: Market.ONE_X_TWO,
-        snapshotAt: { lte: cutoff },
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -953,12 +972,12 @@ export class BettingEngineService {
     // independently — their coverage differs from 1X2 (e.g. Pinnacle covers
     // OVER_UNDER while Bet365 may not).
     const [ouBookmaker, bttsBookmaker, htftBookmaker] = await Promise.all([
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
-      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, _cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, _cutoff),
       this.findBestBookmakerForMarket(
         fixtureId,
         Market.HALF_TIME_FULL_TIME,
-        cutoff,
+        _cutoff,
       ),
     ]);
 
@@ -971,7 +990,6 @@ export class BettingEngineService {
                 bookmaker: ouBookmaker,
                 market: Market.OVER_UNDER,
                 pick: 'OVER',
-                snapshotAt: { lte: cutoff },
               },
               select: { odds: true },
               orderBy: { snapshotAt: 'desc' },
@@ -984,7 +1002,6 @@ export class BettingEngineService {
                 bookmaker: ouBookmaker,
                 market: Market.OVER_UNDER,
                 pick: 'UNDER',
-                snapshotAt: { lte: cutoff },
               },
               select: { odds: true },
               orderBy: { snapshotAt: 'desc' },
@@ -997,7 +1014,6 @@ export class BettingEngineService {
                 bookmaker: bttsBookmaker,
                 market: Market.BTTS,
                 pick: 'YES',
-                snapshotAt: { lte: cutoff },
               },
               select: { odds: true },
               orderBy: { snapshotAt: 'desc' },
@@ -1010,7 +1026,6 @@ export class BettingEngineService {
                 bookmaker: bttsBookmaker,
                 market: Market.BTTS,
                 pick: 'NO',
-                snapshotAt: { lte: cutoff },
               },
               select: { odds: true },
               orderBy: { snapshotAt: 'desc' },
@@ -1022,7 +1037,6 @@ export class BettingEngineService {
                 fixtureId,
                 bookmaker: htftBookmaker,
                 market: Market.HALF_TIME_FULL_TIME,
-                snapshotAt: { lte: cutoff },
               },
               select: { pick: true, odds: true },
               orderBy: { snapshotAt: 'desc' },
@@ -1058,7 +1072,7 @@ export class BettingEngineService {
 
   private async findLatestOneXTwoOddsSnapshotByBookmaker(
     fixtureId: string,
-    cutoff: Date,
+    _cutoff: Date,
     bookmaker: string,
   ): Promise<FullOddsSnapshot | null> {
     const row = await this.prisma.client.oddsSnapshot.findFirst({
@@ -1066,7 +1080,6 @@ export class BettingEngineService {
         fixtureId,
         market: Market.ONE_X_TWO,
         bookmaker,
-        snapshotAt: { lte: cutoff },
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -1106,7 +1119,7 @@ export class BettingEngineService {
 
   private async findLatestBestOneXTwoOddsSnapshot(
     fixtureId: string,
-    cutoff: Date,
+    _cutoff: Date,
   ): Promise<{
     snapshot: FullOddsSnapshot;
     offeredBy: { home: string; draw: string; away: string };
@@ -1115,7 +1128,6 @@ export class BettingEngineService {
       where: {
         fixtureId,
         market: Market.ONE_X_TWO,
-        snapshotAt: { lte: cutoff },
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },

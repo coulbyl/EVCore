@@ -620,9 +620,7 @@ export class FixtureRepository {
     );
   }
 
-  async findCandidatesByDate(
-    input: FindCandidatesByDateInput,
-  ): Promise<
+  async findCandidatesByDate(input: FindCandidatesByDateInput): Promise<
     {
       scheduledAt: Date;
       homeTeam: { name: string };

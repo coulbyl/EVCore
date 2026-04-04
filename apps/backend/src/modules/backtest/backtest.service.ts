@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
@@ -5,6 +7,7 @@ import { BetStatus, FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import type {
+  EvaluatedPick,
   FullOddsSnapshot,
   TeamStatsInput,
   ViablePick,
@@ -32,9 +35,10 @@ import {
   type ValidationVerdict,
 } from './backtest.report';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
-import { MODEL_SCORE_THRESHOLD } from '@modules/betting-engine/ev.constants';
+import { getModelScoreThreshold } from '@modules/betting-engine/ev.constants';
 
 const logger = createLogger('backtest-service');
+const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
 
 type FixtureForBacktest = {
   id: string;
@@ -95,6 +99,60 @@ type BucketAccumulator = {
   evTotal: Decimal;
 };
 
+type BacktestAnalysisReason =
+  | 'MISSING_TEAM_STATS'
+  | 'MISSING_ODDS'
+  | 'BELOW_MODEL_SCORE_THRESHOLD'
+  | 'NO_VIABLE_PICK'
+  | 'SIMULATION_NOT_PLACED'
+  | 'BET_PLACED';
+
+type BacktestAnalysisEntry = {
+  seasonId: string;
+  competitionCode: string | null;
+  fixtureId: string;
+  scheduledAt: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  actualOutcome: 'HOME' | 'DRAW' | 'AWAY' | null;
+  reason: BacktestAnalysisReason;
+  homeStatsAvailable: boolean;
+  awayStatsAvailable: boolean;
+  oddsAvailable: boolean;
+  deterministicScore: string | null;
+  modelScoreThreshold: string | null;
+  bookmaker: string | null;
+  oddsSnapshotAt: string | null;
+  market: Market | null;
+  pick: string | null;
+  odds: string | null;
+  ev: string | null;
+  qualityScore: string | null;
+  result: 'WIN' | 'LOSS' | 'VOID' | null;
+  profit: string | null;
+  rejectionReason: string | null;
+  rejectionSummary: { reason: string; count: number }[] | null;
+  topRejectedCandidates:
+    | {
+        market: string;
+        pick: string;
+        comboMarket?: string;
+        comboPick?: string;
+        odds: string;
+        ev: string;
+        qualityScore: string;
+        rejectionReason: string;
+      }[]
+    | null;
+};
+
+type RunBacktestOptions = {
+  analysisEntries?: BacktestAnalysisEntry[];
+  writeAnalysisLog?: boolean;
+};
+
 @Injectable()
 export class BacktestService {
   private latestAllSeasonsReport: AllSeasonsBacktestReport | null = null;
@@ -108,8 +166,11 @@ export class BacktestService {
   async runBacktest(
     seasonId: string,
     competitionCode?: string,
+    options: RunBacktestOptions = {},
   ): Promise<BacktestReport> {
     logger.info({ seasonId }, 'Starting backtest');
+    const analysisEntries = options.analysisEntries ?? [];
+    const writeAnalysisLog = options.writeAnalysisLog ?? true;
 
     const fixtures = await this.prisma.client.fixture.findMany({
       where: {
@@ -165,6 +226,18 @@ export class BacktestService {
       );
 
       if (!homeStats || !awayStats) {
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: null,
+            reason: 'MISSING_TEAM_STATS',
+            homeStatsAvailable: homeStats !== null,
+            awayStatsAvailable: awayStats !== null,
+            oddsAvailable: false,
+          }),
+        );
         skippedCount++;
         continue;
       }
@@ -191,10 +264,42 @@ export class BacktestService {
 
       const odds = oddsByFixture.get(fixture.id);
       if (!odds) {
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: actual,
+            reason: 'MISSING_ODDS',
+            homeStatsAvailable: true,
+            awayStatsAvailable: true,
+            oddsAvailable: false,
+            deterministicScore: computed.deterministicScore,
+          }),
+        );
         continue;
       }
 
-      if (computed.deterministicScore.lessThan(MODEL_SCORE_THRESHOLD)) {
+      const modelScoreThreshold = getModelScoreThreshold(
+        competitionCode ?? null,
+      );
+      if (computed.deterministicScore.lessThan(modelScoreThreshold)) {
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: actual,
+            reason: 'BELOW_MODEL_SCORE_THRESHOLD',
+            homeStatsAvailable: true,
+            awayStatsAvailable: true,
+            oddsAvailable: true,
+            deterministicScore: computed.deterministicScore,
+            modelScoreThreshold,
+            bookmaker: odds.bookmaker,
+            oddsSnapshotAt: odds.snapshotAt,
+          }),
+        );
         continue;
       }
 
@@ -217,13 +322,87 @@ export class BacktestService {
       });
 
       if (!pick) {
+        const evaluatedPicks = this.bettingEngine.listEvaluatedPicksForBacktest(
+          {
+            probabilities: computed.probabilities,
+            odds,
+            deterministicScore: computed.deterministicScore,
+            distHome,
+            distAway,
+            lambdaFloorHit,
+            competitionCode: competitionCode ?? null,
+          },
+        );
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: actual,
+            reason: 'NO_VIABLE_PICK',
+            homeStatsAvailable: true,
+            awayStatsAvailable: true,
+            oddsAvailable: true,
+            deterministicScore: computed.deterministicScore,
+            modelScoreThreshold,
+            bookmaker: odds.bookmaker,
+            oddsSnapshotAt: odds.snapshotAt,
+            rejectionSummary: buildRejectionSummary(evaluatedPicks),
+            topRejectedCandidates: buildTopRejectedCandidates(evaluatedPicks),
+          }),
+        );
         continue;
       }
 
       const simulation = simulatePick(fixture, pick);
       if (!simulation.placed) {
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: actual,
+            reason: 'SIMULATION_NOT_PLACED',
+            homeStatsAvailable: true,
+            awayStatsAvailable: true,
+            oddsAvailable: true,
+            deterministicScore: computed.deterministicScore,
+            modelScoreThreshold,
+            bookmaker: odds.bookmaker,
+            oddsSnapshotAt: odds.snapshotAt,
+            market: pick.market,
+            pick: pick.pick,
+            oddsValue: pick.odds,
+            ev: simulation.ev,
+            qualityScore: pick.qualityScore,
+          }),
+        );
         continue;
       }
+
+      analysisEntries.push(
+        buildAnalysisEntry({
+          seasonId,
+          competitionCode,
+          fixture,
+          actualOutcome: actual,
+          reason: 'BET_PLACED',
+          homeStatsAvailable: true,
+          awayStatsAvailable: true,
+          oddsAvailable: true,
+          deterministicScore: computed.deterministicScore,
+          modelScoreThreshold,
+          bookmaker: odds.bookmaker,
+          oddsSnapshotAt: odds.snapshotAt,
+          market: pick.market,
+          pick: pick.pick,
+          oddsValue: pick.odds,
+          ev: simulation.ev,
+          qualityScore: pick.qualityScore,
+          result: simulation.result,
+          profit: simulation.profit,
+        }),
+      );
 
       roiProfit = roiProfit.plus(simulation.profit);
       if (!simulation.voided) {
@@ -325,6 +504,14 @@ export class BacktestService {
       'Backtest complete',
     );
 
+    if (writeAnalysisLog) {
+      await this.writeBacktestAnalysisLog(analysisEntries, {
+        scope: 'season',
+        seasonId,
+        competitionCode: competitionCode ?? null,
+      });
+    }
+
     return report;
   }
 
@@ -343,8 +530,16 @@ export class BacktestService {
     );
 
     const reports: BacktestReport[] = [];
+    const analysisEntries: BacktestAnalysisEntry[] = [];
     for (const season of seasons) {
-      const report = await this.runBacktest(season.id, season.competition.code);
+      const report = await this.runBacktest(
+        season.id,
+        season.competition.code,
+        {
+          analysisEntries,
+          writeAnalysisLog: false,
+        },
+      );
       reports.push(report);
     }
 
@@ -425,6 +620,10 @@ export class BacktestService {
 
     this.latestAllSeasonsReport = report;
     this.latestValidationReport = null;
+    await this.writeBacktestAnalysisLog(analysisEntries, {
+      scope: 'all-seasons',
+      seasonCount: seasons.length,
+    });
 
     return report;
   }
@@ -649,7 +848,6 @@ export class BacktestService {
       const oneXTwoRows = fixtureRows.filter(
         (row) =>
           row.market === Market.ONE_X_TWO &&
-          row.snapshotAt <= fixture.scheduledAt &&
           row.homeOdds !== null &&
           row.drawOdds !== null &&
           row.awayOdds !== null,
@@ -683,7 +881,6 @@ export class BacktestService {
             entry.bookmaker === bestOneXTwo.bookmaker &&
             entry.market === market &&
             entry.pick === pick &&
-            entry.snapshotAt <= fixture.scheduledAt &&
             entry.odds !== null,
         );
         return row?.odds ?? null;
@@ -696,7 +893,6 @@ export class BacktestService {
           row.market !== Market.HALF_TIME_FULL_TIME ||
           row.pick === null ||
           row.odds === null ||
-          row.snapshotAt > fixture.scheduledAt ||
           row.pick in htftOdds
         ) {
           continue;
@@ -719,6 +915,41 @@ export class BacktestService {
     }
 
     return latest;
+  }
+
+  private async writeBacktestAnalysisLog(
+    entries: BacktestAnalysisEntry[],
+    metadata: Record<string, number | string | null>,
+  ): Promise<void> {
+    const logDir = process.env['LOG_DIR'] ?? path.join(process.cwd(), 'logs');
+    const destination = path.join(logDir, BACKTEST_ANALYSIS_LOG_FILE);
+    const generatedAt = new Date().toISOString();
+    const reasonCounts = entries.reduce<Record<string, number>>(
+      (acc, entry) => {
+        acc[entry.reason] = (acc[entry.reason] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
+
+    const lines = [
+      JSON.stringify({
+        type: 'meta',
+        generatedAt,
+        entryCount: entries.length,
+        reasonCounts,
+        ...metadata,
+      }),
+      ...entries.map((entry) => JSON.stringify(entry)),
+    ];
+
+    await mkdir(logDir, { recursive: true });
+    await writeFile(destination, `${lines.join('\n')}\n`, 'utf8');
+
+    logger.info(
+      { destination, entryCount: entries.length, ...metadata },
+      'Backtest analysis log written',
+    );
   }
 }
 
@@ -806,6 +1037,118 @@ function buildCompetitionBreakdown(
       };
     },
   );
+}
+
+function buildAnalysisEntry(input: {
+  seasonId: string;
+  competitionCode?: string;
+  fixture: FixtureForBacktest;
+  actualOutcome: 'HOME' | 'DRAW' | 'AWAY' | null;
+  reason: BacktestAnalysisReason;
+  homeStatsAvailable: boolean;
+  awayStatsAvailable: boolean;
+  oddsAvailable: boolean;
+  deterministicScore?: Decimal;
+  modelScoreThreshold?: Decimal;
+  bookmaker?: string;
+  oddsSnapshotAt?: Date;
+  market?: Market;
+  pick?: string;
+  oddsValue?: Decimal;
+  ev?: Decimal;
+  qualityScore?: Decimal;
+  result?: 'WIN' | 'LOSS' | 'VOID';
+  profit?: Decimal;
+  rejectionReason?: string;
+  rejectionSummary?: { reason: string; count: number }[];
+  topRejectedCandidates?: {
+    market: string;
+    pick: string;
+    comboMarket?: string;
+    comboPick?: string;
+    odds: string;
+    ev: string;
+    qualityScore: string;
+    rejectionReason: string;
+  }[];
+}): BacktestAnalysisEntry {
+  return {
+    seasonId: input.seasonId,
+    competitionCode: input.competitionCode ?? null,
+    fixtureId: input.fixture.id,
+    scheduledAt: input.fixture.scheduledAt.toISOString(),
+    homeTeamId: input.fixture.homeTeamId,
+    awayTeamId: input.fixture.awayTeamId,
+    homeScore: input.fixture.homeScore,
+    awayScore: input.fixture.awayScore,
+    actualOutcome: input.actualOutcome,
+    reason: input.reason,
+    homeStatsAvailable: input.homeStatsAvailable,
+    awayStatsAvailable: input.awayStatsAvailable,
+    oddsAvailable: input.oddsAvailable,
+    deterministicScore: input.deterministicScore?.toString() ?? null,
+    modelScoreThreshold: input.modelScoreThreshold?.toString() ?? null,
+    bookmaker: input.bookmaker ?? null,
+    oddsSnapshotAt: input.oddsSnapshotAt?.toISOString() ?? null,
+    market: input.market ?? null,
+    pick: input.pick ?? null,
+    odds: input.oddsValue?.toString() ?? null,
+    ev: input.ev?.toString() ?? null,
+    qualityScore: input.qualityScore?.toString() ?? null,
+    result: input.result ?? null,
+    profit: input.profit?.toString() ?? null,
+    rejectionReason: input.rejectionReason ?? null,
+    rejectionSummary: input.rejectionSummary ?? null,
+    topRejectedCandidates: input.topRejectedCandidates ?? null,
+  };
+}
+
+function buildRejectionSummary(
+  picks: EvaluatedPick[],
+): { reason: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const pick of picks) {
+    if (!pick.rejectionReason) continue;
+    counts.set(
+      pick.rejectionReason,
+      (counts.get(pick.rejectionReason) ?? 0) + 1,
+    );
+  }
+
+  return Array.from(counts.entries())
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+}
+
+function buildTopRejectedCandidates(picks: EvaluatedPick[]): {
+  market: string;
+  pick: string;
+  comboMarket?: string;
+  comboPick?: string;
+  odds: string;
+  ev: string;
+  qualityScore: string;
+  rejectionReason: string;
+}[] {
+  return picks
+    .filter(
+      (
+        pick,
+      ): pick is EvaluatedPick & {
+        rejectionReason: NonNullable<EvaluatedPick['rejectionReason']>;
+      } => pick.rejectionReason !== undefined,
+    )
+    .slice(0, 3)
+    .map((pick) => ({
+      market: pick.market,
+      pick: pick.pick,
+      ...(pick.comboMarket ? { comboMarket: pick.comboMarket } : {}),
+      ...(pick.comboPick ? { comboPick: pick.comboPick } : {}),
+      odds: pick.odds.toString(),
+      ev: pick.ev.toString(),
+      qualityScore: pick.qualityScore.toString(),
+      rejectionReason: pick.rejectionReason,
+    }));
 }
 
 function findLatestStatsBeforeFixture(

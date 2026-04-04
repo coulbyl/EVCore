@@ -61,6 +61,8 @@ const LEAGUE_MIN_SELECTION_ODDS_DEFAULT = new Decimal('2.00');
 const LEAGUE_MIN_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   LL: new Decimal('1.80'),
   SA: new Decimal('1.80'),
+  J1: new Decimal('1.80'),
+  MX1: new Decimal('1.90'),
   PL: new Decimal('2.00'),
   BL1: new Decimal('2.00'),
   L1: new Decimal('2.00'),
@@ -154,39 +156,37 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 // decision. Differentiated by market efficiency tier (audit finding: the flat
 // 0.60 threshold blocked 7 winning picks on secondary-market fixtures).
 //
-// Tier A — efficient markets (well-calibrated bookmakers, high liquidity):
-const MODEL_SCORE_THRESHOLD_A = new Decimal('0.55');
-// Tier B — secondary markets (noisier, lower liquidity, more EV available):
-const MODEL_SCORE_THRESHOLD_B = new Decimal('0.45');
 // Default fallback for unmapped competition codes:
 const MODEL_SCORE_THRESHOLD_DEFAULT = new Decimal('0.60');
 
 const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier A — efficient markets
-  PL: MODEL_SCORE_THRESHOLD_A,
-  SA: MODEL_SCORE_THRESHOLD_A,
-  BL1: MODEL_SCORE_THRESHOLD_A,
-  LL: MODEL_SCORE_THRESHOLD_A,
-  L1: MODEL_SCORE_THRESHOLD_A,
+  PL: new Decimal('0.58'),
+  SA: new Decimal('0.60'),
+  BL1: new Decimal('0.55'),
+  LL: new Decimal('0.58'),
+  L1: new Decimal('0.58'),
+  J1: new Decimal('0.55'),
+  MX1: new Decimal('0.55'),
   // Tier B — secondary / lower-division markets
-  CH: MODEL_SCORE_THRESHOLD_B,
-  D2: MODEL_SCORE_THRESHOLD_B,
-  F2: MODEL_SCORE_THRESHOLD_B,
-  SP2: MODEL_SCORE_THRESHOLD_A,
-  I2: MODEL_SCORE_THRESHOLD_B,
-  EL1: MODEL_SCORE_THRESHOLD_B,
-  EL2: MODEL_SCORE_THRESHOLD_B,
+  CH: new Decimal('0.50'),
+  D2: new Decimal('0.55'),
+  F2: new Decimal('0.58'),
+  SP2: new Decimal('0.62'),
+  I2: new Decimal('0.63'),
+  EL1: new Decimal('0.50'),
+  EL2: new Decimal('0.45'),
   // Tier C — European competitions (decided in prior session)
-  LDC: MODEL_SCORE_THRESHOLD_B,
-  UEL: MODEL_SCORE_THRESHOLD_B,
-  UECL: MODEL_SCORE_THRESHOLD_B,
+  LDC: new Decimal('0.45'),
+  UEL: new Decimal('0.45'),
+  UECL: new Decimal('0.45'),
   // Tier D — international competitions (conservative default — limited team
   // data, high variance, no historical backtest baseline yet).
-  WCQE: MODEL_SCORE_THRESHOLD_DEFAULT,
+  WCQE: new Decimal('0.60'),
   FRI: new Decimal('0.45'),
-  UNL: MODEL_SCORE_THRESHOLD_DEFAULT,
-  CAN: MODEL_SCORE_THRESHOLD_DEFAULT,
-  COPA: MODEL_SCORE_THRESHOLD_DEFAULT,
+  UNL: new Decimal('0.60'),
+  CAN: new Decimal('0.60'),
+  COPA: new Decimal('0.60'),
 };
 
 export function getModelScoreThreshold(
