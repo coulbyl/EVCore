@@ -181,11 +181,10 @@ describe('EtlController', () => {
       competitionCode: 'J1',
       seasons: [2023, 2024, 2025],
     });
-    expect(service.triggerStatsSyncForSeasons).toHaveBeenCalledWith('J1', [
-      2023,
-      2024,
-      2025,
-    ]);
+    expect(service.triggerStatsSyncForSeasons).toHaveBeenCalledWith(
+      'J1',
+      [2023, 2024, 2025],
+    );
   });
 
   it('rejects invalid rolling-stats mode', async () => {

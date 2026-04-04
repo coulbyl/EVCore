@@ -75,6 +75,11 @@ type FindByDateAndTeamsInput = {
   competitionCode?: string;
 };
 
+type FindCandidatesByDateInput = {
+  date: Date;
+  competitionCode?: string;
+};
+
 type UpdateScoresInput = {
   externalId: number;
   homeScore: number;
@@ -146,6 +151,10 @@ export class FixtureService {
 
   findByDateAndTeams(input: FindByDateAndTeamsInput) {
     return this.fixtureRepository.findByDateAndTeams(input);
+  }
+
+  findCandidatesByDate(input: FindCandidatesByDateInput) {
+    return this.fixtureRepository.findCandidatesByDate(input);
   }
 
   async updateScores(input: UpdateScoresInput): Promise<void> {

@@ -107,9 +107,7 @@ export class StatsSyncWorker {
         continue;
       }
 
-      const parsed = ApiFootballStatisticsResponseSchema.safeParse(
-        res.body,
-      );
+      const parsed = ApiFootballStatisticsResponseSchema.safeParse(res.body);
 
       if (!parsed.success) {
         logger.warn(

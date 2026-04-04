@@ -55,6 +55,90 @@ describe('FixtureRepository scheduled fixture queries', () => {
       orderBy: { scheduledAt: 'asc' },
     });
   });
+
+  it('matches fixtures by team names even when accents differ', async () => {
+    prisma.client.fixture.findMany.mockResolvedValueOnce([
+      {
+        id: 'fixture-id',
+        scheduledAt: new Date('2024-03-08T17:30:00.000Z'),
+        homeTeam: {
+          name: 'Fortuna Dusseldorf',
+          shortName: 'Fortuna Dusseldorf',
+          logoUrl: null,
+        },
+        awayTeam: {
+          name: 'VfL Osnabruck',
+          shortName: 'VfL Osnabruck',
+          logoUrl: null,
+        },
+      },
+    ]);
+
+    const fixture = await repository.findByDateAndTeams({
+      date: new Date('2024-03-08T12:00:00.000Z'),
+      homeTeamName: 'Fortuna Düsseldorf',
+      awayTeamName: 'VfL Osnabrück',
+      competitionCode: 'D2',
+    });
+
+    expect(fixture?.id).toBe('fixture-id');
+  });
+
+  it('matches fixtures by shortName when the full team name differs', async () => {
+    prisma.client.fixture.findMany.mockResolvedValueOnce([
+      {
+        id: 'fixture-id',
+        scheduledAt: new Date('2024-11-09T20:00:00.000Z'),
+        homeTeam: {
+          name: 'Waalwijk',
+          shortName: 'Waalwijk',
+          logoUrl: null,
+        },
+        awayTeam: {
+          name: 'NEC Nijmegen',
+          shortName: 'Nijmegen',
+          logoUrl: null,
+        },
+      },
+    ]);
+
+    const fixture = await repository.findByDateAndTeams({
+      date: new Date('2024-11-09T12:00:00.000Z'),
+      homeTeamName: 'RKC Waalwijk',
+      awayTeamName: 'Nijmegen',
+      competitionCode: 'ERD',
+    });
+
+    expect(fixture?.id).toBe('fixture-id');
+  });
+
+  it('matches fixtures when one side only differs by a club prefix', async () => {
+    prisma.client.fixture.findMany.mockResolvedValueOnce([
+      {
+        id: 'fixture-id',
+        scheduledAt: new Date('2025-03-15T19:00:00.000Z'),
+        homeTeam: {
+          name: 'Waalwijk',
+          shortName: 'Waalwijk',
+          logoUrl: null,
+        },
+        awayTeam: {
+          name: 'PSV Eindhoven',
+          shortName: 'PSV',
+          logoUrl: null,
+        },
+      },
+    ]);
+
+    const fixture = await repository.findByDateAndTeams({
+      date: new Date('2025-03-15T12:00:00.000Z'),
+      homeTeamName: 'RKC Waalwijk',
+      awayTeamName: 'PSV Eindhoven',
+      competitionCode: 'ERD',
+    });
+
+    expect(fixture?.id).toBe('fixture-id');
+  });
 });
 
 describe('FixtureRepository.upsertFixture', () => {

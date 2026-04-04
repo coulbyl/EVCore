@@ -15,6 +15,11 @@ type FindByDateAndTeamsInput = {
   competitionCode?: string;
 };
 
+type FindCandidatesByDateInput = {
+  date: Date;
+  competitionCode?: string;
+};
+
 type UpsertCompetitionInput = {
   leagueId: number;
   name: string;
@@ -609,12 +614,38 @@ export class FixtureRepository {
     return (
       candidates.find(
         (f) =>
-          normalizeTeamName(f.homeTeam.name) ===
-            normalizeTeamName(homeTeamName) &&
-          normalizeTeamName(f.awayTeam.name) ===
-            normalizeTeamName(awayTeamName),
+          teamMatches(f.homeTeam, homeTeamName) &&
+          teamMatches(f.awayTeam, awayTeamName),
       ) ?? null
     );
+  }
+
+  async findCandidatesByDate(
+    input: FindCandidatesByDateInput,
+  ): Promise<
+    {
+      scheduledAt: Date;
+      homeTeam: { name: string };
+      awayTeam: { name: string };
+    }[]
+  > {
+    const { date, competitionCode } = input;
+    const { from, to } = oneDayWindow(date);
+
+    return this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: from, lte: to },
+        ...(competitionCode
+          ? { season: { competition: { code: competitionCode } } }
+          : {}),
+      },
+      select: {
+        scheduledAt: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
   }
 }
 
@@ -667,10 +698,33 @@ function fixtureStateAffectsRollingStats(
 
 function normalizeTeamName(name: string): string {
   return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/[.'-]/g, ' ')
     .replace(/\b(fc|afc|cf|sc)\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function teamMatches(
+  team: { name: string; shortName: string },
+  lookupName: string,
+): boolean {
+  const normalizedLookup = normalizeTeamName(lookupName);
+  const normalizedName = normalizeTeamName(team.name);
+  const normalizedShortName = normalizeTeamName(team.shortName);
+
+  return (
+    namesEquivalent(normalizedName, normalizedLookup) ||
+    namesEquivalent(normalizedShortName, normalizedLookup)
+  );
+}
+
+function namesEquivalent(left: string, right: string): boolean {
+  return (
+    left === right || left.endsWith(` ${right}`) || right.endsWith(` ${left}`)
+  );
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

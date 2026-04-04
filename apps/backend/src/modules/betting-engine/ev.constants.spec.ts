@@ -76,17 +76,17 @@ describe('getPickMinSelectionOdds', () => {
   });
 
   it('raises the floor to 3.00 for Championship 1X2 HOME picks', () => {
-    expect(
-      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'HOME').toNumber(),
-    ).toBe(3);
+    expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
+      3,
+    );
   });
 
   it('keeps the league floor for other Championship 1X2 picks', () => {
-    expect(
-      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'DRAW').toNumber(),
-    ).toBe(2.1);
-    expect(
-      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'AWAY').toNumber(),
-    ).toBe(2.1);
+    expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'DRAW').toNumber()).toBe(
+      2.1,
+    );
+    expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'AWAY').toNumber()).toBe(
+      2.1,
+    );
   });
 });

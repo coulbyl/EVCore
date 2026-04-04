@@ -83,9 +83,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
           continue;
         }
 
-        const parsed = ApiFootballFixturesResponseSchema.safeParse(
-          res.body,
-        );
+        const parsed = ApiFootballFixturesResponseSchema.safeParse(res.body);
 
         if (!parsed.success) {
           failedFixtures++;

@@ -52,10 +52,7 @@ async function main() {
   const betCount = betIds.length;
   const couponLegCount = await prisma.couponLeg.count({
     where: {
-      OR: [
-        { betId: { in: betIds } },
-        { couponId: { in: couponIds } },
-      ],
+      OR: [{ betId: { in: betIds } }, { couponId: { in: couponIds } }],
     },
   });
   const couponCount = couponIds.length;
@@ -63,10 +60,7 @@ async function main() {
   const result = await prisma.$transaction(async (tx) => {
     const deletedCouponLegs = await tx.couponLeg.deleteMany({
       where: {
-        OR: [
-          { betId: { in: betIds } },
-          { couponId: { in: couponIds } },
-        ],
+        OR: [{ betId: { in: betIds } }, { couponId: { in: couponIds } }],
       },
     });
 

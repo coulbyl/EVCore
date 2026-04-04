@@ -325,7 +325,9 @@ describe('FixturesSyncWorker', () => {
   });
 
   it('refreshes rolling-stats when a fixture is newly finished', async () => {
-    mockCurlStdoutOnce(buildCurlStdout(buildFinishedFixturesResponse(135, 2024)));
+    mockCurlStdoutOnce(
+      buildCurlStdout(buildFinishedFixturesResponse(135, 2024)),
+    );
     fixtureService.upsertFixtureChain.mockResolvedValueOnce({
       id: 'fixture-id',
       changed: true,
@@ -340,7 +342,9 @@ describe('FixturesSyncWorker', () => {
   });
 
   it('refreshes rolling-stats when a finished fixture score changes', async () => {
-    mockCurlStdoutOnce(buildCurlStdout(buildFinishedFixturesResponse(135, 2024)));
+    mockCurlStdoutOnce(
+      buildCurlStdout(buildFinishedFixturesResponse(135, 2024)),
+    );
     fixtureService.upsertFixtureChain.mockResolvedValueOnce({
       id: 'fixture-id',
       changed: true,

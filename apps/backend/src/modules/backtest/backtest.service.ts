@@ -378,7 +378,9 @@ export class BacktestService {
     // which caused severe distortion when most seasons had < 10 bets — only the
     // high-volume losing seasons survived the filter, masking overall profitability.
     const aggregateRoi =
-      totalBets > 0 ? aggregateProfit.div(new Decimal(totalBets)) : new Decimal(0);
+      totalBets > 0
+        ? aggregateProfit.div(new Decimal(totalBets))
+        : new Decimal(0);
     const averageEvSimulated =
       totalBets > 0
         ? reports

@@ -19,6 +19,7 @@ POST /coupon/generate-tomorrow
 Remplacer `:code` par le code compétition (`WCQE`, `PL`, `UNL`, etc.) et `:season` par l'année de saison (`2024`, `2025`…).
 
 Important :
+
 - `POST /etl/sync/fixtures/:code` cible la saison courante de la compétition
 - `POST /etl/sync/stats/:code` cible aussi uniquement la saison courante
 - pour l'historique, utiliser les routes `/backfill`
@@ -48,7 +49,7 @@ Ordre recommandé :
 Exemple `J1` :
 
 ```bash
-curl -X POST 'http://localhost:3001/etl/sync/fixtures/J1/backfill?seasons=2023,2024,2025'
+curl -X POST 'http://localhost:3001/etl/sync/fixtures/sa/backfill?seasons=2023,2024,2025'
 curl -X POST 'http://localhost:3001/etl/sync/stats/J1/backfill?seasons=2023,2024,2025'
 curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2023'
 curl -X POST 'http://localhost:3001/etl/sync/rolling-stats/J1/2024'
@@ -66,6 +67,7 @@ pnpm --filter @evcore/db db:audit:fixtures YYYY-MM-DD
 ```
 
 Lecture rapide de `db:stats` :
+
 - `xG (done/fin)` lit `fixture.homeXg IS NOT NULL`
 - `STATS` lit `team_stats`
 - donc `STATS > 0` ne veut pas dire que le vrai `xG` fixture est rempli

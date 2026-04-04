@@ -111,9 +111,7 @@ export class FixturesSyncWorker {
       );
     }
 
-    const parsed = ApiFootballFixturesResponseSchema.safeParse(
-      res.body,
-    );
+    const parsed = ApiFootballFixturesResponseSchema.safeParse(res.body);
 
     if (!parsed.success) {
       logger.error(

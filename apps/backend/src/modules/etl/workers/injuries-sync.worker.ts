@@ -101,9 +101,7 @@ export class InjuriesSyncWorker {
         continue;
       }
 
-      const parsed = ApiFootballInjuriesResponseSchema.safeParse(
-        res.body,
-      );
+      const parsed = ApiFootballInjuriesResponseSchema.safeParse(res.body);
 
       if (!parsed.success) {
         logger.warn(

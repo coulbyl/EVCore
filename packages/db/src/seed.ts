@@ -183,6 +183,8 @@ async function seedCompetitions() {
       update: {
         isActive: competition.isActive,
         includeInBacktest: competition.includeInBacktest ?? true,
+        csvDivisionCode: competition.csvDivisionCode,
+        apiSeasonOverride: competition.apiSeasonOverride,
       },
       create: competition,
     });
