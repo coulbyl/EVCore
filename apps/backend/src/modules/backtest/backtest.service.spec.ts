@@ -217,6 +217,7 @@ describe('BacktestService', () => {
           leagueVolat: new Decimal('0.4'),
         },
       }),
+      listEvaluatedPicksForBacktest: vi.fn().mockReturnValue([]),
       selectBestViablePickForBacktest,
     } as unknown as BettingEngineService;
 

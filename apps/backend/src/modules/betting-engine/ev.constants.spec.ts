@@ -81,12 +81,17 @@ describe('getPickMinSelectionOdds', () => {
     );
   });
 
-  it('keeps the league floor for other Championship 1X2 picks', () => {
+  it('keeps the league floor for CH 1X2 DRAW', () => {
     expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'DRAW').toNumber()).toBe(
       2.1,
     );
+  });
+
+  it('raises the floor to 3.50 for Championship 1X2 AWAY picks', () => {
+    // Audit 2026-04-04: CH AWAY placed was -15.9% ROI; only marginal signal
+    // at odds >= 3.5 (N=3). Aligned with CH HOME (3.00) plus a premium.
     expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'AWAY').toNumber()).toBe(
-      2.1,
+      3.5,
     );
   });
 });

@@ -58,6 +58,9 @@ import {
   getLeagueMeanLambda,
   getLeagueMinSelectionOdds,
   getPickDirectionProbabilityThreshold,
+  getPickEvFloor,
+  getPickEvSoftCap,
+  getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
@@ -1959,8 +1962,17 @@ function getPickRejectionReason(
     }
   }
 
-  if (pick.ev.lessThan(minEv)) {
+  if (
+    pick.ev.lessThan(
+      getPickEvFloor(competitionCode, pick.market, pick.pick, minEv),
+    )
+  ) {
     return 'ev_below_threshold';
+  }
+
+  const evSoftCap = getPickEvSoftCap(competitionCode, pick.market, pick.pick);
+  if (pick.ev.greaterThan(evSoftCap)) {
+    return 'ev_above_soft_cap';
   }
 
   if (pick.qualityScore.lessThan(MIN_QUALITY_SCORE)) {
@@ -1975,6 +1987,17 @@ function getPickRejectionReason(
 
   if (pick.odds.lessThan(minSelectionOdds)) {
     return 'odds_below_floor';
+  }
+
+  // Per-pick odds ceiling — used when the profitable segment is at short odds
+  // and medium/long odds are structurally unprofitable (e.g. SP2 HOME).
+  const maxSelectionOdds = getPickMaxSelectionOdds(
+    competitionCode,
+    pick.market,
+    pick.pick,
+  );
+  if (maxSelectionOdds !== null && pick.odds.greaterThan(maxSelectionOdds)) {
+    return 'odds_above_cap';
   }
 
   // For combos, individual leg odds are already filtered upstream — only apply

@@ -29,11 +29,21 @@ export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
   MIN_PICK_DIRECTION_PROBABILITY;
 
+// Keys: "${competitionCode}|${market}|${pick}"
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04: rejected D2 1X2 AWAY picks failing only the probability
   // gate were strongly profitable in backtest (+15.9% ROI on 131 picks). Relax
   // only this branch instead of lowering the global floor.
-  D2_AWAY: new Decimal('0.40'),
+  'D2|ONE_X_TWO|AWAY': new Decimal('0.40'),
+  // Audit 2026-04-04: EL1 HOME is structurally miscalibrated — model over-estimates
+  // P(home win) by ~15pp. Raising the probability gate reduces exposure to the
+  // over-confident sub-population where EV > 0.25 but actual ROI is -32%.
+  'EL1|ONE_X_TWO|HOME': new Decimal('0.52'),
+  // Audit 2026-04-04: MX1 AWAY is toxic in all observed segments (placed -31%,
+  // rejected sim -24%). Both placed and rejected groups have P(away) >= 0.45 or
+  // not — result is equally bad. Raising the threshold reduces volume while
+  // preserving the rare high-probability AWAY that may carry real edge.
+  'MX1|ONE_X_TWO|AWAY': new Decimal('0.50'),
 };
 
 export function getPickDirectionProbabilityThreshold(
@@ -41,15 +51,11 @@ export function getPickDirectionProbabilityThreshold(
   market: string,
   pick: string,
 ): Decimal {
-  if (
-    competitionCode === 'D2' &&
-    market === 'ONE_X_TWO' &&
-    pick === 'AWAY'
-  ) {
-    return PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP.D2_AWAY;
-  }
-
-  return PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT;
+  const key = `${competitionCode}|${market}|${pick}`;
+  return (
+    PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP[key] ??
+    PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT
+  );
 }
 
 // Minimum directional probability for DRAW-based combo picks (e.g. NUL + MOINS 2.5).
@@ -133,11 +139,36 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
 
-  // Audit 2026-04-04: D2 1X2 HOME picks were structurally negative, driven
-  // almost entirely by the 2.0-2.99 bucket (-15.3% ROI on 32 bets). Raise the
-  // floor to keep only the less efficiently priced home spots.
+  // Audit 2026-04-04 (initial): D2 1X2 HOME picks were structurally negative in
+  // the 2.0-2.99 bucket (-15.3% ROI on 32 bets). Floor raised to 2.50.
+  // Audit 2026-04-04 (post-patch): remaining 7 bets had avg odds 2.72, still
+  // -62.1% ROI. Pattern matches CH HOME and BL1 HOME — raise to 3.00 for parity.
   if (competitionCode === 'D2' && market === 'ONE_X_TWO' && pick === 'HOME') {
-    return Decimal.max(leagueFloor, new Decimal('2.50'));
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
+  // Audit 2026-04-04: CH AWAY placed was -15.9% ROI across 18 bets. The only
+  // marginal positive signal was at odds >= 3.5 (N=3). Align with CH HOME (3.00)
+  // and require a slight premium to avoid the negative mid-priced AWAY bucket.
+  if (competitionCode === 'CH' && market === 'ONE_X_TWO' && pick === 'AWAY') {
+    return Decimal.max(leagueFloor, new Decimal('3.50'));
+  }
+
+  // Audit 2026-04-04: MX1 AWAY remaining bets (after probability threshold raise
+  // to 0.50) had avg odds 2.40 — same toxic mid-range. The only marginal positive
+  // signal was at odds >= 3.5 (N=3, backtest-analysis 2026-04-04). Add floor to
+  // require premium odds before any MX1 AWAY bet is accepted.
+  if (competitionCode === 'MX1' && market === 'ONE_X_TWO' && pick === 'AWAY') {
+    return Decimal.max(leagueFloor, new Decimal('3.50'));
+  }
+
+  // Audit 2026-04-04: SP2 HOME placed (odds 1.80–2.70) was -21.5% ROI on 8 bets.
+  // Rejected SP2 HOME blocked by odds_below_floor showed positive sim ROI —
+  // meaning the short-odds favorites (< current floor) are profitable while the
+  // medium-priced ones (>= floor) are not. Lower the floor to admit favorites;
+  // getPickMaxSelectionOdds() caps the upper bound to exclude the losing segment.
+  if (competitionCode === 'SP2' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return new Decimal('1.50');
   }
 
   return leagueFloor;
@@ -206,7 +237,10 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   D2: new Decimal('0.55'),
   F2: new Decimal('0.58'),
   SP2: new Decimal('0.62'),
-  I2: new Decimal('0.63'),
+  // Raised 0.63 → 0.75 (audit 2026-04-04): -75% ROI on 9 bets, 1/9 wins.
+  // Calibration is catastrophically wrong for I2 HOME; N < 50 means no valid
+  // sub-segment exists. De facto suspension until ≥ 50 bets accumulate.
+  I2: new Decimal('0.75'),
   EL1: new Decimal('0.50'),
   EL2: new Decimal('0.45'),
   // Tier C — European competitions (decided in prior session)
@@ -262,6 +296,91 @@ export function getLeagueEvThreshold(competitionCode: string | null): Decimal {
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
+
+// Per-(competition, market, pick) EV soft cap — rejects picks whose EV exceeds
+// the ceiling, independently of the global EV_HARD_CAP (0.90).
+//
+// Use case: when a market segment shows that high-EV bets are MORE unprofitable
+// than moderate-EV bets (model over-confidence pattern), an upper bound on EV
+// acts as a calibration guard without full exclusion.
+//
+// Keys: "${competitionCode}|${market}|${pick}"
+const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
+  // Audit 2026-04-04: EL1 HOME — EV [0.15–0.25) was the only profitable bucket
+  // (+4.5% ROI on 33 bets). EV > 0.25 → -32% ROI on 16 bets; EV > 0.40 → -32%
+  // on 16 bets. The model is increasingly wrong as confidence rises — cap at 0.25.
+  'EL1|ONE_X_TWO|HOME': new Decimal('0.25'),
+  // Audit 2026-04-04 (post-patch): D2 HOME remaining 7 bets at avg EV 0.360,
+  // all lost or barely won. Over-calibration pattern confirmed — cap EV at 0.25.
+  'D2|ONE_X_TWO|HOME': new Decimal('0.25'),
+  // Audit 2026-04-04 (post-patch): PL HOME 19 bets at -13.4% ROI.
+  // EV [0.20–0.40) → +9.6% on 9 bets. EV < 0.20 and EV >= 0.40 both negative.
+  // Soft cap at 0.40 combined with per-pick EV floor at 0.20 creates the window.
+  'PL|ONE_X_TWO|HOME': new Decimal('0.40'),
+};
+
+// Per-(competition, market, pick) EV floor — overrides the league EV threshold
+// for specific (competition, market, pick) tuples where the profitable range
+// starts ABOVE the competition default.
+//
+// Keys: "${competitionCode}|${market}|${pick}"
+const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
+  // Audit 2026-04-04 (post-patch): EL1 DRAW — 10 bets, 9 losses. All bets had
+  // EV 0.11–0.19, quality scores 0.062–0.110 (barely above thresholds). No edge
+  // visible at any EV level. Raise floor to eliminate the segment.
+  'EL1|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  // Audit 2026-04-04 (post-patch): EL2 DRAW — 3 bets, -100%, avg EV 0.123.
+  // Borderline quality with no profitable signal.
+  'EL2|ONE_X_TWO|DRAW': new Decimal('0.18'),
+  // Audit 2026-04-04 (post-patch): F2 DRAW — 4 bets, -100%, EV 0.10–0.33.
+  // All four outcomes were losses across a wide EV range — no usable edge.
+  'F2|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  // Audit 2026-04-04 (post-patch): PL HOME — EV [0.12–0.20) → -38.9% on 7 bets.
+  // Paired with soft cap at 0.40, this creates a [0.20, 0.40) window (+9.6% on 9 bets).
+  'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
+};
+
+export function getPickEvFloor(
+  competitionCode: string | null,
+  market: string,
+  pick: string,
+  leagueFloor: Decimal,
+): Decimal {
+  const key = `${competitionCode}|${market}|${pick}`;
+  return PICK_EV_FLOOR_MAP[key] ?? leagueFloor;
+}
+
+export function getPickEvSoftCap(
+  competitionCode: string | null,
+  market: string,
+  pick: string,
+): Decimal {
+  const key = `${competitionCode}|${market}|${pick}`;
+  return PICK_EV_SOFT_CAP_MAP[key] ?? EV_HARD_CAP;
+}
+
+// Per-(competition, market, pick) maximum selection odds (ceiling).
+// Complements getPickMinSelectionOdds() for cases where the profitable segment
+// is at SHORT odds and medium/long odds are structurally unprofitable.
+// Returns null for unmapped picks (no ceiling beyond global MAX_SELECTION_ODDS).
+//
+// Keys: "${competitionCode}|${market}|${pick}"
+const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
+  // Audit 2026-04-04: SP2 HOME placed (odds 1.80–2.70) was -21.5% ROI.
+  // Rejected HOME blocked by odds_below_floor showed positive sim ROI — the
+  // profitable segment is short-odds favorites (< 1.95), not medium-priced ones.
+  // Combined with floor lowered to 1.50, this creates a [1.50, 1.95) window.
+  'SP2|ONE_X_TWO|HOME': new Decimal('1.95'),
+};
+
+export function getPickMaxSelectionOdds(
+  competitionCode: string | null,
+  market: string,
+  pick: string,
+): Decimal | null {
+  const key = `${competitionCode}|${market}|${pick}`;
+  return PICK_MAX_SELECTION_ODDS_MAP[key] ?? null;
+}
 
 // Flat stake used when KELLY_ENABLED=false (default — safe fallback)
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');

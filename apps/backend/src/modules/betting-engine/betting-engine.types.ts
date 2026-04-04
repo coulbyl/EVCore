@@ -70,6 +70,7 @@ export type ViablePick = {
 export type EvaluatedPick = ViablePick & {
   rejectionReason?:
     | 'ev_above_hard_cap'
+    | 'ev_above_soft_cap'
     | 'ev_below_threshold'
     | 'filtered_longshot'
     | 'market_suspended'
