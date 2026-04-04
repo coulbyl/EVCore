@@ -1989,20 +1989,21 @@ function getPickRejectionReason(
     return 'odds_below_floor';
   }
 
-  // Per-pick odds ceiling — used when the profitable segment is at short odds
-  // and medium/long odds are structurally unprofitable (e.g. SP2 HOME).
+  // Per-pick odds ceiling — when defined, it REPLACES the global MAX_SELECTION_ODDS
+  // cap. This allows both tighter windows (e.g. SP2 HOME < 1.95) and wider ones
+  // (e.g. PL DRAW up to 5.50) without touching the global default.
   const maxSelectionOdds = getPickMaxSelectionOdds(
     competitionCode,
     pick.market,
     pick.pick,
   );
-  if (maxSelectionOdds !== null && pick.odds.greaterThan(maxSelectionOdds)) {
-    return 'odds_above_cap';
-  }
-
-  // For combos, individual leg odds are already filtered upstream — only apply
-  // the cap to single picks where the pick odds IS the leg odds.
-  if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
+  if (maxSelectionOdds !== null) {
+    if (pick.odds.greaterThan(maxSelectionOdds)) {
+      return 'odds_above_cap';
+    }
+  } else if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
+    // For combos, individual leg odds are already filtered upstream — only apply
+    // the cap to single picks where the pick odds IS the leg odds.
     return 'odds_above_cap';
   }
 

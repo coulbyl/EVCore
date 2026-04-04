@@ -125,6 +125,14 @@ export function getPickMinSelectionOdds(
 ): Decimal {
   const leagueFloor = getLeagueMinSelectionOdds(competitionCode);
 
+  // PL 1X2 DRAW: profitable segment is exclusively at odds >= 5.0.
+  // Audit 2026-04-04: [3.0–4.99] → 28b at −3.0% ROI (−0.83 profit);
+  // [>=5.0] → 24b at +29.8% ROI (+7.15 profit). The ceiling is already raised
+  // to 5.50 via getPickMaxSelectionOdds — this floor creates the [5.0, 5.50) window.
+  if (competitionCode === 'PL' && market === 'ONE_X_TWO' && pick === 'DRAW') {
+    return new Decimal('5.00');
+  }
+
   // Championship 1X2 HOME picks in the 2.0-2.99 range were structurally
   // unprofitable in the 2026-04-03 backtest (-23.4% ROI on 25 bets) despite
   // strong simulated EV. Raise the floor to keep only higher-priced spots.
@@ -376,6 +384,12 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // profitable segment is short-odds favorites (< 1.95), not medium-priced ones.
   // Combined with floor lowered to 1.50, this creates a [1.50, 1.95) window.
   'SP2|ONE_X_TWO|HOME': new Decimal('1.95'),
+  // Audit 2026-04-04: PL DRAW was entirely blocked by the global MAX_SELECTION_ODDS
+  // cap (4.0) — 164 rejected cases showed sim ROI +17.1% at EV >= 0.08. The sole
+  // allowed DRAW (3.91, below cap) won at +2.91 profit. Raise the ceiling to 5.50
+  // to admit the profitable > 4.0 segment. When a per-pick max is set it replaces
+  // the global cap (see getPickRejectionReason), so this entry is authoritative.
+  'PL|ONE_X_TWO|DRAW': new Decimal('5.50'),
 };
 
 export function getPickMaxSelectionOdds(

@@ -4,6 +4,7 @@ import {
   EV_THRESHOLD,
   getLeagueEvThreshold,
   getLeagueMinSelectionOdds,
+  getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
   MIN_DRAW_DIRECTION_PROBABILITY,
 } from './ev.constants';
@@ -75,6 +76,12 @@ describe('getPickMinSelectionOdds', () => {
     );
   });
 
+  it('raises the floor to 5.00 for PL 1X2 DRAW picks', () => {
+    // Audit 2026-04-04: [3.0–4.99] −3.0% ROI; [>=5.0] +29.8% ROI.
+    // Creates [5.00, 5.50) window (ceiling set via getPickMaxSelectionOdds).
+    expect(getPickMinSelectionOdds('PL', 'ONE_X_TWO', 'DRAW').toNumber()).toBe(5);
+  });
+
   it('raises the floor to 3.00 for Championship 1X2 HOME picks', () => {
     expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
       3,
@@ -93,5 +100,23 @@ describe('getPickMinSelectionOdds', () => {
     expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'AWAY').toNumber()).toBe(
       3.5,
     );
+  });
+});
+
+describe('getPickMaxSelectionOdds', () => {
+  it('returns null for picks with no ceiling override', () => {
+    expect(getPickMaxSelectionOdds('PL', 'ONE_X_TWO', 'HOME')).toBeNull();
+    expect(getPickMaxSelectionOdds('EL2', 'ONE_X_TWO', 'AWAY')).toBeNull();
+    expect(getPickMaxSelectionOdds(null, 'ONE_X_TWO', 'DRAW')).toBeNull();
+  });
+
+  it('returns 1.95 ceiling for SP2 1X2 HOME', () => {
+    expect(getPickMaxSelectionOdds('SP2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(1.95);
+  });
+
+  it('returns 5.50 ceiling for PL 1X2 DRAW — raises the global 4.0 cap', () => {
+    // Audit 2026-04-04: 164 rejected PL DRAW cases (odds > 4.0) showed sim
+    // ROI +17.1%. Per-pick ceiling replaces the global MAX_SELECTION_ODDS cap.
+    expect(getPickMaxSelectionOdds('PL', 'ONE_X_TWO', 'DRAW')?.toNumber()).toBe(5.5);
   });
 });

@@ -40,32 +40,38 @@
 - Re-générer `packages/db/reports/db-stats.txt`.
 - Vérifier que le périmètre backtest reste propre après le refresh stats.
 
-## Classement des ligues (audit 2026-04-04 — 486 bets, ROI +13.9%)
+## Classement des ligues (audit 2026-04-04 R3 — 505 bets, ROI +14.4%, profit +72.62)
+
+> R2 : 482 bets, +14.2%, +68.38 profit
+> Delta : +23 bets, +4.24 profit, +0.2pp ROI
+> Changement principal : PL DRAW window [5.0, 5.50) validée — 24b +29.8% ROI +7.15 profit
 
 ### Very Good — Épines dorsales
 
-- `EL2` — 189b, +13.9% ROI, +26.29 profit. Colonne vertébrale, sélection 11.8%
-- `EL1` — 40b, +26.8% ROI, +10.71 profit. Win rate 50%, AWAY très solide
-- `L1` — 21b, +36.8% ROI, +7.73 profit. Meilleur ROI, win rate 57%
+- `EL2` — 189b, +13.9% ROI, +26.29 profit. Colonne vertébrale, sélection 11.8%.
+  AWAY 84b +20.4% très solide, HOME 104b +9.7% contributeur régulier
+- `EL1` — 40b, +26.8% ROI, +10.71 profit. AWAY 20b +45.6%, HOME 19b +2.3% (EV window [0.15–0.25] tenu)
+- `L1` — 21b, +36.8% ROI, +7.73 profit. Meilleur ROI. HOME 19b +39.1% sur odds 2.0–2.99
 
 ### Good — Contributeurs fiables
 
-- `J1` — 56b, +10.8% ROI, +6.05 profit. Meilleur volume hors EL, AWAY exceptionnel
-- `LL` — 30b, +18.8% ROI, +5.63 profit. HOME discipliné
-- `D2` — 15b, +26.6% ROI, +3.99 profit. Excellent post-patch, surveiller le volume
+- `PL` — 32b, +18.7% ROI, +5.98 profit. ↑ depuis Low (9b +19.3% R1).
+  DRAW 24b +29.8% window [5.0–5.50) — segment propre. HOME 8b = -14.6% (inchangé, accepté)
+- `J1` — 56b, +10.8% ROI, +6.05 profit. ⚠ AWAY 6b porte tout (+106% ROI). HOME 50b = -0.6%. Surveiller la dépendance AWAY
+- `LL` — 30b, +18.8% ROI, +5.63 profit. HOME exclusif, discipliné
+- `D2` — 15b, +26.6% ROI, +3.99 profit. AWAY 14b +7.4%, DRAW 1b +295% (outlier). Surveiller le volume
+- `CH` — 23b, +9.5% ROI, +2.17 profit. DRAW 16b +22.1% moteur principal.
+  HOME 2b -100% (soft cap 0.35 actif), AWAY 3b +18%
 
 ### Medium — Positifs mais fragiles
 
-- `F2` — 38b, +5.3% ROI. HOME solide (+11.2%), DRAW/AWAY drainent
-- `CH` — 27b, +4.4% ROI. DRAW porte tout, HOME plombe encore
-- `SP2` — 12b, +4.0% ROI. Niche : fenêtre odds [1.50–1.95] uniquement
-- `BL1` — 7b, +31.4% ROI. ROI flatteur, N=7 non significatif statistiquement
+- `F2` — 38b, +5.3% ROI, +2.03 profit. HOME 36b +11.2% réel moteur. DRAW/AWAY drainent (1b chacun = -100%)
+- `SP2` — 12b, +4.0% ROI, +0.48 profit. Niche : HOME fenêtre odds [1.50–1.95] uniquement (11b, +13.5%)
+- `BL1` — 7b, +31.4% ROI, +2.20 profit. ROI flatteur, N=7 non significatif statistiquement
 
 ### Low — Signaux faibles ou instables
 
-- `PL` — 9b, +19.3% ROI. Trompe-l'œil : 1 DRAW à 3.91 porte tout. HOME 8b = -14.6%.
-  PL DRAW non débloqué (odds_above_cap bloque > 4.0, sim ROI +17% sur 164 cas rejetés)
-- `MX1` — 26b, +0.04% ROI. Neutre. HOME flat, AWAY suspendu
+- `MX1` — 26b, +0.04% ROI, +0.01 profit. HOME only (AWAY suspendu). Signal <2.0 : 7b +39.3% (non significatif)
 - `SA` — 7b, -3.7% ROI. N trop faible, surveiller
 - `POR` — 4b, +8.0% ROI. N=4, bruit pur
 
