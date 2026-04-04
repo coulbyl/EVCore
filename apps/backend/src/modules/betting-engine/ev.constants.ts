@@ -202,6 +202,12 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   PL: 1.468,
   SA: 1.247,
   SP2: 1.449,
+  // ERD: Eredivisie is one of the highest-scoring leagues in Europe (~3.3 goals/game).
+  // Without this entry the default (1.4) is used, causing Poisson to massively
+  // over-estimate extreme outcomes — 67 ev_above_hard_cap AWAY cases (avg EV 1.63)
+  // and 18 ev_above_hard_cap DRAW cases (avg EV 1.49) in audit 2026-04-04.
+  // Estimated from historical Eredivisie data; refine after stats sync.
+  ERD: 1.75,
 };
 
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
