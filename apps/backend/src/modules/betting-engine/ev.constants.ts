@@ -317,6 +317,11 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // EV [0.20–0.40) → +9.6% on 9 bets. EV < 0.20 and EV >= 0.40 both negative.
   // Soft cap at 0.40 combined with per-pick EV floor at 0.20 creates the window.
   'PL|ONE_X_TWO|HOME': new Decimal('0.40'),
+  // Audit 2026-04-04: CH HOME — 6 bets at avg EV 0.425, 1 win in 6 (-49.7% ROI).
+  // Over-calibration pattern: model increasingly wrong at high EV (floor 3.00 already
+  // set). EV [0.35+] concentrates the worst bets. Cap at 0.35 to reduce exposure
+  // while preserving the rare low-EV HOME that cleared the 3.00 floor.
+  'CH|ONE_X_TWO|HOME': new Decimal('0.35'),
 };
 
 // Per-(competition, market, pick) EV floor — overrides the league EV threshold
