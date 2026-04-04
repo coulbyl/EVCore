@@ -48,7 +48,6 @@ import {
   MAX_SELECTION_ODDS,
   MIN_DRAW_DIRECTION_PROBABILITY,
   MIN_PICK_DIRECTION_PROBABILITY,
-  MIN_SELECTION_ODDS,
   MIN_QUALITY_SCORE,
   getLeagueEvThreshold,
   ONE_X_TWO_AWAY_MAX_ODDS,
@@ -56,6 +55,10 @@ import {
   ONE_X_TWO_DRAW_MAX_ODDS,
   ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  LAMBDA_SHRINKAGE_FACTOR,
+  getLeagueMeanLambda,
+  getLeagueMinSelectionOdds,
+  getPickMinSelectionOdds,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
@@ -143,17 +146,19 @@ export class BettingEngineService {
     return calcEV(probability, odds);
   }
 
+  // eslint-disable-next-line max-params
   computeFromTeamStats(
     homeStats: TeamStatsInput,
     awayStats: TeamStatsInput,
     weights?: FeatureWeights,
+    competitionCode?: string | null,
   ): MatchComputation {
     const features = buildMatchupFeatures(homeStats, awayStats);
     const deterministicScore = this.calculateDeterministicScore(
       features,
       weights,
     );
-    const lambda = deriveLambdas(homeStats, awayStats);
+    const lambda = deriveLambdas(homeStats, awayStats, competitionCode);
     const probabilities = this.computeProbabilities(lambda.home, lambda.away);
 
     return { deterministicScore, probabilities, lambda, features };
@@ -166,6 +171,7 @@ export class BettingEngineService {
     distHome: number[];
     distAway: number[];
     lambdaFloorHit: boolean;
+    competitionCode?: string | null;
   }): ViablePick | null {
     return this.selectBestViablePick(
       input.probabilities,
@@ -175,6 +181,7 @@ export class BettingEngineService {
       input.distAway,
       input.lambdaFloorHit,
       new Set<Market>(),
+      input.competitionCode,
     );
   }
 
@@ -355,7 +362,12 @@ export class BettingEngineService {
     const weights = await this.getEffectiveWeights();
     const predictionSource: PredictionSource = 'POISSON_MAIN';
     const { features, deterministicScore, lambda, probabilities } =
-      this.computeFromTeamStats(homeStats, awayStats, weights);
+      this.computeFromTeamStats(
+        homeStats,
+        awayStats,
+        weights,
+        getFixtureCompetitionCode(fixture),
+      );
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
       lambda.away <= MIN_LAMBDA + Number.EPSILON;
@@ -1311,6 +1323,7 @@ export class BettingEngineService {
           suspendedMarkets,
           probabilities,
           minEv,
+          competitionCode,
         );
         return rejectionReason ? { ...candidate, rejectionReason } : candidate;
       })
@@ -1530,6 +1543,7 @@ export class BettingEngineService {
         suspendedMarkets,
         probabilities,
         minEv,
+        competitionCode,
       );
       return rejectionReason ? { ...candidate, rejectionReason } : candidate;
     });
@@ -1571,7 +1585,11 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function deriveLambdas(homeStats: TeamStatsInput, awayStats: TeamStatsInput) {
+function deriveLambdas(
+  homeStats: TeamStatsInput,
+  awayStats: TeamStatsInput,
+  competitionCode?: string | null,
+) {
   const homeXgFor = asNumber(homeStats.xgFor);
   const awayXgFor = asNumber(awayStats.xgFor);
   const homeXgAgainst = asNumber(homeStats.xgAgainst);
@@ -1582,8 +1600,13 @@ function deriveLambdas(homeStats: TeamStatsInput, awayStats: TeamStatsInput) {
     (homeXgFor + awayXgFor + homeXgAgainst + awayXgAgainst) / 4,
   );
 
-  const rawHome = (homeXgFor * awayXgAgainst) / leagueAvg;
-  const rawAway = (awayXgFor * homeXgAgainst) / leagueAvg;
+  const anchor = getLeagueMeanLambda(competitionCode);
+  const rawHome =
+    LAMBDA_SHRINKAGE_FACTOR * ((homeXgFor * awayXgAgainst) / leagueAvg) +
+    (1 - LAMBDA_SHRINKAGE_FACTOR) * anchor;
+  const rawAway =
+    LAMBDA_SHRINKAGE_FACTOR * ((awayXgFor * homeXgAgainst) / leagueAvg) +
+    (1 - LAMBDA_SHRINKAGE_FACTOR) * anchor;
 
   return {
     home: clamp(rawHome * HOME_ADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
@@ -1881,12 +1904,13 @@ function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
   }));
 }
 
-// eslint-disable-next-line max-params -- Four domain parameters; minEv is derived from competition context and kept explicit for testability.
+// eslint-disable-next-line max-params -- Five domain parameters; minEv and minOdds are derived from competition context and kept explicit for testability.
 function getPickRejectionReason(
   pick: ViablePick,
   suspendedMarkets: Set<Market>,
   probabilities: MatchProbabilities,
   minEv: Decimal = EV_THRESHOLD,
+  competitionCode: string | null = null,
 ): EvaluatedPick['rejectionReason'] {
   if (pick.ev.greaterThan(EV_HARD_CAP)) {
     return 'ev_above_hard_cap';
@@ -1925,7 +1949,13 @@ function getPickRejectionReason(
     return 'quality_score_below_threshold';
   }
 
-  if (pick.odds.lessThan(MIN_SELECTION_ODDS)) {
+  const minSelectionOdds = getPickMinSelectionOdds(
+    competitionCode,
+    pick.market,
+    pick.pick,
+  );
+
+  if (pick.odds.lessThan(minSelectionOdds)) {
     return 'odds_below_floor';
   }
 

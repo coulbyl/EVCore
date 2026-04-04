@@ -105,7 +105,10 @@ export class BacktestService {
     private readonly bettingEngine: BettingEngineService,
   ) {}
 
-  async runBacktest(seasonId: string): Promise<BacktestReport> {
+  async runBacktest(
+    seasonId: string,
+    competitionCode?: string,
+  ): Promise<BacktestReport> {
     logger.info({ seasonId }, 'Starting backtest');
 
     const fixtures = await this.prisma.client.fixture.findMany({
@@ -169,6 +172,8 @@ export class BacktestService {
       const computed = this.bettingEngine.computeFromTeamStats(
         homeStats,
         awayStats,
+        undefined,
+        competitionCode,
       );
       const actual = getOneXTwoOutcome(fixture.homeScore, fixture.awayScore);
 
@@ -208,6 +213,7 @@ export class BacktestService {
         distHome,
         distAway,
         lambdaFloorHit,
+        competitionCode,
       });
 
       if (!pick) {
@@ -338,7 +344,7 @@ export class BacktestService {
 
     const reports: BacktestReport[] = [];
     for (const season of seasons) {
-      const report = await this.runBacktest(season.id);
+      const report = await this.runBacktest(season.id, season.competition.code);
       reports.push(report);
     }
 
@@ -362,31 +368,17 @@ export class BacktestService {
     // Total bets placed across all seasons (informational — no filter).
     const totalBets = reports.reduce((sum, r) => sum + getTotalBets(r), 0);
 
-    // Weighted aggregate ROI: profit_total / stake_total across qualifying seasons.
-    // Seasons with fewer than MIN_BETS_FOR_ROI bets are excluded from ROI/profit/EV
-    // computation — a single loss in a 1-bet season produces ROI = -100%, which is
-    // noise not signal. totalBets above is not affected by this filter.
-    const roiReports = reports.filter(
-      (r) => getTotalBets(r) >= BACKTEST_CONSTANTS.MIN_BETS_FOR_ROI,
-    );
-    // aggregateProfit = real profit across all bets, no filter.
+    // aggregateProfit = real profit across all bets.
     const aggregateProfit = reports.reduce(
       (sum, r) => sum.plus(sumProfit(r.marketPerformance)),
       new Decimal(0),
     );
-    // aggregateRoi = weighted ROI only on qualifying seasons (anti-noise filter).
-    const roiBets = roiReports.reduce((sum, r) => sum + getTotalBets(r), 0);
+    // aggregateRoi = profit / stake across all bets (unit stake = 1 per bet).
+    // Previously used a per-season weighted average filtered by MIN_BETS_FOR_ROI,
+    // which caused severe distortion when most seasons had < 10 bets — only the
+    // high-volume losing seasons survived the filter, masking overall profitability.
     const aggregateRoi =
-      roiBets > 0
-        ? roiReports
-            .reduce((sum, r) => {
-              const bets = getTotalBets(r);
-              return sum.plus(r.roiSimulated.mul(bets));
-            }, new Decimal(0))
-            .div(roiBets)
-        : totalBets > 0
-          ? aggregateProfit.div(totalBets)
-          : new Decimal(0);
+      totalBets > 0 ? aggregateProfit.div(new Decimal(totalBets)) : new Decimal(0);
     const averageEvSimulated =
       totalBets > 0
         ? reports
@@ -771,25 +763,12 @@ function buildCompetitionBreakdown(
               .div(compReports.length)
           : new Decimal(0);
       const totalBets = compReports.reduce((s, r) => s + getTotalBets(r), 0);
-      const roiCompReports = compReports.filter(
-        (r) => getTotalBets(r) >= BACKTEST_CONSTANTS.MIN_BETS_FOR_ROI,
-      );
       const aggregateProfit = compReports.reduce(
         (sum, r) => sum.plus(sumProfit(r.marketPerformance)),
         new Decimal(0),
       );
-      const roiBets = roiCompReports.reduce((s, r) => s + getTotalBets(r), 0);
       const roi =
-        roiBets > 0
-          ? roiCompReports
-              .reduce((s, r) => {
-                const bets = getTotalBets(r);
-                return s.plus(r.roiSimulated.mul(bets));
-              }, new Decimal(0))
-              .div(roiBets)
-          : totalBets > 0
-            ? aggregateProfit.div(totalBets)
-            : new Decimal(0);
+        totalBets > 0 ? aggregateProfit.div(totalBets) : new Decimal(0);
       const averageEvSimulated =
         totalBets > 0
           ? compReports

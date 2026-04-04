@@ -11,6 +11,7 @@ describe('EtlController', () => {
       triggerFixturesSyncForLeague: vi.fn().mockResolvedValue(undefined),
       triggerStatsSync: vi.fn().mockResolvedValue(undefined),
       triggerStatsSyncForLeague: vi.fn().mockResolvedValue(undefined),
+      triggerStatsSyncForSeasons: vi.fn().mockResolvedValue(undefined),
       triggerInjuriesSync: vi.fn().mockResolvedValue(undefined),
       triggerInjuriesSyncForLeague: vi.fn().mockResolvedValue(undefined),
       triggerPendingBetsSettlementSync: vi.fn().mockResolvedValue(undefined),
@@ -167,6 +168,24 @@ describe('EtlController', () => {
       2024,
       'rebuild',
     );
+  });
+
+  it('triggers historical stats backfill via ETL', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerStatsBackfill('j1', '2023,2024,2025'),
+    ).resolves.toEqual({
+      status: 'ok',
+      competitionCode: 'J1',
+      seasons: [2023, 2024, 2025],
+    });
+    expect(service.triggerStatsSyncForSeasons).toHaveBeenCalledWith('J1', [
+      2023,
+      2024,
+      2025,
+    ]);
   });
 
   it('rejects invalid rolling-stats mode', async () => {

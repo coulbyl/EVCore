@@ -56,7 +56,6 @@ const COMPETITIONS = [
     name: "Serie B",
     country: "Italy",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "I2",
   },
   {
@@ -65,7 +64,6 @@ const COMPETITIONS = [
     name: "Segunda Division",
     country: "Spain",
     isActive: true,
-    includeInBacktest: true,
     csvDivisionCode: "SP2",
   },
   {
@@ -74,7 +72,6 @@ const COMPETITIONS = [
     name: "2. Bundesliga",
     country: "Germany",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "D2",
   },
   {
@@ -83,7 +80,6 @@ const COMPETITIONS = [
     name: "Ligue 2",
     country: "France",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "F2",
   },
   {
@@ -92,7 +88,6 @@ const COMPETITIONS = [
     name: "League One",
     country: "England",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "E2",
   },
   {
@@ -101,8 +96,41 @@ const COMPETITIONS = [
     name: "League Two",
     country: "England",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "E3",
+  },
+  {
+    leagueId: 88,
+    code: "ERD",
+    name: "Eredivisie",
+    country: "Netherlands",
+    isActive: true,
+    csvDivisionCode: "N1",
+  },
+  {
+    leagueId: 94,
+    code: "POR",
+    name: "Primeira Liga",
+    country: "Portugal",
+    isActive: true,
+    csvDivisionCode: "P1",
+  },
+  {
+    leagueId: 98,
+    code: "J1",
+    name: "J1 League",
+    country: "Japan",
+    isActive: true,
+    csvDivisionCode: "JPN",
+    seasonStartMonth: 1,
+  },
+  {
+    leagueId: 262,
+    code: "MX1",
+    name: "Liga MX",
+    country: "Mexico",
+    isActive: true,
+    csvDivisionCode: "MEX",
+    seasonStartMonth: 6,
   },
   {
     leagueId: 2,

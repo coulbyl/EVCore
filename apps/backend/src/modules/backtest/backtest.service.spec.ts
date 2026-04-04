@@ -149,6 +149,85 @@ describe('BacktestService', () => {
     );
   });
 
+  it('passes competitionCode to backtest pick selection', async () => {
+    const selectBestViablePickForBacktest = vi.fn().mockReturnValue(null);
+    const prismaMock = {
+      client: {
+        fixture: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'f1',
+              seasonId: 's1',
+              scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+              homeTeamId: 'h1',
+              awayTeamId: 'a1',
+              homeHtScore: 1,
+              awayHtScore: 0,
+              homeScore: 2,
+              awayScore: 1,
+            },
+          ]),
+        },
+        teamStats: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              ...makeTeamStatsRows('h1', 5),
+              ...makeTeamStatsRows('a1', 5),
+            ]),
+        },
+        oddsSnapshot: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              fixtureId: 'f1',
+              bookmaker: 'Pinnacle',
+              market: Market.ONE_X_TWO,
+              pick: null,
+              snapshotAt: new Date('2022-12-31T10:00:00.000Z'),
+              homeOdds: new Decimal('2.1'),
+              drawOdds: new Decimal('3.4'),
+              awayOdds: new Decimal('4.2'),
+              odds: null,
+            },
+          ]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const bettingMock = {
+      computeFromTeamStats: vi.fn().mockReturnValue({
+        deterministicScore: new Decimal('0.66'),
+        lambda: { home: 1.4, away: 1.1 },
+        probabilities: {
+          home: new Decimal('0.6'),
+          draw: new Decimal('0.2'),
+          away: new Decimal('0.2'),
+          over25: new Decimal('0.4'),
+          under25: new Decimal('0.6'),
+          bttsYes: new Decimal('0.5'),
+          bttsNo: new Decimal('0.5'),
+          dc1X: new Decimal('0.8'),
+          dcX2: new Decimal('0.4'),
+          dc12: new Decimal('0.8'),
+        },
+        features: {
+          recentForm: new Decimal('0.7'),
+          xg: new Decimal('0.7'),
+          domExtPerf: new Decimal('0.6'),
+          leagueVolat: new Decimal('0.4'),
+        },
+      }),
+      selectBestViablePickForBacktest,
+    } as unknown as BettingEngineService;
+
+    const service = new BacktestService(prismaMock, bettingMock);
+    await service.runBacktest('s1', 'CH');
+
+    expect(selectBestViablePickForBacktest).toHaveBeenCalledWith(
+      expect.objectContaining({ competitionCode: 'CH' }),
+    );
+  });
+
   it('does not place simulated bets when best EV is below threshold', async () => {
     const prismaMock = {
       client: {
@@ -348,6 +427,100 @@ describe('BacktestService.runAllSeasons', () => {
     expect(report.totalAnalyzed).toBe(0);
     expect(report.averageBrierScore.toNumber()).toBe(0);
     expect(report.aggregateRoi.toNumber()).toBe(0);
+  });
+
+  it('computes competition aggregate ROI from total profit and total bets', async () => {
+    const prismaMock = {
+      client: {
+        season: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 's1',
+              competition: { id: 'c1', code: 'CH', name: 'Championship' },
+            },
+            {
+              id: 's2',
+              competition: { id: 'c1', code: 'CH', name: 'Championship' },
+            },
+          ]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    vi.spyOn(service, 'runBacktest')
+      .mockResolvedValueOnce({
+        seasonId: 's1',
+        fixtureCount: 100,
+        analyzedCount: 100,
+        skippedCount: 0,
+        brierScore: new Decimal('0.62'),
+        calibrationError: new Decimal('0.03'),
+        roiSimulated: new Decimal('-0.20'),
+        maxDrawdownSimulated: new Decimal('5'),
+        averageEvSimulated: new Decimal('0.30'),
+        marketPerformance: [
+          {
+            market: Market.ONE_X_TWO,
+            betsPlaced: 5,
+            wins: 2,
+            losses: 3,
+            voids: 0,
+            stake: new Decimal('5'),
+            profit: new Decimal('-1'),
+            roi: new Decimal('-0.20'),
+            averageOdds: new Decimal('2.5'),
+            averageEv: new Decimal('0.20'),
+            maxDrawdown: new Decimal('2'),
+            pickBreakdown: [],
+            oddsBuckets: [],
+          },
+        ],
+        reportGeneratedAt: new Date(),
+      })
+      .mockResolvedValueOnce({
+        seasonId: 's2',
+        fixtureCount: 100,
+        analyzedCount: 100,
+        skippedCount: 0,
+        brierScore: new Decimal('0.61'),
+        calibrationError: new Decimal('0.02'),
+        roiSimulated: new Decimal('0.13333333333333333333'),
+        maxDrawdownSimulated: new Decimal('2'),
+        averageEvSimulated: new Decimal('0.35'),
+        marketPerformance: [
+          {
+            market: Market.ONE_X_TWO,
+            betsPlaced: 30,
+            wins: 14,
+            losses: 16,
+            voids: 0,
+            stake: new Decimal('30'),
+            profit: new Decimal('4'),
+            roi: new Decimal('0.13333333333333333333'),
+            averageOdds: new Decimal('2.4'),
+            averageEv: new Decimal('0.25'),
+            maxDrawdown: new Decimal('4'),
+            pickBreakdown: [],
+            oddsBuckets: [],
+          },
+        ],
+        reportGeneratedAt: new Date(),
+      });
+
+    const report = await service.runAllSeasons();
+
+    expect(report.aggregateProfit.toNumber()).toBeCloseTo(3, 6);
+    expect(report.aggregateRoi.toNumber()).toBeCloseTo(3 / 35, 6);
+    expect(report.byCompetition).toHaveLength(1);
+    expect(report.byCompetition[0].aggregateProfit.toNumber()).toBeCloseTo(
+      3,
+      6,
+    );
+    expect(report.byCompetition[0].aggregateRoi.toNumber()).toBeCloseTo(
+      3 / 35,
+      6,
+    );
   });
 });
 

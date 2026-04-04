@@ -3,6 +3,8 @@ import Decimal from 'decimal.js';
 import {
   EV_THRESHOLD,
   getLeagueEvThreshold,
+  getLeagueMinSelectionOdds,
+  getPickMinSelectionOdds,
   MIN_DRAW_DIRECTION_PROBABILITY,
 } from './ev.constants';
 
@@ -56,5 +58,35 @@ describe('MIN_DRAW_DIRECTION_PROBABILITY', () => {
     expect(MIN_DRAW_DIRECTION_PROBABILITY.lessThan(new Decimal('0.45'))).toBe(
       true,
     );
+  });
+});
+
+describe('getPickMinSelectionOdds', () => {
+  it('keeps the broad Bundesliga floor at 2.00', () => {
+    expect(getLeagueMinSelectionOdds('BL1').toNumber()).toBe(2);
+    expect(getPickMinSelectionOdds('BL1', 'ONE_X_TWO', 'DRAW').toNumber()).toBe(
+      2,
+    );
+  });
+
+  it('raises the floor to 3.00 for Bundesliga 1X2 HOME picks', () => {
+    expect(getPickMinSelectionOdds('BL1', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
+      3,
+    );
+  });
+
+  it('raises the floor to 3.00 for Championship 1X2 HOME picks', () => {
+    expect(
+      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'HOME').toNumber(),
+    ).toBe(3);
+  });
+
+  it('keeps the league floor for other Championship 1X2 picks', () => {
+    expect(
+      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'DRAW').toNumber(),
+    ).toBe(2.1);
+    expect(
+      getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'AWAY').toNumber(),
+    ).toBe(2.1);
   });
 });

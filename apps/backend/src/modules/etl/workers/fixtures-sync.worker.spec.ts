@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
@@ -7,6 +8,10 @@ import type { Queue } from 'bullmq';
 import { FixturesSyncWorker } from './fixtures-sync.worker';
 import type { LeagueSyncJobData } from './league-sync.worker';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn(),
+}));
 
 function buildFixturesResponse(leagueId: number, season: number) {
   return {
@@ -80,6 +85,17 @@ function buildFinishedFixturesResponse(leagueId: number, season: number) {
   response.response[0].score.halftime = { home: 1, away: 1 };
   response.response[0].score.fulltime = { home: 2, away: 1 };
   return response;
+}
+
+function buildCurlStdout(body: unknown, status = 200) {
+  return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
+}
+
+function mockCurlStdoutOnce(stdout: string) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    cb(null, stdout, '');
+    return {} as never;
+  }) as unknown as typeof execFile);
 }
 
 const SA_COMPETITION_ROW = {
@@ -186,10 +202,7 @@ describe('FixturesSyncWorker', () => {
       injuriesQueue,
     );
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixturesResponse(135, 2024)));
 
     await localWorker.process({
       data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
@@ -210,18 +223,23 @@ describe('FixturesSyncWorker', () => {
   });
 
   it('uses leagueId from job data to build API URL and upserts competition metadata', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixturesResponse(135, 2024)));
 
     await worker.process({
       data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
     } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
-    expect(fetch).toHaveBeenCalledWith(
-      'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-16',
-      { headers: { 'x-apisports-key': 'test-api-key' } },
+    expect(execFile).toHaveBeenCalledWith(
+      'curl',
+      expect.arrayContaining([
+        '--silent',
+        '--show-error',
+        '--location',
+        '-H',
+        'x-apisports-key: test-api-key',
+        'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-16',
+      ]),
+      expect.any(Function),
     );
     expect(fixtureService.upsertCompetition).toHaveBeenCalledWith({
       leagueId: 135,
@@ -243,7 +261,7 @@ describe('FixturesSyncWorker', () => {
   });
 
   it('throws when API responds with non-ok status', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+    mockCurlStdoutOnce(buildCurlStdout({}, 429));
 
     await expect(
       worker.process({
@@ -254,10 +272,7 @@ describe('FixturesSyncWorker', () => {
 
   it('throws when competitionCode is not found in DB', async () => {
     prisma.client.competition.findUnique.mockResolvedValue(null);
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixturesResponse(135, 2024)));
 
     await expect(
       worker.process({
@@ -271,23 +286,20 @@ describe('FixturesSyncWorker', () => {
       ...SA_COMPETITION_ROW,
       isActive: false,
     });
-    global.fetch = vi.fn();
+    vi.mocked(execFile).mockReset();
 
     await worker.process({
       data: { competitionCode: 'SA', season: 2024, leagueId: 135 },
     } as Job<{ competitionCode: string; season: number; leagueId: number }>);
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFile).not.toHaveBeenCalled();
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(fixtureService.upsertFixtureChain).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
   it('uses full-season fetch for backfill jobs', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixturesResponse(135, 2024)));
 
     await worker.process({
       data: {
@@ -303,17 +315,17 @@ describe('FixturesSyncWorker', () => {
       syncScope: 'routine' | 'backfill';
     }>);
 
-    expect(fetch).toHaveBeenCalledWith(
-      'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
-      { headers: { 'x-apisports-key': 'test-api-key' } },
+    expect(execFile).toHaveBeenCalledWith(
+      'curl',
+      expect.arrayContaining([
+        'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
+      ]),
+      expect.any(Function),
     );
   });
 
   it('refreshes rolling-stats when a fixture is newly finished', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFinishedFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFinishedFixturesResponse(135, 2024)));
     fixtureService.upsertFixtureChain.mockResolvedValueOnce({
       id: 'fixture-id',
       changed: true,
@@ -328,10 +340,7 @@ describe('FixturesSyncWorker', () => {
   });
 
   it('refreshes rolling-stats when a finished fixture score changes', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFinishedFixturesResponse(135, 2024)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFinishedFixturesResponse(135, 2024)));
     fixtureService.upsertFixtureChain.mockResolvedValueOnce({
       id: 'fixture-id',
       changed: true,

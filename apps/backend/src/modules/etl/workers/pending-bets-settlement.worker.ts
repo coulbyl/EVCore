@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Inject, Injectable } from '@nestjs/common';
@@ -15,11 +16,12 @@ import { BettingEngineService } from '../../betting-engine/betting-engine.servic
 import { CouponService } from '../../coupon/coupon.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
-import { fetchOrSkip, notifyOnWorkerFailure } from './etl-worker.utils';
+import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
 
 const logger = createLogger('pending-bets-settlement-worker');
+const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 
 @Injectable()
 @Processor(BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT)
@@ -60,11 +62,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     for (const fixture of fixtures) {
       try {
         const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
-        const res = await fetchOrSkip(url, {
-          headers: { 'x-apisports-key': apiKey },
-        });
+        const curlResult = await fetchJsonViaCurl(url, apiKey);
 
-        if (res === null) {
+        if (curlResult.response === null) {
           skippedFixtures++;
           logger.warn(
             { externalId: fixture.externalId },
@@ -72,8 +72,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
           );
           continue;
         }
+        const res = curlResult.response;
 
-        if (!res.ok) {
+        if (res.status < 200 || res.status >= 300) {
           failedFixtures++;
           logger.error(
             { externalId: fixture.externalId, status: res.status },
@@ -83,7 +84,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         }
 
         const parsed = ApiFootballFixturesResponseSchema.safeParse(
-          await res.json(),
+          res.body,
         );
 
         if (!parsed.success) {
@@ -179,6 +180,93 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       logger,
     });
   }
+}
+
+type CurlJsonResponse = {
+  status: number;
+  body: unknown;
+};
+
+type CurlJsonResult = {
+  response: CurlJsonResponse | null;
+  transientErrorCode?: string;
+};
+
+async function fetchJsonViaCurl(
+  url: string,
+  apiKey: string,
+): Promise<CurlJsonResult> {
+  try {
+    const stdout = await runCurlJsonRequest(url, apiKey);
+    const lastMarker = stdout.lastIndexOf(`\n${CURL_HTTP_CODE_MARKER}:`);
+    if (lastMarker === -1) {
+      throw new Error('curl output missing HTTP code marker');
+    }
+
+    const bodyText = stdout.slice(0, lastMarker);
+    const statusText = stdout
+      .slice(lastMarker + `\n${CURL_HTTP_CODE_MARKER}:`.length)
+      .trim();
+    const status = Number.parseInt(statusText, 10);
+
+    if (Number.isNaN(status)) {
+      throw new Error(`curl returned invalid HTTP code: ${statusText}`);
+    }
+
+    let body: unknown = null;
+    if (bodyText.trim().length > 0) {
+      body = JSON.parse(bodyText);
+    }
+
+    return { response: { status, body } };
+  } catch (error) {
+    const transientErrorCode = getCurlTransientErrorCode(error);
+    if (transientErrorCode !== undefined) {
+      return { response: null, transientErrorCode };
+    }
+    throw error;
+  }
+}
+
+function runCurlJsonRequest(url: string, apiKey: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'curl',
+      [
+        '--silent',
+        '--show-error',
+        '--location',
+        '--write-out',
+        `\n${CURL_HTTP_CODE_MARKER}:%{http_code}`,
+        '-H',
+        `x-apisports-key: ${apiKey}`,
+        url,
+      ],
+      (error, stdout) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      },
+    );
+  });
+}
+
+function getCurlTransientErrorCode(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+
+  const message = error.message.toLowerCase();
+  if (message.includes('timed out')) return 'ETIMEDOUT';
+  if (message.includes('could not resolve host')) return 'ENOTFOUND';
+  if (message.includes('connection reset')) return 'ECONNRESET';
+
+  const exitCode = 'code' in error ? (error.code as number | undefined) : null;
+  if (exitCode === 28) return 'ETIMEDOUT';
+  if (exitCode === 6) return 'ENOTFOUND';
+  if (exitCode === 56) return 'ECONNRESET';
+
+  return undefined;
 }
 
 function mapFixtureState(item: ApiFootballFixture): {

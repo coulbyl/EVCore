@@ -178,7 +178,7 @@ export class EtlController {
     description:
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
       'stats → injuries, then odds-csv and odds-prematch. Routine fixtures/injuries ' +
-      'runs target the current season; stats still scans active seasons. Settlement ' +
+      'runs target the current season; stats also targets the current season only. Settlement ' +
       'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
       'or after a long downtime.',
   })
@@ -290,6 +290,34 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, seasons };
   }
 
+  @Post('sync/stats/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Backfill historical stats sync for specific seasons',
+    description:
+      'Enqueues stats sync jobs for each requested season year. Use this when a league ' +
+      'has historical finished fixtures without xG, because routine stats sync only ' +
+      'targets the current season. Example: `?seasons=2023,2024,2025`.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'Competition code (e.g. J1, ERD, POR).',
+    example: 'J1',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerStatsBackfill(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerStatsSyncForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
   @Post('sync/odds-csv/:competitionCode/backfill')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -390,7 +418,8 @@ export class EtlController {
     summary: 'Trigger league-scoped ETL sync',
     description:
       'Triggers a league-scoped ETL flow for one competition code. Supported types: ' +
-      'fixtures, stats, injuries. Example competition codes: PL, SA, LL.',
+      'fixtures, stats, injuries. This path targets the current season for the league; ' +
+      'use dedicated `/backfill` routes for explicit historical seasons.',
   })
   @ApiParam({
     name: 'type',

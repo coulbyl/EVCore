@@ -381,6 +381,61 @@ describe('EtlService', () => {
     );
   });
 
+  it('dispatches explicit historical stats backfill jobs for requested seasons', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue({
+      leagueId: 98,
+      code: 'J1',
+      name: 'J1 League',
+      country: 'Japan',
+      csvDivisionCode: 'JPN',
+      seasonStartMonth: 1,
+      apiSeasonOverride: null,
+    });
+
+    await service.triggerStatsSyncForSeasons('J1', [2023, 2024, 2025]);
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(3);
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      1,
+      'stats-sync-J1-2023',
+      {
+        syncType: 'stats',
+        season: 2023,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
+    );
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      2,
+      'stats-sync-J1-2024',
+      {
+        syncType: 'stats',
+        season: 2024,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+      },
+    );
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      3,
+      'stats-sync-J1-2025',
+      {
+        syncType: 'stats',
+        season: 2025,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS * 2,
+      },
+    );
+  });
+
   it('dispatches one fixtures backfill job for current season on manual per-league sync', async () => {
     prismaMockRaw.client.competition.findFirst.mockResolvedValue({
       leagueId: 140,

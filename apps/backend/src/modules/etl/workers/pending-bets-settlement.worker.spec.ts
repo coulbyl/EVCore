@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
@@ -7,6 +8,10 @@ import type { CouponService } from '../../coupon/coupon.service';
 import type { NotificationService } from '../../notification/notification.service';
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
+
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn(),
+}));
 
 function buildFixtureResponse(status: 'NS' | 'FT') {
   return {
@@ -65,6 +70,27 @@ function buildFixtureResponse(status: 'NS' | 'FT') {
       },
     ],
   };
+}
+
+function buildCurlStdout(body: unknown, status = 200) {
+  return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
+}
+
+function mockCurlStdoutOnce(stdout: string) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    cb(null, stdout, '');
+    return {} as never;
+  }) as unknown as typeof execFile);
+}
+
+function mockCurlErrorOnce(message: string, code?: number) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    const error = Object.assign(new Error(message), {
+      code,
+    });
+    cb(error, '', '');
+    return {} as never;
+  }) as unknown as typeof execFile);
 }
 
 describe('PendingBetsSettlementWorker', () => {
@@ -133,10 +159,7 @@ describe('PendingBetsSettlementWorker', () => {
   });
 
   it('updates fixture state and settles bets/coupons when a fixture finishes', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixtureResponse('FT')),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('FT')));
 
     await worker.process({ data: {} } as Job<Record<string, never>>);
 
@@ -159,10 +182,7 @@ describe('PendingBetsSettlementWorker', () => {
   });
 
   it('only refreshes fixture state when the fixture is still scheduled', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildFixtureResponse('NS')),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('NS')));
 
     await worker.process({ data: {} } as Job<Record<string, never>>);
 
@@ -173,7 +193,7 @@ describe('PendingBetsSettlementWorker', () => {
   });
 
   it('throws on non-ok API response', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+    mockCurlStdoutOnce(buildCurlStdout({}, 500));
 
     await expect(
       worker.process({ data: {} } as Job<Record<string, never>>),
@@ -210,15 +230,8 @@ describe('PendingBetsSettlementWorker', () => {
         },
       },
     ]);
-    global.fetch = vi
-      .fn()
-      .mockRejectedValueOnce(
-        Object.assign(new Error('timeout'), { cause: { code: 'ETIMEDOUT' } }),
-      )
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(buildFixtureResponse('FT')),
-      });
+    mockCurlErrorOnce('Operation timed out', 28);
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('FT')));
 
     await worker.process({ data: {} } as Job<Record<string, never>>);
 

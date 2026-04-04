@@ -42,13 +42,104 @@ export const MIN_QUALITY_SCORE = new Decimal('0.06');
 export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal('5.0');
 export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal('6.0');
 
-// Odds window for selectable picks. Picks outside [MIN, MAX] are rejected
-// regardless of EV. The lower bound allows short-priced picks with genuine EV
-// (audit 2026-03-22: Roma V1 at 1.52 blocked, would have won); EV and quality
-// filters downstream still prevent weak short-priced selections.
+// Per-league minimum selection odds. Each league has a different bookmaker
+// efficiency profile — the optimal floor varies based on lambda (goal rate variance)
+// and historical false-EV patterns on short-priced favorites.
+//
+// Derivation (backtest 2026-04-03, α=0.70):
+//   LL  <2.0 → +17.7% ROI (low lambda 1.298, tactique, stable)  → floor 1.80
+//   SA  <2.0 → insufficient data, low lambda 1.247 similar to LL → floor 1.80
+//   PL  <2.0 → -32.0% ROI                                        → floor 2.00
+//   BL1 <2.0 → -36.9% ROI (high lambda 1.574, high variance)     → floor 2.00
+//   L1  <2.0 → insufficient data, moderate lambda 1.431           → floor 2.00
+//   SP2 <2.0 → insufficient data                                  → floor 2.00
+//   CH  <2.0 → -17.3%, and 2.0-2.99 HOME → -23.4%               → floor 2.10
+//
+// Default fallback for unmapped competitions.
+const LEAGUE_MIN_SELECTION_ODDS_DEFAULT = new Decimal('2.00');
+
+const LEAGUE_MIN_SELECTION_ODDS_MAP: Record<string, Decimal> = {
+  LL: new Decimal('1.80'),
+  SA: new Decimal('1.80'),
+  PL: new Decimal('2.00'),
+  BL1: new Decimal('2.00'),
+  L1: new Decimal('2.00'),
+  SP2: new Decimal('2.00'),
+  CH: new Decimal('2.10'),
+  // FRI uses de-vigged Pinnacle as probability source — the EV is relative to a
+  // second bookmaker (Bet365). A Pinnacle-implied 65% home at 1.95 Bet365 is
+  // genuine EV. The Poisson-based floor (2.00) does not apply here.
+  FRI: new Decimal('1.40'),
+};
+
+export function getLeagueMinSelectionOdds(
+  competitionCode: string | null | undefined,
+): Decimal {
+  if (
+    competitionCode != null &&
+    competitionCode in LEAGUE_MIN_SELECTION_ODDS_MAP
+  ) {
+    return LEAGUE_MIN_SELECTION_ODDS_MAP[competitionCode];
+  }
+  return LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
+}
+
+export function getPickMinSelectionOdds(
+  competitionCode: string | null | undefined,
+  market: string,
+  pick: string,
+): Decimal {
+  const leagueFloor = getLeagueMinSelectionOdds(competitionCode);
+
+  // Championship 1X2 HOME picks in the 2.0-2.99 range were structurally
+  // unprofitable in the 2026-04-03 backtest (-23.4% ROI on 25 bets) despite
+  // strong simulated EV. Raise the floor to keep only higher-priced spots.
+  if (competitionCode === 'CH' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
+  // Bundesliga 1X2 HOME picks remained structurally unprofitable across floor
+  // sweeps at 2.10 / 2.25 / 2.40. The toxic segment is specifically HOME in the
+  // 2.0-2.99 bucket, so keep the league floor broad and harden only this pick.
+  if (competitionCode === 'BL1' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
+  return leagueFloor;
+}
+
+// Global floor — kept as a hard minimum across all leagues.
 // The upper bound eliminates long shots where probability overestimation inflates EV.
-export const MIN_SELECTION_ODDS = new Decimal('1.45');
+export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
 export const MAX_SELECTION_ODDS = new Decimal('4.0');
+
+// Bayesian shrinkage — pulls raw Poisson lambdas toward the per-league mean goal rate.
+// Formula: rawLambda = α × (xgFor × xgAgainst / leagueAvg) + (1 - α) × anchor
+// where anchor = LEAGUE_MEAN_LAMBDA_MAP[code] ?? LEAGUE_MEAN_LAMBDA_DEFAULT.
+// α = 0.70 keeps 70% of the team-specific signal and moderates extreme products.
+// Computed from DB team_stats (April 2026, 7 leagues, includeInBacktest = true).
+export const LAMBDA_SHRINKAGE_FACTOR = 0.7;
+
+const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
+  BL1: 1.574,
+  CH: 1.263,
+  L1: 1.431,
+  LL: 1.298,
+  PL: 1.468,
+  SA: 1.247,
+  SP2: 1.449,
+};
+
+const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
+
+export function getLeagueMeanLambda(
+  competitionCode: string | null | undefined,
+): number {
+  if (competitionCode != null && competitionCode in LEAGUE_MEAN_LAMBDA_MAP) {
+    return LEAGUE_MEAN_LAMBDA_MAP[competitionCode];
+  }
+  return LEAGUE_MEAN_LAMBDA_DEFAULT;
+}
 
 // Home advantage correction applied to Poisson lambdas before probability
 // computation. Academic literature (Dixon-Coles, Karlis-Ntzoufras) measures

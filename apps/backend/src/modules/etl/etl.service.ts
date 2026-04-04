@@ -532,6 +532,20 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerLeagueSeasonSyncForLeague('stats', competitionCode);
   }
 
+  async triggerStatsSyncForSeasons(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const competition = await this.loadActiveCompetition(competitionCode);
+    const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
+      syncType: 'stats',
+      season,
+      competitionCode,
+      leagueId: competition.leagueId,
+    }));
+    await this.enqueueLeagueSeasonJobs('stats', jobs);
+  }
+
   async triggerInjuriesSyncForLeague(competitionCode: string): Promise<void> {
     await this.triggerLeagueSeasonSyncForLeague('injuries', competitionCode);
   }

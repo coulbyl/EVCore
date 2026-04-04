@@ -712,7 +712,7 @@ describe('BettingEngineService', () => {
           decision: 'NO_BET',
           features: expect.objectContaining({
             predictionSource: null,
-            fallbackReason: 'missing_1x2_odds',
+            fallbackReason: 'missing_market_odds',
             candidatePicks: [],
             evaluatedPicks: [],
           }),
@@ -1229,6 +1229,54 @@ describe('BettingEngineService', () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it('selectBestViablePickForBacktest rejects Championship 1X2 HOME picks below 3.00', () => {
+    const service = new BettingEngineService(
+      {} as unknown as PrismaService,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    const htft = makeHtftProbabilities('0.111111');
+    const { distHome, distAway } = buildPoissonDistributions(2.0, 0.5);
+
+    const result = service.selectBestViablePickForBacktest({
+      probabilities: {
+        home: new Decimal('0.48'),
+        draw: new Decimal('0.32'),
+        away: new Decimal('0.20'),
+        over25: new Decimal('0.55'),
+        under25: new Decimal('0.45'),
+        bttsYes: new Decimal('0.40'),
+        bttsNo: new Decimal('0.60'),
+        dc1X: new Decimal('0.80'),
+        dcX2: new Decimal('0.45'),
+        dc12: new Decimal('0.75'),
+        htft,
+      },
+      odds: {
+        bookmaker: 'Pinnacle',
+        snapshotAt: new Date(),
+        homeOdds: new Decimal('2.50'),
+        drawOdds: new Decimal('3.50'),
+        awayOdds: new Decimal('4.00'),
+        overOdds: null,
+        underOdds: null,
+        bttsYesOdds: null,
+        bttsNoOdds: null,
+        htftOdds: {},
+      },
+      deterministicScore: new Decimal('0.80'),
+      distHome,
+      distAway,
+      lambdaFloorHit: false,
+      competitionCode: 'CH',
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.pick).not.toBe('HOME');
   });
 
   it('uses Kelly stake size instead of flat stake when KELLY_ENABLED=true', async () => {
