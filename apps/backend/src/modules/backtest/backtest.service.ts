@@ -144,6 +144,8 @@ type BacktestAnalysisEntry = {
         ev: string;
         qualityScore: string;
         rejectionReason: string;
+        result: 'WIN' | 'LOSS' | 'VOID';
+        profit: string;
       }[]
     | null;
 };
@@ -348,7 +350,10 @@ export class BacktestService {
             bookmaker: odds.bookmaker,
             oddsSnapshotAt: odds.snapshotAt,
             rejectionSummary: buildRejectionSummary(evaluatedPicks),
-            topRejectedCandidates: buildTopRejectedCandidates(evaluatedPicks),
+            topRejectedCandidates: buildTopRejectedCandidates(
+              fixture,
+              evaluatedPicks,
+            ),
           }),
         );
         continue;
@@ -1070,6 +1075,8 @@ function buildAnalysisEntry(input: {
     ev: string;
     qualityScore: string;
     rejectionReason: string;
+    result: 'WIN' | 'LOSS' | 'VOID';
+    profit: string;
   }[];
 }): BacktestAnalysisEntry {
   return {
@@ -1120,7 +1127,10 @@ function buildRejectionSummary(
     .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
 }
 
-function buildTopRejectedCandidates(picks: EvaluatedPick[]): {
+function buildTopRejectedCandidates(
+  fixture: FixtureForBacktest,
+  picks: EvaluatedPick[],
+): {
   market: string;
   pick: string;
   comboMarket?: string;
@@ -1129,6 +1139,8 @@ function buildTopRejectedCandidates(picks: EvaluatedPick[]): {
   ev: string;
   qualityScore: string;
   rejectionReason: string;
+  result: 'WIN' | 'LOSS' | 'VOID';
+  profit: string;
 }[] {
   return picks
     .filter(
@@ -1139,16 +1151,21 @@ function buildTopRejectedCandidates(picks: EvaluatedPick[]): {
       } => pick.rejectionReason !== undefined,
     )
     .slice(0, 3)
-    .map((pick) => ({
-      market: pick.market,
-      pick: pick.pick,
-      ...(pick.comboMarket ? { comboMarket: pick.comboMarket } : {}),
-      ...(pick.comboPick ? { comboPick: pick.comboPick } : {}),
-      odds: pick.odds.toString(),
-      ev: pick.ev.toString(),
-      qualityScore: pick.qualityScore.toString(),
-      rejectionReason: pick.rejectionReason,
-    }));
+    .map((pick) => {
+      const simulation = simulatePick(fixture, pick);
+      return {
+        market: pick.market,
+        pick: pick.pick,
+        ...(pick.comboMarket ? { comboMarket: pick.comboMarket } : {}),
+        ...(pick.comboPick ? { comboPick: pick.comboPick } : {}),
+        odds: pick.odds.toString(),
+        ev: pick.ev.toString(),
+        qualityScore: pick.qualityScore.toString(),
+        rejectionReason: pick.rejectionReason,
+        result: simulation.result,
+        profit: simulation.profit.toString(),
+      };
+    });
 }
 
 function findLatestStatsBeforeFixture(

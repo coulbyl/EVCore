@@ -47,7 +47,6 @@ import {
   HOME_ADVANTAGE_LAMBDA_FACTOR,
   MAX_SELECTION_ODDS,
   MIN_DRAW_DIRECTION_PROBABILITY,
-  MIN_PICK_DIRECTION_PROBABILITY,
   MIN_QUALITY_SCORE,
   getLeagueEvThreshold,
   ONE_X_TWO_AWAY_MAX_ODDS,
@@ -58,6 +57,7 @@ import {
   LAMBDA_SHRINKAGE_FACTOR,
   getLeagueMeanLambda,
   getLeagueMinSelectionOdds,
+  getPickDirectionProbabilityThreshold,
   getPickMinSelectionOdds,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
@@ -1924,6 +1924,12 @@ function getPickRejectionReason(
   minEv: Decimal = EV_THRESHOLD,
   competitionCode: string | null = null,
 ): EvaluatedPick['rejectionReason'] {
+  const minDirectionProbability = getPickDirectionProbabilityThreshold(
+    competitionCode,
+    pick.market,
+    pick.pick,
+  );
+
   if (pick.ev.greaterThan(EV_HARD_CAP)) {
     return 'ev_above_hard_cap';
   }
@@ -1931,13 +1937,13 @@ function getPickRejectionReason(
   if (pick.market === Market.ONE_X_TWO) {
     if (
       pick.pick === 'HOME' &&
-      probabilities.home.lessThan(MIN_PICK_DIRECTION_PROBABILITY)
+      probabilities.home.lessThan(minDirectionProbability)
     ) {
       return 'probability_too_low';
     }
     if (
       pick.pick === 'AWAY' &&
-      probabilities.away.lessThan(MIN_PICK_DIRECTION_PROBABILITY)
+      probabilities.away.lessThan(minDirectionProbability)
     ) {
       return 'probability_too_low';
     }

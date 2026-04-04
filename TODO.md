@@ -57,3 +57,41 @@
 - Contrôler les ratios `xG (done/fin)` dans `packages/db/reports/db-stats.txt`
 - Vérifier qu'il n'y a pas de nouvelle explosion de `noFixture`
 - Relancer un backtest uniquement après validation du rapport
+
+## Reprise tuning backtest
+
+- Garder la logique backtest alignée avec le `betting engine` :
+  - analyse des rejets sur tous les marchés, pas seulement `ONE_X_TWO`
+  - utiliser les `topRejectedCandidates` avec `result` et `profit` simulés
+
+### Pistes chirurgicales identifiées
+
+- `I2`
+  - `ONE_X_TWO|HOME` placé reste très toxique
+  - `AWAY` rejeté ne montre pas de poche rentable claire
+  - prochaine action : durcir fortement ou exclure temporairement `I2` sur `ONE_X_TWO|HOME`
+
+- `MX1`
+  - `ONE_X_TWO|AWAY` placé est toxique
+  - `ONE_X_TWO|HOME` rejeté par `ev_below_threshold` / `probability_too_low` montre une légère valeur
+  - prochaine action : durcir `AWAY`, assouplir légèrement `HOME`
+
+- `CH`
+  - `ONE_X_TWO|DRAW` fonctionne
+  - `ONE_X_TWO|HOME` et `ONE_X_TWO|AWAY` restent mauvais
+  - `OVER_UNDER|UNDER` est légèrement positif mais faible volume
+  - prochaine action : préserver `DRAW` et `UNDER`, durcir `HOME` et `AWAY`
+
+- `SP2`
+  - `ONE_X_TWO|HOME` placé est mauvais
+  - `HOME` rejeté par `odds_below_floor` est positif
+  - `DRAW` rejeté par `ev_below_threshold` mérite revue
+  - prochaine action : tester une fenêtre plus précise sur `HOME` court et revoir le cas `DRAW`
+
+### Patches déjà validés
+
+- suppression de la dépendance stricte à `snapshotAt <= scheduledAt/cutoff`
+- `J1` débloquée et profitable après alignement odds/backtest
+- `D2`
+  - assouplissement validé sur `ONE_X_TWO|AWAY` via `probability_too_low`
+  - durcissement validé sur `ONE_X_TWO|HOME` via floor d'odds

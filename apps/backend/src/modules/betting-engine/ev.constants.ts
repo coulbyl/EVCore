@@ -26,6 +26,32 @@ export const EV_HARD_CAP = new Decimal('0.90');
 // considers unlikely to win (e.g. Guingamp V1 at P=36%).
 export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
 
+const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
+  MIN_PICK_DIRECTION_PROBABILITY;
+
+const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
+  // Audit 2026-04-04: rejected D2 1X2 AWAY picks failing only the probability
+  // gate were strongly profitable in backtest (+15.9% ROI on 131 picks). Relax
+  // only this branch instead of lowering the global floor.
+  D2_AWAY: new Decimal('0.40'),
+};
+
+export function getPickDirectionProbabilityThreshold(
+  competitionCode: string | null | undefined,
+  market: string,
+  pick: string,
+): Decimal {
+  if (
+    competitionCode === 'D2' &&
+    market === 'ONE_X_TWO' &&
+    pick === 'AWAY'
+  ) {
+    return PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP.D2_AWAY;
+  }
+
+  return PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT;
+}
+
 // Minimum directional probability for DRAW-based combo picks (e.g. NUL + MOINS 2.5).
 // Combos with DRAW as primary leg repeatedly cleared the EV floor only via high
 // combo odds while P(draw) was 19-27% — audit 2026-03-21/28 showed 0/3 win rate.
@@ -105,6 +131,13 @@ export function getPickMinSelectionOdds(
   // 2.0-2.99 bucket, so keep the league floor broad and harden only this pick.
   if (competitionCode === 'BL1' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
+  // Audit 2026-04-04: D2 1X2 HOME picks were structurally negative, driven
+  // almost entirely by the 2.0-2.99 bucket (-15.3% ROI on 32 bets). Raise the
+  // floor to keep only the less efficiently priced home spots.
+  if (competitionCode === 'D2' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('2.50'));
   }
 
   return leagueFloor;
