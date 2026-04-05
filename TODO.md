@@ -1,137 +1,100 @@
 # EVCore — TODO
 
-## Fait aujourd'hui
+## Prochaine session — Tuning promotion de ligues
 
-- Odds CSV import stabilisé sur les ligues principales et secondaires.
-- Support ajouté pour les ligues `extra` de `football-data.co.uk` :
-  - `J1` via `new/JPN.csv`
-  - `MX1` via `new/MEX.csv`
-- Parser dédié ajouté pour les CSV `extra leagues`.
-- Mapping d'alias renforcé pour les équipes CSV sur :
-  - `J1`, `MX1`, `L1`, `LL`, `EL1`, `EL2`, `F2`, `POR`, `SP2`, `D2`, `ERD`
-- Matching de fixtures renforcé :
-  - accents / ASCII
-  - ponctuation
-  - `name` vs `shortName`
-  - préfixes de club (`RKC Waalwijk` vs `Waalwijk`)
-- Zéros bookmaker dans les CSV tolérés quand la ligne reste exploitable.
+Référence backtest actuel : **R6 — 468 bets, +15.7% ROI, +73.46u ← record**
 
-## À faire demain
+### Priorité 1 — Promotions validées ✅
 
-- Relancer le `stats sync` sur les ligues incomplètes, quota API-Football terminé aujourd'hui.
+#### `PL` → Very Good ✅ (R6)
+- Floor HOME 3.0 → 0 HOME, 19b DRAW pur +37.6% ROI +7.15u
 
-### Priorité 1
+#### `CH` → Good ✅ (R6)
+- Floor HOME 5.0 → 0 HOME, 13b DRAW+AWAY+UNDER +16.8% ROI +2.18u
 
-- `PL`
-- `LL`
-- `CH`
-- `D2`
+### Priorité 2 — En cours
 
-### Priorité 2
+#### `LL` → Very Good (bloqué)
+- 19b +33.4% ROI — signal propre mais volume limité
+- Threshold 0.55 testé et rejeté (R5) — fixtures [0.55-0.58) génèrent faux EV à [3.0-4.99] odds (-4u net)
+- Threshold 0.58 = filtre correct pour LL
+- **Prochaine action** : analyser si probability gate HOME peut être assoupli sans élargir le threshold
 
-- `EL1`
-- `EL2`
-- `L1`
-- `F2`
+#### `SP2` → Good
+- 13b +12.8% ROI — HOME pur fenêtre <2.0
+- **Prochaine action** : analyser `topRejectedCandidates` HOME — poche [2.0-2.5) exploitable ?
 
-## Objectif après relance
+### Priorité 3 — Surveillance
 
-- Améliorer la couverture xG sur les ligues encore incomplètes.
-- Re-générer `packages/db/reports/db-stats.txt`.
-- Vérifier que le périmètre backtest reste propre après le refresh stats.
+#### `J1` — consolider AWAY
+- AWAY 6b +106% porte tout — concentration excessive
+- HOME 50b -0.6% neutre mais pèse sur le ROI global
+- **Action** : analyser ndjson AWAY pour identifier si le signal est systématique ou 1-2 gros coups
+- Si signal AWAY tient : J1 devient Very Good candidat
+- Si bruit : durcir HOME et revoir le lambda J1
 
-## Classement des ligues (audit 2026-04-04 R3 — 505 bets, ROI +14.4%, profit +72.62)
+#### `MX1` — signal sub-2.0
+- Break-even structurel (26b, +0.0%)
+- Signal HOME odds <2.0 : 7b +39.3% — trop petit pour agir maintenant
+- **Action** : attendre N ≥ 20 bets dans ce bucket avant tout patch
 
-> R2 : 482 bets, +14.2%, +68.38 profit
-> Delta : +23 bets, +4.24 profit, +0.2pp ROI
-> Changement principal : PL DRAW window [5.0, 5.50) validée — 24b +29.8% ROI +7.15 profit
+---
+
+## Classement des ligues (audit 2026-04-05 R6 — 468 bets, ROI +15.7%, profit +73.46u) ← record
+
+> R4 : 473 bets, +14.9%, +70.54u
+> Delta R6 : PL HOME floor 3.0 (+0.92u), CH HOME floor 5.0 (+2.00u), LL threshold revert 0.58
+> R6 = nouveau record absolu
 
 ### Very Good — Épines dorsales
 
-- `EL2` — 189b, +13.9% ROI, +26.29 profit. Colonne vertébrale, sélection 11.8%.
+- `EL2` — 189b, +13.9% ROI, +26.29u. Colonne vertébrale, sélection 11.8%.
   AWAY 84b +20.4% très solide, HOME 104b +9.7% contributeur régulier
-- `EL1` — 40b, +26.8% ROI, +10.71 profit. AWAY 20b +45.6%, HOME 19b +2.3% (EV window [0.15–0.25] tenu)
-- `L1` — 21b, +36.8% ROI, +7.73 profit. Meilleur ROI. HOME 19b +39.1% sur odds 2.0–2.99
+- `EL1` — 40b, +26.8% ROI, +10.71u. AWAY 20b +45.6%, HOME 19b +2.3%
+- `L1` — 21b, +36.8% ROI, +7.73u. Meilleur ROI absolu. HOME 19b +39.1%
+- `PL` — 19b, +37.6% ROI, +7.15u. ⬆ promu R6. DRAW pur window [5.0–5.50). 0 HOME (floor 3.0)
 
 ### Good — Contributeurs fiables
 
-- `PL` — 32b, +18.7% ROI, +5.98 profit. ↑ depuis Low (9b +19.3% R1).
-  DRAW 24b +29.8% window [5.0–5.50) — segment propre. HOME 8b = -14.6% (inchangé, accepté)
-- `J1` — 56b, +10.8% ROI, +6.05 profit. ⚠ AWAY 6b porte tout (+106% ROI). HOME 50b = -0.6%. Surveiller la dépendance AWAY
-- `LL` — 30b, +18.8% ROI, +5.63 profit. HOME exclusif, discipliné
-- `D2` — 15b, +26.6% ROI, +3.99 profit. AWAY 14b +7.4%, DRAW 1b +295% (outlier). Surveiller le volume
-- `CH` — 23b, +9.5% ROI, +2.17 profit. DRAW 16b +22.1% moteur principal.
-  HOME 2b -100% (soft cap 0.35 actif), AWAY 3b +18%
+- `LL` — 19b, +33.4% ROI, +6.34u. HOME 18b +21.9%, UNDER 1b +240% (outlier)
+- `J1` — 56b, +10.8% ROI, +6.05u. ⚠ AWAY 6b porte tout (+106%). HOME 50b = -0.6%
+- `D2` — 15b, +26.6% ROI, +3.99u. AWAY 14b +7.4%, DRAW 1b +295% (outlier)
+- `F2` — 38b, +5.3% ROI, +2.03u. HOME 36b +11.2% moteur
+- `CH` — 13b, +16.8% ROI, +2.18u. ⬆ promu R6. DRAW 8b +19.3%, AWAY 3b +18%, UNDER 2b +5%. 0 HOME (floor 5.0)
 
 ### Medium — Positifs mais fragiles
 
-- `F2` — 38b, +5.3% ROI, +2.03 profit. HOME 36b +11.2% réel moteur. DRAW/AWAY drainent (1b chacun = -100%)
-- `SP2` — 12b, +4.0% ROI, +0.48 profit. Niche : HOME fenêtre odds [1.50–1.95] uniquement (11b, +13.5%)
-- `BL1` — 7b, +31.4% ROI, +2.20 profit. ROI flatteur, N=7 non significatif statistiquement
+- `SP2` — 13b, +12.8% ROI, +1.66u. HOME 11b +13.5% fenêtre <2.0. ⬆ Good si volume augmente
 
 ### Low — Signaux faibles ou instables
 
-- `MX1` — 26b, +0.04% ROI, +0.01 profit. HOME only (AWAY suspendu). Signal <2.0 : 7b +39.3% (non significatif)
-- `SA` — 7b, -3.7% ROI. N trop faible, surveiller
-- `POR` — 4b, +8.0% ROI. N=4, bruit pur
+- `POR` — 4b, +8.0% ROI, +0.32u. N=4, bruit pur
+- `MX1` — 26b, +0.0% ROI, +0.01u. HOME only (AWAY suspendu). Break-even structurel
+- `SA` — 7b, -3.7% ROI, -0.26u. N trop faible
+- `BL1` — 3b, -1.0% ROI, -0.03u. N=3 non significatif
 
 ### Red — Exclus ou négatifs structurels
 
-- `ERD` — 5b, -14.4% ROI. Pas de sub-segment rentable identifié
-- `I2` — 0b, suspendu (threshold 0.75). Reprendre à N ≥ 50 bets HOME
+- `ERD` — 5b, -14.4% ROI, -0.72u. Pas de sub-segment rentable identifié
+- `I2` — 0b (floor 2.50 bloque tout HOME, aucun AWAY/DRAW candidat). Reprendre audit à ≥ 50 bets réels
 
-## Ligues déjà assez propres pour backtest
+---
 
-- `J1`
-- `MX1`
-- `POR`
-- `SA`
-- `I2`
-- `ERD`
-- `PL`
-- `BL1`
-- `SP2`
+## Patches validés
 
-## Vérification après sync
+- Suppression dépendance stricte `snapshotAt <= scheduledAt/cutoff`
+- `J1` débloquée après alignement odds/backtest
+- `D2` : assouplissement AWAY + durcissement HOME via floor d'odds
+- `PL` : DRAW window [5.0–5.50) validée — 19b +37.6%
+- `ERD` : lambda 1.75 — correction Poisson
+- `I2` (audit 2026-04-05, 5 itérations)
+  - lambda 1.56, per-league HA factor [1.02, 0.98]
+  - probability gate HOME ≥ 0.50 + EV soft cap 0.35
+  - floor HOME 2.50 → bloque la totalité des bets HOME (bucket [2.0–2.49] toxique à -54.6%)
+  - I2 ne génère que des candidats HOME — floor et gate produisent le même résultat (0 bets)
 
-- Contrôler les ratios `xG (done/fin)` dans `packages/db/reports/db-stats.txt`
-- Vérifier qu'il n'y a pas de nouvelle explosion de `noFixture`
-- Relancer un backtest uniquement après validation du rapport
+---
 
-## Reprise tuning backtest
+## Guide de référence
 
-- Garder la logique backtest alignée avec le `betting engine` :
-  - analyse des rejets sur tous les marchés, pas seulement `ONE_X_TWO`
-  - utiliser les `topRejectedCandidates` avec `result` et `profit` simulés
-
-### Pistes chirurgicales identifiées
-
-- `I2`
-  - `ONE_X_TWO|HOME` placé reste très toxique
-  - `AWAY` rejeté ne montre pas de poche rentable claire
-  - prochaine action : durcir fortement ou exclure temporairement `I2` sur `ONE_X_TWO|HOME`
-
-- `MX1`
-  - `ONE_X_TWO|AWAY` placé est toxique
-  - `ONE_X_TWO|HOME` rejeté par `ev_below_threshold` / `probability_too_low` montre une légère valeur
-  - prochaine action : durcir `AWAY`, assouplir légèrement `HOME`
-
-- `CH`
-  - `ONE_X_TWO|DRAW` fonctionne
-  - `ONE_X_TWO|HOME` et `ONE_X_TWO|AWAY` restent mauvais
-  - `OVER_UNDER|UNDER` est légèrement positif mais faible volume
-  - prochaine action : préserver `DRAW` et `UNDER`, durcir `HOME` et `AWAY`
-
-- `SP2`
-  - `ONE_X_TWO|HOME` placé est mauvais
-  - `HOME` rejeté par `odds_below_floor` est positif
-  - `DRAW` rejeté par `ev_below_threshold` mérite revue
-  - prochaine action : tester une fenêtre plus précise sur `HOME` court et revoir le cas `DRAW`
-
-### Patches déjà validés
-
-- suppression de la dépendance stricte à `snapshotAt <= scheduledAt/cutoff`
-- `J1` débloquée et profitable après alignement odds/backtest
-- `D2`
-  - assouplissement validé sur `ONE_X_TWO|AWAY` via `probability_too_low`
-  - durcissement validé sur `ONE_X_TWO|HOME` via floor d'odds
+- `docs/league-calibration-audit.md` — méthodologie complète d'audit par ligue

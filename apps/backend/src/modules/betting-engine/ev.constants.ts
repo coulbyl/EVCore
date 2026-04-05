@@ -139,11 +139,14 @@ export function getPickMinSelectionOdds(
     return new Decimal('5.00');
   }
 
-  // Championship 1X2 HOME picks in the 2.0-2.99 range were structurally
-  // unprofitable in the 2026-04-03 backtest (-23.4% ROI on 25 bets) despite
-  // strong simulated EV. Raise the floor to keep only higher-priced spots.
+  // Championship 1X2 HOME: systematic model overestimation of P(home) on longshots.
+  // Audit 2026-04-03: floor raised to 3.00 after [2.0-2.99] was -23.4% ROI (25b).
+  // Audit 2026-04-05: 2 placed bets at odds 3.55 and 4.80 — both losses (-2u).
+  // Model estimates P(home) ≥ 45% while market implies 21-28% — systematic bias.
+  // [3.0-3.5) 30b at -12% (all prob<lim), [3.5-5.0) 2 placed both lost (-2u).
+  // Floor raised to 5.00 → 0 CH HOME bets. CH becomes pure DRAW+AWAY+UNDER play.
   if (competitionCode === 'CH' && market === 'ONE_X_TWO' && pick === 'HOME') {
-    return Decimal.max(leagueFloor, new Decimal('3.00'));
+    return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
   // Bundesliga 1X2 HOME picks remained structurally unprofitable across floor
@@ -158,6 +161,15 @@ export function getPickMinSelectionOdds(
   // Audit 2026-04-04 (post-patch): remaining 7 bets had avg odds 2.72, still
   // -62.1% ROI. Pattern matches CH HOME and BL1 HOME — raise to 3.00 for parity.
   if (competitionCode === 'D2' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
+  // Audit 2026-04-05: PL HOME — 3 bets placed in [2.0-3.0), 1W/2L (-30.7% ROI, -0.92u).
+  // All rejected HOME candidates (225b) are negative (-9.6% ev_below_threshold,
+  // -6.6% prob<lim). Candidates in [3.0-3.5) are blocked by prob<lim (not odds).
+  // Floor 3.0 eliminates all current placed bets → PL becomes pure DRAW play at
+  // +37.6% ROI window [5.0, 5.50). No sub-segment above 3.0 passes prob gate.
+  if (competitionCode === 'PL' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
 
@@ -284,6 +296,10 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   PL: new Decimal('0.58'),
   SA: new Decimal('0.60'),
   BL1: new Decimal('0.55'),
+  // Audit 2026-04-05: 0.58 → 0.55 tested — 10 new bets, -5.94u net regression.
+  // Newly unlocked fixtures [0.55-0.58) generate false EV at [3.0-4.99] odds
+  // (4 new bets, 4 losses, -4u). Threshold 0.58 is the correct filter for LL.
+  // Reverted to 0.58.
   LL: new Decimal('0.58'),
   L1: new Decimal('0.58'),
   J1: new Decimal('0.55'),
