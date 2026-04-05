@@ -232,7 +232,14 @@ async function main() {
   w();
   w("  CODE  ACTIVE  FIXTURES  FINISHED  xG (done/fin)   ODDS   STATS");
   w("  ────────────────────────────────────────────────────────────────");
-  for (const r of leagueBreakdown) {
+  const leaguesSorted = [...leagueBreakdown].sort((a, b) => {
+    const finA = Number(a.finished);
+    const finB = Number(b.finished);
+    const pctA = finA > 0 ? Number(a.with_xg) / finA : 0;
+    const pctB = finB > 0 ? Number(b.with_xg) / finB : 0;
+    return pctB - pctA;
+  });
+  for (const r of leaguesSorted) {
     const total = Number(r.fixtures);
     const fin = Number(r.finished);
     const xg = Number(r.with_xg);

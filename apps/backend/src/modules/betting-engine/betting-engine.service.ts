@@ -45,6 +45,7 @@ import {
   KELLY_MAX_STAKE_PCT,
   AWAY_DISADVANTAGE_LAMBDA_FACTOR,
   HOME_ADVANTAGE_LAMBDA_FACTOR,
+  getLeagueHomeAwayFactors,
   MAX_SELECTION_ODDS,
   MIN_DRAW_DIRECTION_PROBABILITY,
   MIN_QUALITY_SCORE,
@@ -1623,9 +1624,11 @@ function deriveLambdas(
     LAMBDA_SHRINKAGE_FACTOR * ((awayXgFor * homeXgAgainst) / leagueAvg) +
     (1 - LAMBDA_SHRINKAGE_FACTOR) * anchor;
 
+  const [homeAdvFactor, awayDisadvFactor] =
+    getLeagueHomeAwayFactors(competitionCode);
   return {
-    home: clamp(rawHome * HOME_ADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
-    away: clamp(rawAway * AWAY_DISADVANTAGE_LAMBDA_FACTOR, 0.05, 5),
+    home: clamp(rawHome * homeAdvFactor, 0.05, 5),
+    away: clamp(rawAway * awayDisadvFactor, 0.05, 5),
   };
 }
 

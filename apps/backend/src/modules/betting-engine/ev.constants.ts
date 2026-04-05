@@ -44,6 +44,12 @@ const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
   // not — result is equally bad. Raising the threshold reduces volume while
   // preserving the rare high-probability AWAY that may carry real edge.
   'MX1|ONE_X_TWO|AWAY': new Decimal('0.50'),
+  // Audit 2026-04-05: I2 HOME — all picks land at avg odds 2.152 (2.0-2.49 bucket),
+  // 2/10 wins (-54.6% ROI). Raising the probability gate to 0.99 (option 2) produced
+  // identical results to the floor 2.50 (option 1) — I2 only generates HOME picks,
+  // AWAY/DRAW never surface. Floor 2.50 retained as the explicit, documented guard.
+  // Note: probability gate kept at 0.50 (set above) as an additional filter.
+  'I2|ONE_X_TWO|HOME': new Decimal('0.50'),
 };
 
 export function getPickDirectionProbabilityThreshold(
@@ -155,6 +161,14 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
 
+  // Audit 2026-04-05: I2 HOME — 10 bets at avg odds 2.152, all in [2.0-2.49] bucket,
+  // 2/10 wins (-54.6% ROI). Model overestimates P(home) for short-priced favorites
+  // even after HA factor correction. Floor 2.50 eliminates the entire toxic segment.
+  // Probability gate 0.50 (above) tested as alternative — same 0-bet outcome confirmed.
+  if (competitionCode === 'I2' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('2.50'));
+  }
+
   // Audit 2026-04-04: CH AWAY placed was -15.9% ROI across 18 bets. The only
   // marginal positive signal was at odds >= 3.5 (N=3). Align with CH HOME (3.00)
   // and require a slight premium to avoid the negative mid-priced AWAY bucket.
@@ -208,6 +222,11 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // and 18 ev_above_hard_cap DRAW cases (avg EV 1.49) in audit 2026-04-04.
   // Estimated from historical Eredivisie data; refine after stats sync.
   ERD: 1.75,
+  // I2: Serie B mean lambda computed from team_stats (2,197 records, April 2026).
+  // Without this entry the default (1.4) underestimates goal rate — same miscalibration
+  // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
+  // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
+  I2: 1.56,
 };
 
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
@@ -230,6 +249,29 @@ export function getLeagueMeanLambda(
 export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05;
 export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 
+// Per-league home advantage overrides.
+// Most leagues use the global 1.05 / 0.95 factors. Balanced divisions with
+// more parity or lower tactical asymmetry require a smaller correction.
+//
+// I2 (Serie B): 22-team league with high promotion/relegation turnover and
+// narrow squad investment gaps. Empirical home win rate ~44% vs ~50-52% in
+// Serie A. Audit 2026-04-05: modeled P(home) averaged 56% on 26 bets placed
+// while actual win rate was 27% — gap of 29pp. Reducing HA factor from 1.05
+// to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
+const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
+  // [homeAdvFactor, awayDisadvFactor]
+  I2: [1.02, 0.98],
+};
+
+export function getLeagueHomeAwayFactors(
+  competitionCode: string | null | undefined,
+): [number, number] {
+  if (competitionCode != null && competitionCode in LEAGUE_HOME_ADVANTAGE_MAP) {
+    return LEAGUE_HOME_ADVANTAGE_MAP[competitionCode]!;
+  }
+  return [HOME_ADVANTAGE_LAMBDA_FACTOR, AWAY_DISADVANTAGE_LAMBDA_FACTOR];
+}
+
 // MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
 // decision. Differentiated by market efficiency tier (audit finding: the flat
 // 0.60 threshold blocked 7 winning picks on secondary-market fixtures).
@@ -251,10 +293,11 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   D2: new Decimal('0.55'),
   F2: new Decimal('0.58'),
   SP2: new Decimal('0.62'),
-  // Raised 0.63 → 0.75 (audit 2026-04-04): -75% ROI on 9 bets, 1/9 wins.
-  // Calibration is catastrophically wrong for I2 HOME; N < 50 means no valid
-  // sub-segment exists. De facto suspension until ≥ 50 bets accumulate.
-  I2: new Decimal('0.75'),
+  // Lowered 0.75 → 0.60 (audit 2026-04-05): root cause of HOME miscalibration
+  // identified as HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05 being too high for Serie B
+  // (22-team balanced division, ~44% real home win rate). Per-league HA factor
+  // corrected to 1.02/0.98 via getLeagueHomeAwayFactors(). Threshold back to Tier B.
+  I2: new Decimal('0.60'),
   EL1: new Decimal('0.50'),
   EL2: new Decimal('0.45'),
   // Tier C — European competitions (decided in prior session)
@@ -327,6 +370,10 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04 (post-patch): D2 HOME remaining 7 bets at avg EV 0.360,
   // all lost or barely won. Over-calibration pattern confirmed — cap EV at 0.25.
   'D2|ONE_X_TWO|HOME': new Decimal('0.25'),
+  // Audit 2026-04-05: I2 HOME — EV >= 0.40 had 0% win rate (0/4 bets) even after
+  // lambda correction. Over-confidence pattern confirmed. Cap at 0.35 to eliminate
+  // the high-EV overconfident segment while preserving moderate-EV picks.
+  'I2|ONE_X_TWO|HOME': new Decimal('0.35'),
   // Audit 2026-04-04 (post-patch): PL HOME 19 bets at -13.4% ROI.
   // EV [0.20–0.40) → +9.6% on 9 bets. EV < 0.20 and EV >= 0.40 both negative.
   // Soft cap at 0.40 combined with per-pick EV floor at 0.20 creates the window.
