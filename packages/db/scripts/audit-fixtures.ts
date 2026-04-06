@@ -41,13 +41,6 @@ function pickLabel(
   return base;
 }
 
-function marketFullLabel(market: string): string {
-  if (market === "ONE_X_TWO") return "Résultat 1X2";
-  if (market === "OVER_UNDER") return "Plus/Moins 2.5";
-  if (market === "BTTS") return "Les deux équipes marquent";
-  return market;
-}
-
 function rejectionLabel(reason: string): string {
   if (reason === "ev_above_hard_cap") return "EV au-dessus du plafond dur";
   if (reason === "ev_below_threshold") return "EV insuffisant";
@@ -179,16 +172,24 @@ async function main(): Promise<void> {
           analyzedAt: true,
           bets: {
             select: {
+              id: true,
               market: true,
               pick: true,
               comboMarket: true,
               comboPick: true,
               ev: true,
+              qualityScore: true,
               probEstimated: true,
               status: true,
+              dailyCouponId: true,
+              dailyCoupon: {
+                select: { code: true, tier: true },
+              },
             },
-            orderBy: { ev: "desc" },
-            take: 1,
+            orderBy: [
+              { qualityScore: { sort: "desc", nulls: "last" } },
+              { ev: "desc" },
+            ],
           },
         },
         orderBy: { analyzedAt: "desc" },
@@ -234,7 +235,6 @@ async function main(): Promise<void> {
   for (const f of betFixtures) {
     selIdx++;
     const run = f.modelRuns[0]!;
-    const bet = run.bets[0] ?? null;
     const feat = run.features;
 
     const home = f.homeTeam.name;
@@ -266,35 +266,22 @@ async function main(): Promise<void> {
     const finalScore = run.finalScore ? Number(run.finalScore).toFixed(3) : "—";
     const modelThreshold = getModelScoreThreshold(comp).toFixed(2);
 
-    const betPickLabel = bet
-      ? pickLabel(bet.market, bet.pick, bet.comboMarket, bet.comboPick)
-      : "—";
-    const betMarketLabel = bet ? marketFullLabel(bet.market) : "—";
-    const betStatus = bet ? betStatusLabel(bet.status) : "—";
-    const betEv = bet ? fmtSigned(Number(bet.ev), 3) : "—";
-    const betProb = bet
-      ? `${(Number(bet.probEstimated) * 100).toFixed(1)}%`
-      : "—";
-
-    const scoreLine = score
+    const scoreStr = score
       ? htScore
-        ? `${betStatus} · ${score} (${htScore})`
-        : `${betStatus} · ${score}`
+        ? `${score} (${htScore})`
+        : score
       : "En cours / À jouer";
 
     w();
     w(`── Sélection ${selIdx} ─────────────────────────────────────────`);
-    w(`${home} vs ${away} · ${betMarketLabel} · ${betPickLabel}`);
-    w(`[${comp}]  ${scoreLine}`);
+    w(`${home} vs ${away}`);
+    w(`[${comp}]  ${scoreStr}`);
     w();
     w("Entrées modèle");
     w(`  Score det / final  : ${detScore} / ${finalScore}`);
     w(`  Seuil modèle       : ${modelThreshold}`);
     if (predictionSource !== null) {
       w(`  Source prédiction  : ${predictionSource}`);
-    }
-    if (bet) {
-      w(`  Prob. estimée      : ${betProb}`);
     }
     if (lambdaHome !== null) {
       w(`  λ V1               : ${lambdaHome.toFixed(2)}`);
@@ -316,8 +303,29 @@ async function main(): Promise<void> {
       if (shadowCong !== null)
         w(`    congestion    : ${shadowCong.toFixed(4)}`);
     }
-    if (bet) {
-      w(`  EV sélectionné     : ${betEv}`);
+
+    // ── Bets persistés dans le pool ──────────────────────────────────────────
+    if (run.bets.length > 0) {
+      w();
+      w(`Bets pool (${run.bets.length})`);
+      for (const bet of run.bets) {
+        const label = pickLabel(
+          bet.market,
+          bet.pick,
+          bet.comboMarket,
+          bet.comboPick,
+        ).padEnd(28);
+        const qs =
+          bet.qualityScore !== null ? Number(bet.qualityScore).toFixed(4) : "—";
+        const couponInfo = bet.dailyCoupon
+          ? `  Coupon: ${bet.dailyCoupon.code} [${bet.dailyCoupon.tier ?? "—"}]`
+          : bet.dailyCouponId
+            ? `  Coupon: ${bet.dailyCouponId.slice(0, 8)}…`
+            : "  Coupon: non assigné";
+        w(
+          `  ${label}  Prob.: ${(Number(bet.probEstimated) * 100).toFixed(1)}%  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}${couponInfo}`,
+        );
+      }
     }
 
     if (candidatePicks.length > 0) {
@@ -456,6 +464,80 @@ async function main(): Promise<void> {
       const comp = f.season.competition.code;
       w(
         `  [${comp}]  ${f.homeTeam.name} vs ${f.awayTeam.name}  status=${f.status}`,
+      );
+    }
+  }
+
+  // ── Coupons du jour ─────────────────────────────────────────────────────────
+
+  const coupons = await prisma.dailyCoupon.findMany({
+    where: { date: { gte: dayStart, lte: dayEnd } },
+    select: {
+      code: true,
+      tier: true,
+      status: true,
+      legCount: true,
+      couponLegs: {
+        select: {
+          bet: {
+            select: {
+              market: true,
+              pick: true,
+              comboMarket: true,
+              comboPick: true,
+              ev: true,
+              qualityScore: true,
+              status: true,
+              fixture: {
+                select: {
+                  homeTeam: { select: { name: true } },
+                  awayTeam: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  w();
+  w(
+    `── Coupons du jour (${coupons.length}) ──────────────────────────────────`,
+  );
+
+  if (coupons.length === 0) {
+    w("  Aucun coupon généré.");
+  }
+
+  for (const coupon of coupons) {
+    const tierLabel = coupon.tier ?? "—";
+    const legs = coupon.couponLegs.map((cl) => cl.bet);
+    const avgQs =
+      legs.length > 0
+        ? legs.reduce(
+            (s, b) =>
+              s + (b.qualityScore !== null ? Number(b.qualityScore) : 0),
+            0,
+          ) / legs.length
+        : 0;
+    w();
+    w(
+      `  ${coupon.code}  [${tierLabel}]  ${coupon.legCount} leg${coupon.legCount !== 1 ? "s" : ""}  statut=${coupon.status}  avgQuality=${avgQs.toFixed(4)}`,
+    );
+    for (const bet of legs) {
+      const label = pickLabel(
+        bet.market,
+        bet.pick,
+        bet.comboMarket,
+        bet.comboPick,
+      ).padEnd(28);
+      const qs =
+        bet.qualityScore !== null ? Number(bet.qualityScore).toFixed(4) : "—";
+      w(
+        `    ${bet.fixture.homeTeam.name} vs ${bet.fixture.awayTeam.name}  ${label}  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`,
       );
     }
   }

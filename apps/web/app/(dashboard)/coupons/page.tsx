@@ -7,7 +7,12 @@ import { Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { TableCard } from "@/components/table-card";
 import { CouponDetail, CouponDetailEmpty } from "@/components/coupon-detail";
-import { couponStatusBadgeClass, couponStatusLabel } from "@/helpers/coupon";
+import {
+  couponStatusBadgeClass,
+  couponStatusLabel,
+  couponTierBadgeClass,
+  couponTierLabel,
+} from "@/helpers/coupon";
 import { useCouponsByPeriod } from "@/hooks/use-coupons-by-period";
 
 function currentWeekInputRange(now = new Date()): { from: string; to: string } {
@@ -205,6 +210,7 @@ function CouponsPageContent() {
                     <thead className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-500">
                       <tr>
                         <th className="px-5 py-3.5 font-medium">Code</th>
+                        <th className="px-5 py-3.5 font-medium">Tier</th>
                         <th className="px-5 py-3.5 font-medium">Legs</th>
                         <th className="px-5 py-3.5 font-medium">Statut</th>
                         <th className="px-5 py-3.5 font-medium">EV</th>
@@ -231,6 +237,17 @@ function CouponsPageContent() {
                             >
                               {coupon.code}
                             </Link>
+                          </td>
+                          <td className="px-5 py-4.5">
+                            {coupon.tier ? (
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+                              >
+                                {couponTierLabel(coupon.tier)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
                           </td>
                           <td className="px-5 py-4.5 text-slate-500">
                             {coupon.legs}

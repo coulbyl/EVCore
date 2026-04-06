@@ -279,7 +279,7 @@ export function getLeagueHomeAwayFactors(
   competitionCode: string | null | undefined,
 ): [number, number] {
   if (competitionCode != null && competitionCode in LEAGUE_HOME_ADVANTAGE_MAP) {
-    return LEAGUE_HOME_ADVANTAGE_MAP[competitionCode]!;
+    return LEAGUE_HOME_ADVANTAGE_MAP[competitionCode];
   }
   return [HOME_ADVANTAGE_LAMBDA_FACTOR, AWAY_DISADVANTAGE_LAMBDA_FACTOR];
 }
@@ -422,6 +422,7 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
 };
 
+// eslint-disable-next-line max-params
 export function getPickEvFloor(
   competitionCode: string | null,
   market: string,

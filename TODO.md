@@ -7,20 +7,24 @@ Référence backtest actuel : **R6 — 468 bets, +15.7% ROI, +73.46u ← record*
 ### Priorité 1 — Promotions validées ✅
 
 #### `PL` → Very Good ✅ (R6)
+
 - Floor HOME 3.0 → 0 HOME, 19b DRAW pur +37.6% ROI +7.15u
 
 #### `CH` → Good ✅ (R6)
+
 - Floor HOME 5.0 → 0 HOME, 13b DRAW+AWAY+UNDER +16.8% ROI +2.18u
 
 ### Priorité 2 — Analysées, aucun levier actionnable
 
 #### `LL` → Very Good (bloqué)
+
 - 19b +33.4% ROI — signal propre, volume naturellement limité par marché efficient
 - Threshold 0.55 testé/rejeté (R5) : fixtures [0.55-0.58) → faux EV [3.0-4.99] (-4u net)
 - Probability gate HOME 0.45 : 58 rejetés à -9.7% ROI — correctement bloqués
 - **Conclusion** : LL est au maximum de ce que le modèle peut extraire. Aucun levier sans dégradation.
 
 #### `SP2` → Good
+
 - 13b +12.8% ROI — niche HOME <2.0 propre
 - Threshold 0.62 filtre 91% des fixtures (1022/1126) — signal rare mais propre
 - [2.00+] correctement bloqué (-33% à -100%). Aucune poche HOME [2.0-2.5) actionnable.
@@ -29,6 +33,7 @@ Référence backtest actuel : **R6 — 468 bets, +15.7% ROI, +73.46u ← record*
 ### Surveillance — Conclusions d'analyse
 
 #### `J1` — signal AWAY confirmé multi-saisons ✅
+
 - AWAY 6b, 4W/2L sur **3 saisons distinctes** (2023, 2024, 2025) — signal systématique, pas de chance
 - Sans biggest win (+2.42u) : encore +3.95u sur 5b (+79% ROI)
 - 244 AWAY rejetés par `prob<lim` : +0.9% ROI — trop faible pour assouplir le gate
@@ -37,6 +42,7 @@ Référence backtest actuel : **R6 — 468 bets, +15.7% ROI, +73.46u ← record*
   Pour Very Good, attendre que le volume AWAY augmente naturellement sur saisons futures.
 
 #### `MX1` — signal sub-2.0 insuffisant
+
 - 7b <2.0 à +39.3% ROI — N trop faible, variance pure
 - **Conclusion** : attendre N ≥ 20 bets dans ce bucket avant tout patch
 

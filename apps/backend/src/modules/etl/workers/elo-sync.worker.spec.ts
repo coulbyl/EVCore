@@ -31,6 +31,7 @@ describe('parseWorldEloTsv', () => {
 describe('EloSyncWorker', () => {
   const createMany = vi.fn().mockResolvedValue({ count: 2 });
   const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
+  // eslint-disable-next-line @typescript-eslint/require-await
   const transaction = vi.fn().mockImplementation(async (ops: unknown[]) => ops);
   const prisma = {
     client: {

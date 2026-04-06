@@ -27,10 +27,13 @@ export type AlertItem = {
   severity: "high" | "medium" | "low";
 };
 
+export type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF";
+
 export type CouponSnapshot = {
   id: string;
   code: string;
   status: "PENDING" | "WON" | "LOST";
+  tier: CouponTier | null;
   legs: number;
   ev: string;
   window: string;

@@ -29,12 +29,13 @@ Ce guide documente la méthode complète pour diagnostiquer et corriger la misca
 ```json
 {
   "competitionCode": "I2",
-  "totalBets": 0,          // ← zéro bets = signe d'exclusion totale
-  "aggregateRoi": "-0.42"  // ← ROI catastrophique si des bets ont été placés
+  "totalBets": 0, // ← zéro bets = signe d'exclusion totale
+  "aggregateRoi": "-0.42" // ← ROI catastrophique si des bets ont été placés
 }
 ```
 
 Cas à investiguer :
+
 - `totalBets = 0` malgré des fixtures analysées
 - ROI < -15% avec N >= 10 bets (statistiquement significatif)
 - Win rate réel << probabilité modélisée (gap > 10pp)
@@ -74,13 +75,13 @@ print(dict(reasons))
 
 ### Raisons possibles et leur signification
 
-| Reason | Signification | Action |
-|--------|---------------|--------|
-| `MISSING_TEAM_STATS` | Cold-start — équipe < 5 fixtures historiques | Normal en début de saison |
-| `MISSING_ODDS` | Pas de snapshot odds pour ce bookmaker | Vérifier ETL odds |
-| `BELOW_MODEL_SCORE_THRESHOLD` | Score déterministe < seuil ligue | Vérifier lambda, features |
-| `NO_VIABLE_PICK` | Score OK mais aucun pick passe les filtres | Vérifier EV, probability gates |
-| `BET_PLACED` | Bet sélectionné (chercher `result` et `profit`) | Analyser la performance |
+| Reason                        | Signification                                   | Action                         |
+| ----------------------------- | ----------------------------------------------- | ------------------------------ |
+| `MISSING_TEAM_STATS`          | Cold-start — équipe < 5 fixtures historiques    | Normal en début de saison      |
+| `MISSING_ODDS`                | Pas de snapshot odds pour ce bookmaker          | Vérifier ETL odds              |
+| `BELOW_MODEL_SCORE_THRESHOLD` | Score déterministe < seuil ligue                | Vérifier lambda, features      |
+| `NO_VIABLE_PICK`              | Score OK mais aucun pick passe les filtres      | Vérifier EV, probability gates |
+| `BET_PLACED`                  | Bet sélectionné (chercher `result` et `profit`) | Analyser la performance        |
 
 ### Si BELOW_MODEL_SCORE_THRESHOLD domine
 
@@ -255,7 +256,7 @@ Questions à répondre avant de toucher la config :
 ```typescript
 const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // ... ligues existantes ...
-  XX: 1.56,  // Liga XX: lambda calculé depuis team_stats (n=2197, avril 2026)
+  XX: 1.56, // Liga XX: lambda calculé depuis team_stats (n=2197, avril 2026)
 };
 ```
 
@@ -265,7 +266,7 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
   // Symmetric: homeAdv × awayDisadv ≈ 1
-  XX: [1.02, 0.98],  // Ligue paritaire ~44% home win rate
+  XX: [1.02, 0.98], // Ligue paritaire ~44% home win rate
 };
 ```
 
@@ -277,7 +278,7 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier B (divisions 2/3, marché moins efficient) : 0.50-0.62
   // Tier C (compétitions européennes) : 0.45-0.50
   // Tier D (international, sparse data) : 0.60
-  XX: new Decimal('0.58'),
+  XX: new Decimal("0.58"),
 };
 ```
 
@@ -298,18 +299,18 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
 
 ```typescript
 // Odds minimum par pick (si segment mid-range est toxique)
-if (competitionCode === 'XX' && market === 'ONE_X_TWO' && pick === 'HOME') {
-  return Decimal.max(leagueFloor, new Decimal('3.00'));
+if (competitionCode === "XX" && market === "ONE_X_TWO" && pick === "HOME") {
+  return Decimal.max(leagueFloor, new Decimal("3.00"));
 }
 ```
 
 #### Floor vs gate : quand utiliser quoi
 
-| Situation | Outil | Raison |
-|-----------|-------|--------|
-| Segment de cotes toxique (ex: 2.0-2.49) | **Floor odds** | Précis, documenté, ne bloque que le sous-segment |
-| Pick trop confiant sur toute la plage de cotes | **Probability gate** | Bloque quelle que soit la cote |
-| 100% des bets sur un seul pick | **Floor ou gate = même effet** | Tester les deux est inutile si AWAY/DRAW ne génèrent jamais de candidats |
+| Situation                                      | Outil                          | Raison                                                                   |
+| ---------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------ |
+| Segment de cotes toxique (ex: 2.0-2.49)        | **Floor odds**                 | Précis, documenté, ne bloque que le sous-segment                         |
+| Pick trop confiant sur toute la plage de cotes | **Probability gate**           | Bloque quelle que soit la cote                                           |
+| 100% des bets sur un seul pick                 | **Floor ou gate = même effet** | Tester les deux est inutile si AWAY/DRAW ne génèrent jamais de candidats |
 
 > Avant de choisir, vérifier dans le ndjson si les picks alternatifs ont déjà des `topRejectedCandidates` — si non, la ligue ne génère que ce pick et les deux outils auront le même résultat (0 bets).
 
@@ -319,10 +320,11 @@ Si `getLeagueHomeAwayFactors()` a été ajouté dans `ev.constants.ts`, s'assure
 
 ```typescript
 // Import
-import { getLeagueHomeAwayFactors } from './ev.constants';
+import { getLeagueHomeAwayFactors } from "./ev.constants";
 
 // Dans deriveLambdas()
-const [homeAdvFactor, awayDisadvFactor] = getLeagueHomeAwayFactors(competitionCode);
+const [homeAdvFactor, awayDisadvFactor] =
+  getLeagueHomeAwayFactors(competitionCode);
 return {
   home: clamp(rawHome * homeAdvFactor, 0.05, 5),
   away: clamp(rawAway * awayDisadvFactor, 0.05, 5),
@@ -341,13 +343,13 @@ return {
 
 ### Interpréter les résultats
 
-| Signal | Interprétation |
-|--------|----------------|
-| Bets = 0 encore | Threshold trop haut **ou** lambda toujours sous-estimé |
-| ROI s'améliore mais encore négatif | Cause partiellement corrigée, chercher filtre additionnel |
-| Win rate réel ≈ P(home) modélisée | Calibration réussie |
-| Volume de bets explose mais ROI chute | Threshold trop bas — remonter |
-| ROI positif mais N < 20 | Ne pas conclure, attendre plus de données live |
+| Signal                                | Interprétation                                            |
+| ------------------------------------- | --------------------------------------------------------- |
+| Bets = 0 encore                       | Threshold trop haut **ou** lambda toujours sous-estimé    |
+| ROI s'améliore mais encore négatif    | Cause partiellement corrigée, chercher filtre additionnel |
+| Win rate réel ≈ P(home) modélisée     | Calibration réussie                                       |
+| Volume de bets explose mais ROI chute | Threshold trop bas — remonter                             |
+| ROI positif mais N < 20               | Ne pas conclure, attendre plus de données live            |
 
 ### Référence des résultats de calibration
 
@@ -384,6 +386,7 @@ Toute modification ne doit pas faire chuter le ROI global en dessous de +8% ni l
 **Fix final :** floor HOME à 2.50 → 0 bets, profit = 0. Testé aussi via gate 0.99 (option 2) : **résultat identique** — I2 ne génère que des picks HOME, suspendre HOME = 0 bets dans les deux cas.
 
 **Config finale :**
+
 - `I2: 1.56` dans `LEAGUE_MEAN_LAMBDA_MAP`
 - `I2: [1.02, 0.98]` dans `LEAGUE_HOME_ADVANTAGE_MAP`
 - `I2: 0.60` MODEL_SCORE_THRESHOLD

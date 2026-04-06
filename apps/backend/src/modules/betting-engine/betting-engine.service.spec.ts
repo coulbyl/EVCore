@@ -521,6 +521,7 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue(null),
           findMany: vi.fn().mockResolvedValue([]),
@@ -609,6 +610,7 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue({
             snapshotAt: new Date('2023-01-01T00:00:00.000Z'),
@@ -682,6 +684,7 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue(null),
           findMany: vi.fn().mockResolvedValue([]),
@@ -774,6 +777,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 
@@ -901,6 +905,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 
@@ -1002,6 +1007,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 
@@ -1097,6 +1103,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 
@@ -1231,7 +1238,7 @@ describe('BettingEngineService', () => {
     expect(result).toBeNull();
   });
 
-  it('selectBestViablePickForBacktest rejects Championship 1X2 HOME picks below 3.00', () => {
+  it('selectBestViablePickForBacktest rejects Championship 1X2 HOME picks below 5.00', () => {
     const service = new BettingEngineService(
       {} as unknown as PrismaService,
       makeConfig(),
@@ -1259,7 +1266,7 @@ describe('BettingEngineService', () => {
       odds: {
         bookmaker: 'Pinnacle',
         snapshotAt: new Date(),
-        homeOdds: new Decimal('2.50'),
+        homeOdds: new Decimal('4.80'),
         drawOdds: new Decimal('3.50'),
         awayOdds: new Decimal('4.00'),
         overOdds: null,
@@ -1332,6 +1339,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 
@@ -1447,6 +1455,7 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
+        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
       },
     } as unknown as PrismaService;
 

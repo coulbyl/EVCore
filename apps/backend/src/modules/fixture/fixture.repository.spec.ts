@@ -3,10 +3,11 @@ import { FixtureRepository } from './fixture.repository';
 import type { PrismaService } from '@/prisma.service';
 
 describe('FixtureRepository scheduled fixture queries', () => {
+  const findMany = vi.fn().mockResolvedValue([]);
   const prisma = {
     client: {
       fixture: {
-        findMany: vi.fn().mockResolvedValue([]),
+        findMany,
       },
     },
   } as unknown as PrismaService;
@@ -57,7 +58,7 @@ describe('FixtureRepository scheduled fixture queries', () => {
   });
 
   it('matches fixtures by team names even when accents differ', async () => {
-    prisma.client.fixture.findMany.mockResolvedValueOnce([
+    findMany.mockResolvedValueOnce([
       {
         id: 'fixture-id',
         scheduledAt: new Date('2024-03-08T17:30:00.000Z'),
@@ -85,7 +86,7 @@ describe('FixtureRepository scheduled fixture queries', () => {
   });
 
   it('matches fixtures by shortName when the full team name differs', async () => {
-    prisma.client.fixture.findMany.mockResolvedValueOnce([
+    findMany.mockResolvedValueOnce([
       {
         id: 'fixture-id',
         scheduledAt: new Date('2024-11-09T20:00:00.000Z'),
@@ -113,7 +114,7 @@ describe('FixtureRepository scheduled fixture queries', () => {
   });
 
   it('matches fixtures when one side only differs by a club prefix', async () => {
-    prisma.client.fixture.findMany.mockResolvedValueOnce([
+    findMany.mockResolvedValueOnce([
       {
         id: 'fixture-id',
         scheduledAt: new Date('2025-03-15T19:00:00.000Z'),

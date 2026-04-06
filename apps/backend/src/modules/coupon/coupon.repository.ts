@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, CouponStatus, Market, Prisma } from '@evcore/db';
+import {
+  BetStatus,
+  CouponStatus,
+  CouponTier,
+  Market,
+  Prisma,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
@@ -15,7 +21,23 @@ type BetCreateData = {
   probability: Decimal;
   odds: Decimal;
   ev: Decimal;
+  qualityScore: Decimal;
   stakePct: Decimal;
+};
+
+export type EligibleBet = {
+  id: string;
+  fixtureId: string;
+  market: string;
+  pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
+  probEstimated: unknown;
+  oddsSnapshot: unknown;
+  ev: unknown;
+  qualityScore: unknown;
+  stakePct: unknown;
+  modelRunId: string;
 };
 
 const couponBetSelect = {
@@ -57,10 +79,83 @@ export class CouponRepository {
     date: Date;
     status: CouponStatus;
     legCount: number;
+    tier?: CouponTier;
   }): Promise<{ id: string; code: string }> {
     return this.prisma.client.dailyCoupon.create({
       data,
       select: { id: true, code: true },
+    });
+  }
+
+  async findEligibleBetsForCoupon(
+    fixtureIds: string[],
+  ): Promise<EligibleBet[]> {
+    if (fixtureIds.length === 0) return [];
+    return this.prisma.client.bet.findMany({
+      where: {
+        fixtureId: { in: fixtureIds },
+        status: BetStatus.PENDING,
+        couponLegs: {
+          none: {
+            coupon: { status: CouponStatus.PENDING },
+          },
+        },
+      },
+      select: {
+        id: true,
+        fixtureId: true,
+        market: true,
+        pick: true,
+        comboMarket: true,
+        comboPick: true,
+        probEstimated: true,
+        oddsSnapshot: true,
+        ev: true,
+        qualityScore: true,
+        stakePct: true,
+        modelRunId: true,
+      },
+      orderBy: [
+        { qualityScore: { sort: 'desc', nulls: 'last' } },
+        { ev: 'desc' },
+      ],
+    });
+  }
+
+  async createCouponAndLinkBets(input: {
+    code: string;
+    date: Date;
+    tier: CouponTier;
+    betIds: string[];
+  }): Promise<{ id: string; code: string }> {
+    const { code, date, tier, betIds } = input;
+
+    return this.prisma.client.$transaction(async (tx) => {
+      const coupon = await tx.dailyCoupon.create({
+        data: {
+          code,
+          date,
+          status: CouponStatus.PENDING,
+          legCount: betIds.length,
+          tier,
+        },
+        select: { id: true, code: true },
+      });
+
+      if (betIds.length > 0) {
+        const result = await tx.couponLeg.createMany({
+          data: betIds.map((betId) => ({ couponId: coupon.id, betId })),
+          skipDuplicates: true,
+        });
+
+        if (result.count !== betIds.length) {
+          throw new Error(
+            `Failed linking coupon bets atomically: expected ${betIds.length}, linked ${result.count}`,
+          );
+        }
+      }
+
+      return coupon;
     });
   }
 
@@ -76,9 +171,10 @@ export class CouponRepository {
     code: string;
     date: Date;
     legCount: number;
+    tier?: CouponTier;
     bets: BetCreateData[];
   }): Promise<{ id: string; code: string; betIds: string[] }> {
-    const { code, date, legCount, bets } = input;
+    const { code, date, legCount, tier, bets } = input;
 
     return this.prisma.client.$transaction(async (tx) => {
       const coupon = await tx.dailyCoupon.create({
@@ -87,6 +183,7 @@ export class CouponRepository {
           date,
           status: CouponStatus.PENDING,
           legCount,
+          tier,
         },
         select: { id: true, code: true },
       });
@@ -105,6 +202,7 @@ export class CouponRepository {
             probEstimated: toPrismaDecimal(bet.probability, 4),
             oddsSnapshot: toPrismaDecimal(bet.odds, 3),
             ev: toPrismaDecimal(bet.ev, 4),
+            qualityScore: toPrismaDecimal(bet.qualityScore, 4),
             stakePct: toPrismaDecimal(bet.stakePct, 4),
           },
           select: { id: true },
@@ -257,6 +355,7 @@ export class CouponRepository {
     code: string;
     date: Date;
     status: CouponStatus;
+    tier: CouponTier | null;
     legCount: number;
     createdAt: Date;
     bets: {
@@ -292,6 +391,7 @@ export class CouponRepository {
         code: true,
         date: true,
         status: true,
+        tier: true,
         legCount: true,
         createdAt: true,
         couponLegs: {
@@ -311,6 +411,7 @@ export class CouponRepository {
       code: coupon.code,
       date: coupon.date,
       status: coupon.status,
+      tier: coupon.tier,
       legCount: coupon.legCount,
       createdAt: coupon.createdAt,
       bets: coupon.couponLegs.map((leg) => leg.bet),
@@ -336,6 +437,7 @@ export class CouponRepository {
       code: string;
       date: Date;
       status: CouponStatus;
+      tier: CouponTier | null;
       bets: {
         id: string;
         market: string;
@@ -443,6 +545,7 @@ export class CouponRepository {
         code: true,
         date: true,
         status: true,
+        tier: true,
         couponLegs: {
           select: {
             bet: {
@@ -458,6 +561,7 @@ export class CouponRepository {
       code: coupon.code,
       date: coupon.date,
       status: coupon.status,
+      tier: coupon.tier,
       bets: coupon.couponLegs.map((leg) => leg.bet),
     }));
   }

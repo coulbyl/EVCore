@@ -43,8 +43,6 @@ import {
   getModelScoreThreshold,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
-  AWAY_DISADVANTAGE_LAMBDA_FACTOR,
-  HOME_ADVANTAGE_LAMBDA_FACTOR,
   getLeagueHomeAwayFactors,
   MAX_SELECTION_ODDS,
   MIN_DRAW_DIRECTION_PROBABILITY,
@@ -57,7 +55,6 @@ import {
   ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
   LAMBDA_SHRINKAGE_FACTOR,
   getLeagueMeanLambda,
-  getLeagueMinSelectionOdds,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
   getPickEvSoftCap,
@@ -613,6 +610,33 @@ export class BettingEngineService {
         stakePct,
         qualityScore: valueBet.qualityScore,
       };
+
+      await this.prisma.client.bet.upsert({
+        where: { fixtureId_pickKey: { fixtureId, pickKey } },
+        create: {
+          modelRunId: modelRun.id,
+          fixtureId,
+          market: valueBet.market,
+          pick: valueBet.pick,
+          pickKey,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
+        },
+        update: {
+          modelRunId: modelRun.id,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
+          status: BetStatus.PENDING,
+        },
+      });
     }
 
     return {
@@ -837,6 +861,33 @@ export class BettingEngineService {
         stakePct,
         qualityScore: valueBet.qualityScore,
       };
+
+      await this.prisma.client.bet.upsert({
+        where: { fixtureId_pickKey: { fixtureId, pickKey } },
+        create: {
+          modelRunId: modelRun.id,
+          fixtureId,
+          market: valueBet.market,
+          pick: valueBet.pick,
+          pickKey,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
+        },
+        update: {
+          modelRunId: modelRun.id,
+          probEstimated: toPrismaDecimal(valueBet.probability, 4),
+          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+          ev: toPrismaDecimal(valueBet.ev, 4),
+          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+          stakePct: toPrismaDecimal(stakePct, 4),
+          status: BetStatus.PENDING,
+        },
+      });
     }
 
     return {
@@ -874,6 +925,35 @@ export class BettingEngineService {
       snapshotAt: latest.snapshotAt,
       ratings: new Map(rows.map((row) => [row.teamName, row.rating])),
     };
+  }
+
+  async analyzeByDate(date: string): Promise<{
+    date: string;
+    analyzed: number;
+    skipped: number;
+  }> {
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: start, lte: end },
+        status: FixtureStatus.SCHEDULED,
+      },
+      select: { id: true },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    let analyzed = 0;
+    let skipped = 0;
+
+    for (const fixture of fixtures) {
+      const result = await this.analyzeFixture(fixture.id);
+      if (result.status === 'analyzed') analyzed++;
+      else skipped++;
+    }
+
+    return { date, analyzed, skipped };
   }
 
   async analyzeSeason(seasonId: string): Promise<{
@@ -1208,7 +1288,7 @@ export class BettingEngineService {
     return {
       snapshot: {
         bookmaker: 'MarketBest',
-        snapshotAt: latestRows[0]!.snapshotAt,
+        snapshotAt: latestRows[0].snapshotAt,
         homeOdds: new Decimal(bestHome.homeOdds!.toString()),
         drawOdds: new Decimal(bestDraw.drawOdds!.toString()),
         awayOdds: new Decimal(bestAway.awayOdds!.toString()),
@@ -1276,6 +1356,7 @@ export class BettingEngineService {
       .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
   }
 
+  // eslint-disable-next-line max-params
   private listEvaluatedOneXTwoPicks(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,

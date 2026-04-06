@@ -141,6 +141,7 @@ function runCurlDownload(): Promise<string> {
       ],
       (error, stdout) => {
         if (error) {
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
           reject(error);
           return;
         }
