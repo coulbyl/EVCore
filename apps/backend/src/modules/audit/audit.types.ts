@@ -1,3 +1,5 @@
+import type { PredictionSource } from '@modules/betting-engine/betting-engine.types';
+
 export type AuditDiagnostics = {
   lambdaFloorHit: boolean;
   lineMovement: number | null;
@@ -42,6 +44,7 @@ export type AuditFixtureRow = {
     betStatus: 'WON' | 'LOST' | 'PENDING' | null;
     probEstimated: string | null;
     ev: string | null;
+    predictionSource: PredictionSource | null;
     lambdaHome: string | null;
     lambdaAway: string | null;
     expectedTotalGoals: string | null;

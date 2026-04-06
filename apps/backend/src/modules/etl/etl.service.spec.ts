@@ -12,6 +12,8 @@ import type { Queue } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
+import type { EloSyncJobData } from './workers/elo-sync.worker';
+import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
@@ -46,6 +48,7 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
+  apiSeasonOverride: number | null;
 };
 
 const TEST_COMPETITIONS: CompetitionRow[] = [
@@ -56,6 +59,7 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'England',
     csvDivisionCode: 'E0',
     seasonStartMonth: null,
+    apiSeasonOverride: null,
   },
   {
     leagueId: 135,
@@ -64,6 +68,7 @@ const TEST_COMPETITIONS: CompetitionRow[] = [
     country: 'Italy',
     csvDivisionCode: 'I1',
     seasonStartMonth: null,
+    apiSeasonOverride: null,
   },
 ];
 
@@ -73,7 +78,9 @@ const totalStatsJobs = TEST_COMPETITIONS.length;
 describe('EtlService', () => {
   const leagueSyncQueue = makeQueue<LeagueSyncJobData>();
   const pendingBetsSettlementQueue = makeQueue<PendingBetsSettlementJobData>();
+  const staleScheduledSyncQueue = makeQueue<StaleScheduledSyncJobData>();
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
+  const eloSyncQueue = makeQueue<EloSyncJobData>();
   const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
   const prismaMockRaw = {
@@ -161,7 +168,9 @@ describe('EtlService', () => {
   const service = new EtlService(
     leagueSyncQueue as Queue<LeagueSyncJobData>,
     pendingBetsSettlementQueue as Queue<PendingBetsSettlementJobData>,
+    staleScheduledSyncQueue as Queue<StaleScheduledSyncJobData>,
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
+    eloSyncQueue as Queue<EloSyncJobData>,
     oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     configMock,
@@ -244,6 +253,16 @@ describe('EtlService', () => {
     );
   });
 
+  it('dispatches one stale scheduled sync job', async () => {
+    await service.triggerStaleScheduledSync();
+
+    expect(staleScheduledSyncQueue.add).toHaveBeenCalledWith(
+      'stale-scheduled-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  });
+
   it('dispatches stats jobs only for the current season', async () => {
     await service.triggerStatsSync();
 
@@ -265,6 +284,16 @@ describe('EtlService', () => {
         },
       );
     });
+  });
+
+  it('dispatches the Elo sync job', async () => {
+    await service.triggerEloSync();
+
+    expect(eloSyncQueue.add).toHaveBeenCalledWith(
+      'elo-sync',
+      {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
   });
 
   it('dispatches injuries jobs only for the current season', async () => {
@@ -334,6 +363,7 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
+      apiSeasonOverride: null,
     });
 
     await service.triggerStatsSyncForLeague('LL');
@@ -351,6 +381,61 @@ describe('EtlService', () => {
     );
   });
 
+  it('dispatches explicit historical stats backfill jobs for requested seasons', async () => {
+    prismaMockRaw.client.competition.findFirst.mockResolvedValue({
+      leagueId: 98,
+      code: 'J1',
+      name: 'J1 League',
+      country: 'Japan',
+      csvDivisionCode: 'JPN',
+      seasonStartMonth: 1,
+      apiSeasonOverride: null,
+    });
+
+    await service.triggerStatsSyncForSeasons('J1', [2023, 2024, 2025]);
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledTimes(3);
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      1,
+      'stats-sync-J1-2023',
+      {
+        syncType: 'stats',
+        season: 2023,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
+    );
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      2,
+      'stats-sync-J1-2024',
+      {
+        syncType: 'stats',
+        season: 2024,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS,
+      },
+    );
+    expect(leagueSyncQueue.add).toHaveBeenNthCalledWith(
+      3,
+      'stats-sync-J1-2025',
+      {
+        syncType: 'stats',
+        season: 2025,
+        competitionCode: 'J1',
+        leagueId: 98,
+      },
+      {
+        ...BULLMQ_DEFAULT_JOB_OPTIONS,
+        delay: ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS * 2,
+      },
+    );
+  });
+
   it('dispatches one fixtures backfill job for current season on manual per-league sync', async () => {
     prismaMockRaw.client.competition.findFirst.mockResolvedValue({
       leagueId: 140,
@@ -359,6 +444,7 @@ describe('EtlService', () => {
       country: 'Spain',
       csvDivisionCode: 'SP1',
       seasonStartMonth: null,
+      apiSeasonOverride: null,
     });
 
     await service.triggerFixturesSyncForLeague('LL');

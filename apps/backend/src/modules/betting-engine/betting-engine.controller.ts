@@ -10,6 +10,11 @@ export class BettingEngineController {
     return this.bettingEngineService.analyzeFixture(fixtureId);
   }
 
+  @Post('analyze/date/:date')
+  analyzeByDate(@Param('date') date: string) {
+    return this.bettingEngineService.analyzeByDate(date);
+  }
+
   @Post('analyze/season/:seasonId')
   analyzeSeason(@Param('seasonId') seasonId: string) {
     return this.bettingEngineService.analyzeSeason(seasonId);

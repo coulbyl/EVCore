@@ -6,6 +6,11 @@ import type { NotificationService } from '../../notification/notification.servic
 import type { PrismaService } from '@/prisma.service';
 import type { Job } from 'bullmq';
 import type { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import { execFile } from 'node:child_process';
+
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn(),
+}));
 
 // Minimal valid statistics response for two teams
 function buildStatisticsResponse(homeXg: string | null, awayXg: string | null) {
@@ -47,6 +52,7 @@ const PL_COMPETITION_ROW = {
 };
 
 describe('StatsSyncWorker', () => {
+  const execFileMock = vi.mocked(execFile);
   const fixtureService = {
     upsertCompetition: vi.fn().mockResolvedValue({ id: 'competition-id' }),
     upsertSeason: vi.fn().mockResolvedValue({ id: 'season-id' }),
@@ -113,6 +119,7 @@ describe('StatsSyncWorker', () => {
     config.getOrThrow.mockReturnValue('test-api-key');
     config.get.mockReturnValue(undefined);
     prisma.client.competition.findFirst.mockResolvedValue(PL_COMPETITION_ROW);
+    execFileMock.mockReset();
   });
 
   it('skips fixtures when API returns non-ok status', async () => {
@@ -120,9 +127,14 @@ describe('StatsSyncWorker', () => {
       { externalId: 12345 },
     ]);
 
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: false, status: 429, json: vi.fn() });
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(null, '{"errors":{"rate":"limited"}}\n__EVCORE_HTTP_CODE__:429');
+      return {} as never;
+    });
 
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
@@ -137,9 +149,16 @@ describe('StatsSyncWorker', () => {
       { externalId: 99999 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildStatisticsResponse('0.76', '1.23')),
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify(buildStatisticsResponse('0.76', '1.23'))}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
     });
 
     await worker.process({
@@ -156,20 +175,27 @@ describe('StatsSyncWorker', () => {
       { externalId: 11111 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildStatisticsResponse(null, null)),
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify(buildStatisticsResponse(null, null))}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
     });
 
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    // Proxy: shots_on_goal × 0.35 — home: 5×0.35=1.75, away: 3×0.35≈1.05
+    // Proxy: shots_on_goal × 0.40 — home: 5×0.40=2.00, away: 3×0.40=1.20
     expect(fixtureService.updateXg).toHaveBeenCalledWith(
       11111,
-      expect.closeTo(1.75),
-      expect.closeTo(1.05),
+      expect.closeTo(2.0),
+      expect.closeTo(1.2),
     );
     expect(fixtureService.markXgUnavailable).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
@@ -197,30 +223,35 @@ describe('StatsSyncWorker', () => {
       ],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(responseWithoutXg),
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify(responseWithoutXg)}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
     });
 
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    // Proxy: shots_on_goal × 0.35
-    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.7, 1.75);
+    // Proxy: shots_on_goal × 0.40 — home: 2×0.40=0.80, away: 5×0.40=2.00
+    expect(fixtureService.updateXg).toHaveBeenCalledWith(44444, 0.8, 2.0);
     expect(rollingStatsService.refreshSeason).toHaveBeenCalledWith('season-id');
   });
 
   it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([]);
 
-    global.fetch = vi.fn();
-
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
@@ -231,15 +262,13 @@ describe('StatsSyncWorker', () => {
       isActive: false,
     });
 
-    global.fetch = vi.fn();
-
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(fixtureService.findFinishedWithoutXg).not.toHaveBeenCalled();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 
@@ -260,9 +289,16 @@ describe('StatsSyncWorker', () => {
       ],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(singleTeamResponse),
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify(singleTeamResponse)}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
     });
 
     await worker.process({
@@ -291,9 +327,16 @@ describe('StatsSyncWorker', () => {
       ],
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(singleTeamResponse),
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify(singleTeamResponse)}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
     });
 
     await worker.process({

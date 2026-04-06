@@ -1,3 +1,9 @@
+export type PredictionSource =
+  | "POISSON_MAIN"
+  | "FRI_ELO_REAL"
+  | "FRI_ELO_INTERNAL"
+  | "ODDS_DEVIG";
+
 export type AuditDiagnostics = {
   lambdaFloorHit: boolean;
   lineMovement: number | null;
@@ -42,6 +48,7 @@ export type AuditFixtureRow = {
     betStatus: "WON" | "LOST" | "PENDING" | null;
     probEstimated: string | null;
     ev: string | null;
+    predictionSource: PredictionSource | null;
     lambdaHome: string | null;
     lambdaAway: string | null;
     expectedTotalGoals: string | null;

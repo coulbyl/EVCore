@@ -75,6 +75,11 @@ type FindByDateAndTeamsInput = {
   competitionCode?: string;
 };
 
+type FindCandidatesByDateInput = {
+  date: Date;
+  competitionCode?: string;
+};
+
 type UpdateScoresInput = {
   externalId: number;
   homeScore: number;
@@ -146,6 +151,10 @@ export class FixtureService {
 
   findByDateAndTeams(input: FindByDateAndTeamsInput) {
     return this.fixtureRepository.findByDateAndTeams(input);
+  }
+
+  findCandidatesByDate(input: FindCandidatesByDateInput) {
+    return this.fixtureRepository.findCandidatesByDate(input);
   }
 
   async updateScores(input: UpdateScoresInput): Promise<void> {
@@ -223,6 +232,13 @@ export class FixtureService {
     }[]
   > {
     return this.fixtureRepository.findPendingSettlementFixtures(now);
+  }
+
+  findPastScheduledFixtures(
+    now: Date,
+    lookbackDays: number,
+  ): Promise<{ id: string; externalId: number; scheduledAt: Date }[]> {
+    return this.fixtureRepository.findPastScheduledFixtures(now, lookbackDays);
   }
 
   async upsertOddsSnapshot(

@@ -86,6 +86,7 @@ export class AuditService {
                   ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`
                   : null,
                 ev: bet ? formatSigned(toNumber(bet.ev), 3) : null,
+                predictionSource: featureDiag.predictionSource,
                 lambdaHome: featureDiag.lambdaHome,
                 lambdaAway: featureDiag.lambdaAway,
                 expectedTotalGoals: featureDiag.expectedTotalGoals,

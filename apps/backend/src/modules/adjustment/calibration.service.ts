@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus } from '@evcore/db';
+import { BetStatus, Market } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import {
   CALIBRATION_TRIGGER_THRESHOLD,
   MIN_BET_COUNT,
 } from './adjustment.constants';
+
+const CALIBRATION_MARKETS = [
+  Market.ONE_X_TWO,
+  Market.OVER_UNDER,
+  Market.BTTS,
+] as const;
 
 export type CalibrationInput = {
   probEstimated: Decimal.Value;
@@ -31,12 +37,28 @@ export class CalibrationService {
   /**
    * Fetches settled bets for a given market and computes calibration metrics.
    * Returns null if not enough bets have been settled.
+   *
+   * @param excludeLambdaFloorHit - when true, bets from model runs where
+   *   lambdaFloorHit=true are excluded. These fixtures have artificially floored
+   *   lambdas that distort probability estimates and should not bias calibration.
    */
-  async computeForMarket(market: string): Promise<CalibrationResult | null> {
+  async computeForMarket(
+    market: string,
+    options: { excludeLambdaFloorHit?: boolean } = {},
+  ): Promise<CalibrationResult | null> {
     const bets = await this.prisma.client.bet.findMany({
       where: {
         market: market as never,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
+        ...(options.excludeLambdaFloorHit
+          ? {
+              NOT: {
+                modelRun: {
+                  features: { path: ['lambdaFloorHit'], equals: true },
+                },
+              },
+            }
+          : {}),
       },
       select: { probEstimated: true, status: true },
     });
@@ -49,6 +71,30 @@ export class CalibrationService {
     }));
 
     return this.compute(inputs);
+  }
+
+  /**
+   * Computes calibration metrics for each tracked market type independently.
+   * Markets with fewer than MIN_BET_COUNT settled bets return null.
+   * lambdaFloorHit bets are excluded from all market computations to avoid
+   * polluting calibration with artificially floored lambda fixtures.
+   */
+  async computeAllMarkets(): Promise<
+    Partial<
+      Record<(typeof CALIBRATION_MARKETS)[number], CalibrationResult | null>
+    >
+  > {
+    const results: Partial<
+      Record<(typeof CALIBRATION_MARKETS)[number], CalibrationResult | null>
+    > = {};
+
+    for (const market of CALIBRATION_MARKETS) {
+      results[market] = await this.computeForMarket(market, {
+        excludeLambdaFloorHit: true,
+      });
+    }
+
+    return results;
   }
 
   /**

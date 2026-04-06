@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import { InjuriesSyncWorker } from './injuries-sync.worker';
+
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn(),
+}));
 
 function buildInjuriesResponse(fixtureId: number) {
   return {
@@ -29,6 +34,17 @@ function buildInjuriesResponse(fixtureId: number) {
       },
     ],
   };
+}
+
+function buildCurlStdout(body: unknown, status = 200) {
+  return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
+}
+
+function mockCurlStdoutOnce(stdout: string) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    cb(null, stdout, '');
+    return {} as never;
+  }) as unknown as typeof execFile);
 }
 
 const PL_COMPETITION_ROW = {
@@ -105,10 +121,7 @@ describe('InjuriesSyncWorker', () => {
       features: { shadow_lineMovement: 0.05 },
     });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildInjuriesResponse(999)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildInjuriesResponse(999)));
 
     await worker.process({
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
@@ -137,10 +150,7 @@ describe('InjuriesSyncWorker', () => {
     ]);
 
     prisma.client.modelRun.findFirst.mockResolvedValue(null);
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildInjuriesResponse(999)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildInjuriesResponse(999)));
 
     await worker.process({
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
@@ -160,7 +170,7 @@ describe('InjuriesSyncWorker', () => {
       },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+    mockCurlStdoutOnce(buildCurlStdout({}, 429));
 
     await worker.process({
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
@@ -171,7 +181,7 @@ describe('InjuriesSyncWorker', () => {
 
   it('throws when competitionCode is not found in DB', async () => {
     prisma.client.competition.findFirst.mockResolvedValue(null);
-    global.fetch = vi.fn();
+    vi.mocked(execFile).mockReset();
 
     await expect(
       worker.process({
@@ -179,7 +189,7 @@ describe('InjuriesSyncWorker', () => {
       } as Job<{ season: number; competitionCode: string; leagueId: number }>),
     ).rejects.toThrow('Competition not found in DB: UNKNOWN');
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFile).not.toHaveBeenCalled();
   });
 
   it('skips the job when the competition is inactive', async () => {
@@ -187,13 +197,13 @@ describe('InjuriesSyncWorker', () => {
       ...PL_COMPETITION_ROW,
       isActive: false,
     });
-    global.fetch = vi.fn();
+    vi.mocked(execFile).mockReset();
 
     await worker.process({
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFile).not.toHaveBeenCalled();
     expect(fixtureService.upsertCompetition).not.toHaveBeenCalled();
     expect(prisma.client.modelRun.findFirst).not.toHaveBeenCalled();
   });
@@ -221,19 +231,24 @@ describe('InjuriesSyncWorker', () => {
       features: { shadow_lineMovement: 0.05 },
     });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(buildInjuriesResponse(999)),
-    });
+    mockCurlStdoutOnce(buildCurlStdout(buildInjuriesResponse(999)));
 
     await worker.process({
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith(
-      'https://v3.football.api-sports.io/injuries?fixture=999',
-      { headers: { 'x-apisports-key': 'test-api-key' } },
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(execFile).toHaveBeenCalledWith(
+      'curl',
+      expect.arrayContaining([
+        '--silent',
+        '--show-error',
+        '--location',
+        '-H',
+        'x-apisports-key: test-api-key',
+        'https://v3.football.api-sports.io/injuries?fixture=999',
+      ]),
+      expect.any(Function),
     );
   });
 });

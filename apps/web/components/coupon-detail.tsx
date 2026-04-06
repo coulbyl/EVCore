@@ -5,12 +5,15 @@ import {
   couponStatusLabel,
   couponStatusBadgeClass,
   couponModeLabel,
+  couponTierLabel,
+  couponTierBadgeClass,
   combinedOdds,
   selectionStatusLabel,
   selectionStatusBadgeClass,
   selectionCardClass,
   formatPickForDisplay,
 } from "../helpers/coupon";
+import type { CouponTier } from "../types/dashboard";
 import {
   fixtureStatusLabel,
   fixtureStatusBadgeClass,
@@ -54,6 +57,7 @@ type CouponDetailHeaderProps = {
   code: string;
   legs: number;
   status: "PENDING" | "WON" | "LOST";
+  tier?: CouponTier | null;
   selections?: Array<{ fixtureStatus: string }>;
   locale?: Locale;
 };
@@ -62,6 +66,7 @@ export function CouponDetailHeader({
   code,
   legs,
   status,
+  tier,
   selections,
   locale = "fr",
 }: CouponDetailHeaderProps) {
@@ -70,6 +75,13 @@ export function CouponDetailHeader({
       <div className="flex items-center justify-between gap-2">
         <p className="font-mono text-xs text-slate-500">{code}</p>
         <div className="flex items-center gap-1.5">
+          {tier && (
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(tier)}`}
+            >
+              {couponTierLabel(tier, locale)}
+            </span>
+          )}
           <span className="rounded-full border border-slate-900 bg-slate-900 px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.06em] text-white">
             {couponModeLabel(legs, locale)}
           </span>
@@ -293,6 +305,7 @@ export function CouponDetail({
         code={coupon.code}
         legs={coupon.legs}
         status={coupon.status}
+        tier={coupon.tier}
         selections={coupon.selections}
         locale={locale}
       />

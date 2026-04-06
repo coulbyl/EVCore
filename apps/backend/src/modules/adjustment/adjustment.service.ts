@@ -141,6 +141,59 @@ export class AdjustmentService {
     return { newProposalId: newProposal.id };
   }
 
+  /**
+   * Runs calibration check and auto-applies if triggered.
+   * Does not settle any bets — purely reads existing settled bets.
+   * Called by the settlement worker after each batch, and exposed via the controller.
+   */
+  async runCalibrationCheck(): Promise<{
+    calibration: CalibrationResult | null;
+    proposalId: string | null;
+    shadowCorrelations: ShadowCorrelationsResult | null;
+    shadowProposalId: string | null;
+  }> {
+    const calibrationResult =
+      await this.calibration.computeForMarket(CALIBRATION_MARKET);
+
+    if (
+      calibrationResult === null ||
+      !calibrationResult.needsAdjustment ||
+      calibrationResult.betCount < MIN_BET_COUNT
+    ) {
+      const shadowCorrelations = await this.computeShadowCorrelations();
+      const shadowProposalId =
+        shadowCorrelations === null
+          ? null
+          : await this.autoActivateShadowFeatures(shadowCorrelations);
+      return {
+        calibration: calibrationResult,
+        proposalId: null,
+        shadowCorrelations,
+        shadowProposalId,
+      };
+    }
+
+    const recentApply = await this.findRecentApply();
+    if (recentApply !== null) {
+      const shadowCorrelations = await this.computeShadowCorrelations();
+      return {
+        calibration: calibrationResult,
+        proposalId: null,
+        shadowCorrelations,
+        shadowProposalId: null,
+      };
+    }
+
+    const proposalId = await this.autoApply(calibrationResult);
+    const shadowCorrelations = await this.computeShadowCorrelations();
+    return {
+      calibration: calibrationResult,
+      proposalId,
+      shadowCorrelations,
+      shadowProposalId: null,
+    };
+  }
+
   async listProposals() {
     return this.prisma.client.adjustmentProposal.findMany({
       orderBy: { createdAt: 'desc' },

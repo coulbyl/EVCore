@@ -12,10 +12,9 @@ const positiveOdd = z.coerce
     message: 'odd must be in range (1, 1000)',
   });
 
-// Pinnacle odds are degraded since 2025-07-23 — football-data.co.uk sends 0
-// instead of leaving the column empty. Treat 0 as absent rather than failing
-// the whole row.
-const pinnacleOdd = z.preprocess(
+// football-data.co.uk sometimes sends 0 instead of leaving an odds field empty.
+// Treat 0 as absent rather than failing the whole row.
+const optionalOdd = z.preprocess(
   (v) => (Number(v) === 0 ? undefined : v),
   positiveOdd.optional(),
 );
@@ -30,24 +29,24 @@ export const OddsCsvRowSchema = z
     FTR: z.enum(['H', 'D', 'A']), // full-time result
 
     // Bet365 opening odds
-    B365H: positiveOdd.optional(),
-    B365D: positiveOdd.optional(),
-    B365A: positiveOdd.optional(),
+    B365H: optionalOdd,
+    B365D: optionalOdd,
+    B365A: optionalOdd,
 
     // Bet365 closing odds (pre-match, at kickoff)
-    B365CH: positiveOdd.optional(),
-    B365CD: positiveOdd.optional(),
-    B365CA: positiveOdd.optional(),
+    B365CH: optionalOdd,
+    B365CD: optionalOdd,
+    B365CA: optionalOdd,
 
     // Pinnacle closing odds — industry benchmark for true probability
-    PSCH: pinnacleOdd,
-    PSCD: pinnacleOdd,
-    PSCA: pinnacleOdd,
+    PSCH: optionalOdd,
+    PSCD: optionalOdd,
+    PSCA: optionalOdd,
 
     // Market average closing
-    AvgCH: positiveOdd.optional(),
-    AvgCD: positiveOdd.optional(),
-    AvgCA: positiveOdd.optional(),
+    AvgCH: optionalOdd,
+    AvgCD: optionalOdd,
+    AvgCA: optionalOdd,
   })
   .passthrough(); // extra columns in the CSV are silently ignored
 

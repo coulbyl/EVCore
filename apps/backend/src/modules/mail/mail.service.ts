@@ -112,13 +112,16 @@ export class MailService implements OnModuleInit {
     id: string;
     date: string;
     legCount: number;
+    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | null;
     legs: DailyCouponLeg[];
   }): Promise<void> {
-    const subject = `Coupon EVCore — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''})`;
+    const tierLabel = props.tier ? ` · ${props.tier}` : '';
+    const subject = `Coupon EVCore — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''}${tierLabel})`;
     const { html, text } = await renderDailyCoupon({
       couponId: props.id,
       date: props.date,
       legCount: props.legCount,
+      tier: props.tier ?? undefined,
       legs: props.legs,
     });
     await this.send(subject, html, text);

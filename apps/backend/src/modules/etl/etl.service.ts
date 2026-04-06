@@ -19,6 +19,8 @@ import { PrismaService } from '@/prisma.service';
 import { BacktestService } from '../backtest/backtest.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
+import type { EloSyncJobData } from './workers/elo-sync.worker';
+import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
@@ -41,6 +43,7 @@ type CompetitionRow = {
   country: string;
   csvDivisionCode: string | null;
   seasonStartMonth: number | null;
+  apiSeasonOverride: number | null;
 };
 
 type CompetitionPlan = {
@@ -66,6 +69,9 @@ function computeSeasons(
   competition: CompetitionRow,
   now = new Date(),
 ): readonly number[] {
+  if (competition.apiSeasonOverride !== null) {
+    return [competition.apiSeasonOverride];
+  }
   return activeSeasons(
     competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH,
     1,
@@ -99,8 +105,12 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly leagueSyncQueue: Queue<LeagueSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT)
     private readonly pendingBetsSettlementQueue: Queue<PendingBetsSettlementJobData>,
+    @InjectQueue(BULLMQ_QUEUES.STALE_SCHEDULED_SYNC)
+    private readonly staleScheduledSyncQueue: Queue<StaleScheduledSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
     private readonly oddsCsvQueue: Queue<OddsCsvImportJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ELO_SYNC)
+    private readonly eloSyncQueue: Queue<EloSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC)
     private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
@@ -207,6 +217,24 @@ export class EtlService implements OnApplicationBootstrap {
       },
     );
 
+    await this.eloSyncQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.ELO_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.ELO_SYNC },
+      {
+        name: 'elo-sync',
+        data: {} satisfies EloSyncJobData,
+      },
+    );
+
+    await this.staleScheduledSyncQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.STALE_SCHEDULED_SYNC,
+      { pattern: ETL_CRON_SCHEDULES.STALE_SCHEDULED_SYNC },
+      {
+        name: 'stale-scheduled-sync',
+        data: {} satisfies StaleScheduledSyncJobData,
+      },
+    );
+
     await this.pendingBetsSettlementQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.PENDING_BETS_SETTLEMENT,
       { pattern: ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT },
@@ -238,6 +266,7 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
+        apiSeasonOverride: true,
       },
     });
     this.competitionPlans = competitions.map(toCompetitionPlan);
@@ -342,6 +371,14 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  async triggerStaleScheduledSync(lookbackDays?: number): Promise<void> {
+    await this.staleScheduledSyncQueue.add(
+      'stale-scheduled-sync',
+      { lookbackDays } satisfies StaleScheduledSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
   async triggerStatsSync(): Promise<void> {
     await this.triggerLeagueSeasonSync('stats');
   }
@@ -404,6 +441,14 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  async triggerEloSync(): Promise<void> {
+    await this.eloSyncQueue.add(
+      'elo-sync',
+      {} satisfies EloSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
   async triggerOddsSnapshotRetention(retentionDays?: number): Promise<void> {
     await this.oddsSnapshotRetentionQueue.add(
       'odds-snapshot-retention',
@@ -441,7 +486,9 @@ export class EtlService implements OnApplicationBootstrap {
     const queues = {
       [BULLMQ_QUEUES.LEAGUE_SYNC]: this.leagueSyncQueue,
       [BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT]: this.pendingBetsSettlementQueue,
+      [BULLMQ_QUEUES.STALE_SCHEDULED_SYNC]: this.staleScheduledSyncQueue,
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
+      [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
     };
@@ -466,8 +513,37 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerLeagueSeasonSyncForLeague('fixtures', competitionCode);
   }
 
+  async triggerFixturesBackfillForSeasons(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const competition = await this.loadActiveCompetition(competitionCode);
+    const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
+      syncType: 'fixtures',
+      season,
+      competitionCode,
+      leagueId: competition.leagueId,
+      syncScope: 'backfill',
+    }));
+    await this.enqueueLeagueSeasonJobs('fixtures', jobs);
+  }
+
   async triggerStatsSyncForLeague(competitionCode: string): Promise<void> {
     await this.triggerLeagueSeasonSyncForLeague('stats', competitionCode);
+  }
+
+  async triggerStatsSyncForSeasons(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const competition = await this.loadActiveCompetition(competitionCode);
+    const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
+      syncType: 'stats',
+      season,
+      competitionCode,
+      leagueId: competition.leagueId,
+    }));
+    await this.enqueueLeagueSeasonJobs('stats', jobs);
   }
 
   async triggerInjuriesSyncForLeague(competitionCode: string): Promise<void> {
@@ -477,9 +553,11 @@ export class EtlService implements OnApplicationBootstrap {
   async triggerFullSync(): Promise<void> {
     await this.triggerFixturesSync();
     await this.triggerPendingBetsSettlementSync();
+    await this.triggerStaleScheduledSync();
     await this.triggerStatsSync();
     await this.triggerInjuriesSync();
     await this.triggerOddsCsvImport();
+    await this.triggerEloSync();
     await this.triggerOddsPrematchSync();
   }
 
@@ -571,6 +649,7 @@ export class EtlService implements OnApplicationBootstrap {
         country: true,
         csvDivisionCode: true,
         seasonStartMonth: true,
+        apiSeasonOverride: true,
       },
     });
     if (!competition) {

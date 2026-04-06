@@ -16,6 +16,7 @@ export type OddsCsvImportJobData = {
 };
 
 const logger = createLogger('odds-csv-import-worker');
+const EXTRA_LEAGUE_DIVISION_CODES = new Set(['JPN', 'MEX']);
 
 @Processor(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
 export class OddsCsvImportWorker extends WorkerHost {
@@ -28,7 +29,7 @@ export class OddsCsvImportWorker extends WorkerHost {
 
   async process(job: Job<OddsCsvImportJobData>): Promise<void> {
     const { competitionCode, seasonCode, divisionCode } = job.data;
-    const url = `${ETL_CONSTANTS.CSV_ODDS_BASE}/${seasonCode}/${divisionCode}.csv`;
+    const url = buildCsvUrl(seasonCode, divisionCode);
 
     logger.info(
       { competitionCode, seasonCode, divisionCode, url },
@@ -43,7 +44,7 @@ export class OddsCsvImportWorker extends WorkerHost {
     }
 
     const text = await res.text();
-    const rows = parseCsv(text);
+    const rows = filterRowsForJob(parseCsv(text), job.data);
 
     logger.info({ seasonCode, rowCount: rows.length }, 'CSV parsed');
 
@@ -92,12 +93,28 @@ export class OddsCsvImportWorker extends WorkerHost {
       });
 
       if (!fixture) {
+        const candidates = await this.fixtureService.findCandidatesByDate({
+          date: matchDate,
+          competitionCode,
+        });
+
         logger.warn(
           {
             competitionCode,
             date: row.Date,
             home: row.HomeTeam,
             away: row.AwayTeam,
+            lookupHome: resolveTeamName(row.HomeTeam),
+            lookupAway: resolveTeamName(row.AwayTeam),
+            reason:
+              candidates.length === 0
+                ? 'no-fixtures-on-date'
+                : 'fixtures-found-but-teams-differ',
+            candidateFixtures: candidates.map((candidate) => ({
+              scheduledAt: candidate.scheduledAt,
+              home: candidate.homeTeam.name,
+              away: candidate.awayTeam.name,
+            })),
           },
           'No fixture found — skipping row',
         );
@@ -167,13 +184,66 @@ const CSV_TEAM_ALIASES: Record<string, string> = {
   Milan: 'AC Milan',
   Roma: 'AS Roma',
   Verona: 'Hellas Verona',
+  // ERD (N1)
+  'For Sittard': 'Fortuna Sittard',
+  Nijmegen: 'NEC Nijmegen',
+  Volendam: 'FC Volendam',
+  Waalwijk: 'RKC Waalwijk',
+  Zwolle: 'PEC Zwolle',
+  'Go Ahead Eagles': 'GO Ahead Eagles',
+  // POR (P1)
+  'Gil Vicente': 'GIL Vicente',
+  Porto: 'FC Porto',
+  'Sp Braga': 'SC Braga',
+  'Sp Lisbon': 'Sporting CP',
   // LL (SP1)
   'Ath Bilbao': 'Athletic Club',
   'Ath Madrid': 'Atletico Madrid',
   Betis: 'Real Betis',
+  Brest: 'Stade Brestois 29',
   Celta: 'Celta Vigo',
+  Espanol: 'Espanyol',
   Sociedad: 'Real Sociedad',
   Vallecano: 'Rayo Vallecano',
+  // SP2 (SP2)
+  Andorra: 'FC Andorra',
+  Castellon: 'Castellón',
+  Ceuta: 'AD Ceuta FC',
+  Ferrol: 'Racing Ferrol',
+  'La Coruna': 'Deportivo La Coruna',
+  Santander: 'Racing Santander',
+  'Sociedad B': 'Real Sociedad II',
+  'Sp Gijon': 'Sporting Gijon',
+  'Villarreal B': 'Villarreal II',
+  Granada: 'Granada CF',
+  // L1 (F1)
+  Clermont: 'Clermont Foot',
+  'Paris SG': 'Paris Saint Germain',
+  'St Etienne': 'Saint Etienne',
+  // F2 (F2)
+  'Pau FC': 'PAU',
+  'Quevilly Rouen': 'Quevilly',
+  'Red Star': 'RED Star FC 93',
+  Troyes: 'Estac Troyes',
+  // EL1 / EL2 (E1 / E2)
+  Accrington: 'Accrington ST',
+  'Bristol Rvs': 'Bristol Rovers',
+  Burton: 'Burton Albion',
+  Cambridge: 'Cambridge United',
+  Crawley: 'Crawley Town',
+  Exeter: 'Exeter City',
+  Fleetwood: 'Fleetwood Town',
+  Harrogate: 'Harrogate Town',
+  Mansfield: 'Mansfield Town',
+  'MK Dons': 'Milton Keynes Dons',
+  Newport: 'Newport County',
+  'Notts Co': 'Notts County',
+  Oxford: 'Oxford United',
+  Peterboro: 'Peterborough',
+  Salford: 'Salford City',
+  Stockport: 'Stockport County',
+  Sutton: 'Sutton Utd',
+  Swindon: 'Swindon Town',
   // BL1 (D1)
   'Bayern Munich': 'Bayern München',
   'FC Koln': '1. FC Köln',
@@ -190,10 +260,63 @@ const CSV_TEAM_ALIASES: Record<string, string> = {
   Freiburg: 'SC Freiburg',
   Bochum: 'VfL Bochum',
   Darmstadt: 'SV Darmstadt 98',
+  // D2 (D2)
+  Braunschweig: 'Eintracht Braunschweig',
+  Dresden: 'Dynamo Dresden',
+  Elversberg: 'SV Elversberg',
+  Hamburg: 'Hamburger SV',
+  Hannover: 'Hannover 96',
+  Hertha: 'Hertha BSC',
+  Karlsruhe: 'Karlsruher SC',
+  Kaiserslautern: '1. FC Kaiserslautern',
+  Magdeburg: '1. FC Magdeburg',
+  Nurnberg: '1. FC Nürnberg',
+  Osnabruck: 'VfL Osnabrück',
+  Paderborn: 'SC Paderborn 07',
+  Regensburg: 'SSV Jahn Regensburg',
+  'Schalke 04': 'FC Schalke 04',
+  'St Pauli': 'FC St. Pauli',
+  Ulm: 'SSV Ulm 1846',
+  Wehen: 'SV Wehen',
+  'Greuther Furth': 'SpVgg Greuther Fürth',
+  'Fortuna Dusseldorf': 'Fortuna Düsseldorf',
+  Bielefeld: 'Arminia Bielefeld',
+  // J1 (JPN)
+  'Hokkaido Consadole Sapporo': 'Consadole Sapporo',
+  Iwata: 'Jubilo Iwata',
+  'Kashima Antlers': 'Kashima',
+  Kyoto: 'Kyoto Sanga',
+  Machida: 'Machida Zelvia',
+  Okayama: 'Fagiano Okayama',
+  'Shimizu S-Pulse': 'Shimizu S-pulse',
+  'Urawa Reds': 'Urawa',
+  Verdy: 'Tokyo Verdy',
+  // MX1 (MEX)
+  'Atl. San Luis': 'Atletico San Luis',
+  'Club Leon': 'Leon',
+  Juarez: 'FC Juarez',
+  'Mazatlan FC': 'Mazatlán',
+  Queretaro: 'Club Queretaro',
+  'UNAM Pumas': 'U.N.A.M. - Pumas',
 };
 
 function resolveTeamName(csvName: string): string {
-  return CSV_TEAM_ALIASES[csvName] ?? csvName;
+  const normalized = normalizeTeamAliasKey(csvName);
+  return NORMALIZED_CSV_TEAM_ALIASES[normalized] ?? csvName.trim();
+}
+
+const NORMALIZED_CSV_TEAM_ALIASES = Object.fromEntries(
+  Object.entries(CSV_TEAM_ALIASES).map(([key, value]) => [
+    normalizeTeamAliasKey(key),
+    value,
+  ]),
+);
+
+function normalizeTeamAliasKey(value: string): string {
+  return value
+    .replace(/\u00a0/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -206,21 +329,88 @@ function hasNoClosingOdds(raw: Record<string, string>): boolean {
   return cols.every((col) => !raw[col] || raw[col] === '0');
 }
 
+function buildCsvUrl(seasonCode: string, divisionCode: string): string {
+  if (EXTRA_LEAGUE_DIVISION_CODES.has(divisionCode)) {
+    return `https://www.football-data.co.uk/new/${divisionCode}.csv`;
+  }
+
+  return `${ETL_CONSTANTS.CSV_ODDS_BASE}/${seasonCode}/${divisionCode}.csv`;
+}
+
 function parseCsv(text: string): Record<string, string>[] {
   const lines = text.trim().split('\n');
   const [header, ...rows] = lines;
   if (!header) return [];
 
-  const keys = header.split(',').map((k) => k.trim().replace(/\r/, ''));
+  const keys = header
+    .replace(/^\uFEFF/, '')
+    .split(',')
+    .map((k) => k.trim().replace(/\r/, ''));
 
   return rows
     .filter((line) => line.trim().length > 0)
     .map((line) => {
       const values = line.split(',');
-      return Object.fromEntries(
+      const raw = Object.fromEntries(
         keys.map((k, i) => [k, (values[i] ?? '').trim().replace(/\r/, '')]),
       );
+      return normalizeCsvRow(raw);
     });
+}
+
+function normalizeCsvRow(raw: Record<string, string>): Record<string, string> {
+  if (raw['HomeTeam'] && raw['AwayTeam']) {
+    return raw;
+  }
+
+  if (
+    raw['Home'] &&
+    raw['Away'] &&
+    raw['HG'] !== undefined &&
+    raw['AG'] !== undefined &&
+    raw['Res']
+  ) {
+    return {
+      ...raw,
+      HomeTeam: raw['Home'],
+      AwayTeam: raw['Away'],
+      FTHG: raw['HG'],
+      FTAG: raw['AG'],
+      FTR: raw['Res'],
+    };
+  }
+
+  return raw;
+}
+
+function filterRowsForJob(
+  rows: Record<string, string>[],
+  job: OddsCsvImportJobData,
+): Record<string, string>[] {
+  if (!EXTRA_LEAGUE_DIVISION_CODES.has(job.divisionCode)) {
+    return rows;
+  }
+
+  const targetSeasonStartYear = seasonCodeToStartYear(job.seasonCode);
+  return rows.filter((row) => {
+    const seasonStartYear = extractSeasonStartYear(row['Season']);
+    return seasonStartYear === targetSeasonStartYear;
+  });
+}
+
+function seasonCodeToStartYear(seasonCode: string): number {
+  const prefix = Number(seasonCode.slice(0, 2));
+  return 2000 + prefix;
+}
+
+function extractSeasonStartYear(season: string | undefined): number | null {
+  if (!season) return null;
+
+  const match = season.match(/\d{4}/);
+  if (!match) return null;
+
+  const year = Number(match[0]);
+  return Number.isFinite(year) ? year : null;
 }
 
 function parseDdMmYyyy(dateStr: string): Date {

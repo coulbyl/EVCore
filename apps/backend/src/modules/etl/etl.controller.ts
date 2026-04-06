@@ -26,7 +26,9 @@ type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
   | LeagueSyncType
   | 'settlement'
+  | 'stale-scheduled'
   | 'odds-csv'
+  | 'elo'
   | 'odds-prematch'
   | 'odds-retention';
 
@@ -43,7 +45,9 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   stats: (service) => service.triggerStatsSync(),
   injuries: (service) => service.triggerInjuriesSync(),
   settlement: (service) => service.triggerPendingBetsSettlementSync(),
+  'stale-scheduled': (service) => service.triggerStaleScheduledSync(),
   'odds-csv': (service) => service.triggerOddsCsvImport(),
+  elo: (service) => service.triggerEloSync(),
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
   'odds-retention': (service, body) =>
@@ -64,7 +68,9 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'stats',
   'injuries',
   'settlement',
+  'stale-scheduled',
   'odds-csv',
+  'elo',
   'odds-prematch',
   'odds-retention',
 ] as const satisfies readonly GlobalSyncType[];
@@ -121,10 +127,24 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'stale-scheduled-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 3,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-csv-import': {
           active: 0,
           waiting: 0,
           completed: 3,
+          failed: 0,
+          delayed: 0,
+        },
+        'elo-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 1,
           failed: 0,
           delayed: 0,
         },
@@ -158,7 +178,7 @@ export class EtlController {
     description:
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
       'stats → injuries, then odds-csv and odds-prematch. Routine fixtures/injuries ' +
-      'runs target the current season; stats still scans active seasons. Settlement ' +
+      'runs target the current season; stats also targets the current season only. Settlement ' +
       'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
       'or after a long downtime.',
   })
@@ -242,6 +262,62 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, season: year, mode };
   }
 
+  @Post('sync/fixtures/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Backfill historical fixtures for specific seasons',
+    description:
+      'Enqueues fixtures sync jobs (syncScope=backfill) for each requested season year. ' +
+      'Use before odds-csv backfill and backtest when a league has no historical data. ' +
+      'Example: `?seasons=2022,2023,2024` imports 2022-23, 2023-24 and 2024-25.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'Competition code (e.g. BL1, LL).',
+    example: 'BL1',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerFixturesBackfill(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerFixturesBackfillForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
+  @Post('sync/stats/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Backfill historical stats sync for specific seasons',
+    description:
+      'Enqueues stats sync jobs for each requested season year. Use this when a league ' +
+      'has historical finished fixtures without xG, because routine stats sync only ' +
+      'targets the current season. Example: `?seasons=2023,2024,2025`.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'Competition code (e.g. J1, ERD, POR).',
+    example: 'J1',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerStatsBackfill(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerStatsSyncForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
   @Post('sync/odds-csv/:competitionCode/backfill')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -300,7 +376,7 @@ export class EtlController {
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, odds-csv, odds-prematch, odds-retention. For league-scoped runs, use ' +
+      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, odds-retention. For league-scoped runs, use ' +
       '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({
@@ -342,7 +418,8 @@ export class EtlController {
     summary: 'Trigger league-scoped ETL sync',
     description:
       'Triggers a league-scoped ETL flow for one competition code. Supported types: ' +
-      'fixtures, stats, injuries. Example competition codes: PL, SA, LL.',
+      'fixtures, stats, injuries. This path targets the current season for the league; ' +
+      'use dedicated `/backfill` routes for explicit historical seasons.',
   })
   @ApiParam({
     name: 'type',

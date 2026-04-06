@@ -60,6 +60,56 @@ function formatDateTime(scheduledAt: string): string {
   return scheduledAt;
 }
 
+// ─── Tier badge ───────────────────────────────────────────────────────────────
+
+type Tier = "PREMIUM" | "STANDARD" | "SPECULATIF";
+
+const TIER_STYLES: Record<
+  Tier,
+  { bg: string; text: string; border: string; label: string }
+> = {
+  PREMIUM: {
+    bg: "#2e1065",
+    text: "#c4b5fd",
+    border: "#7c3aed",
+    label: "PREMIUM",
+  },
+  STANDARD: {
+    bg: "#0c2040",
+    text: "#7dd3fc",
+    border: "#0284c7",
+    label: "STANDARD",
+  },
+  SPECULATIF: {
+    bg: "#422006",
+    text: "#fde68a",
+    border: "#d97706",
+    label: "SPÉCULATIF",
+  },
+};
+
+function TierBadge({ tier }: { tier: Tier }) {
+  const style = TIER_STYLES[tier];
+  return (
+    <Text
+      style={{
+        display: "inline-block",
+        backgroundColor: style.bg,
+        color: style.text,
+        border: `1px solid ${style.border}`,
+        borderRadius: "999px",
+        fontSize: "10px",
+        fontWeight: "700",
+        letterSpacing: "0.08em",
+        padding: "2px 10px",
+        margin: "0 0 16px",
+      }}
+    >
+      {style.label}
+    </Text>
+  );
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = {
@@ -72,7 +122,7 @@ const s = {
   subHeader: {
     color: palette.text.secondary,
     fontSize: "12px",
-    margin: "0 0 20px",
+    margin: "0 0 8px",
   },
   // Summary pill row
   summaryRow: {
@@ -194,6 +244,7 @@ export function DailyCouponEmail({
   couponId,
   date,
   legCount,
+  tier,
   legs,
 }: DailyCouponProps) {
   const evAvg =
@@ -211,6 +262,7 @@ export function DailyCouponEmail({
     >
       <Heading style={s.header}>Coupon du jour</Heading>
       <Text style={s.subHeader}>{date}</Text>
+      {tier && <TierBadge tier={tier} />}
 
       {/* Summary row */}
       <Section style={s.summaryRow}>

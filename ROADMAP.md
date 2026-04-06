@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 3 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 31 mars 2026)**
 
 ---
 
@@ -25,10 +25,10 @@
 - [~] Roadmap (ROADMAP.md)
 - [x] Guide d'écriture backend (`apps/backend/CODE_GUIDE.md`)
 - [x] Initialisation monorepo `apps/backend` (NestJS)
-- [x] Docker Compose (PostgreSQL + Redis + Novu)
+- [x] Docker Compose (PostgreSQL + Redis + Mailpit)
 - [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
 - [x] Configuration CI/CD (GitHub Actions — lint + type-check + test)
-- [x] Setup Novu (Slack + Email)
+- [x] Setup Nodemailer + Mailpit (Email)
 
 ---
 
@@ -102,8 +102,8 @@
 
 - [x] Implémentation seuil alerte ROI < -10% (30 derniers paris)
 - [x] Implémentation suspension automatique ROI < -15% (50+ paris)
-- [x] Alerte Novu si Brier Score > seuil acceptable
-- [x] Alerte Novu sur suspension marché
+- [x] Alerte notification si Brier Score > seuil acceptable
+- [x] Alerte notification sur suspension marché
 - [x] Rapport hebdomadaire ROI/Brier Score par endpoint (`POST /risk/report/weekly`)
 
 ---
@@ -116,7 +116,7 @@
 - [x] `ETL_CRON_SCHEDULES` + `ETL_SCHEDULER_KEYS` dans `etl.constants.ts` (configurables)
 - [x] `EtlService.onApplicationBootstrap()` — registration idempotente au démarrage
 - [x] `ETL_SCHEDULING_ENABLED` — flag pour désactiver le scheduling en dev/test
-- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte Novu uniquement sur échec définitif (après 3 tentatives)
+- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte notification uniquement sur échec définitif (après 3 tentatives)
 - [x] `sendEtlFailureAlert()` dans `NotificationService`
 - [x] Gestion `POSTPONED` fixtures — déjà couverte par le statut pipeline existant
 - [-] Setup Kestra — abandonné au profit de BullMQ natif (infra simplifiée pour MVP)
@@ -130,14 +130,14 @@
 - [x] Auto-apply : brierScore > 0.25 ET betCount ≥ 50 ET cooldown 7 jours
 - [x] `AdjustmentService.rollback()` — nouveau proposal APPLIED avec poids inversés (audit complet)
 - [x] `AdjustmentController` : 3 endpoints (settle-and-check, list, rollback)
-- [x] `sendWeightAdjustmentAlert()` — alerte Novu sur auto-apply + rollback
+- [x] `sendWeightAdjustmentAlert()` — alerte notification sur auto-apply + rollback
 
 **Semaine 11 — Stabilisation**
 
 - [x] Tests E2E Testcontainers (`vitest.config.e2e.ts`, `global-e2e.ts`, `prisma-test.ts`)
 - [x] `test/adjustment.e2e-spec.ts` — 3 tests intégration (settle, weights, auto-apply)
 - [x] Revue Zod schemas : `paging.total` fix, `response.length(2)` stats, 22 tests créés
-- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "Novu disabled"
+- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "SMTP disabled"
 - [x] Docker Compose : `start_period` postgres (10s) + redis (5s)
 
 **Semaine 12 — Validation MVP** ✅ Go Phase 2 (2 mars 2026)
@@ -236,6 +236,32 @@
   - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)
   - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées
   - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + warning seuil quota)
+- [x] Fallback FRI hors pipeline Poisson principal
+  - [x] Branche dédiée `competitionCode === 'FRI'` avant le guard `missing_team_stats`
+  - [x] Source primaire `FRI_ELO_REAL` pour sélections nationales seniors mappées
+  - [x] Fallback `ODDS_DEVIG` sur cotes 1X2 complètes si Elo indisponible
+  - [x] `NO_BET` explicite si aucune source probabiliste exploitable
+  - [x] V1 limitée au marché `ONE_X_TWO`
+  - [x] Persistance `predictionSource`, `fallbackReason`, diagnostics Elo/odds et `eloSnapshotAt`
+- [x] Référence Elo synchronisée en base
+  - [x] Worker ETL `elo-sync` depuis `https://eloratings.net/World.tsv`
+  - [x] Stockage DB `national_team_elo_rating`
+  - [x] Consommation runtime du dernier snapshot Elo par le moteur FRI
+  - [x] Conservation du dernier snapshot uniquement
+- [x] Audit FRI Elo aligné sur la donnée de prod
+  - [x] `fri-elo-audit.ts` lit le dernier snapshot DB au lieu d'un TSV local
+  - [x] Génération d'un report texte dans `packages/db/reports/`
+  - [x] Benchmark `FRI_ELO_REAL` / `FRI_ELO_INTERNAL` / `ODDS_DEVIG`
+- [x] Hygiène des fixtures passées encore `SCHEDULED`
+  - [x] Worker ETL `stale-scheduled-sync`
+  - [x] Endpoint manuel `POST /etl/sync/stale-scheduled`
+  - [x] Réconciliation des fixtures passées récentes encore `SCHEDULED`
+- [x] Reporting opérationnel complémentaire
+  - [x] `scheduled-fixtures-report.ts` pour volumétrie `SCHEDULED` par date et compétition
+- [x] Nettoyage scripts DB obsolètes
+  - [x] Suppression `reset-zero-xg.ts`
+  - [x] Suppression `sa-away-audit.ts`
+  - [x] Suppression `fri-xg-audit.ts`
 - [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
   - Activation après 30+ jours prod stables, d'abord en shadow mode
   - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe

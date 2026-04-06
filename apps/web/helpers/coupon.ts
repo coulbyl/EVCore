@@ -1,6 +1,7 @@
 // Pure helpers — no React, no imports from components
 
 type CouponStatus = "PENDING" | "WON" | "LOST";
+type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF";
 type SelectionStatus = "PENDING" | "WON" | "LOST" | "VOID";
 type Locale = "fr" | "en";
 
@@ -78,6 +79,22 @@ export function couponStatusHeaderBadgeClass(status: CouponStatus): string {
 export function couponModeLabel(legs: number, locale: Locale = "fr"): string {
   if (locale === "en") return legs > 1 ? "Combined" : "Single";
   return legs > 1 ? "Combiné" : "Simple";
+}
+
+export function couponTierLabel(
+  tier: CouponTier,
+  locale: Locale = "fr",
+): string {
+  if (tier === "SPECULATIF")
+    return locale === "en" ? "SPECULATIVE" : "SPÉCULATIF";
+  return tier; // PREMIUM and STANDARD are the same in both locales
+}
+
+export function couponTierBadgeClass(tier: CouponTier): string {
+  if (tier === "PREMIUM")
+    return "border-violet-200 bg-violet-50 text-violet-700";
+  if (tier === "STANDARD") return "border-sky-200 bg-sky-50 text-sky-700";
+  return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
 export function combinedOdds(odds: string[]): string {

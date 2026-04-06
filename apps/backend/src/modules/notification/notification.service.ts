@@ -232,6 +232,7 @@ export class NotificationService {
     id: string;
     date: Date;
     legCount: number;
+    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | null;
     bets: (Bet & {
       modelRun: {
         fixture: {
@@ -255,12 +256,18 @@ export class NotificationService {
       type: NotificationType.DAILY_COUPON,
       title,
       body,
-      payload: { id: coupon.id, date: dateStr, legCount: coupon.legCount },
+      payload: {
+        id: coupon.id,
+        date: dateStr,
+        legCount: coupon.legCount,
+        tier: coupon.tier ?? null,
+      },
     });
     await this.mail.sendDailyCoupon({
       id: coupon.id,
       date: dateStr,
       legCount: coupon.legCount,
+      tier: coupon.tier ?? null,
       legs: coupon.bets.map((b) => ({
         homeTeam: b.modelRun.fixture.homeTeam.name,
         awayTeam: b.modelRun.fixture.awayTeam.name,

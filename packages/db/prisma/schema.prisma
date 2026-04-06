@@ -59,6 +59,12 @@ enum CouponStatus {
   NO_BET
 }
 
+enum CouponTier {
+  PREMIUM
+  STANDARD
+  SPECULATIF
+}
+
 enum NotificationType {
   ROI_ALERT
   MARKET_SUSPENSION
@@ -86,6 +92,7 @@ model Competition {
   includeInBacktest  Boolean  @default(true)
   csvDivisionCode    String?
   seasonStartMonth   Int?
+  apiSeasonOverride  Int?
   seasons            Season[]
   teams              Team[]
   createdAt          DateTime @default(now())
@@ -220,6 +227,7 @@ model Bet {
   probEstimated Decimal   @db.Decimal(5, 4)
   oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
   ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
+  qualityScore  Decimal?  @db.Decimal(6, 4) // ev × deterministicScore — used for coupon pool ranking (null for legacy bets)
   stakePct      Decimal   @db.Decimal(5, 4) // 0.01 = 1% bankroll
   status        BetStatus @default(PENDING)
   // combo-match fields: null for single-market picks
@@ -249,6 +257,7 @@ model DailyCoupon {
   date      DateTime     @db.Date
   status    CouponStatus @default(PENDING)
   legCount  Int
+  tier      CouponTier?  // confidence level — null for legacy coupons
   bets      Bet[]
   couponLegs CouponLeg[]
   createdAt DateTime     @default(now())
@@ -319,6 +328,21 @@ model Notification {
 
   @@index([read, createdAt])
   @@map("notification")
+}
+
+model NationalTeamEloRating {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  teamName   String
+  eloCode    String
+  rating     Int
+  source     String   @default("eloratings.net")
+  snapshotAt DateTime
+  syncedAt   DateTime @default(now())
+
+  @@unique([teamName, snapshotAt])
+  @@index([snapshotAt])
+  @@index([teamName, snapshotAt])
+  @@map("national_team_elo_rating")
 }
 
 // Odds snapshots — scaffolded for Phase 2 (prematch odds integration).

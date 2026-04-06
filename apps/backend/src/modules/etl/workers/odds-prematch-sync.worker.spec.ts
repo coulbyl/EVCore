@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { execFile } from 'node:child_process';
 import {
   OddsPrematchSyncWorker,
   extractAdditionalMarketOdds,
@@ -9,6 +10,10 @@ import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
 import type { Job } from 'bullmq';
 import type { OddsPrematchSyncJobData } from './odds-prematch-sync.worker';
+
+vi.mock('node:child_process', () => ({
+  execFile: vi.fn(),
+}));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -103,6 +108,10 @@ function bet365Bookmaker(home: string, draw: string, away: string) {
   };
 }
 
+function buildCurlStdout(body: unknown, status = 200) {
+  return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
+}
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const fixtureService = {
@@ -142,16 +151,32 @@ beforeEach(() => {
   });
 });
 
+function mockCurlStdoutOnce(stdout: string) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    cb(null, stdout, '');
+    return {} as never;
+  }) as unknown as typeof execFile);
+}
+
+function mockCurlErrorOnce(message: string, code?: number) {
+  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
+    const error = Object.assign(new Error(message), {
+      code,
+    });
+    cb(error, '', '');
+    return {} as never;
+  }) as unknown as typeof execFile);
+}
+
 // ─── Worker.process ───────────────────────────────────────────────────────────
 
 describe('OddsPrematchSyncWorker.process', () => {
   it('does nothing when no scheduled fixtures for the date', async () => {
     fixtureService.findScheduledForDate.mockResolvedValue([]);
-    global.fetch = vi.fn();
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(fetch).not.toHaveBeenCalled();
+    expect(execFile).not.toHaveBeenCalled();
     expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
@@ -160,16 +185,13 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 1379250 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi
-        .fn()
-        .mockResolvedValue(
-          buildOddsApiResponse(1379250, [
-            pinnacleBookmaker('2.10', '3.40', '4.20'),
-          ]),
-        ),
-    });
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(1379250, [
+          pinnacleBookmaker('2.10', '3.40', '4.20'),
+        ]),
+      ),
+    );
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -191,16 +213,13 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 1379250 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi
-        .fn()
-        .mockResolvedValue(
-          buildOddsApiResponse(1379250, [
-            bet365Bookmaker('2.00', '3.30', '4.00'),
-          ]),
-        ),
-    });
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(1379250, [
+          bet365Bookmaker('2.00', '3.30', '4.00'),
+        ]),
+      ),
+    );
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -214,17 +233,14 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 1379250 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi
-        .fn()
-        .mockResolvedValue(
-          buildOddsApiResponse(1379250, [
-            pinnacleBookmaker('2.08', '3.38', '4.15'),
-            bet365Bookmaker('2.10', '3.40', '4.20'),
-          ]),
-        ),
-    });
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(1379250, [
+          pinnacleBookmaker('2.08', '3.38', '4.15'),
+          bet365Bookmaker('2.10', '3.40', '4.20'),
+        ]),
+      ),
+    );
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -238,10 +254,44 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 99999 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+    mockCurlStdoutOnce(buildCurlStdout({ errors: [] }, 429));
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
+    expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('retries once immediately when a transient network error occurs, then succeeds', async () => {
+    fixtureService.findScheduledForDate.mockResolvedValue([
+      { id: 'fixture-uuid', externalId: 1389367 },
+    ]);
+
+    mockCurlErrorOnce('Operation timed out', 28);
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(1389367, [
+          pinnacleBookmaker('2.10', '3.40', '4.20'),
+        ]),
+      ),
+    );
+
+    await worker.process(makeJob({ date: '2026-03-03' }));
+
+    expect(execFile).toHaveBeenCalledTimes(2);
+    expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
+  });
+
+  it('skips fixture after two transient network timeouts', async () => {
+    fixtureService.findScheduledForDate.mockResolvedValue([
+      { id: 'fixture-uuid', externalId: 1389367 },
+    ]);
+
+    mockCurlErrorOnce('Operation timed out', 28);
+    mockCurlErrorOnce('Operation timed out', 28);
+
+    await worker.process(makeJob({ date: '2026-03-03' }));
+
+    expect(execFile).toHaveBeenCalledTimes(2);
     expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
@@ -250,10 +300,7 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 12345 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ response: [{ bad: 'data' }] }),
-    });
+    mockCurlStdoutOnce(buildCurlStdout({ response: [{ bad: 'data' }] }));
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -265,10 +312,7 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 12345 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ response: [] }),
-    });
+    mockCurlStdoutOnce(buildCurlStdout({ response: [] }));
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -280,16 +324,13 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'fixture-uuid', externalId: 12345 },
     ]);
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi
-        .fn()
-        .mockResolvedValue(
-          buildOddsApiResponse(12345, [
-            { id: 7, name: 'William Hill', bets: [] },
-          ]),
-        ),
-    });
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(12345, [
+          { id: 7, name: 'William Hill', bets: [] },
+        ]),
+      ),
+    );
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
@@ -302,19 +343,12 @@ describe('OddsPrematchSyncWorker.process', () => {
       { id: 'uuid-2', externalId: 222 },
     ]);
 
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi
-          .fn()
-          .mockResolvedValue(
-            buildOddsApiResponse(111, [
-              pinnacleBookmaker('1.80', '3.50', '5.00'),
-            ]),
-          ),
-      })
-      .mockResolvedValueOnce({ ok: false, status: 503 });
+    mockCurlStdoutOnce(
+      buildCurlStdout(
+        buildOddsApiResponse(111, [pinnacleBookmaker('1.80', '3.50', '5.00')]),
+      ),
+    );
+    mockCurlStdoutOnce(buildCurlStdout({ errors: [] }, 503));
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 

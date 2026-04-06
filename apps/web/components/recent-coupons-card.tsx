@@ -10,6 +10,8 @@ import {
   couponStatusBadgeClass,
   couponStatusDotClass,
   couponStatusHeaderBadgeClass,
+  couponTierLabel,
+  couponTierBadgeClass,
 } from "../helpers/coupon";
 
 function evColor(ev: string) {
@@ -55,7 +57,14 @@ function CouponRow({
         </span>
       </div>
 
-      <div className="mt-1.5 flex items-center gap-3 pl-[18px]">
+      <div className="mt-1.5 flex items-center gap-3 pl-4.5">
+        {coupon.tier && (
+          <span
+            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+          >
+            {couponTierLabel(coupon.tier)}
+          </span>
+        )}
         <span className="text-xs text-slate-500">
           {coupon.legs} sélection{coupon.legs > 1 ? "s" : ""}
         </span>
@@ -121,7 +130,7 @@ function CouponDrawerContent({
           </button>
         </div>
 
-        {/* Status + window */}
+        {/* Status + tier + window */}
         <div className="mt-3 flex items-center gap-2.5">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
@@ -131,6 +140,13 @@ function CouponDrawerContent({
             />
             {couponStatusLabel(coupon.status, coupon.selections)}
           </span>
+          {coupon.tier && (
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+            >
+              {couponTierLabel(coupon.tier)}
+            </span>
+          )}
           <span className="text-xs text-slate-400">{coupon.window}</span>
         </div>
       </div>

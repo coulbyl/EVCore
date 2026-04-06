@@ -78,6 +78,16 @@ export class AdjustmentController {
   }
 
   /**
+   * POST /adjustment/run-calibration
+   * Manually triggers calibration check and auto-apply if needed.
+   * Does not settle any bets — reads existing settled bets only.
+   */
+  @Post('run-calibration')
+  async runCalibration() {
+    return this.adjustment.runCalibrationCheck();
+  }
+
+  /**
    * GET /adjustment
    * Lists all AdjustmentProposals, most recent first.
    */

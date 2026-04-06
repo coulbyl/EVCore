@@ -77,6 +77,66 @@ type WorkerFailureContext<T> = {
   };
 };
 
+const TRANSIENT_NETWORK_CODES = [
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'ENOTFOUND',
+] as const;
+
+function getNetworkErrorCode(err: unknown): string | undefined {
+  if (!(err instanceof Error)) return undefined;
+  return (err.cause as Record<string, unknown> | undefined)?.['code'] as
+    | string
+    | undefined;
+}
+
+export function getTransientNetworkErrorCode(err: unknown): string | undefined {
+  const code = getNetworkErrorCode(err);
+  return code !== undefined &&
+    (TRANSIENT_NETWORK_CODES as readonly string[]).includes(code)
+    ? code
+    : undefined;
+}
+
+/**
+ * Wraps fetch() with transient network error handling.
+ * Returns null when the error is transient (ETIMEDOUT / ECONNRESET / ENOTFOUND)
+ * so callers can skip the current item and continue their loop.
+ * Re-throws all other errors so BullMQ can handle retries at job level.
+ */
+export async function fetchOrSkip(
+  url: string,
+  options: RequestInit,
+): Promise<Response | null> {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    if (getTransientNetworkErrorCode(err) !== undefined) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+export function isTransientNetworkError(err: unknown): boolean {
+  return getTransientNetworkErrorCode(err) !== undefined;
+}
+
+export async function fetchOrSkipWithMeta(
+  url: string,
+  options: RequestInit,
+): Promise<{ response: Response | null; transientErrorCode?: string }> {
+  try {
+    return { response: await fetch(url, options) };
+  } catch (err) {
+    const transientErrorCode = getTransientNetworkErrorCode(err);
+    if (transientErrorCode !== undefined) {
+      return { response: null, transientErrorCode };
+    }
+    throw err;
+  }
+}
+
 export function notifyOnWorkerFailure<T>({
   notification,
   queueName,
@@ -89,7 +149,11 @@ export function notifyOnWorkerFailure<T>({
 
   if (isFinalAttempt) {
     logger.error(
-      { jobName: job.name, attempts: job.attemptsMade },
+      {
+        jobName: job.name,
+        attempts: job.attemptsMade,
+        errorMessage: error.message,
+      },
       'Job permanently failed — sending alert',
     );
     void notification.sendEtlFailureAlert(queueName, job.name, error.message);
@@ -97,7 +161,11 @@ export function notifyOnWorkerFailure<T>({
   }
 
   logger.warn(
-    { jobName: job?.name, attempt: job?.attemptsMade },
+    {
+      jobName: job?.name,
+      attempt: job?.attemptsMade,
+      errorMessage: error.message,
+    },
     'Job attempt failed — will retry',
   );
 }

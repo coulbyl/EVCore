@@ -56,7 +56,6 @@ const COMPETITIONS = [
     name: "Serie B",
     country: "Italy",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "I2",
   },
   {
@@ -65,7 +64,6 @@ const COMPETITIONS = [
     name: "Segunda Division",
     country: "Spain",
     isActive: true,
-    includeInBacktest: true,
     csvDivisionCode: "SP2",
   },
   {
@@ -74,7 +72,6 @@ const COMPETITIONS = [
     name: "2. Bundesliga",
     country: "Germany",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "D2",
   },
   {
@@ -83,8 +80,57 @@ const COMPETITIONS = [
     name: "Ligue 2",
     country: "France",
     isActive: true,
-    includeInBacktest: false,
     csvDivisionCode: "F2",
+  },
+  {
+    leagueId: 41,
+    code: "EL1",
+    name: "League One",
+    country: "England",
+    isActive: true,
+    csvDivisionCode: "E2",
+  },
+  {
+    leagueId: 42,
+    code: "EL2",
+    name: "League Two",
+    country: "England",
+    isActive: true,
+    csvDivisionCode: "E3",
+  },
+  {
+    leagueId: 88,
+    code: "ERD",
+    name: "Eredivisie",
+    country: "Netherlands",
+    isActive: true,
+    csvDivisionCode: "N1",
+  },
+  {
+    leagueId: 94,
+    code: "POR",
+    name: "Primeira Liga",
+    country: "Portugal",
+    isActive: true,
+    csvDivisionCode: "P1",
+  },
+  {
+    leagueId: 98,
+    code: "J1",
+    name: "J1 League",
+    country: "Japan",
+    isActive: true,
+    csvDivisionCode: "JPN",
+    seasonStartMonth: 1,
+  },
+  {
+    leagueId: 262,
+    code: "MX1",
+    name: "Liga MX",
+    country: "Mexico",
+    isActive: true,
+    csvDivisionCode: "MEX",
+    seasonStartMonth: 6,
   },
   {
     leagueId: 2,
@@ -95,6 +141,39 @@ const COMPETITIONS = [
     includeInBacktest: false,
     csvDivisionCode: null,
   },
+  // International competitions — apiSeasonOverride bypasses the standard
+  // seasonStartMonth logic (API Football uses non-calendar season numbering
+  // for international tournaments).
+  {
+    leagueId: 32,
+    code: "WCQE",
+    name: "World Cup Qualification - Europe",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2024,
+  },
+  {
+    leagueId: 10,
+    code: "FRI",
+    name: "International Friendlies",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2026,
+  },
+  {
+    leagueId: 5,
+    code: "UNL",
+    name: "UEFA Nations League",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2024,
+  },
 ];
 
 async function seedCompetitions() {
@@ -104,6 +183,8 @@ async function seedCompetitions() {
       update: {
         isActive: competition.isActive,
         includeInBacktest: competition.includeInBacktest ?? true,
+        csvDivisionCode: competition.csvDivisionCode,
+        apiSeasonOverride: competition.apiSeasonOverride,
       },
       create: competition,
     });

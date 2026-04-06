@@ -8,6 +8,12 @@ import type {
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
+export type PredictionSource =
+  | 'POISSON_MAIN'
+  | 'FRI_ELO_REAL'
+  | 'FRI_ELO_INTERNAL'
+  | 'ODDS_DEVIG';
+
 export type TeamStatsInput = {
   recentForm: unknown;
   xgFor: unknown;
@@ -63,10 +69,13 @@ export type ViablePick = {
 
 export type EvaluatedPick = ViablePick & {
   rejectionReason?:
+    | 'ev_above_hard_cap'
+    | 'ev_above_soft_cap'
     | 'ev_below_threshold'
     | 'filtered_longshot'
     | 'market_suspended'
     | 'odds_above_cap'
     | 'odds_below_floor'
+    | 'probability_too_low'
     | 'quality_score_below_threshold';
 };

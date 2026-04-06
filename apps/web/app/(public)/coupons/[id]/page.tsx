@@ -298,6 +298,7 @@ function CouponPageBody({
               code={coupon.code}
               legs={coupon.legs}
               status={coupon.status}
+              tier={coupon.tier}
               selections={coupon.selections}
               locale={locale}
             />
