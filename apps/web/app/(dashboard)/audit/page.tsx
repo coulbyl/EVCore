@@ -23,6 +23,23 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const REJECTION_REASON_LABELS: Record<string, string> = {
+  ev_above_hard_cap: "EV au-dessus du plafond dur",
+  ev_above_soft_cap: "EV au-dessus du plafond calibration",
+  ev_below_threshold: "EV insuffisant",
+  filtered_longshot: "Longshot filtré",
+  market_suspended: "Marché suspendu",
+  odds_above_cap: "Cote trop haute",
+  odds_below_floor: "Cote trop basse",
+  probability_too_low: "Probabilité directionnelle insuffisante",
+  quality_score_below_threshold: "Score qualité insuffisant",
+};
+
+function formatRejectionReason(reason: string | null | undefined): string {
+  if (!reason) return "—";
+  return REJECTION_REASON_LABELS[reason] ?? reason;
+}
+
 // ---------------------------------------------------------------------------
 // Fixtures table
 // ---------------------------------------------------------------------------
@@ -151,7 +168,7 @@ function AuditPicksTable({
                   )}
                   {isEvaluated && (
                     <td className="py-2 text-[0.65rem] text-slate-400">
-                      {p.rejectionReason ?? "—"}
+                      {formatRejectionReason(p.rejectionReason)}
                     </td>
                   )}
                 </tr>
