@@ -59,9 +59,11 @@ Le **type de pari**.
 Exemples :
 
 - `ONE_X_TWO` : victoire domicile / nul / victoire extérieur
-- `OVER_UNDER` : plus ou moins d’un seuil de buts
+- `OVER_UNDER` : plus ou moins d’un seuil de buts total
+- `OVER_UNDER_HT` : plus ou moins d’un seuil de buts à la mi-temps
 - `BTTS` : les deux équipes marquent
-- `HT/FT` : résultat mi-temps / fin de match
+- `HALF_TIME_FULL_TIME` (HT/FT) : résultat à la mi-temps + résultat final
+- `FIRST_HALF_WINNER` : vainqueur de la première mi-temps (1X2 sur 45 min)
 
 ### `ONE_X_TWO`
 
@@ -90,6 +92,32 @@ Exemple :
 
 - `YES` = les deux équipes marquent
 - `NO` = au moins une des deux ne marque pas
+
+### `OVER_UNDER_HT`
+
+Pari sur le **total de buts à la mi-temps uniquement**.
+
+Exemple :
+
+- `OVER 1.5 HT` = au moins 2 buts avant la mi-temps
+- `UNDER 0.5 HT` = aucun but avant la mi-temps
+
+### `FIRST_HALF_WINNER`
+
+Pari 1X2 limité à **la première mi-temps**.
+
+Même structure que `ONE_X_TWO` mais résolu à 45 min.
+
+### `HALF_TIME_FULL_TIME`
+
+Pari combiné sur **le résultat à la mi-temps ET le résultat final**.
+
+Exemple :
+
+- `V1 / V1` = domicile mène à la mi-temps et gagne le match
+- `NUL / V2` = nul à la mi-temps, victoire extérieur au final
+
+C'est un marché à forte valeur sur les équipes qui renversent systématiquement des situations ou qui dominent dès l'entame.
 
 ### `closing odds`
 
@@ -401,6 +429,26 @@ Exemple :
 
 ## Décision betting et performance
 
+### `pick`
+
+Une **sélection candidate** générée par le moteur pour un match donné.
+
+Un pick contient :
+
+- le marché (`ONE_X_TWO`, `OVER_UNDER`, etc.)
+- la direction (`HOME`, `AWAY`, `DRAW`, `OVER 2.5`, etc.)
+- la probabilité estimée par le modèle
+- la cote disponible
+- l'`EV` calculé
+
+Un pick peut être **viable** (passe tous les filtres) ou **rejeté** (bloqué par un garde-fou).
+
+### `pick candidat`
+
+Pick dont l'`EV` est positif et qui entre dans l'évaluation approfondie.
+
+Tous les candidats ne deviennent pas des paris — ils passent ensuite par une série de filtres (probabilité directionnelle, cotes plancher/plafond, score qualité, etc.).
+
 ### `EV`
 
 `Expected Value`, ou **valeur espérée**.
@@ -447,17 +495,54 @@ Formule simple :
 ROI = profit net / mise totale
 ```
 
+### `probabilité directionnelle`
+
+La **probabilité que le modèle assigne à la direction choisie** pour un pari.
+
+Exemple concret :
+
+- on envisage un pari `HOME` sur Arsenal
+- le modèle estime P(victoire Arsenal) = **38 %**
+- le seuil de probabilité directionnelle est **45 %**
+- → pick **rejeté**, raison : "Probabilité directionnelle insuffisante"
+
+L’idée centrale : **on ne mise pas dans une direction que le modèle lui-même juge improbable**, même si les cotes offrent un EV positif sur le papier. Un EV positif peut apparaître mécaniquement quand la cote est très haute — mais si le modèle lui-même dit "ce résultat est peu probable", miser dessus est incohérent avec ses propres estimations.
+
+Ce filtre est distinct du seuil d’EV :
+
+| Filtre | Bloque quand |
+|--------|-------------|
+| `ev_below_threshold` | EV trop faible |
+| `probability_too_low` | P(direction) < seuil, même si EV > 0 |
+
+Dans `EVCore`, le seuil par défaut est **0.45** (45 %). Il peut être ajusté par compétition et par direction (ex : seuil abaissé sur `D2 AWAY` où les cotes extérieur sont historiquement sous-évaluées).
+
+### `MODEL_SCORE_THRESHOLD`
+
+Seuil minimum de `deterministicScore` requis pour qu’un match soit éligible à un pari.
+
+Si le score déterministe d’un match est inférieur à ce seuil, **aucun pick n’est généré**, même si l’EV est positif et la probabilité suffisante.
+
+Ce filtre protège contre les fixtures où le contexte statistique est jugé insuffisant — données incomplètes, cold start, faible couverture xG.
+
+Différencié par compétition :
+
+- `UCL` : `0.45` (données cross-compétition, moins de matchs)
+- `PL` : `0.58` (marché très efficace)
+- `EL2` : `0.45` (division 4, tolérance plus haute)
+- etc.
+
 ### `qualityScore`
 
 Score combiné utilisé dans `EVCore` pour prioriser les picks.
 
-Dans les types du projet :
+Formule :
 
 ```text
-qualityScore = EV * deterministicScore
+qualityScore = EV * deterministicScore * longshotPenalty
 ```
 
-Ce n’est pas une probabilité. C’est un **score de classement**.
+Ce n’est pas une probabilité. C’est un **score de classement** qui pénalise les picks à la fois peu soutenus statistiquement et à forte cote (longshot).
 
 ### `stake sizing`
 
@@ -494,21 +579,50 @@ Ces paris sont risqués car une petite surestimation de probabilité peut gonfle
 
 ### `hard cap`
 
-Plafond strict.
+Plafond strict — le pick est rejeté sans exception si la valeur dépasse la limite.
 
-Exemple :
+Exemples dans `EVCore` :
 
-- cote trop haute
-- `EV` trop élevé pour être crédible
-- pick rejeté
+- `EV_HARD_CAP = 0.90` : un EV supérieur à 90 % contre Pinnacle est irréaliste, il signale une erreur de lambda ou de xG
+- `MAX_SELECTION_ODDS = 4.0` : les cotes très élevées amplifient les erreurs de probabilité
 
 ### `soft cap`
 
-Plafond plus souple qu’un `hard cap`, utilisé comme garde-fou intermédiaire.
+Plafond de calibration, moins strict qu’un `hard cap`.
+
+Utilisé quand un segment (ex : `UEL HOME`) montre que **plus l’EV est élevé, moins le pari gagne** — signe d’une sur-confiance du modèle à haute EV. Le soft cap coupe le segment surestimé sans désactiver le marché entier.
+
+### `overconfidence`
+
+Situation où le modèle **surestime systématiquement** la probabilité d’un résultat.
+
+Signe typique :
+
+- P_model = 55 %
+- win_rate observé = 30 %
+- écart = +25 pp (points de pourcentage)
+
+Dans ce cas, l’EV calculé est gonflé artificiellement, et les paris à EV élevé sont les plus mauvais.
+
+Corrections utilisées dans `EVCore` : `MODEL_SCORE_THRESHOLD` plus strict, EV soft cap, seuil de probabilité directionnelle ajusté.
+
+### `backtest`
+
+Test du modèle **sur des données historiques passées**.
+
+Dans `EVCore`, le backtest simule les décisions du moteur sur des saisons terminées et mesure :
+
+- le `ROI` simulé
+- le `Brier score`
+- l’erreur de calibration (`ECE`)
+
+Un backtest valide que le modèle est calibré et rentable — pas seulement théoriquement, mais sur des données réelles.
 
 ### `suspension threshold`
 
-Seuil à partir duquel un marché, une ligue ou un comportement modèle peut être temporairement suspendu.
+Seuil à partir duquel un marché ou une ligue est **automatiquement suspendu**.
+
+Dans `EVCore`, un marché est suspendu si son `ROI` descend sous `-15 %` sur au moins 50 paris réglés. La suspension est automatique — seul un humain peut la lever manuellement.
 
 ---
 
@@ -1045,15 +1159,17 @@ Certains codes de compétitions sont reliés à des codes `football-data.co.uk` 
 
 ## Résumé express
 
-Si tu ne devais retenir que dix notions :
+Si tu ne devais retenir que douze notions :
 
 1. `odds` = la cote
 2. `implied probability` = `1 / cote`
-3. `margin` = la commission implicite du bookmaker
-4. `de-vig` = le retrait de cette marge
-5. `EV` = la rentabilité théorique du pari
-6. `xG` = la qualité attendue des occasions
-7. `lambda` = les buts attendus
-8. `Poisson` = le modèle qui transforme les lambdas en probabilités
-9. `calibration` = la crédibilité empirique des probabilités du modèle
-10. `backtest` = le test du modèle sur le passé
+3. `de-vig` = retirer la marge bookmaker pour retrouver des probabilités propres
+4. `EV` = rentabilité théorique : `(p_model × cote) - 1`
+5. `xG` = qualité des occasions créées / concédées
+6. `lambda` = buts attendus (entrée du modèle Poisson)
+7. `Poisson` = transforme les lambdas en distribution de scores
+8. `deterministicScore` = score statistique composite du match, sert de filtre qualité
+9. `probabilité directionnelle` = P(direction choisie) — doit dépasser un seuil, sinon le pick est incohérent
+10. `overconfidence` = le modèle surestime la proba, l'EV calculé est trompeur
+11. `calibration` = mesure si les probabilités prédites correspondent à la réalité observée
+12. `backtest` = test du modèle sur des saisons passées pour valider ROI et calibration
