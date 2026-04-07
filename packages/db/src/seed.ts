@@ -138,7 +138,7 @@ const COMPETITIONS = [
     name: "UEFA Champions League",
     country: "Europe",
     isActive: true,
-    includeInBacktest: false,
+    includeInBacktest: true,
     csvDivisionCode: null,
   },
   {
@@ -147,7 +147,7 @@ const COMPETITIONS = [
     name: "UEFA Europa League",
     country: "Europe",
     isActive: true,
-    includeInBacktest: false,
+    includeInBacktest: true,
     csvDivisionCode: null,
   },
   {
@@ -156,7 +156,7 @@ const COMPETITIONS = [
     name: "UEFA Europa Conference League",
     country: "Europe",
     isActive: true,
-    includeInBacktest: false,
+    includeInBacktest: true,
     csvDivisionCode: null,
   },
   // International competitions — apiSeasonOverride bypasses the standard

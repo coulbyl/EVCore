@@ -518,6 +518,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
+      [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
     };
 
     const entries = await Promise.all(

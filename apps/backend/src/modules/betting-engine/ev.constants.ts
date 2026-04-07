@@ -245,13 +245,16 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
   // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
   I2: 1.56,
-  // European competitions — initial estimates, to be refined after backtest.
-  // UCL elite defenses produce fewer goals than domestic leagues (~2.7/game).
-  UCL: 1.35,
-  LDC: 1.35, // legacy alias for UCL
-  // Europa League: similar profile to UCL but broader field → slightly higher.
+  // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
+  // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
+  // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
+  // but DB measurement shows UCL runs closer to ~3.2 goals/game. Corrected.
+  UCL: 1.59,
+  LDC: 1.59, // legacy alias for UCL
+  // UEL: computed from team_stats (1,326 records). avg_lambda=1.437 ≈ default 1.4.
+  // No lambda correction needed — miscalibration is EV overconfidence, not lambda.
   UEL: 1.4,
-  // Conference League: more open matches with greater variance in team quality.
+  // UECL: computed from team_stats (2,253 records). avg_lambda=1.464 ≈ config 1.45.
   UECL: 1.45,
 };
 
@@ -343,7 +346,10 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // stat blending which produces less certain deterministic scores.
   UCL: new Decimal('0.45'),
   LDC: new Decimal('0.45'), // legacy alias for UCL
-  UEL: new Decimal('0.45'),
+  // Audit 2026-04-07: UEL AWAY bucket [3.0-4.99] — n=7, ROI -56%, EV 0.676 avg.
+  // P_model 52.5% vs actual win_rate 31.9% (+20.6pp overconfidence gap). Threshold
+  // raised to 0.55 to filter low-certainty fixtures generating false EV.
+  UEL: new Decimal('0.55'),
   UECL: new Decimal('0.45'),
   // Tier D — international competitions (conservative default — limited team
   // data, high variance, no historical backtest baseline yet).
@@ -442,6 +448,18 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // set). EV [0.35+] concentrates the worst bets. Cap at 0.35 to reduce exposure
   // while preserving the rare low-EV HOME that cleared the 3.00 floor.
   'CH|ONE_X_TWO|HOME': new Decimal('0.35'),
+  // Audit 2026-04-07: UEL AWAY — n=7, ROI -56%, all bets EV >= 0.35. Model
+  // over-confidence gap +20.6pp (P_model 52.5% vs win_rate 31.9%). Cap at 0.35
+  // as a calibration guard — eliminates the high-EV overconfident segment.
+  'UEL|ONE_X_TWO|AWAY': new Decimal('0.35'),
+  // Audit 2026-04-07: UEL HOME — 22 bets, ROI -19%, avg EV 0.474. Same
+  // overconfidence pattern as EL1/CH/D2 HOME: model increasingly wrong as EV rises.
+  // Cap at 0.35 to cut the high-EV segment while keeping moderate-EV HOME picks.
+  'UEL|ONE_X_TWO|HOME': new Decimal('0.35'),
+  // Audit 2026-04-07: UECL AWAY — 11 bets, ROI -53.3%, avg EV 0.537. Identical
+  // overconfidence pattern to UEL AWAY (high EV, low actual win rate). EV soft cap
+  // at 0.35 eliminates the overconfident segment — more targeted than a prob gate.
+  'UECL|ONE_X_TWO|AWAY': new Decimal('0.35'),
 };
 
 // Per-(competition, market, pick) EV floor — overrides the league EV threshold

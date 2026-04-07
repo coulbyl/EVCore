@@ -162,6 +162,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'odds-historical-import': {
+          active: 0,
+          waiting: 0,
+          completed: 9,
+          failed: 0,
+          delayed: 0,
+        },
       },
     },
   })

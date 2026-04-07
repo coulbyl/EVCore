@@ -229,7 +229,7 @@ function groupByDate(
 function buildSnapshotTimestamp(scheduledAt: Date): string {
   const t = new Date(scheduledAt);
   t.setUTCHours(t.getUTCHours() - 1);
-  return t.toISOString();
+  return t.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 /**

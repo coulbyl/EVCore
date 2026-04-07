@@ -334,7 +334,7 @@ export class FixtureRepository {
     return this.prisma.client.season.findFirst({
       where: {
         competition: { code: competitionCode },
-        name: `${seasonYear}/${seasonYear + 1}`,
+        name: `${seasonYear}-${String(seasonYear + 1).slice(-2)}`,
       },
       select: { id: true },
     });
