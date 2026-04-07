@@ -48,8 +48,26 @@ export type ValidationReport = {
   aggregateProfit: Decimal;
   averageEvSimulated: Decimal;
   overallVerdict: ValidationVerdict;
+  byMarket: ValidationMarketSummary[];
   byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
+};
+
+export type ValidationMarketSummary = {
+  market: Market;
+  betsPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  stake: Decimal;
+  aggregateProfit: Decimal;
+  aggregateRoi: Decimal;
+  averageOdds: Decimal;
+  averageEvSimulated: Decimal;
+  maxDrawdownSimulated: Decimal;
+  roi: MetricResult;
+  pickBreakdown: BacktestPickPerformance[];
+  oddsBuckets: BacktestOddsBucketPerformance[];
 };
 
 export type OneXTwoOutcome = 'HOME' | 'DRAW' | 'AWAY';

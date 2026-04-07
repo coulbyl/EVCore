@@ -580,9 +580,98 @@ describe('BacktestService.getValidationReport', () => {
     expect(report.brierScore.verdict).toBe('PASS');
     expect(report.calibrationError.verdict).toBe('PASS');
     expect(report.roi.verdict).toBe('PASS');
+    expect(report.byMarket).toEqual([]);
     expect(report.brierScore.threshold).toEqual(
       BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
     );
+  });
+
+  it('builds byMarket validation summaries with ROI verdicts', async () => {
+    const prismaMock = {
+      client: {
+        season: { findMany: vi.fn().mockResolvedValue([{ id: 's1' }]) },
+        fixture: { findMany: vi.fn() },
+        teamStats: { findMany: vi.fn() },
+        oddsSnapshot: { findMany: vi.fn() },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+
+    vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
+      seasons: [
+        {
+          seasonId: 's1',
+          fixtureCount: 100,
+          analyzedCount: 100,
+          skippedCount: 0,
+          brierScore: new Decimal('0.20'),
+          calibrationError: new Decimal('0.03'),
+          roiSimulated: new Decimal('0.05'),
+          maxDrawdownSimulated: new Decimal('2'),
+          averageEvSimulated: new Decimal('0.18'),
+          marketPerformance: [
+            {
+              market: Market.OVER_UNDER,
+              betsPlaced: 12,
+              wins: 7,
+              losses: 5,
+              voids: 0,
+              stake: new Decimal('12'),
+              profit: new Decimal('1.8'),
+              roi: new Decimal('0.15'),
+              averageOdds: new Decimal('2.15'),
+              averageEv: new Decimal('0.17'),
+              maxDrawdown: new Decimal('2'),
+              pickBreakdown: [],
+              oddsBuckets: [],
+            },
+            {
+              market: Market.HALF_TIME_FULL_TIME,
+              betsPlaced: 3,
+              wins: 1,
+              losses: 2,
+              voids: 0,
+              stake: new Decimal('3'),
+              profit: new Decimal('-0.5'),
+              roi: new Decimal('-0.1666666667'),
+              averageOdds: new Decimal('3.5'),
+              averageEv: new Decimal('0.11'),
+              maxDrawdown: new Decimal('1'),
+              pickBreakdown: [],
+              oddsBuckets: [],
+            },
+          ],
+          reportGeneratedAt: new Date(),
+        },
+      ],
+      totalFixtures: 100,
+      totalAnalyzed: 100,
+      totalBets: 15,
+      averageBrierScore: new Decimal('0.20'),
+      averageCalibrationError: new Decimal('0.03'),
+      aggregateRoi: new Decimal('0.0866666667'),
+      aggregateProfit: new Decimal('1.3'),
+      averageEvSimulated: new Decimal('0.158'),
+      byCompetition: [],
+      reportGeneratedAt: new Date(),
+    });
+
+    const report = await service.getValidationReport();
+
+    expect(report.byMarket).toHaveLength(2);
+    expect(report.byMarket[0]).toMatchObject({
+      market: Market.HALF_TIME_FULL_TIME,
+      betsPlaced: 3,
+      aggregateProfit: new Decimal('-0.5'),
+    });
+    expect(report.byMarket[0]?.roi.verdict).toBe('INSUFFICIENT_DATA');
+    expect(report.byMarket[1]).toMatchObject({
+      market: Market.OVER_UNDER,
+      betsPlaced: 12,
+      aggregateProfit: new Decimal('1.8'),
+    });
+    expect(report.byMarket[1]?.roi.verdict).toBe('PASS');
   });
 
   it('reuses the cached all-seasons report when validation is requested twice', async () => {
@@ -676,5 +765,6 @@ describe('BacktestService.getValidationReport', () => {
     expect(report.brierScore.verdict).toBe('FAIL');
     expect(report.calibrationError.verdict).toBe('PASS');
     expect(report.roi.verdict).toBe('PASS');
+    expect(report.byMarket).toEqual([]);
   });
 });

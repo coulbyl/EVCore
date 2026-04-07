@@ -129,6 +129,7 @@ describe('EtlService', () => {
       aggregateProfit: new Decimal(0),
       averageEvSimulated: new Decimal(0),
       overallVerdict: 'INSUFFICIENT_DATA',
+      byMarket: [],
       byCompetition: [],
       reportGeneratedAt: new Date(),
     }),

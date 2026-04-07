@@ -35,6 +35,8 @@ enum Market {
   BTTS
   DOUBLE_CHANCE
   HALF_TIME_FULL_TIME
+  OVER_UNDER_HT
+  FIRST_HALF_WINNER
 }
 
 enum BetStatus {

@@ -47,11 +47,19 @@ export type FullOddsSnapshot = {
   homeOdds: Decimal;
   drawOdds: Decimal;
   awayOdds: Decimal;
-  overOdds: Decimal | null;
-  underOdds: Decimal | null;
+  overUnderOdds: Partial<
+    Record<
+      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      Decimal
+    >
+  >;
   bttsYesOdds: Decimal | null;
   bttsNoOdds: Decimal | null;
   htftOdds: Partial<Record<HalfTimeFullTimePick, Decimal>>;
+  ouHtOdds: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
+  >;
+  firstHalfWinnerOdds: { home: Decimal; draw: Decimal; away: Decimal } | null;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

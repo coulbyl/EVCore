@@ -9,14 +9,23 @@ export type ThreeWayProba = {
 };
 
 export type DerivedMarketsProba = {
+  over15: Decimal;
+  under15: Decimal;
   over25: Decimal;
   under25: Decimal;
+  over35: Decimal;
+  under35: Decimal;
   bttsYes: Decimal;
   bttsNo: Decimal;
   dc1X: Decimal;
   dcX2: Decimal;
   dc12: Decimal;
   htft: Record<HalfTimeFullTimePick, Decimal>;
+  // First-half derived markets
+  ouHT: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
+  >;
+  firstHalfWinner: ThreeWayProba;
 };
 
 export type DeterministicFeatures = {
@@ -153,38 +162,68 @@ function deriveMarketsFromDistributions(
   awayDist: number[],
   oneXTwo: ThreeWayProba,
 ): DerivedMarketsProba {
+  let under15 = 0;
   let under25 = 0;
+  let under35 = 0;
+
+  for (let h = 0; h <= Math.min(1, homeDist.length - 1); h++) {
+    for (let a = 0; a <= Math.min(1 - h, awayDist.length - 1); a++) {
+      under15 += homeDist[h] * awayDist[a];
+    }
+  }
   for (let h = 0; h <= Math.min(2, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(2 - h, awayDist.length - 1); a++) {
       under25 += homeDist[h] * awayDist[a];
     }
   }
+  for (let h = 0; h <= Math.min(3, homeDist.length - 1); h++) {
+    for (let a = 0; a <= Math.min(3 - h, awayDist.length - 1); a++) {
+      under35 += homeDist[h] * awayDist[a];
+    }
+  }
 
+  const over15 = Math.max(0, 1 - under15);
   const over25 = Math.max(0, 1 - under25);
+  const over35 = Math.max(0, 1 - under35);
   // Uses the same truncated+normalized distributions for coherence with 1X2.
   const bttsYes = (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0));
   const bttsNo = 1 - bttsYes;
-  const htft = computeHalfTimeFullTimeFromMatchDistributions(
-    homeDist,
-    awayDist,
-  );
+  const { htft, ouHT, firstHalfWinner } =
+    computeFirstHalfMarketsFromMatchDistributions(homeDist, awayDist);
 
   return {
+    over15: new Decimal(over15),
+    under15: new Decimal(under15),
     over25: new Decimal(over25),
     under25: new Decimal(under25),
+    over35: new Decimal(over35),
+    under35: new Decimal(under35),
     bttsYes: new Decimal(bttsYes),
     bttsNo: new Decimal(bttsNo),
     dc1X: oneXTwo.home.plus(oneXTwo.draw),
     dcX2: oneXTwo.draw.plus(oneXTwo.away),
     dc12: oneXTwo.home.plus(oneXTwo.away),
     htft,
+    ouHT,
+    firstHalfWinner,
   };
 }
 
-function computeHalfTimeFullTimeFromMatchDistributions(
+type FirstHalfMarkets = {
+  htft: Record<HalfTimeFullTimePick, Decimal>;
+  ouHT: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
+  >;
+  firstHalfWinner: ThreeWayProba;
+};
+
+// Derives HT/FT, Over/Under HT, and First Half Winner from the full-time
+// Poisson distributions. All three share the same homeHalfDist/awayHalfDist
+// so the computation is done in a single pass.
+function computeFirstHalfMarketsFromMatchDistributions(
   homeDist: number[],
   awayDist: number[],
-): Record<HalfTimeFullTimePick, Decimal> {
+): FirstHalfMarkets {
   const maxGoals = Math.max(0, homeDist.length - 1, awayDist.length - 1);
   const factorialCache = buildFactorialCache(maxGoals);
   const lambdaHome = expectedGoalsFromDistribution(homeDist);
@@ -204,36 +243,66 @@ function computeHalfTimeFullTimeFromMatchDistributions(
   const homeSecondDist = homeHalfDist;
   const awaySecondDist = awayHalfDist;
 
-  const totals = Object.fromEntries(
+  const htftTotals = Object.fromEntries(
     HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, 0]),
   ) as Record<HalfTimeFullTimePick, number>;
+
+  let under0_5_ht = 0;
+  let under1_5_ht = 0;
+  let homeHT = 0;
+  let drawHT = 0;
+  let awayHT = 0;
 
   for (let h1 = 0; h1 < homeHalfDist.length; h1++) {
     for (let a1 = 0; a1 < awayHalfDist.length; a1++) {
       const pHalf = (homeHalfDist[h1] ?? 0) * (awayHalfDist[a1] ?? 0);
       if (pHalf <= 0) continue;
 
-      const halfOutcome = outcomeFromScores(h1, a1);
+      // OU HT
+      if (h1 + a1 === 0) under0_5_ht += pHalf;
+      if (h1 + a1 <= 1) under1_5_ht += pHalf;
 
+      // First Half Winner
+      if (h1 > a1) homeHT += pHalf;
+      else if (h1 === a1) drawHT += pHalf;
+      else awayHT += pHalf;
+
+      // HT/FT
+      const halfOutcome = outcomeFromScores(h1, a1);
       for (let h2 = 0; h2 < homeSecondDist.length; h2++) {
         for (let a2 = 0; a2 < awaySecondDist.length; a2++) {
           const p =
             pHalf * (homeSecondDist[h2] ?? 0) * (awaySecondDist[a2] ?? 0);
           if (p <= 0) continue;
-
           const fullOutcome = outcomeFromScores(h1 + h2, a1 + a2);
           const pick = `${halfOutcome}_${fullOutcome}`;
           if (isHalfTimeFullTimePick(pick)) {
-            totals[pick] += p;
+            htftTotals[pick] += p;
           }
         }
       }
     }
   }
 
-  return Object.fromEntries(
-    HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, new Decimal(totals[pick])]),
-  ) as Record<HalfTimeFullTimePick, Decimal>;
+  return {
+    htft: Object.fromEntries(
+      HALF_TIME_FULL_TIME_PICKS.map((pick) => [
+        pick,
+        new Decimal(htftTotals[pick]),
+      ]),
+    ) as Record<HalfTimeFullTimePick, Decimal>,
+    ouHT: {
+      OVER_0_5: new Decimal(Math.max(0, 1 - under0_5_ht)),
+      UNDER_0_5: new Decimal(under0_5_ht),
+      OVER_1_5: new Decimal(Math.max(0, 1 - under1_5_ht)),
+      UNDER_1_5: new Decimal(under1_5_ht),
+    },
+    firstHalfWinner: {
+      home: new Decimal(homeHT),
+      draw: new Decimal(drawHT),
+      away: new Decimal(awayHT),
+    },
+  };
 }
 
 function expectedGoalsFromDistribution(distribution: number[]): number {
@@ -318,8 +387,14 @@ const PICK_CONDITIONS: Record<string, (h: number, a: number) => boolean> = {
   HOME: (h, a) => h > a,
   DRAW: (h, a) => h === a,
   AWAY: (h, a) => h < a,
+  OVER_0_5: (h, a) => h + a > 0,
+  UNDER_0_5: (h, a) => h + a === 0,
+  OVER_1_5: (h, a) => h + a > 1,
+  UNDER_1_5: (h, a) => h + a <= 1,
   OVER: (h, a) => h + a > 2,
   UNDER: (h, a) => h + a <= 2,
+  OVER_3_5: (h, a) => h + a > 3,
+  UNDER_3_5: (h, a) => h + a <= 3,
   YES: (h, a) => h >= 1 && a >= 1, // BTTS YES
   NO: (h, a) => h === 0 || a === 0, // BTTS NO
   '1X': (h, a) => h >= a,
@@ -488,6 +563,18 @@ export function resolveHalfTimeFullTimeBetStatus(
   return expectedHalf === halfOutcome && expectedFull === fullOutcome
     ? BetStatus.WON
     : BetStatus.LOST;
+}
+
+// Resolve OVER_UNDER_HT and FIRST_HALF_WINNER bets against half-time scores.
+export function resolveFirstHalfBetStatus(
+  pick: string,
+  homeHtScore: number | null,
+  awayHtScore: number | null,
+): BetStatus {
+  if (homeHtScore === null || awayHtScore === null) return BetStatus.VOID;
+  const condition = PICK_CONDITIONS[pick];
+  if (!condition) return BetStatus.VOID;
+  return condition(homeHtScore, awayHtScore) ? BetStatus.WON : BetStatus.LOST;
 }
 
 // Resolve the outcome of a single-market bet (1X2, OVER_UNDER, BTTS, DOUBLE_CHANCE).

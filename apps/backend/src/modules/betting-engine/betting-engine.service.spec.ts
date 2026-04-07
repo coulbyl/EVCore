@@ -152,6 +152,28 @@ describe('deriveMarketsFromPoisson', () => {
     );
     expect(htftSum.toNumber()).toBeCloseTo(1, 6);
   });
+
+  it('returns coherent totals ladders for 1.5, 2.5 and 3.5', () => {
+    const oneXTwo = poissonProba(1.4, 1.0);
+    const derived = deriveMarketsFromPoisson({
+      lambdaHome: 1.4,
+      lambdaAway: 1.0,
+      oneXTwo,
+    });
+
+    expect(derived.over15.plus(derived.under15).toNumber()).toBeCloseTo(1, 6);
+    expect(derived.over35.plus(derived.under35).toNumber()).toBeCloseTo(1, 6);
+    expect(derived.over15.toNumber()).toBeGreaterThan(
+      derived.over25.toNumber(),
+    );
+    expect(derived.over25.toNumber()).toBeGreaterThan(
+      derived.over35.toNumber(),
+    );
+    expect(derived.under15.toNumber()).toBeLessThan(derived.under25.toNumber());
+    expect(derived.under25.toNumber()).toBeLessThan(derived.under35.toNumber());
+    expect(derived.over15.toNumber()).toBeCloseTo(0.69156, 5);
+    expect(derived.over35.toNumber()).toBeCloseTo(0.22128, 5);
+  });
 });
 
 describe('calculateDeterministicScore', () => {
@@ -327,14 +349,24 @@ describe('BettingEngineService', () => {
       home: new Decimal('0.62'),
       draw: new Decimal('0.22'),
       away: new Decimal('0.16'),
+      over15: new Decimal('0.70'),
+      under15: new Decimal('0.30'),
       over25: new Decimal('0.48'),
       under25: new Decimal('0.52'),
+      over35: new Decimal('0.26'),
+      under35: new Decimal('0.74'),
       bttsYes: new Decimal('0.39'),
       bttsNo: new Decimal('0.61'),
       dc1X: new Decimal('0.84'),
       dcX2: new Decimal('0.38'),
       dc12: new Decimal('0.78'),
       htft: makeHtftProbabilities('0.01'),
+      ouHT: {},
+      firstHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -359,14 +391,24 @@ describe('BettingEngineService', () => {
       home: new Decimal('0.62'),
       draw: new Decimal('0.22'),
       away: new Decimal('0.16'),
+      over15: new Decimal('0.70'),
+      under15: new Decimal('0.30'),
       over25: new Decimal('0.48'),
       under25: new Decimal('0.52'),
+      over35: new Decimal('0.26'),
+      under35: new Decimal('0.74'),
       bttsYes: new Decimal('0.39'),
       bttsNo: new Decimal('0.61'),
       dc1X: new Decimal('0.84'),
       dcX2: new Decimal('0.38'),
       dc12: new Decimal('0.78'),
       htft: makeHtftProbabilities('0.01'),
+      ouHT: {},
+      firstHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -797,14 +839,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.5'),
         draw: new Decimal('0.3'),
         away: new Decimal('0.2'),
+        over15: new Decimal('0.7'),
+        under15: new Decimal('0.3'),
         over25: new Decimal('0.4'),
         under25: new Decimal('0.6'),
+        over35: new Decimal('0.2'),
+        under35: new Decimal('0.8'),
         bttsYes: new Decimal('0.5'),
         bttsNo: new Decimal('0.5'),
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
         htft: makeHtftProbabilities(),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -923,14 +975,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.5'),
         draw: new Decimal('0.3'),
         away: new Decimal('0.2'),
+        over15: new Decimal('0.7'),
+        under15: new Decimal('0.3'),
         over25: new Decimal('0.4'),
         under25: new Decimal('0.6'),
+        over35: new Decimal('0.2'),
+        under35: new Decimal('0.8'),
         bttsYes: new Decimal('0.5'),
         bttsNo: new Decimal('0.5'),
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
         htft: makeHtftProbabilities(),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -1025,14 +1087,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.18'),
         draw: new Decimal('0.17'),
         away: new Decimal('0.65'),
+        over15: new Decimal('0.78'),
+        under15: new Decimal('0.22'),
         over25: new Decimal('0.52'),
         under25: new Decimal('0.48'),
+        over35: new Decimal('0.29'),
+        under35: new Decimal('0.71'),
         bttsYes: new Decimal('0.49'),
         bttsNo: new Decimal('0.51'),
         dc1X: new Decimal('0.35'),
         dcX2: new Decimal('0.82'),
         dc12: new Decimal('0.83'),
         htft: makeHtftProbabilities('0.111111'),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       features: {
         recentForm: new Decimal('0.3'),
@@ -1121,14 +1193,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.22'),
         draw: new Decimal('0.34'),
         away: new Decimal('0.44'),
+        over15: new Decimal('0.72'),
+        under15: new Decimal('0.28'),
         over25: new Decimal('0.44'),
         under25: new Decimal('0.56'),
+        over35: new Decimal('0.21'),
+        under35: new Decimal('0.79'),
         bttsYes: new Decimal('0.47'),
         bttsNo: new Decimal('0.53'),
         dc1X: new Decimal('0.60'),
         dcX2: new Decimal('0.74'),
         dc12: new Decimal('0.66'),
         htft: makeHtftProbabilities('0.111111'),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       features: {
         recentForm: new Decimal('0.3'),
@@ -1163,14 +1245,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.20'),
         draw: new Decimal('0.25'),
         away: new Decimal('0.55'),
+        over15: new Decimal('0.74'),
+        under15: new Decimal('0.26'),
         over25: new Decimal('0.45'),
         under25: new Decimal('0.55'),
+        over35: new Decimal('0.22'),
+        under35: new Decimal('0.78'),
         bttsYes: new Decimal('0.47'),
         bttsNo: new Decimal('0.53'),
         dc1X: new Decimal('0.45'),
         dcX2: new Decimal('0.80'),
         dc12: new Decimal('0.75'),
         htft,
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1178,11 +1270,12 @@ describe('BettingEngineService', () => {
         homeOdds: new Decimal('6.5'), // all above cap=4.0
         drawOdds: new Decimal('5.2'),
         awayOdds: new Decimal('4.5'),
-        overOdds: null,
-        underOdds: null,
+        overUnderOdds: {},
         bttsYesOdds: null,
         bttsNoOdds: null,
         htftOdds: {},
+        ouHtOdds: {},
+        firstHalfWinnerOdds: null,
       },
       deterministicScore: new Decimal('0.75'),
       distHome,
@@ -1209,14 +1302,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.75'),
         draw: new Decimal('0.15'),
         away: new Decimal('0.10'),
+        over15: new Decimal('0.80'),
+        under15: new Decimal('0.20'),
         over25: new Decimal('0.55'),
         under25: new Decimal('0.45'),
+        over35: new Decimal('0.31'),
+        under35: new Decimal('0.69'),
         bttsYes: new Decimal('0.40'),
         bttsNo: new Decimal('0.60'),
         dc1X: new Decimal('0.90'),
         dcX2: new Decimal('0.25'),
         dc12: new Decimal('0.85'),
         htft,
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1224,11 +1327,12 @@ describe('BettingEngineService', () => {
         homeOdds: new Decimal('1.30'), // below MIN_SELECTION_ODDS=1.80
         drawOdds: new Decimal('1.50'), // below MIN_SELECTION_ODDS=1.80
         awayOdds: new Decimal('1.60'), // below MIN_SELECTION_ODDS=1.80
-        overOdds: null,
-        underOdds: null,
+        overUnderOdds: {},
         bttsYesOdds: null,
         bttsNoOdds: null,
         htftOdds: {},
+        ouHtOdds: {},
+        firstHalfWinnerOdds: null,
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -1255,14 +1359,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.48'),
         draw: new Decimal('0.32'),
         away: new Decimal('0.20'),
+        over15: new Decimal('0.80'),
+        under15: new Decimal('0.20'),
         over25: new Decimal('0.55'),
         under25: new Decimal('0.45'),
+        over35: new Decimal('0.31'),
+        under35: new Decimal('0.69'),
         bttsYes: new Decimal('0.40'),
         bttsNo: new Decimal('0.60'),
         dc1X: new Decimal('0.80'),
         dcX2: new Decimal('0.45'),
         dc12: new Decimal('0.75'),
         htft,
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1270,11 +1384,12 @@ describe('BettingEngineService', () => {
         homeOdds: new Decimal('4.80'),
         drawOdds: new Decimal('3.50'),
         awayOdds: new Decimal('4.00'),
-        overOdds: null,
-        underOdds: null,
+        overUnderOdds: {},
         bttsYesOdds: null,
         bttsNoOdds: null,
         htftOdds: {},
+        ouHtOdds: {},
+        firstHalfWinnerOdds: null,
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -1357,14 +1472,24 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.5'),
         draw: new Decimal('0.3'),
         away: new Decimal('0.2'),
+        over15: new Decimal('0.7'),
+        under15: new Decimal('0.3'),
         over25: new Decimal('0.4'),
         under25: new Decimal('0.6'),
+        over35: new Decimal('0.2'),
+        under35: new Decimal('0.8'),
         bttsYes: new Decimal('0.5'),
         bttsNo: new Decimal('0.5'),
         dc1X: new Decimal('0.8'),
         dcX2: new Decimal('0.5'),
         dc12: new Decimal('0.7'),
         htft: makeHtftProbabilities(),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
       },
       features: {
         recentForm: new Decimal('0.7'),
@@ -1474,8 +1599,12 @@ describe('BettingEngineService', () => {
         home: new Decimal('0.3'),
         draw: new Decimal('0.3'),
         away: new Decimal('0.4'),
+        over15: new Decimal('0.7'),
+        under15: new Decimal('0.3'),
         over25: new Decimal('0.4'),
         under25: new Decimal('0.6'),
+        over35: new Decimal('0.2'),
+        under35: new Decimal('0.8'),
         bttsYes: new Decimal('0.5'),
         bttsNo: new Decimal('0.5'),
         dc1X: new Decimal('0.6'),
@@ -1484,6 +1613,12 @@ describe('BettingEngineService', () => {
         htft: {
           ...makeHtftProbabilities('0.01'),
           HOME_HOME: new Decimal('0.65'),
+        },
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
         },
       },
       features: {

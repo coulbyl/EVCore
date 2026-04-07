@@ -18,12 +18,38 @@ function singlePickLabel(market: string, pick: string): string {
     if (pick === "AWAY") return "V2";
   }
   if (market === "OVER_UNDER") {
+    if (pick === "OVER_1_5") return "PLUS DE 1.5";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5";
     if (pick === "OVER") return "PLUS DE 2.5";
     if (pick === "UNDER") return "MOINS DE 2.5";
+    if (pick === "OVER_3_5") return "PLUS DE 3.5";
+    if (pick === "UNDER_3_5") return "MOINS DE 3.5";
   }
   if (market === "BTTS") {
     if (pick === "YES") return "BB OUI";
     if (pick === "NO") return "BB NON";
+  }
+  if (market === "OVER_UNDER_HT") {
+    if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
+    if (pick === "UNDER_0_5") return "MOINS DE 0.5 MT";
+    if (pick === "OVER_1_5") return "PLUS DE 1.5 MT";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5 MT";
+  }
+  if (market === "FIRST_HALF_WINNER") {
+    if (pick === "HOME") return "MT V1";
+    if (pick === "DRAW") return "MT NUL";
+    if (pick === "AWAY") return "MT V2";
+  }
+  if (market === "HALF_TIME_FULL_TIME") {
+    if (pick === "HOME_HOME") return "V1 / V1";
+    if (pick === "HOME_DRAW") return "V1 / NUL";
+    if (pick === "HOME_AWAY") return "V1 / V2";
+    if (pick === "DRAW_HOME") return "NUL / V1";
+    if (pick === "DRAW_DRAW") return "NUL / NUL";
+    if (pick === "DRAW_AWAY") return "NUL / V2";
+    if (pick === "AWAY_HOME") return "V2 / V1";
+    if (pick === "AWAY_DRAW") return "V2 / NUL";
+    if (pick === "AWAY_AWAY") return "V2 / V2";
   }
   return `${market}/${pick}`;
 }

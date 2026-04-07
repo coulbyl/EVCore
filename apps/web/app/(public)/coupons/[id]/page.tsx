@@ -11,6 +11,7 @@ import {
 } from "@/components/coupon-detail";
 import {
   combinedOdds,
+  formatMarketForDisplay,
   selectionStatusLabel,
   selectionStatusBadgeClass,
 } from "@/helpers/coupon";
@@ -337,9 +338,7 @@ function CouponPageBody({
                     selection.market,
                     t,
                   )}
-                  marketLabel={
-                    t.marketLabels[selection.market] ?? selection.market
-                  }
+                  marketLabel={formatMarketForDisplay(selection.market, locale)}
                 />
               </div>
             ))}
@@ -394,7 +393,7 @@ function formatLegText(
     selection.market,
     t,
   );
-  const marketLabel = t.marketLabels[selection.market] ?? selection.market;
+  const marketLabel = formatMarketForDisplay(selection.market, locale);
   const statusLabel = selectionStatusLabel(
     selection.status,
     selection.fixtureStatus,
@@ -423,7 +422,7 @@ function formatDiagnosticsText(
     selection.market,
     t,
   );
-  const marketLabel = t.marketLabels[selection.market] ?? selection.market;
+  const marketLabel = formatMarketForDisplay(selection.market, locale);
   const statusLabel = selectionStatusLabel(
     selection.status,
     selection.fixtureStatus,

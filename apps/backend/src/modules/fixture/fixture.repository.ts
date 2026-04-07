@@ -121,11 +121,19 @@ export type UpsertOddsSnapshotInput = {
   homeOdds: number;
   drawOdds: number;
   awayOdds: number;
-  overOdds: number | null;
-  underOdds: number | null;
+  overUnderOdds: Partial<
+    Record<
+      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      number
+    >
+  >;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
+  ouHtOdds: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
+  >;
+  firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -133,11 +141,19 @@ export type UpsertSecondaryMarketOddsInput = {
   fixtureId: string;
   bookmaker: string;
   snapshotAt: Date;
-  overOdds: number | null;
-  underOdds: number | null;
+  overUnderOdds: Partial<
+    Record<
+      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      number
+    >
+  >;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
+  ouHtOdds: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
+  >;
+  firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -567,7 +583,12 @@ export class FixtureRepository {
       snapshotAt: Date;
       source: OddsSnapshotSource;
     },
-    market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
+    market:
+      | 'OVER_UNDER'
+      | 'BTTS'
+      | 'HALF_TIME_FULL_TIME'
+      | 'OVER_UNDER_HT'
+      | 'FIRST_HALF_WINNER',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -628,13 +649,39 @@ export class FixtureRepository {
     });
 
     await Promise.all([
-      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'OVER', data.overOdds),
-      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'UNDER', data.underOdds),
+      ...Object.entries(data.overUnderOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER', pick, odds ?? null),
+      ),
       this.upsertNonOneXTwo(ctx, 'BTTS', 'YES', data.bttsYesOdds),
       this.upsertNonOneXTwo(ctx, 'BTTS', 'NO', data.bttsNoOdds),
       ...Object.entries(data.htftOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'HALF_TIME_FULL_TIME', pick, odds),
       ),
+      ...Object.entries(data.ouHtOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER_HT', pick, odds ?? null),
+      ),
+      ...(data.firstHalfWinnerOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'HOME',
+              data.firstHalfWinnerOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'DRAW',
+              data.firstHalfWinnerOdds.draw,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'AWAY',
+              data.firstHalfWinnerOdds.away,
+            ),
+          ]
+        : []),
     ]);
 
     return oneXTwoId;
@@ -652,13 +699,39 @@ export class FixtureRepository {
     };
 
     await Promise.all([
-      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'OVER', data.overOdds),
-      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'UNDER', data.underOdds),
+      ...Object.entries(data.overUnderOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER', pick, odds ?? null),
+      ),
       this.upsertNonOneXTwo(ctx, 'BTTS', 'YES', data.bttsYesOdds),
       this.upsertNonOneXTwo(ctx, 'BTTS', 'NO', data.bttsNoOdds),
       ...Object.entries(data.htftOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'HALF_TIME_FULL_TIME', pick, odds),
       ),
+      ...Object.entries(data.ouHtOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER_HT', pick, odds ?? null),
+      ),
+      ...(data.firstHalfWinnerOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'HOME',
+              data.firstHalfWinnerOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'DRAW',
+              data.firstHalfWinnerOdds.draw,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'AWAY',
+              data.firstHalfWinnerOdds.away,
+            ),
+          ]
+        : []),
     ]);
   }
 
