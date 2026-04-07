@@ -35,7 +35,13 @@ import {
   type ValidationVerdict,
 } from './backtest.report';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
-import { getModelScoreThreshold } from '@modules/betting-engine/ev.constants';
+import {
+  getModelScoreThreshold,
+  isEuropeanCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
+} from '@modules/betting-engine/ev.constants';
+import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
 
 const logger = createLogger('backtest-service');
 const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
@@ -197,6 +203,12 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
+    const uniqueTeamIds = [
+      ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+    ];
+    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
+      ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
+      : new Map<string, TeamStatsIndexEntry[]>();
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -216,16 +228,53 @@ export class BacktestService {
         continue;
       }
 
-      const homeStats = findLatestStatsBeforeFixture(
+      const homeStatsRaw = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.homeTeamId) ?? [],
         fixture,
         BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
-      const awayStats = findLatestStatsBeforeFixture(
+      const awayStatsRaw = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.awayTeamId) ?? [],
         fixture,
         BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
+
+      const homeCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.homeTeamId) ?? [],
+        fixture,
+        0,
+      );
+      const awayCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.awayTeamId) ?? [],
+        fixture,
+        0,
+      );
+
+      const homeStats: TeamStatsInput | null = (() => {
+        if (!homeStatsRaw) return homeCross ?? null;
+        if (homeCross) {
+          return blendTeamStats({
+            primary: homeStatsRaw,
+            secondary: homeCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        }
+        return homeStatsRaw;
+      })();
+
+      const awayStats: TeamStatsInput | null = (() => {
+        if (!awayStatsRaw) return awayCross ?? null;
+        if (awayCross) {
+          return blendTeamStats({
+            primary: awayStatsRaw,
+            secondary: awayCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        }
+        return awayStatsRaw;
+      })();
 
       if (!homeStats || !awayStats) {
         analysisEntries.push(
@@ -760,6 +809,61 @@ export class BacktestService {
   ): Promise<Map<string, TeamStatsIndexEntry[]>> {
     const statsRows = await this.prisma.client.teamStats.findMany({
       where: { afterFixture: { seasonId } },
+      select: {
+        teamId: true,
+        afterFixtureId: true,
+        recentForm: true,
+        xgFor: true,
+        xgAgainst: true,
+        homeWinRate: true,
+        awayWinRate: true,
+        drawRate: true,
+        leagueVolatility: true,
+        afterFixture: { select: { scheduledAt: true } },
+      },
+      orderBy: [
+        { afterFixture: { scheduledAt: 'asc' } },
+        { afterFixtureId: 'asc' },
+      ],
+    });
+
+    const index = new Map<string, TeamStatsIndexEntry[]>();
+    for (const row of statsRows) {
+      const list = index.get(row.teamId) ?? [];
+      list.push({
+        afterFixtureId: row.afterFixtureId,
+        scheduledAt: row.afterFixture.scheduledAt,
+        stats: {
+          recentForm: row.recentForm,
+          xgFor: row.xgFor,
+          xgAgainst: row.xgAgainst,
+          homeWinRate: row.homeWinRate,
+          awayWinRate: row.awayWinRate,
+          drawRate: row.drawRate,
+          leagueVolatility: row.leagueVolatility,
+        },
+      });
+      index.set(row.teamId, list);
+    }
+
+    return index;
+  }
+
+  /**
+   * Load team stats from all seasons EXCEPT `excludeSeasonId` for the given
+   * team IDs. Used to supplement European-season stats with domestic form.
+   */
+  private async loadCrossCompStatsIndex(
+    excludeSeasonId: string,
+    teamIds: string[],
+  ): Promise<Map<string, TeamStatsIndexEntry[]>> {
+    if (teamIds.length === 0) return new Map();
+
+    const statsRows = await this.prisma.client.teamStats.findMany({
+      where: {
+        teamId: { in: teamIds },
+        afterFixture: { seasonId: { not: excludeSeasonId } },
+      },
       select: {
         teamId: true,
         afterFixtureId: true,

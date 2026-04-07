@@ -24,6 +24,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         href: "/audit",
         active: pathname === "/audit",
       },
+      {
+        label: "Glossaire",
+        href: "/glossaire",
+        active: pathname === "/glossaire",
+      },
     ],
     [pathname],
   );

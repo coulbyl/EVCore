@@ -22,4 +22,10 @@ export const BACKTEST_CONSTANTS = {
   // aggregate. Seasons with fewer bets are statistically unreliable (high
   // variance — a single loss can produce ROI = -100%).
   MIN_BETS_FOR_ROI: 10,
+  // Earliest season year to include in European competition backtests.
+  // 2022/23 is the default: earlier seasons lack Pinnacle odds (historical
+  // import via The Odds API starts from 2020 but 2020/21 and 2021/22 are
+  // excluded due to COVID-era noise). Extend back to 2020 if calibration
+  // needs more volume.
+  EUROPEAN_BACKTEST_SEASON_FROM: 2022,
 } as const;

@@ -20,6 +20,7 @@ import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.worker';
 import { EloSyncWorker } from './workers/elo-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
+import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { AdjustmentModule } from '../adjustment/adjustment.module';
       { name: BULLMQ_QUEUES.ELO_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
+      { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
     ),
     AdjustmentModule,
     BacktestModule,
@@ -55,6 +57,7 @@ import { AdjustmentModule } from '../adjustment/adjustment.module';
     EloSyncWorker,
     OddsPrematchSyncWorker,
     OddsSnapshotRetentionWorker,
+    OddsHistoricalImportWorker,
   ],
   exports: [EtlService],
 })

@@ -16,6 +16,7 @@ import type { EloSyncJobData } from './workers/elo-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
+import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BacktestService } from '../backtest/backtest.service';
@@ -83,6 +84,7 @@ describe('EtlService', () => {
   const eloSyncQueue = makeQueue<EloSyncJobData>();
   const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
+  const oddsHistoricalImportQueue = makeQueue<OddsHistoricalImportJobData>();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -173,6 +175,7 @@ describe('EtlService', () => {
     eloSyncQueue as Queue<EloSyncJobData>,
     oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
+    oddsHistoricalImportQueue as Queue<OddsHistoricalImportJobData>,
     configMock,
     prismaMock,
     backtestServiceMock,

@@ -14,6 +14,7 @@ import {
 } from './betting-engine.utils';
 import {
   BettingEngineService,
+  blendTeamStats,
   estimateComboOdds,
 } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
@@ -1502,5 +1503,81 @@ describe('BettingEngineService', () => {
         pick: 'HOME_HOME',
       });
     }
+  });
+});
+
+describe('blendTeamStats', () => {
+  const euro = {
+    recentForm: 0.8,
+    xgFor: 2.0,
+    xgAgainst: 0.8,
+    homeWinRate: 0.6,
+    awayWinRate: 0.4,
+    drawRate: 0.2,
+    leagueVolatility: 0.5,
+  };
+  const domestic = {
+    recentForm: 0.6,
+    xgFor: 1.4,
+    xgAgainst: 1.2,
+    homeWinRate: 0.55,
+    awayWinRate: 0.35,
+    drawRate: 0.25,
+    leagueVolatility: 0.3,
+  };
+
+  it('blends recentForm with specified form weight', () => {
+    const result = blendTeamStats({
+      primary: euro,
+      secondary: domestic,
+      formWeight: 0.6,
+      xgWeight: 0.4,
+    });
+    // 0.8 * 0.6 + 0.6 * 0.4 = 0.48 + 0.24 = 0.72
+    expect(Number(result.recentForm)).toBeCloseTo(0.72, 6);
+  });
+
+  it('blends xgFor with specified xg weight', () => {
+    const result = blendTeamStats({
+      primary: euro,
+      secondary: domestic,
+      formWeight: 0.6,
+      xgWeight: 0.4,
+    });
+    // 2.0 * 0.4 + 1.4 * 0.6 = 0.80 + 0.84 = 1.64
+    expect(Number(result.xgFor)).toBeCloseTo(1.64, 6);
+  });
+
+  it('takes homeWinRate, awayWinRate, drawRate from secondary (domestic)', () => {
+    const result = blendTeamStats({
+      primary: euro,
+      secondary: domestic,
+      formWeight: 0.6,
+      xgWeight: 0.4,
+    });
+    expect(result.homeWinRate).toBe(domestic.homeWinRate);
+    expect(result.awayWinRate).toBe(domestic.awayWinRate);
+    expect(result.drawRate).toBe(domestic.drawRate);
+  });
+
+  it('takes leagueVolatility from primary (European)', () => {
+    const result = blendTeamStats({
+      primary: euro,
+      secondary: domestic,
+      formWeight: 0.6,
+      xgWeight: 0.4,
+    });
+    expect(result.leagueVolatility).toBe(euro.leagueVolatility);
+  });
+
+  it('works correctly with Decimal.js values (Prisma output)', () => {
+    const euroDecimal = { ...euro, recentForm: new Decimal(0.8) };
+    const result = blendTeamStats({
+      primary: euroDecimal,
+      secondary: domestic,
+      formWeight: 0.6,
+      xgWeight: 0.4,
+    });
+    expect(Number(result.recentForm)).toBeCloseTo(0.72, 6);
   });
 });

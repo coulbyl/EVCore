@@ -65,6 +65,11 @@ enum CouponTier {
   SPECULATIF
 }
 
+enum OddsSnapshotSource {
+  PREMATCH
+  HISTORICAL
+}
+
 enum NotificationType {
   ROI_ALERT
   MARKET_SUSPENSION
@@ -139,24 +144,29 @@ model Fixture {
   homeTeam      Team          @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeamId    String        @db.Uuid
   awayTeam      Team          @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  matchday      Int
-  scheduledAt   DateTime
-  status        FixtureStatus @default(SCHEDULED)
-  homeScore     Int?
-  awayScore     Int?
-  homeHtScore   Int?
-  awayHtScore   Int?
-  homeXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
-  awayXg        Decimal?      @db.Decimal(5, 3) // from API-Football expected_goals
-  xgUnavailable Boolean       @default(false)   // true = API returned no stats, skip on retry
-  modelRuns     ModelRun[]
-  bets          Bet[]
-  teamStats     TeamStats[]
-  oddsSnapshots OddsSnapshot[] // scaffolded for Phase 2
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  matchday             Int
+  round                String?               // raw API round string (e.g. "Quarter-finals", "League Stage - 1")
+  leg                  Int?                  // 1 = aller, 2 = retour — null for group/league stage
+  aggregateHomeGoals   Int?                  // goals scored by home team's side in leg 1 (set on leg 2 only)
+  aggregateAwayGoals   Int?                  // goals scored by away team's side in leg 1 (set on leg 2 only)
+  scheduledAt          DateTime
+  status               FixtureStatus         @default(SCHEDULED)
+  homeScore            Int?
+  awayScore            Int?
+  homeHtScore          Int?
+  awayHtScore          Int?
+  homeXg               Decimal?              @db.Decimal(5, 3) // from API-Football expected_goals
+  awayXg               Decimal?              @db.Decimal(5, 3) // from API-Football expected_goals
+  xgUnavailable        Boolean               @default(false)   // true = API returned no stats, skip on retry
+  modelRuns            ModelRun[]
+  bets                 Bet[]
+  teamStats            TeamStats[]
+  oddsSnapshots        OddsSnapshot[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([seasonId, matchday])
+  @@index([seasonId, round])
   @@index([scheduledAt])
   @@index([status, scheduledAt])
   @@index([seasonId, status, scheduledAt])
@@ -356,10 +366,11 @@ model OddsSnapshot {
   homeOdds   Decimal? @db.Decimal(6, 3)
   drawOdds   Decimal? @db.Decimal(6, 3)
   awayOdds   Decimal? @db.Decimal(6, 3)
-  pick       String?  // for non-1X2 markets
-  odds       Decimal? @db.Decimal(6, 3) // for non-1X2 markets
+  pick       String?              // for non-1X2 markets
+  odds       Decimal?             @db.Decimal(6, 3) // for non-1X2 markets
+  source     OddsSnapshotSource   @default(PREMATCH)
   snapshotAt DateTime
-  createdAt  DateTime @default(now())
+  createdAt  DateTime             @default(now())
 
   @@index([fixtureId, snapshotAt])
   @@index([fixtureId, bookmaker, market, pick, snapshotAt])

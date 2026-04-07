@@ -110,6 +110,12 @@ const LEAGUE_MIN_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // second bookmaker (Bet365). A Pinnacle-implied 65% home at 1.95 Bet365 is
   // genuine EV. The Poisson-based floor (2.00) does not apply here.
   FRI: new Decimal('1.40'),
+  // European competitions: Pinnacle is a primary bookmaker for UCL/UEL/UECL.
+  // Using the standard 2.00 floor — no historical evidence to deviate yet.
+  UCL: new Decimal('2.00'),
+  LDC: new Decimal('2.00'), // legacy alias
+  UEL: new Decimal('2.00'),
+  UECL: new Decimal('2.00'),
 };
 
 export function getLeagueMinSelectionOdds(
@@ -239,6 +245,14 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
   // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
   I2: 1.56,
+  // European competitions — initial estimates, to be refined after backtest.
+  // UCL elite defenses produce fewer goals than domestic leagues (~2.7/game).
+  UCL: 1.35,
+  LDC: 1.35, // legacy alias for UCL
+  // Europa League: similar profile to UCL but broader field → slightly higher.
+  UEL: 1.4,
+  // Conference League: more open matches with greater variance in team quality.
+  UECL: 1.45,
 };
 
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
@@ -273,6 +287,14 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
   I2: [1.02, 0.98],
+  // European competitions: home advantage is structurally lower than domestic
+  // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
+  // Teams that qualify are elite — talent gap is narrower and travel is managed.
+  // Estimate: ~3% home advantage vs 5% global default. Refine after backtest.
+  UCL: [1.03, 0.97],
+  LDC: [1.03, 0.97], // legacy alias for UCL
+  UEL: [1.04, 0.96],
+  UECL: [1.04, 0.96],
 };
 
 export function getLeagueHomeAwayFactors(
@@ -316,8 +338,11 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   I2: new Decimal('0.60'),
   EL1: new Decimal('0.50'),
   EL2: new Decimal('0.45'),
-  // Tier C — European competitions (decided in prior session)
-  LDC: new Decimal('0.45'),
+  // Tier C — European competitions
+  // Lower threshold reflects sparse early-season stats and cross-competition
+  // stat blending which produces less certain deterministic scores.
+  UCL: new Decimal('0.45'),
+  LDC: new Decimal('0.45'), // legacy alias for UCL
   UEL: new Decimal('0.45'),
   UECL: new Decimal('0.45'),
   // Tier D — international competitions (conservative default — limited team
@@ -366,6 +391,24 @@ export function getLeagueEvThreshold(competitionCode: string | null): Decimal {
   }
   return EV_THRESHOLD;
 }
+
+// ─── European competitions ───────────────────────────────────────────────────
+
+// All competition codes treated as European (UCL/UEL/UECL + legacy alias LDC).
+const EUROPEAN_COMPETITION_CODE_SET = new Set(['UCL', 'UEL', 'UECL', 'LDC']);
+
+export function isEuropeanCompetition(
+  code: string | null | undefined,
+): boolean {
+  return code != null && EUROPEAN_COMPETITION_CODE_SET.has(code);
+}
+
+// Cross-competition form blending weights for European fixture analysis.
+// European recentForm is weighted higher (direct competitive context).
+// Domestic xg is weighted higher (30+ match sample vs 5-8 European matches).
+export const EUROPEAN_CROSS_COMP_FORM_WEIGHT = 0.6;
+export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
+
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;

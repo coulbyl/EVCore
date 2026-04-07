@@ -50,65 +50,116 @@ Ces briques sont utiles, mais elles restent insuffisantes pour couvrir correctem
 
 ## Découvertes validées sur API-Football
 
-Les constats suivants ont été vérifiés pendant l'exploration du sujet:
+Investigation complète réalisée le 2026-04-06 via appels directs API-Football (v3).
 
-### 1. Les odds utilisées sont bien des odds pre-match
+### 1. Couverture par compétition et par saison
 
-Le flux principal exploité pour EVCore correspond à des snapshots pre-match.
-
-Conséquence:
-
-- il est cohérent de raisonner en logique "prematch"
-- le produit ne fait pas aujourd'hui d'analyse live / in-play
-- la qualité de la collecte dépend surtout de la disponibilité des cotes avant coup d'envoi
-
-### 2. La Champions League n'a pas une profondeur historique exploitable uniforme
-
-La couverture historique des odds sur la Champions League n'est pas homogène selon les saisons.
-
-Le constat pratique retenu est:
-
-- la saison 2025 est exploitable dans l'API pour les besoins actuels
-- les saisons antérieures ne fournissent pas une base suffisamment régulière pour un usage simple et propre
+| Compétition            | ID  | Odds prematch   | Stats / xG | Injuries        | Saison complète     |
+| ---------------------- | --- | --------------- | ---------- | --------------- | ------------------- |
+| UEFA Champions League  | 2   | 2025 uniquement | 2015+      | 2020+           | **2025 uniquement** |
+| UEFA Europa League     | 3   | 2025 uniquement | 2015+      | 2020+           | **2025 uniquement** |
+| UEFA Conference League | 848 | 2025 uniquement | 2021+      | 2025 uniquement | **2025 uniquement** |
 
 Conséquence:
 
-- la Champions League peut être activée en mode opérationnel courant
-- elle ne doit pas être traitée comme une compétition historique mature pour le backtest
+- les trois compétitions peuvent être activées en mode opérationnel courant dès la saison 2025
+- les saisons antérieures ne disposent pas d'odds dans l'API — le backtest historique sur données API-Football seules n'est pas envisageable
 
-### 3. Les prochains matchs UCL disposent bien de cotes pre-match
+### 2. Structure des compétitions (saison 2025)
 
-Une vérification légère sur quota réduit a confirmé:
+Les trois compétitions suivent le même format:
 
-- présence de matchs UCL à venir dans l'API
-- présence de cotes pre-match pour ces matchs
-- présence de bookmakers prioritaires exploitables
+- tours qualificatifs (données présentes mais peu exploitables — équipes inconnues, volume faible)
+- League Stage 1 à 8 (format ligue, ~18 matchs par journée)
+- Round of 32 → Round of 16 → Quarts → Demi-finales → Finale
 
-Conséquence:
+Volumes saison 2025: UCL = 276 fixtures, Europa = 266, Conference = 404.
 
-- l'alimentation opérationnelle de la compétition est réaliste
-- la génération de coupons UCL est faisable dès lors que les autres prérequis analytiques sont réunis
+### 3. xG natif disponible sur tous les matchs terminés
 
-### 4. Le blocage principal n'est pas la disponibilité brute des matchs
+Le champ `expected_goals` est renseigné nativement sur les matchs UCL/Europa/Conference terminés (vérifié sur plusieurs matchs Round of 16 2025/2026). Le proxy `shots_on_goal × 0.35` n'est pas nécessaire sur ces compétitions.
 
-Le vrai sujet n'est pas "est-ce qu'il y a des matchs UCL dans l'API ?" mais plutôt:
+### 4. Odds prematch: bookmakers disponibles
 
-- la qualité et la continuité des cotes historiques
-- la profondeur de contexte disponible pour les équipes
-- la pertinence du moteur sur des matchs à forte dimension tactique
+15 bookmakers disponibles sur les matchs UCL courants. Pinnacle (ID=4) est présent avec:
 
-Autrement dit:
+- Match Winner 1X2 ✅
+- Goals Over/Under (Asian lines détaillées) ✅
+- **To Qualify**: absent sur Pinnacle ❌ — disponible sur Bet365, Marathonbet, 1xBet, Betano, 10Bet uniquement
 
-- l'alimentation est suffisante pour opérer
-- elle n'est pas encore suffisante, à elle seule, pour prétendre à une lecture experte des compétitions UEFA
+Le marché "To Qualify" est donc un marché secondaire, non couvert par le bookmaker prioritaire.
 
-### 5. Conséquence stratégique
+### 5. Injuries: données riches et exploitables
 
-Le bon positionnement est donc:
+Données injuries disponibles avec type (`Missing Fixture` / `Questionable`) et raison détaillée (`Knee Injury`, `Yellow Cards`, etc.). Doublon d'entrées constaté sur l'endpoint — à dédupliquer à l'ingestion.
 
-- activer UCL / Europa / Conference en exploitation lorsque la donnée courante est disponible
-- rester prudent sur le backtest historique
-- investir dans un moteur spécialisé Europe plutôt que supposer que la seule présence des odds suffit
+### 6. Détection aller/retour: pas de champ natif
+
+L'API ne fournit pas de champ `leg` sur les matchs à élimination directe. Le round s'appelle `"Quarter-finals"` sans distinction aller/retour.
+
+La détection doit être inférée:
+
+- trouver les deux fixtures avec les mêmes équipes dans le même round
+- la plus ancienne par date = aller (leg 1)
+- la plus récente = retour (leg 2)
+- le score agrégé = calculé depuis le résultat du leg 1 stocké en base
+
+### 7. Forme cross-compétitions accessible depuis la base
+
+Les fixtures de toutes compétitions sont stockées avec `league.id`. La forme domestique (ex: EPL, `leagueId=39`) et la forme européenne (UCL, `leagueId=2`) d'une même équipe sont joignables directement en base sans appel API supplémentaire.
+
+### 8. Conséquence stratégique
+
+Le bon positionnement est:
+
+- activer UCL / Europa / Conference en exploitation dès la saison courante
+- rester prudent sur le backtest historique avec les seules données API-Football
+- construire le moteur spécialisé Europe en s'appuyant sur les signaux déjà disponibles (xG natif, injuries riches, forme cross-compétitions)
+
+---
+
+## Stratégie d'import des odds historiques
+
+### Pourquoi un import one-shot est nécessaire
+
+API-Football ne fournit des odds que pour la saison 2025. Pour calibrer le moteur sur des données historiques (UCL 2020-2024), il faut une source externe.
+
+### Sources évaluées
+
+| Source                     | Pinnacle?               | Format       | Historique | Coût              | Verdict                                   |
+| -------------------------- | ----------------------- | ------------ | ---------- | ----------------- | ----------------------------------------- |
+| football-data.co.uk        | ✅ (ligues domestiques) | CSV          | 1993+      | Gratuit           | ❌ Pas de compétitions UEFA               |
+| Footiqo                    | ❌ (1xBet uniquement)   | CSV export   | 2015+      | Gratuit           | ❌ Source trop molle pour EV Pinnacle     |
+| OddsPapi                   | ✅                      | API JSON     | Variable   | Gratuit (limité)  | ⚠️ IDs propres, matching par date+équipes |
+| **The Odds API**           | ✅                      | API JSON     | **2020+**  | **~$30 one-shot** | ✅ Recommandé                             |
+| OddsPortal + OddsHarvester | ✅                      | Scraping CSV | 2003+      | Gratuit           | ⚠️ Fragile, pas d'API officielle          |
+
+Footiqo écarté: source 1xBet uniquement — marge ~7-10% vs Pinnacle ~2-3%, les probabilités implicites extraites sont moins précises et biaisent l'EV calculé.
+
+### Décision retenue
+
+Import one-shot via **The Odds API** (~$30) pour les saisons **2022/2023 → 2024/2025** sur UCL, Europa League et Conference League.
+
+Pourquoi 2022/2023 comme point de départ et pas 2020/2021:
+
+- les saisons 2020/2021 et 2021/2022 sont marquées par le contexte COVID (matchs à huis clos, rotations atypiques) — bruit de calibration non représentatif
+- 3 saisons × 3 compétitions ≈ 1 000 matchs hors tours qualificatifs — volume suffisant pour un premier Brier score significatif
+- si la calibration manque de robustesse après ce premier import, on étend à 2020/2021 sans modifier le code
+
+La constante `EUROPEAN_BACKTEST_SEASON_FROM` dans la config définit l'année de départ (valeur initiale: `2022`). Les données sont importées en base une seule fois et conservées indéfiniment.
+
+### Impact sur OddsSnapshot: champ source
+
+Le worker de rétention actuel (`ODDS_SNAPSHOT_RETENTION_DAYS`, défaut 30 jours) supprimerait les odds historiques importées. Pour distinguer les deux types:
+
+```
+OddsSnapshot.source: 'PREMATCH' | 'HISTORICAL'
+```
+
+- `PREMATCH` — collectées par l'ETL quotidien → nettoyées selon la politique de rétention normale
+- `HISTORICAL` — importées one-shot pour le backtest → conservées indéfiniment, exclues du worker de rétention
+
+Migration Prisma + update du retention worker à implémenter avant l'import.
 
 ---
 

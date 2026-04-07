@@ -28,6 +28,8 @@ import type {
   LeagueSyncJobData,
   LeagueSyncType,
 } from './workers/league-sync.worker';
+import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
+import { THE_ODDS_API_SPORT_KEYS } from '../../config/etl.constants';
 
 const logger = createLogger('etl-service');
 const LEAGUE_SEASON_SYNC_KINDS: LeagueSyncType[] = [
@@ -115,6 +117,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT)
+    private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly backtestService: BacktestService,
@@ -405,6 +409,29 @@ export class EtlService implements OnApplicationBootstrap {
           divisionCode: competition.csvDivisionCode,
         } satisfies OddsCsvImportJobData,
         BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
+    }
+  }
+
+  async triggerOddsHistoricalImport(
+    competitionCode: string,
+    seasons: number[],
+  ): Promise<void> {
+    const code =
+      competitionCode.toUpperCase() as keyof typeof THE_ODDS_API_SPORT_KEYS;
+    if (!(code in THE_ODDS_API_SPORT_KEYS)) {
+      throw new Error(
+        `${competitionCode} is not a supported UEFA competition for historical import. Use UCL, UEL or UECL.`,
+      );
+    }
+    for (const [i, seasonYear] of seasons.entries()) {
+      await this.oddsHistoricalImportQueue.add(
+        `odds-historical-${code}-${seasonYear}`,
+        {
+          competitionCode: code,
+          seasonYear,
+        } satisfies OddsHistoricalImportJobData,
+        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: i * 1_000 },
       );
     }
   }

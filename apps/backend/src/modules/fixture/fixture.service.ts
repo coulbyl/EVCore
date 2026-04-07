@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus } from '@evcore/db';
+import { Fixture, FixtureStatus, OddsSnapshotSource } from '@evcore/db';
 import {
   FixtureRepository,
   type UpsertFixtureResult,
   type UpsertOddsSnapshotInput,
   type UpsertSecondaryMarketOddsInput,
 } from './fixture.repository';
+import { MatchLegDetectionService } from './match-leg-detection.service';
 
 type UpsertCompetitionInput = {
   leagueId: number;
@@ -39,6 +40,7 @@ export type FixtureInput = {
     logoUrl: string;
   };
   matchday: number;
+  round: string;
   scheduledAt: Date;
   status: FixtureStatus;
   homeScore: number | null;
@@ -60,6 +62,7 @@ type UpsertOneXTwoOddsSnapshotInput = {
   homeOdds: number;
   drawOdds: number;
   awayOdds: number;
+  source?: OddsSnapshotSource;
 };
 
 type HasOneXTwoOddsSnapshotInput = {
@@ -100,7 +103,14 @@ type SyncFixtureStateInput = {
 
 @Injectable()
 export class FixtureService {
-  constructor(private readonly fixtureRepository: FixtureRepository) {}
+  constructor(
+    private readonly fixtureRepository: FixtureRepository,
+    private readonly matchLegDetection: MatchLegDetectionService,
+  ) {}
+
+  detectKnockoutLegsForSeason(seasonId: string): Promise<number> {
+    return this.matchLegDetection.detectLegsForSeason(seasonId);
+  }
 
   async upsertFixtureChain(
     input: UpsertFixtureChainInput,
@@ -130,6 +140,7 @@ export class FixtureService {
       homeTeamId: homeTeam.id,
       awayTeamId: awayTeam.id,
       matchday: fixture.matchday,
+      round: fixture.round,
       scheduledAt: fixture.scheduledAt,
       status: fixture.status,
       homeScore: fixture.homeScore,
@@ -179,6 +190,27 @@ export class FixtureService {
 
   async findFinishedBySeason(seasonId: string): Promise<Fixture[]> {
     return this.fixtureRepository.findFinishedBySeason(seasonId);
+  }
+
+  findSeasonByCompetitionAndYear(
+    competitionCode: string,
+    seasonYear: number,
+  ): Promise<{ id: string } | null> {
+    return this.fixtureRepository.findSeasonByCompetitionAndYear(
+      competitionCode,
+      seasonYear,
+    );
+  }
+
+  findFinishedBySeasonWithTeams(seasonId: string): Promise<
+    {
+      id: string;
+      scheduledAt: Date;
+      homeTeam: { name: string; shortName: string };
+      awayTeam: { name: string; shortName: string };
+    }[]
+  > {
+    return this.fixtureRepository.findFinishedBySeasonWithTeams(seasonId);
   }
 
   findScheduledForDate(

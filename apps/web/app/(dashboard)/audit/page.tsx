@@ -2,6 +2,7 @@
 
 import { Fragment, Suspense, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Check, Copy } from "lucide-react";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { TableCard } from "@/components/table-card";
@@ -52,6 +53,34 @@ function DiagStat({
         {value ?? "—"}
       </p>
     </div>
+  );
+}
+
+function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(fixtureId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={fixtureId}
+      className="mt-1 flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+    >
+      <span>{fixtureId.slice(0, 8)}</span>
+      {copied ? (
+        <Check size={10} className="text-success" />
+      ) : (
+        <Copy size={10} />
+      )}
+    </button>
   );
 }
 
@@ -319,11 +348,14 @@ function AuditFixturesSection({ date }: { date: string }) {
                         {row.scheduledAt}
                       </td>
                       <td className="px-4 py-3">
-                        <FixtureName
-                          fixture={row.fixture}
-                          homeLogo={row.homeLogo}
-                          awayLogo={row.awayLogo}
-                        />
+                        <div>
+                          <FixtureName
+                            fixture={row.fixture}
+                            homeLogo={row.homeLogo}
+                            awayLogo={row.awayLogo}
+                          />
+                          <CopyFixtureId fixtureId={row.fixtureId} />
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <FixtureStatusBadge status={row.status} />

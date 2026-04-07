@@ -1,108 +1,123 @@
 # EVCore — TODO
 
-## Prochaine session — Tuning promotion de ligues
+## Branche courante : `feat/european-competitions-engine`
 
-Référence backtest actuel : **R6 — 468 bets, +15.7% ROI, +73.46u ← record**
-
-### Priorité 1 — Promotions validées ✅
-
-#### `PL` → Very Good ✅ (R6)
-
-- Floor HOME 3.0 → 0 HOME, 19b DRAW pur +37.6% ROI +7.15u
-
-#### `CH` → Good ✅ (R6)
-
-- Floor HOME 5.0 → 0 HOME, 13b DRAW+AWAY+UNDER +16.8% ROI +2.18u
-
-### Priorité 2 — Analysées, aucun levier actionnable
-
-#### `LL` → Very Good (bloqué)
-
-- 19b +33.4% ROI — signal propre, volume naturellement limité par marché efficient
-- Threshold 0.55 testé/rejeté (R5) : fixtures [0.55-0.58) → faux EV [3.0-4.99] (-4u net)
-- Probability gate HOME 0.45 : 58 rejetés à -9.7% ROI — correctement bloqués
-- **Conclusion** : LL est au maximum de ce que le modèle peut extraire. Aucun levier sans dégradation.
-
-#### `SP2` → Good
-
-- 13b +12.8% ROI — niche HOME <2.0 propre
-- Threshold 0.62 filtre 91% des fixtures (1022/1126) — signal rare mais propre
-- [2.00+] correctement bloqué (-33% à -100%). Aucune poche HOME [2.0-2.5) actionnable.
-- **Conclusion** : laisser en l'état, attendre volume naturel avec plus de saisons.
-
-### Surveillance — Conclusions d'analyse
-
-#### `J1` — signal AWAY confirmé multi-saisons ✅
-
-- AWAY 6b, 4W/2L sur **3 saisons distinctes** (2023, 2024, 2025) — signal systématique, pas de chance
-- Sans biggest win (+2.42u) : encore +3.95u sur 5b (+79% ROI)
-- 244 AWAY rejetés par `prob<lim` : +0.9% ROI — trop faible pour assouplir le gate
-- HOME 50b -0.6% : neutre structurel, pas de bucket toxique isolé
-- **Conclusion** : J1 correctement calibré. Volume AWAY limité par nature (gate prob<lim). Good tier validé.
-  Pour Very Good, attendre que le volume AWAY augmente naturellement sur saisons futures.
-
-#### `MX1` — signal sub-2.0 insuffisant
-
-- 7b <2.0 à +39.3% ROI — N trop faible, variance pure
-- **Conclusion** : attendre N ≥ 20 bets dans ce bucket avant tout patch
+Référence : `EUROPEAN_COMPETITIONS_ENGINE.md` — lire avant toute implémentation.
 
 ---
 
-## Classement des ligues (audit 2026-04-05 R6 — 468 bets, ROI +15.7%, profit +73.46u) ← record
+## Plan d'implémentation
 
-> R4 : 473 bets, +14.9%, +70.54u
-> Delta R6 : PL HOME floor 3.0 (+0.92u), CH HOME floor 5.0 (+2.00u), LL threshold revert 0.58
-> R6 = nouveau record absolu
+### ✅ Étape 1 — OddsSnapshot.source (prérequis)
 
-### Very Good — Épines dorsales
+- ✅ Ajout `source OddsSnapshotSource @default(PREMATCH)` sur `OddsSnapshot` (enum: `PREMATCH | HISTORICAL`)
+- ✅ Prisma `db:generate` + rebuild `@evcore/db`
+- ✅ `OddsSnapshotRetentionWorker` : filtrer `source = PREMATCH` uniquement
+- ✅ `upsertOneXTwoOddsSnapshot` / `upsertOddsSnapshot` / `upsertSecondaryMarketOdds` : `source` optionnel, défaut `PREMATCH`
 
-- `EL2` — 189b, +13.9% ROI, +26.29u. Colonne vertébrale, sélection 11.8%.
-  AWAY 84b +20.4% très solide, HOME 104b +9.7% contributeur régulier
-- `EL1` — 40b, +26.8% ROI, +10.71u. AWAY 20b +45.6%, HOME 19b +2.3%
-- `L1` — 21b, +36.8% ROI, +7.73u. Meilleur ROI absolu. HOME 19b +39.1%
-- `PL` — 19b, +37.6% ROI, +7.15u. ⬆ promu R6. DRAW pur window [5.0–5.50). 0 HOME (floor 3.0)
+### ✅ Étape 2 — Activer les ligues européennes
 
-### Good — Contributeurs fiables
+- ✅ Seed : `isActive: true` sur UCL (leagueId=2), Europa (leagueId=3), Conference (leagueId=848)
 
-- `LL` — 19b, +33.4% ROI, +6.34u. HOME 18b +21.9%, UNDER 1b +240% (outlier)
-- `J1` — 56b, +10.8% ROI, +6.05u. AWAY 6b +106% ROI — signal multi-saisons confirmé (4W/2L sur 2023/2024/2025). HOME 50b neutre (-0.6%). Good tier validé.
-- `D2` — 15b, +26.6% ROI, +3.99u. AWAY 14b +7.4%, DRAW 1b +295% (outlier)
-- `F2` — 38b, +5.3% ROI, +2.03u. HOME 36b +11.2% moteur
-- `CH` — 13b, +16.8% ROI, +2.18u. ⬆ promu R6. DRAW 8b +19.3%, AWAY 3b +18%, UNDER 2b +5%. 0 HOME (floor 5.0)
+### ✅ Étape 3 — Détection aller/retour
 
-### Medium — Positifs mais fragiles
+- ✅ Schema : `round String?`, `leg Int?`, `aggregateHomeGoals Int?`, `aggregateAwayGoals Int?` sur `Fixture`
+- ✅ `MatchLegDetectionService` : detection par paires inversées dans les rounds KO, score agrégé calculé
+- ✅ `fixtures-sync.worker.ts` : mapping `round` depuis `league.round` (support "League Stage - N")
+- ✅ 6 tests unitaires
 
-- `SP2` — 13b, +12.8% ROI, +1.66u. HOME 11b +13.5% fenêtre <2.0. ⬆ Good si volume augmente
+### ✅ Étape 4 — Config EUROPEAN_BACKTEST_SEASON_FROM
 
-### Low — Signaux faibles ou instables
+- ✅ `EUROPEAN_BACKTEST_SEASON_FROM = 2022` dans `backtest.constants.ts`
 
-- `POR` — 4b, +8.0% ROI, +0.32u. N=4, bruit pur
-- `MX1` — 26b, +0.0% ROI, +0.01u. HOME only (AWAY suspendu). Break-even structurel
-- `SA` — 7b, -3.7% ROI, -0.26u. N trop faible
-- `BL1` — 3b, -1.0% ROI, -0.03u. N=3 non significatif
+### ✅ Étape 5 — Worker import historique The Odds API
 
-### Red — Exclus ou négatifs structurels
+- ✅ `odds-historical-import.worker.ts` : UCL/UEL/UECL, saisons 2022/23 → 2024/25
+- ✅ Matching fixtures par `(date + homeTeam + awayTeam)` fuzzy (normalisation accents, suffixes FC/AC)
+- ✅ Tagger `source: HISTORICAL` sur chaque `OddsSnapshot`
+- ✅ Endpoint ETL : `POST /sync/odds-historical/:competitionCode/backfill`
+- ✅ Zod schema `TheOddsApiHistoricalResponseSchema`
 
-- `ERD` — 5b, -14.4% ROI, -0.72u. Pas de sub-segment rentable identifié
-- `I2` — 0b (floor 2.50 bloque tout HOME, aucun AWAY/DRAW candidat). Reprendre audit à ≥ 50 bets réels
+### ✅ Étape 6 — Forme cross-compétitions
 
----
+- ✅ `blendTeamStats({ primary, secondary, formWeight, xgWeight })` exportée depuis `betting-engine.service.ts`
+- ✅ `isEuropeanCompetition()` + `EUROPEAN_CROSS_COMP_FORM_WEIGHT=0.6` + `EUROPEAN_CROSS_COMP_XG_WEIGHT=0.4` dans `ev.constants.ts`
+- ✅ `analyzeFixture()` : pour UCL/UEL/UECL, fetch stats domestiques + blend (fallback si stats EU absentes)
+- ✅ `backtest.service.ts` : `loadCrossCompStatsIndex()` + blend par fixture sur saisons européennes
+- ✅ 5 tests unitaires `blendTeamStats`
 
-## Patches validés
+### ✅ Étape 7 — Calibration par compétition UEFA
 
-- Suppression dépendance stricte `snapshotAt <= scheduledAt/cutoff`
-- `J1` débloquée après alignement odds/backtest
-- `D2` : assouplissement AWAY + durcissement HOME via floor d'odds
-- `PL` : DRAW window [5.0–5.50) validée — 19b +37.6%
-- `ERD` : lambda 1.75 — correction Poisson
-- `I2` (audit 2026-04-05, 5 itérations)
-  - lambda 1.56, per-league HA factor [1.02, 0.98]
-  - probability gate HOME ≥ 0.50 + EV soft cap 0.35
-  - floor HOME 2.50 → bloque la totalité des bets HOME (bucket [2.0–2.49] toxique à -54.6%)
-  - I2 ne génère que des candidats HOME — floor et gate produisent le même résultat (0 bets)
+- ✅ `MODEL_SCORE_THRESHOLD` : UCL/LDC/UEL/UECL → 0.45
+- ✅ `LEAGUE_MEAN_LAMBDA_MAP` : UCL=1.35, UEL=1.40, UECL=1.45 (initial — à affiner après backtest)
+- ✅ `LEAGUE_HOME_ADVANTAGE_MAP` : UCL=[1.03, 0.97], UEL/UECL=[1.04, 0.96] (home advantage réduit en Europe)
+- ✅ `LEAGUE_MIN_SELECTION_ODDS_MAP` : UCL/UEL/UECL=2.00
 
 ---
 
-## Guide de référence
+## Prochaines étapes (post-branche)
 
-- `docs/league-calibration-audit.md` — méthodologie complète d'audit par ligue
+- [ ] Générer la migration Prisma (`pnpm --filter @evcore/db db:migrate -- --name european-competitions-engine`)
+- [ ] Lancer le seed sur les nouvelles compétitions
+- [ ] Lancer `POST /sync/fixtures/:leagueId` pour UCL/UEL/UECL (saisons 2022/23 → 2024/25)
+- [ ] Lancer `POST /sync/rolling-stats` pour ces saisons
+- [ ] Lancer `POST /sync/odds-historical/UCL/backfill` (+ UEL, UECL) après achat The Odds API
+- [ ] Backtest européen + audit Brier score / ROI
+- [ ] Affiner `LEAGUE_MEAN_LAMBDA` / home advantage sur données réelles
+
+---
+
+## Nouveaux marchés — `feat/new-markets` (à démarrer)
+
+Audit API-Football du 2026-04-07 : les cotes Over/Under multiples lignes et HTFT sont
+disponibles chez 14 bookmakers (dont Pinnacle id=4). Tout est calculable via le Poisson existant.
+
+### Étape A — Over/Under 1.5 et 3.5
+
+- [ ] `betting-engine.utils.ts` : ajouter `over15`, `under15`, `over35`, `under35` dans `DerivedMarketsProba`
+      → même logique que `over25`/`under25` dans `deriveMarketsFromDistributions`
+- [ ] `betting-engine.service.ts` : exposer ces 4 picks comme candidats (fetch cotes bet id=5)
+- [ ] `OVER_UNDER` enum Prisma : vérifier si des picks `OVER_1.5` / `UNDER_3.5` nécessitent un nouveau `pick` label ou si le champ `pick` string suffit
+- [ ] Ajouter les conditions dans `PICK_CONDITIONS` (`betting-engine.utils.ts`) + `resolvePickBetStatus`
+- [ ] Tests unitaires : vérifier P(over15) et P(over35) sur inputs Poisson connus
+- [ ] Filtres directionnels : appliquer `MIN_QUALITY_SCORE` — pas de seuil directionnel spécifique (marché goals)
+
+### Étape B — HT/FT comme marché standalone évalué
+
+- [ ] `betting-engine.service.ts` : les 9 probabilités HTFT sont calculées mais non comparées aux cotes
+      → fetcher les cotes bet id=7 (HT/FT Double) et générer des picks candidats
+- [ ] Ajouter `HALF_TIME_FULL_TIME` dans l'enum `Market` Prisma (si absent) + migration
+- [ ] Filtres : seuil directionnel à définir (HOME_HOME et AWAY_AWAY les plus liquides)
+- [ ] Tests unitaires : résolution `resolveHalfTimeFullTimeBetStatus` déjà testée — ajouter les cas candidats
+
+### Étape C — Goals Over/Under 1st Half (optionnel, après A+B)
+
+- [ ] Calculer Poisson(λ/2) pour Under 1.5 HT / Over 0.5 HT — déjà fait partiellement dans HTFT
+- [ ] Fetch cotes bet id=6 et évaluer comme picks candidats
+- [ ] Complexité : dépendance à la Mi-temps → évaluer si le volume de données justify l'effort
+
+---
+
+## Contexte technique
+
+- Odds uniquement disponibles sur API-Football pour la saison 2025 (courante)
+- Odds historiques 2022-2024 : import one-shot via The Odds API (~$30), Pinnacle inclus
+- xG natif disponible sur UCL/Europa/Conference (pas besoin du proxy shots×0.35)
+- Aller/retour : pas de champ `leg` dans l'API — inférence obligatoire par date + paires d'équipes
+- "To Qualify" : absent sur Pinnacle, disponible sur Bet365/Marathonbet uniquement
+
+---
+
+## Historique précédent (branche main — R6 record)
+
+Référence backtest R6 : **468 bets, +15.7% ROI, +73.46u**
+
+Classement ligues actif sur `main` :
+
+- Very Good : EL2, EL1, L1, PL
+- Good : LL, J1, D2, F2, CH
+- Medium : SP2
+- Low : POR, MX1, SA, BL1
+- Red : ERD, I2
+
+Guide méthodologie : `docs/league-calibration-audit.md`

@@ -60,6 +60,9 @@ import {
   getPickEvSoftCap,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
+  isEuropeanCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
@@ -342,6 +345,8 @@ export class BettingEngineService {
       return this.analyzeFriFixture(fixture);
     }
 
+    const competitionCode = getFixtureCompetitionCode(fixture);
+
     const [homeStats, awayStats] = await Promise.all([
       this.prisma.client.teamStats.findFirst({
         where: {
@@ -365,15 +370,56 @@ export class BettingEngineService {
       }),
     ]);
 
-    if (!homeStats || !awayStats) {
+    // For European competitions, supplement (or replace) European stats with
+    // domestic form when the European sample is absent or thin.
+    let effectiveHomeStats: TeamStatsInput | null = homeStats;
+    let effectiveAwayStats: TeamStatsInput | null = awayStats;
+
+    if (isEuropeanCompetition(competitionCode)) {
+      const [homeCross, awayCross] = await Promise.all([
+        this.findCrossCompStats(
+          fixture.homeTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+        this.findCrossCompStats(
+          fixture.awayTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+      ]);
+
+      if (homeCross) {
+        effectiveHomeStats = homeStats
+          ? blendTeamStats({
+              primary: homeStats,
+              secondary: homeCross,
+              formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            })
+          : homeCross;
+      }
+      if (awayCross) {
+        effectiveAwayStats = awayStats
+          ? blendTeamStats({
+              primary: awayStats,
+              secondary: awayCross,
+              formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            })
+          : awayCross;
+      }
+    }
+
+    if (!effectiveHomeStats || !effectiveAwayStats) {
       logger.info(
         {
           fixtureId,
-          competitionCode: getFixtureCompetitionCode(fixture),
+          competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
-          hasHomeStats: homeStats !== null,
-          hasAwayStats: awayStats !== null,
+          hasHomeStats: effectiveHomeStats !== null,
+          hasAwayStats: effectiveAwayStats !== null,
           reason: 'missing_team_stats',
         },
         'Fixture skipped',
@@ -385,10 +431,10 @@ export class BettingEngineService {
     const predictionSource: PredictionSource = 'POISSON_MAIN';
     const { features, deterministicScore, lambda, probabilities } =
       this.computeFromTeamStats(
-        homeStats,
-        awayStats,
+        effectiveHomeStats,
+        effectiveAwayStats,
         weights,
-        getFixtureCompetitionCode(fixture),
+        competitionCode,
       );
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -398,13 +444,13 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
-          competitionCode: getFixtureCompetitionCode(fixture),
+          competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
           lambdaHome: lambda.home,
           lambdaAway: lambda.away,
-          homeStats: summarizeTeamStats(homeStats),
-          awayStats: summarizeTeamStats(awayStats),
+          homeStats: summarizeTeamStats(effectiveHomeStats),
+          awayStats: summarizeTeamStats(effectiveAwayStats),
         },
         'Lambda floor hit',
       );
@@ -431,7 +477,6 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
-    const competitionCode = getFixtureCompetitionCode(fixture);
     const evaluatedPicks: EvaluatedPick[] = latestOdds
       ? this.listEvaluatedPicks(
           probabilities,
@@ -1010,6 +1055,28 @@ export class BettingEngineService {
     return atLatest.reduce((a, b) =>
       bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
     ).bookmaker;
+  }
+
+  /**
+   * Fetch the most recent TeamStats for a team from any season other than the
+   * specified one, before a given date. Used to supplement European stats with
+   * the team's domestic form when the European sample is absent or thin.
+   */
+  private async findCrossCompStats(
+    teamId: string,
+    beforeDate: Date,
+    excludeSeasonId: string,
+  ): Promise<TeamStatsInput | null> {
+    return this.prisma.client.teamStats.findFirst({
+      where: {
+        teamId,
+        afterFixture: {
+          scheduledAt: { lt: beforeDate },
+          seasonId: { not: excludeSeasonId },
+        },
+      },
+      orderBy: { afterFixture: { scheduledAt: 'desc' } },
+    });
   }
 
   private async findLatestOddsSnapshot(
@@ -1745,6 +1812,41 @@ function buildMatchupFeatures(
 
 function clamp01(value: number): number {
   return clamp(value, 0, 1);
+}
+
+type BlendTeamStatsInput = {
+  primary: TeamStatsInput;
+  secondary: TeamStatsInput;
+  formWeight: number;
+  xgWeight: number;
+};
+
+/**
+ * Blend European stats (primary) with domestic/cross-competition stats (secondary).
+ * European recentForm weighted at `formWeight`; domestic xg at `1 - xgWeight`.
+ * Win/draw rates taken from domestic (larger sample); leagueVolatility from European.
+ */
+export function blendTeamStats({
+  primary,
+  secondary,
+  formWeight,
+  xgWeight,
+}: BlendTeamStatsInput): TeamStatsInput {
+  const fw1 = 1 - formWeight;
+  const xw1 = 1 - xgWeight;
+  return {
+    recentForm:
+      asNumber(primary.recentForm) * formWeight +
+      asNumber(secondary.recentForm) * fw1,
+    xgFor: asNumber(primary.xgFor) * xgWeight + asNumber(secondary.xgFor) * xw1,
+    xgAgainst:
+      asNumber(primary.xgAgainst) * xgWeight +
+      asNumber(secondary.xgAgainst) * xw1,
+    homeWinRate: secondary.homeWinRate,
+    awayWinRate: secondary.awayWinRate,
+    drawRate: secondary.drawRate,
+    leagueVolatility: primary.leagueVolatility,
+  };
 }
 
 function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
