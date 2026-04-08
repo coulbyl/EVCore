@@ -82,6 +82,19 @@ export const ETL_CONSTANTS = {
   CSV_ODDS_BASE: 'https://www.football-data.co.uk/mmz4281',
   // World Football Elo Ratings export used by the FRI fallback reference model.
   ELO_RATINGS_WORLD_TSV_URL: 'https://eloratings.net/World.tsv',
+
+  // --- The Odds API — historical odds import for European competitions ---
+  THE_ODDS_API_BASE: 'https://api.the-odds-api.com/v4',
+  // Rate-limit between requests (historical endpoint charges credits per call).
+  THE_ODDS_API_RATE_LIMIT_MS: 500,
+} as const;
+
+// Sport keys used by The Odds API for UEFA competitions.
+// Used by the odds-historical-import worker.
+export const THE_ODDS_API_SPORT_KEYS = {
+  UCL: 'soccer_uefa_champs_league',
+  UEL: 'soccer_uefa_europa_league',
+  UECL: 'soccer_uefa_europa_conference_league',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).
@@ -111,8 +124,10 @@ export const API_FOOTBALL_BOOKMAKERS = {
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
   OVER_UNDER_25: 5,
+  OVER_UNDER_FIRST_HALF: 6,
+  HALF_TIME_FULL_TIME: 7,
   BTTS: 8,
-  HALF_TIME_FULL_TIME: 18,
+  FIRST_HALF_WINNER: 13,
 } as const;
 
 export const BULLMQ_QUEUES = {
@@ -124,6 +139,7 @@ export const BULLMQ_QUEUES = {
   ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   ELO_SYNC: 'elo-sync',
   BETTING_ENGINE: 'betting-engine',
+  ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {

@@ -110,6 +110,12 @@ const LEAGUE_MIN_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // second bookmaker (Bet365). A Pinnacle-implied 65% home at 1.95 Bet365 is
   // genuine EV. The Poisson-based floor (2.00) does not apply here.
   FRI: new Decimal('1.40'),
+  // European competitions: Pinnacle is a primary bookmaker for UCL/UEL/UECL.
+  // Using the standard 2.00 floor — no historical evidence to deviate yet.
+  UCL: new Decimal('2.00'),
+  LDC: new Decimal('2.00'), // legacy alias
+  UEL: new Decimal('2.00'),
+  UECL: new Decimal('2.00'),
 };
 
 export function getLeagueMinSelectionOdds(
@@ -239,6 +245,17 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
   // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
   I2: 1.56,
+  // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
+  // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
+  // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
+  // but DB measurement shows UCL runs closer to ~3.2 goals/game. Corrected.
+  UCL: 1.59,
+  LDC: 1.59, // legacy alias for UCL
+  // UEL: computed from team_stats (1,326 records). avg_lambda=1.437 ≈ default 1.4.
+  // No lambda correction needed — miscalibration is EV overconfidence, not lambda.
+  UEL: 1.4,
+  // UECL: computed from team_stats (2,253 records). avg_lambda=1.464 ≈ config 1.45.
+  UECL: 1.45,
 };
 
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
@@ -273,6 +290,14 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
   I2: [1.02, 0.98],
+  // European competitions: home advantage is structurally lower than domestic
+  // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
+  // Teams that qualify are elite — talent gap is narrower and travel is managed.
+  // Estimate: ~3% home advantage vs 5% global default. Refine after backtest.
+  UCL: [1.03, 0.97],
+  LDC: [1.03, 0.97], // legacy alias for UCL
+  UEL: [1.04, 0.96],
+  UECL: [1.04, 0.96],
 };
 
 export function getLeagueHomeAwayFactors(
@@ -316,9 +341,15 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   I2: new Decimal('0.60'),
   EL1: new Decimal('0.50'),
   EL2: new Decimal('0.45'),
-  // Tier C — European competitions (decided in prior session)
-  LDC: new Decimal('0.45'),
-  UEL: new Decimal('0.45'),
+  // Tier C — European competitions
+  // Lower threshold reflects sparse early-season stats and cross-competition
+  // stat blending which produces less certain deterministic scores.
+  UCL: new Decimal('0.45'),
+  LDC: new Decimal('0.45'), // legacy alias for UCL
+  // Audit 2026-04-07: UEL AWAY bucket [3.0-4.99] — n=7, ROI -56%, EV 0.676 avg.
+  // P_model 52.5% vs actual win_rate 31.9% (+20.6pp overconfidence gap). Threshold
+  // raised to 0.55 to filter low-certainty fixtures generating false EV.
+  UEL: new Decimal('0.55'),
   UECL: new Decimal('0.45'),
   // Tier D — international competitions (conservative default — limited team
   // data, high variance, no historical backtest baseline yet).
@@ -366,6 +397,24 @@ export function getLeagueEvThreshold(competitionCode: string | null): Decimal {
   }
   return EV_THRESHOLD;
 }
+
+// ─── European competitions ───────────────────────────────────────────────────
+
+// All competition codes treated as European (UCL/UEL/UECL + legacy alias LDC).
+const EUROPEAN_COMPETITION_CODE_SET = new Set(['UCL', 'UEL', 'UECL', 'LDC']);
+
+export function isEuropeanCompetition(
+  code: string | null | undefined,
+): boolean {
+  return code != null && EUROPEAN_COMPETITION_CODE_SET.has(code);
+}
+
+// Cross-competition form blending weights for European fixture analysis.
+// European recentForm is weighted higher (direct competitive context).
+// Domestic xg is weighted higher (30+ match sample vs 5-8 European matches).
+export const EUROPEAN_CROSS_COMP_FORM_WEIGHT = 0.6;
+export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
+
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
@@ -399,6 +448,18 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // set). EV [0.35+] concentrates the worst bets. Cap at 0.35 to reduce exposure
   // while preserving the rare low-EV HOME that cleared the 3.00 floor.
   'CH|ONE_X_TWO|HOME': new Decimal('0.35'),
+  // Audit 2026-04-07: UEL AWAY — n=7, ROI -56%, all bets EV >= 0.35. Model
+  // over-confidence gap +20.6pp (P_model 52.5% vs win_rate 31.9%). Cap at 0.35
+  // as a calibration guard — eliminates the high-EV overconfident segment.
+  'UEL|ONE_X_TWO|AWAY': new Decimal('0.35'),
+  // Audit 2026-04-07: UEL HOME — 22 bets, ROI -19%, avg EV 0.474. Same
+  // overconfidence pattern as EL1/CH/D2 HOME: model increasingly wrong as EV rises.
+  // Cap at 0.35 to cut the high-EV segment while keeping moderate-EV HOME picks.
+  'UEL|ONE_X_TWO|HOME': new Decimal('0.35'),
+  // Audit 2026-04-07: UECL AWAY — 11 bets, ROI -53.3%, avg EV 0.537. Identical
+  // overconfidence pattern to UEL AWAY (high EV, low actual win rate). EV soft cap
+  // at 0.35 eliminates the overconfident segment — more targeted than a prob gate.
+  'UECL|ONE_X_TWO|AWAY': new Decimal('0.35'),
 };
 
 // Per-(competition, market, pick) EV floor — overrides the league EV threshold

@@ -18,6 +18,7 @@ function buildFixture(overrides: Partial<FixtureInput> = {}): FixtureInput {
       logoUrl: 'https://media.api-sports.io/football/teams/42.png',
     },
     matchday: 1,
+    round: 'Regular Season - 1',
     scheduledAt: new Date('2022-08-05T19:00:00Z'),
     status: 'SCHEDULED',
     homeScore: null,
@@ -41,7 +42,14 @@ describe('FixtureService.upsertFixtureChain', () => {
     findFinishedBySeason: vi.fn(),
   } satisfies Partial<FixtureRepository>;
 
-  const service = new FixtureService(fixtureRepository as never);
+  const matchLegDetection = {
+    detectLegsForSeason: vi.fn().mockResolvedValue(0),
+  };
+
+  const service = new FixtureService(
+    fixtureRepository as never,
+    matchLegDetection as never,
+  );
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -1,5 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus, Prisma } from '@evcore/db';
+import { Fixture, FixtureStatus, OddsSnapshotSource, Prisma } from '@evcore/db';
+
+// API-Football round strings that follow a home-and-away (aller/retour) format.
+// "Final" and "League Stage" are single-leg — excluded intentionally.
+export const KNOCKOUT_ROUNDS = [
+  '1st Qualifying Round',
+  '2nd Qualifying Round',
+  '3rd Qualifying Round',
+  'Play-offs',
+  'Playoff round',
+  'Round of 32',
+  'Round of 16',
+  'Quarter-finals',
+  'Semi-finals',
+] as const;
 import { PrismaService } from '@/prisma.service';
 import { oneDayWindow } from '@utils/date.utils';
 
@@ -51,6 +65,7 @@ type UpsertFixtureInput = {
   homeTeamId: string;
   awayTeamId: string;
   matchday: number;
+  round: string;
   scheduledAt: Date;
   status: FixtureStatus;
   homeScore?: number | null;
@@ -90,6 +105,7 @@ type UpsertOneXTwoOddsSnapshotInput = {
   homeOdds: number;
   drawOdds: number;
   awayOdds: number;
+  source?: OddsSnapshotSource;
 };
 
 type HasOneXTwoOddsSnapshotInput = {
@@ -105,22 +121,40 @@ export type UpsertOddsSnapshotInput = {
   homeOdds: number;
   drawOdds: number;
   awayOdds: number;
-  overOdds: number | null;
-  underOdds: number | null;
+  overUnderOdds: Partial<
+    Record<
+      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      number
+    >
+  >;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
+  ouHtOdds: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
+  >;
+  firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
+  source?: OddsSnapshotSource;
 };
 
 export type UpsertSecondaryMarketOddsInput = {
   fixtureId: string;
   bookmaker: string;
   snapshotAt: Date;
-  overOdds: number | null;
-  underOdds: number | null;
+  overUnderOdds: Partial<
+    Record<
+      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      number
+    >
+  >;
   bttsYesOdds: number | null;
   bttsNoOdds: number | null;
   htftOdds: Record<string, number>;
+  ouHtOdds: Partial<
+    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
+  >;
+  firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
+  source?: OddsSnapshotSource;
 };
 
 type PendingSettlementFixture = {
@@ -208,6 +242,7 @@ export class FixtureRepository {
         create: data,
         update: {
           matchday: data.matchday,
+          round: data.round,
           scheduledAt: data.scheduledAt,
           status: data.status,
           homeScore: data.homeScore,
@@ -289,6 +324,39 @@ export class FixtureRepository {
     await this.prisma.client.fixture.update({
       where: { externalId },
       data: { homeXg, awayXg },
+    });
+  }
+
+  findSeasonByCompetitionAndYear(
+    competitionCode: string,
+    seasonYear: number,
+  ): Promise<{ id: string } | null> {
+    return this.prisma.client.season.findFirst({
+      where: {
+        competition: { code: competitionCode },
+        name: `${seasonYear}-${String(seasonYear + 1).slice(-2)}`,
+      },
+      select: { id: true },
+    });
+  }
+
+  findFinishedBySeasonWithTeams(seasonId: string): Promise<
+    {
+      id: string;
+      scheduledAt: Date;
+      homeTeam: { name: string; shortName: string };
+      awayTeam: { name: string; shortName: string };
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: { seasonId, status: 'FINISHED' },
+      select: {
+        id: true,
+        scheduledAt: true,
+        homeTeam: { select: { name: true, shortName: true } },
+        awayTeam: { select: { name: true, shortName: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
     });
   }
 
@@ -375,6 +443,61 @@ export class FixtureRepository {
     });
   }
 
+  findKnockoutFixturesBySeasonAndRound(
+    seasonId: string,
+    round: string,
+  ): Promise<
+    {
+      id: string;
+      homeTeamId: string;
+      awayTeamId: string;
+      scheduledAt: Date;
+      homeScore: number | null;
+      awayScore: number | null;
+      leg: number | null;
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: { seasonId, round },
+      select: {
+        id: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        scheduledAt: true,
+        homeScore: true,
+        awayScore: true,
+        leg: true,
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
+  async setFixtureLeg(
+    id: string,
+    leg: 1 | 2,
+    aggregate: { homeGoals: number | null; awayGoals: number | null } | null,
+  ): Promise<void> {
+    await this.prisma.client.fixture.update({
+      where: { id },
+      data: {
+        leg,
+        aggregateHomeGoals: aggregate?.homeGoals ?? null,
+        aggregateAwayGoals: aggregate?.awayGoals ?? null,
+      },
+    });
+  }
+
+  findKnockoutRoundsBySeasonId(seasonId: string): Promise<{ round: string }[]> {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        seasonId,
+        round: { in: [...KNOCKOUT_ROUNDS] },
+      },
+      select: { round: true },
+      distinct: ['round'],
+    }) as Promise<{ round: string }[]>;
+  }
+
   async markXgUnavailable(externalId: number): Promise<void> {
     await this.prisma.client.fixture.updateMany({
       where: { externalId },
@@ -384,7 +507,10 @@ export class FixtureRepository {
 
   async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
     const result = await this.prisma.client.oddsSnapshot.deleteMany({
-      where: { snapshotAt: { lt: cutoff } },
+      where: {
+        snapshotAt: { lt: cutoff },
+        source: OddsSnapshotSource.PREMATCH,
+      },
     });
     return result.count;
   }
@@ -451,8 +577,18 @@ export class FixtureRepository {
 
   // eslint-disable-next-line max-params -- Four domain parameters; no meaningful grouping possible.
   private async upsertNonOneXTwo(
-    data: { fixtureId: string; bookmaker: string; snapshotAt: Date },
-    market: 'OVER_UNDER' | 'BTTS' | 'HALF_TIME_FULL_TIME',
+    data: {
+      fixtureId: string;
+      bookmaker: string;
+      snapshotAt: Date;
+      source: OddsSnapshotSource;
+    },
+    market:
+      | 'OVER_UNDER'
+      | 'BTTS'
+      | 'HALF_TIME_FULL_TIME'
+      | 'OVER_UNDER_HT'
+      | 'FIRST_HALF_WINNER',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -473,6 +609,7 @@ export class FixtureRepository {
           market,
           pick,
           snapshotAt: data.snapshotAt,
+          source: data.source,
           odds,
         },
       });
@@ -493,6 +630,14 @@ export class FixtureRepository {
   async upsertOddsSnapshot(
     data: UpsertOddsSnapshotInput,
   ): Promise<{ id: string }> {
+    const source = data.source ?? OddsSnapshotSource.PREMATCH;
+    const ctx = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      snapshotAt: data.snapshotAt,
+      source,
+    };
+
     const oneXTwoId = await this.upsertOneXTwoOddsSnapshot({
       fixtureId: data.fixtureId,
       bookmaker: data.bookmaker,
@@ -500,16 +645,43 @@ export class FixtureRepository {
       homeOdds: data.homeOdds,
       drawOdds: data.drawOdds,
       awayOdds: data.awayOdds,
+      source,
     });
 
     await Promise.all([
-      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'OVER', data.overOdds),
-      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'UNDER', data.underOdds),
-      this.upsertNonOneXTwo(data, 'BTTS', 'YES', data.bttsYesOdds),
-      this.upsertNonOneXTwo(data, 'BTTS', 'NO', data.bttsNoOdds),
-      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
-        this.upsertNonOneXTwo(data, 'HALF_TIME_FULL_TIME', pick, odds),
+      ...Object.entries(data.overUnderOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER', pick, odds ?? null),
       ),
+      this.upsertNonOneXTwo(ctx, 'BTTS', 'YES', data.bttsYesOdds),
+      this.upsertNonOneXTwo(ctx, 'BTTS', 'NO', data.bttsNoOdds),
+      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'HALF_TIME_FULL_TIME', pick, odds),
+      ),
+      ...Object.entries(data.ouHtOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER_HT', pick, odds ?? null),
+      ),
+      ...(data.firstHalfWinnerOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'HOME',
+              data.firstHalfWinnerOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'DRAW',
+              data.firstHalfWinnerOdds.draw,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'AWAY',
+              data.firstHalfWinnerOdds.away,
+            ),
+          ]
+        : []),
     ]);
 
     return oneXTwoId;
@@ -518,14 +690,48 @@ export class FixtureRepository {
   async upsertSecondaryMarketOdds(
     data: UpsertSecondaryMarketOddsInput,
   ): Promise<void> {
+    const source = data.source ?? OddsSnapshotSource.PREMATCH;
+    const ctx = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      snapshotAt: data.snapshotAt,
+      source,
+    };
+
     await Promise.all([
-      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'OVER', data.overOdds),
-      this.upsertNonOneXTwo(data, 'OVER_UNDER', 'UNDER', data.underOdds),
-      this.upsertNonOneXTwo(data, 'BTTS', 'YES', data.bttsYesOdds),
-      this.upsertNonOneXTwo(data, 'BTTS', 'NO', data.bttsNoOdds),
-      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
-        this.upsertNonOneXTwo(data, 'HALF_TIME_FULL_TIME', pick, odds),
+      ...Object.entries(data.overUnderOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER', pick, odds ?? null),
       ),
+      this.upsertNonOneXTwo(ctx, 'BTTS', 'YES', data.bttsYesOdds),
+      this.upsertNonOneXTwo(ctx, 'BTTS', 'NO', data.bttsNoOdds),
+      ...Object.entries(data.htftOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'HALF_TIME_FULL_TIME', pick, odds),
+      ),
+      ...Object.entries(data.ouHtOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'OVER_UNDER_HT', pick, odds ?? null),
+      ),
+      ...(data.firstHalfWinnerOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'HOME',
+              data.firstHalfWinnerOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'DRAW',
+              data.firstHalfWinnerOdds.draw,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'FIRST_HALF_WINNER',
+              'AWAY',
+              data.firstHalfWinnerOdds.away,
+            ),
+          ]
+        : []),
     ]);
   }
 
@@ -533,6 +739,7 @@ export class FixtureRepository {
   async upsertOneXTwoOddsSnapshot(
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
+    const source = data.source ?? OddsSnapshotSource.PREMATCH;
     const where = {
       fixtureId: data.fixtureId,
       bookmaker: data.bookmaker,
@@ -547,6 +754,7 @@ export class FixtureRepository {
           bookmaker: data.bookmaker,
           market: 'ONE_X_TWO',
           snapshotAt: data.snapshotAt,
+          source,
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,
           awayOdds: data.awayOdds,

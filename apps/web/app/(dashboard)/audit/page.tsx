@@ -2,6 +2,7 @@
 
 import { Fragment, Suspense, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Check, Copy } from "lucide-react";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { TableCard } from "@/components/table-card";
@@ -20,6 +21,23 @@ import type {
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
+}
+
+const REJECTION_REASON_LABELS: Record<string, string> = {
+  ev_above_hard_cap: "EV au-dessus du plafond dur",
+  ev_above_soft_cap: "EV au-dessus du plafond calibration",
+  ev_below_threshold: "EV insuffisant",
+  filtered_longshot: "Longshot filtré",
+  market_suspended: "Marché suspendu",
+  odds_above_cap: "Cote trop haute",
+  odds_below_floor: "Cote trop basse",
+  probability_too_low: "Probabilité directionnelle insuffisante",
+  quality_score_below_threshold: "Score qualité insuffisant",
+};
+
+function formatRejectionReason(reason: string | null | undefined): string {
+  if (!reason) return "—";
+  return REJECTION_REASON_LABELS[reason] ?? reason;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +70,34 @@ function DiagStat({
         {value ?? "—"}
       </p>
     </div>
+  );
+}
+
+function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(fixtureId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={fixtureId}
+      className="mt-1 flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+    >
+      <span>{fixtureId.slice(0, 8)}</span>
+      {copied ? (
+        <Check size={10} className="text-success" />
+      ) : (
+        <Copy size={10} />
+      )}
+    </button>
   );
 }
 
@@ -122,7 +168,7 @@ function AuditPicksTable({
                   )}
                   {isEvaluated && (
                     <td className="py-2 text-[0.65rem] text-slate-400">
-                      {p.rejectionReason ?? "—"}
+                      {formatRejectionReason(p.rejectionReason)}
                     </td>
                   )}
                 </tr>
@@ -319,11 +365,14 @@ function AuditFixturesSection({ date }: { date: string }) {
                         {row.scheduledAt}
                       </td>
                       <td className="px-4 py-3">
-                        <FixtureName
-                          fixture={row.fixture}
-                          homeLogo={row.homeLogo}
-                          awayLogo={row.awayLogo}
-                        />
+                        <div>
+                          <FixtureName
+                            fixture={row.fixture}
+                            homeLogo={row.homeLogo}
+                            awayLogo={row.awayLogo}
+                          />
+                          <CopyFixtureId fixtureId={row.fixtureId} />
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <FixtureStatusBadge status={row.status} />

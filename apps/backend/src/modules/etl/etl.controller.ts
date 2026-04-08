@@ -162,6 +162,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'odds-historical-import': {
+          active: 0,
+          waiting: 0,
+          completed: 9,
+          failed: 0,
+          delayed: 0,
+        },
       },
     },
   })
@@ -343,6 +350,34 @@ export class EtlController {
     const code = this.resolveCode(competitionCode);
     const seasons = this.resolveSeasonYears(seasonsParam);
     await this.etlService.triggerOddsCsvImportForSeasons(code, seasons);
+    return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
+  @Post('sync/odds-historical/:competitionCode/backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Import historical Pinnacle odds from The Odds API',
+    description:
+      'One-shot import of pre-match Pinnacle 1X2 odds for UCL, Europa or Conference League. ' +
+      'Odds are tagged as HISTORICAL and never cleaned up by the retention worker. ' +
+      'Example: `?seasons=2022,2023,2024` imports seasons 2022-23, 2023-24 and 2024-25.',
+  })
+  @ApiParam({
+    name: 'competitionCode',
+    description: 'UEFA competition code: UCL, UEL or UECL.',
+    example: 'UCL',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid seasons query parameter.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerOddsHistoricalImport(
+    @Param('competitionCode') competitionCode: string,
+    @Query('seasons') seasonsParam: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    await this.etlService.triggerOddsHistoricalImport(code, seasons);
     return { status: 'ok' as const, competitionCode: code, seasons };
   }
 

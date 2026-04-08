@@ -11,6 +11,7 @@ import {
   selectionStatusLabel,
   selectionStatusBadgeClass,
   selectionCardClass,
+  formatMarketForDisplay,
   formatPickForDisplay,
 } from "../helpers/coupon";
 import type { CouponTier } from "../types/dashboard";
@@ -248,7 +249,8 @@ export function CouponDetailLeg({
           awayLogo={selection.awayLogo}
         />
         <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
-          {selection.scheduledAt} • {marketLabel ?? selection.market}
+          {selection.scheduledAt} •{" "}
+          {marketLabel ?? formatMarketForDisplay(selection.market, locale)}
           {(selection.status === "WON" || selection.status === "LOST") &&
           selection.score ? (
             <span className="ml-2 font-bold text-slate-600">

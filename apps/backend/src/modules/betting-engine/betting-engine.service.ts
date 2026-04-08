@@ -19,6 +19,7 @@ import {
   HALF_TIME_FULL_TIME_PICKS,
   computeJointProbability,
   resolveComboPickBetStatus,
+  resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
   type ComboPick,
@@ -60,6 +61,9 @@ import {
   getPickEvSoftCap,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
+  isEuropeanCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
@@ -284,6 +288,15 @@ export class BettingEngineService {
           homeScore: fixture.homeScore,
           awayScore: fixture.awayScore,
         });
+      } else if (
+        bet.market === Market.OVER_UNDER_HT ||
+        bet.market === Market.FIRST_HALF_WINNER
+      ) {
+        status = resolveFirstHalfBetStatus(
+          bet.pick,
+          fixture.homeHtScore,
+          fixture.awayHtScore,
+        );
       } else {
         status = resolvePickBetStatus(
           bet.pick,
@@ -342,6 +355,8 @@ export class BettingEngineService {
       return this.analyzeFriFixture(fixture);
     }
 
+    const competitionCode = getFixtureCompetitionCode(fixture);
+
     const [homeStats, awayStats] = await Promise.all([
       this.prisma.client.teamStats.findFirst({
         where: {
@@ -365,15 +380,56 @@ export class BettingEngineService {
       }),
     ]);
 
-    if (!homeStats || !awayStats) {
+    // For European competitions, supplement (or replace) European stats with
+    // domestic form when the European sample is absent or thin.
+    let effectiveHomeStats: TeamStatsInput | null = homeStats;
+    let effectiveAwayStats: TeamStatsInput | null = awayStats;
+
+    if (isEuropeanCompetition(competitionCode)) {
+      const [homeCross, awayCross] = await Promise.all([
+        this.findCrossCompStats(
+          fixture.homeTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+        this.findCrossCompStats(
+          fixture.awayTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+      ]);
+
+      if (homeCross) {
+        effectiveHomeStats = homeStats
+          ? blendTeamStats({
+              primary: homeStats,
+              secondary: homeCross,
+              formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            })
+          : homeCross;
+      }
+      if (awayCross) {
+        effectiveAwayStats = awayStats
+          ? blendTeamStats({
+              primary: awayStats,
+              secondary: awayCross,
+              formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            })
+          : awayCross;
+      }
+    }
+
+    if (!effectiveHomeStats || !effectiveAwayStats) {
       logger.info(
         {
           fixtureId,
-          competitionCode: getFixtureCompetitionCode(fixture),
+          competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
-          hasHomeStats: homeStats !== null,
-          hasAwayStats: awayStats !== null,
+          hasHomeStats: effectiveHomeStats !== null,
+          hasAwayStats: effectiveAwayStats !== null,
           reason: 'missing_team_stats',
         },
         'Fixture skipped',
@@ -385,10 +441,10 @@ export class BettingEngineService {
     const predictionSource: PredictionSource = 'POISSON_MAIN';
     const { features, deterministicScore, lambda, probabilities } =
       this.computeFromTeamStats(
-        homeStats,
-        awayStats,
+        effectiveHomeStats,
+        effectiveAwayStats,
         weights,
-        getFixtureCompetitionCode(fixture),
+        competitionCode,
       );
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -398,13 +454,13 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
-          competitionCode: getFixtureCompetitionCode(fixture),
+          competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
           lambdaHome: lambda.home,
           lambdaAway: lambda.away,
-          homeStats: summarizeTeamStats(homeStats),
-          awayStats: summarizeTeamStats(awayStats),
+          homeStats: summarizeTeamStats(effectiveHomeStats),
+          awayStats: summarizeTeamStats(effectiveAwayStats),
         },
         'Lambda floor hit',
       );
@@ -431,7 +487,6 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
-    const competitionCode = getFixtureCompetitionCode(fixture);
     const evaluatedPicks: EvaluatedPick[] = latestOdds
       ? this.listEvaluatedPicks(
           probabilities,
@@ -1012,6 +1067,28 @@ export class BettingEngineService {
     ).bookmaker;
   }
 
+  /**
+   * Fetch the most recent TeamStats for a team from any season other than the
+   * specified one, before a given date. Used to supplement European stats with
+   * the team's domestic form when the European sample is absent or thin.
+   */
+  private async findCrossCompStats(
+    teamId: string,
+    beforeDate: Date,
+    excludeSeasonId: string,
+  ): Promise<TeamStatsInput | null> {
+    return this.prisma.client.teamStats.findFirst({
+      where: {
+        teamId,
+        afterFixture: {
+          scheduledAt: { lt: beforeDate },
+          seasonId: { not: excludeSeasonId },
+        },
+      },
+      orderBy: { afterFixture: { scheduledAt: 'desc' } },
+    });
+  }
+
   private async findLatestOddsSnapshot(
     fixtureId: string,
     _cutoff: Date,
@@ -1055,7 +1132,13 @@ export class BettingEngineService {
     // Resolve the best available bookmaker for each secondary market
     // independently — their coverage differs from 1X2 (e.g. Pinnacle covers
     // OVER_UNDER while Bet365 may not).
-    const [ouBookmaker, bttsBookmaker, htftBookmaker] = await Promise.all([
+    const [
+      ouBookmaker,
+      bttsBookmaker,
+      htftBookmaker,
+      ouHtBookmaker,
+      fhwBookmaker,
+    ] = await Promise.all([
       this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, _cutoff),
       this.findBestBookmakerForMarket(fixtureId, Market.BTTS, _cutoff),
       this.findBestBookmakerForMarket(
@@ -1063,31 +1146,24 @@ export class BettingEngineService {
         Market.HALF_TIME_FULL_TIME,
         _cutoff,
       ),
+      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER_HT, _cutoff),
+      this.findBestBookmakerForMarket(
+        fixtureId,
+        Market.FIRST_HALF_WINNER,
+        _cutoff,
+      ),
     ]);
 
-    const [overRow, underRow, bttsYesRow, bttsNoRow, htftRows] =
+    const [ouRows, bttsYesRow, bttsNoRow, htftRows, ouHtRows, fhwRows] =
       await Promise.all([
         ouBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
+          ? this.prisma.client.oddsSnapshot.findMany({
               where: {
                 fixtureId,
                 bookmaker: ouBookmaker,
                 market: Market.OVER_UNDER,
-                pick: 'OVER',
               },
-              select: { odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        ouBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
-              where: {
-                fixtureId,
-                bookmaker: ouBookmaker,
-                market: Market.OVER_UNDER,
-                pick: 'UNDER',
-              },
-              select: { odds: true },
+              select: { pick: true, odds: true },
               orderBy: { snapshotAt: 'desc' },
             })
           : null,
@@ -1126,13 +1202,77 @@ export class BettingEngineService {
               orderBy: { snapshotAt: 'desc' },
             })
           : [],
+        ouHtBookmaker
+          ? this.prisma.client.oddsSnapshot.findMany({
+              where: {
+                fixtureId,
+                bookmaker: ouHtBookmaker,
+                market: Market.OVER_UNDER_HT,
+              },
+              select: { pick: true, odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
+        fhwBookmaker
+          ? this.prisma.client.oddsSnapshot.findMany({
+              where: {
+                fixtureId,
+                bookmaker: fhwBookmaker,
+                market: Market.FIRST_HALF_WINNER,
+              },
+              select: { pick: true, odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
       ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
+    const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
+    const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
+    let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
+
+    for (const row of ouRows ?? []) {
+      if (!row.pick || !row.odds) continue;
+      if (
+        !(row.pick in overUnderOdds) &&
+        (row.pick === 'OVER_1_5' ||
+          row.pick === 'UNDER_1_5' ||
+          row.pick === 'OVER' ||
+          row.pick === 'UNDER' ||
+          row.pick === 'OVER_3_5' ||
+          row.pick === 'UNDER_3_5')
+      ) {
+        overUnderOdds[row.pick] = new Decimal(row.odds.toString());
+      }
+    }
     for (const row of htftRows) {
       if (!row.pick || !row.odds) continue;
       if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {
         htftOdds[row.pick] = new Decimal(row.odds.toString());
+      }
+    }
+    for (const row of ouHtRows ?? []) {
+      if (!row.pick || !row.odds) continue;
+      if (
+        !(row.pick in ouHtOdds) &&
+        (row.pick === 'OVER_0_5' ||
+          row.pick === 'UNDER_0_5' ||
+          row.pick === 'OVER_1_5' ||
+          row.pick === 'UNDER_1_5')
+      ) {
+        ouHtOdds[row.pick] = new Decimal(row.odds.toString());
+      }
+    }
+    if (fhwRows !== null) {
+      const homeRow = fhwRows.find((r) => r.pick === 'HOME');
+      const drawRow = fhwRows.find((r) => r.pick === 'DRAW');
+      const awayRow = fhwRows.find((r) => r.pick === 'AWAY');
+      if (homeRow?.odds && drawRow?.odds && awayRow?.odds) {
+        firstHalfWinnerOdds = {
+          home: new Decimal(homeRow.odds.toString()),
+          draw: new Decimal(drawRow.odds.toString()),
+          away: new Decimal(awayRow.odds.toString()),
+        };
       }
     }
 
@@ -1142,8 +1282,7 @@ export class BettingEngineService {
       homeOdds: new Decimal(best.homeOdds.toString()),
       drawOdds: new Decimal(best.drawOdds.toString()),
       awayOdds: new Decimal(best.awayOdds.toString()),
-      overOdds: overRow?.odds ? new Decimal(overRow.odds.toString()) : null,
-      underOdds: underRow?.odds ? new Decimal(underRow.odds.toString()) : null,
+      overUnderOdds,
       bttsYesOdds: bttsYesRow?.odds
         ? new Decimal(bttsYesRow.odds.toString())
         : null,
@@ -1151,6 +1290,8 @@ export class BettingEngineService {
         ? new Decimal(bttsNoRow.odds.toString())
         : null,
       htftOdds,
+      ouHtOdds,
+      firstHalfWinnerOdds,
     };
   }
 
@@ -1193,11 +1334,12 @@ export class BettingEngineService {
       homeOdds: new Decimal(row.homeOdds.toString()),
       drawOdds: new Decimal(row.drawOdds.toString()),
       awayOdds: new Decimal(row.awayOdds.toString()),
-      overOdds: null,
-      underOdds: null,
+      overUnderOdds: {},
       bttsYesOdds: null,
       bttsNoOdds: null,
       htftOdds: {},
+      ouHtOdds: {},
+      firstHalfWinnerOdds: null,
     };
   }
 
@@ -1292,11 +1434,12 @@ export class BettingEngineService {
         homeOdds: new Decimal(bestHome.homeOdds!.toString()),
         drawOdds: new Decimal(bestDraw.drawOdds!.toString()),
         awayOdds: new Decimal(bestAway.awayOdds!.toString()),
-        overOdds: null,
-        underOdds: null,
+        overUnderOdds: {},
         bttsYesOdds: null,
         bttsNoOdds: null,
         htftOdds: {},
+        ouHtOdds: {},
+        firstHalfWinnerOdds: null,
       },
       offeredBy: {
         home: bestHome.bookmaker,
@@ -1479,38 +1622,58 @@ export class BettingEngineService {
     }
 
     // Singles Over/Under
-    if (odds.overOdds !== null) {
-      const ev = calcEV(probabilities.over25, odds.overOdds);
-      candidates.push({
-        market: Market.OVER_UNDER,
+    const overUnderCandidates: Array<{
+      pick: string;
+      probability: Decimal;
+      odds: Decimal | null | undefined;
+    }> = [
+      {
+        pick: 'OVER_1_5',
+        probability: probabilities.over15,
+        odds: odds.overUnderOdds['OVER_1_5'],
+      },
+      {
+        pick: 'UNDER_1_5',
+        probability: probabilities.under15,
+        odds: odds.overUnderOdds['UNDER_1_5'],
+      },
+      {
         pick: 'OVER',
         probability: probabilities.over25,
-        odds: odds.overOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.OVER_UNDER,
-          'OVER',
-          odds.overOdds,
-        ),
-        isCombo: false,
-      });
-    }
-    if (odds.underOdds !== null) {
-      const ev = calcEV(probabilities.under25, odds.underOdds);
-      candidates.push({
-        market: Market.OVER_UNDER,
+        odds: odds.overUnderOdds['OVER'],
+      },
+      {
         pick: 'UNDER',
         probability: probabilities.under25,
-        odds: odds.underOdds,
+        odds: odds.overUnderOdds['UNDER'],
+      },
+      {
+        pick: 'OVER_3_5',
+        probability: probabilities.over35,
+        odds: odds.overUnderOdds['OVER_3_5'],
+      },
+      {
+        pick: 'UNDER_3_5',
+        probability: probabilities.under35,
+        odds: odds.overUnderOdds['UNDER_3_5'],
+      },
+    ];
+
+    for (const candidate of overUnderCandidates) {
+      if (candidate.odds === null || candidate.odds === undefined) continue;
+      const ev = calcEV(candidate.probability, candidate.odds);
+      candidates.push({
+        market: Market.OVER_UNDER,
+        pick: candidate.pick,
+        probability: candidate.probability,
+        odds: candidate.odds,
         ev,
         qualityScore: buildQualityScore(
           ev,
           deterministicScore,
           Market.OVER_UNDER,
-          'UNDER',
-          odds.underOdds,
+          candidate.pick,
+          candidate.odds,
         ),
         isCombo: false,
       });
@@ -1576,6 +1739,92 @@ export class BettingEngineService {
         ),
         isCombo: false,
       });
+    }
+
+    // Singles OVER_UNDER_HT
+    const ouHtCandidates: Array<{
+      pick: 'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5';
+      probability: Decimal;
+    }> = [
+      {
+        pick: 'OVER_0_5',
+        probability: probabilities.ouHT['OVER_0_5'] ?? new Decimal(0),
+      },
+      {
+        pick: 'UNDER_0_5',
+        probability: probabilities.ouHT['UNDER_0_5'] ?? new Decimal(0),
+      },
+      {
+        pick: 'OVER_1_5',
+        probability: probabilities.ouHT['OVER_1_5'] ?? new Decimal(0),
+      },
+      {
+        pick: 'UNDER_1_5',
+        probability: probabilities.ouHT['UNDER_1_5'] ?? new Decimal(0),
+      },
+    ];
+    for (const candidate of ouHtCandidates) {
+      const pickOdds = odds.ouHtOdds[candidate.pick];
+      if (!pickOdds) continue;
+      const ev = calcEV(candidate.probability, pickOdds);
+      candidates.push({
+        market: Market.OVER_UNDER_HT,
+        pick: candidate.pick,
+        probability: candidate.probability,
+        odds: pickOdds,
+        ev,
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.OVER_UNDER_HT,
+          candidate.pick,
+          pickOdds,
+        ),
+        isCombo: false,
+      });
+    }
+
+    // Singles FIRST_HALF_WINNER
+    if (odds.firstHalfWinnerOdds !== null) {
+      const fhwCandidates: Array<{
+        pick: string;
+        probability: Decimal;
+        pickOdds: Decimal;
+      }> = [
+        {
+          pick: 'HOME',
+          probability: probabilities.firstHalfWinner.home,
+          pickOdds: odds.firstHalfWinnerOdds.home,
+        },
+        {
+          pick: 'DRAW',
+          probability: probabilities.firstHalfWinner.draw,
+          pickOdds: odds.firstHalfWinnerOdds.draw,
+        },
+        {
+          pick: 'AWAY',
+          probability: probabilities.firstHalfWinner.away,
+          pickOdds: odds.firstHalfWinnerOdds.away,
+        },
+      ];
+      for (const candidate of fhwCandidates) {
+        const ev = calcEV(candidate.probability, candidate.pickOdds);
+        candidates.push({
+          market: Market.FIRST_HALF_WINNER,
+          pick: candidate.pick,
+          probability: candidate.probability,
+          odds: candidate.pickOdds,
+          ev,
+          qualityScore: buildQualityScore(
+            ev,
+            deterministicScore,
+            Market.FIRST_HALF_WINNER,
+            candidate.pick,
+            candidate.pickOdds,
+          ),
+          isCombo: false,
+        });
+      }
     }
 
     // Combos from COMBO_WHITELIST. When lambdas collapse to the floor, Poisson
@@ -1658,8 +1907,12 @@ function mapProbabilitiesToNumber(
     home: probabilities.home.toNumber(),
     draw: probabilities.draw.toNumber(),
     away: probabilities.away.toNumber(),
+    over15: probabilities.over15.toNumber(),
+    under15: probabilities.under15.toNumber(),
     over25: probabilities.over25.toNumber(),
     under25: probabilities.under25.toNumber(),
+    over35: probabilities.over35.toNumber(),
+    under35: probabilities.under35.toNumber(),
     bttsYes: probabilities.bttsYes.toNumber(),
     bttsNo: probabilities.bttsNo.toNumber(),
     dc1X: probabilities.dc1X.toNumber(),
@@ -1671,6 +1924,17 @@ function mapProbabilitiesToNumber(
         value.toNumber(),
       ]),
     ),
+    ouHT: Object.fromEntries(
+      Object.entries(probabilities.ouHT).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    firstHalfWinner: {
+      home: probabilities.firstHalfWinner.home.toNumber(),
+      draw: probabilities.firstHalfWinner.draw.toNumber(),
+      away: probabilities.firstHalfWinner.away.toNumber(),
+    },
   };
 }
 
@@ -1747,6 +2011,41 @@ function clamp01(value: number): number {
   return clamp(value, 0, 1);
 }
 
+type BlendTeamStatsInput = {
+  primary: TeamStatsInput;
+  secondary: TeamStatsInput;
+  formWeight: number;
+  xgWeight: number;
+};
+
+/**
+ * Blend European stats (primary) with domestic/cross-competition stats (secondary).
+ * European recentForm weighted at `formWeight`; domestic xg at `1 - xgWeight`.
+ * Win/draw rates taken from domestic (larger sample); leagueVolatility from European.
+ */
+export function blendTeamStats({
+  primary,
+  secondary,
+  formWeight,
+  xgWeight,
+}: BlendTeamStatsInput): TeamStatsInput {
+  const fw1 = 1 - formWeight;
+  const xw1 = 1 - xgWeight;
+  return {
+    recentForm:
+      asNumber(primary.recentForm) * formWeight +
+      asNumber(secondary.recentForm) * fw1,
+    xgFor: asNumber(primary.xgFor) * xgWeight + asNumber(secondary.xgFor) * xw1,
+    xgAgainst:
+      asNumber(primary.xgAgainst) * xgWeight +
+      asNumber(secondary.xgAgainst) * xw1,
+    homeWinRate: secondary.homeWinRate,
+    awayWinRate: secondary.awayWinRate,
+    drawRate: secondary.drawRate,
+    leagueVolatility: primary.leagueVolatility,
+  };
+}
+
 function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
   const invHome = new Decimal(1).div(odds.homeOdds);
   const invDraw = new Decimal(1).div(odds.drawOdds);
@@ -1762,8 +2061,12 @@ function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
     home,
     draw,
     away,
+    over15: zero,
+    under15: zero,
     over25: zero,
     under25: zero,
+    over35: zero,
+    under35: zero,
     bttsYes: zero,
     bttsNo: zero,
     dc1X: home.plus(draw),
@@ -1780,6 +2083,8 @@ function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
       AWAY_DRAW: zero,
       AWAY_AWAY: zero,
     },
+    ouHT: { OVER_0_5: zero, UNDER_0_5: zero, OVER_1_5: zero, UNDER_1_5: zero },
+    firstHalfWinner: { home: zero, draw: zero, away: zero },
   };
 }
 
@@ -1806,8 +2111,12 @@ function eloProbabilities(
     home,
     draw: drawProb,
     away,
+    over15: zero,
+    under15: zero,
     over25: zero,
     under25: zero,
+    over35: zero,
+    under35: zero,
     bttsYes: zero,
     bttsNo: zero,
     dc1X: home.plus(drawProb),
@@ -1824,6 +2133,8 @@ function eloProbabilities(
       AWAY_DRAW: zero,
       AWAY_AWAY: zero,
     },
+    ouHT: { OVER_0_5: zero, UNDER_0_5: zero, OVER_1_5: zero, UNDER_1_5: zero },
+    firstHalfWinner: { home: zero, draw: zero, away: zero },
   };
 }
 
@@ -1849,8 +2160,7 @@ function getPickOddsFromSnapshot(
     if (pick === 'AWAY') return odds.awayOdds;
   }
   if (market === Market.OVER_UNDER) {
-    if (pick === 'OVER') return odds.overOdds;
-    if (pick === 'UNDER') return odds.underOdds;
+    return odds.overUnderOdds[pick as keyof typeof odds.overUnderOdds] ?? null;
   }
   if (market === Market.BTTS) {
     if (pick === 'YES') return odds.bttsYesOdds;
@@ -1860,6 +2170,17 @@ function getPickOddsFromSnapshot(
     if (isHalfTimeFullTimePick(pick)) {
       return odds.htftOdds[pick] ?? null;
     }
+  }
+  if (market === Market.OVER_UNDER_HT) {
+    return odds.ouHtOdds[pick as keyof typeof odds.ouHtOdds] ?? null;
+  }
+  if (
+    market === Market.FIRST_HALF_WINNER &&
+    odds.firstHalfWinnerOdds !== null
+  ) {
+    if (pick === 'HOME') return odds.firstHalfWinnerOdds.home;
+    if (pick === 'DRAW') return odds.firstHalfWinnerOdds.draw;
+    if (pick === 'AWAY') return odds.firstHalfWinnerOdds.away;
   }
   return null;
 }
@@ -1890,8 +2211,12 @@ function getModelProbabilityForPick(
     if (pick === '12') return probabilities.dc12;
   }
   if (market === Market.OVER_UNDER) {
+    if (pick === 'OVER_1_5') return probabilities.over15;
+    if (pick === 'UNDER_1_5') return probabilities.under15;
     if (pick === 'OVER') return probabilities.over25;
     if (pick === 'UNDER') return probabilities.under25;
+    if (pick === 'OVER_3_5') return probabilities.over35;
+    if (pick === 'UNDER_3_5') return probabilities.under35;
   }
   if (market === Market.BTTS) {
     if (pick === 'YES') return probabilities.bttsYes;
@@ -1899,6 +2224,14 @@ function getModelProbabilityForPick(
   }
   if (market === Market.HALF_TIME_FULL_TIME && isHalfTimeFullTimePick(pick)) {
     return probabilities.htft[pick];
+  }
+  if (market === Market.OVER_UNDER_HT) {
+    return probabilities.ouHT[pick as keyof typeof probabilities.ouHT] ?? null;
+  }
+  if (market === Market.FIRST_HALF_WINNER) {
+    if (pick === 'HOME') return probabilities.firstHalfWinner.home;
+    if (pick === 'DRAW') return probabilities.firstHalfWinner.draw;
+    if (pick === 'AWAY') return probabilities.firstHalfWinner.away;
   }
   return null;
 }

@@ -18,12 +18,38 @@ function singlePickLabel(market: string, pick: string): string {
     if (pick === "AWAY") return "V2";
   }
   if (market === "OVER_UNDER") {
+    if (pick === "OVER_1_5") return "PLUS DE 1.5";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5";
     if (pick === "OVER") return "PLUS DE 2.5";
     if (pick === "UNDER") return "MOINS DE 2.5";
+    if (pick === "OVER_3_5") return "PLUS DE 3.5";
+    if (pick === "UNDER_3_5") return "MOINS DE 3.5";
   }
   if (market === "BTTS") {
     if (pick === "YES") return "BB OUI";
     if (pick === "NO") return "BB NON";
+  }
+  if (market === "OVER_UNDER_HT") {
+    if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
+    if (pick === "UNDER_0_5") return "MOINS DE 0.5 MT";
+    if (pick === "OVER_1_5") return "PLUS DE 1.5 MT";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5 MT";
+  }
+  if (market === "FIRST_HALF_WINNER") {
+    if (pick === "HOME") return "MT V1";
+    if (pick === "DRAW") return "MT NUL";
+    if (pick === "AWAY") return "MT V2";
+  }
+  if (market === "HALF_TIME_FULL_TIME") {
+    if (pick === "HOME_HOME") return "V1 / V1";
+    if (pick === "HOME_DRAW") return "V1 / NUL";
+    if (pick === "HOME_AWAY") return "V1 / V2";
+    if (pick === "DRAW_HOME") return "NUL / V1";
+    if (pick === "DRAW_DRAW") return "NUL / NUL";
+    if (pick === "DRAW_AWAY") return "NUL / V2";
+    if (pick === "AWAY_HOME") return "V2 / V1";
+    if (pick === "AWAY_DRAW") return "V2 / NUL";
+    if (pick === "AWAY_AWAY") return "V2 / V2";
   }
   return `${market}/${pick}`;
 }
@@ -126,15 +152,17 @@ function readNullableBool(features: unknown, key: string): boolean | null {
   return typeof value === "boolean" ? value : null;
 }
 
+// Keep in sync with MODEL_SCORE_THRESHOLD_MAP in ev.constants.ts
 function getModelScoreThreshold(code: string): number {
-  if (["PL", "SA", "BL1", "LL", "L1", "SP2"].includes(code)) return 0.55;
-  if (
-    ["CH", "D2", "F2", "I2", "EL1", "EL2", "LDC", "UEL", "UECL"].includes(code)
-  ) {
-    return 0.45;
-  }
-  if (code === "FRI") return 0.45;
-  return 0.6;
+  const map: Record<string, number> = {
+    PL: 0.58, SA: 0.6, BL1: 0.55, LL: 0.58, L1: 0.58,
+    J1: 0.55, MX1: 0.55,
+    CH: 0.5, D2: 0.55, F2: 0.58, SP2: 0.62, I2: 0.6,
+    EL1: 0.5, EL2: 0.45,
+    UCL: 0.45, LDC: 0.45, UEL: 0.55, UECL: 0.45,
+    WCQE: 0.6, FRI: 0.45, UNL: 0.6,
+  };
+  return map[code] ?? 0.6;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────

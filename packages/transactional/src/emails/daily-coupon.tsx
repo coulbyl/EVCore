@@ -17,8 +17,11 @@ import { palette } from "../components/palette";
 function formatMarketLabel(market: string, comboMarket: string | null): string {
   const fmt = (m: string) => {
     if (m === "ONE_X_TWO") return "1X2";
-    if (m === "OVER_UNDER" || m === "OVER_UNDER_25") return "O/U 2.5";
+    if (m === "OVER_UNDER" || m === "OVER_UNDER_25") return "O/U";
     if (m === "BTTS") return "BTTS";
+    if (m === "HALF_TIME_FULL_TIME") return "HT/FT";
+    if (m === "OVER_UNDER_HT") return "O/U MT";
+    if (m === "FIRST_HALF_WINNER") return "Résultat MT";
     return m.replace(/_/g, " ");
   };
   return comboMarket ? `${fmt(market)} + ${fmt(comboMarket)}` : fmt(market);
@@ -32,12 +35,38 @@ function formatPick(leg: DailyCouponLeg): string {
       if (pick === "AWAY") return "Extérieur";
     }
     if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
+      if (pick === "OVER_1_5") return "Plus de 1.5";
+      if (pick === "UNDER_1_5") return "Moins de 1.5";
       if (pick === "OVER") return "Plus de 2.5";
       if (pick === "UNDER") return "Moins de 2.5";
+      if (pick === "OVER_3_5") return "Plus de 3.5";
+      if (pick === "UNDER_3_5") return "Moins de 3.5";
     }
     if (market === "BTTS") {
       if (pick === "YES") return "Les deux marquent";
       if (pick === "NO") return "Non";
+    }
+    if (market === "OVER_UNDER_HT") {
+      if (pick === "OVER_0_5") return "Plus de 0.5 MT";
+      if (pick === "UNDER_0_5") return "Moins de 0.5 MT";
+      if (pick === "OVER_1_5") return "Plus de 1.5 MT";
+      if (pick === "UNDER_1_5") return "Moins de 1.5 MT";
+    }
+    if (market === "FIRST_HALF_WINNER") {
+      if (pick === "HOME") return "MT Domicile";
+      if (pick === "DRAW") return "MT Nul";
+      if (pick === "AWAY") return "MT Extérieur";
+    }
+    if (market === "HALF_TIME_FULL_TIME") {
+      if (pick === "HOME_HOME") return "Domicile / Domicile";
+      if (pick === "HOME_DRAW") return "Domicile / Nul";
+      if (pick === "HOME_AWAY") return "Domicile / Extérieur";
+      if (pick === "DRAW_HOME") return "Nul / Domicile";
+      if (pick === "DRAW_DRAW") return "Nul / Nul";
+      if (pick === "DRAW_AWAY") return "Nul / Extérieur";
+      if (pick === "AWAY_HOME") return "Extérieur / Domicile";
+      if (pick === "AWAY_DRAW") return "Extérieur / Nul";
+      if (pick === "AWAY_AWAY") return "Extérieur / Extérieur";
     }
     return pick;
   };

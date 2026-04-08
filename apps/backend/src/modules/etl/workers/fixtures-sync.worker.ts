@@ -276,6 +276,7 @@ function getCurlTransientErrorCode(error: unknown): string | undefined {
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
 
 function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
+  const round = item.league.round;
   return {
     externalId: item.fixture.id,
     homeTeam: {
@@ -290,7 +291,8 @@ function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
       shortName: item.teams.away.name,
       logoUrl: item.teams.away.logo,
     },
-    matchday: parseMatchday(item.league.round),
+    matchday: parseMatchday(round),
+    round,
     scheduledAt: parseIsoDate(item.fixture.date),
     status: mapStatus(item.fixture.status.short),
     homeScore: item.goals.home,
@@ -301,12 +303,16 @@ function mapApiFootballFixture(item: ApiFootballFixture): FixtureInput {
 }
 
 function parseMatchday(round: string): number {
-  const match = /Regular Season - (\d+)/i.exec(round);
-  if (!match?.[1]) {
-    // Non-standard rounds (e.g. play-offs) default to 0 — filtered out by model
-    return 0;
-  }
-  return parseInt(match[1], 10);
+  // Domestic leagues: "Regular Season - N"
+  const domestic = /Regular Season - (\d+)/i.exec(round);
+  if (domestic?.[1]) return parseInt(domestic[1], 10);
+
+  // UEFA League Stage: "League Stage - N"
+  const leagueStage = /League Stage - (\d+)/i.exec(round);
+  if (leagueStage?.[1]) return parseInt(leagueStage[1], 10);
+
+  // Knockout rounds and qualifying: default to 0 — filtered out by model
+  return 0;
 }
 
 function mapStatus(status: ApiFootballStatus): FixtureStatus {

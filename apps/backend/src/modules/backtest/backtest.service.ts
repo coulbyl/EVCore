@@ -15,6 +15,7 @@ import type {
 import {
   buildPoissonDistributions,
   resolveComboPickBetStatus,
+  resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
 } from '@modules/betting-engine/betting-engine.utils';
@@ -32,10 +33,17 @@ import {
   type MetricResult,
   type OneXTwoPrediction,
   type ValidationReport,
+  type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
 import { BACKTEST_CONSTANTS } from './backtest.constants';
-import { getModelScoreThreshold } from '@modules/betting-engine/ev.constants';
+import {
+  getModelScoreThreshold,
+  isEuropeanCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
+} from '@modules/betting-engine/ev.constants';
+import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
 
 const logger = createLogger('backtest-service');
 const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
@@ -197,6 +205,12 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
+    const uniqueTeamIds = [
+      ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+    ];
+    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
+      ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
+      : new Map<string, TeamStatsIndexEntry[]>();
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -216,16 +230,53 @@ export class BacktestService {
         continue;
       }
 
-      const homeStats = findLatestStatsBeforeFixture(
+      const homeStatsRaw = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.homeTeamId) ?? [],
         fixture,
         BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
-      const awayStats = findLatestStatsBeforeFixture(
+      const awayStatsRaw = findLatestStatsBeforeFixture(
         teamStatsByTeam.get(fixture.awayTeamId) ?? [],
         fixture,
         BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
       );
+
+      const homeCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.homeTeamId) ?? [],
+        fixture,
+        0,
+      );
+      const awayCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.awayTeamId) ?? [],
+        fixture,
+        0,
+      );
+
+      const homeStats: TeamStatsInput | null = (() => {
+        if (!homeStatsRaw) return homeCross ?? null;
+        if (homeCross) {
+          return blendTeamStats({
+            primary: homeStatsRaw,
+            secondary: homeCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        }
+        return homeStatsRaw;
+      })();
+
+      const awayStats: TeamStatsInput | null = (() => {
+        if (!awayStatsRaw) return awayCross ?? null;
+        if (awayCross) {
+          return blendTeamStats({
+            primary: awayStatsRaw,
+            secondary: awayCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        }
+        return awayStatsRaw;
+      })();
 
       if (!homeStats || !awayStats) {
         analysisEntries.push(
@@ -644,6 +695,7 @@ export class BacktestService {
       averageBrierScore,
       averageCalibrationError,
       aggregateRoi,
+      seasons,
       totalAnalyzed,
       totalBets,
       aggregateProfit,
@@ -706,6 +758,7 @@ export class BacktestService {
       threshold: BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
       verdict: roiVerdict,
     };
+    const byMarket = buildValidationMarketSummaries(seasons);
 
     logger.info(
       {
@@ -733,6 +786,7 @@ export class BacktestService {
       aggregateProfit,
       averageEvSimulated,
       overallVerdict,
+      byMarket,
       byCompetition,
       reportGeneratedAt: new Date(),
     };
@@ -800,6 +854,61 @@ export class BacktestService {
     return index;
   }
 
+  /**
+   * Load team stats from all seasons EXCEPT `excludeSeasonId` for the given
+   * team IDs. Used to supplement European-season stats with domestic form.
+   */
+  private async loadCrossCompStatsIndex(
+    excludeSeasonId: string,
+    teamIds: string[],
+  ): Promise<Map<string, TeamStatsIndexEntry[]>> {
+    if (teamIds.length === 0) return new Map();
+
+    const statsRows = await this.prisma.client.teamStats.findMany({
+      where: {
+        teamId: { in: teamIds },
+        afterFixture: { seasonId: { not: excludeSeasonId } },
+      },
+      select: {
+        teamId: true,
+        afterFixtureId: true,
+        recentForm: true,
+        xgFor: true,
+        xgAgainst: true,
+        homeWinRate: true,
+        awayWinRate: true,
+        drawRate: true,
+        leagueVolatility: true,
+        afterFixture: { select: { scheduledAt: true } },
+      },
+      orderBy: [
+        { afterFixture: { scheduledAt: 'asc' } },
+        { afterFixtureId: 'asc' },
+      ],
+    });
+
+    const index = new Map<string, TeamStatsIndexEntry[]>();
+    for (const row of statsRows) {
+      const list = index.get(row.teamId) ?? [];
+      list.push({
+        afterFixtureId: row.afterFixtureId,
+        scheduledAt: row.afterFixture.scheduledAt,
+        stats: {
+          recentForm: row.recentForm,
+          xgFor: row.xgFor,
+          xgAgainst: row.xgAgainst,
+          homeWinRate: row.homeWinRate,
+          awayWinRate: row.awayWinRate,
+          drawRate: row.drawRate,
+          leagueVolatility: row.leagueVolatility,
+        },
+      });
+      index.set(row.teamId, list);
+    }
+
+    return index;
+  }
+
   private async loadLatestOddsSnapshotsForFixtures(
     fixtures: FixtureForBacktest[],
   ): Promise<Map<string, FullOddsSnapshot>> {
@@ -818,6 +927,8 @@ export class BacktestService {
             Market.OVER_UNDER,
             Market.BTTS,
             Market.HALF_TIME_FULL_TIME,
+            Market.OVER_UNDER_HT,
+            Market.FIRST_HALF_WINNER,
           ],
         },
       },
@@ -892,17 +1003,38 @@ export class BacktestService {
       };
 
       const htftOdds: FullOddsSnapshot['htftOdds'] = {};
+      const ouHtOdds: FullOddsSnapshot['ouHtOdds'] = {};
+      const fhwHome = findLatestPickOdds(Market.FIRST_HALF_WINNER, 'HOME');
+      const fhwDraw = findLatestPickOdds(Market.FIRST_HALF_WINNER, 'DRAW');
+      const fhwAway = findLatestPickOdds(Market.FIRST_HALF_WINNER, 'AWAY');
+      const firstHalfWinnerOdds =
+        fhwHome && fhwDraw && fhwAway
+          ? { home: fhwHome, draw: fhwDraw, away: fhwAway }
+          : null;
+
       for (const row of fixtureRows) {
         if (
           row.bookmaker !== bestOneXTwo.bookmaker ||
-          row.market !== Market.HALF_TIME_FULL_TIME ||
           row.pick === null ||
-          row.odds === null ||
-          row.pick in htftOdds
-        ) {
+          row.odds === null
+        )
           continue;
+        if (
+          row.market === Market.HALF_TIME_FULL_TIME &&
+          !(row.pick in htftOdds)
+        ) {
+          htftOdds[row.pick] = row.odds;
         }
-        htftOdds[row.pick] = row.odds;
+        if (
+          row.market === Market.OVER_UNDER_HT &&
+          !(row.pick in ouHtOdds) &&
+          (row.pick === 'OVER_0_5' ||
+            row.pick === 'UNDER_0_5' ||
+            row.pick === 'OVER_1_5' ||
+            row.pick === 'UNDER_1_5')
+        ) {
+          ouHtOdds[row.pick] = row.odds;
+        }
       }
 
       latest.set(fixture.id, {
@@ -911,11 +1043,23 @@ export class BacktestService {
         homeOdds: bestOneXTwo.homeOdds,
         drawOdds: bestOneXTwo.drawOdds,
         awayOdds: bestOneXTwo.awayOdds,
-        overOdds: findLatestPickOdds(Market.OVER_UNDER, 'OVER'),
-        underOdds: findLatestPickOdds(Market.OVER_UNDER, 'UNDER'),
+        overUnderOdds: {
+          OVER_1_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'OVER_1_5') ?? undefined,
+          UNDER_1_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'UNDER_1_5') ?? undefined,
+          OVER: findLatestPickOdds(Market.OVER_UNDER, 'OVER') ?? undefined,
+          UNDER: findLatestPickOdds(Market.OVER_UNDER, 'UNDER') ?? undefined,
+          OVER_3_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'OVER_3_5') ?? undefined,
+          UNDER_3_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'UNDER_3_5') ?? undefined,
+        },
         bttsYesOdds: findLatestPickOdds(Market.BTTS, 'YES'),
         bttsNoOdds: findLatestPickOdds(Market.BTTS, 'NO'),
         htftOdds,
+        ouHtOdds,
+        firstHalfWinnerOdds,
       });
     }
 
@@ -956,6 +1100,43 @@ export class BacktestService {
       'Backtest analysis log written',
     );
   }
+}
+
+function buildValidationMarketSummaries(
+  reports: BacktestReport[],
+): ValidationMarketSummary[] {
+  return aggregateMarketPerformance(
+    reports.flatMap((report) => report.marketPerformance),
+  ).map((market) => {
+    const insufficient =
+      market.betsPlaced < BACKTEST_CONSTANTS.MIN_BETS_FOR_ROI;
+    const roiVerdict: ValidationVerdict = insufficient
+      ? 'INSUFFICIENT_DATA'
+      : market.roi.greaterThanOrEqualTo(BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD)
+        ? 'PASS'
+        : 'FAIL';
+
+    return {
+      market: market.market,
+      betsPlaced: market.betsPlaced,
+      wins: market.wins,
+      losses: market.losses,
+      voids: market.voids,
+      stake: market.stake,
+      aggregateProfit: market.profit,
+      aggregateRoi: market.roi,
+      averageOdds: market.averageOdds,
+      averageEvSimulated: market.averageEv,
+      maxDrawdownSimulated: market.maxDrawdown,
+      roi: {
+        value: market.roi,
+        threshold: BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
+        verdict: roiVerdict,
+      },
+      pickBreakdown: market.pickBreakdown,
+      oddsBuckets: market.oddsBuckets,
+    };
+  });
 }
 
 type SeasonWithCompetition = {
@@ -1431,7 +1612,18 @@ function simulatePick(
             homeScore: fixture.homeScore,
             awayScore: fixture.awayScore,
           })
-        : resolvePickBetStatus(pick.pick, fixture.homeScore, fixture.awayScore);
+        : pick.market === Market.OVER_UNDER_HT ||
+            pick.market === Market.FIRST_HALF_WINNER
+          ? resolveFirstHalfBetStatus(
+              pick.pick,
+              fixture.homeHtScore,
+              fixture.awayHtScore,
+            )
+          : resolvePickBetStatus(
+              pick.pick,
+              fixture.homeScore,
+              fixture.awayScore,
+            );
 
   if (status === BetStatus.VOID) {
     return {

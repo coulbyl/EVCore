@@ -78,8 +78,8 @@ function pinnacleWithAdditionalMarkets() {
         ],
       },
       {
-        id: 18,
-        name: 'Half Time / Full Time',
+        id: 7,
+        name: 'HT/FT Double',
         values: [
           { value: 'Home/Home', odd: 3.2 },
           { value: 'Draw/Home', odd: 5.6 },
@@ -420,8 +420,10 @@ describe('extractAdditionalMarketOdds', () => {
     const bk = pinnacleWithAdditionalMarkets();
     const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
 
-    expect(additional.overOdds).toBe(1.85);
-    expect(additional.underOdds).toBe(2);
+    expect(additional.overUnderOdds).toMatchObject({
+      OVER: 1.85,
+      UNDER: 2,
+    });
     expect(additional.bttsYesOdds).toBe(1.7);
     expect(additional.bttsNoOdds).toBe(2.05);
     expect(additional.htftOdds).toEqual({
