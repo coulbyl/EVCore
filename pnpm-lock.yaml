@@ -397,6 +397,9 @@ importers:
       '@prisma/client':
         specifier: 'catalog:'
         version: 7.7.0(prisma@7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2))(typescript@6.0.2)
+      prisma:
+        specifier: 'catalog:'
+        version: 7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2)
     devDependencies:
       '@evcore/eslint-config':
         specifier: workspace:*
@@ -413,9 +416,6 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 9.39.4(jiti@2.6.1)
-      prisma:
-        specifier: 'catalog:'
-        version: 7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
@@ -8031,7 +8031,6 @@ snapshots:
       prettier: 3.7.4
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
-      react-promise-suspense: 0.3.4
 
   '@react-email/row@0.0.12(react@19.2.5)':
     dependencies:
