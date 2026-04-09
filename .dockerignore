@@ -28,6 +28,7 @@
 # Docs & misc
 **/*.md
 !CLAUDE.md
+!apps/web/content/*.md
 **/docs
 .github
 
