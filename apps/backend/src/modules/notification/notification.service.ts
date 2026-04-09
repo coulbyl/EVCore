@@ -4,6 +4,7 @@ import {
   type Bet,
   CouponStatus,
   Market,
+  type Notification,
   NotificationType,
   type Prisma,
 } from '@evcore/db';
@@ -196,7 +197,7 @@ export class NotificationService {
     offset: number;
     unread?: boolean;
   }): Promise<{
-    data: Awaited<ReturnType<typeof this.prisma.client.notification.findMany>>;
+    data: Notification[];
     total: number;
     limit: number;
     offset: number;
