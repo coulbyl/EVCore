@@ -1,7 +1,7 @@
 ################################################################################
 # Stage 1 — Base: Node 24 Alpine + pnpm via corepack
 ################################################################################
-FROM node:24-alpine AS base
+FROM node:25-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Patch OS packages at base level to eliminate known Alpine CVEs in all stages
