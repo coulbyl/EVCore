@@ -6,7 +6,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Patch OS packages at base level to eliminate known Alpine CVEs in all stages
 RUN apk upgrade --no-cache \
- && corepack enable && corepack prepare pnpm@10.30.3 --activate
+ && corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 ################################################################################
 # Stage 2 — Builder: install deps, build workspace packages + backend

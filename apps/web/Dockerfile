@@ -5,7 +5,7 @@ FROM node:24-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN apk upgrade --no-cache \
- && corepack enable && corepack prepare pnpm@10.30.3 --activate
+ && corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 ################################################################################
 # Stage 2 — Builder: install deps, build workspace packages + Next.js

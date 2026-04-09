@@ -13,6 +13,7 @@
     "types": ["node", "vitest/globals"],
     "sourceMap": true,
     "outDir": "./dist",
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],

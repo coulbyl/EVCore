@@ -26,6 +26,7 @@ coverage
 out/
 build
 dist
+*.tsbuildinfo
 generated
 **/generated/
 packages/db/src/generated/
