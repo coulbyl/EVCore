@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Create semver tag
-        uses: K-Phoen/semver-release-action@master
+        uses: K-Phoen/semver-release-action@v1.3.4
         with:
           release_branch: main
           tag_format: "v%major%.%minor%.%patch%"

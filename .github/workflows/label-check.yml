@@ -1,0 +1,14 @@
+name: 'Label Checker'
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, labeled, unlabeled, synchronize]
+jobs:
+  check_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: yogevbd/enforce-label-action@v2.2.2
+        with:
+          REQUIRED_LABELS_ANY: 'patch,minor,major' # Liste de vos labels requis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
