@@ -57,7 +57,7 @@ services:
     image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3001}:3000"
     env_file:
       - apps/backend/.env
     environment:
@@ -77,6 +77,27 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # ── Web (Next.js dashboard) ─────────────────────────────────────────────────
+  web:
+    container_name: evcore-web
+    image: ghcr.io/${GHCR_OWNER}/evcore-web:latest
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # Backend API URL reachable from the browser (public-facing)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # ── Migration runner (one-shot, exits after completion) ─────────────────────
   # Run with: docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate

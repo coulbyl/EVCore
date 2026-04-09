@@ -155,12 +155,27 @@ function readNullableBool(features: unknown, key: string): boolean | null {
 // Keep in sync with MODEL_SCORE_THRESHOLD_MAP in ev.constants.ts
 function getModelScoreThreshold(code: string): number {
   const map: Record<string, number> = {
-    PL: 0.58, SA: 0.6, BL1: 0.55, LL: 0.58, L1: 0.58,
-    J1: 0.55, MX1: 0.55,
-    CH: 0.5, D2: 0.55, F2: 0.58, SP2: 0.62, I2: 0.6,
-    EL1: 0.5, EL2: 0.45,
-    UCL: 0.45, LDC: 0.45, UEL: 0.55, UECL: 0.45,
-    WCQE: 0.6, FRI: 0.45, UNL: 0.6,
+    PL: 0.58,
+    SA: 0.6,
+    BL1: 0.55,
+    LL: 0.58,
+    L1: 0.58,
+    J1: 0.55,
+    MX1: 0.55,
+    CH: 0.5,
+    D2: 0.55,
+    F2: 0.58,
+    SP2: 0.62,
+    I2: 0.6,
+    EL1: 0.5,
+    EL2: 0.45,
+    UCL: 0.45,
+    LDC: 0.45,
+    UEL: 0.55,
+    UECL: 0.45,
+    WCQE: 0.6,
+    FRI: 0.45,
+    UNL: 0.6,
   };
   return map[code] ?? 0.6;
 }
