@@ -24,9 +24,9 @@ jobs:
           fetch-depth: 0
 
       - name: Create semver tag
-        uses: K-Phoen/semver-release-action@v1.3.4
+        uses: K-Phoen/semver-release-action@master
         with:
           release_branch: main
-          tag_format: "v%major%.%minor%.%patch%"
+          tag_format: 'v%major%.%minor%.%patch%'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
