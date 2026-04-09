@@ -19,9 +19,6 @@ COPY . .
 # Install all deps (dev included — needed for tailwind, typescript, etc.)
 RUN pnpm install --frozen-lockfile
 
-# Build shared workspace packages consumed by the web app
-RUN pnpm --filter @evcore/ui build
-
 # Build Next.js with standalone output
 # (output: "standalone" is set in next.config.js)
 RUN pnpm --filter web build
