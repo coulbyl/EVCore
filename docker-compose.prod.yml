@@ -4,7 +4,7 @@ name: evcore-prod
 # Image built and pushed to GHCR by GitHub Actions (workflows/deploy.yml).
 # The VPS only pulls and runs — no build step on the server.
 #
-# 1. Copy apps/backend/.env.example → apps/backend/.env and fill values
+# 1. Copy apps/backend/.env.example → .env and fill values
 # 2. First deploy — run migrations before starting backend:
 #      docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate
 # 3. Start all services:
@@ -25,8 +25,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-evcore}
       POSTGRES_USER: ${POSTGRES_USER:-evcore}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      PGDATA: /var/lib/postgresql/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/pgdata
     # Not exposed to host — backend accesses via internal Docker network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evcore} -d ${POSTGRES_DB:-evcore}"]
@@ -59,7 +60,7 @@ services:
     ports:
       - "${PORT:-3001}:3000"
     env_file:
-      - apps/backend/.env
+      - .env
     environment:
       NODE_ENV: production
       # Override DB/Redis to use Docker service names (internal network)
@@ -113,7 +114,7 @@ services:
         /app/node_modules/.bin/prisma migrate deploy && \
         echo "Migrations complete."
     env_file:
-      - apps/backend/.env
+      - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
     depends_on:
