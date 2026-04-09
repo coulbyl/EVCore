@@ -510,9 +510,9 @@ L’idée centrale : **on ne mise pas dans une direction que le modèle lui-mêm
 
 Ce filtre est distinct du seuil d’EV :
 
-| Filtre | Bloque quand |
-|--------|-------------|
-| `ev_below_threshold` | EV trop faible |
+| Filtre                | Bloque quand                         |
+| --------------------- | ------------------------------------ |
+| `ev_below_threshold`  | EV trop faible                       |
 | `probability_too_low` | P(direction) < seuil, même si EV > 0 |
 
 Dans `EVCore`, le seuil par défaut est **0.45** (45 %). Il peut être ajusté par compétition et par direction (ex : seuil abaissé sur `D2 AWAY` où les cotes extérieur sont historiquement sous-évaluées).
