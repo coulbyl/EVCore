@@ -44,7 +44,8 @@ ENV NODE_ENV=production
 
 # Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 --ingroup nodejs nestjs
+ && adduser  --system --uid 1001 --ingroup nodejs nestjs \
+ && mkdir -p /app/logs && chown nestjs:nodejs /app/logs
 
 # Production node_modules (includes built @evcore/db and @evcore/transactional)
 COPY --from=builder --chown=nestjs:nodejs /deploy/node_modules ./node_modules
