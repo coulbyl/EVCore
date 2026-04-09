@@ -7,7 +7,7 @@ jobs:
   check_labels:
     runs-on: ubuntu-latest
     steps:
-      - uses: yogevbd/enforce-label-action@v2.2.2
+      - uses: yogevbd/enforce-label-action@2.2.2
         with:
           REQUIRED_LABELS_ANY: 'patch,minor,major' # Liste de vos labels requis
         env:
