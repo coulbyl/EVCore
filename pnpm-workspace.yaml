@@ -32,9 +32,9 @@ catalog:
   eslint-plugin-prettier: "^5.2.2"
 
   # Database (Prisma 7)
-  prisma: "^7.0.0"
-  "@prisma/client": "^7.0.0"
-  "@prisma/adapter-pg": "^7.0.0"
+  prisma: "^7.7.0"
+  "@prisma/client": "^7.7.0"
+  "@prisma/adapter-pg": "^7.7.0"
 
   # React Email
   react-email: "^3.0.5"
