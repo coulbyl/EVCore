@@ -6,7 +6,7 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const port = Number(process.env.PORT ?? 3001);
+  const port = Number(process.env.PORT ?? 3000);
   const host = process.env.HOST ?? '0.0.0.0';
   const corsOrigin = process.env.CORS_ORIGIN ?? true;
   const app = await NestFactory.create(AppModule);
