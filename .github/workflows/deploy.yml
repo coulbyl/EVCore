@@ -112,6 +112,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-web:latest
             ghcr.io/${{ github.repository_owner }}/evcore-web:${{ steps.version.outputs.tag }}
+          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
