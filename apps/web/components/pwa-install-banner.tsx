@@ -12,47 +12,46 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function PwaInstallBanner() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(DISMISSED_KEY)) return;
 
-    const show = (e: Event) => {
-      setPrompt(e as BeforeInstallPromptEvent);
+    // Already installed — don't show
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+
+    const isIOSDevice =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+      !(window as Window & { MSStream?: unknown }).MSStream;
+
+    if (isIOSDevice) {
+      setIsIOS(true);
       setVisible(true);
-
-      console.log(e, " ---show event");
-    };
-
-    // Cas 1 : l'event est déjà stocké sur window (capturé par PwaRegister avant notre montage)
-    if (window.__pwaInstallPrompt) {
-      console.log('cas 1 ---');
-      show(window.__pwaInstallPrompt);
       return;
     }
 
-    // Cas 2 : l'event arrive après notre montage
-    window.addEventListener("pwainstallready", () => {
-      console.log(window.__pwaInstallPrompt, " ---yo");
-      if (window.__pwaInstallPrompt) show(window.__pwaInstallPrompt);
-    });
+    // Chrome / Android / Edge — listen for the native install prompt
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setPrompt(e as BeforeInstallPromptEvent);
+      setVisible(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   const handleInstall = async () => {
     if (!prompt) return;
     await prompt.prompt();
     const { outcome } = await prompt.userChoice;
-    if (outcome === "accepted") {
-      setVisible(false);
-    }
+    if (outcome === "accepted") setVisible(false);
   };
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "1");
     setVisible(false);
   };
-
-  console.log(visible, " visible ---");
 
   if (!visible) return null;
 
@@ -69,19 +68,27 @@ export function PwaInstallBanner() {
           <p className="truncate text-sm font-semibold text-slate-900">
             Installer EVCore
           </p>
-          <p className="truncate text-xs text-slate-500">
-            Accès rapide depuis l&apos;écran d&apos;accueil
-          </p>
+          {isIOS ? (
+            <p className="text-xs text-slate-500">
+              Tap&nbsp;⎋ puis &laquo;&nbsp;Sur l&apos;écran d&apos;accueil&nbsp;&raquo;
+            </p>
+          ) : (
+            <p className="truncate text-xs text-slate-500">
+              Accès rapide depuis l&apos;écran d&apos;accueil
+            </p>
+          )}
         </div>
 
-        {/* Bouton installer */}
-        <button
-          onClick={handleInstall}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
-        >
-          <Download size={13} />
-          Installer
-        </button>
+        {/* Bouton installer (Chrome / Android uniquement) */}
+        {!isIOS && (
+          <button
+            onClick={handleInstall}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
+          >
+            <Download size={13} />
+            Installer
+          </button>
+        )}
 
         {/* Fermer */}
         <button

@@ -30,11 +30,20 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
         purpose: "maskable",
       },
+      // SVG retiré : non supporté de façon fiable par Chrome dans le manifest
+    ],
+    screenshots: [
       {
-        src: "/icons/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "any",
+        src: "/screenshots/mobile.png",
+        sizes: "390x844",
+        type: "image/png",
+        // form_factor absent = mobile (requis pour le Richer Install UI mobile)
+      },
+      {
+        src: "/screenshots/desktop.png",
+        sizes: "1280x800",
+        type: "image/png",
+        form_factor: "wide",
       },
     ],
   };
