@@ -16,6 +16,7 @@ import {
 } from '@config/etl.constants';
 import {
   COUPON_MAX_LEGS,
+  SAFE_COUPON_MAX_LEGS,
   COUPON_CRON_SCHEDULE,
   COUPON_SCHEDULER_KEY,
   COUPON_WINDOW_MAX_DAYS,
@@ -204,6 +205,60 @@ export class CouponService implements OnApplicationBootstrap {
       logger.info(
         { couponId: coupon.id, legCount: betIds.length, tier },
         'Daily coupon created',
+      );
+    }
+
+    // Safe value coupon — one coupon of max SAFE_COUPON_MAX_LEGS (2) legs.
+    // Picks are sorted by probability DESC to maximise passage rate.
+    const safePool =
+      await this.couponRepository.findEligibleSafeValueBetsForCoupon(
+        fixtureIds,
+      );
+
+    if (safePool.length > 0) {
+      const safeBetIds = safePool
+        .slice(0, SAFE_COUPON_MAX_LEGS)
+        .map((b) => b.id);
+
+      const safeCoupon = await this.couponRepository.createCouponAndLinkBets({
+        code: generateCouponCode(startDate),
+        date: startDate,
+        tier: CouponTier.SAFE,
+        betIds: safeBetIds,
+      });
+
+      const fullSafeBets = await this.prisma.client.bet.findMany({
+        where: { id: { in: safeBetIds } },
+        include: {
+          modelRun: {
+            select: {
+              fixture: {
+                select: {
+                  scheduledAt: true,
+                  homeTeam: { select: { name: true } },
+                  awayTeam: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      await this.notificationService.sendDailyCoupon({
+        id: safeCoupon.id,
+        date: startDate,
+        legCount: safeBetIds.length,
+        tier: CouponTier.SAFE,
+        bets: fullSafeBets,
+      });
+
+      logger.info(
+        {
+          couponId: safeCoupon.id,
+          legCount: safeBetIds.length,
+          tier: CouponTier.SAFE,
+        },
+        'Safe value coupon created',
       );
     }
   }

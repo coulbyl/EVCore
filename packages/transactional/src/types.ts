@@ -64,6 +64,6 @@ export type DailyCouponProps = {
   couponId: string;
   date: string;
   legCount: number;
-  tier?: "PREMIUM" | "STANDARD" | "SPECULATIF" | null;
+  tier?: "PREMIUM" | "STANDARD" | "SPECULATIF" | "SAFE" | null;
   legs: DailyCouponLeg[];
 };

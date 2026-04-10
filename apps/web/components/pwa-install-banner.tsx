@@ -70,7 +70,8 @@ export function PwaInstallBanner() {
           </p>
           {isIOS ? (
             <p className="text-xs text-slate-500">
-              Tap&nbsp;⎋ puis &laquo;&nbsp;Sur l&apos;écran d&apos;accueil&nbsp;&raquo;
+              Tap&nbsp;⎋ puis &laquo;&nbsp;Sur l&apos;écran
+              d&apos;accueil&nbsp;&raquo;
             </p>
           ) : (
             <p className="truncate text-xs text-slate-500">

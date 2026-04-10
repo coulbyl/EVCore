@@ -112,7 +112,7 @@ export class MailService implements OnModuleInit {
     id: string;
     date: string;
     legCount: number;
-    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | null;
+    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | 'SAFE' | null;
     legs: DailyCouponLeg[];
   }): Promise<void> {
     const tierLabel = props.tier ? ` · ${props.tier}` : '';

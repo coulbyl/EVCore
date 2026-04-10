@@ -532,6 +532,24 @@ export function getPickMaxSelectionOdds(
   return PICK_MAX_SELECTION_ODDS_MAP[key] ?? null;
 }
 
+// ─── Safe Value flux ──────────────────────────────────────────────────────────
+//
+// A secondary pick-selection channel that targets high-probability single-market
+// bets (P ≥ 68%) with non-negative EV — distinct from the EV-primary channel.
+// Safe value picks are assembled into a separate SAFE coupon (max 2 legs).
+// These constants define the eligibility window for the safe value pool.
+
+// Minimum probability for a safe value pick (strict — P < 0.68 is excluded).
+export const SAFE_VALUE_MIN_PROBABILITY = new Decimal('0.68');
+
+// Non-negative EV required — safe value bets must not have negative EV.
+export const SAFE_VALUE_MIN_EV = new Decimal('0.00');
+
+// Odds window: allow shorter odds than the EV floor but cap to avoid mid-range
+// picks where bookmaker margin erodes expected value disproportionately.
+export const SAFE_VALUE_MIN_ODDS = new Decimal('1.15');
+export const SAFE_VALUE_MAX_ODDS = new Decimal('2.20');
+
 // Flat stake used when KELLY_ENABLED=false (default — safe fallback)
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');
 

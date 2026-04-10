@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Copy, Check } from "lucide-react";
+import { Button } from "@evcore/ui";
 import { TableCard } from "./table-card";
 import { FixtureName, FixtureStatusBadge } from "./coupon-detail";
 import { formatPickForDisplay } from "../helpers/coupon";
@@ -9,7 +11,13 @@ import { useIsMobile } from "../hooks/use-mobile";
 
 import type { OpportunityRow } from "../types/dashboard";
 
-function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
+function CopyFixtureId({
+  fixtureId,
+  compact = false,
+}: {
+  fixtureId: string;
+  compact?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
 
   function handleCopy(e: React.MouseEvent) {
@@ -25,14 +33,18 @@ function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
       type="button"
       onClick={handleCopy}
       title={fixtureId}
-      className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+      className={
+        compact
+          ? "inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+          : "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+      }
     >
-      <span>{fixtureId.slice(0, 8)}</span>
       {copied ? (
         <Check size={10} className="text-success" />
       ) : (
         <Copy size={10} />
       )}
+      {compact ? null : <span>{fixtureId.slice(0, 8)}</span>}
     </button>
   );
 }
@@ -66,17 +78,6 @@ function CopyPick({ row }: { row: OpportunityRow }) {
   );
 }
 
-function handleRowKeyDown(
-  event: React.KeyboardEvent<HTMLDivElement>,
-  row: OpportunityRow,
-  onSelectAction: (row: OpportunityRow) => void,
-) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    onSelectAction(row);
-  }
-}
-
 export function OpportunitiesTable({
   rows,
   selectedId,
@@ -87,6 +88,7 @@ export function OpportunitiesTable({
   onSelectAction: (row: OpportunityRow) => void;
 }) {
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   return (
     <TableCard
@@ -95,63 +97,64 @@ export function OpportunitiesTable({
     >
       {isMobile ? (
         <div className="divide-y divide-border bg-white">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelectAction(row)}
-              onKeyDown={(event) =>
-                handleRowKeyDown(event, row, onSelectAction)
-              }
-              className={`block w-full px-4 py-4 text-left transition-colors ${
-                selectedId === row.id
-                  ? "bg-accent/8 ring-1 ring-inset ring-accent/20"
-                  : "hover:bg-[#f5f7fb]"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <FixtureName
-                    fixture={row.fixture}
-                    homeLogo={row.homeLogo}
-                    awayLogo={row.awayLogo}
-                  />
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400">
-                      {row.competition} • {row.kickoff}
-                    </span>
-                    <FixtureStatusBadge status={row.fixtureStatus} />
-                    <CopyFixtureId fixtureId={row.fixtureId} />
+          {rows.map((row) => {
+            return (
+              <div key={row.id} className="block w-full px-4 py-4 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <FixtureName
+                      fixture={row.fixture}
+                      homeLogo={row.homeLogo}
+                      awayLogo={row.awayLogo}
+                    />
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="text-[0.68rem] uppercase tracking-[0.16em] text-slate-400">
+                        {row.competition} • {row.kickoff}
+                      </span>
+                      <FixtureStatusBadge status={row.fixtureStatus} />
+                      <CopyFixtureId fixtureId={row.fixtureId} compact />
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-emerald-50 px-2.5 py-1.5 text-right">
+                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                      EV
+                    </p>
+                    <p className="text-sm font-semibold text-emerald-700">
+                      {row.ev}
+                    </p>
                   </div>
                 </div>
-                <div className="rounded-xl bg-emerald-50 px-2.5 py-1.5 text-right">
-                  <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                    EV
-                  </p>
-                  <p className="text-sm font-semibold text-emerald-700">
-                    {row.ev}
-                  </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                    {formatPickForDisplay(row.pick, row.market)}
+                  </span>
+                  <CopyPick row={row} />
+                  <span className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-slate-600">
+                    Cote {row.odds}
+                  </span>
+                  <span className="rounded-full border border-border px-2.5 py-1 text-xs text-slate-500">
+                    Qualité {row.quality}
+                  </span>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <span className="rounded-full border border-border px-2.5 py-1 text-xs text-slate-500">
+                    Dét. {row.deterministic}
+                  </span>
+                  {row.couponId ? (
+                    <Button
+                      tone="secondary"
+                      size="xs"
+                      onClick={() => router.push(`/coupons/${row.couponId}`)}
+                    >
+                      voir diagnostic
+                    </Button>
+                  ) : null}
                 </div>
               </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                  {formatPickForDisplay(row.pick, row.market)}
-                </span>
-                <CopyPick row={row} />
-                <span className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  Cote {row.odds}
-                </span>
-                <span className="rounded-full border border-border px-2.5 py-1 text-xs text-slate-500">
-                  Qualité {row.quality}
-                </span>
-                <span className="rounded-full border border-border px-2.5 py-1 text-xs text-slate-500">
-                  Dét. {row.deterministic}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <table className="min-w-full text-left text-sm">

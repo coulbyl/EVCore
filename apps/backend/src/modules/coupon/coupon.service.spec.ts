@@ -57,6 +57,7 @@ function makeDeps(
     findCouponsForDate: vi.fn().mockResolvedValue([]),
     findPendingFixtureIdsForWindow: vi.fn().mockResolvedValue(new Set()),
     findEligibleBetsForCoupon: vi.fn().mockResolvedValue([]),
+    findEligibleSafeValueBetsForCoupon: vi.fn().mockResolvedValue([]),
     createCouponAndLinkBets: vi
       .fn()
       .mockResolvedValue({ id: 'coupon-id', code: 'CPN-TEST' }),
@@ -431,6 +432,145 @@ describe('CouponService settlement', () => {
     expect(deps.notificationService.sendCouponResult).toHaveBeenCalledWith(
       'coupon-id',
     );
+  });
+});
+
+describe('CouponService.generateCouponWindow — safe value coupon', () => {
+  it('creates a SAFE coupon with tier SAFE when safe pool is non-empty', async () => {
+    const safeBets = [
+      makeEligibleBet('sv-1', 'f-1', '0.000'),
+      makeEligibleBet('sv-2', 'f-2', '0.000'),
+      makeEligibleBet('sv-3', 'f-3', '0.000'),
+    ];
+
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi.fn().mockResolvedValue([
+          { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          { id: 'f-2', externalId: 2, scheduledAt: TEST_KICKOFF },
+          { id: 'f-3', externalId: 3, scheduledAt: TEST_KICKOFF },
+        ]),
+      },
+      couponRepository: {
+        findEligibleBetsForCoupon: vi
+          .fn()
+          .mockResolvedValue([makeEligibleBet('ev-1', 'f-1', '0.250')]),
+        findEligibleSafeValueBetsForCoupon: vi.fn().mockResolvedValue(safeBets),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    // EV coupon + SAFE coupon
+    expect(deps.couponRepository.createCouponAndLinkBets).toHaveBeenCalledTimes(
+      2,
+    );
+
+    const calls = (
+      deps.couponRepository.createCouponAndLinkBets as ReturnType<typeof vi.fn>
+    ).mock.calls as [{ tier: CouponTier; betIds: string[] }][];
+
+    const safeCall = calls.find((c) => c[0].tier === CouponTier.SAFE);
+    expect(safeCall).toBeDefined();
+    expect(safeCall![0].tier).toBe(CouponTier.SAFE);
+  });
+
+  it('caps SAFE coupon at SAFE_COUPON_MAX_LEGS (2) legs even when pool has more bets', async () => {
+    const safeBets = [
+      makeEligibleBet('sv-1', 'f-1', '0.000'),
+      makeEligibleBet('sv-2', 'f-2', '0.000'),
+      makeEligibleBet('sv-3', 'f-3', '0.000'),
+      makeEligibleBet('sv-4', 'f-4', '0.000'),
+    ];
+
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
+      },
+      couponRepository: {
+        findEligibleBetsForCoupon: vi
+          .fn()
+          .mockResolvedValue([makeEligibleBet('ev-1', 'f-1', '0.250')]),
+        findEligibleSafeValueBetsForCoupon: vi.fn().mockResolvedValue(safeBets),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    const calls = (
+      deps.couponRepository.createCouponAndLinkBets as ReturnType<typeof vi.fn>
+    ).mock.calls as [{ tier: CouponTier; betIds: string[] }][];
+
+    const safeCall = calls.find((c) => c[0].tier === CouponTier.SAFE);
+    expect(safeCall![0].betIds).toHaveLength(2);
+    expect(safeCall![0].betIds).toEqual(['sv-1', 'sv-2']);
+  });
+
+  it('does not create a SAFE coupon when safe pool is empty', async () => {
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
+      },
+      couponRepository: {
+        findEligibleBetsForCoupon: vi
+          .fn()
+          .mockResolvedValue([makeEligibleBet('ev-1', 'f-1', '0.250')]),
+        findEligibleSafeValueBetsForCoupon: vi.fn().mockResolvedValue([]),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    const calls = (
+      deps.couponRepository.createCouponAndLinkBets as ReturnType<typeof vi.fn>
+    ).mock.calls as [{ tier: CouponTier }][];
+
+    const safeCall = calls.find((c) => c[0].tier === CouponTier.SAFE);
+    expect(safeCall).toBeUndefined();
+    // Only the EV coupon was created
+    expect(deps.couponRepository.createCouponAndLinkBets).toHaveBeenCalledTimes(
+      1,
+    );
+  });
+
+  it('sends a sendDailyCoupon notification for the SAFE coupon', async () => {
+    const deps = makeDeps({
+      fixtureService: {
+        findScheduledForDate: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'f-1', externalId: 1, scheduledAt: TEST_KICKOFF },
+          ]),
+      },
+      couponRepository: {
+        findEligibleBetsForCoupon: vi
+          .fn()
+          .mockResolvedValue([makeEligibleBet('ev-1', 'f-1', '0.250')]),
+        findEligibleSafeValueBetsForCoupon: vi
+          .fn()
+          .mockResolvedValue([
+            makeEligibleBet('sv-1', 'f-1', '0.000'),
+            makeEligibleBet('sv-2', 'f-2', '0.000'),
+          ]),
+      },
+    });
+    const service = makeService(deps);
+
+    await service.generateDailyCoupon(TEST_DATE);
+
+    // One notification per coupon: EV + SAFE
+    expect(deps.notificationService.sendDailyCoupon).toHaveBeenCalledTimes(2);
   });
 });
 

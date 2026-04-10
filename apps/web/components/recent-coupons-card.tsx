@@ -132,23 +132,25 @@ function CouponDrawerContent({
         </div>
 
         {/* Status + tier + window */}
-        <div className="mt-3 flex items-center gap-2.5">
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
-          >
+        <div className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span
-              className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`}
-            />
-            {couponStatusLabel(coupon.status, coupon.selections)}
-          </span>
-          {coupon.tier && (
-            <span
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
             >
-              {couponTierLabel(coupon.tier)}
+              <span
+                className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`}
+              />
+              {couponStatusLabel(coupon.status, coupon.selections)}
             </span>
-          )}
-          <span className="text-xs text-slate-400">{coupon.window}</span>
+            {coupon.tier && (
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+              >
+                {couponTierLabel(coupon.tier)}
+              </span>
+            )}
+            <span className="text-xs text-slate-400">{coupon.window}</span>
+          </div>
         </div>
       </div>
 
@@ -255,10 +257,15 @@ export function RecentCouponsCard({
           <Drawer.Content
             className={`fixed z-50 flex overflow-hidden bg-panel-strong shadow-2xl ${
               isMobile
-                ? "inset-x-0 bottom-0 max-h-[88vh] flex-col rounded-t-[2rem]"
+                ? "inset-x-0 bottom-0 max-h-[88vh] flex-col rounded-t-4xl"
                 : "inset-y-0 right-0 w-full max-w-105 flex-col"
             }`}
           >
+            <Drawer.Title className="sr-only">Coupon récent</Drawer.Title>
+            <Drawer.Description className="sr-only">
+              Consultez le détail du coupon récent sélectionné et ouvrez son
+              diagnostic.
+            </Drawer.Description>
             {selected ? (
               <CouponDrawerContent coupon={selected} onClose={close} />
             ) : null}
