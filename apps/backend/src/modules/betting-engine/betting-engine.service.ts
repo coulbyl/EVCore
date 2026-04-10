@@ -64,6 +64,10 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  SAFE_VALUE_MIN_PROBABILITY,
+  SAFE_VALUE_MIN_EV,
+  SAFE_VALUE_MIN_ODDS,
+  SAFE_VALUE_MAX_ODDS,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
@@ -208,6 +212,17 @@ export class BettingEngineService {
       input.lambdaFloorHit,
       new Set<Market>(),
       input.competitionCode ?? null,
+    );
+  }
+
+  selectSafeValuePickForBacktest(input: {
+    evaluatedPicks: EvaluatedPick[];
+    evPickKey: string | null;
+  }): ViablePick | null {
+    return this.selectSafeValuePick(
+      input.evaluatedPicks,
+      new Set<Market>(),
+      input.evPickKey,
     );
   }
 
@@ -635,6 +650,7 @@ export class BettingEngineService {
     });
 
     let betCandidate: BetCandidate | null = null;
+    let evPickKey: string | null = null;
 
     if (decision === Decision.BET && valueBet !== null) {
       const stakePct = this.kellyEnabled
@@ -650,6 +666,7 @@ export class BettingEngineService {
         comboMarket: valueBet.comboMarket ?? null,
         comboPick: valueBet.comboPick ?? null,
       });
+      evPickKey = pickKey;
 
       betCandidate = {
         fixtureId,
@@ -692,6 +709,67 @@ export class BettingEngineService {
           status: BetStatus.PENDING,
         },
       });
+    }
+
+    // Safe value pass — only when the model score threshold is met (same guard as EV).
+    // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
+    if (deterministicDecision === Decision.BET && latestOdds !== null) {
+      const svPick = this.selectSafeValuePick(
+        evaluatedPicks,
+        suspendedMarkets,
+        evPickKey,
+      );
+
+      if (svPick !== null) {
+        const svPickKey = `sv:${buildBetPickKey({
+          market: svPick.market,
+          pick: svPick.pick,
+          comboMarket: null,
+          comboPick: null,
+        })}`;
+
+        await this.prisma.client.bet.upsert({
+          where: { fixtureId_pickKey: { fixtureId, pickKey: svPickKey } },
+          create: {
+            modelRunId: modelRun.id,
+            fixtureId,
+            market: svPick.market,
+            pick: svPick.pick,
+            pickKey: svPickKey,
+            comboMarket: null,
+            comboPick: null,
+            probEstimated: toPrismaDecimal(svPick.probability, 4),
+            oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
+            ev: toPrismaDecimal(svPick.ev, 4),
+            qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
+            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+            isSafeValue: true,
+          },
+          update: {
+            modelRunId: modelRun.id,
+            probEstimated: toPrismaDecimal(svPick.probability, 4),
+            oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
+            ev: toPrismaDecimal(svPick.ev, 4),
+            qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
+            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+            status: BetStatus.PENDING,
+            isSafeValue: true,
+          },
+        });
+
+        logger.info(
+          {
+            fixtureId,
+            competitionCode,
+            market: svPick.market,
+            pick: svPick.pick,
+            probability: svPick.probability.toNumber(),
+            ev: svPick.ev.toNumber(),
+            odds: svPick.odds.toNumber(),
+          },
+          'Safe value pick saved',
+        );
+      }
     }
 
     return {
@@ -1447,6 +1525,60 @@ export class BettingEngineService {
         away: bestAway.bookmaker,
       },
     };
+  }
+
+  // Select the best safe-value pick from a pre-computed list of evaluated picks.
+  //
+  // Safe value criteria (distinct from EV criteria):
+  //   - Single-market pick only (no combos)
+  //   - Allowed markets: ONE_X_TWO, OVER_UNDER, BTTS, OVER_UNDER_HT
+  //   - Probability ≥ SAFE_VALUE_MIN_PROBABILITY (0.68)
+  //   - EV in [SAFE_VALUE_MIN_EV (0.00), EV_HARD_CAP]
+  //   - Odds in [SAFE_VALUE_MIN_ODDS (1.15), SAFE_VALUE_MAX_ODDS (2.20)]
+  //   - Market not suspended
+  //   - Not already the EV pick (excludedPickKey)
+  //
+  // Returns the candidate with the highest probability (then highest EV as tiebreak).
+  private selectSafeValuePick(
+    evaluatedPicks: EvaluatedPick[],
+    suspendedMarkets: Set<Market>,
+    excludedPickKey: string | null,
+  ): ViablePick | null {
+    const safeValueMarkets = new Set<Market>([
+      Market.ONE_X_TWO,
+      Market.OVER_UNDER,
+      Market.BTTS,
+      Market.OVER_UNDER_HT,
+    ]);
+
+    const candidates = evaluatedPicks.filter((pick) => {
+      if (pick.isCombo) return false;
+      if (!safeValueMarkets.has(pick.market)) return false;
+      if (pick.probability.lessThan(SAFE_VALUE_MIN_PROBABILITY)) return false;
+      if (pick.ev.lessThan(SAFE_VALUE_MIN_EV)) return false;
+      if (pick.ev.greaterThan(EV_HARD_CAP)) return false;
+      if (pick.odds.lessThan(SAFE_VALUE_MIN_ODDS)) return false;
+      if (pick.odds.greaterThan(SAFE_VALUE_MAX_ODDS)) return false;
+      if (suspendedMarkets.has(pick.market)) return false;
+      const pickKey = buildBetPickKey({
+        market: pick.market,
+        pick: pick.pick,
+        comboMarket: pick.comboMarket ?? null,
+        comboPick: pick.comboPick ?? null,
+      });
+      if (excludedPickKey !== null && pickKey === excludedPickKey) return false;
+      return true;
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Best by probability DESC, then EV DESC
+    return candidates.reduce((best, c) => {
+      const cmpProb = c.probability.comparedTo(best.probability);
+      if (cmpProb > 0) return c;
+      if (cmpProb < 0) return best;
+      return c.ev.comparedTo(best.ev) > 0 ? c : best;
+    });
   }
 
   // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.

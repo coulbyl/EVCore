@@ -1,7 +1,7 @@
 // Pure helpers — no React, no imports from components
 
 type CouponStatus = "PENDING" | "WON" | "LOST";
-type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF";
+type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF" | "SAFE";
 type SelectionStatus = "PENDING" | "WON" | "LOST" | "VOID";
 type Locale = "fr" | "en";
 
@@ -87,6 +87,7 @@ export function couponTierLabel(
 ): string {
   if (tier === "SPECULATIF")
     return locale === "en" ? "SPECULATIVE" : "SPÉCULATIF";
+  if (tier === "SAFE") return "SAFE";
   return tier; // PREMIUM and STANDARD are the same in both locales
 }
 
@@ -94,6 +95,8 @@ export function couponTierBadgeClass(tier: CouponTier): string {
   if (tier === "PREMIUM")
     return "border-violet-200 bg-violet-50 text-violet-700";
   if (tier === "STANDARD") return "border-sky-200 bg-sky-50 text-sky-700";
+  if (tier === "SAFE")
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
   return "border-amber-200 bg-amber-50 text-amber-700";
 }
 

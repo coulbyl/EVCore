@@ -66,6 +66,7 @@ enum CouponTier {
   PREMIUM
   STANDARD
   SPECULATIF
+  SAFE
 }
 
 enum OddsSnapshotSource {
@@ -246,6 +247,8 @@ model Bet {
   // combo-match fields: null for single-market picks
   comboMarket   Market?
   comboPick     String?   // secondary pick (e.g. "YES", "OVER")
+  // safe-value flag: true for picks selected via the SAFE_VALUE flux (P ≥ 68%, EV ≥ 0)
+  isSafeValue   Boolean   @default(false)
   // coupon link: null until assigned to a DailyCoupon
   dailyCouponId String?   @db.Uuid
   dailyCoupon   DailyCoupon? @relation(fields: [dailyCouponId], references: [id])

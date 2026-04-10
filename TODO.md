@@ -1,133 +1,80 @@
 # EVCore — TODO
 
-## Web responsive + PWA mobile-like
+## Safe Value — Couche secondaire de sélection
 
-### Objectif
+### Contexte
 
-Transformer la console web actuelle en expérience mobile crédible sans dupliquer l'application:
+Les coupons EV pur (P=35-45%) ont un taux de passage < 18% sur 6 legs.
+L'idée : ajouter un canal parallèle `SAFE` ciblant des picks haute probabilité (P ≥ 68%),
+sans remplacer le flux EV existant.
 
-- corriger le shell desktop-first actuel
-- rendre les écrans dashboard utilisables sur téléphone
-- ajouter ensuite une couche PWA installable
+Rapport d'analyse : [ANALYSE_SAFE_VALUE.md](ANALYSE_SAFE_VALUE.md)
 
-### Principes
+---
 
-- ne pas commencer par le manifest PWA seul
-- traiter d'abord la responsivité structurelle
-- conserver une seule base UI avec variantes desktop/mobile
-- privilégier une sensation app native: navigation simple, surfaces compactes, drawers plein écran mobile
+### Checklist d'implémentation
 
-### Phase 1 — Audit responsive
+#### Backend
 
-- cartographier les composants bloquants côté mobile
-- identifier les largeurs minimales, zones scrollables et `overflow-hidden` problématiques
-- lister les composants desktop-only dans `packages/ui` et `apps/web`
-- définir les breakpoints cibles:
-  - mobile: `< 768px`
-  - tablet: `768px - 1023px`
-  - desktop: `>= 1024px`
+- [x] `CouponTier.SAFE` ajouté au schéma Prisma
+- [x] `isSafeValue Boolean @default(false)` ajouté au modèle `Bet`
+- [x] Migration DB exécutée (faite manuellement)
+- [x] Constantes `SAFE_VALUE_*` dans `ev.constants.ts`
+- [x] `SAFE_COUPON_MAX_LEGS = 2` dans `coupon.constants.ts`
+- [x] `selectSafeValuePick()` dans `BettingEngineService`
+- [x] `analyzeFixture()` génère un bet `isSafeValue: true` avec pickKey `sv:...`
+- [x] `findEligibleSafeValueBetsForCoupon()` dans `CouponRepository`
+- [x] `findEligibleBetsForCoupon()` filtre `isSafeValue: false`
+- [x] `generateCouponWindow()` génère le coupon SAFE après les coupons EV
+- [x] `sendDailyCoupon()` supporte le tier `'SAFE'` (NotificationService + MailService)
 
-### Phase 2 — Shell responsive
+#### Email (`@evcore/transactional`)
 
-- refondre `packages/ui/src/components/page-shell.tsx`
-- conserver la sidebar actuelle sur desktop
-- remplacer la sidebar par une navigation mobile:
-  - top bar compacte
-  - bottom navigation fixe
-- supprimer les blocages liés à `h-screen` + `overflow-hidden` quand ils cassent le scroll mobile
-- garantir le respect des safe areas iOS
-- rendre le `main` scrollable correctement sur mobile et desktop
+- [x] `DailyCouponProps.tier` inclut `"SAFE"`
+- [x] Badge SAFE vert dans `daily-coupon.tsx` (`TIER_STYLES`)
 
-### Phase 3 — Fondations UI partagées
+#### Web (`apps/web`)
 
-- ajouter le hook `useIsMobile` de shadcn dans `apps/web`
-- centraliser la détection mobile dans ce hook plutôt que dupliquer les conditions de viewport
-- utiliser `useIsMobile` pour piloter:
-  - shell mobile vs desktop
-  - variantes cards vs table
-  - drawers full-screen / side panel
-  - densité du header et des actions
-- adapter `packages/ui/src/components/page.tsx`
-- adapter `apps/web/components/app-page-header.tsx`
-- réduire les paddings, rayons et hauteurs sur petits écrans
-- revoir les grilles trop denses en variantes `grid-cols-1` ou `grid-cols-2`
-- vérifier les états sticky et backdrop sur mobile
+- [x] `CouponTier` dans `helpers/coupon.ts` inclut `"SAFE"`
+- [x] `couponTierLabel()` gère `"SAFE"`
+- [x] `couponTierBadgeClass()` badge vert (`border-emerald-200 bg-emerald-50 text-emerald-700`)
 
-### Phase 4 — Dashboard mobile
+#### Tests
 
-- rendre la page dashboard lisible sans zoom sur téléphone
-- convertir les tableaux critiques en cartes ou listes empilées sur mobile
-- afficher les KPI en 1 colonne sur mobile, 2 colonnes sur tablet, grille dense sur desktop
-- transformer les panneaux secondaires en sections collapsibles ou drawers
-- préserver les actions clés:
-  - refresh
-  - sélection d'un match
-  - lecture des alertes
-  - consultation des coupons
+- [x] Mock `findEligibleSafeValueBetsForCoupon` ajouté dans `coupon.service.spec.ts`
+- [x] Tests unitaires pour `selectSafeValuePick()` dans `betting-engine.service.spec.ts`
+- [x] Tests unitaires pour la génération du coupon SAFE dans `coupon.service.spec.ts`
 
-### Phase 5 — Composants métier à adapter
+#### Qualité
 
-- `apps/web/components/opportunities-table.tsx`
-  - vue table sur desktop
-  - vue cards sur mobile
-- `apps/web/components/recent-coupons-card.tsx`
-  - améliorer la liste mobile
-  - faire passer le drawer en plein écran ou bottom sheet sur mobile
-- `apps/web/components/fixture-detail-panel.tsx`
-  - revoir la densité d'information et la hiérarchie mobile
-- `apps/web/components/activity-feed.tsx`
-  - vérifier le wrapping, les badges et les timestamps
+- [x] `pnpm --filter backend lint` ✅
+- [x] `pnpm --filter backend typecheck` ✅
+- [x] `pnpm --filter backend test` ✅ (360 tests)
+- [x] `pnpm --filter web typecheck` ✅
 
-### Phase 6 — Polish mobile-like
+---
 
-- ajouter une bottom nav avec état actif clair
-- harmoniser les hauteurs tactiles
-- améliorer les zones d'appui et le spacing vertical
-- stabiliser les interactions drawer/sheet
-- éviter les tables horizontales scrollables comme solution par défaut
+### À faire ensuite
 
-### Phase 7 — PWA ✅
+- [x] Backtest sur les coupons SAFE : mesurer taux de passage réel (cible ≥ 40%)
+- [ ] Monitorer en prod : comparer ROI coupon SAFE vs coupon EV sur 4 semaines
 
-- ~~ajouter un `manifest.webmanifest`~~ → `app/manifest.ts` (Next.js MetadataRoute)
-- ~~déclarer nom, icônes, `theme_color`, `background_color`, `display: standalone`~~
-- ~~ajouter les meta tags PWA dans le layout Next~~ → `viewport` export + `appleWebApp`
-- ~~générer les icônes nécessaires~~ → SVG source + 4 PNG (192, 512, maskable-512, apple-touch-icon 180)
-- vérifier le comportement "Add to Home Screen" — à tester sur device
-- ~~prévoir un cache minimal des assets statiques~~ → `public/sw.js` cache-first `/_next/static/` + icônes
-- ~~ne pas introduire d'offline métier complexe dans la première version~~
+---
 
-### Phase 8 — Validation
+### Résultats backtest SAFE (10 avril 2026)
 
-- tester sur tailles:
-  - iPhone SE / 375px
-  - iPhone standard / 390px
-  - Android ~412px
-  - tablet / 768px
-  - desktop / 1280px+
-- vérifier:
-  - navigation
-  - scroll vertical
-  - drawers
-  - tableaux/listes
-  - boutons d'action
-  - lisibilité des KPI
-- lancer `pnpm lint`
-- lancer `pnpm typecheck`
+3 saisons, toutes compétitions confondues (`includeInBacktest: true`), pooling cross-compétitions par date UTC (miroir prod) :
 
-### Ordre d'implémentation recommandé
+| Métrique | Résultat | Cible |
+|---|---|---|
+| Picks placés | 165 | — |
+| Win rate | 67.9% | ≥ 68% |
+| ROI | +2.77% | ≥ 0% |
+| Jours avec coupon (≥ 2 picks) | 36 / 115 | — |
+| **Coupon win rate** | **41.7%** | **≥ 40% ✅** |
 
-1. shell responsive
-2. header et primitives de page
-3. dashboard principal
-4. composants métier les plus denses
-5. polish mobile-like
-6. couche PWA
-7. validation multi-device
-
-### V1 cible
-
-- une seule app web
-- dashboard entièrement utilisable sur mobile
-- navigation mobile claire
-- coupons et opportunités consultables sans friction
-- app installable sur écran d'accueil
+**Points de vigilance :**
+- UEL (1 saison) : 4 picks, win rate 25%, ROI -64.8% — faible volume, à surveiller
+- UECL (2 saisons) : 12 picks, win rate 37.5–50%, ROI négatif — picks home sur groupes hétérogènes
+- Championship : 17 picks sur 2 saisons, ROI légèrement négatif (-5%)
+- La plupart des lignes < 5 picks → non significatif statistiquement

@@ -233,7 +233,7 @@ export class NotificationService {
     id: string;
     date: Date;
     legCount: number;
-    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | null;
+    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | 'SAFE' | null;
     bets: (Bet & {
       modelRun: {
         fixture: {

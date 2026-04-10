@@ -1639,6 +1639,217 @@ describe('BettingEngineService', () => {
       });
     }
   });
+
+  // ─── Safe value selection ──────────────────────────────────────────────────
+
+  function makeSafeValuePrismaMock(homeOdds: string, overOdds: string | null) {
+    const snapshotAt = new Date('2023-01-01T11:00:00.000Z');
+    const betUpsert = vi.fn().mockResolvedValue({ id: 'bet-id' });
+
+    const oddsSnapshotFindMany = vi.fn().mockImplementation((args: unknown) => {
+      const market = (args as { where?: { market?: Market } }).where?.market;
+      if (market === Market.ONE_X_TWO) {
+        return Promise.resolve([
+          {
+            bookmaker: 'Pinnacle',
+            snapshotAt,
+            homeOdds: new Decimal(homeOdds),
+            drawOdds: new Decimal('3.50'),
+            awayOdds: new Decimal('5.00'),
+          },
+        ]);
+      }
+      if (market === Market.OVER_UNDER && overOdds !== null) {
+        return Promise.resolve([
+          {
+            bookmaker: 'Pinnacle',
+            snapshotAt,
+            pick: 'OVER',
+            odds: new Decimal(overOdds),
+          },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    return {
+      betUpsert,
+      prisma: {
+        client: {
+          fixture: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: 'fixture-id',
+              seasonId: 'season-id',
+              scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+              homeTeamId: 'home-team',
+              awayTeamId: 'away-team',
+              status: 'FINISHED',
+            }),
+            findMany: vi.fn(),
+          },
+          teamStats: {
+            findFirst: vi
+              .fn()
+              .mockResolvedValueOnce({
+                recentForm: new Decimal('0.7'),
+                xgFor: new Decimal('1.8'),
+                xgAgainst: new Decimal('1.1'),
+                homeWinRate: new Decimal('0.65'),
+                awayWinRate: new Decimal('0.35'),
+                drawRate: new Decimal('0.20'),
+                leagueVolatility: new Decimal('1.5'),
+              })
+              .mockResolvedValueOnce({
+                recentForm: new Decimal('0.4'),
+                xgFor: new Decimal('1.2'),
+                xgAgainst: new Decimal('1.6'),
+                homeWinRate: new Decimal('0.45'),
+                awayWinRate: new Decimal('0.30'),
+                drawRate: new Decimal('0.25'),
+                leagueVolatility: new Decimal('1.4'),
+              }),
+          },
+          modelRun: { create: vi.fn().mockResolvedValue({ id: 'run-id' }) },
+          nationalTeamEloRating: {
+            findFirst: vi.fn().mockResolvedValue(null),
+            findMany: vi.fn().mockResolvedValue([]),
+          },
+          oddsSnapshot: {
+            findMany: oddsSnapshotFindMany,
+            findFirst: vi.fn().mockResolvedValue(null),
+          },
+          marketSuspension: { findMany: vi.fn().mockResolvedValue([]) },
+          adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
+          bet: { upsert: betUpsert },
+        },
+      } as unknown as PrismaService,
+    };
+  }
+
+  function makeSafeValueProbabilities(homeProb: string) {
+    return {
+      deterministicScore: new Decimal('0.70'),
+      lambda: { home: 1.4, away: 1.1 },
+      probabilities: {
+        home: new Decimal(homeProb),
+        draw: new Decimal('0.14'),
+        away: new Decimal('0.14'),
+        over15: new Decimal('0.75'),
+        under15: new Decimal('0.25'),
+        over25: new Decimal('0.45'),
+        under25: new Decimal('0.55'),
+        over35: new Decimal('0.22'),
+        under35: new Decimal('0.78'),
+        bttsYes: new Decimal('0.42'),
+        bttsNo: new Decimal('0.58'),
+        dc1X: new Decimal('0.86'),
+        dcX2: new Decimal('0.28'),
+        dc12: new Decimal('0.86'),
+        htft: makeHtftProbabilities('0.111111'),
+        ouHT: {},
+        firstHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
+      },
+      features: {
+        recentForm: new Decimal('0.7'),
+        xg: new Decimal('0.7'),
+        domExtPerf: new Decimal('0.6'),
+        leagueVolat: new Decimal('0.4'),
+      },
+    };
+  }
+
+  it('saves a safe value bet for a qualifying pick distinct from the EV pick', async () => {
+    // EV pick: OVER (odds=3.0, EV=0.35, quality=0.245)
+    // Safe value: HOME (P=0.72 ≥ 0.68, odds=1.65 ∈ [1.15,2.20], EV=0.188)
+    //   HOME is rejected by the EV system (odds=1.65 < 2.00 selection floor)
+    //   but qualifies for safe value which targets high-P low-odds picks
+    const { betUpsert, prisma } = makeSafeValuePrismaMock('1.65', '3.0');
+    const service = new BettingEngineService(
+      prisma,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
+      makeSafeValueProbabilities('0.72'),
+    );
+
+    const result = await service.analyzeFixture('fixture-id');
+
+    expect(result.status).toBe('analyzed');
+    expect(betUpsert).toHaveBeenCalledTimes(2);
+
+    const [, svCall] = betUpsert.mock.calls as unknown[][];
+    const svArgs = (
+      svCall as unknown as [
+        {
+          create: {
+            isSafeValue: boolean;
+            market: Market;
+            pick: string;
+            pickKey: string;
+          };
+        },
+      ]
+    )[0];
+    expect(svArgs.create.isSafeValue).toBe(true);
+    expect(svArgs.create.market).toBe(Market.ONE_X_TWO);
+    expect(svArgs.create.pick).toBe('HOME');
+    expect(svArgs.create.pickKey).toMatch(/^sv:/);
+  });
+
+  it('skips safe value bet when no pick meets the probability threshold (P < 0.68)', async () => {
+    // HOME has P=0.60 < 0.68 — below SAFE_VALUE_MIN_PROBABILITY
+    // OVER has odds=3.0 > 2.20 — above SAFE_VALUE_MAX_ODDS
+    // Neither qualifies for safe value
+    const { betUpsert, prisma } = makeSafeValuePrismaMock('2.10', '3.0');
+    const service = new BettingEngineService(
+      prisma,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
+      makeSafeValueProbabilities('0.60'),
+    );
+
+    await service.analyzeFixture('fixture-id');
+
+    // Only the EV bet upsert, no safe value upsert
+    expect(betUpsert).toHaveBeenCalledTimes(1);
+    const evCall = (
+      betUpsert.mock.calls as [{ create: { isSafeValue?: boolean } }[]]
+    )[0][0];
+    expect(evCall.create.isSafeValue).toBeFalsy();
+  });
+
+  it('does not save a safe value bet when the only qualifying pick is the EV pick itself', async () => {
+    // HOME: P=0.75, odds=2.10 (in safe range [1.15,2.20] AND above EV floor 2.00)
+    // HOME wins as EV pick → evPickKey = ONE_X_TWO|HOME|-|-
+    // selectSafeValuePick excludes HOME via evPickKey → returns null
+    const { betUpsert, prisma } = makeSafeValuePrismaMock('2.10', null);
+    const service = new BettingEngineService(
+      prisma,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+    vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
+      makeSafeValueProbabilities('0.75'),
+    );
+
+    await service.analyzeFixture('fixture-id');
+
+    expect(betUpsert).toHaveBeenCalledTimes(1);
+    const evCall = (
+      betUpsert.mock.calls as [{ create: { isSafeValue?: boolean } }[]]
+    )[0][0];
+    expect(evCall.create.isSafeValue).toBeFalsy();
+  });
 });
 
 describe('blendTeamStats', () => {

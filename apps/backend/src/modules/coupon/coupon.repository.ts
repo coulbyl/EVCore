@@ -23,6 +23,7 @@ type BetCreateData = {
   ev: Decimal;
   qualityScore: Decimal;
   stakePct: Decimal;
+  isSafeValue?: boolean;
 };
 
 export type EligibleBet = {
@@ -95,6 +96,7 @@ export class CouponRepository {
       where: {
         fixtureId: { in: fixtureIds },
         status: BetStatus.PENDING,
+        isSafeValue: false,
         couponLegs: {
           none: {
             coupon: { status: CouponStatus.PENDING },
@@ -119,6 +121,40 @@ export class CouponRepository {
         { qualityScore: { sort: 'desc', nulls: 'last' } },
         { ev: 'desc' },
       ],
+    });
+  }
+
+  async findEligibleSafeValueBetsForCoupon(
+    fixtureIds: string[],
+  ): Promise<EligibleBet[]> {
+    if (fixtureIds.length === 0) return [];
+    return this.prisma.client.bet.findMany({
+      where: {
+        fixtureId: { in: fixtureIds },
+        status: BetStatus.PENDING,
+        isSafeValue: true,
+        couponLegs: {
+          none: {
+            coupon: { status: CouponStatus.PENDING },
+          },
+        },
+      },
+      select: {
+        id: true,
+        fixtureId: true,
+        market: true,
+        pick: true,
+        comboMarket: true,
+        comboPick: true,
+        probEstimated: true,
+        oddsSnapshot: true,
+        ev: true,
+        qualityScore: true,
+        stakePct: true,
+        modelRunId: true,
+      },
+      // Sorted by probability DESC (safe value prioritises certainty over EV)
+      orderBy: [{ probEstimated: 'desc' }, { ev: 'desc' }],
     });
   }
 
@@ -204,6 +240,7 @@ export class CouponRepository {
             ev: toPrismaDecimal(bet.ev, 4),
             qualityScore: toPrismaDecimal(bet.qualityScore, 4),
             stakePct: toPrismaDecimal(bet.stakePct, 4),
+            isSafeValue: bet.isSafeValue ?? false,
           },
           select: { id: true },
         });

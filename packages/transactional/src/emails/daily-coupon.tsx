@@ -91,7 +91,7 @@ function formatDateTime(scheduledAt: string): string {
 
 // ─── Tier badge ───────────────────────────────────────────────────────────────
 
-type Tier = "PREMIUM" | "STANDARD" | "SPECULATIF";
+type Tier = "PREMIUM" | "STANDARD" | "SPECULATIF" | "SAFE";
 
 const TIER_STYLES: Record<
   Tier,
@@ -114,6 +114,12 @@ const TIER_STYLES: Record<
     text: "#fde68a",
     border: "#d97706",
     label: "SPÉCULATIF",
+  },
+  SAFE: {
+    bg: "#052e16",
+    text: "#86efac",
+    border: "#16a34a",
+    label: "SAFE",
   },
 };
 

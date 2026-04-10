@@ -107,6 +107,51 @@ type BucketAccumulator = {
   evTotal: Decimal;
 };
 
+export type SafeValueSeasonResult = {
+  seasonId: string;
+  competitionCode: string;
+  competitionName: string;
+  picksPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  profit: Decimal;
+  roi: number;
+  winRate: number;
+  avgProbability: number;
+  avgOdds: number;
+  avgEv: number;
+  daysWithPicks: number;
+};
+
+export type SafeValueBacktestReport = {
+  seasons: SafeValueSeasonResult[];
+  aggregate: {
+    picksPlaced: number;
+    wins: number;
+    voids: number;
+    winRate: number;
+    roi: number;
+    avgProbability: number;
+    avgOdds: number;
+    // Cross-competition coupon simulation (mirrors production exactly)
+    daysWithPicks: number;
+    daysWithCoupon: number;
+    couponWins: number;
+    couponWinRate: number;
+  };
+  generatedAt: Date;
+};
+
+type SafeValuePickEntry = {
+  seasonId: string;
+  competitionCode: string;
+  pick: ViablePick;
+  fixture: FixtureForBacktest;
+  result: 'WIN' | 'LOSS' | 'VOID';
+  profit: Decimal;
+};
+
 type BacktestAnalysisReason =
   | 'MISSING_TEAM_STATS'
   | 'MISSING_ODDS'
@@ -1099,6 +1144,303 @@ export class BacktestService {
       { destination, entryCount: entries.length, ...metadata },
       'Backtest analysis log written',
     );
+  }
+
+  // ─── Safe value backtest ───────────────────────────────────────────────────
+
+  async runAllSeasonsSafeValueBacktest(): Promise<SafeValueBacktestReport> {
+    const seasons = await this.prisma.client.season.findMany({
+      where: { competition: { includeInBacktest: true } },
+      select: {
+        id: true,
+        competition: { select: { code: true, name: true } },
+      },
+    });
+
+    logger.info(
+      { seasonCount: seasons.length },
+      'Starting safe value backtest (all seasons)',
+    );
+
+    const allEntries: SafeValuePickEntry[] = [];
+    const seasonResults: SafeValueSeasonResult[] = [];
+
+    for (const season of seasons) {
+      const entries = await this.collectSafeValuePicksForSeason(
+        season.id,
+        season.competition.code,
+      );
+
+      // Per-season pick-level stats
+      let picksPlaced = 0;
+      let wins = 0;
+      let losses = 0;
+      let voids = 0;
+      let profitTotal = new Decimal(0);
+      let probTotal = new Decimal(0);
+      let oddsTotal = new Decimal(0);
+      let evTotal = new Decimal(0);
+      const datesInSeason = new Set<string>();
+
+      for (const entry of entries) {
+        picksPlaced++;
+        if (entry.result === 'WIN') wins++;
+        if (entry.result === 'LOSS') losses++;
+        if (entry.result === 'VOID') voids++;
+        profitTotal = profitTotal.plus(entry.profit);
+        if (entry.result !== 'VOID') {
+          probTotal = probTotal.plus(entry.pick.probability);
+          oddsTotal = oddsTotal.plus(entry.pick.odds);
+          evTotal = evTotal.plus(entry.pick.ev);
+        }
+        datesInSeason.add(entry.fixture.scheduledAt.toISOString().slice(0, 10));
+      }
+
+      const stake = picksPlaced - voids;
+      seasonResults.push({
+        seasonId: season.id,
+        competitionCode: season.competition.code,
+        competitionName: season.competition.name,
+        picksPlaced,
+        wins,
+        losses,
+        voids,
+        profit: profitTotal,
+        roi: stake > 0 ? profitTotal.div(stake).toNumber() : 0,
+        winRate: stake > 0 ? wins / stake : 0,
+        avgProbability: stake > 0 ? probTotal.div(stake).toNumber() : 0,
+        avgOdds: stake > 0 ? oddsTotal.div(stake).toNumber() : 0,
+        avgEv: stake > 0 ? evTotal.div(stake).toNumber() : 0,
+        daysWithPicks: datesInSeason.size,
+      });
+
+      allEntries.push(...entries);
+    }
+
+    // Cross-competition coupon simulation — mirrors production exactly:
+    // all picks from all seasons pooled and grouped by UTC date globally.
+    const picksByDate = new Map<string, SafeValuePickEntry[]>();
+    for (const entry of allEntries) {
+      const dateKey = entry.fixture.scheduledAt.toISOString().slice(0, 10);
+      const bucket = picksByDate.get(dateKey) ?? [];
+      bucket.push(entry);
+      picksByDate.set(dateKey, bucket);
+    }
+
+    let daysWithPicks = 0;
+    let daysWithCoupon = 0;
+    let couponWins = 0;
+    for (const dayPicks of picksByDate.values()) {
+      daysWithPicks++;
+      const sorted = [...dayPicks].sort((a, b) =>
+        b.pick.probability.comparedTo(a.pick.probability),
+      );
+      if (sorted.length >= 2) {
+        daysWithCoupon++;
+        if (sorted[0].result === 'WIN' && sorted[1].result === 'WIN') {
+          couponWins++;
+        }
+      }
+    }
+
+    const totalPicks = seasonResults.reduce((s, r) => s + r.picksPlaced, 0);
+    const totalWins = seasonResults.reduce((s, r) => s + r.wins, 0);
+    const totalVoids = seasonResults.reduce((s, r) => s + r.voids, 0);
+    const totalStake = totalPicks - totalVoids;
+    const totalProfit = seasonResults.reduce(
+      (s, r) => s.plus(r.profit),
+      new Decimal(0),
+    );
+    const seasonsWithPicks = seasonResults.filter((r) => r.picksPlaced > 0);
+
+    const report: SafeValueBacktestReport = {
+      seasons: seasonResults,
+      aggregate: {
+        picksPlaced: totalPicks,
+        wins: totalWins,
+        voids: totalVoids,
+        winRate: totalStake > 0 ? totalWins / totalStake : 0,
+        roi: totalStake > 0 ? totalProfit.div(totalStake).toNumber() : 0,
+        avgProbability:
+          seasonsWithPicks.length > 0
+            ? seasonsWithPicks.reduce((s, r) => s + r.avgProbability, 0) /
+              seasonsWithPicks.length
+            : 0,
+        avgOdds:
+          seasonsWithPicks.length > 0
+            ? seasonsWithPicks.reduce((s, r) => s + r.avgOdds, 0) /
+              seasonsWithPicks.length
+            : 0,
+        daysWithPicks,
+        daysWithCoupon,
+        couponWins,
+        couponWinRate: daysWithCoupon > 0 ? couponWins / daysWithCoupon : 0,
+      },
+      generatedAt: new Date(),
+    };
+
+    logger.info(
+      {
+        totalPicks,
+        totalWins,
+        winRate: report.aggregate.winRate,
+        roi: report.aggregate.roi,
+        daysWithCoupon,
+        couponWinRate: report.aggregate.couponWinRate,
+      },
+      'Safe value backtest complete',
+    );
+
+    return report;
+  }
+
+  private async collectSafeValuePicksForSeason(
+    seasonId: string,
+    competitionCode: string,
+  ): Promise<SafeValuePickEntry[]> {
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        seasonId,
+        status: FixtureStatus.FINISHED,
+        homeScore: { not: null },
+        awayScore: { not: null },
+        xgUnavailable: false,
+      },
+      select: {
+        id: true,
+        seasonId: true,
+        scheduledAt: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeHtScore: true,
+        awayHtScore: true,
+        homeScore: true,
+        awayScore: true,
+      },
+      orderBy: [{ scheduledAt: 'asc' }, { id: 'asc' }],
+    });
+
+    const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
+    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
+      ? await this.loadCrossCompStatsIndex(seasonId, [
+          ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+        ])
+      : new Map<string, TeamStatsIndexEntry[]>();
+    const oddsByFixture =
+      await this.loadLatestOddsSnapshotsForFixtures(fixtures);
+
+    const modelScoreThreshold = getModelScoreThreshold(competitionCode);
+    const entries: SafeValuePickEntry[] = [];
+
+    for (const fixture of fixtures) {
+      if (fixture.homeScore === null || fixture.awayScore === null) continue;
+
+      const homeStatsRaw = findLatestStatsBeforeFixture(
+        teamStatsByTeam.get(fixture.homeTeamId) ?? [],
+        fixture,
+        BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
+      );
+      const awayStatsRaw = findLatestStatsBeforeFixture(
+        teamStatsByTeam.get(fixture.awayTeamId) ?? [],
+        fixture,
+        BACKTEST_CONSTANTS.MIN_PRIOR_TEAM_STATS,
+      );
+      const homeCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.homeTeamId) ?? [],
+        fixture,
+        0,
+      );
+      const awayCross = findLatestStatsBeforeFixture(
+        crossCompStatsByTeam.get(fixture.awayTeamId) ?? [],
+        fixture,
+        0,
+      );
+
+      const homeStats: TeamStatsInput | null = (() => {
+        if (!homeStatsRaw) return homeCross ?? null;
+        if (homeCross)
+          return blendTeamStats({
+            primary: homeStatsRaw,
+            secondary: homeCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        return homeStatsRaw;
+      })();
+      const awayStats: TeamStatsInput | null = (() => {
+        if (!awayStatsRaw) return awayCross ?? null;
+        if (awayCross)
+          return blendTeamStats({
+            primary: awayStatsRaw,
+            secondary: awayCross,
+            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+          });
+        return awayStatsRaw;
+      })();
+
+      if (!homeStats || !awayStats) continue;
+
+      const computed = this.bettingEngine.computeFromTeamStats(
+        homeStats,
+        awayStats,
+        undefined,
+        competitionCode,
+      );
+      const odds = oddsByFixture.get(fixture.id);
+      if (!odds) continue;
+      if (computed.deterministicScore.lessThan(modelScoreThreshold)) continue;
+
+      const { distHome, distAway } = buildPoissonDistributions(
+        computed.lambda.home,
+        computed.lambda.away,
+      );
+      const lambdaFloorHit =
+        computed.lambda.home <= Number.EPSILON + 0.05 ||
+        computed.lambda.away <= Number.EPSILON + 0.05;
+
+      const evaluatedPicks = this.bettingEngine.listEvaluatedPicksForBacktest({
+        probabilities: computed.probabilities,
+        odds,
+        deterministicScore: computed.deterministicScore,
+        distHome,
+        distAway,
+        lambdaFloorHit,
+        competitionCode,
+      });
+
+      // Mirror production: exclude the EV pick from the safe value pool
+      const evPick = this.bettingEngine.selectBestViablePickForBacktest({
+        probabilities: computed.probabilities,
+        odds,
+        deterministicScore: computed.deterministicScore,
+        distHome,
+        distAway,
+        lambdaFloorHit,
+        competitionCode,
+      });
+      const evPickKey = evPick ? `${evPick.market}|${evPick.pick}|-|-` : null;
+
+      const svPick = this.bettingEngine.selectSafeValuePickForBacktest({
+        evaluatedPicks,
+        evPickKey,
+      });
+      if (!svPick) continue;
+
+      const simulation = simulatePick(fixture, svPick);
+      if (!simulation.placed) continue;
+
+      entries.push({
+        seasonId,
+        competitionCode,
+        pick: svPick,
+        fixture,
+        result: simulation.result,
+        profit: simulation.profit,
+      });
+    }
+
+    return entries;
   }
 }
 

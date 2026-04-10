@@ -3,6 +3,9 @@ import { CouponTier } from '@evcore/db';
 
 // Maximum number of legs per coupon — pool is split into chunks of this size.
 export const COUPON_MAX_LEGS = 3;
+// Maximum legs for safe-value coupons — kept tight to preserve expected passage rate.
+// With P ≥ 68% per leg: 2-leg coupon ≈ 46% passage vs 31% for 3-leg.
+export const SAFE_COUPON_MAX_LEGS = 2;
 export const COUPON_WINDOW_MIN_DAYS = 1;
 export const COUPON_WINDOW_MAX_DAYS = 3;
 

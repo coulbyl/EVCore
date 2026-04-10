@@ -1,4 +1,11 @@
-import { Controller, Get, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Post,
+} from '@nestjs/common';
 import { BacktestService } from './backtest.service';
 
 @Controller('backtest')
@@ -15,5 +22,11 @@ export class BacktestController {
     }
 
     return report;
+  }
+
+  @Post('safe-value')
+  @HttpCode(HttpStatus.OK)
+  runSafeValueBacktest() {
+    return this.backtestService.runAllSeasonsSafeValueBacktest();
   }
 }
