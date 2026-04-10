@@ -19,6 +19,10 @@ COPY . .
 # Install all deps (dev included — needed for tailwind, typescript, etc.)
 RUN pnpm install --frozen-lockfile
 
+# NEXT_PUBLIC_* vars must be available at build time (baked into the JS bundle)
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build Next.js with standalone output
 # (output: "standalone" is set in next.config.js)
 RUN pnpm --filter web build
