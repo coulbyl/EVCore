@@ -134,11 +134,7 @@ jobs:
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f compose.yml pull backend web
 
-            # Run migrations (no-op if already up to date)
-            docker compose -f compose.yml \
-              --profile migrate run --rm backend-migrate
-
-            # Restart backend and web (postgres/redis untouched)
+            # Restart backend and web (migrations run automatically via entrypoint.sh)
             docker compose -f compose.yml \
               up -d --no-deps --no-build backend web
 

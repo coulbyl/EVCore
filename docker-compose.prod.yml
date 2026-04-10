@@ -5,11 +5,9 @@ name: evcore-prod
 # The VPS only pulls and runs — no build step on the server.
 #
 # 1. Copy apps/backend/.env.example → .env and fill values
-# 2. First deploy — run migrations before starting backend:
-#      docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate
-# 3. Start all services:
+# 2. Start all services (migrations run automatically on backend startup):
 #      docker compose -f docker-compose.prod.yml up -d
-# 4. After a new push to main: GitHub Actions handles pull + migrate + restart automatically
+# 3. After a new push to main: GitHub Actions handles pull + restart automatically
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # GHCR_OWNER: GitHub username or org (e.g. "myuser")
@@ -53,6 +51,7 @@ services:
       start_period: 5s
 
   # ── Backend ─────────────────────────────────────────────────────────────────
+  # entrypoint.sh runs prisma migrate deploy then starts the NestJS app
   backend:
     container_name: evcore-backend
     image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
@@ -77,7 +76,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   # ── Web (Next.js dashboard) ─────────────────────────────────────────────────
   web:
@@ -99,29 +98,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
-
-  # ── Migration runner (one-shot, exits after completion) ─────────────────────
-  # Run with: docker compose -f docker-compose.prod.yml --profile migrate run --rm backend-migrate
-  backend-migrate:
-    container_name: evcore-migrate
-    image: ghcr.io/${GHCR_OWNER}/evcore-backend:latest
-    # Override CMD to run prisma migrate deploy then exit
-    entrypoint: ["sh", "-c"]
-    command:
-      - |
-        echo "Running Prisma migrations..." && \
-        cd /app/node_modules/@evcore/db && \
-        /app/node_modules/.bin/prisma migrate deploy && \
-        echo "Migrations complete."
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    profiles:
-      - migrate
 
 volumes:
   postgres_data:
