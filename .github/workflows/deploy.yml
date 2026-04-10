@@ -106,6 +106,8 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-web:latest
             ghcr.io/${{ github.repository_owner }}/evcore-web:${{ steps.version.outputs.tag }}
