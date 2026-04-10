@@ -50,6 +50,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/prisma-engines/schema-engine
 
+# curl is required by ETL workers (fetchJsonViaCurl spawns it)
+RUN apk add --no-cache curl
+
 # Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 --ingroup nodejs nestjs \
