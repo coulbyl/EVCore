@@ -5,12 +5,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Check, Copy } from "lucide-react";
 import { Badge, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
+import { DateField } from "@/components/date-field";
 import { TableCard } from "@/components/table-card";
 import { FixtureName, FixtureStatusBadge } from "@/components/coupon-detail";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { formatPickForDisplay } from "@/helpers/coupon";
+import { formatCompactValue } from "@/helpers/number";
 import { useAuditFixtures } from "@/hooks/use-audit-fixtures";
 import { useAuditOverview } from "@/hooks/use-audit-overview";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
   AuditDiagnostics,
   AuditEvaluatedPickSnapshot,
@@ -303,7 +306,25 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" }) {
   );
 }
 
-function AuditFixturesSection({ date }: { date: string }) {
+function handleFixtureRowKeyDown(
+  event: React.KeyboardEvent<HTMLDivElement>,
+  fixtureId: string,
+  expandedId: string | null,
+  setExpandedId: (fixtureId: string | null) => void,
+) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    setExpandedId(expandedId === fixtureId ? null : fixtureId);
+  }
+}
+
+function AuditFixturesSection({
+  date,
+  isMobile,
+}: {
+  date: string;
+  isMobile: boolean;
+}) {
   const { data: fixtures = [], isFetching } = useAuditFixtures(date);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -325,6 +346,114 @@ function AuditFixturesSection({ date }: { date: string }) {
       {fixtures.length === 0 ? (
         <div className="bg-white px-4 py-8 text-center text-sm text-slate-400">
           Aucune fixture pour cette date.
+        </div>
+      ) : isMobile ? (
+        <div className="divide-y divide-border bg-white">
+          {fixtures.map((row) => {
+            const isExpanded = expandedId === row.fixtureId;
+            const hasDiagnostics = row.modelRun !== null;
+            return (
+              <div key={row.fixtureId} className="bg-white">
+                <div
+                  role={hasDiagnostics ? "button" : undefined}
+                  tabIndex={hasDiagnostics ? 0 : undefined}
+                  onClick={() =>
+                    hasDiagnostics
+                      ? setExpandedId(isExpanded ? null : row.fixtureId)
+                      : undefined
+                  }
+                  onKeyDown={(event) =>
+                    hasDiagnostics
+                      ? handleFixtureRowKeyDown(
+                          event,
+                          row.fixtureId,
+                          expandedId,
+                          setExpandedId,
+                        )
+                      : undefined
+                  }
+                  className={`px-4 py-4 ${hasDiagnostics ? "cursor-pointer" : ""} ${isExpanded ? "bg-slate-50" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[0.65rem] text-slate-600">
+                          {row.competitionCode}
+                        </span>
+                        <span className="font-mono text-xs text-slate-500">
+                          {row.scheduledAt}
+                        </span>
+                        <FixtureStatusBadge status={row.status} />
+                      </div>
+                      <FixtureName
+                        fixture={row.fixture}
+                        homeLogo={row.homeLogo}
+                        awayLogo={row.awayLogo}
+                        className="mt-2 text-sm font-semibold text-slate-800"
+                      />
+                      <CopyFixtureId fixtureId={row.fixtureId} />
+                    </div>
+                    {row.modelRun ? (
+                      <DecisionBadge decision={row.modelRun.decision} />
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-[0.9rem] border border-border bg-slate-50 px-2.5 py-2">
+                      <p className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Cotes
+                      </p>
+                      <p className="mt-0.5 text-[0.78rem] font-semibold text-slate-700">
+                        {row.hasOdds ? "Oui" : "Non"}
+                      </p>
+                    </div>
+                    <div className="rounded-[0.9rem] border border-border bg-slate-50 px-2.5 py-2">
+                      <p className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Dét.
+                      </p>
+                      <p className="mt-0.5 font-mono text-[0.78rem] font-semibold text-slate-700">
+                        {row.modelRun?.deterministicScore ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Pick candidat
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-slate-700">
+                        {row.modelRun?.pick
+                          ? formatPickForDisplay(
+                              row.modelRun.pick,
+                              row.modelRun.market ?? "",
+                            )
+                          : "—"}
+                      </p>
+                    </div>
+                    {row.modelRun?.ev ? (
+                      <span
+                        className={`shrink-0 text-xs font-semibold ${row.modelRun.ev.startsWith("+") ? "text-emerald-600" : "text-rose-500"}`}
+                      >
+                        EV {row.modelRun.ev}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {hasDiagnostics ? (
+                    <p className="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      {isExpanded ? "Masquer le détail" : "Voir le détail"}
+                    </p>
+                  ) : null}
+                </div>
+                {isExpanded ? (
+                  <div className="border-t border-slate-100 bg-slate-50">
+                    <ExpandedModelRunPanel row={row} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="max-h-128 overflow-y-auto">
@@ -454,13 +583,19 @@ function CountCard({ label, value }: { label: string; value: number }) {
         {label}
       </p>
       <p className="mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight text-slate-800">
-        {value.toLocaleString()}
+        {formatCompactValue(value)}
       </p>
     </div>
   );
 }
 
-function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
+function AuditOverviewSection({
+  overview,
+  isMobile,
+}: {
+  overview: AuditOverview;
+  isMobile: boolean;
+}) {
   return (
     <div className="space-y-5">
       {/* Counts */}
@@ -472,79 +607,172 @@ function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
       </div>
 
       {/* League breakdown */}
-      <div className="overflow-hidden rounded-[1.3rem] border border-border">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-500">
-            <tr>
-              <th className="px-4 py-3 font-medium">Ligue</th>
-              <th className="px-4 py-3 font-medium">Active</th>
-              <th className="px-4 py-3 font-medium">Fixtures</th>
-              <th className="px-4 py-3 font-medium">Terminées</th>
-              <th className="px-4 py-3 font-medium">Couv. xG</th>
-              <th className="px-4 py-3 font-medium">Cotes</th>
-              <th className="px-4 py-3 font-medium">Stats</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border bg-white">
-            {overview.leagueBreakdown.map((league) => (
-              <tr key={league.code} className="hover:bg-slate-50/60">
-                <td className="px-4 py-3">
-                  <span className="font-mono text-[0.7rem] text-slate-600">
-                    {league.code}
-                  </span>
-                  <span className="ml-2 text-slate-500">{league.name}</span>
-                </td>
-                <td className="px-4 py-3">
-                  {league.isActive ? (
-                    <span className="text-emerald-600">✓</span>
-                  ) : (
-                    <span className="text-slate-300">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 tabular-nums text-slate-600">
-                  {league.fixtures.toLocaleString()}
-                </td>
-                <td className="px-4 py-3 tabular-nums text-slate-600">
-                  {league.finished.toLocaleString()}
-                </td>
-                <td className="px-4 py-3">
+      {isMobile ? (
+        <div className="space-y-3">
+          {overview.leagueBreakdown.map((league) => (
+            <div
+              key={league.code}
+              className="rounded-[1.2rem] border border-border bg-white p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`tabular-nums font-semibold ${
-                        league.xgCoveragePct >= 80
-                          ? "text-emerald-600"
-                          : league.xgCoveragePct >= 50
-                            ? "text-amber-600"
-                            : "text-rose-500"
-                      }`}
-                    >
-                      {league.xgCoveragePct}%
+                    <span className="font-mono text-[0.7rem] text-slate-600">
+                      {league.code}
                     </span>
-                    <div className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className={`h-full rounded-full ${
-                          league.xgCoveragePct >= 80
-                            ? "bg-emerald-500"
-                            : league.xgCoveragePct >= 50
-                              ? "bg-amber-400"
-                              : "bg-rose-400"
-                        }`}
-                        style={{ width: `${league.xgCoveragePct}%` }}
-                      />
-                    </div>
+                    <span className="text-sm text-slate-500">
+                      {league.name}
+                    </span>
                   </div>
-                </td>
-                <td className="px-4 py-3 tabular-nums text-slate-600">
-                  {league.withOdds.toLocaleString()}
-                </td>
-                <td className="px-4 py-3 tabular-nums text-slate-600">
-                  {league.teamStats.toLocaleString()}
-                </td>
+                </div>
+                <span
+                  className={`text-xs font-semibold ${
+                    league.isActive ? "text-emerald-600" : "text-slate-300"
+                  }`}
+                >
+                  {league.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                  <p className="uppercase tracking-[0.12em] text-slate-400">
+                    Fixtures
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {formatCompactValue(league.fixtures)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                  <p className="uppercase tracking-[0.12em] text-slate-400">
+                    Terminées
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {formatCompactValue(league.finished)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                  <p className="uppercase tracking-[0.12em] text-slate-400">
+                    Cotes
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {formatCompactValue(league.withOdds)}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                  <p className="uppercase tracking-[0.12em] text-slate-400">
+                    Stats
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {formatCompactValue(league.teamStats)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span
+                  className={`tabular-nums font-semibold ${
+                    league.xgCoveragePct >= 80
+                      ? "text-emerald-600"
+                      : league.xgCoveragePct >= 50
+                        ? "text-amber-600"
+                        : "text-rose-500"
+                  }`}
+                >
+                  {league.xgCoveragePct}%
+                </span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full ${
+                      league.xgCoveragePct >= 80
+                        ? "bg-emerald-500"
+                        : league.xgCoveragePct >= 50
+                          ? "bg-amber-400"
+                          : "bg-rose-400"
+                    }`}
+                    style={{ width: `${league.xgCoveragePct}%` }}
+                  />
+                </div>
+                <span className="text-[0.68rem] uppercase tracking-[0.12em] text-slate-500">
+                  xG
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-[1.3rem] border border-border">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-500">
+              <tr>
+                <th className="px-4 py-3 font-medium">Ligue</th>
+                <th className="px-4 py-3 font-medium">Active</th>
+                <th className="px-4 py-3 font-medium">Fixtures</th>
+                <th className="px-4 py-3 font-medium">Terminées</th>
+                <th className="px-4 py-3 font-medium">Couv. xG</th>
+                <th className="px-4 py-3 font-medium">Cotes</th>
+                <th className="px-4 py-3 font-medium">Stats</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-border bg-white">
+              {overview.leagueBreakdown.map((league) => (
+                <tr key={league.code} className="hover:bg-slate-50/60">
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-[0.7rem] text-slate-600">
+                      {league.code}
+                    </span>
+                    <span className="ml-2 text-slate-500">{league.name}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {league.isActive ? (
+                      <span className="text-emerald-600">✓</span>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-slate-600">
+                    {league.fixtures.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-slate-600">
+                    {league.finished.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`tabular-nums font-semibold ${
+                          league.xgCoveragePct >= 80
+                            ? "text-emerald-600"
+                            : league.xgCoveragePct >= 50
+                              ? "text-amber-600"
+                              : "text-rose-500"
+                        }`}
+                      >
+                        {league.xgCoveragePct}%
+                      </span>
+                      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className={`h-full rounded-full ${
+                            league.xgCoveragePct >= 80
+                              ? "bg-emerald-500"
+                              : league.xgCoveragePct >= 50
+                                ? "bg-amber-400"
+                                : "bg-rose-400"
+                          }`}
+                          style={{ width: `${league.xgCoveragePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-slate-600">
+                    {league.withOdds.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-slate-600">
+                    {league.teamStats.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Bets & coupons breakdown */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -642,6 +870,7 @@ function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
 // ---------------------------------------------------------------------------
 
 function AuditPageContent() {
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const router = useRouter();
   const today = useMemo(() => todayIso(), []);
@@ -671,28 +900,26 @@ function AuditPageContent() {
         isRefreshing={overviewFetching}
       />
 
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="space-y-5">
           {/* Date picker */}
-          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
+          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
               Filtres
             </p>
-            <form className="mt-3 flex items-end gap-3" onSubmit={applyDate}>
-              <label className="rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
-                <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
-                  Date
-                </span>
-                <input
-                  type="date"
-                  value={formDate}
-                  onChange={(e) => setFormDate(e.target.value)}
-                  className="bg-transparent outline-none"
-                />
-              </label>
+            <form
+              className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3"
+              onSubmit={applyDate}
+            >
+              <DateField
+                label="Date"
+                value={formDate}
+                onChange={setFormDate}
+                className="sm:min-w-52"
+              />
               <button
                 type="submit"
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-50 sm:self-auto"
               >
                 Appliquer
               </button>
@@ -700,11 +927,11 @@ function AuditPageContent() {
           </section>
 
           {/* Fixtures */}
-          <AuditFixturesSection date={activeDate} />
+          <AuditFixturesSection date={activeDate} isMobile={isMobile} />
 
           {/* Overview */}
-          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-            <div className="flex items-center justify-between gap-3">
+          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
                   Vue d&apos;ensemble
@@ -726,7 +953,7 @@ function AuditPageContent() {
             </div>
             <div className="mt-4">
               {overview ? (
-                <AuditOverviewSection overview={overview} />
+                <AuditOverviewSection overview={overview} isMobile={isMobile} />
               ) : (
                 <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-slate-400">
                   Chargement…

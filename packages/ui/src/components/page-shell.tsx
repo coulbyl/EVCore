@@ -3,6 +3,7 @@ import { cn } from "../utils/cn";
 
 type NavItem = {
   label: string;
+  mobileLabel?: string;
   href: string;
   active?: boolean;
 };
@@ -15,8 +16,8 @@ export function PageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      <aside className="flex h-full w-[296px] shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[linear-gradient(180deg,#1b2432_0%,#202c3d_100%)] text-sidebar-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:flex-row lg:overflow-hidden">
+      <aside className="hidden h-full w-[296px] shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[linear-gradient(180deg,#1b2432_0%,#202c3d_100%)] text-sidebar-foreground lg:flex">
         <div className="border-b border-white/10 px-6 py-6">
           <div className="flex items-center gap-3">
             <span className="h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]" />
@@ -63,10 +64,57 @@ export function PageShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-slate-100">
-        <main className="ev-grid-glow flex-1 overflow-hidden p-5">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-slate-100">
+        <div className="sticky top-0 z-30 border-b border-white/70 bg-white/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/75 lg:hidden">
+          <div className="flex items-center gap-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-[0_0_18px_rgba(6,182,212,0.35)]" />
+            <div className="min-w-0">
+              <p className="text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                EVCore
+              </p>
+              <p className="truncate text-sm font-semibold text-slate-900">
+                Console mobile
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-4 lg:overflow-hidden lg:p-5 lg:pb-5">
           <div className="h-full w-full">{children}</div>
         </main>
+
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-[backdrop-filter]:bg-white/88 lg:hidden">
+          <div className="grid grid-cols-4 gap-1">
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                aria-current={item.active ? "page" : undefined}
+                className={cn(
+                  "flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
+                  item.active
+                    ? "bg-[linear-gradient(180deg,#1b2432_0%,#24344d_100%)] text-white shadow-[0_12px_24px_rgba(15,23,42,0.16)]"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                )}
+                href={item.href}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-6 rounded-full",
+                    item.active ? "bg-cyan-300" : "bg-slate-300",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+                    item.active ? "text-white" : "text-slate-500",
+                  )}
+                >
+                  {item.mobileLabel ?? item.label}
+                </span>
+              </a>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );

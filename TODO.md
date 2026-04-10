@@ -1,75 +1,133 @@
 # EVCore — TODO
 
-## Branche courante : `feat/european-competitions-engine`
+## Web responsive + PWA mobile-like
 
-Référence : `EUROPEAN_COMPETITIONS_ENGINE.md` — lire avant toute implémentation.
+### Objectif
 
----
+Transformer la console web actuelle en expérience mobile crédible sans dupliquer l'application:
 
-## Prochaines étapes (post-branche)
+- corriger le shell desktop-first actuel
+- rendre les écrans dashboard utilisables sur téléphone
+- ajouter ensuite une couche PWA installable
 
-- [ ] Générer la migration Prisma (`pnpm --filter @evcore/db db:migrate -- --name european-competitions-engine`)
-- [ ] Lancer le seed sur les nouvelles compétitions
-- [ ] Lancer `POST /sync/fixtures/:leagueId` pour UCL/UEL/UECL (saisons 2022/23 → 2024/25)
-- [ ] Lancer `POST /sync/rolling-stats` pour ces saisons
-- [ ] Lancer `POST /sync/odds-historical/UCL/backfill` (+ UEL, UECL) après achat The Odds API
-- [ ] Backtest européen + audit Brier score / ROI
-- [ ] Affiner `LEAGUE_MEAN_LAMBDA` / home advantage sur données réelles
+### Principes
 
----
+- ne pas commencer par le manifest PWA seul
+- traiter d'abord la responsivité structurelle
+- conserver une seule base UI avec variantes desktop/mobile
+- privilégier une sensation app native: navigation simple, surfaces compactes, drawers plein écran mobile
 
-## Nouveaux marchés — `feat/new-markets`
+### Phase 1 — Audit responsive
 
-Audit API-Football du 2026-04-07 : les cotes Over/Under multiples lignes et HTFT sont
-disponibles chez 14 bookmakers (dont Pinnacle id=4). Tout est calculable via le Poisson existant.
+- cartographier les composants bloquants côté mobile
+- identifier les largeurs minimales, zones scrollables et `overflow-hidden` problématiques
+- lister les composants desktop-only dans `packages/ui` et `apps/web`
+- définir les breakpoints cibles:
+  - mobile: `< 768px`
+  - tablet: `768px - 1023px`
+  - desktop: `>= 1024px`
 
-### En validation
+### Phase 2 — Shell responsive
 
-- [ ] Étape A — Over/Under 1.5 et 3.5 : vérifier affichage web + emails sur de vrais coupons contenant ces nouveaux picks
-- [ ] Étape B — HT/FT : définir un seuil directionnel (HOME_HOME et AWAY_AWAY semblent les plus liquides)
-- [ ] Étape B — HT/FT : vérifier affichage web + emails sur de vrais coupons/picks HT/FT
-- [ ] Étape B — HT/FT : confirmer en backtest si le marché mérite des seuils dédiés ou si les filtres génériques suffisent
+- refondre `packages/ui/src/components/page-shell.tsx`
+- conserver la sidebar actuelle sur desktop
+- remplacer la sidebar par une navigation mobile:
+  - top bar compacte
+  - bottom navigation fixe
+- supprimer les blocages liés à `h-screen` + `overflow-hidden` quand ils cassent le scroll mobile
+- garantir le respect des safe areas iOS
+- rendre le `main` scrollable correctement sur mobile et desktop
 
-### Done
+### Phase 3 — Fondations UI partagées
 
-- [x] Étape A — Over/Under 1.5 et 3.5 : ajout des probabilités `over15`, `under15`, `over35`, `under35`
-- [x] Étape A — Over/Under 1.5 et 3.5 : exposition de `OVER_1_5`, `UNDER_1_5`, `OVER_3_5`, `UNDER_3_5` comme picks candidats
-- [x] Étape A — Over/Under 1.5 et 3.5 : support ingestion / stockage / résolution / sélection backtest
-- [x] Étape A — Over/Under 1.5 et 3.5 : tests unitaires ajoutés sur les nouvelles lignes
-- [x] Étape A — Over/Under 1.5 et 3.5 : rendu audit / web / email branché
-- [x] Étape A — Over/Under 1.5 et 3.5 : validation audit OK, les picks 1.5 et 3.5 remontent bien dans `audit-fixtures`
-- [x] Étape B — HT/FT : marché standalone déjà branché côté moteur / backtest / résolution
-- [x] Étape B — HT/FT : rendu audit / web / email branché
-- [x] Étape B — HT/FT : reporting backtest `byMarket` ajouté pour suivre le marché proprement
+- ajouter le hook `useIsMobile` de shadcn dans `apps/web`
+- centraliser la détection mobile dans ce hook plutôt que dupliquer les conditions de viewport
+- utiliser `useIsMobile` pour piloter:
+  - shell mobile vs desktop
+  - variantes cards vs table
+  - drawers full-screen / side panel
+  - densité du header et des actions
+- adapter `packages/ui/src/components/page.tsx`
+- adapter `apps/web/components/app-page-header.tsx`
+- réduire les paddings, rayons et hauteurs sur petits écrans
+- revoir les grilles trop denses en variantes `grid-cols-1` ou `grid-cols-2`
+- vérifier les états sticky et backdrop sur mobile
 
-### À faire plus tard
+### Phase 4 — Dashboard mobile
 
-- [ ] Étape C — Goals Over/Under 1st Half (optionnel, après A+B) : calculer Poisson(λ/2) pour Under 1.5 HT / Over 0.5 HT
-- [ ] Étape C — Goals Over/Under 1st Half (optionnel, après A+B) : fetcher les cotes `bet id=6` et les évaluer comme picks candidats
-- [ ] Étape C — Goals Over/Under 1st Half (optionnel, après A+B) : confirmer que le volume et la qualité de données justifient l'effort
+- rendre la page dashboard lisible sans zoom sur téléphone
+- convertir les tableaux critiques en cartes ou listes empilées sur mobile
+- afficher les KPI en 1 colonne sur mobile, 2 colonnes sur tablet, grille dense sur desktop
+- transformer les panneaux secondaires en sections collapsibles ou drawers
+- préserver les actions clés:
+  - refresh
+  - sélection d'un match
+  - lecture des alertes
+  - consultation des coupons
 
----
+### Phase 5 — Composants métier à adapter
 
-## Contexte technique
+- `apps/web/components/opportunities-table.tsx`
+  - vue table sur desktop
+  - vue cards sur mobile
+- `apps/web/components/recent-coupons-card.tsx`
+  - améliorer la liste mobile
+  - faire passer le drawer en plein écran ou bottom sheet sur mobile
+- `apps/web/components/fixture-detail-panel.tsx`
+  - revoir la densité d'information et la hiérarchie mobile
+- `apps/web/components/activity-feed.tsx`
+  - vérifier le wrapping, les badges et les timestamps
 
-- Odds uniquement disponibles sur API-Football pour la saison 2025 (courante)
-- Odds historiques 2022-2024 : import one-shot via The Odds API (~$30), Pinnacle inclus
-- xG natif disponible sur UCL/Europa/Conference (pas besoin du proxy shots×0.35)
-- Aller/retour : pas de champ `leg` dans l'API — inférence obligatoire par date + paires d'équipes
-- "To Qualify" : absent sur Pinnacle, disponible sur Bet365/Marathonbet uniquement
+### Phase 6 — Polish mobile-like
 
----
+- ajouter une bottom nav avec état actif clair
+- harmoniser les hauteurs tactiles
+- améliorer les zones d'appui et le spacing vertical
+- stabiliser les interactions drawer/sheet
+- éviter les tables horizontales scrollables comme solution par défaut
 
-## Historique précédent (branche main — R6 record)
+### Phase 7 — PWA ✅
 
-Référence backtest R6 : **468 bets, +15.7% ROI, +73.46u**
+- ~~ajouter un `manifest.webmanifest`~~ → `app/manifest.ts` (Next.js MetadataRoute)
+- ~~déclarer nom, icônes, `theme_color`, `background_color`, `display: standalone`~~
+- ~~ajouter les meta tags PWA dans le layout Next~~ → `viewport` export + `appleWebApp`
+- ~~générer les icônes nécessaires~~ → SVG source + 4 PNG (192, 512, maskable-512, apple-touch-icon 180)
+- vérifier le comportement "Add to Home Screen" — à tester sur device
+- ~~prévoir un cache minimal des assets statiques~~ → `public/sw.js` cache-first `/_next/static/` + icônes
+- ~~ne pas introduire d'offline métier complexe dans la première version~~
 
-Classement ligues actif sur `main` :
+### Phase 8 — Validation
 
-- Very Good : EL2, EL1, L1, PL
-- Good : LL, J1, D2, F2, CH
-- Medium : SP2
-- Low : POR, MX1, SA, BL1
-- Red : ERD, I2
+- tester sur tailles:
+  - iPhone SE / 375px
+  - iPhone standard / 390px
+  - Android ~412px
+  - tablet / 768px
+  - desktop / 1280px+
+- vérifier:
+  - navigation
+  - scroll vertical
+  - drawers
+  - tableaux/listes
+  - boutons d'action
+  - lisibilité des KPI
+- lancer `pnpm lint`
+- lancer `pnpm typecheck`
 
-Guide méthodologie : `docs/league-calibration-audit.md`
+### Ordre d'implémentation recommandé
+
+1. shell responsive
+2. header et primitives de page
+3. dashboard principal
+4. composants métier les plus denses
+5. polish mobile-like
+6. couche PWA
+7. validation multi-device
+
+### V1 cible
+
+- une seule app web
+- dashboard entièrement utilisable sur mobile
+- navigation mobile claire
+- coupons et opportunités consultables sans friction
+- app installable sur écran d'accueil

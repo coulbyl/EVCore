@@ -51,7 +51,13 @@ body {
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), rgba(236, 242, 247, 0.88) 44%, rgba(218, 226, 235, 0.92) 100%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(232, 238, 245, 0.2));
-  overflow: hidden;
+  overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  body {
+    overflow: hidden;
+  }
 }
 
 * {

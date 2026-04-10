@@ -231,6 +231,11 @@
   - [x] Probas HT/FT (9 issues) dérivées du modèle Poisson
   - [x] Ingestion odds live HT/FT + stockage `OddsSnapshot` (`HALF_TIME_FULL_TIME`)
   - [x] Sélection EV/qualityScore étendue au marché HT/FT dans `BettingEngineService`
+- [x] Déploiement production (VPS OVH)
+  - [x] Docker Compose (backend + web + postgres + redis) sur `/opt/evcore`
+  - [x] Nginx reverse proxy + HTTPS Let's Encrypt (`c-evcore.com`, `api.c-evcore.com`)
+  - [x] CI/CD GitHub Actions → GHCR → deploy SSH automatique au merge sur `main`
+  - [x] `CORS_ORIGIN=https://c-evcore.com` + `NEXT_PUBLIC_API_URL=https://api.c-evcore.com`
 - [x] Stabilité first prod sans TimescaleDB
   - [x] Cleanup automatique `OddsSnapshot` via worker ETL `odds-snapshot-retention` (rétention configurable)
   - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)

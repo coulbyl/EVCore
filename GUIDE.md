@@ -135,7 +135,20 @@ Si `with_odds = 0` → relancer `POST /etl/sync/odds-live` avec `{ "date": "YYYY
 
 ---
 
-## 6. Logs
+## 6. Variables d'environnement prod (VPS)
+
+Variables spécifiques à la prod dans `/opt/evcore/.env` :
+
+| Variable              | Valeur                     | Notes                                             |
+| --------------------- | -------------------------- | ------------------------------------------------- |
+| `CORS_ORIGIN`         | `https://c-evcore.com`     | Sans ça, le backend rejette les requêtes du web   |
+| `NEXT_PUBLIC_API_URL` | `https://api.c-evcore.com` | Build arg Docker — baked dans le bundle JS du web |
+
+> `NEXT_PUBLIC_API_URL` est inliné au **build** de l'image web. Un changement de valeur nécessite un rebuild complet de l'image (CI/CD).
+
+---
+
+## 7. Logs
 
 Les logs sont à deux endroits :
 
@@ -151,7 +164,7 @@ Variables d'env disponibles :
 
 ---
 
-## 7. Pièges connus
+## 8. Pièges connus
 
 ### Quota API-Football dépassé
 
@@ -193,7 +206,7 @@ Activer une ligue dans le seed sans mettre à jour `etl.constants.ts` = les work
 
 ---
 
-## 8. Commandes qualité (avant tout commit)
+## 9. Commandes qualité (avant tout commit)
 
 ```bash
 pnpm --filter backend lint        # ESLint (--max-warnings 0)
@@ -203,7 +216,7 @@ pnpm --filter backend test        # Vitest (279 tests)
 
 ---
 
-## 9. Prisma — workflow critique
+## 10. Prisma — workflow critique
 
 Après tout changement de schema :
 

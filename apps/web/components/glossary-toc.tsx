@@ -62,14 +62,14 @@ export function GlossaryToc({ items }: { items: TocItem[] }) {
             key={item.id}
             href={`#${item.id}`}
             aria-current={active ? "location" : undefined}
-            className={`group flex items-start gap-3 rounded-2xl border px-3 py-3 transition ${
+            className={`group flex items-start gap-3 rounded-[1rem] border px-3 py-2.5 transition sm:rounded-2xl sm:py-3 ${
               active
                 ? "border-cyan-300 bg-cyan-50 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.16)]"
                 : "border-transparent hover:border-cyan-200 hover:bg-cyan-50"
             }`}
           >
             <span
-              className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[0.7rem] font-semibold ${
+              className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-semibold sm:h-6 sm:w-6 sm:text-[0.7rem] ${
                 active
                   ? "border-cyan-300 bg-white text-cyan-700"
                   : "border-slate-200 bg-white text-slate-500 group-hover:border-cyan-200 group-hover:text-cyan-700"
@@ -78,7 +78,7 @@ export function GlossaryToc({ items }: { items: TocItem[] }) {
               {index + 1}
             </span>
             <span
-              className={`text-sm font-medium ${
+              className={`text-[0.92rem] font-medium sm:text-sm ${
                 active
                   ? "text-slate-900"
                   : "text-slate-600 group-hover:text-slate-900"

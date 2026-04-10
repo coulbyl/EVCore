@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import type { CouponSnapshot } from "../types/dashboard";
 import { CouponDetailLeg, CouponDetailStats } from "./coupon-detail";
+import { useIsMobile } from "../hooks/use-mobile";
 import {
   combinedOdds,
   couponStatusLabel,
@@ -186,6 +187,7 @@ export function RecentCouponsCard({
 }: {
   snapshots: CouponSnapshot[];
 }) {
+  const isMobile = useIsMobile();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -242,7 +244,7 @@ export function RecentCouponsCard({
 
       {/* Drawer */}
       <Drawer.Root
-        direction="right"
+        direction={isMobile ? "bottom" : "right"}
         open={isOpen}
         onOpenChange={(open) => {
           if (!open) close();
@@ -250,7 +252,13 @@ export function RecentCouponsCard({
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px]" />
-          <Drawer.Content className="fixed inset-y-0 right-0 z-50 flex w-full max-w-105 flex-col overflow-hidden bg-panel-strong shadow-2xl">
+          <Drawer.Content
+            className={`fixed z-50 flex overflow-hidden bg-panel-strong shadow-2xl ${
+              isMobile
+                ? "inset-x-0 bottom-0 max-h-[88vh] flex-col rounded-t-[2rem]"
+                : "inset-y-0 right-0 w-full max-w-105 flex-col"
+            }`}
+          >
             {selected ? (
               <CouponDrawerContent coupon={selected} onClose={close} />
             ) : null}
