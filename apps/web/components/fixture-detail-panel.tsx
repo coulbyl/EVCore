@@ -7,6 +7,7 @@ import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import { FixtureName } from "./coupon-detail";
 import { InfoTooltip } from "./info-tooltip";
 import { formatPickForDisplay } from "../helpers/coupon";
+import { useIsMobile } from "../hooks/use-mobile";
 import type { FixturePanel } from "../types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {
@@ -80,11 +81,12 @@ function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
 }
 
 export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
+  const isMobile = useIsMobile();
   const cotes = fixture.metrics.find((m) => m.label === "Cotes");
   const coreMetrics = fixture.metrics.filter((m) => m.label !== "Cotes");
 
   return (
-    <div className="rounded-[1.7rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
+    <div className="rounded-[1.7rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -95,15 +97,17 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
             {fixture.competition} • {fixture.startTime}
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <CopyFixtureId fixtureId={fixture.fixtureId} />
-          {fixture.fixtureId && (
-            <SettleFixtureDialog
-              fixtureId={fixture.fixtureId}
-              fixtureName={fixture.fixture}
-            />
-          )}
-        </div>
+        {!isMobile ? (
+          <div className="flex items-center gap-1.5">
+            <CopyFixtureId fixtureId={fixture.fixtureId} />
+            {fixture.fixtureId && (
+              <SettleFixtureDialog
+                fixtureId={fixture.fixtureId}
+                fixtureName={fixture.fixture}
+              />
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Fixture name */}

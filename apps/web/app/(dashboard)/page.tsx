@@ -6,6 +6,8 @@ import { AppPageHeader } from "@/components/app-page-header";
 import { FixtureDetailPanel } from "@/components/fixture-detail-panel";
 import { OpportunitiesTable } from "@/components/opportunities-table";
 import { RecentCouponsCard } from "@/components/recent-coupons-card";
+import { formatCompactValue } from "@/helpers/number";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
 import type {
   DashboardSummary,
@@ -39,10 +41,10 @@ function rowToFixturePanel(row: OpportunityRow): FixturePanel {
   };
 }
 
-function renderKpiDelta(delta: KpiDelta) {
+function renderKpiDelta(delta: KpiDelta, compact = false) {
   if (typeof delta === "object") {
     return (
-      <div className="flex items-center gap-2 px-2">
+      <div className={`flex items-center gap-2 ${compact ? "px-0" : "px-2"}`}>
         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
           {delta.bet} BET
         </span>
@@ -59,11 +61,15 @@ function renderKpiDelta(delta: KpiDelta) {
   ) {
     const [value, ...rest] = delta.split(" ");
     return (
-      <div className="flex items-center gap-2 px-2">
+      <div
+        className={`flex items-center gap-2 ${compact ? "flex-wrap px-0" : "px-2"}`}
+      >
         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
           {value}
         </span>
-        <span className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
+        <span
+          className={`font-medium uppercase text-slate-500 ${compact ? "text-[0.62rem] tracking-[0.1em]" : "text-xs tracking-[0.12em]"}`}
+        >
           {rest.join(" ")}
         </span>
       </div>
@@ -78,24 +84,38 @@ function renderKpiDelta(delta: KpiDelta) {
     const rawPercent = percentMatch?.[1] ?? "0";
     const percentValue = `${rawPercent.replace(",", ".")}%`;
     return (
-      <div className="flex items-center gap-2 px-2">
-        <span className="text-sm font-semibold text-slate-700">
-          {percentValue}
-        </span>
-        <div className="h-2 w-20 overflow-hidden rounded-full bg-slate-200">
+      <div className={compact ? "space-y-1" : "flex items-center gap-2 px-2"}>
+        <div className={compact ? "flex items-center gap-1.5" : "contents"}>
+          <span
+            className={`${compact ? "text-[0.78rem]" : "text-sm"} font-semibold text-slate-700`}
+          >
+            {percentValue}
+          </span>
           <div
-            className="h-full rounded-full bg-emerald-500"
-            style={{ width: percentValue }}
-          />
+            className={`${compact ? "h-1.5 min-w-0 flex-1" : "h-2 w-20"} overflow-hidden rounded-full bg-slate-200`}
+          >
+            <div
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: percentValue }}
+            />
+          </div>
         </div>
-        <span className="text-xs uppercase tracking-[0.12em] text-slate-500">
+        <span
+          className={`uppercase text-slate-500 ${compact ? "block text-[0.56rem] tracking-[0.16em]" : "text-xs tracking-[0.12em]"}`}
+        >
           couverture
         </span>
       </div>
     );
   }
 
-  return <p className="px-2 text-sm text-slate-500">{delta}</p>;
+  return (
+    <p
+      className={`${compact ? "px-0 text-[0.72rem]" : "px-2 text-sm"} text-slate-500`}
+    >
+      {delta}
+    </p>
+  );
 }
 
 function workerStatusLabel(status: string) {
@@ -165,6 +185,7 @@ const EMPTY_SUMMARY: DashboardSummary = {
 };
 
 export default function Home() {
+  const isMobile = useIsMobile();
   const { data, refetch, isFetching, isError } = useDashboardSummary();
   const {
     dashboardKpis: kpis,
@@ -184,6 +205,11 @@ export default function Home() {
   const roiPct = Number.parseFloat(pnl.roi.replace(",", "."));
   const winBarPct =
     pnl.settledBets > 0 ? Math.round((pnl.wonBets / pnl.settledBets) * 100) : 0;
+  const compactSettledBets = formatCompactValue(pnl.settledBets);
+  const compactRoi = isMobile ? formatCompactValue(pnl.roi) : pnl.roi;
+  const compactNetUnits = isMobile
+    ? formatCompactValue(pnl.netUnits)
+    : pnl.netUnits;
 
   return (
     <Page className="flex h-full flex-col">
@@ -195,11 +221,11 @@ export default function Home() {
         isRefreshing={isFetching}
       />
 
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="space-y-5">
-          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-            <div className="flex items-center justify-between gap-3">
-              <div>
+          <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
                   Performance globale
                 </p>
@@ -214,52 +240,70 @@ export default function Home() {
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
               <div
-                className={`rounded-2xl border px-4 py-3 ${Number.isFinite(roiPct) && roiPct > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(roiPct) && roiPct < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
+                className={`min-w-0 rounded-[1.15rem] border ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"} ${Number.isFinite(roiPct) && roiPct > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(roiPct) && roiPct < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
               >
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <p
+                  className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-slate-500`}
+                >
                   ROI
                 </p>
                 <p
-                  className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(roiPct) && roiPct > 0 ? "text-emerald-700" : Number.isFinite(roiPct) && roiPct < 0 ? "text-rose-700" : "text-slate-700"}`}
+                  className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${Number.isFinite(roiPct) && roiPct > 0 ? "text-emerald-700" : Number.isFinite(roiPct) && roiPct < 0 ? "text-rose-700" : "text-slate-700"}`}
                 >
-                  {pnl.roi}
+                  {compactRoi}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  sur capital misé
+                <p
+                  className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-slate-400`}
+                >
+                  {isMobile ? "capital" : "sur capital misé"}
                 </p>
               </div>
 
               <div
-                className={`rounded-2xl border px-4 py-3 ${Number.isFinite(netUnits) && netUnits > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(netUnits) && netUnits < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
+                className={`min-w-0 rounded-[1.15rem] border ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"} ${Number.isFinite(netUnits) && netUnits > 0 ? "border-emerald-200 bg-emerald-50" : Number.isFinite(netUnits) && netUnits < 0 ? "border-rose-200 bg-rose-50" : "border-border bg-slate-50"}`}
               >
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <p
+                  className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-slate-500`}
+                >
                   Gain net
                 </p>
                 <p
-                  className={`mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight ${Number.isFinite(netUnits) && netUnits > 0 ? "text-emerald-700" : Number.isFinite(netUnits) && netUnits < 0 ? "text-rose-700" : "text-slate-700"}`}
+                  className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${Number.isFinite(netUnits) && netUnits > 0 ? "text-emerald-700" : Number.isFinite(netUnits) && netUnits < 0 ? "text-rose-700" : "text-slate-700"}`}
                 >
-                  {pnl.netUnits}
+                  {compactNetUnits}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">unités de stake</p>
+                <p
+                  className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-slate-400`}
+                >
+                  {isMobile ? "stake" : "unités de stake"}
+                </p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-slate-50 px-4 py-3">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <div
+                className={`min-w-0 rounded-[1.15rem] border border-border bg-slate-50 ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"}`}
+              >
+                <p
+                  className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-slate-500`}
+                >
                   Réussite
                 </p>
-                <p className="mt-1 text-[1.6rem] font-semibold tabular-nums tracking-tight text-slate-700">
+                <p
+                  className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight text-slate-700`}
+                >
                   {pnl.winRate}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  {pnl.settledBets} bets settlés
+                <p
+                  className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-slate-400`}
+                >
+                  {compactSettledBets} {isMobile ? "settlés" : "bets settlés"}
                 </p>
               </div>
             </div>
 
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
                 <span className="text-xs font-semibold text-emerald-600">
                   {pnl.wonBets} gagnés
                 </span>
@@ -276,14 +320,15 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+          <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 2xl:grid-cols-4">
             {kpis.map((item) => (
               <StatCard
                 key={item.label}
                 label={item.label}
-                value={item.value}
+                value={isMobile ? formatCompactValue(item.value) : item.value}
                 tone={item.tone}
-                delta={renderKpiDelta(item.delta)}
+                delta={renderKpiDelta(item.delta, isMobile)}
+                compact={isMobile}
               />
             ))}
           </section>
@@ -298,7 +343,7 @@ export default function Home() {
               <RecentCouponsCard snapshots={coupons} />
             </section>
             <aside className="space-y-5">
-              <FixtureDetailPanel fixture={fixture} />
+              {!isMobile ? <FixtureDetailPanel fixture={fixture} /> : null}
 
               {/* Pipeline */}
               <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">

@@ -3,16 +3,20 @@
 import { Suspense, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Drawer } from "vaul";
 import { Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { TableCard } from "@/components/table-card";
 import { CouponDetail, CouponDetailEmpty } from "@/components/coupon-detail";
+import { DateField } from "@/components/date-field";
 import {
   couponStatusBadgeClass,
   couponStatusLabel,
   couponTierBadgeClass,
   couponTierLabel,
 } from "@/helpers/coupon";
+import { formatCompactValue } from "@/helpers/number";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useCouponsByPeriod } from "@/hooks/use-coupons-by-period";
 
 function currentWeekInputRange(now = new Date()): { from: string; to: string } {
@@ -34,7 +38,19 @@ function currentWeekInputRange(now = new Date()): { from: string; to: string } {
 
 type CouponFilterStatus = "" | "PENDING" | "WON" | "LOST";
 
+function handleCouponRowKeyDown(
+  event: React.KeyboardEvent<HTMLDivElement>,
+  couponId: string,
+  onSelect: (couponId: string) => void,
+) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    onSelect(couponId);
+  }
+}
+
 function CouponsPageContent() {
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const router = useRouter();
   const defaultRange = useMemo(() => currentWeekInputRange(), []);
@@ -73,6 +89,16 @@ function CouponsPageContent() {
     router.replace(`/coupons?${params.toString()}`);
   }
 
+  function renderCouponStatus(coupon: (typeof coupons)[number]) {
+    return (
+      <span
+        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(coupon.status)}`}
+      >
+        {couponStatusLabel(coupon.status, coupon.selections)}
+      </span>
+    );
+  }
+
   return (
     <Page className="flex h-full flex-col">
       <AppPageHeader
@@ -83,10 +109,10 @@ function CouponsPageContent() {
         isRefreshing={isFetching}
       />
 
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
           <div className="space-y-5">
-            <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
+            <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
                 Filtres
               </p>
@@ -94,38 +120,26 @@ function CouponsPageContent() {
                 className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_1.2fr_1fr_auto]"
                 onSubmit={applyPeriodFilter}
               >
-                <label className="rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
-                  <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
-                    Du
-                  </span>
-                  <input
-                    type="date"
-                    value={formFilters.from}
-                    onChange={(e) =>
-                      setFormFilters((prev) => ({
-                        ...prev,
-                        from: e.target.value,
-                      }))
-                    }
-                    className="w-full bg-transparent outline-none"
-                  />
-                </label>
-                <label className="rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
-                  <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
-                    Au
-                  </span>
-                  <input
-                    type="date"
-                    value={formFilters.to}
-                    onChange={(e) =>
-                      setFormFilters((prev) => ({
-                        ...prev,
-                        to: e.target.value,
-                      }))
-                    }
-                    className="w-full bg-transparent outline-none"
-                  />
-                </label>
+                <DateField
+                  label="Du"
+                  value={formFilters.from}
+                  onChange={(value) =>
+                    setFormFilters((prev) => ({
+                      ...prev,
+                      from: value,
+                    }))
+                  }
+                />
+                <DateField
+                  label="Au"
+                  value={formFilters.to}
+                  onChange={(value) =>
+                    setFormFilters((prev) => ({
+                      ...prev,
+                      to: value,
+                    }))
+                  }
+                />
                 <label className="rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
                   <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
                     Recherche
@@ -196,13 +210,75 @@ function CouponsPageContent() {
               subtitle="Coupons de la période sélectionnée."
               action={
                 <span className="rounded-full border border-border px-3 py-1 text-xs text-slate-500">
-                  {coupons.length} coupon{coupons.length > 1 ? "s" : ""}
+                  {formatCompactValue(coupons.length)} coupon
+                  {coupons.length > 1 ? "s" : ""}
                 </span>
               }
             >
               {coupons.length === 0 ? (
                 <div className="bg-white px-4 py-8 text-center text-sm text-slate-400">
                   Aucun coupon sur cette période.
+                </div>
+              ) : isMobile ? (
+                <div className="divide-y divide-border bg-white">
+                  {coupons.map((coupon) => (
+                    <div
+                      key={coupon.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedCouponId(coupon.id)}
+                      onKeyDown={(event) =>
+                        handleCouponRowKeyDown(
+                          event,
+                          coupon.id,
+                          setSelectedCouponId,
+                        )
+                      }
+                      className={`block w-full px-4 py-4 text-left transition-colors ${
+                        selectedCouponId === coupon.id
+                          ? "bg-accent/8 ring-1 ring-inset ring-accent/20"
+                          : "hover:bg-[#f5f7fb]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm text-slate-700">
+                            {coupon.code}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {coupon.tier ? (
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+                              >
+                                {couponTierLabel(coupon.tier)}
+                              </span>
+                            ) : null}
+                            {renderCouponStatus(coupon)}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[0.68rem] uppercase tracking-[0.14em] text-slate-400">
+                            EV
+                          </p>
+                          <p className="text-sm font-semibold text-slate-700">
+                            {coupon.ev}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                        <span>{coupon.legs} legs</span>
+                        <Link
+                          href={`/coupons/${coupon.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-medium text-accent"
+                        >
+                          Ouvrir
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="max-h-105 overflow-y-auto">
@@ -253,14 +329,7 @@ function CouponsPageContent() {
                             {coupon.legs}
                           </td>
                           <td className="px-5 py-4.5 text-slate-500">
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${couponStatusBadgeClass(coupon.status)}`}
-                            >
-                              {couponStatusLabel(
-                                coupon.status,
-                                coupon.selections,
-                              )}
-                            </span>
+                            {renderCouponStatus(coupon)}
                           </td>
                           <td className="px-5 py-4.5 font-semibold text-slate-700">
                             {coupon.ev}
@@ -274,20 +343,53 @@ function CouponsPageContent() {
             </TableCard>
           </div>
 
-          <aside className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:sticky xl:top-0">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
-              Détail coupon
-            </p>
-            {!selectedCoupon ? (
-              <CouponDetailEmpty />
-            ) : (
-              <CouponDetail
-                coupon={selectedCoupon}
-                onSettled={() => void refetch()}
-              />
-            )}
-          </aside>
+          {!isMobile ? (
+            <aside className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:sticky xl:top-0">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                Détail coupon
+              </p>
+              {!selectedCoupon ? (
+                <CouponDetailEmpty />
+              ) : (
+                <CouponDetail
+                  coupon={selectedCoupon}
+                  onSettled={() => void refetch()}
+                />
+              )}
+            </aside>
+          ) : null}
         </div>
+
+        {isMobile ? (
+          <Drawer.Root
+            direction="bottom"
+            open={selectedCoupon !== null}
+            onOpenChange={(open) => {
+              if (!open) setSelectedCouponId(null);
+            }}
+          >
+            <Drawer.Portal>
+              <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px]" />
+              <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[88vh] flex-col overflow-hidden rounded-t-[2rem] bg-panel-strong shadow-2xl">
+                <Drawer.Title className="sr-only">Détail coupon</Drawer.Title>
+                <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
+                <div className="px-4 pb-4 pt-3">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                    Détail coupon
+                  </p>
+                  {!selectedCoupon ? (
+                    <CouponDetailEmpty />
+                  ) : (
+                    <CouponDetail
+                      coupon={selectedCoupon}
+                      onSettled={() => void refetch()}
+                    />
+                  )}
+                </div>
+              </Drawer.Content>
+            </Drawer.Portal>
+          </Drawer.Root>
+        ) : null}
       </PageContent>
     </Page>
   );

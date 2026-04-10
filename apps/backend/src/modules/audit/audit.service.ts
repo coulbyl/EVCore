@@ -44,9 +44,18 @@ export class AuditService {
       endOfUtcDay(date),
     );
 
-    return fixtures.map((f) => {
+    const rows: AuditFixtureRow[] = fixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
       const bet = run?.bets[0] ?? null;
+      const betStatus: AuditFixtureRow['modelRun'] extends infer T
+        ? T extends { betStatus: infer S }
+          ? S
+          : never
+        : never = bet
+        ? bet.status === 'WON' || bet.status === 'LOST'
+          ? bet.status
+          : 'PENDING'
+        : null;
 
       return {
         fixtureId: f.id,
@@ -77,11 +86,7 @@ export class AuditService {
                 finalScore: toNumber(run.finalScore).toFixed(3),
                 market: bet?.market ?? null,
                 pick: bet?.pick ?? null,
-                betStatus: bet
-                  ? bet.status === 'WON' || bet.status === 'LOST'
-                    ? bet.status
-                    : 'PENDING'
-                  : null,
+                betStatus,
                 probEstimated: bet
                   ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`
                   : null,
@@ -97,6 +102,17 @@ export class AuditService {
             })()
           : null,
       };
+    });
+
+    return rows.sort((a, b) => {
+      const aPriority = a.modelRun?.decision === 'BET' ? 0 : 1;
+      const bPriority = b.modelRun?.decision === 'BET' ? 0 : 1;
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      return a.scheduledAt.localeCompare(b.scheduledAt);
     });
   }
 

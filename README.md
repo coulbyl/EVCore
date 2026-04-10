@@ -70,7 +70,7 @@ Useful maintenance commands:
 pnpm --filter @evcore/db db:stats
 ```
 
-Default service endpoints:
+Default service endpoints (dev):
 
 | Service    | URL                     |
 | ---------- | ----------------------- |
@@ -78,6 +78,13 @@ Default service endpoints:
 | PostgreSQL | `localhost:5432`        |
 | Redis      | `localhost:6379`        |
 | Mailpit UI | `http://localhost:8025` |
+
+Production endpoints:
+
+| Service | URL                        |
+| ------- | -------------------------- |
+| Web     | `https://c-evcore.com`     |
+| Backend | `https://api.c-evcore.com` |
 
 ---
 
@@ -141,6 +148,9 @@ KELLY_ENABLED=false
 ETL_SCHEDULING_ENABLED=false
 COUPON_SCHEDULING_ENABLED=false
 ODDS_SNAPSHOT_RETENTION_DAYS=30
+
+# CORS (prod: restrict to frontend domain)
+CORS_ORIGIN=https://c-evcore.com
 ```
 
 ### Rate-limit / quota tuning (10 leagues first prod)

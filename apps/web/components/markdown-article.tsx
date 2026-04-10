@@ -220,7 +220,7 @@ export function MarkdownArticle({ content }: { content: string }) {
   const blocks = parseMarkdown(content);
 
   return (
-    <div className="space-y-6 text-[15px] leading-7 text-slate-600">
+    <div className="space-y-5 text-[14px] leading-7 text-slate-600 sm:space-y-6 sm:text-[15px]">
       {blocks.map((block, index) => {
         if (block.type === "heading") {
           const id = slugify(block.text);
@@ -233,7 +233,7 @@ export function MarkdownArticle({ content }: { content: string }) {
                 </div>
                 <h1
                   id={id}
-                  className="scroll-mt-24 text-4xl font-semibold tracking-tight text-slate-950"
+                  className="scroll-mt-24 text-[1.9rem] font-semibold tracking-tight text-slate-950 sm:text-4xl"
                 >
                   {block.text}
                 </h1>
@@ -245,11 +245,11 @@ export function MarkdownArticle({ content }: { content: string }) {
             return (
               <section
                 key={`${block.type}-${index}`}
-                className="scroll-mt-24 border-t border-slate-200 pt-8"
+                className="scroll-mt-24 border-t border-slate-200 pt-6 sm:pt-8"
               >
                 <h2
                   id={id}
-                  className="text-2xl font-semibold tracking-tight text-slate-900"
+                  className="text-[1.45rem] font-semibold tracking-tight text-slate-900 sm:text-2xl"
                 >
                   {block.text}
                 </h2>
@@ -261,7 +261,7 @@ export function MarkdownArticle({ content }: { content: string }) {
             <h3
               key={`${block.type}-${index}`}
               id={id}
-              className="scroll-mt-24 text-lg font-semibold tracking-tight text-slate-900"
+              className="scroll-mt-24 text-[1rem] font-semibold tracking-tight text-slate-900 sm:text-lg"
             >
               {block.text}
             </h3>
@@ -272,7 +272,7 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <p
               key={`${block.type}-${index}`}
-              className="text-base text-slate-600"
+              className="text-[0.96rem] text-slate-600 sm:text-base"
             >
               {renderInline(block.text)}
             </p>
@@ -283,7 +283,7 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <ul
               key={`${block.type}-${index}`}
-              className="space-y-2 pl-5 text-base text-slate-600"
+              className="space-y-2 pl-5 text-[0.96rem] text-slate-600 sm:text-base"
             >
               {block.items.map((item, itemIndex) => (
                 <li key={`${index}-${itemIndex}`} className="list-disc pl-1">
@@ -314,7 +314,7 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <blockquote
               key={`${block.type}-${index}`}
-              className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-base text-amber-900"
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-[0.96rem] text-amber-900 sm:px-5 sm:text-base"
             >
               {renderInline(block.text)}
             </blockquote>

@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Drawer } from "vaul";
 import { useCouponById } from "@/hooks/use-coupon-by-id";
 import {
   CouponDetailEmpty,
@@ -15,6 +16,7 @@ import {
   selectionStatusLabel,
   selectionStatusBadgeClass,
 } from "@/helpers/coupon";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { CouponSnapshot } from "@/types/dashboard";
 import {
   locales,
@@ -51,6 +53,7 @@ function UnifiedPicksTable({
   candidatePicks,
   evaluatedPicks,
   t,
+  isMobile,
 }: {
   candidatePicks?: NonNullable<
     CouponSnapshot["selections"][number]["candidatePicks"]
@@ -59,11 +62,119 @@ function UnifiedPicksTable({
     CouponSnapshot["selections"][number]["evaluatedPicks"]
   >;
   t: Translations;
+  isMobile: boolean;
 }) {
   const hasCandidates = candidatePicks && candidatePicks.length > 0;
   const hasEvaluated = evaluatedPicks && evaluatedPicks.length > 0;
   if (!hasCandidates && !hasEvaluated)
     return <p className="text-xs text-slate-400">{t.noPicks}</p>;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {hasCandidates ? (
+          <div className="space-y-2">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {t.candidatePicks(candidatePicks.length)}
+            </p>
+            {candidatePicks.map((p, i) => {
+              const pickLabel = p.comboMarket
+                ? `${formatPickLabel(p.market, p.pick, t)} + ${formatPickLabel(p.comboMarket, p.comboPick ?? "", t)}`
+                : formatPickLabel(p.market, p.pick, t);
+              return (
+                <div
+                  key={`c-${i}`}
+                  className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3"
+                >
+                  <p className="text-sm font-medium text-slate-700">
+                    {pickLabel}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                    <span>
+                      {t.tableHeaders.prob}: {p.probability}
+                    </span>
+                    <span>
+                      {t.tableHeaders.odds}: {p.odds}
+                    </span>
+                    <span
+                      className={
+                        p.ev.startsWith("+")
+                          ? "font-semibold text-emerald-600"
+                          : "font-semibold text-rose-500"
+                      }
+                    >
+                      EV {p.ev}
+                    </span>
+                    <span>
+                      {t.tableHeaders.quality}: {p.qualityScore}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {hasEvaluated ? (
+          <div className="space-y-2">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {t.evaluatedPicks(evaluatedPicks.length)}
+            </p>
+            {evaluatedPicks.map((p, i) => {
+              const pickLabel = p.comboMarket
+                ? `${formatPickLabel(p.market, p.pick, t)} + ${formatPickLabel(p.comboMarket, p.comboPick ?? "", t)}`
+                : formatPickLabel(p.market, p.pick, t);
+              const isViable = p.status === "viable";
+              return (
+                <div
+                  key={`e-${i}`}
+                  className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium text-slate-700">
+                      {pickLabel}
+                    </p>
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.08em] ${isViable ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-600"}`}
+                    >
+                      {t.pickStatuses[p.status as "viable" | "rejected"] ??
+                        p.status}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                    <span>
+                      {t.tableHeaders.prob}: {p.probability}
+                    </span>
+                    <span>
+                      {t.tableHeaders.odds}: {p.odds}
+                    </span>
+                    <span
+                      className={
+                        p.ev.startsWith("+")
+                          ? "font-semibold text-emerald-600"
+                          : "font-semibold text-rose-500"
+                      }
+                    >
+                      EV {p.ev}
+                    </span>
+                    <span>
+                      {t.tableHeaders.quality}: {p.qualityScore}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[0.68rem] text-slate-400">
+                    {p.rejectionReason
+                      ? (t.rejectionReasons[p.rejectionReason] ??
+                        p.rejectionReason)
+                      : "--"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -186,16 +297,18 @@ function SelectionDiagnosticsCard({
   index,
   t,
   locale,
+  isMobile,
 }: {
   selection: CouponSnapshot["selections"][number];
   index: number;
   t: Translations;
   locale: "fr" | "en";
+  isMobile: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
-        <p className="min-w-0 truncate text-xs text-slate-500">
+      <div className="flex flex-col gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="min-w-0 text-xs text-slate-500 sm:truncate">
           <span className="font-semibold text-slate-700">
             {t.leg} {index + 1}
           </span>
@@ -249,6 +362,7 @@ function SelectionDiagnosticsCard({
             candidatePicks={selection.candidatePicks}
             evaluatedPicks={selection.evaluatedPicks}
             t={t}
+            isMobile={isMobile}
           />
         ) : null}
       </div>
@@ -271,7 +385,9 @@ function CouponPageBody({
   t: Translations;
   locale: "fr" | "en";
 }) {
+  const isMobile = useIsMobile();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [mobileDiagnosticsOpen, setMobileDiagnosticsOpen] = useState(false);
   const isCombined = coupon.selections.length > 1;
   const odds = isCombined
     ? combinedOdds(coupon.selections.map((s) => s.odds))
@@ -279,7 +395,7 @@ function CouponPageBody({
   const activeLeg = coupon.selections[selectedIndex];
 
   return (
-    <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:h-full lg:grid-cols-[340px_1fr] lg:gap-6">
       {/* Left — scrolls independently */}
       <div className="flex min-h-0 flex-col overflow-hidden">
         <div className="mb-2 flex shrink-0 items-center justify-between">
@@ -311,16 +427,25 @@ function CouponPageBody({
               locale={locale}
             />
           </div>
-          <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
+          <div
+            className={`min-h-0 flex-1 divide-y divide-border ${
+              isMobile ? "" : "overflow-y-auto"
+            }`}
+          >
             {coupon.selections.map((selection, index) => (
               <div
                 key={selection.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedIndex(index)}
+                onClick={() => {
+                  setSelectedIndex(index);
+                  if (isMobile) setMobileDiagnosticsOpen(true);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
+                  if (e.key === "Enter" || e.key === " ") {
+                    if (isMobile) setMobileDiagnosticsOpen(true);
                     setSelectedIndex(index);
+                  }
                 }}
                 className={`w-full cursor-pointer text-left transition-colors ${
                   index === selectedIndex
@@ -340,6 +465,13 @@ function CouponPageBody({
                   )}
                   marketLabel={formatMarketForDisplay(selection.market, locale)}
                 />
+                {isMobile ? (
+                  <div className="px-3 pb-3">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      Voir les diagnostics
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -347,7 +479,9 @@ function CouponPageBody({
       </div>
 
       {/* Right — scrolls independently */}
-      <div className="flex min-h-0 flex-col overflow-hidden">
+      <div
+        className={`flex min-h-0 flex-col overflow-hidden ${isMobile ? "hidden" : ""}`}
+      >
         <div className="mb-2 flex shrink-0 items-center justify-between">
           <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
             {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
@@ -363,17 +497,62 @@ function CouponPageBody({
             />
           )}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className={`min-h-0 flex-1 ${isMobile ? "" : "overflow-y-auto"}`}>
           {activeLeg ? (
             <SelectionDiagnosticsCard
               selection={activeLeg}
               index={selectedIndex}
               t={t}
               locale={locale}
+              isMobile={isMobile}
             />
           ) : null}
         </div>
       </div>
+
+      {isMobile ? (
+        <Drawer.Root
+          direction="bottom"
+          open={mobileDiagnosticsOpen}
+          onOpenChange={setMobileDiagnosticsOpen}
+        >
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px]" />
+            <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[88vh] flex-col overflow-hidden rounded-t-[2rem] bg-panel-strong shadow-2xl">
+              <Drawer.Title className="sr-only">
+                {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
+              </Drawer.Title>
+              <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
+              <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-3">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
+                </p>
+                {activeLeg ? (
+                  <CopyButton
+                    getText={() =>
+                      formatDiagnosticsText(activeLeg, selectedIndex, t, locale)
+                    }
+                    label={t.copyDiagnostics}
+                    copiedLabel={t.copied}
+                    className="cursor-pointer rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] font-medium text-slate-500 hover:bg-slate-50"
+                  />
+                ) : null}
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                {activeLeg ? (
+                  <SelectionDiagnosticsCard
+                    selection={activeLeg}
+                    index={selectedIndex}
+                    t={t}
+                    locale={locale}
+                    isMobile={isMobile}
+                  />
+                ) : null}
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      ) : null}
     </div>
   );
 }
@@ -630,31 +809,32 @@ export default function CouponDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const isMobile = useIsMobile();
   const { id } = use(params);
   const searchParams = useSearchParams();
   const t = locales[getLocale(searchParams.get("lang"))];
   const { data: coupon, isFetching, isError, refetch } = useCouponById(id);
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2">
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-500">
               EVCore
             </span>
-            <span className="text-slate-300">/</span>
+            {!isMobile ? <span className="text-slate-300">/</span> : null}
             <span className="text-sm text-slate-500">{t.coupon}</span>
             {coupon && (
               <>
-                <span className="text-slate-300">/</span>
-                <span className="font-mono text-sm font-semibold text-slate-700">
+                {!isMobile ? <span className="text-slate-300">/</span> : null}
+                <span className="truncate font-mono text-sm font-semibold text-slate-700">
                   {coupon.code}
                 </span>
               </>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <LangSwitcher />
             {coupon && <ShareButton coupon={coupon} t={t} />}
             <button
@@ -668,7 +848,7 @@ export default function CouponDetailPage({
         </div>
       </header>
 
-      <main className="mx-auto min-h-0 w-full max-w-6xl flex-1 px-6 py-8">
+      <main className="mx-auto min-h-0 w-full max-w-6xl flex-1 px-4 py-4 sm:px-6 sm:py-8">
         {isFetching && !coupon ? (
           <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-16 text-center text-sm text-slate-400">
             {t.loading}

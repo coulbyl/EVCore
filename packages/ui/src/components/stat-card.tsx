@@ -26,7 +26,7 @@ export function StatCard({
     <div
       className={cn(
         "rounded-[1.55rem] border border-border bg-panel-strong shadow-sm",
-        compact ? "rounded-xl px-3 py-2.5" : "px-5 py-5",
+        compact ? "rounded-[1.15rem] px-3 py-2.5" : "px-5 py-5",
       )}
     >
       <div
@@ -35,19 +35,28 @@ export function StatCard({
           toneClasses[tone],
         )}
       >
-        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <p
+          className={cn(
+            "font-semibold uppercase text-slate-500",
+            compact
+              ? "text-[0.58rem] tracking-[0.18em]"
+              : "text-[0.68rem] tracking-[0.2em]",
+          )}
+        >
           {label}
         </p>
         <p
           className={cn(
             "mt-3 font-semibold tracking-tight text-slate-950",
-            compact ? "mt-1 text-[1.2rem]" : "text-[2.35rem]",
+            compact ? "mt-1 text-[1.8rem] leading-none" : "text-[2.35rem]",
           )}
         >
           {value}
         </p>
       </div>
-      {delta ? <div className="mt-3">{delta}</div> : null}
+      {delta ? (
+        <div className={cn(compact ? "mt-2" : "mt-3")}>{delta}</div>
+      ) : null}
     </div>
   );
 }

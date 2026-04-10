@@ -5,8 +5,7 @@ import type {
 } from "../types/dashboard";
 import type { AuditFixtureRow, AuditOverview } from "../types/audit";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export async function declareFixtureResult(
   fixtureId: string,

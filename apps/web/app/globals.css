@@ -10,3 +10,8 @@
 body {
   font-family: var(--font-sans), sans-serif;
 }
+
+.ev-date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}

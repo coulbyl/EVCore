@@ -11,6 +11,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     () => [
       {
         label: "Tableau de bord",
+        mobileLabel: "Accueil",
         href: "/",
         active: pathname === "/",
       },
