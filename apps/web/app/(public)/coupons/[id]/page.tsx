@@ -1,8 +1,10 @@
 "use client";
 
 import { use, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Drawer } from "vaul";
+import { Button } from "@evcore/ui";
 import { useCouponById } from "@/hooks/use-coupon-by-id";
 import {
   CouponDetailEmpty,
@@ -435,22 +437,26 @@ function CouponPageBody({
             {coupon.selections.map((selection, index) => (
               <div
                 key={selection.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  setSelectedIndex(index);
-                  if (isMobile) setMobileDiagnosticsOpen(true);
-                }}
+                role={isMobile ? undefined : "button"}
+                tabIndex={isMobile ? undefined : 0}
+                onClick={
+                  isMobile
+                    ? undefined
+                    : () => {
+                        setSelectedIndex(index);
+                      }
+                }
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    if (isMobile) setMobileDiagnosticsOpen(true);
+                  if (!isMobile && (e.key === "Enter" || e.key === " ")) {
                     setSelectedIndex(index);
                   }
                 }}
-                className={`w-full cursor-pointer text-left transition-colors ${
+                className={`w-full text-left transition-colors ${
                   index === selectedIndex
                     ? "border-l-2 border-l-accent bg-accent/5"
-                    : "border-l-2 border-l-transparent hover:bg-slate-50"
+                    : `border-l-2 border-l-transparent ${
+                        isMobile ? "" : "hover:bg-slate-50"
+                      }`
                 }`}
               >
                 <CouponDetailLeg
@@ -466,10 +472,18 @@ function CouponPageBody({
                   marketLabel={formatMarketForDisplay(selection.market, locale)}
                 />
                 {isMobile ? (
-                  <div className="px-3 pb-3">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <div className="flex px-3 pb-3">
+                    <Button
+                      tone="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedIndex(index);
+                        setMobileDiagnosticsOpen(true);
+                      }}
+                      className="rounded-full px-3 text-[0.68rem] uppercase tracking-[0.08em]"
+                    >
                       Voir les diagnostics
-                    </p>
+                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -810,16 +824,29 @@ export default function CouponDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const isMobile = useIsMobile();
+  const router = useRouter();
   const { id } = use(params);
   const searchParams = useSearchParams();
   const t = locales[getLocale(searchParams.get("lang"))];
   const { data: coupon, isFetching, isError, refetch } = useCouponById(id);
 
+  function handleBack() {
+    router.push("/coupons");
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
+            <button
+              onClick={handleBack}
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 sm:px-2.5"
+              aria-label={t.back}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">{t.back}</span>
+            </button>
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-500">
               EVCore
             </span>
@@ -828,7 +855,7 @@ export default function CouponDetailPage({
             {coupon && (
               <>
                 {!isMobile ? <span className="text-slate-300">/</span> : null}
-                <span className="truncate font-mono text-sm font-semibold text-slate-700">
+                <span className="max-w-[140px] truncate font-mono text-sm font-semibold text-slate-700 sm:max-w-none">
                   {coupon.code}
                 </span>
               </>

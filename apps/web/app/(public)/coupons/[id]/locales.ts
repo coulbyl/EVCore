@@ -2,6 +2,7 @@ export type Locale = "fr" | "en";
 
 export const locales = {
   fr: {
+    back: "Retour",
     coupon: "Coupon",
     refresh: "Rafraîchir",
     share: "Partager",
@@ -111,6 +112,7 @@ export const locales = {
     } as Record<string, string>,
   },
   en: {
+    back: "Back",
     coupon: "Coupon",
     refresh: "Refresh",
     share: "Share",

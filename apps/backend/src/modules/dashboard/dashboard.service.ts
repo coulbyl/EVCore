@@ -221,6 +221,7 @@ export class DashboardService {
       const fixture = bet.modelRun.fixture;
       return {
         id: bet.id,
+        couponId: bet.couponLegs[0]?.couponId ?? null,
         fixtureId: fixture.id,
         fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
         homeLogo: fixture.homeTeam.logoUrl ?? null,

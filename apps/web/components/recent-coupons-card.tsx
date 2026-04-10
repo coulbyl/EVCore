@@ -14,6 +14,8 @@ import {
   couponTierLabel,
   couponTierBadgeClass,
 } from "../helpers/coupon";
+import Link from "next/link";
+import { Button } from "@evcore/ui/button";
 
 function evColor(ev: string) {
   const n = parseFloat(ev);
@@ -149,6 +151,16 @@ function CouponDrawerContent({
             </span>
           )}
           <span className="text-xs text-slate-400">{coupon.window}</span>
+          <Button tone="ghost" size="xs">
+            <Link
+              href={`/coupons/${coupon.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+            >
+              Voir diagnostic
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -255,7 +267,7 @@ export function RecentCouponsCard({
           <Drawer.Content
             className={`fixed z-50 flex overflow-hidden bg-panel-strong shadow-2xl ${
               isMobile
-                ? "inset-x-0 bottom-0 max-h-[88vh] flex-col rounded-t-[2rem]"
+                ? "inset-x-0 bottom-0 max-h-[88vh] flex-col rounded-t-4xl"
                 : "inset-y-0 right-0 w-full max-w-105 flex-col"
             }`}
           >

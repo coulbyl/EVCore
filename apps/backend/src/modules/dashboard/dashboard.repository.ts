@@ -132,13 +132,19 @@ export class DashboardRepository {
               status: {
                 in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
               },
-              scheduledAt: { gte: todayStart },
+              scheduledAt: { gte: todayStart, lte: todayEnd },
             },
           },
         },
         orderBy: { ev: 'desc' },
         take: 12,
         include: {
+          couponLegs: {
+            select: {
+              couponId: true,
+            },
+            take: 1,
+          },
           modelRun: {
             include: {
               fixture: {

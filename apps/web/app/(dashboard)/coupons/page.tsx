@@ -2,9 +2,10 @@
 
 import { Suspense, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
-import { Page, PageContent } from "@evcore/ui";
+import { Button, Page, PageContent } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { TableCard } from "@/components/table-card";
 import { CouponDetail, CouponDetailEmpty } from "@/components/coupon-detail";
@@ -265,17 +266,8 @@ function CouponsPageContent() {
                           </p>
                         </div>
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                      <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
                         <span>{coupon.legs} legs</span>
-                        <Link
-                          href={`/coupons/${coupon.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="font-medium text-accent"
-                        >
-                          Ouvrir
-                        </Link>
                       </div>
                     </div>
                   ))}
@@ -374,9 +366,28 @@ function CouponsPageContent() {
                 <Drawer.Title className="sr-only">Détail coupon</Drawer.Title>
                 <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
                 <div className="px-4 pb-4 pt-3">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    Détail coupon
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      Détail coupon
+                    </p>
+                    {selectedCoupon ? (
+                      <Button
+                        tone="secondary"
+                        size="sm"
+                        className="gap-1.5 rounded-full uppercase"
+                        onClick={() =>
+                          window.open(
+                            `/coupons/${selectedCoupon.id}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
+                      >
+                        <span>Voir plus</span>
+                        <ExternalLink size={13} />
+                      </Button>
+                    ) : null}
+                  </div>
                   {!selectedCoupon ? (
                     <CouponDetailEmpty />
                   ) : (

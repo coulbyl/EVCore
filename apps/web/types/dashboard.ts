@@ -85,6 +85,7 @@ export type CouponSnapshot = {
 
 export type OpportunityRow = {
   id: string;
+  couponId: string | null;
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;

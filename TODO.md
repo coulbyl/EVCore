@@ -65,16 +65,36 @@ Rapport d'analyse : [ANALYSE_SAFE_VALUE.md](ANALYSE_SAFE_VALUE.md)
 
 3 saisons, toutes compétitions confondues (`includeInBacktest: true`), pooling cross-compétitions par date UTC (miroir prod) :
 
-| Métrique | Résultat | Cible |
-|---|---|---|
-| Picks placés | 165 | — |
-| Win rate | 67.9% | ≥ 68% |
-| ROI | +2.77% | ≥ 0% |
-| Jours avec coupon (≥ 2 picks) | 36 / 115 | — |
-| **Coupon win rate** | **41.7%** | **≥ 40% ✅** |
+| Métrique                      | Résultat  | Cible        |
+| ----------------------------- | --------- | ------------ |
+| Picks placés                  | 165       | —            |
+| Win rate                      | 67.9%     | ≥ 68%        |
+| ROI                           | +2.77%    | ≥ 0%         |
+| Jours avec coupon (≥ 2 picks) | 36 / 115  | —            |
+| **Coupon win rate**           | **41.7%** | **≥ 40% ✅** |
 
 **Points de vigilance :**
+
 - UEL (1 saison) : 4 picks, win rate 25%, ROI -64.8% — faible volume, à surveiller
 - UECL (2 saisons) : 12 picks, win rate 37.5–50%, ROI négatif — picks home sur groupes hétérogènes
 - Championship : 17 picks sur 2 saisons, ROI légèrement négatif (-5%)
 - La plupart des lignes < 5 picks → non significatif statistiquement
+
+---
+
+### Double Chance — Tentative abandonnée (10 avril 2026)
+
+**Problème rencontré :** ajout des marchés `1X`, `X2`, `12` au canal SAFE via dérivation des cotes 1X2.
+
+**Résultat backtest :**
+
+- Volume : 165 → 2 052 picks (×12)
+- Win rate : 67.9% → 71.2% ✅
+- ROI : **+2.77% → -2.57%** ❌
+- Coupon win rate : 41.7% → 53.6% ✅
+
+**Cause racine :** les cotes DC sont dérivées comme `1 / (1/homeOdds + 1/drawOdds)`. La marge bookmaker des cotes 1X2 est ainsi **héritée et doublée** dans les cotes DC. Résultat : EV théorique ≈ 0 = EV réel légèrement négatif de façon systématique. Avg odds = 1.365, break-even à 73.3% de win rate — inatteignable.
+
+**Bonne solution (Phase 2) :** fetcher les vraies cotes Double Chance directement depuis API-Football (market id séparé). L'EV serait alors calculé sur des cotes authentiques sans vig accumulé, et le marché pourrait offrir de vraie valeur.
+
+- [ ] **Phase 2** : intégrer les cotes DC réelles dans `FullOddsSnapshot` via ETL odds (API-Football), puis réactiver `Market.DOUBLE_CHANCE` dans `safeValueMarkets`
