@@ -14,8 +14,6 @@ import {
   couponTierLabel,
   couponTierBadgeClass,
 } from "../helpers/coupon";
-import Link from "next/link";
-import { Button } from "@evcore/ui/button";
 
 function evColor(ev: string) {
   const n = parseFloat(ev);
@@ -134,33 +132,25 @@ function CouponDrawerContent({
         </div>
 
         {/* Status + tier + window */}
-        <div className="mt-3 flex items-center gap-2.5">
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
-          >
+        <div className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span
-              className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`}
-            />
-            {couponStatusLabel(coupon.status, coupon.selections)}
-          </span>
-          {coupon.tier && (
-            <span
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponStatusHeaderBadgeClass(coupon.status)}`}
             >
-              {couponTierLabel(coupon.tier)}
+              <span
+                className={`size-1.5 rounded-full ${couponStatusDotClass(coupon.status)}`}
+              />
+              {couponStatusLabel(coupon.status, coupon.selections)}
             </span>
-          )}
-          <span className="text-xs text-slate-400">{coupon.window}</span>
-          <Button tone="ghost" size="xs">
-            <Link
-              href={`/coupons/${coupon.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-            >
-              Voir diagnostic
-            </Link>
-          </Button>
+            {coupon.tier && (
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${couponTierBadgeClass(coupon.tier)}`}
+              >
+                {couponTierLabel(coupon.tier)}
+              </span>
+            )}
+            <span className="text-xs text-slate-400">{coupon.window}</span>
+          </div>
         </div>
       </div>
 
@@ -271,6 +261,11 @@ export function RecentCouponsCard({
                 : "inset-y-0 right-0 w-full max-w-105 flex-col"
             }`}
           >
+            <Drawer.Title className="sr-only">Coupon récent</Drawer.Title>
+            <Drawer.Description className="sr-only">
+              Consultez le détail du coupon récent sélectionné et ouvrez son
+              diagnostic.
+            </Drawer.Description>
             {selected ? (
               <CouponDrawerContent coupon={selected} onClose={close} />
             ) : null}

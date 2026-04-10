@@ -364,6 +364,10 @@ function CouponsPageContent() {
               <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px]" />
               <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[88vh] flex-col overflow-hidden rounded-t-[2rem] bg-panel-strong shadow-2xl">
                 <Drawer.Title className="sr-only">Détail coupon</Drawer.Title>
+                <Drawer.Description className="sr-only">
+                  Consultez le détail du coupon sélectionné et ouvrez sa page
+                  publique.
+                </Drawer.Description>
                 <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
                 <div className="px-4 pb-4 pt-3">
                   <div className="flex items-center justify-between gap-3">

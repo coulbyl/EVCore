@@ -536,6 +536,11 @@ function CouponPageBody({
               <Drawer.Title className="sr-only">
                 {t.engineDiagnostics} — {t.leg} {selectedIndex + 1}
               </Drawer.Title>
+              <Drawer.Description className="sr-only">
+                {locale === "fr"
+                  ? "Consultez les diagnostics détaillés de la sélection active."
+                  : "Review detailed diagnostics for the active selection."}
+              </Drawer.Description>
               <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300" />
               <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-3">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
