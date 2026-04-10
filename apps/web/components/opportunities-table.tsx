@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@evcore/ui";
