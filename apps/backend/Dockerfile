@@ -21,15 +21,22 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # prisma generate reads schema only — no real DB connection needed at build time
+# binaryTargets includes linux-musl-openssl-3.0.x so schema-engine is bundled for Alpine
 ARG DATABASE_URL=postgresql://build:build@localhost:5432/evcore
 ENV DATABASE_URL=$DATABASE_URL
 
 # Build workspace packages in dependency order
+# prisma generate (inside db build) downloads schema-engine for linux-musl
 RUN pnpm --filter @evcore/db build
 RUN pnpm --filter @evcore/transactional build
 
 # Build NestJS backend (SWC compiler → dist/)
 RUN pnpm --filter backend build
+
+# Capture the Alpine schema engine so migrate deploy does not download it at runtime.
+RUN mkdir -p /tmp/prisma-engines \
+ && find /app/node_modules/.pnpm -path '*/node_modules/@prisma/engines/schema-engine-*' -print -quit \
+ | xargs -r -I{} cp {} /tmp/prisma-engines/schema-engine
 
 # Deploy: extract prod-only node_modules + workspace packages into /deploy
 # pnpm copies built workspace packages (dist/) into /deploy/node_modules
@@ -41,20 +48,31 @@ RUN pnpm --filter backend --prod deploy --legacy /deploy
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/prisma-engines/schema-engine
 
 # Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 --ingroup nodejs nestjs \
- && mkdir -p /app/logs && chown nestjs:nodejs /app/logs
+ && mkdir -p /app/logs /app/prisma-engines \
+ && chown nestjs:nodejs /app/logs /app/prisma-engines
 
-# Production node_modules (includes built @evcore/db and @evcore/transactional)
+# Production node_modules (includes built @evcore/db, @evcore/transactional, prisma CLI)
 COPY --from=builder --chown=nestjs:nodejs /deploy/node_modules ./node_modules
+
+# Prisma CLI v7 expects the datasource URL from prisma.config.ts at runtime.
+COPY --from=builder --chown=nestjs:nodejs /app/packages/db/prisma.config.ts ./node_modules/@evcore/db/prisma.config.ts
+COPY --from=builder --chown=nestjs:nodejs /tmp/prisma-engines/schema-engine ./prisma-engines/schema-engine
+RUN chmod +x ./prisma-engines/schema-engine
 
 # Compiled NestJS app
 COPY --from=builder --chown=nestjs:nodejs /app/apps/backend/dist ./dist
 
 # package.json needed by some NestJS internals (e.g. version, main field)
 COPY --from=builder --chown=nestjs:nodejs /app/apps/backend/package.json ./package.json
+
+# Entrypoint: run migrations then start the app
+COPY --chown=nestjs:nodejs apps/backend/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 USER nestjs
 
@@ -63,4 +81,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
-CMD ["node", "dist/src/main"]
+CMD ["sh", "entrypoint.sh"]

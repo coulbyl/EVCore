@@ -22,6 +22,7 @@
   "dependencies": {
     "@evcore/db": "workspace:*",
     "dotenv": "catalog:",
+    "prisma": "catalog:",
     "@evcore/transactional": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
