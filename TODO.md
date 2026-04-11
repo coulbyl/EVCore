@@ -11,24 +11,29 @@ Migration vers une architecture domain-based.
 ## Phase 1 — Fondations ✅
 
 ### `apps/web/lib/`
+
 - [x] `date.ts` — `todayIso`, `formatTime`, `formatDate`, `formatDateLong`, `isoToDate` (date-fns)
 
 ### `apps/web/constants/`
+
 - [x] `time-slots.ts` — 5 créneaux horaires (Matin / Midi / Après-midi / Soirée / Nuit)
 - [x] `competitions.ts` — 22 compétitions statiques (source de vérité : packages/db/src/seed.ts)
 
 ### `apps/web/domains/fixture/`
+
 - [x] `types/fixture.ts` — `FixtureRow`, `FixtureModelRun`, `FixtureFilters` + types filtres
 - [x] `constants/filters.ts` — `DECISION_OPTIONS`, `STATUS_OPTIONS`
 - [x] `helpers/fixture.ts` — `toFixturePanel`, `formatScore`, `formatKickoff`
 - [x] `use-cases/get-fixtures.ts` — appelle `GET /fixture`, tout filtrage/tri délégué au backend
 
 ### `apps/backend/src/modules/fixture/` (ajouts)
+
 - [x] `fixture-scoring.controller.ts` — `GET /fixture` avec 5 query params
 - [x] `fixture-scoring.service.ts` — requête Prisma + filtres decision/timeSlot + tri fiabilité
 - [x] `dto/fixture-scoring-query.dto.ts` — validation class-validator
 
 ### `apps/backend/src/modules/audit/` (mis à jour)
+
 - [x] Filtres `decision`, `status`, `competition`, `timeSlot` ajoutés à `GET /audit/fixtures`
 - [x] Tri par fiabilité (BET EV desc → NO_BET finalScore desc)
 
@@ -44,10 +49,13 @@ Migration vers une architecture domain-based.
 
 ---
 
-## Phase 3 — Dashboard
+## Phase 3 — Dashboard ✅
 
-- [ ] Retirer la section `RecentCouponsCard`
-- [ ] Ajouter un filtre date optionnel (simple `<input type="date">`) sur la section "Performance globale"
+- [x] Retirer la section `RecentCouponsCard`
+- [x] Ajouter un filtre date optionnel (simple `<input type="date">`) sur la section "Performance globale"
+- [x] Backend : `getSummaryData` refactorisé en options object (max-params), `settledBets` filtré par `pnlDateRange`
+- [x] `fetchDashboardSummary(pnlDate?)` — param `?pnlDate=` passé au backend
+- [x] `useDashboardSummary(pnlDate?)` — clé de cache isolée par date
 
 ---
 
@@ -56,6 +64,7 @@ Migration vers une architecture domain-based.
 Migration de tout le code existant.
 
 ### Domaines à créer
+
 ```
 domains/
   dashboard/
@@ -73,14 +82,17 @@ shared/
 ```
 
 ### Pages à décomposer
+
 - [ ] `audit/page.tsx` → extraire dans `audit/components/` (audit-table, rejection-badge, diagnostic-card)
 - [ ] `page.tsx` (dashboard) → extraire dans `(dashboard)/components/` (performance-card, kpi-cards, pipeline-status, active-alerts)
 
 ### Nettoyage types
+
 - [ ] Supprimer `AuditFixtureRow` de `types/audit.ts` (concept fixture hors du domaine audit)
 - [ ] Supprimer `types/audit.ts` et `types/dashboard.ts` une fois migrés dans `domains/`
 
 ### Imports
+
 - [ ] Mettre à jour tous les imports après migration
 
 ---
@@ -117,6 +129,7 @@ Phase 1 ✅ → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - `GET /fixture` (fixture module) → page fixtures / `GET /audit/fixtures` (audit module) → page audit
 
 ### PWA / Mobile-first (critique)
+
 - L'app est une **PWA installable** — toute UI doit être pensée mobile en premier
 - Pas de hover-only interactions, pas de tooltips desktop-only
 - Les filtres de la page fixtures doivent être accessibles sur petit écran (scroll horizontal)

@@ -5,7 +5,6 @@ import { Badge, Page, PageContent, StatCard } from "@evcore/ui";
 import { AppPageHeader } from "@/components/app-page-header";
 import { FixtureDetailPanel } from "@/components/fixture-detail-panel";
 import { OpportunitiesTable } from "@/components/opportunities-table";
-import { RecentCouponsCard } from "@/components/recent-coupons-card";
 import { formatCompactValue } from "@/helpers/number";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
@@ -186,11 +185,11 @@ const EMPTY_SUMMARY: DashboardSummary = {
 
 export default function Home() {
   const isMobile = useIsMobile();
-  const { data, refetch, isFetching, isError } = useDashboardSummary();
+  const [pnlDate, setPnlDate] = useState<string | undefined>(undefined);
+  const { data, refetch, isFetching, isError } = useDashboardSummary(pnlDate);
   const {
     dashboardKpis: kpis,
     topOpportunities: opportunities,
-    couponSnapshots: coupons,
     selectedFixture: apiFixture,
     workerStatuses: workers,
     activeAlerts: alerts,
@@ -233,11 +232,32 @@ export default function Home() {
                   Gains &amp; pertes
                 </h2>
               </div>
-              {pnl.settledBets === 0 && (
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                  En attente de résultats
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {pnl.settledBets === 0 && (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                    En attente de résultats
+                  </span>
+                )}
+                <input
+                  type="date"
+                  value={pnlDate ?? ""}
+                  onChange={(e) =>
+                    setPnlDate(
+                      e.target.value !== "" ? e.target.value : undefined,
+                    )
+                  }
+                  className="h-9 rounded-xl border border-border bg-white px-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                />
+                {pnlDate && (
+                  <button
+                    type="button"
+                    onClick={() => setPnlDate(undefined)}
+                    className="h-9 rounded-xl border border-border bg-white px-3 text-xs text-slate-500 hover:text-slate-800"
+                  >
+                    Tout
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
@@ -340,7 +360,6 @@ export default function Home() {
                 selectedId={selectedRow?.id ?? null}
                 onSelectAction={setSelectedRow}
               />
-              <RecentCouponsCard snapshots={coupons} />
             </section>
             <aside className="space-y-5">
               {!isMobile ? <FixtureDetailPanel fixture={fixture} /> : null}

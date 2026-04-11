@@ -6,6 +6,7 @@ import {
   endOfUtcDay,
   formatTimeUtc,
   formatTimeWithSecondsUtc,
+  parseIsoDate,
 } from '@utils/date.utils';
 import {
   signedDelta,
@@ -37,14 +38,20 @@ type ActivityNotification = SummaryData['activityNotifications'][number];
 export class DashboardService {
   constructor(private readonly repo: DashboardRepository) {}
 
-  async getSummary(): Promise<DashboardSummary> {
+  async getSummary(pnlDate?: string): Promise<DashboardSummary> {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 86_400_000);
-    const data = await this.repo.getSummaryData(
-      { start: startOfUtcDay(now), end: endOfUtcDay(now) },
-      { start: startOfUtcDay(yesterday), end: endOfUtcDay(yesterday) },
-      yesterday,
-    );
+    const pnlDay = pnlDate ? parseIsoDate(pnlDate) : undefined;
+    const data = await this.repo.getSummaryData({
+      today: { start: startOfUtcDay(now), end: endOfUtcDay(now) },
+      yesterday: {
+        start: startOfUtcDay(yesterday),
+        end: endOfUtcDay(yesterday),
+      },
+      pnlDateRange: pnlDay
+        ? { start: startOfUtcDay(pnlDay), end: endOfUtcDay(pnlDay) }
+        : undefined,
+    });
     const uniqueTopBets = uniqueBetsByFixture(data.topBets).slice(0, 4);
 
     return {

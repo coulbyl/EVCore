@@ -30,8 +30,11 @@ export async function declareFixtureResult(
   }
 }
 
-export async function fetchDashboardSummary(): Promise<DashboardSummary> {
-  const response = await fetch(`${BACKEND_URL}/dashboard/summary`);
+export async function fetchDashboardSummary(
+  pnlDate?: string,
+): Promise<DashboardSummary> {
+  const params = pnlDate ? `?pnlDate=${pnlDate}` : "";
+  const response = await fetch(`${BACKEND_URL}/dashboard/summary${params}`);
 
   if (!response.ok) {
     throw new Error(`Impossible de charger le dashboard (${response.status})`);

@@ -6,11 +6,12 @@ import { PrismaService } from '@/prisma.service';
 export class DashboardRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummaryData(
-    today: { start: Date; end: Date },
-    yesterday: { start: Date; end: Date },
-    _rolling24hStart: Date,
-  ) {
+  async getSummaryData(opts: {
+    today: { start: Date; end: Date };
+    yesterday: { start: Date; end: Date };
+    pnlDateRange?: { start: Date; end: Date };
+  }) {
+    const { today, yesterday, pnlDateRange } = opts;
     const { start: todayStart, end: todayEnd } = today;
     const { start: yesterdayStart, end: yesterdayEnd } = yesterday;
 
@@ -179,7 +180,21 @@ export class DashboardRepository {
         select: { createdAt: true },
       }),
       this.prisma.client.bet.findMany({
-        where: { status: { in: [BetStatus.WON, BetStatus.LOST] } },
+        where: {
+          status: { in: [BetStatus.WON, BetStatus.LOST] },
+          ...(pnlDateRange
+            ? {
+                modelRun: {
+                  fixture: {
+                    scheduledAt: {
+                      gte: pnlDateRange.start,
+                      lte: pnlDateRange.end,
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
         select: {
           status: true,
           stakePct: true,

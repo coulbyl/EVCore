@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardSummary } from "../lib/dashboard-api";
 
-export function useDashboardSummary() {
+export function useDashboardSummary(pnlDate?: string) {
   return useQuery({
-    queryKey: ["dashboard-summary"],
-    queryFn: fetchDashboardSummary,
+    queryKey: ["dashboard-summary", pnlDate ?? null],
+    queryFn: () => fetchDashboardSummary(pnlDate),
     refetchInterval: 30_000,
   });
 }
