@@ -3,7 +3,7 @@ import type {
   CouponSnapshot,
   DashboardSummary,
 } from "../types/dashboard";
-import type { AuditFixtureRow, AuditOverview } from "../types/audit";
+import type { AuditOverview } from "../types/audit";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -74,16 +74,6 @@ export async function fetchCouponById(
     throw new Error(`Impossible de charger le coupon (${response.status})`);
   }
   return (await response.json()) as CouponSnapshot;
-}
-
-export async function fetchAuditFixtures(
-  date: string,
-): Promise<AuditFixtureRow[]> {
-  const response = await fetch(`${BACKEND_URL}/audit/fixtures?date=${date}`);
-  if (!response.ok) {
-    throw new Error(`Impossible de charger les fixtures (${response.status})`);
-  }
-  return (await response.json()) as AuditFixtureRow[];
 }
 
 export async function fetchAuditOverview(): Promise<AuditOverview> {
