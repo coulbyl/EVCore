@@ -70,9 +70,9 @@ domains/
   dashboard/
     types/        ← depuis types/dashboard.ts
     use-cases/    ← depuis hooks/use-dashboard-summary.ts + lib/dashboard-api.ts
-  audit/
-    types/        ← depuis types/audit.ts (dont AuditFixtureRow à supprimer)
-    use-cases/    ← depuis hooks/use-audit-fixtures.ts + hooks/use-audit-overview.ts
+  audit/          ✅
+    types/        ✅ domains/audit/types/audit.ts
+    use-cases/    ✅ domains/audit/use-cases/get-audit-overview.ts
   glossary/
     types/
 
@@ -83,17 +83,18 @@ shared/
 
 ### Pages à décomposer
 
-- [ ] `audit/page.tsx` → extraire dans `audit/components/` (audit-table, rejection-badge, diagnostic-card)
+- [x] `audit/page.tsx` → `audit/components/` (audit-overview-section, league-breakdown, bets-breakdown, count-card)
 - [ ] `page.tsx` (dashboard) → extraire dans `(dashboard)/components/` (performance-card, kpi-cards, pipeline-status, active-alerts)
 
 ### Nettoyage types
 
-- [ ] Supprimer `AuditFixtureRow` de `types/audit.ts` (concept fixture hors du domaine audit)
-- [ ] Supprimer `types/audit.ts` et `types/dashboard.ts` une fois migrés dans `domains/`
+- [x] Supprimer `AuditFixtureRow` de `types/audit.ts`
+- [x] Supprimer `types/audit.ts` (migré dans `domains/audit/types/`)
+- [ ] Supprimer `types/dashboard.ts` une fois migré dans `domains/`
 
 ### Imports
 
-- [ ] Mettre à jour tous les imports après migration
+- [ ] Mettre à jour tous les imports après migration dashboard
 
 ---
 
