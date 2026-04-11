@@ -1,6 +1,6 @@
 import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
 
-export class AuditFixturesQueryDto {
+export class FixtureScoringQueryDto {
   @IsOptional()
   @IsDateString()
   date?: string;
@@ -13,7 +13,7 @@ export class AuditFixturesQueryDto {
   @IsIn(['SCHEDULED', 'LIVE', 'FINISHED'])
   status?: string;
 
-  /** Code de compétition (ex: "EPL", "UCL"). */
+  /** Code de compétition (ex: "PL", "UCL"). */
   @IsOptional()
   @IsString()
   competition?: string;

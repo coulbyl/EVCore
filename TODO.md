@@ -1,100 +1,145 @@
 # EVCore — TODO
 
-## Safe Value — Couche secondaire de sélection
+## UI IMPROVEMENT (WEB)
 
-### Contexte
-
-Les coupons EV pur (P=35-45%) ont un taux de passage < 18% sur 6 legs.
-L'idée : ajouter un canal parallèle `SAFE` ciblant des picks haute probabilité (P ≥ 68%),
-sans remplacer le flux EV existant.
-
-Rapport d'analyse : [ANALYSE_SAFE_VALUE.md](ANALYSE_SAFE_VALUE.md)
+Amélioration UX/UI du dashboard web.
+Remplacement des coupons par des fixtures individuelles.
+Migration vers une architecture domain-based.
 
 ---
 
-### Checklist d'implémentation
+## Phase 1 — Fondations ✅
 
-#### Backend
+### `apps/web/lib/`
+- [x] `date.ts` — `todayIso`, `formatTime`, `formatDate`, `formatDateLong`, `isoToDate` (date-fns)
 
-- [x] `CouponTier.SAFE` ajouté au schéma Prisma
-- [x] `isSafeValue Boolean @default(false)` ajouté au modèle `Bet`
-- [x] Migration DB exécutée (faite manuellement)
-- [x] Constantes `SAFE_VALUE_*` dans `ev.constants.ts`
-- [x] `SAFE_COUPON_MAX_LEGS = 2` dans `coupon.constants.ts`
-- [x] `selectSafeValuePick()` dans `BettingEngineService`
-- [x] `analyzeFixture()` génère un bet `isSafeValue: true` avec pickKey `sv:...`
-- [x] `findEligibleSafeValueBetsForCoupon()` dans `CouponRepository`
-- [x] `findEligibleBetsForCoupon()` filtre `isSafeValue: false`
-- [x] `generateCouponWindow()` génère le coupon SAFE après les coupons EV
-- [x] `sendDailyCoupon()` supporte le tier `'SAFE'` (NotificationService + MailService)
+### `apps/web/constants/`
+- [x] `time-slots.ts` — 5 créneaux horaires (Matin / Midi / Après-midi / Soirée / Nuit)
+- [x] `competitions.ts` — 22 compétitions statiques (source de vérité : packages/db/src/seed.ts)
 
-#### Email (`@evcore/transactional`)
+### `apps/web/domains/fixture/`
+- [x] `types/fixture.ts` — `FixtureRow`, `FixtureModelRun`, `FixtureFilters` + types filtres
+- [x] `constants/filters.ts` — `DECISION_OPTIONS`, `STATUS_OPTIONS`
+- [x] `helpers/fixture.ts` — `toFixturePanel`, `formatScore`, `formatKickoff`
+- [x] `use-cases/get-fixtures.ts` — appelle `GET /fixture`, tout filtrage/tri délégué au backend
 
-- [x] `DailyCouponProps.tier` inclut `"SAFE"`
-- [x] Badge SAFE vert dans `daily-coupon.tsx` (`TIER_STYLES`)
+### `apps/backend/src/modules/fixture/` (ajouts)
+- [x] `fixture-scoring.controller.ts` — `GET /fixture` avec 5 query params
+- [x] `fixture-scoring.service.ts` — requête Prisma + filtres decision/timeSlot + tri fiabilité
+- [x] `dto/fixture-scoring-query.dto.ts` — validation class-validator
 
-#### Web (`apps/web`)
-
-- [x] `CouponTier` dans `helpers/coupon.ts` inclut `"SAFE"`
-- [x] `couponTierLabel()` gère `"SAFE"`
-- [x] `couponTierBadgeClass()` badge vert (`border-emerald-200 bg-emerald-50 text-emerald-700`)
-
-#### Tests
-
-- [x] Mock `findEligibleSafeValueBetsForCoupon` ajouté dans `coupon.service.spec.ts`
-- [x] Tests unitaires pour `selectSafeValuePick()` dans `betting-engine.service.spec.ts`
-- [x] Tests unitaires pour la génération du coupon SAFE dans `coupon.service.spec.ts`
-
-#### Qualité
-
-- [x] `pnpm --filter backend lint` ✅
-- [x] `pnpm --filter backend typecheck` ✅
-- [x] `pnpm --filter backend test` ✅ (360 tests)
-- [x] `pnpm --filter web typecheck` ✅
+### `apps/backend/src/modules/audit/` (mis à jour)
+- [x] Filtres `decision`, `status`, `competition`, `timeSlot` ajoutés à `GET /audit/fixtures`
+- [x] Tri par fiabilité (BET EV desc → NO_BET finalScore desc)
 
 ---
 
-### À faire ensuite
+## Phase 2 — Page `/fixtures`
 
-- [x] Backtest sur les coupons SAFE : mesurer taux de passage réel (cible ≥ 40%)
-- [ ] Monitorer en prod : comparer ROI coupon SAFE vs coupon EV sur 4 semaines
+Server Component qui lit `searchParams`, délègue au use-case, passe les données aux composants.
+
+### Colonnes table
+Match · Score · Compétition · Heure · Décision · Pick · Cote · EV · Résultat bet
+
+### Tri
+BET triés par EV desc → NO_BET triés par finalScore desc → sans modelRun en dernier
+
+### Filtres (server-side via searchParams)
+- `date` — date picker, défaut = aujourd'hui
+- `competition` — ALL | <competitionCode> (liste depuis `constants/competitions.ts`)
+- `decision` — ALL | BET | NO_BET
+- `status` — ALL | SCHEDULED | LIVE | FINISHED
+- `timeSlot` — ALL | morning | noon | afternoon | evening | night
+
+### Notes score
+- Affiché uniquement si `status = FINISHED` ou `LIVE`
+- Format : `2 – 1` (score final) + `(1 – 0 MT)` mi-temps si disponible
+- Colonne masquée sur mobile si SCHEDULED (pas de score à afficher)
+
+### Fichiers
+- [ ] `app/(dashboard)/fixtures/components/fixtures-filters.tsx` — client component, pushes URL params
+- [ ] `app/(dashboard)/fixtures/components/fixtures-table.tsx` — client component, reçoit rows, gère sélection + drawer mobile / side panel desktop
+- [ ] `app/(dashboard)/fixtures/page.tsx` — Server Component, lit searchParams, appelle `getFixtures`, assemble
 
 ---
 
-### Résultats backtest SAFE (10 avril 2026)
+## Phase 3 — Dashboard
 
-3 saisons, toutes compétitions confondues (`includeInBacktest: true`), pooling cross-compétitions par date UTC (miroir prod) :
-
-| Métrique                      | Résultat  | Cible        |
-| ----------------------------- | --------- | ------------ |
-| Picks placés                  | 165       | —            |
-| Win rate                      | 67.9%     | ≥ 68%        |
-| ROI                           | +2.77%    | ≥ 0%         |
-| Jours avec coupon (≥ 2 picks) | 36 / 115  | —            |
-| **Coupon win rate**           | **41.7%** | **≥ 40% ✅** |
-
-**Points de vigilance :**
-
-- UEL (1 saison) : 4 picks, win rate 25%, ROI -64.8% — faible volume, à surveiller
-- UECL (2 saisons) : 12 picks, win rate 37.5–50%, ROI négatif — picks home sur groupes hétérogènes
-- Championship : 17 picks sur 2 saisons, ROI légèrement négatif (-5%)
-- La plupart des lignes < 5 picks → non significatif statistiquement
+- [ ] Retirer la section `RecentCouponsCard`
+- [ ] Ajouter un filtre date optionnel (simple `<input type="date">`) sur la section "Performance globale"
 
 ---
 
-### Double Chance — Tentative abandonnée (10 avril 2026)
+## Phase 4 — Refactor architecture (domain-based)
 
-**Problème rencontré :** ajout des marchés `1X`, `X2`, `12` au canal SAFE via dérivation des cotes 1X2.
+Migration de tout le code existant.
 
-**Résultat backtest :**
+### Domaines à créer
+```
+domains/
+  dashboard/
+    types/        ← depuis types/dashboard.ts
+    use-cases/    ← depuis hooks/use-dashboard-summary.ts + lib/dashboard-api.ts
+  audit/
+    types/        ← depuis types/audit.ts (dont AuditFixtureRow à supprimer)
+    use-cases/    ← depuis hooks/use-audit-fixtures.ts + hooks/use-audit-overview.ts
+  glossary/
+    types/
 
-- Volume : 165 → 2 052 picks (×12)
-- Win rate : 67.9% → 71.2% ✅
-- ROI : **+2.77% → -2.57%** ❌
-- Coupon win rate : 41.7% → 53.6% ✅
+shared/
+  components/     ← depuis components/ (app-shell, app-page-header, table-card, etc.)
+  hooks/          ← depuis hooks/use-mobile.ts
+```
 
-**Cause racine :** les cotes DC sont dérivées comme `1 / (1/homeOdds + 1/drawOdds)`. La marge bookmaker des cotes 1X2 est ainsi **héritée et doublée** dans les cotes DC. Résultat : EV théorique ≈ 0 = EV réel légèrement négatif de façon systématique. Avg odds = 1.365, break-even à 73.3% de win rate — inatteignable.
+### Pages à décomposer
+- [ ] `audit/page.tsx` → extraire dans `audit/components/` (audit-table, rejection-badge, diagnostic-card)
+- [ ] `page.tsx` (dashboard) → extraire dans `(dashboard)/components/` (performance-card, kpi-cards, pipeline-status, active-alerts)
 
-**Bonne solution (Phase 2) :** fetcher les vraies cotes Double Chance directement depuis API-Football (market id séparé). L'EV serait alors calculé sur des cotes authentiques sans vig accumulé, et le marché pourrait offrir de vraie valeur.
+### Nettoyage types
+- [ ] Supprimer `AuditFixtureRow` de `types/audit.ts` (concept fixture hors du domaine audit)
+- [ ] Supprimer `types/audit.ts` et `types/dashboard.ts` une fois migrés dans `domains/`
 
-- [ ] **Phase 2** : intégrer les cotes DC réelles dans `FullOddsSnapshot` via ETL odds (API-Football), puis réactiver `Market.DOUBLE_CHANCE` dans `safeValueMarkets`
+### Imports
+- [ ] Mettre à jour tous les imports après migration
+
+---
+
+## Phase 5 — Nettoyage
+
+- [ ] Supprimer `app/(dashboard)/coupons/`
+- [ ] Supprimer `app/(public)/coupons/`
+- [ ] Vider `app/(public)/` — garder le dossier, ajouter `page.tsx` placeholder (future landing)
+- [ ] Supprimer hooks orphelins : `use-coupons-by-period.ts`, `use-coupon-by-id.ts`
+- [ ] Supprimer `helpers/coupon.ts`
+- [ ] Supprimer composants coupons : `coupon-detail.tsx`, `recent-coupons-card.tsx`
+
+---
+
+## Ordre d'exécution
+
+```
+Phase 1 ✅ → Phase 2 → Phase 3 → Phase 4 → Phase 5
+```
+
+---
+
+## Notes
+
+- Tous les filtres sont server-side (searchParams Next.js, pas de useState pour les filtres)
+- Un composant = un fichier
+- `page.tsx` = assemblage uniquement, pas de logique
+- `apps/web/constants/` pour les constantes partagées entre domaines
+- `constants/` dans chaque domaine si constantes spécifiques au domaine
+- La route `(public)` est conservée pour la future landing page
+- `packages/ui` est conservé tel quel (shadcn sera intégré plus tard)
+- **Jamais de helpers date inline** dans les composants ou use-cases → toujours passer par `lib/date.ts` (date-fns)
+- `GET /fixture` (fixture module) → page fixtures / `GET /audit/fixtures` (audit module) → page audit
+
+### PWA / Mobile-first (critique)
+- L'app est une **PWA installable** — toute UI doit être pensée mobile en premier
+- Pas de hover-only interactions, pas de tooltips desktop-only
+- Les filtres de la page fixtures doivent être accessibles sur petit écran (scroll horizontal)
+- La table fixtures sur mobile = cards empilées, pas de tableau à colonnes multiples
+- Le side panel de détail fixture = bottom drawer sur mobile (Vaul), side panel sur desktop
+- Touch targets minimum 44px
+- Pas de layout qui suppose une souris

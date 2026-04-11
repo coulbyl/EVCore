@@ -1,14 +1,14 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { parseIsoDate, startOfUtcDay } from '@utils/date.utils';
-import { AuditService } from './audit.service';
-import { AuditFixturesQueryDto } from './dto/audit-fixtures-query.dto';
+import { FixtureScoringService } from './fixture-scoring.service';
+import { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
-@Controller('audit')
-export class AuditController {
-  constructor(private readonly service: AuditService) {}
+@Controller('fixture')
+export class FixtureScoringController {
+  constructor(private readonly service: FixtureScoringService) {}
 
-  @Get('fixtures')
-  getFixtures(@Query() query: AuditFixturesQueryDto) {
+  @Get()
+  getFixtures(@Query() query: FixtureScoringQueryDto) {
     const date = query.date
       ? parseIsoDate(query.date)
       : startOfUtcDay(new Date());
@@ -19,10 +19,5 @@ export class AuditController {
       competition: query.competition,
       timeSlot: query.timeSlot,
     });
-  }
-
-  @Get('overview')
-  getOverview() {
-    return this.service.getOverview();
   }
 }

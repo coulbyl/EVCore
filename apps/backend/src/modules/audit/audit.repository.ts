@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, FixtureStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 type LeagueBreakdownRow = {
@@ -12,13 +13,34 @@ type LeagueBreakdownRow = {
   team_stats: bigint;
 };
 
+export type FixturesForDateFilters = {
+  status?: string;
+  competitionCode?: string;
+};
+
 @Injectable()
 export class AuditRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getFixturesForDate(start: Date, end: Date) {
+  async getFixturesForDate(
+    start: Date,
+    end: Date,
+    filters: FixturesForDateFilters = {},
+  ) {
+    const where: Prisma.FixtureWhereInput = {
+      scheduledAt: { gte: start, lte: end },
+    };
+
+    if (filters.status) {
+      where.status = filters.status as FixtureStatus;
+    }
+
+    if (filters.competitionCode) {
+      where.season = { competition: { code: filters.competitionCode } };
+    }
+
     return this.prisma.client.fixture.findMany({
-      where: { scheduledAt: { gte: start, lte: end } },
+      where,
       select: {
         id: true,
         scheduledAt: true,
