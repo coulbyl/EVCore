@@ -34,32 +34,13 @@ Migration vers une architecture domain-based.
 
 ---
 
-## Phase 2 — Page `/fixtures`
+## Phase 2 — Page `/fixtures` ✅
 
-Server Component qui lit `searchParams`, délègue au use-case, passe les données aux composants.
-
-### Colonnes table
-Match · Score · Compétition · Heure · Décision · Pick · Cote · EV · Résultat bet
-
-### Tri
-BET triés par EV desc → NO_BET triés par finalScore desc → sans modelRun en dernier
-
-### Filtres (server-side via searchParams)
-- `date` — date picker, défaut = aujourd'hui
-- `competition` — ALL | <competitionCode> (liste depuis `constants/competitions.ts`)
-- `decision` — ALL | BET | NO_BET
-- `status` — ALL | SCHEDULED | LIVE | FINISHED
-- `timeSlot` — ALL | morning | noon | afternoon | evening | night
-
-### Notes score
-- Affiché uniquement si `status = FINISHED` ou `LIVE`
-- Format : `2 – 1` (score final) + `(1 – 0 MT)` mi-temps si disponible
-- Colonne masquée sur mobile si SCHEDULED (pas de score à afficher)
-
-### Fichiers
-- [ ] `app/(dashboard)/fixtures/components/fixtures-filters.tsx` — client component, pushes URL params
-- [ ] `app/(dashboard)/fixtures/components/fixtures-table.tsx` — client component, reçoit rows, gère sélection + drawer mobile / side panel desktop
-- [ ] `app/(dashboard)/fixtures/page.tsx` — Server Component, lit searchParams, appelle `getFixtures`, assemble
+- [x] `fixtures/page.tsx` — Server Component, lit searchParams, fetch, assemble
+- [x] `fixtures/components/fixtures-header-client.tsx` — refresh via router.refresh()
+- [x] `fixtures/components/fixtures-filters.tsx` — date, compétition, décision, statut, créneau (scroll horizontal mobile)
+- [x] `fixtures/components/fixtures-table.tsx` — cards mobile + table desktop, drawer Vaul + side panel
+- [x] `components/app-shell.tsx` — route `/fixtures` ajoutée dans la nav
 
 ---
 

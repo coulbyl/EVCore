@@ -16,9 +16,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         active: pathname === "/",
       },
       {
-        label: "Coupons",
-        href: "/coupons",
-        active: pathname === "/coupons",
+        label: "Fixtures",
+        href: "/fixtures",
+        active: pathname.startsWith("/fixtures"),
       },
       {
         label: "Audit",
