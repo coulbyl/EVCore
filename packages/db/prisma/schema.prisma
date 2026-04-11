@@ -59,21 +59,6 @@ enum AdjustmentStatus {
   FROZEN
 }
 
-enum CouponStatus {
-  PENDING
-  WON
-  LOST
-  SETTLED
-  NO_BET
-}
-
-enum CouponTier {
-  PREMIUM
-  STANDARD
-  SPECULATIF
-  SAFE
-}
-
 enum OddsSnapshotSource {
   PREMATCH
   HISTORICAL
@@ -87,9 +72,6 @@ enum NotificationType {
   ETL_FAILURE
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
-  DAILY_COUPON
-  NO_BET_TODAY
-  COUPON_RESULT
 }
 
 // ─────────────────────────────────────────────
@@ -247,7 +229,7 @@ model Bet {
   probEstimated Decimal   @db.Decimal(5, 4)
   oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
   ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
-  qualityScore  Decimal?  @db.Decimal(6, 4) // ev × deterministicScore — used for coupon pool ranking (null for legacy bets)
+  qualityScore  Decimal?  @db.Decimal(6, 4) // ev × deterministicScore — used for pick pool ranking (null for legacy bets)
   stakePct      Decimal   @db.Decimal(5, 4) // 0.01 = 1% bankroll
   status        BetStatus @default(PENDING)
   // combo-match fields: null for single-market picks
@@ -255,17 +237,12 @@ model Bet {
   comboPick     String?   // secondary pick (e.g. "YES", "OVER")
   // safe-value flag: true for picks selected via the SAFE_VALUE flux (P ≥ 68%, EV ≥ 0)
   isSafeValue   Boolean   @default(false)
-  // coupon link: null until assigned to a DailyCoupon
-  dailyCouponId String?   @db.Uuid
-  dailyCoupon   DailyCoupon? @relation(fields: [dailyCouponId], references: [id])
-  couponLegs    CouponLeg[]
   betSlipItems  BetSlipItem[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@index([modelRunId])
   @@index([fixtureId])
-  @@index([dailyCouponId])
   @@index([market, status, createdAt])
   @@index([status, updatedAt])
   @@unique([fixtureId, pickKey])
@@ -336,36 +313,6 @@ model BetSlipItem {
   @@index([betId])
   @@index([fixtureId])
   @@map("bet_slip_item")
-}
-
-// Daily betting coupon — one per day across all active leagues.
-// Assembles the best N picks (≤ COUPON_MAX_LEGS) selected by qualityScore = EV × deterministicScore.
-model DailyCoupon {
-  id        String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  code      String       @unique
-  date      DateTime     @db.Date
-  status    CouponStatus @default(PENDING)
-  legCount  Int
-  tier      CouponTier?  // confidence level — null for legacy coupons
-  bets      Bet[]
-  couponLegs CouponLeg[]
-  createdAt DateTime     @default(now())
-
-  @@index([date])
-  @@map("daily_coupon")
-}
-
-// Join table between coupons and canonical bets.
-model CouponLeg {
-  couponId  String     @db.Uuid
-  betId     String     @db.Uuid
-  coupon    DailyCoupon @relation(fields: [couponId], references: [id])
-  bet       Bet        @relation(fields: [betId], references: [id])
-  createdAt DateTime   @default(now())
-
-  @@id([couponId, betId])
-  @@index([betId])
-  @@map("coupon_leg")
 }
 
 // Proposed weight adjustments from the learning loop.
