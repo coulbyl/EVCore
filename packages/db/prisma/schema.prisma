@@ -47,6 +47,11 @@ enum BetStatus {
   VOID
 }
 
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
 enum AdjustmentStatus {
   PENDING
   APPLIED
@@ -164,6 +169,7 @@ model Fixture {
   xgUnavailable        Boolean               @default(false)   // true = API returned no stats, skip on retry
   modelRuns            ModelRun[]
   bets                 Bet[]
+  betSlipItems         BetSlipItem[]
   teamStats            TeamStats[]
   oddsSnapshots        OddsSnapshot[]
   createdAt            DateTime              @default(now())
@@ -253,6 +259,7 @@ model Bet {
   dailyCouponId String?   @db.Uuid
   dailyCoupon   DailyCoupon? @relation(fields: [dailyCouponId], references: [id])
   couponLegs    CouponLeg[]
+  betSlipItems  BetSlipItem[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -263,6 +270,72 @@ model Bet {
   @@index([status, updatedAt])
   @@unique([fixtureId, pickKey])
   @@map("bet")
+}
+
+model User {
+  id            String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email         String         @unique
+  username      String         @unique
+  passwordHash  String
+  fullName      String
+  bio           String?
+  role          UserRole       @default(OPERATOR)
+  emailVerified Boolean        @default(false)
+  avatarUrl     String?
+  sessions      Session[]
+  betSlips      BetSlip[]
+  betSlipItems  BetSlipItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, expiresAt])
+  @@map("user_session")
+}
+
+model BetSlip {
+  id           String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String        @db.Uuid
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitStake    Decimal       @db.Decimal(12, 2)
+  items        BetSlipItem[]
+  createdAt    DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@map("bet_slip")
+}
+
+model BetSlipItem {
+  betSlipId      String      @db.Uuid
+  betSlip        BetSlip     @relation(fields: [betSlipId], references: [id], onDelete: Cascade)
+  userId         String      @db.Uuid
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  betId          String      @db.Uuid
+  bet            Bet         @relation(fields: [betId], references: [id], onDelete: Cascade)
+  fixtureId      String      @db.Uuid
+  fixture        Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  stakeOverride  Decimal?    @db.Decimal(12, 2)
+  createdAt      DateTime    @default(now())
+
+  @@id([betSlipId, betId])
+  @@unique([userId, betId])
+  @@unique([betSlipId, fixtureId])
+  @@index([betId])
+  @@index([fixtureId])
+  @@map("bet_slip_item")
 }
 
 // Daily betting coupon — one per day across all active leagues.

@@ -1,5 +1,11 @@
 # EVCore — TODO
 
+## Règle migrations DB
+
+- L'agent ne doit **pas** créer de migration Prisma
+- Les migrations sont créées manuellement par l'utilisateur
+- Pour travailler sans erreurs de types Prisma, l'agent peut utiliser uniquement `db:generate`
+
 ## UI IMPROVEMENT (WEB)
 
 Amélioration UX/UI du dashboard web.
@@ -111,10 +117,181 @@ shared/
 
 ---
 
+## Phase 6 — Panier de bets simples utilisateur
+
+La notion de `coupon` disparaît d'EVCore.
+À la place, on introduit un **panier de bets simples** construit manuellement par l'utilisateur depuis la page `fixtures`.
+
+### Objectif produit
+
+- L'utilisateur parcourt les fixtures scorées
+- Il peut ajouter des bets proposés dans un panier
+- Le panier contient uniquement des **bets simples** (pas de combiné)
+- L'utilisateur définit une **mise unitaire** appliquée à chaque bet du panier
+- L'utilisateur peut définir des **overrides de mise** par bet avant validation
+- Exemple : 10 bets sélectionnés, mise unitaire = `4000`, donc `4000` sur chaque bet
+
+### Domaine à créer
+
+```
+domains/
+  bet-slip/
+    types/
+    use-cases/
+    helpers/
+```
+
+### Modèle métier cible
+
+- `Bet` reste l'unité métier centrale produite par le betting engine
+- le **panier de préparation** sert de formulaire de création de slip
+- tant que le panier n'est pas soumis, l'utilisateur peut le modifier librement
+- le panier de préparation vit côté web en `localStorage`
+- si le `localStorage` est perdu avant validation, le draft est perdu
+- `BetSlip` devient l'objet final créé au submit
+- un `BetSlip` créé est **immuable**
+- un `BetSlip` contient uniquement des **bets simples**
+- un utilisateur peut créer **plusieurs** `BetSlip`
+- un `Bet` ne peut pas être dupliqué dans plusieurs slips du même utilisateur
+
+### Brouillon vs objet final
+
+- [ ] Définir le modèle de panier de préparation (`draft`) côté produit
+- [x] Le draft n'est pas persisté côté backend : `localStorage` uniquement
+- [ ] Transformer le draft en `BetSlip` immuable au submit
+- [ ] Geler la composition et les mises après création du `BetSlip`
+
+### Types à prévoir
+
+- [ ] `BetSlipItem`
+- [ ] `BetSlip`
+- [ ] `BetSlipStake`
+
+### Use-cases à prévoir
+
+- [ ] `add-pick-to-slip`
+- [ ] `remove-pick-from-slip`
+- [ ] `update-slip-stake`
+- [ ] `clear-slip`
+
+### UI à prévoir
+
+- [ ] Ajouter une action "ajouter au panier" depuis `fixtures`
+- [ ] Ajouter un panneau / drawer `bet-slip`
+- [ ] Afficher la liste des bets sélectionnés
+- [ ] Permettre la définition d'une mise unitaire
+- [ ] Permettre les overrides de mise par bet avant validation
+- [ ] Afficher le total de bets sélectionnés
+- [ ] Ajouter une page `mes bet-slips`
+- [ ] Ajouter une page détail `bet-slips/[id]`
+- [ ] Ajouter l'accès aux bet-slips dans la navigation
+- [ ] Permettre la gestion de plusieurs slips utilisateur
+- [ ] Ajouter une action de validation / création du `BetSlip` depuis le panier
+
+### Refactor / nettoyage lié
+
+- [ ] Renommer / découper `coupon-detail.tsx` en primitives réutilisables orientées `fixture` / `bet`
+- [ ] Supprimer le vocabulaire `coupon` restant dans l'UI et les labels
+- [ ] Éviter toute réintroduction de logique de combiné
+
+---
+
+## Phase 7 — Backend auth + hard delete coupon + data model bet slip
+
+La disparition du concept `coupon` touche aussi le backend.
+Le modèle cible est :
+
+- authentification centralisée dans `apps/backend`
+- `User` + `Session` côté base de données
+- `BetSlip` lié à un `User`
+- `Bet` conservé comme entité principale issue du betting engine
+- suppression forte (`hard delete`) du modèle `coupon`, sans perdre les données métier importantes portées par `Bet`
+
+### Référence d'architecture
+
+S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
+
+- backend NestJS = autorité unique d'auth
+- sessions opaques stockées côté serveur
+- cookie `httpOnly`
+- pas de JWT applicatif pour le web
+- `User` + `Session` en base
+
+### Data model à introduire
+
+- [x] Ajouter `User`
+- [x] Ajouter `Session`
+- [x] Ajouter `BetSlip`
+- [x] Ajouter `BetSlipItem`
+- [x] Lier `BetSlip` à `User`
+- [x] Lier les `Bet` aux `BetSlip` via `BetSlipItem`
+- [x] Permettre un override de mise par item de slip
+- [x] Garantir qu'un `Bet` ne peut pas apparaître dans plusieurs slips d'un même utilisateur
+- [x] Pas de modèle `draft` backend en V1
+- [x] Ajouter `username` unique sur `User`
+- [x] Ajouter `bio` optionnelle sur `User`
+
+### Auth backend à introduire
+
+- [x] Créer un module `auth/` dans `apps/backend`
+- [x] Implémenter login / logout / session courante
+- [x] Stocker les sessions en base
+- [x] Utiliser un cookie `httpOnly`
+- [x] Ajouter guards / décorateurs backend pour les routes protégées
+- [ ] Préparer l'arrivée des permissions / rôles utilisateur
+
+### Backend coupon à supprimer
+
+- [ ] Supprimer `modules/coupon/*`
+- [ ] Retirer `CouponModule` de `app.module.ts`
+- [ ] Supprimer le scheduler / worker de génération coupon
+- [ ] Supprimer les endpoints backend `/coupon`
+- [ ] Supprimer les constantes `coupon.constants.ts`
+
+### Flux backend à simplifier
+
+- [ ] Retirer `CouponService` de `adjustment.service.ts`
+- [ ] Retirer le settlement coupon de `pending-bets-settlement.worker.ts`
+- [ ] Garder uniquement : sync fixture → settlement bets → calibration
+
+### Dashboard / audit backend à refactorer
+
+- [ ] Supprimer `couponSnapshots` du dashboard backend
+- [ ] Supprimer `recentCoupons` / `latestCoupon` du dashboard repository
+- [ ] Supprimer `couponId` des opportunités backend si plus de diagnostic coupon
+- [ ] Retirer `coupon-worker` des worker statuses dashboard
+- [ ] Supprimer `couponsTotal` / `couponsByStatus` de l'overview audit
+- [ ] Remplacer ces métriques par des métriques orientées bets / slips
+
+### Notifications / mails à nettoyer
+
+- [ ] Supprimer `sendDailyCoupon`
+- [ ] Supprimer `sendCouponResult`
+- [ ] Revoir `sendNoBetToday` selon le nouveau produit
+- [ ] Supprimer les templates email liés aux coupons
+- [ ] Nettoyer les `NotificationType` obsolètes liés aux coupons
+
+### DB / Prisma / migrations
+
+- [ ] Supprimer `DailyCoupon`
+- [ ] Supprimer `CouponLeg`
+- [ ] Supprimer les relations coupon depuis `Bet`
+- [ ] Nettoyer les colonnes et index coupon-centric
+- [ ] Revoir les commentaires métier de `qualityScore`
+- [ ] Écrire une migration Prisma de suppression forte du modèle coupon
+
+### Scripts / backtest / dette technique
+
+- [ ] Supprimer ou réécrire les simulations coupon dans `backtest`
+- [ ] Nettoyer les scripts DB qui lisent encore `daily_coupon` / `coupon_leg`
+- [ ] Nettoyer les tests backend liés au domaine coupon
+
+---
+
 ## Ordre d'exécution
 
 ```
-Phase 1 ✅ → Phase 2 → Phase 3 → Phase 4 → Phase 5
+Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (data model + auth ✅, nettoyage coupon en cours)
 ```
 
 ---
@@ -130,6 +307,8 @@ Phase 1 ✅ → Phase 2 → Phase 3 → Phase 4 → Phase 5
 - `packages/ui` est conservé tel quel (shadcn sera intégré plus tard)
 - **Jamais de helpers date inline** dans les composants ou use-cases → toujours passer par `lib/date.ts` (date-fns)
 - `GET /fixture` (fixture module) → page fixtures / `GET /audit/fixtures` (audit module) → page audit
+- EVCore n'a plus de notion de coupon combiné : à terme, l'objet utilisateur devient un **panier de bets simples**
+- L'authentification future doit être centralisée dans `apps/backend` avec sessions opaques serveur
 
 ### PWA / Mobile-first (critique)
 
