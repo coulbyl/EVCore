@@ -242,34 +242,34 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 
 ### Backend coupon à supprimer
 
-- [ ] Supprimer `modules/coupon/*`
-- [ ] Retirer `CouponModule` de `app.module.ts`
-- [ ] Supprimer le scheduler / worker de génération coupon
-- [ ] Supprimer les endpoints backend `/coupon`
-- [ ] Supprimer les constantes `coupon.constants.ts`
+- [x] Supprimer `modules/coupon/*`
+- [x] Retirer `CouponModule` de `app.module.ts`
+- [x] Supprimer le scheduler / worker de génération coupon
+- [x] Supprimer les endpoints backend `/coupon`
+- [x] Supprimer les constantes `coupon.constants.ts`
 
 ### Flux backend à simplifier
 
-- [ ] Retirer `CouponService` de `adjustment.service.ts`
-- [ ] Retirer le settlement coupon de `pending-bets-settlement.worker.ts`
-- [ ] Garder uniquement : sync fixture → settlement bets → calibration
+- [x] Retirer `CouponService` de `adjustment.service.ts`
+- [x] Retirer le settlement coupon de `pending-bets-settlement.worker.ts`
+- [x] Garder uniquement : sync fixture → settlement bets → calibration
 
 ### Dashboard / audit backend à refactorer
 
-- [ ] Supprimer `couponSnapshots` du dashboard backend
-- [ ] Supprimer `recentCoupons` / `latestCoupon` du dashboard repository
-- [ ] Supprimer `couponId` des opportunités backend si plus de diagnostic coupon
-- [ ] Retirer `coupon-worker` des worker statuses dashboard
-- [ ] Supprimer `couponsTotal` / `couponsByStatus` de l'overview audit
+- [x] Supprimer `couponSnapshots` du dashboard backend
+- [x] Supprimer `recentCoupons` / `latestCoupon` du dashboard repository
+- [x] Supprimer `couponId` des opportunités backend si plus de diagnostic coupon
+- [x] Retirer `coupon-worker` des worker statuses dashboard
+- [x] Supprimer `couponsTotal` / `couponsByStatus` de l'overview audit
 - [ ] Remplacer ces métriques par des métriques orientées bets / slips
 
 ### Notifications / mails à nettoyer
 
-- [ ] Supprimer `sendDailyCoupon`
-- [ ] Supprimer `sendCouponResult`
-- [ ] Revoir `sendNoBetToday` selon le nouveau produit
-- [ ] Supprimer les templates email liés aux coupons
-- [ ] Nettoyer les `NotificationType` obsolètes liés aux coupons
+- [x] Supprimer `sendDailyCoupon`
+- [x] Supprimer `sendCouponResult`
+- [x] Supprimer `sendNoBetToday` (retiré avec le domaine coupon)
+- [ ] Supprimer les templates email liés aux coupons (`renderDailyCoupon` dans `@evcore/transactional`)
+- [ ] Nettoyer les `NotificationType` obsolètes liés aux coupons (`DAILY_COUPON`, `NO_BET_TODAY`, `COUPON_RESULT`)
 
 ### DB / Prisma / migrations
 
@@ -282,16 +282,16 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 
 ### Scripts / backtest / dette technique
 
-- [ ] Supprimer ou réécrire les simulations coupon dans `backtest`
+- [x] Supprimer la simulation coupon dans `backtest.service.ts`
 - [ ] Nettoyer les scripts DB qui lisent encore `daily_coupon` / `coupon_leg`
-- [ ] Nettoyer les tests backend liés au domaine coupon
+- [x] Nettoyer les tests backend liés au domaine coupon (341 tests passants)
 
 ---
 
 ## Ordre d'exécution
 
 ```
-Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (data model + auth ✅, nettoyage coupon en cours)
+Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (data model + auth ✅, coupon backend ✅, DB/transactional restants)
 ```
 
 ---
