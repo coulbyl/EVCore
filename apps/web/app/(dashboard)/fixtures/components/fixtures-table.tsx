@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Drawer } from "vaul";
 import { FixtureDetailPanel } from "@/components/fixture-detail-panel";
-import { formatScore, formatKickoff, toFixturePanel } from "@/domains/fixture/helpers/fixture";
+import {
+  formatScore,
+  formatKickoff,
+  toFixturePanel,
+} from "@/domains/fixture/helpers/fixture";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 
@@ -26,9 +30,14 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
   );
 }
 
-function BetResultBadge({ status }: { status: "WON" | "LOST" | "PENDING" | null }) {
+function BetResultBadge({
+  status,
+}: {
+  status: "WON" | "LOST" | "PENDING" | null;
+}) {
   if (!status) return <span className="text-xs text-slate-400">—</span>;
-  if (status === "PENDING") return <span className="text-xs text-slate-400">En attente</span>;
+  if (status === "PENDING")
+    return <span className="text-xs text-slate-400">En attente</span>;
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest ${
@@ -97,10 +106,7 @@ function FixtureMobileCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <FixtureTeamLogos
-              homeLogo={row.homeLogo}
-              awayLogo={row.awayLogo}
-            />
+            <FixtureTeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
             <p className="truncate text-sm font-semibold text-slate-900">
               {row.fixture}
             </p>
@@ -120,11 +126,14 @@ function FixtureMobileCard({
               Sélection
             </p>
             <p className="truncate text-sm font-bold text-white">
-              {mr.pick ?? "—"}{mr.market ? ` · ${mr.market}` : ""}
+              {mr.pick ?? "—"}
+              {mr.market ? ` · ${mr.market}` : ""}
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">EV</p>
+            <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
+              EV
+            </p>
             <p className="text-sm font-bold text-emerald-400">{mr.ev ?? "—"}</p>
           </div>
           {mr.betStatus && mr.betStatus !== "PENDING" && (
@@ -277,16 +286,24 @@ export function FixturesTable({ rows }: { rows: FixtureRow[] }) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-slate-50/80">
-                  {["Match", "Score", "Compétition", "Heure", "Décision", "Pick", "Cote", "EV", "Résultat"].map(
-                    (col) => (
-                      <th
-                        key={col}
-                        className="px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500"
-                      >
-                        {col}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Match",
+                    "Score",
+                    "Compétition",
+                    "Heure",
+                    "Décision",
+                    "Pick",
+                    "Cote",
+                    "EV",
+                    "Résultat",
+                  ].map((col) => (
+                    <th
+                      key={col}
+                      className="px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500"
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>

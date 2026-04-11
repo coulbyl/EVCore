@@ -4,7 +4,10 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { TIME_SLOTS } from "@/constants/time-slots";
 import { COMPETITIONS } from "@/constants/competitions";
-import { DECISION_OPTIONS, STATUS_OPTIONS } from "@/domains/fixture/constants/filters";
+import {
+  DECISION_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/domains/fixture/constants/filters";
 import type { FixtureFilters } from "@/domains/fixture/types/fixture";
 
 type Props = { filters: FixtureFilters };

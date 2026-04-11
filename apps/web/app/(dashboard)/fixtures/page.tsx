@@ -9,7 +9,9 @@ import { FixturesTable } from "./components/fixtures-table";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-function parseFilters(sp: Record<string, string | string[] | undefined>): FixtureFilters {
+function parseFilters(
+  sp: Record<string, string | string[] | undefined>,
+): FixtureFilters {
   const str = (key: string) =>
     typeof sp[key] === "string" ? (sp[key] as string) : undefined;
 
