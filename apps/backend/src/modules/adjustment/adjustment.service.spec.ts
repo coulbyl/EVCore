@@ -4,7 +4,6 @@ import { AdjustmentStatus } from '@evcore/db';
 import { AdjustmentService } from './adjustment.service';
 import type { PrismaService } from '@/prisma.service';
 import type { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
-import type { CouponService } from '@modules/coupon/coupon.service';
 import type { NotificationService } from '@modules/notification/notification.service';
 import type { CalibrationService } from './calibration.service';
 import { MIN_BET_COUNT } from './adjustment.constants';
@@ -38,13 +37,6 @@ function makeService({
     computeForMarket,
   } as unknown as CalibrationService;
 
-  const couponService = {
-    settlePendingCouponsByFixture: vi
-      .fn()
-      .mockResolvedValue({ settledCount: 0 }),
-    settleExpiredCoupons: vi.fn().mockResolvedValue({ settledCount: 0 }),
-  } as unknown as CouponService;
-
   const notification = {
     sendWeightAdjustmentAlert: vi.fn().mockResolvedValue(undefined),
   } as unknown as NotificationService;
@@ -68,7 +60,6 @@ function makeService({
   return new AdjustmentService(
     prismaMock,
     bettingEngine,
-    couponService,
     calibrationService,
     notification,
   );
@@ -193,7 +184,6 @@ describe('AdjustmentService.rollback', () => {
     const service = new AdjustmentService(
       prismaMock,
       {} as BettingEngineService,
-      { settleExpiredCoupons: vi.fn() } as unknown as CouponService,
       {} as CalibrationService,
       notification,
     );

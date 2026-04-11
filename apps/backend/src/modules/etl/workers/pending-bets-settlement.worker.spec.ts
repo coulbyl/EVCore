@@ -4,7 +4,6 @@ import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { BettingEngineService } from '../../betting-engine/betting-engine.service';
-import type { CouponService } from '../../coupon/coupon.service';
 import type { NotificationService } from '../../notification/notification.service';
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
@@ -101,12 +100,6 @@ describe('PendingBetsSettlementWorker', () => {
   const bettingEngineService = {
     settleOpenBets: vi.fn().mockResolvedValue({ settled: 1 }),
   } satisfies Partial<BettingEngineService>;
-  const couponService = {
-    settlePendingCouponsByFixture: vi
-      .fn()
-      .mockResolvedValue({ settledCount: 1 }),
-    settleExpiredCoupons: vi.fn().mockResolvedValue({ settledCount: 0 }),
-  } satisfies Partial<CouponService>;
   const notification = {
     sendEtlFailureAlert: vi.fn(),
   } satisfies Partial<NotificationService>;
@@ -126,7 +119,6 @@ describe('PendingBetsSettlementWorker', () => {
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
-    couponService as unknown as CouponService,
     adjustmentService as unknown as AdjustmentService,
   );
 
@@ -138,10 +130,6 @@ describe('PendingBetsSettlementWorker', () => {
     });
     fixtureService.syncFixtureState.mockResolvedValue(undefined);
     bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 1 });
-    couponService.settlePendingCouponsByFixture.mockResolvedValue({
-      settledCount: 1,
-    });
-    couponService.settleExpiredCoupons.mockResolvedValue({ settledCount: 0 });
     config.getOrThrow.mockReturnValue('test-api-key');
     fixtureService.findPendingSettlementFixtures.mockResolvedValue([
       {
@@ -175,10 +163,6 @@ describe('PendingBetsSettlementWorker', () => {
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
     );
-    expect(couponService.settlePendingCouponsByFixture).toHaveBeenCalledWith(
-      'fixture-1',
-    );
-    expect(couponService.settleExpiredCoupons).toHaveBeenCalledOnce();
   });
 
   it('only refreshes fixture state when the fixture is still scheduled', async () => {
@@ -188,8 +172,6 @@ describe('PendingBetsSettlementWorker', () => {
 
     expect(fixtureService.syncFixtureState).toHaveBeenCalledOnce();
     expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
-    expect(couponService.settlePendingCouponsByFixture).not.toHaveBeenCalled();
-    expect(couponService.settleExpiredCoupons).toHaveBeenCalledOnce();
   });
 
   it('throws on non-ok API response', async () => {
@@ -201,8 +183,6 @@ describe('PendingBetsSettlementWorker', () => {
 
     expect(fixtureService.syncFixtureState).not.toHaveBeenCalled();
     expect(bettingEngineService.settleOpenBets).not.toHaveBeenCalled();
-    expect(couponService.settlePendingCouponsByFixture).not.toHaveBeenCalled();
-    expect(couponService.settleExpiredCoupons).toHaveBeenCalledOnce();
   });
 
   it('skips transient network errors and continues processing', async () => {

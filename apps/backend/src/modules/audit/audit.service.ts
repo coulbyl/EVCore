@@ -195,7 +195,6 @@ export class AuditService {
         fixtures: data.fixturesTotal,
         modelRuns: data.modelRunsTotal,
         bets: data.betsTotal,
-        coupons: data.couponsTotal,
       },
       leagueBreakdown: data.leagueBreakdown.map((r) => {
         const fixtures = Number(r.fixtures);
@@ -220,10 +219,6 @@ export class AuditService {
       })),
       betsByMarket: data.betsByMarket.map((r) => ({
         market: r.market,
-        count: r._count.id,
-      })),
-      couponsByStatus: data.couponsByStatus.map((r) => ({
-        status: r.status,
         count: r._count.id,
       })),
       settledBets: data.settledBets,

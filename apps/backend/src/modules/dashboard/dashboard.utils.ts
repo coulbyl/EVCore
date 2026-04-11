@@ -1,6 +1,5 @@
 import { NotificationType } from '@evcore/db';
 import { toNumber } from '@utils/prisma.utils';
-import { startOfUtcDay } from '@utils/date.utils';
 import type { WorkerStatus } from './dashboard.types';
 
 export function signedDelta(value: number): string {
@@ -13,14 +12,6 @@ export function formatSigned(value: number, digits: number): string {
 
 export function toQualityScore(finalScore: unknown): number {
   return Math.max(0, Math.min(100, Math.round(toNumber(finalScore) * 100)));
-}
-
-export function couponWindow(couponDate: Date, now: Date): string {
-  const couponDay = startOfUtcDay(couponDate).getTime();
-  const currentDay = startOfUtcDay(now).getTime();
-  if (couponDay === currentDay) return "Aujourd'hui";
-  if (couponDay > currentDay) return 'À venir';
-  return 'Soldé';
 }
 
 export function buildWorkerStatus(input: {
@@ -91,12 +82,6 @@ export function notificationLevel(
     type === NotificationType.BRIER_ALERT
   ) {
     return 'ALERT';
-  }
-  if (
-    type === NotificationType.DAILY_COUPON ||
-    type === NotificationType.COUPON_RESULT
-  ) {
-    return 'BET';
   }
   if (type === NotificationType.WEIGHT_ADJUSTMENT) {
     return 'WARN';

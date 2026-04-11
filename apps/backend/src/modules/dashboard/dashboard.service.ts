@@ -12,7 +12,6 @@ import {
   signedDelta,
   formatSigned,
   toQualityScore,
-  couponWindow,
   buildWorkerStatus,
   uniqueBetsByFixture,
   notificationSeverity,
@@ -21,7 +20,6 @@ import {
 import { DashboardRepository } from './dashboard.repository';
 import type {
   DashboardSummary,
-  CouponSnapshot,
   OpportunityRow,
   PnlSummary,
   WorkerStatus,
@@ -30,7 +28,6 @@ import type {
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 type TopBet = SummaryData['topBets'][number];
-type RecentCoupon = SummaryData['recentCoupons'][number];
 type UnreadNotification = SummaryData['unreadNotifications'][number];
 type ActivityNotification = SummaryData['activityNotifications'][number];
 
@@ -58,7 +55,6 @@ export class DashboardService {
       dashboardKpis: this.buildKpis(data),
       workerStatuses: this.buildWorkerStatuses(data),
       activeAlerts: this.buildActiveAlerts(data.unreadNotifications),
-      couponSnapshots: this.buildCouponSnapshots(data.recentCoupons, now),
       topOpportunities: this.buildTopOpportunities(uniqueTopBets),
       selectedFixture: this.buildSelectedFixture(uniqueTopBets),
       activityFeed: this.buildActivityFeed(data.activityNotifications),
@@ -135,14 +131,6 @@ export class DashboardService {
         detail: 'Stats équipe calculées (proxy disponibilité injuries)',
         formatTime: formatTimeUtc,
       }),
-      buildWorkerStatus({
-        worker: 'coupon-worker',
-        lastRun: data.latestCoupon?.createdAt ?? null,
-        healthyMinutes: 120,
-        watchMinutes: 360,
-        detail: `${data.recentCoupons.length} coupons détectés`,
-        formatTime: formatTimeUtc,
-      }),
     ];
   }
 
@@ -169,66 +157,11 @@ export class DashboardService {
       }));
   }
 
-  private buildCouponSnapshots(
-    coupons: RecentCoupon[],
-    now: Date,
-  ): CouponSnapshot[] {
-    return coupons.map((coupon) => {
-      const avgEv =
-        coupon.bets.length > 0
-          ? coupon.bets.reduce((acc, bet) => acc + toNumber(bet.ev), 0) /
-            coupon.bets.length
-          : 0;
-      return {
-        id: coupon.id,
-        code: coupon.code,
-        status:
-          coupon.status === 'WON' || coupon.status === 'LOST'
-            ? coupon.status
-            : 'PENDING',
-        legs: coupon.bets.length,
-        ev: formatSigned(avgEv, 2),
-        window: couponWindow(coupon.date, now),
-        selections: coupon.bets.map((bet) => {
-          const comboParts = [bet.pick];
-          if (bet.comboMarket && bet.comboPick) {
-            comboParts.push(`${bet.comboMarket} ${bet.comboPick}`);
-          }
-
-          return {
-            id: bet.id,
-            fixture: `${bet.modelRun.fixture.homeTeam.name} vs ${bet.modelRun.fixture.awayTeam.name}`,
-            homeLogo: bet.modelRun.fixture.homeTeam.logoUrl ?? null,
-            awayLogo: bet.modelRun.fixture.awayTeam.logoUrl ?? null,
-            scheduledAt: formatTimeUtc(bet.modelRun.fixture.scheduledAt),
-            fixtureStatus: bet.modelRun.fixture.status,
-            score:
-              bet.modelRun.fixture.homeScore !== null &&
-              bet.modelRun.fixture.awayScore !== null
-                ? `${bet.modelRun.fixture.homeScore} - ${bet.modelRun.fixture.awayScore}`
-                : null,
-            status:
-              bet.status === 'WON' ||
-              bet.status === 'LOST' ||
-              bet.status === 'VOID'
-                ? bet.status
-                : 'PENDING',
-            market: bet.market,
-            pick: comboParts.join(' + '),
-            odds: toNumber(bet.oddsSnapshot).toFixed(2),
-            ev: formatSigned(toNumber(bet.ev), 3),
-          };
-        }),
-      };
-    });
-  }
-
   private buildTopOpportunities(uniqueTopBets: TopBet[]): OpportunityRow[] {
     return uniqueTopBets.map((bet) => {
       const fixture = bet.modelRun.fixture;
       return {
         id: bet.id,
-        couponId: bet.couponLegs[0]?.couponId ?? null,
         fixtureId: fixture.id,
         fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
         homeLogo: fixture.homeTeam.logoUrl ?? null,

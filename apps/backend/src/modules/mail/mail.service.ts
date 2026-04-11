@@ -5,7 +5,6 @@ import type { Transporter } from 'nodemailer';
 import { createLogger } from '@utils/logger';
 import {
   renderBrierAlert,
-  renderDailyCoupon,
   renderEtlFailure,
   renderMarketSuspension,
   renderRoiAlert,
@@ -13,7 +12,6 @@ import {
   renderWeeklyReport,
   renderXgUnavailableReport,
   type BrierAlertProps,
-  type DailyCouponLeg,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type RoiAlertProps,
@@ -106,46 +104,6 @@ export class MailService implements OnModuleInit {
       html,
       text,
     );
-  }
-
-  async sendDailyCoupon(props: {
-    id: string;
-    date: string;
-    legCount: number;
-    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | 'SAFE' | null;
-    legs: DailyCouponLeg[];
-  }): Promise<void> {
-    const tierLabel = props.tier ? ` · ${props.tier}` : '';
-    const subject = `Coupon EVCore — ${props.date} (${props.legCount} leg${props.legCount !== 1 ? 's' : ''}${tierLabel})`;
-    const { html, text } = await renderDailyCoupon({
-      couponId: props.id,
-      date: props.date,
-      legCount: props.legCount,
-      tier: props.tier ?? undefined,
-      legs: props.legs,
-    });
-    await this.send(subject, html, text);
-  }
-
-  async sendNoBetToday(props: { date: string }): Promise<void> {
-    // TODO: consider rendering a prettier email with more details about the coupon and picks
-
-    const subject = `No Bet Today — ${props.date}`;
-    const html = `<p>No qualified picks found for <strong>${props.date}</strong>. No coupon generated today.</p>`;
-    const text = `No Bet Today — ${props.date}: no qualified picks.`;
-    await this.send(subject, html, text);
-  }
-
-  async sendCouponResult(props: {
-    couponId: string;
-    status: 'WON' | 'LOST' | 'SETTLED';
-  }): Promise<void> {
-    // TODO: consider rendering a prettier email with more details about the coupon and picks
-
-    const subject = `Coupon Result — ${props.status}`;
-    const html = `<p>Coupon <strong>${props.couponId}</strong> settled with status <strong>${props.status}</strong>.</p>`;
-    const text = `Coupon Result — ${props.couponId}: ${props.status}`;
-    await this.send(subject, html, text);
   }
 
   private async send(

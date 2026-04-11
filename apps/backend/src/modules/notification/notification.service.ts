@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
 import {
-  type Bet,
-  CouponStatus,
   Market,
   type Notification,
   NotificationType,
@@ -226,113 +224,6 @@ export class NotificationService {
     await this.prisma.client.notification.updateMany({
       where: { read: false },
       data: { read: true, readAt: new Date() },
-    });
-  }
-
-  async sendDailyCoupon(coupon: {
-    id: string;
-    date: Date;
-    legCount: number;
-    tier?: 'PREMIUM' | 'STANDARD' | 'SPECULATIF' | 'SAFE' | null;
-    bets: (Bet & {
-      modelRun: {
-        fixture: {
-          scheduledAt: Date;
-          homeTeam: { name: string };
-          awayTeam: { name: string };
-        };
-      };
-    })[];
-  }): Promise<void> {
-    const dateStr = coupon.date.toISOString().slice(0, 10);
-    const title = `Daily Coupon — ${dateStr} (${coupon.legCount} leg${coupon.legCount !== 1 ? 's' : ''})`;
-    const body = coupon.bets
-      .map((b) =>
-        b.comboMarket
-          ? `${b.market} ${b.pick} + ${b.comboMarket} ${b.comboPick ?? ''}`
-          : `${b.market} ${b.pick}`,
-      )
-      .join('\n');
-    await this.save({
-      type: NotificationType.DAILY_COUPON,
-      title,
-      body,
-      payload: {
-        id: coupon.id,
-        date: dateStr,
-        legCount: coupon.legCount,
-        tier: coupon.tier ?? null,
-      },
-    });
-    await this.mail.sendDailyCoupon({
-      id: coupon.id,
-      date: dateStr,
-      legCount: coupon.legCount,
-      tier: coupon.tier ?? null,
-      legs: coupon.bets.map((b) => ({
-        homeTeam: b.modelRun.fixture.homeTeam.name,
-        awayTeam: b.modelRun.fixture.awayTeam.name,
-        scheduledAt:
-          b.modelRun.fixture.scheduledAt
-            .toISOString()
-            .replace('T', ' ')
-            .slice(0, 16) + ' UTC',
-        market: b.market,
-        pick: b.pick,
-        odds: b.oddsSnapshot !== null ? Number(b.oddsSnapshot) : null,
-        ev: Number(b.ev),
-        comboMarket: b.comboMarket ?? null,
-        comboPick: b.comboPick ?? null,
-      })),
-    });
-  }
-
-  async sendNoBetToday(date: Date): Promise<void> {
-    const dateStr = date.toISOString().slice(0, 10);
-    const title = `No Bet Today — ${dateStr}`;
-    const body = 'No qualified picks found for today.';
-    await this.save({
-      type: NotificationType.NO_BET_TODAY,
-      title,
-      body,
-      payload: { date: dateStr },
-    });
-    await this.mail.sendNoBetToday({ date: dateStr });
-  }
-
-  async sendCouponResult(couponId: string): Promise<void> {
-    const coupon = await this.prisma.client.dailyCoupon.findUnique({
-      where: { id: couponId },
-      select: { id: true, status: true, legCount: true },
-    });
-
-    if (!coupon) {
-      logger.warn(
-        { couponId },
-        'Coupon not found — skipping coupon result alert',
-      );
-      return;
-    }
-
-    if (
-      coupon.status !== CouponStatus.WON &&
-      coupon.status !== CouponStatus.LOST &&
-      coupon.status !== CouponStatus.SETTLED
-    ) {
-      return;
-    }
-
-    const title = `Coupon Result — ${coupon.status}`;
-    const body = `Coupon ${coupon.id} settled as ${coupon.status} (${coupon.legCount} leg${coupon.legCount !== 1 ? 's' : ''}).`;
-    await this.save({
-      type: NotificationType.COUPON_RESULT,
-      title,
-      body,
-      payload: { couponId: coupon.id, status: coupon.status },
-    });
-    await this.mail.sendCouponResult({
-      couponId: coupon.id,
-      status: coupon.status,
     });
   }
 

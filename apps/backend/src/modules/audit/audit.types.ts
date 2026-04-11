@@ -72,12 +72,10 @@ export type AuditOverview = {
     fixtures: number;
     modelRuns: number;
     bets: number;
-    coupons: number;
   };
   leagueBreakdown: AuditLeagueRow[];
   betsByStatus: Array<{ status: string; count: number }>;
   betsByMarket: Array<{ market: string; count: number }>;
-  couponsByStatus: Array<{ status: string; count: number }>;
   settledBets: number;
   adjustmentProposals: number;
   activeSuspensions: number;

@@ -70,7 +70,7 @@ import {
   SAFE_VALUE_MAX_ODDS,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
-import { LINE_MOVEMENT_THRESHOLD } from '@config/coupon.constants';
+import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,

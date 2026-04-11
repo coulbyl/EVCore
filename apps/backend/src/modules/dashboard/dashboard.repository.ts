@@ -24,13 +24,11 @@ export class DashboardRepository {
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
-      recentCouponsRaw,
       topBets,
       activityNotifications,
       latestFixture,
       latestOddsSnapshot,
       latestTeamStats,
-      latestCoupon,
       settledBets,
     ] = await Promise.all([
       this.prisma.client.fixture.count({
@@ -89,43 +87,6 @@ export class DashboardRepository {
         orderBy: { createdAt: 'desc' },
         take: 25,
       }),
-      this.prisma.client.dailyCoupon.findMany({
-        where: { couponLegs: { some: {} } },
-        orderBy: { date: 'desc' },
-        take: 8,
-        include: {
-          couponLegs: {
-            select: {
-              bet: {
-                select: {
-                  id: true,
-                  market: true,
-                  pick: true,
-                  comboMarket: true,
-                  comboPick: true,
-                  oddsSnapshot: true,
-                  ev: true,
-                  status: true,
-                  modelRun: {
-                    select: {
-                      fixture: {
-                        select: {
-                          scheduledAt: true,
-                          status: true,
-                          homeScore: true,
-                          awayScore: true,
-                          homeTeam: { select: { name: true, logoUrl: true } },
-                          awayTeam: { select: { name: true, logoUrl: true } },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      }),
       this.prisma.client.bet.findMany({
         where: {
           modelRun: {
@@ -140,12 +101,6 @@ export class DashboardRepository {
         orderBy: { ev: 'desc' },
         take: 12,
         include: {
-          couponLegs: {
-            select: {
-              couponId: true,
-            },
-            take: 1,
-          },
           modelRun: {
             include: {
               fixture: {
@@ -175,10 +130,6 @@ export class DashboardRepository {
         orderBy: { createdAt: 'desc' },
         select: { createdAt: true },
       }),
-      this.prisma.client.dailyCoupon.findFirst({
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
-      }),
       this.prisma.client.bet.findMany({
         where: {
           status: { in: [BetStatus.WON, BetStatus.LOST] },
@@ -203,14 +154,6 @@ export class DashboardRepository {
       }),
     ]);
 
-    const recentCoupons = recentCouponsRaw.map((coupon) => ({
-      id: coupon.id,
-      code: coupon.code,
-      date: coupon.date,
-      status: coupon.status,
-      bets: coupon.couponLegs.map((leg) => leg.bet),
-    }));
-
     return {
       scheduledToday,
       scheduledYesterday,
@@ -220,13 +163,11 @@ export class DashboardRepository {
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
-      recentCoupons,
       topBets,
       activityNotifications,
       latestFixture,
       latestOddsSnapshot,
       latestTeamStats,
-      latestCoupon,
       settledBets,
     };
   }
