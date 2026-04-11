@@ -1,6 +1,6 @@
 import { formatTime } from "@/lib/date";
+import type { FixturePanel } from "@/domains/dashboard/types/dashboard";
 import type { FixtureRow } from "../types/fixture";
-import type { FixturePanel } from "@/types/dashboard";
 
 /** Formate le score d'un fixture terminé.
  *  score: "2 - 1", htScore: "1 - 0" → "2 – 1 (1 – 0 MT)" */

@@ -68,8 +68,9 @@ Migration de tout le code existant.
 ```
 domains/
   dashboard/
-    types/        ← depuis types/dashboard.ts
-    use-cases/    ← depuis hooks/use-dashboard-summary.ts + lib/dashboard-api.ts
+    types/        ✅ domains/dashboard/types/dashboard.ts
+    use-cases/    ✅ domains/dashboard/use-cases/get-dashboard-summary.ts
+    helpers/      ✅ domains/dashboard/helpers/*
   audit/          ✅
     types/        ✅ domains/audit/types/audit.ts
     use-cases/    ✅ domains/audit/use-cases/get-audit-overview.ts
@@ -84,17 +85,17 @@ shared/
 ### Pages à décomposer
 
 - [x] `audit/page.tsx` → `audit/components/` (audit-overview-section, league-breakdown, bets-breakdown, count-card)
-- [ ] `page.tsx` (dashboard) → extraire dans `(dashboard)/components/` (performance-card, kpi-cards, pipeline-status, active-alerts)
+- [x] `page.tsx` (dashboard) → extraire dans `(dashboard)/components/` (performance-card, kpi-cards, pipeline-status, active-alerts)
 
 ### Nettoyage types
 
 - [x] Supprimer `AuditFixtureRow` de `types/audit.ts`
 - [x] Supprimer `types/audit.ts` (migré dans `domains/audit/types/`)
-- [ ] Supprimer `types/dashboard.ts` une fois migré dans `domains/`
+- [x] Supprimer `types/dashboard.ts` une fois migré dans `domains/`
 
 ### Imports
 
-- [ ] Mettre à jour tous les imports après migration dashboard
+- [x] Mettre à jour tous les imports après migration dashboard
 
 ---
 

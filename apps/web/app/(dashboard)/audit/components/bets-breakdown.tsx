@@ -25,7 +25,9 @@ export function BetsBreakdown({
         <div className="space-y-1.5">
           {betsByStatus.map((r) => (
             <div key={r.status} className="flex items-center justify-between">
-              <span className="font-mono text-xs text-slate-500">{r.status}</span>
+              <span className="font-mono text-xs text-slate-500">
+                {r.status}
+              </span>
               <span className="font-semibold tabular-nums text-slate-700">
                 {r.count.toLocaleString()}
               </span>
@@ -41,7 +43,9 @@ export function BetsBreakdown({
         <div className="space-y-1.5">
           {betsByMarket.map((r) => (
             <div key={r.market} className="flex items-center justify-between">
-              <span className="font-mono text-xs text-slate-500">{r.market}</span>
+              <span className="font-mono text-xs text-slate-500">
+                {r.market}
+              </span>
               <span className="font-semibold tabular-nums text-slate-700">
                 {r.count.toLocaleString()}
               </span>
@@ -86,7 +90,9 @@ export function BetsBreakdown({
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Suspensions actives</span>
+              <span className="text-xs text-slate-500">
+                Suspensions actives
+              </span>
               <span
                 className={`font-semibold tabular-nums ${activeSuspensions > 0 ? "text-rose-600" : "text-slate-700"}`}
               >

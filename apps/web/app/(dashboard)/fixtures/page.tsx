@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "@/components/app-page-header";
 import { todayIso } from "@/lib/date";
 import { getFixtures } from "@/domains/fixture/use-cases/get-fixtures";
 import type { FixtureFilters } from "@/domains/fixture/types/fixture";

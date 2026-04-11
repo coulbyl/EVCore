@@ -1,5 +1,5 @@
 import { SectionHeader } from "@evcore/ui";
-import type { ActivityItem } from "../types/dashboard";
+import type { ActivityItem } from "@/domains/dashboard/types/dashboard";
 
 const levelClassName: Record<ActivityItem["level"], string> = {
   INFO: "text-sky-700",

@@ -19,7 +19,7 @@ import {
   selectionStatusBadgeClass,
 } from "@/helpers/coupon";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { CouponSnapshot } from "@/types/dashboard";
+import type { CouponSnapshot } from "@/domains/dashboard/types/dashboard";
 import {
   locales,
   getLocale,

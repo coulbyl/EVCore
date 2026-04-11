@@ -52,7 +52,6 @@ export type CouponSnapshot = {
     pick: string;
     odds: string;
     ev: string;
-    // Diagnostic fields (populated by GET /coupon/:id)
     probEstimated?: string;
     predictionSource?: PredictionSource | null;
     lambdaHome?: string | null;

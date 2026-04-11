@@ -3,7 +3,11 @@ import { CountCard } from "./count-card";
 import { LeagueBreakdown } from "./league-breakdown";
 import { BetsBreakdown } from "./bets-breakdown";
 
-export function AuditOverviewSection({ overview }: { overview: AuditOverview }) {
+export function AuditOverviewSection({
+  overview,
+}: {
+  overview: AuditOverview;
+}) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CouponSnapshot } from "../types/dashboard";
+import type { CouponSnapshot } from "@/domains/dashboard/types/dashboard";
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import {
   couponStatusLabel,
@@ -14,7 +14,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "../helpers/coupon";
-import type { CouponTier } from "../types/dashboard";
+import type { CouponTier } from "@/domains/dashboard/types/dashboard";
 import {
   fixtureStatusLabel,
   fixtureStatusBadgeClass,

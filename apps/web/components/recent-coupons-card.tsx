@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
-import type { CouponSnapshot } from "../types/dashboard";
+import type { CouponSnapshot } from "@/domains/dashboard/types/dashboard";
 import { CouponDetailLeg, CouponDetailStats } from "./coupon-detail";
 import { useIsMobile } from "../hooks/use-mobile";
 import {

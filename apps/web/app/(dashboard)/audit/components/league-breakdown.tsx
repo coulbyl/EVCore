@@ -37,7 +37,10 @@ function XgBarFull({ pct }: { pct: number }) {
     <div className="mt-3 flex items-center gap-2">
       <span className={`tabular-nums font-semibold ${text}`}>{pct}%</span>
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full rounded-full ${color}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <span className="text-[0.68rem] uppercase tracking-[0.12em] text-slate-500">
         xG
@@ -101,13 +104,19 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
       <table className="min-w-full text-left text-sm">
         <thead className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-500">
           <tr>
-            {["Ligue", "Active", "Fixtures", "Terminées", "Couv. xG", "Cotes", "Stats"].map(
-              (col) => (
-                <th key={col} className="px-4 py-3 font-medium">
-                  {col}
-                </th>
-              ),
-            )}
+            {[
+              "Ligue",
+              "Active",
+              "Fixtures",
+              "Terminées",
+              "Couv. xG",
+              "Cotes",
+              "Stats",
+            ].map((col) => (
+              <th key={col} className="px-4 py-3 font-medium">
+                {col}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-border bg-white">

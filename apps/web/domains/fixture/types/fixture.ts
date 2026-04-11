@@ -1,5 +1,5 @@
 import type { TimeSlotKey } from "@/constants/time-slots";
-import type { PredictionSource } from "@/types/dashboard";
+import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
 
 // ---------------------------------------------------------------------------
 // Fixture domain types — indépendants du concept "audit"

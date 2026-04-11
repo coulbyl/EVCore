@@ -9,7 +9,7 @@ import { FixtureName, FixtureStatusBadge } from "./coupon-detail";
 import { formatPickForDisplay } from "../helpers/coupon";
 import { useIsMobile } from "../hooks/use-mobile";
 
-import type { OpportunityRow } from "../types/dashboard";
+import type { OpportunityRow } from "@/domains/dashboard/types/dashboard";
 
 function CopyFixtureId({
   fixtureId,

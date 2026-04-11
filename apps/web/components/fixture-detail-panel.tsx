@@ -8,7 +8,7 @@ import { FixtureName } from "./coupon-detail";
 import { InfoTooltip } from "./info-tooltip";
 import { formatPickForDisplay } from "../helpers/coupon";
 import { useIsMobile } from "../hooks/use-mobile";
-import type { FixturePanel } from "../types/dashboard";
+import type { FixturePanel } from "@/domains/dashboard/types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {
   EV: "Expected Value — valeur attendue du pari. Formule : (probabilité modèle × cotes) − 1. Un EV ≥ 0.08 est requis pour déclencher une décision BET dans EVCore.",

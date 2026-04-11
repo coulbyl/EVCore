@@ -4,7 +4,7 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CheckCircle, ClipboardCheck, Loader2, X } from "lucide-react";
 import { Button } from "@evcore/ui";
-import { declareFixtureResult } from "../lib/dashboard-api";
+import { declareFixtureResult } from "@/domains/dashboard/use-cases/declare-fixture-result";
 
 type State = "idle" | "loading" | "success" | "error";
 
