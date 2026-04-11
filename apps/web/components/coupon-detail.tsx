@@ -1,19 +1,19 @@
 import Image from "next/image";
 import type { CouponSnapshot } from "@/domains/dashboard/types/dashboard";
-import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import {
-  couponStatusLabel,
-  couponStatusBadgeClass,
-  couponModeLabel,
-  couponTierLabel,
-  couponTierBadgeClass,
   combinedOdds,
-  selectionStatusLabel,
-  selectionStatusBadgeClass,
-  selectionCardClass,
+  couponModeLabel,
+  couponStatusBadgeClass,
+  couponStatusLabel,
+  couponTierBadgeClass,
+  couponTierLabel,
   formatMarketForDisplay,
   formatPickForDisplay,
-} from "../helpers/coupon";
+  selectionCardClass,
+  selectionStatusBadgeClass,
+  selectionStatusLabel,
+} from "@/domains/dashboard/helpers/coupon-display";
+import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import type { CouponTier } from "@/domains/dashboard/types/dashboard";
 import {
   fixtureStatusLabel,

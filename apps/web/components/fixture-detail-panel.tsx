@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-
+import { formatPickForDisplay } from "@/domains/dashboard/helpers/coupon-display";
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
 import { FixtureName } from "./coupon-detail";
 import { InfoTooltip } from "./info-tooltip";
-import { formatPickForDisplay } from "../helpers/coupon";
 import { useIsMobile } from "../hooks/use-mobile";
 import type { FixturePanel } from "@/domains/dashboard/types/dashboard";
 

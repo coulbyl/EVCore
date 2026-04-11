@@ -1,13 +1,7 @@
-// Pure helpers — no React, no imports from components
-
 type CouponStatus = "PENDING" | "WON" | "LOST";
 type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF" | "SAFE";
 type SelectionStatus = "PENDING" | "WON" | "LOST" | "VOID";
 type Locale = "fr" | "en";
-
-// ---------------------------------------------------------------------------
-// Coupon-level
-// ---------------------------------------------------------------------------
 
 const COUPON_STATUS_LABELS: Record<
   Locale,
@@ -62,20 +56,6 @@ export function couponStatusBadgeClass(status: CouponStatus): string {
   return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
-export function couponStatusDotClass(status: CouponStatus): string {
-  if (status === "WON") return "bg-emerald-400";
-  if (status === "LOST") return "bg-rose-400";
-  return "bg-amber-400";
-}
-
-export function couponStatusHeaderBadgeClass(status: CouponStatus): string {
-  if (status === "WON")
-    return "border-emerald-400/40 bg-emerald-400/20 text-emerald-300";
-  if (status === "LOST")
-    return "border-rose-400/40 bg-rose-400/20 text-rose-300";
-  return "border-amber-400/40 bg-amber-400/20 text-amber-300";
-}
-
 export function couponModeLabel(legs: number, locale: Locale = "fr"): string {
   if (locale === "en") return legs > 1 ? "Combined" : "Single";
   return legs > 1 ? "Combiné" : "Simple";
@@ -88,7 +68,7 @@ export function couponTierLabel(
   if (tier === "SPECULATIF")
     return locale === "en" ? "SPECULATIVE" : "SPÉCULATIF";
   if (tier === "SAFE") return "SAFE";
-  return tier; // PREMIUM and STANDARD are the same in both locales
+  return tier;
 }
 
 export function couponTierBadgeClass(tier: CouponTier): string {
@@ -105,10 +85,6 @@ export function combinedOdds(odds: string[]): string {
   const product = odds.reduce((acc, odd) => acc * Number.parseFloat(odd), 1);
   return Number.isFinite(product) ? product.toFixed(2) : "—";
 }
-
-// ---------------------------------------------------------------------------
-// Selection-level (bet)
-// ---------------------------------------------------------------------------
 
 const SELECTION_STATUS_LABELS: Record<
   Locale,
@@ -175,10 +151,6 @@ export function selectionCardClass(status: SelectionStatus): string {
   return "border-border bg-white";
 }
 
-// ---------------------------------------------------------------------------
-// Market formatting
-// ---------------------------------------------------------------------------
-
 const MARKET_LABELS: Record<Locale, Record<string, string>> = {
   fr: {
     ONE_X_TWO: "Résultat",
@@ -211,10 +183,6 @@ export function formatMarketForDisplay(
     market.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
   );
 }
-
-// ---------------------------------------------------------------------------
-// Pick formatting
-// ---------------------------------------------------------------------------
 
 export function formatPickForDisplay(pick: string, market: string): string {
   const formatted = pick

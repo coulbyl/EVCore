@@ -101,12 +101,13 @@ shared/
 
 ## Phase 5 — Nettoyage
 
-- [ ] Supprimer `app/(dashboard)/coupons/`
-- [ ] Supprimer `app/(public)/coupons/`
-- [ ] Vider `app/(public)/` — garder le dossier, ajouter `page.tsx` placeholder (future landing)
-- [ ] Supprimer hooks orphelins : `use-coupons-by-period.ts`, `use-coupon-by-id.ts`
-- [ ] Supprimer `helpers/coupon.ts`
-- [ ] Supprimer composants coupons : `coupon-detail.tsx`, `recent-coupons-card.tsx`
+- [x] Supprimer `app/(dashboard)/coupons/`
+- [x] Supprimer `app/(public)/coupons/`
+- [x] Vider `app/(public)/` — garder le dossier, ajouter `page.tsx` placeholder (future landing)
+- [x] Supprimer hooks orphelins : `use-coupons-by-period.ts`, `use-coupon-by-id.ts`
+- [x] Supprimer `helpers/coupon.ts`
+- [x] Supprimer composant coupon mort : `recent-coupons-card.tsx`
+- [ ] Revoir `coupon-detail.tsx` avant suppression / découpage final
 
 ---
 
