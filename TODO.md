@@ -269,16 +269,16 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 - [x] Supprimer `sendCouponResult`
 - [x] Supprimer `sendNoBetToday` (retiré avec le domaine coupon)
 - [ ] Supprimer les templates email liés aux coupons (`renderDailyCoupon` dans `@evcore/transactional`)
-- [ ] Nettoyer les `NotificationType` obsolètes liés aux coupons (`DAILY_COUPON`, `NO_BET_TODAY`, `COUPON_RESULT`)
+- [x] Nettoyer les `NotificationType` obsolètes liés aux coupons (`DAILY_COUPON`, `NO_BET_TODAY`, `COUPON_RESULT`)
 
 ### DB / Prisma / migrations
 
-- [ ] Supprimer `DailyCoupon`
-- [ ] Supprimer `CouponLeg`
-- [ ] Supprimer les relations coupon depuis `Bet`
-- [ ] Nettoyer les colonnes et index coupon-centric
-- [ ] Revoir les commentaires métier de `qualityScore`
-- [ ] Écrire une migration Prisma de suppression forte du modèle coupon
+- [x] Supprimer `DailyCoupon`
+- [x] Supprimer `CouponLeg`
+- [x] Supprimer les relations coupon depuis `Bet`
+- [x] Nettoyer les colonnes et index coupon-centric
+- [x] Revoir les commentaires métier de `qualityScore`
+- [x] Écrire une migration Prisma de suppression forte du modèle coupon
 
 ### Scripts / backtest / dette technique
 
@@ -291,7 +291,7 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 ## Ordre d'exécution
 
 ```
-Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (data model + auth ✅, coupon backend ✅, DB/transactional restants)
+Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (quasi complet — reste transactional + métriques + scripts DB)
 ```
 
 ---
