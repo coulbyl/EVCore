@@ -1,3 +1,6 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import type { BetSlipView } from "../types/bet-slip";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -26,4 +29,19 @@ export async function getBetSlipById(id: string): Promise<BetSlipView> {
   }
 
   return (await response.json()) as BetSlipView;
+}
+
+export function useBetSlips() {
+  return useQuery({
+    queryKey: ["bet-slips"],
+    queryFn: getBetSlips,
+  });
+}
+
+export function useBetSlipById(id: string) {
+  return useQuery({
+    queryKey: ["bet-slip", id],
+    queryFn: () => getBetSlipById(id),
+    enabled: id.length > 0,
+  });
 }

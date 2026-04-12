@@ -11,10 +11,12 @@ type NavItem = {
 export function PageShell({
   navItems,
   actions,
+  sidebarFooter,
   children,
 }: {
   navItems: NavItem[];
   actions?: ReactNode;
+  sidebarFooter?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -31,7 +33,8 @@ export function PageShell({
             Console
           </h1>
           <p className="mt-2 max-w-[18rem] text-sm leading-6 text-slate-300">
-            Operator workspace for coupons, fixture audit, and pipeline control.
+            Operator workspace for fixtures, bet slips, audit, and pipeline
+            control.
           </p>
         </div>
         <nav className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
@@ -63,6 +66,7 @@ export function PageShell({
           <p className="mt-2 text-sm leading-6 text-slate-300">
             Public V1 without auth. All data will come from backend APIs.
           </p>
+          {sidebarFooter ? <div className="mt-4">{sidebarFooter}</div> : null}
         </div>
       </aside>
 
@@ -92,7 +96,12 @@ export function PageShell({
         </main>
 
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-white/88 lg:hidden">
-          <div className="grid grid-cols-4 gap-1">
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+            }}
+          >
             {navItems.map((item) => (
               <a
                 key={item.label}

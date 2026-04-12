@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { X, ShoppingCart, Trash2, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  X,
+  ShoppingCart,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { Drawer } from "vaul";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
 import { FixtureName } from "./fixture-name";
-import { formatPickForDisplay, formatMarketForDisplay } from "@/helpers/fixture";
+import {
+  formatPickForDisplay,
+  formatMarketForDisplay,
+} from "@/helpers/fixture";
 
 function StakeInput({
   value,
@@ -41,8 +50,8 @@ export function BetSlipDrawer() {
     clearDraft,
   } = useBetSlip();
 
-  const [unitStakeInput, setUnitStakeInput] = useState(
-    () => String(draft.unitStake),
+  const [unitStakeInput, setUnitStakeInput] = useState(() =>
+    String(draft.unitStake),
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);

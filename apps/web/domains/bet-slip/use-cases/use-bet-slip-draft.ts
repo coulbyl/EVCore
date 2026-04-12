@@ -40,13 +40,16 @@ export function useBetSlipDraft() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const setDraft = useCallback((updater: (prev: BetSlipDraft) => BetSlipDraft) => {
-    setDraftState((prev) => {
-      const next = updater(prev);
-      saveDraft(next);
-      return next;
-    });
-  }, []);
+  const setDraft = useCallback(
+    (updater: (prev: BetSlipDraft) => BetSlipDraft) => {
+      setDraftState((prev) => {
+        const next = updater(prev);
+        saveDraft(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const addItem = useCallback(
     (item: BetSlipDraftItem) => {

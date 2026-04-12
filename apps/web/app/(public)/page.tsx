@@ -6,9 +6,10 @@ export default function PublicLandingPlaceholder() {
       <div className="mx-auto max-w-4xl">
         <p className="text-sm font-medium text-slate-500">EVCore</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-          Landing page à venir 🚧 <a href="/dashboard" className="text-blue-500 hover:underline">
-          Accéder au tableau de bord
-        </a>
+          Landing page à venir 🚧{" "}
+          <a href="/auth/login" className="text-blue-500 hover:underline">
+            Se connecter
+          </a>
         </h1>
       </div>
     </main>

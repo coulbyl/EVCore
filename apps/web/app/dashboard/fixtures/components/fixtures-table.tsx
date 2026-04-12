@@ -154,20 +154,17 @@ function FixtureMobileCard({
   return (
     <div
       className={`rounded-[1.2rem] border p-4 transition-colors ${
-        selected
-          ? "border-accent bg-accent/5"
-          : "border-border bg-panel-strong"
+        selected ? "border-accent bg-accent/5" : "border-border bg-panel-strong"
       }`}
     >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="w-full text-left"
-      >
+      <button type="button" onClick={onSelect} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <FixtureTeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
+              <FixtureTeamLogos
+                homeLogo={row.homeLogo}
+                awayLogo={row.awayLogo}
+              />
               <p className="truncate text-sm font-semibold text-slate-900">
                 {row.fixture}
               </p>

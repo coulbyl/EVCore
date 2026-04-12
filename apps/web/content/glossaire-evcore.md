@@ -726,9 +726,11 @@ Exemple :
 
 - `2024-2025`
 
-### `coupon`
+### `bet slip`
 
-Un ticket ou un groupe de sélections généré pour une journée ou une fenêtre donnée.
+Un ticket utilisateur final contenant une liste de **bets simples** validés.
+
+Le `bet slip` est immuable après création.
 
 ### `settled bet`
 
