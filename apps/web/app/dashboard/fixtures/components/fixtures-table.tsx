@@ -5,6 +5,11 @@ import { Drawer } from "vaul";
 import { ShoppingCart, Check, ChevronRight } from "lucide-react";
 import { SettleFixtureDialog } from "@/components/settle-fixture-dialog";
 import { formatScore, formatKickoff } from "@/domains/fixture/helpers/fixture";
+import {
+  fixtureStatusBadgeClass,
+  fixtureStatusLabel,
+  formatCombinedPickForDisplay,
+} from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
@@ -160,11 +165,11 @@ function AddToSlipButton({
   );
 }
 
-function ResultAction({ row }: { row: FixtureRow }) {
+function ResultAction({ row, isAdmin }: { row: FixtureRow; isAdmin: boolean }) {
   const isBet = row.modelRun?.decision === "BET";
   const settled =
     row.modelRun?.betStatus === "WON" || row.modelRun?.betStatus === "LOST";
-  if (!isBet || settled) return null;
+  if (!isAdmin || !isBet || settled) return null;
 
   return (
     <SettleFixtureDialog
@@ -181,16 +186,24 @@ function ResultAction({ row }: { row: FixtureRow }) {
 
 function FixtureMobileCard({
   row,
+  isAdmin,
   selected,
   onSelect,
 }: {
   row: FixtureRow;
+  isAdmin: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
   const mr = row.modelRun;
   const score = formatScore(row.score, row.htScore);
-  const isFinished = row.status === "FINISHED";
+  const pickLabel =
+    mr?.market && mr?.pick
+      ? formatCombinedPickForDisplay({
+          market: mr.market,
+          pick: mr.pick,
+        })
+      : null;
 
   return (
     <div
@@ -203,59 +216,81 @@ function FixtureMobileCard({
         onClick={onSelect}
         className="w-full cursor-pointer text-left"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <FixtureTeamLogos
-                homeLogo={row.homeLogo}
-                awayLogo={row.awayLogo}
-              />
-              <p className="truncate text-sm font-semibold text-slate-900">
-                {row.fixture}
-              </p>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {row.competition} · {formatKickoff(row.scheduledAt)}
-              {isFinished && score ? ` · ${score}` : ""}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <DecisionBadge decision={mr?.decision ?? null} />
-            <ChevronRight size={15} className="text-slate-300" />
-          </div>
-        </div>
-
-        {mr?.decision === "BET" && (
-          <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-                  Sélection
-                </p>
-                <p className="truncate text-sm font-bold text-white">
-                  {mr.pick ?? "—"}
-                  {mr.market ? ` · ${mr.market}` : ""}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <FixtureTeamLogos
+                  homeLogo={row.homeLogo}
+                  awayLogo={row.awayLogo}
+                />
+                <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+                  {row.fixture}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+            </div>
+            <span
+              className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
+            >
+              {fixtureStatusLabel(row.status)}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+            {pickLabel ? (
+              <span className="font-medium text-slate-800">{pickLabel}</span>
+            ) : (
+              <span className="font-medium text-slate-400">Sans sélection</span>
+            )}
+            {score ? <span className="text-slate-400">•</span> : null}
+            {score ? (
+              <span className="font-semibold tabular-nums text-slate-700">
+                {score}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="truncate text-xs text-slate-500">
+                {row.competition}
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {formatKickoff(row.scheduledAt)}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <DecisionBadge decision={mr?.decision ?? null} />
+              <ChevronRight size={15} className="text-slate-300" />
+            </div>
+          </div>
+
+          {mr?.decision === "BET" && (
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-white">
+              <div>
                 <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-                  EV
+                  Valeur
                 </p>
-                <p className="text-sm font-bold text-emerald-400">
+                <p className="mt-1 text-sm font-bold text-emerald-400">
                   {mr.ev ?? "—"}
                 </p>
               </div>
-              {mr.betStatus && mr.betStatus !== "PENDING" && (
-                <BetResultBadge status={mr.betStatus} />
-              )}
+              <div className="text-right">
+                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
+                  Résultat
+                </p>
+                <div className="mt-1 flex justify-end">
+                  <BetResultBadge status={mr.betStatus ?? null} />
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </button>
 
       {mr?.decision === "BET" && (
         <div className="mt-2 flex gap-2">
-          <ResultAction row={row} />
+          <ResultAction row={row} isAdmin={isAdmin} />
           <AddToSlipButton row={row} variant="full" />
         </div>
       )}
@@ -269,10 +304,12 @@ function FixtureMobileCard({
 
 function FixtureTableRow({
   row,
+  isAdmin,
   selected,
   onSelect,
 }: {
   row: FixtureRow;
+  isAdmin: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -311,7 +348,11 @@ function FixtureTableRow({
       </td>
       {/* Pick */}
       <td className="px-4 py-3 text-sm text-slate-700">
-        {mr?.pick ?? <span className="text-slate-400">—</span>}
+        {mr?.market && mr?.pick ? (
+          formatCombinedPickForDisplay({ market: mr.market, pick: mr.pick })
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
       </td>
       {/* Cote */}
       <td className="px-4 py-3 text-sm tabular-nums font-medium text-slate-700">
@@ -332,7 +373,7 @@ function FixtureTableRow({
       {/* Actions */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-2">
-          <ResultAction row={row} />
+          <ResultAction row={row} isAdmin={isAdmin} />
           <AddToSlipButton row={row} />
         </div>
       </td>
@@ -363,9 +404,11 @@ function EmptyState() {
 export function FixturesTable({
   rows,
   total,
+  isAdmin,
 }: {
   rows: FixtureRow[];
   total: number;
+  isAdmin: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -380,12 +423,13 @@ export function FixturesTable({
   if (rows.length === 0) return <EmptyState />;
 
   return (
-    <>
+    <div className="h-full lg:flex lg:min-h-0 lg:flex-col">
       <div className="space-y-3 lg:hidden">
         {rows.map((row) => (
           <FixtureMobileCard
             key={row.fixtureId}
             row={row}
+            isAdmin={isAdmin}
             selected={selectedId === row.fixtureId}
             onSelect={() => handleSelect(row)}
           />
@@ -395,7 +439,7 @@ export function FixturesTable({
         </p>
       </div>
 
-      <div className="hidden overflow-hidden rounded-[1.3rem] border border-border lg:block">
+      <div className="hidden min-h-0 flex-1 overflow-y-auto rounded-[1.3rem] border border-border lg:block">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-slate-50/80">
@@ -413,7 +457,7 @@ export function FixturesTable({
               ].map((col, i) => (
                 <th
                   key={i}
-                  className="px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500"
+                  className="sticky top-0 z-10 bg-slate-50/95 px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500 backdrop-blur"
                 >
                   {col}
                 </th>
@@ -425,6 +469,7 @@ export function FixturesTable({
               <FixtureTableRow
                 key={row.fixtureId}
                 row={row}
+                isAdmin={isAdmin}
                 selected={selectedId === row.fixtureId}
                 onSelect={() => handleSelect(row)}
               />
@@ -460,6 +505,6 @@ export function FixturesTable({
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
-    </>
+    </div>
   );
 }

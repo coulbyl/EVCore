@@ -5,9 +5,9 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Créer un compte"
-      subtitle="Créez votre accès opérateur pour préparer et suivre vos slips."
-      asideTitle="Un compte opérateur, une session backend, un espace dashboard protégé."
-      asideText="Le compte créé ici ouvre une session côté backend dès l'inscription. Vous pouvez ensuite construire vos slips simples depuis les fixtures scorées."
+      subtitle="Créez votre accès pour préparer et suivre vos tickets."
+      asideTitle="Un accès simple pour commencer à travailler sur vos sélections."
+      asideText="Créez votre compte, ouvrez votre espace et commencez à construire vos tickets depuis les matchs analysés."
     >
       <RegisterForm />
     </AuthShell>

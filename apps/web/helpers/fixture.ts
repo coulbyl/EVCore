@@ -1,3 +1,5 @@
+import type { FixturePickSnapshot } from "@/domains/fixture/types/fixture";
+
 type Locale = "fr" | "en";
 
 const FIXTURE_STATUS_LABELS: Record<Locale, Record<string, string>> = {
@@ -122,4 +124,65 @@ export function formatPickForDisplay(pick: string, market: string): string {
   }
 
   return formatted;
+}
+
+export function formatDiagnosticPickForDisplay(
+  market: string,
+  pick: string,
+): string {
+  if (market === "ONE_X_TWO") {
+    if (pick === "HOME") return "V1";
+    if (pick === "DRAW") return "N";
+    if (pick === "AWAY") return "V2";
+  }
+
+  if (market === "BTTS") {
+    if (pick === "YES") return "BB OUI";
+    if (pick === "NO") return "BB NON";
+  }
+
+  if (market === "FIRST_HALF_WINNER") {
+    if (pick === "HOME") return "MT DOMICILE";
+    if (pick === "DRAW") return "MT NUL";
+    if (pick === "AWAY") return "MT EXTÉRIEUR";
+  }
+
+  if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
+    if (pick === "OVER") return "PLUS DE 2.5";
+    if (pick === "UNDER") return "MOINS DE 2.5";
+    if (pick === "OVER_1_5") return "PLUS DE 1.5";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5";
+    if (pick === "OVER_3_5") return "PLUS DE 3.5";
+    if (pick === "UNDER_3_5") return "MOINS DE 3.5";
+  }
+
+  if (market === "OVER_UNDER_HT") {
+    if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
+    if (pick === "UNDER_0_5") return "MOINS DE 0.5 MT";
+    if (pick === "OVER_1_5") return "PLUS DE 1.5 MT";
+    if (pick === "UNDER_1_5") return "MOINS DE 1.5 MT";
+  }
+
+  if (market === "HALF_TIME_FULL_TIME") {
+    return pick.replace(/_/g, " / ");
+  }
+
+  return pick.replace(/_/g, " ");
+}
+
+export function formatCombinedPickForDisplay(
+  snapshot: Pick<
+    FixturePickSnapshot,
+    "market" | "pick" | "comboMarket" | "comboPick"
+  >,
+): string {
+  const primary = formatDiagnosticPickForDisplay(
+    snapshot.market,
+    snapshot.pick,
+  );
+  if (!snapshot.comboMarket || !snapshot.comboPick) {
+    return primary;
+  }
+
+  return `${primary} + ${formatDiagnosticPickForDisplay(snapshot.comboMarket, snapshot.comboPick)}`;
 }

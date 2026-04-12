@@ -1,223 +1,86 @@
 # EVCore — TODO
 
-## Règle migrations DB
+## Idée générale
 
-- L'agent ne doit **pas** créer de migration Prisma
-- Les migrations sont créées manuellement par l'utilisateur
-- Pour travailler sans erreurs de types Prisma, l'agent peut utiliser uniquement `db:generate`
+Le socle principal est en place :
 
----
+- auth web branchée sur les sessions backend
+- dashboard, fixtures, audit, tickets et détail ticket livrés
+- vocabulaire `coupon` retiré du produit courant
+- backend auth / fixture / audit / bet-slip opérationnel
+- analyse quotidienne auto branchée côté backend
 
-## État actuel
+La suite consiste surtout à finir le polish produit et verrouiller les derniers détails UX.
 
-### Terminé
+## À faire
 
-- Fondations web `fixtures` + filtres + helpers date
-- Page `/dashboard/fixtures` responsive
-- Refactor dashboard / audit vers architecture domain-based
-- Nettoyage du vocabulaire `coupon` côté web et glossaire
-- Backend `fixture`, `audit`, `bet-slip`, `auth`
-- Data model `User` / `Session` / `BetSlip` / `BetSlipItem`
-- Hard delete du domaine coupon côté backend
-- Draft panier localStorage + drawer + ajout depuis fixtures
-- Auth web branchée sur les sessions backend
-- Pages `Mes slips` + détail de slip
-- Service worker ajusté pour ne pas polluer le cache en dev
-
-### À faire maintenant
-
-- vérification fine des parcours mobile
-
----
-
-## Phase A — Auth web + proxy (priorité)
-
-Le backend d'auth existe déjà. Il faut maintenant brancher correctement le web Next.js sur ce backend, en reprenant le pattern de `fne-flash-ci`, **sans permissions ni RBAC**.
-
-### Cible
-
-- session stockée uniquement en cookie `httpOnly`
-- backend NestJS = autorité unique d'auth
-- web Next.js = lecture de session via `/auth/me`
-- routes `/dashboard/*` protégées
-- routes `/auth/*` publiques
-- aucune logique de permissions / rôles avancés côté web
-
-### Structure cible
-
-```text
-apps/web/
-  app/
-    (public)/
-      auth/
-        login/
-        register/
-        components/
-    dashboard/
-      ...
-  domains/
-    auth/
-      types/
-      use-cases/
-      context/   // seulement si nécessaire
-  proxy.ts
-```
-
-### Livré
-
-- [x] domaine `domains/auth/`
-  - [x] `types/`
-  - [x] `use-cases/`
-  - [ ] `context/` non nécessaire en V1
-- [x] `domains/auth/use-cases/get-current-session.ts`
-  - [x] lecture des cookies côté serveur
-  - [x] forward vers `GET /auth/me`
-- [x] `domains/auth/use-cases/auth-request.ts`
-  - [x] helper client avec `credentials: "include"`
-  - [x] gestion homogène des erreurs backend
-- [x] `apps/web/proxy.ts`
-  - [x] redirection `/dashboard/*` vers `/auth/login` si pas de session
-  - [x] redirection hors de `/auth/login` si session active
-- [x] routes / pages auth
-  - [x] `app/(public)/auth/login/page.tsx`
-  - [x] `app/(public)/auth/register/page.tsx`
-  - [x] `app/(public)/auth/components/*`
-  - [x] logout côté web
-- [x] intégration session dans le shell dashboard
-  - [x] affichage de l'utilisateur courant
-  - [x] action logout
-
----
-
-## Phase B — Bet slips web
-
-Le panier draft existe déjà. Il faut terminer le flux utilisateur autour des slips créés.
-
-### Déjà fait
-
-- [x] domaine `domains/bet-slip/` créé (`types`, `use-cases`, `context`)
-- [x] draft de panier côté web
-- [x] persistance du draft en `localStorage`
-- [x] ajout / retrait d'un bet depuis `fixtures`
-- [x] drawer panier
-- [x] mise unitaire
-- [x] overrides de mise
-- [x] total du panier
-- [x] soumission du draft vers `POST /bet-slips`
-- [x] lien de navigation `Mes slips`
-
-### Reste à faire
-
-- [x] geler clairement la composition et les mises après création du `BetSlip`
-- [ ] introduire / confirmer le type `BetSlipStake` si utile
-- [x] page `mes bet-slips`
-- [x] page détail `bet-slips/[id]`
-- [x] permettre la gestion explicite de plusieurs slips utilisateur
-
----
-
-## Phase C — Nettoyage final du vocabulaire coupon
-
-EVCore ne doit plus réintroduire le concept produit de `coupon`.
-
-- [x] supprimer le vocabulaire `coupon` restant dans l'UI et les labels
-- [x] nettoyer le glossaire si nécessaire
-- [x] retirer les textes shell encore orientés `coupon`
-- [ ] éviter toute réintroduction de logique de combiné dans l'UX
-
----
-
-## Phase D — Polish produit
-
+- [ ] vérifier finement les parcours mobile-first sur auth, fixtures, drawer et tickets
 - [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
-- [x] homogénéiser les fetchers web vers le backend protégé
-- [ ] vérifier les parcours mobile-first sur auth + fixtures + drawer + slips
-- [x] vocabulaire : Fixtures → Matchs, Slips → Tickets (labels UI uniquement)
-- [x] drawer panier : bouton suppression visible sur mobile + mise unitaire appliquée à la frappe
-- [x] card opérateur : ROI global du modèle (bets système `decision=BET`, pondéré par `stakePct`, filtre date)
+- [ ] confirmer ou introduire `BetSlipStake` si ce type apporte une vraie valeur
+- [ ] éviter toute réintroduction de logique de combiné dans l’UX
 
----
+## Retours de test
 
-## Phase E — Dashboard opérateur
+### Fixtures
 
-Remplacer la carte "Performance Globale" (données système globales) par un résumé
-personnel pour les utilisateurs non-admin.
+- [x] sur mobile, garder `Marché` et `Prob` visibles dans le tableau de diagnostic, avec `Cote` encore visible sur desktop
+- [x] garder un header fixe sur la table fixtures pour ne pas perdre les repères pendant le scroll vertical
+- [x] remplacer `Marché / Pick` par `Marché` dans le diagnostic
+- [x] retirer l’id de fixture et l’action de copie, jugés inutiles
+- [x] afficher le score dès qu’un score existe, quel que soit le statut du match
+- [x] conserver les valeurs actuelles de `Entrée modèle`, mais les réorganiser en `grid-cols-4` compact sur mobile
+- [x] revoir le header mobile du détail fixture sur 2 lignes :
+      ligne 1 = équipes + badge de statut
+      ligne 2 = marché + score si disponible
+- [x] améliorer la présentation du fixture item sur mobile
+- [x] ne pas rendre `Déclarer le résultat` pour les non-admin
 
-### Backend
+- [ ] garder le concept actuel de panier, mais revoir le wording et l’UX pour se rapprocher d’un ticket plus naturel
+- [ ] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
+- [ ] renommer `Ajouter panier` en `Placer`
+- [ ] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
+- [ ] permettre à l’utilisateur de transformer un pick modèle en décision utilisateur explicite, que ce soit `BET` ou `NO_BET`
 
-- [x] `GET /bet-slips/summary` — agrégat par userId : slips créés, bets WON/LOST/PENDING, winRate
-- [x] Endpoint protégé par `AuthSessionGuard`, userId déduit de la session
-- [x] Filtre optionnel `?date=` sur `fixture.scheduledAt`
+### Dashboard
 
-### Web
+- [ ] afficher le scoring du jour et les matchs avec cotes uniquement pour l’admin sur le dashboard d’accueil
+- [ ] afficher un classement par compétitions actives
+- [ ] afficher un top 10 des utilisateurs selon leurs tickets, métrique exacte à définir (`ROI`, gain net, autre)
 
-- [x] `domains/bet-slip/use-cases/get-operator-summary.ts`
-- [x] `app/dashboard/components/operator-performance-card.tsx`
-- [x] `DashboardPageClient` : `isAdmin` → `PerformanceCard`, sinon → `OperatorPerformanceCard`
-- [x] Filtre par date sur `OperatorPerformanceCard` (même UX que l'admin)
+### Mes tickets
 
----
+- [ ] afficher le gain ou la perte d’un ticket, avec une valeur provisoire tant que tout n’est pas settlé
+- [ ] dans le détail ticket, afficher le score et le statut de chaque pick
 
-## Backend — statut
+### Langage produit
 
-### Terminé
+- [ ] retirer le vocabulaire trop technique au profit de mots simples et clairs
+- [ ] garder les mots métier simples et connus de tous comme `cote`, `ticket` et `mise`
+- [ ] garder une rédaction en français correct avec accentuation
 
-- [x] module `auth/`
-- [x] login / logout / session courante
-- [x] sessions en base
-- [x] cookie `httpOnly`
-- [x] guards / décorateurs backend
-- [x] modèle `User`
-- [x] modèle `Session`
-- [x] modèle `BetSlip`
-- [x] modèle `BetSlipItem`
-- [x] seed admin idempotent via `packages/db/src/seed.ts`
-- [x] analyse quotidienne auto via worker `betting-engine-analysis`
-- [x] routes `adjustment/*` protégées admin
-- [x] hard delete du domaine coupon
-- [x] nettoyage dashboard / audit / notifications / scripts liés aux coupons
+## Hors scope
 
-### Hors scope pour ce projet actuel
+- permissions
+- RBAC
 
-- [ ] permissions
-- [ ] RBAC
+## Règles importantes
 
-> Note: ces deux sujets sont volontairement hors scope tant que le besoin produit n'existe pas.
+- ne jamais créer de migration Prisma
+- les migrations Prisma sont créées manuellement par l’utilisateur
+- l’agent peut utiliser uniquement `db:generate` pour rester aligné avec Prisma
+- l’authentification reste centralisée dans `apps/backend` avec sessions opaques serveur
+- tous les filtres web restent server-side
+- `page.tsx` sert à l’assemblage, pas à la logique métier lourde
+- toute UI doit rester pensée mobile-first
+- pas de hover-only interactions
+- pas de tooltips desktop-only
+- table fixtures sur mobile = cards empilées
+- détail fixture = drawer mobile / side panel desktop
+- touch targets minimum `44px`
 
----
+## Rappels de structure
 
-## Ordre d'exécution
-
-```text
-Phase A — Auth web + proxy
-→ Phase B — Bet slips web
-→ Phase C — Nettoyage final coupon
-→ Phase D — Polish produit
-```
-
----
-
-## Notes
-
-- Tous les filtres sont server-side (`searchParams` Next.js, pas de `useState` pour les filtres)
-- Un composant = un fichier
-- `page.tsx` = assemblage uniquement, pas de logique métier lourde
-- `apps/web/constants/` pour les constantes partagées entre domaines
-- `constants/` dans chaque domaine si constantes spécifiques au domaine
-- La route `(public)` est conservée pour la future landing page
-- `packages/ui` est conservé tel quel
-- **Jamais de helpers date inline** dans les composants ou use-cases → toujours passer par `lib/date.ts`
-- `GET /fixture` → page fixtures
-- `GET /audit/fixtures` → page audit
-- L'authentification doit être centralisée dans `apps/backend` avec sessions opaques serveur
-
-### PWA / Mobile-first
-
-- L'app est une **PWA installable**
-- Toute UI doit être pensée mobile en premier
-- Pas de hover-only interactions
-- Pas de tooltips desktop-only
-- Les filtres fixtures doivent rester accessibles sur petit écran
-- La table fixtures sur mobile = cards empilées
-- Le détail fixture = drawer mobile / side panel desktop
-- Touch targets minimum 44px
+- `apps/web/constants/` pour les constantes partagées
+- `constants/` dans un domaine pour les constantes spécifiques
+- `lib/date.ts` comme point de passage unique pour la logique de date
+- un composant = un fichier
