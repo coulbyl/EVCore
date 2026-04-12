@@ -36,7 +36,7 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 - [x] ne pas rendre `Déclarer le résultat` pour les non-admin
 
 - [x] garder le concept actuel de panier, mais revoir le wording et l’UX pour se rapprocher d’un ticket plus naturel
-- [ ] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
+- [x] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
 - [x] renommer `Ajouter panier` en `Placer`
 - [x] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
 - [ ] permettre à l’utilisateur de transformer un pick modèle en décision utilisateur explicite, que ce soit `BET` ou `NO_BET`
@@ -49,14 +49,14 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 
 ### Mes tickets (NB: utiliser le langage de pick universelle)
 
-- [ ] afficher le gain ou la perte d’un ticket, avec une valeur provisoire tant que tout n’est pas settlé
-- [ ] dans le détail ticket, afficher le score et le statut de chaque pick
+- [x] afficher le gain ou la perte d’un ticket, avec une valeur provisoire tant que tout n’est pas settlé
+- [x] dans le détail ticket, afficher le score et le statut de chaque pick
 
 ### Langage produit
 
-- [ ] retirer le vocabulaire trop technique au profit de mots simples et clairs
-- [ ] garder les mots métier simples et connus de tous comme `cote`, `ticket` et `mise`
-- [ ] garder une rédaction en français correct avec accentuation
+- [x] retirer le vocabulaire trop technique au profit de mots simples et clairs
+- [x] garder les mots métier simples et connus de tous comme `cote`, `ticket` et `mise`
+- [x] garder une rédaction en français correct avec accentuation
 
 ## Hors scope
 
