@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { PageShell } from "@evcore/ui";
 import { BetSlipButton } from "./bet-slip-button";
-import { LogoutButton } from "@/app/(public)/auth/components/logout-button";
+import { AccountButton } from "./account-button";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 
 export function AppShell({
@@ -15,37 +15,43 @@ export function AppShell({
   currentUser: AuthSessionUser;
 }) {
   const pathname = usePathname();
+  const isAdmin = currentUser.role === "ADMIN";
 
   const navItems = useMemo(
-    () => [
-      {
-        label: "Tableau de bord",
-        mobileLabel: "Accueil",
-        href: "/dashboard",
-        active: pathname === "/dashboard",
-      },
-      {
-        label: "Fixtures",
-        href: "/dashboard/fixtures",
-        active: pathname.startsWith("/dashboard/fixtures"),
-      },
-      {
-        label: "Mes slips",
-        href: "/dashboard/bet-slips",
-        active: pathname.startsWith("/dashboard/bet-slips"),
-      },
-      {
-        label: "Audit",
-        href: "/dashboard/audit",
-        active: pathname === "/dashboard/audit",
-      },
-      {
-        label: "Glossaire",
-        href: "/dashboard/glossaire",
-        active: pathname === "/dashboard/glossaire",
-      },
-    ],
-    [pathname],
+    () =>
+      [
+        {
+          label: "Tableau de bord",
+          mobileLabel: "Accueil",
+          href: "/dashboard",
+          active: pathname === "/dashboard",
+        },
+        {
+          label: "Fixtures",
+          href: "/dashboard/fixtures",
+          active: pathname.startsWith("/dashboard/fixtures"),
+        },
+        {
+          label: "Mes slips",
+          href: "/dashboard/bet-slips",
+          active: pathname.startsWith("/dashboard/bet-slips"),
+        },
+        isAdmin
+          ? {
+              label: "Audit",
+              href: "/dashboard/audit",
+              active: pathname === "/dashboard/audit",
+            }
+          : null,
+        isAdmin
+          ? {
+              label: "Glossaire",
+              href: "/dashboard/glossaire",
+              active: pathname === "/dashboard/glossaire",
+            }
+          : null,
+      ].filter((item): item is NonNullable<typeof item> => item !== null),
+    [isAdmin, pathname],
   );
 
   return (
@@ -54,7 +60,7 @@ export function AppShell({
       actions={
         <div className="flex items-center gap-2">
           <BetSlipButton />
-          <LogoutButton tone="ghost" className="rounded-lg px-3 py-2" />
+          <AccountButton currentUser={currentUser} />
         </div>
       }
       sidebarFooter={

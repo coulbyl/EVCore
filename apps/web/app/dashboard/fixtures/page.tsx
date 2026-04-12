@@ -20,14 +20,14 @@ function parseFilters(
     decision: (str("decision") as FixtureFilters["decision"]) ?? "ALL",
     status: (str("status") as FixtureFilters["status"]) ?? "ALL",
     timeSlot: (str("timeSlot") as FixtureFilters["timeSlot"]) ?? "ALL",
+    betStatus: (str("betStatus") as FixtureFilters["betStatus"]) ?? "ALL",
   };
 }
 
 async function FixturesContent({ filters }: { filters: FixtureFilters }) {
-  let rows: Awaited<ReturnType<typeof getFixtures>> = [];
-
   try {
-    rows = await getFixtures(filters);
+    const { rows, total } = await getFixtures(filters);
+    return <FixturesTable rows={rows} total={total} />;
   } catch {
     return (
       <div className="rounded-[1.3rem] border border-rose-200 bg-rose-50 p-6 text-center">
@@ -38,8 +38,6 @@ async function FixturesContent({ filters }: { filters: FixtureFilters }) {
       </div>
     );
   }
-
-  return <FixturesTable rows={rows} />;
 }
 
 export default async function FixturesPage({
@@ -52,8 +50,6 @@ export default async function FixturesPage({
 
   return (
     <Page className="flex h-full flex-col">
-      <FixturesPageHeader />
-
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="space-y-5">
           <Suspense fallback={null}>
@@ -73,14 +69,4 @@ export default async function FixturesPage({
       </PageContent>
     </Page>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Header client wrapper (refresh via router.refresh)
-// ---------------------------------------------------------------------------
-
-import { FixturesHeaderClient } from "./components/fixtures-header-client";
-
-function FixturesPageHeader() {
-  return <FixturesHeaderClient />;
 }

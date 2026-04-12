@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Badge, EmptyState, Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "@/components/app-page-header";
 import { formatDateLong } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 
@@ -19,14 +18,6 @@ export function BetSlipListPageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <AppPageHeader
-        currentPageLabel="Mes slips"
-        subtitle="Historique des bet slips créés depuis le panier."
-        backendLabel={isError ? "indisponible" : "OK"}
-        onRefresh={() => void refetch()}
-        isRefreshing={isFetching}
-      />
-
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         {betSlips.length === 0 ? (
           <EmptyState

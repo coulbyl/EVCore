@@ -1,16 +1,8 @@
 import { Badge, Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "@/components/app-page-header";
 
 export default function AccountSettingsPage() {
   return (
     <Page className="flex h-full flex-col">
-      <AppPageHeader
-        currentPageLabel="Paramètres"
-        subtitle="Préférences opérateur"
-        backendLabel="local"
-        onRefresh={() => {}}
-      />
-
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
           <section className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">

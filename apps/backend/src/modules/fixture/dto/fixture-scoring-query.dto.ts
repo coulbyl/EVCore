@@ -21,4 +21,8 @@ export class FixtureScoringQueryDto {
   @IsOptional()
   @IsIn(['morning', 'noon', 'afternoon', 'evening', 'night'])
   timeSlot?: 'morning' | 'noon' | 'afternoon' | 'evening' | 'night';
+
+  @IsOptional()
+  @IsIn(['WON', 'LOST', 'PENDING'])
+  betStatus?: 'WON' | 'LOST' | 'PENDING';
 }

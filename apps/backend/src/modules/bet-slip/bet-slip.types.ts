@@ -20,3 +20,12 @@ export type BetSlipView = {
   createdAt: string;
   items: BetSlipItemView[];
 };
+
+export type BetSlipSummaryView = {
+  slipCount: number;
+  wonBets: number;
+  lostBets: number;
+  pendingBets: number;
+  settledBets: number;
+  winRate: string;
+};

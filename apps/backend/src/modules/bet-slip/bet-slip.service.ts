@@ -7,7 +7,7 @@ import { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
-import type { BetSlipView } from './bet-slip.types';
+import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
 
 @Injectable()
 export class BetSlipService {
@@ -87,6 +87,15 @@ export class BetSlipService {
       throw new NotFoundException('Bet slip introuvable après création');
     }
     return toBetSlipView(betSlip);
+  }
+
+  async getSummary(userId: string, date?: Date): Promise<BetSlipSummaryView> {
+    const { slipCount, wonBets, lostBets, pendingBets } =
+      await this.repository.getUserSummary(userId, date);
+    const settledBets = wonBets + lostBets;
+    const winRate =
+      settledBets > 0 ? `${Math.round((wonBets / settledBets) * 100)}%` : '—';
+    return { slipCount, wonBets, lostBets, pendingBets, settledBets, winRate };
   }
 
   async list(userId: string): Promise<BetSlipView[]> {

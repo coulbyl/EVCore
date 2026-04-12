@@ -18,6 +18,7 @@ export class FixtureScoringController {
       status: query.status,
       competition: query.competition,
       timeSlot: query.timeSlot,
+      betStatus: query.betStatus,
     });
   }
 }

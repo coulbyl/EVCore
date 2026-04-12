@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
@@ -9,6 +17,15 @@ import { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 @UseGuards(AuthSessionGuard)
 export class BetSlipController {
   constructor(private readonly betSlipService: BetSlipService) {}
+
+  @Get('summary')
+  getSummary(
+    @CurrentSession() session: AuthSession,
+    @Query('date') date?: string,
+  ) {
+    const parsed = date ? new Date(date) : undefined;
+    return this.betSlipService.getSummary(session.user.id, parsed);
+  }
 
   @Get()
   list(@CurrentSession() session: AuthSession) {

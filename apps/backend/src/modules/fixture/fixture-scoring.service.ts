@@ -5,6 +5,10 @@ import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
+import type {
+  PickSnapshot,
+  EvaluatedPickSnapshot,
+} from '@utils/model-run.utils';
 import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
 // ---------------------------------------------------------------------------
@@ -25,6 +29,8 @@ export type ScoredFixtureModelRun = {
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
+  candidatePicks: PickSnapshot[];
+  evaluatedPicks: EvaluatedPickSnapshot[];
 };
 
 export type ScoredFixtureRow = {
@@ -42,6 +48,11 @@ export type ScoredFixtureRow = {
   modelRun: ScoredFixtureModelRun | null;
 };
 
+export type ScoredFixturesResult = {
+  rows: ScoredFixtureRow[];
+  total: number;
+};
+
 // ---------------------------------------------------------------------------
 // Time slot definitions (heure UTC)
 // ---------------------------------------------------------------------------
@@ -54,11 +65,8 @@ const TIME_SLOTS = {
   night: { start: 22, end: 23 },
 } as const;
 
-function matchesTimeSlot(
-  isoDatetime: string,
-  slot: keyof typeof TIME_SLOTS,
-): boolean {
-  const hour = new Date(isoDatetime).getUTCHours();
+function matchesTimeSlot(date: Date, slot: keyof typeof TIME_SLOTS): boolean {
+  const hour = date.getUTCHours();
   const { start, end } = TIME_SLOTS[slot];
   return hour >= start && hour <= end;
 }
@@ -104,12 +112,14 @@ export class FixtureScoringService {
     date: Date,
     filters: Pick<
       FixtureScoringQueryDto,
-      'decision' | 'status' | 'competition' | 'timeSlot'
+      'decision' | 'status' | 'competition' | 'timeSlot' | 'betStatus'
     > = {},
-  ): Promise<ScoredFixtureRow[]> {
-    const where: Prisma.FixtureWhereInput = {
+  ): Promise<ScoredFixturesResult> {
+    const dateRange: Prisma.FixtureWhereInput = {
       scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) },
     };
+
+    const where: Prisma.FixtureWhereInput = { ...dateRange };
 
     if (filters.status) {
       where.status = filters.status as FixtureStatus;
@@ -119,55 +129,64 @@ export class FixtureScoringService {
       where.season = { competition: { code: filters.competition } };
     }
 
-    const fixtures = await this.prisma.client.fixture.findMany({
-      where,
-      select: {
-        id: true,
-        scheduledAt: true,
-        status: true,
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-        homeTeam: { select: { name: true, logoUrl: true } },
-        awayTeam: { select: { name: true, logoUrl: true } },
-        season: {
-          select: {
-            competition: { select: { code: true, name: true } },
-          },
-        },
-        oddsSnapshots: { select: { id: true }, take: 1 },
-        modelRuns: {
-          select: {
-            decision: true,
-            deterministicScore: true,
-            finalScore: true,
-            features: true,
-            analyzedAt: true,
-            bets: {
-              select: {
-                id: true,
-                market: true,
-                pick: true,
-                ev: true,
-                probEstimated: true,
-                status: true,
-              },
-              orderBy: { ev: 'desc' },
-              take: 1,
+    const [total, fixtures] = await Promise.all([
+      this.prisma.client.fixture.count({ where: dateRange }),
+      this.prisma.client.fixture.findMany({
+        where,
+        select: {
+          id: true,
+          scheduledAt: true,
+          status: true,
+          homeScore: true,
+          awayScore: true,
+          homeHtScore: true,
+          awayHtScore: true,
+          homeTeam: { select: { name: true, logoUrl: true } },
+          awayTeam: { select: { name: true, logoUrl: true } },
+          season: {
+            select: {
+              competition: { select: { code: true, name: true } },
             },
           },
-          orderBy: { analyzedAt: 'desc' },
-          take: 1,
+          oddsSnapshots: { select: { id: true }, take: 1 },
+          modelRuns: {
+            select: {
+              decision: true,
+              deterministicScore: true,
+              finalScore: true,
+              features: true,
+              analyzedAt: true,
+              bets: {
+                select: {
+                  id: true,
+                  market: true,
+                  pick: true,
+                  ev: true,
+                  probEstimated: true,
+                  status: true,
+                },
+                orderBy: { ev: 'desc' },
+                take: 1,
+              },
+            },
+            orderBy: { analyzedAt: 'desc' },
+            take: 1,
+          },
         },
-      },
-      orderBy: [
-        { season: { competition: { name: 'asc' } } },
-        { scheduledAt: 'asc' },
-      ],
-    });
+        orderBy: [
+          { season: { competition: { name: 'asc' } } },
+          { scheduledAt: 'asc' },
+        ],
+      }),
+    ]);
 
-    let rows: ScoredFixtureRow[] = fixtures.map((f) => {
+    const filteredFixtures = filters.timeSlot
+      ? fixtures.filter((f) =>
+          matchesTimeSlot(f.scheduledAt, filters.timeSlot!),
+        )
+      : fixtures;
+
+    let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
       const bet = run?.bets[0] ?? null;
       const betStatus =
@@ -216,6 +235,8 @@ export class FixtureScoringService {
               lambdaHome: featureDiag?.lambdaHome ?? null,
               lambdaAway: featureDiag?.lambdaAway ?? null,
               expectedTotalGoals: featureDiag?.expectedTotalGoals ?? null,
+              candidatePicks: featureDiag?.candidatePicks ?? [],
+              evaluatedPicks: featureDiag?.evaluatedPicks ?? [],
             }
           : null,
       };
@@ -225,12 +246,10 @@ export class FixtureScoringService {
       rows = rows.filter((r) => r.modelRun?.decision === filters.decision);
     }
 
-    if (filters.timeSlot) {
-      rows = rows.filter((r) =>
-        matchesTimeSlot(r.scheduledAt, filters.timeSlot!),
-      );
+    if (filters.betStatus) {
+      rows = rows.filter((r) => r.modelRun?.betStatus === filters.betStatus);
     }
 
-    return sortByReliability(rows);
+    return { rows: sortByReliability(rows), total };
   }
 }

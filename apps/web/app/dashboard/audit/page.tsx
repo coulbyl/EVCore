@@ -2,7 +2,6 @@
 
 import { Suspense } from "react";
 import { Badge, Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "@/components/app-page-header";
 import { useAuditOverview } from "@/domains/audit/use-cases/get-audit-overview";
 import { AuditOverviewSection } from "./components/audit-overview-section";
 
@@ -16,14 +15,6 @@ function AuditPageContent() {
 
   return (
     <Page className="flex h-full flex-col">
-      <AppPageHeader
-        currentPageLabel="Audit"
-        subtitle="Traçabilité des runs et snapshot DB"
-        backendLabel={isError ? "indisponible" : "OK"}
-        onRefresh={() => void refetch()}
-        isRefreshing={overviewFetching}
-      />
-
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

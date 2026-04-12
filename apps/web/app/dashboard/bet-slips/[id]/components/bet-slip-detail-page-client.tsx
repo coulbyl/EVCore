@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Badge, EmptyState, Page, PageContent } from "@evcore/ui";
-import { AppPageHeader } from "@/components/app-page-header";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -34,14 +33,6 @@ export function BetSlipDetailPageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <AppPageHeader
-        currentPageLabel="Détail du slip"
-        subtitle="Composition figée du bet slip créé depuis le panier."
-        backendLabel={isError ? "indisponible" : "OK"}
-        onRefresh={() => void refetch()}
-        isRefreshing={isFetching}
-      />
-
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         {!data ? (
           <EmptyState

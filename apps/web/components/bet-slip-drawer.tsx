@@ -97,6 +97,7 @@ export function BetSlipDrawer() {
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-white outline-none sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[420px] sm:rounded-[1.5rem]">
+          <Drawer.Title className="sr-only">Panier de bets</Drawer.Title>
           {/* Handle (mobile) */}
           <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
 

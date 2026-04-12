@@ -26,7 +26,6 @@
 
 ### À faire maintenant
 
-- polish produit
 - homogénéisation finale des fetchers web
 - vérification fine des parcours mobile
 
@@ -134,6 +133,26 @@ EVCore ne doit plus réintroduire le concept produit de `coupon`.
 - [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
 - [ ] homogénéiser les fetchers web vers le backend protégé
 - [ ] vérifier les parcours mobile-first sur auth + fixtures + drawer + slips
+
+---
+
+## Phase E — Dashboard opérateur
+
+Remplacer la carte "Performance Globale" (données système globales) par un résumé
+personnel pour les utilisateurs non-admin.
+
+### Backend
+
+- [x] `GET /bet-slips/summary` — agrégat par userId : slips créés, bets WON/LOST/PENDING, winRate
+- [x] Endpoint protégé par `AuthSessionGuard`, userId déduit de la session
+- [x] Filtre optionnel `?date=` sur `fixture.scheduledAt`
+
+### Web
+
+- [x] `domains/bet-slip/use-cases/get-operator-summary.ts`
+- [x] `app/dashboard/components/operator-performance-card.tsx`
+- [x] `DashboardPageClient` : `isAdmin` → `PerformanceCard`, sinon → `OperatorPerformanceCard`
+- [x] Filtre par date sur `OperatorPerformanceCard` (même UX que l'admin)
 
 ---
 

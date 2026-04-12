@@ -4,7 +4,7 @@ export type AuthSessionUser = {
   username: string;
   fullName: string;
   bio: string | null;
-  role: string;
+  role: "ADMIN" | "OPERATOR";
   emailVerified: boolean;
   avatarUrl: string | null;
 };

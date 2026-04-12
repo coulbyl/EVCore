@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { TIME_SLOTS } from "@/constants/time-slots";
 import { COMPETITIONS } from "@/constants/competitions";
+import { Button } from "@evcore/ui";
 import {
+  BET_STATUS_OPTIONS,
   DECISION_OPTIONS,
   STATUS_OPTIONS,
 } from "@/domains/fixture/constants/filters";
@@ -17,46 +19,69 @@ export function FixturesFilters({ filters }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [form, setForm] = useState<FixtureFilters>(filters);
 
-  const update = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(key, value);
-      startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`);
-      });
-    },
-    [router, pathname, searchParams],
+  useEffect(() => {
+    setForm(filters);
+  }, [filters]);
+
+  const timeSlotOptions = useMemo(
+    () => [
+      { value: "ALL", label: "Tous horaires" },
+      ...TIME_SLOTS.map((slot) => ({
+        value: slot.key,
+        label: `${slot.label} ${slot.start}h–${slot.end}h`,
+      })),
+    ],
+    [],
   );
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("date", form.date);
+      params.set("competition", form.competition);
+      params.set("decision", form.decision);
+      params.set("status", form.status);
+      params.set("timeSlot", form.timeSlot);
+      params.set("betStatus", form.betStatus);
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  }
+
+  const labelCls =
+    "text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400";
+  const inputCls =
+    "h-11 cursor-pointer rounded-xl border border-border bg-white px-3 text-sm font-medium text-slate-700 shadow-sm";
+
   return (
-    <div
-      className={`space-y-3 transition-opacity ${isPending ? "opacity-60 pointer-events-none" : ""}`}
+    <form
+      onSubmit={handleSubmit}
+      className={`transition-opacity ${isPending ? "opacity-60 pointer-events-none" : ""}`}
     >
-      {/* Ligne 1 : date + compétition */}
-      <div className="flex flex-wrap items-end gap-2">
-        {/* Date */}
-        <label className="flex flex-col gap-1">
-          <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
-            Date
-          </span>
+      {/* Mobile : grille 2 colonnes */}
+      <div className="grid grid-cols-2 gap-2 lg:hidden">
+        <label className="col-span-2 flex flex-col gap-1">
+          <span className={labelCls}>Date</span>
           <input
             type="date"
-            value={filters.date}
-            onChange={(e) => update("date", e.target.value)}
-            className="h-11 rounded-xl border border-border bg-white px-3 text-sm font-medium text-slate-700 shadow-sm"
+            value={form.date}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, date: e.target.value }))
+            }
+            className={inputCls}
           />
         </label>
 
-        {/* Compétition */}
-        <label className="flex flex-col gap-1">
-          <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-slate-400">
-            Compétition
-          </span>
+        <label className="col-span-2 flex flex-col gap-1">
+          <span className={labelCls}>Compétition</span>
           <select
-            value={filters.competition}
-            onChange={(e) => update("competition", e.target.value)}
-            className="h-11 rounded-xl border border-border bg-white px-3 text-sm font-medium text-slate-700 shadow-sm"
+            value={form.competition}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, competition: e.target.value }))
+            }
+            className={inputCls}
           >
             <option value="ALL">Toutes</option>
             {COMPETITIONS.map((c) => (
@@ -66,81 +91,213 @@ export function FixturesFilters({ filters }: Props) {
             ))}
           </select>
         </label>
-      </div>
 
-      {/* Ligne 2 : pills décision + statut — scroll horizontal sur mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {/* Décision */}
-        <div className="flex shrink-0 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-          {DECISION_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => update("decision", opt.value)}
-              className={`h-11 px-4 text-sm font-semibold transition-colors ${
-                filters.decision === opt.value
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Séparateur visuel */}
-        <div className="w-px shrink-0 self-stretch bg-border" />
-
-        {/* Statut */}
-        <div className="flex shrink-0 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-          {STATUS_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => update("status", opt.value)}
-              className={`h-11 px-4 text-sm font-semibold transition-colors ${
-                filters.status === opt.value
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Ligne 3 : créneaux horaires — scroll horizontal sur mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button
-          type="button"
-          onClick={() => update("timeSlot", "ALL")}
-          className={`h-10 shrink-0 rounded-full px-4 text-xs font-semibold transition-colors ${
-            filters.timeSlot === "ALL"
-              ? "bg-slate-900 text-white"
-              : "border border-border bg-white text-slate-600 hover:bg-slate-50"
-          }`}
-        >
-          Tous horaires
-        </button>
-        {TIME_SLOTS.map((slot) => (
-          <button
-            key={slot.key}
-            type="button"
-            onClick={() => update("timeSlot", slot.key)}
-            className={`h-10 shrink-0 rounded-full px-4 text-xs font-semibold transition-colors ${
-              filters.timeSlot === slot.key
-                ? "bg-slate-900 text-white"
-                : "border border-border bg-white text-slate-600 hover:bg-slate-50"
-            }`}
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Décision</span>
+          <select
+            value={form.decision}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                decision: e.target.value as FixtureFilters["decision"],
+              }))
+            }
+            className={inputCls}
           >
-            {slot.label}
-            <span className="ml-1 opacity-60">
-              {slot.start}h–{slot.end}h
-            </span>
-          </button>
-        ))}
+            {DECISION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Statut</span>
+          <select
+            value={form.status}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                status: e.target.value as FixtureFilters["status"],
+              }))
+            }
+            className={inputCls}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Horaire</span>
+          <select
+            value={form.timeSlot}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                timeSlot: e.target.value as FixtureFilters["timeSlot"],
+              }))
+            }
+            className={inputCls}
+          >
+            {timeSlotOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Résultat</span>
+          <select
+            value={form.betStatus}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                betStatus: e.target.value as FixtureFilters["betStatus"],
+              }))
+            }
+            className={inputCls}
+          >
+            {BET_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <Button
+          type="submit"
+          className="col-span-2 mt-1 h-11 w-full rounded-xl"
+        >
+          {isPending ? "Filtrage..." : "Filtrer"}
+        </Button>
       </div>
-    </div>
+
+      {/* Desktop : une ligne */}
+      <div className="hidden gap-3 lg:grid lg:grid-cols-[180px_220px_160px_160px_160px_220px_auto]">
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Date</span>
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, date: e.target.value }))
+            }
+            className={inputCls}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Compétition</span>
+          <select
+            value={form.competition}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, competition: e.target.value }))
+            }
+            className={inputCls}
+          >
+            <option value="ALL">Toutes</option>
+            {COMPETITIONS.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Décision</span>
+          <select
+            value={form.decision}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                decision: e.target.value as FixtureFilters["decision"],
+              }))
+            }
+            className={inputCls}
+          >
+            {DECISION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Statut</span>
+          <select
+            value={form.status}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                status: e.target.value as FixtureFilters["status"],
+              }))
+            }
+            className={inputCls}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Horaire</span>
+          <select
+            value={form.timeSlot}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                timeSlot: e.target.value as FixtureFilters["timeSlot"],
+              }))
+            }
+            className={inputCls}
+          >
+            {timeSlotOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Résultat</span>
+          <select
+            value={form.betStatus}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                betStatus: e.target.value as FixtureFilters["betStatus"],
+              }))
+            }
+            className={inputCls}
+          >
+            {BET_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex items-end">
+          <Button type="submit" className="h-11 w-full rounded-xl lg:w-auto">
+            {isPending ? "Filtrage..." : "Filtrer"}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

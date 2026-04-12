@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { BetStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 
 @Injectable()
 export class BetSlipRepository {
@@ -39,6 +41,25 @@ export class BetSlipRepository {
         },
       },
     });
+  }
+
+  async getUserSummary(userId: string, date?: Date) {
+    const fixtureFilter = date
+      ? { scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) } }
+      : undefined;
+    const itemWhere = (status: BetStatus) => ({
+      userId,
+      bet: { status },
+      ...(fixtureFilter ? { fixture: fixtureFilter } : {}),
+    });
+
+    const [slipCount, wonBets, lostBets, pendingBets] = await Promise.all([
+      this.prisma.client.betSlip.count({ where: { userId } }),
+      this.prisma.client.betSlipItem.count({ where: itemWhere('WON') }),
+      this.prisma.client.betSlipItem.count({ where: itemWhere('LOST') }),
+      this.prisma.client.betSlipItem.count({ where: itemWhere('PENDING') }),
+    ]);
+    return { slipCount, wonBets, lostBets, pendingBets };
   }
 
   findUserBetSlipById(userId: string, betSlipId: string) {

@@ -27,7 +27,15 @@ function saveDraft(draft: BetSlipDraft): void {
 }
 
 export function useBetSlipDraft() {
-  const [draft, setDraftState] = useState<BetSlipDraft>(() => loadDraft());
+  const [draft, setDraftState] = useState<BetSlipDraft>({
+    items: [],
+    unitStake: DEFAULT_UNIT_STAKE,
+  });
+
+  // Hydrate from localStorage after mount to avoid SSR/client mismatch
+  useEffect(() => {
+    setDraftState(loadDraft());
+  }, []);
 
   // Sync depuis d'autres onglets
   useEffect(() => {

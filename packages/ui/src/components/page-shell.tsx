@@ -22,20 +22,17 @@ export function PageShell({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:flex-row lg:overflow-hidden">
       <aside className="hidden h-full w-[296px] shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[linear-gradient(180deg,#1b2432_0%,#202c3d_100%)] text-sidebar-foreground lg:flex">
-        <div className="border-b border-white/10 px-6 py-6">
+        <div className="border-b border-white/10 px-6 py-5">
           <div className="flex items-center gap-3">
-            <span className="h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]" />
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-slate-300">
+            <img
+              src="/icons/icon.svg"
+              alt="EVCore"
+              className="size-9 rounded-xl"
+            />
+            <p className="text-base font-bold tracking-tight text-white">
               EVCore
             </p>
           </div>
-          <h1 className="mt-3 text-[2rem] font-semibold tracking-tight text-white">
-            Console
-          </h1>
-          <p className="mt-2 max-w-[18rem] text-sm leading-6 text-slate-300">
-            Operator workspace for fixtures, bet slips, audit, and pipeline
-            control.
-          </p>
         </div>
         <nav className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
           {navItems.map((item) => (
@@ -59,15 +56,11 @@ export function PageShell({
             </a>
           ))}
         </nav>
-        <div className="border-t border-white/10 px-6 py-5">
-          <p className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-400">
-            Visibility
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            Public V1 without auth. All data will come from backend APIs.
-          </p>
-          {sidebarFooter ? <div className="mt-4">{sidebarFooter}</div> : null}
-        </div>
+        {sidebarFooter ? (
+          <div className="border-t border-white/10 px-6 py-5">
+            {sidebarFooter}
+          </div>
+        ) : null}
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-slate-100">
@@ -76,16 +69,15 @@ export function PageShell({
             {actions}
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:hidden">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-[0_0_18px_rgba(6,182,212,0.35)]" />
-              <div className="min-w-0">
-                <p className="text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  EVCore
-                </p>
-                <p className="truncate text-sm font-semibold text-slate-900">
-                  Console mobile
-                </p>
-              </div>
+            <div className="flex min-w-0 items-center gap-2">
+              <img
+                src="/icons/icon.svg"
+                alt="EVCore"
+                className="size-7 rounded-lg"
+              />
+              <p className="text-sm font-bold tracking-tight text-slate-900">
+                EVCore
+              </p>
             </div>
             {actions}
           </div>

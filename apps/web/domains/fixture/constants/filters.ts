@@ -1,4 +1,5 @@
 import type {
+  FixtureBetStatusFilter,
   FixtureDecisionFilter,
   FixtureStatusFilter,
 } from "../types/fixture";
@@ -17,4 +18,14 @@ export const STATUS_OPTIONS: { value: FixtureStatusFilter; label: string }[] = [
   { value: "SCHEDULED", label: "Planifié" },
   { value: "LIVE", label: "En cours" },
   { value: "FINISHED", label: "Terminé" },
+];
+
+export const BET_STATUS_OPTIONS: {
+  value: FixtureBetStatusFilter;
+  label: string;
+}[] = [
+  { value: "ALL", label: "Tous" },
+  { value: "WON", label: "Gagné" },
+  { value: "LOST", label: "Perdu" },
+  { value: "PENDING", label: "En attente" },
 ];

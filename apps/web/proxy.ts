@@ -21,7 +21,10 @@ async function getSession(request: NextRequest) {
     }
 
     const payload = (await response.json()) as {
-      session: { sessionId: string; user: { id: string } };
+      session: {
+        sessionId: string;
+        user: { id: string; role: "ADMIN" | "OPERATOR" };
+      };
     };
 
     return payload.session;
@@ -35,6 +38,9 @@ export async function proxy(request: NextRequest) {
   const session = await getSession(request);
   const isAuthRoute = pathname.startsWith("/auth/");
   const isDashboardRoute = pathname.startsWith("/dashboard");
+  const isAdminOnlyRoute =
+    pathname.startsWith("/dashboard/audit") ||
+    pathname.startsWith("/dashboard/glossaire");
 
   if (isAuthRoute && session) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -42,6 +48,10 @@ export async function proxy(request: NextRequest) {
 
   if (isDashboardRoute && !session) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
+  }
+
+  if (isAdminOnlyRoute && session?.user.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
