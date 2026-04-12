@@ -39,7 +39,25 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 - [x] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
 - [x] renommer `Ajouter panier` en `Placer`
 - [x] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
-- [ ] permettre à l’utilisateur de transformer un pick modèle en décision utilisateur explicite, que ce soit `BET` ou `NO_BET`
+- [ ] permettre à l’utilisateur de placer n’importe quel pick évalué (pas seulement la décision modèle) depuis le diagnostic
+
+  **Contexte** : le modèle sélectionne un pick `BET` mais évalue plusieurs picks. Un utilisateur peut vouloir placer un pick rejeté (ex : `Moins de 3.5` rejeté pour cote trop basse). Ce pick devient une décision propre à l’utilisateur, invisible des autres.
+
+  **Migration Prisma requise (manuelle)** — ajouter sur `Bet` :
+  ```prisma
+  source BetSource @default(MODEL)   // MODEL | USER
+  userId String?                     // null pour les bets modèle, id de l’auteur pour les bets utilisateur
+  user   User? @relation(...)
+  ```
+
+  **Backend** :
+  - Endpoint `POST /bets/from-evaluated-pick` — reçoit `{ modelRunId, market, pick }`, vérifie que le pick existe dans `evaluatedPicks` du `ModelRun`, crée le `Bet` avec `source: USER, userId`
+  - Settlement local des bets `USER` : déclenché lors du settlement de la fixture (score déjà disponible sur `Fixture.homeScore / awayScore`), sans appel API Football — logique symétrique au settlement modèle
+
+  **Frontend** :
+  - Bouton "Placer" sur chaque ligne de la table "Sélections évaluées" dans le diagnostic
+  - Désactivé si la fixture est déjà dans un ticket de l’utilisateur (garde existante)
+  - Même flux drawer que le pick modèle
 
 ### Dashboard
 
