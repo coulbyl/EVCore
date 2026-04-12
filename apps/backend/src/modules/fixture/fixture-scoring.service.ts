@@ -15,6 +15,7 @@ export type ScoredFixtureModelRun = {
   decision: 'BET' | 'NO_BET';
   deterministicScore: string;
   finalScore: string;
+  betId: string | null;
   market: string | null;
   pick: string | null;
   betStatus: 'WON' | 'LOST' | 'PENDING' | null;
@@ -145,6 +146,7 @@ export class FixtureScoringService {
             analyzedAt: true,
             bets: {
               select: {
+                id: true,
                 market: true,
                 pick: true,
                 ev: true,
@@ -202,6 +204,7 @@ export class FixtureScoringService {
               decision: run.decision as 'BET' | 'NO_BET',
               deterministicScore: toNumber(run.deterministicScore).toFixed(2),
               finalScore: toNumber(run.finalScore).toFixed(3),
+              betId: bet?.id ?? null,
               market: bet?.market ?? null,
               pick: bet?.pick ?? null,
               betStatus,

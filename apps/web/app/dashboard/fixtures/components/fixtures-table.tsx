@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Drawer } from "vaul";
+import { ShoppingCart, Check } from "lucide-react";
 import { FixtureDetailPanel } from "@/components/fixture-detail-panel";
 import {
   formatScore,
@@ -9,7 +10,9 @@ import {
   toFixturePanel,
 } from "@/domains/fixture/helpers/fixture";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
+import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,6 +80,61 @@ function FixtureTeamLogos({
 }
 
 // ---------------------------------------------------------------------------
+// Add to slip button
+// ---------------------------------------------------------------------------
+
+function AddToSlipButton({ row }: { row: FixtureRow }) {
+  const { addItem, removeItem, isInSlip, open } = useBetSlip();
+  const mr = row.modelRun;
+
+  if (!mr || mr.decision !== "BET" || !mr.betId || !mr.market || !mr.pick) {
+    return null;
+  }
+
+  const betId = mr.betId;
+  const inSlip = isInSlip(betId);
+  const { market, pick, ev } = mr;
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(betId);
+    } else {
+      const item: BetSlipDraftItem = {
+        betId,
+        fixtureId: row.fixtureId,
+        fixture: row.fixture,
+        homeLogo: row.homeLogo,
+        awayLogo: row.awayLogo,
+        competition: row.competition,
+        scheduledAt: row.scheduledAt,
+        market,
+        pick,
+        ev,
+        stakeOverride: null,
+      };
+      addItem(item);
+      open();
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={inSlip ? "Retirer du panier" : "Ajouter au panier"}
+      className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border transition-colors ${
+        inSlip
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : "border-slate-200 bg-white text-slate-400 hover:border-accent hover:text-accent"
+      }`}
+    >
+      {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Mobile card
 // ---------------------------------------------------------------------------
 
@@ -94,54 +152,68 @@ function FixtureMobileCard({
   const isFinished = row.status === "FINISHED";
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full rounded-[1.2rem] border p-4 text-left transition-colors ${
+    <div
+      className={`rounded-[1.2rem] border p-4 transition-colors ${
         selected
           ? "border-accent bg-accent/5"
-          : "border-border bg-panel-strong hover:bg-slate-50"
+          : "border-border bg-panel-strong"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <FixtureTeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {row.fixture}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <FixtureTeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
+              <p className="truncate text-sm font-semibold text-slate-900">
+                {row.fixture}
+              </p>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              {row.competition} · {formatKickoff(row.scheduledAt)}
+              {isFinished && score ? ` · ${score}` : ""}
             </p>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            {row.competition} · {formatKickoff(row.scheduledAt)}
-            {isFinished && score ? ` · ${score}` : ""}
-          </p>
+          <DecisionBadge decision={mr?.decision ?? null} />
         </div>
-        <DecisionBadge decision={mr?.decision ?? null} />
-      </div>
+
+        {mr?.decision === "BET" && (
+          <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
+                  Sélection
+                </p>
+                <p className="truncate text-sm font-bold text-white">
+                  {mr.pick ?? "—"}
+                  {mr.market ? ` · ${mr.market}` : ""}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
+                  EV
+                </p>
+                <p className="text-sm font-bold text-emerald-400">
+                  {mr.ev ?? "—"}
+                </p>
+              </div>
+              {mr.betStatus && mr.betStatus !== "PENDING" && (
+                <BetResultBadge status={mr.betStatus} />
+              )}
+            </div>
+          </div>
+        )}
+      </button>
 
       {mr?.decision === "BET" && (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5">
-          <div className="min-w-0">
-            <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-              Sélection
-            </p>
-            <p className="truncate text-sm font-bold text-white">
-              {mr.pick ?? "—"}
-              {mr.market ? ` · ${mr.market}` : ""}
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-              EV
-            </p>
-            <p className="text-sm font-bold text-emerald-400">{mr.ev ?? "—"}</p>
-          </div>
-          {mr.betStatus && mr.betStatus !== "PENDING" && (
-            <BetResultBadge status={mr.betStatus} />
-          )}
+        <div className="mt-2 flex justify-end">
+          <AddToSlipButton row={row} />
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -210,6 +282,10 @@ function FixtureTableRow({
       {/* Résultat */}
       <td className="px-4 py-3">
         <BetResultBadge status={mr?.betStatus ?? null} />
+      </td>
+      {/* Panier */}
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        <AddToSlipButton row={row} />
       </td>
     </tr>
   );
@@ -296,9 +372,10 @@ export function FixturesTable({ rows }: { rows: FixtureRow[] }) {
                     "Cote",
                     "EV",
                     "Résultat",
-                  ].map((col) => (
+                    "",
+                  ].map((col, i) => (
                     <th
-                      key={col}
+                      key={i}
                       className="px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500"
                     >
                       {col}

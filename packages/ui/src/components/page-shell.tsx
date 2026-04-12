@@ -10,9 +10,11 @@ type NavItem = {
 
 export function PageShell({
   navItems,
+  actions,
   children,
 }: {
   navItems: NavItem[];
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -65,17 +67,23 @@ export function PageShell({
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-slate-100">
-        <div className="sticky top-0 z-30 border-b border-white/70 bg-white/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/75 lg:hidden">
-          <div className="flex items-center gap-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-[0_0_18px_rgba(6,182,212,0.35)]" />
-            <div className="min-w-0">
-              <p className="text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                EVCore
-              </p>
-              <p className="truncate text-sm font-semibold text-slate-900">
-                Console mobile
-              </p>
+        <div className="sticky top-0 z-30 border-b border-white/70 bg-white/90 backdrop-blur supports-backdrop-filter:bg-white/75">
+          <div className="hidden items-center justify-end px-5 py-3 lg:flex">
+            {actions}
+          </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:hidden">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-[0_0_18px_rgba(6,182,212,0.35)]" />
+              <div className="min-w-0">
+                <p className="text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                  EVCore
+                </p>
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  Console mobile
+                </p>
+              </div>
             </div>
+            {actions}
           </div>
         </div>
 
@@ -83,7 +91,7 @@ export function PageShell({
           <div className="h-full w-full">{children}</div>
         </main>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-[backdrop-filter]:bg-white/88 lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-white/88 lg:hidden">
           <div className="grid grid-cols-4 gap-1">
             {navItems.map((item) => (
               <a

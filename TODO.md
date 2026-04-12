@@ -141,6 +141,8 @@ domains/
     helpers/
 ```
 
+- [x] Domaine `domains/bet-slip/` créé (`types`, `use-cases`, `context`)
+
 ### Modèle métier cible
 
 - `Bet` reste l'unité métier centrale produite par le betting engine
@@ -156,37 +158,37 @@ domains/
 
 ### Brouillon vs objet final
 
-- [ ] Définir le modèle de panier de préparation (`draft`) côté produit
+- [x] Définir le modèle de panier de préparation (`draft`) côté web
 - [x] Le draft n'est pas persisté côté backend : `localStorage` uniquement
-- [ ] Transformer le draft en `BetSlip` immuable au submit
+- [x] Transformer le draft en `BetSlip` au submit
 - [ ] Geler la composition et les mises après création du `BetSlip`
 
 ### Types à prévoir
 
-- [ ] `BetSlipItem`
-- [ ] `BetSlip`
+- [x] `BetSlipItem`
+- [x] `BetSlip`
 - [ ] `BetSlipStake`
 
 ### Use-cases à prévoir
 
-- [ ] `add-pick-to-slip`
-- [ ] `remove-pick-from-slip`
-- [ ] `update-slip-stake`
-- [ ] `clear-slip`
+- [x] `add-pick-to-slip`
+- [x] `remove-pick-from-slip`
+- [x] `update-slip-stake`
+- [x] `clear-slip`
 
 ### UI à prévoir
 
-- [ ] Ajouter une action "ajouter au panier" depuis `fixtures`
-- [ ] Ajouter un panneau / drawer `bet-slip`
-- [ ] Afficher la liste des bets sélectionnés
-- [ ] Permettre la définition d'une mise unitaire
-- [ ] Permettre les overrides de mise par bet avant validation
-- [ ] Afficher le total de bets sélectionnés
+- [x] Ajouter une action "ajouter au panier" depuis `fixtures`
+- [x] Ajouter un panneau / drawer `bet-slip`
+- [x] Afficher la liste des bets sélectionnés
+- [x] Permettre la définition d'une mise unitaire
+- [x] Permettre les overrides de mise par bet avant validation
+- [x] Afficher le total de bets sélectionnés
 - [ ] Ajouter une page `mes bet-slips`
 - [ ] Ajouter une page détail `bet-slips/[id]`
-- [ ] Ajouter l'accès aux bet-slips dans la navigation
+- [x] Ajouter l'accès aux bet-slips dans la navigation
 - [ ] Permettre la gestion de plusieurs slips utilisateur
-- [ ] Ajouter une action de validation / création du `BetSlip` depuis le panier
+- [x] Ajouter une action de validation / création du `BetSlip` depuis le panier
 
 ### Refactor / nettoyage lié
 

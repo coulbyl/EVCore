@@ -9,6 +9,7 @@ export type FixtureModelRun = {
   decision: "BET" | "NO_BET";
   deterministicScore: string;
   finalScore: string;
+  betId: string | null;
   market: string | null;
   pick: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
