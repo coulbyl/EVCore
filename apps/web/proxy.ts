@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { BACKEND_URL } from "@/lib/api/shared";
 
 async function getSession(request: NextRequest) {
   const cookie = request.headers.get("cookie");
@@ -11,7 +10,7 @@ async function getSession(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await fetch(`${BACKEND_URL}/auth/me`, {
       headers: { cookie },
       cache: "no-store",
     });

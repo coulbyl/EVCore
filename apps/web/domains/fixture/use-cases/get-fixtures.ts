@@ -1,6 +1,5 @@
 import type { FixtureFilters, FixtureRow } from "../types/fixture";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { serverApiRequest } from "@/lib/api/server-api";
 
 export type FixturesResult = { rows: FixtureRow[]; total: number };
 
@@ -18,13 +17,7 @@ export async function getFixtures(
   if (filters.timeSlot !== "ALL") params.set("timeSlot", filters.timeSlot);
   if (filters.betStatus !== "ALL") params.set("betStatus", filters.betStatus);
 
-  const response = await fetch(`${BACKEND_URL}/fixture?${params.toString()}`, {
-    cache: "no-store",
+  return serverApiRequest<FixturesResult>(`/fixture?${params.toString()}`, {
+    fallbackErrorMessage: "Impossible de charger les fixtures.",
   });
-
-  if (!response.ok) {
-    throw new Error(`Impossible de charger les fixtures (${response.status})`);
-  }
-
-  return (await response.json()) as FixturesResult;
 }

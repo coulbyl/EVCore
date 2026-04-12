@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { clientApiRequest } from "@/lib/api/client-api";
 
 export async function declareFixtureResult(
   fixtureId: string,
@@ -9,17 +9,9 @@ export async function declareFixtureResult(
     awayHtScore?: number;
   },
 ): Promise<void> {
-  const response = await fetch(
-    `${BACKEND_URL}/adjustment/fixture/${fixtureId}/result`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erreur ${response.status}: ${text}`);
-  }
+  await clientApiRequest<void>(`/adjustment/fixture/${fixtureId}/result`, {
+    method: "PATCH",
+    body,
+    fallbackErrorMessage: "Impossible de declarer le resultat du match.",
+  });
 }

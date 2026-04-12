@@ -2,33 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { BetSlipView } from "../types/bet-slip";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { clientApiRequest } from "@/lib/api/client-api";
 
 export async function getBetSlips(): Promise<BetSlipView[]> {
-  const response = await fetch(`${BACKEND_URL}/bet-slips`, {
-    credentials: "include",
-    cache: "no-store",
+  return clientApiRequest<BetSlipView[]>("/bet-slips", {
+    fallbackErrorMessage: "Impossible de charger les tickets.",
   });
-
-  if (!response.ok) {
-    throw new Error(`Impossible de charger les bet slips (${response.status})`);
-  }
-
-  return (await response.json()) as BetSlipView[];
 }
 
 export async function getBetSlipById(id: string): Promise<BetSlipView> {
-  const response = await fetch(`${BACKEND_URL}/bet-slips/${id}`, {
-    credentials: "include",
-    cache: "no-store",
+  return clientApiRequest<BetSlipView>(`/bet-slips/${id}`, {
+    fallbackErrorMessage: "Ticket introuvable.",
   });
-
-  if (!response.ok) {
-    throw new Error(`Bet slip introuvable (${response.status})`);
-  }
-
-  return (await response.json()) as BetSlipView;
 }
 
 export function useBetSlips() {

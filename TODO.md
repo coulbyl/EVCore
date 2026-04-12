@@ -26,7 +26,6 @@
 
 ### À faire maintenant
 
-- homogénéisation finale des fetchers web
 - vérification fine des parcours mobile
 
 ---
@@ -131,7 +130,7 @@ EVCore ne doit plus réintroduire le concept produit de `coupon`.
 ## Phase D — Polish produit
 
 - [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
-- [ ] homogénéiser les fetchers web vers le backend protégé
+- [x] homogénéiser les fetchers web vers le backend protégé
 - [ ] vérifier les parcours mobile-first sur auth + fixtures + drawer + slips
 - [x] vocabulaire : Fixtures → Matchs, Slips → Tickets (labels UI uniquement)
 - [x] drawer panier : bouton suppression visible sur mobile + mise unitaire appliquée à la frappe
@@ -172,6 +171,7 @@ personnel pour les utilisateurs non-admin.
 - [x] modèle `Session`
 - [x] modèle `BetSlip`
 - [x] modèle `BetSlipItem`
+- [x] seed admin idempotent via `packages/db/src/seed.ts`
 - [x] hard delete du domaine coupon
 - [x] nettoyage dashboard / audit / notifications / scripts liés aux coupons
 

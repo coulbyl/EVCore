@@ -2,17 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { AuditOverview } from "../types/audit";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { clientApiRequest } from "@/lib/api/client-api";
 
 async function fetchAuditOverview(): Promise<AuditOverview> {
-  const response = await fetch(`${BACKEND_URL}/audit/overview`);
-  if (!response.ok) {
-    throw new Error(
-      `Impossible de charger l'overview audit (${response.status})`,
-    );
-  }
-  return (await response.json()) as AuditOverview;
+  return clientApiRequest<AuditOverview>("/audit/overview", {
+    fallbackErrorMessage: "Impossible de charger l'overview audit.",
+  });
 }
 
 export function useAuditOverview() {

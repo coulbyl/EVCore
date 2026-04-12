@@ -1,27 +1,16 @@
 import type { BetSlipDraft, BetSlipView } from "../types/bet-slip";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { clientApiRequest } from "@/lib/api/client-api";
 
 export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
-  const response = await fetch(`${BACKEND_URL}/bet-slips`, {
+  return clientApiRequest<BetSlipView>("/bet-slips", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
+    body: {
       unitStake: draft.unitStake,
       items: draft.items.map((item) => ({
         betId: item.betId,
         stakeOverride: item.stakeOverride ?? undefined,
       })),
-    }),
+    },
+    fallbackErrorMessage: "Impossible de creer le ticket.",
   });
-
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as {
-      message?: string;
-    };
-    throw new Error(body.message ?? `Erreur ${response.status}`);
-  }
-
-  return (await response.json()) as BetSlipView;
 }
