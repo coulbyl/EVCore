@@ -101,7 +101,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-slate-400`}
           >
-            {isMobile ? "stake" : "unités de stake"}
+            {isMobile ? "mise" : "unités de mise"}
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-slate-400`}
           >
-            {compactSettledBets} {isMobile ? "settlés" : "bets settlés"}
+            {compactSettledBets} {isMobile ? "réglés" : "paris réglés"}
           </p>
         </div>
       </div>

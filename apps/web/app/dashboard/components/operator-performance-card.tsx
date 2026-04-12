@@ -20,7 +20,7 @@ function RoiBadge({ roi, count }: { roi: string; count: number }) {
     >
       <span className="tabular-nums">{roi}</span>
       <span className="font-normal opacity-70">
-        · {count} bet{count > 1 ? "s" : ""} · {label}
+        · {count} pari{count > 1 ? "s" : ""} · {label}
       </span>
     </div>
   );
@@ -84,13 +84,13 @@ export function OperatorPerformanceCard() {
         </div>
 
         <div className={slotCls}>
-          <p className={labelCls}>Bets</p>
+          <p className={labelCls}>Paris</p>
           {isLoading ? (
             skeleton
           ) : (
             <p className={valueCls}>{data?.settledBets ?? 0}</p>
           )}
-          <p className={subCls}>{isMobile ? "settlés" : "bets settlés"}</p>
+          <p className={subCls}>{isMobile ? "réglés" : "paris réglés"}</p>
         </div>
 
         <div className={slotCls}>
@@ -101,7 +101,7 @@ export function OperatorPerformanceCard() {
             <p className={valueCls}>{data?.winRate ?? "—"}</p>
           )}
           <p className={subCls}>
-            {data ? `${data.wonBets}W · ${data.lostBets}L` : "—"}
+            {data ? `${data.wonBets} gagnés · ${data.lostBets} perdus` : "—"}
           </p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export function OperatorPerformanceCard() {
 
       {data && data.pendingBets > 0 && (
         <p className="mt-3 text-xs text-slate-400">
-          {data.pendingBets} bet{data.pendingBets > 1 ? "s" : ""} en attente de
+          {data.pendingBets} pari{data.pendingBets > 1 ? "s" : ""} en attente de
           résultat
         </p>
       )}

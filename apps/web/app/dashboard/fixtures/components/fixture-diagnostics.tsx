@@ -18,10 +18,10 @@ function rejectionReasonLabel(reason?: string): string {
   const labels: Record<string, string> = {
     odds_below_floor: "Cote trop basse",
     odds_above_cap: "Cote trop haute",
-    ev_below_threshold: "EV insuffisant",
-    ev_above_hard_cap: "EV au-dessus du plafond",
-    ev_above_soft_cap: "EV au-dessus du plafond calibration",
-    filtered_longshot: "Longshot filtré",
+    ev_below_threshold: "Valeur insuffisante",
+    ev_above_hard_cap: "Valeur au-dessus du plafond",
+    ev_above_soft_cap: "Valeur au-dessus du plafond (calibration)",
+    filtered_longshot: "Grande cote écartée",
     market_suspended: "Marché suspendu",
     probability_too_low: "Probabilité insuffisante",
     quality_score_below_threshold: "Qualité insuffisante",
@@ -78,7 +78,7 @@ function DiagnosticTable({
               <th className="w-[82px] min-w-[82px] bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-[228px] md:z-20 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
                 Cote
               </th>
-              <th className="px-4 py-3 pr-4">EV</th>
+              <th className="px-4 py-3 pr-4">Valeur</th>
               <th className="px-4 py-3 pr-4">Qualité</th>
               <th className="px-4 py-3 pr-4">Statut</th>
               <th className="px-4 py-3">Raison</th>
@@ -188,18 +188,18 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         </p>
         <div className="grid grid-cols-4 gap-2 rounded-[1.1rem] border border-slate-100 bg-slate-50 px-2 py-2.5 sm:gap-3 sm:px-4 sm:py-4">
           <ModelInput label="Prob. estimée" value={mr.probEstimated} />
-          <ModelInput label="λ V1" value={mr.lambdaHome} />
-          <ModelInput label="λ V2" value={mr.lambdaAway} />
+          <ModelInput label="λ Dom." value={mr.lambdaHome} />
+          <ModelInput label="λ Ext." value={mr.lambdaAway} />
           <ModelInput label="Buts attendus" value={mr.expectedTotalGoals} />
         </div>
       </div>
 
       <DiagnosticTable
-        title={`Picks candidats (${mr.candidatePicks.length})`}
+        title={`Sélections candidates (${mr.candidatePicks.length})`}
         rows={mr.candidatePicks}
       />
       <DiagnosticTable
-        title={`Picks évalués (${mr.evaluatedPicks.length})`}
+        title={`Sélections évaluées (${mr.evaluatedPicks.length})`}
         rows={mr.evaluatedPicks}
         evaluated
       />

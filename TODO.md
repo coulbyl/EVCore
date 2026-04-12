@@ -47,7 +47,7 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 - [ ] afficher un classement par compétitions actives
 - [ ] afficher un top 10 des utilisateurs selon leurs tickets, métrique exacte à définir (`ROI`, gain net, autre)
 
-### Mes tickets
+### Mes tickets (NB: utiliser le langage de pick universelle)
 
 - [ ] afficher le gain ou la perte d’un ticket, avec une valeur provisoire tant que tout n’est pas settlé
 - [ ] dans le détail ticket, afficher le score et le statut de chaque pick

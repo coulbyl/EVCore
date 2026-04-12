@@ -73,98 +73,110 @@ export function formatMarketForDisplay(
 }
 
 export function formatPickForDisplay(pick: string, market: string): string {
-  const formatted = pick
-    .replace("OVER_UNDER UNDER_1_5", "UNDER 1.5")
-    .replace("OVER_UNDER OVER_1_5", "OVER 1.5")
-    .replace("OVER_UNDER UNDER_3_5", "UNDER 3.5")
-    .replace("OVER_UNDER OVER_3_5", "OVER 3.5")
-    .replace("OVER_UNDER UNDER", "UNDER 2.5")
-    .replace("OVER_UNDER OVER", "OVER 2.5")
-    .replace("OVER_UNDER_25 UNDER", "UNDER 2.5")
-    .replace("OVER_UNDER_25 OVER", "OVER 2.5");
+  // Normalise : retire le préfixe marché si concaténé (ex: "OVER_UNDER OVER_1_5" → "OVER_1_5")
+  const p = pick.includes(" ") ? pick.split(" ").slice(1).join("_") : pick;
 
-  if (
-    formatted === pick &&
-    (market === "OVER_UNDER" || market === "OVER_UNDER_25")
-  ) {
-    if (pick === "UNDER_1_5") return "UNDER 1.5";
-    if (pick === "OVER_1_5") return "OVER 1.5";
-    if (pick === "UNDER") return "UNDER 2.5";
-    if (pick === "OVER") return "OVER 2.5";
-    if (pick === "UNDER_3_5") return "UNDER 3.5";
-    if (pick === "OVER_3_5") return "OVER 3.5";
+  if (market === "ONE_X_TWO" || market === "MATCH_WINNER") {
+    if (p === "HOME") return "Domicile";
+    if (p === "DRAW") return "Nul";
+    if (p === "AWAY") return "Extérieur";
   }
 
-  if (formatted === pick && market === "OVER_UNDER_HT") {
-    if (pick === "OVER_0_5") return "OVER 0.5 HT";
-    if (pick === "UNDER_0_5") return "UNDER 0.5 HT";
-    if (pick === "OVER_1_5") return "OVER 1.5 HT";
-    if (pick === "UNDER_1_5") return "UNDER 1.5 HT";
+  if (market === "BTTS") {
+    if (p === "YES") return "Oui";
+    if (p === "NO") return "Non";
   }
 
-  if (formatted === pick && market === "FIRST_HALF_WINNER") {
-    if (pick === "HOME") return "MT DOMICILE";
-    if (pick === "DRAW") return "MT NUL";
-    if (pick === "AWAY") return "MT EXTÉRIEUR";
+  if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
+    if (p === "OVER_1_5") return "Plus de 1.5";
+    if (p === "UNDER_1_5") return "Moins de 1.5";
+    if (p === "OVER") return "Plus de 2.5";
+    if (p === "UNDER") return "Moins de 2.5";
+    if (p === "OVER_3_5") return "Plus de 3.5";
+    if (p === "UNDER_3_5") return "Moins de 3.5";
   }
 
-  if (formatted === pick && market === "HALF_TIME_FULL_TIME") {
+  if (market === "OVER_UNDER_HT") {
+    if (p === "OVER_0_5") return "Plus de 0.5 MT";
+    if (p === "UNDER_0_5") return "Moins de 0.5 MT";
+    if (p === "OVER_1_5") return "Plus de 1.5 MT";
+    if (p === "UNDER_1_5") return "Moins de 1.5 MT";
+  }
+
+  if (market === "FIRST_HALF_WINNER") {
+    if (p === "HOME") return "Domicile MT";
+    if (p === "DRAW") return "Nul MT";
+    if (p === "AWAY") return "Extérieur MT";
+  }
+
+  if (market === "HALF_TIME_FULL_TIME") {
     const htftLabels: Record<string, string> = {
-      HOME_HOME: "HOME / HOME",
-      HOME_DRAW: "HOME / DRAW",
-      HOME_AWAY: "HOME / AWAY",
-      DRAW_HOME: "DRAW / HOME",
-      DRAW_DRAW: "DRAW / DRAW",
-      DRAW_AWAY: "DRAW / AWAY",
-      AWAY_HOME: "AWAY / HOME",
-      AWAY_DRAW: "AWAY / DRAW",
-      AWAY_AWAY: "AWAY / AWAY",
+      HOME_HOME: "Dom. / Dom.",
+      HOME_DRAW: "Dom. / Nul",
+      HOME_AWAY: "Dom. / Ext.",
+      DRAW_HOME: "Nul / Dom.",
+      DRAW_DRAW: "Nul / Nul",
+      DRAW_AWAY: "Nul / Ext.",
+      AWAY_HOME: "Ext. / Dom.",
+      AWAY_DRAW: "Ext. / Nul",
+      AWAY_AWAY: "Ext. / Ext.",
     };
-    return htftLabels[pick] ?? pick;
+    return htftLabels[p] ?? p;
   }
 
-  return formatted;
+  return p;
 }
 
 export function formatDiagnosticPickForDisplay(
   market: string,
   pick: string,
 ): string {
-  if (market === "ONE_X_TWO") {
+  if (market === "ONE_X_TWO" || market === "MATCH_WINNER") {
     if (pick === "HOME") return "V1";
-    if (pick === "DRAW") return "N";
+    if (pick === "DRAW") return "Nul";
     if (pick === "AWAY") return "V2";
   }
 
   if (market === "BTTS") {
-    if (pick === "YES") return "BB OUI";
-    if (pick === "NO") return "BB NON";
+    if (pick === "YES") return "BB Oui";
+    if (pick === "NO") return "BB Non";
   }
 
   if (market === "FIRST_HALF_WINNER") {
-    if (pick === "HOME") return "MT DOMICILE";
-    if (pick === "DRAW") return "MT NUL";
-    if (pick === "AWAY") return "MT EXTÉRIEUR";
+    if (pick === "HOME") return "Dom. MT";
+    if (pick === "DRAW") return "Nul MT";
+    if (pick === "AWAY") return "Ext. MT";
   }
 
   if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
-    if (pick === "OVER") return "PLUS DE 2.5";
-    if (pick === "UNDER") return "MOINS DE 2.5";
-    if (pick === "OVER_1_5") return "PLUS DE 1.5";
-    if (pick === "UNDER_1_5") return "MOINS DE 1.5";
-    if (pick === "OVER_3_5") return "PLUS DE 3.5";
-    if (pick === "UNDER_3_5") return "MOINS DE 3.5";
+    if (pick === "OVER") return "Plus de 2.5";
+    if (pick === "UNDER") return "Moins de 2.5";
+    if (pick === "OVER_1_5") return "Plus de 1.5";
+    if (pick === "UNDER_1_5") return "Moins de 1.5";
+    if (pick === "OVER_3_5") return "Plus de 3.5";
+    if (pick === "UNDER_3_5") return "Moins de 3.5";
   }
 
   if (market === "OVER_UNDER_HT") {
-    if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
-    if (pick === "UNDER_0_5") return "MOINS DE 0.5 MT";
-    if (pick === "OVER_1_5") return "PLUS DE 1.5 MT";
-    if (pick === "UNDER_1_5") return "MOINS DE 1.5 MT";
+    if (pick === "OVER_0_5") return "Plus de 0.5 MT";
+    if (pick === "UNDER_0_5") return "Moins de 0.5 MT";
+    if (pick === "OVER_1_5") return "Plus de 1.5 MT";
+    if (pick === "UNDER_1_5") return "Moins de 1.5 MT";
   }
 
   if (market === "HALF_TIME_FULL_TIME") {
-    return pick.replace(/_/g, " / ");
+    const htftLabels: Record<string, string> = {
+      HOME_HOME: "V1 / V1",
+      HOME_DRAW: "V1 / Nul",
+      HOME_AWAY: "V1 / V2",
+      DRAW_HOME: "Nul / V1",
+      DRAW_DRAW: "Nul / Nul",
+      DRAW_AWAY: "Nul / V2",
+      AWAY_HOME: "V2 / V1",
+      AWAY_DRAW: "V2 / Nul",
+      AWAY_AWAY: "V2 / V2",
+    };
+    return htftLabels[pick] ?? pick;
   }
 
   return pick.replace(/_/g, " ");

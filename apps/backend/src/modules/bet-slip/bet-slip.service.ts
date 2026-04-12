@@ -178,26 +178,47 @@ function toBetSlipView(
     unitStake: betSlip.unitStake.toFixed(2),
     itemCount: betSlip.items.length,
     createdAt: betSlip.createdAt.toISOString(),
-    items: betSlip.items.map((item) => ({
-      betId: item.bet.id,
-      fixtureId: item.fixture.id,
-      fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
-      market: item.bet.market,
-      pick: item.bet.pick,
-      odds:
-        item.bet.oddsSnapshot !== null
-          ? item.bet.oddsSnapshot.toFixed(2)
-          : null,
-      ev: formatSigned(Number(item.bet.ev), 4),
-      stake: (item.stakeOverride ?? betSlip.unitStake).toFixed(2),
-      stakeOverride:
-        item.stakeOverride !== null ? item.stakeOverride.toFixed(2) : null,
-      createdAt: item.createdAt.toISOString(),
-    })),
+    items: betSlip.items.map((item) => {
+      const stake = item.stakeOverride ?? betSlip.unitStake;
+      const odds = item.bet.oddsSnapshot;
+      const status = item.bet.status;
+      return {
+        betId: item.bet.id,
+        fixtureId: item.fixture.id,
+        fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
+        market: item.bet.market,
+        pick: item.bet.pick,
+        odds: odds !== null ? odds.toFixed(2) : null,
+        ev: formatSigned(Number(item.bet.ev), 4),
+        stake: stake.toFixed(2),
+        stakeOverride:
+          item.stakeOverride !== null ? item.stakeOverride.toFixed(2) : null,
+        createdAt: item.createdAt.toISOString(),
+        betStatus: status,
+        homeScore: item.fixture.homeScore,
+        awayScore: item.fixture.awayScore,
+        pnl: computePnl(status, stake, odds),
+      };
+    }),
   };
 }
 
 function formatSigned(value: number, digits: number): string {
   const sign = value >= 0 ? '+' : '';
   return `${sign}${value.toFixed(digits)}`;
+}
+
+function computePnl(
+  status: import('@evcore/db').BetStatus,
+  stake: Decimal,
+  odds: Decimal | null,
+): string | null {
+  if (status === 'WON' && odds !== null) {
+    const profit = stake.times(odds.minus(1));
+    return `+${profit.toFixed(2)}`;
+  }
+  if (status === 'LOST') {
+    return `-${stake.toFixed(2)}`;
+  }
+  return null;
 }
