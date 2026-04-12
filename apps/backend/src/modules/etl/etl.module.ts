@@ -22,6 +22,7 @@ import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker'
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AdjustmentModule } from '../adjustment/adjustment.module';
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
     ),
+    AuthModule,
     AdjustmentModule,
     BacktestModule,
     BettingEngineModule,
