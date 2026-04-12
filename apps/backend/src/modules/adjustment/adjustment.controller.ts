@@ -1,14 +1,19 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { IsInt, IsOptional, Min } from 'class-validator';
 import { PrismaService } from '@/prisma.service';
+import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
+import { CurrentSession } from '@modules/auth/current-session.decorator';
+import type { AuthSession } from '@modules/auth/auth.types';
 import { AdjustmentService } from './adjustment.service';
 
 class SetFixtureResultDto {
@@ -32,11 +37,18 @@ class SetFixtureResultDto {
 }
 
 @Controller('adjustment')
+@UseGuards(AuthSessionGuard)
 export class AdjustmentController {
   constructor(
     private readonly adjustment: AdjustmentService,
     private readonly prisma: PrismaService,
   ) {}
+
+  private assertAdmin(session: AuthSession): void {
+    if (session.user.role !== 'ADMIN') {
+      throw new ForbiddenException('Admin only');
+    }
+  }
 
   /**
    * PATCH /adjustment/fixture/:id/result
@@ -44,9 +56,12 @@ export class AdjustmentController {
    */
   @Patch('fixture/:id/result')
   async setFixtureResult(
+    @CurrentSession() session: AuthSession,
     @Param('id') id: string,
     @Body() dto: SetFixtureResultDto,
   ) {
+    this.assertAdmin(session);
+
     const fixture = await this.prisma.client.fixture.findUnique({
       where: { id },
       select: { id: true },
@@ -73,7 +88,11 @@ export class AdjustmentController {
    * Settles open bets for a fixture, then checks calibration and auto-applies if triggered.
    */
   @Post('settle-and-check/:fixtureId')
-  async settleAndCheck(@Param('fixtureId') fixtureId: string) {
+  async settleAndCheck(
+    @CurrentSession() session: AuthSession,
+    @Param('fixtureId') fixtureId: string,
+  ) {
+    this.assertAdmin(session);
     return this.adjustment.settleAndCheck(fixtureId);
   }
 
@@ -83,7 +102,8 @@ export class AdjustmentController {
    * Does not settle any bets — reads existing settled bets only.
    */
   @Post('run-calibration')
-  async runCalibration() {
+  async runCalibration(@CurrentSession() session: AuthSession) {
+    this.assertAdmin(session);
     return this.adjustment.runCalibrationCheck();
   }
 
@@ -92,7 +112,8 @@ export class AdjustmentController {
    * Lists all AdjustmentProposals, most recent first.
    */
   @Get()
-  async listProposals() {
+  async listProposals(@CurrentSession() session: AuthSession) {
+    this.assertAdmin(session);
     return this.adjustment.listProposals();
   }
 
@@ -101,7 +122,11 @@ export class AdjustmentController {
    * Creates a new APPLIED proposal that reverts the weights to before the target proposal.
    */
   @Post(':id/rollback')
-  async rollback(@Param('id') id: string) {
+  async rollback(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+  ) {
+    this.assertAdmin(session);
     return this.adjustment.rollback(id);
   }
 }

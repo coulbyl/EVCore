@@ -6,12 +6,7 @@ import { useAuditOverview } from "@/domains/audit/use-cases/get-audit-overview";
 import { AuditOverviewSection } from "./components/audit-overview-section";
 
 function AuditPageContent() {
-  const {
-    data: overview,
-    isFetching: overviewFetching,
-    isError,
-    refetch,
-  } = useAuditOverview();
+  const { data: overview } = useAuditOverview();
 
   return (
     <Page className="flex h-full flex-col">

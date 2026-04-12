@@ -159,7 +159,7 @@ export const ETL_CRON_SCHEDULES = {
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
   ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
-  ODDS_SNAPSHOT_RETENTION: '30 6 * * *', // 06:30 UTC daily — purge stale odds snapshots
+  BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -170,5 +170,5 @@ export const ETL_SCHEDULER_KEYS = {
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ELO_SYNC: 'cron:elo-sync',
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
-  ODDS_SNAPSHOT_RETENTION: 'cron:odds-snapshot-retention',
+  BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
 } as const;

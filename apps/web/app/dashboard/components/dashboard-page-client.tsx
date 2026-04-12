@@ -12,7 +12,7 @@ import { PipelineStatus } from "./pipeline-status";
 
 export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
   const [pnlDate, setPnlDate] = useState<string | undefined>(undefined);
-  const { data, refetch, isFetching, isError } = useDashboardSummary(pnlDate);
+  const { data } = useDashboardSummary(pnlDate);
   const {
     dashboardKpis: kpis,
     workerStatuses: workers,

@@ -13,7 +13,7 @@ function formatStake(value: string) {
 }
 
 export function BetSlipListPageClient() {
-  const { data, isFetching, isError, refetch } = useBetSlips();
+  const { data } = useBetSlips();
   const betSlips = data ?? [];
 
   return (

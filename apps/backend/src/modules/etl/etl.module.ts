@@ -20,6 +20,7 @@ import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.w
 import { EloSyncWorker } from './workers/elo-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
+import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { AdjustmentModule } from '../adjustment/adjustment.module';
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
       { name: BULLMQ_QUEUES.ELO_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
+      { name: BULLMQ_QUEUES.BETTING_ENGINE },
       { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
     ),
@@ -54,6 +56,7 @@ import { AdjustmentModule } from '../adjustment/adjustment.module';
     OddsCsvImportWorker,
     EloSyncWorker,
     OddsPrematchSyncWorker,
+    BettingEngineAnalysisWorker,
     OddsSnapshotRetentionWorker,
     OddsHistoricalImportWorker,
   ],

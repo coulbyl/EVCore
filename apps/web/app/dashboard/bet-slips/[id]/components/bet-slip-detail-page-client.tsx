@@ -29,7 +29,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export function BetSlipDetailPageClient() {
   const params = useParams<{ id: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  const { data, isFetching, isError, refetch } = useBetSlipById(id ?? "");
+  const { data } = useBetSlipById(id ?? "");
 
   return (
     <Page className="flex h-full flex-col">

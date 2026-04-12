@@ -172,6 +172,8 @@ personnel pour les utilisateurs non-admin.
 - [x] modèle `BetSlip`
 - [x] modèle `BetSlipItem`
 - [x] seed admin idempotent via `packages/db/src/seed.ts`
+- [x] analyse quotidienne auto via worker `betting-engine-analysis`
+- [x] routes `adjustment/*` protégées admin
 - [x] hard delete du domaine coupon
 - [x] nettoyage dashboard / audit / notifications / scripts liés aux coupons
 
