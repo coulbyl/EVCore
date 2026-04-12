@@ -4,6 +4,28 @@ import { useState } from "react";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+function RoiBadge({ roi, count }: { roi: string; count: number }) {
+  const value = parseFloat(roi);
+  const isPositive = value > 0;
+  const isNeutral = value >= -5 && value <= 0;
+  const label = isPositive ? "En forme" : isNeutral ? "Neutre" : "À surveiller";
+  const cls = isPositive
+    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+    : isNeutral
+      ? "bg-amber-50 text-amber-700 border-amber-200"
+      : "bg-rose-50 text-rose-700 border-rose-200";
+  return (
+    <div
+      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${cls}`}
+    >
+      <span className="tabular-nums">{roi}</span>
+      <span className="font-normal opacity-70">
+        · {count} bet{count > 1 ? "s" : ""} · {label}
+      </span>
+    </div>
+  );
+}
+
 export function OperatorPerformanceCard() {
   const [date, setDate] = useState<string | undefined>(undefined);
   const { data, isLoading } = useOperatorSummary(date);
@@ -26,7 +48,7 @@ export function OperatorPerformanceCard() {
             Mes performances
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
-            Résumé de mes slips
+            Résumé de mes tickets
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -52,7 +74,7 @@ export function OperatorPerformanceCard() {
 
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
         <div className={slotCls}>
-          <p className={labelCls}>Slips</p>
+          <p className={labelCls}>Tickets</p>
           {isLoading ? (
             skeleton
           ) : (
@@ -111,6 +133,19 @@ export function OperatorPerformanceCard() {
           résultat
         </p>
       )}
+
+      <div className="mt-4 border-t border-border pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-slate-500">Rendement du modèle</span>
+          {isLoading ? (
+            <div className="h-5 w-16 animate-pulse rounded-lg bg-slate-200" />
+          ) : data?.globalRoi != null ? (
+            <RoiBadge roi={data.globalRoi} count={data.globalRoiBetCount} />
+          ) : (
+            <span className="text-xs text-slate-400">Pas assez de données</span>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

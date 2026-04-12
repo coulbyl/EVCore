@@ -10,6 +10,8 @@ export type OperatorSummary = {
   pendingBets: number;
   settledBets: number;
   winRate: string;
+  globalRoi: string | null;
+  globalRoiBetCount: number;
 };
 
 async function fetchOperatorSummary(date?: string): Promise<OperatorSummary> {

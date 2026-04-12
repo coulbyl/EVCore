@@ -27,12 +27,12 @@ export function AppShell({
           active: pathname === "/dashboard",
         },
         {
-          label: "Fixtures",
+          label: "Matchs",
           href: "/dashboard/fixtures",
           active: pathname.startsWith("/dashboard/fixtures"),
         },
         {
-          label: "Mes slips",
+          label: "Mes tickets",
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },

@@ -59,7 +59,7 @@ export default async function FixturesPage({
           <Suspense
             fallback={
               <div className="py-16 text-center text-sm text-slate-400">
-                Chargement des fixtures...
+                Chargement des matchs...
               </div>
             }
           >

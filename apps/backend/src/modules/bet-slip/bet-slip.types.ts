@@ -28,4 +28,6 @@ export type BetSlipSummaryView = {
   pendingBets: number;
   settledBets: number;
   winRate: string;
+  globalRoi: string | null;
+  globalRoiBetCount: number;
 };

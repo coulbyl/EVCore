@@ -62,6 +62,25 @@ export class BetSlipRepository {
     return { slipCount, wonBets, lostBets, pendingBets };
   }
 
+  getGlobalModelBets(date?: Date) {
+    const fixtureFilter = date
+      ? { scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) } }
+      : undefined;
+    return this.prisma.client.bet.findMany({
+      where: {
+        modelRun: { decision: 'BET' },
+        status: { in: ['WON', 'LOST'] },
+        oddsSnapshot: { not: null },
+        ...(fixtureFilter ? { fixture: fixtureFilter } : {}),
+      },
+      select: {
+        status: true,
+        oddsSnapshot: true,
+        stakePct: true,
+      },
+    });
+  }
+
   findUserBetSlipById(userId: string, betSlipId: string) {
     return this.prisma.client.betSlip.findFirst({
       where: { id: betSlipId, userId },

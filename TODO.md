@@ -133,6 +133,9 @@ EVCore ne doit plus réintroduire le concept produit de `coupon`.
 - [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
 - [ ] homogénéiser les fetchers web vers le backend protégé
 - [ ] vérifier les parcours mobile-first sur auth + fixtures + drawer + slips
+- [x] vocabulaire : Fixtures → Matchs, Slips → Tickets (labels UI uniquement)
+- [x] drawer panier : bouton suppression visible sur mobile + mise unitaire appliquée à la frappe
+- [x] card opérateur : ROI global du modèle (bets système `decision=BET`, pondéré par `stakePct`, filtre date)
 
 ---
 

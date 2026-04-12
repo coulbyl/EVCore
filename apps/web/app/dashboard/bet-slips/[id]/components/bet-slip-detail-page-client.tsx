@@ -36,15 +36,15 @@ export function BetSlipDetailPageClient() {
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         {!data ? (
           <EmptyState
-            title="Bet slip introuvable"
-            description="Le slip demandé n'existe pas ou n'est plus accessible pour cette session."
+            title="Ticket introuvable"
+            description="Le ticket demandé n'existe pas ou n'est plus accessible pour cette session."
           />
         ) : (
           <div className="space-y-5">
             <div className="flex flex-col gap-4 rounded-[1.1rem] border border-border bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Bet slip
+                  Ticket
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-slate-900">
                   #{data.id.slice(0, 8)}
@@ -83,7 +83,7 @@ export function BetSlipDetailPageClient() {
                   )}
                 />
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
-                  Ce slip est un objet final. Sa composition et ses mises ne
+                  Ce ticket est un objet final. Sa composition et ses mises ne
                   sont plus modifiables après création.
                 </div>
               </section>
@@ -91,7 +91,7 @@ export function BetSlipDetailPageClient() {
               <section className="overflow-hidden rounded-[1.1rem] border border-border bg-white">
                 <div className="border-b border-border px-4 py-3">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Bets du slip
+                    Paris du ticket
                   </p>
                 </div>
 

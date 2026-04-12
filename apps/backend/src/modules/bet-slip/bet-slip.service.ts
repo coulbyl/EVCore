@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
+import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
@@ -90,12 +91,45 @@ export class BetSlipService {
   }
 
   async getSummary(userId: string, date?: Date): Promise<BetSlipSummaryView> {
-    const { slipCount, wonBets, lostBets, pendingBets } =
-      await this.repository.getUserSummary(userId, date);
+    const [{ slipCount, wonBets, lostBets, pendingBets }, globalBets] =
+      await Promise.all([
+        this.repository.getUserSummary(userId, date),
+        this.repository.getGlobalModelBets(date),
+      ]);
+
     const settledBets = wonBets + lostBets;
     const winRate =
       settledBets > 0 ? `${Math.round((wonBets / settledBets) * 100)}%` : '—';
-    return { slipCount, wonBets, lostBets, pendingBets, settledBets, winRate };
+
+    let totalStaked = new Decimal(0);
+    let totalReturned = new Decimal(0);
+    const roiBetCount = globalBets.length;
+
+    for (const bet of globalBets) {
+      const stake = new Decimal(bet.stakePct.toString());
+      totalStaked = totalStaked.plus(stake);
+      if (bet.status === 'WON') {
+        totalReturned = totalReturned.plus(
+          stake.times(bet.oddsSnapshot!.toString()),
+        );
+      }
+    }
+
+    const globalRoi =
+      roiBetCount > 0 && totalStaked.gt(0)
+        ? `${totalReturned.minus(totalStaked).dividedBy(totalStaked).times(100).toFixed(1)}%`
+        : null;
+
+    return {
+      slipCount,
+      wonBets,
+      lostBets,
+      pendingBets,
+      settledBets,
+      winRate,
+      globalRoi,
+      globalRoiBetCount: roiBetCount,
+    };
   }
 
   async list(userId: string): Promise<BetSlipView[]> {

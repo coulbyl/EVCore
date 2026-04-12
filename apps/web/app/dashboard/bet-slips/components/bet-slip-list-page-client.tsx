@@ -21,8 +21,8 @@ export function BetSlipListPageClient() {
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         {betSlips.length === 0 ? (
           <EmptyState
-            title="Aucun bet slip"
-            description="Créez votre premier slip depuis la page Fixtures pour commencer à suivre vos sélections."
+            title="Aucun ticket"
+            description="Créez votre premier ticket depuis la page Matchs pour commencer à suivre vos sélections."
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -35,7 +35,7 @@ export function BetSlipListPageClient() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Bet slip
+                      Ticket
                     </p>
                     <h2 className="mt-1 text-base font-semibold text-slate-900">
                       #{betSlip.id.slice(0, 8)}

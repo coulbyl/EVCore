@@ -59,15 +59,6 @@ export function BetSlipDrawer() {
 
   const totalItems = draft.items.length;
 
-  function handleUnitStakeBlur() {
-    const val = parseFloat(unitStakeInput);
-    if (!isNaN(val) && val > 0) {
-      setUnitStake(val);
-    } else {
-      setUnitStakeInput(String(draft.unitStake));
-    }
-  }
-
   function effectiveStake(stakeOverride: number | null): number {
     return stakeOverride ?? draft.unitStake;
   }
@@ -140,11 +131,9 @@ export function BetSlipDrawer() {
             {submitted ? (
               <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
                 <CheckCircle size={40} className="text-emerald-500" />
-                <p className="font-semibold text-slate-800">
-                  Bet slip soumis !
-                </p>
+                <p className="font-semibold text-slate-800">Ticket soumis !</p>
                 <p className="text-sm text-slate-500">
-                  Retrouvez-le dans la section Mes bet slips.
+                  Retrouvez-le dans la section Mes tickets.
                 </p>
                 <button
                   type="button"
@@ -164,7 +153,7 @@ export function BetSlipDrawer() {
                   Panier vide
                 </p>
                 <p className="text-xs text-slate-400">
-                  Ajoutez des bets depuis la page Fixtures.
+                  Ajoutez des paris depuis la page Matchs.
                 </p>
               </div>
             ) : (
@@ -199,9 +188,10 @@ export function BetSlipDrawer() {
                       <button
                         type="button"
                         onClick={() => removeItem(item.betId)}
-                        className="mt-0.5 shrink-0 rounded-lg p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
+                        className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
+                        aria-label="Supprimer"
                       >
-                        <X size={13} />
+                        <X size={14} />
                       </button>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
@@ -243,7 +233,11 @@ export function BetSlipDrawer() {
                 <span className="text-slate-500">Mise unitaire</span>
                 <StakeInput
                   value={unitStakeInput}
-                  onChange={setUnitStakeInput}
+                  onChange={(v) => {
+                    setUnitStakeInput(v);
+                    const val = parseFloat(v);
+                    if (!isNaN(val) && val > 0) setUnitStake(val);
+                  }}
                   placeholder="4000"
                 />
               </div>
@@ -258,11 +252,10 @@ export function BetSlipDrawer() {
               <button
                 type="button"
                 disabled={isPending}
-                onBlur={handleUnitStakeBlur}
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white disabled:opacity-60"
               >
-                {isPending ? "Soumission…" : "Valider le bet slip"}
+                {isPending ? "Soumission…" : "Valider le ticket"}
               </button>
             </div>
           )}
