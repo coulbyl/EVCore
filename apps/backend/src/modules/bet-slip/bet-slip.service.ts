@@ -47,6 +47,21 @@ export class BetSlipService {
     }
 
     const fixtureIds = bets.map((bet) => bet.fixtureId);
+    const existingFixtures = await this.prisma.client.betSlipItem.findMany({
+      where: {
+        userId,
+        fixtureId: { in: fixtureIds },
+      },
+      distinct: ['fixtureId'],
+      select: { fixtureId: true },
+    });
+
+    if (existingFixtures.length > 0) {
+      throw new BadRequestException(
+        'Un ou plusieurs matchs sont déjà présents dans vos tickets',
+      );
+    }
+
     if (new Set(fixtureIds).size !== fixtureIds.length) {
       throw new BadRequestException(
         'Un slip ne peut pas contenir plusieurs bets du même fixture',

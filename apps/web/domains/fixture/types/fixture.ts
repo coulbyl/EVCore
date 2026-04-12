@@ -51,6 +51,7 @@ export type FixtureRow = {
   score: string | null;
   htScore: string | null;
   hasOdds: boolean;
+  alreadyInUserTicket: boolean;
   modelRun: FixtureModelRun | null;
 };
 

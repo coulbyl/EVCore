@@ -107,12 +107,15 @@ function AddToSlipButton({
 
   const betId = mr.betId;
   const inSlip = isInSlip(betId);
+  const alreadyInUserTicket = row.alreadyInUserTicket;
   const { market, pick, ev } = mr;
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (inSlip) {
       removeItem(betId);
+    } else if (alreadyInUserTicket) {
+      return;
     } else {
       const shouldOpenTicket = draft.items.length === 0;
       const item: BetSlipDraftItem = {
@@ -143,11 +146,18 @@ function AddToSlipButton({
         className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors ${
           inSlip
             ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-            : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
+            : alreadyInUserTicket
+              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+              : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
         }`}
+        disabled={alreadyInUserTicket && !inSlip}
       >
         {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
-        {inSlip ? "Déjà dans le ticket" : "Placer"}
+        {inSlip
+          ? "Déjà dans le ticket"
+          : alreadyInUserTicket
+            ? "Déjà dans vos tickets"
+            : "Placer"}
       </button>
     );
   }
@@ -156,12 +166,21 @@ function AddToSlipButton({
     <button
       type="button"
       onClick={handleClick}
-      title={inSlip ? "Retirer du ticket" : "Placer"}
+      title={
+        inSlip
+          ? "Retirer du ticket"
+          : alreadyInUserTicket
+            ? "Déjà dans vos tickets"
+            : "Placer"
+      }
       className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border transition-colors ${
         inSlip
           ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-          : "border-slate-200 bg-white text-slate-400 hover:border-accent hover:text-accent"
+          : alreadyInUserTicket
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
+            : "border-slate-200 bg-white text-slate-400 hover:border-accent hover:text-accent"
       }`}
+      disabled={alreadyInUserTicket && !inSlip}
     >
       {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
     </button>
