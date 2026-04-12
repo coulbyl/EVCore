@@ -35,9 +35,9 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 - [x] améliorer la présentation du fixture item sur mobile
 - [x] ne pas rendre `Déclarer le résultat` pour les non-admin
 
-- [ ] garder le concept actuel de panier, mais revoir le wording et l’UX pour se rapprocher d’un ticket plus naturel
+- [x] garder le concept actuel de panier, mais revoir le wording et l’UX pour se rapprocher d’un ticket plus naturel
 - [ ] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
-- [ ] renommer `Ajouter panier` en `Placer`
+- [x] renommer `Ajouter panier` en `Placer`
 - [ ] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
 - [ ] permettre à l’utilisateur de transformer un pick modèle en décision utilisateur explicite, que ce soit `BET` ou `NO_BET`
 

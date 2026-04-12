@@ -91,7 +91,7 @@ function AddToSlipButton({
   row: FixtureRow;
   variant?: "icon" | "full";
 }) {
-  const { addItem, removeItem, isInSlip, open } = useBetSlip();
+  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
   const mr = row.modelRun;
 
   if (
@@ -114,6 +114,7 @@ function AddToSlipButton({
     if (inSlip) {
       removeItem(betId);
     } else {
+      const shouldOpenTicket = draft.items.length === 0;
       const item: BetSlipDraftItem = {
         betId,
         fixtureId: row.fixtureId,
@@ -128,7 +129,9 @@ function AddToSlipButton({
         stakeOverride: null,
       };
       addItem(item);
-      open();
+      if (shouldOpenTicket) {
+        open();
+      }
     }
   }
 
@@ -144,7 +147,7 @@ function AddToSlipButton({
         }`}
       >
         {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
-        {inSlip ? "Dans le panier" : "Ajouter au panier"}
+        {inSlip ? "Déjà dans le ticket" : "Placer"}
       </button>
     );
   }
@@ -153,7 +156,7 @@ function AddToSlipButton({
     <button
       type="button"
       onClick={handleClick}
-      title={inSlip ? "Retirer du panier" : "Ajouter au panier"}
+      title={inSlip ? "Retirer du ticket" : "Placer"}
       className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border transition-colors ${
         inSlip
           ? "border-emerald-300 bg-emerald-50 text-emerald-700"
