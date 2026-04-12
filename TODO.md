@@ -113,7 +113,7 @@ shared/
 - [x] Supprimer hooks orphelins : `use-coupons-by-period.ts`, `use-coupon-by-id.ts`
 - [x] Supprimer `helpers/coupon.ts`
 - [x] Supprimer composant coupon mort : `recent-coupons-card.tsx`
-- [ ] Revoir `coupon-detail.tsx` avant suppression / découpage final
+- [x] Revoir `coupon-detail.tsx` avant suppression / découpage final
 
 ---
 
@@ -261,14 +261,14 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 - [x] Supprimer `couponId` des opportunités backend si plus de diagnostic coupon
 - [x] Retirer `coupon-worker` des worker statuses dashboard
 - [x] Supprimer `couponsTotal` / `couponsByStatus` de l'overview audit
-- [ ] Remplacer ces métriques par des métriques orientées bets / slips
+- [x] Remplacer ces métriques par des métriques orientées bets / slips
 
 ### Notifications / mails à nettoyer
 
 - [x] Supprimer `sendDailyCoupon`
 - [x] Supprimer `sendCouponResult`
 - [x] Supprimer `sendNoBetToday` (retiré avec le domaine coupon)
-- [ ] Supprimer les templates email liés aux coupons (`renderDailyCoupon` dans `@evcore/transactional`)
+- [x] Supprimer les templates email liés aux coupons (`renderDailyCoupon` dans `@evcore/transactional`)
 - [x] Nettoyer les `NotificationType` obsolètes liés aux coupons (`DAILY_COUPON`, `NO_BET_TODAY`, `COUPON_RESULT`)
 
 ### DB / Prisma / migrations
@@ -283,7 +283,7 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 ### Scripts / backtest / dette technique
 
 - [x] Supprimer la simulation coupon dans `backtest.service.ts`
-- [ ] Nettoyer les scripts DB qui lisent encore `daily_coupon` / `coupon_leg`
+- [x] Nettoyer les scripts DB qui lisent encore `daily_coupon` / `coupon_leg`
 - [x] Nettoyer les tests backend liés au domaine coupon (341 tests passants)
 
 ---
@@ -291,7 +291,7 @@ S'inspirer du modèle `user` / `auth` de `~/lab/fne-flash-ci` :
 ## Ordre d'exécution
 
 ```
-Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 (1 item restant) → Phase 6 → Phase 7 (quasi complet — reste transactional + métriques + scripts DB)
+Phase 1 ✅ → Phase 2 ✅ → Phase 3 ✅ → Phase 4 ✅ → Phase 5 ✅ → Phase 6 → Phase 7 (quasi complet — reste métriques slips + rôles utilisateur)
 ```
 
 ---

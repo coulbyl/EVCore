@@ -27,64 +27,8 @@ export type AlertItem = {
   severity: "high" | "medium" | "low";
 };
 
-export type CouponTier = "PREMIUM" | "STANDARD" | "SPECULATIF";
-
-export type CouponSnapshot = {
-  id: string;
-  code: string;
-  status: "PENDING" | "WON" | "LOST";
-  tier: CouponTier | null;
-  legs: number;
-  ev: string;
-  window: string;
-  selections: Array<{
-    id: string;
-    fixtureId?: string;
-    fixture: string;
-    homeLogo: string | null;
-    awayLogo: string | null;
-    scheduledAt: string;
-    fixtureStatus: string;
-    score: string | null;
-    htScore?: string | null;
-    status: "PENDING" | "WON" | "LOST" | "VOID";
-    market: string;
-    pick: string;
-    odds: string;
-    ev: string;
-    probEstimated?: string;
-    predictionSource?: PredictionSource | null;
-    lambdaHome?: string | null;
-    lambdaAway?: string | null;
-    expectedTotalGoals?: string | null;
-    candidatePicks?: Array<{
-      market: string;
-      pick: string;
-      comboMarket?: string;
-      comboPick?: string;
-      probability: string;
-      odds: string;
-      ev: string;
-      qualityScore: string;
-    }>;
-    evaluatedPicks?: Array<{
-      market: string;
-      pick: string;
-      comboMarket?: string;
-      comboPick?: string;
-      probability: string;
-      odds: string;
-      ev: string;
-      qualityScore: string;
-      status: "viable" | "rejected";
-      rejectionReason?: string;
-    }>;
-  }>;
-};
-
 export type OpportunityRow = {
   id: string;
-  couponId: string | null;
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;
@@ -137,17 +81,8 @@ export type DashboardSummary = {
   dashboardKpis: KpiCard[];
   workerStatuses: WorkerStatus[];
   activeAlerts: AlertItem[];
-  couponSnapshots: CouponSnapshot[];
   topOpportunities: OpportunityRow[];
   selectedFixture: FixturePanel;
   activityFeed: ActivityItem[];
   pnlSummary: PnlSummary;
-};
-
-export type CouponPeriodResponse = {
-  period: {
-    from: string;
-    to: string;
-  };
-  coupons: CouponSnapshot[];
 };

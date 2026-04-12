@@ -3,7 +3,6 @@ import type { AuditOverview } from "@/domains/audit/types/audit";
 export function BetsBreakdown({
   betsByStatus,
   betsByMarket,
-  couponsByStatus,
   settledBets,
   adjustmentProposals,
   activeSuspensions,
@@ -11,7 +10,6 @@ export function BetsBreakdown({
   AuditOverview,
   | "betsByStatus"
   | "betsByMarket"
-  | "couponsByStatus"
   | "settledBets"
   | "adjustmentProposals"
   | "activeSuspensions"
@@ -56,49 +54,35 @@ export function BetsBreakdown({
 
       <div className="rounded-[1.3rem] border border-border bg-white p-4">
         <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Coupons &amp; boucle
+          Boucle d&apos;apprentissage
         </p>
         <div className="space-y-1.5">
-          {couponsByStatus.map((r) => (
-            <div key={r.status} className="flex items-center justify-between">
-              <span className="font-mono text-xs text-slate-500">
-                coupon {r.status}
-              </span>
-              <span className="font-semibold tabular-nums text-slate-700">
-                {r.count.toLocaleString()}
-              </span>
-            </div>
-          ))}
-          <div className="mt-2 border-t border-border pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Bets settlés</span>
-              <span
-                className={`font-semibold tabular-nums ${settledBets >= 50 ? "text-emerald-600" : "text-amber-600"}`}
-              >
-                {settledBets}
-                {settledBets < 50 && (
-                  <span className="ml-1 text-[0.65rem] font-normal text-slate-400">
-                    / 50
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Proposals</span>
-              <span className="font-semibold tabular-nums text-slate-700">
-                {adjustmentProposals}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">
-                Suspensions actives
-              </span>
-              <span
-                className={`font-semibold tabular-nums ${activeSuspensions > 0 ? "text-rose-600" : "text-slate-700"}`}
-              >
-                {activeSuspensions}
-              </span>
-            </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">Bets settlés</span>
+            <span
+              className={`font-semibold tabular-nums ${settledBets >= 50 ? "text-emerald-600" : "text-amber-600"}`}
+            >
+              {settledBets}
+              {settledBets < 50 && (
+                <span className="ml-1 text-[0.65rem] font-normal text-slate-400">
+                  / 50
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">Proposals</span>
+            <span className="font-semibold tabular-nums text-slate-700">
+              {adjustmentProposals}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">Suspensions actives</span>
+            <span
+              className={`font-semibold tabular-nums ${activeSuspensions > 0 ? "text-rose-600" : "text-slate-700"}`}
+            >
+              {activeSuspensions}
+            </span>
           </div>
         </div>
       </div>

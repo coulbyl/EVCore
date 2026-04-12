@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { TableCard } from "./table-card";
-import { FixtureName, FixtureStatusBadge } from "./coupon-detail";
-import { formatPickForDisplay } from "@/domains/dashboard/helpers/coupon-display";
+import { FixtureName } from "./fixture-name";
+import { FixtureStatusBadge } from "./fixture-status-badge";
+import { formatPickForDisplay } from "@/helpers/fixture";
 import { useIsMobile } from "../hooks/use-mobile";
 
 import type { OpportunityRow } from "@/domains/dashboard/types/dashboard";

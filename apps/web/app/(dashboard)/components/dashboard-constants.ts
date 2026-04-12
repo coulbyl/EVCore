@@ -29,7 +29,6 @@ export const EMPTY_SUMMARY: DashboardSummary = {
   ],
   workerStatuses: [],
   activeAlerts: [],
-  couponSnapshots: [],
   topOpportunities: [],
   selectedFixture: {
     fixtureId: "",

@@ -32,38 +32,14 @@ async function main() {
     })
   ).map((fixture) => fixture.id);
 
-  const betIds = (
-    await prisma.bet.findMany({
-      where: { fixtureId: { in: fixtureIds } },
-      select: { id: true },
-    })
-  ).map((bet) => bet.id);
-
-  const couponIds = (
-    await prisma.dailyCoupon.findMany({
-      where: { date: start },
-      select: { id: true },
-    })
-  ).map((coupon) => coupon.id);
-
   const modelRunCount = await prisma.modelRun.count({
     where: { fixtureId: { in: fixtureIds } },
   });
-  const betCount = betIds.length;
-  const couponLegCount = await prisma.couponLeg.count({
-    where: {
-      OR: [{ betId: { in: betIds } }, { couponId: { in: couponIds } }],
-    },
+  const betCount = await prisma.bet.count({
+    where: { fixtureId: { in: fixtureIds } },
   });
-  const couponCount = couponIds.length;
 
   const result = await prisma.$transaction(async (tx) => {
-    const deletedCouponLegs = await tx.couponLeg.deleteMany({
-      where: {
-        OR: [{ betId: { in: betIds } }, { couponId: { in: couponIds } }],
-      },
-    });
-
     const deletedBets = await tx.bet.deleteMany({
       where: { fixtureId: { in: fixtureIds } },
     });
@@ -72,15 +48,9 @@ async function main() {
       where: { fixtureId: { in: fixtureIds } },
     });
 
-    const deletedCoupons = await tx.dailyCoupon.deleteMany({
-      where: { date: start },
-    });
-
     return {
-      deletedCouponLegs: deletedCouponLegs.count,
       deletedBets: deletedBets.count,
       deletedModelRuns: deletedModelRuns.count,
-      deletedCoupons: deletedCoupons.count,
     };
   });
 
@@ -91,8 +61,6 @@ async function main() {
         fixtureCount: fixtureIds.length,
         modelRunCount,
         betCount,
-        couponLegCount,
-        couponCount,
         ...result,
       },
       null,

@@ -14,7 +14,7 @@ export function AuditOverviewSection({
         <CountCard label="Fixtures" value={overview.counts.fixtures} />
         <CountCard label="Model runs" value={overview.counts.modelRuns} />
         <CountCard label="Bets" value={overview.counts.bets} />
-        <CountCard label="Coupons" value={overview.counts.coupons} />
+        <CountCard label="Bets settlés" value={overview.settledBets} />
       </div>
 
       <LeagueBreakdown rows={overview.leagueBreakdown} />
@@ -22,7 +22,6 @@ export function AuditOverviewSection({
       <BetsBreakdown
         betsByStatus={overview.betsByStatus}
         betsByMarket={overview.betsByMarket}
-        couponsByStatus={overview.couponsByStatus}
         settledBets={overview.settledBets}
         adjustmentProposals={overview.adjustmentProposals}
         activeSuspensions={overview.activeSuspensions}
