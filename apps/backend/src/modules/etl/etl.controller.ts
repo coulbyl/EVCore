@@ -2,12 +2,14 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -21,6 +23,9 @@ import { EtlService } from './etl.service';
 import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
 import { OddsPrematchSyncBodyDto } from './dto/odds-prematch-sync-body.dto';
 import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
+import { AuthSessionGuard } from '../auth/auth-session.guard';
+import { CurrentSession } from '../auth/current-session.decorator';
+import type { AuthSession } from '../auth/auth.types';
 
 type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
@@ -30,9 +35,9 @@ type GlobalSyncType =
   | 'odds-csv'
   | 'elo'
   | 'odds-prematch'
-  | 'odds-retention';
+  | 'analysis';
 
-type SyncBody = OddsPrematchSyncBodyDto & OddsSnapshotRetentionBodyDto;
+type SyncBody = OddsPrematchSyncBodyDto;
 type RollingStatsSyncBody = { mode?: 'refresh' | 'rebuild' };
 type GlobalSyncHandler = (service: EtlService, body: SyncBody) => Promise<void>;
 type LeagueSyncHandler = (
@@ -50,8 +55,7 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   elo: (service) => service.triggerEloSync(),
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
-  'odds-retention': (service, body) =>
-    service.triggerOddsSnapshotRetention(body.retentionDays),
+  analysis: (service, body) => service.triggerBettingEngineAnalysis(body.date),
 };
 
 const LEAGUE_SYNC_HANDLERS: Record<LeagueSyncType, LeagueSyncHandler> = {
@@ -72,7 +76,7 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'odds-csv',
   'elo',
   'odds-prematch',
-  'odds-retention',
+  'analysis',
 ] as const satisfies readonly GlobalSyncType[];
 
 const LEAGUE_SYNC_TYPE_VALUES = [
@@ -98,6 +102,12 @@ export class EtlController {
     const code = this.resolveCode(competition);
     await trigger(code);
     return { status: 'ok' as const, competitionCode: code };
+  }
+
+  private assertAdmin(session: AuthSession): void {
+    if (session.user.role !== 'ADMIN') {
+      throw new ForbiddenException('Admin only');
+    }
   }
 
   // ─── Status ───────────────────────────────────────────────────────────────
@@ -155,6 +165,13 @@ export class EtlController {
           failed: 0,
           delayed: 0,
         },
+        'betting-engine': {
+          active: 0,
+          waiting: 0,
+          completed: 5,
+          failed: 0,
+          delayed: 0,
+        },
         'odds-snapshot-retention': {
           active: 0,
           waiting: 0,
@@ -184,7 +201,7 @@ export class EtlController {
     summary: 'Trigger full ETL sync',
     description:
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
-      'stats → injuries, then odds-csv and odds-prematch. Routine fixtures/injuries ' +
+      'stats → injuries, then odds-csv → elo → odds-prematch → analysis. Routine fixtures/injuries ' +
       'runs target the current season; stats also targets the current season only. Settlement ' +
       'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
       'or after a long downtime.',
@@ -405,13 +422,31 @@ export class EtlController {
     return { status: 'ok' as const, seasonId };
   }
 
+  @Post('sync/odds-retention')
+  @UseGuards(AuthSessionGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger odds snapshot retention cleanup',
+    description:
+      'Runs manual cleanup of old odds snapshots. Restricted to ADMIN users.',
+  })
+  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  async triggerOddsRetention(
+    @CurrentSession() session: AuthSession,
+    @Body() body: OddsSnapshotRetentionBodyDto = {},
+  ) {
+    this.assertAdmin(session);
+    await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
+    return { status: 'ok' as const };
+  }
+
   @Post('sync/:type')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, odds-retention. For league-scoped runs, use ' +
+      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, analysis. For league-scoped runs, use ' +
       '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({
@@ -421,10 +456,7 @@ export class EtlController {
   })
   @ApiBody({
     schema: {
-      oneOf: [
-        { type: 'object', properties: { date: { type: 'string' } } },
-        { type: 'object', properties: { retentionDays: { type: 'number' } } },
-      ],
+      oneOf: [{ type: 'object', properties: { date: { type: 'string' } } }],
     },
     required: false,
   })
@@ -442,7 +474,7 @@ export class EtlController {
   })
   async triggerSync(
     @Param('type') type: string,
-    @Body() body: OddsPrematchSyncBodyDto & OddsSnapshotRetentionBodyDto = {},
+    @Body() body: OddsPrematchSyncBodyDto = {},
   ) {
     return this.ok(() => this.triggerGlobalSync(type, body));
   }

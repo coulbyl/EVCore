@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, FixtureStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 type LeagueBreakdownRow = {
@@ -12,13 +13,34 @@ type LeagueBreakdownRow = {
   team_stats: bigint;
 };
 
+export type FixturesForDateFilters = {
+  status?: string;
+  competitionCode?: string;
+};
+
 @Injectable()
 export class AuditRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getFixturesForDate(start: Date, end: Date) {
+  async getFixturesForDate(
+    start: Date,
+    end: Date,
+    filters: FixturesForDateFilters = {},
+  ) {
+    const where: Prisma.FixtureWhereInput = {
+      scheduledAt: { gte: start, lte: end },
+    };
+
+    if (filters.status) {
+      where.status = filters.status as FixtureStatus;
+    }
+
+    if (filters.competitionCode) {
+      where.season = { competition: { code: filters.competitionCode } };
+    }
+
     return this.prisma.client.fixture.findMany({
-      where: { scheduledAt: { gte: start, lte: end } },
+      where,
       select: {
         id: true,
         scheduledAt: true,
@@ -70,10 +92,8 @@ export class AuditRepository {
       fixturesTotal,
       modelRunsTotal,
       betsTotal,
-      couponsTotal,
       betsByStatus,
       betsByMarket,
-      couponsByStatus,
       settledBets,
       adjustmentProposals,
       activeSuspensions,
@@ -82,7 +102,6 @@ export class AuditRepository {
       this.prisma.client.fixture.count(),
       this.prisma.client.modelRun.count(),
       this.prisma.client.bet.count(),
-      this.prisma.client.dailyCoupon.count(),
       this.prisma.client.bet.groupBy({
         by: ['status'],
         _count: { id: true },
@@ -91,10 +110,6 @@ export class AuditRepository {
         by: ['market'],
         _count: { id: true },
         orderBy: { _count: { id: 'desc' } },
-      }),
-      this.prisma.client.dailyCoupon.groupBy({
-        by: ['status'],
-        _count: { id: true },
       }),
       this.prisma.client.bet.count({
         where: { status: { in: ['WON', 'LOST', 'VOID'] } },
@@ -125,10 +140,8 @@ export class AuditRepository {
       fixturesTotal,
       modelRunsTotal,
       betsTotal,
-      couponsTotal,
       betsByStatus,
       betsByMarket,
-      couponsByStatus,
       settledBets,
       adjustmentProposals,
       activeSuspensions,

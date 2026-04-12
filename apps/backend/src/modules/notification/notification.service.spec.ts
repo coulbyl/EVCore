@@ -7,13 +7,6 @@ import type { MailService } from '@modules/mail/mail.service';
 function makePrisma(): PrismaService {
   return {
     client: {
-      dailyCoupon: {
-        findUnique: vi.fn().mockResolvedValue({
-          id: 'coupon-id',
-          status: 'WON',
-          legCount: 3,
-        }),
-      },
       notification: {
         create: vi.fn().mockResolvedValue({}),
         findMany: vi.fn().mockResolvedValue([]),
@@ -33,7 +26,6 @@ function makeMail(): MailService {
     sendEtlFailure: vi.fn().mockResolvedValue(undefined),
     sendWeightAdjustment: vi.fn().mockResolvedValue(undefined),
     sendWeeklyReport: vi.fn().mockResolvedValue(undefined),
-    sendCouponResult: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
 }
 
@@ -166,15 +158,6 @@ describe('NotificationService — mail delegation', () => {
         periodEnd: end.toISOString(),
       }),
     );
-  });
-
-  it('delegates coupon settlement result to mail.sendCouponResult', async () => {
-    await service.sendCouponResult('coupon-id');
-
-    expect(mail.sendCouponResult).toHaveBeenCalledWith({
-      couponId: 'coupon-id',
-      status: 'WON',
-    });
   });
 });
 

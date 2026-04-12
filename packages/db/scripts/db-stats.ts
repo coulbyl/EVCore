@@ -56,9 +56,6 @@ async function main() {
     betsTotal,
     betsByStatus,
     betsByMarket,
-    couponsTotal,
-    couponsByStatus,
-    latestCoupon,
     todayFixtures,
     todayWithOddsRaw,
     settledBets,
@@ -126,13 +123,6 @@ async function main() {
       by: ["market"],
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
-    }),
-
-    prisma.dailyCoupon.count(),
-    prisma.dailyCoupon.groupBy({ by: ["status"], _count: { id: true } }),
-    prisma.dailyCoupon.findFirst({
-      orderBy: { createdAt: "desc" },
-      select: { date: true, status: true, legCount: true, createdAt: true },
     }),
 
     prisma.fixture.count({
@@ -213,10 +203,10 @@ async function main() {
     `  5. Backtest ready          ${req(backtestOk)}    ${modelRunsTotal.toLocaleString()} model runs, ${betsTotal.toLocaleString()} bets`,
   );
 
-  const couponOk = todayFixtures > 0 && todayWithOddsCount > 0;
-  const couponWarn = todayFixtures > 0;
+  const scoringOk = todayFixtures > 0 && todayWithOddsCount > 0;
+  const scoringWarn = todayFixtures > 0;
   w(
-    `  6. Coupon today            ${req(couponOk, !couponOk && couponWarn)}    ${todayFixtures} fixtures scheduled, ${todayWithOddsCount} with odds`,
+    `  6. Scoring today           ${req(scoringOk, !scoringOk && scoringWarn)}    ${todayFixtures} fixtures scheduled, ${todayWithOddsCount} with odds`,
   );
 
   const loopOk = settledBets >= 50;
@@ -292,20 +282,6 @@ async function main() {
   w("  Per market:");
   for (const r of betsByMarket) {
     w(`    ${r.market.padEnd(20)}: ${r._count.id}`);
-  }
-  w();
-
-  // ── Coupons ──────────────────────────────────────────────────────────────────
-  w("── Daily coupons ───────────────────────────────────────");
-  w(`  Total : ${couponsTotal}`);
-  for (const r of couponsByStatus) {
-    w(`  ${r.status.padEnd(12)}: ${r._count.id}`);
-  }
-  if (latestCoupon) {
-    const legWord = latestCoupon.legCount !== 1 ? "legs" : "leg";
-    w(
-      `  Latest: ${latestCoupon.date.toISOString().slice(0, 10)} — ${latestCoupon.status} (${latestCoupon.legCount} ${legWord}) — created ${latestCoupon.createdAt.toISOString().slice(0, 16)} UTC`,
-    );
   }
   w();
 

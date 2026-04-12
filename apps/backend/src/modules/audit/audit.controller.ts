@@ -12,7 +12,13 @@ export class AuditController {
     const date = query.date
       ? parseIsoDate(query.date)
       : startOfUtcDay(new Date());
-    return this.service.getFixtures(date);
+
+    return this.service.getFixtures(date, {
+      decision: query.decision,
+      status: query.status,
+      competition: query.competition,
+      timeSlot: query.timeSlot,
+    });
   }
 
   @Get('overview')

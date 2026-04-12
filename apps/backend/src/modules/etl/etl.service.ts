@@ -24,6 +24,7 @@ import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.w
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
+import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -96,6 +97,10 @@ export class EtlService implements OnApplicationBootstrap {
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
   private readonly avgFinishedFixturesWithoutXgPerLeaguePerDay: number;
   private competitionPlans: CompetitionPlan[] = [];
+  private readonly cronSchedules: Record<
+    keyof typeof ETL_CRON_SCHEDULES,
+    string
+  >;
   private readonly leagueSeasonSyncs: Record<
     LeagueSyncType,
     LeagueSeasonSyncConfig<LeagueSyncJobData>
@@ -115,6 +120,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly eloSyncQueue: Queue<EloSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC)
     private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE)
+    private readonly bettingEngineQueue: Queue<BettingEngineAnalysisJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
     private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT)
@@ -141,11 +148,49 @@ export class EtlService implements OnApplicationBootstrap {
         '2',
       ),
     );
+    this.cronSchedules = {
+      FIXTURES_SYNC: config.get<string>(
+        'ETL_FIXTURES_SYNC_CRON',
+        ETL_CRON_SCHEDULES.FIXTURES_SYNC,
+      ),
+      PENDING_BETS_SETTLEMENT: config.get<string>(
+        'ETL_PENDING_BETS_SETTLEMENT_CRON',
+        ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT,
+      ),
+      STALE_SCHEDULED_SYNC: config.get<string>(
+        'ETL_STALE_SCHEDULED_SYNC_CRON',
+        ETL_CRON_SCHEDULES.STALE_SCHEDULED_SYNC,
+      ),
+      STATS_SYNC: config.get<string>(
+        'ETL_STATS_SYNC_CRON',
+        ETL_CRON_SCHEDULES.STATS_SYNC,
+      ),
+      INJURIES_SYNC: config.get<string>(
+        'ETL_INJURIES_SYNC_CRON',
+        ETL_CRON_SCHEDULES.INJURIES_SYNC,
+      ),
+      ODDS_CSV_IMPORT: config.get<string>(
+        'ETL_ODDS_CSV_IMPORT_CRON',
+        ETL_CRON_SCHEDULES.ODDS_CSV_IMPORT,
+      ),
+      ELO_SYNC: config.get<string>(
+        'ETL_ELO_SYNC_CRON',
+        ETL_CRON_SCHEDULES.ELO_SYNC,
+      ),
+      ODDS_PREMATCH_SYNC: config.get<string>(
+        'ETL_ODDS_PREMATCH_SYNC_CRON',
+        ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC,
+      ),
+      BETTING_ENGINE_ANALYSIS: config.get<string>(
+        'ETL_BETTING_ENGINE_ANALYSIS_CRON',
+        ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
+      ),
+    };
     this.leagueSeasonSyncs = {
       fixtures: {
         queue: this.leagueSyncQueue,
         schedulerKey: `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:fixtures`,
-        cronPattern: ETL_CRON_SCHEDULES.FIXTURES_SYNC,
+        cronPattern: this.cronSchedules.FIXTURES_SYNC,
         syncType: 'fixtures',
         jobName: (competitionCode, season) =>
           `fixtures-sync-${competitionCode}-${season}`,
@@ -154,7 +199,7 @@ export class EtlService implements OnApplicationBootstrap {
       stats: {
         queue: this.leagueSyncQueue,
         schedulerKey: `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:stats`,
-        cronPattern: ETL_CRON_SCHEDULES.STATS_SYNC,
+        cronPattern: this.cronSchedules.STATS_SYNC,
         syncType: 'stats',
         jobName: (competitionCode, season) =>
           `stats-sync-${competitionCode}-${season}`,
@@ -163,7 +208,7 @@ export class EtlService implements OnApplicationBootstrap {
       injuries: {
         queue: this.leagueSyncQueue,
         schedulerKey: `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:injuries`,
-        cronPattern: ETL_CRON_SCHEDULES.INJURIES_SYNC,
+        cronPattern: this.cronSchedules.INJURIES_SYNC,
         syncType: 'injuries',
         jobName: (competitionCode, season) =>
           `injuries-sync-${competitionCode}-${season}`,
@@ -198,7 +243,7 @@ export class EtlService implements OnApplicationBootstrap {
         if (competition.csvDivisionCode) {
           await this.oddsCsvQueue.upsertJobScheduler(
             `${ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT}:${competition.code}`,
-            { pattern: ETL_CRON_SCHEDULES.ODDS_CSV_IMPORT },
+            { pattern: this.cronSchedules.ODDS_CSV_IMPORT },
             {
               name: `odds-csv-import-${competition.code}-${currentSeasonCode}`,
               data: {
@@ -214,16 +259,25 @@ export class EtlService implements OnApplicationBootstrap {
 
     await this.oddsPrematchQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.ODDS_PREMATCH_SYNC,
-      { pattern: ETL_CRON_SCHEDULES.ODDS_PREMATCH_SYNC },
+      { pattern: this.cronSchedules.ODDS_PREMATCH_SYNC },
       {
         name: 'odds-prematch-sync',
         data: {} satisfies OddsPrematchSyncJobData,
       },
     );
 
+    await this.bettingEngineQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.BETTING_ENGINE_ANALYSIS,
+      { pattern: this.cronSchedules.BETTING_ENGINE_ANALYSIS },
+      {
+        name: 'betting-engine-analysis',
+        data: {} satisfies BettingEngineAnalysisJobData,
+      },
+    );
+
     await this.eloSyncQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.ELO_SYNC,
-      { pattern: ETL_CRON_SCHEDULES.ELO_SYNC },
+      { pattern: this.cronSchedules.ELO_SYNC },
       {
         name: 'elo-sync',
         data: {} satisfies EloSyncJobData,
@@ -232,7 +286,7 @@ export class EtlService implements OnApplicationBootstrap {
 
     await this.staleScheduledSyncQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.STALE_SCHEDULED_SYNC,
-      { pattern: ETL_CRON_SCHEDULES.STALE_SCHEDULED_SYNC },
+      { pattern: this.cronSchedules.STALE_SCHEDULED_SYNC },
       {
         name: 'stale-scheduled-sync',
         data: {} satisfies StaleScheduledSyncJobData,
@@ -241,19 +295,10 @@ export class EtlService implements OnApplicationBootstrap {
 
     await this.pendingBetsSettlementQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.PENDING_BETS_SETTLEMENT,
-      { pattern: ETL_CRON_SCHEDULES.PENDING_BETS_SETTLEMENT },
+      { pattern: this.cronSchedules.PENDING_BETS_SETTLEMENT },
       {
         name: 'pending-bets-settlement-sync',
         data: {} satisfies PendingBetsSettlementJobData,
-      },
-    );
-
-    await this.oddsSnapshotRetentionQueue.upsertJobScheduler(
-      ETL_SCHEDULER_KEYS.ODDS_SNAPSHOT_RETENTION,
-      { pattern: ETL_CRON_SCHEDULES.ODDS_SNAPSHOT_RETENTION },
-      {
-        name: 'odds-snapshot-retention',
-        data: {} satisfies OddsSnapshotRetentionJobData,
       },
     );
 
@@ -468,6 +513,14 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  async triggerBettingEngineAnalysis(date?: string): Promise<void> {
+    await this.bettingEngineQueue.add(
+      'betting-engine-analysis',
+      { date } satisfies BettingEngineAnalysisJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
   async triggerEloSync(): Promise<void> {
     await this.eloSyncQueue.add(
       'elo-sync',
@@ -517,6 +570,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
       [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
+      [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
       [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
     };
@@ -587,6 +641,7 @@ export class EtlService implements OnApplicationBootstrap {
     await this.triggerOddsCsvImport();
     await this.triggerEloSync();
     await this.triggerOddsPrematchSync();
+    await this.triggerBettingEngineAnalysis();
   }
 
   private async upsertLeagueSeasonScheduler(

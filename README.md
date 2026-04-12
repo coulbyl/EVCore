@@ -52,6 +52,9 @@ docker compose up -d
 # Apply DB migrations
 pnpm --filter @evcore/db db:migrate -- --name init
 
+# Seed competitions and optionally an admin user
+pnpm --filter @evcore/db db:seed
+
 # Start backend in dev mode
 pnpm --filter backend dev
 ```
@@ -128,6 +131,10 @@ Key variables (see `.env.example` for the full list):
 
 ```
 DATABASE_URL=postgresql://...
+SEED_ADMIN_EMAIL=admin@evcore.local
+SEED_ADMIN_USERNAME=admin
+SEED_ADMIN_FULL_NAME=EVCore Admin
+SEED_ADMIN_PASSWORD=<choose-a-password>
 REDIS_HOST=localhost
 REDIS_PORT=6379
 API_FOOTBALL_KEY=<your-key>
@@ -146,6 +153,15 @@ SMTP_TO=admin@localhost
 # Feature flags
 KELLY_ENABLED=false
 ETL_SCHEDULING_ENABLED=false
+ETL_FIXTURES_SYNC_CRON=0 2 * * *
+ETL_PENDING_BETS_SETTLEMENT_CRON=*/30 * * * *
+ETL_STALE_SCHEDULED_SYNC_CRON=15 7 * * *
+ETL_STATS_SYNC_CRON=0 4 * * *
+ETL_INJURIES_SYNC_CRON=0 6 * * *
+ETL_ODDS_CSV_IMPORT_CRON=0 5 * * 1
+ETL_ELO_SYNC_CRON=0 3 * * *
+ETL_ODDS_PREMATCH_SYNC_CRON=0 18 * * *
+ETL_BETTING_ENGINE_ANALYSIS_CRON=0 20 * * *
 COUPON_SCHEDULING_ENABLED=false
 ODDS_SNAPSHOT_RETENTION_DAYS=30
 

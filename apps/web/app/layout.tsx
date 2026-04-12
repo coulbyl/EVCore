@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Console EVCore",
   description:
-    "Console opérateur pour les analyses EVCore, les coupons et les flux d'audit.",
+    "Console opérateur pour les analyses EVCore, les fixtures et les flux d'audit.",
   // manifest est auto-généré par app/manifest.ts — ne pas dupliquer ici
   appleWebApp: {
     capable: true,

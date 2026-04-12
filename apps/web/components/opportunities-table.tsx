@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Copy, Check } from "lucide-react";
-import { Button } from "@evcore/ui";
 import { TableCard } from "./table-card";
-import { FixtureName, FixtureStatusBadge } from "./coupon-detail";
-import { formatPickForDisplay } from "../helpers/coupon";
+import { FixtureName } from "./fixture-name";
+import { FixtureStatusBadge } from "./fixture-status-badge";
+import { formatPickForDisplay } from "@/helpers/fixture";
 import { useIsMobile } from "../hooks/use-mobile";
 
-import type { OpportunityRow } from "../types/dashboard";
+import type { OpportunityRow } from "@/domains/dashboard/types/dashboard";
 
 function CopyFixtureId({
   fixtureId,
@@ -88,7 +87,6 @@ export function OpportunitiesTable({
   onSelectAction: (row: OpportunityRow) => void;
 }) {
   const isMobile = useIsMobile();
-  const router = useRouter();
 
   return (
     <TableCard
@@ -142,15 +140,6 @@ export function OpportunitiesTable({
                   <span className="rounded-full border border-border px-2.5 py-1 text-xs text-slate-500">
                     Dét. {row.deterministic}
                   </span>
-                  {row.couponId ? (
-                    <Button
-                      tone="secondary"
-                      size="xs"
-                      onClick={() => router.push(`/coupons/${row.couponId}`)}
-                    >
-                      voir diagnostic
-                    </Button>
-                  ) : null}
                 </div>
               </div>
             );

@@ -1,5 +1,8 @@
 import "dotenv/config";
+import { randomBytes, scryptSync } from "node:crypto";
 import { prisma } from "./client";
+
+const SCRYPT_KEYLEN = 64;
 
 const COMPETITIONS = [
   {
@@ -128,7 +131,7 @@ const COMPETITIONS = [
     code: "MX1",
     name: "Liga MX",
     country: "Mexico",
-    isActive: true,
+    isActive: false,
     csvDivisionCode: "MEX",
     seasonStartMonth: 6,
   },
@@ -177,7 +180,7 @@ const COMPETITIONS = [
     code: "FRI",
     name: "International Friendlies",
     country: "World",
-    isActive: true,
+    isActive: false,
     includeInBacktest: false,
     csvDivisionCode: null,
     apiSeasonOverride: 2026,
@@ -211,8 +214,89 @@ async function seedCompetitions() {
   console.log(`[db:seed] competitions upserted: ${COMPETITIONS.length}`);
 }
 
+function normalizeIdentifier(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, SCRYPT_KEYLEN).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+async function seedAdminUser() {
+  const email = normalizeIdentifier(
+    process.env.SEED_ADMIN_EMAIL ?? "admin@evcore.local",
+  );
+  const username = normalizeIdentifier(
+    process.env.SEED_ADMIN_USERNAME ?? "admin",
+  );
+  const fullName = (process.env.SEED_ADMIN_FULL_NAME ?? "EVCore Admin").trim();
+  const password = process.env.SEED_ADMIN_PASSWORD;
+
+  const matchingUsers = await prisma.user.findMany({
+    where: { OR: [{ email }, { username }] },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      role: true,
+    },
+  });
+
+  if (matchingUsers.length > 1) {
+    throw new Error(
+      `[db:seed] admin seed is ambiguous for email=${email} username=${username}`,
+    );
+  }
+
+  if (matchingUsers.length === 1) {
+    const user = matchingUsers[0];
+
+    if (!user) {
+      throw new Error("[db:seed] unexpected missing admin candidate");
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email,
+        username,
+        fullName,
+        role: "ADMIN",
+        emailVerified: true,
+      },
+    });
+
+    console.log(`[db:seed] admin user ensured: ${email}`);
+    return;
+  }
+
+  if (!password || password.trim() === "") {
+    console.log(
+      "[db:seed] admin user skipped: set SEED_ADMIN_PASSWORD to create it",
+    );
+    return;
+  }
+
+  await prisma.user.create({
+    data: {
+      email,
+      username,
+      fullName,
+      passwordHash: hashPassword(password),
+      role: "ADMIN",
+      emailVerified: true,
+    },
+    select: { id: true },
+  });
+
+  console.log(`[db:seed] admin user created: ${email}`);
+}
+
 async function main() {
   await seedCompetitions();
+  await seedAdminUser();
 }
 
 main()

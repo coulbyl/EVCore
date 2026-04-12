@@ -13,7 +13,6 @@ import {
 } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
-import { CouponService } from '../../coupon/coupon.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
@@ -32,11 +31,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   @Inject(ConfigService)
   private config!: ConfigService;
 
-  // eslint-disable-next-line max-params -- Settlement worker needs adjustment service for learning loop.
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly bettingEngineService: BettingEngineService,
-    private readonly couponService: CouponService,
     private readonly adjustmentService: AdjustmentService,
   ) {
     super();
@@ -55,7 +52,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
     let finishedFixtures = 0;
     let settledBets = 0;
-    let settledCoupons = 0;
     let failedFixtures = 0;
     let skippedFixtures = 0;
 
@@ -125,10 +121,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
           fixture.id,
         );
         settledBets += settled;
-
-        const { settledCount } =
-          await this.couponService.settlePendingCouponsByFixture(fixture.id);
-        settledCoupons += settledCount;
       } catch (error) {
         failedFixtures++;
         logger.error(
@@ -141,15 +133,11 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       }
     }
 
-    const { settledCount: expiredCouponsSettled } =
-      await this.couponService.settleExpiredCoupons(new Date());
-
     logger.info(
       {
         fixtureCount: fixtures.length,
         finishedFixtures,
         settledBets,
-        settledCoupons: settledCoupons + expiredCouponsSettled,
         failedFixtures,
         skippedFixtures,
       },

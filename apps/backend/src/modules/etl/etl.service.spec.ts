@@ -19,6 +19,7 @@ import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-reten
 import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
+import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { BacktestService } from '../backtest/backtest.service';
 import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
@@ -83,6 +84,7 @@ describe('EtlService', () => {
   const oddsCsvQueue = makeQueue<OddsCsvImportJobData>();
   const eloSyncQueue = makeQueue<EloSyncJobData>();
   const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
+  const bettingEngineQueue = makeQueue<BettingEngineAnalysisJobData>();
   const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
   const oddsHistoricalImportQueue = makeQueue<OddsHistoricalImportJobData>();
   const prismaMockRaw = {
@@ -175,6 +177,7 @@ describe('EtlService', () => {
     oddsCsvQueue as Queue<OddsCsvImportJobData>,
     eloSyncQueue as Queue<EloSyncJobData>,
     oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
+    bettingEngineQueue as Queue<BettingEngineAnalysisJobData>,
     oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     oddsHistoricalImportQueue as Queue<OddsHistoricalImportJobData>,
     configMock,
@@ -296,6 +299,16 @@ describe('EtlService', () => {
     expect(eloSyncQueue.add).toHaveBeenCalledWith(
       'elo-sync',
       {},
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  });
+
+  it('dispatches the betting engine analysis job', async () => {
+    await service.triggerBettingEngineAnalysis('2026-04-13');
+
+    expect(bettingEngineQueue.add).toHaveBeenCalledWith(
+      'betting-engine-analysis',
+      { date: '2026-04-13' },
       BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   });
@@ -467,7 +480,7 @@ describe('EtlService', () => {
     );
   });
 
-  it('triggerFullSync enqueues the fused league jobs, current CSV import, and prematch odds sync', async () => {
+  it('triggerFullSync enqueues the fused league jobs, current CSV import, prematch odds sync, and analysis', async () => {
     await service.triggerFullSync();
 
     // fixtures (current) + stats (current) + injuries (current) = 3 jobs per competition
@@ -477,6 +490,7 @@ describe('EtlService', () => {
     expect(pendingBetsSettlementQueue.add).toHaveBeenCalledOnce();
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
     expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
+    expect(bettingEngineQueue.add).toHaveBeenCalledOnce();
   });
 
   it('dispatches odds snapshot retention cleanup job', async () => {

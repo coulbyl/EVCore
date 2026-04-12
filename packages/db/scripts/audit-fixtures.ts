@@ -224,10 +224,6 @@ async function main(): Promise<void> {
               qualityScore: true,
               probEstimated: true,
               status: true,
-              dailyCouponId: true,
-              dailyCoupon: {
-                select: { code: true, tier: true },
-              },
             },
             orderBy: [
               { qualityScore: { sort: "desc", nulls: "last" } },
@@ -360,13 +356,8 @@ async function main(): Promise<void> {
         ).padEnd(28);
         const qs =
           bet.qualityScore !== null ? Number(bet.qualityScore).toFixed(4) : "—";
-        const couponInfo = bet.dailyCoupon
-          ? `  Coupon: ${bet.dailyCoupon.code} [${bet.dailyCoupon.tier ?? "—"}]`
-          : bet.dailyCouponId
-            ? `  Coupon: ${bet.dailyCouponId.slice(0, 8)}…`
-            : "  Coupon: non assigné";
         w(
-          `  ${label}  Prob.: ${(Number(bet.probEstimated) * 100).toFixed(1)}%  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}${couponInfo}`,
+          `  ${label}  Prob.: ${(Number(bet.probEstimated) * 100).toFixed(1)}%  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`,
         );
       }
     }
@@ -507,80 +498,6 @@ async function main(): Promise<void> {
       const comp = f.season.competition.code;
       w(
         `  [${comp}]  ${f.homeTeam.name} vs ${f.awayTeam.name}  status=${f.status}`,
-      );
-    }
-  }
-
-  // ── Coupons du jour ─────────────────────────────────────────────────────────
-
-  const coupons = await prisma.dailyCoupon.findMany({
-    where: { date: { gte: dayStart, lte: dayEnd } },
-    select: {
-      code: true,
-      tier: true,
-      status: true,
-      legCount: true,
-      couponLegs: {
-        select: {
-          bet: {
-            select: {
-              market: true,
-              pick: true,
-              comboMarket: true,
-              comboPick: true,
-              ev: true,
-              qualityScore: true,
-              status: true,
-              fixture: {
-                select: {
-                  homeTeam: { select: { name: true } },
-                  awayTeam: { select: { name: true } },
-                },
-              },
-            },
-          },
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  w();
-  w(
-    `── Coupons du jour (${coupons.length}) ──────────────────────────────────`,
-  );
-
-  if (coupons.length === 0) {
-    w("  Aucun coupon généré.");
-  }
-
-  for (const coupon of coupons) {
-    const tierLabel = coupon.tier ?? "—";
-    const legs = coupon.couponLegs.map((cl) => cl.bet);
-    const avgQs =
-      legs.length > 0
-        ? legs.reduce(
-            (s, b) =>
-              s + (b.qualityScore !== null ? Number(b.qualityScore) : 0),
-            0,
-          ) / legs.length
-        : 0;
-    w();
-    w(
-      `  ${coupon.code}  [${tierLabel}]  ${coupon.legCount} leg${coupon.legCount !== 1 ? "s" : ""}  statut=${coupon.status}  avgQuality=${avgQs.toFixed(4)}`,
-    );
-    for (const bet of legs) {
-      const label = pickLabel(
-        bet.market,
-        bet.pick,
-        bet.comboMarket,
-        bet.comboPick,
-      ).padEnd(28);
-      const qs =
-        bet.qualityScore !== null ? Number(bet.qualityScore).toFixed(4) : "—";
-      w(
-        `    ${bet.fixture.homeTeam.name} vs ${bet.fixture.awayTeam.name}  ${label}  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`,
       );
     }
   }

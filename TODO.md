@@ -1,100 +1,223 @@
 # EVCore — TODO
 
-## Safe Value — Couche secondaire de sélection
+## Règle migrations DB
 
-### Contexte
-
-Les coupons EV pur (P=35-45%) ont un taux de passage < 18% sur 6 legs.
-L'idée : ajouter un canal parallèle `SAFE` ciblant des picks haute probabilité (P ≥ 68%),
-sans remplacer le flux EV existant.
-
-Rapport d'analyse : [ANALYSE_SAFE_VALUE.md](ANALYSE_SAFE_VALUE.md)
+- L'agent ne doit **pas** créer de migration Prisma
+- Les migrations sont créées manuellement par l'utilisateur
+- Pour travailler sans erreurs de types Prisma, l'agent peut utiliser uniquement `db:generate`
 
 ---
 
-### Checklist d'implémentation
+## État actuel
 
-#### Backend
+### Terminé
 
-- [x] `CouponTier.SAFE` ajouté au schéma Prisma
-- [x] `isSafeValue Boolean @default(false)` ajouté au modèle `Bet`
-- [x] Migration DB exécutée (faite manuellement)
-- [x] Constantes `SAFE_VALUE_*` dans `ev.constants.ts`
-- [x] `SAFE_COUPON_MAX_LEGS = 2` dans `coupon.constants.ts`
-- [x] `selectSafeValuePick()` dans `BettingEngineService`
-- [x] `analyzeFixture()` génère un bet `isSafeValue: true` avec pickKey `sv:...`
-- [x] `findEligibleSafeValueBetsForCoupon()` dans `CouponRepository`
-- [x] `findEligibleBetsForCoupon()` filtre `isSafeValue: false`
-- [x] `generateCouponWindow()` génère le coupon SAFE après les coupons EV
-- [x] `sendDailyCoupon()` supporte le tier `'SAFE'` (NotificationService + MailService)
+- Fondations web `fixtures` + filtres + helpers date
+- Page `/dashboard/fixtures` responsive
+- Refactor dashboard / audit vers architecture domain-based
+- Nettoyage du vocabulaire `coupon` côté web et glossaire
+- Backend `fixture`, `audit`, `bet-slip`, `auth`
+- Data model `User` / `Session` / `BetSlip` / `BetSlipItem`
+- Hard delete du domaine coupon côté backend
+- Draft panier localStorage + drawer + ajout depuis fixtures
+- Auth web branchée sur les sessions backend
+- Pages `Mes slips` + détail de slip
+- Service worker ajusté pour ne pas polluer le cache en dev
 
-#### Email (`@evcore/transactional`)
+### À faire maintenant
 
-- [x] `DailyCouponProps.tier` inclut `"SAFE"`
-- [x] Badge SAFE vert dans `daily-coupon.tsx` (`TIER_STYLES`)
-
-#### Web (`apps/web`)
-
-- [x] `CouponTier` dans `helpers/coupon.ts` inclut `"SAFE"`
-- [x] `couponTierLabel()` gère `"SAFE"`
-- [x] `couponTierBadgeClass()` badge vert (`border-emerald-200 bg-emerald-50 text-emerald-700`)
-
-#### Tests
-
-- [x] Mock `findEligibleSafeValueBetsForCoupon` ajouté dans `coupon.service.spec.ts`
-- [x] Tests unitaires pour `selectSafeValuePick()` dans `betting-engine.service.spec.ts`
-- [x] Tests unitaires pour la génération du coupon SAFE dans `coupon.service.spec.ts`
-
-#### Qualité
-
-- [x] `pnpm --filter backend lint` ✅
-- [x] `pnpm --filter backend typecheck` ✅
-- [x] `pnpm --filter backend test` ✅ (360 tests)
-- [x] `pnpm --filter web typecheck` ✅
+- vérification fine des parcours mobile
 
 ---
 
-### À faire ensuite
+## Phase A — Auth web + proxy (priorité)
 
-- [x] Backtest sur les coupons SAFE : mesurer taux de passage réel (cible ≥ 40%)
-- [ ] Monitorer en prod : comparer ROI coupon SAFE vs coupon EV sur 4 semaines
+Le backend d'auth existe déjà. Il faut maintenant brancher correctement le web Next.js sur ce backend, en reprenant le pattern de `fne-flash-ci`, **sans permissions ni RBAC**.
+
+### Cible
+
+- session stockée uniquement en cookie `httpOnly`
+- backend NestJS = autorité unique d'auth
+- web Next.js = lecture de session via `/auth/me`
+- routes `/dashboard/*` protégées
+- routes `/auth/*` publiques
+- aucune logique de permissions / rôles avancés côté web
+
+### Structure cible
+
+```text
+apps/web/
+  app/
+    (public)/
+      auth/
+        login/
+        register/
+        components/
+    dashboard/
+      ...
+  domains/
+    auth/
+      types/
+      use-cases/
+      context/   // seulement si nécessaire
+  proxy.ts
+```
+
+### Livré
+
+- [x] domaine `domains/auth/`
+  - [x] `types/`
+  - [x] `use-cases/`
+  - [ ] `context/` non nécessaire en V1
+- [x] `domains/auth/use-cases/get-current-session.ts`
+  - [x] lecture des cookies côté serveur
+  - [x] forward vers `GET /auth/me`
+- [x] `domains/auth/use-cases/auth-request.ts`
+  - [x] helper client avec `credentials: "include"`
+  - [x] gestion homogène des erreurs backend
+- [x] `apps/web/proxy.ts`
+  - [x] redirection `/dashboard/*` vers `/auth/login` si pas de session
+  - [x] redirection hors de `/auth/login` si session active
+- [x] routes / pages auth
+  - [x] `app/(public)/auth/login/page.tsx`
+  - [x] `app/(public)/auth/register/page.tsx`
+  - [x] `app/(public)/auth/components/*`
+  - [x] logout côté web
+- [x] intégration session dans le shell dashboard
+  - [x] affichage de l'utilisateur courant
+  - [x] action logout
 
 ---
 
-### Résultats backtest SAFE (10 avril 2026)
+## Phase B — Bet slips web
 
-3 saisons, toutes compétitions confondues (`includeInBacktest: true`), pooling cross-compétitions par date UTC (miroir prod) :
+Le panier draft existe déjà. Il faut terminer le flux utilisateur autour des slips créés.
 
-| Métrique                      | Résultat  | Cible        |
-| ----------------------------- | --------- | ------------ |
-| Picks placés                  | 165       | —            |
-| Win rate                      | 67.9%     | ≥ 68%        |
-| ROI                           | +2.77%    | ≥ 0%         |
-| Jours avec coupon (≥ 2 picks) | 36 / 115  | —            |
-| **Coupon win rate**           | **41.7%** | **≥ 40% ✅** |
+### Déjà fait
 
-**Points de vigilance :**
+- [x] domaine `domains/bet-slip/` créé (`types`, `use-cases`, `context`)
+- [x] draft de panier côté web
+- [x] persistance du draft en `localStorage`
+- [x] ajout / retrait d'un bet depuis `fixtures`
+- [x] drawer panier
+- [x] mise unitaire
+- [x] overrides de mise
+- [x] total du panier
+- [x] soumission du draft vers `POST /bet-slips`
+- [x] lien de navigation `Mes slips`
 
-- UEL (1 saison) : 4 picks, win rate 25%, ROI -64.8% — faible volume, à surveiller
-- UECL (2 saisons) : 12 picks, win rate 37.5–50%, ROI négatif — picks home sur groupes hétérogènes
-- Championship : 17 picks sur 2 saisons, ROI légèrement négatif (-5%)
-- La plupart des lignes < 5 picks → non significatif statistiquement
+### Reste à faire
+
+- [x] geler clairement la composition et les mises après création du `BetSlip`
+- [ ] introduire / confirmer le type `BetSlipStake` si utile
+- [x] page `mes bet-slips`
+- [x] page détail `bet-slips/[id]`
+- [x] permettre la gestion explicite de plusieurs slips utilisateur
 
 ---
 
-### Double Chance — Tentative abandonnée (10 avril 2026)
+## Phase C — Nettoyage final du vocabulaire coupon
 
-**Problème rencontré :** ajout des marchés `1X`, `X2`, `12` au canal SAFE via dérivation des cotes 1X2.
+EVCore ne doit plus réintroduire le concept produit de `coupon`.
 
-**Résultat backtest :**
+- [x] supprimer le vocabulaire `coupon` restant dans l'UI et les labels
+- [x] nettoyer le glossaire si nécessaire
+- [x] retirer les textes shell encore orientés `coupon`
+- [ ] éviter toute réintroduction de logique de combiné dans l'UX
 
-- Volume : 165 → 2 052 picks (×12)
-- Win rate : 67.9% → 71.2% ✅
-- ROI : **+2.77% → -2.57%** ❌
-- Coupon win rate : 41.7% → 53.6% ✅
+---
 
-**Cause racine :** les cotes DC sont dérivées comme `1 / (1/homeOdds + 1/drawOdds)`. La marge bookmaker des cotes 1X2 est ainsi **héritée et doublée** dans les cotes DC. Résultat : EV théorique ≈ 0 = EV réel légèrement négatif de façon systématique. Avg odds = 1.365, break-even à 73.3% de win rate — inatteignable.
+## Phase D — Polish produit
 
-**Bonne solution (Phase 2) :** fetcher les vraies cotes Double Chance directement depuis API-Football (market id séparé). L'EV serait alors calculé sur des cotes authentiques sans vig accumulé, et le marché pourrait offrir de vraie valeur.
+- [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
+- [x] homogénéiser les fetchers web vers le backend protégé
+- [ ] vérifier les parcours mobile-first sur auth + fixtures + drawer + slips
+- [x] vocabulaire : Fixtures → Matchs, Slips → Tickets (labels UI uniquement)
+- [x] drawer panier : bouton suppression visible sur mobile + mise unitaire appliquée à la frappe
+- [x] card opérateur : ROI global du modèle (bets système `decision=BET`, pondéré par `stakePct`, filtre date)
 
-- [ ] **Phase 2** : intégrer les cotes DC réelles dans `FullOddsSnapshot` via ETL odds (API-Football), puis réactiver `Market.DOUBLE_CHANCE` dans `safeValueMarkets`
+---
+
+## Phase E — Dashboard opérateur
+
+Remplacer la carte "Performance Globale" (données système globales) par un résumé
+personnel pour les utilisateurs non-admin.
+
+### Backend
+
+- [x] `GET /bet-slips/summary` — agrégat par userId : slips créés, bets WON/LOST/PENDING, winRate
+- [x] Endpoint protégé par `AuthSessionGuard`, userId déduit de la session
+- [x] Filtre optionnel `?date=` sur `fixture.scheduledAt`
+
+### Web
+
+- [x] `domains/bet-slip/use-cases/get-operator-summary.ts`
+- [x] `app/dashboard/components/operator-performance-card.tsx`
+- [x] `DashboardPageClient` : `isAdmin` → `PerformanceCard`, sinon → `OperatorPerformanceCard`
+- [x] Filtre par date sur `OperatorPerformanceCard` (même UX que l'admin)
+
+---
+
+## Backend — statut
+
+### Terminé
+
+- [x] module `auth/`
+- [x] login / logout / session courante
+- [x] sessions en base
+- [x] cookie `httpOnly`
+- [x] guards / décorateurs backend
+- [x] modèle `User`
+- [x] modèle `Session`
+- [x] modèle `BetSlip`
+- [x] modèle `BetSlipItem`
+- [x] seed admin idempotent via `packages/db/src/seed.ts`
+- [x] analyse quotidienne auto via worker `betting-engine-analysis`
+- [x] routes `adjustment/*` protégées admin
+- [x] hard delete du domaine coupon
+- [x] nettoyage dashboard / audit / notifications / scripts liés aux coupons
+
+### Hors scope pour ce projet actuel
+
+- [ ] permissions
+- [ ] RBAC
+
+> Note: ces deux sujets sont volontairement hors scope tant que le besoin produit n'existe pas.
+
+---
+
+## Ordre d'exécution
+
+```text
+Phase A — Auth web + proxy
+→ Phase B — Bet slips web
+→ Phase C — Nettoyage final coupon
+→ Phase D — Polish produit
+```
+
+---
+
+## Notes
+
+- Tous les filtres sont server-side (`searchParams` Next.js, pas de `useState` pour les filtres)
+- Un composant = un fichier
+- `page.tsx` = assemblage uniquement, pas de logique métier lourde
+- `apps/web/constants/` pour les constantes partagées entre domaines
+- `constants/` dans chaque domaine si constantes spécifiques au domaine
+- La route `(public)` est conservée pour la future landing page
+- `packages/ui` est conservé tel quel
+- **Jamais de helpers date inline** dans les composants ou use-cases → toujours passer par `lib/date.ts`
+- `GET /fixture` → page fixtures
+- `GET /audit/fixtures` → page audit
+- L'authentification doit être centralisée dans `apps/backend` avec sessions opaques serveur
+
+### PWA / Mobile-first
+
+- L'app est une **PWA installable**
+- Toute UI doit être pensée mobile en premier
+- Pas de hover-only interactions
+- Pas de tooltips desktop-only
+- Les filtres fixtures doivent rester accessibles sur petit écran
+- La table fixtures sur mobile = cards empilées
+- Le détail fixture = drawer mobile / side panel desktop
+- Touch targets minimum 44px

@@ -134,11 +134,7 @@ export type SafeValueBacktestReport = {
     roi: number;
     avgProbability: number;
     avgOdds: number;
-    // Cross-competition coupon simulation (mirrors production exactly)
     daysWithPicks: number;
-    daysWithCoupon: number;
-    couponWins: number;
-    couponWinRate: number;
   };
   generatedAt: Date;
 };
@@ -1217,8 +1213,6 @@ export class BacktestService {
       allEntries.push(...entries);
     }
 
-    // Cross-competition coupon simulation — mirrors production exactly:
-    // all picks from all seasons pooled and grouped by UTC date globally.
     const picksByDate = new Map<string, SafeValuePickEntry[]>();
     for (const entry of allEntries) {
       const dateKey = entry.fixture.scheduledAt.toISOString().slice(0, 10);
@@ -1228,19 +1222,8 @@ export class BacktestService {
     }
 
     let daysWithPicks = 0;
-    let daysWithCoupon = 0;
-    let couponWins = 0;
-    for (const dayPicks of picksByDate.values()) {
+    for (const _dayPicks of picksByDate.values()) {
       daysWithPicks++;
-      const sorted = [...dayPicks].sort((a, b) =>
-        b.pick.probability.comparedTo(a.pick.probability),
-      );
-      if (sorted.length >= 2) {
-        daysWithCoupon++;
-        if (sorted[0].result === 'WIN' && sorted[1].result === 'WIN') {
-          couponWins++;
-        }
-      }
     }
 
     const totalPicks = seasonResults.reduce((s, r) => s + r.picksPlaced, 0);
@@ -1272,9 +1255,6 @@ export class BacktestService {
               seasonsWithPicks.length
             : 0,
         daysWithPicks,
-        daysWithCoupon,
-        couponWins,
-        couponWinRate: daysWithCoupon > 0 ? couponWins / daysWithCoupon : 0,
       },
       generatedAt: new Date(),
     };
@@ -1285,8 +1265,7 @@ export class BacktestService {
         totalWins,
         winRate: report.aggregate.winRate,
         roi: report.aggregate.roi,
-        daysWithCoupon,
-        couponWinRate: report.aggregate.couponWinRate,
+        daysWithPicks,
       },
       'Safe value backtest complete',
     );

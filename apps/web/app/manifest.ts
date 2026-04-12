@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Console EVCore",
     short_name: "EVCore",
     description:
-      "Console opérateur pour les analyses EVCore, les coupons et les flux d'audit.",
+      "Console opérateur pour les analyses EVCore, les fixtures et les flux d'audit.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

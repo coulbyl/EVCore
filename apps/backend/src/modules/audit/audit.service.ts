@@ -9,6 +9,64 @@ import type {
   AuditFixtureRow,
   AuditOverview,
 } from './audit.types';
+import type { AuditFixturesQueryDto } from './dto/audit-fixtures-query.dto';
+
+// ---------------------------------------------------------------------------
+// Time slot definitions (heure UTC)
+// ---------------------------------------------------------------------------
+
+const TIME_SLOTS = {
+  morning: { start: 0, end: 11 },
+  noon: { start: 12, end: 13 },
+  afternoon: { start: 14, end: 17 },
+  evening: { start: 18, end: 21 },
+  night: { start: 22, end: 23 },
+} as const;
+
+function getUtcHour(isoDatetime: string): number {
+  return new Date(isoDatetime).getUTCHours();
+}
+
+function matchesTimeSlot(
+  isoDatetime: string,
+  slot: keyof typeof TIME_SLOTS,
+): boolean {
+  const hour = getUtcHour(isoDatetime);
+  const { start, end } = TIME_SLOTS[slot];
+  return hour >= start && hour <= end;
+}
+
+// ---------------------------------------------------------------------------
+// Sort by reliability: BET (EV desc) → NO_BET (finalScore desc) → sans run
+// ---------------------------------------------------------------------------
+
+function sortByReliability(rows: AuditFixtureRow[]): AuditFixtureRow[] {
+  return rows.sort((a, b) => {
+    const aHasRun = a.modelRun !== null;
+    const bHasRun = b.modelRun !== null;
+
+    if (!aHasRun && !bHasRun) return 0;
+    if (!aHasRun) return 1;
+    if (!bHasRun) return -1;
+
+    const aIsBet = a.modelRun?.decision === 'BET';
+    const bIsBet = b.modelRun?.decision === 'BET';
+
+    if (aIsBet !== bIsBet) return aIsBet ? -1 : 1;
+
+    if (aIsBet) {
+      const aEv = parseFloat(a.modelRun?.ev ?? '0');
+      const bEv = parseFloat(b.modelRun?.ev ?? '0');
+      return bEv - aEv;
+    }
+
+    const aScore = parseFloat(a.modelRun?.finalScore ?? '0');
+    const bScore = parseFloat(b.modelRun?.finalScore ?? '0');
+    return bScore - aScore;
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 function extractDiagnostics(features: unknown): AuditDiagnostics {
   if (features === null || typeof features !== 'object') {
@@ -38,13 +96,23 @@ function extractDiagnostics(features: unknown): AuditDiagnostics {
 export class AuditService {
   constructor(private readonly repo: AuditRepository) {}
 
-  async getFixtures(date: Date): Promise<AuditFixtureRow[]> {
+  async getFixtures(
+    date: Date,
+    filters: Pick<
+      AuditFixturesQueryDto,
+      'decision' | 'status' | 'competition' | 'timeSlot'
+    > = {},
+  ): Promise<AuditFixtureRow[]> {
     const fixtures = await this.repo.getFixturesForDate(
       startOfUtcDay(date),
       endOfUtcDay(date),
+      {
+        status: filters.status,
+        competitionCode: filters.competition,
+      },
     );
 
-    const rows: AuditFixtureRow[] = fixtures.map((f) => {
+    let rows: AuditFixtureRow[] = fixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
       const bet = run?.bets[0] ?? null;
       const betStatus: AuditFixtureRow['modelRun'] extends infer T
@@ -104,16 +172,18 @@ export class AuditService {
       };
     });
 
-    return rows.sort((a, b) => {
-      const aPriority = a.modelRun?.decision === 'BET' ? 0 : 1;
-      const bPriority = b.modelRun?.decision === 'BET' ? 0 : 1;
+    // Filtres appliqués après mapping (décision sur le dernier run, créneau horaire)
+    if (filters.decision) {
+      rows = rows.filter((r) => r.modelRun?.decision === filters.decision);
+    }
 
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
+    if (filters.timeSlot) {
+      rows = rows.filter((r) =>
+        matchesTimeSlot(r.scheduledAt, filters.timeSlot!),
+      );
+    }
 
-      return a.scheduledAt.localeCompare(b.scheduledAt);
-    });
+    return sortByReliability(rows);
   }
 
   async getOverview(): Promise<AuditOverview> {
@@ -125,7 +195,6 @@ export class AuditService {
         fixtures: data.fixturesTotal,
         modelRuns: data.modelRunsTotal,
         bets: data.betsTotal,
-        coupons: data.couponsTotal,
       },
       leagueBreakdown: data.leagueBreakdown.map((r) => {
         const fixtures = Number(r.fixtures);
@@ -150,10 +219,6 @@ export class AuditService {
       })),
       betsByMarket: data.betsByMarket.map((r) => ({
         market: r.market,
-        count: r._count.id,
-      })),
-      couponsByStatus: data.couponsByStatus.map((r) => ({
-        status: r.status,
         count: r._count.id,
       })),
       settledBets: data.settledBets,

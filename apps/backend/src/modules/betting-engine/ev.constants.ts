@@ -542,6 +542,9 @@ export function getPickMaxSelectionOdds(
 // Minimum probability for a safe value pick (strict — P < 0.68 is excluded).
 export const SAFE_VALUE_MIN_PROBABILITY = new Decimal('0.68');
 
+// Adverse line movement threshold: if odds drop by >10% over 7 days, exclude the pick.
+export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
+
 // Non-negative EV required — safe value bets must not have negative EV.
 export const SAFE_VALUE_MIN_EV = new Decimal('0.00');
 

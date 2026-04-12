@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-
+import { formatPickForDisplay } from "@/helpers/fixture";
 import { SettleFixtureDialog } from "./settle-fixture-dialog";
-import { FixtureName } from "./coupon-detail";
+import { FixtureName } from "./fixture-name";
 import { InfoTooltip } from "./info-tooltip";
-import { formatPickForDisplay } from "../helpers/coupon";
-import { useIsMobile } from "../hooks/use-mobile";
-import type { FixturePanel } from "../types/dashboard";
+import type { FixturePanel } from "@/domains/dashboard/types/dashboard";
 
 const METRIC_HINTS: Record<string, string> = {
   EV: "Expected Value — valeur attendue du pari. Formule : (probabilité modèle × cotes) − 1. Un EV ≥ 0.08 est requis pour déclencher une décision BET dans EVCore.",
@@ -81,7 +79,6 @@ function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
 }
 
 export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
-  const isMobile = useIsMobile();
   const cotes = fixture.metrics.find((m) => m.label === "Cotes");
   const coreMetrics = fixture.metrics.filter((m) => m.label !== "Cotes");
 
@@ -91,23 +88,21 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
-            Match clé
+            Analyse du diagnostic
           </p>
           <p className="mt-0.5 text-xs text-slate-500">
             {fixture.competition} • {fixture.startTime}
           </p>
         </div>
-        {!isMobile ? (
-          <div className="flex items-center gap-1.5">
-            <CopyFixtureId fixtureId={fixture.fixtureId} />
-            {fixture.fixtureId && (
-              <SettleFixtureDialog
-                fixtureId={fixture.fixtureId}
-                fixtureName={fixture.fixture}
-              />
-            )}
-          </div>
-        ) : null}
+        <div className="flex items-center gap-1.5">
+          <CopyFixtureId fixtureId={fixture.fixtureId} />
+          {fixture.fixtureId && (
+            <SettleFixtureDialog
+              fixtureId={fixture.fixtureId}
+              fixtureName={fixture.fixture}
+            />
+          )}
+        </div>
       </div>
 
       {/* Fixture name */}
@@ -118,15 +113,18 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
         className="mt-4 text-[1.4rem] font-semibold leading-snug text-slate-900"
       />
 
-      {/* Pick + cote */}
+      {/* Diagnostic */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
         <div className="flex items-stretch">
           <div className="flex-1 px-4 py-4">
             <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Sélection
+              Diagnostic modèle
             </p>
             <p className="mt-1.5 text-[1.05rem] font-bold tracking-tight text-white">
               {formatPickForDisplay(fixture.pick, fixture.market)}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              {fixture.modelConfidence}
             </p>
           </div>
           {cotes && (
@@ -141,6 +139,19 @@ export function FixtureDetailPanel({ fixture }: { fixture: FixturePanel }) {
           )}
         </div>
       </div>
+
+      {fixture.notes.length > 0 ? (
+        <div className="mt-3 rounded-2xl border border-border bg-slate-50 px-4 py-3">
+          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Notes du run
+          </p>
+          <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+            {fixture.notes.map((note) => (
+              <li key={note}>• {note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* Metrics */}
       <div className="mt-3 grid grid-cols-3 gap-2">

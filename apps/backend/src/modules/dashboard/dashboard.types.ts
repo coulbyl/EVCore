@@ -21,32 +21,8 @@ export type AlertItem = {
   severity: 'high' | 'medium' | 'low';
 };
 
-export type CouponSnapshot = {
-  id: string;
-  code: string;
-  status: 'PENDING' | 'WON' | 'LOST';
-  legs: number;
-  ev: string;
-  window: string;
-  selections: Array<{
-    id: string;
-    fixture: string;
-    homeLogo: string | null;
-    awayLogo: string | null;
-    scheduledAt: string;
-    fixtureStatus: string;
-    score: string | null;
-    status: 'PENDING' | 'WON' | 'LOST' | 'VOID';
-    market: string;
-    pick: string;
-    odds: string;
-    ev: string;
-  }>;
-};
-
 export type OpportunityRow = {
   id: string;
-  couponId: string | null;
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;
@@ -99,7 +75,6 @@ export type DashboardSummary = {
   dashboardKpis: KpiCard[];
   workerStatuses: WorkerStatus[];
   activeAlerts: AlertItem[];
-  couponSnapshots: CouponSnapshot[];
   topOpportunities: OpportunityRow[];
   selectedFixture: FixturePanel;
   activityFeed: ActivityItem[];

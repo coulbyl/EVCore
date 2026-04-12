@@ -3,7 +3,6 @@ import { AdjustmentStatus, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
-import { CouponService } from '@modules/coupon/coupon.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import {
   CalibrationService,
@@ -57,15 +56,12 @@ export class AdjustmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
-    private readonly couponService: CouponService,
     private readonly calibration: CalibrationService,
     private readonly notification: NotificationService,
   ) {}
 
   async settleAndCheck(fixtureId: string): Promise<SettleAndCheckResult> {
     const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
-    await this.couponService.settlePendingCouponsByFixture(fixtureId);
-    await this.couponService.settleExpiredCoupons(new Date());
 
     const calibrationResult =
       await this.calibration.computeForMarket(CALIBRATION_MARKET);

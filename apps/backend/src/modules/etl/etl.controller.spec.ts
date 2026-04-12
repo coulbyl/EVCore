@@ -1,7 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { describe, it, expect, vi } from 'vitest';
 import { EtlController } from './etl.controller';
 import type { EtlService } from './etl.service';
+import type { AuthSession } from '../auth/auth.types';
 
 describe('EtlController', () => {
   function makeService(overrides: Partial<EtlService> = {}): EtlService {
@@ -19,6 +20,7 @@ describe('EtlController', () => {
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
       triggerEloSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
+      triggerBettingEngineAnalysis: vi.fn().mockResolvedValue(undefined),
       triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
       triggerBacktestAllSeasons: vi.fn().mockResolvedValue(undefined),
       triggerBacktestSeason: vi.fn().mockResolvedValue(undefined),
@@ -89,6 +91,20 @@ describe('EtlController', () => {
     expect(service.triggerOddsPrematchSync).toHaveBeenCalledWith('2026-03-10');
   });
 
+  it('triggers betting engine analysis and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(
+      controller.triggerSync('analysis', { date: '2026-03-10' }),
+    ).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.triggerBettingEngineAnalysis).toHaveBeenCalledWith(
+      '2026-03-10',
+    );
+  });
+
   it('triggers Elo sync and returns ok', async () => {
     const service = makeService();
     const controller = new EtlController(service);
@@ -102,13 +118,48 @@ describe('EtlController', () => {
   it('triggers odds snapshot retention and returns ok', async () => {
     const service = makeService();
     const controller = new EtlController(service);
+    const session: AuthSession = {
+      sessionId: 'session-1',
+      user: {
+        id: 'user-1',
+        email: 'admin@evcore.local',
+        username: 'admin',
+        fullName: 'Admin',
+        bio: null,
+        role: 'ADMIN',
+        emailVerified: true,
+        avatarUrl: null,
+      },
+    };
 
     await expect(
-      controller.triggerSync('odds-retention', { retentionDays: 45 }),
+      controller.triggerOddsRetention(session, { retentionDays: 45 }),
     ).resolves.toEqual({
       status: 'ok',
     });
     expect(service.triggerOddsSnapshotRetention).toHaveBeenCalledWith(45);
+  });
+
+  it('rejects odds snapshot retention for non-admin users', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+    const session: AuthSession = {
+      sessionId: 'session-1',
+      user: {
+        id: 'user-2',
+        email: 'operator@evcore.local',
+        username: 'operator',
+        fullName: 'Operator',
+        bio: null,
+        role: 'OPERATOR',
+        emailVerified: true,
+        avatarUrl: null,
+      },
+    };
+
+    await expect(
+      controller.triggerOddsRetention(session, { retentionDays: 45 }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('triggers league-scoped sync and returns competitionCode', async () => {
