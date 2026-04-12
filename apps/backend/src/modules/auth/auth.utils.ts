@@ -4,7 +4,11 @@ import {
   scryptSync,
   timingSafeEqual,
 } from 'node:crypto';
-import { AUTH_SESSION_COOKIE, AUTH_SESSION_TTL_MS } from './auth.constants';
+import {
+  AUTH_SESSION_COOKIE,
+  AUTH_SESSION_TTL_MS,
+  COOKIE_DOMAIN,
+} from './auth.constants';
 
 const SCRYPT_KEYLEN = 64;
 
@@ -59,6 +63,7 @@ export function buildSessionCookie(token: string, secure: boolean): string {
     'SameSite=Lax',
     `Max-Age=${Math.floor(AUTH_SESSION_TTL_MS / 1000)}`,
   ];
+  if (COOKIE_DOMAIN) parts.push(`Domain=${COOKIE_DOMAIN}`);
   if (secure) parts.push('Secure');
   return parts.join('; ');
 }
@@ -71,6 +76,7 @@ export function buildExpiredSessionCookie(secure: boolean): string {
     'SameSite=Lax',
     'Max-Age=0',
   ];
+  if (COOKIE_DOMAIN) parts.push(`Domain=${COOKIE_DOMAIN}`);
   if (secure) parts.push('Secure');
   return parts.join('; ');
 }
