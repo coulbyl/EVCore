@@ -77,6 +77,7 @@ function rejectionLabel(reason: string): string {
   if (reason === "odds_below_floor") return "Cote trop basse";
   if (reason === "odds_above_cap") return "Cote trop haute";
   if (reason === "market_suspended") return "Marché suspendu";
+  if (reason === "under_high_lambda") return "Under rejeté (λ élevé)";
   return reason;
 }
 

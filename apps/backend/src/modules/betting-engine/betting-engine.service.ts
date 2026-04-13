@@ -68,6 +68,8 @@ import {
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MIN_ODDS,
   SAFE_VALUE_MAX_ODDS,
+  UNDER_HIGH_LAMBDA_THRESHOLD,
+  UNDER_HIGH_LAMBDA_EV_FLOOR,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
@@ -641,7 +643,7 @@ export class BettingEngineService {
           shadow_lineups: null,
           shadow_injuries: null,
           candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
-          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks.slice(0, 10)),
+          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks),
         },
         openclawRaw: Prisma.JsonNull,
         validatedByBackend: true,
@@ -974,7 +976,7 @@ export class BettingEngineService {
           shadow_lineups: null,
           shadow_injuries: null,
           candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
-          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks.slice(0, 10)),
+          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks),
         },
         openclawRaw: Prisma.JsonNull,
         validatedByBackend: true,
@@ -1196,12 +1198,13 @@ export class BettingEngineService {
 
   private async findLatestOddsSnapshot(
     fixtureId: string,
-    _cutoff: Date,
+    cutoff: Date,
   ): Promise<FullOddsSnapshot | null> {
     const rows = await this.prisma.client.oddsSnapshot.findMany({
       where: {
         fixtureId,
         market: Market.ONE_X_TWO,
+        snapshotAt: { lte: cutoff },
         homeOdds: { not: null },
         drawOdds: { not: null },
         awayOdds: { not: null },
@@ -1244,18 +1247,18 @@ export class BettingEngineService {
       ouHtBookmaker,
       fhwBookmaker,
     ] = await Promise.all([
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, _cutoff),
-      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, _cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
       this.findBestBookmakerForMarket(
         fixtureId,
         Market.HALF_TIME_FULL_TIME,
-        _cutoff,
+        cutoff,
       ),
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER_HT, _cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER_HT, cutoff),
       this.findBestBookmakerForMarket(
         fixtureId,
         Market.FIRST_HALF_WINNER,
-        _cutoff,
+        cutoff,
       ),
     ]);
 
@@ -1723,6 +1726,8 @@ export class BettingEngineService {
           probabilities,
           minEv,
           competitionCode,
+          // lambdaTotal not needed — this helper only evaluates 1X2 picks, never UNDER.
+          0,
         );
         return rejectionReason ? { ...candidate, rejectionReason } : candidate;
       })
@@ -1741,6 +1746,9 @@ export class BettingEngineService {
     competitionCode: string | null = null,
   ): EvaluatedPick[] {
     const minEv = getLeagueEvThreshold(competitionCode);
+    const lambdaTotal =
+      distHome.reduce((sum, p, k) => sum + k * p, 0) +
+      distAway.reduce((sum, p, k) => sum + k * p, 0);
     const candidates: ViablePick[] = [];
 
     // Singles 1X2
@@ -2049,6 +2057,7 @@ export class BettingEngineService {
         probabilities,
         minEv,
         competitionCode,
+        lambdaTotal,
       );
       return rejectionReason ? { ...candidate, rejectionReason } : candidate;
     });
@@ -2495,13 +2504,14 @@ function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
   }));
 }
 
-// eslint-disable-next-line max-params -- Five domain parameters; minEv and minOdds are derived from competition context and kept explicit for testability.
+// eslint-disable-next-line max-params -- Six domain parameters; kept explicit for testability.
 function getPickRejectionReason(
   pick: ViablePick,
   suspendedMarkets: Set<Market>,
   probabilities: MatchProbabilities,
   minEv: Decimal = EV_THRESHOLD,
   competitionCode: string | null = null,
+  lambdaTotal = 0,
 ): EvaluatedPick['rejectionReason'] {
   const minDirectionProbability = getPickDirectionProbabilityThreshold(
     competitionCode,
@@ -2511,6 +2521,18 @@ function getPickRejectionReason(
 
   if (pick.ev.greaterThan(EV_HARD_CAP)) {
     return 'ev_above_hard_cap';
+  }
+
+  // Under-2.5 bets at high expected-goal totals: the independent Poisson model
+  // overestimates P(Under) due to real-match overdispersion. Require a stricter
+  // EV floor to compensate — calibrated on April 2026 prod losses (λ 2.57–3.23).
+  if (
+    pick.market === Market.OVER_UNDER &&
+    pick.pick === 'UNDER' &&
+    lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD &&
+    pick.ev.lessThan(UNDER_HIGH_LAMBDA_EV_FLOOR)
+  ) {
+    return 'under_high_lambda';
   }
 
   if (pick.market === Market.ONE_X_TWO) {

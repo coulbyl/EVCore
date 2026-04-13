@@ -151,7 +151,7 @@ export function BetSlipDetailPanel({
         </div>
 
         {/* Items */}
-        <div className="divide-y divide-border">
+        <div className="max-h-96 lg:max-h-128 overflow-y-auto divide-y divide-border">
           {data.items.map((item) => (
             <div key={item.betId} className="px-4 py-3.5">
               <div className="flex flex-col gap-2">
