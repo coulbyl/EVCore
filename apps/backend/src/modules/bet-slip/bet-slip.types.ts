@@ -9,6 +9,11 @@ export type BetSlipItemView = {
   stake: string;
   stakeOverride: string | null;
   createdAt: string;
+  betStatus: 'WON' | 'LOST' | 'PENDING' | 'VOID';
+  homeScore: number | null;
+  awayScore: number | null;
+  /** Gain net réel (>0) ou perte (<0) en unités de mise. null si le pari est encore en attente. */
+  pnl: string | null;
 };
 
 export type BetSlipView = {

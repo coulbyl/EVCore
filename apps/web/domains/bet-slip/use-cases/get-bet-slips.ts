@@ -4,8 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import type { BetSlipView } from "../types/bet-slip";
 import { clientApiRequest } from "@/lib/api/client-api";
 
-export async function getBetSlips(): Promise<BetSlipView[]> {
-  return clientApiRequest<BetSlipView[]>("/bet-slips", {
+export async function getBetSlips(
+  from?: string,
+  to?: string,
+): Promise<BetSlipView[]> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.size > 0 ? `?${params.toString()}` : "";
+  return clientApiRequest<BetSlipView[]>(`/bet-slips${qs}`, {
     fallbackErrorMessage: "Impossible de charger les tickets.",
   });
 }
@@ -16,10 +23,10 @@ export async function getBetSlipById(id: string): Promise<BetSlipView> {
   });
 }
 
-export function useBetSlips() {
+export function useBetSlips(from?: string, to?: string) {
   return useQuery({
-    queryKey: ["bet-slips"],
-    queryFn: getBetSlips,
+    queryKey: ["bet-slips", from, to],
+    queryFn: () => getBetSlips(from, to),
   });
 }
 

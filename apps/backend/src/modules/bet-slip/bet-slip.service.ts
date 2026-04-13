@@ -3,12 +3,29 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@evcore/db';
+import { BetSource, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
+import { toPrismaDecimal } from '@utils/prisma.utils';
+import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
+import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
+
+function buildPickKey(input: {
+  market: string;
+  pick: string;
+  comboMarket?: string | null;
+  comboPick?: string | null;
+}): string {
+  return [
+    input.market,
+    input.pick,
+    input.comboMarket ?? '-',
+    input.comboPick ?? '-',
+  ].join('|');
+}
 
 @Injectable()
 export class BetSlipService {
@@ -18,63 +35,216 @@ export class BetSlipService {
   ) {}
 
   async create(userId: string, input: CreateBetSlipDto): Promise<BetSlipView> {
-    const uniqueBetIds = new Set(input.items.map((item) => item.betId));
-    if (uniqueBetIds.size !== input.items.length) {
-      throw new BadRequestException('Un bet ne peut apparaître qu’une fois');
-    }
+    // Sépare les items selon leur type : bet MODEL existant ou pick USER à créer.
+    const modelPickItems = input.items.filter((i) => i.betId != null);
+    const userPickItems = input.items.filter(
+      (i) =>
+        i.betId == null &&
+        i.modelRunId != null &&
+        i.market != null &&
+        i.pick != null,
+    );
 
-    const bets = await this.prisma.client.bet.findMany({
-      where: { id: { in: [...uniqueBetIds] } },
-      select: { id: true, fixtureId: true },
-    });
-
-    if (bets.length !== input.items.length) {
-      throw new BadRequestException('Certains bets sont introuvables');
-    }
-
-    const existing = await this.prisma.client.betSlipItem.findMany({
-      where: {
-        userId,
-        betId: { in: [...uniqueBetIds] },
-      },
-      select: { betId: true },
-    });
-
-    if (existing.length > 0) {
+    if (modelPickItems.length + userPickItems.length !== input.items.length) {
       throw new BadRequestException(
-        'Un ou plusieurs bets sont déjà présents dans un de vos slips',
+        'Chaque item doit avoir soit un betId, soit un modelRunId + market + pick',
       );
     }
 
-    const fixtureIds = bets.map((bet) => bet.fixtureId);
-    if (new Set(fixtureIds).size !== fixtureIds.length) {
+    // ── Bets MODEL : charger les bets existants ───────────────────────────
+    const modelBetIds = modelPickItems.map((i) => i.betId!);
+
+    if (new Set(modelBetIds).size !== modelBetIds.length) {
+      throw new BadRequestException("Un bet ne peut apparaître qu'une fois");
+    }
+
+    const modelBets = await this.prisma.client.bet.findMany({
+      where: { id: { in: modelBetIds } },
+      select: { id: true, fixtureId: true },
+    });
+
+    if (modelBets.length !== modelPickItems.length) {
+      throw new BadRequestException('Certains bets sont introuvables');
+    }
+
+    // ── Picks USER : valider et résoudre ────────────────────────────────
+    const modelRunIds = userPickItems.map((i) => i.modelRunId!);
+    const modelRuns = await this.prisma.client.modelRun.findMany({
+      where: { id: { in: modelRunIds } },
+      select: { id: true, features: true, fixture: { select: { id: true } } },
+    });
+
+    if (modelRuns.length !== new Set(modelRunIds).size) {
+      throw new BadRequestException('Certains model runs sont introuvables');
+    }
+
+    const modelRunById = new Map(modelRuns.map((mr) => [mr.id, mr]));
+
+    type UserPickResolved = {
+      item: (typeof userPickItems)[0];
+      fixtureId: string;
+      market: Market;
+      probEstimated: Decimal;
+      oddsSnapshot: Decimal;
+      ev: Decimal;
+      qualityScore: Decimal;
+    };
+
+    const resolvedUserPicks: UserPickResolved[] = [];
+
+    for (const item of userPickItems) {
+      const mr = modelRunById.get(item.modelRunId!);
+      if (!mr) throw new BadRequestException('ModelRun introuvable');
+
+      const diag = extractModelRunFeatureDiagnostics(mr.features);
+      const evalPick = diag.evaluatedPicks.find(
+        (p) =>
+          p.market === item.market &&
+          p.pick === item.pick &&
+          (p.comboMarket ?? null) === (item.comboMarket ?? null) &&
+          (p.comboPick ?? null) === (item.comboPick ?? null),
+      );
+
+      if (!evalPick) {
+        throw new BadRequestException(
+          `Pick introuvable dans les sélections évaluées : ${item.market}/${item.pick}`,
+        );
+      }
+
+      if (!(item.market! in Market)) {
+        throw new BadRequestException(`Marché invalide : ${item.market}`);
+      }
+
+      resolvedUserPicks.push({
+        item,
+        fixtureId: mr.fixture.id,
+        market: item.market! as Market,
+        probEstimated: new Decimal(evalPick.probability),
+        oddsSnapshot: new Decimal(evalPick.odds),
+        ev: new Decimal(evalPick.ev),
+        qualityScore: new Decimal(evalPick.qualityScore),
+      });
+    }
+
+    // ── Unicité des fixtures dans le slip ────────────────────────────────
+    const modelBetFixtureIds = modelBets.map((b) => b.fixtureId);
+    const userPickFixtureIds = resolvedUserPicks.map((r) => r.fixtureId);
+    const allFixtureIds = [...modelBetFixtureIds, ...userPickFixtureIds];
+
+    if (new Set(allFixtureIds).size !== allFixtureIds.length) {
       throw new BadRequestException(
         'Un slip ne peut pas contenir plusieurs bets du même fixture',
       );
     }
 
-    const betById = new Map(bets.map((bet) => [bet.id, bet]));
+    // ── Vérifier que les bets MODEL ne sont pas déjà dans un autre slip ──
+    if (modelBetIds.length > 0) {
+      const existing = await this.prisma.client.betSlipItem.findMany({
+        where: { userId, betId: { in: modelBetIds } },
+        select: { betId: true },
+      });
+      if (existing.length > 0) {
+        throw new BadRequestException(
+          'Un ou plusieurs bets sont déjà présents dans un de vos slips',
+        );
+      }
+    }
+
+    // ── Vérifier qu'aucun match n'est déjà dans un ticket de l'utilisateur ──
+    const existingFixtures = await this.prisma.client.betSlipItem.findMany({
+      where: { userId, fixtureId: { in: allFixtureIds } },
+      distinct: ['fixtureId'],
+      select: { fixtureId: true },
+    });
+
+    if (existingFixtures.length > 0) {
+      throw new BadRequestException(
+        'Un ou plusieurs matchs sont déjà présents dans vos tickets',
+      );
+    }
+
+    // ── Créer tout en transaction ────────────────────────────────────────
+    const modelBetById = new Map(modelBets.map((b) => [b.id, b]));
 
     const created = await this.prisma.client.$transaction(async (tx) => {
+      // Créer les bets USER
+      const userBetItems: Array<{
+        betId: string;
+        fixtureId: string;
+        stakeOverride?: number;
+      }> = [];
+
+      for (const resolved of resolvedUserPicks) {
+        const { item, market, fixtureId } = resolved;
+        const comboMarket =
+          item.comboMarket && item.comboMarket in Market
+            ? (item.comboMarket as Market)
+            : undefined;
+
+        const pickKey = buildPickKey({
+          market,
+          pick: item.pick!,
+          comboMarket: comboMarket ?? null,
+          comboPick: item.comboPick ?? null,
+        });
+
+        const bet = await tx.bet.create({
+          data: {
+            modelRunId: item.modelRunId!,
+            fixtureId,
+            market,
+            pick: item.pick!,
+            pickKey,
+            ...(comboMarket ? { comboMarket } : {}),
+            ...(item.comboPick ? { comboPick: item.comboPick } : {}),
+            probEstimated: toPrismaDecimal(resolved.probEstimated, 4),
+            oddsSnapshot: toPrismaDecimal(resolved.oddsSnapshot, 3),
+            ev: toPrismaDecimal(resolved.ev, 4),
+            qualityScore: toPrismaDecimal(resolved.qualityScore, 4),
+            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+            source: BetSource.USER,
+            userId,
+          },
+          select: { id: true },
+        });
+
+        userBetItems.push({
+          betId: bet.id,
+          fixtureId,
+          stakeOverride: item.stakeOverride,
+        });
+      }
+
+      // Créer le BetSlip
       const betSlip = await tx.betSlip.create({
-        data: {
-          userId,
-          unitStake: new Prisma.Decimal(input.unitStake),
-        },
+        data: { userId, unitStake: new Prisma.Decimal(input.unitStake) },
         select: { id: true },
       });
 
+      // Créer les BetSlipItems
       await tx.betSlipItem.createMany({
-        data: input.items.map((item) => ({
-          betSlipId: betSlip.id,
-          userId,
-          betId: item.betId,
-          fixtureId: betById.get(item.betId)!.fixtureId,
-          stakeOverride:
-            item.stakeOverride !== undefined
-              ? new Prisma.Decimal(item.stakeOverride)
-              : null,
-        })),
+        data: [
+          ...modelPickItems.map((item) => ({
+            betSlipId: betSlip.id,
+            userId,
+            betId: item.betId!,
+            fixtureId: modelBetById.get(item.betId!)!.fixtureId,
+            stakeOverride:
+              item.stakeOverride !== undefined
+                ? new Prisma.Decimal(item.stakeOverride)
+                : null,
+          })),
+          ...userBetItems.map(({ betId, fixtureId, stakeOverride }) => ({
+            betSlipId: betSlip.id,
+            userId,
+            betId,
+            fixtureId,
+            stakeOverride:
+              stakeOverride !== undefined
+                ? new Prisma.Decimal(stakeOverride)
+                : null,
+          })),
+        ],
       });
 
       return betSlip;
@@ -132,8 +302,8 @@ export class BetSlipService {
     };
   }
 
-  async list(userId: string): Promise<BetSlipView[]> {
-    const betSlips = await this.repository.findUserBetSlips(userId);
+  async list(userId: string, from?: Date, to?: Date): Promise<BetSlipView[]> {
+    const betSlips = await this.repository.findUserBetSlips(userId, from, to);
     return betSlips.map(toBetSlipView);
   }
 
@@ -163,26 +333,47 @@ function toBetSlipView(
     unitStake: betSlip.unitStake.toFixed(2),
     itemCount: betSlip.items.length,
     createdAt: betSlip.createdAt.toISOString(),
-    items: betSlip.items.map((item) => ({
-      betId: item.bet.id,
-      fixtureId: item.fixture.id,
-      fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
-      market: item.bet.market,
-      pick: item.bet.pick,
-      odds:
-        item.bet.oddsSnapshot !== null
-          ? item.bet.oddsSnapshot.toFixed(2)
-          : null,
-      ev: formatSigned(Number(item.bet.ev), 4),
-      stake: (item.stakeOverride ?? betSlip.unitStake).toFixed(2),
-      stakeOverride:
-        item.stakeOverride !== null ? item.stakeOverride.toFixed(2) : null,
-      createdAt: item.createdAt.toISOString(),
-    })),
+    items: betSlip.items.map((item) => {
+      const stake = item.stakeOverride ?? betSlip.unitStake;
+      const odds = item.bet.oddsSnapshot;
+      const status = item.bet.status;
+      return {
+        betId: item.bet.id,
+        fixtureId: item.fixture.id,
+        fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
+        market: item.bet.market,
+        pick: item.bet.pick,
+        odds: odds !== null ? odds.toFixed(2) : null,
+        ev: formatSigned(Number(item.bet.ev), 4),
+        stake: stake.toFixed(2),
+        stakeOverride:
+          item.stakeOverride !== null ? item.stakeOverride.toFixed(2) : null,
+        createdAt: item.createdAt.toISOString(),
+        betStatus: status,
+        homeScore: item.fixture.homeScore,
+        awayScore: item.fixture.awayScore,
+        pnl: computePnl(status, stake, odds),
+      };
+    }),
   };
 }
 
 function formatSigned(value: number, digits: number): string {
   const sign = value >= 0 ? '+' : '';
   return `${sign}${value.toFixed(digits)}`;
+}
+
+function computePnl(
+  status: import('@evcore/db').BetStatus,
+  stake: Decimal,
+  odds: Decimal | null,
+): string | null {
+  if (status === 'WON' && odds !== null) {
+    const profit = stake.times(odds.minus(1));
+    return `+${profit.toFixed(2)}`;
+  }
+  if (status === 'LOST') {
+    return `-${stake.toFixed(2)}`;
+  }
+  return null;
 }

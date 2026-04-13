@@ -18,7 +18,7 @@ export function BetsBreakdown({
     <div className="grid gap-4 md:grid-cols-3">
       <div className="rounded-[1.3rem] border border-border bg-white p-4">
         <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Bets par statut
+          Paris par statut
         </p>
         <div className="space-y-1.5">
           {betsByStatus.map((r) => (
@@ -36,7 +36,7 @@ export function BetsBreakdown({
 
       <div className="rounded-[1.3rem] border border-border bg-white p-4">
         <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Bets par marché
+          Paris par marché
         </p>
         <div className="space-y-1.5">
           {betsByMarket.map((r) => (
@@ -58,7 +58,7 @@ export function BetsBreakdown({
         </p>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Bets settlés</span>
+            <span className="text-xs text-slate-500">Paris réglés</span>
             <span
               className={`font-semibold tabular-nums ${settledBets >= 50 ? "text-emerald-600" : "text-amber-600"}`}
             >
@@ -71,7 +71,7 @@ export function BetsBreakdown({
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Proposals</span>
+            <span className="text-xs text-slate-500">Propositions</span>
             <span className="font-semibold tabular-nums text-slate-700">
               {adjustmentProposals}
             </span>

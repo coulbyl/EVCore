@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { BetSlipDraft, BetSlipDraftItem } from "../types/bet-slip";
+import {
+  draftItemKey,
+  type BetSlipDraft,
+  type BetSlipDraftItem,
+} from "../types/bet-slip";
 
 const STORAGE_KEY = "evcore:bet-slip-draft";
 const DEFAULT_UNIT_STAKE = 4000;
@@ -62,29 +66,31 @@ export function useBetSlipDraft() {
   const addItem = useCallback(
     (item: BetSlipDraftItem) => {
       setDraft((prev) => {
-        if (prev.items.some((i) => i.betId === item.betId)) return prev;
+        const key = draftItemKey(item);
+        if (prev.items.some((i) => draftItemKey(i) === key)) return prev;
         return { ...prev, items: [...prev.items, item] };
       });
     },
     [setDraft],
   );
 
+  /** Retire l'item dont la clé correspond (betId pour MODEL, clé composite pour USER). */
   const removeItem = useCallback(
-    (betId: string) => {
+    (key: string) => {
       setDraft((prev) => ({
         ...prev,
-        items: prev.items.filter((i) => i.betId !== betId),
+        items: prev.items.filter((i) => draftItemKey(i) !== key),
       }));
     },
     [setDraft],
   );
 
   const setStakeOverride = useCallback(
-    (betId: string, stake: number | null) => {
+    (key: string, stake: number | null) => {
       setDraft((prev) => ({
         ...prev,
         items: prev.items.map((i) =>
-          i.betId === betId ? { ...i, stakeOverride: stake } : i,
+          draftItemKey(i) === key ? { ...i, stakeOverride: stake } : i,
         ),
       }));
     },
@@ -102,8 +108,9 @@ export function useBetSlipDraft() {
     setDraft(() => ({ items: [], unitStake: DEFAULT_UNIT_STAKE }));
   }, [setDraft]);
 
+  /** Vérifie si la clé donnée correspond à un item dans le brouillon. */
   const isInSlip = useCallback(
-    (betId: string) => draft.items.some((i) => i.betId === betId),
+    (key: string) => draft.items.some((i) => draftItemKey(i) === key),
     [draft.items],
   );
 

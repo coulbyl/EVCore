@@ -6,6 +6,7 @@ import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
 // ---------------------------------------------------------------------------
 
 export type FixtureModelRun = {
+  modelRunId: string;
   decision: "BET" | "NO_BET";
   deterministicScore: string;
   finalScore: string;
@@ -51,6 +52,7 @@ export type FixtureRow = {
   score: string | null;
   htScore: string | null;
   hasOdds: boolean;
+  alreadyInUserTicket: boolean;
   modelRun: FixtureModelRun | null;
 };
 

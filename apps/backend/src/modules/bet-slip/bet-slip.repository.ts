@@ -7,9 +7,19 @@ import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 export class BetSlipRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserBetSlips(userId: string) {
+  findUserBetSlips(userId: string, from?: Date, to?: Date) {
     return this.prisma.client.betSlip.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...((from ?? to)
+          ? {
+              createdAt: {
+                ...(from ? { gte: from } : {}),
+                ...(to ? { lte: to } : {}),
+              },
+            }
+          : {}),
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -28,6 +38,7 @@ export class BetSlipRepository {
                 pick: true,
                 ev: true,
                 oddsSnapshot: true,
+                status: true,
               },
             },
             fixture: {
@@ -35,6 +46,9 @@ export class BetSlipRepository {
                 id: true,
                 homeTeam: { select: { name: true } },
                 awayTeam: { select: { name: true } },
+                homeScore: true,
+                awayScore: true,
+                status: true,
               },
             },
           },
@@ -101,6 +115,7 @@ export class BetSlipRepository {
                 pick: true,
                 ev: true,
                 oddsSnapshot: true,
+                status: true,
               },
             },
             fixture: {
@@ -108,6 +123,9 @@ export class BetSlipRepository {
                 id: true,
                 homeTeam: { select: { name: true } },
                 awayTeam: { select: { name: true } },
+                homeScore: true,
+                awayScore: true,
+                status: true,
               },
             },
           },

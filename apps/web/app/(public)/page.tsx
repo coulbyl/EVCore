@@ -11,32 +11,32 @@ import {
 } from "lucide-react";
 
 const STATS = [
-  { label: "Brier Score", value: "0.592", sub: "seuil PASS < 0.65" },
-  { label: "ROI simulé", value: "+2.28%", sub: "3 saisons EPL" },
-  { label: "Calibration", value: "2.5%", sub: "erreur moyenne" },
-  { label: "Fixtures analysées", value: "760", sub: "données vérifiées" },
+  { label: "Précision", value: "0.592", sub: "résultat validé" },
+  { label: "Résultat simulé", value: "+2.28%", sub: "sur 3 saisons" },
+  { label: "Écart moyen", value: "2.5%", sub: "estimation mesurée" },
+  { label: "Matchs étudiés", value: "760", sub: "données vérifiées" },
 ];
 
 const FEATURES = [
   {
     icon: BarChart2,
-    title: "Scoring déterministe 70 %",
-    body: "Forme récente, xG, volatilité de ligue, domicile/extérieur. Des données, pas des opinions.",
+    title: "Des choix fondés sur les données",
+    body: "Forme récente, résultats passés, niveau des équipes et contexte du match. Le système s'appuie sur des faits, pas sur l'intuition.",
   },
   {
     icon: Target,
-    title: "Expected Value uniquement",
-    body: "EV ≥ 0.08 comme seul critère d'entrée. Le système n'ouvre pas une position sans avantage mathématique.",
+    title: "Un filtre simple et clair",
+    body: "Le système ne retient un pari que s'il estime qu'il y a un vrai avantage. Sinon, il passe son tour.",
   },
   {
     icon: Shield,
-    title: "Gestion du risque intégrée",
-    body: "Suspension automatique à ROI < −15% sur 50 bets. Calibration hebdomadaire des poids par marché.",
+    title: "Une approche prudente",
+    body: "Quand les résultats se dégradent, le système ralentit et contrôle davantage ce qu'il propose.",
   },
   {
     icon: TrendingUp,
-    title: "Audit complet",
-    body: "Chaque analyse est tracée — score, features, décision. Vous savez exactement pourquoi un bet a été retenu.",
+    title: "Des décisions lisibles",
+    body: "Chaque sélection laisse une trace claire. Vous pouvez comprendre pourquoi un pari a été retenu.",
   },
 ];
 
@@ -44,17 +44,17 @@ const STEPS = [
   {
     n: "01",
     title: "Le moteur analyse chaque match",
-    body: "Données historiques, xG, forme, cotes — le moteur calcule la probabilité estimée et l'EV pour chaque marché disponible.",
+    body: "Le système rassemble les informations utiles sur chaque rencontre et compare plusieurs issues possibles.",
   },
   {
     n: "02",
-    title: "Seule la valeur attendue décide",
-    body: "Aucun biais humain. Si l'EV est insuffisant, le système dit non. S'il est positif, un bet est proposé avec stake calibré.",
+    title: "Le système retient peu, mais mieux",
+    body: "S'il ne voit pas d'intérêt clair, il ne propose rien. Quand une option paraît solide, elle remonte avec une mise adaptée.",
   },
   {
     n: "03",
-    title: "Vous suivez, ajustez, capitalisez",
-    body: "Vos tickets sont tracés, vos résultats compilés. Le système apprend et s'affine à chaque lot de bets settlés.",
+    title: "Vous suivez vos tickets dans le temps",
+    body: "Vos tickets restent enregistrés, vos résultats sont regroupés, et le système s'ajuste au fil des matchs terminés.",
   },
 ];
 
@@ -116,7 +116,7 @@ export default function LandingPlaceholder() {
               background: "rgba(15,118,110,0.1)",
             }}
           >
-            Système EV — MVP validé
+            Outil d&apos;aide à la décision
           </span>
 
           <h1
@@ -135,9 +135,8 @@ export default function LandingPlaceholder() {
             className="mx-auto mt-6 max-w-xl text-base leading-relaxed sm:text-lg"
             style={{ color: "#94a3b8" }}
           >
-            EVCore est un moteur de paris autonome piloté par l&apos;Expected
-            Value. Il ne donne pas de tips — il calcule, décide et trace chaque
-            position avec rigueur mathématique.
+            EVCore vous aide à repérer les paris les plus intéressants, à éviter
+            les choix faibles et à suivre vos tickets avec méthode.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -207,7 +206,7 @@ export default function LandingPlaceholder() {
             className="mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl"
             style={{ color: "#f1f5f9" }}
           >
-            Un processus rigoureux, de bout en bout
+            Une méthode simple, du début à la fin
           </h2>
 
           <div className="mt-12 flex flex-col gap-8 sm:gap-0">
@@ -272,7 +271,7 @@ export default function LandingPlaceholder() {
             className="mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl"
             style={{ color: "#f1f5f9" }}
           >
-            Conçu pour le long terme
+            Pensé pour durer
           </h2>
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2">
@@ -329,16 +328,16 @@ export default function LandingPlaceholder() {
             className="text-3xl font-bold tracking-tight sm:text-4xl"
             style={{ color: "#f8fafc" }}
           >
-            Arrêtez de jouer.
+            Faites des choix plus calmes.
             <br />
-            <span style={{ color: "#2dd4bf" }}>Commencez à investir.</span>
+            <span style={{ color: "#2dd4bf" }}>Avancez avec méthode.</span>
           </h2>
           <p
             className="mx-auto mt-4 max-w-md text-sm leading-relaxed"
             style={{ color: "#64748b" }}
           >
-            Accès sur invitation. Le système n&apos;existe pas pour maximiser le
-            volume — il existe pour maximiser la précision.
+            Accès sur invitation. L&apos;objectif n&apos;est pas de parier plus,
+            mais de choisir avec plus de soin.
           </p>
           <Link
             href="/auth/register"
@@ -358,8 +357,8 @@ export default function LandingPlaceholder() {
           color: "#334155",
         }}
       >
-        © {new Date().getFullYear()} EVCore — Moteur de paris piloté par
-        l&apos;Expected Value
+        © {new Date().getFullYear()} EVCore — Un outil pour choisir ses paris
+        avec plus de clarté
       </footer>
     </main>
   );

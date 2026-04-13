@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Decision } from '@evcore/db';
+import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import {
   startOfUtcDay,
@@ -19,12 +20,17 @@ import {
 } from './dashboard.utils';
 import { DashboardRepository } from './dashboard.repository';
 import type {
+  CompetitionStat,
   DashboardSummary,
+  LeaderboardEntry,
   OpportunityRow,
   PnlSummary,
   WorkerStatus,
   FixturePanel,
 } from './dashboard.types';
+
+const MIN_SETTLED_MODEL = 10;
+const MIN_SETTLED_USER = 5;
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 type TopBet = SummaryData['topBets'][number];
@@ -291,5 +297,199 @@ export class DashboardService {
     const normalized = body.replace(/\s+/g, ' ').trim();
     if (normalized.length <= 180) return normalized;
     return `${normalized.slice(0, 177)}...`;
+  }
+
+  async getCompetitionStats(userId: string): Promise<CompetitionStat[]> {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [analyzedRuns, modelBets, userBets] =
+      await this.repo.getCompetitionData(userId, since);
+
+    // Compter les fixtures analysées par compétition
+    const activeByComp = new Map<string, number>();
+    for (const run of analyzedRuns) {
+      const comp = run.fixture.season.competition;
+      activeByComp.set(comp.id, (activeByComp.get(comp.id) ?? 0) + 1);
+    }
+
+    // Agréger les bets MODEL par compétition
+    type CompKey = string;
+    type BetAgg = {
+      won: number;
+      total: number;
+      staked: Decimal;
+      returned: Decimal;
+    };
+    const modelAgg = new Map<
+      CompKey,
+      BetAgg & { comp: { id: string; name: string; code: string } }
+    >();
+    for (const bet of modelBets) {
+      const comp = bet.fixture.season.competition;
+      const existing = modelAgg.get(comp.id) ?? {
+        comp,
+        won: 0,
+        total: 0,
+        staked: new Decimal(0),
+        returned: new Decimal(0),
+      };
+      const stake = new Decimal(bet.stakePct.toString());
+      existing.total += 1;
+      existing.staked = existing.staked.plus(stake);
+      if (bet.status === 'WON') {
+        existing.won += 1;
+        existing.returned = existing.returned.plus(
+          stake.times(bet.oddsSnapshot!.toString()),
+        );
+      }
+      modelAgg.set(comp.id, existing);
+    }
+
+    // Agréger les picks USER par compétition
+    type UserAgg = {
+      won: number;
+      total: number;
+      staked: Decimal;
+      returned: Decimal;
+    };
+    const userAgg = new Map<CompKey, UserAgg>();
+    for (const bet of userBets) {
+      const compId = bet.fixture.season.competition.id;
+      const existing = userAgg.get(compId) ?? {
+        won: 0,
+        total: 0,
+        staked: new Decimal(0),
+        returned: new Decimal(0),
+      };
+      const stake = new Decimal(bet.stakePct.toString());
+      existing.total += 1;
+      existing.staked = existing.staked.plus(stake);
+      if (bet.status === 'WON') {
+        existing.won += 1;
+        existing.returned = existing.returned.plus(
+          stake.times(bet.oddsSnapshot!.toString()),
+        );
+      }
+      userAgg.set(compId, existing);
+    }
+
+    const stats: CompetitionStat[] = [];
+
+    for (const [compId, model] of modelAgg) {
+      const active = activeByComp.get(compId) ?? 0;
+      const userPicks = userAgg.get(compId) ?? null;
+
+      const modelRoi =
+        model.total >= MIN_SETTLED_MODEL && model.staked.gt(0)
+          ? formatSigned(
+              model.returned
+                .minus(model.staked)
+                .dividedBy(model.staked)
+                .times(100)
+                .toNumber(),
+              1,
+            ) + '%'
+          : null;
+
+      const modelWinRate =
+        model.total >= MIN_SETTLED_MODEL
+          ? `${Math.round((model.won / model.total) * 100)}%`
+          : null;
+
+      const myPicksRoi =
+        userPicks &&
+        userPicks.total >= MIN_SETTLED_USER &&
+        userPicks.staked.gt(0)
+          ? formatSigned(
+              userPicks.returned
+                .minus(userPicks.staked)
+                .dividedBy(userPicks.staked)
+                .times(100)
+                .toNumber(),
+              1,
+            ) + '%'
+          : null;
+
+      stats.push({
+        competitionId: compId,
+        competitionName: model.comp.name,
+        competitionCode: model.comp.code,
+        activeFixtures: active,
+        model: {
+          settled: model.total,
+          won: model.won,
+          roi: modelRoi,
+          winRate: modelWinRate,
+        },
+        myPicks: userPicks
+          ? { settled: userPicks.total, won: userPicks.won, roi: myPicksRoi }
+          : null,
+      });
+    }
+
+    // Tri : fixtures actives décroissant, puis ROI modèle
+    return stats.sort((a, b) => {
+      if (b.activeFixtures !== a.activeFixtures)
+        return b.activeFixtures - a.activeFixtures;
+      const roiA = a.model.roi ? parseFloat(a.model.roi) : -Infinity;
+      const roiB = b.model.roi ? parseFloat(b.model.roi) : -Infinity;
+      return roiB - roiA;
+    });
+  }
+
+  async getLeaderboard(): Promise<LeaderboardEntry[]> {
+    const bets = await this.repo.getLeaderboardData();
+
+    type UserAgg = {
+      username: string;
+      won: number;
+      total: number;
+      staked: Decimal;
+      returned: Decimal;
+    };
+    const byUser = new Map<string, UserAgg>();
+
+    for (const bet of bets) {
+      if (!bet.userId || !bet.user) continue;
+      const existing = byUser.get(bet.userId) ?? {
+        username: bet.user.username,
+        won: 0,
+        total: 0,
+        staked: new Decimal(0),
+        returned: new Decimal(0),
+      };
+      const stake = new Decimal(bet.stakePct.toString());
+      existing.total += 1;
+      existing.staked = existing.staked.plus(stake);
+      if (bet.status === 'WON') {
+        existing.won += 1;
+        existing.returned = existing.returned.plus(
+          stake.times(bet.oddsSnapshot!.toString()),
+        );
+      }
+      byUser.set(bet.userId, existing);
+    }
+
+    const eligible = [...byUser.values()]
+      .filter((u) => u.total >= MIN_SETTLED_USER && u.staked.gt(0))
+      .map((u) => ({
+        username: u.username,
+        settled: u.total,
+        won: u.won,
+        roiValue: u.returned
+          .minus(u.staked)
+          .dividedBy(u.staked)
+          .times(100)
+          .toNumber(),
+      }))
+      .sort((a, b) => b.roiValue - a.roiValue)
+      .slice(0, 10);
+
+    return eligible.map((u, i) => ({
+      rank: i + 1,
+      username: u.username,
+      roi: formatSigned(u.roiValue, 1) + '%',
+      settled: u.settled,
+      won: u.won,
+    }));
   }
 }

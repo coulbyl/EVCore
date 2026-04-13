@@ -16,6 +16,7 @@ import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 // ---------------------------------------------------------------------------
 
 export type ScoredFixtureModelRun = {
+  modelRunId: string;
   decision: 'BET' | 'NO_BET';
   deterministicScore: string;
   finalScore: string;
@@ -45,6 +46,7 @@ export type ScoredFixtureRow = {
   score: string | null;
   htScore: string | null;
   hasOdds: boolean;
+  alreadyInUserTicket: boolean;
   modelRun: ScoredFixtureModelRun | null;
 };
 
@@ -114,6 +116,7 @@ export class FixtureScoringService {
       FixtureScoringQueryDto,
       'decision' | 'status' | 'competition' | 'timeSlot' | 'betStatus'
     > = {},
+    userId?: string,
   ): Promise<ScoredFixturesResult> {
     const dateRange: Prisma.FixtureWhereInput = {
       scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) },
@@ -151,6 +154,7 @@ export class FixtureScoringService {
           oddsSnapshots: { select: { id: true }, take: 1 },
           modelRuns: {
             select: {
+              id: true,
               decision: true,
               deterministicScore: true,
               finalScore: true,
@@ -186,6 +190,24 @@ export class FixtureScoringService {
         )
       : fixtures;
 
+    const userFixtureIds =
+      userId && filteredFixtures.length > 0
+        ? new Set(
+            (
+              await this.prisma.client.betSlipItem.findMany({
+                where: {
+                  userId,
+                  fixtureId: {
+                    in: filteredFixtures.map((fixture) => fixture.id),
+                  },
+                },
+                distinct: ['fixtureId'],
+                select: { fixtureId: true },
+              })
+            ).map((item) => item.fixtureId),
+          )
+        : new Set<string>();
+
     let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
       const bet = run?.bets[0] ?? null;
@@ -218,8 +240,10 @@ export class FixtureScoringService {
             ? `${f.homeHtScore} - ${f.awayHtScore}`
             : null,
         hasOdds: f.oddsSnapshots.length > 0,
+        alreadyInUserTicket: userFixtureIds.has(f.id),
         modelRun: run
           ? {
+              modelRunId: run.id,
               decision: run.decision as 'BET' | 'NO_BET',
               deterministicScore: toNumber(run.deterministicScore).toFixed(2),
               finalScore: toNumber(run.finalScore).toFixed(3),

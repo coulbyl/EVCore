@@ -28,8 +28,14 @@ export class BetSlipController {
   }
 
   @Get()
-  list(@CurrentSession() session: AuthSession) {
-    return this.betSlipService.list(session.user.id);
+  list(
+    @CurrentSession() session: AuthSession,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(`${to}T23:59:59.999Z`) : undefined;
+    return this.betSlipService.list(session.user.id, fromDate, toDate);
   }
 
   @Get(':id')

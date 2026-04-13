@@ -1,87 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Copy } from "lucide-react";
-import { fixtureStatusBadgeClass, fixtureStatusLabel } from "@/helpers/fixture";
+import { ShoppingCart, Check } from "lucide-react";
+import {
+  fixtureStatusBadgeClass,
+  fixtureStatusLabel,
+  formatCombinedPickForDisplay,
+} from "@/helpers/fixture";
+import { formatScore } from "@/domains/fixture/helpers/fixture";
+import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
+import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type {
   FixtureEvaluatedPickSnapshot,
   FixturePickSnapshot,
   FixtureRow,
 } from "@/domains/fixture/types/fixture";
-
-function CopyFixtureId({ fixtureId }: { fixtureId: string }) {
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void navigator.clipboard.writeText(fixtureId).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        });
-      }}
-      title={fixtureId}
-      className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-mono text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-    >
-      <span>{fixtureId.slice(0, 8)}</span>
-      {copied ? (
-        <Check size={10} className="text-success" />
-      ) : (
-        <Copy size={10} />
-      )}
-    </button>
-  );
-}
-
-function modelPickLabel(market: string, pick: string): string {
-  if (market === "ONE_X_TWO") {
-    if (pick === "HOME") return "V1";
-    if (pick === "DRAW") return "N";
-    if (pick === "AWAY") return "V2";
-  }
-
-  if (market === "BTTS") {
-    if (pick === "YES") return "BB OUI";
-    if (pick === "NO") return "BB NON";
-  }
-
-  if (market === "FIRST_HALF_WINNER") {
-    if (pick === "HOME") return "MT DOMICILE";
-    if (pick === "DRAW") return "MT NUL";
-    if (pick === "AWAY") return "MT EXTÉRIEUR";
-  }
-
-  if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
-    if (pick === "OVER") return "PLUS DE 2.5";
-    if (pick === "UNDER") return "MOINS DE 2.5";
-    if (pick === "OVER_1_5") return "PLUS DE 1.5";
-    if (pick === "UNDER_1_5") return "MOINS DE 1.5";
-    if (pick === "OVER_3_5") return "PLUS DE 3.5";
-    if (pick === "UNDER_3_5") return "MOINS DE 3.5";
-  }
-
-  if (market === "OVER_UNDER_HT") {
-    if (pick === "OVER_0_5") return "PLUS DE 0.5 MT";
-    if (pick === "UNDER_0_5") return "MOINS DE 0.5 MT";
-    if (pick === "OVER_1_5") return "PLUS DE 1.5 MT";
-    if (pick === "UNDER_1_5") return "MOINS DE 1.5 MT";
-  }
-
-  if (market === "HALF_TIME_FULL_TIME") {
-    return pick.replace(/_/g, " / ");
-  }
-
-  return pick.replace(/_/g, " ");
-}
-
-function combinedPickLabel(snapshot: FixturePickSnapshot): string {
-  const primary = modelPickLabel(snapshot.market, snapshot.pick);
-  if (!snapshot.comboMarket || !snapshot.comboPick) {
-    return primary;
-  }
-  return `${primary} + ${modelPickLabel(snapshot.comboMarket, snapshot.comboPick)}`;
-}
 
 function rejectionReasonLabel(reason?: string): string {
   if (!reason) return "--";
@@ -89,10 +22,10 @@ function rejectionReasonLabel(reason?: string): string {
   const labels: Record<string, string> = {
     odds_below_floor: "Cote trop basse",
     odds_above_cap: "Cote trop haute",
-    ev_below_threshold: "EV insuffisant",
-    ev_above_hard_cap: "EV au-dessus du plafond",
-    ev_above_soft_cap: "EV au-dessus du plafond calibration",
-    filtered_longshot: "Longshot filtré",
+    ev_below_threshold: "Valeur insuffisante",
+    ev_above_hard_cap: "Valeur au-dessus du plafond",
+    ev_above_soft_cap: "Valeur au-dessus du plafond (calibration)",
+    filtered_longshot: "Grande cote écartée",
     market_suspended: "Marché suspendu",
     probability_too_low: "Probabilité insuffisante",
     quality_score_below_threshold: "Qualité insuffisante",
@@ -109,14 +42,68 @@ function ModelInput({
   value: string | null | undefined;
 }) {
   return (
-    <div>
-      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+    <div className="min-w-0 rounded-[0.9rem] bg-white/75 px-2 py-2 sm:px-3">
+      <p className="truncate text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[0.62rem]">
         {label}
       </p>
-      <p className="mt-1 text-[1.05rem] font-semibold text-slate-900">
+      <p className="mt-1 truncate text-[0.92rem] font-semibold text-slate-900 sm:text-[1.02rem]">
         {value ?? "—"}
       </p>
     </div>
+  );
+}
+
+function PlacePickButton({
+  snap,
+  fixtureId,
+  alreadyInUserTicket,
+  onPlace,
+}: {
+  snap: FixtureEvaluatedPickSnapshot;
+  fixtureId: string;
+  alreadyInUserTicket: boolean;
+  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
+}) {
+  const { isInSlip } = useBetSlip();
+  const key = draftItemKey({
+    fixtureId,
+    market: snap.market,
+    pick: snap.pick,
+    comboMarket: snap.comboMarket,
+    comboPick: snap.comboPick,
+  });
+  const inSlip = isInSlip(key);
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip || alreadyInUserTicket) return;
+    onPlace(snap);
+  }
+
+  const disabled = alreadyInUserTicket && !inSlip;
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled}
+      title={
+        inSlip
+          ? "Déjà dans le ticket"
+          : alreadyInUserTicket
+            ? "Déjà dans vos tickets"
+            : "Placer ce pick"
+      }
+      className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
+        inSlip
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : disabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : "border-slate-200 bg-white text-slate-500 hover:border-accent hover:text-accent"
+      }`}
+    >
+      {inSlip ? <Check size={13} /> : <ShoppingCart size={13} />}
+    </button>
   );
 }
 
@@ -124,12 +111,20 @@ function DiagnosticTable({
   title,
   rows,
   evaluated = false,
+  alreadyInUserTicket = false,
+  fixtureId,
+  onPlace,
 }: {
   title: string;
   rows: FixturePickSnapshot[] | FixtureEvaluatedPickSnapshot[];
   evaluated?: boolean;
+  alreadyInUserTicket?: boolean;
+  fixtureId?: string;
+  onPlace?: (snap: FixtureEvaluatedPickSnapshot) => void;
 }) {
   if (rows.length === 0) return null;
+
+  const showActions = evaluated && onPlace != null;
 
   return (
     <div className="mt-5">
@@ -137,16 +132,23 @@ function DiagnosticTable({
         {title}
       </p>
       <div className="overflow-x-auto rounded-[1.1rem] border border-slate-100 bg-white">
-        <table className="w-full text-sm">
+        <table className="min-w-[760px] w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-              <th className="px-4 py-3 pr-4">Marché / Pick</th>
-              <th className="px-4 py-3 pr-4">Prob.</th>
-              <th className="px-4 py-3 pr-4">Cote</th>
-              <th className="px-4 py-3 pr-4">EV</th>
+              <th className="sticky left-0 z-20 w-[152px] min-w-[152px] bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
+                Marché
+              </th>
+              <th className="sticky left-[152px] z-20 w-[76px] min-w-[76px] bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
+                Prob.
+              </th>
+              <th className="w-[82px] min-w-[82px] bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-[228px] md:z-20 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
+                Cote
+              </th>
+              <th className="px-4 py-3 pr-4">Valeur</th>
               <th className="px-4 py-3 pr-4">Qualité</th>
               <th className="px-4 py-3 pr-4">Statut</th>
               <th className="px-4 py-3">Raison</th>
+              {showActions && <th className="px-4 py-3" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -157,13 +159,13 @@ function DiagnosticTable({
 
               return (
                 <tr key={`${title}-${index}`} className="align-middle">
-                  <td className="px-4 py-3 pr-4 font-medium text-slate-800">
-                    {combinedPickLabel(row)}
+                  <td className="sticky left-0 z-10 min-w-[152px] bg-white px-3 py-3 pr-3 font-medium text-slate-800 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
+                    {formatCombinedPickForDisplay(row)}
                   </td>
-                  <td className="px-4 py-3 pr-4 tabular-nums text-slate-700">
+                  <td className="sticky left-[152px] z-10 min-w-[76px] bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
                     {row.probability}
                   </td>
-                  <td className="px-4 py-3 pr-4 tabular-nums text-slate-700">
+                  <td className="min-w-[82px] bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 sm:px-4 sm:pr-4 md:sticky md:left-[228px] md:z-10 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
                     {row.odds}
                   </td>
                   <td className="px-4 py-3 pr-4 tabular-nums font-semibold text-emerald-600">
@@ -192,6 +194,16 @@ function DiagnosticTable({
                       ? rejectionReasonLabel(snapshot.rejectionReason)
                       : "--"}
                   </td>
+                  {showActions && fixtureId && (
+                    <td className="px-3 py-3">
+                      <PlacePickButton
+                        snap={snapshot}
+                        fixtureId={fixtureId}
+                        alreadyInUserTicket={alreadyInUserTicket}
+                        onPlace={onPlace}
+                      />
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -204,6 +216,32 @@ function DiagnosticTable({
 
 export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   const mr = row.modelRun;
+  const score = formatScore(row.score, row.htScore);
+  const { draft, addItem, open } = useBetSlip();
+
+  function handlePlacePick(snap: FixtureEvaluatedPickSnapshot) {
+    if (!mr) return;
+    const shouldOpen = draft.items.length === 0;
+    const item: BetSlipDraftItem = {
+      modelRunId: mr.modelRunId,
+      fixtureId: row.fixtureId,
+      fixture: row.fixture,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
+      competition: row.competition,
+      scheduledAt: row.scheduledAt,
+      market: snap.market,
+      pick: snap.pick,
+      comboMarket: snap.comboMarket,
+      comboPick: snap.comboPick,
+      ev: snap.ev,
+      stakeOverride: null,
+    };
+    addItem(item);
+    if (shouldOpen) {
+      open();
+    }
+  }
 
   if (!mr) {
     return (
@@ -215,55 +253,60 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
 
   return (
     <div className="rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-        <p className="min-w-0 text-sm text-slate-600">
-          {row.fixture}
-          {mr.pick && mr.market ? (
-            <>
-              {" · "}
-              <span className="font-semibold text-slate-800">
-                {combinedPickLabel({
-                  market: mr.market,
-                  pick: mr.pick,
-                  probability: "",
-                  odds: "",
-                  ev: "",
-                  qualityScore: "",
-                })}
-              </span>
-            </>
-          ) : null}
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="border-b border-slate-100 pb-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="min-w-0 text-base font-semibold leading-tight text-slate-900 sm:text-lg">
+            {row.fixture}
+          </p>
           <span
-            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
+            className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
           >
             {fixtureStatusLabel(row.status)}
           </span>
-          <CopyFixtureId fixtureId={row.fixtureId} />
         </div>
+        <p className="mt-2 text-sm text-slate-600">
+          {mr.pick && mr.market ? (
+            <span className="font-medium text-slate-800">
+              {formatCombinedPickForDisplay({
+                market: mr.market,
+                pick: mr.pick,
+              })}
+            </span>
+          ) : (
+            "Sélection non disponible"
+          )}
+          {score ? (
+            <>
+              {" · "}
+              <span className="font-medium text-slate-700">{score}</span>
+            </>
+          ) : null}
+        </p>
       </div>
 
       <div className="mt-6">
         <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
           Entrées modèle
         </p>
-        <div className="grid gap-3 rounded-[1.1rem] border border-slate-100 bg-slate-50 px-4 py-4 sm:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2 rounded-[1.1rem] border border-slate-100 bg-slate-50 px-2 py-2.5 sm:gap-3 sm:px-4 sm:py-4">
           <ModelInput label="Prob. estimée" value={mr.probEstimated} />
-          <ModelInput label="λ V1" value={mr.lambdaHome} />
-          <ModelInput label="λ V2" value={mr.lambdaAway} />
+          <ModelInput label="λ Dom." value={mr.lambdaHome} />
+          <ModelInput label="λ Ext." value={mr.lambdaAway} />
           <ModelInput label="Buts attendus" value={mr.expectedTotalGoals} />
         </div>
       </div>
 
       <DiagnosticTable
-        title={`Picks candidats (${mr.candidatePicks.length})`}
+        title={`Sélections candidates (${mr.candidatePicks.length})`}
         rows={mr.candidatePicks}
       />
       <DiagnosticTable
-        title={`Picks évalués (${mr.evaluatedPicks.length})`}
+        title={`Sélections évaluées (${mr.evaluatedPicks.length})`}
         rows={mr.evaluatedPicks}
         evaluated
+        alreadyInUserTicket={row.alreadyInUserTicket}
+        fixtureId={row.fixtureId}
+        onPlace={handlePlacePick}
       />
     </div>
   );

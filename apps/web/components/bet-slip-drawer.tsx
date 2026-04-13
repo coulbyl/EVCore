@@ -1,19 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import {
-  X,
-  ShoppingCart,
-  Trash2,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { Drawer } from "vaul";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 import { FixtureName } from "./fixture-name";
 import {
-  formatPickForDisplay,
+  formatCombinedPickForDisplay,
   formatMarketForDisplay,
 } from "@/helpers/fixture";
 
@@ -39,6 +37,70 @@ function StakeInput({
   );
 }
 
+function DraftItemRow({
+  item,
+  unitStake,
+  onRemove,
+  onStakeChange,
+}: {
+  item: BetSlipDraftItem;
+  unitStake: number;
+  onRemove: () => void;
+  onStakeChange: (v: string) => void;
+}) {
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <FixtureName
+            fixture={item.fixture}
+            homeLogo={item.homeLogo}
+            awayLogo={item.awayLogo}
+            className="text-xs font-semibold text-slate-800"
+          />
+          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-slate-400">
+            {item.competition} • {item.scheduledAt}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="text-[0.65rem] text-slate-400">
+              {formatMarketForDisplay(item.market)}
+            </span>
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[0.68rem] font-semibold text-slate-700">
+              {formatCombinedPickForDisplay({
+                market: item.market,
+                pick: item.pick,
+                comboMarket: item.comboMarket,
+                comboPick: item.comboPick,
+              })}
+            </span>
+            {item.ev && (
+              <span className="text-[0.65rem] font-semibold text-emerald-600">
+                Valeur {item.ev}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
+          aria-label="Supprimer"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="text-[0.65rem] text-slate-400">Mise spécifique</span>
+        <StakeInput
+          value={item.stakeOverride !== null ? String(item.stakeOverride) : ""}
+          onChange={onStakeChange}
+          placeholder={String(unitStake)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function BetSlipDrawer() {
   const {
     draft,
@@ -58,6 +120,17 @@ export function BetSlipDrawer() {
   const [isPending, startTransition] = useTransition();
 
   const totalItems = draft.items.length;
+
+  useEffect(() => {
+    setUnitStakeInput(String(draft.unitStake));
+  }, [draft.unitStake]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitError(null);
+      setSubmitted(false);
+    }
+  }, [isOpen]);
 
   function effectiveStake(stakeOverride: number | null): number {
     return stakeOverride ?? draft.unitStake;
@@ -88,22 +161,29 @@ export function BetSlipDrawer() {
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-white outline-none sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[420px] sm:rounded-[1.5rem]">
-          <Drawer.Title className="sr-only">Panier de bets</Drawer.Title>
+          <Drawer.Title className="sr-only">Ticket en préparation</Drawer.Title>
           {/* Handle (mobile) */}
           <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div className="flex items-center gap-2">
-              <ShoppingCart size={16} className="text-accent" />
-              <h2 className="text-sm font-semibold text-slate-800">
-                Panier
-                {totalItems > 0 && (
-                  <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-white">
-                    {totalItems}
-                  </span>
-                )}
-              </h2>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <ReceiptText size={16} className="text-accent" />
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Ticket en préparation
+                  {totalItems > 0 && (
+                    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-white">
+                      {totalItems}
+                    </span>
+                  )}
+                </h2>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                {totalItems > 0
+                  ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
+                  : "Ajoutez vos sélections pour préparer votre ticket."}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {totalItems > 0 && (
@@ -148,74 +228,31 @@ export function BetSlipDrawer() {
               </div>
             ) : totalItems === 0 ? (
               <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-                <ShoppingCart size={32} className="text-slate-300" />
+                <ReceiptText size={32} className="text-slate-300" />
                 <p className="text-sm font-semibold text-slate-500">
-                  Panier vide
+                  Aucun ticket en préparation
                 </p>
                 <p className="text-xs text-slate-400">
-                  Ajoutez des paris depuis la page Matchs.
+                  Placez des sélections depuis la page Matchs.
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {draft.items.map((item) => (
-                  <div key={item.betId} className="px-4 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <FixtureName
-                          fixture={item.fixture}
-                          homeLogo={item.homeLogo}
-                          awayLogo={item.awayLogo}
-                          className="text-xs font-semibold text-slate-800"
-                        />
-                        <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-slate-400">
-                          {item.competition} • {item.scheduledAt}
-                        </p>
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[0.68rem] font-semibold text-slate-700">
-                            {formatPickForDisplay(item.pick, item.market)}
-                          </span>
-                          <span className="text-[0.65rem] text-slate-400">
-                            {formatMarketForDisplay(item.market)}
-                          </span>
-                          {item.ev && (
-                            <span className="text-[0.65rem] font-semibold text-emerald-600">
-                              EV {item.ev}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.betId)}
-                        className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
-                        aria-label="Supprimer"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-[0.65rem] text-slate-400">
-                        Mise override
-                      </span>
-                      <StakeInput
-                        value={
-                          item.stakeOverride !== null
-                            ? String(item.stakeOverride)
-                            : ""
-                        }
-                        onChange={(v) => {
-                          const n = parseFloat(v);
-                          setStakeOverride(
-                            item.betId,
-                            v === "" || isNaN(n) ? null : n,
-                          );
-                        }}
-                        placeholder={String(draft.unitStake)}
-                      />
-                    </div>
-                  </div>
-                ))}
+                {draft.items.map((item) => {
+                  const key = draftItemKey(item);
+                  return (
+                    <DraftItemRow
+                      key={key}
+                      item={item}
+                      unitStake={draft.unitStake}
+                      onRemove={() => removeItem(key)}
+                      onStakeChange={(v) => {
+                        const n = parseFloat(v);
+                        setStakeOverride(key, v === "" || isNaN(n) ? null : n);
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
@@ -230,7 +267,7 @@ export function BetSlipDrawer() {
                 </div>
               )}
               <div className="mb-3 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Mise unitaire</span>
+                <span className="text-slate-500">Mise par sélection</span>
                 <StakeInput
                   value={unitStakeInput}
                   onChange={(v) => {
@@ -243,7 +280,7 @@ export function BetSlipDrawer() {
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">
-                  Total ({totalItems} bet{totalItems > 1 ? "s" : ""})
+                  Total ({totalItems} sélection{totalItems > 1 ? "s" : ""})
                 </span>
                 <span className="font-bold tabular-nums text-slate-900">
                   {totalStake.toLocaleString("fr-FR")}

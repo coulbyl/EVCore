@@ -86,3 +86,29 @@ export type DashboardSummary = {
   activityFeed: ActivityItem[];
   pnlSummary: PnlSummary;
 };
+
+export type CompetitionStat = {
+  competitionId: string;
+  competitionName: string;
+  competitionCode: string;
+  activeFixtures: number;
+  model: {
+    settled: number;
+    won: number;
+    roi: string | null;
+    winRate: string | null;
+  };
+  myPicks: {
+    settled: number;
+    won: number;
+    roi: string | null;
+  } | null;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  username: string;
+  roi: string;
+  settled: number;
+  won: number;
+};
