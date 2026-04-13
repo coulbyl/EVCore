@@ -46,13 +46,13 @@ catalog:
   tsx: "^4.19.4"
 
   # NestJS backend
-  "@nestjs/common": "^11.1.18"
-  "@nestjs/core": "^11.1.18"
-  "@nestjs/platform-express": "^11.1.18"
-  "@nestjs/cli": "^11.0.18"
+  "@nestjs/common": "^11.1.19"
+  "@nestjs/core": "^11.1.19"
+  "@nestjs/platform-express": "^11.1.19"
+  "@nestjs/cli": "^11.0.19"
   "@nestjs/schematics": "^11.0.10"
-  "@nestjs/testing": "^11.1.18"
-  "@nestjs/swagger": "^11.2.3"
+  "@nestjs/testing": "^11.1.19"
+  "@nestjs/swagger": "^11.2.7"
   reflect-metadata: "^0.2.2"
   rxjs: "^7.8.2"
   supertest: "^7.0.0"
@@ -68,7 +68,7 @@ catalog:
 
   # ETL & async
   "@nestjs/bullmq": "^11.0.4"
-  "@nestjs/config": "^4.0.3"
+  "@nestjs/config": "^4.0.4"
   bullmq: "^5.70.1"
   ioredis: "^5.9.3"
   cheerio: "^1.2.0"
