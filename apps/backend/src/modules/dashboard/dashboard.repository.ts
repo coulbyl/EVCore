@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, FixtureStatus, NotificationType } from '@evcore/db';
+import {
+  BetSource,
+  BetStatus,
+  FixtureStatus,
+  NotificationType,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 @Injectable()
@@ -170,5 +175,75 @@ export class DashboardRepository {
       latestTeamStats,
       settledBets,
     };
+  }
+
+  getCompetitionData(userId: string, since: Date) {
+    const fixtureFilter = { scheduledAt: { gte: since } };
+    const competitionSelect = {
+      select: { id: true, name: true, code: true },
+    } as const;
+    const seasonSelect = {
+      select: { competition: competitionSelect },
+    } as const;
+
+    return Promise.all([
+      // Fixtures analysées par compétition (30 derniers jours)
+      this.prisma.client.modelRun.findMany({
+        where: { fixture: fixtureFilter },
+        distinct: ['fixtureId'],
+        select: {
+          fixture: { select: { season: seasonSelect } },
+        },
+      }),
+      // Bets MODEL settlés par compétition
+      this.prisma.client.bet.findMany({
+        where: {
+          source: BetSource.MODEL,
+          status: { in: [BetStatus.WON, BetStatus.LOST] },
+          fixture: fixtureFilter,
+          oddsSnapshot: { not: null },
+        },
+        select: {
+          status: true,
+          stakePct: true,
+          oddsSnapshot: true,
+          fixture: { select: { season: seasonSelect } },
+        },
+      }),
+      // Picks USER settlés de l'utilisateur connecté
+      this.prisma.client.bet.findMany({
+        where: {
+          source: BetSource.USER,
+          userId,
+          status: { in: [BetStatus.WON, BetStatus.LOST] },
+          fixture: fixtureFilter,
+          oddsSnapshot: { not: null },
+        },
+        select: {
+          status: true,
+          stakePct: true,
+          oddsSnapshot: true,
+          fixture: { select: { season: seasonSelect } },
+        },
+      }),
+    ]);
+  }
+
+  getLeaderboardData() {
+    return this.prisma.client.bet.findMany({
+      where: {
+        source: BetSource.USER,
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        userId: { not: null },
+        oddsSnapshot: { not: null },
+      },
+      select: {
+        userId: true,
+        status: true,
+        stakePct: true,
+        oddsSnapshot: true,
+        user: { select: { username: true } },
+      },
+    });
   }
 }

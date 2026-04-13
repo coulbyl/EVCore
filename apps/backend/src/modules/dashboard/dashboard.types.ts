@@ -80,3 +80,38 @@ export type DashboardSummary = {
   activityFeed: ActivityItem[];
   pnlSummary: PnlSummary;
 };
+
+export type CompetitionModelStats = {
+  settled: number;
+  won: number;
+  /** null si settled < 10 (données insuffisantes) */
+  roi: string | null;
+  /** null si settled < 10 */
+  winRate: string | null;
+};
+
+export type CompetitionMyPicks = {
+  settled: number;
+  won: number;
+  /** null si settled < 5 */
+  roi: string | null;
+};
+
+export type CompetitionStat = {
+  competitionId: string;
+  competitionName: string;
+  competitionCode: string;
+  activeFixtures: number;
+  model: CompetitionModelStats;
+  /** null si l'utilisateur n'a aucun pick settlé dans cette compétition */
+  myPicks: CompetitionMyPicks | null;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  username: string;
+  /** ROI formaté ex. "+12.3%" */
+  roi: string;
+  settled: number;
+  won: number;
+};

@@ -65,7 +65,7 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 ### Dashboard
 
 - [ ] afficher le scoring du jour et les matchs avec cotes uniquement pour l’admin sur le dashboard d’accueil
-- [ ] **Classement par compétitions actives** — section dans le dashboard existant
+- [x] **Classement par compétitions actives** — section dans le dashboard existant
   - Une card par compétition ayant ≥ 1 fixture analysée dans les 30 derniers jours
   - Couche commune (visible par tous) :
     - ROI moteur (bets MODEL settlés), win rate MODEL, nb bets settlés
@@ -77,7 +77,7 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
   - L'admin y lit la performance du modèle par ligue (signal calibration)
   - L'utilisateur y lit "puis-je faire confiance au moteur sur cette ligue ?"
 
-- [ ] **Top 10 utilisateurs** — section dans le dashboard existant, sous le classement compétitions
+- [x] **Top 10 utilisateurs** — section dans le dashboard existant, sous le classement compétitions
   - Métrique : ROI = (retours - mises) / mises × 100, sur les picks USER settlés
   - Seuil d'éligibilité : ≥ 5 picks settlés (en dessous, données non affichées)
   - Tri décroissant par ROI, top 10 affiché
