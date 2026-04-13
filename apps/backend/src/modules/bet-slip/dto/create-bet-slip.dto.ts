@@ -11,8 +11,31 @@ import {
 import { Type } from 'class-transformer';
 
 class CreateBetSlipItemDto {
+  /** Référence un bet MODEL déjà créé par le moteur. */
+  @IsOptional()
   @IsUUID()
-  betId!: string;
+  betId?: string;
+
+  /** Pour les picks utilisateur : ID du ModelRun source. */
+  @IsOptional()
+  @IsUUID()
+  modelRunId?: string;
+
+  @IsOptional()
+  @IsString()
+  market?: string;
+
+  @IsOptional()
+  @IsString()
+  pick?: string;
+
+  @IsOptional()
+  @IsString()
+  comboMarket?: string;
+
+  @IsOptional()
+  @IsString()
+  comboPick?: string;
 
   @IsOptional()
   @Type(() => Number)

@@ -1,11 +1,15 @@
 "use client";
 
+import { ShoppingCart, Check } from "lucide-react";
 import {
   fixtureStatusBadgeClass,
   fixtureStatusLabel,
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { formatScore } from "@/domains/fixture/helpers/fixture";
+import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
+import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type {
   FixtureEvaluatedPickSnapshot,
   FixturePickSnapshot,
@@ -49,16 +53,78 @@ function ModelInput({
   );
 }
 
+function PlacePickButton({
+  snap,
+  fixtureId,
+  alreadyInUserTicket,
+  onPlace,
+}: {
+  snap: FixtureEvaluatedPickSnapshot;
+  fixtureId: string;
+  alreadyInUserTicket: boolean;
+  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
+}) {
+  const { isInSlip } = useBetSlip();
+  const key = draftItemKey({
+    fixtureId,
+    market: snap.market,
+    pick: snap.pick,
+    comboMarket: snap.comboMarket,
+    comboPick: snap.comboPick,
+  });
+  const inSlip = isInSlip(key);
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip || alreadyInUserTicket) return;
+    onPlace(snap);
+  }
+
+  const disabled = alreadyInUserTicket && !inSlip;
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled}
+      title={
+        inSlip
+          ? "Déjà dans le ticket"
+          : alreadyInUserTicket
+            ? "Déjà dans vos tickets"
+            : "Placer ce pick"
+      }
+      className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
+        inSlip
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : disabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : "border-slate-200 bg-white text-slate-500 hover:border-accent hover:text-accent"
+      }`}
+    >
+      {inSlip ? <Check size={13} /> : <ShoppingCart size={13} />}
+    </button>
+  );
+}
+
 function DiagnosticTable({
   title,
   rows,
   evaluated = false,
+  alreadyInUserTicket = false,
+  fixtureId,
+  onPlace,
 }: {
   title: string;
   rows: FixturePickSnapshot[] | FixtureEvaluatedPickSnapshot[];
   evaluated?: boolean;
+  alreadyInUserTicket?: boolean;
+  fixtureId?: string;
+  onPlace?: (snap: FixtureEvaluatedPickSnapshot) => void;
 }) {
   if (rows.length === 0) return null;
+
+  const showActions = evaluated && onPlace != null;
 
   return (
     <div className="mt-5">
@@ -82,6 +148,7 @@ function DiagnosticTable({
               <th className="px-4 py-3 pr-4">Qualité</th>
               <th className="px-4 py-3 pr-4">Statut</th>
               <th className="px-4 py-3">Raison</th>
+              {showActions && <th className="px-4 py-3" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -127,6 +194,16 @@ function DiagnosticTable({
                       ? rejectionReasonLabel(snapshot.rejectionReason)
                       : "--"}
                   </td>
+                  {showActions && fixtureId && (
+                    <td className="px-3 py-3">
+                      <PlacePickButton
+                        snap={snapshot}
+                        fixtureId={fixtureId}
+                        alreadyInUserTicket={alreadyInUserTicket}
+                        onPlace={onPlace}
+                      />
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -140,6 +217,31 @@ function DiagnosticTable({
 export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   const mr = row.modelRun;
   const score = formatScore(row.score, row.htScore);
+  const { draft, addItem, open } = useBetSlip();
+
+  function handlePlacePick(snap: FixtureEvaluatedPickSnapshot) {
+    if (!mr) return;
+    const shouldOpen = draft.items.length === 0;
+    const item: BetSlipDraftItem = {
+      modelRunId: mr.modelRunId,
+      fixtureId: row.fixtureId,
+      fixture: row.fixture,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
+      competition: row.competition,
+      scheduledAt: row.scheduledAt,
+      market: snap.market,
+      pick: snap.pick,
+      comboMarket: snap.comboMarket,
+      comboPick: snap.comboPick,
+      ev: snap.ev,
+      stakeOverride: null,
+    };
+    addItem(item);
+    if (shouldOpen) {
+      open();
+    }
+  }
 
   if (!mr) {
     return (
@@ -202,6 +304,9 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         title={`Sélections évaluées (${mr.evaluatedPicks.length})`}
         rows={mr.evaluatedPicks}
         evaluated
+        alreadyInUserTicket={row.alreadyInUserTicket}
+        fixtureId={row.fixtureId}
+        onPlace={handlePlacePick}
       />
     </div>
   );

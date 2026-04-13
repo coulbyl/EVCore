@@ -39,25 +39,28 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 - [x] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
 - [x] renommer `Ajouter panier` en `Placer`
 - [x] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
-- [ ] permettre à l’utilisateur de placer n’importe quel pick évalué (pas seulement la décision modèle) depuis le diagnostic
+- [x] permettre à l’utilisateur de placer n’importe quel pick évalué (pas seulement la décision modèle) depuis le diagnostic
 
-  **Contexte** : le modèle sélectionne un pick `BET` mais évalue plusieurs picks. Un utilisateur peut vouloir placer un pick rejeté (ex : `Moins de 3.5` rejeté pour cote trop basse). Ce pick devient une décision propre à l’utilisateur, invisible des autres.
+  **Migration Prisma requise (manuelle)** — à appliquer avant de tester en production :
 
-  **Migration Prisma requise (manuelle)** — ajouter sur `Bet` :
   ```prisma
-  source BetSource @default(MODEL)   // MODEL | USER
-  userId String?                     // null pour les bets modèle, id de l’auteur pour les bets utilisateur
+  enum BetSource { MODEL USER }
+
+  // Sur model Bet :
+  source BetSource @default(MODEL)
+  userId String?
   user   User? @relation(...)
+
+  // Remplacer @@unique([fixtureId, pickKey]) par :
+  @@unique([fixtureId, pickKey, userId])  // avec NULLS NOT DISTINCT côté PostgreSQL
   ```
 
-  **Backend** :
-  - Endpoint `POST /bets/from-evaluated-pick` — reçoit `{ modelRunId, market, pick }`, vérifie que le pick existe dans `evaluatedPicks` du `ModelRun`, crée le `Bet` avec `source: USER, userId`
-  - Settlement local des bets `USER` : déclenché lors du settlement de la fixture (score déjà disponible sur `Fixture.homeScore / awayScore`), sans appel API Football — logique symétrique au settlement modèle
-
-  **Frontend** :
-  - Bouton "Placer" sur chaque ligne de la table "Sélections évaluées" dans le diagnostic
-  - Désactivé si la fixture est déjà dans un ticket de l’utilisateur (garde existante)
-  - Même flux drawer que le pick modèle
+  **Implémenté** :
+  - Bouton "Placer" sur chaque ligne de "Sélections évaluées" dans le diagnostic — picks viables ET rejetés
+  - Création du Bet USER déplacée à la soumission du ticket (transaction unique `BetSlip` + `Bet`) — zéro bet orphelin
+  - Clé composite `fixtureId|market|pick|comboMarket|comboPick` pour différencier les combos (corrige le bug "V2, +2.5 → tous cochés")
+  - `POST /bets/from-evaluated-pick` supprimé (remplacé par `POST /bet-slips` étendu)
+  - Settlement USER à implémenter (logique symétrique au settlement modèle, sans appel API Football)
 
 ### Dashboard
 

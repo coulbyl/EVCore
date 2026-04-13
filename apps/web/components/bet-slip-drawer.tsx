@@ -5,9 +5,13 @@ import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { Drawer } from "vaul";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 import { FixtureName } from "./fixture-name";
 import {
-  formatPickForDisplay,
+  formatCombinedPickForDisplay,
   formatMarketForDisplay,
 } from "@/helpers/fixture";
 
@@ -30,6 +34,70 @@ function StakeInput({
       placeholder={placeholder}
       className="w-24 rounded-lg border border-border bg-slate-50 px-2 py-1.5 text-right text-xs font-semibold tabular-nums text-slate-700 focus:outline-none focus:ring-1 focus:ring-accent"
     />
+  );
+}
+
+function DraftItemRow({
+  item,
+  unitStake,
+  onRemove,
+  onStakeChange,
+}: {
+  item: BetSlipDraftItem;
+  unitStake: number;
+  onRemove: () => void;
+  onStakeChange: (v: string) => void;
+}) {
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <FixtureName
+            fixture={item.fixture}
+            homeLogo={item.homeLogo}
+            awayLogo={item.awayLogo}
+            className="text-xs font-semibold text-slate-800"
+          />
+          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-slate-400">
+            {item.competition} • {item.scheduledAt}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="text-[0.65rem] text-slate-400">
+              {formatMarketForDisplay(item.market)}
+            </span>
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[0.68rem] font-semibold text-slate-700">
+              {formatCombinedPickForDisplay({
+                market: item.market,
+                pick: item.pick,
+                comboMarket: item.comboMarket,
+                comboPick: item.comboPick,
+              })}
+            </span>
+            {item.ev && (
+              <span className="text-[0.65rem] font-semibold text-emerald-600">
+                Valeur {item.ev}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
+          aria-label="Supprimer"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="text-[0.65rem] text-slate-400">Mise spécifique</span>
+        <StakeInput
+          value={item.stakeOverride !== null ? String(item.stakeOverride) : ""}
+          onChange={onStakeChange}
+          placeholder={String(unitStake)}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -170,64 +238,21 @@ export function BetSlipDrawer() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {draft.items.map((item) => (
-                  <div key={item.betId} className="px-4 py-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <FixtureName
-                          fixture={item.fixture}
-                          homeLogo={item.homeLogo}
-                          awayLogo={item.awayLogo}
-                          className="text-xs font-semibold text-slate-800"
-                        />
-                        <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-slate-400">
-                          {item.competition} • {item.scheduledAt}
-                        </p>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                          <span className="text-[0.65rem] text-slate-400">
-                            {formatMarketForDisplay(item.market)}
-                          </span>
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[0.68rem] font-semibold text-slate-700">
-                            {formatPickForDisplay(item.pick, item.market)}
-                          </span>
-                          {item.ev && (
-                            <span className="text-[0.65rem] font-semibold text-emerald-600">
-                              Valeur {item.ev}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.betId)}
-                        className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
-                        aria-label="Supprimer"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-[0.65rem] text-slate-400">
-                        Mise spécifique
-                      </span>
-                      <StakeInput
-                        value={
-                          item.stakeOverride !== null
-                            ? String(item.stakeOverride)
-                            : ""
-                        }
-                        onChange={(v) => {
-                          const n = parseFloat(v);
-                          setStakeOverride(
-                            item.betId,
-                            v === "" || isNaN(n) ? null : n,
-                          );
-                        }}
-                        placeholder={String(draft.unitStake)}
-                      />
-                    </div>
-                  </div>
-                ))}
+                {draft.items.map((item) => {
+                  const key = draftItemKey(item);
+                  return (
+                    <DraftItemRow
+                      key={key}
+                      item={item}
+                      unitStake={draft.unitStake}
+                      onRemove={() => removeItem(key)}
+                      onStakeChange={(v) => {
+                        const n = parseFloat(v);
+                        setStakeOverride(key, v === "" || isNaN(n) ? null : n);
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
