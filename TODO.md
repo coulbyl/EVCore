@@ -64,24 +64,20 @@ La suite consiste surtout à finir le polish produit et verrouiller les derniers
 
 ### Dashboard
 
-- [ ] afficher le scoring du jour et les matchs avec cotes uniquement pour l’admin sur le dashboard d’accueil
+- [x] afficher le scoring du jour et les matchs avec cotes uniquement pour l’admin sur le dashboard d’accueil
+- [x] afficher les KPI uniquement pour l’admin
 - [x] **Classement par compétitions actives** — section dans le dashboard existant
-  - Une card par compétition ayant ≥ 1 fixture analysée dans les 30 derniers jours
-  - Couche commune (visible par tous) :
-    - ROI moteur (bets MODEL settlés), win rate MODEL, nb bets settlés
-    - Nb fixtures actives (avec pick disponible)
-    - Badge "données insuffisantes" si < 10 bets settlés (ROI non significatif)
-  - Couche personnelle (si l'utilisateur a des picks dans la compétition) :
-    - Son propre ROI et nb picks settlés / total
-  - Tri : fixtures actives décroissant, puis ROI moteur en tiebreaker
-  - L'admin y lit la performance du modèle par ligue (signal calibration)
-  - L'utilisateur y lit "puis-je faire confiance au moteur sur cette ligue ?"
+  - Style premium light, liste compacte avec scroll vertical
+  - Une ligne par compétition : rang, code ligue, nom, nb matchs, ROI moteur, % victoires, nb paris joués
+  - "données insuffisantes" si ROI null (< 10 bets)
+  - Section "Mes paris" (violet) si l’utilisateur a des paris dans la ligue
+  - Vocabulaire francisé : "joués" au lieu de "settlés", "Mes paris" au lieu de "picks"
 
 - [x] **Top 10 utilisateurs** — section dans le dashboard existant, sous le classement compétitions
-  - Métrique : ROI = (retours - mises) / mises × 100, sur les picks USER settlés
-  - Seuil d'éligibilité : ≥ 5 picks settlés (en dessous, données non affichées)
-  - Tri décroissant par ROI, top 10 affiché
-  - Afficher : rang, username, ROI, nb picks settlés
+  - Style premium gamifié, podium or/argent/bronze pour le top 3
+  - Liste compacte avec scroll vertical
+  - Seuil d’éligibilité : ≥ 5 paris joués
+  - Afficher : rang, pseudo, ROI (vert/rouge), nb paris joués
 
 ### Mes tickets (NB: utiliser le langage de pick universelle)
 

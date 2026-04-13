@@ -26,10 +26,6 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
     activeAlerts: alerts,
     pnlSummary: pnl,
   } = data ?? EMPTY_SUMMARY;
-  const visibleKpis = isAdmin
-    ? kpis
-    : kpis.filter((item) => item.label !== "Alertes actives");
-
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
@@ -45,7 +41,7 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
             <OperatorPerformanceCard />
           )}
 
-          <KpiCards items={visibleKpis} />
+          {isAdmin && <KpiCards items={kpis} />}
 
           {isAdmin ? (
             <div className="grid gap-5 xl:grid-cols-2">
