@@ -16,6 +16,7 @@ import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 // ---------------------------------------------------------------------------
 
 export type ScoredFixtureModelRun = {
+  modelRunId: string;
   decision: 'BET' | 'NO_BET';
   deterministicScore: string;
   finalScore: string;
@@ -153,6 +154,7 @@ export class FixtureScoringService {
           oddsSnapshots: { select: { id: true }, take: 1 },
           modelRuns: {
             select: {
+              id: true,
               decision: true,
               deterministicScore: true,
               finalScore: true,
@@ -241,6 +243,7 @@ export class FixtureScoringService {
         alreadyInUserTicket: userFixtureIds.has(f.id),
         modelRun: run
           ? {
+              modelRunId: run.id,
               decision: run.decision as 'BET' | 'NO_BET',
               deterministicScore: toNumber(run.deterministicScore).toFixed(2),
               finalScore: toNumber(run.finalScore).toFixed(3),

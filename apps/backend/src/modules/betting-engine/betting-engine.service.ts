@@ -683,32 +683,41 @@ export class BettingEngineService {
         qualityScore: valueBet.qualityScore,
       };
 
-      await this.prisma.client.bet.upsert({
-        where: { fixtureId_pickKey: { fixtureId, pickKey } },
-        create: {
-          modelRunId: modelRun.id,
-          fixtureId,
-          market: valueBet.market,
-          pick: valueBet.pick,
-          pickKey,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-        },
-        update: {
-          modelRunId: modelRun.id,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-          status: BetStatus.PENDING,
-        },
+      const existingBet = await this.prisma.client.bet.findFirst({
+        where: { fixtureId, pickKey, userId: null },
+        select: { id: true },
       });
+      if (existingBet) {
+        await this.prisma.client.bet.update({
+          where: { id: existingBet.id },
+          data: {
+            modelRunId: modelRun.id,
+            probEstimated: toPrismaDecimal(valueBet.probability, 4),
+            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+            ev: toPrismaDecimal(valueBet.ev, 4),
+            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+            stakePct: toPrismaDecimal(stakePct, 4),
+            status: BetStatus.PENDING,
+          },
+        });
+      } else {
+        await this.prisma.client.bet.create({
+          data: {
+            modelRunId: modelRun.id,
+            fixtureId,
+            market: valueBet.market,
+            pick: valueBet.pick,
+            pickKey,
+            comboMarket: valueBet.comboMarket ?? null,
+            comboPick: valueBet.comboPick ?? null,
+            probEstimated: toPrismaDecimal(valueBet.probability, 4),
+            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+            ev: toPrismaDecimal(valueBet.ev, 4),
+            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+            stakePct: toPrismaDecimal(stakePct, 4),
+          },
+        });
+      }
     }
 
     // Safe value pass — only when the model score threshold is met (same guard as EV).
@@ -728,34 +737,43 @@ export class BettingEngineService {
           comboPick: null,
         })}`;
 
-        await this.prisma.client.bet.upsert({
-          where: { fixtureId_pickKey: { fixtureId, pickKey: svPickKey } },
-          create: {
-            modelRunId: modelRun.id,
-            fixtureId,
-            market: svPick.market,
-            pick: svPick.pick,
-            pickKey: svPickKey,
-            comboMarket: null,
-            comboPick: null,
-            probEstimated: toPrismaDecimal(svPick.probability, 4),
-            oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
-            ev: toPrismaDecimal(svPick.ev, 4),
-            qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
-            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-            isSafeValue: true,
-          },
-          update: {
-            modelRunId: modelRun.id,
-            probEstimated: toPrismaDecimal(svPick.probability, 4),
-            oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
-            ev: toPrismaDecimal(svPick.ev, 4),
-            qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
-            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-            status: BetStatus.PENDING,
-            isSafeValue: true,
-          },
+        const existingSvBet = await this.prisma.client.bet.findFirst({
+          where: { fixtureId, pickKey: svPickKey, userId: null },
+          select: { id: true },
         });
+        if (existingSvBet) {
+          await this.prisma.client.bet.update({
+            where: { id: existingSvBet.id },
+            data: {
+              modelRunId: modelRun.id,
+              probEstimated: toPrismaDecimal(svPick.probability, 4),
+              oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
+              ev: toPrismaDecimal(svPick.ev, 4),
+              qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
+              stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+              status: BetStatus.PENDING,
+              isSafeValue: true,
+            },
+          });
+        } else {
+          await this.prisma.client.bet.create({
+            data: {
+              modelRunId: modelRun.id,
+              fixtureId,
+              market: svPick.market,
+              pick: svPick.pick,
+              pickKey: svPickKey,
+              comboMarket: null,
+              comboPick: null,
+              probEstimated: toPrismaDecimal(svPick.probability, 4),
+              oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
+              ev: toPrismaDecimal(svPick.ev, 4),
+              qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
+              stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+              isSafeValue: true,
+            },
+          });
+        }
 
         logger.info(
           {
@@ -995,32 +1013,41 @@ export class BettingEngineService {
         qualityScore: valueBet.qualityScore,
       };
 
-      await this.prisma.client.bet.upsert({
-        where: { fixtureId_pickKey: { fixtureId, pickKey } },
-        create: {
-          modelRunId: modelRun.id,
-          fixtureId,
-          market: valueBet.market,
-          pick: valueBet.pick,
-          pickKey,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-        },
-        update: {
-          modelRunId: modelRun.id,
-          probEstimated: toPrismaDecimal(valueBet.probability, 4),
-          oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
-          ev: toPrismaDecimal(valueBet.ev, 4),
-          qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
-          stakePct: toPrismaDecimal(stakePct, 4),
-          status: BetStatus.PENDING,
-        },
+      const existingBet2 = await this.prisma.client.bet.findFirst({
+        where: { fixtureId, pickKey, userId: null },
+        select: { id: true },
       });
+      if (existingBet2) {
+        await this.prisma.client.bet.update({
+          where: { id: existingBet2.id },
+          data: {
+            modelRunId: modelRun.id,
+            probEstimated: toPrismaDecimal(valueBet.probability, 4),
+            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+            ev: toPrismaDecimal(valueBet.ev, 4),
+            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+            stakePct: toPrismaDecimal(stakePct, 4),
+            status: BetStatus.PENDING,
+          },
+        });
+      } else {
+        await this.prisma.client.bet.create({
+          data: {
+            modelRunId: modelRun.id,
+            fixtureId,
+            market: valueBet.market,
+            pick: valueBet.pick,
+            pickKey,
+            comboMarket: valueBet.comboMarket ?? null,
+            comboPick: valueBet.comboPick ?? null,
+            probEstimated: toPrismaDecimal(valueBet.probability, 4),
+            oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
+            ev: toPrismaDecimal(valueBet.ev, 4),
+            qualityScore: toPrismaDecimal(valueBet.qualityScore, 4),
+            stakePct: toPrismaDecimal(stakePct, 4),
+          },
+        });
+      }
     }
 
     return {

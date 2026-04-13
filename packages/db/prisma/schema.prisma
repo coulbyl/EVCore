@@ -47,6 +47,11 @@ enum BetStatus {
   VOID
 }
 
+enum BetSource {
+  MODEL
+  USER
+}
+
 enum UserRole {
   ADMIN
   OPERATOR
@@ -237,6 +242,10 @@ model Bet {
   comboPick     String?   // secondary pick (e.g. "YES", "OVER")
   // safe-value flag: true for picks selected via the SAFE_VALUE flux (P ≥ 68%, EV ≥ 0)
   isSafeValue   Boolean   @default(false)
+  // source: MODEL for engine bets, USER for user-placed picks from evaluated picks
+  source        BetSource @default(MODEL)
+  userId        String?   @db.Uuid
+  user          User?     @relation(fields: [userId], references: [id])
   betSlipItems  BetSlipItem[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -245,7 +254,8 @@ model Bet {
   @@index([fixtureId])
   @@index([market, status, createdAt])
   @@index([status, updatedAt])
-  @@unique([fixtureId, pickKey])
+  @@index([userId])
+  @@unique([fixtureId, pickKey, userId])
   @@map("bet")
 }
 
@@ -262,6 +272,7 @@ model User {
   sessions      Session[]
   betSlips      BetSlip[]
   betSlipItems  BetSlipItem[]
+  bets          Bet[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

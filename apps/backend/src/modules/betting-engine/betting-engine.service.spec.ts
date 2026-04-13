@@ -108,7 +108,11 @@ function makePrismaMock(
         findMany: vi.fn().mockResolvedValue([]),
       },
       adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
-      bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+      bet: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+      },
       ...overrides,
     },
   } as unknown as PrismaService;
@@ -496,7 +500,11 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
           findFirst: vi.fn().mockResolvedValue(null),
         },
-        bet: { upsert: vi.fn() },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn(),
+          update: vi.fn(),
+        },
       },
     } as unknown as PrismaService;
 
@@ -564,7 +572,11 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue(null),
           findMany: vi.fn().mockResolvedValue([]),
@@ -653,7 +665,11 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue({
             snapshotAt: new Date('2023-01-01T00:00:00.000Z'),
@@ -727,7 +743,11 @@ describe('BettingEngineService', () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
         nationalTeamEloRating: {
           findFirst: vi.fn().mockResolvedValue(null),
           findMany: vi.fn().mockResolvedValue([]),
@@ -820,7 +840,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -958,7 +982,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -1070,7 +1098,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -1176,7 +1208,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -1455,7 +1491,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -1581,7 +1621,11 @@ describe('BettingEngineService', () => {
         },
         adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
         modelRun: { create: createModelRun },
-        bet: { upsert: vi.fn().mockResolvedValue({ id: 'bet-id' }) },
+        bet: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+        },
       },
     } as unknown as PrismaService;
 
@@ -1644,7 +1688,7 @@ describe('BettingEngineService', () => {
 
   function makeSafeValuePrismaMock(homeOdds: string, overOdds: string | null) {
     const snapshotAt = new Date('2023-01-01T11:00:00.000Z');
-    const betUpsert = vi.fn().mockResolvedValue({ id: 'bet-id' });
+    const betCreate = vi.fn().mockResolvedValue({ id: 'bet-id' });
 
     const oddsSnapshotFindMany = vi.fn().mockImplementation((args: unknown) => {
       const market = (args as { where?: { market?: Market } }).where?.market;
@@ -1673,7 +1717,7 @@ describe('BettingEngineService', () => {
     });
 
     return {
-      betUpsert,
+      betCreate,
       prisma: {
         client: {
           fixture: {
@@ -1720,7 +1764,11 @@ describe('BettingEngineService', () => {
           },
           marketSuspension: { findMany: vi.fn().mockResolvedValue([]) },
           adjustmentProposal: { findFirst: vi.fn().mockResolvedValue(null) },
-          bet: { upsert: betUpsert },
+          bet: {
+            findFirst: vi.fn().mockResolvedValue(null),
+            create: betCreate,
+            update: vi.fn().mockResolvedValue({ id: 'bet-id' }),
+          },
         },
       } as unknown as PrismaService,
     };
@@ -1767,7 +1815,7 @@ describe('BettingEngineService', () => {
     // Safe value: HOME (P=0.72 ≥ 0.68, odds=1.65 ∈ [1.15,2.20], EV=0.188)
     //   HOME is rejected by the EV system (odds=1.65 < 2.00 selection floor)
     //   but qualifies for safe value which targets high-P low-odds picks
-    const { betUpsert, prisma } = makeSafeValuePrismaMock('1.65', '3.0');
+    const { betCreate, prisma } = makeSafeValuePrismaMock('1.65', '3.0');
     const service = new BettingEngineService(
       prisma,
       makeConfig(),
@@ -1781,32 +1829,31 @@ describe('BettingEngineService', () => {
     const result = await service.analyzeFixture('fixture-id');
 
     expect(result.status).toBe('analyzed');
-    expect(betUpsert).toHaveBeenCalledTimes(2);
+    expect(betCreate).toHaveBeenCalledTimes(2);
 
-    const [, svCall] = betUpsert.mock.calls as unknown[][];
     const svArgs = (
-      svCall as unknown as [
+      betCreate.mock.calls as unknown as [
         {
-          create: {
+          data: {
             isSafeValue: boolean;
             market: Market;
             pick: string;
             pickKey: string;
           };
-        },
+        }[],
       ]
-    )[0];
-    expect(svArgs.create.isSafeValue).toBe(true);
-    expect(svArgs.create.market).toBe(Market.ONE_X_TWO);
-    expect(svArgs.create.pick).toBe('HOME');
-    expect(svArgs.create.pickKey).toMatch(/^sv:/);
+    )[1][0];
+    expect(svArgs.data.isSafeValue).toBe(true);
+    expect(svArgs.data.market).toBe(Market.ONE_X_TWO);
+    expect(svArgs.data.pick).toBe('HOME');
+    expect(svArgs.data.pickKey).toMatch(/^sv:/);
   });
 
   it('skips safe value bet when no pick meets the probability threshold (P < 0.68)', async () => {
     // HOME has P=0.60 < 0.68 — below SAFE_VALUE_MIN_PROBABILITY
     // OVER has odds=3.0 > 2.20 — above SAFE_VALUE_MAX_ODDS
     // Neither qualifies for safe value
-    const { betUpsert, prisma } = makeSafeValuePrismaMock('2.10', '3.0');
+    const { betCreate, prisma } = makeSafeValuePrismaMock('2.10', '3.0');
     const service = new BettingEngineService(
       prisma,
       makeConfig(),
@@ -1819,19 +1866,19 @@ describe('BettingEngineService', () => {
 
     await service.analyzeFixture('fixture-id');
 
-    // Only the EV bet upsert, no safe value upsert
-    expect(betUpsert).toHaveBeenCalledTimes(1);
-    const evCall = (
-      betUpsert.mock.calls as [{ create: { isSafeValue?: boolean } }[]]
+    // Only the EV bet create, no safe value create
+    expect(betCreate).toHaveBeenCalledTimes(1);
+    const evArgs = (
+      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
     )[0][0];
-    expect(evCall.create.isSafeValue).toBeFalsy();
+    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 
   it('does not save a safe value bet when the only qualifying pick is the EV pick itself', async () => {
     // HOME: P=0.75, odds=2.10 (in safe range [1.15,2.20] AND above EV floor 2.00)
     // HOME wins as EV pick → evPickKey = ONE_X_TWO|HOME|-|-
     // selectSafeValuePick excludes HOME via evPickKey → returns null
-    const { betUpsert, prisma } = makeSafeValuePrismaMock('2.10', null);
+    const { betCreate, prisma } = makeSafeValuePrismaMock('2.10', null);
     const service = new BettingEngineService(
       prisma,
       makeConfig(),
@@ -1844,11 +1891,11 @@ describe('BettingEngineService', () => {
 
     await service.analyzeFixture('fixture-id');
 
-    expect(betUpsert).toHaveBeenCalledTimes(1);
-    const evCall = (
-      betUpsert.mock.calls as [{ create: { isSafeValue?: boolean } }[]]
+    expect(betCreate).toHaveBeenCalledTimes(1);
+    const evArgs = (
+      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
     )[0][0];
-    expect(evCall.create.isSafeValue).toBeFalsy();
+    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 });
 
