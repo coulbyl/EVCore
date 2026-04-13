@@ -3,6 +3,10 @@ import { randomBytes, scryptSync } from "node:crypto";
 import { prisma } from "./client";
 
 const SCRYPT_KEYLEN = 64;
+const SCRYPT_N = 32768;
+const SCRYPT_R = 8;
+const SCRYPT_P = 1;
+const SCRYPT_MAXMEM = 128 * SCRYPT_N * SCRYPT_R * SCRYPT_P * 2; // 64 MB
 
 const COMPETITIONS = [
   {
@@ -220,8 +224,13 @@ function normalizeIdentifier(value: string): string {
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, SCRYPT_KEYLEN).toString("hex");
-  return `${salt}:${hash}`;
+  const hash = scryptSync(password, salt, SCRYPT_KEYLEN, {
+    N: SCRYPT_N,
+    r: SCRYPT_R,
+    p: SCRYPT_P,
+    maxmem: SCRYPT_MAXMEM,
+  }).toString("hex");
+  return `${SCRYPT_N}:${SCRYPT_R}:${SCRYPT_P}:${salt}:${hash}`;
 }
 
 async function seedAdminUser() {
@@ -265,6 +274,9 @@ async function seedAdminUser() {
         fullName,
         role: "ADMIN",
         emailVerified: true,
+        ...(password && password.trim() !== ""
+          ? { passwordHash: hashPassword(password) }
+          : {}),
       },
     });
 
