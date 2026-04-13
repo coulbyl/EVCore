@@ -131,17 +131,18 @@ function DiagnosticTable({
       <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
         {title}
       </p>
-      <div className="overflow-x-auto rounded-[1.1rem] border border-slate-100 bg-white">
-        <table className="min-w-[760px] w-full text-sm">
+      <div className="max-h-96 overflow-auto rounded-[1.1rem] border border-slate-100 bg-white">
+        {" "}
+        <table className="min-w-190 w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-              <th className="sticky left-0 z-20 w-[152px] min-w-[152px] bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
+              <th className="sticky left-0 z-20 w-38 min-w-38 bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
                 Marché
               </th>
-              <th className="sticky left-[152px] z-20 w-[76px] min-w-[76px] bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
+              <th className="sticky left-38 z-20 w-19 min-w-19 bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
                 Prob.
               </th>
-              <th className="w-[82px] min-w-[82px] bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-[228px] md:z-20 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
+              <th className="w-20.5 min-w-20.5 bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-20 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
                 Cote
               </th>
               <th className="px-4 py-3 pr-4">Valeur</th>
@@ -159,13 +160,13 @@ function DiagnosticTable({
 
               return (
                 <tr key={`${title}-${index}`} className="align-middle">
-                  <td className="sticky left-0 z-10 min-w-[152px] bg-white px-3 py-3 pr-3 font-medium text-slate-800 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
+                  <td className="sticky left-0 z-10 min-w-38 bg-white px-3 py-3 pr-3 font-medium text-slate-800 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
                     {formatCombinedPickForDisplay(row)}
                   </td>
-                  <td className="sticky left-[152px] z-10 min-w-[76px] bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
+                  <td className="sticky left-38 z-10 min-w-19 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
                     {row.probability}
                   </td>
-                  <td className="min-w-[82px] bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 sm:px-4 sm:pr-4 md:sticky md:left-[228px] md:z-10 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
+                  <td className="min-w-20.5 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-10 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
                     {row.odds}
                   </td>
                   <td className="px-4 py-3 pr-4 tabular-nums font-semibold text-emerald-600">

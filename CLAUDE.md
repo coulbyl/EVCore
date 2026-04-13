@@ -221,3 +221,16 @@ Before adding any feature, verify it belongs to the current phase:
 | SaaS, multi-tenant                         | Phase 4                        |
 
 If asked to implement something from a future phase, flag it and ask for confirmation.
+
+## next.js
+
+Next.js ships version-matched documentation inside the next package, allowing AI coding agents to reference accurate, up-to-date APIs and patterns. An AGENTS.md file at the root of your project directs agents to these bundled docs instead of their training data.
+
+node_modules/next/dist/docs/
+├── 01-app/
+│ ├── 01-getting-started/
+│ ├── 02-guides/
+│ └── 03-api-reference/
+├── 02-pages/
+├── 03-architecture/
+└── index.mdx

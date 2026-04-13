@@ -85,5 +85,6 @@ export type EvaluatedPick = ViablePick & {
     | 'odds_above_cap'
     | 'odds_below_floor'
     | 'probability_too_low'
-    | 'quality_score_below_threshold';
+    | 'quality_score_below_threshold'
+    | 'under_high_lambda';
 };

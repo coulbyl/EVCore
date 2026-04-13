@@ -219,6 +219,14 @@ export function getPickMinSelectionOdds(
 export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
 export const MAX_SELECTION_ODDS = new Decimal('4.0');
 
+// Under 2.5 bets at high expected-goal totals are systematically losing — the
+// independent Poisson model overestimates P(Under) when λ is high because real
+// football matches exhibit overdispersion (variance > mean). When λ_home + λ_away
+// exceeds this threshold, require a stricter EV floor before accepting UNDER picks.
+// Calibrated on April 2026 prod data: 5 Under-2.5 losses at λ_total 2.57–3.23.
+export const UNDER_HIGH_LAMBDA_THRESHOLD = 2.5;
+export const UNDER_HIGH_LAMBDA_EV_FLOOR = new Decimal('0.20');
+
 // Bayesian shrinkage — pulls raw Poisson lambdas toward the per-league mean goal rate.
 // Formula: rawLambda = α × (xgFor × xgAgainst / leagueAvg) + (1 - α) × anchor
 // where anchor = LEAGUE_MEAN_LAMBDA_MAP[code] ?? LEAGUE_MEAN_LAMBDA_DEFAULT.
@@ -545,8 +553,10 @@ export const SAFE_VALUE_MIN_PROBABILITY = new Decimal('0.68');
 // Adverse line movement threshold: if odds drop by >10% over 7 days, exclude the pick.
 export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
 
-// Non-negative EV required — safe value bets must not have negative EV.
-export const SAFE_VALUE_MIN_EV = new Decimal('0.00');
+// Minimum EV for safe value bets. Near-zero EV picks (< 0.05) show no reliable
+// edge with the Poisson model — backtest 2026-04-13 shows OVER_1_5 at EV 0.004–0.039
+// losing more often than the probability estimate predicts.
+export const SAFE_VALUE_MIN_EV = new Decimal('0.05');
 
 // Odds window: allow shorter odds than the EV floor but cap to avoid mid-range
 // picks where bookmaker margin erodes expected value disproportionately.
