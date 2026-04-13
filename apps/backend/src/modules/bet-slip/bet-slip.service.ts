@@ -302,8 +302,8 @@ export class BetSlipService {
     };
   }
 
-  async list(userId: string): Promise<BetSlipView[]> {
-    const betSlips = await this.repository.findUserBetSlips(userId);
+  async list(userId: string, from?: Date, to?: Date): Promise<BetSlipView[]> {
+    const betSlips = await this.repository.findUserBetSlips(userId, from, to);
     return betSlips.map(toBetSlipView);
   }
 

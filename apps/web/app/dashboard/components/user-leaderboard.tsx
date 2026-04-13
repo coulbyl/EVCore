@@ -37,7 +37,9 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
 
   if (podium) {
     return (
-      <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${podium.row}`}>
+      <div
+        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${podium.row}`}
+      >
         <span className="text-base leading-none">{podium.icon}</span>
         <span className="min-w-0 flex-1 truncate text-[0.8rem] font-bold text-slate-800">
           {entry.username}
@@ -104,7 +106,10 @@ export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
       ) : (
         <div
           className="max-h-65 overflow-y-auto"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#cbd5e1 transparent" }}
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#cbd5e1 transparent",
+          }}
         >
           <div className="space-y-1.5">
             {entries.map((entry) => (

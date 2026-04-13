@@ -6,16 +6,16 @@ import type { CompetitionStat } from "@/domains/dashboard/types/dashboard";
 function RoiChip({ roi }: { roi: string | null }) {
   if (!roi) {
     return (
-      <span className="text-[0.6rem] italic text-slate-400">données insuff.</span>
+      <span className="text-[0.6rem] italic text-slate-400">
+        données insuff.
+      </span>
     );
   }
   const positive = roi.startsWith("+");
   return (
     <span
       className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums ${
-        positive
-          ? "bg-emerald-50 text-emerald-700"
-          : "bg-rose-50 text-rose-600"
+        positive ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"
       }`}
     >
       {roi}
@@ -103,7 +103,10 @@ export function CompetitionRanking({ stats }: { stats: CompetitionStat[] }) {
       ) : (
         <div
           className="max-h-65 overflow-y-auto"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "#cbd5e1 transparent" }}
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#cbd5e1 transparent",
+          }}
         >
           <div className="space-y-0.5">
             {stats.map((stat, i) => (

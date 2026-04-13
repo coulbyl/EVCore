@@ -1,118 +1,28 @@
-# EVCore — TODO
+# EVCore — Notes de développement
 
-## Idée générale
+## État du produit
 
-Le socle principal est en place :
+Socle complet : auth, dashboard, fixtures, audit, tickets, bet-slip, analyse quotidienne auto. Polish produit et UX terminés.
 
-- auth web branchée sur les sessions backend
-- dashboard, fixtures, audit, tickets et détail ticket livrés
-- vocabulaire `coupon` retiré du produit courant
-- backend auth / fixture / audit / bet-slip opérationnel
-- analyse quotidienne auto branchée côté backend
+## Règles de codage
 
-La suite consiste surtout à finir le polish produit et verrouiller les derniers détails UX.
+- Ne jamais créer de migration Prisma — migrations créées manuellement par l'utilisateur
+- L'agent peut utiliser uniquement `db:generate` pour rester aligné avec Prisma
+- L'authentification reste centralisée dans `apps/backend` avec sessions opaques serveur
+- Tous les filtres web restent server-side
+- `page.tsx` sert à l'assemblage, pas à la logique métier lourde
 
-## À faire
+## Règles UI
 
-- [ ] vérifier finement les parcours mobile-first sur auth, fixtures, drawer et tickets
-- [ ] revoir le détail fixture / bet pour extraire des primitives réutilisables
-- [ ] confirmer ou introduire `BetSlipStake` si ce type apporte une vraie valeur
-- [ ] éviter toute réintroduction de logique de combiné dans l’UX
+- Toute UI pensée mobile-first, touch targets minimum `44px`
+- Pas de hover-only interactions, pas de tooltips desktop-only
+- Vocabulaire simple et français correct : `cote`, `ticket`, `mise`, `paris joués`
+- Table fixtures sur mobile = cards empilées
+- Détail fixture = drawer mobile / side panel desktop
 
-## Retours de test
-
-### Fixtures
-
-- [x] sur mobile, garder `Marché` et `Prob` visibles dans le tableau de diagnostic, avec `Cote` encore visible sur desktop
-- [x] garder un header fixe sur la table fixtures pour ne pas perdre les repères pendant le scroll vertical
-- [x] remplacer `Marché / Pick` par `Marché` dans le diagnostic
-- [x] retirer l’id de fixture et l’action de copie, jugés inutiles
-- [x] afficher le score dès qu’un score existe, quel que soit le statut du match
-- [x] conserver les valeurs actuelles de `Entrée modèle`, mais les réorganiser en `grid-cols-4` compact sur mobile
-- [x] revoir le header mobile du détail fixture sur 2 lignes :
-      ligne 1 = équipes + badge de statut
-      ligne 2 = marché + score si disponible
-- [x] améliorer la présentation du fixture item sur mobile
-- [x] ne pas rendre `Déclarer le résultat` pour les non-admin
-
-- [x] garder le concept actuel de panier, mais revoir le wording et l’UX pour se rapprocher d’un ticket plus naturel
-- [x] aligner le langage des marchés et des picks dans toute l’UI sur le diagnostic, qui devient la référence fiable
-- [x] renommer `Ajouter panier` en `Placer`
-- [x] empêcher `Placer` sur une fixture déjà présente dans n’importe quel ticket de l’utilisateur connecté
-- [x] permettre à l’utilisateur de placer n’importe quel pick évalué (pas seulement la décision modèle) depuis le diagnostic
-
-  **Migration Prisma requise (manuelle)** — à appliquer avant de tester en production :
-
-  ```prisma
-  enum BetSource { MODEL USER }
-
-  // Sur model Bet :
-  source BetSource @default(MODEL)
-  userId String?
-  user   User? @relation(...)
-
-  // Remplacer @@unique([fixtureId, pickKey]) par :
-  @@unique([fixtureId, pickKey, userId])  // avec NULLS NOT DISTINCT côté PostgreSQL
-  ```
-
-  **Implémenté** :
-  - Bouton "Placer" sur chaque ligne de "Sélections évaluées" dans le diagnostic — picks viables ET rejetés
-  - Création du Bet USER déplacée à la soumission du ticket (transaction unique `BetSlip` + `Bet`) — zéro bet orphelin
-  - Clé composite `fixtureId|market|pick|comboMarket|comboPick` pour différencier les combos (corrige le bug "V2, +2.5 → tous cochés")
-  - `POST /bets/from-evaluated-pick` supprimé (remplacé par `POST /bet-slips` étendu)
-  - Settlement USER à implémenter (logique symétrique au settlement modèle, sans appel API Football)
-
-### Dashboard
-
-- [x] afficher le scoring du jour et les matchs avec cotes uniquement pour l’admin sur le dashboard d’accueil
-- [x] afficher les KPI uniquement pour l’admin
-- [x] **Classement par compétitions actives** — section dans le dashboard existant
-  - Style premium light, liste compacte avec scroll vertical
-  - Une ligne par compétition : rang, code ligue, nom, nb matchs, ROI moteur, % victoires, nb paris joués
-  - "données insuffisantes" si ROI null (< 10 bets)
-  - Section "Mes paris" (violet) si l’utilisateur a des paris dans la ligue
-  - Vocabulaire francisé : "joués" au lieu de "settlés", "Mes paris" au lieu de "picks"
-
-- [x] **Top 10 utilisateurs** — section dans le dashboard existant, sous le classement compétitions
-  - Style premium gamifié, podium or/argent/bronze pour le top 3
-  - Liste compacte avec scroll vertical
-  - Seuil d’éligibilité : ≥ 5 paris joués
-  - Afficher : rang, pseudo, ROI (vert/rouge), nb paris joués
-
-### Mes tickets (NB: utiliser le langage de pick universelle)
-
-- [x] afficher le gain ou la perte d’un ticket, avec une valeur provisoire tant que tout n’est pas settlé
-- [x] dans le détail ticket, afficher le score et le statut de chaque pick
-
-### Langage produit
-
-- [x] retirer le vocabulaire trop technique au profit de mots simples et clairs
-- [x] garder les mots métier simples et connus de tous comme `cote`, `ticket` et `mise`
-- [x] garder une rédaction en français correct avec accentuation
-
-## Hors scope
-
-- permissions
-- RBAC
-
-## Règles importantes
-
-- ne jamais créer de migration Prisma
-- les migrations Prisma sont créées manuellement par l’utilisateur
-- l’agent peut utiliser uniquement `db:generate` pour rester aligné avec Prisma
-- l’authentification reste centralisée dans `apps/backend` avec sessions opaques serveur
-- tous les filtres web restent server-side
-- `page.tsx` sert à l’assemblage, pas à la logique métier lourde
-- toute UI doit rester pensée mobile-first
-- pas de hover-only interactions
-- pas de tooltips desktop-only
-- table fixtures sur mobile = cards empilées
-- détail fixture = drawer mobile / side panel desktop
-- touch targets minimum `44px`
-
-## Rappels de structure
+## Structure web
 
 - `apps/web/constants/` pour les constantes partagées
 - `constants/` dans un domaine pour les constantes spécifiques
 - `lib/date.ts` comme point de passage unique pour la logique de date
-- un composant = un fichier
+- Un composant = un fichier

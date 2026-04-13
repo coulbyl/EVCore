@@ -9,7 +9,8 @@ export function useCompetitionStats() {
     queryKey: ["dashboard-competition-stats"],
     queryFn: () =>
       clientApiRequest<CompetitionStat[]>("/dashboard/competition-stats", {
-        fallbackErrorMessage: "Impossible de charger les stats par compétition.",
+        fallbackErrorMessage:
+          "Impossible de charger les stats par compétition.",
       }),
     refetchInterval: 5 * 60_000, // 5 min
   });

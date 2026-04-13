@@ -1832,17 +1832,21 @@ describe('BettingEngineService', () => {
     expect(betCreate).toHaveBeenCalledTimes(2);
 
     const svArgs = (
-      betCreate.mock.calls as unknown as [
-        {
-          data: {
-            isSafeValue: boolean;
-            market: Market;
-            pick: string;
-            pickKey: string;
-          };
-        }[],
+      betCreate.mock.calls as [
+        [unknown],
+        [
+          {
+            data: {
+              isSafeValue: boolean;
+              market: Market;
+              pick: string;
+              pickKey: string;
+            };
+          },
+        ],
       ]
     )[1][0];
+
     expect(svArgs.data.isSafeValue).toBe(true);
     expect(svArgs.data.market).toBe(Market.ONE_X_TWO);
     expect(svArgs.data.pick).toBe('HOME');

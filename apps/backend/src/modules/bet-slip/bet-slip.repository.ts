@@ -7,9 +7,19 @@ import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 export class BetSlipRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserBetSlips(userId: string) {
+  findUserBetSlips(userId: string, from?: Date, to?: Date) {
     return this.prisma.client.betSlip.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...((from ?? to)
+          ? {
+              createdAt: {
+                ...(from ? { gte: from } : {}),
+                ...(to ? { lte: to } : {}),
+              },
+            }
+          : {}),
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
