@@ -29,6 +29,7 @@ function rejectionReasonLabel(reason?: string): string {
     market_suspended: "Marché suspendu",
     probability_too_low: "Probabilité insuffisante",
     quality_score_below_threshold: "Qualité insuffisante",
+    under_high_lambda: "Nbre de but élevé",
   };
 
   return labels[reason] ?? reason;
@@ -136,19 +137,27 @@ function DiagnosticTable({
         <table className="min-w-190 w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-              <th className="sticky left-0 z-20 w-38 min-w-38 bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
+              <th className="sticky top-0 left-0 z-20 w-38 min-w-38 bg-white px-3 py-3 pr-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:px-4 sm:pr-4">
                 Marché
               </th>
-              <th className="sticky left-38 z-20 w-19 min-w-19 bg-white px-3 py-3 pr-3 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
-                Prob.
+              <th className="sticky top-0 left-38 z-20 w-19 min-w-19 bg-white px-3 py-3 pr-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:px-4 sm:pr-4">
+                Prob. %
               </th>
-              <th className="w-20.5 min-w-20.5 bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-20 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
+              <th className="sticky top-0 w-20.5 min-w-20.5 bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-20 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
                 Cote
               </th>
-              <th className="px-4 py-3 pr-4">Valeur</th>
-              <th className="px-4 py-3 pr-4">Qualité</th>
-              <th className="px-4 py-3 pr-4">Statut</th>
-              <th className="px-4 py-3">Raison</th>
+              <th className="sticky top-0 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-3 pr-4">
+                Valeur
+              </th>
+              <th className="sticky top-0 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-3 pr-4">
+                Qualité
+              </th>
+              <th className="sticky top-0 bg-white px-4 py-3 pr-4 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+                Statut
+              </th>
+              <th className="sticky top-0 bg-white px-4 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+                Raison
+              </th>
               {showActions && <th className="px-4 py-3" />}
             </tr>
           </thead>
@@ -164,15 +173,27 @@ function DiagnosticTable({
                     {formatCombinedPickForDisplay(row)}
                   </td>
                   <td className="sticky left-38 z-10 min-w-19 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
-                    {row.probability}
+                    {(Number(row.probability) * 100).toFixed(2)}
                   </td>
                   <td className="min-w-20.5 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-10 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
                     {row.odds}
                   </td>
-                  <td className="px-4 py-3 pr-4 tabular-nums font-semibold text-emerald-600">
+                  <td
+                    className={`px-4 py-3 pr-4 tabular-nums font-semibold ${
+                      parseFloat(row.ev) >= 0
+                        ? "text-emerald-600"
+                        : "text-rose-600"
+                    }`}
+                  >
                     {row.ev}
                   </td>
-                  <td className="px-4 py-3 pr-4 tabular-nums text-slate-700">
+                  <td
+                    className={`px-4 py-3 pr-4 tabular-nums font-semibold ${
+                      parseFloat(row.qualityScore) >= 0
+                        ? "text-emerald-600"
+                        : "text-rose-600"
+                    }`}
+                  >
                     {row.qualityScore}
                   </td>
                   <td className="px-4 py-3 pr-4">
