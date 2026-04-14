@@ -58,7 +58,7 @@ export function AppShell({
     <PageShell
       navItems={navItems}
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <BetSlipButton />
           <AccountButton currentUser={currentUser} />
         </div>
