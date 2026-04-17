@@ -4,7 +4,7 @@
 
 EVCore is a disciplined probabilistic decision system — not a tip generator. It targets long-term ROI through deterministic data scoring, calibrated over time, with the backend always acting as the final authority.
 
-**Status:** Phase 2 in progress — coupon settlement completed, Bloc 6 (HT/FT foundations) started.
+**Status:** Phase 2 — Pivot vers backtest par compétition et paris unitaires.
 
 ---
 
@@ -14,7 +14,7 @@ EVCore is a disciplined probabilistic decision system — not a tip generator. I
 - Computes match probabilities using a Poisson model weighted by 4 deterministic features
 - Evaluates all markets (1X2, Over/Under 2.5, BTTS, Double Chance, 12 combo-match pairs) for value bets where `EV ≥ 8%`
 - Applies fractional Kelly (0.25×) for stake sizing
-- Generates a coupon (daily or 2-3 day window) of up to 6 legs ranked by `qualityScore = EV × deterministicScore`
+- Identifie les value bets unitaires filtrés par un score de qualité déterministe.
 - Filters picks with adverse line movement (> 10% odds drop over 7 days)
 - Tracks performance metrics (Brier Score, ROI, drawdown) and self-calibrates over time
 - Sends alerts via Email when opportunities, anomalies, or auto-calibrations are detected
@@ -95,7 +95,7 @@ Production endpoints:
 
 ```
 apps/
-  backend/    # NestJS API — Betting Engine, ETL workers, coupon generator
+  backend/    # NestJS API — Betting Engine, ETL workers, pick generator
   web/        # Next.js dashboard (in progress)
 packages/
   db/                # Prisma schema + generated client (@evcore/db)
@@ -111,7 +111,6 @@ packages/
 | ----------------- | ----------------------------------------------------------- |
 | `etl/`            | BullMQ workers: fixtures, results, stats, odds (live + CSV) |
 | `betting-engine/` | Poisson model, EV calculation, pick selection, settlement   |
-| `coupon/`         | Daily coupon generation, anti-correlation, scheduling       |
 | `adjustment/`     | Calibration, auto-apply AdjustmentProposal, rollback        |
 | `risk/`           | ROI alerts, market suspension, Brier alerts, weekly report  |
 | `notification/`   | Email (SMTP) + in-app notifications                         |
@@ -162,7 +161,6 @@ ETL_ODDS_CSV_IMPORT_CRON=0 5 * * 1
 ETL_ELO_SYNC_CRON=0 3 * * *
 ETL_ODDS_PREMATCH_SYNC_CRON=0 18 * * *
 ETL_BETTING_ENGINE_ANALYSIS_CRON=0 20 * * *
-COUPON_SCHEDULING_ENABLED=false
 ODDS_SNAPSHOT_RETENTION_DAYS=30
 
 # CORS (prod: restrict to frontend domain)
@@ -187,7 +185,6 @@ CORS_ORIGIN=https://c-evcore.com
 | [EVCORE.md](EVCORE.md)     | Full product specification — architecture, model, constraints |
 | [ROADMAP.md](ROADMAP.md)   | Implementation roadmap — phase-by-phase checklist             |
 | [TODO.md](TODO.md)         | Current work plan and upcoming blocs                          |
-| [COUPON.md](COUPON.md)     | Daily coupon generator specification                          |
 | [OPENCLAW.md](OPENCLAW.md) | OpenClaw policy — stand-by post-prod + activation criteria    |
 | [GRAFANA.md](GRAFANA.md)   | Grafana policy — stand-by post-prod + activation criteria     |
 | [CLAUDE.md](CLAUDE.md)     | AI coding conventions (Claude Code)                           |
@@ -201,7 +198,7 @@ CORS_ORIGIN=https://c-evcore.com
 | MVP Phase 1    | ✅ Complete    | Backtest validated — Brier 0.592, ROI +2.28%                             |
 | Phase 2 Bloc 1 | ✅ Complete    | Live odds pipeline, multi-league ETL                                     |
 | Phase 2 Bloc 2 | ✅ Complete    | ETL hardening, Kelly fractional                                          |
-| Phase 2 Bloc 3 | ✅ Complete    | Daily coupon generator (204 tests)                                       |
+| Phase 2 Bloc 3 | ✅ Complete    | Per-pick EV engine (204 tests)                                           |
 | Phase 2 Bloc 4 | 🚧 In progress | Shadow data collection, auto-activation loop                             |
-| Phase 2 Bloc 5 | ✅ Complete    | Coupon settlement, result notifications                                  |
+| Phase 2 Bloc 5 | ✅ Complete    | Pick settlement, result notifications                                    |
 | Phase 2 Bloc 6 | 🚧 In progress | HT/FT end-to-end livré, OpenClaw/Grafana stand-by post-prod, TimescaleDB |

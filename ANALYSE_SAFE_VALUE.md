@@ -3,6 +3,13 @@
 **Période analysée :** 31 mars – 10 avril 2026  
 **Rapport généré :** 10 avril 2026
 
+> **Archive historique** — ce rapport a été écrit quand le moteur produisait
+> encore des **coupons combinés**. La notion de coupon a depuis été retirée :
+> le moteur publie désormais des **picks individuels** par fixture, plus un
+> éventuel pick "safe value" distinct. Les conclusions ci-dessous restent
+> valables pour la partie **picks individuels** ; les sections sur les
+> coupons combinés sont conservées pour contexte historique uniquement.
+
 ---
 
 ## 1. Bilan de la période

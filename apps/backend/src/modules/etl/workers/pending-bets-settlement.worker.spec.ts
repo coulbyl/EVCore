@@ -146,7 +146,7 @@ describe('PendingBetsSettlementWorker', () => {
     ]);
   });
 
-  it('updates fixture state and settles bets/coupons when a fixture finishes', async () => {
+  it('updates fixture state and settles bets when a fixture finishes', async () => {
     mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('FT')));
 
     await worker.process({ data: {} } as Job<Record<string, never>>);

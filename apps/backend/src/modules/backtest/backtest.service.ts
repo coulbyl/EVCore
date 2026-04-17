@@ -23,16 +23,14 @@ import {
   brierScoreOneXTwo,
   calibrationError,
   getOneXTwoOutcome,
-  type AllSeasonsBacktestReport,
   type BacktestOddsBucketPerformance,
   type BacktestMarketPerformance,
   type BacktestPickPerformance,
   type BacktestReport,
   type CalibrationPoint,
-  type CompetitionBacktestSummary,
+  type CompetitionBacktestReport,
   type MetricResult,
   type OneXTwoPrediction,
-  type ValidationReport,
   type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
@@ -206,9 +204,6 @@ type RunBacktestOptions = {
 
 @Injectable()
 export class BacktestService {
-  private latestAllSeasonsReport: AllSeasonsBacktestReport | null = null;
-  private latestValidationReport: ValidationReport | null = null;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
@@ -612,242 +607,105 @@ export class BacktestService {
     return report;
   }
 
-  async runAllSeasons(): Promise<AllSeasonsBacktestReport> {
-    const seasons = await this.prisma.client.season.findMany({
-      where: { competition: { includeInBacktest: true } },
+  async runCompetitionBacktest(
+    competitionCode: string,
+    seasonName?: string,
+  ): Promise<CompetitionBacktestReport> {
+    const competition = await this.prisma.client.competition.findUnique({
+      where: { code: competitionCode },
       select: {
         id: true,
-        competition: { select: { id: true, code: true, name: true } },
+        code: true,
+        name: true,
+        includeInBacktest: true,
       },
     });
 
+    if (!competition) {
+      throw new Error(
+        `Competition not found for code "${competitionCode}". Check competition.code in DB.`,
+      );
+    }
+
+    const seasons = await this.prisma.client.season.findMany({
+      where: {
+        competitionId: competition.id,
+        ...(seasonName ? { name: seasonName } : {}),
+      },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    if (seasons.length === 0) {
+      throw new Error(
+        `No season found for competition "${competitionCode}"${seasonName ? ` and season "${seasonName}"` : ''}.`,
+      );
+    }
+
     logger.info(
-      { seasonCount: seasons.length },
-      'Starting all-seasons backtest',
+      {
+        competitionCode,
+        seasonName: seasonName ?? 'ALL',
+        seasonCount: seasons.length,
+      },
+      'Starting competition backtest',
     );
 
     const reports: BacktestReport[] = [];
     const analysisEntries: BacktestAnalysisEntry[] = [];
     for (const season of seasons) {
-      const report = await this.runBacktest(
-        season.id,
-        season.competition.code,
-        {
-          analysisEntries,
-          writeAnalysisLog: false,
-        },
-      );
+      const report = await this.runBacktest(season.id, competition.code, {
+        analysisEntries,
+        writeAnalysisLog: false,
+      });
       reports.push(report);
     }
 
-    const totalFixtures = reports.reduce((sum, r) => sum + r.fixtureCount, 0);
-    const totalAnalyzed = reports.reduce((sum, r) => sum + r.analyzedCount, 0);
+    const report = buildCompetitionReport({
+      competition,
+      seasonFilter: seasonName ?? null,
+      reports,
+    });
 
-    const averageBrierScore =
-      reports.length > 0
-        ? reports
-            .reduce((sum, r) => sum.plus(r.brierScore), new Decimal(0))
-            .div(reports.length)
-        : new Decimal(0);
-
-    const averageCalibrationError =
-      reports.length > 0
-        ? reports
-            .reduce((sum, r) => sum.plus(r.calibrationError), new Decimal(0))
-            .div(reports.length)
-        : new Decimal(0);
-
-    // Total bets placed across all seasons (informational — no filter).
-    const totalBets = reports.reduce((sum, r) => sum + getTotalBets(r), 0);
-
-    // aggregateProfit = real profit across all bets.
-    const aggregateProfit = reports.reduce(
-      (sum, r) => sum.plus(sumProfit(r.marketPerformance)),
-      new Decimal(0),
-    );
-    // aggregateRoi = profit / stake across all bets (unit stake = 1 per bet).
-    // Previously used a per-season weighted average filtered by MIN_BETS_FOR_ROI,
-    // which caused severe distortion when most seasons had < 10 bets — only the
-    // high-volume losing seasons survived the filter, masking overall profitability.
-    const aggregateRoi =
-      totalBets > 0
-        ? aggregateProfit.div(new Decimal(totalBets))
-        : new Decimal(0);
-    const averageEvSimulated =
-      totalBets > 0
-        ? reports
-            .reduce(
-              (sum, r) => sum.plus(r.averageEvSimulated.mul(getTotalBets(r))),
-              new Decimal(0),
-            )
-            .div(totalBets)
-        : new Decimal(0);
-
-    const byCompetition = buildCompetitionBreakdown(seasons, reports);
-
-    logger.info(
-      {
-        seasonCount: seasons.length,
-        totalFixtures,
-        totalAnalyzed,
-        totalBets,
-        averageBrierScore: averageBrierScore.toNumber(),
-        averageCalibrationError: averageCalibrationError.toNumber(),
-        aggregateRoi: aggregateRoi.toNumber(),
-        aggregateProfit: aggregateProfit.toNumber(),
-        averageEvSimulated: averageEvSimulated.toNumber(),
-        competitionCount: byCompetition.length,
-      },
-      'All-seasons backtest complete',
-    );
-
-    const report: AllSeasonsBacktestReport = {
-      seasons: reports,
-      totalFixtures,
-      totalAnalyzed,
-      totalBets,
-      averageBrierScore,
-      averageCalibrationError,
-      aggregateRoi,
-      aggregateProfit,
-      averageEvSimulated,
-      byCompetition,
-      reportGeneratedAt: new Date(),
-    };
-
-    this.latestAllSeasonsReport = report;
-    this.latestValidationReport = null;
     await this.writeBacktestAnalysisLog(analysisEntries, {
-      scope: 'all-seasons',
+      scope: 'competition',
+      competitionCode,
+      seasonName: seasonName ?? null,
       seasonCount: seasons.length,
     });
 
-    return report;
-  }
-
-  async getValidationReport(): Promise<ValidationReport> {
-    if (this.latestValidationReport) {
-      return this.latestValidationReport;
-    }
-
-    const allSeasons =
-      this.latestAllSeasonsReport ?? (await this.runAllSeasons());
-    const {
-      averageBrierScore,
-      averageCalibrationError,
-      aggregateRoi,
-      seasons,
-      totalAnalyzed,
-      totalBets,
-      aggregateProfit,
-      averageEvSimulated,
-      byCompetition,
-    } = allSeasons;
-
-    const insufficient =
-      totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
-
-    const brierVerdict: ValidationVerdict = insufficient
-      ? 'INSUFFICIENT_DATA'
-      : averageBrierScore.lessThanOrEqualTo(
-            BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
-          )
-        ? 'PASS'
-        : 'FAIL';
-
-    const calibrationVerdict: ValidationVerdict = insufficient
-      ? 'INSUFFICIENT_DATA'
-      : averageCalibrationError.lessThanOrEqualTo(
-            BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
-          )
-        ? 'PASS'
-        : 'FAIL';
-
-    const roiVerdict: ValidationVerdict = insufficient
-      ? 'INSUFFICIENT_DATA'
-      : aggregateRoi.greaterThanOrEqualTo(
-            BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
-          )
-        ? 'PASS'
-        : 'FAIL';
-
-    const verdicts: ValidationVerdict[] = [
-      brierVerdict,
-      calibrationVerdict,
-      roiVerdict,
-    ];
-    const overallVerdict: ValidationVerdict = verdicts.includes(
-      'INSUFFICIENT_DATA',
-    )
-      ? 'INSUFFICIENT_DATA'
-      : verdicts.includes('FAIL')
-        ? 'FAIL'
-        : 'PASS';
-
-    const brierScore: MetricResult = {
-      value: averageBrierScore,
-      threshold: BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
-      verdict: brierVerdict,
-    };
-    const calibrationError: MetricResult = {
-      value: averageCalibrationError,
-      threshold: BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
-      verdict: calibrationVerdict,
-    };
-    const roi: MetricResult = {
-      value: aggregateRoi,
-      threshold: BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
-      verdict: roiVerdict,
-    };
-    const byMarket = buildValidationMarketSummaries(seasons);
-
     logger.info(
       {
-        totalAnalyzed,
-        totalBets,
-        brierScore: averageBrierScore.toNumber(),
-        brierVerdict,
-        calibrationError: averageCalibrationError.toNumber(),
-        calibrationVerdict,
-        roi: aggregateRoi.toNumber(),
-        aggregateProfit: aggregateProfit.toNumber(),
-        averageEvSimulated: averageEvSimulated.toNumber(),
-        roiVerdict,
-        overallVerdict,
+        competitionCode,
+        seasonName: seasonName ?? 'ALL',
+        totalAnalyzed: report.totalAnalyzed,
+        totalBets: report.totalBets,
+        brier: report.averageBrierScore.toNumber(),
+        brierVerdict: report.brierScore.verdict,
+        cal: report.averageCalibrationError.toNumber(),
+        calVerdict: report.calibrationError.verdict,
+        roi: report.aggregateRoi.toNumber(),
+        roiVerdict: report.roi.verdict,
+        overallVerdict: report.overallVerdict,
       },
-      'Validation report generated',
+      'Competition backtest complete',
     );
-
-    const report: ValidationReport = {
-      brierScore,
-      calibrationError,
-      roi,
-      totalAnalyzed,
-      totalBets,
-      aggregateProfit,
-      averageEvSimulated,
-      overallVerdict,
-      byMarket,
-      byCompetition,
-      reportGeneratedAt: new Date(),
-    };
-
-    this.latestValidationReport = report;
 
     return report;
   }
 
-  async refreshValidationReport(): Promise<ValidationReport> {
-    await this.runAllSeasons();
-    return this.getValidationReport();
-  }
+  async runAllCompetitions(): Promise<CompetitionBacktestReport[]> {
+    const competitions = await this.prisma.client.competition.findMany({
+      where: { includeInBacktest: true },
+      select: { code: true },
+      orderBy: { code: 'asc' },
+    });
 
-  getLatestValidationReport(): ValidationReport | null {
-    return this.latestValidationReport;
-  }
-
-  getLatestAllSeasonsReport(): AllSeasonsBacktestReport | null {
-    return this.latestAllSeasonsReport;
+    const reports: CompetitionBacktestReport[] = [];
+    for (const { code } of competitions) {
+      reports.push(await this.runCompetitionBacktest(code));
+    }
+    return reports;
   }
 
   private async loadTeamStatsIndexForSeason(
@@ -1423,7 +1281,7 @@ export class BacktestService {
   }
 }
 
-function buildValidationMarketSummaries(
+function buildMarketSummaries(
   reports: BacktestReport[],
 ): ValidationMarketSummary[] {
   return aggregateMarketPerformance(
@@ -1460,90 +1318,132 @@ function buildValidationMarketSummaries(
   });
 }
 
-type SeasonWithCompetition = {
-  id: string;
+function buildCompetitionReport(input: {
   competition: { id: string; code: string; name: string };
-};
+  seasonFilter: string | null;
+  reports: BacktestReport[];
+}): CompetitionBacktestReport {
+  const { competition, seasonFilter, reports } = input;
 
-function buildCompetitionBreakdown(
-  seasons: SeasonWithCompetition[],
-  reports: BacktestReport[],
-): CompetitionBacktestSummary[] {
-  type Entry = {
-    competition: SeasonWithCompetition['competition'];
-    reports: BacktestReport[];
-  };
-  const byId = new Map<string, Entry>();
+  const totalFixtures = reports.reduce((sum, r) => sum + r.fixtureCount, 0);
+  const totalAnalyzed = reports.reduce((sum, r) => sum + r.analyzedCount, 0);
+  const totalBets = reports.reduce((s, r) => s + getTotalBets(r), 0);
 
-  for (let i = 0; i < seasons.length; i++) {
-    const season = seasons[i];
-    const report = reports[i];
-    if (!season || !report) continue;
-    const entry = byId.get(season.competition.id) ?? {
-      competition: season.competition,
-      reports: [],
-    };
-    entry.reports.push(report);
-    byId.set(season.competition.id, entry);
-  }
-
-  return Array.from(byId.values()).map(
-    ({ competition, reports: compReports }) => {
-      const analyzed = compReports.reduce((s, r) => s + r.analyzedCount, 0);
-      const avgBrier =
-        compReports.length > 0
-          ? compReports
-              .reduce((s, r) => s.plus(r.brierScore), new Decimal(0))
-              .div(compReports.length)
-          : new Decimal(0);
-      const avgCal =
-        compReports.length > 0
-          ? compReports
-              .reduce((s, r) => s.plus(r.calibrationError), new Decimal(0))
-              .div(compReports.length)
-          : new Decimal(0);
-      const totalBets = compReports.reduce((s, r) => s + getTotalBets(r), 0);
-      const aggregateProfit = compReports.reduce(
-        (sum, r) => sum.plus(sumProfit(r.marketPerformance)),
-        new Decimal(0),
-      );
-      const roi =
-        totalBets > 0 ? aggregateProfit.div(totalBets) : new Decimal(0);
-      const averageEvSimulated =
-        totalBets > 0
-          ? compReports
-              .reduce(
-                (sum, r) => sum.plus(r.averageEvSimulated.mul(getTotalBets(r))),
-                new Decimal(0),
-              )
-              .div(totalBets)
-          : new Decimal(0);
-      const marketPerformance = aggregateMarketPerformance(
-        compReports.flatMap((report) => report.marketPerformance),
-      );
-      const maxDrawdownSimulated = marketPerformance.reduce(
-        (max, market) =>
-          market.maxDrawdown.greaterThan(max) ? market.maxDrawdown : max,
-        new Decimal(0),
-      );
-
-      return {
-        competitionId: competition.id,
-        competitionCode: competition.code,
-        competitionName: competition.name,
-        seasonCount: compReports.length,
-        totalAnalyzed: analyzed,
-        totalBets,
-        averageBrierScore: avgBrier,
-        averageCalibrationError: avgCal,
-        aggregateRoi: roi,
-        aggregateProfit,
-        averageEvSimulated,
-        maxDrawdownSimulated,
-        marketPerformance,
-      };
-    },
+  const averageBrierScore =
+    reports.length > 0
+      ? reports
+          .reduce((s, r) => s.plus(r.brierScore), new Decimal(0))
+          .div(reports.length)
+      : new Decimal(0);
+  const averageCalibrationError =
+    reports.length > 0
+      ? reports
+          .reduce((s, r) => s.plus(r.calibrationError), new Decimal(0))
+          .div(reports.length)
+      : new Decimal(0);
+  const aggregateProfit = reports.reduce(
+    (sum, r) => sum.plus(sumProfit(r.marketPerformance)),
+    new Decimal(0),
   );
+  const aggregateRoi =
+    totalBets > 0 ? aggregateProfit.div(totalBets) : new Decimal(0);
+  const averageEvSimulated =
+    totalBets > 0
+      ? reports
+          .reduce(
+            (sum, r) => sum.plus(r.averageEvSimulated.mul(getTotalBets(r))),
+            new Decimal(0),
+          )
+          .div(totalBets)
+      : new Decimal(0);
+  const marketPerformance = aggregateMarketPerformance(
+    reports.flatMap((report) => report.marketPerformance),
+  );
+  const maxDrawdownSimulated = marketPerformance.reduce(
+    (max, market) =>
+      market.maxDrawdown.greaterThan(max) ? market.maxDrawdown : max,
+    new Decimal(0),
+  );
+  const byMarket = buildMarketSummaries(reports);
+
+  const insufficient =
+    totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
+
+  const brierVerdict: ValidationVerdict = insufficient
+    ? 'INSUFFICIENT_DATA'
+    : averageBrierScore.lessThanOrEqualTo(
+          BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
+        )
+      ? 'PASS'
+      : 'FAIL';
+
+  const calibrationVerdict: ValidationVerdict = insufficient
+    ? 'INSUFFICIENT_DATA'
+    : averageCalibrationError.lessThanOrEqualTo(
+          BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
+        )
+      ? 'PASS'
+      : 'FAIL';
+
+  const roiVerdict: ValidationVerdict = insufficient
+    ? 'INSUFFICIENT_DATA'
+    : aggregateRoi.greaterThanOrEqualTo(BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD)
+      ? 'PASS'
+      : 'FAIL';
+
+  const brierScore: MetricResult = {
+    value: averageBrierScore,
+    threshold: BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
+    verdict: brierVerdict,
+  };
+  const calibrationErrorMetric: MetricResult = {
+    value: averageCalibrationError,
+    threshold: BACKTEST_CONSTANTS.CALIBRATION_ERROR_PASS_THRESHOLD,
+    verdict: calibrationVerdict,
+  };
+  const roi: MetricResult = {
+    value: aggregateRoi,
+    threshold: BACKTEST_CONSTANTS.ROI_FLOOR_THRESHOLD,
+    verdict: roiVerdict,
+  };
+
+  const verdicts: ValidationVerdict[] = [
+    brierVerdict,
+    calibrationVerdict,
+    roiVerdict,
+  ];
+  const overallVerdict: ValidationVerdict = verdicts.includes(
+    'INSUFFICIENT_DATA',
+  )
+    ? 'INSUFFICIENT_DATA'
+    : verdicts.includes('FAIL')
+      ? 'FAIL'
+      : 'PASS';
+
+  return {
+    competitionId: competition.id,
+    competitionCode: competition.code,
+    competitionName: competition.name,
+    seasonFilter,
+    seasons: reports,
+    seasonCount: reports.length,
+    totalFixtures,
+    totalAnalyzed,
+    totalBets,
+    averageBrierScore,
+    averageCalibrationError,
+    aggregateRoi,
+    aggregateProfit,
+    averageEvSimulated,
+    maxDrawdownSimulated,
+    brierScore,
+    calibrationError: calibrationErrorMetric,
+    roi,
+    overallVerdict,
+    marketPerformance,
+    byMarket,
+    reportGeneratedAt: new Date(),
+  };
 }
 
 function buildAnalysisEntry(input: {

@@ -44,10 +44,10 @@ Toujours respecter cet ordre. Chaque étape dépend de la précédente.
 
 ```
 POST /etl/sync/fixtures            ← routine today+tomorrow UTC, ou /fixtures/:competitionCode pour backfill ligue
-POST /etl/sync/settlement          ← refresh des fixtures avec bets pending + settlement coupon/bets
+POST /etl/sync/settlement          ← refresh des fixtures avec bets pending + settlement des paris
 POST /etl/sync/stats               ← xG, shots (2s de délai par fixture — prévoir ~2h pour 3 saisons × 10 ligues)
 POST /etl/sync/odds-csv            ← odds historiques Pinnacle/Bet365 depuis football-data.co.uk
-POST /etl/sync/odds-live           ← cotes pré-match J+1 (corps JSON optionnel : { "date": "YYYY-MM-DD" })
+POST /etl/sync/odds-live           ← cotes pré-match J+1 (indispensable pour calcul EV unitaire)
 POST /etl/sync/injuries            ← shadow scoring blessures sur la fenêtre today+tomorrow UTC
 ```
 
@@ -70,8 +70,10 @@ Les rolling stats doivent être calculées **avant** le backtest.
 
 ```
 POST /rolling-stats/backfill-all    ← calcule TeamStats pour toutes les ligues × saisons
-POST /backtest/run-all              ← lance le backtest sur toutes les saisons
-GET  /backtest/validation-report    ← Brier Score / Calibration / ROI
+POST /backtest/run-all              ← lance le backtest global
+POST /backtest/run/:competitionCode ← lance le backtest spécifique (ex: /backtest/run/PL)
+GET  /backtest/validation-report    ← rapport global
+GET  /backtest/report/:competitionCode ← rapport détaillé par ligue
 ```
 
 ### Nettoyage xG historique sans quota API
@@ -107,19 +109,19 @@ Seuils de validation MVP :
 
 ---
 
-## 5. Générer un coupon
+## 5. Générer les picks du lendemain
 
-Le coupon se génère automatiquement à **20:00 UTC** chaque jour (après le odds-live-sync de 18:00 UTC).
+Les picks sont générés automatiquement à **20:00 UTC** chaque jour (après le odds-live-sync de 18:00 UTC).
 
 Pour déclencher manuellement :
 
 ```
-POST /coupon/generate-tomorrow
+POST /betting-engine/run-tomorrow
 ```
 
-> Plusieurs coupons par jour sont possibles — chaque appel génère un nouveau coupon indépendamment.
+> Chaque run indépendant scanne les fixtures SCHEDULED, scorent les marchés et persistent les paris viables.
 
-Si le coupon retourne `NO_BET`, vérifier :
+Si le run retourne aucun pick, vérifier :
 
 ```sql
 -- Fixtures SCHEDULED pour demain avec odds disponibles

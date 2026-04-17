@@ -170,7 +170,10 @@
 - [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
 - [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
 
-### Bloc 3 — Daily Coupon Generator ✅ (2 mars 2026)
+### Bloc 3 — Daily Picks Generator ✅ (2 mars 2026)
+
+> Notion de "coupon" retirée (bloc combiné supprimé) — le moteur produit désormais
+> des picks individuels par fixture (référence historique uniquement ci-dessous).
 
 **Feature flags + shadow scoring**
 
@@ -178,21 +181,17 @@
 - [x] Shadow scoring dans `analyzeFixture()` — facteurs calculés mais non pris en compte, shadow\_\* loggés dans `ModelRun.features`
 - [x] Filtre line movement — delta cote > 10% sur 7 jours → fixture exclue (depuis `OddsSnapshot` DB)
 
-**Coupon quotidien** — spec : [COUPON.md](COUPON.md)
+**Picks quotidiens**
 
-- [x] `DailyCoupon` — modèle Prisma (id, date unique, status, legCount, Bets[] FK)
-- [x] `coupon.constants.ts` — `COUPON_MAX_LEGS=6`, `COUPON_CRON_SCHEDULE` (20h00 UTC), `COUPON_SCHEDULER_KEY`
 - [x] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
 - [x] `COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)
-- [x] `CouponService.generateDailyCoupon(date)` — sélection `qualityScore = EV × deterministicScore`, garde d'idempotence
+- [x] Sélection `qualityScore = EV × deterministicScore`, garde d'idempotence par fixture
 - [x] Anti-corrélation — max 1 bet par fixture (meilleur qualityScore conservé)
-- [x] `CouponWorker` — `@Processor('betting-engine')`, lockDuration 5 min
-- [x] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()` (flag `COUPON_SCHEDULING_ENABLED`)
-- [x] `NotificationService.sendDailyCoupon()` — email (coupon ≥ 1 leg)
+- [x] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()`
+- [x] `NotificationService.sendDailyPicks()` — email (≥ 1 pick)
 - [x] `NotificationService.sendNoBetToday()` — email (0 opportunité EV+)
 - [x] `upsertOddsSnapshot()` multi-marché (1X2 + Over/Under 2.5 + BTTS) dans `fixture.repository.ts`
 - [x] `extractAdditionalMarketOdds()` dans `odds-live-sync.worker.ts`
-- [x] Tests unitaires `CouponService` (6 cas : NO_BET, PENDING, max legs, tri qualityScore, idempotence)
 - [x] Tests unitaires `computeJointProbability`, `COMBO_WHITELIST`, `resolveComboPickBetStatus`
 - [x] 204 tests passants, lint ✓, typecheck ✓
 
@@ -214,13 +213,11 @@
 
 ---
 
-### Bloc 5 — Coupon settlement + résultats live
+### Bloc 5 — Settlement des paris + résultats live
 
-- [x] `CouponService.settleExpiredCoupons()` — settle les coupons PENDING dont tous les bets sont WON/LOST/VOID
-- [x] `DailyCoupon.status` → SETTLED (tous paris résolus), LOST (≥ 1 LOST), WON (tous WON)
-- [x] Worker ou endpoint déclenché post `settleOpenBets()` pour cascader le statut coupon
+- [x] Settlement des bets PENDING dès que la fixture passe `FINISHED` (WON/LOST/VOID)
 - [x] Remplacement de `results-sync` par `pending-bets-settlement-sync` ciblé sur les fixtures avec bets PENDING
-- [x] `NotificationService.sendCouponResult()` — email récap résultat coupon (WON/LOST)
+- [x] `NotificationService.sendBetResult()` — email récap résultat pari individuel
 
 ---
 
@@ -239,7 +236,7 @@
 - [x] Stabilité first prod sans TimescaleDB
   - [x] Cleanup automatique `OddsSnapshot` via worker ETL `odds-snapshot-retention` (rétention configurable)
   - [x] Indexation `OddsSnapshot` renforcée (requêtes moteur + purge par date)
-  - [x] Coupon multi-jours (fenêtre 1-3 jours) pour combiner 2-3 journées
+  - [x] Fenêtre picks multi-jours (1-3 jours) pour combiner 2-3 journées
   - [x] Tuning rate-limit/quota API-Football (estimation appels/jour + warning seuil quota)
 - [x] Fallback FRI hors pipeline Poisson principal
   - [x] Branche dédiée `competitionCode === 'FRI'` avant le guard `missing_team_stats`

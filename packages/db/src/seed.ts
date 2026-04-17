@@ -16,7 +16,7 @@ const COMPETITIONS = [
     country: "England",
     isActive: true,
     csvDivisionCode: "E0",
-  },
+  }, 
   {
     leagueId: 135,
     code: "SA",

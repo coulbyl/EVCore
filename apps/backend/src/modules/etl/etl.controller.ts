@@ -203,7 +203,7 @@ export class EtlController {
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
       'stats → injuries, then odds-csv → elo → odds-prematch → analysis. Routine fixtures/injuries ' +
       'runs target the current season; stats also targets the current season only. Settlement ' +
-      'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
+      'refreshes only fixtures with pending bets. Use for initial backfill ' +
       'or after a long downtime.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
@@ -396,30 +396,6 @@ export class EtlController {
     const seasons = this.resolveSeasonYears(seasonsParam);
     await this.etlService.triggerOddsHistoricalImport(code, seasons);
     return { status: 'ok' as const, competitionCode: code, seasons };
-  }
-
-  @Post('sync/backtest')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger all-seasons backtest run',
-    description:
-      'Runs the full backtest across all included seasons and refreshes the cached validation report.',
-  })
-  async triggerBacktest() {
-    await this.etlService.triggerBacktestAllSeasons();
-    return { status: 'ok' as const };
-  }
-
-  @Post('sync/backtest/:seasonId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger one-season backtest run',
-    description:
-      'Runs a targeted backtest for one seasonId. Useful for investigation without recalculating all seasons.',
-  })
-  async triggerBacktestSeason(@Param('seasonId') seasonId: string) {
-    await this.etlService.triggerBacktestSeason(seasonId);
-    return { status: 'ok' as const, seasonId };
   }
 
   @Post('sync/odds-retention')

@@ -544,7 +544,7 @@ export function getPickMaxSelectionOdds(
 //
 // A secondary pick-selection channel that targets high-probability single-market
 // bets (P ≥ 68%) with non-negative EV — distinct from the EV-primary channel.
-// Safe value picks are assembled into a separate SAFE coupon (max 2 legs).
+// Safe value picks are published alongside the EV pick as a separate "safe" channel.
 // These constants define the eligibility window for the safe value pool.
 
 // Minimum probability for a safe value pick (strict — P < 0.68 is excluded).

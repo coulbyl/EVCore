@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common';
 import { describe, it, expect, vi } from 'vitest';
 import type { BacktestService } from './backtest.service';
 import { BacktestController } from './backtest.controller';
@@ -8,31 +7,59 @@ describe('BacktestController', () => {
     overrides: Partial<BacktestService> = {},
   ): BacktestService {
     return {
-      getLatestValidationReport: vi.fn().mockReturnValue({
-        totalAnalyzed: 100,
+      runAllCompetitions: vi
+        .fn()
+        .mockResolvedValue([{ competitionCode: 'PL', overallVerdict: 'PASS' }]),
+      runCompetitionBacktest: vi.fn().mockResolvedValue({
+        competitionCode: 'PL',
         overallVerdict: 'PASS',
       }),
+      runAllSeasonsSafeValueBacktest: vi
+        .fn()
+        .mockResolvedValue({ aggregate: { picksPlaced: 0 } }),
       ...overrides,
     } as unknown as BacktestService;
   }
 
-  it('returns the cached validation report', () => {
+  it('runs backtest for all competitions and returns reports', async () => {
     const service = makeService();
     const controller = new BacktestController(service);
 
-    expect(controller.getValidationReport()).toEqual({
-      totalAnalyzed: 100,
-      overallVerdict: 'PASS',
-    });
-    expect(service.getLatestValidationReport).toHaveBeenCalledTimes(1);
+    await expect(controller.runAll()).resolves.toEqual([
+      { competitionCode: 'PL', overallVerdict: 'PASS' },
+    ]);
+    expect(service.runAllCompetitions).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects when no cached validation report exists yet', () => {
-    const service = makeService({
-      getLatestValidationReport: vi.fn().mockReturnValue(null),
-    });
+  it('runs backtest for one competition (all seasons) and returns the report', async () => {
+    const service = makeService();
     const controller = new BacktestController(service);
 
-    expect(() => controller.getValidationReport()).toThrow(NotFoundException);
+    await expect(controller.runCompetition('PL')).resolves.toEqual({
+      competitionCode: 'PL',
+      overallVerdict: 'PASS',
+    });
+    expect(service.runCompetitionBacktest).toHaveBeenCalledWith('PL');
+  });
+
+  it('runs backtest for one competition + one season and returns the report', async () => {
+    const service = makeService();
+    const controller = new BacktestController(service);
+
+    await controller.runCompetitionSeason('PL', '2023-24');
+
+    expect(service.runCompetitionBacktest).toHaveBeenCalledWith(
+      'PL',
+      '2023-24',
+    );
+  });
+
+  it('delegates safe-value backtest to the service', async () => {
+    const service = makeService();
+    const controller = new BacktestController(service);
+
+    await controller.runSafeValueBacktest();
+
+    expect(service.runAllSeasonsSafeValueBacktest).toHaveBeenCalledTimes(1);
   });
 });

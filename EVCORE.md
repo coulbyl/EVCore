@@ -93,7 +93,7 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 
 ### Combos-match (Phase 2)
 
-Un pick peut combiner deux marchés sur la même fixture si la probabilité jointe est calculable depuis le modèle de Poisson et que l'EV joint ≥ 8%. Maximum 2 marchés par combo. Référentiel complet et règles de sélection : [COUPON.md](COUPON.md).
+Un pick peut combiner deux marchés sur la même fixture si la probabilité jointe est calculable depuis le modèle de Poisson et que l'EV joint ≥ 8%. Maximum 2 marchés par combo.
 
 | Exemples de combos valides       |
 | -------------------------------- |
@@ -135,16 +135,6 @@ Un pick peut combiner deux marchés sur la même fixture si la probabilité join
 
 Pas d’odds au début.
 
-## 3.6 Pipeline Phase 2 — Coupon quotidien
-
-Le système génère **un seul coupon combiné par jour** sur toutes les ligues actives. Ce coupon est le résultat final opérationnel du moteur : il est placé tel quel par les utilisateurs. Spécification complète : [COUPON.md](COUPON.md).
-
-```
-odds-live-sync (18:00 UTC)  →  coupon-generator (20:00 UTC)  →  notification
-        ↓                              ↓                              ↓
-  odds en DB               DailyCoupon + Bets persistés      Email + Slack
-```
-
 ---
 
 # 4. Modèle décisionnel
@@ -153,7 +143,7 @@ odds-live-sync (18:00 UTC)  →  coupon-generator (20:00 UTC)  →  notification
 
 ### Étape 1 — Scoring déterministe (70%)
 
-Le score déterministe est la somme pondérée des facteurs **activés**. Tous les facteurs sont calculés en permanence — les facteurs désactivés sont loggés en mode shadow dans `ModelRun.features` sans contribuer au score. Référentiel complet des facteurs et feature flags : [COUPON.md § Facteurs d'analyse](COUPON.md).
+Le score déterministe est la somme pondérée des facteurs **activés**. Tous les facteurs sont calculés en permanence — les facteurs désactivés sont loggés en mode shadow dans `ModelRun.features` sans contribuer au score.
 
 **Facteurs core (toujours activés) :**
 
@@ -195,8 +185,6 @@ Ces poids sont ajustables par la boucle d'apprentissage après 50+ paris, dans l
 ### Étape 2 — Raffinement LLM (30%)
 
 - Cohérence contextuelle
-- Corrélation picks
-- Construction combiné
 
 Backend valide toujours.
 
@@ -263,7 +251,6 @@ Seuil initial :
 ## 5.2 Volume recommandé
 
 - 4–8 paris par semaine
-- Max 3 legs par combiné
 - No bet autorisé
 - 1% bankroll par pari (fixe au début)
 
@@ -302,7 +289,8 @@ Backend décide :
 - ROI glissant
 - Drawdown max
 - EV moyen
-- ROI par marché
+- ROI par compétition (Priorité 1)
+- ROI par marché au sein de la compétition
 - ROI par plage de cote
 
 ---
@@ -403,7 +391,7 @@ Backend décide :
 
 Ce projet n’est pas :
 
-- Un générateur de coupons excitants
+- Un générateur de pronostics excitants
 - Un outil court terme
 - Un système basé sur intuition
 
@@ -526,7 +514,7 @@ OpenClaw est un composant contraint, pas une boîte noire. Trois risques identif
 
 | Événement                            | Canal         | Priorité |
 | ------------------------------------ | ------------- | -------- |
-| Coupon quotidien généré (≥ 1 leg)    | Email + Slack | Haute    |
+| Picks du jour générés (≥ 1 pari)     | Email + Slack | Haute    |
 | NO BET du jour (0 opportunité)       | Email + Slack | Normale  |
 | Marché suspendu automatiquement      | Slack + Email | Haute    |
 | Échec total job ETL                  | Slack + Email | Critique |

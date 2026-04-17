@@ -3,7 +3,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { BULLMQ_QUEUES } from '../../config/etl.constants';
 import { BettingEngineModule } from '../betting-engine/betting-engine.module';
-import { BacktestModule } from '../backtest/backtest.module';
 import { FixtureModule } from '../fixture/fixture.module';
 import { NotificationModule } from '../notification/notification.module';
 import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
@@ -40,7 +39,6 @@ import { AuthModule } from '../auth/auth.module';
     ),
     AuthModule,
     AdjustmentModule,
-    BacktestModule,
     BettingEngineModule,
     FixtureModule,
     NotificationModule,
