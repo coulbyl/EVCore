@@ -524,7 +524,10 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'EL2|OVER_UNDER|OVER': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): F2 DRAW — 4 bets, -100%, EV 0.10–0.33.
   // All four outcomes were losses across a wide EV range — no usable edge.
-  'F2|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  'F2|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-18: F2 AWAY surfaced twice and lost twice at avg odds 4.41
+  // with inflated EV. No evidence of a viable away signal — remove it for now.
+  'F2|ONE_X_TWO|AWAY': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): PL HOME — EV [0.12–0.20) → -38.9% on 7 bets.
   // Paired with soft cap at 0.40, this creates a [0.20, 0.40) window (+9.6% on 9 bets).
   'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
@@ -607,6 +610,9 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // The actual profitable window is [2.0-2.99] at 4W/7 and +57.7% ROI, while
   // [3.0-4.99] goes 2W/10 with -20.5% ROI and >=5.0 is 0W/1. Cap at 2.99.
   'D2|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // Backtest 2026-04-18: F2 HOME remains slightly positive overall, but every HOME
+  // pick above 3.0 lost. Keep the short/medium home favorites and cut the long tail.
+  'F2|ONE_X_TWO|HOME': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(

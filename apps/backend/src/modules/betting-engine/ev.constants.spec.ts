@@ -171,6 +171,12 @@ describe('getPickMaxSelectionOdds', () => {
       2.99,
     );
   });
+
+  it('returns 2.99 ceiling for F2 1X2 HOME', () => {
+    expect(getPickMaxSelectionOdds('F2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
+      2.99,
+    );
+  });
 });
 
 describe('getLeagueHomeAwayFactors', () => {
@@ -203,6 +209,15 @@ describe('getPickEvFloor', () => {
     ).toBe(0.99);
     expect(
       getPickEvFloor('EL2', 'OVER_UNDER', 'OVER', new Decimal('0.10')).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables F2 DRAW and AWAY picks', () => {
+    expect(
+      getPickEvFloor('F2', 'ONE_X_TWO', 'DRAW', new Decimal('0.10')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('F2', 'ONE_X_TWO', 'AWAY', new Decimal('0.10')).toNumber(),
     ).toBe(0.99);
   });
 

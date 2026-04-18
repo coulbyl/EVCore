@@ -239,12 +239,24 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### F2 — Ligue 2 (17W-22L, ROI +2.6 %, FAIL Brier)
-**Problème structurel :** le modèle ne génère QUE des picks HOME pour la Ligue 2, alors que le taux réel de nuls est exceptionnel (67 % sur la fenêtre prod, ~30–35 % historique). Brier 0.662 confirme une mauvaise calibration des probabilités.
+#### F2 — Ligue 2 ✅ amélioré (2026-04-18) — Brier fail persistant
+**Résultat retenu :** 36 bets / 3 saisons — ROI +18.4 %, CalibrationErr 4.28 % (PASS), Brier 0.6620 (FAIL), overallVerdict FAIL technique.
+- ONE_X_TWO : 35 bets, 17W/18L, +14.4 % ROI — seul segment réellement conservé.
+- HOME [2.0-2.99] : 35 bets, 17W/18L, +14.4 % ROI — segment principal, moyen en W/L mais enfin rentable.
+- DRAW et AWAY supprimés — ils perdaient tout dans le backtest.
+- HOME > 2.99 supprimé — le tail 3.0+ était entièrement toxique.
+- OVER_UNDER : 1 bet, 1W — insuffisant pour agir.
 
-- [ ] **F2-1** Activer les picks DRAW 1X2 pour F2 : recalibrer la probabilité de nul en F2 à la hausse. La Ligue 2 est la ligue française avec le plus de nuls structurellement (équipes évitant la défaite, matchs serrés).
-- [ ] **F2-2** Durcir le filtre HOME en F2 : exiger prob_modèle HOME ≥ 52 % (vs ~45 % actuellement). Cela éliminera les HOME picks trop incertains qui font baisser le W/L.
-- [ ] **F2-3** Vérifier et corriger le Brier en F2 : prob_modèle HOME est systématiquement surestimée (17W-22L sur 39 picks = 44 % WR vs prob estimée probablement ~55-60 %). Un facteur d'atténuation de 0.95 sur les proba HOME F2 est à tester.
+**Actions appliquées :**
+
+- [x] **F2-1** `PICK_EV_FLOOR_MAP` F2 DRAW : 0.99.
+- [x] **F2-2** `PICK_EV_FLOOR_MAP` F2 AWAY : 0.99.
+- [x] **F2-3** `PICK_MAX_SELECTION_ODDS_MAP` F2 HOME : 2.99.
+
+**Décision :**
+
+- [x] **F2-4** Geler F2 dans cet état — le nettoyage des segments morts améliore fortement le ROI sans résoudre le Brier.
+- [ ] **F2-5** Revenir plus tard uniquement avec une recalibration probabiliste plus profonde si l'objectif est de corriger le Brier / W-L plutôt que le ROI.
 
 ---
 
