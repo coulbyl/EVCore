@@ -69,13 +69,21 @@ describe('MIN_DRAW_DIRECTION_PROBABILITY', () => {
 describe('getPickDirectionProbabilityThreshold', () => {
   it('returns the tightened D2 AWAY override', () => {
     expect(
-      getPickDirectionProbabilityThreshold('D2', 'ONE_X_TWO', 'AWAY').toNumber(),
+      getPickDirectionProbabilityThreshold(
+        'D2',
+        'ONE_X_TWO',
+        'AWAY',
+      ).toNumber(),
     ).toBe(0.42);
   });
 
   it('returns the raised ERD HOME override', () => {
     expect(
-      getPickDirectionProbabilityThreshold('ERD', 'ONE_X_TWO', 'HOME').toNumber(),
+      getPickDirectionProbabilityThreshold(
+        'ERD',
+        'ONE_X_TWO',
+        'HOME',
+      ).toNumber(),
     ).toBe(0.6);
   });
 });
@@ -194,7 +202,12 @@ describe('getPickEvFloor', () => {
 
   it('returns the raised EV floor for ERD 1X2 HOME', () => {
     expect(
-      getPickEvFloor('ERD', 'ONE_X_TWO', 'HOME', new Decimal('0.08')).toNumber(),
+      getPickEvFloor(
+        'ERD',
+        'ONE_X_TWO',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
     ).toBe(0.15);
   });
 
@@ -208,7 +221,12 @@ describe('getPickEvFloor', () => {
       ).toNumber(),
     ).toBe(0.99);
     expect(
-      getPickEvFloor('EL2', 'OVER_UNDER', 'OVER', new Decimal('0.10')).toNumber(),
+      getPickEvFloor(
+        'EL2',
+        'OVER_UNDER',
+        'OVER',
+        new Decimal('0.10'),
+      ).toNumber(),
     ).toBe(0.99);
   });
 
@@ -223,7 +241,12 @@ describe('getPickEvFloor', () => {
 
   it('disables ERD UNDER and OVER_1_5 HT picks', () => {
     expect(
-      getPickEvFloor('ERD', 'OVER_UNDER', 'UNDER', new Decimal('0.08')).toNumber(),
+      getPickEvFloor(
+        'ERD',
+        'OVER_UNDER',
+        'UNDER',
+        new Decimal('0.08'),
+      ).toNumber(),
     ).toBe(0.99);
     expect(
       getPickEvFloor(
