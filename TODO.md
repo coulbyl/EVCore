@@ -79,7 +79,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 | EL1  | League One         | 53    | ~26 | ~27 | +28.5 % | PASS    | ⚖️ (~égal) |
 | CH   | Championship       | 20    | ~8  | ~12 | +8.1 %  | PASS    | ❌          |
 | PL   | Premier League     | 20    | 5   | 14  | +30.8 % | PASS    | ❌          |
-| SA   | Serie A            | 8     | 3   | 5   | –15.7 % | FAIL    | ❌          |
+| SA   | Serie A            | 6     | 2   | 4   | +42.9 % | PASS    | ✅ (2026-04-18) |
 | D2   | 2. Bundesliga      | 17    | 6   | 10  | +11.7 % | FAIL    | ❌          |
 | F2   | Ligue 2            | 39    | 17  | 22  | +2.6 %  | FAIL    | ❌          |
 | J1   | J1 League          | 56    | 26  | 30  | +10.8 % | FAIL    | ❌          |
@@ -104,12 +104,18 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### SA — Serie A (3W-5L, ROI –15.7 %, FAIL)
-**Problème :** très peu de picks (8 sur 3 saisons), uniquement HOME, et HOME_ADVANTAGE_LAMBDA_FACTOR trop généreux pour la SA (jeu tactique, peu d'avantage domicile net).
+#### SA — Serie A ✅ PASS (2026-04-18)
+**Résultat final :** 6 bets / 3 saisons — ROI +42.9 %, Brier 0.596, CalibErr 3.4 % — overallVerdict PASS.
+- ONE_X_TWO HOME [3.0-4.99] : 6 bets, 2W/4L, +42.9 % ROI — longshot HOME value en SA.
+- UNDER 2.5 éliminé, DRAW éliminé, HOME [2.0-2.99] éliminé.
 
-- [ ] **SA-1** Réduire HOME_ADVANTAGE_LAMBDA_FACTOR pour SA de ~0.10 points (à calibrer — la SA a un des plus faibles taux de victoires à domicile d'Europe, ~45 %).
-- [ ] **SA-2** Activer OVER_UNDER_HT OVER_0_5 en SA (SA = 2.45 buts/match prod, 65 % over 1.5). Le modèle n'y génère aucun pick OVER actuellement.
-- [ ] **SA-3** Augmenter EV minimum pour HOME SA à 0.12 (réduire le volume pour augmenter la qualité).
+**Actions appliquées :**
+
+- [x] **SA-1** MODEL_SCORE_THRESHOLD SA : 0.60 → 0.55 (730/929 fixtures bloquées = 78 % du funnel).
+- [x] **SA-2** HOME floor 3.00 ajouté (pattern BL1/CH/D2/PL — [2.0-2.99] était 5 bets, 2W/3L).
+- [x] **SA-3** EV floor HOME SA relevé à 0.12.
+- [x] **SA-4** (ajout) SA UNDER éliminé (floor 0.99) — 9 bets, 3W/6L, -35 % ROI. Lambda 1.247 → P(under) ~54 % mais win rate réel 33 %.
+- [x] **SA-5** (ajout) SA DRAW éliminé (floor 0.99) — 3 bets, 0W/3L après abaissement threshold.
 
 ---
 

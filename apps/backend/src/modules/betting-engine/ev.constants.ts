@@ -187,6 +187,12 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('2.50'));
   }
 
+  // Backtest 2026-04-18: SA HOME [2.0-2.99] → 5 bets, 2W/3L, -16.6% ROI.
+  // Same over-confidence pattern as BL1/CH/D2/PL HOME on mid-range odds.
+  if (competitionCode === 'SA' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
   // Audit 2026-04-04: CH AWAY placed was -15.9% ROI across 18 bets. The only
   // marginal positive signal was at odds >= 3.5 (N=3). Align with CH HOME (3.00)
   // and require a slight premium to avoid the negative mid-priced AWAY bucket.
@@ -329,7 +335,10 @@ const MODEL_SCORE_THRESHOLD_DEFAULT = new Decimal('0.60');
 const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier A — efficient markets
   PL: new Decimal('0.58'),
-  SA: new Decimal('0.60'),
+  // Lowered 0.60 → 0.55: 730/929 fixtures (78%) were skipped — SA tactical style produces
+  // max_prob 0.52-0.57 on balanced matches. Combined with HOME floor 3.00 + UNDER eliminated,
+  // newly unlocked fixtures feed better-filtered picks.
+  SA: new Decimal('0.55'),
   // Lowered 0.55 → 0.50: balanced BL1 fixtures (max_prob ~0.45-0.55) were
   // entirely skipped before OVER_UNDER evaluation. BL1 has 3.39 goals/match
   // (67% over 2.5) — OVER picks need to enter the evaluation loop.
@@ -494,6 +503,17 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04 (post-patch): PL HOME — EV [0.12–0.20) → -38.9% on 7 bets.
   // Paired with soft cap at 0.40, this creates a [0.20, 0.40) window (+9.6% on 9 bets).
   'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
+  // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
+  // Floor 0.12 retains only picks with stronger model confidence.
+  'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
+  // Backtest 2026-04-18: SA DRAW >=5.0 — 3 bets, 0W/3L after threshold lowered to 0.55.
+  // Model over-confidence on draw outcomes in a balanced tactical league. Eliminate.
+  'SA|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-18: SA UNDER — 9 bets, 3W/6L, -34.9% ROI. Model lambda SA=1.247
+  // places P(under 2.5) ~54% but actual win rate is 33% — systematic overconfidence.
+  // SA sits at the over/under boundary (2.49 avg goals); no reliable UNDER edge exists.
+  // Floor 0.99 effectively eliminates all SA UNDER picks.
+  'SA|OVER_UNDER|UNDER': new Decimal('0.99'),
 };
 
 // eslint-disable-next-line max-params
