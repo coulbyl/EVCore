@@ -2,6 +2,47 @@
 
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/evcore
 
+---
+
+## Méthode d'analyse backtest par championnat
+
+### Ordre d'investigation (à respecter pour chaque ligue)
+
+1. **Lire le ndjson avant tout** — `apps/backend/logs/backtest-analysis.latest.ndjson`
+   - `reasonCounts` : volumes par motif de rejet (BELOW_MODEL_SCORE_THRESHOLD, ev_below_threshold, odds_below_floor, prob<lim, ev_above_hard_cap…)
+   - `topRejectedCandidates` : picks rejetés avec EV simulé — révèle si les bons picks sont bloqués en dehors ou si les mauvais passent
+   - `deterministicScore` par fixture : permet de juger si le threshold est trop haut pour le profil de la ligue
+
+2. **Lire le rapport JSON backtest** — `POST /backtest/:code`
+   - `marketPerformance` + `pickBreakdown` + `oddsBuckets` : identifier le segment toxique précis (marché × direction × tranche de cotes)
+   - `brierScore` + `calibrationError` par saison : si une saison fait exploser les métriques, chercher la cause externe (données manquantes, API key exhausted, import partiel) avant de toucher les paramètres
+
+3. **Diagnostic causal** (dans l'ordre de probabilité)
+   - **Volume trop faible** → threshold trop haut pour cette ligue (I2, BL1)
+   - **Segment 1X2 HOME [2.0–3.0) toxique** → sur-confiance modèle sur underdogs domicile (CH, BL1, D2, PL, SA) → relever floor
+   - **EV élevé + ROI négatif** → sur-confiance lambda → réduire lambda, ajouter EV soft cap ou floor 0.99
+   - **Brier ≈ 0.667 (random)** → lambda trop haut → Poisson trop peaked → réduire lambda
+   - **CalibErr > 5 %** → biais systématique sur une direction (P_model vs win_rate gap > 10 pp) → HA factor ou lambda
+   - **Brier fail sur une seule saison** → vérifier données manquantes (odds incomplètes, API partielle) avant d'ajuster
+
+4. **Fixes par ordre de ciblage** (du plus chirurgical au plus large)
+   - `PICK_EV_FLOOR_MAP` : floor 0.99 = élimination complète d'un segment (option nucléaire, réservée aux cas structurellement cassés)
+   - `getPickMinSelectionOdds` : relever le plancher de cotes d'un segment (HOME [2.0–3.0) → 3.00 ou 5.00)
+   - `PICK_MAX_SELECTION_ODDS_MAP` : plafonner les cotes d'un segment (BL1 AWAY cap 2.99)
+   - `PICK_EV_SOFT_CAP_MAP` : cap EV sur un segment sur-confiant (EL1 HOME > 0.25 = sur-confiance)
+   - `PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP` : relever le seuil de probabilité directionnelle
+   - `LEAGUE_MEAN_LAMBDA_MAP` : corriger l'ancre Bayésienne (mesurer depuis DB team_stats)
+   - `LEAGUE_HOME_ADVANTAGE_MAP` : corriger le facteur HA si gap P_model vs win_rate > 15 pp
+   - `MODEL_SCORE_THRESHOLD_MAP` : dernier levier — impact sur tout le funnel
+
+5. **Règle de validation**
+   - Toujours relancer le backtest après chaque groupe de fixes
+   - PASS requis sur : ROI ≥ −5 % ET (Brier < 0.65 OU données partielles documentées)
+   - Avec peu de bets (< 10) : ne pas sur-optimiser, noter INSUFFICIENT_DATA
+   - Avant commit : `pnpm --filter backend lint && typecheck && test`
+
+---
+
 ## 1. Backtest par championnat (terminé)
 
 Le backtest « global » (toutes compétitions agrégées) a été remplacé par une API per-compétition, qui déclenche et retourne le rapport dans un seul appel synchrone.
