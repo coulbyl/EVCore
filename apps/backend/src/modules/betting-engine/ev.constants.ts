@@ -32,9 +32,11 @@ const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
 // Keys: "${competitionCode}|${market}|${pick}"
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04: rejected D2 1X2 AWAY picks failing only the probability
-  // gate were strongly profitable in backtest (+15.9% ROI on 131 picks). Relax
-  // only this branch instead of lowering the global floor.
-  'D2|ONE_X_TWO|AWAY': new Decimal('0.40'),
+  // gate were strongly profitable in backtest (+15.9% ROI on 131 picks), so the
+  // branch was initially relaxed to 0.40. Backtest 2026-04-18 still clears ROI
+  // after odds caps and HA correction but remains slightly over-confident on Brier;
+  // tighten modestly to 0.42 rather than reverting to the global 0.45.
+  'D2|ONE_X_TWO|AWAY': new Decimal('0.42'),
   // Audit 2026-04-04: EL1 HOME is structurally miscalibrated — model over-estimates
   // P(home win) by ~15pp. Raising the probability gate reduces exposure to the
   // over-confident sub-population where EV > 0.25 but actual ROI is -32%.
@@ -162,10 +164,10 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
-  // Audit 2026-04-04 (initial): D2 1X2 HOME picks were structurally negative in
-  // the 2.0-2.99 bucket (-15.3% ROI on 32 bets). Floor raised to 2.50.
-  // Audit 2026-04-04 (post-patch): remaining 7 bets had avg odds 2.72, still
-  // -62.1% ROI. Pattern matches CH HOME and BL1 HOME — raise to 3.00 for parity.
+  // Backtest 2026-04-18: D2 HOME remaining bets sit at 3.05 and 3.21 after the
+  // earlier 3.00 floor, both losses. Keep the 3.00 odds guard to exclude the
+  // structurally bad 2.0-2.99 bucket, but do not fully eliminate HOME so a future
+  // high-conviction sub-segment can still surface once calibration improves.
   if (competitionCode === 'D2' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
@@ -306,6 +308,11 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 // to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
+  // D2: 2. Bundesliga is one of the most balanced domestic leagues in the pool.
+  // Backtest 2026-04-18 improved selection quality after odds caps + tighter
+  // probability gate, but a further HA reduction to 1.01/0.99 worsened Brier.
+  // Keep the milder override at 1.02/0.98 as the best observed compromise.
+  D2: [1.02, 0.98],
   I2: [1.02, 0.98],
   // European competitions: home advantage is structurally lower than domestic
   // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
@@ -504,6 +511,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04 (post-patch): PL HOME — EV [0.12–0.20) → -38.9% on 7 bets.
   // Paired with soft cap at 0.40, this creates a [0.20, 0.40) window (+9.6% on 9 bets).
   'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
+  // Backtest 2026-04-18: D2 HOME should remain observable, but only with stronger
+  // signal than the league default. Pair with the 3.00 odds floor and reduced HA.
+  'D2|ONE_X_TWO|HOME': new Decimal('0.12'),
   // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
   // Floor 0.12 retains only picks with stronger model confidence.
   'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
@@ -563,6 +573,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-18: BL1 AWAY at [3.0-4.99] → 1W-6L, -54% ROI across 3 seasons.
   // AWAY at [2.0-2.99] was 2W-0L. Cap at 2.99 to eliminate the losing segment.
   'BL1|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // Backtest 2026-04-18: D2 AWAY is only break-even overall thanks to one 4.00 hit.
+  // The actual profitable window is [2.0-2.99] at 4W/7 and +57.7% ROI, while
+  // [3.0-4.99] goes 2W/10 with -20.5% ROI and >=5.0 is 0W/1. Cap at 2.99.
+  'D2|ONE_X_TWO|AWAY': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(

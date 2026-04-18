@@ -217,13 +217,25 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### D2 — 2. Bundesliga (6W-10L, ROI +11.7 %, FAIL)
-**Problème :** picks AWAY 0W/1L (ignorable — 1 seul), mais HOME 6W-10L sur 16 bets reste W<L. HOME_ADVANTAGE trop généreux pour D2. Prod confirme : gap –40 pp, –100 % ROI sur 4 bets.
+#### D2 — 2. Bundesliga ✅ stabilisé (2026-04-18) — caveat Brier
+**Résultat retenu :** 13 bets / 3 saisons — ROI +38.2 %, CalibrationErr 4.46 % (PASS), Brier 0.6566 (FAIL léger), overallVerdict FAIL technique mais acceptable.
+- ONE_X_TWO : 12 bets, 6W/6L, +49.7 % ROI — signal principal conservé.
+- AWAY [2.0-2.99] : 10 bets, 5W/5L, +40.1 % ROI — seul segment récurrent vraiment exploitable.
+- HOME : 1 bet, 0W/1L — laissé ouvert mais très contraint pour ne pas tuer un éventuel futur signal.
+- FIRST_HALF_WINNER : 1 bet, 0W/1L — bruit, insuffisant pour décider.
 
-- [ ] **D2-1** Désactiver complètement les picks AWAY en D2 (0W en backtest, gap confirmé en prod).
-- [ ] **D2-2** Réduire HOME_ADVANTAGE_LAMBDA_FACTOR pour D2 : la 2. Bundesliga est très équilibrée entre domicile/extérieur. Abaisser le facteur d'environ 0.08–0.12 points.
-- [ ] **D2-3** Augmenter EV threshold pour D2 HOME à 0.12. Moins de paris mais meilleure sélection.
-- [ ] **D2-4** Activer OVER_UNDER_HT pour D2 (2.61 buts/match, profil similaire à D1 — marchés MT non exploités).
+**Actions appliquées :**
+
+- [x] **D2-1** `PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP` D2 AWAY : 0.40 → 0.42.
+- [x] **D2-2** `PICK_MAX_SELECTION_ODDS_MAP` D2 AWAY cap 2.99 — élimine le faux EV au-dessus de 3.0.
+- [x] **D2-3** `getPickMinSelectionOdds()` D2 HOME maintenu à 3.00 — exclut le bucket 2.0-2.99 historiquement toxique sans éliminer totalement HOME.
+- [x] **D2-4** `PICK_EV_FLOOR_MAP` D2 HOME relevé à 0.12.
+- [x] **D2-5** `LEAGUE_HOME_ADVANTAGE_MAP` D2 fixé à 1.02 / 0.98 — un test à 1.01 / 0.99 a dégradé le Brier, donc revert.
+
+**Décision :**
+
+- [x] **D2-6** Geler D2 sur cette config. Le Brier reste légèrement au-dessus du seuil malgré plusieurs micro-ajustements de sélection/HA.
+- [ ] **D2-7** Revenir plus tard uniquement avec une recalibration modèle plus profonde si on veut faire passer le Brier sous 0.65.
 
 ---
 
