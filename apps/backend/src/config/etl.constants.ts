@@ -89,12 +89,32 @@ export const ETL_CONSTANTS = {
   THE_ODDS_API_RATE_LIMIT_MS: 500,
 } as const;
 
-// Sport keys used by The Odds API for UEFA competitions.
+// Sport keys used by The Odds API.
 // Used by the odds-historical-import worker.
 export const THE_ODDS_API_SPORT_KEYS = {
+  // UEFA
   UCL: 'soccer_uefa_champs_league',
   UEL: 'soccer_uefa_europa_league',
   UECL: 'soccer_uefa_europa_conference_league',
+  // Top 5 domestic leagues
+  PL: 'soccer_epl',
+  SA: 'soccer_italy_serie_a',
+  L1: 'soccer_france_ligue_one',
+  LL: 'soccer_spain_la_liga',
+  BL1: 'soccer_germany_bundesliga',
+  // Secondary domestic leagues
+  CH: 'soccer_efl_champ',
+  D2: 'soccer_germany_bundesliga2',
+  SP2: 'soccer_spain_segunda_division',
+  ERD: 'soccer_netherlands_eredivisie',
+  // Lower divisions
+  EL1: 'soccer_england_league1',
+  EL2: 'soccer_england_league2',
+  F2: 'soccer_france_ligue_two',
+  I2: 'soccer_italy_serie_b',
+  // International
+  J1: 'soccer_japan_j_league',
+  MX1: 'soccer_mexico_ligamx',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).

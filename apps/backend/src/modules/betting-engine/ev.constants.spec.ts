@@ -3,7 +3,11 @@ import Decimal from 'decimal.js';
 import {
   EV_THRESHOLD,
   getLeagueEvThreshold,
+  getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
+  getModelScoreThreshold,
+  getPickDirectionProbabilityThreshold,
+  getPickEvFloor,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
   MIN_DRAW_DIRECTION_PROBABILITY,
@@ -62,6 +66,38 @@ describe('MIN_DRAW_DIRECTION_PROBABILITY', () => {
   });
 });
 
+describe('getPickDirectionProbabilityThreshold', () => {
+  it('returns the tightened D2 AWAY override', () => {
+    expect(
+      getPickDirectionProbabilityThreshold(
+        'D2',
+        'ONE_X_TWO',
+        'AWAY',
+      ).toNumber(),
+    ).toBe(0.42);
+  });
+
+  it('returns the raised ERD HOME override', () => {
+    expect(
+      getPickDirectionProbabilityThreshold(
+        'ERD',
+        'ONE_X_TWO',
+        'HOME',
+      ).toNumber(),
+    ).toBe(0.6);
+  });
+});
+
+describe('getModelScoreThreshold', () => {
+  it('returns the raised ERD threshold', () => {
+    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.68);
+  });
+
+  it('returns the slightly raised EL2 threshold', () => {
+    expect(getModelScoreThreshold('EL2').toNumber()).toBe(0.5);
+  });
+});
+
 describe('getPickMinSelectionOdds', () => {
   it('keeps the broad Bundesliga floor at 2.00', () => {
     expect(getLeagueMinSelectionOdds('BL1').toNumber()).toBe(2);
@@ -70,9 +106,9 @@ describe('getPickMinSelectionOdds', () => {
     );
   });
 
-  it('raises the floor to 3.00 for Bundesliga 1X2 HOME picks', () => {
+  it('raises the floor to 5.00 for Bundesliga 1X2 HOME picks', () => {
     expect(getPickMinSelectionOdds('BL1', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
-      3,
+      5,
     );
   });
 
@@ -87,6 +123,12 @@ describe('getPickMinSelectionOdds', () => {
   it('raises the floor to 5.00 for Championship 1X2 HOME picks', () => {
     expect(getPickMinSelectionOdds('CH', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
       5,
+    );
+  });
+
+  it('raises the floor to 3.00 for D2 1X2 HOME picks', () => {
+    expect(getPickMinSelectionOdds('D2', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
+      3,
     );
   });
 
@@ -118,11 +160,101 @@ describe('getPickMaxSelectionOdds', () => {
     ).toBe(1.95);
   });
 
+  it('returns 2.99 ceiling for EL1 HT over 1.5', () => {
+    expect(
+      getPickMaxSelectionOdds('EL1', 'OVER_UNDER_HT', 'OVER_1_5')?.toNumber(),
+    ).toBe(2.99);
+  });
+
   it('returns 5.50 ceiling for PL 1X2 DRAW — raises the global 4.0 cap', () => {
     // Audit 2026-04-04: 164 rejected PL DRAW cases (odds > 4.0) showed sim
     // ROI +17.1%. Per-pick ceiling replaces the global MAX_SELECTION_ODDS cap.
     expect(getPickMaxSelectionOdds('PL', 'ONE_X_TWO', 'DRAW')?.toNumber()).toBe(
       5.5,
     );
+  });
+
+  it('returns 2.99 ceiling for D2 1X2 AWAY', () => {
+    expect(getPickMaxSelectionOdds('D2', 'ONE_X_TWO', 'AWAY')?.toNumber()).toBe(
+      2.99,
+    );
+  });
+
+  it('returns 2.99 ceiling for F2 1X2 HOME', () => {
+    expect(getPickMaxSelectionOdds('F2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
+      2.99,
+    );
+  });
+});
+
+describe('getLeagueHomeAwayFactors', () => {
+  it('returns the reduced home-advantage override for D2', () => {
+    expect(getLeagueHomeAwayFactors('D2')).toEqual([1.02, 0.98]);
+  });
+});
+
+describe('getPickEvFloor', () => {
+  it('returns a stronger EV floor for D2 1X2 HOME', () => {
+    expect(
+      getPickEvFloor('D2', 'ONE_X_TWO', 'HOME', new Decimal('0.08')).toNumber(),
+    ).toBe(0.12);
+  });
+
+  it('returns the raised EV floor for ERD 1X2 HOME', () => {
+    expect(
+      getPickEvFloor(
+        'ERD',
+        'ONE_X_TWO',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.15);
+  });
+
+  it('disables noisy EL2 side markets', () => {
+    expect(
+      getPickEvFloor(
+        'EL2',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.10'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL2',
+        'OVER_UNDER',
+        'OVER',
+        new Decimal('0.10'),
+      ).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables F2 DRAW and AWAY picks', () => {
+    expect(
+      getPickEvFloor('F2', 'ONE_X_TWO', 'DRAW', new Decimal('0.10')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('F2', 'ONE_X_TWO', 'AWAY', new Decimal('0.10')).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables ERD UNDER and OVER_1_5 HT picks', () => {
+    expect(
+      getPickEvFloor(
+        'ERD',
+        'OVER_UNDER',
+        'UNDER',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'ERD',
+        'OVER_UNDER_HT',
+        'OVER_1_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
   });
 });

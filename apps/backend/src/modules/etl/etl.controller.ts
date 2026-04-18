@@ -203,7 +203,7 @@ export class EtlController {
       'Enqueues the unified league-sync pipeline in sequence: fixtures → settlement → ' +
       'stats → injuries, then odds-csv → elo → odds-prematch → analysis. Routine fixtures/injuries ' +
       'runs target the current season; stats also targets the current season only. Settlement ' +
-      'refreshes only fixtures with pending bets/coupons. Use for initial backfill ' +
+      'refreshes only fixtures with pending bets. Use for initial backfill ' +
       'or after a long downtime.',
   })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
@@ -398,30 +398,6 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, seasons };
   }
 
-  @Post('sync/backtest')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger all-seasons backtest run',
-    description:
-      'Runs the full backtest across all included seasons and refreshes the cached validation report.',
-  })
-  async triggerBacktest() {
-    await this.etlService.triggerBacktestAllSeasons();
-    return { status: 'ok' as const };
-  }
-
-  @Post('sync/backtest/:seasonId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger one-season backtest run',
-    description:
-      'Runs a targeted backtest for one seasonId. Useful for investigation without recalculating all seasons.',
-  })
-  async triggerBacktestSeason(@Param('seasonId') seasonId: string) {
-    await this.etlService.triggerBacktestSeason(seasonId);
-    return { status: 'ok' as const, seasonId };
-  }
-
   @Post('sync/odds-retention')
   @UseGuards(AuthSessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -525,14 +501,21 @@ export class EtlController {
   }
 
   private resolveSeasonYears(seasonsParam: string | undefined): number[] {
+    console.log(seasonsParam, ' params ---');
     if (!seasonsParam?.trim()) {
       throw new BadRequestException(
         'seasons query param is required (e.g. ?seasons=2022,2023)',
       );
     }
-    const years = seasonsParam
+    const tokens = seasonsParam
+      .trim()
       .split(',')
-      .map((s) => Number.parseInt(s.trim(), 10));
+      .map((s) => s.trim());
+    const years = tokens.map((s) => {
+      if (!/^\d+$/.test(s)) return NaN;
+      return Number.parseInt(s, 10);
+    });
+
     if (years.some((y) => Number.isNaN(y) || y < 1900 || y > 2100)) {
       throw new BadRequestException(
         'seasons must be comma-separated valid years (e.g. ?seasons=2022,2023)',

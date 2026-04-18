@@ -4,7 +4,7 @@ Date: 2026-03-03
 
 ## Recommandation courte
 
-Pour ton modèle actuel (Poisson + EV + odds snapshots + coupon multi-jours), je recommande:
+Pour ton modèle actuel (Poisson + EV + odds snapshots), je recommande:
 
 1. Premier League (Angleterre) — `E0`
 2. Serie A (Italie) — `I1`
@@ -37,7 +37,7 @@ Pour ton modèle actuel (Poisson + EV + odds snapshots + coupon multi-jours), je
 4. Compatibilité forte avec ton modèle
 
 - Ton modèle dépend d'un volume stable de fixtures + odds + résultats.
-- Ces ligues offrent une cadence saisonnière régulière (août-mai), idéale pour rolling stats, calibration et coupon windows 2-3 jours.
+- Ces ligues offrent une cadence saisonnière régulière (août-mai), idéale pour rolling stats et calibration.
 
 5. Liquidité marché (pragmatique EV)
 
@@ -60,7 +60,7 @@ KPIs à suivre à chaque phase:
 
 - taux de jobs ETL réussis
 - taux de fixtures avec odds valides
-- délai moyen de génération coupon
+- délai moyen de génération des picks
 - ROI/Brier/Calibration par ligue
 
 ## Notes opérationnelles importantes

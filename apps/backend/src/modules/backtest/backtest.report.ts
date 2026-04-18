@@ -9,24 +9,13 @@ export type MetricResult = {
   verdict: ValidationVerdict;
 };
 
-export type CompetitionBacktestSummary = {
+export type CompetitionBacktestReport = {
   competitionId: string;
   competitionCode: string;
   competitionName: string;
-  seasonCount: number;
-  totalAnalyzed: number;
-  totalBets: number;
-  averageBrierScore: Decimal;
-  averageCalibrationError: Decimal;
-  aggregateRoi: Decimal;
-  aggregateProfit: Decimal;
-  averageEvSimulated: Decimal;
-  maxDrawdownSimulated: Decimal;
-  marketPerformance: BacktestMarketPerformance[];
-};
-
-export type AllSeasonsBacktestReport = {
+  seasonFilter: string | null;
   seasons: BacktestReport[];
+  seasonCount: number;
   totalFixtures: number;
   totalAnalyzed: number;
   totalBets: number;
@@ -35,21 +24,13 @@ export type AllSeasonsBacktestReport = {
   aggregateRoi: Decimal;
   aggregateProfit: Decimal;
   averageEvSimulated: Decimal;
-  byCompetition: CompetitionBacktestSummary[];
-  reportGeneratedAt: Date;
-};
-
-export type ValidationReport = {
+  maxDrawdownSimulated: Decimal;
   brierScore: MetricResult;
   calibrationError: MetricResult;
   roi: MetricResult;
-  totalAnalyzed: number;
-  totalBets: number;
-  aggregateProfit: Decimal;
-  averageEvSimulated: Decimal;
   overallVerdict: ValidationVerdict;
+  marketPerformance: BacktestMarketPerformance[];
   byMarket: ValidationMarketSummary[];
-  byCompetition: CompetitionBacktestSummary[];
   reportGeneratedAt: Date;
 };
 

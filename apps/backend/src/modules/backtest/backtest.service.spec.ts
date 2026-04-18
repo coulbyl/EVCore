@@ -311,7 +311,7 @@ describe('BacktestService', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Helpers shared across runAllSeasons / getValidationReport tests
+// Helpers shared across runCompetitionBacktest tests
 // ---------------------------------------------------------------------------
 
 function buildSeasonFixtureMock(seasonId: string) {
@@ -328,11 +328,18 @@ function buildSeasonFixtureMock(seasonId: string) {
   };
 }
 
-// 5 entries per team → satisfies MIN_PRIOR_TEAM_STATS for runAllSeasons tests
+// 5 entries per team → satisfies MIN_PRIOR_TEAM_STATS for competition tests
 const sharedTeamStats = [
   ...makeTeamStatsRows('h1', 5),
   ...makeTeamStatsRows('a1', 5),
 ];
+
+const defaultCompetition = {
+  id: 'c1',
+  code: 'EPL',
+  name: 'Premier League',
+  includeInBacktest: true,
+};
 
 function makeBettingMock(): BettingEngineService {
   return {
@@ -370,20 +377,17 @@ function makeBettingMock(): BettingEngineService {
   } as unknown as BettingEngineService;
 }
 
-describe('BacktestService.runAllSeasons', () => {
-  it('aggregates reports from all seasons in the DB', async () => {
+describe('BacktestService.runCompetitionBacktest', () => {
+  it('aggregates reports from all seasons of one competition', async () => {
     const prismaMock = {
       client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
         season: {
           findMany: vi.fn().mockResolvedValue([
-            {
-              id: 's1',
-              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
-            },
-            {
-              id: 's2',
-              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
-            },
+            { id: 's1', name: '2022-23' },
+            { id: 's2', name: '2023-24' },
           ]),
         },
         fixture: {
@@ -400,49 +404,102 @@ describe('BacktestService.runAllSeasons', () => {
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-    const report = await service.runAllSeasons();
+    const report = await service.runCompetitionBacktest('EPL');
 
+    expect(report.competitionCode).toBe('EPL');
+    expect(report.seasonFilter).toBeNull();
     expect(report.seasons).toHaveLength(2);
     expect(report.totalFixtures).toBe(2);
     expect(report.totalAnalyzed).toBe(2);
     expect(report.averageBrierScore).toBeInstanceOf(Decimal);
     // No odds → no bets → aggregate ROI = 0
     expect(report.aggregateRoi.toNumber()).toBeCloseTo(0, 6);
+    // Under MIN_FIXTURES_FOR_VALIDATION → verdicts are INSUFFICIENT_DATA
+    expect(report.overallVerdict).toBe('INSUFFICIENT_DATA');
   });
 
-  it('returns zero metrics when no seasons exist', async () => {
+  it('throws when the competition code is unknown', async () => {
     const prismaMock = {
       client: {
+        competition: { findUnique: vi.fn().mockResolvedValue(null) },
+        season: { findMany: vi.fn() },
+        fixture: { findMany: vi.fn() },
+        teamStats: { findMany: vi.fn() },
+        oddsSnapshot: { findMany: vi.fn() },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    await expect(service.runCompetitionBacktest('UNKNOWN')).rejects.toThrow(
+      /Competition not found/,
+    );
+  });
+
+  it('throws when no season matches the competition', async () => {
+    const prismaMock = {
+      client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
         season: { findMany: vi.fn().mockResolvedValue([]) },
-        fixture: { findMany: vi.fn().mockResolvedValue([]) },
-        teamStats: { findMany: vi.fn().mockResolvedValue([]) },
+        fixture: { findMany: vi.fn() },
+        teamStats: { findMany: vi.fn() },
+        oddsSnapshot: { findMany: vi.fn() },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    await expect(service.runCompetitionBacktest('EPL')).rejects.toThrow(
+      /No season found/,
+    );
+  });
+
+  it('narrows to a single season when seasonName is provided', async () => {
+    const seasonFindMany = vi
+      .fn()
+      .mockResolvedValue([{ id: 's2', name: '2023-24' }]);
+
+    const prismaMock = {
+      client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
+        season: { findMany: seasonFindMany },
+        fixture: {
+          findMany: vi.fn().mockResolvedValue([buildSeasonFixtureMock('s2')]),
+        },
+        teamStats: { findMany: vi.fn().mockResolvedValue(sharedTeamStats) },
         oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
       },
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-    const report = await service.runAllSeasons();
+    const report = await service.runCompetitionBacktest('EPL', '2023-24');
 
-    expect(report.seasons).toHaveLength(0);
-    expect(report.totalFixtures).toBe(0);
-    expect(report.totalAnalyzed).toBe(0);
-    expect(report.averageBrierScore.toNumber()).toBe(0);
-    expect(report.aggregateRoi.toNumber()).toBe(0);
+    expect(seasonFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ name: '2023-24' }),
+      }),
+    );
+    expect(report.seasonFilter).toBe('2023-24');
+    expect(report.seasons).toHaveLength(1);
   });
 
-  it('computes competition aggregate ROI from total profit and total bets', async () => {
+  it('computes aggregate ROI from total profit and total bets', async () => {
     const prismaMock = {
       client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'c1',
+            code: 'CH',
+            name: 'Championship',
+            includeInBacktest: true,
+          }),
+        },
         season: {
           findMany: vi.fn().mockResolvedValue([
-            {
-              id: 's1',
-              competition: { id: 'c1', code: 'CH', name: 'Championship' },
-            },
-            {
-              id: 's2',
-              competition: { id: 'c1', code: 'CH', name: 'Championship' },
-            },
+            { id: 's1', name: '2022-23' },
+            { id: 's2', name: '2023-24' },
           ]),
         },
       },
@@ -509,27 +566,23 @@ describe('BacktestService.runAllSeasons', () => {
         reportGeneratedAt: new Date(),
       });
 
-    const report = await service.runAllSeasons();
+    const report = await service.runCompetitionBacktest('CH');
 
     expect(report.aggregateProfit.toNumber()).toBeCloseTo(3, 6);
     expect(report.aggregateRoi.toNumber()).toBeCloseTo(3 / 35, 6);
-    expect(report.byCompetition).toHaveLength(1);
-    expect(report.byCompetition[0].aggregateProfit.toNumber()).toBeCloseTo(
-      3,
-      6,
-    );
-    expect(report.byCompetition[0].aggregateRoi.toNumber()).toBeCloseTo(
-      3 / 35,
-      6,
-    );
+    expect(report.competitionCode).toBe('CH');
+    expect(report.seasonCount).toBe(2);
   });
-});
 
-describe('BacktestService.getValidationReport', () => {
   it('returns INSUFFICIENT_DATA when analyzed fixture count is below minimum', async () => {
     const prismaMock = {
       client: {
-        season: { findMany: vi.fn().mockResolvedValue([]) },
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
         fixture: { findMany: vi.fn().mockResolvedValue([]) },
         teamStats: { findMany: vi.fn().mockResolvedValue([]) },
         oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
@@ -537,7 +590,7 @@ describe('BacktestService.getValidationReport', () => {
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-    const report = await service.getValidationReport();
+    const report = await service.runCompetitionBacktest('EPL');
 
     expect(report.overallVerdict).toBe('INSUFFICIENT_DATA');
     expect(report.brierScore.verdict).toBe('INSUFFICIENT_DATA');
@@ -551,113 +604,116 @@ describe('BacktestService.getValidationReport', () => {
   it('returns PASS when all metrics are within MVP thresholds', async () => {
     const prismaMock = {
       client: {
-        season: { findMany: vi.fn().mockResolvedValue([{ id: 's1' }]) },
-        fixture: { findMany: vi.fn() },
-        teamStats: { findMany: vi.fn() },
-        oddsSnapshot: { findMany: vi.fn() },
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
       },
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-
-    vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
-      seasons: [],
-      totalFixtures: 100,
-      totalAnalyzed: 100,
-      totalBets: 25,
-      averageBrierScore: new Decimal('0.20'),
-      averageCalibrationError: new Decimal('0.03'),
-      aggregateRoi: new Decimal('0.05'),
-      aggregateProfit: new Decimal('1.25'),
+    vi.spyOn(service, 'runBacktest').mockResolvedValue({
+      seasonId: 's1',
+      fixtureCount: 100,
+      analyzedCount: 100,
+      skippedCount: 0,
+      brierScore: new Decimal('0.20'),
+      calibrationError: new Decimal('0.03'),
+      roiSimulated: new Decimal('0.05'),
+      maxDrawdownSimulated: new Decimal('2'),
       averageEvSimulated: new Decimal('0.12'),
-      byCompetition: [],
+      marketPerformance: [
+        {
+          market: Market.ONE_X_TWO,
+          betsPlaced: 25,
+          wins: 13,
+          losses: 12,
+          voids: 0,
+          stake: new Decimal('25'),
+          profit: new Decimal('1.25'),
+          roi: new Decimal('0.05'),
+          averageOdds: new Decimal('2.1'),
+          averageEv: new Decimal('0.12'),
+          maxDrawdown: new Decimal('2'),
+          pickBreakdown: [],
+          oddsBuckets: [],
+        },
+      ],
       reportGeneratedAt: new Date(),
     });
 
-    const report = await service.getValidationReport();
+    const report = await service.runCompetitionBacktest('EPL');
 
     expect(report.overallVerdict).toBe('PASS');
     expect(report.brierScore.verdict).toBe('PASS');
     expect(report.calibrationError.verdict).toBe('PASS');
     expect(report.roi.verdict).toBe('PASS');
-    expect(report.byMarket).toEqual([]);
     expect(report.brierScore.threshold).toEqual(
       BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
     );
   });
 
-  it('builds byMarket validation summaries with ROI verdicts', async () => {
+  it('builds byMarket summaries with ROI verdicts', async () => {
     const prismaMock = {
       client: {
-        season: { findMany: vi.fn().mockResolvedValue([{ id: 's1' }]) },
-        fixture: { findMany: vi.fn() },
-        teamStats: { findMany: vi.fn() },
-        oddsSnapshot: { findMany: vi.fn() },
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
       },
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-
-    vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
-      seasons: [
+    vi.spyOn(service, 'runBacktest').mockResolvedValue({
+      seasonId: 's1',
+      fixtureCount: 100,
+      analyzedCount: 100,
+      skippedCount: 0,
+      brierScore: new Decimal('0.20'),
+      calibrationError: new Decimal('0.03'),
+      roiSimulated: new Decimal('0.05'),
+      maxDrawdownSimulated: new Decimal('2'),
+      averageEvSimulated: new Decimal('0.18'),
+      marketPerformance: [
         {
-          seasonId: 's1',
-          fixtureCount: 100,
-          analyzedCount: 100,
-          skippedCount: 0,
-          brierScore: new Decimal('0.20'),
-          calibrationError: new Decimal('0.03'),
-          roiSimulated: new Decimal('0.05'),
-          maxDrawdownSimulated: new Decimal('2'),
-          averageEvSimulated: new Decimal('0.18'),
-          marketPerformance: [
-            {
-              market: Market.OVER_UNDER,
-              betsPlaced: 12,
-              wins: 7,
-              losses: 5,
-              voids: 0,
-              stake: new Decimal('12'),
-              profit: new Decimal('1.8'),
-              roi: new Decimal('0.15'),
-              averageOdds: new Decimal('2.15'),
-              averageEv: new Decimal('0.17'),
-              maxDrawdown: new Decimal('2'),
-              pickBreakdown: [],
-              oddsBuckets: [],
-            },
-            {
-              market: Market.HALF_TIME_FULL_TIME,
-              betsPlaced: 3,
-              wins: 1,
-              losses: 2,
-              voids: 0,
-              stake: new Decimal('3'),
-              profit: new Decimal('-0.5'),
-              roi: new Decimal('-0.1666666667'),
-              averageOdds: new Decimal('3.5'),
-              averageEv: new Decimal('0.11'),
-              maxDrawdown: new Decimal('1'),
-              pickBreakdown: [],
-              oddsBuckets: [],
-            },
-          ],
-          reportGeneratedAt: new Date(),
+          market: Market.OVER_UNDER,
+          betsPlaced: 12,
+          wins: 7,
+          losses: 5,
+          voids: 0,
+          stake: new Decimal('12'),
+          profit: new Decimal('1.8'),
+          roi: new Decimal('0.15'),
+          averageOdds: new Decimal('2.15'),
+          averageEv: new Decimal('0.17'),
+          maxDrawdown: new Decimal('2'),
+          pickBreakdown: [],
+          oddsBuckets: [],
+        },
+        {
+          market: Market.HALF_TIME_FULL_TIME,
+          betsPlaced: 3,
+          wins: 1,
+          losses: 2,
+          voids: 0,
+          stake: new Decimal('3'),
+          profit: new Decimal('-0.5'),
+          roi: new Decimal('-0.1666666667'),
+          averageOdds: new Decimal('3.5'),
+          averageEv: new Decimal('0.11'),
+          maxDrawdown: new Decimal('1'),
+          pickBreakdown: [],
+          oddsBuckets: [],
         },
       ],
-      totalFixtures: 100,
-      totalAnalyzed: 100,
-      totalBets: 15,
-      averageBrierScore: new Decimal('0.20'),
-      averageCalibrationError: new Decimal('0.03'),
-      aggregateRoi: new Decimal('0.0866666667'),
-      aggregateProfit: new Decimal('1.3'),
-      averageEvSimulated: new Decimal('0.158'),
-      byCompetition: [],
       reportGeneratedAt: new Date(),
     });
 
-    const report = await service.getValidationReport();
+    const report = await service.runCompetitionBacktest('EPL');
 
     expect(report.byMarket).toHaveLength(2);
     expect(report.byMarket[0]).toMatchObject({
@@ -674,97 +730,89 @@ describe('BacktestService.getValidationReport', () => {
     expect(report.byMarket[1]?.roi.verdict).toBe('PASS');
   });
 
-  it('reuses the cached all-seasons report when validation is requested twice', async () => {
-    const prismaMock = {
-      client: {
-        season: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              id: 's1',
-              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
-            },
-          ]),
-        },
-        fixture: {
-          findMany: vi.fn().mockResolvedValue([buildSeasonFixtureMock('s1')]),
-        },
-        teamStats: {
-          findMany: vi.fn().mockResolvedValue(sharedTeamStats),
-        },
-        oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
-      },
-    } as unknown as PrismaService;
-
-    const service = new BacktestService(prismaMock, makeBettingMock());
-
-    await service.getValidationReport();
-    await service.getValidationReport();
-
-    expect(prismaMock.client.season.findMany).toHaveBeenCalledTimes(1);
-    expect(prismaMock.client.fixture.findMany).toHaveBeenCalledTimes(1);
-  });
-
-  it('refreshValidationReport recomputes all seasons and updates the cache', async () => {
-    const prismaMock = {
-      client: {
-        season: {
-          findMany: vi.fn().mockResolvedValue([
-            {
-              id: 's1',
-              competition: { id: 'c1', code: 'EPL', name: 'Premier League' },
-            },
-          ]),
-        },
-        fixture: {
-          findMany: vi.fn().mockResolvedValue([buildSeasonFixtureMock('s1')]),
-        },
-        teamStats: {
-          findMany: vi.fn().mockResolvedValue(sharedTeamStats),
-        },
-        oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
-      },
-    } as unknown as PrismaService;
-
-    const service = new BacktestService(prismaMock, makeBettingMock());
-
-    const report = await service.refreshValidationReport();
-
-    expect(report).toEqual(service.getLatestValidationReport());
-    expect(service.getLatestAllSeasonsReport()).not.toBeNull();
-  });
-
   it('returns FAIL when Brier Score exceeds threshold', async () => {
     const prismaMock = {
       client: {
-        season: { findMany: vi.fn().mockResolvedValue([{ id: 's1' }]) },
-        fixture: { findMany: vi.fn() },
-        teamStats: { findMany: vi.fn() },
-        oddsSnapshot: { findMany: vi.fn() },
+        competition: {
+          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
       },
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-
-    vi.spyOn(service, 'runAllSeasons').mockResolvedValue({
-      seasons: [],
-      totalFixtures: 100,
-      totalAnalyzed: 100,
-      totalBets: 25,
-      averageBrierScore: new Decimal('0.70'), // above 0.65 threshold → FAIL
-      averageCalibrationError: new Decimal('0.03'),
-      aggregateRoi: new Decimal('0.05'),
-      aggregateProfit: new Decimal('1.25'),
+    vi.spyOn(service, 'runBacktest').mockResolvedValue({
+      seasonId: 's1',
+      fixtureCount: 100,
+      analyzedCount: 100,
+      skippedCount: 0,
+      brierScore: new Decimal('0.70'), // above 0.65 threshold → FAIL
+      calibrationError: new Decimal('0.03'),
+      roiSimulated: new Decimal('0.05'),
+      maxDrawdownSimulated: new Decimal('2'),
       averageEvSimulated: new Decimal('0.12'),
-      byCompetition: [],
+      marketPerformance: [
+        {
+          market: Market.ONE_X_TWO,
+          betsPlaced: 25,
+          wins: 13,
+          losses: 12,
+          voids: 0,
+          stake: new Decimal('25'),
+          profit: new Decimal('1.25'),
+          roi: new Decimal('0.05'),
+          averageOdds: new Decimal('2.1'),
+          averageEv: new Decimal('0.12'),
+          maxDrawdown: new Decimal('2'),
+          pickBreakdown: [],
+          oddsBuckets: [],
+        },
+      ],
       reportGeneratedAt: new Date(),
     });
 
-    const report = await service.getValidationReport();
+    const report = await service.runCompetitionBacktest('EPL');
 
     expect(report.overallVerdict).toBe('FAIL');
     expect(report.brierScore.verdict).toBe('FAIL');
     expect(report.calibrationError.verdict).toBe('PASS');
     expect(report.roi.verdict).toBe('PASS');
-    expect(report.byMarket).toEqual([]);
+  });
+});
+
+describe('BacktestService.runAllCompetitions', () => {
+  it('runs one report per competition flagged for backtest', async () => {
+    const prismaMock = {
+      client: {
+        competition: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([{ code: 'EPL' }, { code: 'CH' }]),
+          findUnique: vi
+            .fn()
+            .mockResolvedValueOnce(defaultCompetition)
+            .mockResolvedValueOnce({
+              id: 'c2',
+              code: 'CH',
+              name: 'Championship',
+              includeInBacktest: true,
+            }),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
+        fixture: { findMany: vi.fn().mockResolvedValue([]) },
+        teamStats: { findMany: vi.fn().mockResolvedValue([]) },
+        oddsSnapshot: { findMany: vi.fn().mockResolvedValue([]) },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    const reports = await service.runAllCompetitions();
+
+    expect(reports).toHaveLength(2);
+    expect(reports.map((r) => r.competitionCode)).toEqual(['EPL', 'CH']);
   });
 });

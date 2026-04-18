@@ -71,6 +71,15 @@ type HasOneXTwoOddsSnapshotInput = {
   snapshotAt: Date;
 };
 
+type UpsertOverUnderOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  over: number;
+  under: number;
+  source?: OddsSnapshotSource;
+};
+
 type FindByDateAndTeamsInput = {
   date: Date;
   homeTeamName: string;
@@ -290,6 +299,12 @@ export class FixtureService {
     data: UpsertOneXTwoOddsSnapshotInput,
   ): Promise<{ id: string }> {
     return this.fixtureRepository.upsertOneXTwoOddsSnapshot(data);
+  }
+
+  async upsertOverUnderOddsSnapshot(
+    data: UpsertOverUnderOddsSnapshotInput,
+  ): Promise<void> {
+    return this.fixtureRepository.upsertOverUnderOddsSnapshot(data);
   }
 
   async hasOneXTwoOddsSnapshot(

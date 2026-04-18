@@ -32,9 +32,15 @@ const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
 // Keys: "${competitionCode}|${market}|${pick}"
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04: rejected D2 1X2 AWAY picks failing only the probability
-  // gate were strongly profitable in backtest (+15.9% ROI on 131 picks). Relax
-  // only this branch instead of lowering the global floor.
-  'D2|ONE_X_TWO|AWAY': new Decimal('0.40'),
+  // gate were strongly profitable in backtest (+15.9% ROI on 131 picks), so the
+  // branch was initially relaxed to 0.40. Backtest 2026-04-18 still clears ROI
+  // after odds caps and HA correction but remains slightly over-confident on Brier;
+  // tighten modestly to 0.42 rather than reverting to the global 0.45.
+  'D2|ONE_X_TWO|AWAY': new Decimal('0.42'),
+  // Backtest 2026-04-18: ERD only places HOME picks and they all sit in the
+  // 2.0-2.99 bucket at 2W/5, -14.4% ROI. Raise the directional confidence bar
+  // before allowing another Eredivisie home favorite at mid-range odds.
+  'ERD|ONE_X_TWO|HOME': new Decimal('0.60'),
   // Audit 2026-04-04: EL1 HOME is structurally miscalibrated — model over-estimates
   // P(home win) by ~15pp. Raising the probability gate reduces exposure to the
   // over-confident sub-population where EV > 0.25 but actual ROI is -32%.
@@ -155,17 +161,17 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
-  // Bundesliga 1X2 HOME picks remained structurally unprofitable across floor
-  // sweeps at 2.10 / 2.25 / 2.40. The toxic segment is specifically HOME in the
-  // 2.0-2.99 bucket, so keep the league floor broad and harden only this pick.
+  // Backtest 2026-04-18: BL1 HOME [3.0-4.99] → 1W/9L across 3 seasons after lowering
+  // MODEL_SCORE_THRESHOLD to 0.50. Previously floored at 3.00 (sweeps at 2.10/2.25/2.40
+  // also failed). Pattern matches CH HOME — raise to 5.00 to eliminate the segment.
   if (competitionCode === 'BL1' && market === 'ONE_X_TWO' && pick === 'HOME') {
-    return Decimal.max(leagueFloor, new Decimal('3.00'));
+    return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
-  // Audit 2026-04-04 (initial): D2 1X2 HOME picks were structurally negative in
-  // the 2.0-2.99 bucket (-15.3% ROI on 32 bets). Floor raised to 2.50.
-  // Audit 2026-04-04 (post-patch): remaining 7 bets had avg odds 2.72, still
-  // -62.1% ROI. Pattern matches CH HOME and BL1 HOME — raise to 3.00 for parity.
+  // Backtest 2026-04-18: D2 HOME remaining bets sit at 3.05 and 3.21 after the
+  // earlier 3.00 floor, both losses. Keep the 3.00 odds guard to exclude the
+  // structurally bad 2.0-2.99 bucket, but do not fully eliminate HOME so a future
+  // high-conviction sub-segment can still surface once calibration improves.
   if (competitionCode === 'D2' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
@@ -185,6 +191,12 @@ export function getPickMinSelectionOdds(
   // Probability gate 0.50 (above) tested as alternative — same 0-bet outcome confirmed.
   if (competitionCode === 'I2' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('2.50'));
+  }
+
+  // Backtest 2026-04-18: SA HOME [2.0-2.99] → 5 bets, 2W/3L, -16.6% ROI.
+  // Same over-confidence pattern as BL1/CH/D2/PL HOME on mid-range odds.
+  if (competitionCode === 'SA' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
 
   // Audit 2026-04-04: CH AWAY placed was -15.9% ROI across 18 bets. The only
@@ -235,7 +247,9 @@ export const UNDER_HIGH_LAMBDA_EV_FLOOR = new Decimal('0.20');
 export const LAMBDA_SHRINKAGE_FACTOR = 0.7;
 
 const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
-  BL1: 1.574,
+  // Raised 1.574 → 1.70: prod measurement 3.39 goals/match = 1.695/team.
+  // Shrinkage anchor at 1.574 underestimated P(over 2.5) by ~2pp on average.
+  BL1: 1.7,
   CH: 1.263,
   L1: 1.431,
   LL: 1.298,
@@ -250,9 +264,10 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   ERD: 1.75,
   // I2: Serie B mean lambda computed from team_stats (2,197 records, April 2026).
   // Without this entry the default (1.4) underestimates goal rate — same miscalibration
-  // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
-  // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
-  I2: 1.56,
+  // pattern as ERD. Correcting to 1.56 reduced HOME bias but left Brier at 0.669 (barely
+  // above random 0.667). Lowered 1.56 → 1.45 to reduce over-confidence via less extreme
+  // Poisson probabilities (2026-04-18).
+  I2: 1.45,
   // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
   // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
   // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
@@ -297,6 +312,11 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 // to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
+  // D2: 2. Bundesliga is one of the most balanced domestic leagues in the pool.
+  // Backtest 2026-04-18 improved selection quality after odds caps + tighter
+  // probability gate, but a further HA reduction to 1.01/0.99 worsened Brier.
+  // Keep the milder override at 1.02/0.98 as the best observed compromise.
+  D2: [1.02, 0.98],
   I2: [1.02, 0.98],
   // European competitions: home advantage is structurally lower than domestic
   // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
@@ -327,8 +347,14 @@ const MODEL_SCORE_THRESHOLD_DEFAULT = new Decimal('0.60');
 const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier A — efficient markets
   PL: new Decimal('0.58'),
-  SA: new Decimal('0.60'),
-  BL1: new Decimal('0.55'),
+  // Lowered 0.60 → 0.55: 730/929 fixtures (78%) were skipped — SA tactical style produces
+  // max_prob 0.52-0.57 on balanced matches. Combined with HOME floor 3.00 + UNDER eliminated,
+  // newly unlocked fixtures feed better-filtered picks.
+  SA: new Decimal('0.55'),
+  // Lowered 0.55 → 0.50: balanced BL1 fixtures (max_prob ~0.45-0.55) were
+  // entirely skipped before OVER_UNDER evaluation. BL1 has 3.39 goals/match
+  // (67% over 2.5) — OVER picks need to enter the evaluation loop.
+  BL1: new Decimal('0.50'),
   // Audit 2026-04-05: 0.58 → 0.55 tested — 10 new bets, -5.94u net regression.
   // Newly unlocked fixtures [0.55-0.58) generate false EV at [3.0-4.99] odds
   // (4 new bets, 4 losses, -4u). Threshold 0.58 is the correct filter for LL.
@@ -337,18 +363,25 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   L1: new Decimal('0.58'),
   J1: new Decimal('0.55'),
   MX1: new Decimal('0.55'),
+  // Backtest 2026-04-18: ERD passes Brier and calibration but fails ROI on a tiny
+  // set of mid-range HOME picks. Raise the fixture-quality bar before selection.
+  ERD: new Decimal('0.68'),
   // Tier B — secondary / lower-division markets
   CH: new Decimal('0.50'),
   D2: new Decimal('0.55'),
   F2: new Decimal('0.58'),
   SP2: new Decimal('0.62'),
-  // Lowered 0.75 → 0.60 (audit 2026-04-05): root cause of HOME miscalibration
-  // identified as HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05 being too high for Serie B
-  // (22-team balanced division, ~44% real home win rate). Per-league HA factor
-  // corrected to 1.02/0.98 via getLeagueHomeAwayFactors(). Threshold back to Tier B.
-  I2: new Decimal('0.60'),
+  // Lowered 0.75 → 0.60 (audit 2026-04-05): HA factor corrected to 1.02/0.98.
+  // Lowered 0.60 → 0.50 (2026-04-18): ndjson audit shows 836/1120 fixtures blocked
+  // with scores 0.29–0.60. I2 is structurally the most balanced league in the system
+  // (22 teams, high parity) — max(P) rarely exceeds 0.60, threshold must match reality.
+  I2: new Decimal('0.50'),
   EL1: new Decimal('0.50'),
-  EL2: new Decimal('0.45'),
+  // Backtest 2026-04-18: EL2 has strong ROI but fails Brier by a hair (0.6508).
+  // The issue is the massive 1X2 volume in the 2.0-2.99 bucket (155 bets, ROI +7%),
+  // not the profitable 3.0-4.99 sub-segment or HT over 1.5. 0.48 improved ROI and
+  // reduced volume without moving Brier; test 0.50 as the next small step.
+  EL2: new Decimal('0.50'),
   // Tier C — European competitions
   // Lower threshold reflects sparse early-season stats and cross-competition
   // stat blending which produces less certain deterministic scores.
@@ -483,12 +516,49 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04 (post-patch): EL2 DRAW — 3 bets, -100%, avg EV 0.123.
   // Borderline quality with no profitable signal.
   'EL2|ONE_X_TWO|DRAW': new Decimal('0.18'),
+  // Backtest 2026-04-18: EL2 had a single FIRST_HALF_WINNER AWAY bet, 0W/1L.
+  // No evidence of a usable edge; remove the noise before tuning the main market.
+  'EL2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-18: EL2 OVER surfaced once at 2.15 and lost. Keep EL2 totals
+  // focus on the profitable HT over 1.5 signal instead of sparse full-time OVER.
+  'EL2|OVER_UNDER|OVER': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): F2 DRAW — 4 bets, -100%, EV 0.10–0.33.
   // All four outcomes were losses across a wide EV range — no usable edge.
-  'F2|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  'F2|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-18: F2 AWAY surfaced twice and lost twice at avg odds 4.41
+  // with inflated EV. No evidence of a viable away signal — remove it for now.
+  'F2|ONE_X_TWO|AWAY': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): PL HOME — EV [0.12–0.20) → -38.9% on 7 bets.
   // Paired with soft cap at 0.40, this creates a [0.20, 0.40) window (+9.6% on 9 bets).
   'PL|ONE_X_TWO|HOME': new Decimal('0.20'),
+  // Backtest 2026-04-18: D2 HOME should remain observable, but only with stronger
+  // signal than the league default. Pair with the 3.00 odds floor and reduced HA.
+  'D2|ONE_X_TWO|HOME': new Decimal('0.12'),
+  // Backtest 2026-04-18: ERD HOME at odds 2.02-2.36 goes 2W/5 with avg EV 0.184
+  // and negative ROI. Keep the market alive but require a stronger edge signal.
+  'ERD|ONE_X_TWO|HOME': new Decimal('0.15'),
+  // Backtest 2026-04-18: ERD UNDER surfaced once at 3.39 and lost. High Eredivisie
+  // goal environment plus dominant teams make model-derived UNDER value suspect.
+  'ERD|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-18: ERD OVER_1_5 HT surfaced once and lost; the market is too
+  // sparse and noisy to keep in scope while fixing ROI. Disable for now.
+  'ERD|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
+  // Floor 0.12 retains only picks with stronger model confidence.
+  'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
+  // Backtest 2026-04-18: SA DRAW >=5.0 — 3 bets, 0W/3L after threshold lowered to 0.55.
+  // Model over-confidence on draw outcomes in a balanced tactical league. Eliminate.
+  'SA|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-18: SA UNDER — 9 bets, 3W/6L, -34.9% ROI. Model lambda SA=1.247
+  // places P(under 2.5) ~54% but actual win rate is 33% — systematic overconfidence.
+  // SA sits at the over/under boundary (2.49 avg goals); no reliable UNDER edge exists.
+  // Floor 0.99 effectively eliminates all SA UNDER picks.
+  'SA|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-18: I2 ONE_X_TWO is structurally broken — AWAY 30b 8W/22L avg EV
+  // 0.517 (over-confidence), HOME 6b 1W/5L -57.5%. Only OVER_UNDER OVER is profitable
+  // (15b, 9W/6L, +22.9%). Eliminate both 1X2 directions to isolate the OVER signal.
+  'I2|ONE_X_TWO|AWAY': new Decimal('0.99'),
+  'I2|ONE_X_TWO|HOME': new Decimal('0.99'),
 };
 
 // eslint-disable-next-line max-params
@@ -523,12 +593,26 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // profitable segment is short-odds favorites (< 1.95), not medium-priced ones.
   // Combined with floor lowered to 1.50, this creates a [1.50, 1.95) window.
   'SP2|ONE_X_TWO|HOME': new Decimal('1.95'),
+  // Backtest 2026-04-18 plus prod dashboard: EL1 HT over 1.5 is pulled down by
+  // the 3.0-4.99 slice (0W/3 in backtest), while 2.0-2.99 remains positive.
+  // Keep the market alive, but cap the long half-time prices.
+  'EL1|OVER_UNDER_HT|OVER_1_5': new Decimal('2.99'),
   // Audit 2026-04-04: PL DRAW was entirely blocked by the global MAX_SELECTION_ODDS
   // cap (4.0) — 164 rejected cases showed sim ROI +17.1% at EV >= 0.08. The sole
   // allowed DRAW (3.91, below cap) won at +2.91 profit. Raise the ceiling to 5.50
   // to admit the profitable > 4.0 segment. When a per-pick max is set it replaces
   // the global cap (see getPickRejectionReason), so this entry is authoritative.
   'PL|ONE_X_TWO|DRAW': new Decimal('5.50'),
+  // Backtest 2026-04-18: BL1 AWAY at [3.0-4.99] → 1W-6L, -54% ROI across 3 seasons.
+  // AWAY at [2.0-2.99] was 2W-0L. Cap at 2.99 to eliminate the losing segment.
+  'BL1|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // Backtest 2026-04-18: D2 AWAY is only break-even overall thanks to one 4.00 hit.
+  // The actual profitable window is [2.0-2.99] at 4W/7 and +57.7% ROI, while
+  // [3.0-4.99] goes 2W/10 with -20.5% ROI and >=5.0 is 0W/1. Cap at 2.99.
+  'D2|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // Backtest 2026-04-18: F2 HOME remains slightly positive overall, but every HOME
+  // pick above 3.0 lost. Keep the short/medium home favorites and cut the long tail.
+  'F2|ONE_X_TWO|HOME': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(
@@ -544,7 +628,7 @@ export function getPickMaxSelectionOdds(
 //
 // A secondary pick-selection channel that targets high-probability single-market
 // bets (P ≥ 68%) with non-negative EV — distinct from the EV-primary channel.
-// Safe value picks are assembled into a separate SAFE coupon (max 2 legs).
+// Safe value picks are published alongside the EV pick as a separate "safe" channel.
 // These constants define the eligibility window for the safe value pool.
 
 // Minimum probability for a safe value pick (strict — P < 0.68 is excluded).

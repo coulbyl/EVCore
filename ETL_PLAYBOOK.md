@@ -4,7 +4,7 @@ Backend : `http://localhost:3001`
 
 ---
 
-## Préparer une compétition pour le coupon
+## Préparer une compétition pour la génération de picks
 
 Ordre strict. Chaque étape dépend de la précédente.
 
@@ -13,7 +13,7 @@ POST /etl/sync/fixtures/:code
 POST /etl/sync/stats/:code
 POST /etl/sync/rolling-stats/:code/:season
 POST /etl/sync/odds-prematch
-POST /coupon/generate-tomorrow
+POST /betting-engine/run-tomorrow
 ```
 
 Remplacer `:code` par le code compétition (`WCQE`, `PL`, `UNL`, etc.) et `:season` par l'année de saison (`2024`, `2025`…).
