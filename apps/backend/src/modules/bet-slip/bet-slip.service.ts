@@ -9,6 +9,7 @@ import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
+import { BankrollService } from '@modules/bankroll/bankroll.service';
 import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
@@ -32,6 +33,7 @@ export class BetSlipService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repository: BetSlipRepository,
+    private readonly bankroll: BankrollService,
   ) {}
 
   async create(userId: string, input: CreateBetSlipDto): Promise<BetSlipView> {
@@ -222,30 +224,45 @@ export class BetSlipService {
       });
 
       // Créer les BetSlipItems
+      const betSlipItemsData = [
+        ...modelPickItems.map((item) => ({
+          betSlipId: betSlip.id,
+          userId,
+          betId: item.betId!,
+          fixtureId: modelBetById.get(item.betId!)!.fixtureId,
+          stakeOverride:
+            item.stakeOverride !== undefined
+              ? new Prisma.Decimal(item.stakeOverride)
+              : null,
+        })),
+        ...userBetItems.map(({ betId, fixtureId, stakeOverride }) => ({
+          betSlipId: betSlip.id,
+          userId,
+          betId,
+          fixtureId,
+          stakeOverride:
+            stakeOverride !== undefined
+              ? new Prisma.Decimal(stakeOverride)
+              : null,
+        })),
+      ];
+
       await tx.betSlipItem.createMany({
-        data: [
-          ...modelPickItems.map((item) => ({
-            betSlipId: betSlip.id,
-            userId,
-            betId: item.betId!,
-            fixtureId: modelBetById.get(item.betId!)!.fixtureId,
-            stakeOverride:
-              item.stakeOverride !== undefined
-                ? new Prisma.Decimal(item.stakeOverride)
-                : null,
-          })),
-          ...userBetItems.map(({ betId, fixtureId, stakeOverride }) => ({
-            betSlipId: betSlip.id,
-            userId,
-            betId,
-            fixtureId,
-            stakeOverride:
-              stakeOverride !== undefined
-                ? new Prisma.Decimal(stakeOverride)
-                : null,
-          })),
-        ],
+        data: betSlipItemsData,
       });
+
+      await this.bankroll.recordBetPlacedBatch(
+        userId,
+        betSlipItemsData.map((item) => ({
+          betId: item.betId,
+          stake: new Decimal(
+            (
+              item.stakeOverride ?? new Prisma.Decimal(input.unitStake)
+            ).toString(),
+          ),
+        })),
+        { tx },
+      );
 
       return betSlip;
     });
@@ -257,6 +274,7 @@ export class BetSlipService {
     if (!betSlip) {
       throw new NotFoundException('Bet slip introuvable après création');
     }
+
     return toBetSlipView(betSlip);
   }
 
