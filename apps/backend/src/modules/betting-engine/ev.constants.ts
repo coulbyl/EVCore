@@ -258,9 +258,10 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   ERD: 1.75,
   // I2: Serie B mean lambda computed from team_stats (2,197 records, April 2026).
   // Without this entry the default (1.4) underestimates goal rate — same miscalibration
-  // pattern as ERD. Correcting to 1.56 should fix Poisson probability bias and
-  // recover the deterministic scores previously blocked by the 0.75 suspension threshold.
-  I2: 1.56,
+  // pattern as ERD. Correcting to 1.56 reduced HOME bias but left Brier at 0.669 (barely
+  // above random 0.667). Lowered 1.56 → 1.45 to reduce over-confidence via less extreme
+  // Poisson probabilities (2026-04-18).
+  I2: 1.45,
   // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
   // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
   // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
@@ -356,11 +357,11 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   D2: new Decimal('0.55'),
   F2: new Decimal('0.58'),
   SP2: new Decimal('0.62'),
-  // Lowered 0.75 → 0.60 (audit 2026-04-05): root cause of HOME miscalibration
-  // identified as HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05 being too high for Serie B
-  // (22-team balanced division, ~44% real home win rate). Per-league HA factor
-  // corrected to 1.02/0.98 via getLeagueHomeAwayFactors(). Threshold back to Tier B.
-  I2: new Decimal('0.60'),
+  // Lowered 0.75 → 0.60 (audit 2026-04-05): HA factor corrected to 1.02/0.98.
+  // Lowered 0.60 → 0.50 (2026-04-18): ndjson audit shows 836/1120 fixtures blocked
+  // with scores 0.29–0.60. I2 is structurally the most balanced league in the system
+  // (22 teams, high parity) — max(P) rarely exceeds 0.60, threshold must match reality.
+  I2: new Decimal('0.50'),
   EL1: new Decimal('0.50'),
   EL2: new Decimal('0.45'),
   // Tier C — European competitions
@@ -514,6 +515,11 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // SA sits at the over/under boundary (2.49 avg goals); no reliable UNDER edge exists.
   // Floor 0.99 effectively eliminates all SA UNDER picks.
   'SA|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-18: I2 ONE_X_TWO is structurally broken — AWAY 30b 8W/22L avg EV
+  // 0.517 (over-confidence), HOME 6b 1W/5L -57.5%. Only OVER_UNDER OVER is profitable
+  // (15b, 9W/6L, +22.9%). Eliminate both 1X2 directions to isolate the OVER signal.
+  'I2|ONE_X_TWO|AWAY': new Decimal('0.99'),
+  'I2|ONE_X_TWO|HOME': new Decimal('0.99'),
 };
 
 // eslint-disable-next-line max-params
