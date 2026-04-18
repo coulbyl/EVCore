@@ -1,5 +1,6 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import { execFile } from 'node:child_process';
 import { ConfigService } from '@nestjs/config';
 import { OddsSnapshotSource } from '@evcore/db';
 import { createLogger } from '@utils/logger';
@@ -27,8 +28,10 @@ export type OddsHistoricalImportJobData = {
 
 const logger = createLogger('odds-historical-import-worker');
 
-// Pinnacle bookmaker key on The Odds API
 const PINNACLE_KEY = 'pinnacle';
+// Fallback bookmaker for totals when Pinnacle uses a non-2.5 Asian line.
+// Unibet EU consistently offers standard 2.5 over/under lines.
+const TOTALS_FALLBACK_KEY = 'unibet_eu';
 
 // lockDuration: 20 min — one season import fetches many pages with rate limiting
 @Processor(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT, { lockDuration: 1_200_000 })
@@ -132,15 +135,29 @@ export class OddsHistoricalImportWorker extends WorkerHost {
           continue;
         }
 
+        const snapshotAt = new Date(event.bookmakers[0].last_update);
+
         await this.fixtureService.upsertOneXTwoOddsSnapshot({
           fixtureId: fixture.id,
           bookmaker: 'Pinnacle',
-          snapshotAt: new Date(event.bookmakers[0].last_update),
+          snapshotAt,
           homeOdds: pinnacleOdds.home,
           drawOdds: pinnacleOdds.draw,
           awayOdds: pinnacleOdds.away,
           source: OddsSnapshotSource.HISTORICAL,
         });
+
+        const totals = extractTotals25(event);
+        if (totals) {
+          await this.fixtureService.upsertOverUnderOddsSnapshot({
+            fixtureId: fixture.id,
+            bookmaker: totals.bookmaker,
+            snapshotAt,
+            over: totals.over,
+            under: totals.under,
+            source: OddsSnapshotSource.HISTORICAL,
+          });
+        }
 
         imported++;
       }
@@ -161,15 +178,12 @@ export class OddsHistoricalImportWorker extends WorkerHost {
   ): Promise<TheOddsApiEvent[] | null> {
     const url =
       `${ETL_CONSTANTS.THE_ODDS_API_BASE}/historical/sports/${sportKey}/odds` +
-      `?apiKey=${apiKey}&date=${date}&regions=eu&markets=h2h&bookmakers=${PINNACLE_KEY}`;
+      `?apiKey=${apiKey}&date=${date}&regions=eu&markets=h2h,totals` +
+      `&bookmakers=${PINNACLE_KEY},${TOTALS_FALLBACK_KEY}`;
 
     try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        logger.warn({ status: res.status, date }, 'The Odds API error');
-        return null;
-      }
-      const json: unknown = await res.json();
+      const stdout = await runCurlGet(url);
+      const json: unknown = JSON.parse(stdout);
       const parsed = TheOddsApiHistoricalResponseSchema.safeParse(json);
       if (!parsed.success) {
         logger.warn(
@@ -277,6 +291,37 @@ function matchEvent(
 
 type H2HOdds = { home: number; draw: number; away: number };
 
+type TotalsOdds = { over: number; under: number; bookmaker: string };
+
+// Extracts over/under 2.5 odds: Pinnacle preferred, falls back to Unibet EU.
+// Pinnacle uses Asian handicap lines (2.75, 3.0) for high-scoring leagues —
+// in that case Unibet EU provides the standard 2.5 line.
+function extractTotals25(event: TheOddsApiEvent): TotalsOdds | null {
+  for (const bmKey of [PINNACLE_KEY, TOTALS_FALLBACK_KEY]) {
+    const bm = event.bookmakers.find((b) => b.key === bmKey);
+    if (!bm) continue;
+
+    const totals = bm.markets.find((m) => m.key === 'totals');
+    if (!totals) continue;
+
+    const over = totals.outcomes.find(
+      (o) => o.name === 'Over' && o.point === 2.5,
+    )?.price;
+    const under = totals.outcomes.find(
+      (o) => o.name === 'Under' && o.point === 2.5,
+    )?.price;
+
+    if (over !== undefined && under !== undefined) {
+      return {
+        over,
+        under,
+        bookmaker: bmKey === PINNACLE_KEY ? 'Pinnacle' : 'Unibet',
+      };
+    }
+  }
+  return null;
+}
+
 function extractPinnacleH2H(event: TheOddsApiEvent): H2HOdds | null {
   const bm = event.bookmakers.find((b) => b.key === PINNACLE_KEY);
   if (!bm) return null;
@@ -292,4 +337,23 @@ function extractPinnacleH2H(event: TheOddsApiEvent): H2HOdds | null {
     return null;
 
   return { home, draw, away };
+}
+
+// Uses system curl instead of Node fetch to avoid WSL2 ETIMEDOUT issues.
+// The API key is embedded in the URL query string — no auth header needed.
+function runCurlGet(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'curl',
+      ['--silent', '--show-error', '--location', url],
+      (error, stdout) => {
+        if (error) {
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      },
+    );
+  });
 }

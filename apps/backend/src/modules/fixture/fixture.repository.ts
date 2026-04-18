@@ -108,6 +108,15 @@ type UpsertOneXTwoOddsSnapshotInput = {
   source?: OddsSnapshotSource;
 };
 
+type UpsertOverUnderOddsSnapshotInput = {
+  fixtureId: string;
+  bookmaker: string;
+  snapshotAt: Date;
+  over: number;
+  under: number;
+  source?: OddsSnapshotSource;
+};
+
 type HasOneXTwoOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -781,6 +790,22 @@ export class FixtureRepository {
         select: { id: true },
       });
     }
+  }
+
+  async upsertOverUnderOddsSnapshot(
+    data: UpsertOverUnderOddsSnapshotInput,
+  ): Promise<void> {
+    const source = data.source ?? OddsSnapshotSource.HISTORICAL;
+    const ctx = {
+      fixtureId: data.fixtureId,
+      bookmaker: data.bookmaker,
+      snapshotAt: data.snapshotAt,
+      source,
+    };
+    await Promise.all([
+      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'OVER', data.over),
+      this.upsertNonOneXTwo(ctx, 'OVER_UNDER', 'UNDER', data.under),
+    ]);
   }
 
   async hasOneXTwoOddsSnapshot(

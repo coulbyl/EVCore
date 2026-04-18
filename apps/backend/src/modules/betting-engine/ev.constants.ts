@@ -155,11 +155,11 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
-  // Bundesliga 1X2 HOME picks remained structurally unprofitable across floor
-  // sweeps at 2.10 / 2.25 / 2.40. The toxic segment is specifically HOME in the
-  // 2.0-2.99 bucket, so keep the league floor broad and harden only this pick.
+  // Backtest 2026-04-18: BL1 HOME [3.0-4.99] → 1W/9L across 3 seasons after lowering
+  // MODEL_SCORE_THRESHOLD to 0.50. Previously floored at 3.00 (sweeps at 2.10/2.25/2.40
+  // also failed). Pattern matches CH HOME — raise to 5.00 to eliminate the segment.
   if (competitionCode === 'BL1' && market === 'ONE_X_TWO' && pick === 'HOME') {
-    return Decimal.max(leagueFloor, new Decimal('3.00'));
+    return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
   // Audit 2026-04-04 (initial): D2 1X2 HOME picks were structurally negative in
@@ -235,7 +235,9 @@ export const UNDER_HIGH_LAMBDA_EV_FLOOR = new Decimal('0.20');
 export const LAMBDA_SHRINKAGE_FACTOR = 0.7;
 
 const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
-  BL1: 1.574,
+  // Raised 1.574 → 1.70: prod measurement 3.39 goals/match = 1.695/team.
+  // Shrinkage anchor at 1.574 underestimated P(over 2.5) by ~2pp on average.
+  BL1: 1.7,
   CH: 1.263,
   L1: 1.431,
   LL: 1.298,
@@ -328,7 +330,10 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier A — efficient markets
   PL: new Decimal('0.58'),
   SA: new Decimal('0.60'),
-  BL1: new Decimal('0.55'),
+  // Lowered 0.55 → 0.50: balanced BL1 fixtures (max_prob ~0.45-0.55) were
+  // entirely skipped before OVER_UNDER evaluation. BL1 has 3.39 goals/match
+  // (67% over 2.5) — OVER picks need to enter the evaluation loop.
+  BL1: new Decimal('0.50'),
   // Audit 2026-04-05: 0.58 → 0.55 tested — 10 new bets, -5.94u net regression.
   // Newly unlocked fixtures [0.55-0.58) generate false EV at [3.0-4.99] odds
   // (4 new bets, 4 losses, -4u). Threshold 0.58 is the correct filter for LL.
@@ -529,6 +534,9 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // to admit the profitable > 4.0 segment. When a per-pick max is set it replaces
   // the global cap (see getPickRejectionReason), so this entry is authoritative.
   'PL|ONE_X_TWO|DRAW': new Decimal('5.50'),
+  // Backtest 2026-04-18: BL1 AWAY at [3.0-4.99] → 1W-6L, -54% ROI across 3 seasons.
+  // AWAY at [2.0-2.99] was 2W-0L. Cap at 2.99 to eliminate the losing segment.
+  'BL1|ONE_X_TWO|AWAY': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(

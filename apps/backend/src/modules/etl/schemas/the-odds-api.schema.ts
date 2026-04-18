@@ -3,6 +3,8 @@ import { z } from 'zod';
 const OutcomeSchema = z.object({
   name: z.string(),
   price: z.number().positive(),
+  // Present on totals (over/under) markets — indicates the line (e.g. 2.5)
+  point: z.number().optional(),
 });
 
 const MarketSchema = z.object({

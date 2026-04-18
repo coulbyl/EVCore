@@ -463,8 +463,9 @@ export class EtlService implements OnApplicationBootstrap {
     const code =
       competitionCode.toUpperCase() as keyof typeof THE_ODDS_API_SPORT_KEYS;
     if (!(code in THE_ODDS_API_SPORT_KEYS)) {
+      const supported = Object.keys(THE_ODDS_API_SPORT_KEYS).join(', ');
       throw new Error(
-        `${competitionCode} is not a supported UEFA competition for historical import. Use UCL, UEL or UECL.`,
+        `${competitionCode} is not supported for historical odds import. Supported: ${supported}`,
       );
     }
     for (const [i, seasonYear] of seasons.entries()) {

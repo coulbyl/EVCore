@@ -34,7 +34,29 @@ Chaque réponse par compétition expose désormais les verdicts embarqués : `br
 Rapport dédié : [ANALYSE_PROD_2026-04-17.md](ANALYSE_PROD_2026-04-17.md)
 Tendances par league + écarts modèle vs résultats réels sur la fenêtre.
 
-## 3. Nettoyage docs — notion de « coupon »
+## 3. Import historique The Odds API — toutes ligues domestiques (terminé 2026-04-18)
+
+Extension du worker `odds-historical-import` pour couvrir toutes les ligues domestiques en plus des compétitions UEFA.
+
+### Modifications techniques
+
+- `THE_ODDS_API_SPORT_KEYS` étendu de 3 → 18 compétitions (UCL/UEL/UECL + PL, SA, L1, LL, BL1, CH, D2, SP2, ERD, EL1, EL2, F2, I2, J1, MX1).
+- Worker étendu : fetch `markets=h2h,totals` + `bookmakers=pinnacle,unibet_eu`. Pinnacle utilisé pour h2h et totals 2.5 ; Unibet EU en fallback pour totals quand Pinnacle utilise des lignes asiatiques (2.75/3.0).
+- `upsertOverUnderOddsSnapshot()` ajouté à `FixtureRepository` et `FixtureService`.
+- `OutcomeSchema` Zod étendu avec `point?: number` pour le marché totals.
+- Remplacement de `fetch()` natif par `execFile('curl')` — corrige les ETIMEDOUT WSL2.
+- Validation `^\d+$` sur le paramètre `seasons` — évite que `parseInt('2O24')` retourne silencieusement `2`.
+- Guard UEFA-only retiré de `EtlService` — tous les codes de `THE_ODDS_API_SPORT_KEYS` sont désormais valides.
+
+### Qualité
+
+- `pnpm --filter backend lint` ✅
+- `pnpm --filter backend typecheck` ✅
+- `pnpm --filter backend test` ✅ (343 tests / 38 fichiers)
+
+---
+
+## 4. Nettoyage docs — notion de « coupon »
 
 Références résiduelles retirées des docs (`EVCORE.md`, `GUIDE.md`, `LEAGUES_SELECTION.md`, `ROADMAP.md`, `ANALYSE_SAFE_VALUE.md`, `README.md`, `ETL_PLAYBOOK.md`, suppression de `COUPON.md`).
 
@@ -51,7 +73,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 | LL   | La Liga            | 22    | 10  | 8   | +41.3 % | PASS    | ✅          |
 | SP2  | Segunda División   | 14    | 7   | 4   | +18.4 % | FAIL*   | ✅          |
 | L1   | Ligue 1            | 23    | 11  | 10  | +14.9 % | PASS    | ✅ (juste)  |
-| BL1  | Bundesliga         | 5     | –   | –   | +80.8 % | PASS    | trop peu   |
+| BL1  | Bundesliga         | 14    | 7   | 5   | +18.3 % | PASS    | ✅ (2026-04-18) |
 | POR  | Primeira Liga      | 6     | 2   | 2   | +26.5 % | PASS    | trop peu   |
 | I2   | Serie B            | 1     | 1   | 0   | +100 %  | FAIL*   | trop peu   |
 | EL1  | League One         | 53    | ~26 | ~27 | +28.5 % | PASS    | ⚖️ (~égal) |
@@ -91,12 +113,19 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### BL1 — Bundesliga (5 paris, ROI +80.8 %, PASS)
-**Problème :** trop peu de picks générés (5 sur 3 saisons). La Bundesliga est pourtant la ligue la plus offensive (3.39 buts/match, 67 % over 2.5 en prod) — le modèle la sous-exploite massivement.
+#### BL1 — Bundesliga ✅ PASS (2026-04-18)
+**Résultat final :** 14 paris / 3 saisons — ROI +18.3 %, Brier 0.603, CalibErr 2.6 % — overallVerdict PASS.
+- OVER_UNDER : 8 bets, 5W/3L, +31 % ROI ✅ — signal principal validé.
+- ONE_X_TWO AWAY : 2 bets, INSUFFICIENT_DATA — pas d'action.
+- HOME entièrement éliminé (floor 5.00) — pattern identique à CH HOME (sur-confiance modèle sur underdogs domicile).
 
-- [ ] **BL1-1** Abaisser MODEL_SCORE_THRESHOLD pour les marchés OVER_UNDER en BL1 à 0.50 (depuis 0.60). Le Brier est bon (0.602), la calibration est fiable.
-- [ ] **BL1-2** Activer explicitement OVER_2_5 en BL1 (67 % de matchs over 2.5 en prod = marché à fort EV attendu). Vérifier pourquoi aucun pick OVER_2_5 n'est généré.
-- [ ] **BL1-3** Booster le λ scoring offensif pour BL1 : la Bundesliga a un style de jeu très ouvert qui n'est pas encore encodé dans les facteurs de ligue.
+**Actions appliquées :**
+
+- [x] **BL1-1** `MODEL_SCORE_THRESHOLD` BL1 abaissé 0.55 → 0.50 — débloque l'évaluation OVER_UNDER sur matchs équilibrés (max_prob ~0.45-0.55).
+- [x] **BL1-2** OVER_2_5 activé via import historique The Odds API (Pinnacle h2h + totals 2.5). Worker étendu à toutes les ligues domestiques.
+- [x] **BL1-3** `LEAGUE_MEAN_LAMBDA_MAP` BL1 : 1.574 → 1.70 (mesuré prod : 3.39 buts/match = 1.695/équipe).
+- [x] **BL1-4** (ajout) `PICK_MAX_SELECTION_ODDS_MAP` BL1 AWAY cap 2.99 — [3.0-4.99] était 1W/6L (-54 % ROI).
+- [x] **BL1-5** (ajout) Floor BL1 HOME relevé 3.00 → 5.00 — [3.0-4.99] HOME était 1W/9L après abaissement threshold.
 
 ---
 

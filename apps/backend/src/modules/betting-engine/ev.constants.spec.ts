@@ -70,9 +70,9 @@ describe('getPickMinSelectionOdds', () => {
     );
   });
 
-  it('raises the floor to 3.00 for Bundesliga 1X2 HOME picks', () => {
+  it('raises the floor to 5.00 for Bundesliga 1X2 HOME picks', () => {
     expect(getPickMinSelectionOdds('BL1', 'ONE_X_TWO', 'HOME').toNumber()).toBe(
-      3,
+      5,
     );
   });
 
