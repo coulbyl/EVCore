@@ -109,26 +109,26 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ### Vue d'ensemble (3 saisons historiques)
 
-| Code | Ligue              | Paris | W   | L   | ROI     | Verdict | Statut W>L |
-|------|--------------------|-------|-----|-----|---------|---------|------------|
-| LL   | La Liga            | 22    | 10  | 8   | +41.3 % | PASS    | ✅          |
-| SP2  | Segunda División   | 14    | 7   | 4   | +18.4 % | FAIL*   | ✅          |
-| L1   | Ligue 1            | 23    | 11  | 10  | +14.9 % | PASS    | ✅ (juste)  |
-| BL1  | Bundesliga         | 14    | 7   | 5   | +18.3 % | PASS    | ✅ (2026-04-18) |
-| POR  | Primeira Liga      | 6     | 2   | 2   | +26.5 % | PASS    | trop peu   |
-| I2   | Serie B            | 21    | 11  | 9   | +20.8 % | PASS*   | ✅ (2026-04-18) |
-| EL1  | League One         | 53    | ~26 | ~27 | +28.5 % | PASS    | ⚖️ (~égal) |
-| CH   | Championship       | 20    | ~8  | ~12 | +8.1 %  | PASS    | ❌          |
-| PL   | Premier League     | 20    | 5   | 14  | +30.8 % | PASS    | ❌          |
-| SA   | Serie A            | 6     | 2   | 4   | +42.9 % | PASS    | ✅ (2026-04-18) |
-| D2   | 2. Bundesliga      | 17    | 6   | 10  | +11.7 % | FAIL    | ❌          |
-| F2   | Ligue 2            | 39    | 17  | 22  | +2.6 %  | FAIL    | ❌          |
-| J1   | J1 League          | 56    | 26  | 30  | +10.8 % | FAIL    | ❌          |
-| EL2  | League Two         | 202   | 84  | 108 | +16 %   | FAIL    | ❌          |
-| MX1  | Liga MX            | 28    | ~13 | ~15 | –7.1 %  | FAIL    | ❌          |
-| ERD  | Eredivisie         | 7     | 2   | 3   | –38.9 % | FAIL    | ❌          |
+| Code | Ligue            | Paris | W   | L   | ROI     | Verdict | Statut W>L      |
+| ---- | ---------------- | ----- | --- | --- | ------- | ------- | --------------- |
+| LL   | La Liga          | 22    | 10  | 8   | +41.3 % | PASS    | ✅              |
+| SP2  | Segunda División | 14    | 7   | 4   | +18.4 % | FAIL\*  | ✅              |
+| L1   | Ligue 1          | 23    | 11  | 10  | +14.9 % | PASS    | ✅ (juste)      |
+| BL1  | Bundesliga       | 14    | 7   | 5   | +18.3 % | PASS    | ✅ (2026-04-18) |
+| POR  | Primeira Liga    | 6     | 2   | 2   | +26.5 % | PASS    | trop peu        |
+| I2   | Serie B          | 21    | 11  | 9   | +20.8 % | PASS\*  | ✅ (2026-04-18) |
+| EL1  | League One       | 53    | ~26 | ~27 | +28.5 % | PASS    | ⚖️ (~égal)      |
+| CH   | Championship     | 20    | ~8  | ~12 | +8.1 %  | PASS    | ❌              |
+| PL   | Premier League   | 20    | 5   | 14  | +30.8 % | PASS    | ❌              |
+| SA   | Serie A          | 6     | 2   | 4   | +42.9 % | PASS    | ✅ (2026-04-18) |
+| D2   | 2. Bundesliga    | 17    | 6   | 10  | +11.7 % | FAIL    | ❌              |
+| F2   | Ligue 2          | 39    | 17  | 22  | +2.6 %  | FAIL    | ❌              |
+| J1   | J1 League        | 56    | 26  | 30  | +10.8 % | FAIL    | ❌              |
+| EL2  | League Two       | 202   | 84  | 108 | +16 %   | FAIL    | ❌              |
+| MX1  | Liga MX          | 28    | ~13 | ~15 | –7.1 %  | FAIL    | ❌              |
+| ERD  | Eredivisie       | 7     | 2   | 3   | –38.9 % | FAIL    | ❌              |
 
-*FAIL uniquement sur Brier Score légèrement au-dessus du seuil, pas sur ROI ni W/L.
+\*FAIL uniquement sur Brier Score légèrement au-dessus du seuil, pas sur ROI ni W/L.
 
 **Observation transversale :** les ligues qui réussissent (LL, SP2, L1) utilisent principalement HOME et AWAY picks à cotes 2.0–4.0. Les ligues qui échouent ont soit des picks DRAW à 5.0+ (PL), soit des picks HOME/AWAY sur-générés à probabilité ≤ 55 % (EL2, J1, F2), soit les deux.
 
@@ -137,6 +137,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ### Actions par championnat
 
 #### PL — Premier League (5W-14L, ROI +30 %, PASS)
+
 **Problème :** le modèle ne génère que des picks DRAW à cote moyenne 5.27. Winrate 26 % inévitable à ces cotes. ROI positif grâce aux cotes élevées, mais W/L structurellement inversé.
 
 - [ ] **PL-1** Ajouter les picks OVER_UNDER_HT OVER_0_5 et OVER_1_5 en PL (breakeven ~65 %, PL fait 90 % over 1.5 sur la période prod). Le modèle doit générer ces marchés car il les ignore actuellement.
@@ -146,7 +147,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### SA — Serie A ✅ PASS (2026-04-18)
+
 **Résultat final :** 6 bets / 3 saisons — ROI +42.9 %, Brier 0.596, CalibErr 3.4 % — overallVerdict PASS.
+
 - ONE_X_TWO HOME [3.0-4.99] : 6 bets, 2W/4L, +42.9 % ROI — longshot HOME value en SA.
 - UNDER 2.5 éliminé, DRAW éliminé, HOME [2.0-2.99] éliminé.
 
@@ -161,7 +164,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### BL1 — Bundesliga ✅ PASS (2026-04-18)
+
 **Résultat final :** 14 paris / 3 saisons — ROI +18.3 %, Brier 0.603, CalibErr 2.6 % — overallVerdict PASS.
+
 - OVER_UNDER : 8 bets, 5W/3L, +31 % ROI ✅ — signal principal validé.
 - ONE_X_TWO AWAY : 2 bets, INSUFFICIENT_DATA — pas d'action.
 - HOME entièrement éliminé (floor 5.00) — pattern identique à CH HOME (sur-confiance modèle sur underdogs domicile).
@@ -177,6 +182,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### L1 — Ligue 1 (11W-10L, ROI +14.9 %, PASS)
+
 **Problème :** quasi-équilibre, pas besoin de changement majeur. Légère dégradation sur la prod récente (gap –19 pp sur 4 semaines) à surveiller.
 
 - [ ] **L1-1** Ajouter un filtre EV ≥ 0.10 pour les picks ONE_X_TWO dont la prob_modèle ∈ [0.50, 0.60] en L1 (zone biaisée identifiée dans l'analyse globale).
@@ -185,6 +191,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### CH — Championship (≈8W-12L, ROI +8.1 %, PASS)
+
 **Problème :** les picks DRAW 1X2 (2W-6L) et AWAY (1W-3L) plombent le W/L. Les marchés OVER sont profitables mais peu représentés.
 
 - [ ] **CH-1** Désactiver les picks DRAW 1X2 en CH (2W-6L sur 3 saisons, Brier 0.643 indique que la probabilité de nul est surestimée). Le vrai taux de nul CH en backtest historique est ~28-30 %, pas 43 % comme sur la fenêtre prod.
@@ -194,7 +201,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### I2 — Serie B ✅ PASS (2026-04-18) — data caveat
+
 **Résultat final :** 21 bets / 3 saisons — ROI +20.8 %, Brier 0.668 (FAIL), CalibErr 6.2 % (FAIL), overallVerdict FAIL technique mais accepté.
+
 - OVER_UNDER OVER : 18 bets, 10W/8L, +13.6 % ROI — signal validé.
 - BTTS YES : 1 bet 1W, OVER_UNDER_HT OVER_1_5 : 2 bets 1W/1L.
 - ONE_X_TWO entièrement éliminé (AWAY 30b 8W/22L, HOME 6b 1W/5L → floor 0.99).
@@ -210,15 +219,25 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### SP2 — Segunda División (7W-4L, ROI +18.4 %, FAIL Brier)
-**Problème :** wins > losses ✅ déjà atteint. Seul blocage : Brier Score 0.650 (0.001 au-dessus du seuil 0.65). ROI et calibration OK.
+#### SP2 — Segunda División ✅ quasi validé (2026-04-18)
 
-- [ ] **SP2-1** Appliquer un facteur de lissage de probabilité pour SP2 : multiplier prob_modèle par 0.97 avant scoring final (réduit légèrement la confiance, corrige le Brier sans toucher aux marchés). Ceci est une micro-recalibration isotonique manuelle.
+**Résultat retenu :** 14 bets / 3 saisons — ROI +18.4 %, CalibrationErr 2.91 % (PASS), Brier 0.65033 (FAIL ultra marginal), overallVerdict FAIL technique.
+
+- ONE_X_TWO HOME < 2.0 : 11 bets, 7W/4L, +13.5 % ROI — fenêtre principale déjà saine.
+- BTTS YES : 1 bet, 1W — insuffisant pour agir.
+- OVER_UNDER OVER : 2 bets, 1W/1L — insuffisant également.
+
+**Décision :**
+
+- [x] **SP2-1** Ne pas patcher pour l'instant — la ligue est déjà dans une fenêtre courte et cohérente, et le Brier manque le seuil de seulement 0.00033.
+- [ ] **SP2-2** Revenir plus tard uniquement si on décide d'introduire une micro-recalibration probabiliste explicite pour corriger ce fail marginal.
 
 ---
 
 #### D2 — 2. Bundesliga ✅ stabilisé (2026-04-18) — caveat Brier
+
 **Résultat retenu :** 13 bets / 3 saisons — ROI +38.2 %, CalibrationErr 4.46 % (PASS), Brier 0.6566 (FAIL léger), overallVerdict FAIL technique mais acceptable.
+
 - ONE_X_TWO : 12 bets, 6W/6L, +49.7 % ROI — signal principal conservé.
 - AWAY [2.0-2.99] : 10 bets, 5W/5L, +40.1 % ROI — seul segment récurrent vraiment exploitable.
 - HOME : 1 bet, 0W/1L — laissé ouvert mais très contraint pour ne pas tuer un éventuel futur signal.
@@ -240,7 +259,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### F2 — Ligue 2 ✅ amélioré (2026-04-18) — Brier fail persistant
+
 **Résultat retenu :** 36 bets / 3 saisons — ROI +18.4 %, CalibrationErr 4.28 % (PASS), Brier 0.6620 (FAIL), overallVerdict FAIL technique.
+
 - ONE_X_TWO : 35 bets, 17W/18L, +14.4 % ROI — seul segment réellement conservé.
 - HOME [2.0-2.99] : 35 bets, 17W/18L, +14.4 % ROI — segment principal, moyen en W/L mais enfin rentable.
 - DRAW et AWAY supprimés — ils perdaient tout dans le backtest.
@@ -261,7 +282,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### EL1 — League One ✅ PASS renforcé (2026-04-18)
+
 **Résultat retenu :** 52 bets / 3 saisons — ROI +31.0 %, Brier 0.6337 (PASS), CalibrationErr 2.17 % (PASS), overallVerdict PASS.
+
 - ONE_X_TWO : 40 bets, 20W/20L, +30.2 % ROI — signal principal sain.
 - AWAY : 21 bets, 11W/10L, +55.3 % ROI — meilleur vrai signal de la ligue.
 - HOME : 19 bets, 9W/10L, +2.3 % ROI — segment faible mais pas assez mauvais pour justifier un durcissement immédiat.
@@ -280,7 +303,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### EL2 — League Two ✅ amélioré (2026-04-18) — Brier fail léger persistant
+
 **Résultat retenu :** 133 bets / 3 saisons — ROI +23.7 %, CalibrationErr 3.40 % (PASS), Brier 0.6508 (FAIL marginal), overallVerdict FAIL technique.
+
 - ONE_X_TWO : 126 bets, 59W/67L, +21.1 % ROI — marché principal conservé mais nettoyé.
 - Bucket 2.0-2.99 : 103 bets, 48W/55L, +12.7 % ROI — encore volumineux, mais nettement meilleur qu'au point de départ.
 - Bucket 3.0-4.99 : 23 bets, 11W/12L, +59.1 % ROI — meilleur sous-segment, à préserver.
@@ -302,6 +327,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### J1 — J1 League (26W-30L, ROI +10.8 %, FAIL Brier 0.675)
+
 **Problème :** uniquement des picks ONE_X_TWO HOME (22W-28L) et AWAY (4W-2L ?) — le Brier 0.675 dépasse le seuil, indiquant une mauvaise qualité probabiliste. L'avantage domicile en J1 est structurellement différent de l'Europe (faible, pas de supporters adverses).
 
 - [ ] **J1-1** Réduire HOME_ADVANTAGE_LAMBDA_FACTOR pour J1 : c'est la cause principale du Brier élevé et des 22W-28L HOME. Abaisser de 0.10–0.15 points.
@@ -312,6 +338,7 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### MX1 — Liga MX (≈13W-15L, ROI –7.1 %, FAIL)
+
 **Problème :** ROI négatif + W<L. Prod confirmait déjà : gap –44 pp, l'un des pires écarts du système. Le modèle surévalue massivement les équipes mexicaines HOME.
 
 - [ ] **MX1-1** Augmenter MODEL_SCORE_THRESHOLD MX1 à 0.65 (depuis 0.55 actuel) — réduction agressive du volume.
@@ -323,7 +350,9 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 ---
 
 #### ERD — Eredivisie ✅ PASS technique (2026-04-18) — 0 bet / insuffisant
+
 **Résultat retenu :** 0 bet / 3 saisons — ROI 0 %, Brier 0.5988 (PASS), CalibrationErr 3.46 % (PASS), overallVerdict PASS.
+
 - Le patch a supprimé tout le faux EV observé auparavant (`ROI -38.9 %` sur 7 bets).
 - Le `ndjson` montre surtout un mix de `BELOW_MODEL_SCORE_THRESHOLD` massif (694 fixtures), de favoris HOME sans EV (`ev_below_threshold`) et d'extrêmes DRAW/AWAY rejetés par `probability_too_low`, `odds_above_cap` ou `ev_above_hard_cap`.
 - En pratique, on a un PASS technique, mais pas encore de signal exploitable ni de stock visible de bons `OVER` bloqués par erreur.
@@ -354,8 +383,8 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ### Ligues déjà satisfaisantes (ne pas toucher)
 
-| Code | Statut | Raison |
-|------|--------|--------|
+| Code | Statut                 | Raison                                              |
+| ---- | ---------------------- | --------------------------------------------------- |
 | LL   | ✅ wins > losses, PASS | 10W-8L, ROI +41 % — modèle bien calibré sur La Liga |
-| L1   | ✅ quasi-satisfaisant | 11W-10L — surveillance légère suffit |
-| SP2  | ✅ wins > losses | 7W-4L — seul le Brier à corriger (SP2-1) |
+| L1   | ✅ quasi-satisfaisant  | 11W-10L — surveillance légère suffit                |
+| SP2  | ✅ wins > losses       | 7W-4L — seul le Brier à corriger (SP2-1)            |
