@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { BetStatus, Market } from '@evcore/db';
 import {
   poissonProba,
   calculateDeterministicScore,
@@ -21,6 +21,7 @@ import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
+import type { BankrollService } from '@modules/bankroll/bankroll.service';
 
 function makeHtftProbabilities(defaultValue = '0.111111') {
   return {
@@ -52,6 +53,16 @@ function makeCongestionServiceMock(score = 0): CongestionService {
   return {
     computeCongestionScore: vi.fn().mockResolvedValue(score),
   } as unknown as CongestionService;
+}
+
+function makeBankrollServiceMock(): Pick<
+  BankrollService,
+  'recordBetWon' | 'recordBetVoid'
+> {
+  return {
+    recordBetWon: vi.fn().mockResolvedValue(undefined),
+    recordBetVoid: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 // Minimal Prisma mock shared across analyzeFixture tests.
@@ -241,6 +252,94 @@ describe('computeJointProbability', () => {
     );
     expect(joint.toNumber()).toBeGreaterThan(0);
     expect(joint.toNumber()).toBeLessThan(homeOnly.toNumber());
+  });
+});
+
+describe('settleOpenBets', () => {
+  it('credits winning slips with the effective stake and odds snapshot', async () => {
+    const bankroll = makeBankrollServiceMock();
+    const tx = {
+      bet: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+    };
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            homeScore: 2,
+            awayScore: 1,
+            homeHtScore: 1,
+            awayHtScore: 0,
+            status: 'FINISHED',
+          }),
+        },
+        bet: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'bet-1',
+              market: Market.ONE_X_TWO,
+              pick: 'HOME',
+              comboMarket: null,
+              comboPick: null,
+              oddsSnapshot: new Decimal('2.30'),
+              betSlipItems: [
+                {
+                  userId: 'u1',
+                  stakeOverride: new Decimal('12.50'),
+                  betSlip: { unitStake: new Decimal('10.00') },
+                },
+                {
+                  userId: 'u2',
+                  stakeOverride: null,
+                  betSlip: { unitStake: new Decimal('8.00') },
+                },
+              ],
+            },
+          ]),
+          update: tx.bet.update,
+        },
+        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+      bankroll as BankrollService,
+    );
+
+    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
+      settled: 1,
+    });
+
+    expect(tx.bet.update).toHaveBeenCalledWith({
+      where: { id: 'bet-1' },
+      data: { status: BetStatus.WON },
+    });
+    expect(bankroll.recordBetWon).toHaveBeenCalledTimes(2);
+    expect(bankroll.recordBetWon).toHaveBeenNthCalledWith(
+      1,
+      {
+        userId: 'u1',
+        betId: 'bet-1',
+        stake: new Decimal('12.50'),
+        odds: new Decimal('2.30'),
+      },
+      { tx },
+    );
+    expect(bankroll.recordBetWon).toHaveBeenNthCalledWith(
+      2,
+      {
+        userId: 'u2',
+        betId: 'bet-1',
+        stake: new Decimal('8.00'),
+        odds: new Decimal('2.30'),
+      },
+      { tx },
+    );
   });
 });
 

@@ -15,6 +15,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BetSlipModule } from './modules/bet-slip/bet-slip.module';
 import { BetModule } from './modules/bet/bet.module';
+import { BankrollModule } from './modules/bankroll/bankroll.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { BetModule } from './modules/bet/bet.module';
     AuthModule,
     BetSlipModule,
     BetModule,
+    BankrollModule,
     DashboardModule,
     AuditModule,
   ],

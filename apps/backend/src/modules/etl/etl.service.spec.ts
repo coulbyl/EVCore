@@ -14,7 +14,6 @@ import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
-import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
@@ -83,7 +82,6 @@ describe('EtlService', () => {
   const eloSyncQueue = makeQueue<EloSyncJobData>();
   const oddsPrematchQueue = makeQueue<OddsPrematchSyncJobData>();
   const bettingEngineQueue = makeQueue<BettingEngineAnalysisJobData>();
-  const oddsSnapshotRetentionQueue = makeQueue<OddsSnapshotRetentionJobData>();
   const oddsHistoricalImportQueue = makeQueue<OddsHistoricalImportJobData>();
   const prismaMockRaw = {
     client: {
@@ -123,7 +121,6 @@ describe('EtlService', () => {
     eloSyncQueue as Queue<EloSyncJobData>,
     oddsPrematchQueue as Queue<OddsPrematchSyncJobData>,
     bettingEngineQueue as Queue<BettingEngineAnalysisJobData>,
-    oddsSnapshotRetentionQueue as Queue<OddsSnapshotRetentionJobData>,
     oddsHistoricalImportQueue as Queue<OddsHistoricalImportJobData>,
     configMock,
     prismaMock,
@@ -422,15 +419,5 @@ describe('EtlService', () => {
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
     expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
     expect(bettingEngineQueue.add).toHaveBeenCalledOnce();
-  });
-
-  it('dispatches odds snapshot retention cleanup job', async () => {
-    await service.triggerOddsSnapshotRetention(30);
-
-    expect(oddsSnapshotRetentionQueue.add).toHaveBeenCalledWith(
-      'odds-snapshot-retention',
-      { retentionDays: 30 },
-      BULLMQ_DEFAULT_JOB_OPTIONS,
-    );
   });
 });

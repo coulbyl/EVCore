@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus, OddsSnapshotSource, Prisma } from '@evcore/db';
+import {
+  Fixture,
+  FixtureStatus,
+  Market,
+  OddsSnapshotSource,
+  Prisma,
+} from '@evcore/db';
 
 // API-Football round strings that follow a home-and-away (aller/retour) format.
 // "Final" and "League Stage" are single-leg — excluded intentionally.
@@ -514,16 +520,6 @@ export class FixtureRepository {
     });
   }
 
-  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
-    const result = await this.prisma.client.oddsSnapshot.deleteMany({
-      where: {
-        snapshotAt: { lt: cutoff },
-        source: OddsSnapshotSource.PREMATCH,
-      },
-    });
-    return result.count;
-  }
-
   findPendingSettlementFixtures(
     now: Date,
   ): Promise<PendingSettlementFixture[]> {
@@ -822,6 +818,25 @@ export class FixtureRepository {
     });
 
     return existing !== null;
+  }
+
+  async findExistingMarketsForFixtures(
+    fixtureIds: string[],
+    markets: Market[],
+  ): Promise<Map<string, Set<Market>>> {
+    const result = new Map<string, Set<Market>>();
+    if (fixtureIds.length === 0) return result;
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: { fixtureId: { in: fixtureIds }, market: { in: markets } },
+      select: { fixtureId: true, market: true },
+      distinct: ['fixtureId', 'market'],
+    });
+    for (const row of rows) {
+      const set = result.get(row.fixtureId) ?? new Set<Market>();
+      set.add(row.market);
+      result.set(row.fixtureId, set);
+    }
+    return result;
   }
 
   // Used by xg-sync to match Understat entries to DB fixtures via date (±1 day) + team names.

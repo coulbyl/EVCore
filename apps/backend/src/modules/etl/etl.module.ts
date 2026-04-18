@@ -15,7 +15,6 @@ import { OddsCsvImportWorker } from './workers/odds-csv-import.worker';
 import { StatsSyncWorker } from './workers/stats-sync.worker';
 import { OddsPrematchSyncWorker } from './workers/odds-prematch-sync.worker';
 import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
-import { OddsSnapshotRetentionWorker } from './workers/odds-snapshot-retention.worker';
 import { EloSyncWorker } from './workers/elo-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
@@ -34,7 +33,6 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.ELO_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.BETTING_ENGINE },
-      { name: BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
     ),
     AuthModule,
@@ -57,7 +55,6 @@ import { AuthModule } from '../auth/auth.module';
     EloSyncWorker,
     OddsPrematchSyncWorker,
     BettingEngineAnalysisWorker,
-    OddsSnapshotRetentionWorker,
     OddsHistoricalImportWorker,
   ],
   exports: [EtlService],

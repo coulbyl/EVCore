@@ -21,7 +21,6 @@ import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
-import type { OddsSnapshotRetentionJobData } from './workers/odds-snapshot-retention.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type {
@@ -121,8 +120,6 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE)
     private readonly bettingEngineQueue: Queue<BettingEngineAnalysisJobData>,
-    @InjectQueue(BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION)
-    private readonly oddsSnapshotRetentionQueue: Queue<OddsSnapshotRetentionJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT)
     private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
     config: ConfigService,
@@ -528,14 +525,6 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
-  async triggerOddsSnapshotRetention(retentionDays?: number): Promise<void> {
-    await this.oddsSnapshotRetentionQueue.add(
-      'odds-snapshot-retention',
-      { retentionDays } satisfies OddsSnapshotRetentionJobData,
-      BULLMQ_DEFAULT_JOB_OPTIONS,
-    );
-  }
-
   async triggerRollingStatsSeason(
     competitionCode: string,
     season: number,
@@ -561,7 +550,6 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
-      [BULLMQ_QUEUES.ODDS_SNAPSHOT_RETENTION]: this.oddsSnapshotRetentionQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
     };
 

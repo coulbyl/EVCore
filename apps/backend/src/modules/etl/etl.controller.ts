@@ -2,14 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -22,10 +20,6 @@ import {
 import { EtlService } from './etl.service';
 import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
 import { OddsPrematchSyncBodyDto } from './dto/odds-prematch-sync-body.dto';
-import { OddsSnapshotRetentionBodyDto } from './dto/odds-snapshot-retention-body.dto';
-import { AuthSessionGuard } from '../auth/auth-session.guard';
-import { CurrentSession } from '../auth/current-session.decorator';
-import type { AuthSession } from '../auth/auth.types';
 
 type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
@@ -104,12 +98,6 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code };
   }
 
-  private assertAdmin(session: AuthSession): void {
-    if (session.user.role !== 'ADMIN') {
-      throw new ForbiddenException('Admin only');
-    }
-  }
-
   // ─── Status ───────────────────────────────────────────────────────────────
 
   @Get('status')
@@ -169,13 +157,6 @@ export class EtlController {
           active: 0,
           waiting: 0,
           completed: 5,
-          failed: 0,
-          delayed: 0,
-        },
-        'odds-snapshot-retention': {
-          active: 0,
-          waiting: 0,
-          completed: 1,
           failed: 0,
           delayed: 0,
         },
@@ -375,8 +356,7 @@ export class EtlController {
   @ApiOperation({
     summary: 'Import historical Pinnacle odds from The Odds API',
     description:
-      'One-shot import of pre-match Pinnacle 1X2 odds for UCL, Europa or Conference League. ' +
-      'Odds are tagged as HISTORICAL and never cleaned up by the retention worker. ' +
+      'One-shot import of pre-match Pinnacle odds for UCL, Europa or Conference League. ' +
       'Example: `?seasons=2022,2023,2024` imports seasons 2022-23, 2023-24 and 2024-25.',
   })
   @ApiParam({
@@ -396,24 +376,6 @@ export class EtlController {
     const seasons = this.resolveSeasonYears(seasonsParam);
     await this.etlService.triggerOddsHistoricalImport(code, seasons);
     return { status: 'ok' as const, competitionCode: code, seasons };
-  }
-
-  @Post('sync/odds-retention')
-  @UseGuards(AuthSessionGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger odds snapshot retention cleanup',
-    description:
-      'Runs manual cleanup of old odds snapshots. Restricted to ADMIN users.',
-  })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
-  async triggerOddsRetention(
-    @CurrentSession() session: AuthSession,
-    @Body() body: OddsSnapshotRetentionBodyDto = {},
-  ) {
-    this.assertAdmin(session);
-    await this.etlService.triggerOddsSnapshotRetention(body.retentionDays);
-    return { status: 'ok' as const };
   }
 
   @Post('sync/:type')

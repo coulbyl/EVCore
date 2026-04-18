@@ -52,6 +52,13 @@ enum BetSource {
   USER
 }
 
+enum BankrollTransactionType {
+  DEPOSIT
+  BET_PLACED
+  BET_WON
+  BET_VOID
+}
+
 enum UserRole {
   ADMIN
   OPERATOR
@@ -260,21 +267,22 @@ model Bet {
 }
 
 model User {
-  id            String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  email         String         @unique
-  username      String         @unique
-  passwordHash  String
-  fullName      String
-  bio           String?
-  role          UserRole       @default(OPERATOR)
-  emailVerified Boolean        @default(false)
-  avatarUrl     String?
-  sessions      Session[]
-  betSlips      BetSlip[]
-  betSlipItems  BetSlipItem[]
-  bets          Bet[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                   String                 @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email                String                 @unique
+  username             String                 @unique
+  passwordHash         String
+  fullName             String
+  bio                  String?
+  role                 UserRole               @default(OPERATOR)
+  emailVerified        Boolean                @default(false)
+  avatarUrl            String?
+  sessions             Session[]
+  betSlips             BetSlip[]
+  betSlipItems         BetSlipItem[]
+  bets                 Bet[]
+  bankrollTransactions BankrollTransaction[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 
   @@map("users")
 }
@@ -324,6 +332,20 @@ model BetSlipItem {
   @@index([betId])
   @@index([fixtureId])
   @@map("bet_slip_item")
+}
+
+model BankrollTransaction {
+  id        String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String                  @db.Uuid
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      BankrollTransactionType
+  amount    Decimal                 @db.Decimal(14, 2)
+  betId     String?                 @db.Uuid
+  note      String?
+  createdAt DateTime                @default(now())
+
+  @@index([userId, createdAt])
+  @@map("bankroll_transaction")
 }
 
 // Proposed weight adjustments from the learning loop.

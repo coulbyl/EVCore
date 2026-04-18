@@ -3,6 +3,11 @@ const COMPACT_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
+const UNITS_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
 export function formatCompactValue(value: string | number) {
   const rawValue = typeof value === "number" ? String(value) : value.trim();
   const match = rawValue.match(/^([+-]?)(\d+(?:[.,]\d+)?)(.*)$/);
@@ -26,4 +31,25 @@ export function formatCompactValue(value: string | number) {
   }
 
   return `${sign}${COMPACT_NUMBER_FORMATTER.format(parsedValue)}${suffix}`;
+}
+
+export function formatUnitsValue(value: string | number) {
+  const parsedValue = typeof value === "number" ? value : Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return typeof value === "string" ? value : String(value);
+  }
+
+  return UNITS_NUMBER_FORMATTER.format(parsedValue);
+}
+
+export function formatSignedUnitsValue(value: string | number) {
+  const parsedValue = typeof value === "number" ? value : Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return typeof value === "string" ? value : String(value);
+  }
+
+  const prefix = parsedValue > 0 ? "+" : "";
+  return `${prefix}${formatUnitsValue(parsedValue)}`;
 }

@@ -73,6 +73,7 @@ import {
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
+import { BankrollService } from '@modules/bankroll/bankroll.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
@@ -135,6 +136,7 @@ export class BettingEngineService {
     config: ConfigService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
+    private readonly bankroll?: BankrollService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
   }
@@ -276,60 +278,111 @@ export class BettingEngineService {
         pick: true,
         comboMarket: true,
         comboPick: true,
+        oddsSnapshot: true,
+        betSlipItems: {
+          select: {
+            userId: true,
+            stakeOverride: true,
+            betSlip: {
+              select: {
+                unitStake: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (bets.length === 0) return { settled: 0 };
 
-    let settled = 0;
-    for (const bet of bets) {
-      let status: BetStatus;
+    return this.prisma.client.$transaction(async (tx) => {
+      let settled = 0;
+      for (const bet of bets) {
+        let status: BetStatus;
 
-      if (bet.comboMarket !== null && bet.comboPick !== null) {
-        const combo: ComboPick = {
-          market1: bet.market,
-          pick1: bet.pick,
-          market2: bet.comboMarket,
-          pick2: bet.comboPick,
-        };
-        status = resolveComboPickBetStatus(
-          combo,
-          fixture.homeScore,
-          fixture.awayScore,
-        );
-      } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
-        status = resolveHalfTimeFullTimeBetStatus({
-          pick: bet.pick,
-          homeHtScore: fixture.homeHtScore,
-          awayHtScore: fixture.awayHtScore,
-          homeScore: fixture.homeScore,
-          awayScore: fixture.awayScore,
+        if (bet.comboMarket !== null && bet.comboPick !== null) {
+          const combo: ComboPick = {
+            market1: bet.market,
+            pick1: bet.pick,
+            market2: bet.comboMarket,
+            pick2: bet.comboPick,
+          };
+          status = resolveComboPickBetStatus(
+            combo,
+            fixture.homeScore,
+            fixture.awayScore,
+          );
+        } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
+          status = resolveHalfTimeFullTimeBetStatus({
+            pick: bet.pick,
+            homeHtScore: fixture.homeHtScore,
+            awayHtScore: fixture.awayHtScore,
+            homeScore: fixture.homeScore,
+            awayScore: fixture.awayScore,
+          });
+        } else if (
+          bet.market === Market.OVER_UNDER_HT ||
+          bet.market === Market.FIRST_HALF_WINNER
+        ) {
+          status = resolveFirstHalfBetStatus(
+            bet.pick,
+            fixture.homeHtScore,
+            fixture.awayHtScore,
+          );
+        } else {
+          status = resolvePickBetStatus(
+            bet.pick,
+            fixture.homeScore,
+            fixture.awayScore,
+          );
+        }
+
+        await tx.bet.update({
+          where: { id: bet.id },
+          data: { status },
         });
-      } else if (
-        bet.market === Market.OVER_UNDER_HT ||
-        bet.market === Market.FIRST_HALF_WINNER
-      ) {
-        status = resolveFirstHalfBetStatus(
-          bet.pick,
-          fixture.homeHtScore,
-          fixture.awayHtScore,
-        );
-      } else {
-        status = resolvePickBetStatus(
-          bet.pick,
-          fixture.homeScore,
-          fixture.awayScore,
-        );
+
+        if (status === BetStatus.WON || status === BetStatus.VOID) {
+          for (const item of bet.betSlipItems) {
+            const stake = new Decimal(
+              (item.stakeOverride ?? item.betSlip.unitStake).toString(),
+            );
+
+            if (status === BetStatus.WON) {
+              if (bet.oddsSnapshot === null) {
+                throw new Error(
+                  `Impossible de créditer le bet ${bet.id} sans oddsSnapshot`,
+                );
+              }
+
+              await this.bankroll?.recordBetWon(
+                {
+                  userId: item.userId,
+                  betId: bet.id,
+                  stake,
+                  odds: new Decimal(bet.oddsSnapshot.toString()),
+                },
+                { tx },
+              );
+              continue;
+            }
+
+            await this.bankroll?.recordBetVoid(
+              {
+                userId: item.userId,
+                betId: bet.id,
+                stake,
+              },
+              { tx },
+            );
+          }
+        }
+
+        settled++;
       }
 
-      await this.prisma.client.bet.update({
-        where: { id: bet.id },
-        data: { status },
-      });
-      settled++;
-    }
-
-    return { settled };
+      return { settled };
+    });
   }
 
   async analyzeFixture(fixtureId: string): Promise<AnalyzeFixtureResult> {
