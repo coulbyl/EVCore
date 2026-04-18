@@ -5,6 +5,7 @@ import {
   getLeagueEvThreshold,
   getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
+  getModelScoreThreshold,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
   getPickMaxSelectionOdds,
@@ -70,6 +71,22 @@ describe('getPickDirectionProbabilityThreshold', () => {
     expect(
       getPickDirectionProbabilityThreshold('D2', 'ONE_X_TWO', 'AWAY').toNumber(),
     ).toBe(0.42);
+  });
+
+  it('returns the raised ERD HOME override', () => {
+    expect(
+      getPickDirectionProbabilityThreshold('ERD', 'ONE_X_TWO', 'HOME').toNumber(),
+    ).toBe(0.6);
+  });
+});
+
+describe('getModelScoreThreshold', () => {
+  it('returns the raised ERD threshold', () => {
+    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.68);
+  });
+
+  it('returns the slightly raised EL2 threshold', () => {
+    expect(getModelScoreThreshold('EL2').toNumber()).toBe(0.5);
   });
 });
 
@@ -161,5 +178,39 @@ describe('getPickEvFloor', () => {
     expect(
       getPickEvFloor('D2', 'ONE_X_TWO', 'HOME', new Decimal('0.08')).toNumber(),
     ).toBe(0.12);
+  });
+
+  it('returns the raised EV floor for ERD 1X2 HOME', () => {
+    expect(
+      getPickEvFloor('ERD', 'ONE_X_TWO', 'HOME', new Decimal('0.08')).toNumber(),
+    ).toBe(0.15);
+  });
+
+  it('disables noisy EL2 side markets', () => {
+    expect(
+      getPickEvFloor(
+        'EL2',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.10'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('EL2', 'OVER_UNDER', 'OVER', new Decimal('0.10')).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables ERD UNDER and OVER_1_5 HT picks', () => {
+    expect(
+      getPickEvFloor('ERD', 'OVER_UNDER', 'UNDER', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'ERD',
+        'OVER_UNDER_HT',
+        'OVER_1_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
   });
 });

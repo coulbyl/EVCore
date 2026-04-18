@@ -257,14 +257,25 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### EL2 — League Two (84W-108L, ROI +16 %, FAIL Brier)
-**Problème principal :** volume massif (202 paris) avec des picks ONE_X_TWO HOME et AWAY sur-générés à probabilité marginale (WR ~41 %). Les marchés OVER_UNDER_HT OVER_1_5 (8 bets, ROI +86.5 %) sont excellents mais sous-représentés. FIRST_HALF_WINNER et OVER_0_5 font 0W.
+#### EL2 — League Two ✅ amélioré (2026-04-18) — Brier fail léger persistant
+**Résultat retenu :** 133 bets / 3 saisons — ROI +23.7 %, CalibrationErr 3.40 % (PASS), Brier 0.6508 (FAIL marginal), overallVerdict FAIL technique.
+- ONE_X_TWO : 126 bets, 59W/67L, +21.1 % ROI — marché principal conservé mais nettoyé.
+- Bucket 2.0-2.99 : 103 bets, 48W/55L, +12.7 % ROI — encore volumineux, mais nettement meilleur qu'au point de départ.
+- Bucket 3.0-4.99 : 23 bets, 11W/12L, +59.1 % ROI — meilleur sous-segment, à préserver.
+- OVER_UNDER_HT OVER_1_5 : 7 bets, 4W/3L, +69.9 % ROI — signal utile conservé.
+- FIRST_HALF_WINNER AWAY et OVER_UNDER OVER supprimés — bruit sans edge.
 
-- [ ] **EL2-1** Supprimer FIRST_HALF_WINNER en EL2 (0W sur l'ensemble du backtest).
-- [ ] **EL2-2** Supprimer OVER_UNDER_HT OVER_0_5 en EL2 (0W également — cote trop basse pour la variance League Two).
-- [ ] **EL2-3** Augmenter MODEL_SCORE_THRESHOLD pour ONE_X_TWO en EL2 : passer de 0.60 à 0.63. Objectif : réduire de 192 à ~100 picks ONE_X_TWO et améliorer le WR de 41 % à 52 %+.
-- [ ] **EL2-4** Multiplier par 3-4 les picks OVER_UNDER_HT OVER_1_5 en EL2 : abaisser le threshold de ce marché spécifique à 0.50. Ce marché est le plus rentable du backtest EL2 (ROI +86 %).
-- [ ] **EL2-5** Augmenter EV minimum global EL2 à 0.10 (actuellement 0.08).
+**Actions appliquées :**
+
+- [x] **EL2-1** `PICK_EV_FLOOR_MAP` EL2 FIRST_HALF_WINNER AWAY : 0.99.
+- [x] **EL2-2** `PICK_EV_FLOOR_MAP` EL2 OVER_UNDER OVER : 0.99.
+- [x] **EL2-3** `MODEL_SCORE_THRESHOLD_MAP` EL2 : 0.45 → 0.48 → 0.50 (0.50 retenu).
+- [x] **EL2-4** Conserver `OVER_UNDER_HT OVER_1_5` ouvert — ne pas le couper avec les marchés parasites.
+
+**Décision :**
+
+- [x] **EL2-5** Retenir `MODEL_SCORE_THRESHOLD = 0.50` comme meilleur compromis volume / ROI observé.
+- [ ] **EL2-6** Revenir plus tard seulement si on veut attaquer le Brier marginal via recalibration plus profonde, pas via un saut brutal de threshold.
 
 ---
 
@@ -289,13 +300,24 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### ERD — Eredivisie (2W-3L sur 5 décidés, ROI –38.9 %, FAIL)
-**Problème critique :** pire ROI de tous les championnats. Prod confirmait : gap –58 pp. Le modèle est le plus overconfident sur l'ERD de toutes les ligues. Ajax/PSV dominent mais les cotes reflètent déjà cette domination — il n'y a pas d'EV réel.
+#### ERD — Eredivisie ✅ PASS technique (2026-04-18) — 0 bet / insuffisant
+**Résultat retenu :** 0 bet / 3 saisons — ROI 0 %, Brier 0.5988 (PASS), CalibrationErr 3.46 % (PASS), overallVerdict PASS.
+- Le patch a supprimé tout le faux EV observé auparavant (`ROI -38.9 %` sur 7 bets).
+- Le `ndjson` montre surtout un mix de `BELOW_MODEL_SCORE_THRESHOLD` massif (694 fixtures), de favoris HOME sans EV (`ev_below_threshold`) et d'extrêmes DRAW/AWAY rejetés par `probability_too_low`, `odds_above_cap` ou `ev_above_hard_cap`.
+- En pratique, on a un PASS technique, mais pas encore de signal exploitable ni de stock visible de bons `OVER` bloqués par erreur.
 
-- [ ] **ERD-1** Augmenter MODEL_SCORE_THRESHOLD ERD à 0.68 (depuis ~0.60).
-- [ ] **ERD-2** Désactiver OVER_UNDER_HT picks en ERD (0W sur backtest) — la ligue néerlandaise a des matchs très déséquilibrés où les cotes mi-temps ne reflètent pas bien la réalité.
-- [ ] **ERD-3** Restreindre ERD aux picks HOME uniquement avec EV ≥ 0.15 et prob_modèle ≥ 60 %.
-- [ ] **ERD-4** Recalibrer λ Eredivisie : les équipes dominantes (Ajax, PSV) ont des λ offensifs très élevés qui gonflent artificiellement la confiance du modèle sur leurs matchs à domicile.
+**Actions appliquées :**
+
+- [x] **ERD-1** `MODEL_SCORE_THRESHOLD_MAP` ERD : 0.60 → 0.68.
+- [x] **ERD-2** `PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP` ERD HOME : 0.60.
+- [x] **ERD-3** `PICK_EV_FLOOR_MAP` ERD HOME : 0.15.
+- [x] **ERD-4** `PICK_EV_FLOOR_MAP` ERD UNDER : 0.99.
+- [x] **ERD-5** `PICK_EV_FLOOR_MAP` ERD OVER_UNDER_HT OVER_1_5 : 0.99.
+
+**Décision :**
+
+- [x] **ERD-6** Geler ERD dans cet état pour éviter de republier du faux EV.
+- [ ] **ERD-7** Revenir plus tard avec une recalibration de modèle plus fine si l'objectif devient de recréer du volume exploitable en ERD.
 
 ---
 

@@ -37,6 +37,10 @@ const PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP: Record<string, Decimal> = {
   // after odds caps and HA correction but remains slightly over-confident on Brier;
   // tighten modestly to 0.42 rather than reverting to the global 0.45.
   'D2|ONE_X_TWO|AWAY': new Decimal('0.42'),
+  // Backtest 2026-04-18: ERD only places HOME picks and they all sit in the
+  // 2.0-2.99 bucket at 2W/5, -14.4% ROI. Raise the directional confidence bar
+  // before allowing another Eredivisie home favorite at mid-range odds.
+  'ERD|ONE_X_TWO|HOME': new Decimal('0.60'),
   // Audit 2026-04-04: EL1 HOME is structurally miscalibrated — model over-estimates
   // P(home win) by ~15pp. Raising the probability gate reduces exposure to the
   // over-confident sub-population where EV > 0.25 but actual ROI is -32%.
@@ -359,6 +363,9 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   L1: new Decimal('0.58'),
   J1: new Decimal('0.55'),
   MX1: new Decimal('0.55'),
+  // Backtest 2026-04-18: ERD passes Brier and calibration but fails ROI on a tiny
+  // set of mid-range HOME picks. Raise the fixture-quality bar before selection.
+  ERD: new Decimal('0.68'),
   // Tier B — secondary / lower-division markets
   CH: new Decimal('0.50'),
   D2: new Decimal('0.55'),
@@ -370,7 +377,11 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // (22 teams, high parity) — max(P) rarely exceeds 0.60, threshold must match reality.
   I2: new Decimal('0.50'),
   EL1: new Decimal('0.50'),
-  EL2: new Decimal('0.45'),
+  // Backtest 2026-04-18: EL2 has strong ROI but fails Brier by a hair (0.6508).
+  // The issue is the massive 1X2 volume in the 2.0-2.99 bucket (155 bets, ROI +7%),
+  // not the profitable 3.0-4.99 sub-segment or HT over 1.5. 0.48 improved ROI and
+  // reduced volume without moving Brier; test 0.50 as the next small step.
+  EL2: new Decimal('0.50'),
   // Tier C — European competitions
   // Lower threshold reflects sparse early-season stats and cross-competition
   // stat blending which produces less certain deterministic scores.
@@ -505,6 +516,12 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Audit 2026-04-04 (post-patch): EL2 DRAW — 3 bets, -100%, avg EV 0.123.
   // Borderline quality with no profitable signal.
   'EL2|ONE_X_TWO|DRAW': new Decimal('0.18'),
+  // Backtest 2026-04-18: EL2 had a single FIRST_HALF_WINNER AWAY bet, 0W/1L.
+  // No evidence of a usable edge; remove the noise before tuning the main market.
+  'EL2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-18: EL2 OVER surfaced once at 2.15 and lost. Keep EL2 totals
+  // focus on the profitable HT over 1.5 signal instead of sparse full-time OVER.
+  'EL2|OVER_UNDER|OVER': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): F2 DRAW — 4 bets, -100%, EV 0.10–0.33.
   // All four outcomes were losses across a wide EV range — no usable edge.
   'F2|ONE_X_TWO|DRAW': new Decimal('0.20'),
@@ -514,6 +531,15 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-18: D2 HOME should remain observable, but only with stronger
   // signal than the league default. Pair with the 3.00 odds floor and reduced HA.
   'D2|ONE_X_TWO|HOME': new Decimal('0.12'),
+  // Backtest 2026-04-18: ERD HOME at odds 2.02-2.36 goes 2W/5 with avg EV 0.184
+  // and negative ROI. Keep the market alive but require a stronger edge signal.
+  'ERD|ONE_X_TWO|HOME': new Decimal('0.15'),
+  // Backtest 2026-04-18: ERD UNDER surfaced once at 3.39 and lost. High Eredivisie
+  // goal environment plus dominant teams make model-derived UNDER value suspect.
+  'ERD|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-18: ERD OVER_1_5 HT surfaced once and lost; the market is too
+  // sparse and noisy to keep in scope while fixing ROI. Disable for now.
+  'ERD|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
   // Floor 0.12 retains only picks with stronger model confidence.
   'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
