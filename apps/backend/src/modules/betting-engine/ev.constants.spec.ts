@@ -152,6 +152,12 @@ describe('getPickMaxSelectionOdds', () => {
     ).toBe(1.95);
   });
 
+  it('returns 2.99 ceiling for EL1 HT over 1.5', () => {
+    expect(
+      getPickMaxSelectionOdds('EL1', 'OVER_UNDER_HT', 'OVER_1_5')?.toNumber(),
+    ).toBe(2.99);
+  });
+
   it('returns 5.50 ceiling for PL 1X2 DRAW — raises the global 4.0 cap', () => {
     // Audit 2026-04-04: 164 rejected PL DRAW cases (odds > 4.0) showed sim
     // ROI +17.1%. Per-pick ceiling replaces the global MAX_SELECTION_ODDS cap.

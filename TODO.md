@@ -248,12 +248,22 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 ---
 
-#### EL1 — League One (≈26W-27L, ROI +28.5 %, PASS)
-**Problème :** quasi-équilibre W/L. Le marché HOME (40 picks, ROI 0.30) est proche de l'équilibre. Les petits marchés OVER_UNDER drainent quelques défaites.
+#### EL1 — League One ✅ PASS renforcé (2026-04-18)
+**Résultat retenu :** 52 bets / 3 saisons — ROI +31.0 %, Brier 0.6337 (PASS), CalibrationErr 2.17 % (PASS), overallVerdict PASS.
+- ONE_X_TWO : 40 bets, 20W/20L, +30.2 % ROI — signal principal sain.
+- AWAY : 21 bets, 11W/10L, +55.3 % ROI — meilleur vrai signal de la ligue.
+- HOME : 19 bets, 9W/10L, +2.3 % ROI — segment faible mais pas assez mauvais pour justifier un durcissement immédiat.
+- OVER_UNDER_HT OVER_1_5 : 5 bets, 3W/2L, +62.4 % ROI après cap — le mauvais sous-segment 3.0-4.99 a été coupé.
+- OVER_UNDER full-time reste marginal / bruité (6 bets, -30.8 % ROI), surtout via OVER_3_5 (0W/2L).
 
-- [ ] **EL1-1** Supprimer les picks OVER_UNDER UNDER_3_5 en EL1 (ROI 0.015 sur 8 bets — trop marginal, ajoute des défaites sans valeur).
-- [ ] **EL1-2** Augmenter la génération OVER_UNDER_HT OVER_1_5 en EL1 (le seul pick FIRST_HALF_WINNER capturé était 1W-0L à 2.77u — ce marché doit être plus exploité).
-- [ ] **EL1-3** Resserrer le filtre HOME EL1 : exiger EV ≥ 0.09 (légère hausse depuis 0.08).
+**Actions appliquées :**
+
+- [x] **EL1-1** `PICK_MAX_SELECTION_ODDS_MAP` EL1 OVER_UNDER_HT OVER_1_5 : cap 2.99.
+
+**Décision :**
+
+- [x] **EL1-2** Conserver EL1 en l'état — la ligue est déjà PASS avec un bon ROI et de bonnes métriques.
+- [ ] **EL1-3** Revenir plus tard seulement si on veut nettoyer `OVER_UNDER OVER_3_5`, qui reste le petit segment douteux.
 
 ---
 

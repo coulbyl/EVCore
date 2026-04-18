@@ -590,6 +590,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // profitable segment is short-odds favorites (< 1.95), not medium-priced ones.
   // Combined with floor lowered to 1.50, this creates a [1.50, 1.95) window.
   'SP2|ONE_X_TWO|HOME': new Decimal('1.95'),
+  // Backtest 2026-04-18 plus prod dashboard: EL1 HT over 1.5 is pulled down by
+  // the 3.0-4.99 slice (0W/3 in backtest), while 2.0-2.99 remains positive.
+  // Keep the market alive, but cap the long half-time prices.
+  'EL1|OVER_UNDER_HT|OVER_1_5': new Decimal('2.99'),
   // Audit 2026-04-04: PL DRAW was entirely blocked by the global MAX_SELECTION_ODDS
   // cap (4.0) — 164 rejected cases showed sim ROI +17.1% at EV >= 0.08. The sole
   // allowed DRAW (3.91, below cap) won at +2.91 profit. Raise the ceiling to 5.50
