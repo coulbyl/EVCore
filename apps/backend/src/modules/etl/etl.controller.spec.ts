@@ -1,8 +1,7 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { describe, it, expect, vi } from 'vitest';
 import { EtlController } from './etl.controller';
 import type { EtlService } from './etl.service';
-import type { AuthSession } from '../auth/auth.types';
 
 describe('EtlController', () => {
   function makeService(overrides: Partial<EtlService> = {}): EtlService {
@@ -21,7 +20,6 @@ describe('EtlController', () => {
       triggerEloSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
       triggerBettingEngineAnalysis: vi.fn().mockResolvedValue(undefined),
-      triggerOddsSnapshotRetention: vi.fn().mockResolvedValue(undefined),
       triggerRollingStatsSeason: vi.fn().mockResolvedValue(undefined),
       ...overrides,
     } as unknown as EtlService;
@@ -111,53 +109,6 @@ describe('EtlController', () => {
       status: 'ok',
     });
     expect(service.triggerEloSync).toHaveBeenCalledTimes(1);
-  });
-
-  it('triggers odds snapshot retention and returns ok', async () => {
-    const service = makeService();
-    const controller = new EtlController(service);
-    const session: AuthSession = {
-      sessionId: 'session-1',
-      user: {
-        id: 'user-1',
-        email: 'admin@evcore.local',
-        username: 'admin',
-        fullName: 'Admin',
-        bio: null,
-        role: 'ADMIN',
-        emailVerified: true,
-        avatarUrl: null,
-      },
-    };
-
-    await expect(
-      controller.triggerOddsRetention(session, { retentionDays: 45 }),
-    ).resolves.toEqual({
-      status: 'ok',
-    });
-    expect(service.triggerOddsSnapshotRetention).toHaveBeenCalledWith(45);
-  });
-
-  it('rejects odds snapshot retention for non-admin users', async () => {
-    const service = makeService();
-    const controller = new EtlController(service);
-    const session: AuthSession = {
-      sessionId: 'session-1',
-      user: {
-        id: 'user-2',
-        email: 'operator@evcore.local',
-        username: 'operator',
-        fullName: 'Operator',
-        bio: null,
-        role: 'OPERATOR',
-        emailVerified: true,
-        avatarUrl: null,
-      },
-    };
-
-    await expect(
-      controller.triggerOddsRetention(session, { retentionDays: 45 }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('triggers league-scoped sync and returns competitionCode', async () => {

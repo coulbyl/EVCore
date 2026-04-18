@@ -2,7 +2,7 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { execFile } from 'node:child_process';
 import { ConfigService } from '@nestjs/config';
-import { OddsSnapshotSource } from '@evcore/db';
+import { Market, OddsSnapshotSource } from '@evcore/db';
 import { createLogger } from '@utils/logger';
 import {
   ETL_CONSTANTS,
@@ -98,22 +98,70 @@ export class OddsHistoricalImportWorker extends WorkerHost {
     let skipped = 0;
 
     for (const [dateStr, dateFixtures] of byDate) {
-      // Fetch odds snapshot from just before kick-off (T-1 hour)
-      const snapshotDate = buildSnapshotTimestamp(dateFixtures[0].scheduledAt);
+      const fixtureIds = dateFixtures.map((f) => f.id);
+      const TRACKED_MARKETS = [
+        Market.ONE_X_TWO,
+        Market.OVER_UNDER,
+        Market.BTTS,
+        Market.FIRST_HALF_WINNER,
+        Market.OVER_UNDER_HT,
+      ] as const;
 
+      // Single query: returns a map of fixtureId → set of already-imported markets.
+      const existing = await this.fixtureService.findExistingMarketsForFixtures(
+        fixtureIds,
+        [...TRACKED_MARKETS],
+      );
+
+      const has = (fixtureId: string, market: Market): boolean =>
+        existing.get(fixtureId)?.has(market) ?? false;
+
+      // Skip fixtures where every tracked market is already present.
+      const needFetch = dateFixtures.filter((f) =>
+        TRACKED_MARKETS.some((m) => !has(f.id, m)),
+      );
+
+      if (needFetch.length === 0) {
+        logger.debug(
+          { dateStr },
+          'All markets already present — skipping date',
+        );
+        imported += dateFixtures.length;
+        continue;
+      }
+
+      // Build the minimal set of API markets needed across all fixtures on this date.
+      const needH2H = needFetch.some((f) => !has(f.id, Market.ONE_X_TWO));
+      const needOu = needFetch.some((f) => !has(f.id, Market.OVER_UNDER));
+      const needBtts = needFetch.some((f) => !has(f.id, Market.BTTS));
+      const needFhw = needFetch.some(
+        (f) => !has(f.id, Market.FIRST_HALF_WINNER),
+      );
+      const needHt = needFetch.some((f) => !has(f.id, Market.OVER_UNDER_HT));
+
+      const marketParts: string[] = [];
+      if (needH2H) marketParts.push('h2h');
+      if (needOu) marketParts.push('totals');
+      if (needBtts) marketParts.push('btts');
+      if (needFhw) marketParts.push('h2h_h1');
+      if (needHt) marketParts.push('totals_h1');
+      const markets = marketParts.join(',');
+
+      const snapshotDate = buildSnapshotTimestamp(dateFixtures[0].scheduledAt);
       const events = await this.fetchHistoricalOdds(
         apiKey,
         sportKey,
         snapshotDate,
+        markets,
       );
 
       if (events === null) {
         logger.warn({ dateStr }, 'Failed to fetch odds for date — skipping');
-        skipped += dateFixtures.length;
+        skipped += needFetch.length;
         continue;
       }
 
-      for (const fixture of dateFixtures) {
+      for (const fixture of needFetch) {
         const event = matchEvent(events, fixture);
 
         if (!event) {
@@ -125,36 +173,59 @@ export class OddsHistoricalImportWorker extends WorkerHost {
           continue;
         }
 
-        const pinnacleOdds = extractPinnacleH2H(event);
-        if (!pinnacleOdds) {
-          logger.debug(
-            { fixtureId: fixture.id, externalEventId: event.id },
-            'Pinnacle h2h odds not available for this event',
-          );
-          skipped++;
-          continue;
-        }
-
         const snapshotAt = new Date(event.bookmakers[0].last_update);
 
-        await this.fixtureService.upsertOneXTwoOddsSnapshot({
-          fixtureId: fixture.id,
-          bookmaker: 'Pinnacle',
-          snapshotAt,
-          homeOdds: pinnacleOdds.home,
-          drawOdds: pinnacleOdds.draw,
-          awayOdds: pinnacleOdds.away,
-          source: OddsSnapshotSource.HISTORICAL,
-        });
-
-        const totals = extractTotals25(event);
-        if (totals) {
-          await this.fixtureService.upsertOverUnderOddsSnapshot({
+        if (!has(fixture.id, Market.ONE_X_TWO)) {
+          const pinnacleOdds = extractPinnacleH2H(event);
+          if (!pinnacleOdds) {
+            logger.debug(
+              { fixtureId: fixture.id, externalEventId: event.id },
+              'Pinnacle h2h odds not available for this event',
+            );
+            skipped++;
+            continue;
+          }
+          await this.fixtureService.upsertOneXTwoOddsSnapshot({
             fixtureId: fixture.id,
-            bookmaker: totals.bookmaker,
+            bookmaker: 'Pinnacle',
             snapshotAt,
-            over: totals.over,
-            under: totals.under,
+            homeOdds: pinnacleOdds.home,
+            drawOdds: pinnacleOdds.draw,
+            awayOdds: pinnacleOdds.away,
+            source: OddsSnapshotSource.HISTORICAL,
+          });
+        }
+
+        const totals = !has(fixture.id, Market.OVER_UNDER)
+          ? extractTotals25(event)
+          : null;
+        const btts = !has(fixture.id, Market.BTTS) ? extractBtts(event) : null;
+        const fhw = !has(fixture.id, Market.FIRST_HALF_WINNER)
+          ? extractFirstHalfWinner(event)
+          : null;
+        const ouHt = !has(fixture.id, Market.OVER_UNDER_HT)
+          ? extractTotalsHT(event)
+          : {};
+
+        const hasSecondary =
+          totals !== null ||
+          btts !== null ||
+          fhw !== null ||
+          Object.keys(ouHt).length > 0;
+
+        if (hasSecondary) {
+          await this.fixtureService.upsertSecondaryMarketOdds({
+            fixtureId: fixture.id,
+            bookmaker: totals?.bookmaker ?? 'Pinnacle',
+            snapshotAt,
+            overUnderOdds: totals
+              ? { OVER: totals.over, UNDER: totals.under }
+              : {},
+            bttsYesOdds: btts?.yes ?? null,
+            bttsNoOdds: btts?.no ?? null,
+            htftOdds: {},
+            ouHtOdds: ouHt,
+            firstHalfWinnerOdds: fhw,
             source: OddsSnapshotSource.HISTORICAL,
           });
         }
@@ -171,14 +242,17 @@ export class OddsHistoricalImportWorker extends WorkerHost {
     );
   }
 
+  // eslint-disable-next-line max-params
   private async fetchHistoricalOdds(
     apiKey: string,
     sportKey: string,
     date: string,
+    markets: string,
   ): Promise<TheOddsApiEvent[] | null> {
     const url =
       `${ETL_CONSTANTS.THE_ODDS_API_BASE}/historical/sports/${sportKey}/odds` +
-      `?apiKey=${apiKey}&date=${date}&regions=eu&markets=h2h,totals` +
+      `?apiKey=${apiKey}&date=${date}&regions=eu` +
+      `&markets=${markets}` +
       `&bookmakers=${PINNACLE_KEY},${TOTALS_FALLBACK_KEY}`;
 
     try {
@@ -320,6 +394,60 @@ function extractTotals25(event: TheOddsApiEvent): TotalsOdds | null {
     }
   }
   return null;
+}
+
+type BttsOdds = { yes: number; no: number };
+
+type OuHtOdds = Partial<
+  Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
+>;
+
+type FirstHalfWinnerOdds = { home: number; draw: number; away: number };
+
+function extractBtts(event: TheOddsApiEvent): BttsOdds | null {
+  const bm = event.bookmakers.find((b) => b.key === PINNACLE_KEY);
+  if (!bm) return null;
+  const market = bm.markets.find((m) => m.key === 'btts');
+  if (!market) return null;
+  const yes = market.outcomes.find((o) => o.name === 'Yes')?.price;
+  const no = market.outcomes.find((o) => o.name === 'No')?.price;
+  if (yes === undefined || no === undefined) return null;
+  return { yes, no };
+}
+
+function extractFirstHalfWinner(
+  event: TheOddsApiEvent,
+): FirstHalfWinnerOdds | null {
+  const bm = event.bookmakers.find((b) => b.key === PINNACLE_KEY);
+  if (!bm) return null;
+  const market = bm.markets.find((m) => m.key === 'h2h_h1');
+  if (!market) return null;
+  const home = market.outcomes.find((o) => o.name === event.home_team)?.price;
+  const away = market.outcomes.find((o) => o.name === event.away_team)?.price;
+  const draw = market.outcomes.find((o) => o.name === 'Draw')?.price;
+  if (home === undefined || away === undefined || draw === undefined)
+    return null;
+  return { home, draw, away };
+}
+
+function extractTotalsHT(event: TheOddsApiEvent): OuHtOdds {
+  const bm = event.bookmakers.find((b) => b.key === PINNACLE_KEY);
+  if (!bm) return {};
+  const market = bm.markets.find((m) => m.key === 'totals_h1');
+  if (!market) return {};
+
+  const result: OuHtOdds = {};
+  for (const outcome of market.outcomes) {
+    const point = outcome.point;
+    if (point === 0.5) {
+      if (outcome.name === 'Over') result['OVER_0_5'] = outcome.price;
+      else if (outcome.name === 'Under') result['UNDER_0_5'] = outcome.price;
+    } else if (point === 1.5) {
+      if (outcome.name === 'Over') result['OVER_1_5'] = outcome.price;
+      else if (outcome.name === 'Under') result['UNDER_1_5'] = outcome.price;
+    }
+  }
+  return result;
 }
 
 function extractPinnacleH2H(event: TheOddsApiEvent): H2HOdds | null {

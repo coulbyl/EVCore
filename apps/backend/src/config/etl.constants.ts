@@ -156,7 +156,6 @@ export const BULLMQ_QUEUES = {
   STALE_SCHEDULED_SYNC: 'stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
-  ODDS_SNAPSHOT_RETENTION: 'odds-snapshot-retention',
   ELO_SYNC: 'elo-sync',
   BETTING_ENGINE: 'betting-engine',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',

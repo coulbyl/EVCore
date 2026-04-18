@@ -140,9 +140,15 @@ Rapport source : [backtest-result.txt](backtest-result.txt) · Analyse prod : [A
 
 **Problème :** le modèle ne génère que des picks DRAW à cote moyenne 5.27. Winrate 26 % inévitable à ces cotes. ROI positif grâce aux cotes élevées, mais W/L structurellement inversé.
 
-- [ ] **PL-1** Ajouter les picks OVER_UNDER_HT OVER_0_5 et OVER_1_5 en PL (breakeven ~65 %, PL fait 90 % over 1.5 sur la période prod). Le modèle doit générer ces marchés car il les ignore actuellement.
-- [ ] **PL-2** Plafonner les picks DRAW 1X2 en PL : exiger prob_modèle ≥ 35 % ET EV ≥ 0.15 (au lieu de 0.08). Cela élimine les DRAW "marginaux" qui font chuter le W/L.
-- [ ] **PL-3** Vérifier pourquoi AWAY picks (ONE_X_TWO) ne sont pas générés en PL alors que AWAY WR = 40 % (bon) sur la période prod.
+**Diagnostics 2026-04-18 :**
+
+- W<L est **inhérent aux longshots DRAW à 5+** — pas un problème de calibration (breakeven 19 %, winrate réel 26 %).
+- **PL-2 abandonné :** prob ≥ 35 % sur DRAW à 5.27 cotes → EV ≈ 0.85 → impossible contre Pinnacle → 0 bets.
+- **PL-1 (OVER_UNDER_HT) :** odds HT uniquement depuis avril 2026 (ETL live), pas de couverture historique. En attente d'import odds historiques pour backtest.
+- **PL-3 (AWAY) :** 0 picks à threshold 0.45. Threshold 0.38 testé → 2 AWAY picks, EV 0.591, 0W/2L — sur-confiance modèle confirmée. En attente d'odds historiques pour analyse robuste.
+
+- [ ] **PL-1** Activer OVER_UNDER_HT OVER_1_5 en PL — nécessite import odds HT historiques d'abord.
+- [ ] **PL-3** Ré-évaluer AWAY picks après import odds historiques PL.
 
 ---
 

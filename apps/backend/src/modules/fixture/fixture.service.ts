@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Fixture, FixtureStatus, OddsSnapshotSource } from '@evcore/db';
+import { Fixture, FixtureStatus, Market, OddsSnapshotSource } from '@evcore/db';
 import {
   FixtureRepository,
   type UpsertFixtureResult,
@@ -255,10 +255,6 @@ export class FixtureService {
     return this.fixtureRepository.markXgUnavailable(externalId);
   }
 
-  async deleteOddsSnapshotsOlderThan(cutoff: Date): Promise<number> {
-    return this.fixtureRepository.deleteOddsSnapshotsOlderThan(cutoff);
-  }
-
   findPendingSettlementFixtures(now: Date): Promise<
     {
       id: string;
@@ -311,5 +307,15 @@ export class FixtureService {
     input: HasOneXTwoOddsSnapshotInput,
   ): Promise<boolean> {
     return this.fixtureRepository.hasOneXTwoOddsSnapshot(input);
+  }
+
+  async findExistingMarketsForFixtures(
+    fixtureIds: string[],
+    markets: Market[],
+  ): Promise<Map<string, Set<Market>>> {
+    return this.fixtureRepository.findExistingMarketsForFixtures(
+      fixtureIds,
+      markets,
+    );
   }
 }
