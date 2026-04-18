@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { PageShell } from "@evcore/ui";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
+import { BankrollWidget } from "./bankroll-widget";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 
 export function AppShell({
@@ -36,6 +37,11 @@ export function AppShell({
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },
+        {
+          label: "Portefeuille",
+          href: "/dashboard/bankroll",
+          active: pathname.startsWith("/dashboard/bankroll"),
+        },
         isAdmin
           ? {
               label: "Audit",
@@ -59,6 +65,7 @@ export function AppShell({
       navItems={navItems}
       actions={
         <div className="flex items-center gap-2 relative">
+          <BankrollWidget />
           <BetSlipButton />
           <AccountButton currentUser={currentUser} />
         </div>

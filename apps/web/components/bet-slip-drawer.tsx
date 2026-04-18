@@ -3,8 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { Drawer } from "vaul";
+import { useQueryClient } from "@tanstack/react-query";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
+import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
 import {
   draftItemKey,
   type BetSlipDraftItem,
@@ -111,6 +113,8 @@ export function BetSlipDrawer() {
     setUnitStake,
     clearDraft,
   } = useBetSlip();
+  const queryClient = useQueryClient();
+  const bankrollQuery = useBankrollBalance();
 
   const [unitStakeInput, setUnitStakeInput] = useState(() =>
     String(draft.unitStake),
@@ -140,12 +144,21 @@ export function BetSlipDrawer() {
     (sum, item) => sum + effectiveStake(item.stakeOverride),
     0,
   );
+  const bankroll = Number.parseFloat(bankrollQuery.data?.balance ?? "0");
+  const exceedsBalance = totalStake > bankroll;
 
   function handleSubmit() {
     setSubmitError(null);
     startTransition(async () => {
       try {
         await createBetSlip(draft);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["bet-slips"] }),
+          queryClient.invalidateQueries({ queryKey: ["bankroll-balance"] }),
+          queryClient.invalidateQueries({
+            queryKey: ["bankroll-transactions"],
+          }),
+        ]);
         setSubmitted(true);
         clearDraft();
       } catch (err) {
@@ -183,6 +196,12 @@ export function BetSlipDrawer() {
                 {totalItems > 0
                   ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
                   : "Ajoutez vos sélections pour préparer votre ticket."}
+              </p>
+              <p className="mt-2 text-xs font-semibold text-slate-700">
+                Solde disponible :{" "}
+                <span className="tabular-nums text-slate-950">
+                  {bankroll.toLocaleString("fr-FR")} u
+                </span>
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -266,6 +285,13 @@ export function BetSlipDrawer() {
                   {submitError}
                 </div>
               )}
+              {exceedsBalance && (
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                  <AlertCircle size={13} />
+                  Solde insuffisant : vous voulez miser{" "}
+                  {totalStake.toLocaleString("fr-FR")} u.
+                </div>
+              )}
               <div className="mb-3 flex items-center justify-between text-xs">
                 <span className="text-slate-500">Mise par sélection</span>
                 <StakeInput
@@ -279,6 +305,12 @@ export function BetSlipDrawer() {
                 />
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
+                <span className="text-slate-500">Solde disponible</span>
+                <span className="font-semibold tabular-nums text-slate-800">
+                  {bankroll.toLocaleString("fr-FR")}
+                </span>
+              </div>
+              <div className="mb-4 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">
                   Total ({totalItems} sélection{totalItems > 1 ? "s" : ""})
                 </span>
@@ -288,7 +320,7 @@ export function BetSlipDrawer() {
               </div>
               <button
                 type="button"
-                disabled={isPending}
+                disabled={isPending || exceedsBalance}
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white disabled:opacity-60"
               >
