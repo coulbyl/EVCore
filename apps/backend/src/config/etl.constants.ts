@@ -112,6 +112,8 @@ export const THE_ODDS_API_SPORT_KEYS = {
   EL2: 'soccer_england_league2',
   F2: 'soccer_france_ligue_two',
   I2: 'soccer_italy_serie_b',
+  // Other domestic leagues
+  POR: 'soccer_portugal_primeira_liga',
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',

@@ -29,11 +29,26 @@ export const TheOddsApiEventSchema = z.object({
   bookmakers: z.array(BookmakerSchema),
 });
 
+// API error response shape — e.g. unsupported markets on the current plan.
+export const TheOddsApiErrorResponseSchema = z.object({
+  message: z.string(),
+  error_code: z.string().optional(),
+  details_url: z.string().optional(),
+});
+
 // The API returns { data: [], timestamp: "..." } on success.
 // On out-of-coverage dates it returns {} or { message: "..." } with no data/timestamp —
 // default to empty array so the worker skips cleanly without a Zod warning.
 export const TheOddsApiHistoricalResponseSchema = z.object({
   data: z.array(TheOddsApiEventSchema).default([]),
+  timestamp: z.string().optional(),
+  previous_timestamp: z.string().optional(),
+  next_timestamp: z.string().optional(),
+});
+
+// Per-event historical endpoint — data is a single event object, not an array.
+export const TheOddsApiEventOddsResponseSchema = z.object({
+  data: TheOddsApiEventSchema,
   timestamp: z.string().optional(),
   previous_timestamp: z.string().optional(),
   next_timestamp: z.string().optional(),

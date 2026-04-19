@@ -70,6 +70,7 @@ import {
   SAFE_VALUE_MAX_ODDS,
   UNDER_HIGH_LAMBDA_THRESHOLD,
   UNDER_HIGH_LAMBDA_EV_FLOOR,
+  COMBOS_ENABLED,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
@@ -2047,10 +2048,10 @@ export class BettingEngineService {
       }
     }
 
-    // Combos from COMBO_WHITELIST. When lambdas collapse to the floor, Poisson
-    // scoreline mass becomes unrealistic and combo joint probabilities become
-    // unreliable, so combos are disabled for that fixture.
-    if (!lambdaFloorHit) {
+    // Combos from COMBO_WHITELIST. Disabled globally during single-pick calibration
+    // phase (COMBOS_ENABLED = false). Also disabled per-fixture when lambdas collapse
+    // to the floor (Poisson scoreline mass becomes unreliable).
+    if (COMBOS_ENABLED && !lambdaFloorHit) {
       for (const combo of COMBO_WHITELIST) {
         const p1Odds = getPickOddsFromSnapshot(
           combo.market1,

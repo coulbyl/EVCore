@@ -1521,7 +1521,7 @@ describe('BettingEngineService', () => {
         awayOdds: new Decimal('4.00'),
         overUnderOdds: {},
         bttsYesOdds: null,
-        bttsNoOdds: null,
+        bttsNoOdds: new Decimal('2.30'),
         htftOdds: {},
         ouHtOdds: {},
         firstHalfWinnerOdds: null,
