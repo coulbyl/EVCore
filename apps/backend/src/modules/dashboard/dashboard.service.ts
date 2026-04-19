@@ -6,36 +6,28 @@ import {
   startOfUtcDay,
   endOfUtcDay,
   formatTimeUtc,
-  formatTimeWithSecondsUtc,
   parseIsoDate,
 } from '@utils/date.utils';
 import {
   signedDelta,
   formatSigned,
-  toQualityScore,
   buildWorkerStatus,
-  uniqueBetsByFixture,
   notificationSeverity,
-  notificationLevel,
 } from './dashboard.utils';
 import { DashboardRepository } from './dashboard.repository';
 import type {
   CompetitionStat,
   DashboardSummary,
   LeaderboardEntry,
-  OpportunityRow,
   PnlSummary,
   WorkerStatus,
-  FixturePanel,
 } from './dashboard.types';
 
 const MIN_SETTLED_MODEL = 10;
 const MIN_SETTLED_USER = 5;
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
-type TopBet = SummaryData['topBets'][number];
 type UnreadNotification = SummaryData['unreadNotifications'][number];
-type ActivityNotification = SummaryData['activityNotifications'][number];
 
 @Injectable()
 export class DashboardService {
@@ -55,15 +47,10 @@ export class DashboardService {
         ? { start: startOfUtcDay(pnlDay), end: endOfUtcDay(pnlDay) }
         : undefined,
     });
-    const uniqueTopBets = uniqueBetsByFixture(data.topBets).slice(0, 4);
-
     return {
       dashboardKpis: this.buildKpis(data),
       workerStatuses: this.buildWorkerStatuses(data),
       activeAlerts: this.buildActiveAlerts(data.unreadNotifications),
-      topOpportunities: this.buildTopOpportunities(uniqueTopBets),
-      selectedFixture: this.buildSelectedFixture(uniqueTopBets),
-      activityFeed: this.buildActivityFeed(data.activityNotifications),
       pnlSummary: this.buildPnlSummary(data.settledBets),
     };
   }
@@ -161,110 +148,6 @@ export class DashboardService {
         detail: this.sanitizeAlertDetail(n.body),
         severity: notificationSeverity(n.type),
       }));
-  }
-
-  private buildTopOpportunities(uniqueTopBets: TopBet[]): OpportunityRow[] {
-    return uniqueTopBets.map((bet) => {
-      const fixture = bet.modelRun.fixture;
-      return {
-        id: bet.id,
-        fixtureId: fixture.id,
-        fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
-        homeLogo: fixture.homeTeam.logoUrl ?? null,
-        awayLogo: fixture.awayTeam.logoUrl ?? null,
-        competition: fixture.season.competition.name,
-        kickoff: formatTimeUtc(fixture.scheduledAt),
-        fixtureStatus: fixture.status,
-        market: bet.market,
-        pick: bet.pick,
-        odds:
-          bet.oddsSnapshot != null
-            ? toNumber(bet.oddsSnapshot).toFixed(2)
-            : '-',
-        ev: formatSigned(toNumber(bet.ev), 3),
-        quality: String(toQualityScore(bet.modelRun.finalScore)),
-        deterministic: toNumber(bet.modelRun.deterministicScore).toFixed(2),
-        decision: bet.modelRun.decision,
-      };
-    });
-  }
-
-  private buildSelectedFixture(uniqueTopBets: TopBet[]): FixturePanel {
-    const bet = uniqueTopBets[0];
-    if (!bet) {
-      return {
-        fixtureId: '',
-        fixture: 'Aucun match',
-        homeLogo: null,
-        awayLogo: null,
-        competition: '-',
-        startTime: '--:--',
-        market: '-',
-        pick: '-',
-        modelConfidence: 'Aucune donnée disponible.',
-        notes: ['Aucun run modèle disponible.'],
-        metrics: [
-          { label: 'EV', value: '+0.000', tone: 'accent' },
-          { label: 'Qualité', value: '0', tone: 'success' },
-          { label: 'Déterministe', value: '0.00', tone: 'warning' },
-          { label: 'Cotes', value: '0.00', tone: 'neutral' },
-        ],
-      };
-    }
-
-    const fixture = bet.modelRun.fixture;
-    return {
-      fixtureId: fixture.id,
-      fixture: `${fixture.homeTeam.name} vs ${fixture.awayTeam.name}`,
-      homeLogo: fixture.homeTeam.logoUrl ?? null,
-      awayLogo: fixture.awayTeam.logoUrl ?? null,
-      competition: fixture.season.competition.name,
-      startTime: formatTimeUtc(fixture.scheduledAt),
-      market: bet.market,
-      pick: bet.pick,
-      modelConfidence:
-        'Sélection calculée à partir des dernières exécutions du modèle.',
-      notes: [
-        `runId ${bet.modelRunId.slice(0, 8)}`,
-        `score final ${toNumber(bet.modelRun.finalScore).toFixed(3)}`,
-        `stake ${toNumber(bet.stakePct).toFixed(3)}`,
-      ],
-      metrics: [
-        {
-          label: 'EV',
-          value: formatSigned(toNumber(bet.ev), 3),
-          tone: 'accent',
-        },
-        {
-          label: 'Qualité',
-          value: String(toQualityScore(bet.modelRun.finalScore)),
-          tone: 'success',
-        },
-        {
-          label: 'Déterministe',
-          value: toNumber(bet.modelRun.deterministicScore).toFixed(2),
-          tone: 'warning',
-        },
-        {
-          label: 'Cotes',
-          value:
-            bet.oddsSnapshot != null
-              ? toNumber(bet.oddsSnapshot).toFixed(2)
-              : '-',
-          tone: 'neutral',
-        },
-      ],
-    };
-  }
-
-  private buildActivityFeed(
-    notifications: ActivityNotification[],
-  ): DashboardSummary['activityFeed'] {
-    return notifications.map((n) => ({
-      time: formatTimeWithSecondsUtc(n.createdAt),
-      level: notificationLevel(n.type),
-      message: n.title,
-    }));
   }
 
   private buildPnlSummary(settled: SummaryData['settledBets']): PnlSummary {

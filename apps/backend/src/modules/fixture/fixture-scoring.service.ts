@@ -36,6 +36,17 @@ export type ScoredFixtureModelRun = {
   evaluatedPicks: EvaluatedPickSnapshot[];
 };
 
+export type ScoredFixtureSvBet = {
+  betId: string;
+  market: string;
+  pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
+  ev: string;
+  betStatus: 'WON' | 'LOST' | 'PENDING' | null;
+  probEstimated: string | null;
+};
+
 export type ScoredFixtureRow = {
   fixtureId: string;
   fixture: string;
@@ -50,6 +61,7 @@ export type ScoredFixtureRow = {
   hasOdds: boolean;
   alreadyInUserTicket: boolean;
   modelRun: ScoredFixtureModelRun | null;
+  safeValueBet: ScoredFixtureSvBet | null;
 };
 
 export type ScoredFixturesResult = {
@@ -172,9 +184,10 @@ export class FixtureScoringService {
                   ev: true,
                   probEstimated: true,
                   status: true,
+                  isSafeValue: true,
                 },
                 orderBy: { ev: 'desc' },
-                take: 1,
+                take: 5,
               },
             },
             orderBy: { analyzedAt: 'desc' },
@@ -214,11 +227,18 @@ export class FixtureScoringService {
 
     let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
-      const bet = run?.bets[0] ?? null;
+      const bet = run?.bets.find((b) => !b.isSafeValue) ?? null;
+      const svBet = run?.bets.find((b) => b.isSafeValue) ?? null;
       const betStatus =
         bet?.status === 'WON' || bet?.status === 'LOST'
           ? bet.status
           : bet
+            ? 'PENDING'
+            : null;
+      const svBetStatus =
+        svBet?.status === 'WON' || svBet?.status === 'LOST'
+          ? svBet.status
+          : svBet
             ? 'PENDING'
             : null;
 
@@ -267,6 +287,20 @@ export class FixtureScoringService {
               expectedTotalGoals: featureDiag?.expectedTotalGoals ?? null,
               candidatePicks: featureDiag?.candidatePicks ?? [],
               evaluatedPicks: featureDiag?.evaluatedPicks ?? [],
+            }
+          : null,
+        safeValueBet: svBet
+          ? {
+              betId: svBet.id,
+              market: svBet.market ?? '',
+              pick: svBet.pick ?? '',
+              comboMarket: svBet.comboMarket ?? null,
+              comboPick: svBet.comboPick ?? null,
+              ev: formatSigned(toNumber(svBet.ev), 3),
+              betStatus: svBetStatus,
+              probEstimated: svBet.probEstimated
+                ? `${(toNumber(svBet.probEstimated) * 100).toFixed(1)}%`
+                : null,
             }
           : null,
       };

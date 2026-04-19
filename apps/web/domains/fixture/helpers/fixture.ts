@@ -1,6 +1,4 @@
 import { formatTime } from "@/lib/date";
-import type { FixturePanel } from "@/domains/dashboard/types/dashboard";
-import type { FixtureRow } from "../types/fixture";
 
 /** Formate le score d'un fixture terminé.
  *  score: "2 - 1", htScore: "1 - 0" → "2 – 1 (1 – 0 MT)" */
@@ -19,41 +17,3 @@ export function formatKickoff(iso: string): string {
   return formatTime(iso);
 }
 
-/** Convertit un FixtureRow en FixturePanel pour le side panel / drawer. */
-export function toFixturePanel(row: FixtureRow): FixturePanel {
-  const mr = row.modelRun;
-  return {
-    fixtureId: row.fixtureId,
-    fixture: row.fixture,
-    homeLogo: row.homeLogo,
-    awayLogo: row.awayLogo,
-    competition: row.competition,
-    startTime: row.scheduledAt,
-    market: mr?.market ?? "-",
-    pick: mr?.pick ?? "-",
-    modelConfidence: mr
-      ? `Source : ${mr.predictionSource ?? "—"} — Score final : ${mr.finalScore}`
-      : "Aucun model run disponible.",
-    notes: [
-      mr?.lambdaHome ? `λ domicile : ${mr.lambdaHome}` : null,
-      mr?.lambdaAway ? `λ extérieur : ${mr.lambdaAway}` : null,
-      mr?.expectedTotalGoals
-        ? `buts attendus : ${mr.expectedTotalGoals}`
-        : null,
-    ].filter((n): n is string => n !== null),
-    metrics: [
-      { label: "EV", value: mr?.ev ?? "+0.000", tone: "accent" },
-      {
-        label: "Score final",
-        value: mr?.finalScore ?? "0.00",
-        tone: "success",
-      },
-      {
-        label: "Déterministe",
-        value: mr?.deterministicScore ?? "0.00",
-        tone: "warning",
-      },
-      { label: "Prob.", value: mr?.probEstimated ?? "—", tone: "neutral" },
-    ],
-  };
-}

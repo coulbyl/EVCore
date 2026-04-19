@@ -11,7 +11,7 @@ import {
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
-import type { FixtureRow } from "@/domains/fixture/types/fixture";
+import type { FixtureRow, FixtureSvBet } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "./fixture-diagnostics";
 
@@ -31,6 +31,33 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
     >
       {decision === "BET" ? "BET" : "NO BET"}
     </span>
+  );
+}
+
+function SVBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-widest text-sky-600">
+      Safe
+    </span>
+  );
+}
+
+function SVRow({ sv }: { sv: FixtureSvBet }) {
+  const pickLabel = formatCombinedPickForDisplay({
+    market: sv.market,
+    pick: sv.pick,
+    comboMarket: sv.comboMarket ?? undefined,
+    comboPick: sv.comboPick ?? undefined,
+  });
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <SVBadge />
+      <span className="text-slate-600">{pickLabel}</span>
+      <span className="font-semibold text-sky-600">{sv.ev}</span>
+      {sv.betStatus && sv.betStatus !== "PENDING" ? (
+        <BetResultBadge status={sv.betStatus} />
+      ) : null}
+    </div>
   );
 }
 
@@ -296,7 +323,7 @@ function FixtureMobileCard({
             </div>
           </div>
 
-          {/* Row 4 : résultat (si bet settled) */}
+          {/* Row 4 : résultat EV (si bet settled) */}
           {mr?.decision === "BET" &&
           mr.betStatus &&
           mr.betStatus !== "PENDING" ? (
@@ -304,6 +331,9 @@ function FixtureMobileCard({
               <BetResultBadge status={mr.betStatus} />
             </div>
           ) : null}
+
+          {/* Row 5 : Safe Value bet (si présent) */}
+          {row.safeValueBet ? <SVRow sv={row.safeValueBet} /> : null}
         </div>
       </button>
 
@@ -367,16 +397,33 @@ function FixtureTableRow({
       </td>
       {/* Pick */}
       <td className="px-4 py-3 text-sm text-slate-700">
-        {mr?.market && mr?.pick ? (
-          formatCombinedPickForDisplay({
-            market: mr.market,
-            pick: mr.pick,
-            comboMarket: mr.comboMarket ?? undefined,
-            comboPick: mr.comboPick ?? undefined,
-          })
-        ) : (
-          <span className="text-slate-400">—</span>
-        )}
+        <div className="space-y-1">
+          {mr?.market && mr?.pick ? (
+            <div>
+              {formatCombinedPickForDisplay({
+                market: mr.market,
+                pick: mr.pick,
+                comboMarket: mr.comboMarket ?? undefined,
+                comboPick: mr.comboPick ?? undefined,
+              })}
+            </div>
+          ) : (
+            <span className="text-slate-400">—</span>
+          )}
+          {row.safeValueBet ? (
+            <div className="flex items-center gap-1.5">
+              <SVBadge />
+              <span className="text-xs text-slate-600">
+                {formatCombinedPickForDisplay({
+                  market: row.safeValueBet.market,
+                  pick: row.safeValueBet.pick,
+                  comboMarket: row.safeValueBet.comboMarket ?? undefined,
+                  comboPick: row.safeValueBet.comboPick ?? undefined,
+                })}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </td>
       {/* Cote */}
       <td className="px-4 py-3 text-sm tabular-nums font-medium text-slate-700">
@@ -384,15 +431,26 @@ function FixtureTableRow({
       </td>
       {/* EV */}
       <td className="px-4 py-3 text-sm tabular-nums font-semibold">
-        {mr?.ev ? (
-          <span className="text-emerald-600">{mr.ev}</span>
-        ) : (
-          <span className="text-slate-400">—</span>
-        )}
+        <div className="space-y-1">
+          {mr?.ev ? (
+            <div className="text-emerald-600">{mr.ev}</div>
+          ) : (
+            <span className="text-slate-400">—</span>
+          )}
+          {row.safeValueBet ? (
+            <div className="text-sky-600">{row.safeValueBet.ev}</div>
+          ) : null}
+        </div>
       </td>
       {/* Résultat */}
       <td className="px-4 py-3">
-        <BetResultBadge status={mr?.betStatus ?? null} />
+        <div className="space-y-1">
+          <BetResultBadge status={mr?.betStatus ?? null} />
+          {row.safeValueBet?.betStatus &&
+          row.safeValueBet.betStatus !== "PENDING" ? (
+            <BetResultBadge status={row.safeValueBet.betStatus} />
+          ) : null}
+        </div>
       </td>
       {/* Actions */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -483,7 +541,7 @@ export function FixturesTable({
                   key={i}
                   className="sticky top-0 z-10 bg-slate-50/95 px-4 py-3 text-left text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-slate-500 backdrop-blur"
                 >
-                  {col}
+                  {col} 
                 </th>
               ))}
             </tr>
