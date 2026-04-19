@@ -21,48 +21,6 @@ export type AlertItem = {
   severity: 'high' | 'medium' | 'low';
 };
 
-export type OpportunityRow = {
-  id: string;
-  fixtureId: string;
-  fixture: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  competition: string;
-  kickoff: string;
-  fixtureStatus: string;
-  market: string;
-  pick: string;
-  odds: string;
-  ev: string;
-  quality: string;
-  deterministic: string;
-  decision: 'BET' | 'NO_BET';
-};
-
-export type FixturePanel = {
-  fixtureId: string;
-  fixture: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  competition: string;
-  startTime: string;
-  market: string;
-  pick: string;
-  modelConfidence: string;
-  notes: string[];
-  metrics: Array<{
-    label: string;
-    value: string;
-    tone?: 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
-  }>;
-};
-
-export type ActivityItem = {
-  time: string;
-  level: 'INFO' | 'WARN' | 'BET' | 'ALERT';
-  message: string;
-};
-
 export type PnlSummary = {
   settledBets: number;
   wonBets: number;
@@ -75,9 +33,6 @@ export type DashboardSummary = {
   dashboardKpis: KpiCard[];
   workerStatuses: WorkerStatus[];
   activeAlerts: AlertItem[];
-  topOpportunities: OpportunityRow[];
-  selectedFixture: FixturePanel;
-  activityFeed: ActivityItem[];
   pnlSummary: PnlSummary;
 };
 

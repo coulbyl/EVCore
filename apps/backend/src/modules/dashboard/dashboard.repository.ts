@@ -29,7 +29,6 @@ export class DashboardRepository {
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
-      topBets,
       activityNotifications,
       latestFixture,
       latestOddsSnapshot,
@@ -92,33 +91,6 @@ export class DashboardRepository {
         orderBy: { createdAt: 'desc' },
         take: 25,
       }),
-      this.prisma.client.bet.findMany({
-        where: {
-          modelRun: {
-            fixture: {
-              status: {
-                in: [FixtureStatus.SCHEDULED, FixtureStatus.IN_PROGRESS],
-              },
-              scheduledAt: { gte: todayStart, lte: todayEnd },
-            },
-          },
-        },
-        orderBy: { ev: 'desc' },
-        take: 12,
-        include: {
-          modelRun: {
-            include: {
-              fixture: {
-                include: {
-                  season: { include: { competition: true } },
-                  homeTeam: true,
-                  awayTeam: true,
-                },
-              },
-            },
-          },
-        },
-      }),
       this.prisma.client.notification.findMany({
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -168,7 +140,6 @@ export class DashboardRepository {
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
-      topBets,
       activityNotifications,
       latestFixture,
       latestOddsSnapshot,

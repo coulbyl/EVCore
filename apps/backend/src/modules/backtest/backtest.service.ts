@@ -25,12 +25,16 @@ import {
   getOneXTwoOutcome,
   type BacktestOddsBucketPerformance,
   type BacktestMarketPerformance,
+  type PredictionBacktestResult,
+  type PredictionBacktestSummary,
   type BacktestPickPerformance,
   type BacktestReport,
   type CalibrationPoint,
   type CompetitionBacktestReport,
   type MetricResult,
   type OneXTwoPrediction,
+  type PredictionCalibrationRecommendation,
+  type PredictionThresholdBacktest,
   type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
@@ -42,6 +46,7 @@ import {
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
 import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
+import { getPredictionConfig } from '@modules/prediction/prediction.constants';
 
 const logger = createLogger('backtest-service');
 const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
@@ -122,17 +127,39 @@ export type SafeValueSeasonResult = {
   daysWithPicks: number;
 };
 
+export type SafeValueCompetitionResult = {
+  competitionCode: string;
+  competitionName: string;
+  picksPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  profit: Decimal;
+  roi: number;
+  winRate: number;
+  avgProbability: number;
+  avgOdds: number;
+  avgEv: number;
+  daysWithPicks: number;
+  marketPerformance: BacktestMarketPerformance[];
+};
+
 export type SafeValueBacktestReport = {
   seasons: SafeValueSeasonResult[];
+  competitions: SafeValueCompetitionResult[];
   aggregate: {
     picksPlaced: number;
     wins: number;
+    losses: number;
     voids: number;
+    profit: Decimal;
     winRate: number;
     roi: number;
     avgProbability: number;
     avgOdds: number;
+    avgEv: number;
     daysWithPicks: number;
+    marketPerformance: BacktestMarketPerformance[];
   };
   generatedAt: Date;
 };
@@ -140,6 +167,7 @@ export type SafeValueBacktestReport = {
 type SafeValuePickEntry = {
   seasonId: string;
   competitionCode: string;
+  competitionName: string;
   pick: ViablePick;
   fixture: FixtureForBacktest;
   result: 'WIN' | 'LOSS' | 'VOID';
@@ -202,6 +230,18 @@ type RunBacktestOptions = {
   writeAnalysisLog?: boolean;
 };
 
+type PredictionCandidate = {
+  probability: number;
+  correct: boolean;
+};
+
+const PREDICTION_VALIDATION_HIT_RATE = 0.55;
+const PREDICTION_VALIDATION_COVERAGE_RATE = 0.1;
+const PREDICTION_LOWERING_HIT_RATE = 0.7;
+const PREDICTION_THRESHOLD_SCAN = [
+  0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+];
+
 @Injectable()
 export class BacktestService {
   constructor(
@@ -252,6 +292,7 @@ export class BacktestService {
 
     const oneXTwoPredictions: OneXTwoPrediction[] = [];
     const calibrationPoints: CalibrationPoint[] = [];
+    const predictionCandidates: PredictionCandidate[] = [];
     let analyzedCount = 0;
     let skippedCount = 0;
     let roiProfit = new Decimal(0);
@@ -348,6 +389,16 @@ export class BacktestService {
         { prob: home, actual: actual === 'HOME' ? 1 : 0 },
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
+      );
+      predictionCandidates.push(
+        buildPredictionCandidate(
+          {
+            home: computed.probabilities.home,
+            draw: computed.probabilities.draw,
+            away: computed.probabilities.away,
+          },
+          actual,
+        ),
       );
       analyzedCount++;
 
@@ -562,6 +613,10 @@ export class BacktestService {
       marketStats.values(),
       (stats) => buildMarketPerformance(stats),
     ).sort((a, b) => a.market.localeCompare(b.market));
+    const predictionBacktest = buildPredictionBacktestSummary(
+      competitionCode ?? null,
+      predictionCandidates,
+    );
 
     const report: BacktestReport = {
       seasonId,
@@ -577,6 +632,7 @@ export class BacktestService {
         new Decimal(0),
       ),
       averageEvSimulated,
+      predictionBacktest,
       marketPerformance,
       reportGeneratedAt: new Date(),
     };
@@ -592,6 +648,9 @@ export class BacktestService {
         roiSimulated: report.roiSimulated.toNumber(),
         maxDrawdownSimulated: report.maxDrawdownSimulated.toNumber(),
         averageEvSimulated: report.averageEvSimulated.toNumber(),
+        predictionHitRate: report.predictionBacktest.hitRate,
+        predictionCoverageRate: report.predictionBacktest.coverageRate,
+        predictionVerdict: report.predictionBacktest.verdict,
       },
       'Backtest complete',
     );
@@ -1023,6 +1082,7 @@ export class BacktestService {
       const entries = await this.collectSafeValuePicksForSeason(
         season.id,
         season.competition.code,
+        season.competition.name,
       );
 
       // Per-season pick-level stats
@@ -1086,6 +1146,7 @@ export class BacktestService {
 
     const totalPicks = seasonResults.reduce((s, r) => s + r.picksPlaced, 0);
     const totalWins = seasonResults.reduce((s, r) => s + r.wins, 0);
+    const totalLosses = seasonResults.reduce((s, r) => s + r.losses, 0);
     const totalVoids = seasonResults.reduce((s, r) => s + r.voids, 0);
     const totalStake = totalPicks - totalVoids;
     const totalProfit = seasonResults.reduce(
@@ -1093,26 +1154,45 @@ export class BacktestService {
       new Decimal(0),
     );
     const seasonsWithPicks = seasonResults.filter((r) => r.picksPlaced > 0);
+    const competitions = buildSafeValueCompetitionResults(allEntries);
+    const aggregateMarketPerformance =
+      buildSafeValueMarketPerformance(allEntries);
+    const totalEvSum = seasonsWithPicks.reduce(
+      (sum, season) => sum + season.avgEv * (season.picksPlaced - season.voids),
+      0,
+    );
 
     const report: SafeValueBacktestReport = {
       seasons: seasonResults,
+      competitions,
       aggregate: {
         picksPlaced: totalPicks,
         wins: totalWins,
+        losses: totalLosses,
         voids: totalVoids,
+        profit: totalProfit,
         winRate: totalStake > 0 ? totalWins / totalStake : 0,
         roi: totalStake > 0 ? totalProfit.div(totalStake).toNumber() : 0,
         avgProbability:
-          seasonsWithPicks.length > 0
-            ? seasonsWithPicks.reduce((s, r) => s + r.avgProbability, 0) /
-              seasonsWithPicks.length
+          totalStake > 0
+            ? seasonsWithPicks.reduce(
+                (sum, season) =>
+                  sum +
+                  season.avgProbability * (season.picksPlaced - season.voids),
+                0,
+              ) / totalStake
             : 0,
         avgOdds:
-          seasonsWithPicks.length > 0
-            ? seasonsWithPicks.reduce((s, r) => s + r.avgOdds, 0) /
-              seasonsWithPicks.length
+          totalStake > 0
+            ? seasonsWithPicks.reduce(
+                (sum, season) =>
+                  sum + season.avgOdds * (season.picksPlaced - season.voids),
+                0,
+              ) / totalStake
             : 0,
+        avgEv: totalStake > 0 ? totalEvSum / totalStake : 0,
         daysWithPicks,
+        marketPerformance: aggregateMarketPerformance,
       },
       generatedAt: new Date(),
     };
@@ -1134,6 +1214,7 @@ export class BacktestService {
   private async collectSafeValuePicksForSeason(
     seasonId: string,
     competitionCode: string,
+    competitionName: string,
   ): Promise<SafeValuePickEntry[]> {
     const fixtures = await this.prisma.client.fixture.findMany({
       where: {
@@ -1270,6 +1351,7 @@ export class BacktestService {
       entries.push({
         seasonId,
         competitionCode,
+        competitionName,
         pick: svPick,
         fixture,
         result: simulation.result,
@@ -1316,6 +1398,431 @@ function buildMarketSummaries(
       oddsBuckets: market.oddsBuckets,
     };
   });
+}
+
+function buildSafeValueCompetitionResults(
+  entries: SafeValuePickEntry[],
+): SafeValueCompetitionResult[] {
+  const byCompetition = new Map<
+    string,
+    {
+      competitionCode: string;
+      competitionName: string;
+      entries: SafeValuePickEntry[];
+    }
+  >();
+
+  for (const entry of entries) {
+    const current = byCompetition.get(entry.competitionCode);
+    if (current) {
+      current.entries.push(entry);
+      continue;
+    }
+
+    byCompetition.set(entry.competitionCode, {
+      competitionCode: entry.competitionCode,
+      competitionName: entry.competitionName,
+      entries: [entry],
+    });
+  }
+
+  return Array.from(
+    byCompetition.values(),
+    ({ entries, competitionCode, competitionName }) =>
+      buildSafeValueSummary({
+        entries,
+        competitionCode,
+        competitionName,
+      }),
+  ).sort((a, b) => b.picksPlaced - a.picksPlaced);
+}
+
+function buildSafeValueSummary(input: {
+  entries: SafeValuePickEntry[];
+  competitionCode: string;
+  competitionName: string;
+}): SafeValueCompetitionResult {
+  let picksPlaced = 0;
+  let wins = 0;
+  let losses = 0;
+  let voids = 0;
+  let profit = new Decimal(0);
+  let probabilityTotal = new Decimal(0);
+  let oddsTotal = new Decimal(0);
+  let evTotal = new Decimal(0);
+  const daysWithPicks = new Set<string>();
+
+  for (const entry of input.entries) {
+    picksPlaced++;
+    if (entry.result === 'WIN') wins++;
+    if (entry.result === 'LOSS') losses++;
+    if (entry.result === 'VOID') voids++;
+    profit = profit.plus(entry.profit);
+    if (entry.result !== 'VOID') {
+      probabilityTotal = probabilityTotal.plus(entry.pick.probability);
+      oddsTotal = oddsTotal.plus(entry.pick.odds);
+      evTotal = evTotal.plus(entry.pick.ev);
+    }
+    daysWithPicks.add(entry.fixture.scheduledAt.toISOString().slice(0, 10));
+  }
+
+  const stake = picksPlaced - voids;
+
+  return {
+    competitionCode: input.competitionCode,
+    competitionName: input.competitionName,
+    picksPlaced,
+    wins,
+    losses,
+    voids,
+    profit,
+    roi: stake > 0 ? profit.div(stake).toNumber() : 0,
+    winRate: stake > 0 ? wins / stake : 0,
+    avgProbability: stake > 0 ? probabilityTotal.div(stake).toNumber() : 0,
+    avgOdds: stake > 0 ? oddsTotal.div(stake).toNumber() : 0,
+    avgEv: stake > 0 ? evTotal.div(stake).toNumber() : 0,
+    daysWithPicks: daysWithPicks.size,
+    marketPerformance: buildSafeValueMarketPerformance(input.entries),
+  };
+}
+
+function buildSafeValueMarketPerformance(
+  entries: SafeValuePickEntry[],
+): BacktestMarketPerformance[] {
+  const byMarket = new Map<Market, MarketAccumulator>();
+
+  for (const entry of entries) {
+    const stats = getOrCreateMarketAccumulator(byMarket, entry.pick.market);
+    const pickLabel = getSafeValuePickLabel(entry.pick);
+    const bucketLabel = getOddsBucketLabel(entry.pick.odds);
+
+    stats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      stats.stake = stats.stake.plus(1);
+    }
+    stats.profit = stats.profit.plus(entry.profit);
+    stats.oddsTotal = stats.oddsTotal.plus(entry.pick.odds);
+    stats.evTotal = stats.evTotal.plus(entry.pick.ev);
+    stats.equity = stats.equity.plus(entry.profit);
+    stats.equityPeak = Decimal.max(stats.equityPeak, stats.equity);
+    stats.maxDrawdown = Decimal.max(
+      stats.maxDrawdown,
+      stats.equityPeak.minus(stats.equity),
+    );
+    if (entry.result === 'WIN') stats.wins++;
+    if (entry.result === 'LOSS') stats.losses++;
+    if (entry.result === 'VOID') stats.voids++;
+
+    const pickStats = getOrCreatePickAccumulator(stats.picks, pickLabel);
+    pickStats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      pickStats.stake = pickStats.stake.plus(1);
+    }
+    pickStats.profit = pickStats.profit.plus(entry.profit);
+    pickStats.oddsTotal = pickStats.oddsTotal.plus(entry.pick.odds);
+    pickStats.evTotal = pickStats.evTotal.plus(entry.pick.ev);
+    if (entry.result === 'WIN') pickStats.wins++;
+    if (entry.result === 'LOSS') pickStats.losses++;
+    if (entry.result === 'VOID') pickStats.voids++;
+
+    const bucketStats = getOrCreateBucketAccumulator(
+      stats.buckets,
+      bucketLabel,
+    );
+    bucketStats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      bucketStats.stake = bucketStats.stake.plus(1);
+    }
+    bucketStats.profit = bucketStats.profit.plus(entry.profit);
+    bucketStats.oddsTotal = bucketStats.oddsTotal.plus(entry.pick.odds);
+    bucketStats.evTotal = bucketStats.evTotal.plus(entry.pick.ev);
+    if (entry.result === 'WIN') bucketStats.wins++;
+    if (entry.result === 'LOSS') bucketStats.losses++;
+    if (entry.result === 'VOID') bucketStats.voids++;
+  }
+
+  return Array.from(byMarket.values(), (stats) =>
+    buildMarketPerformance(stats),
+  ).sort((a, b) => a.market.localeCompare(b.market));
+}
+
+function getSafeValuePickLabel(pick: ViablePick): string {
+  if (pick.comboMarket && pick.comboPick) {
+    return `${pick.pick} + ${pick.comboPick}`;
+  }
+  return pick.pick;
+}
+
+function buildPredictionCandidate(
+  probabilities: {
+    home: Decimal;
+    draw: Decimal;
+    away: Decimal;
+  },
+  actual: 'HOME' | 'DRAW' | 'AWAY',
+): PredictionCandidate {
+  const pHome = probabilities.home.toNumber();
+  const pDraw = probabilities.draw.toNumber();
+  const pAway = probabilities.away.toNumber();
+
+  const pick =
+    pHome >= pDraw && pHome >= pAway
+      ? 'HOME'
+      : pDraw >= pAway
+        ? 'DRAW'
+        : 'AWAY';
+  const probability = Math.max(pHome, pDraw, pAway);
+
+  return {
+    probability,
+    correct: pick === actual,
+  };
+}
+
+function buildPredictionBacktestSummary(
+  competitionCode: string | null,
+  candidates: PredictionCandidate[],
+): PredictionBacktestSummary {
+  const config = getPredictionConfig(competitionCode);
+  const thresholds = buildPredictionThresholdGrid(config.threshold).map(
+    (threshold) =>
+      summarizePredictionThreshold(candidates, threshold, config.minSampleN),
+  );
+  const current =
+    thresholds.find((entry) => entry.threshold === config.threshold) ??
+    summarizePredictionThreshold(
+      candidates,
+      config.threshold,
+      config.minSampleN,
+    );
+
+  return {
+    enabled: config.enabled,
+    threshold: config.threshold,
+    minSampleN: config.minSampleN,
+    total: current.total,
+    predicted: current.predicted,
+    correct: current.correct,
+    hitRate: current.hitRate,
+    coverageRate: current.coverageRate,
+    verdict: current.verdict,
+    thresholds,
+  };
+}
+
+function buildCompetitionPredictionBacktest(
+  competitionCode: string,
+  reports: BacktestReport[],
+): PredictionBacktestResult | null {
+  const summaries = reports.map((report) => report.predictionBacktest);
+  if (summaries.length === 0) return null;
+
+  const currentConfig = getPredictionConfig(competitionCode);
+  const thresholdGrid = buildPredictionThresholdGrid(currentConfig.threshold);
+  const thresholds = thresholdGrid.map((threshold) => {
+    const aggregate = summaries.reduce(
+      (acc, summary) => {
+        const entry = summary.thresholds.find(
+          (item) => item.threshold === threshold,
+        );
+        if (!entry) return acc;
+        acc.total += entry.total;
+        acc.predicted += entry.predicted;
+        acc.correct += entry.correct;
+        return acc;
+      },
+      { total: 0, predicted: 0, correct: 0 },
+    );
+
+    return summarizePredictionTotals(
+      aggregate.total,
+      aggregate.predicted,
+      aggregate.correct,
+      threshold,
+      currentConfig.minSampleN,
+    );
+  });
+
+  const current =
+    thresholds.find((entry) => entry.threshold === currentConfig.threshold) ??
+    summarizePredictionThreshold(
+      [],
+      currentConfig.threshold,
+      currentConfig.minSampleN,
+    );
+  const recommendation = buildPredictionCalibrationRecommendation(
+    currentConfig.enabled,
+    current,
+    thresholds,
+    currentConfig.minSampleN,
+  );
+
+  return {
+    competition: competitionCode,
+    enabled: currentConfig.enabled,
+    threshold: currentConfig.threshold,
+    minSampleN: currentConfig.minSampleN,
+    total: current.total,
+    predicted: current.predicted,
+    correct: current.correct,
+    hitRate: current.hitRate,
+    coverageRate: current.coverageRate,
+    verdict: current.verdict,
+    thresholds,
+    recommendation,
+  };
+}
+
+// eslint-disable-next-line max-params
+function buildPredictionCalibrationRecommendation(
+  enabled: boolean,
+  current: PredictionThresholdBacktest,
+  thresholds: PredictionThresholdBacktest[],
+  minSampleN: number,
+): PredictionCalibrationRecommendation {
+  const passing = thresholds.filter((entry) => entry.verdict === 'PASS');
+  const lowerPassing = passing.filter(
+    (entry) => entry.threshold < current.threshold,
+  );
+  const higherPassing = passing.filter(
+    (entry) => entry.threshold > current.threshold,
+  );
+
+  if (!enabled) {
+    const candidate = passing[0];
+    if (!candidate) {
+      return {
+        enabled: false,
+        threshold: current.threshold,
+        reason:
+          'Canal désactivé: aucun seuil ne valide simultanément hit rate, couverture et volume minimal.',
+      };
+    }
+
+    return {
+      enabled: true,
+      threshold: candidate.threshold,
+      reason: `Canal désactivé aujourd'hui, mais ${formatPct(candidate.hitRate)} sur ${candidate.predicted} prédictions à ${candidate.threshold.toFixed(2)} valide une activation.`,
+    };
+  }
+
+  if (current.verdict === 'PASS') {
+    if (
+      current.hitRate > PREDICTION_LOWERING_HIT_RATE &&
+      lowerPassing.length > 0
+    ) {
+      const candidate = lowerPassing[0];
+      return {
+        enabled: true,
+        threshold: candidate.threshold,
+        reason: `Hit rate solide (${formatPct(current.hitRate)}). Abaisser à ${candidate.threshold.toFixed(2)} augmente la couverture à ${formatPct(candidate.coverageRate)} tout en restant valide.`,
+      };
+    }
+
+    return {
+      enabled: true,
+      threshold: current.threshold,
+      reason: `Seuil actuel validé: ${formatPct(current.hitRate)} de hit rate pour ${current.predicted} prédictions.`,
+    };
+  }
+
+  const lacksVolume =
+    current.predicted < minSampleN ||
+    current.coverageRate < PREDICTION_VALIDATION_COVERAGE_RATE;
+  if (lacksVolume) {
+    const candidate = lowerPassing[0];
+    if (candidate) {
+      return {
+        enabled: true,
+        threshold: candidate.threshold,
+        reason: `Seuil actuel trop strict (${current.predicted} prédictions, couverture ${formatPct(current.coverageRate)}). ${candidate.threshold.toFixed(2)} restaure un volume valide.`,
+      };
+    }
+
+    return {
+      enabled: false,
+      threshold: current.threshold,
+      reason:
+        'Seuil actuel trop strict et aucun seuil plus bas ne respecte les critères minimaux de couverture et de volume.',
+    };
+  }
+
+  const candidate = higherPassing[0];
+  if (candidate) {
+    return {
+      enabled: true,
+      threshold: candidate.threshold,
+      reason: `Hit rate sous le plancher à ${current.threshold.toFixed(2)} (${formatPct(current.hitRate)}). Monter à ${candidate.threshold.toFixed(2)} repasse en zone valide.`,
+    };
+  }
+
+  return {
+    enabled: false,
+    threshold: current.threshold,
+    reason:
+      'Aucun seuil ne maintient un hit rate valide avec le volume actuel. Désactivation recommandée en attendant recalibration.',
+  };
+}
+
+function buildPredictionThresholdGrid(currentThreshold: number): number[] {
+  return Array.from(
+    new Set([...PREDICTION_THRESHOLD_SCAN, currentThreshold]),
+  ).sort((a, b) => a - b);
+}
+
+function summarizePredictionThreshold(
+  candidates: PredictionCandidate[],
+  threshold: number,
+  minSampleN: number,
+): PredictionThresholdBacktest {
+  const predictedCandidates = candidates.filter(
+    (candidate) => candidate.probability >= threshold,
+  );
+  const predicted = predictedCandidates.length;
+  const correct = predictedCandidates.filter(
+    (candidate) => candidate.correct,
+  ).length;
+
+  return summarizePredictionTotals(
+    candidates.length,
+    predicted,
+    correct,
+    threshold,
+    minSampleN,
+  );
+}
+
+// eslint-disable-next-line max-params
+function summarizePredictionTotals(
+  total: number,
+  predicted: number,
+  correct: number,
+  threshold: number,
+  minSampleN: number,
+): PredictionThresholdBacktest {
+  const hitRate = predicted > 0 ? correct / predicted : 0;
+  const coverageRate = total > 0 ? predicted / total : 0;
+  const verdict: ValidationVerdict =
+    predicted < minSampleN
+      ? 'INSUFFICIENT_DATA'
+      : hitRate >= PREDICTION_VALIDATION_HIT_RATE &&
+          coverageRate >= PREDICTION_VALIDATION_COVERAGE_RATE
+        ? 'PASS'
+        : 'FAIL';
+
+  return {
+    threshold,
+    total,
+    predicted,
+    correct,
+    hitRate,
+    coverageRate,
+    verdict,
+  };
+}
+
+function formatPct(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function buildCompetitionReport(input: {
@@ -1365,6 +1872,10 @@ function buildCompetitionReport(input: {
     new Decimal(0),
   );
   const byMarket = buildMarketSummaries(reports);
+  const predictionBacktest = buildCompetitionPredictionBacktest(
+    competition.code,
+    reports,
+  );
 
   const insufficient =
     totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
@@ -1440,6 +1951,7 @@ function buildCompetitionReport(input: {
     calibrationError: calibrationErrorMetric,
     roi,
     overallVerdict,
+    predictionBacktest,
     marketPerformance,
     byMarket,
     reportGeneratedAt: new Date(),

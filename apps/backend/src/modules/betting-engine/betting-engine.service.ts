@@ -75,6 +75,7 @@ import {
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
+import { PredictionService } from '@modules/prediction/prediction.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
@@ -137,6 +138,7 @@ export class BettingEngineService {
     config: ConfigService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
+    private readonly predictionService: PredictionService,
     private readonly bankroll?: BankrollService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
@@ -293,6 +295,13 @@ export class BettingEngineService {
         },
       },
     });
+
+    // Settle predictions (canal Confiance) en parallèle des bets EV/SV.
+    await this.predictionService.settlePredictions(
+      fixtureId,
+      fixture.homeScore,
+      fixture.awayScore,
+    );
 
     if (bets.length === 0) return { settled: 0 };
 
@@ -845,6 +854,14 @@ export class BettingEngineService {
         );
       }
     }
+
+    // Canal Confiance — après les canaux EV et Safe Value, sur les mêmes probabilities.
+    await this.predictionService.createPrediction({
+      fixtureId,
+      modelRunId: modelRun.id,
+      competition: competitionCode ?? '',
+      probabilities,
+    });
 
     return {
       status: 'analyzed',
