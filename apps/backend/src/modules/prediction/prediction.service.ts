@@ -1,15 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
+import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { getPredictionConfig } from './prediction.constants';
 import { PredictionRepository } from './prediction.repository';
-import type { PredictionRow } from './prediction.repository';
 import type { ThreeWayProba } from '@modules/betting-engine/betting-engine.utils';
+
+type PredictionWithFixture = Awaited<
+  ReturnType<PredictionRepository['findByDate']>
+>[number];
 
 export type PredictionListItem = {
   id: string;
   fixtureId: string;
   competition: string;
+  fixture: string;
+  kickoff: string;
   market: string;
   pick: string;
   probability: string;
@@ -140,14 +145,16 @@ export class PredictionService {
     };
   }
 
-  private toListItem(r: PredictionRow): PredictionListItem {
+  private toListItem(r: PredictionWithFixture): PredictionListItem {
     return {
       id: r.id,
       fixtureId: r.fixtureId,
       competition: r.competition,
+      fixture: `${r.fixture.homeTeam.name} vs ${r.fixture.awayTeam.name}`,
+      kickoff: formatTimeUtc(r.fixture.scheduledAt),
       market: r.market,
       pick: r.pick,
-      probability: `${(Number(r.probability) * 100).toFixed(1)}%`,
+      probability: `${(Number(r.probability) * 100).toFixed(0)}%`,
       correct: r.correct,
       settledAt: r.settledAt?.toISOString() ?? null,
       createdAt: r.createdAt.toISOString(),

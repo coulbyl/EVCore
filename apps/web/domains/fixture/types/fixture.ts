@@ -42,6 +42,12 @@ export type FixtureEvaluatedPickSnapshot = FixturePickSnapshot & {
   rejectionReason?: string;
 };
 
+export type FixturePrediction = {
+  pick: string;
+  probability: string;
+  correct: boolean | null;
+};
+
 export type FixtureSvBet = {
   betId: string;
   market: string;
@@ -68,6 +74,7 @@ export type FixtureRow = {
   alreadyInUserTicket: boolean;
   modelRun: FixtureModelRun | null;
   safeValueBet: FixtureSvBet | null;
+  prediction: FixturePrediction | null;
 };
 
 // ---------------------------------------------------------------------------

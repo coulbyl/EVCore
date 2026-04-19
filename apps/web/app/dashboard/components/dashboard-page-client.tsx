@@ -13,6 +13,7 @@ import { PerformanceCard } from "./performance-card";
 import { OperatorPerformanceCard } from "./operator-performance-card";
 import { PipelineStatus } from "./pipeline-status";
 import { UserLeaderboard } from "./user-leaderboard";
+import { PredictionsCard } from "./predictions-card";
 
 export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
   const [pnlDate, setPnlDate] = useState<string | undefined>(undefined);
@@ -49,6 +50,8 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
               <ActiveAlerts alerts={alerts} />
             </div>
           ) : null}
+
+          <PredictionsCard />
 
           <div className="grid gap-5 xl:grid-cols-2">
             <CompetitionRanking stats={competitionStats ?? []} />

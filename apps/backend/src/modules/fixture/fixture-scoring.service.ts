@@ -47,6 +47,12 @@ export type ScoredFixtureSvBet = {
   probEstimated: string | null;
 };
 
+export type ScoredFixturePrediction = {
+  pick: string;
+  probability: string;
+  correct: boolean | null;
+};
+
 export type ScoredFixtureRow = {
   fixtureId: string;
   fixture: string;
@@ -62,6 +68,7 @@ export type ScoredFixtureRow = {
   alreadyInUserTicket: boolean;
   modelRun: ScoredFixtureModelRun | null;
   safeValueBet: ScoredFixtureSvBet | null;
+  prediction: ScoredFixturePrediction | null;
 };
 
 export type ScoredFixturesResult = {
@@ -166,6 +173,11 @@ export class FixtureScoringService {
             },
           },
           oddsSnapshots: { select: { id: true }, take: 1 },
+          predictions: {
+            select: { pick: true, probability: true, correct: true },
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
           modelRuns: {
             select: {
               id: true,
@@ -301,6 +313,13 @@ export class FixtureScoringService {
               probEstimated: svBet.probEstimated
                 ? `${(toNumber(svBet.probEstimated) * 100).toFixed(1)}%`
                 : null,
+            }
+          : null,
+        prediction: f.predictions[0]
+          ? {
+              pick: f.predictions[0].pick,
+              probability: `${(toNumber(f.predictions[0].probability) * 100).toFixed(0)}%`,
+              correct: f.predictions[0].correct,
             }
           : null,
       };
