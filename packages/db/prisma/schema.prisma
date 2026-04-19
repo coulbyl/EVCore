@@ -166,6 +166,7 @@ model Fixture {
   betSlipItems         BetSlipItem[]
   teamStats            TeamStats[]
   oddsSnapshots        OddsSnapshot[]
+  predictions          Prediction[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -219,9 +220,10 @@ model ModelRun {
   features           Json     // { recentForm, xg, performanceDomExt, volatiliteLigue }
   openclawRaw        Json?    // raw LLM output — null in MVP
 
-  validatedByBackend Boolean  @default(false)
+  validatedByBackend Boolean      @default(false)
   bets               Bet[]
-  createdAt          DateTime @default(now())
+  predictions        Prediction[]
+  createdAt          DateTime     @default(now())
 
   @@index([fixtureId])
   @@index([fixtureId, analyzedAt])
@@ -435,4 +437,25 @@ model OddsSnapshot {
   @@index([fixtureId, bookmaker, market, pick, snapshotAt])
   @@index([snapshotAt])
   @@map("odds_snapshot")
+}
+
+// Canal Confiance — une prédiction argmax par fixture (HOME | DRAW | AWAY).
+// Indépendante du canal EV : pas de cote, pas de stake.
+model Prediction {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId   String    @db.Uuid
+  fixture     Fixture   @relation(fields: [fixtureId], references: [id])
+  modelRunId  String    @db.Uuid
+  modelRun    ModelRun  @relation(fields: [modelRunId], references: [id])
+  competition String    // code ligue (BL1, PL, etc.)
+  market      Market    @default(ONE_X_TWO)
+  pick        String    // HOME | DRAW | AWAY
+  probability Decimal   @db.Decimal(5, 4)
+  correct     Boolean?  // null = pending, true/false après settle
+  settledAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([fixtureId])
+  @@index([competition, createdAt])
+  @@map("prediction")
 }
