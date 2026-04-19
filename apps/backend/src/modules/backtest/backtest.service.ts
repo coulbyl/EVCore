@@ -1673,6 +1673,7 @@ function buildCompetitionPredictionBacktest(
   };
 }
 
+// eslint-disable-next-line max-params
 function buildPredictionCalibrationRecommendation(
   enabled: boolean,
   current: PredictionThresholdBacktest,
@@ -1710,7 +1711,7 @@ function buildPredictionCalibrationRecommendation(
       current.hitRate > PREDICTION_LOWERING_HIT_RATE &&
       lowerPassing.length > 0
     ) {
-      const candidate = lowerPassing[0]!;
+      const candidate = lowerPassing[0];
       return {
         enabled: true,
         threshold: candidate.threshold,
@@ -1791,6 +1792,7 @@ function summarizePredictionThreshold(
   );
 }
 
+// eslint-disable-next-line max-params
 function summarizePredictionTotals(
   total: number,
   predicted: number,

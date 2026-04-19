@@ -1081,6 +1081,7 @@ describe('BacktestService.runAllSeasonsSafeValueBacktest', () => {
         seasonId: string,
         competitionCode: string,
         competitionName: string,
+        // eslint-disable-next-line @typescript-eslint/require-await
       ) => {
         if (seasonId === 's1') {
           return [
