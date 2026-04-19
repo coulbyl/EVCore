@@ -16,4 +16,3 @@ export function formatScore(
 export function formatKickoff(iso: string): string {
   return formatTime(iso);
 }
-
