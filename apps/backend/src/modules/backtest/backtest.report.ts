@@ -29,6 +29,7 @@ export type CompetitionBacktestReport = {
   calibrationError: MetricResult;
   roi: MetricResult;
   overallVerdict: ValidationVerdict;
+  predictionBacktest: PredictionBacktestResult | null;
   marketPerformance: BacktestMarketPerformance[];
   byMarket: ValidationMarketSummary[];
   reportGeneratedAt: Date;
@@ -75,8 +76,43 @@ export type BacktestReport = {
   roiSimulated: Decimal;
   maxDrawdownSimulated: Decimal;
   averageEvSimulated: Decimal;
+  predictionBacktest: PredictionBacktestSummary;
   marketPerformance: BacktestMarketPerformance[];
   reportGeneratedAt: Date;
+};
+
+export type PredictionThresholdBacktest = {
+  threshold: number;
+  total: number;
+  predicted: number;
+  correct: number;
+  hitRate: number;
+  coverageRate: number;
+  verdict: ValidationVerdict;
+};
+
+export type PredictionBacktestSummary = {
+  enabled: boolean;
+  threshold: number;
+  minSampleN: number;
+  total: number;
+  predicted: number;
+  correct: number;
+  hitRate: number;
+  coverageRate: number;
+  verdict: ValidationVerdict;
+  thresholds: PredictionThresholdBacktest[];
+};
+
+export type PredictionCalibrationRecommendation = {
+  enabled: boolean;
+  threshold: number;
+  reason: string;
+};
+
+export type PredictionBacktestResult = PredictionBacktestSummary & {
+  competition: string;
+  recommendation: PredictionCalibrationRecommendation;
 };
 
 export type BacktestPickPerformance = {

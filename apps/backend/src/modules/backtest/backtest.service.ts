@@ -25,12 +25,16 @@ import {
   getOneXTwoOutcome,
   type BacktestOddsBucketPerformance,
   type BacktestMarketPerformance,
+  type PredictionBacktestResult,
+  type PredictionBacktestSummary,
   type BacktestPickPerformance,
   type BacktestReport,
   type CalibrationPoint,
   type CompetitionBacktestReport,
   type MetricResult,
   type OneXTwoPrediction,
+  type PredictionCalibrationRecommendation,
+  type PredictionThresholdBacktest,
   type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
@@ -42,6 +46,7 @@ import {
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
 import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
+import { getPredictionConfig } from '@modules/prediction/prediction.constants';
 
 const logger = createLogger('backtest-service');
 const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
@@ -202,6 +207,18 @@ type RunBacktestOptions = {
   writeAnalysisLog?: boolean;
 };
 
+type PredictionCandidate = {
+  probability: number;
+  correct: boolean;
+};
+
+const PREDICTION_VALIDATION_HIT_RATE = 0.55;
+const PREDICTION_VALIDATION_COVERAGE_RATE = 0.1;
+const PREDICTION_LOWERING_HIT_RATE = 0.7;
+const PREDICTION_THRESHOLD_SCAN = [
+  0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+];
+
 @Injectable()
 export class BacktestService {
   constructor(
@@ -252,6 +269,7 @@ export class BacktestService {
 
     const oneXTwoPredictions: OneXTwoPrediction[] = [];
     const calibrationPoints: CalibrationPoint[] = [];
+    const predictionCandidates: PredictionCandidate[] = [];
     let analyzedCount = 0;
     let skippedCount = 0;
     let roiProfit = new Decimal(0);
@@ -348,6 +366,16 @@ export class BacktestService {
         { prob: home, actual: actual === 'HOME' ? 1 : 0 },
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
+      );
+      predictionCandidates.push(
+        buildPredictionCandidate(
+          {
+            home: computed.probabilities.home,
+            draw: computed.probabilities.draw,
+            away: computed.probabilities.away,
+          },
+          actual,
+        ),
       );
       analyzedCount++;
 
@@ -562,6 +590,10 @@ export class BacktestService {
       marketStats.values(),
       (stats) => buildMarketPerformance(stats),
     ).sort((a, b) => a.market.localeCompare(b.market));
+    const predictionBacktest = buildPredictionBacktestSummary(
+      competitionCode ?? null,
+      predictionCandidates,
+    );
 
     const report: BacktestReport = {
       seasonId,
@@ -577,6 +609,7 @@ export class BacktestService {
         new Decimal(0),
       ),
       averageEvSimulated,
+      predictionBacktest,
       marketPerformance,
       reportGeneratedAt: new Date(),
     };
@@ -592,6 +625,9 @@ export class BacktestService {
         roiSimulated: report.roiSimulated.toNumber(),
         maxDrawdownSimulated: report.maxDrawdownSimulated.toNumber(),
         averageEvSimulated: report.averageEvSimulated.toNumber(),
+        predictionHitRate: report.predictionBacktest.hitRate,
+        predictionCoverageRate: report.predictionBacktest.coverageRate,
+        predictionVerdict: report.predictionBacktest.verdict,
       },
       'Backtest complete',
     );
@@ -1318,6 +1354,276 @@ function buildMarketSummaries(
   });
 }
 
+function buildPredictionCandidate(
+  probabilities: {
+    home: Decimal;
+    draw: Decimal;
+    away: Decimal;
+  },
+  actual: 'HOME' | 'DRAW' | 'AWAY',
+): PredictionCandidate {
+  const pHome = probabilities.home.toNumber();
+  const pDraw = probabilities.draw.toNumber();
+  const pAway = probabilities.away.toNumber();
+
+  const pick =
+    pHome >= pDraw && pHome >= pAway
+      ? 'HOME'
+      : pDraw >= pAway
+        ? 'DRAW'
+        : 'AWAY';
+  const probability = Math.max(pHome, pDraw, pAway);
+
+  return {
+    probability,
+    correct: pick === actual,
+  };
+}
+
+function buildPredictionBacktestSummary(
+  competitionCode: string | null,
+  candidates: PredictionCandidate[],
+): PredictionBacktestSummary {
+  const config = getPredictionConfig(competitionCode);
+  const thresholds = buildPredictionThresholdGrid(config.threshold).map(
+    (threshold) =>
+      summarizePredictionThreshold(candidates, threshold, config.minSampleN),
+  );
+  const current =
+    thresholds.find((entry) => entry.threshold === config.threshold) ??
+    summarizePredictionThreshold(
+      candidates,
+      config.threshold,
+      config.minSampleN,
+    );
+
+  return {
+    enabled: config.enabled,
+    threshold: config.threshold,
+    minSampleN: config.minSampleN,
+    total: current.total,
+    predicted: current.predicted,
+    correct: current.correct,
+    hitRate: current.hitRate,
+    coverageRate: current.coverageRate,
+    verdict: current.verdict,
+    thresholds,
+  };
+}
+
+function buildCompetitionPredictionBacktest(
+  competitionCode: string,
+  reports: BacktestReport[],
+): PredictionBacktestResult | null {
+  const summaries = reports.map((report) => report.predictionBacktest);
+  if (summaries.length === 0) return null;
+
+  const currentConfig = getPredictionConfig(competitionCode);
+  const thresholdGrid = buildPredictionThresholdGrid(currentConfig.threshold);
+  const thresholds = thresholdGrid.map((threshold) => {
+    const aggregate = summaries.reduce(
+      (acc, summary) => {
+        const entry = summary.thresholds.find(
+          (item) => item.threshold === threshold,
+        );
+        if (!entry) return acc;
+        acc.total += entry.total;
+        acc.predicted += entry.predicted;
+        acc.correct += entry.correct;
+        return acc;
+      },
+      { total: 0, predicted: 0, correct: 0 },
+    );
+
+    return summarizePredictionTotals(
+      aggregate.total,
+      aggregate.predicted,
+      aggregate.correct,
+      threshold,
+      currentConfig.minSampleN,
+    );
+  });
+
+  const current =
+    thresholds.find((entry) => entry.threshold === currentConfig.threshold) ??
+    summarizePredictionThreshold(
+      [],
+      currentConfig.threshold,
+      currentConfig.minSampleN,
+    );
+  const recommendation = buildPredictionCalibrationRecommendation(
+    currentConfig.enabled,
+    current,
+    thresholds,
+    currentConfig.minSampleN,
+  );
+
+  return {
+    competition: competitionCode,
+    enabled: currentConfig.enabled,
+    threshold: currentConfig.threshold,
+    minSampleN: currentConfig.minSampleN,
+    total: current.total,
+    predicted: current.predicted,
+    correct: current.correct,
+    hitRate: current.hitRate,
+    coverageRate: current.coverageRate,
+    verdict: current.verdict,
+    thresholds,
+    recommendation,
+  };
+}
+
+function buildPredictionCalibrationRecommendation(
+  enabled: boolean,
+  current: PredictionThresholdBacktest,
+  thresholds: PredictionThresholdBacktest[],
+  minSampleN: number,
+): PredictionCalibrationRecommendation {
+  const passing = thresholds.filter((entry) => entry.verdict === 'PASS');
+  const lowerPassing = passing.filter(
+    (entry) => entry.threshold < current.threshold,
+  );
+  const higherPassing = passing.filter(
+    (entry) => entry.threshold > current.threshold,
+  );
+
+  if (!enabled) {
+    const candidate = passing[0];
+    if (!candidate) {
+      return {
+        enabled: false,
+        threshold: current.threshold,
+        reason:
+          'Canal désactivé: aucun seuil ne valide simultanément hit rate, couverture et volume minimal.',
+      };
+    }
+
+    return {
+      enabled: true,
+      threshold: candidate.threshold,
+      reason: `Canal désactivé aujourd'hui, mais ${formatPct(candidate.hitRate)} sur ${candidate.predicted} prédictions à ${candidate.threshold.toFixed(2)} valide une activation.`,
+    };
+  }
+
+  if (current.verdict === 'PASS') {
+    if (
+      current.hitRate > PREDICTION_LOWERING_HIT_RATE &&
+      lowerPassing.length > 0
+    ) {
+      const candidate = lowerPassing[0]!;
+      return {
+        enabled: true,
+        threshold: candidate.threshold,
+        reason: `Hit rate solide (${formatPct(current.hitRate)}). Abaisser à ${candidate.threshold.toFixed(2)} augmente la couverture à ${formatPct(candidate.coverageRate)} tout en restant valide.`,
+      };
+    }
+
+    return {
+      enabled: true,
+      threshold: current.threshold,
+      reason: `Seuil actuel validé: ${formatPct(current.hitRate)} de hit rate pour ${current.predicted} prédictions.`,
+    };
+  }
+
+  const lacksVolume =
+    current.predicted < minSampleN ||
+    current.coverageRate < PREDICTION_VALIDATION_COVERAGE_RATE;
+  if (lacksVolume) {
+    const candidate = lowerPassing[0];
+    if (candidate) {
+      return {
+        enabled: true,
+        threshold: candidate.threshold,
+        reason: `Seuil actuel trop strict (${current.predicted} prédictions, couverture ${formatPct(current.coverageRate)}). ${candidate.threshold.toFixed(2)} restaure un volume valide.`,
+      };
+    }
+
+    return {
+      enabled: false,
+      threshold: current.threshold,
+      reason:
+        'Seuil actuel trop strict et aucun seuil plus bas ne respecte les critères minimaux de couverture et de volume.',
+    };
+  }
+
+  const candidate = higherPassing[0];
+  if (candidate) {
+    return {
+      enabled: true,
+      threshold: candidate.threshold,
+      reason: `Hit rate sous le plancher à ${current.threshold.toFixed(2)} (${formatPct(current.hitRate)}). Monter à ${candidate.threshold.toFixed(2)} repasse en zone valide.`,
+    };
+  }
+
+  return {
+    enabled: false,
+    threshold: current.threshold,
+    reason:
+      'Aucun seuil ne maintient un hit rate valide avec le volume actuel. Désactivation recommandée en attendant recalibration.',
+  };
+}
+
+function buildPredictionThresholdGrid(currentThreshold: number): number[] {
+  return Array.from(
+    new Set([...PREDICTION_THRESHOLD_SCAN, currentThreshold]),
+  ).sort((a, b) => a - b);
+}
+
+function summarizePredictionThreshold(
+  candidates: PredictionCandidate[],
+  threshold: number,
+  minSampleN: number,
+): PredictionThresholdBacktest {
+  const predictedCandidates = candidates.filter(
+    (candidate) => candidate.probability >= threshold,
+  );
+  const predicted = predictedCandidates.length;
+  const correct = predictedCandidates.filter(
+    (candidate) => candidate.correct,
+  ).length;
+
+  return summarizePredictionTotals(
+    candidates.length,
+    predicted,
+    correct,
+    threshold,
+    minSampleN,
+  );
+}
+
+function summarizePredictionTotals(
+  total: number,
+  predicted: number,
+  correct: number,
+  threshold: number,
+  minSampleN: number,
+): PredictionThresholdBacktest {
+  const hitRate = predicted > 0 ? correct / predicted : 0;
+  const coverageRate = total > 0 ? predicted / total : 0;
+  const verdict: ValidationVerdict =
+    predicted < minSampleN
+      ? 'INSUFFICIENT_DATA'
+      : hitRate >= PREDICTION_VALIDATION_HIT_RATE &&
+          coverageRate >= PREDICTION_VALIDATION_COVERAGE_RATE
+        ? 'PASS'
+        : 'FAIL';
+
+  return {
+    threshold,
+    total,
+    predicted,
+    correct,
+    hitRate,
+    coverageRate,
+    verdict,
+  };
+}
+
+function formatPct(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 function buildCompetitionReport(input: {
   competition: { id: string; code: string; name: string };
   seasonFilter: string | null;
@@ -1365,6 +1671,10 @@ function buildCompetitionReport(input: {
     new Decimal(0),
   );
   const byMarket = buildMarketSummaries(reports);
+  const predictionBacktest = buildCompetitionPredictionBacktest(
+    competition.code,
+    reports,
+  );
 
   const insufficient =
     totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
@@ -1440,6 +1750,7 @@ function buildCompetitionReport(input: {
     calibrationError: calibrationErrorMetric,
     roi,
     overallVerdict,
+    predictionBacktest,
     marketPerformance,
     byMarket,
     reportGeneratedAt: new Date(),

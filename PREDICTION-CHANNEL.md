@@ -63,39 +63,39 @@ La prédiction est l'outcome que le modèle considère le plus probable, à cond
 
 ## Seuils validés par backtest
 
-Données issues de 1 739 model_runs sur fixtures terminées (avril 2026).
+Données recalibrées via le backtest complet relancé le 19 avril 2026.
 
 ### Ligues activées
 
-| Ligue | Seuil | Hit rate | N (backtest) | Notes |
-|-------|-------|----------|--------------|-------|
-| BL1   | 0.60  | 73.3%    | 15           | Chute à 42.9% à 0.65 — ne pas dépasser |
-| D2    | 0.55  | 73.7%    | 19           | Stable, bon volume |
-| PL    | 0.55  | 69.2%    | 13           | Petit N, surveiller |
-| SP2   | 0.50  | 75.0%    | 32           | Bon volume, seuil bas suffisant |
-| POR   | 0.50  | 75.0%    | 20           | Stable |
-| LL    | 0.60  | 88.9%    | 9            | Très bon mais N faible — min 20 fixtures avant confiance |
-| F2    | 0.50  | 70.8%    | 24           | Correct à tous les seuils |
-| I2    | 0.55  | 65.0%    | 20           | Chute à 42.9% à 0.60 — seuil strict |
-| ERD   | 0.50  | 73.3%    | 15           | OK, N à surveiller |
-| WCQE  | 0.50  | 63–64%   | 125–157      | Très stable, fort volume |
-| EL1   | 0.65  | 75.0%    | 12           | N faible — activer prudemment |
-| EL2   | 0.55  | 55.9%    | 34           | Limite — surveiller en prod |
-| CH    | 0.65  | 66.7%    | 9            | N très faible — désactiver jusqu'à N ≥ 20 |
+| Ligue | Seuil | Hit rate | N (backtest) | Notes                                                |
+| ----- | ----- | -------- | ------------ | ---------------------------------------------------- |
+| BL1   | 0.50  | 57.1%    | 362          | Baisse du seuil validée pour remonter la couverture  |
+| PL    | 0.55  | 67.6%    | 238          | Stable, seuil conservé                               |
+| SP2   | 0.55  | 60.4%    | 139          | 0.50 ne passe pas, 0.55 restaure un canal valide    |
+| POR   | 0.50  | 60.4%    | 111          | Stable, seuil conservé                               |
+| LL    | 0.50  | 62.7%    | 346          | Baisse du seuil validée avec forte couverture        |
+| ERD   | 0.50  | 56.9%    | 160          | Passe au seuil actuel                                |
+| WCQE  | 0.50  | 61.5%    | 109          | Stable, bon volume                                   |
+| EL1   | 0.55  | 56.0%    | 339          | 0.65 trop strict, 0.55 repasse au-dessus du plancher |
+| CH    | 0.60  | 59.7%    | 186          | Réactivation validée au premier cycle complet        |
 
 ### Ligues désactivées
 
-| Ligue | Raison |
-|-------|--------|
-| MX1   | 0% hit rate à seuil ≥ 0.55, modèle non-calibré |
-| UNL   | 0% à tous les seuils |
-| FRI   | Jamais > 50%, trop de variables non modélisées (matchs amicaux) |
-| SA    | Plafonne à 50–60% avec N insuffisant, pattern instable |
-| UEL   | 11.8% global, données trop sparse |
-| UECL  | Insuffisant (16 model_runs) |
-| UCL   | Insuffisant (30 model_runs) |
-| J1    | N = 6 uniquement, non significatif |
-| L1    | Hit rate variable, pas stable sur plusieurs seuils |
+| Ligue | Raison                                                                      |
+| ----- | --------------------------------------------------------------------------- |
+| D2    | Aucun seuil testé ne valide hit rate + couverture au cycle du 19/04/2026   |
+| F2    | Aucun seuil testé ne passe le plancher de hit rate                          |
+| I2    | Aucun seuil testé ne passe le plancher de hit rate                          |
+| EL2   | Aucun seuil testé ne valide simultanément volume, couverture et hit rate    |
+| MX1   | Modèle non calibré, backtest toujours insuffisant                           |
+| UNL   | 0% à tous les seuils                                                        |
+| FRI   | Jamais > 50%, trop de variables non modélisées (matchs amicaux)             |
+| SA    | Plafonne à 50–60% avec N insuffisant, pattern instable                      |
+| UEL   | Données trop sparse                                                         |
+| UECL  | Données insuffisantes                                                       |
+| UCL   | Données insuffisantes                                                       |
+| J1    | Volume trop faible                                                          |
+| L1    | Hit rate variable, pas stable sur plusieurs seuils                          |
 
 ---
 
@@ -135,31 +135,31 @@ Nouveau fichier `apps/backend/src/modules/prediction/prediction.constants.ts` :
 ```ts
 export type PredictionLeagueConfig = {
   enabled: boolean;
-  threshold: number;   // P_max minimum pour publier une prédiction
-  minSampleN: number;  // fixtures minimum en DB avant d'activer
+  threshold: number; // P_max minimum pour publier une prédiction
+  minSampleN: number; // fixtures minimum en DB avant d'activer
 };
 
 export const PREDICTION_CONFIG: Record<string, PredictionLeagueConfig> = {
-  BL1:  { enabled: true,  threshold: 0.60, minSampleN: 10 },
-  D2:   { enabled: true,  threshold: 0.55, minSampleN: 10 },
-  PL:   { enabled: true,  threshold: 0.55, minSampleN: 10 },
-  SP2:  { enabled: true,  threshold: 0.50, minSampleN: 10 },
-  POR:  { enabled: true,  threshold: 0.50, minSampleN: 10 },
-  LL:   { enabled: true,  threshold: 0.60, minSampleN: 20 },
-  F2:   { enabled: true,  threshold: 0.50, minSampleN: 10 },
-  I2:   { enabled: true,  threshold: 0.55, minSampleN: 10 },
-  ERD:  { enabled: true,  threshold: 0.50, minSampleN: 10 },
-  WCQE: { enabled: true,  threshold: 0.50, minSampleN: 10 },
-  EL1:  { enabled: true,  threshold: 0.65, minSampleN: 20 },
-  EL2:  { enabled: true,  threshold: 0.55, minSampleN: 15 },
-  CH:   { enabled: false, threshold: 0.65, minSampleN: 20 }, // N trop faible
-  MX1:  { enabled: false, threshold: 0.99, minSampleN: 50 },
-  FRI:  { enabled: false, threshold: 0.99, minSampleN: 50 },
-  SA:   { enabled: false, threshold: 0.99, minSampleN: 50 },
-  UNL:  { enabled: false, threshold: 0.99, minSampleN: 50 },
-  UEL:  { enabled: false, threshold: 0.99, minSampleN: 50 },
+  BL1: { enabled: true, threshold: 0.5, minSampleN: 10 },
+  D2: { enabled: false, threshold: 0.55, minSampleN: 10 },
+  PL: { enabled: true, threshold: 0.55, minSampleN: 10 },
+  SP2: { enabled: true, threshold: 0.55, minSampleN: 10 },
+  POR: { enabled: true, threshold: 0.5, minSampleN: 10 },
+  LL: { enabled: true, threshold: 0.5, minSampleN: 20 },
+  F2: { enabled: false, threshold: 0.5, minSampleN: 10 },
+  I2: { enabled: false, threshold: 0.55, minSampleN: 10 },
+  ERD: { enabled: true, threshold: 0.5, minSampleN: 10 },
+  WCQE: { enabled: true, threshold: 0.5, minSampleN: 10 },
+  EL1: { enabled: true, threshold: 0.55, minSampleN: 20 },
+  EL2: { enabled: false, threshold: 0.55, minSampleN: 15 },
+  CH: { enabled: true, threshold: 0.6, minSampleN: 20 },
+  MX1: { enabled: false, threshold: 0.99, minSampleN: 50 },
+  FRI: { enabled: false, threshold: 0.99, minSampleN: 50 },
+  SA: { enabled: false, threshold: 0.99, minSampleN: 50 },
+  UNL: { enabled: false, threshold: 0.99, minSampleN: 50 },
+  UEL: { enabled: false, threshold: 0.99, minSampleN: 50 },
   UECL: { enabled: false, threshold: 0.99, minSampleN: 50 },
-  UCL:  { enabled: false, threshold: 0.99, minSampleN: 50 },
+  UCL: { enabled: false, threshold: 0.99, minSampleN: 50 },
 };
 
 const PREDICTION_CONFIG_DEFAULT: PredictionLeagueConfig = {
@@ -202,12 +202,12 @@ computePoissonMarkets()          ← une fois
 
 ### Cas possibles pour un fixture
 
-| Canal EV | Canal Confiance | Signification |
-|----------|-----------------|---------------|
-| BET      | prédiction      | Signal fort — concordance des deux canaux |
+| Canal EV | Canal Confiance | Signification                               |
+| -------- | --------------- | ------------------------------------------- |
+| BET      | prédiction      | Signal fort — concordance des deux canaux   |
 | NO_BET   | prédiction      | Cas le plus fréquent (~80% des prédictions) |
 | BET      | aucune          | EV sur pick non-favori (longshot AWAY/DRAW) |
-| NO_BET   | aucune          | Match équilibré ou ligue désactivée |
+| NO_BET   | aucune          | Match équilibré ou ligue désactivée         |
 
 ---
 
@@ -224,6 +224,7 @@ await this.predictionService.settlePredictions(fixtureId, {
 ```
 
 `settlePredictions()` :
+
 1. Trouve toutes les `Prediction` du fixture avec `correct = null`
 2. Calcule l'outcome réel (HOME / DRAW / AWAY)
 3. Met à jour `correct` et `settledAt`
@@ -240,11 +241,11 @@ Le backtest existant (`BacktestService`) doit tracker les métriques du canal co
 type PredictionBacktestResult = {
   competition: string;
   threshold: number;
-  total: number;          // fixtures évaluées
-  predicted: number;      // prédictions émises (P_max >= threshold)
-  correct: number;        // prédictions correctes
-  hitRate: number;        // correct / predicted
-  coverageRate: number;   // predicted / total
+  total: number; // fixtures évaluées
+  predicted: number; // prédictions émises (P_max >= threshold)
+  correct: number; // prédictions correctes
+  hitRate: number; // correct / predicted
+  coverageRate: number; // predicted / total
 };
 ```
 
@@ -340,12 +341,14 @@ Nouveau composant `PredictionsCard` inséré dans `DashboardPageClient`, au-dess
 ```
 
 - La ligne `4/6 hier ✓` = hitRate de la veille — recalculé à minuit
-- Couleur badge : indigo (distinct du vert EV)
+- Couleur badge prédiction : indigo par défaut, puis vert/rouge après settle
+- Dot de statut : vert = correct, rouge = incorrect, gris = pending
+- Score du jour affiché au format `X/Y ✓`
 - Mobile-first : liste de cards, pas de tableau
 
 ### 2. Fixture card — badge prédiction
 
-Sur les cards de la page `/fixtures`, badge secondaire à côté du badge EV :
+Sur le tableau fixtures, badge secondaire de prédiction :
 
 ```
 [NO BET]  [→ DOM 63%]    ← prédiction seule
@@ -354,6 +357,9 @@ Sur les cards de la page `/fixtures`, badge secondaire à côté du badge EV :
 ```
 
 Format : `→ DOM` / `→ EXT` / `→ NUL` + probabilité en %.
+
+- Mobile : affiché en row 3, à côté du badge décision
+- Desktop : affiché dans la colonne Décision, sous le badge `BET` / `NO BET`
 
 ### 3. Page prédictions (optionnel — phase 2 UI)
 
@@ -370,27 +376,34 @@ Page `/dashboard/predictions` avec historique, filtre par ligue, courbe de hit r
 - `fixtures-table.tsx` — badge `Safe` visible sur mobile et desktop
 - Un fixture peut afficher EV + Safe simultanément
 
-### Phase 1 — Backend Confiance
+### Phase 1 — Backend Confiance ✅ LIVRÉE
 
 1. **Migration Prisma** — table `Prediction` + relations `Fixture` + `ModelRun`
 2. **`prediction.constants.ts`** — `PREDICTION_CONFIG` + `getPredictionConfig()`
 3. **`PredictionRepository`** — queries Prisma
 4. **`PredictionService`** — `createPrediction()`, `settlePredictions()`, `list()`, `stats()`
-5. **Intégration dans `analyzeFixture()`** — appel `createPrediction()` après le canal EV
-6. **Intégration dans `settleOpenBets()`** — appel `settlePredictions()`
+5. **Intégration dans `analyzeFixture()`** — prédictions incluses directement dans le `select fixture` de `fixture-scoring.service.ts`
+6. **Intégration dashboard** — `findByDate()` enrichi avec noms d'équipes et kickoff
 7. **`PredictionController`** — `GET /predictions`, `GET /predictions/stats`
 
-### Phase 2 — UI Confiance (bloquante avant mise en prod)
+### Phase 2 — UI Confiance ✅ LIVRÉE
 
-8. **`PredictionsCard`** — composant dashboard "Prédictions du jour" avec hit rate veille
-9. **Badge prédiction** sur les fixture cards
+8. **`PredictionsCard`** — composant dashboard "Prédictions du jour" avec dot de statut, score du jour `X/Y ✓` et hit rate veille
+9. **`PredictionBadge`** — badge indigo `→ DOM 63%` sur les fixtures, qui vire vert/rouge après settle
 
-L'étape 8 est **bloquante** : le canal Confiance ne doit pas être activé en prod tant que le composant UI n'est pas déployé. Leçon Safe Value appliquée.
+La contrainte UI bloquante est levée : le canal Confiance dispose maintenant d'une visibilité dashboard + fixtures avant extension du scope produit. Leçon Safe Value appliquée.
 
-### Phase 3 — Backtest et calibration
+### Phase 3 — Backtest et calibration ✅ LIVRÉE
 
-10. **Extension backtest** — `PredictionBacktestResult` par ligue dans le rapport
-11. **Premier cycle de recalibration** — ajuster `PREDICTION_CONFIG` si nécessaire après 3–4 semaines de prod
+10. **Extension backtest** — `predictionBacktest` ajouté au rapport par saison et en agrégé, avec scan multi-seuils et verdict par ligue
+11. **Premier cycle de recalibration** — `PREDICTION_CONFIG` ajusté sur la base du backtest complet du 19 avril 2026
+
+Décisions du premier cycle :
+
+- seuil abaissé : `BL1` (`0.60 -> 0.50`), `LL` (`0.60 -> 0.50`), `EL1` (`0.65 -> 0.55`)
+- seuil relevé : `SP2` (`0.50 -> 0.55`), `CH` réactivée à `0.60`
+- ligues désactivées : `D2`, `F2`, `I2`, `EL2`
+- ligues conservées : `PL`, `POR`, `ERD`, `WCQE`
 
 ---
 

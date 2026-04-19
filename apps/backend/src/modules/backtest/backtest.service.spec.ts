@@ -27,6 +27,59 @@ function makeTeamStatsRows(teamId: string, n: number) {
   }));
 }
 
+function makePredictionBacktestSummary(
+  overrides: Partial<{
+    enabled: boolean;
+    threshold: number;
+    minSampleN: number;
+    total: number;
+    predicted: number;
+    correct: number;
+    hitRate: number;
+    coverageRate: number;
+    verdict: 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
+    thresholds: {
+      threshold: number;
+      total: number;
+      predicted: number;
+      correct: number;
+      hitRate: number;
+      coverageRate: number;
+      verdict: 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
+    }[];
+  }> = {},
+) {
+  const threshold = overrides.threshold ?? 0.55;
+  const total = overrides.total ?? 100;
+  const predicted = overrides.predicted ?? 20;
+  const correct = overrides.correct ?? 12;
+  const hitRate = overrides.hitRate ?? correct / predicted;
+  const coverageRate = overrides.coverageRate ?? predicted / total;
+
+  return {
+    enabled: overrides.enabled ?? true,
+    threshold,
+    minSampleN: overrides.minSampleN ?? 10,
+    total,
+    predicted,
+    correct,
+    hitRate,
+    coverageRate,
+    verdict: overrides.verdict ?? 'PASS',
+    thresholds: overrides.thresholds ?? [
+      {
+        threshold,
+        total,
+        predicted,
+        correct,
+        hitRate,
+        coverageRate,
+        verdict: overrides.verdict ?? 'PASS',
+      },
+    ],
+  };
+}
+
 describe('BacktestService', () => {
   it('runs backtest and aggregates analyzed/skipped fixtures', async () => {
     const prismaMock = {
@@ -130,6 +183,10 @@ describe('BacktestService', () => {
     expect(report.roiSimulated.toNumber()).toBeCloseTo(1.1, 6);
     expect(report.averageEvSimulated.toNumber()).toBeCloseTo(0.26, 6);
     expect(report.maxDrawdownSimulated.toNumber()).toBeCloseTo(0, 6);
+    expect(report.predictionBacktest.threshold).toBe(0.99);
+    expect(report.predictionBacktest.total).toBe(1);
+    expect(report.predictionBacktest.predicted).toBe(0);
+    expect(report.predictionBacktest.verdict).toBe('INSUFFICIENT_DATA');
     expect(report.marketPerformance).toHaveLength(1);
     expect(report.marketPerformance[0]).toMatchObject({
       market: Market.ONE_X_TWO,
@@ -404,7 +461,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
     } as unknown as PrismaService;
 
     const service = new BacktestService(prismaMock, makeBettingMock());
-    const report = await service.runCompetitionBacktest('EPL');
+    const report = await service.runCompetitionBacktest('PL');
 
     expect(report.competitionCode).toBe('EPL');
     expect(report.seasonFilter).toBeNull();
@@ -517,6 +574,13 @@ describe('BacktestService.runCompetitionBacktest', () => {
         roiSimulated: new Decimal('-0.20'),
         maxDrawdownSimulated: new Decimal('5'),
         averageEvSimulated: new Decimal('0.30'),
+        predictionBacktest: makePredictionBacktestSummary({
+          threshold: 0.65,
+          predicted: 12,
+          correct: 7,
+          hitRate: 7 / 12,
+          coverageRate: 0.12,
+        }),
         marketPerformance: [
           {
             market: Market.ONE_X_TWO,
@@ -546,6 +610,13 @@ describe('BacktestService.runCompetitionBacktest', () => {
         roiSimulated: new Decimal('0.13333333333333333333'),
         maxDrawdownSimulated: new Decimal('2'),
         averageEvSimulated: new Decimal('0.35'),
+        predictionBacktest: makePredictionBacktestSummary({
+          threshold: 0.65,
+          predicted: 18,
+          correct: 12,
+          hitRate: 12 / 18,
+          coverageRate: 0.18,
+        }),
         marketPerformance: [
           {
             market: Market.ONE_X_TWO,
@@ -605,7 +676,10 @@ describe('BacktestService.runCompetitionBacktest', () => {
     const prismaMock = {
       client: {
         competition: {
-          findUnique: vi.fn().mockResolvedValue(defaultCompetition),
+          findUnique: vi.fn().mockResolvedValue({
+            ...defaultCompetition,
+            code: 'PL',
+          }),
         },
         season: {
           findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
@@ -624,6 +698,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
       roiSimulated: new Decimal('0.05'),
       maxDrawdownSimulated: new Decimal('2'),
       averageEvSimulated: new Decimal('0.12'),
+      predictionBacktest: makePredictionBacktestSummary(),
       marketPerformance: [
         {
           market: Market.ONE_X_TWO,
@@ -644,7 +719,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
       reportGeneratedAt: new Date(),
     });
 
-    const report = await service.runCompetitionBacktest('EPL');
+    const report = await service.runCompetitionBacktest('PL');
 
     expect(report.overallVerdict).toBe('PASS');
     expect(report.brierScore.verdict).toBe('PASS');
@@ -678,6 +753,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
       roiSimulated: new Decimal('0.05'),
       maxDrawdownSimulated: new Decimal('2'),
       averageEvSimulated: new Decimal('0.18'),
+      predictionBacktest: makePredictionBacktestSummary(),
       marketPerformance: [
         {
           market: Market.OVER_UNDER,
@@ -753,6 +829,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
       roiSimulated: new Decimal('0.05'),
       maxDrawdownSimulated: new Decimal('2'),
       averageEvSimulated: new Decimal('0.12'),
+      predictionBacktest: makePredictionBacktestSummary(),
       marketPerformance: [
         {
           market: Market.ONE_X_TWO,
@@ -779,6 +856,159 @@ describe('BacktestService.runCompetitionBacktest', () => {
     expect(report.brierScore.verdict).toBe('FAIL');
     expect(report.calibrationError.verdict).toBe('PASS');
     expect(report.roi.verdict).toBe('PASS');
+  });
+
+  it('aggregates prediction backtest metrics and recommends a lower passing threshold when hit rate is strong', async () => {
+    const prismaMock = {
+      client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue({
+            ...defaultCompetition,
+            code: 'PL',
+            name: 'Premier League',
+          }),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    vi.spyOn(service, 'runBacktest').mockResolvedValue({
+      seasonId: 's1',
+      fixtureCount: 100,
+      analyzedCount: 100,
+      skippedCount: 0,
+      brierScore: new Decimal('0.20'),
+      calibrationError: new Decimal('0.03'),
+      roiSimulated: new Decimal('0.05'),
+      maxDrawdownSimulated: new Decimal('2'),
+      averageEvSimulated: new Decimal('0.12'),
+      predictionBacktest: makePredictionBacktestSummary({
+        enabled: true,
+        threshold: 0.55,
+        predicted: 20,
+        correct: 15,
+        hitRate: 0.75,
+        coverageRate: 0.2,
+        verdict: 'PASS',
+        thresholds: [
+          {
+            threshold: 0.5,
+            total: 100,
+            predicted: 30,
+            correct: 18,
+            hitRate: 0.6,
+            coverageRate: 0.3,
+            verdict: 'PASS',
+          },
+          {
+            threshold: 0.55,
+            total: 100,
+            predicted: 20,
+            correct: 15,
+            hitRate: 0.75,
+            coverageRate: 0.2,
+            verdict: 'PASS',
+          },
+          {
+            threshold: 0.6,
+            total: 100,
+            predicted: 10,
+            correct: 7,
+            hitRate: 0.7,
+            coverageRate: 0.1,
+            verdict: 'PASS',
+          },
+        ],
+      }),
+      marketPerformance: [],
+      reportGeneratedAt: new Date(),
+    });
+
+    const report = await service.runCompetitionBacktest('PL');
+
+    expect(report.predictionBacktest).not.toBeNull();
+    expect(report.predictionBacktest?.hitRate).toBeCloseTo(0.75, 6);
+    expect(report.predictionBacktest?.recommendation).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        threshold: 0.5,
+      }),
+    );
+  });
+
+  it('recommends disabling predictions when no threshold validates', async () => {
+    const prismaMock = {
+      client: {
+        competition: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'c1',
+            code: 'CH',
+            name: 'Championship',
+            includeInBacktest: true,
+          }),
+        },
+        season: {
+          findMany: vi.fn().mockResolvedValue([{ id: 's1', name: '2022-23' }]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    vi.spyOn(service, 'runBacktest').mockResolvedValue({
+      seasonId: 's1',
+      fixtureCount: 100,
+      analyzedCount: 100,
+      skippedCount: 0,
+      brierScore: new Decimal('0.20'),
+      calibrationError: new Decimal('0.03'),
+      roiSimulated: new Decimal('0.05'),
+      maxDrawdownSimulated: new Decimal('2'),
+      averageEvSimulated: new Decimal('0.12'),
+      predictionBacktest: makePredictionBacktestSummary({
+        enabled: false,
+        threshold: 0.65,
+        minSampleN: 20,
+        predicted: 9,
+        correct: 6,
+        hitRate: 6 / 9,
+        coverageRate: 0.09,
+        verdict: 'INSUFFICIENT_DATA',
+        thresholds: [
+          {
+            threshold: 0.5,
+            total: 100,
+            predicted: 35,
+            correct: 17,
+            hitRate: 17 / 35,
+            coverageRate: 0.35,
+            verdict: 'FAIL',
+          },
+          {
+            threshold: 0.65,
+            total: 100,
+            predicted: 9,
+            correct: 6,
+            hitRate: 6 / 9,
+            coverageRate: 0.09,
+            verdict: 'INSUFFICIENT_DATA',
+          },
+        ],
+      }),
+      marketPerformance: [],
+      reportGeneratedAt: new Date(),
+    });
+
+    const report = await service.runCompetitionBacktest('CH');
+
+    expect(report.predictionBacktest?.recommendation).toEqual(
+      expect.objectContaining({
+        enabled: false,
+        threshold: 0.65,
+      }),
+    );
   });
 });
 
