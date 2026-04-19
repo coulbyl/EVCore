@@ -37,11 +37,6 @@ export function AppShell({
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },
-        {
-          label: "Portefeuille",
-          href: "/dashboard/bankroll",
-          active: pathname.startsWith("/dashboard/bankroll"),
-        },
         isAdmin
           ? {
               label: "Audit",

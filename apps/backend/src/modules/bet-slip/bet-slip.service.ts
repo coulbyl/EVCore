@@ -361,6 +361,8 @@ function toBetSlipView(
         fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
         market: item.bet.market,
         pick: item.bet.pick,
+        comboMarket: item.bet.comboMarket ?? null,
+        comboPick: item.bet.comboPick ?? null,
         odds: odds !== null ? odds.toFixed(2) : null,
         ev: formatSigned(Number(item.bet.ev), 4),
         stake: stake.toFixed(2),
