@@ -224,6 +224,8 @@ function FixtureMobileCard({
       ? formatCombinedPickForDisplay({
           market: mr.market,
           pick: mr.pick,
+          comboMarket: mr.comboMarket ?? undefined,
+          comboPick: mr.comboPick ?? undefined,
         })
       : null;
 
@@ -238,18 +240,17 @@ function FixtureMobileCard({
         onClick={onSelect}
         className="w-full cursor-pointer text-left"
       >
-        <div className="space-y-3">
+        <div className="space-y-2.5">
+          {/* Row 1 : logos + fixture name + status badge */}
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <FixtureTeamLogos
-                  homeLogo={row.homeLogo}
-                  awayLogo={row.awayLogo}
-                />
-                <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
-                  {row.fixture}
-                </p>
-              </div>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <FixtureTeamLogos
+                homeLogo={row.homeLogo}
+                awayLogo={row.awayLogo}
+              />
+              <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+                {row.fixture}
+              </p>
             </div>
             <span
               className={`inline-flex shrink-0 items-center rounded-full border px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
@@ -258,60 +259,56 @@ function FixtureMobileCard({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+          {/* Row 2 : pick + score */}
+          <div className="flex items-center gap-2 text-sm">
             {pickLabel ? (
-              <span className="font-medium text-slate-800">{pickLabel}</span>
+              <span className="font-medium text-slate-700">{pickLabel}</span>
             ) : (
-              <span className="font-medium text-slate-400">Sans sélection</span>
+              <span className="text-slate-400">Sans sélection</span>
             )}
-            {score ? <span className="text-slate-400">•</span> : null}
             {score ? (
-              <span className="font-semibold tabular-nums text-slate-700">
-                {score}
-              </span>
+              <>
+                <span className="text-slate-300">·</span>
+                <span className="font-semibold tabular-nums text-slate-600">
+                  {score}
+                </span>
+              </>
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-            <div className="min-w-0">
-              <p className="truncate text-xs text-slate-500">
+          {/* Row 3 : competition · heure · EV · décision */}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-slate-400">
+              <span className="font-medium text-slate-500">
                 {row.competition}
-              </p>
-              <p className="text-sm font-medium text-slate-700">
-                {formatKickoff(row.scheduledAt)}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+              </span>
+              <span className="mx-1.5">·</span>
+              {formatKickoff(row.scheduledAt)}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              {mr?.decision === "BET" && mr.ev ? (
+                <span className="text-sm font-bold text-emerald-600">
+                  {mr.ev}
+                </span>
+              ) : null}
               <DecisionBadge decision={mr?.decision ?? null} />
-              <ChevronRight size={15} className="text-slate-300" />
+              <ChevronRight size={14} className="text-slate-300" />
             </div>
           </div>
 
-          {mr?.decision === "BET" && (
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-white">
-              <div>
-                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-                  Valeur
-                </p>
-                <p className="mt-1 text-sm font-bold text-emerald-400">
-                  {mr.ev ?? "—"}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[0.6rem] uppercase tracking-[0.16em] text-slate-500">
-                  Résultat
-                </p>
-                <div className="mt-1 flex justify-end">
-                  <BetResultBadge status={mr.betStatus ?? null} />
-                </div>
-              </div>
+          {/* Row 4 : résultat (si bet settled) */}
+          {mr?.decision === "BET" &&
+          mr.betStatus &&
+          mr.betStatus !== "PENDING" ? (
+            <div className="flex items-center gap-2">
+              <BetResultBadge status={mr.betStatus} />
             </div>
-          )}
+          ) : null}
         </div>
       </button>
 
       {mr?.decision === "BET" && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2 border-t border-border pt-3">
           <ResultAction row={row} isAdmin={isAdmin} />
           <AddToSlipButton row={row} variant="full" />
         </div>
@@ -371,7 +368,12 @@ function FixtureTableRow({
       {/* Pick */}
       <td className="px-4 py-3 text-sm text-slate-700">
         {mr?.market && mr?.pick ? (
-          formatCombinedPickForDisplay({ market: mr.market, pick: mr.pick })
+          formatCombinedPickForDisplay({
+            market: mr.market,
+            pick: mr.pick,
+            comboMarket: mr.comboMarket ?? undefined,
+            comboPick: mr.comboPick ?? undefined,
+          })
         ) : (
           <span className="text-slate-400">—</span>
         )}

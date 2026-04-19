@@ -13,6 +13,8 @@ export type FixtureModelRun = {
   betId: string | null;
   market: string | null;
   pick: string | null;
+  comboMarket: string | null;
+  comboPick: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
   probEstimated: string | null;
   ev: string | null;

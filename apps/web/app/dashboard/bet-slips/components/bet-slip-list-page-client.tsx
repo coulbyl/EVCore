@@ -41,7 +41,7 @@ function BetSlipCard({
   onClick: () => void;
 }) {
   const { realPnl, settledCount, pendingCount } = ticketPnlSummary(betSlip);
-  const totalStake = Number(betSlip.unitStake) * betSlip.itemCount;
+  const totalStake = betSlip.items.reduce((sum, i) => sum + Number(i.stake), 0);
   const isPartial = settledCount > 0 && pendingCount > 0;
   const isFullySettled = settledCount > 0 && pendingCount === 0;
 

@@ -89,6 +89,10 @@ describe('getPickDirectionProbabilityThreshold', () => {
 });
 
 describe('getModelScoreThreshold', () => {
+  it('returns the lowered SP2 threshold to unlock balanced fixtures', () => {
+    expect(getModelScoreThreshold('SP2').toNumber()).toBe(0.58);
+  });
+
   it('returns the raised ERD threshold', () => {
     expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.68);
   });
@@ -166,11 +170,10 @@ describe('getPickMaxSelectionOdds', () => {
     ).toBe(2.99);
   });
 
-  it('returns 5.50 ceiling for PL 1X2 DRAW — raises the global 4.0 cap', () => {
-    // Audit 2026-04-04: 164 rejected PL DRAW cases (odds > 4.0) showed sim
-    // ROI +17.1%. Per-pick ceiling replaces the global MAX_SELECTION_ODDS cap.
+  it('returns 7.99 ceiling for PL 1X2 DRAW — raised from 5.50 after ndjson audit', () => {
+    // Backtest 2026-04-19 ndjson: [5.5–8.0] all profitable, [8.0+] 0W/11L -100%.
     expect(getPickMaxSelectionOdds('PL', 'ONE_X_TWO', 'DRAW')?.toNumber()).toBe(
-      5.5,
+      7.99,
     );
   });
 

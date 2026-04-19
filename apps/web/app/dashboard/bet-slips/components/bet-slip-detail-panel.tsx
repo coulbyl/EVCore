@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { Badge } from "@evcore/ui";
 import {
   formatMarketForDisplay,
-  formatPickForDisplay,
+  formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
 import type {
@@ -28,25 +28,124 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ResultBadge({ item }: { item: BetSlipItemView }) {
+type ItemStatus = "WON" | "LOST" | "PENDING" | "VOID";
+
+const STATUS_BAR: Record<ItemStatus, string> = {
+  WON: "bg-emerald-400",
+  LOST: "bg-rose-400",
+  PENDING: "bg-amber-400",
+  VOID: "bg-slate-300",
+};
+
+const STATUS_LABEL: Record<ItemStatus, string> = {
+  WON: "Gagné",
+  LOST: "Perdu",
+  PENDING: "En attente",
+  VOID: "Annulé",
+};
+
+function PnlDisplay({ item }: { item: BetSlipItemView }) {
   if (item.pnl !== null) {
-    const isPositive = item.pnl.startsWith("+");
-    const amount = formatAmount(item.pnl.replace("+", "").replace("-", ""));
+    const raw = Number(item.pnl);
+    const isPos = raw >= 0;
     return (
-      <Badge tone={isPositive ? "success" : "danger"}>
-        {isPositive ? `+${amount} · Gagné` : `−${amount} · Perdu`}
-      </Badge>
+      <p
+        className={`text-base font-bold tabular-nums ${isPos ? "text-emerald-600" : "text-rose-600"}`}
+      >
+        {isPos ? "+" : ""}
+        {raw.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}
+      </p>
     );
   }
-  if (item.betStatus === "VOID") return <Badge tone="neutral">Annulé</Badge>;
+  if (item.betStatus === "VOID") return null;
   if (item.odds !== null) {
     const potential = (
       Number(item.stake) *
       (Number(item.odds) - 1)
-    ).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
-    return <Badge tone="neutral">+{potential} potentiel</Badge>;
+    ).toLocaleString("fr-FR", { maximumFractionDigits: 0 });
+    return (
+      <p className="text-sm tabular-nums text-slate-400">+{potential} pot.</p>
+    );
   }
-  return <Badge tone="neutral">En attente</Badge>;
+  return <p className="text-xs text-slate-400">—</p>;
+}
+
+function BetItem({ item }: { item: BetSlipItemView }) {
+  const status = item.betStatus as ItemStatus;
+  const bar = STATUS_BAR[status] ?? "bg-slate-300";
+
+  const pickLabel = formatCombinedPickForDisplay({
+    market: item.market,
+    pick: item.pick,
+    comboMarket: item.comboMarket ?? undefined,
+    comboPick: item.comboPick ?? undefined,
+  });
+  const marketLabel = formatMarketForDisplay(item.market);
+
+  return (
+    <div className="flex gap-0 overflow-hidden">
+      {/* Left status bar */}
+      <div className={`w-1 shrink-0 rounded-l-sm ${bar}`} />
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 px-4 py-3.5">
+        {/* Row 1: fixture + score */}
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-semibold text-slate-900">
+            {item.fixture}
+          </p>
+          {item.homeScore !== null && item.awayScore !== null ? (
+            <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold tabular-nums text-slate-600">
+              {item.homeScore} – {item.awayScore}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Row 2: pick + market */}
+        <p className="text-xs text-slate-500">
+          <span className="font-medium text-slate-700">{pickLabel}</span>
+          <span className="mx-1 text-slate-300">·</span>
+          {marketLabel}
+        </p>
+
+        {/* Row 3: metrics + P&L */}
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+            {item.odds ? (
+              <span>
+                Cote{" "}
+                <span className="font-semibold text-slate-600">
+                  {item.odds}
+                </span>
+              </span>
+            ) : null}
+            <span>
+              EV{" "}
+              <span className="font-semibold text-emerald-600">
+                {item.ev.startsWith("+") ? item.ev : `+${item.ev}`}
+              </span>
+            </span>
+            <span>
+              Mise{" "}
+              <span className="font-semibold text-slate-600">
+                {formatAmount(item.stake)}
+              </span>
+            </span>
+            {item.stakeOverride ? (
+              <Badge tone="warning" className="py-0 text-[0.65rem]">
+                Perso {formatAmount(item.stakeOverride)}
+              </Badge>
+            ) : null}
+          </div>
+          <div className="shrink-0 text-right">
+            <PnlDisplay item={item} />
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
+              {STATUS_LABEL[status]}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function BetSlipDetailPanel({
@@ -106,10 +205,6 @@ export function BetSlipDetailPanel({
         <div className="space-y-2.5 border-b border-border px-4 py-4">
           <DetailRow label="Utilisateur" value={`@${data.username}`} />
           <DetailRow
-            label="Mise par sélection"
-            value={formatAmount(data.unitStake)}
-          />
-          <DetailRow
             label="Total misé"
             value={formatAmount(String(totalStake))}
           />
@@ -153,39 +248,7 @@ export function BetSlipDetailPanel({
         {/* Items */}
         <div className="max-h-96 lg:max-h-128 overflow-y-auto divide-y divide-border">
           {data.items.map((item) => (
-            <div key={item.betId} className="px-4 py-3.5">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {item.fixture}
-                    </p>
-                    {item.homeScore !== null && item.awayScore !== null && (
-                      <span className="mr-2 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold tabular-nums text-slate-700">
-                        {item.homeScore} – {item.awayScore}
-                      </span>
-                    )}
-                    <p className="mt-1 text-xs text-slate-500">
-                      {formatPickForDisplay(item.pick, item.market)} •{" "}
-                      {formatMarketForDisplay(item.market)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <ResultBadge item={item} />
-                  {item.odds ? (
-                    <Badge tone="neutral">Cote {item.odds}</Badge>
-                  ) : null}
-                  <Badge tone="success">Valeur {item.ev}</Badge>
-                  <Badge tone="accent">Mise {formatAmount(item.stake)}</Badge>
-                  {item.stakeOverride ? (
-                    <Badge tone="warning">
-                      Mise perso {formatAmount(item.stakeOverride)}
-                    </Badge>
-                  ) : null}
-                </div>
-              </div>
-            </div>
+            <BetItem key={item.betId} item={item} />
           ))}
         </div>
       </div>

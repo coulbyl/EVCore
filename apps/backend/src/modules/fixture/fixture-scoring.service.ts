@@ -23,6 +23,8 @@ export type ScoredFixtureModelRun = {
   betId: string | null;
   market: string | null;
   pick: string | null;
+  comboMarket: string | null;
+  comboPick: string | null;
   betStatus: 'WON' | 'LOST' | 'PENDING' | null;
   probEstimated: string | null;
   ev: string | null;
@@ -165,6 +167,8 @@ export class FixtureScoringService {
                   id: true,
                   market: true,
                   pick: true,
+                  comboMarket: true,
+                  comboPick: true,
                   ev: true,
                   probEstimated: true,
                   status: true,
@@ -250,6 +254,8 @@ export class FixtureScoringService {
               betId: bet?.id ?? null,
               market: bet?.market ?? null,
               pick: bet?.pick ?? null,
+              comboMarket: bet?.comboMarket ?? null,
+              comboPick: bet?.comboPick ?? null,
               betStatus,
               probEstimated: bet
                 ? `${(toNumber(bet.probEstimated) * 100).toFixed(1)}%`

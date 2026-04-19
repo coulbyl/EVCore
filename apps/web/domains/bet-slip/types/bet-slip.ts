@@ -58,6 +58,8 @@ export type BetSlipItemView = {
   fixture: string;
   market: string;
   pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
   odds: string | null;
   ev: string;
   stake: string;

@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
-import { LogOut } from "lucide-react";
+import { HelpCircle, LogOut, Settings, Wallet } from "lucide-react";
 import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 
@@ -63,6 +64,31 @@ export function AccountButton({
             </p>
             <p className="text-xs text-slate-400">@{currentUser.username}</p>
           </div>
+          <Link
+            href="/dashboard/bankroll"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Wallet size={14} />
+            Portefeuille
+          </Link>
+          <Link
+            href="/dashboard/aide"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <HelpCircle size={14} />
+            Aide
+          </Link>
+          <Link
+            href="/dashboard/params/account"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Settings size={14} />
+            Paramètres
+          </Link>
+          <div className="border-t border-border" />
           <button
             type="button"
             onClick={handleLogout}

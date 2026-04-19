@@ -1,6 +1,8 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { execFile } from 'node:child_process';
+import { appendFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { Market, OddsSnapshotSource } from '@evcore/db';
 import { createLogger } from '@utils/logger';
@@ -14,6 +16,8 @@ import { FixtureService } from '@modules/fixture/fixture.service';
 import { NotificationService } from '@modules/notification/notification.service';
 import {
   TheOddsApiHistoricalResponseSchema,
+  TheOddsApiEventOddsResponseSchema,
+  TheOddsApiErrorResponseSchema,
   type TheOddsApiEvent,
 } from '../schemas/the-odds-api.schema';
 import { sleep } from '@utils/async.utils';
@@ -94,10 +98,13 @@ export class OddsHistoricalImportWorker extends WorkerHost {
 
     // Group fixtures by date (YYYY-MM-DD) to batch API calls
     const byDate = groupByDate(fixtures);
+    const totalDates = byDate.size;
+    let dateIndex = 0;
     let imported = 0;
     let skipped = 0;
 
     for (const [dateStr, dateFixtures] of byDate) {
+      dateIndex++;
       const fixtureIds = dateFixtures.map((f) => f.id);
       const TRACKED_MARKETS = [
         Market.ONE_X_TWO,
@@ -126,33 +133,23 @@ export class OddsHistoricalImportWorker extends WorkerHost {
           { dateStr },
           'All markets already present — skipping date',
         );
-        imported += dateFixtures.length;
+        skipped += dateFixtures.length;
         continue;
       }
 
-      // Build the minimal set of API markets needed across all fixtures on this date.
-      const needH2H = needFetch.some((f) => !has(f.id, Market.ONE_X_TWO));
+      // Always fetch h2h from batch to get event IDs (needed for per-event secondary calls).
+      // btts, h2h_h1, totals_h1 are fetched per-event via a dedicated endpoint.
       const needOu = needFetch.some((f) => !has(f.id, Market.OVER_UNDER));
-      const needBtts = needFetch.some((f) => !has(f.id, Market.BTTS));
-      const needFhw = needFetch.some(
-        (f) => !has(f.id, Market.FIRST_HALF_WINNER),
-      );
-      const needHt = needFetch.some((f) => !has(f.id, Market.OVER_UNDER_HT));
-
-      const marketParts: string[] = [];
-      if (needH2H) marketParts.push('h2h');
-      if (needOu) marketParts.push('totals');
-      if (needBtts) marketParts.push('btts');
-      if (needFhw) marketParts.push('h2h_h1');
-      if (needHt) marketParts.push('totals_h1');
-      const markets = marketParts.join(',');
+      const batchMarkets = ['h2h', needOu && 'totals']
+        .filter(Boolean)
+        .join(',');
 
       const snapshotDate = buildSnapshotTimestamp(dateFixtures[0].scheduledAt);
-      const events = await this.fetchHistoricalOdds(
+      const events = await this.fetchBatchOdds(
         apiKey,
         sportKey,
         snapshotDate,
-        markets,
+        batchMarkets,
       );
 
       if (events === null) {
@@ -161,14 +158,44 @@ export class OddsHistoricalImportWorker extends WorkerHost {
         continue;
       }
 
+      if (events.length === 0) {
+        logger.info(
+          { dateStr, fixturesNeedFetch: needFetch.length },
+          'API returned empty events array — likely outside retention window',
+        );
+        skipped += needFetch.length;
+        continue;
+      }
+
+      logger.debug(
+        {
+          dateStr,
+          eventsReturned: events.length,
+          fixturesNeedFetch: needFetch.length,
+        },
+        'API response received',
+      );
+
+      const apiTeamNames = events.map(
+        (e: TheOddsApiEvent) => `${e.home_team} vs ${e.away_team}`,
+      );
+
       for (const fixture of needFetch) {
         const event = matchEvent(events, fixture);
 
         if (!event) {
-          logger.debug(
-            { fixtureId: fixture.id, dateStr },
-            'No matching event found in The Odds API response',
-          );
+          const mismatch = {
+            fixtureId: fixture.id,
+            dateStr,
+            dbHome: fixture.homeTeam.name,
+            dbAway: fixture.awayTeam.name,
+            apiEvents: apiTeamNames,
+          };
+          logger.info(mismatch, 'No matching event — team name mismatch');
+          await appendFile(
+            join(process.cwd(), 'logs', 'team-name-mismatches.ndjson'),
+            JSON.stringify(mismatch) + '\n',
+          ).catch(() => undefined);
           skipped++;
           continue;
         }
@@ -199,13 +226,41 @@ export class OddsHistoricalImportWorker extends WorkerHost {
         const totals = !has(fixture.id, Market.OVER_UNDER)
           ? extractTotals25(event)
           : null;
-        const btts = !has(fixture.id, Market.BTTS) ? extractBtts(event) : null;
-        const fhw = !has(fixture.id, Market.FIRST_HALF_WINNER)
-          ? extractFirstHalfWinner(event)
-          : null;
-        const ouHt = !has(fixture.id, Market.OVER_UNDER_HT)
-          ? extractTotalsHT(event)
-          : {};
+
+        // Secondary markets (btts, h2h_h1, totals_h1) require the per-event endpoint.
+        let btts: BttsOdds | null = null;
+        let fhw: FirstHalfWinnerOdds | null = null;
+        let ouHt: OuHtOdds = {};
+
+        const secondaryMarketParts = [
+          !has(fixture.id, Market.BTTS) && 'btts',
+          !has(fixture.id, Market.FIRST_HALF_WINNER) && 'h2h_h1',
+          !has(fixture.id, Market.OVER_UNDER_HT) && 'totals_h1',
+        ]
+          .filter(Boolean)
+          .join(',');
+
+        if (secondaryMarketParts) {
+          const secondaryEvent = await this.fetchEventOdds(
+            apiKey,
+            sportKey,
+            event.id,
+            snapshotDate,
+            secondaryMarketParts,
+          );
+          if (secondaryEvent) {
+            btts = !has(fixture.id, Market.BTTS)
+              ? extractBtts(secondaryEvent)
+              : null;
+            fhw = !has(fixture.id, Market.FIRST_HALF_WINNER)
+              ? extractFirstHalfWinner(secondaryEvent)
+              : null;
+            ouHt = !has(fixture.id, Market.OVER_UNDER_HT)
+              ? extractTotalsHT(secondaryEvent)
+              : {};
+          }
+          await sleep(ETL_CONSTANTS.THE_ODDS_API_RATE_LIMIT_MS);
+        }
 
         const hasSecondary =
           totals !== null ||
@@ -233,6 +288,11 @@ export class OddsHistoricalImportWorker extends WorkerHost {
         imported++;
       }
 
+      logger.info(
+        { dateStr, dateIndex, totalDates, imported, skipped },
+        'Date batch complete',
+      );
+
       await sleep(ETL_CONSTANTS.THE_ODDS_API_RATE_LIMIT_MS);
     }
 
@@ -243,7 +303,7 @@ export class OddsHistoricalImportWorker extends WorkerHost {
   }
 
   // eslint-disable-next-line max-params
-  private async fetchHistoricalOdds(
+  private async fetchBatchOdds(
     apiKey: string,
     sportKey: string,
     date: string,
@@ -258,17 +318,79 @@ export class OddsHistoricalImportWorker extends WorkerHost {
     try {
       const stdout = await runCurlGet(url);
       const json: unknown = JSON.parse(stdout);
+
+      const errorParsed = TheOddsApiErrorResponseSchema.safeParse(json);
+      if (errorParsed.success) {
+        logger.warn(
+          {
+            date,
+            markets,
+            errorCode: errorParsed.data.error_code,
+            message: errorParsed.data.message,
+          },
+          'The Odds API batch returned an error response',
+        );
+        return null;
+      }
+
       const parsed = TheOddsApiHistoricalResponseSchema.safeParse(json);
       if (!parsed.success) {
         logger.warn(
           { date, issues: parsed.error.issues },
-          'The Odds API response failed Zod validation',
+          'The Odds API batch response failed Zod validation',
         );
         return null;
       }
       return parsed.data.data;
     } catch (err) {
       logger.warn({ date, err }, 'The Odds API fetch threw');
+      return null;
+    }
+  }
+
+  // eslint-disable-next-line max-params
+  private async fetchEventOdds(
+    apiKey: string,
+    sportKey: string,
+    eventId: string,
+    date: string,
+    markets: string,
+  ): Promise<TheOddsApiEvent | null> {
+    const url =
+      `${ETL_CONSTANTS.THE_ODDS_API_BASE}/historical/sports/${sportKey}/events/${eventId}/odds` +
+      `?apiKey=${apiKey}&date=${date}&regions=eu` +
+      `&markets=${markets}` +
+      `&bookmakers=${PINNACLE_KEY}`;
+
+    try {
+      const stdout = await runCurlGet(url);
+      const json: unknown = JSON.parse(stdout);
+
+      const errorParsed = TheOddsApiErrorResponseSchema.safeParse(json);
+      if (errorParsed.success) {
+        logger.warn(
+          {
+            eventId,
+            markets,
+            errorCode: errorParsed.data.error_code,
+            message: errorParsed.data.message,
+          },
+          'The Odds API event endpoint returned an error response',
+        );
+        return null;
+      }
+
+      const parsed = TheOddsApiEventOddsResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        logger.warn(
+          { eventId, issues: parsed.error.issues },
+          'The Odds API event response failed Zod validation',
+        );
+        return null;
+      }
+      return parsed.data.data;
+    } catch (err) {
+      logger.warn({ eventId, err }, 'The Odds API event fetch threw');
       return null;
     }
   }
@@ -329,11 +451,41 @@ function normalizeTeam(name: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/\butd\b/g, 'united')
     .replace(/\b(fc|afc|cf|sc|ac|ss|as)\b/g, '')
     .replace(/[.\-']/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+// Maps normalized DB names to additional normalized forms used by The Odds API.
+// Needed when the API name shares no prefix/suffix with the DB name.
+const TEAM_ALIASES: Record<string, string[]> = {
+  // PL
+  wolves: ['wolverhampton wanderers', 'wolverhampton'],
+  // BL1 / D2
+  'bayern munchen': ['bayern munich'],
+  '1899 hoffenheim': ['tsg hoffenheim', 'hoffenheim'],
+  '1 heidenheim': ['heidenheim'],
+  'hertha bsc': ['hertha berlin'],
+  // SP2
+  'racing ferrol': ['racing de ferrol'],
+  'racing santander': ['real racing club de santander', 'real racing club'],
+  'real sociedad ii': ['real sociedad b'],
+  // L1 / F2
+  'stade brestois 29': ['brest'],
+  laval: ['stade lavallois'],
+  // I2
+  catanzaro: ['us catanzaro 1929'],
+  // CH
+  'west brom': ['west bromwich albion', 'west bromwich'],
+  qpr: ['queens park rangers'],
+  // EL1 / EL2
+  'accrington st': ['accrington stanley'],
+  // POR
+  'sporting cp': ['sporting lisbon', 'sporting'],
+  guimaraes: ['vitoria sc', 'vitoria'],
+};
 
 function teamMatches(
   team: { name: string; shortName: string },
@@ -341,14 +493,19 @@ function teamMatches(
 ): boolean {
   const norm = normalizeTeam(eventName);
   const n = normalizeTeam(team.name);
-  const s = normalizeTeam(team.shortName);
-  return (
-    n === norm ||
-    s === norm ||
-    n.endsWith(` ${norm}`) ||
-    norm.endsWith(` ${n}`) ||
-    s.endsWith(` ${norm}`) ||
-    norm.endsWith(` ${s}`)
+  const candidates = [
+    n,
+    normalizeTeam(team.shortName),
+    ...(TEAM_ALIASES[n] ?? []),
+  ];
+
+  return candidates.some(
+    (c) =>
+      c === norm ||
+      norm.startsWith(`${c} `) ||
+      c.startsWith(`${norm} `) ||
+      norm.endsWith(` ${c}`) ||
+      c.endsWith(` ${norm}`),
   );
 }
 
