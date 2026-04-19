@@ -71,7 +71,7 @@ Données recalibrées via le backtest complet relancé le 19 avril 2026.
 | ----- | ----- | -------- | ------------ | ---------------------------------------------------- |
 | BL1   | 0.50  | 57.1%    | 362          | Baisse du seuil validée pour remonter la couverture  |
 | PL    | 0.55  | 67.6%    | 238          | Stable, seuil conservé                               |
-| SP2   | 0.55  | 60.4%    | 139          | 0.50 ne passe pas, 0.55 restaure un canal valide    |
+| SP2   | 0.55  | 60.4%    | 139          | 0.50 ne passe pas, 0.55 restaure un canal valide     |
 | POR   | 0.50  | 60.4%    | 111          | Stable, seuil conservé                               |
 | LL    | 0.50  | 62.7%    | 346          | Baisse du seuil validée avec forte couverture        |
 | ERD   | 0.50  | 56.9%    | 160          | Passe au seuil actuel                                |
@@ -81,21 +81,21 @@ Données recalibrées via le backtest complet relancé le 19 avril 2026.
 
 ### Ligues désactivées
 
-| Ligue | Raison                                                                      |
-| ----- | --------------------------------------------------------------------------- |
-| D2    | Aucun seuil testé ne valide hit rate + couverture au cycle du 19/04/2026   |
-| F2    | Aucun seuil testé ne passe le plancher de hit rate                          |
-| I2    | Aucun seuil testé ne passe le plancher de hit rate                          |
-| EL2   | Aucun seuil testé ne valide simultanément volume, couverture et hit rate    |
-| MX1   | Modèle non calibré, backtest toujours insuffisant                           |
-| UNL   | 0% à tous les seuils                                                        |
-| FRI   | Jamais > 50%, trop de variables non modélisées (matchs amicaux)             |
-| SA    | Plafonne à 50–60% avec N insuffisant, pattern instable                      |
-| UEL   | Données trop sparse                                                         |
-| UECL  | Données insuffisantes                                                       |
-| UCL   | Données insuffisantes                                                       |
-| J1    | Volume trop faible                                                          |
-| L1    | Hit rate variable, pas stable sur plusieurs seuils                          |
+| Ligue | Raison                                                                   |
+| ----- | ------------------------------------------------------------------------ |
+| D2    | Aucun seuil testé ne valide hit rate + couverture au cycle du 19/04/2026 |
+| F2    | Aucun seuil testé ne passe le plancher de hit rate                       |
+| I2    | Aucun seuil testé ne passe le plancher de hit rate                       |
+| EL2   | Aucun seuil testé ne valide simultanément volume, couverture et hit rate |
+| MX1   | Modèle non calibré, backtest toujours insuffisant                        |
+| UNL   | 0% à tous les seuils                                                     |
+| FRI   | Jamais > 50%, trop de variables non modélisées (matchs amicaux)          |
+| SA    | Plafonne à 50–60% avec N insuffisant, pattern instable                   |
+| UEL   | Données trop sparse                                                      |
+| UECL  | Données insuffisantes                                                    |
+| UCL   | Données insuffisantes                                                    |
+| J1    | Volume trop faible                                                       |
+| L1    | Hit rate variable, pas stable sur plusieurs seuils                       |
 
 ---
 

@@ -127,17 +127,39 @@ export type SafeValueSeasonResult = {
   daysWithPicks: number;
 };
 
+export type SafeValueCompetitionResult = {
+  competitionCode: string;
+  competitionName: string;
+  picksPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  profit: Decimal;
+  roi: number;
+  winRate: number;
+  avgProbability: number;
+  avgOdds: number;
+  avgEv: number;
+  daysWithPicks: number;
+  marketPerformance: BacktestMarketPerformance[];
+};
+
 export type SafeValueBacktestReport = {
   seasons: SafeValueSeasonResult[];
+  competitions: SafeValueCompetitionResult[];
   aggregate: {
     picksPlaced: number;
     wins: number;
+    losses: number;
     voids: number;
+    profit: Decimal;
     winRate: number;
     roi: number;
     avgProbability: number;
     avgOdds: number;
+    avgEv: number;
     daysWithPicks: number;
+    marketPerformance: BacktestMarketPerformance[];
   };
   generatedAt: Date;
 };
@@ -145,6 +167,7 @@ export type SafeValueBacktestReport = {
 type SafeValuePickEntry = {
   seasonId: string;
   competitionCode: string;
+  competitionName: string;
   pick: ViablePick;
   fixture: FixtureForBacktest;
   result: 'WIN' | 'LOSS' | 'VOID';
@@ -1059,6 +1082,7 @@ export class BacktestService {
       const entries = await this.collectSafeValuePicksForSeason(
         season.id,
         season.competition.code,
+        season.competition.name,
       );
 
       // Per-season pick-level stats
@@ -1122,6 +1146,7 @@ export class BacktestService {
 
     const totalPicks = seasonResults.reduce((s, r) => s + r.picksPlaced, 0);
     const totalWins = seasonResults.reduce((s, r) => s + r.wins, 0);
+    const totalLosses = seasonResults.reduce((s, r) => s + r.losses, 0);
     const totalVoids = seasonResults.reduce((s, r) => s + r.voids, 0);
     const totalStake = totalPicks - totalVoids;
     const totalProfit = seasonResults.reduce(
@@ -1129,26 +1154,45 @@ export class BacktestService {
       new Decimal(0),
     );
     const seasonsWithPicks = seasonResults.filter((r) => r.picksPlaced > 0);
+    const competitions = buildSafeValueCompetitionResults(allEntries);
+    const aggregateMarketPerformance =
+      buildSafeValueMarketPerformance(allEntries);
+    const totalEvSum = seasonsWithPicks.reduce(
+      (sum, season) => sum + season.avgEv * (season.picksPlaced - season.voids),
+      0,
+    );
 
     const report: SafeValueBacktestReport = {
       seasons: seasonResults,
+      competitions,
       aggregate: {
         picksPlaced: totalPicks,
         wins: totalWins,
+        losses: totalLosses,
         voids: totalVoids,
+        profit: totalProfit,
         winRate: totalStake > 0 ? totalWins / totalStake : 0,
         roi: totalStake > 0 ? totalProfit.div(totalStake).toNumber() : 0,
         avgProbability:
-          seasonsWithPicks.length > 0
-            ? seasonsWithPicks.reduce((s, r) => s + r.avgProbability, 0) /
-              seasonsWithPicks.length
+          totalStake > 0
+            ? seasonsWithPicks.reduce(
+                (sum, season) =>
+                  sum +
+                  season.avgProbability * (season.picksPlaced - season.voids),
+                0,
+              ) / totalStake
             : 0,
         avgOdds:
-          seasonsWithPicks.length > 0
-            ? seasonsWithPicks.reduce((s, r) => s + r.avgOdds, 0) /
-              seasonsWithPicks.length
+          totalStake > 0
+            ? seasonsWithPicks.reduce(
+                (sum, season) =>
+                  sum + season.avgOdds * (season.picksPlaced - season.voids),
+                0,
+              ) / totalStake
             : 0,
+        avgEv: totalStake > 0 ? totalEvSum / totalStake : 0,
         daysWithPicks,
+        marketPerformance: aggregateMarketPerformance,
       },
       generatedAt: new Date(),
     };
@@ -1170,6 +1214,7 @@ export class BacktestService {
   private async collectSafeValuePicksForSeason(
     seasonId: string,
     competitionCode: string,
+    competitionName: string,
   ): Promise<SafeValuePickEntry[]> {
     const fixtures = await this.prisma.client.fixture.findMany({
       where: {
@@ -1306,6 +1351,7 @@ export class BacktestService {
       entries.push({
         seasonId,
         competitionCode,
+        competitionName,
         pick: svPick,
         fixture,
         result: simulation.result,
@@ -1352,6 +1398,159 @@ function buildMarketSummaries(
       oddsBuckets: market.oddsBuckets,
     };
   });
+}
+
+function buildSafeValueCompetitionResults(
+  entries: SafeValuePickEntry[],
+): SafeValueCompetitionResult[] {
+  const byCompetition = new Map<
+    string,
+    {
+      competitionCode: string;
+      competitionName: string;
+      entries: SafeValuePickEntry[];
+    }
+  >();
+
+  for (const entry of entries) {
+    const current = byCompetition.get(entry.competitionCode);
+    if (current) {
+      current.entries.push(entry);
+      continue;
+    }
+
+    byCompetition.set(entry.competitionCode, {
+      competitionCode: entry.competitionCode,
+      competitionName: entry.competitionName,
+      entries: [entry],
+    });
+  }
+
+  return Array.from(
+    byCompetition.values(),
+    ({ entries, competitionCode, competitionName }) =>
+      buildSafeValueSummary({
+        entries,
+        competitionCode,
+        competitionName,
+      }),
+  ).sort((a, b) => b.picksPlaced - a.picksPlaced);
+}
+
+function buildSafeValueSummary(input: {
+  entries: SafeValuePickEntry[];
+  competitionCode: string;
+  competitionName: string;
+}): SafeValueCompetitionResult {
+  let picksPlaced = 0;
+  let wins = 0;
+  let losses = 0;
+  let voids = 0;
+  let profit = new Decimal(0);
+  let probabilityTotal = new Decimal(0);
+  let oddsTotal = new Decimal(0);
+  let evTotal = new Decimal(0);
+  const daysWithPicks = new Set<string>();
+
+  for (const entry of input.entries) {
+    picksPlaced++;
+    if (entry.result === 'WIN') wins++;
+    if (entry.result === 'LOSS') losses++;
+    if (entry.result === 'VOID') voids++;
+    profit = profit.plus(entry.profit);
+    if (entry.result !== 'VOID') {
+      probabilityTotal = probabilityTotal.plus(entry.pick.probability);
+      oddsTotal = oddsTotal.plus(entry.pick.odds);
+      evTotal = evTotal.plus(entry.pick.ev);
+    }
+    daysWithPicks.add(entry.fixture.scheduledAt.toISOString().slice(0, 10));
+  }
+
+  const stake = picksPlaced - voids;
+
+  return {
+    competitionCode: input.competitionCode,
+    competitionName: input.competitionName,
+    picksPlaced,
+    wins,
+    losses,
+    voids,
+    profit,
+    roi: stake > 0 ? profit.div(stake).toNumber() : 0,
+    winRate: stake > 0 ? wins / stake : 0,
+    avgProbability: stake > 0 ? probabilityTotal.div(stake).toNumber() : 0,
+    avgOdds: stake > 0 ? oddsTotal.div(stake).toNumber() : 0,
+    avgEv: stake > 0 ? evTotal.div(stake).toNumber() : 0,
+    daysWithPicks: daysWithPicks.size,
+    marketPerformance: buildSafeValueMarketPerformance(input.entries),
+  };
+}
+
+function buildSafeValueMarketPerformance(
+  entries: SafeValuePickEntry[],
+): BacktestMarketPerformance[] {
+  const byMarket = new Map<Market, MarketAccumulator>();
+
+  for (const entry of entries) {
+    const stats = getOrCreateMarketAccumulator(byMarket, entry.pick.market);
+    const pickLabel = getSafeValuePickLabel(entry.pick);
+    const bucketLabel = getOddsBucketLabel(entry.pick.odds);
+
+    stats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      stats.stake = stats.stake.plus(1);
+    }
+    stats.profit = stats.profit.plus(entry.profit);
+    stats.oddsTotal = stats.oddsTotal.plus(entry.pick.odds);
+    stats.evTotal = stats.evTotal.plus(entry.pick.ev);
+    stats.equity = stats.equity.plus(entry.profit);
+    stats.equityPeak = Decimal.max(stats.equityPeak, stats.equity);
+    stats.maxDrawdown = Decimal.max(
+      stats.maxDrawdown,
+      stats.equityPeak.minus(stats.equity),
+    );
+    if (entry.result === 'WIN') stats.wins++;
+    if (entry.result === 'LOSS') stats.losses++;
+    if (entry.result === 'VOID') stats.voids++;
+
+    const pickStats = getOrCreatePickAccumulator(stats.picks, pickLabel);
+    pickStats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      pickStats.stake = pickStats.stake.plus(1);
+    }
+    pickStats.profit = pickStats.profit.plus(entry.profit);
+    pickStats.oddsTotal = pickStats.oddsTotal.plus(entry.pick.odds);
+    pickStats.evTotal = pickStats.evTotal.plus(entry.pick.ev);
+    if (entry.result === 'WIN') pickStats.wins++;
+    if (entry.result === 'LOSS') pickStats.losses++;
+    if (entry.result === 'VOID') pickStats.voids++;
+
+    const bucketStats = getOrCreateBucketAccumulator(
+      stats.buckets,
+      bucketLabel,
+    );
+    bucketStats.betsPlaced++;
+    if (entry.result !== 'VOID') {
+      bucketStats.stake = bucketStats.stake.plus(1);
+    }
+    bucketStats.profit = bucketStats.profit.plus(entry.profit);
+    bucketStats.oddsTotal = bucketStats.oddsTotal.plus(entry.pick.odds);
+    bucketStats.evTotal = bucketStats.evTotal.plus(entry.pick.ev);
+    if (entry.result === 'WIN') bucketStats.wins++;
+    if (entry.result === 'LOSS') bucketStats.losses++;
+    if (entry.result === 'VOID') bucketStats.voids++;
+  }
+
+  return Array.from(byMarket.values(), (stats) =>
+    buildMarketPerformance(stats),
+  ).sort((a, b) => a.market.localeCompare(b.market));
+}
+
+function getSafeValuePickLabel(pick: ViablePick): string {
+  if (pick.comboMarket && pick.comboPick) {
+    return `${pick.pick} + ${pick.comboPick}`;
+  }
+  return pick.pick;
 }
 
 function buildPredictionCandidate(

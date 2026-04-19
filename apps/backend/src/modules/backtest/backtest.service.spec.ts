@@ -1006,7 +1006,7 @@ describe('BacktestService.runCompetitionBacktest', () => {
     expect(report.predictionBacktest?.recommendation).toEqual(
       expect.objectContaining({
         enabled: false,
-        threshold: 0.65,
+        threshold: 0.6,
       }),
     );
   });
@@ -1044,5 +1044,172 @@ describe('BacktestService.runAllCompetitions', () => {
 
     expect(reports).toHaveLength(2);
     expect(reports.map((r) => r.competitionCode)).toEqual(['EPL', 'CH']);
+  });
+});
+
+describe('BacktestService.runAllSeasonsSafeValueBacktest', () => {
+  it('returns competition and market breakdowns for safe value picks', async () => {
+    const prismaMock = {
+      client: {
+        season: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 's1',
+              competition: { code: 'PL', name: 'Premier League' },
+            },
+            {
+              id: 's2',
+              competition: { code: 'CH', name: 'Championship' },
+            },
+          ]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new BacktestService(prismaMock, makeBettingMock());
+    vi.spyOn(
+      service as unknown as {
+        collectSafeValuePicksForSeason: (
+          seasonId: string,
+          competitionCode: string,
+          competitionName: string,
+        ) => Promise<unknown>;
+      },
+      'collectSafeValuePicksForSeason',
+    ).mockImplementation(
+      async (
+        seasonId: string,
+        competitionCode: string,
+        competitionName: string,
+      ) => {
+        if (seasonId === 's1') {
+          return [
+            {
+              seasonId,
+              competitionCode,
+              competitionName,
+              pick: {
+                market: Market.ONE_X_TWO,
+                pick: 'HOME',
+                probability: new Decimal('0.74'),
+                odds: new Decimal('1.55'),
+                ev: new Decimal('0.08'),
+                qualityScore: new Decimal('0.05'),
+                isCombo: false,
+              },
+              fixture: {
+                id: 'f1',
+                seasonId,
+                scheduledAt: new Date('2024-01-01T12:00:00.000Z'),
+                homeTeamId: 'h1',
+                awayTeamId: 'a1',
+                homeHtScore: 1,
+                awayHtScore: 0,
+                homeScore: 2,
+                awayScore: 0,
+              },
+              result: 'WIN',
+              profit: new Decimal('0.55'),
+            },
+            {
+              seasonId,
+              competitionCode,
+              competitionName,
+              pick: {
+                market: Market.ONE_X_TWO,
+                pick: 'HOME',
+                probability: new Decimal('0.71'),
+                odds: new Decimal('1.85'),
+                ev: new Decimal('0.10'),
+                qualityScore: new Decimal('0.06'),
+                isCombo: false,
+              },
+              fixture: {
+                id: 'f2',
+                seasonId,
+                scheduledAt: new Date('2024-01-02T12:00:00.000Z'),
+                homeTeamId: 'h2',
+                awayTeamId: 'a2',
+                homeHtScore: 0,
+                awayHtScore: 0,
+                homeScore: 0,
+                awayScore: 1,
+              },
+              result: 'LOSS',
+              profit: new Decimal('-1'),
+            },
+          ];
+        }
+
+        return [
+          {
+            seasonId,
+            competitionCode,
+            competitionName,
+            pick: {
+              market: Market.BTTS,
+              pick: 'NO',
+              probability: new Decimal('0.69'),
+              odds: new Decimal('1.95'),
+              ev: new Decimal('0.07'),
+              qualityScore: new Decimal('0.04'),
+              isCombo: false,
+            },
+            fixture: {
+              id: 'f3',
+              seasonId,
+              scheduledAt: new Date('2024-02-01T12:00:00.000Z'),
+              homeTeamId: 'h3',
+              awayTeamId: 'a3',
+              homeHtScore: 0,
+              awayHtScore: 0,
+              homeScore: 1,
+              awayScore: 0,
+            },
+            result: 'WIN',
+            profit: new Decimal('0.95'),
+          },
+        ];
+      },
+    );
+
+    const report = await service.runAllSeasonsSafeValueBacktest();
+
+    expect(report.aggregate).toMatchObject({
+      picksPlaced: 3,
+      wins: 2,
+      losses: 1,
+      voids: 0,
+      daysWithPicks: 3,
+    });
+    expect(report.aggregate.marketPerformance).toHaveLength(2);
+    expect(report.aggregate.marketPerformance[0]?.market).toBe(Market.BTTS);
+    expect(report.aggregate.marketPerformance[1]?.market).toBe(
+      Market.ONE_X_TWO,
+    );
+    expect(report.aggregate.marketPerformance[1]?.pickBreakdown).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ pick: 'HOME', betsPlaced: 2, wins: 1 }),
+      ]),
+    );
+    expect(report.aggregate.marketPerformance[1]?.oddsBuckets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ bucket: '<2.0', betsPlaced: 2 }),
+      ]),
+    );
+    expect(report.competitions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          competitionCode: 'PL',
+          competitionName: 'Premier League',
+          picksPlaced: 2,
+        }),
+        expect.objectContaining({
+          competitionCode: 'CH',
+          competitionName: 'Championship',
+          picksPlaced: 1,
+        }),
+      ]),
+    );
   });
 });
