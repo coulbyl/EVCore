@@ -200,7 +200,12 @@ export class OddsHistoricalImportWorker extends WorkerHost {
           continue;
         }
 
-        const snapshotAt = new Date(event.bookmakers[0].last_update);
+        const snapshotBookmaker =
+          event.bookmakers.find((b) => b.key === PINNACLE_KEY) ??
+          event.bookmakers[0];
+        const snapshotAt = new Date(
+          snapshotBookmaker?.last_update ?? event.commence_time,
+        );
 
         if (!has(fixture.id, Market.ONE_X_TWO)) {
           const pinnacleOdds = extractPinnacleH2H(event);
@@ -468,6 +473,8 @@ const TEAM_ALIASES: Record<string, string[]> = {
   '1899 hoffenheim': ['tsg hoffenheim', 'hoffenheim'],
   '1 heidenheim': ['heidenheim'],
   'hertha bsc': ['hertha berlin'],
+  // D2
+  'sv wehen': ['wehen wiesbaden'],
   // SP2
   'racing ferrol': ['racing de ferrol'],
   'racing santander': ['real racing club de santander', 'real racing club'],
@@ -475,8 +482,10 @@ const TEAM_ALIASES: Record<string, string[]> = {
   // L1 / F2
   'stade brestois 29': ['brest'],
   laval: ['stade lavallois'],
+  quevilly: ['us quevilly rouen'],
   // I2
   catanzaro: ['us catanzaro 1929'],
+  lecco: ['lecce'],
   // CH
   'west brom': ['west bromwich albion', 'west bromwich'],
   qpr: ['queens park rangers'],
@@ -485,6 +494,11 @@ const TEAM_ALIASES: Record<string, string[]> = {
   // POR
   'sporting cp': ['sporting lisbon', 'sporting'],
   guimaraes: ['vitoria sc', 'vitoria'],
+  // LL — DB stores "Athletic Club", API uses "Athletic Bilbao"
+  'athletic club': ['athletic bilbao', 'athletic'],
+  // J1
+  'sanfrecce hiroshima': ['hiroshima sanfrecce'],
+  'kyoto sanga': ['kyoto purple sanga'],
 };
 
 function teamMatches(
