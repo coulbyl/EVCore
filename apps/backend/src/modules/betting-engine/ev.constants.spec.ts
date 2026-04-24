@@ -5,6 +5,7 @@ import {
   getLeagueEvThreshold,
   getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
+  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
@@ -195,9 +196,9 @@ describe('getPickMaxSelectionOdds', () => {
     );
   });
 
-  it('returns 2.99 ceiling for F2 1X2 HOME', () => {
+  it('returns 2.49 ceiling for F2 1X2 HOME', () => {
     expect(getPickMaxSelectionOdds('F2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
-      2.99,
+      2.49,
     );
   });
 
@@ -211,6 +212,12 @@ describe('getPickMaxSelectionOdds', () => {
 describe('getLeagueHomeAwayFactors', () => {
   it('returns the reduced home-advantage override for D2', () => {
     expect(getLeagueHomeAwayFactors('D2')).toEqual([1.02, 0.98]);
+  });
+});
+
+describe('getLeagueThreeWayEmpiricalBlendWeight', () => {
+  it('returns the F2 empirical rebalance weight', () => {
+    expect(getLeagueThreeWayEmpiricalBlendWeight('F2').toNumber()).toBe(0.3);
   });
 });
 

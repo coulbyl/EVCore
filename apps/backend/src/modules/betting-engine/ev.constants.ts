@@ -407,6 +407,10 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // Blend 45% toward those empirical rates to reduce over-confident tails
   // without disturbing totals markets, which are already the profitable axis.
   I2: new Decimal('0.45'),
+  // F2 audit 2026-04-24: the league fails Brier by a narrow margin (0.659 vs
+  // 0.65) while 1X2 HOME remains profitable. Test a light empirical rebalance
+  // before touching home-advantage or selection filters.
+  F2: new Decimal('0.30'),
 };
 
 export function getLeagueThreeWayEmpiricalBlendWeight(
@@ -880,9 +884,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // cleanest edge is on short-priced favorites. <2.0 went 3W/3 (+87% ROI) while
   // 2.0-2.99 was effectively flat at 4W/9 (+0.9% ROI). Keep only the strong core.
   'LL|ONE_X_TWO|HOME': new Decimal('1.99'),
-  // Backtest 2026-04-18: F2 HOME remains slightly positive overall, but every HOME
-  // pick above 3.0 lost. Keep the short/medium home favorites and cut the long tail.
-  'F2|ONE_X_TWO|HOME': new Decimal('2.99'),
+  // Backtest 2026-04-24 after adding a light 1X2 empirical blend: the clean F2
+  // HOME edge concentrates in 2.0-2.49 (+16.5% ROI on 25 bets), while 2.5-2.99
+  // slips slightly negative (4W/11, -3.2% ROI). Keep only the shorter home window.
+  'F2|ONE_X_TWO|HOME': new Decimal('2.49'),
 };
 
 export function getPickMaxSelectionOdds(
