@@ -214,6 +214,18 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('3.00'));
   }
 
+  // LL backtest 2026-04-24 after side-market cleanup: FIRST_HALF_WINNER DRAW
+  // remains mildly positive overall, but the signal is concentrated in the
+  // 3.5-3.99 slice (4W/6, +143% ROI). The 3.0-3.49 band is clearly negative
+  // (3W/17, -41.1% ROI), so tighten by odds instead of disabling the branch.
+  if (
+    competitionCode === 'LL' &&
+    market === 'FIRST_HALF_WINNER' &&
+    pick === 'DRAW'
+  ) {
+    return Decimal.max(leagueFloor, new Decimal('3.50'));
+  }
+
   // Audit 2026-04-04: CH AWAY placed was -15.9% ROI across 18 bets. The only
   // marginal positive signal was at odds >= 3.5 (N=3). Align with CH HOME (3.00)
   // and require a slight premium to avoid the negative mid-priced AWAY bucket.
@@ -735,6 +747,21 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // L1 backtest 2026-04-19: BTTS NO is the wrong side of the market (2W/6L, -23.8%),
   // while BTTS YES stays mildly positive. Remove NO and keep the lighter YES branch.
   'L1|BTTS|NO': new Decimal('0.99'),
+  // LL backtest 2026-04-24: BTTS is the main ROI drag in La Liga.
+  // YES: 8W/19, -7.6% ROI. NO: 3W/10, -33.6% ROI.
+  // No sub-window shows durable edge on the current 3-season sample.
+  'LL|BTTS|YES': new Decimal('0.99'),
+  'LL|BTTS|NO': new Decimal('0.99'),
+  // LL backtest 2026-04-24 after the FHW-DRAW tightening: HT UNDER 1.5 still
+  // places 8 bets for 1W/7L (-77.1% ROI), and the two rejected low-EV cases
+  // also lost. No clean odds window emerges; keep only the most extreme
+  // conviction slice instead of disabling the branch outright.
+  'LL|OVER_UNDER_HT|UNDER_1_5': new Decimal('0.24'),
+  // LL backtest 2026-04-24: first-half winner only survives on DRAW and even
+  // that branch is fragile. HOME is clearly toxic (3W/10, -28.1% ROI) and AWAY
+  // has no support at all (0W/2). Remove both to keep the league on cleaner axes.
+  'LL|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  'LL|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
   // L1 backtest 2026-04-19: all FIRST_HALF_WINNER directions are negative overall
   // (5W/20L, -25.1% ROI). No sub-direction justifies keeping the market active.
   'L1|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
@@ -839,6 +866,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // L1 backtest 2026-04-19: 1X2 HOME at 3.0-4.99 went 0W/2L, while 2.0-2.99 was
   // the profitable core window (9W/15 in the latest 3-season run). Cap at 2.99.
   'L1|ONE_X_TWO|HOME': new Decimal('2.99'),
+  // LL backtest 2026-04-24: HOME remains the only usable 1X2 direction, but the
+  // cleanest edge is on short-priced favorites. <2.0 went 3W/3 (+87% ROI) while
+  // 2.0-2.99 was effectively flat at 4W/9 (+0.9% ROI). Keep only the strong core.
+  'LL|ONE_X_TWO|HOME': new Decimal('1.99'),
   // Backtest 2026-04-18: F2 HOME remains slightly positive overall, but every HOME
   // pick above 3.0 lost. Keep the short/medium home favorites and cut the long tail.
   'F2|ONE_X_TWO|HOME': new Decimal('2.99'),

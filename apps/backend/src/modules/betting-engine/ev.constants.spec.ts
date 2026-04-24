@@ -155,6 +155,12 @@ describe('getPickMinSelectionOdds', () => {
       getPickMinSelectionOdds('EL1', 'FIRST_HALF_WINNER', 'AWAY').toNumber(),
     ).toBe(3);
   });
+
+  it('raises the floor to 3.50 for LL first-half DRAW picks', () => {
+    expect(
+      getPickMinSelectionOdds('LL', 'FIRST_HALF_WINNER', 'DRAW').toNumber(),
+    ).toBe(3.5);
+  });
 });
 
 describe('getPickMaxSelectionOdds', () => {
@@ -192,6 +198,12 @@ describe('getPickMaxSelectionOdds', () => {
   it('returns 2.99 ceiling for F2 1X2 HOME', () => {
     expect(getPickMaxSelectionOdds('F2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
       2.99,
+    );
+  });
+
+  it('returns 1.99 ceiling for LL 1X2 HOME', () => {
+    expect(getPickMaxSelectionOdds('LL', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
+      1.99,
     );
   });
 });
@@ -281,6 +293,39 @@ describe('getPickEvFloor', () => {
         new Decimal('0.08'),
       ).toNumber(),
     ).toBe(0.99);
+  });
+
+  it('disables the LL BTTS branch and toxic first-half winner directions', () => {
+    expect(
+      getPickEvFloor('LL', 'BTTS', 'YES', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('LL', 'BTTS', 'NO', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'FIRST_HALF_WINNER',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'OVER_UNDER_HT',
+        'UNDER_1_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.24);
   });
 
   it('disables F2 DRAW and AWAY picks', () => {
