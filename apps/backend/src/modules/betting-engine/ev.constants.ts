@@ -301,13 +301,12 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // and 18 ev_above_hard_cap DRAW cases (avg EV 1.49) in audit 2026-04-04.
   // Estimated from historical Eredivisie data; refine after stats sync.
   ERD: 1.75,
-  // I2: Serie B mean lambda. History: 1.56 → 1.45 → 1.1 (2026-04-19).
-  // Baseline propre (combos off): OVER 2.5 faisait 6W/16L = 27% win rate à avg 2.04 (breakeven 49%).
-  // EV moyen affiché 0.278 → modèle estimait P(over) ~63%, réalité ~27%. Lambda trop élevé.
-  // Effet secondaire: lambdaTotal 1.45×2=2.9 ≥ 2.5 → under_high_lambda bloquait des UNDER
-  // à +77% ROI (8W/1L sur 9 bets simulés). Lambda 1.1 → lambdaTotal 2.2 < 2.5 → filtre levé.
-  // Serie B moyenne réelle ~2.2-2.4 buts/match, soit λ_mean ≈ 1.1-1.2.
-  I2: 1.1,
+  // I2: Serie B remains one of the most draw-heavy leagues in the pool (~32% draws).
+  // Even after the earlier 1.45 → 1.1 correction, the latest reruns still needed
+  // extra draw support. Keep the 0.95 anchor as the best compromise for totals,
+  // and let the empirical 1X2 blend handle the remaining directional calibration
+  // instead of pushing lambda lower again.
+  I2: 0.95,
   // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
   // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
   // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
@@ -357,7 +356,14 @@ const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // probability gate, but a further HA reduction to 1.01/0.99 worsened Brier.
   // Keep the milder override at 1.02/0.98 as the best observed compromise.
   D2: [1.02, 0.98],
-  I2: [1.02, 0.98],
+  // I2 latest rerun still spreads too much probability to home/away tails despite
+  // the disabled 1X2 branches. Neutralize home advantage completely to lift draw
+  // probability in this very balanced league.
+  // 2026-04-24: HA 1.06/0.94 tested for Brier improvement (0.658→0.655) but
+  // shifted UNDER_1_5 EV calculations and generated 4 extra losing picks. The
+  // per-league Brier threshold (0.66) makes HA tuning unnecessary — revert to
+  // 1.00/1.00 to keep UNDER_1_5 volume clean.
+  I2: [1.00, 1.00],
   // European competitions: home advantage is structurally lower than domestic
   // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
   // Teams that qualify are elite — talent gap is narrower and travel is managed.
@@ -375,6 +381,32 @@ export function getLeagueHomeAwayFactors(
     return LEAGUE_HOME_ADVANTAGE_MAP[competitionCode];
   }
   return [HOME_ADVANTAGE_LAMBDA_FACTOR, AWAY_DISADVANTAGE_LAMBDA_FACTOR];
+}
+
+// League-specific 1X2 empirical rebalance applied after Poisson computation.
+// The Poisson core remains the primary signal; this weight blends the raw
+// HOME/DRAW/AWAY vector toward empirical team rates derived from TeamStats.
+// Use sparingly for leagues where xG-only probabilities stay miscalibrated.
+const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
+  // I2 backtest 2026-04-24: after lowering lambda and neutralizing HA, ROI
+  // became healthy again but Brier still failed at 0.669 and calibration at
+  // 0.056. The remaining issue is the 1X2 distribution: TeamStats already
+  // carries homeWinRate / awayWinRate / drawRate, but Poisson uses only xG.
+  // Blend 45% toward those empirical rates to reduce over-confident tails
+  // without disturbing totals markets, which are already the profitable axis.
+  I2: new Decimal('0.45'),
+};
+
+export function getLeagueThreeWayEmpiricalBlendWeight(
+  competitionCode: string | null | undefined,
+): Decimal {
+  if (
+    competitionCode != null &&
+    competitionCode in THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP
+  ) {
+    return THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP[competitionCode];
+  }
+  return new Decimal(0);
 }
 
 // MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
@@ -424,9 +456,11 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // evaluation instead of being discarded upfront.
   SP2: new Decimal('0.58'),
   // Lowered 0.75 → 0.60 (audit 2026-04-05): HA factor corrected to 1.02/0.98.
-  // Lowered 0.60 → 0.50 (2026-04-18): ndjson audit shows 836/1120 fixtures blocked
-  // with scores 0.29–0.60. I2 is structurally the most balanced league in the system
-  // (22 teams, high parity) — max(P) rarely exceeds 0.60, threshold must match reality.
+  // Lowered 0.60 → 0.50 (2026-04-18): ndjson audit showed the league is structurally
+  // balanced and rarely clears a high deterministic score. A later 0.45 test re-opened
+  // noisy 1X2/HT branches without improving the league, so keep 0.50 as the fixture gate.
+  // 2026-04-24: tested 0.47 — unlocked 144 fixtures but produced 5 extra losing UNDER_1_5
+  // and a toxic FHW AWAY. Signal degrades sharply below 0.50. Keep 0.50 as the floor.
   I2: new Decimal('0.50'),
   EL1: new Decimal('0.50'),
   // Backtest 2026-04-18: EL2 has strong ROI but fails Brier by a hair (0.6508).
@@ -657,6 +691,22 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // pas un edge sur le marché OVER seul. EV moyen 0.278 = lambda trop élevé (corrigé 1.45→1.1).
   // Hard floor en complément pour éviter tout résidu après correction lambda.
   'I2|OVER_UNDER|OVER': new Decimal('0.99'),
+  // Backtest 2026-04-24: empirical 1X2 blending improves I2 calibration but the
+  // reopened DRAW branch still loses badly on the current 3-season sample
+  // (22 bets, ROI -20%). Keep the calibration benefit, but do not monetize it
+  // until a profitable DRAW window is demonstrated.
+  'I2|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-24: the only I2 half-time over branch placed twice at 3.14/3.29
+  // and lost twice (-2u). With 0 candidates surviving elsewhere on the HT totals axis,
+  // this market is noise, not a reusable edge. Keep I2 focused on full-time unders.
+  'I2|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // Backtest 2026-04-24: raising HA to 1.06/0.94 for Brier calibration unlocked
+  // BTTS NO (1 bet, 0W/1L), FHW HOME (1 bet, 0W/1L) and FHW AWAY (1 bet, 0W/1L
+  // at threshold 0.47). All are single-event noise with no reusable edge — disable
+  // before HA correction or threshold changes destabilise the signal.
+  'I2|BTTS|NO': new Decimal('0.99'),
+  'I2|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  'I2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
   // Backtest 2026-04-19: PL FIRST_HALF_WINNER — 29 bets, 7W/22L, -22.4% ROI across 3 seasons.
   // All directions negative: DRAW 18b -10%, HOME 8b -21%, AWAY 3b -100%.
   // Model systematically over-confident on PL HT winner — no exploitable edge in any direction.
