@@ -41,6 +41,7 @@ import {
   EV_MAX_SOFT_ALERT,
   EV_THRESHOLD,
   FEATURE_WEIGHTS,
+  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
@@ -175,7 +176,12 @@ export class BettingEngineService {
       weights,
     );
     const lambda = deriveLambdas(homeStats, awayStats, competitionCode);
-    const probabilities = this.computeProbabilities(lambda.home, lambda.away);
+    const probabilities = rebalanceThreeWayProbabilities({
+      probabilities: this.computeProbabilities(lambda.home, lambda.away),
+      homeStats,
+      awayStats,
+      competitionCode,
+    });
 
     return { deterministicScore, probabilities, lambda, features };
   }
@@ -2213,6 +2219,54 @@ function deriveLambdas(
   return {
     home: clamp(rawHome * homeAdvFactor, 0.05, 5),
     away: clamp(rawAway * awayDisadvFactor, 0.05, 5),
+  };
+}
+
+function rebalanceThreeWayProbabilities(input: {
+  probabilities: MatchProbabilities;
+  homeStats: TeamStatsInput;
+  awayStats: TeamStatsInput;
+  competitionCode?: string | null;
+}): MatchProbabilities {
+  const { probabilities, homeStats, awayStats, competitionCode } = input;
+  const blendWeight = getLeagueThreeWayEmpiricalBlendWeight(competitionCode);
+  if (blendWeight.lte(0)) return probabilities;
+
+  const targetDraw = clamp(
+    (clamp(asNumber(homeStats.drawRate), 0.05, 0.6) +
+      clamp(asNumber(awayStats.drawRate), 0.05, 0.6)) /
+      2,
+    0.05,
+    0.6,
+  );
+  const homeWinRate = clamp(asNumber(homeStats.homeWinRate), 0.01, 0.95);
+  const awayWinRate = clamp(asNumber(awayStats.awayWinRate), 0.01, 0.95);
+  const directionalTargetBase = homeWinRate + awayWinRate;
+  if (directionalTargetBase <= 0) return probabilities;
+
+  const targetHomeShare = homeWinRate / directionalTargetBase;
+  const targetHome = (1 - targetDraw) * targetHomeShare;
+  const targetAway = 1 - targetDraw - targetHome;
+  const weight = blendWeight.toNumber();
+
+  const home = new Decimal(
+    probabilities.home.toNumber() * (1 - weight) + targetHome * weight,
+  );
+  const draw = new Decimal(
+    probabilities.draw.toNumber() * (1 - weight) + targetDraw * weight,
+  );
+  const away = new Decimal(
+    probabilities.away.toNumber() * (1 - weight) + targetAway * weight,
+  );
+
+  return {
+    ...probabilities,
+    home,
+    draw,
+    away,
+    dc1X: home.plus(draw),
+    dcX2: draw.plus(away),
+    dc12: home.plus(away),
   };
 }
 
