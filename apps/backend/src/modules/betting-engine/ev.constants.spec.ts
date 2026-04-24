@@ -328,6 +328,33 @@ describe('getPickEvFloor', () => {
     ).toBe(0.24);
   });
 
+  it('disables weak BL1 side branches outside BTTS, FHW AWAY and OVER', () => {
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'FIRST_HALF_WINNER',
+        'DRAW',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'HALF_TIME_FULL_TIME',
+        'HOME_HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'OVER_UNDER',
+        'UNDER_3_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+  });
+
   it('disables F2 DRAW and AWAY picks', () => {
     expect(
       getPickEvFloor('F2', 'ONE_X_TWO', 'DRAW', new Decimal('0.10')).toNumber(),

@@ -752,6 +752,16 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // No sub-window shows durable edge on the current 3-season sample.
   'LL|BTTS|YES': new Decimal('0.99'),
   'LL|BTTS|NO': new Decimal('0.99'),
+  // BL1 backtest 2026-04-24: FHW DRAW places 29 bets for -4.9% ROI across three
+  // seasons, while FHW AWAY remains the profitable half-time direction. No clean
+  // sub-window emerged in the latest run, so remove DRAW and keep the stronger AWAY.
+  'BL1|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  // BL1 backtest 2026-04-24: HT/FT HOME_HOME surfaced once at 3.60 and lost.
+  // No reusable signal on this branch; keep BL1 focused on BTTS, FHW AWAY and OVER.
+  'BL1|HALF_TIME_FULL_TIME|HOME_HOME': new Decimal('0.99'),
+  // BL1 backtest 2026-04-24: UNDER_3_5 surfaced once at 2.35 and lost. The
+  // league's high-scoring profile keeps this defensive total out of scope.
+  'BL1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
   // LL backtest 2026-04-24 after the FHW-DRAW tightening: HT UNDER 1.5 still
   // places 8 bets for 1W/7L (-77.1% ROI), and the two rejected low-EV cases
   // also lost. No clean odds window emerges; keep only the most extreme
