@@ -242,6 +242,17 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('2.10'));
   }
 
+  // EL1 backtest 2026-04-24: the only remaining FHW branch is AWAY. The sole
+  // sub-3.00 pick lost despite a very high displayed EV (2.94, EV 0.41), while
+  // the observed positive cluster starts at 3.21 and is strongest around 3.5-3.7.
+  if (
+    competitionCode === 'EL1' &&
+    market === 'FIRST_HALF_WINNER' &&
+    pick === 'AWAY'
+  ) {
+    return Decimal.max(leagueFloor, new Decimal('3.00'));
+  }
+
   // Audit 2026-04-04: SP2 HOME placed (odds 1.80–2.70) was -21.5% ROI on 8 bets.
   // Rejected SP2 HOME blocked by odds_below_floor showed positive sim ROI —
   // meaning the short-odds favorites (< current floor) are profitable while the
@@ -521,6 +532,10 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // (+4.5% ROI on 33 bets). EV > 0.25 → -32% ROI on 16 bets; EV > 0.40 → -32%
   // on 16 bets. The model is increasingly wrong as confidence rises — cap at 0.25.
   'EL1|ONE_X_TWO|HOME': new Decimal('0.25'),
+  // EL1 backtest 2026-04-24: the surviving FHW AWAY branch turns negative as soon
+  // as displayed EV exceeds ~0.25. Placed bets at EV 0.25-0.35 went 0W/4L, while
+  // the 0.18-0.25 window remained the only clearly positive slice.
+  'EL1|FIRST_HALF_WINNER|AWAY': new Decimal('0.25'),
   // Audit 2026-04-04 (post-patch): D2 HOME remaining 7 bets at avg EV 0.360,
   // all lost or barely won. Over-calibration pattern confirmed — cap EV at 0.25.
   'D2|ONE_X_TWO|HOME': new Decimal('0.25'),
@@ -561,6 +576,27 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // EV 0.11–0.19, quality scores 0.062–0.110 (barely above thresholds). No edge
   // visible at any EV level. Raise floor to eliminate the segment.
   'EL1|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  // EL1 backtest 2026-04-24: FHW AWAY is only convincing in the middle EV band.
+  // EV < 0.18 went 2W/8 (-9.9% ROI), and EV > 0.25 is already cut by soft cap.
+  'EL1|FIRST_HALF_WINNER|AWAY': new Decimal('0.18'),
+  // Backtest 2026-04-24: EL1 BTTS remains negative on both directions across the
+  // latest 3-season run (YES 2W/7, -39.1% ROI; NO 6W/17, -22.3% ROI). No usable
+  // sub-segment appears in the current sample, while 1X2 carries the league.
+  'EL1|BTTS|YES': new Decimal('0.99'),
+  'EL1|BTTS|NO': new Decimal('0.99'),
+  // Backtest 2026-04-24: EL1 first-half winner is only marginally positive on
+  // AWAY (+0.91u on 17 bets) but structurally bad on HOME (12W/39, -13.5% ROI)
+  // and DRAW (0W/1). Remove the toxic branches and keep only the observable AWAY.
+  'EL1|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  'EL1|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-24: EL1 totals diverge by direction. UNDER stays positive
+  // (+35.7% ROI on 9 bets), while OVER and OVER 3.5 combine for -4.8u on 13 bets.
+  // Keep the under branch and eliminate the structurally losing overs.
+  'EL1|OVER_UNDER|OVER': new Decimal('0.99'),
+  'EL1|OVER_UNDER|OVER_3_5': new Decimal('0.99'),
+  // Backtest 2026-04-24: EL1 HT over 1.5 remains negative even after the 2.99 cap
+  // (2W/8, -37.5% ROI). The half-time Poisson split is too noisy here; disable it.
+  'EL1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // Audit 2026-04-04 (post-patch): EL2 DRAW — 3 bets, -100%, avg EV 0.123.
   // Borderline quality with no profitable signal.
   'EL2|ONE_X_TWO|DRAW': new Decimal('0.18'),
@@ -661,6 +697,11 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // FHW HOME 35 bets +43.9% ROI [2.0-2.99 +38.4%, 35 bets] — retained.
   'CH|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
   'CH|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  // CH latest backtest/prod comparison 2026-04-24: 1X2 HOME has no durable edge.
+  // Backtest places no useful HOME branch under the current config, rejected HOME
+  // candidates remain negative overall, and the recent prod sample added 3 straight
+  // HOME losses. Remove the branch and keep CH focused on BTTS/HT/totals.
+  'CH|ONE_X_TWO|HOME': new Decimal('0.99'),
   // CH backtest 2026-04-19: 1X2 DRAW 9 bets 1W/8L -56.9% ROI (all [3.0-4.99]).
   // Model overestimates P(draw) on the Championship's high-turnover mid-table
   // fixtures. HOME already floored at 5.00; DRAW eliminated to leave only AWAY.
@@ -732,6 +773,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // The only stable positive window remains 2.0-2.99; above 3.0 the branch turns
   // into a win/loss drag despite high model EV.
   'D2|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // CH prod window 2026-04-24: recent AWAY losses cluster at 4.10, 4.98, 5.99, 6.05
+  // while the current backtest's rare positive AWAY bets sit below 4.0. Keep only
+  // the shorter outsider window and cut the long tail that drove the red dashboard.
+  'CH|ONE_X_TWO|AWAY': new Decimal('3.99'),
   // POR backtest 2026-04-19: HOME remains acceptable in the 2.0-2.99 window
   // (8 bets, 4W/4L, +16.1% ROI) but the first 3.0-4.99 extension surfaced one
   // 3.10 loser immediately. Keep the short/mid-price home branch and cut the

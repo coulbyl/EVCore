@@ -149,6 +149,12 @@ describe('getPickMinSelectionOdds', () => {
       3.5,
     );
   });
+
+  it('raises the floor to 3.00 for EL1 first-half AWAY picks', () => {
+    expect(
+      getPickMinSelectionOdds('EL1', 'FIRST_HALF_WINNER', 'AWAY').toNumber(),
+    ).toBe(3);
+  });
 });
 
 describe('getPickMaxSelectionOdds', () => {
@@ -214,6 +220,17 @@ describe('getPickEvFloor', () => {
     ).toBe(0.15);
   });
 
+  it('keeps only the middle EV window for EL1 first-half AWAY picks', () => {
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.18);
+  });
+
   it('disables noisy EL2 side markets', () => {
     expect(
       getPickEvFloor(
@@ -229,6 +246,39 @@ describe('getPickEvFloor', () => {
         'OVER_UNDER',
         'OVER',
         new Decimal('0.10'),
+      ).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables EL1 side markets that drag ROI outside 1X2 and UNDER', () => {
+    expect(
+      getPickEvFloor('EL1', 'BTTS', 'YES', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('EL1', 'BTTS', 'NO', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'FIRST_HALF_WINNER',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'OVER_UNDER',
+        'OVER',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'OVER_UNDER_HT',
+        'OVER_1_5',
+        new Decimal('0.08'),
       ).toNumber(),
     ).toBe(0.99);
   });
