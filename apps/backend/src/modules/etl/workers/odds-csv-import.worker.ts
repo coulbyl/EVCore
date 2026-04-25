@@ -16,7 +16,15 @@ export type OddsCsvImportJobData = {
 };
 
 const logger = createLogger('odds-csv-import-worker');
-const EXTRA_LEAGUE_DIVISION_CODES = new Set(['JPN', 'MEX']);
+const EXTRA_LEAGUE_DIVISION_CODES = new Set([
+  'JPN',
+  'MEX',
+  'POL',
+  'SWE',
+  'SWZ',
+  'USA',
+  'NOR',
+]);
 
 @Processor(BULLMQ_QUEUES.ODDS_CSV_IMPORT)
 export class OddsCsvImportWorker extends WorkerHost {
