@@ -679,6 +679,14 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-18: EL2 had a single FIRST_HALF_WINNER AWAY bet, 0W/1L.
   // No evidence of a usable edge; remove the noise before tuning the main market.
   'EL2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-25: FHW HOME is catastrophically bad across all 3 seasons
+  // (30b 5W/25L, -57.8% ROI — S1 1W/3L, S2 3W/14L, S3 1W/8L). League Two home
+  // HT advantage is structurally over-predicted; eliminate the branch entirely.
+  'EL2|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  // Backtest 2026-04-25: UNDER surfaced twice at avg odds 2.03 — 0W/2L. No edge.
+  'EL2|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-25: OVER_HT surfaced 7 times — 2W/5L, -14.3% ROI. No signal.
+  'EL2|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // D2 backtest 2026-04-19: the lone FIRST_HALF_WINNER AWAY pick lost and there is
   // no evidence of a reusable edge in this side market. Keep focus on 1X2 AWAY.
   'D2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
