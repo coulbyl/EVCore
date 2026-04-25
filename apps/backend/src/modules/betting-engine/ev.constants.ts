@@ -808,6 +808,8 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // while EV < 0.20 yields 1W/4L (4 losses, 1 win at 4.33). Set floor to 0.20 to
   // admit only high-conviction draws (removes 4 losses and 1 low-EV win).
   'POR|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  // L1 backtest 2026-04-25: DRAW surfaced once at 3.71 odds — 0W/1L. No signal.
+  'L1|ONE_X_TWO|DRAW': new Decimal('0.99'),
   // L1 backtest 2026-04-19: BTTS NO is the wrong side of the market (2W/6L, -23.8%),
   // while BTTS YES stays mildly positive. Remove NO and keep the lighter YES branch.
   'L1|BTTS|NO': new Decimal('0.99'),
