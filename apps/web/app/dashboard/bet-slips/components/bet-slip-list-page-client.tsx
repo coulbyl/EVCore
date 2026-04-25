@@ -210,7 +210,7 @@ export function BetSlipListPageClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data } = useBetSlips(from, to);
-  const betSlips = data ?? [];
+  const betSlips = useMemo(() => data ?? [], [data]);
   const isMobile = useIsMobile();
 
   const selectedSlip = betSlips.find((s) => s.id === selectedId) ?? null;
