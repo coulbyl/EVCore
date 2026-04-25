@@ -464,9 +464,10 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   POR: new Decimal('0.58'),
   J1: new Decimal('0.55'),
   MX1: new Decimal('0.55'),
-  // Backtest 2026-04-18: ERD passes Brier and calibration but fails ROI on a tiny
-  // set of mid-range HOME picks. Raise the fixture-quality bar before selection.
-  ERD: new Decimal('0.68'),
+  // Backtest 2026-04-18: threshold raised to 0.68 to block bad HOME picks.
+  // Audit 2026-04-25: 0.68 blocks ALL fixtures (max ERD score = 0.679). Restored
+  // to 0.55 — the per-pick floors now handle HOME/UNDER/BTTS/FHW selectively.
+  ERD: new Decimal('0.55'),
   // Tier B — secondary / lower-division markets
   CH: new Decimal('0.50'),
   D2: new Decimal('0.55'),
@@ -691,9 +692,18 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-18: ERD UNDER surfaced once at 3.39 and lost. High Eredivisie
   // goal environment plus dominant teams make model-derived UNDER value suspect.
   'ERD|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Audit 2026-04-25: UNDER_3_5 appeared once (odds 2.51) and lost — same structural
+  // argument as UNDER: Eredivisie averages 3.3 goals/game, UNDER is systematically bad.
+  'ERD|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Audit 2026-04-25: BTTS NO appeared once (odds 3.0) and lost — high-lambda league
+  // produces both teams scoring frequently; BTTS NO has no edge here.
+  'ERD|BTTS|NO': new Decimal('0.99'),
   // Backtest 2026-04-18: ERD OVER_1_5 HT surfaced once and lost; the market is too
   // sparse and noisy to keep in scope while fixing ROI. Disable for now.
   'ERD|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // Audit 2026-04-25: FHW DRAW surfaced once (odds 3.64) and lost — insufficient
+  // signal to justify keeping this market alive in ERD.
+  'ERD|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
   // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
   // Floor 0.12 retains only picks with stronger model confidence.
   'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
@@ -895,6 +905,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // HOME edge concentrates in 2.0-2.49 (+16.5% ROI on 25 bets), while 2.5-2.99
   // slips slightly negative (4W/11, -3.2% ROI). Keep only the shorter home window.
   'F2|ONE_X_TWO|HOME': new Decimal('2.49'),
+  // Audit 2026-04-25: ERD AWAY at 3.78 odds surfaced and lost; the Eredivisie
+  // dominated-fixture profile means long-shot aways are pure noise. Keep only
+  // the 2.0-2.99 window consistent with other leagues where AWAY signal is real.
+  'ERD|ONE_X_TWO|AWAY': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(
