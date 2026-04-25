@@ -5,6 +5,7 @@
 Avoir une methode claire et reusable pour analyser une ligue, corriger sa calibration si necessaire, puis documenter les signaux a garder dans le produit.
 
 Critere principal:
+
 - verifier si la ligue est vraiment exploitable
 - identifier les marches et segments rentables
 - retirer ou durcir les branches qui detruisent le ROI
@@ -39,19 +40,24 @@ Critere principal:
 8. Appliquer une correction minimale et ciblee dans la configuration du moteur.
 9. Relancer le backtest de la ligue apres patch.
 10. Comparer avant / apres:
-   - ROI global
-   - volume de paris
-   - contribution par marche
-   - robustesse du signal restant
+
+- ROI global
+- volume de paris
+- contribution par marche
+- robustesse du signal restant
+
 11. Si le backtest devient satisfaisant, ajouter ou ajuster les tests relies a la calibration retenue.
 12. Si la ligue devient propre:
-   - garder les segments rentables
-   - laisser de cote les segments encore trop fragiles
+
+- garder les segments rentables
+- laisser de cote les segments encore trop fragiles
+
 13. Mettre a jour la documentation produit dans l'aide web:
-   - signaux a jouer
-   - signaux a eviter
-   - plages de cotes utiles
-   - avertissements sur les segments fragiles
+
+- signaux a jouer
+- signaux a eviter
+- plages de cotes utiles
+- avertissements sur les segments fragiles
 
 ## Regles pratiques
 

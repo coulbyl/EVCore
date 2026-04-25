@@ -375,7 +375,7 @@ const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // shifted UNDER_1_5 EV calculations and generated 4 extra losing picks. The
   // per-league Brier threshold (0.66) makes HA tuning unnecessary — revert to
   // 1.00/1.00 to keep UNDER_1_5 volume clean.
-  I2: [1.00, 1.00],
+  I2: [1.0, 1.0],
   // European competitions: home advantage is structurally lower than domestic
   // leagues (Dixon-Coles meta-analyses; UEFA Champions League empirical studies).
   // Teams that qualify are elite — talent gap is narrower and travel is managed.

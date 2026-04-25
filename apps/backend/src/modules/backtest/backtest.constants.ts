@@ -62,7 +62,10 @@ const BRIER_SCORE_PASS_THRESHOLD_MAP: Record<string, Decimal> = {
 export function getBrierScorePassThreshold(
   competitionCode: string | null | undefined,
 ): Decimal {
-  if (competitionCode != null && competitionCode in BRIER_SCORE_PASS_THRESHOLD_MAP) {
+  if (
+    competitionCode != null &&
+    competitionCode in BRIER_SCORE_PASS_THRESHOLD_MAP
+  ) {
     return BRIER_SCORE_PASS_THRESHOLD_MAP[competitionCode];
   }
   return BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD;

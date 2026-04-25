@@ -38,7 +38,10 @@ import {
   type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
-import { BACKTEST_CONSTANTS, getBrierScorePassThreshold } from './backtest.constants';
+import {
+  BACKTEST_CONSTANTS,
+  getBrierScorePassThreshold,
+} from './backtest.constants';
 import {
   getModelScoreThreshold,
   isEuropeanCompetition,
