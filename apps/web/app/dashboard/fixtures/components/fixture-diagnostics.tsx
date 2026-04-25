@@ -327,7 +327,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         title={`Sélections évaluées (${mr.evaluatedPicks.length})`}
         rows={mr.evaluatedPicks}
         evaluated
-        alreadyInUserTicket={row.alreadyInUserTicket}
         fixtureId={row.fixtureId}
         onPlace={handlePlacePick}
       />
