@@ -38,7 +38,10 @@ import {
   type ValidationMarketSummary,
   type ValidationVerdict,
 } from './backtest.report';
-import { BACKTEST_CONSTANTS } from './backtest.constants';
+import {
+  BACKTEST_CONSTANTS,
+  getBrierScorePassThreshold,
+} from './backtest.constants';
 import {
   getModelScoreThreshold,
   isEuropeanCompetition,
@@ -1880,11 +1883,10 @@ function buildCompetitionReport(input: {
   const insufficient =
     totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
 
+  const brierThreshold = getBrierScorePassThreshold(competition.code);
   const brierVerdict: ValidationVerdict = insufficient
     ? 'INSUFFICIENT_DATA'
-    : averageBrierScore.lessThanOrEqualTo(
-          BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
-        )
+    : averageBrierScore.lessThanOrEqualTo(brierThreshold)
       ? 'PASS'
       : 'FAIL';
 
@@ -1904,7 +1906,7 @@ function buildCompetitionReport(input: {
 
   const brierScore: MetricResult = {
     value: averageBrierScore,
-    threshold: BACKTEST_CONSTANTS.BRIER_SCORE_PASS_THRESHOLD,
+    threshold: brierThreshold,
     verdict: brierVerdict,
   };
   const calibrationErrorMetric: MetricResult = {

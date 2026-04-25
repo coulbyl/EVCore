@@ -5,6 +5,7 @@ import {
   getLeagueEvThreshold,
   getLeagueHomeAwayFactors,
   getLeagueMinSelectionOdds,
+  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
@@ -94,7 +95,7 @@ describe('getModelScoreThreshold', () => {
   });
 
   it('returns the raised ERD threshold', () => {
-    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.68);
+    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.55);
   });
 
   it('returns the slightly raised EL2 threshold', () => {
@@ -149,6 +150,18 @@ describe('getPickMinSelectionOdds', () => {
       3.5,
     );
   });
+
+  it('raises the floor to 3.00 for EL1 first-half AWAY picks', () => {
+    expect(
+      getPickMinSelectionOdds('EL1', 'FIRST_HALF_WINNER', 'AWAY').toNumber(),
+    ).toBe(3);
+  });
+
+  it('raises the floor to 3.50 for LL first-half DRAW picks', () => {
+    expect(
+      getPickMinSelectionOdds('LL', 'FIRST_HALF_WINNER', 'DRAW').toNumber(),
+    ).toBe(3.5);
+  });
 });
 
 describe('getPickMaxSelectionOdds', () => {
@@ -183,9 +196,15 @@ describe('getPickMaxSelectionOdds', () => {
     );
   });
 
-  it('returns 2.99 ceiling for F2 1X2 HOME', () => {
+  it('returns 2.49 ceiling for F2 1X2 HOME', () => {
     expect(getPickMaxSelectionOdds('F2', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
-      2.99,
+      2.49,
+    );
+  });
+
+  it('returns 1.99 ceiling for LL 1X2 HOME', () => {
+    expect(getPickMaxSelectionOdds('LL', 'ONE_X_TWO', 'HOME')?.toNumber()).toBe(
+      1.99,
     );
   });
 });
@@ -193,6 +212,12 @@ describe('getPickMaxSelectionOdds', () => {
 describe('getLeagueHomeAwayFactors', () => {
   it('returns the reduced home-advantage override for D2', () => {
     expect(getLeagueHomeAwayFactors('D2')).toEqual([1.02, 0.98]);
+  });
+});
+
+describe('getLeagueThreeWayEmpiricalBlendWeight', () => {
+  it('returns the F2 empirical rebalance weight', () => {
+    expect(getLeagueThreeWayEmpiricalBlendWeight('F2').toNumber()).toBe(0.3);
   });
 });
 
@@ -214,6 +239,17 @@ describe('getPickEvFloor', () => {
     ).toBe(0.15);
   });
 
+  it('keeps only the middle EV window for EL1 first-half AWAY picks', () => {
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.18);
+  });
+
   it('disables noisy EL2 side markets', () => {
     expect(
       getPickEvFloor(
@@ -229,6 +265,99 @@ describe('getPickEvFloor', () => {
         'OVER_UNDER',
         'OVER',
         new Decimal('0.10'),
+      ).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables EL1 side markets that drag ROI outside 1X2 and UNDER', () => {
+    expect(
+      getPickEvFloor('EL1', 'BTTS', 'YES', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('EL1', 'BTTS', 'NO', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'FIRST_HALF_WINNER',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'OVER_UNDER',
+        'OVER',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'EL1',
+        'OVER_UNDER_HT',
+        'OVER_1_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+  });
+
+  it('disables the LL BTTS branch and toxic first-half winner directions', () => {
+    expect(
+      getPickEvFloor('LL', 'BTTS', 'YES', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor('LL', 'BTTS', 'NO', new Decimal('0.08')).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'FIRST_HALF_WINNER',
+        'HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'FIRST_HALF_WINNER',
+        'AWAY',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'LL',
+        'OVER_UNDER_HT',
+        'UNDER_1_5',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.24);
+  });
+
+  it('disables weak BL1 side branches outside BTTS, FHW AWAY and OVER', () => {
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'FIRST_HALF_WINNER',
+        'DRAW',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'HALF_TIME_FULL_TIME',
+        'HOME_HOME',
+        new Decimal('0.08'),
+      ).toNumber(),
+    ).toBe(0.99);
+    expect(
+      getPickEvFloor(
+        'BL1',
+        'OVER_UNDER',
+        'UNDER_3_5',
+        new Decimal('0.08'),
       ).toNumber(),
     ).toBe(0.99);
   });
