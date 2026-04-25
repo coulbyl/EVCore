@@ -704,6 +704,21 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Audit 2026-04-25: FHW DRAW surfaced once (odds 3.64) and lost — insufficient
   // signal to justify keeping this market alive in ERD.
   'ERD|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  // Audit 2026-04-25: MX1 UNDER surfaced once (odds 2.72) and lost.
+  'MX1|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Audit 2026-04-25: MX1 OVER_3_5 surfaced once (odds 3.04) and lost.
+  'MX1|OVER_UNDER|OVER_3_5': new Decimal('0.99'),
+  // Audit 2026-04-25: MX1 OVER (25 bets, +2.2% ROI) is dragged by S1 (-28% on 11
+  // bets). S2/S3 OVER are profitable (+15%/+92%) but S1 contaminates the signal.
+  // No clean odds-range or EV cutoff separates wins from losses — the issue is
+  // seasonal model calibration on the OVER market, not a specific odds window.
+  // HOME (17 bets, +14.6% ROI) is the only confirmed signal; disable OVER.
+  'MX1|OVER_UNDER|OVER': new Decimal('0.99'),
+  // Audit 2026-04-25: MX1 OVER_1_5 HT surfaced once and lost.
+  'MX1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // Audit 2026-04-25: MX1 FHW DRAW and HOME each surfaced once and lost.
+  'MX1|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  'MX1|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
   // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
   // Floor 0.12 retains only picks with stronger model confidence.
   'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
@@ -909,6 +924,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // dominated-fixture profile means long-shot aways are pure noise. Keep only
   // the 2.0-2.99 window consistent with other leagues where AWAY signal is real.
   'ERD|ONE_X_TWO|AWAY': new Decimal('2.99'),
+  // Audit 2026-04-25: MX1 HOME breakdown by odds range over 3 seasons:
+  // [1.80-2.49] = 17 bets 9W/8L +20% ROI; [2.50-2.75] = 5 bets 1W/4L -47%;
+  // [3.00+] = 2 bets 0W/2L -100%. Cut above 2.49 — same approach as F2 HOME.
+  'MX1|ONE_X_TWO|HOME': new Decimal('2.49'),
 };
 
 export function getPickMaxSelectionOdds(
