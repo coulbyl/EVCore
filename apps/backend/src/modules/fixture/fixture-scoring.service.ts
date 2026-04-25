@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, FixtureStatus } from '@evcore/db';
+import { Prisma, FixtureStatus, BetSource } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
@@ -197,6 +197,7 @@ export class FixtureScoringService {
                   probEstimated: true,
                   status: true,
                   isSafeValue: true,
+                  source: true,
                 },
                 orderBy: { ev: 'desc' },
                 take: 5,
@@ -239,8 +240,8 @@ export class FixtureScoringService {
 
     let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
-      const bet = run?.bets.find((b) => !b.isSafeValue) ?? null;
-      const svBet = run?.bets.find((b) => b.isSafeValue) ?? null;
+      const bet = run?.bets.find((b) => !b.isSafeValue && b.source === BetSource.MODEL) ?? null;
+      const svBet = run?.bets.find((b) => b.isSafeValue && b.source === BetSource.MODEL) ?? null;
       const betStatus =
         bet?.status === 'WON' || bet?.status === 'LOST'
           ? bet.status

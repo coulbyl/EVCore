@@ -55,12 +55,12 @@ export class PredictionRepository {
 
   findByDate(date: { gte: Date; lte: Date }, competition?: string) {
     const where: Prisma.PredictionWhereInput = {
-      createdAt: date,
+      fixture: { scheduledAt: date },
       ...(competition ? { competition } : {}),
     };
     return this.prisma.client.prediction.findMany({
       where,
-      orderBy: [{ competition: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ competition: 'asc' }, { fixture: { scheduledAt: 'asc' } }],
       select: {
         id: true,
         fixtureId: true,
@@ -88,7 +88,7 @@ export class PredictionRepository {
     competition?: string,
   ): Promise<{ competition: string; correct: boolean | null }[]> {
     const where: Prisma.PredictionWhereInput = {
-      createdAt: { gte: from, lte: to },
+      fixture: { scheduledAt: { gte: from, lte: to } },
       correct: { not: null },
       ...(competition ? { competition } : {}),
     };

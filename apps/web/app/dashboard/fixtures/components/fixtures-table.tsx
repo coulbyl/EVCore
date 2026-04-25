@@ -460,7 +460,11 @@ function FixtureTableRow({
       </td>
       {/* Cote */}
       <td className="px-4 py-3 text-sm tabular-nums font-medium text-slate-700">
-        —
+        {mr?.market && mr?.pick
+          ? (mr.evaluatedPicks.find(
+              (p) => p.market === mr.market && p.pick === mr.pick,
+            )?.odds ?? <span className="text-slate-400">—</span>)
+          : <span className="text-slate-400">—</span>}
       </td>
       {/* EV */}
       <td className="px-4 py-3 text-sm tabular-nums font-semibold">

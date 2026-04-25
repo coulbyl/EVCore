@@ -56,11 +56,13 @@ export default async function AidePage() {
             <GlossaryToc items={toc} />
           </section>
 
-          <aside className="hidden h-fit rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:block xl:sticky xl:top-5">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+          <aside className="hidden rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow xl:flex xl:flex-col xl:sticky xl:top-5 xl:max-h-[calc(100vh-3rem)]">
+            <p className="shrink-0 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
               Navigation
             </p>
-            <GlossaryToc items={toc} />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <GlossaryToc items={toc} />
+            </div>
           </aside>
 
           <section className="rounded-[1.4rem] border border-border bg-white p-4 shadow-[0_16px_44px_rgba(15,23,42,0.08)] sm:rounded-[1.6rem] sm:p-6 lg:p-8">
