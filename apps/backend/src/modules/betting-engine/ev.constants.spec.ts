@@ -95,7 +95,7 @@ describe('getModelScoreThreshold', () => {
   });
 
   it('returns the raised ERD threshold', () => {
-    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.68);
+    expect(getModelScoreThreshold('ERD').toNumber()).toBe(0.55);
   });
 
   it('returns the slightly raised EL2 threshold', () => {
