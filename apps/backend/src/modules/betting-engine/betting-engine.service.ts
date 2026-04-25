@@ -294,6 +294,8 @@ export class BettingEngineService {
             stakeOverride: true,
             betSlip: {
               select: {
+                id: true,
+                type: true,
                 unitStake: true,
               },
             },
@@ -313,6 +315,7 @@ export class BettingEngineService {
 
     return this.prisma.client.$transaction(async (tx) => {
       let settled = 0;
+      const touchedComboSlipIds = new Set<string>();
       for (const bet of bets) {
         let status: BetStatus;
 
@@ -360,6 +363,11 @@ export class BettingEngineService {
 
         if (status === BetStatus.WON || status === BetStatus.VOID) {
           for (const item of bet.betSlipItems) {
+            if (item.betSlip.type === 'COMBO') {
+              touchedComboSlipIds.add(item.betSlip.id);
+              continue;
+            }
+
             const stake = new Decimal(
               (item.stakeOverride ?? item.betSlip.unitStake).toString(),
             );
@@ -395,6 +403,57 @@ export class BettingEngineService {
         }
 
         settled++;
+      }
+
+      if (touchedComboSlipIds.size > 0) {
+        const comboSlips = await tx.betSlip.findMany({
+          where: { id: { in: [...touchedComboSlipIds] }, type: 'COMBO' },
+          select: {
+            id: true,
+            userId: true,
+            unitStake: true,
+            items: {
+              select: {
+                betId: true,
+                bet: {
+                  select: {
+                    status: true,
+                    oddsSnapshot: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        for (const slip of comboSlips) {
+          if (
+            slip.items.some((item) => item.bet.status === BetStatus.PENDING)
+          ) {
+            continue;
+          }
+
+          if (slip.items.every((item) => item.bet.status === BetStatus.WON)) {
+            const totalOdds = slip.items.reduce((product, item) => {
+              if (item.bet.oddsSnapshot === null) {
+                throw new Error(
+                  `Impossible de créditer le coupon combiné ${slip.id} sans oddsSnapshot`,
+                );
+              }
+              return product.times(item.bet.oddsSnapshot.toString());
+            }, new Decimal(1));
+
+            await this.bankroll?.recordBetWon(
+              {
+                userId: slip.userId,
+                betId: slip.items[0].betId,
+                stake: new Decimal(slip.unitStake.toString()),
+                odds: totalOdds,
+              },
+              { tx },
+            );
+          }
+        }
       }
 
       return { settled };

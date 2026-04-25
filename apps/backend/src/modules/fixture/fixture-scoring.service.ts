@@ -240,8 +240,12 @@ export class FixtureScoringService {
 
     let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
-      const bet = run?.bets.find((b) => !b.isSafeValue && b.source === BetSource.MODEL) ?? null;
-      const svBet = run?.bets.find((b) => b.isSafeValue && b.source === BetSource.MODEL) ?? null;
+      const bet =
+        run?.bets.find((b) => !b.isSafeValue && b.source === BetSource.MODEL) ??
+        null;
+      const svBet =
+        run?.bets.find((b) => b.isSafeValue && b.source === BetSource.MODEL) ??
+        null;
       const betStatus =
         bet?.status === 'WON' || bet?.status === 'LOST'
           ? bet.status

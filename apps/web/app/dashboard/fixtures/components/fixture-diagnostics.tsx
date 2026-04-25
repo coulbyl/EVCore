@@ -90,9 +90,9 @@ function PlacePickButton({
       disabled={disabled}
       title={
         inSlip
-          ? "Déjà dans le ticket"
+          ? "Déjà dans le coupon"
           : alreadyInUserTicket
-            ? "Déjà dans vos tickets"
+            ? "Déjà dans vos coupons"
             : "Placer ce pick"
       }
       className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
@@ -254,6 +254,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       scheduledAt: row.scheduledAt,
       market: snap.market,
       pick: snap.pick,
+      odds: snap.odds,
       comboMarket: snap.comboMarket,
       comboPick: snap.comboPick,
       ev: snap.ev,

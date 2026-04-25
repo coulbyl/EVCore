@@ -52,6 +52,11 @@ enum BetSource {
   USER
 }
 
+enum BetSlipType {
+  SIMPLE
+  COMBO
+}
+
 enum BankrollTransactionType {
   DEPOSIT
   BET_PLACED
@@ -91,19 +96,19 @@ enum NotificationType {
 // ─────────────────────────────────────────────
 
 model Competition {
-  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  leagueId           Int      @unique
-  code               String   @unique
-  name               String
-  country            String
-  isActive           Boolean
-  includeInBacktest  Boolean  @default(true)
-  csvDivisionCode    String?
-  seasonStartMonth   Int?
-  apiSeasonOverride  Int?
-  seasons            Season[]
-  teams              Team[]
-  createdAt          DateTime @default(now())
+  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  leagueId          Int      @unique
+  code              String   @unique
+  name              String
+  country           String
+  isActive          Boolean
+  includeInBacktest Boolean  @default(true)
+  csvDivisionCode   String?
+  seasonStartMonth  Int?
+  apiSeasonOverride Int?
+  seasons           Season[]
+  teams             Team[]
+  createdAt         DateTime @default(now())
 
   @@map("competition")
 }
@@ -112,7 +117,7 @@ model Season {
   id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   competitionId String      @db.Uuid
   competition   Competition @relation(fields: [competitionId], references: [id])
-  name          String      // e.g. "2022-23"
+  name          String // e.g. "2022-23"
   startDate     DateTime
   endDate       DateTime
   fixtures      Fixture[]
@@ -123,52 +128,52 @@ model Season {
 }
 
 model Team {
-  id             String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId     Int         @unique // football-data.org ID
-  name           String
-  shortName      String
-  logoUrl        String?
-  competitionId  String      @db.Uuid
-  competition    Competition @relation(fields: [competitionId], references: [id])
-  homeFixtures   Fixture[]   @relation("HomeTeam")
-  awayFixtures   Fixture[]   @relation("AwayTeam")
-  stats          TeamStats[]
-  createdAt      DateTime    @default(now())
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId    Int         @unique // football-data.org ID
+  name          String
+  shortName     String
+  logoUrl       String?
+  competitionId String      @db.Uuid
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  homeFixtures  Fixture[]   @relation("HomeTeam")
+  awayFixtures  Fixture[]   @relation("AwayTeam")
+  stats         TeamStats[]
+  createdAt     DateTime    @default(now())
 
   @@map("team")
 }
 
 model Fixture {
-  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId    Int           @unique // football-data.org ID
-  seasonId      String        @db.Uuid
-  season        Season        @relation(fields: [seasonId], references: [id])
-  homeTeamId    String        @db.Uuid
-  homeTeam      Team          @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeamId    String        @db.Uuid
-  awayTeam      Team          @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  matchday             Int
-  round                String?               // raw API round string (e.g. "Quarter-finals", "League Stage - 1")
-  leg                  Int?                  // 1 = aller, 2 = retour — null for group/league stage
-  aggregateHomeGoals   Int?                  // goals scored by home team's side in leg 1 (set on leg 2 only)
-  aggregateAwayGoals   Int?                  // goals scored by away team's side in leg 1 (set on leg 2 only)
-  scheduledAt          DateTime
-  status               FixtureStatus         @default(SCHEDULED)
-  homeScore            Int?
-  awayScore            Int?
-  homeHtScore          Int?
-  awayHtScore          Int?
-  homeXg               Decimal?              @db.Decimal(5, 3) // from API-Football expected_goals
-  awayXg               Decimal?              @db.Decimal(5, 3) // from API-Football expected_goals
-  xgUnavailable        Boolean               @default(false)   // true = API returned no stats, skip on retry
-  modelRuns            ModelRun[]
-  bets                 Bet[]
-  betSlipItems         BetSlipItem[]
-  teamStats            TeamStats[]
-  oddsSnapshots        OddsSnapshot[]
-  predictions          Prediction[]
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  id                 String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId         Int            @unique // football-data.org ID
+  seasonId           String         @db.Uuid
+  season             Season         @relation(fields: [seasonId], references: [id])
+  homeTeamId         String         @db.Uuid
+  homeTeam           Team           @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId         String         @db.Uuid
+  awayTeam           Team           @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  matchday           Int
+  round              String? // raw API round string (e.g. "Quarter-finals", "League Stage - 1")
+  leg                Int? // 1 = aller, 2 = retour — null for group/league stage
+  aggregateHomeGoals Int? // goals scored by home team's side in leg 1 (set on leg 2 only)
+  aggregateAwayGoals Int? // goals scored by away team's side in leg 1 (set on leg 2 only)
+  scheduledAt        DateTime
+  status             FixtureStatus  @default(SCHEDULED)
+  homeScore          Int?
+  awayScore          Int?
+  homeHtScore        Int?
+  awayHtScore        Int?
+  homeXg             Decimal?       @db.Decimal(5, 3) // from API-Football expected_goals
+  awayXg             Decimal?       @db.Decimal(5, 3) // from API-Football expected_goals
+  xgUnavailable      Boolean        @default(false) // true = API returned no stats, skip on retry
+  modelRuns          ModelRun[]
+  bets               Bet[]
+  betSlipItems       BetSlipItem[]
+  teamStats          TeamStats[]
+  oddsSnapshots      OddsSnapshot[]
+  predictions        Prediction[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   @@index([seasonId, matchday])
   @@index([seasonId, round])
@@ -183,22 +188,22 @@ model Fixture {
 // Rolling stats computed for a team after a given fixture was played.
 // One row per team per fixture (home team stats + away team stats).
 model TeamStats {
-  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  teamId           String   @db.Uuid
-  team             Team     @relation(fields: [teamId], references: [id])
-  afterFixtureId   String   @db.Uuid
-  afterFixture     Fixture  @relation(fields: [afterFixtureId], references: [id])
+  id             String  @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  teamId         String  @db.Uuid
+  team           Team    @relation(fields: [teamId], references: [id])
+  afterFixtureId String  @db.Uuid
+  afterFixture   Fixture @relation(fields: [afterFixtureId], references: [id])
 
   // Feature values used in the deterministic scoring model (see EVCORE.md §4.1)
-  recentForm       Decimal  @db.Decimal(5, 4) // weighted 5-match form (decay 0.8)
-  xgFor            Decimal  @db.Decimal(5, 3) // rolling xG scored (10 matches)
-  xgAgainst        Decimal  @db.Decimal(5, 3) // rolling xG conceded (10 matches)
-  homeWinRate      Decimal  @db.Decimal(5, 4) // season home win rate
-  awayWinRate      Decimal  @db.Decimal(5, 4) // season away win rate
-  drawRate         Decimal  @db.Decimal(5, 4) // season draw rate
-  leagueVolatility Decimal  @db.Decimal(5, 4) // std-dev of total goals in league
+  recentForm       Decimal @db.Decimal(5, 4) // weighted 5-match form (decay 0.8)
+  xgFor            Decimal @db.Decimal(5, 3) // rolling xG scored (10 matches)
+  xgAgainst        Decimal @db.Decimal(5, 3) // rolling xG conceded (10 matches)
+  homeWinRate      Decimal @db.Decimal(5, 4) // season home win rate
+  awayWinRate      Decimal @db.Decimal(5, 4) // season away win rate
+  drawRate         Decimal @db.Decimal(5, 4) // season draw rate
+  leagueVolatility Decimal @db.Decimal(5, 4) // std-dev of total goals in league
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([teamId, afterFixtureId])
   @@map("team_stats")
@@ -206,19 +211,19 @@ model TeamStats {
 
 // Output of one betting engine analysis for a fixture.
 model ModelRun {
-  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  fixtureId          String   @db.Uuid
-  fixture            Fixture  @relation(fields: [fixtureId], references: [id])
-  analyzedAt         DateTime @default(now())
-  decision           Decision
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId  String   @db.Uuid
+  fixture    Fixture  @relation(fields: [fixtureId], references: [id])
+  analyzedAt DateTime @default(now())
+  decision   Decision
 
   deterministicScore Decimal  @db.Decimal(5, 4)
   llmDelta           Decimal? @db.Decimal(5, 4) // null in MVP (OpenClaw not active)
   finalScore         Decimal  @db.Decimal(5, 4)
 
   // Snapshot of feature values at analysis time — enables ModelRun replay
-  features           Json     // { recentForm, xg, performanceDomExt, volatiliteLigue }
-  openclawRaw        Json?    // raw LLM output — null in MVP
+  features    Json // { recentForm, xg, performanceDomExt, volatiliteLigue }
+  openclawRaw Json? // raw LLM output — null in MVP
 
   validatedByBackend Boolean      @default(false)
   bets               Bet[]
@@ -232,104 +237,104 @@ model ModelRun {
 
 // One bet per market per ModelRun.
 model Bet {
-  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  modelRunId    String    @db.Uuid
-  modelRun      ModelRun  @relation(fields: [modelRunId], references: [id])
-  fixtureId     String    @db.Uuid
-  fixture       Fixture   @relation(fields: [fixtureId], references: [id])
+  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  modelRunId    String        @db.Uuid
+  modelRun      ModelRun      @relation(fields: [modelRunId], references: [id])
+  fixtureId     String        @db.Uuid
+  fixture       Fixture       @relation(fields: [fixtureId], references: [id])
   market        Market
-  pick          String    // HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12
-  pickKey       String    // canonical key: "<market>|<pick>|<comboMarket?>|<comboPick?>"
-  probEstimated Decimal   @db.Decimal(5, 4)
-  oddsSnapshot  Decimal?  @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
-  ev            Decimal   @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
-  qualityScore  Decimal?  @db.Decimal(6, 4) // ev × deterministicScore — used for pick pool ranking (null for legacy bets)
-  stakePct      Decimal   @db.Decimal(5, 4) // 0.01 = 1% bankroll
-  status        BetStatus @default(PENDING)
+  pick          String // HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12
+  pickKey       String // canonical key: "<market>|<pick>|<comboMarket?>|<comboPick?>"
+  probEstimated Decimal       @db.Decimal(5, 4)
+  oddsSnapshot  Decimal?      @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
+  ev            Decimal       @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
+  qualityScore  Decimal?      @db.Decimal(6, 4) // ev × deterministicScore — used for pick pool ranking (null for legacy bets)
+  stakePct      Decimal       @db.Decimal(5, 4) // 0.01 = 1% bankroll
+  status        BetStatus     @default(PENDING)
   // combo-match fields: null for single-market picks
   comboMarket   Market?
-  comboPick     String?   // secondary pick (e.g. "YES", "OVER")
+  comboPick     String? // secondary pick (e.g. "YES", "OVER")
   // safe-value flag: true for picks selected via the SAFE_VALUE flux (P ≥ 68%, EV ≥ 0)
-  isSafeValue   Boolean   @default(false)
+  isSafeValue   Boolean       @default(false)
   // source: MODEL for engine bets, USER for user-placed picks from evaluated picks
-  source        BetSource @default(MODEL)
-  userId        String?   @db.Uuid
-  user          User?     @relation(fields: [userId], references: [id])
+  source        BetSource     @default(MODEL)
+  userId        String?       @db.Uuid
+  user          User?         @relation(fields: [userId], references: [id])
   betSlipItems  BetSlipItem[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
+  @@unique([fixtureId, pickKey, userId])
   @@index([modelRunId])
   @@index([fixtureId])
   @@index([market, status, createdAt])
   @@index([status, updatedAt])
   @@index([userId])
-  @@unique([fixtureId, pickKey, userId])
   @@map("bet")
 }
 
 model User {
-  id                   String                 @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  email                String                 @unique
-  username             String                 @unique
+  id                   String                @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email                String                @unique
+  username             String                @unique
   passwordHash         String
   fullName             String
   bio                  String?
-  role                 UserRole               @default(OPERATOR)
-  emailVerified        Boolean                @default(false)
+  role                 UserRole              @default(OPERATOR)
+  emailVerified        Boolean               @default(false)
   avatarUrl            String?
   sessions             Session[]
   betSlips             BetSlip[]
   betSlipItems         BetSlipItem[]
   bets                 Bet[]
   bankrollTransactions BankrollTransaction[]
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@map("users")
 }
 
 model Session {
-  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId     String   @db.Uuid
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, expiresAt])
   @@map("user_session")
 }
 
 model BetSlip {
-  id           String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId       String        @db.Uuid
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  unitStake    Decimal       @db.Decimal(12, 2)
-  items        BetSlipItem[]
-  createdAt    DateTime      @default(now())
+  id        String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String        @db.Uuid
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unitStake Decimal       @db.Decimal(12, 2)
+  type      BetSlipType   @default(SIMPLE)
+  items     BetSlipItem[]
+  createdAt DateTime      @default(now())
 
   @@index([userId, createdAt])
   @@map("bet_slip")
 }
 
 model BetSlipItem {
-  betSlipId      String      @db.Uuid
-  betSlip        BetSlip     @relation(fields: [betSlipId], references: [id], onDelete: Cascade)
-  userId         String      @db.Uuid
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  betId          String      @db.Uuid
-  bet            Bet         @relation(fields: [betId], references: [id], onDelete: Cascade)
-  fixtureId      String      @db.Uuid
-  fixture        Fixture     @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  stakeOverride  Decimal?    @db.Decimal(12, 2)
-  createdAt      DateTime    @default(now())
+  betSlipId     String   @db.Uuid
+  betSlip       BetSlip  @relation(fields: [betSlipId], references: [id], onDelete: Cascade)
+  userId        String   @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  betId         String   @db.Uuid
+  bet           Bet      @relation(fields: [betId], references: [id], onDelete: Cascade)
+  fixtureId     String   @db.Uuid
+  fixture       Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  stakeOverride Decimal? @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
 
   @@id([betSlipId, betId])
-  @@unique([userId, betId])
   @@unique([betSlipId, fixtureId])
   @@index([betId])
   @@index([fixtureId])
@@ -354,9 +359,9 @@ model BankrollTransaction {
 // Backend decides whether to apply, reject, or freeze (never auto-applied).
 model AdjustmentProposal {
   id               String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  triggerBetCount  Int              // number of bets that triggered this proposal
-  currentWeights   Json             // { recentForm: 0.30, xg: 0.30, ... }
-  proposedWeights  Json             // { recentForm: 0.32, xg: 0.28, ... }
+  triggerBetCount  Int // number of bets that triggered this proposal
+  currentWeights   Json // { recentForm: 0.30, xg: 0.30, ... }
+  proposedWeights  Json // { recentForm: 0.32, xg: 0.28, ... }
   calibrationError Decimal          @db.Decimal(6, 5)
   status           AdjustmentStatus @default(PENDING)
   appliedAt        DateTime?
@@ -375,7 +380,7 @@ model AdjustmentProposal {
 model MarketSuspension {
   id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   market      Market
-  reason      String    // e.g. "ROI -16.3% over 52 bets — auto-suspended"
+  reason      String // e.g. "ROI -16.3% over 52 bets — auto-suspended"
   triggeredBy String    @default("auto") // "auto" | "manual"
   active      Boolean   @default(true)
   liftedAt    DateTime?
@@ -392,7 +397,7 @@ model Notification {
   type      NotificationType
   title     String
   body      String
-  payload   Json?            // extra context (market, roi, betCount, etc.)
+  payload   Json? // extra context (market, roi, betCount, etc.)
   read      Boolean          @default(false)
   readAt    DateTime?
   createdAt DateTime         @default(now())
@@ -419,19 +424,19 @@ model NationalTeamEloRating {
 // Odds snapshots — scaffolded for Phase 2 (prematch odds integration).
 // Not used in MVP.
 model OddsSnapshot {
-  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  fixtureId  String   @db.Uuid
-  fixture    Fixture  @relation(fields: [fixtureId], references: [id])
+  id         String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  fixtureId  String             @db.Uuid
+  fixture    Fixture            @relation(fields: [fixtureId], references: [id])
   bookmaker  String
   market     Market
-  homeOdds   Decimal? @db.Decimal(6, 3)
-  drawOdds   Decimal? @db.Decimal(6, 3)
-  awayOdds   Decimal? @db.Decimal(6, 3)
-  pick       String?              // for non-1X2 markets
-  odds       Decimal?             @db.Decimal(6, 3) // for non-1X2 markets
-  source     OddsSnapshotSource   @default(PREMATCH)
+  homeOdds   Decimal?           @db.Decimal(6, 3)
+  drawOdds   Decimal?           @db.Decimal(6, 3)
+  awayOdds   Decimal?           @db.Decimal(6, 3)
+  pick       String? // for non-1X2 markets
+  odds       Decimal?           @db.Decimal(6, 3) // for non-1X2 markets
+  source     OddsSnapshotSource @default(PREMATCH)
   snapshotAt DateTime
-  createdAt  DateTime             @default(now())
+  createdAt  DateTime           @default(now())
 
   @@index([fixtureId, snapshotAt])
   @@index([fixtureId, bookmaker, market, pick, snapshotAt])
@@ -447,11 +452,11 @@ model Prediction {
   fixture     Fixture   @relation(fields: [fixtureId], references: [id])
   modelRunId  String    @db.Uuid
   modelRun    ModelRun  @relation(fields: [modelRunId], references: [id])
-  competition String    // code ligue (BL1, PL, etc.)
+  competition String // code ligue (BL1, PL, etc.)
   market      Market    @default(ONE_X_TWO)
-  pick        String    // HOME | DRAW | AWAY
+  pick        String // HOME | DRAW | AWAY
   probability Decimal   @db.Decimal(5, 4)
-  correct     Boolean?  // null = pending, true/false après settle
+  correct     Boolean? // null = pending, true/false après settle
   settledAt   DateTime?
   createdAt   DateTime  @default(now())
 

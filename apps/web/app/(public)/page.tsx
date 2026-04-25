@@ -53,8 +53,8 @@ const STEPS = [
   },
   {
     n: "03",
-    title: "Vous suivez vos tickets dans le temps",
-    body: "Vos tickets restent enregistrés, vos résultats sont regroupés, et le système s'ajuste au fil des matchs terminés.",
+    title: "Vous suivez vos coupons dans le temps",
+    body: "Vos coupons restent enregistrés, vos résultats sont regroupés, et le système s'ajuste au fil des matchs terminés.",
   },
 ];
 
@@ -136,7 +136,7 @@ export default function LandingPlaceholder() {
             style={{ color: "#94a3b8" }}
           >
             EVCore vous aide à repérer les paris les plus intéressants, à éviter
-            les choix faibles et à suivre vos tickets avec méthode.
+            les choix faibles et à suivre vos coupons avec méthode.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

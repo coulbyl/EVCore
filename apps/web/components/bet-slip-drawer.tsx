@@ -42,14 +42,19 @@ function StakeInput({
 function DraftItemRow({
   item,
   unitStake,
+  mode,
   onRemove,
   onStakeChange,
 }: {
   item: BetSlipDraftItem;
   unitStake: number;
+  mode: "SIMPLE" | "COMBO";
   onRemove: () => void;
   onStakeChange: (v: string) => void;
 }) {
+  const odds = item.odds ? Number.parseFloat(item.odds) : null;
+  const stake = item.stakeOverride ?? unitStake;
+
   return (
     <div className="px-4 py-3">
       <div className="flex items-start justify-between gap-2">
@@ -80,6 +85,11 @@ function DraftItemRow({
                 Valeur {item.ev}
               </span>
             )}
+            {odds !== null && Number.isFinite(odds) ? (
+              <span className="text-[0.65rem] font-semibold tabular-nums text-slate-700">
+                @{odds.toFixed(2)}
+              </span>
+            ) : null}
           </div>
         </div>
         <button
@@ -91,14 +101,25 @@ function DraftItemRow({
           <X size={14} />
         </button>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="text-[0.65rem] text-slate-400">Mise spécifique</span>
-        <StakeInput
-          value={item.stakeOverride !== null ? String(item.stakeOverride) : ""}
-          onChange={onStakeChange}
-          placeholder={String(unitStake)}
-        />
-      </div>
+      {mode === "SIMPLE" ? (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="text-[0.65rem] text-slate-400">
+            <span>Mise spécifique</span>
+            {odds !== null && Number.isFinite(odds) ? (
+              <span className="ml-2 tabular-nums">
+                Gain pot. {(stake * odds).toLocaleString("fr-FR")} u
+              </span>
+            ) : null}
+          </div>
+          <StakeInput
+            value={
+              item.stakeOverride !== null ? String(item.stakeOverride) : ""
+            }
+            onChange={onStakeChange}
+            placeholder={String(unitStake)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -111,6 +132,7 @@ export function BetSlipDrawer() {
     removeItem,
     setStakeOverride,
     setUnitStake,
+    setType,
     clearDraft,
   } = useBetSlip();
   const queryClient = useQueryClient();
@@ -124,6 +146,11 @@ export function BetSlipDrawer() {
   const [isPending, startTransition] = useTransition();
 
   const totalItems = draft.items.length;
+  const isCombo = draft.type === "COMBO" && totalItems >= 2;
+  const totalOdds = draft.items.reduce((product, item) => {
+    const odds = item.odds ? Number.parseFloat(item.odds) : 1;
+    return Number.isFinite(odds) && odds > 0 ? product * odds : product;
+  }, 1);
 
   useEffect(() => {
     setUnitStakeInput(String(draft.unitStake));
@@ -140,10 +167,20 @@ export function BetSlipDrawer() {
     return stakeOverride ?? draft.unitStake;
   }
 
-  const totalStake = draft.items.reduce(
-    (sum, item) => sum + effectiveStake(item.stakeOverride),
-    0,
-  );
+  const totalStake = isCombo
+    ? draft.unitStake
+    : draft.items.reduce(
+        (sum, item) => sum + effectiveStake(item.stakeOverride),
+        0,
+      );
+  const potentialReturn = isCombo
+    ? draft.unitStake * totalOdds
+    : draft.items.reduce((sum, item) => {
+        const odds = item.odds ? Number.parseFloat(item.odds) : 0;
+        return Number.isFinite(odds)
+          ? sum + effectiveStake(item.stakeOverride) * odds
+          : sum;
+      }, 0);
   const bankroll = Number.parseFloat(bankrollQuery.data?.balance ?? "0");
   const exceedsBalance = totalStake > bankroll;
 
@@ -174,7 +211,7 @@ export function BetSlipDrawer() {
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-white outline-none sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[420px] sm:rounded-[1.5rem]">
-          <Drawer.Title className="sr-only">Ticket en préparation</Drawer.Title>
+          <Drawer.Title className="sr-only">Coupon en préparation</Drawer.Title>
           {/* Handle (mobile) */}
           <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
 
@@ -184,7 +221,7 @@ export function BetSlipDrawer() {
               <div className="flex items-center gap-2">
                 <ReceiptText size={16} className="text-accent" />
                 <h2 className="text-sm font-semibold text-slate-800">
-                  Ticket en préparation
+                  Coupon en préparation
                   {totalItems > 0 && (
                     <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-white">
                       {totalItems}
@@ -195,7 +232,7 @@ export function BetSlipDrawer() {
               <p className="mt-1 text-xs text-slate-500">
                 {totalItems > 0
                   ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
-                  : "Ajoutez vos sélections pour préparer votre ticket."}
+                  : "Ajoutez vos sélections pour préparer votre coupon."}
               </p>
               <p className="mt-2 text-xs font-semibold text-slate-700">
                 Solde disponible :{" "}
@@ -230,9 +267,9 @@ export function BetSlipDrawer() {
             {submitted ? (
               <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
                 <CheckCircle size={40} className="text-emerald-500" />
-                <p className="font-semibold text-slate-800">Ticket soumis !</p>
+                <p className="font-semibold text-slate-800">Coupon soumis !</p>
                 <p className="text-sm text-slate-500">
-                  Retrouvez-le dans la section Mes tickets.
+                  Retrouvez-le dans la section Mes coupons.
                 </p>
                 <button
                   type="button"
@@ -249,29 +286,62 @@ export function BetSlipDrawer() {
               <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
                 <ReceiptText size={32} className="text-slate-300" />
                 <p className="text-sm font-semibold text-slate-500">
-                  Aucun ticket en préparation
+                  Aucun coupon en préparation
                 </p>
                 <p className="text-xs text-slate-400">
                   Placez des sélections depuis la page Matchs.
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
-                {draft.items.map((item) => {
-                  const key = draftItemKey(item);
-                  return (
-                    <DraftItemRow
-                      key={key}
-                      item={item}
-                      unitStake={draft.unitStake}
-                      onRemove={() => removeItem(key)}
-                      onStakeChange={(v) => {
-                        const n = parseFloat(v);
-                        setStakeOverride(key, v === "" || isNaN(n) ? null : n);
-                      }}
-                    />
-                  );
-                })}
+              <div>
+                <div className="border-b border-border px-4 py-3">
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setType("SIMPLE")}
+                      className={`rounded-md px-3 py-2 text-xs font-bold transition-colors ${
+                        !isCombo
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Simples
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setType("COMBO")}
+                      disabled={totalItems < 2}
+                      className={`rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                        isCombo
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Combiné
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y divide-border">
+                  {draft.items.map((item) => {
+                    const key = draftItemKey(item);
+                    return (
+                      <DraftItemRow
+                        key={key}
+                        item={item}
+                        unitStake={draft.unitStake}
+                        mode={isCombo ? "COMBO" : "SIMPLE"}
+                        onRemove={() => removeItem(key)}
+                        onStakeChange={(v) => {
+                          const n = parseFloat(v);
+                          setStakeOverride(
+                            key,
+                            v === "" || isNaN(n) ? null : n,
+                          );
+                        }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -293,7 +363,9 @@ export function BetSlipDrawer() {
                 </div>
               )}
               <div className="mb-3 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Mise par sélection</span>
+                <span className="text-slate-500">
+                  {isCombo ? "Mise du combiné" : "Mise par sélection"}
+                </span>
                 <StakeInput
                   value={unitStakeInput}
                   onChange={(v) => {
@@ -312,10 +384,29 @@ export function BetSlipDrawer() {
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">
-                  Total ({totalItems} sélection{totalItems > 1 ? "s" : ""})
+                  Mise totale ({totalItems} sélection{totalItems > 1 ? "s" : ""}
+                  )
                 </span>
                 <span className="font-bold tabular-nums text-slate-900">
                   {totalStake.toLocaleString("fr-FR")}
+                </span>
+              </div>
+              {isCombo ? (
+                <div className="mb-4 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700">
+                    Cote totale
+                  </span>
+                  <span className="font-bold tabular-nums text-slate-900">
+                    {totalOdds.toFixed(2)}
+                  </span>
+                </div>
+              ) : null}
+              <div className="mb-4 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700">
+                  Gain potentiel
+                </span>
+                <span className="font-bold tabular-nums text-emerald-600">
+                  {potentialReturn.toLocaleString("fr-FR")} u
                 </span>
               </div>
               <button
@@ -324,7 +415,7 @@ export function BetSlipDrawer() {
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white disabled:opacity-60"
               >
-                {isPending ? "Soumission…" : "Valider le ticket"}
+                {isPending ? "Soumission…" : "Valider le coupon"}
               </button>
             </div>
           )}

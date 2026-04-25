@@ -350,6 +350,177 @@ describe('settleOpenBets', () => {
       { tx },
     );
   });
+
+  it('credits a winning combo slip once with the total odds', async () => {
+    const bankroll = makeBankrollServiceMock();
+    const tx = {
+      bet: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+      betSlip: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'combo-slip',
+            userId: 'u1',
+            unitStake: new Decimal('10.00'),
+            items: [
+              {
+                betId: 'bet-1',
+                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('2') },
+              },
+              {
+                betId: 'bet-2',
+                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('3') },
+              },
+            ],
+          },
+        ]),
+      },
+    };
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            homeScore: 2,
+            awayScore: 1,
+            homeHtScore: 1,
+            awayHtScore: 0,
+            status: 'FINISHED',
+          }),
+        },
+        bet: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'bet-1',
+              market: Market.ONE_X_TWO,
+              pick: 'HOME',
+              comboMarket: null,
+              comboPick: null,
+              oddsSnapshot: new Decimal('2'),
+              betSlipItems: [
+                {
+                  userId: 'u1',
+                  stakeOverride: null,
+                  betSlip: {
+                    id: 'combo-slip',
+                    type: 'COMBO',
+                    unitStake: new Decimal('10.00'),
+                  },
+                },
+              ],
+            },
+          ]),
+          update: tx.bet.update,
+        },
+        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+      makePredictionServiceMock(),
+      bankroll as BankrollService,
+    );
+
+    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
+      settled: 1,
+    });
+
+    expect(bankroll.recordBetWon).toHaveBeenCalledTimes(1);
+    expect(bankroll.recordBetWon).toHaveBeenCalledWith(
+      {
+        userId: 'u1',
+        betId: 'bet-1',
+        stake: new Decimal('10.00'),
+        odds: new Decimal('6'),
+      },
+      { tx },
+    );
+  });
+
+  it('does not credit a combo slip when one leg is lost', async () => {
+    const bankroll = makeBankrollServiceMock();
+    const tx = {
+      bet: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+      betSlip: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'combo-slip',
+            userId: 'u1',
+            unitStake: new Decimal('10.00'),
+            items: [
+              {
+                betId: 'bet-1',
+                bet: { status: BetStatus.WON, oddsSnapshot: new Decimal('2') },
+              },
+              {
+                betId: 'bet-2',
+                bet: { status: BetStatus.LOST, oddsSnapshot: new Decimal('3') },
+              },
+            ],
+          },
+        ]),
+      },
+    };
+    const prismaMock = {
+      client: {
+        fixture: {
+          findUnique: vi.fn().mockResolvedValue({
+            homeScore: 2,
+            awayScore: 1,
+            homeHtScore: 1,
+            awayHtScore: 0,
+            status: 'FINISHED',
+          }),
+        },
+        bet: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'bet-1',
+              market: Market.ONE_X_TWO,
+              pick: 'HOME',
+              comboMarket: null,
+              comboPick: null,
+              oddsSnapshot: new Decimal('2'),
+              betSlipItems: [
+                {
+                  userId: 'u1',
+                  stakeOverride: null,
+                  betSlip: {
+                    id: 'combo-slip',
+                    type: 'COMBO',
+                    unitStake: new Decimal('10.00'),
+                  },
+                },
+              ],
+            },
+          ]),
+          update: tx.bet.update,
+        },
+        $transaction: vi.fn().mockImplementation((callback) => callback(tx)),
+      },
+    } as unknown as PrismaService;
+
+    const service = new BettingEngineService(
+      prismaMock,
+      makeConfig(),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+      makePredictionServiceMock(),
+      bankroll as BankrollService,
+    );
+
+    await expect(service.settleOpenBets('fixture-1')).resolves.toEqual({
+      settled: 1,
+    });
+
+    expect(bankroll.recordBetWon).not.toHaveBeenCalled();
+  });
 });
 
 describe('COMBO_WHITELIST', () => {

@@ -33,7 +33,7 @@ export function AuthShell({
           </div>
 
           <div className="mt-8 flex flex-wrap gap-2.5">
-            {["Tickets suivis", "Matchs du jour"].map((label) => (
+            {["Coupons suivis", "Matchs du jour"].map((label) => (
               <span
                 key={label}
                 className="inline-flex min-h-10 items-center rounded-full border border-white/10 bg-white/8 px-4 text-xs font-medium text-slate-200"
@@ -45,7 +45,7 @@ export function AuthShell({
 
           <div className="mt-8 hidden border-t border-white/8 pt-6 lg:block">
             <p className="max-w-md text-sm leading-7 text-slate-400">
-              Un accès simple pour se connecter, retrouver ses tickets et
+              Un accès simple pour se connecter, retrouver ses coupons et
               reprendre la journée sans détour.
             </p>
           </div>

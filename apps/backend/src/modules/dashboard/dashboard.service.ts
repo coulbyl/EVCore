@@ -24,7 +24,6 @@ import type {
 } from './dashboard.types';
 
 const MIN_SETTLED_MODEL = 10;
-const MIN_SETTLED_USER = 5;
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 type UnreadNotification = SummaryData['unreadNotifications'][number];
@@ -279,9 +278,7 @@ export class DashboardService {
           : null;
 
       const myPicksRoi =
-        userPicks &&
-        userPicks.total >= MIN_SETTLED_USER &&
-        userPicks.staked.gt(0)
+        userPicks && userPicks.total >= 1 && userPicks.staked.gt(0)
           ? formatSigned(
               userPicks.returned
                 .minus(userPicks.staked)
@@ -320,7 +317,7 @@ export class DashboardService {
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const bets = await this.repo.getLeaderboardData();
+    const betSlips = await this.repo.getLeaderboardData();
 
     type UserAgg = {
       username: string;
@@ -331,29 +328,27 @@ export class DashboardService {
     };
     const byUser = new Map<string, UserAgg>();
 
-    for (const bet of bets) {
-      if (!bet.userId || !bet.user) continue;
-      const existing = byUser.get(bet.userId) ?? {
-        username: bet.user.username,
+    for (const betSlip of betSlips) {
+      const existing = byUser.get(betSlip.userId) ?? {
+        username: betSlip.user.username,
         won: 0,
         total: 0,
         staked: new Decimal(0),
         returned: new Decimal(0),
       };
-      const stake = new Decimal(bet.stakePct.toString());
+
+      const { staked, returned } = computeSettledCouponReturn(betSlip);
       existing.total += 1;
-      existing.staked = existing.staked.plus(stake);
-      if (bet.status === 'WON') {
+      existing.staked = existing.staked.plus(staked);
+      existing.returned = existing.returned.plus(returned);
+      if (returned.gt(staked)) {
         existing.won += 1;
-        existing.returned = existing.returned.plus(
-          stake.times(bet.oddsSnapshot!.toString()),
-        );
       }
-      byUser.set(bet.userId, existing);
+      byUser.set(betSlip.userId, existing);
     }
 
     const eligible = [...byUser.values()]
-      .filter((u) => u.total >= MIN_SETTLED_USER && u.staked.gt(0))
+      .filter((u) => u.total >= 1 && u.staked.gt(0))
       .map((u) => ({
         username: u.username,
         settled: u.total,
@@ -375,4 +370,38 @@ export class DashboardService {
       won: u.won,
     }));
   }
+}
+
+type LeaderboardSlip = Awaited<
+  ReturnType<DashboardRepository['getLeaderboardData']>
+>[number];
+
+function computeSettledCouponReturn(betSlip: LeaderboardSlip): {
+  staked: Decimal;
+  returned: Decimal;
+} {
+  if (betSlip.type === 'COMBO') {
+    const staked = new Decimal(betSlip.unitStake.toString());
+    const allWon = betSlip.items.every((item) => item.bet.status === 'WON');
+    if (!allWon) return { staked, returned: new Decimal(0) };
+
+    const totalOdds = betSlip.items.reduce(
+      (product, item) => product.times(item.bet.oddsSnapshot!.toString()),
+      new Decimal(1),
+    );
+    return { staked, returned: staked.times(totalOdds) };
+  }
+
+  let staked = new Decimal(0);
+  let returned = new Decimal(0);
+  for (const item of betSlip.items) {
+    const stake = new Decimal(
+      (item.stakeOverride ?? betSlip.unitStake).toString(),
+    );
+    staked = staked.plus(stake);
+    if (item.bet.status === 'WON') {
+      returned = returned.plus(stake.times(item.bet.oddsSnapshot!.toString()));
+    }
+  }
+  return { staked, returned };
 }

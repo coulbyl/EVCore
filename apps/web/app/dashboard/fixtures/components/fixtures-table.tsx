@@ -161,17 +161,23 @@ function AddToSlipButton({
 
   const betId = mr.betId;
   const inSlip = isInSlip(betId);
-  const alreadyInUserTicket = row.alreadyInUserTicket;
   const { market, pick, ev } = mr;
+  const currentRun = mr;
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (inSlip) {
       removeItem(betId);
-    } else if (alreadyInUserTicket) {
-      return;
     } else {
-      const shouldOpenTicket = draft.items.length === 0;
+      const shouldOpenCoupon = draft.items.length === 0;
+      const odds =
+        currentRun.evaluatedPicks.find(
+          (p) =>
+            p.market === currentRun.market &&
+            p.pick === currentRun.pick &&
+            (p.comboMarket ?? null) === (currentRun.comboMarket ?? null) &&
+            (p.comboPick ?? null) === (currentRun.comboPick ?? null),
+        )?.odds ?? null;
       const item: BetSlipDraftItem = {
         betId,
         fixtureId: row.fixtureId,
@@ -182,11 +188,12 @@ function AddToSlipButton({
         scheduledAt: row.scheduledAt,
         market,
         pick,
+        odds,
         ev,
         stakeOverride: null,
       };
       addItem(item);
-      if (shouldOpenTicket) {
+      if (shouldOpenCoupon) {
         open();
       }
     }
@@ -200,18 +207,11 @@ function AddToSlipButton({
         className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors ${
           inSlip
             ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-            : alreadyInUserTicket
-              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-              : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
+            : "border-slate-200 bg-white text-slate-600 hover:border-accent hover:text-accent"
         }`}
-        disabled={alreadyInUserTicket && !inSlip}
       >
         {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
-        {inSlip
-          ? "Déjà dans le ticket"
-          : alreadyInUserTicket
-            ? "Déjà dans vos tickets"
-            : "Placer"}
+        {inSlip ? "Déjà dans le coupon" : "Placer"}
       </button>
     );
   }
@@ -220,21 +220,12 @@ function AddToSlipButton({
     <button
       type="button"
       onClick={handleClick}
-      title={
-        inSlip
-          ? "Retirer du ticket"
-          : alreadyInUserTicket
-            ? "Déjà dans vos tickets"
-            : "Placer"
-      }
+      title={inSlip ? "Retirer du coupon" : "Placer"}
       className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border transition-colors ${
         inSlip
           ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-          : alreadyInUserTicket
-            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300"
-            : "border-slate-200 bg-white text-slate-400 hover:border-accent hover:text-accent"
+          : "border-slate-200 bg-white text-slate-400 hover:border-accent hover:text-accent"
       }`}
-      disabled={alreadyInUserTicket && !inSlip}
     >
       {inSlip ? <Check size={15} /> : <ShoppingCart size={15} />}
     </button>
@@ -460,11 +451,13 @@ function FixtureTableRow({
       </td>
       {/* Cote */}
       <td className="px-4 py-3 text-sm tabular-nums font-medium text-slate-700">
-        {mr?.market && mr?.pick
-          ? (mr.evaluatedPicks.find(
-              (p) => p.market === mr.market && p.pick === mr.pick,
-            )?.odds ?? <span className="text-slate-400">—</span>)
-          : <span className="text-slate-400">—</span>}
+        {mr?.market && mr?.pick ? (
+          (mr.evaluatedPicks.find(
+            (p) => p.market === mr.market && p.pick === mr.pick,
+          )?.odds ?? <span className="text-slate-400">—</span>)
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
       </td>
       {/* EV */}
       <td className="px-4 py-3 text-sm tabular-nums font-semibold">

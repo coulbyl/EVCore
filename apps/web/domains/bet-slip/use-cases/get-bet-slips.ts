@@ -13,13 +13,13 @@ export async function getBetSlips(
   if (to) params.set("to", to);
   const qs = params.size > 0 ? `?${params.toString()}` : "";
   return clientApiRequest<BetSlipView[]>(`/bet-slips${qs}`, {
-    fallbackErrorMessage: "Impossible de charger les tickets.",
+    fallbackErrorMessage: "Impossible de charger les coupons.",
   });
 }
 
 export async function getBetSlipById(id: string): Promise<BetSlipView> {
   return clientApiRequest<BetSlipView>(`/bet-slips/${id}`, {
-    fallbackErrorMessage: "Ticket introuvable.",
+    fallbackErrorMessage: "Coupon introuvable.",
   });
 }
 

@@ -122,3 +122,5 @@ ROI utilisateur = (Σ retour - Σ misé) / Σ misé × 100
 - [ ] `COUPON-COMBO-3` — BetSlipService.create() : gestion du type Combiné côté backend
 - [ ] `COUPON-COMBO-4` — Règlement : logique coupon Combiné + bankroll
 - [ ] `LEADERBOARD-1` — Classement sur coupons réglés (repo + service + label UI)
+
+NB: ne genere pas le fichier de migration, je vais le faire moi même quand t'auras fini d'implimenter. Fait juste db:build pour avoir accès au nouveau type

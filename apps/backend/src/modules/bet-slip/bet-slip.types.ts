@@ -4,6 +4,8 @@ export type BetSlipItemView = {
   fixture: string;
   market: string;
   pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
   odds: string | null;
   ev: string;
   stake: string;
@@ -21,6 +23,7 @@ export type BetSlipView = {
   userId: string;
   username: string;
   unitStake: string;
+  type: 'SIMPLE' | 'COMBO';
   itemCount: number;
   createdAt: string;
   items: BetSlipItemView[];
