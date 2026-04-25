@@ -324,7 +324,7 @@ Le Safe Value devient vraiment utile quand on descend au niveau **ligue + march�
 
 ## League One (EL1) ✅
 
-**Profil :** ligue désormais propre et rentable après filtrage. Le moteur fonctionne surtout sur les victoires extérieures en 1X2, les favoris domicile à prix courts, et un sous-segment très sélectif sur la mi-temps côté visiteur.
+**Profil :** ligue propre et rentable. Le signal dominant est la victoire extérieure en 1X2, complété par l'Under 2.5 et un sous-segment sur la mi-temps côté visiteur. Backtest validé le 25 avril 2026 (Brier 0.634, ROI +46.2 %, 58 paris sur 3 saisons).
 
 ### 🟢 À jouer
 
