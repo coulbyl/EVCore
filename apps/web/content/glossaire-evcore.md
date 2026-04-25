@@ -728,7 +728,7 @@ Exemple :
 
 ### `bet slip`
 
-Un ticket utilisateur final contenant une liste de **bets simples** validés.
+Un coupon utilisateur final contenant une liste de **bets simples** validés.
 
 Le `bet slip` est immuable après création.
 

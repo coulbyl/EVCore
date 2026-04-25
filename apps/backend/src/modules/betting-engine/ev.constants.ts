@@ -111,7 +111,10 @@ const LEAGUE_MIN_SELECTION_ODDS_DEFAULT = new Decimal('2.00');
 const LEAGUE_MIN_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   LL: new Decimal('1.80'),
   SA: new Decimal('1.80'),
-  J1: new Decimal('1.80'),
+  // J1 backtest 2026-04-25: OVER in the 1.80-1.99 range was 8W/11L (-23.4% ROI, 19 bets)
+  // while OVER 2.0+ was 5W/4L (+12.6%). Raising the floor eliminates the toxic short-odds
+  // OVER segment without touching the profitable 2.0-2.99 range.
+  J1: new Decimal('2.00'),
   MX1: new Decimal('1.90'),
   PL: new Decimal('2.00'),
   BL1: new Decimal('2.00'),
@@ -206,6 +209,15 @@ export function getPickMinSelectionOdds(
   // Probability gate 0.50 (above) tested as alternative — same 0-bet outcome confirmed.
   if (competitionCode === 'I2' && market === 'ONE_X_TWO' && pick === 'HOME') {
     return Decimal.max(leagueFloor, new Decimal('2.50'));
+  }
+
+  // J1 audit 2026-04-25: HOME is structurally unreliable — 46 bets 19W/27L (-6.3% ROI).
+  // Per-season win rate varies from 18% (S1) to 59% (S3) despite similar odds range.
+  // High-EV HOME picks lose more often than low-EV ones (avg EV 0.328 on losses vs
+  // 0.245 on wins) — the model cannot distinguish good from bad HOME picks in J.League.
+  // Pattern matches BL1/CH: eliminate HOME entirely from J1 picks.
+  if (competitionCode === 'J1' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return Decimal.max(leagueFloor, new Decimal('5.00'));
   }
 
   // Backtest 2026-04-18: SA HOME [2.0-2.99] → 5 bets, 2W/3L, -16.6% ROI.
@@ -418,6 +430,12 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // 0.65) while 1X2 HOME remains profitable. Test a light empirical rebalance
   // before touching home-advantage or selection filters.
   F2: new Decimal('0.30'),
+  // J1 audit 2026-04-25: Brier 0.6741 (FAIL). Actual J1 rates: 41.4%H/26.5%D/32.1%A.
+  // Model over-predicts HOME wins — high-EV picks lose more than low-EV (0.328 vs 0.245).
+  // Blend 0.30 improved Brier to 0.6659 but S4 (early-season 2026, Brier 0.7157) keeps
+  // the average above 0.65. Blend 0.40 applies stronger correction to reduce the
+  // systematic HOME over-confidence across all seasons.
+  J1: new Decimal('0.40'),
 };
 
 export function getLeagueThreeWayEmpiricalBlendWeight(
@@ -661,6 +679,14 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-18: EL2 had a single FIRST_HALF_WINNER AWAY bet, 0W/1L.
   // No evidence of a usable edge; remove the noise before tuning the main market.
   'EL2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-25: FHW HOME is catastrophically bad across all 3 seasons
+  // (30b 5W/25L, -57.8% ROI — S1 1W/3L, S2 3W/14L, S3 1W/8L). League Two home
+  // HT advantage is structurally over-predicted; eliminate the branch entirely.
+  'EL2|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  // Backtest 2026-04-25: UNDER surfaced twice at avg odds 2.03 — 0W/2L. No edge.
+  'EL2|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // Backtest 2026-04-25: OVER_HT surfaced 7 times — 2W/5L, -14.3% ROI. No signal.
+  'EL2|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // D2 backtest 2026-04-19: the lone FIRST_HALF_WINNER AWAY pick lost and there is
   // no evidence of a reusable edge in this side market. Keep focus on 1X2 AWAY.
   'D2|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
@@ -716,9 +742,20 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'MX1|OVER_UNDER|OVER': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 OVER_1_5 HT surfaced once and lost.
   'MX1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // SP2 backtest 2026-04-25: OVER_1_5 HT surfaced 3 times in S3 (odds 3.14 avg) — 0W/3L,
+  // -100% ROI (-3 units). HOME and OVER 2.0-2.99 are the proven signals; no edge on HT.
+  'SP2|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 FHW DRAW and HOME each surfaced once and lost.
   'MX1|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
   'MX1|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  // J1 backtest 2026-04-25: DRAW emerged after empirical blend (5b 1W/4L, -26.4% ROI).
+  // Blend shifts probability toward actual 26.5% draw rate but J1 DRAWs lack exploitable
+  // edge against Pinnacle lines at 3.5-4.0 odds.
+  'J1|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // J1 backtest 2026-04-25: UNDER surfaced once (1.92 odds, LOSS -100%). No edge.
+  'J1|OVER_UNDER|UNDER': new Decimal('0.99'),
+  // J1 backtest 2026-04-25: OVER_HT surfaced once (3.2 odds, LOSS -100%). No edge.
+  'J1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // Backtest 2026-04-18: SA HOME — reduce low-quality entries (SA-3).
   // Floor 0.12 retains only picks with stronger model confidence.
   'SA|ONE_X_TWO|HOME': new Decimal('0.12'),
@@ -761,6 +798,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'PL|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
   'PL|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
   'PL|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // PL backtest 2026-04-25: OVER surfaced once at 2.05 — 0W/1L. PL is a DRAW/AWAY
+  // market; OVER adds no signal and only noise. Block it.
+  'PL|OVER_UNDER|OVER': new Decimal('0.99'),
   // Backtest 2026-04-19: PL BTTS divergence — YES 16b 9W/7L +29.4% vs NO 9b 2W/7L -33.9%.
   // PL is a high-scoring league (avg ~2.83 goals/match); model over-assigns P(no BTTS).
   // Keep YES direction open, eliminate NO entirely.
@@ -779,6 +819,8 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // while EV < 0.20 yields 1W/4L (4 losses, 1 win at 4.33). Set floor to 0.20 to
   // admit only high-conviction draws (removes 4 losses and 1 low-EV win).
   'POR|ONE_X_TWO|DRAW': new Decimal('0.20'),
+  // L1 backtest 2026-04-25: DRAW surfaced once at 3.71 odds — 0W/1L. No signal.
+  'L1|ONE_X_TWO|DRAW': new Decimal('0.99'),
   // L1 backtest 2026-04-19: BTTS NO is the wrong side of the market (2W/6L, -23.8%),
   // while BTTS YES stays mildly positive. Remove NO and keep the lighter YES branch.
   'L1|BTTS|NO': new Decimal('0.99'),

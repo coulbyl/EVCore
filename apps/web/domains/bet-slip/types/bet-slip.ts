@@ -15,6 +15,7 @@ export type BetSlipDraftItem = {
   scheduledAt: string;
   market: string;
   pick: string;
+  odds: string | null;
   /** Marché secondaire pour les picks combo (ex. "OVER_UNDER"). */
   comboMarket?: string;
   /** Pick secondaire pour les picks combo (ex. "OVER"). */
@@ -26,6 +27,7 @@ export type BetSlipDraftItem = {
 export type BetSlipDraft = {
   items: BetSlipDraftItem[];
   unitStake: number;
+  type: "SIMPLE" | "COMBO";
 };
 
 /**
@@ -77,6 +79,7 @@ export type BetSlipView = {
   userId: string;
   username: string;
   unitStake: string;
+  type: "SIMPLE" | "COMBO";
   itemCount: number;
   createdAt: string;
   items: BetSlipItemView[];

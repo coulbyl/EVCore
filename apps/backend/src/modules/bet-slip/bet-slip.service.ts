@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BetSource, Market, Prisma } from '@evcore/db';
+import { BetSlipType, BetSource, Market, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
@@ -52,6 +52,11 @@ export class BetSlipService {
         'Chaque item doit avoir soit un betId, soit un modelRunId + market + pick',
       );
     }
+
+    const slipType =
+      input.type === BetSlipType.COMBO && input.items.length >= 2
+        ? BetSlipType.COMBO
+        : BetSlipType.SIMPLE;
 
     // ── Bets MODEL : charger les bets existants ───────────────────────────
     const modelBetIds = modelPickItems.map((i) => i.betId!);
@@ -139,32 +144,6 @@ export class BetSlipService {
       );
     }
 
-    // ── Vérifier que les bets MODEL ne sont pas déjà dans un autre slip ──
-    if (modelBetIds.length > 0) {
-      const existing = await this.prisma.client.betSlipItem.findMany({
-        where: { userId, betId: { in: modelBetIds } },
-        select: { betId: true },
-      });
-      if (existing.length > 0) {
-        throw new BadRequestException(
-          'Un ou plusieurs bets sont déjà présents dans un de vos slips',
-        );
-      }
-    }
-
-    // ── Vérifier qu'aucun match n'est déjà dans un ticket de l'utilisateur ──
-    const existingFixtures = await this.prisma.client.betSlipItem.findMany({
-      where: { userId, fixtureId: { in: allFixtureIds } },
-      distinct: ['fixtureId'],
-      select: { fixtureId: true },
-    });
-
-    if (existingFixtures.length > 0) {
-      throw new BadRequestException(
-        'Un ou plusieurs matchs sont déjà présents dans vos tickets',
-      );
-    }
-
     // ── Créer tout en transaction ────────────────────────────────────────
     const modelBetById = new Map(modelBets.map((b) => [b.id, b]));
 
@@ -173,7 +152,7 @@ export class BetSlipService {
       const userBetItems: Array<{
         betId: string;
         fixtureId: string;
-        stakeOverride?: number;
+        stakeOverride?: number | null;
       }> = [];
 
       for (const resolved of resolvedUserPicks) {
@@ -190,25 +169,36 @@ export class BetSlipService {
           comboPick: item.comboPick ?? null,
         });
 
-        const bet = await tx.bet.create({
-          data: {
-            modelRunId: item.modelRunId!,
+        const existingBet = await tx.bet.findFirst({
+          where: {
             fixtureId,
-            market,
-            pick: item.pick!,
             pickKey,
-            ...(comboMarket ? { comboMarket } : {}),
-            ...(item.comboPick ? { comboPick: item.comboPick } : {}),
-            probEstimated: toPrismaDecimal(resolved.probEstimated, 4),
-            oddsSnapshot: toPrismaDecimal(resolved.oddsSnapshot, 3),
-            ev: toPrismaDecimal(resolved.ev, 4),
-            qualityScore: toPrismaDecimal(resolved.qualityScore, 4),
-            stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-            source: BetSource.USER,
             userId,
           },
           select: { id: true },
         });
+
+        const bet =
+          existingBet ??
+          (await tx.bet.create({
+            data: {
+              modelRunId: item.modelRunId!,
+              fixtureId,
+              market,
+              pick: item.pick!,
+              pickKey,
+              ...(comboMarket ? { comboMarket } : {}),
+              ...(item.comboPick ? { comboPick: item.comboPick } : {}),
+              probEstimated: toPrismaDecimal(resolved.probEstimated, 4),
+              oddsSnapshot: toPrismaDecimal(resolved.oddsSnapshot, 3),
+              ev: toPrismaDecimal(resolved.ev, 4),
+              qualityScore: toPrismaDecimal(resolved.qualityScore, 4),
+              stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
+              source: BetSource.USER,
+              userId,
+            },
+            select: { id: true },
+          }));
 
         userBetItems.push({
           betId: bet.id,
@@ -219,7 +209,11 @@ export class BetSlipService {
 
       // Créer le BetSlip
       const betSlip = await tx.betSlip.create({
-        data: { userId, unitStake: new Prisma.Decimal(input.unitStake) },
+        data: {
+          userId,
+          type: slipType,
+          unitStake: new Prisma.Decimal(input.unitStake),
+        },
         select: { id: true },
       });
 
@@ -231,7 +225,7 @@ export class BetSlipService {
           betId: item.betId!,
           fixtureId: modelBetById.get(item.betId!)!.fixtureId,
           stakeOverride:
-            item.stakeOverride !== undefined
+            slipType === BetSlipType.SIMPLE && item.stakeOverride != null
               ? new Prisma.Decimal(item.stakeOverride)
               : null,
         })),
@@ -241,7 +235,7 @@ export class BetSlipService {
           betId,
           fixtureId,
           stakeOverride:
-            stakeOverride !== undefined
+            slipType === BetSlipType.SIMPLE && stakeOverride != null
               ? new Prisma.Decimal(stakeOverride)
               : null,
         })),
@@ -251,18 +245,31 @@ export class BetSlipService {
         data: betSlipItemsData,
       });
 
-      await this.bankroll.recordBetPlacedBatch(
-        userId,
-        betSlipItemsData.map((item) => ({
-          betId: item.betId,
-          stake: new Decimal(
-            (
-              item.stakeOverride ?? new Prisma.Decimal(input.unitStake)
-            ).toString(),
-          ),
-        })),
-        { tx },
-      );
+      if (slipType === BetSlipType.COMBO) {
+        await this.bankroll.recordBetPlacedBatch(
+          userId,
+          [
+            {
+              betId: betSlipItemsData[0].betId,
+              stake: new Decimal(input.unitStake),
+            },
+          ],
+          { tx },
+        );
+      } else {
+        await this.bankroll.recordBetPlacedBatch(
+          userId,
+          betSlipItemsData.map((item) => ({
+            betId: item.betId,
+            stake: new Decimal(
+              (
+                item.stakeOverride ?? new Prisma.Decimal(input.unitStake)
+              ).toString(),
+            ),
+          })),
+          { tx },
+        );
+      }
 
       return betSlip;
     });
@@ -349,6 +356,7 @@ function toBetSlipView(
     userId: betSlip.user.id,
     username: betSlip.user.username,
     unitStake: betSlip.unitStake.toFixed(2),
+    type: betSlip.type,
     itemCount: betSlip.items.length,
     createdAt: betSlip.createdAt.toISOString(),
     items: betSlip.items.map((item) => {

@@ -9,16 +9,32 @@ import {
 
 const STORAGE_KEY = "evcore:bet-slip-draft";
 const DEFAULT_UNIT_STAKE = 4000;
+const DEFAULT_TYPE: BetSlipDraft["type"] = "SIMPLE";
+
+function emptyDraft(): BetSlipDraft {
+  return { items: [], unitStake: DEFAULT_UNIT_STAKE, type: DEFAULT_TYPE };
+}
+
+function normalizeDraft(draft: Partial<BetSlipDraft>): BetSlipDraft {
+  const items = Array.isArray(draft.items) ? draft.items : [];
+  return {
+    items,
+    unitStake:
+      typeof draft.unitStake === "number"
+        ? draft.unitStake
+        : DEFAULT_UNIT_STAKE,
+    type: draft.type === "COMBO" && items.length >= 2 ? "COMBO" : "SIMPLE",
+  };
+}
 
 function loadDraft(): BetSlipDraft {
-  if (typeof window === "undefined")
-    return { items: [], unitStake: DEFAULT_UNIT_STAKE };
+  if (typeof window === "undefined") return emptyDraft();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { items: [], unitStake: DEFAULT_UNIT_STAKE };
-    return JSON.parse(raw) as BetSlipDraft;
+    if (!raw) return emptyDraft();
+    return normalizeDraft(JSON.parse(raw) as Partial<BetSlipDraft>);
   } catch {
-    return { items: [], unitStake: DEFAULT_UNIT_STAKE };
+    return emptyDraft();
   }
 }
 
@@ -34,6 +50,7 @@ export function useBetSlipDraft() {
   const [draft, setDraftState] = useState<BetSlipDraft>({
     items: [],
     unitStake: DEFAULT_UNIT_STAKE,
+    type: DEFAULT_TYPE,
   });
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
@@ -56,8 +73,9 @@ export function useBetSlipDraft() {
     (updater: (prev: BetSlipDraft) => BetSlipDraft) => {
       setDraftState((prev) => {
         const next = updater(prev);
-        saveDraft(next);
-        return next;
+        const normalized = normalizeDraft(next);
+        saveDraft(normalized);
+        return normalized;
       });
     },
     [],
@@ -104,8 +122,15 @@ export function useBetSlipDraft() {
     [setDraft],
   );
 
+  const setType = useCallback(
+    (type: BetSlipDraft["type"]) => {
+      setDraft((prev) => ({ ...prev, type }));
+    },
+    [setDraft],
+  );
+
   const clearDraft = useCallback(() => {
-    setDraft(() => ({ items: [], unitStake: DEFAULT_UNIT_STAKE }));
+    setDraft(() => emptyDraft());
   }, [setDraft]);
 
   /** Vérifie si la clé donnée correspond à un item dans le brouillon. */
@@ -120,6 +145,7 @@ export function useBetSlipDraft() {
     removeItem,
     setStakeOverride,
     setUnitStake,
+    setType,
     clearDraft,
     isInSlip,
   };

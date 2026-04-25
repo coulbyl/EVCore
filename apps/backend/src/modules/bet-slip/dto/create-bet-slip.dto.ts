@@ -1,6 +1,7 @@
 import {
   ArrayMinSize,
   IsArray,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,6 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BetSlipType } from '@evcore/db';
 
 class CreateBetSlipItemDto {
   /** Référence un bet MODEL déjà créé par le moteur. */
@@ -45,6 +47,10 @@ class CreateBetSlipItemDto {
 }
 
 export class CreateBetSlipDto {
+  @IsOptional()
+  @IsEnum(BetSlipType)
+  type?: BetSlipType;
+
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

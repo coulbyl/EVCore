@@ -56,7 +56,7 @@ export function PwaInstallBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom)+0.5rem)] z-30">
+    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom)+0.5rem)] left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2">
       <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/96 px-4 py-3 shadow-[0_8px_32px_rgba(15,23,42,0.14)] backdrop-blur">
         {/* Icône */}
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#142033]">

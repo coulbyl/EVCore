@@ -5,6 +5,7 @@ export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
   return clientApiRequest<BetSlipView>("/bet-slips", {
     method: "POST",
     body: {
+      type: draft.type,
       unitStake: draft.unitStake,
       items: draft.items.map((item) => {
         if (item.betId) {
@@ -14,7 +15,7 @@ export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
             stakeOverride: item.stakeOverride ?? undefined,
           };
         }
-        // Pick USER — créé en base lors de la soumission du ticket.
+        // Pick USER — créé en base lors de la soumission du coupon.
         return {
           modelRunId: item.modelRunId,
           market: item.market,
@@ -25,6 +26,6 @@ export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
         };
       }),
     },
-    fallbackErrorMessage: "Impossible de créer le ticket.",
+    fallbackErrorMessage: "Impossible de créer le coupon.",
   });
 }

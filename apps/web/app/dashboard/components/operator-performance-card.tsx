@@ -48,7 +48,7 @@ export function OperatorPerformanceCard() {
             Mes performances
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
-            Résumé de mes tickets
+            Résumé de mes coupons
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ export function OperatorPerformanceCard() {
 
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
         <div className={slotCls}>
-          <p className={labelCls}>Tickets</p>
+          <p className={labelCls}>Coupons</p>
           {isLoading ? (
             skeleton
           ) : (

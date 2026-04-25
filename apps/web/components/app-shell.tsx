@@ -33,7 +33,7 @@ export function AppShell({
           active: pathname.startsWith("/dashboard/fixtures"),
         },
         {
-          label: "Mes tickets",
+          label: "Mes coupons",
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },

@@ -201,19 +201,33 @@ export class DashboardRepository {
   }
 
   getLeaderboardData() {
-    return this.prisma.client.bet.findMany({
+    return this.prisma.client.betSlip.findMany({
       where: {
-        source: BetSource.USER,
-        status: { in: [BetStatus.WON, BetStatus.LOST] },
-        userId: { not: null },
-        oddsSnapshot: { not: null },
+        items: {
+          every: {
+            bet: {
+              status: { in: [BetStatus.WON, BetStatus.LOST] },
+              oddsSnapshot: { not: null },
+            },
+          },
+        },
       },
       select: {
         userId: true,
-        status: true,
-        stakePct: true,
-        oddsSnapshot: true,
+        type: true,
+        unitStake: true,
         user: { select: { username: true } },
+        items: {
+          select: {
+            stakeOverride: true,
+            bet: {
+              select: {
+                status: true,
+                oddsSnapshot: true,
+              },
+            },
+          },
+        },
       },
     });
   }

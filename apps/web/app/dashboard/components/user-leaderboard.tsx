@@ -46,7 +46,8 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
         </span>
         <div className="flex shrink-0 items-center gap-2.5">
           <span className="hidden text-[0.62rem] tabular-nums text-slate-500 sm:block">
-            {entry.settled} paris joués
+            {entry.settled} coupon{entry.settled > 1 ? "s" : ""} joué
+            {entry.settled > 1 ? "s" : ""}
           </span>
           <span
             className={`text-[0.85rem] font-extrabold tabular-nums ${
@@ -94,7 +95,7 @@ export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
           Top joueurs
         </h2>
         <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-slate-400">
-          ROI · ≥ 5 paris joués
+          ROI · ≥ 1 coupon joué
         </span>
       </div>
 
