@@ -790,6 +790,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'PL|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
   'PL|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
   'PL|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // PL backtest 2026-04-25: OVER surfaced once at 2.05 — 0W/1L. PL is a DRAW/AWAY
+  // market; OVER adds no signal and only noise. Block it.
+  'PL|OVER_UNDER|OVER': new Decimal('0.99'),
   // Backtest 2026-04-19: PL BTTS divergence — YES 16b 9W/7L +29.4% vs NO 9b 2W/7L -33.9%.
   // PL is a high-scoring league (avg ~2.83 goals/match); model over-assigns P(no BTTS).
   // Keep YES direction open, eliminate NO entirely.
