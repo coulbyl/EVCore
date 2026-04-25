@@ -602,6 +602,7 @@ export class EtlService implements OnApplicationBootstrap {
       season,
       competitionCode,
       leagueId: competition.leagueId,
+      syncScope: 'backfill',
     }));
     await this.enqueueLeagueSeasonJobs('stats', jobs);
   }

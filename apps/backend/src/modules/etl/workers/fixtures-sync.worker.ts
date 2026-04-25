@@ -73,6 +73,7 @@ export class FixturesSyncWorker {
     const competitionMeta = await loadActiveCompetition(
       this.prisma,
       competitionCode,
+      { allowInactive: syncScope === 'backfill' },
     );
     if (!competitionMeta) {
       logger.info(

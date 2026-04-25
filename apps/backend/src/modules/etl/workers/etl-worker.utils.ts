@@ -25,6 +25,7 @@ export type UpsertCompetitionInput = {
 export async function loadActiveCompetition(
   prisma: PrismaService,
   competitionCode: string,
+  { allowInactive = false }: { allowInactive?: boolean } = {},
 ): Promise<CompetitionMeta | null> {
   const competitionReader =
     'findUnique' in prisma.client.competition &&
@@ -49,7 +50,7 @@ export async function loadActiveCompetition(
     throw new Error(`Competition not found in DB: ${competitionCode}`);
   }
 
-  return competition.isActive ? competition : null;
+  return competition.isActive || allowInactive ? competition : null;
 }
 
 export function toUpsertCompetitionInput(
