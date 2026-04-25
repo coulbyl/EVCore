@@ -734,6 +734,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'MX1|OVER_UNDER|OVER': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 OVER_1_5 HT surfaced once and lost.
   'MX1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // SP2 backtest 2026-04-25: OVER_1_5 HT surfaced 3 times in S3 (odds 3.14 avg) — 0W/3L,
+  // -100% ROI (-3 units). HOME and OVER 2.0-2.99 are the proven signals; no edge on HT.
+  'SP2|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 FHW DRAW and HOME each surfaced once and lost.
   'MX1|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
   'MX1|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
