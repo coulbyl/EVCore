@@ -774,12 +774,11 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // the lone placed AWAY at 3.05 lost. Remove the branch to bias SP2 toward the
   // higher-hit-rate HOME and OVER signals.
   'SP2|ONE_X_TWO|AWAY': new Decimal('0.99'),
-  // POR ndjson 2026-04-19: 1X2 DRAW is mostly blocked by the default EV floor,
-  // but the positive-EV sub-segment is surprisingly healthy across the latest
-  // 3-season sample: 17 rejected bets at +41.9% sim ROI, avg odds 4.12, avg EV
-  // 0.045. Lower only this pick-level floor so the branch can surface without
-  // relaxing the rest of the league.
-  'POR|ONE_X_TWO|DRAW': new Decimal('0.02'),
+  // POR ndjson 2026-04-19: 1X2 DRAW is mostly blocked by the default EV floor.
+  // 2026-04-25: EV split is sharp — EV ≥ 0.20 yields 3W/1L (+263% ROI, avg odds 4.82)
+  // while EV < 0.20 yields 1W/4L (4 losses, 1 win at 4.33). Set floor to 0.20 to
+  // admit only high-conviction draws (removes 4 losses and 1 low-EV win).
+  'POR|ONE_X_TWO|DRAW': new Decimal('0.20'),
   // L1 backtest 2026-04-19: BTTS NO is the wrong side of the market (2W/6L, -23.8%),
   // while BTTS YES stays mildly positive. Remove NO and keep the lighter YES branch.
   'L1|BTTS|NO': new Decimal('0.99'),
@@ -900,11 +899,10 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // while the current backtest's rare positive AWAY bets sit below 4.0. Keep only
   // the shorter outsider window and cut the long tail that drove the red dashboard.
   'CH|ONE_X_TWO|AWAY': new Decimal('3.99'),
-  // POR backtest 2026-04-19: HOME remains acceptable in the 2.0-2.99 window
-  // (8 bets, 4W/4L, +16.1% ROI) but the first 3.0-4.99 extension surfaced one
-  // 3.10 loser immediately. Keep the short/mid-price home branch and cut the
-  // longer tail while opening DRAW separately.
-  'POR|ONE_X_TWO|HOME': new Decimal('2.99'),
+  // POR backtest 2026-04-25: HOME odds split is decisive — ≤ 2.34 yields 3W/0L
+  // (2.12, 2.20, 2.32) while 2.35-2.99 yields 1W/4L (2.35L, 2.37L, 2.48L, 2.86L,
+  // 2.65W). Model is reliable only for heavy favorites (short-price home signal).
+  'POR|ONE_X_TWO|HOME': new Decimal('2.34'),
   // POR ndjson 2026-04-19: profitable rejected DRAW candidates sit between 3.57
   // and 4.82, while the market is currently blocked by the global 4.0 cap. Set
   // a local 4.99 ceiling to admit the tested range without opening longshots.
