@@ -57,7 +57,10 @@ export const ApiFootballFixtureSchema = z.object({
     venue: VenueSchema,
     status: z.object({
       long: z.string(),
-      short: z.enum(API_FOOTBALL_STATUSES),
+      short: z.preprocess(
+        (v) => (typeof v === 'string' ? v.toUpperCase() : v),
+        z.enum(API_FOOTBALL_STATUSES),
+      ),
       elapsed: z.number().int().nullable(),
       extra: z.number().int().nullable().optional(),
     }),
