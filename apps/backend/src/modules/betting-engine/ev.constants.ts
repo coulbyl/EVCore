@@ -363,10 +363,10 @@ export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
 // to 1.02 (symmetric AWAY 0.98) closes this systematic bias.
 const LEAGUE_HOME_ADVANTAGE_MAP: Record<string, [number, number]> = {
   // [homeAdvFactor, awayDisadvFactor]
-  // D2: 2. Bundesliga is one of the most balanced domestic leagues in the pool.
-  // Backtest 2026-04-18 improved selection quality after odds caps + tighter
-  // probability gate, but a further HA reduction to 1.01/0.99 worsened Brier.
-  // Keep the milder override at 1.02/0.98 as the best observed compromise.
+  // D2: 2. Bundesliga — per-season home win rates: S1=42.7%, S2=46.1%, S3=44.9%.
+  // 2026-04-18: HA 1.01/0.99 worsened Brier vs 1.02/0.98 — keep mild override.
+  // 2026-04-25: S2 calibration fix attempted via HA neutralization; the empirical
+  // blend (0.30) captures the inter-season variance more cleanly without HA change.
   D2: [1.02, 0.98],
   // I2 latest rerun still spreads too much probability to home/away tails despite
   // the disabled 1X2 branches. Neutralize home advantage completely to lift draw
@@ -407,6 +407,13 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // Blend 45% toward those empirical rates to reduce over-confident tails
   // without disturbing totals markets, which are already the profitable axis.
   I2: new Decimal('0.45'),
+  // D2 audit 2026-04-25: S2 (2024-25) Brier 0.6915 vs floor 0.6416 — the model
+  // over-predicts away wins (S1 had 32.7% away rate; S2 collapsed to 28.7%).
+  // The Poisson core doesn't see team roster changes at season boundaries; the
+  // empirical blend pulls 1X2 toward per-team actual rates, reducing S2 noise.
+  // Tested 0.25/0.35/0.45: 0.30 is the Brier optimum (0.651 overall).
+  // Side-effect: DRAW picks at ~4.0 odds emerge (6 bets 3W/3L, +99% ROI).
+  D2: new Decimal('0.30'),
   // F2 audit 2026-04-24: the league fails Brier by a narrow margin (0.659 vs
   // 0.65) while 1X2 HOME remains profitable. Test a light empirical rebalance
   // before touching home-advantage or selection filters.
