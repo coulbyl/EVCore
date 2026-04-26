@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
-import { EvBadge, EvEmptyState, Page, PageContent } from "@evcore/ui";
+import { EvBadge, EvEmptyState, FilterBar, Page, PageContent, StatCard } from "@evcore/ui";
+import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,11 +25,23 @@ type CouponSummary = {
   statusTone: BadgeTone;
 };
 
+const SLIP_FILTERS: FilterDef[] = [
+  {
+    key: "type",
+    type: "select",
+    label: "Type",
+    options: [
+      { value: "ALL", label: "Tous" },
+      { value: "SIMPLE", label: "Simples" },
+      { value: "COMBO", label: "Combinés" },
+    ],
+  },
+  { key: "from", type: "date", label: "Du" },
+  { key: "to", type: "date", label: "Au" },
+];
+
 function formatAmount(value: string | number) {
-  return Number(value).toLocaleString("fr-FR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  return Number(value).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function totalOdds(betSlip: BetSlipView) {
@@ -47,10 +60,7 @@ function couponSummary(betSlip: BetSlipView): CouponSummary {
     const returned = !hasPending && allWon ? stake * odds : 0;
     const netPnl = !hasPending ? returned - stake : 0;
     return {
-      totalStake: stake,
-      returned,
-      netPnl,
-      totalOdds: odds,
+      totalStake: stake, returned, netPnl, totalOdds: odds,
       potentialReturn: stake * odds,
       settledCount: hasPending ? 0 : 1,
       pendingCount: hasPending ? 1 : 0,
@@ -60,13 +70,7 @@ function couponSummary(betSlip: BetSlipView): CouponSummary {
     };
   }
 
-  let returned = 0;
-  let settledCount = 0;
-  let pendingCount = 0;
-  let totalStake = 0;
-  let settledStake = 0;
-  let potentialReturn = 0;
-
+  let returned = 0, settledCount = 0, pendingCount = 0, totalStake = 0, settledStake = 0, potentialReturn = 0;
   for (const item of betSlip.items) {
     const stake = Number(item.stake);
     const odds = Number(item.odds ?? 0);
@@ -75,24 +79,15 @@ function couponSummary(betSlip: BetSlipView): CouponSummary {
     if (item.betStatus === "WON" || item.betStatus === "LOST") {
       settledCount++;
       settledStake += stake;
-      if (item.betStatus === "WON" && item.odds !== null) {
-        returned += stake * Number(item.odds);
-      }
+      if (item.betStatus === "WON" && item.odds !== null) returned += stake * Number(item.odds);
     } else {
       pendingCount++;
     }
   }
-
   const netPnl = returned - settledStake;
   const isWon = returned >= totalStake;
   return {
-    totalStake,
-    returned,
-    netPnl,
-    totalOdds: null,
-    potentialReturn,
-    settledCount,
-    pendingCount,
+    totalStake, returned, netPnl, totalOdds: null, potentialReturn, settledCount, pendingCount,
     pendingSelections: pendingCount,
     status: pendingCount > 0 ? "En attente" : isWon ? "Gagné" : "Perdu",
     statusTone: pendingCount > 0 ? "warning" : isWon ? "success" : "danger",
@@ -118,84 +113,61 @@ function BetSlipCard({
       type="button"
       onClick={onClick}
       className={`w-full cursor-pointer rounded-2xl border p-4 text-left transition-colors ${
-        selected
-          ? "border-accent bg-accent/5"
-          : "border-border bg-white hover:bg-slate-50"
+        selected ? "border-accent bg-accent/5" : "border-border bg-panel hover:bg-secondary"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Coupon
           </p>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">
+          <h2 className="mt-1 text-base font-semibold text-foreground">
             #{betSlip.id.slice(0, 8)}
           </h2>
         </div>
         <EvBadge tone="accent">
-          {betSlip.type === "COMBO" ? "Combiné" : "Simples"} ·{" "}
-          {betSlip.itemCount} sélection{betSlip.itemCount > 1 ? "s" : ""}
+          {betSlip.type === "COMBO" ? "Combiné" : "Simples"} · {betSlip.itemCount} sélection{betSlip.itemCount > 1 ? "s" : ""}
         </EvBadge>
       </div>
 
       <div className="mt-3 space-y-1.5 text-sm">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-slate-500">Créé le</span>
-          <span className="font-medium text-slate-800">
-            {formatDateLong(betSlip.createdAt)}
-          </span>
+          <span className="text-muted-foreground">Créé le</span>
+          <span className="font-medium text-foreground">{formatDateLong(betSlip.createdAt)}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <span className="text-slate-500">Total misé</span>
-          <span className="font-semibold tabular-nums text-slate-900">
-            {formatAmount(summary.totalStake)}
-          </span>
+          <span className="text-muted-foreground">Total misé</span>
+          <span className="font-semibold tabular-nums text-foreground">{formatAmount(summary.totalStake)}</span>
         </div>
         {betSlip.type === "COMBO" && (
           <div className="flex items-center justify-between gap-3">
-            <span className="text-slate-500">Cote totale</span>
-            <span className="font-semibold tabular-nums text-slate-900">
-              {summary.totalOdds?.toFixed(2)}
-            </span>
+            <span className="text-muted-foreground">Cote totale</span>
+            <span className="font-semibold tabular-nums text-foreground">{summary.totalOdds?.toFixed(2)}</span>
           </div>
         )}
         {(isFullySettled || isPartial) && (
           <div className="flex items-center justify-between gap-3">
-            <span className="text-slate-500">
-              {isPartial ? "Résultat partiel" : "Résultat"}
-            </span>
-            <span
-              className={`font-bold tabular-nums ${
-                summary.netPnl >= 0 ? "text-emerald-600" : "text-rose-600"
-              }`}
-            >
-              {summary.netPnl >= 0 ? "+" : ""}
-              {formatAmount(summary.netPnl)}
+            <span className="text-muted-foreground">{isPartial ? "Résultat partiel" : "Résultat"}</span>
+            <span className={`font-bold tabular-nums ${summary.netPnl >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+              {summary.netPnl >= 0 ? "+" : ""}{formatAmount(summary.netPnl)}
             </span>
           </div>
         )}
         <div className="flex items-center justify-between gap-3">
-          <span className="text-slate-500">Statut</span>
-          <EvBadge tone={summary.statusTone} className="py-0.5 text-[0.62rem]">
-            {status}
-          </EvBadge>
+          <span className="text-muted-foreground">Statut</span>
+          <EvBadge tone={summary.statusTone} className="py-0.5 text-[0.62rem]">{status}</EvBadge>
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center justify-between gap-3">
-            <span className="text-slate-500">Gain potentiel</span>
-            <span className="font-semibold tabular-nums text-emerald-600">
-              {formatAmount(summary.potentialReturn)}
-            </span>
+            <span className="text-muted-foreground">Gain potentiel</span>
+            <span className="font-semibold tabular-nums text-emerald-600">{formatAmount(summary.potentialReturn)}</span>
           </div>
         )}
       </div>
 
       <div className="mt-3 border-t border-border pt-2.5">
-        <p className="text-xs text-slate-500">
-          {betSlip.items
-            .slice(0, 2)
-            .map((item) => item.fixture)
-            .join(" • ")}
+        <p className="text-xs text-muted-foreground">
+          {betSlip.items.slice(0, 2).map((item) => item.fixture).join(" • ")}
           {betSlip.items.length > 2 ? ` • +${betSlip.items.length - 2}` : ""}
         </p>
       </div>
@@ -204,10 +176,16 @@ function BetSlipCard({
 }
 
 export function BetSlipListPageClient() {
-  const [from, setFrom] = useState(() => daysAgoIso(7));
-  const [to, setTo] = useState(todayIso);
-  const [typeFilter, setTypeFilter] = useState<SlipTypeFilter>("ALL");
+  const [filterState, setFilterState] = useState<FilterState>({
+    type: "ALL",
+    from: daysAgoIso(7),
+    to: todayIso(),
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const from = (filterState.from as string) || "";
+  const to = (filterState.to as string) || "";
+  const typeFilter = ((filterState.type as string) || "ALL") as SlipTypeFilter;
 
   const { data } = useBetSlips(from, to);
   const betSlips = useMemo(() => data ?? [], [data]);
@@ -215,25 +193,25 @@ export function BetSlipListPageClient() {
 
   const selectedSlip = betSlips.find((s) => s.id === selectedId) ?? null;
   const filteredBetSlips = useMemo(
-    () =>
-      typeFilter === "ALL"
-        ? betSlips
-        : betSlips.filter((slip) => slip.type === typeFilter),
+    () => (typeFilter === "ALL" ? betSlips : betSlips.filter((slip) => slip.type === typeFilter)),
     [betSlips, typeFilter],
   );
-  const periodSummary = useMemo(() => {
-    return betSlips.reduce(
-      (acc, slip) => {
-        const summary = couponSummary(slip);
-        acc.stake += summary.totalStake;
-        acc.pending += summary.pendingCount > 0 ? 1 : 0;
-        if (slip.type === "COMBO") acc.combo += 1;
-        if (summary.pendingCount === 0) acc.net += summary.netPnl;
-        return acc;
-      },
-      { stake: 0, net: 0, pending: 0, combo: 0 },
-    );
-  }, [betSlips]);
+
+  const periodSummary = useMemo(
+    () =>
+      betSlips.reduce(
+        (acc, slip) => {
+          const summary = couponSummary(slip);
+          acc.stake += summary.totalStake;
+          acc.pending += summary.pendingCount > 0 ? 1 : 0;
+          if (slip.type === "COMBO") acc.combo += 1;
+          if (summary.pendingCount === 0) acc.net += summary.netPnl;
+          return acc;
+        },
+        { stake: 0, net: 0, pending: 0, combo: 0 },
+      ),
+    [betSlips],
+  );
 
   function handleSelect(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));
@@ -244,82 +222,33 @@ export function BetSlipListPageClient() {
   }
 
   const filter = (
-    <div className="shrink-0 rounded-[1.1rem] border border-border bg-white px-4 py-3">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
-            Coupons
-          </span>
-          <p className="mt-1 text-xs text-slate-500">
-            {betSlips.length} coupon{betSlips.length !== 1 ? "s" : ""} ·{" "}
-            {periodSummary.combo} combiné{periodSummary.combo > 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-right text-xs">
-          <div>
-            <p className="text-slate-400">Misé</p>
-            <p className="font-bold tabular-nums text-slate-900">
-              {formatAmount(periodSummary.stake)}
-            </p>
-          </div>
-          <div>
-            <p className="text-slate-400">Net réglé</p>
-            <p
-              className={`font-bold tabular-nums ${
-                periodSummary.net >= 0 ? "text-emerald-600" : "text-rose-600"
-              }`}
-            >
-              {periodSummary.net >= 0 ? "+" : ""}
-              {formatAmount(periodSummary.net)}
-            </p>
-          </div>
-          <div>
-            <p className="text-slate-400">Attente</p>
-            <p className="font-bold tabular-nums text-amber-600">
-              {periodSummary.pending}
-            </p>
-          </div>
-        </div>
+    <div className="shrink-0 space-y-4 rounded-[1.1rem] border border-border bg-panel p-4">
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard
+          compact
+          tone="neutral"
+          label="Misé"
+          value={formatAmount(periodSummary.stake)}
+        />
+        <StatCard
+          compact
+          tone={periodSummary.net >= 0 ? "success" : "danger"}
+          label="Net réglé"
+          value={`${periodSummary.net >= 0 ? "+" : ""}${formatAmount(periodSummary.net)}`}
+        />
+        <StatCard
+          compact
+          tone="warning"
+          label="En attente"
+          value={String(periodSummary.pending)}
+        />
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1">
-          {[
-            ["ALL", "Tous"],
-            ["SIMPLE", "Simples"],
-            ["COMBO", "Combinés"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTypeFilter(value as SlipTypeFilter)}
-              className={`rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-                typeFilter === value
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={from}
-            max={to}
-            onChange={(e) => setFrom(e.target.value)}
-            className="h-9 w-full max-w-40 min-w-0 rounded-lg border border-border bg-slate-50 px-2.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
-          />
-          <span className="shrink-0 text-slate-300">→</span>
-          <input
-            type="date"
-            value={to}
-            min={from}
-            onChange={(e) => setTo(e.target.value)}
-            className="h-9 w-full max-w-40 min-w-0 rounded-lg border border-border bg-slate-50 px-2.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
-          />
-        </div>
-      </div>
+      <FilterBar
+        filters={SLIP_FILTERS}
+        value={filterState}
+        onChange={setFilterState}
+        onReset={() => setFilterState({ type: "ALL", from: daysAgoIso(7), to: todayIso() })}
+      />
     </div>
   );
 
@@ -345,51 +274,38 @@ export function BetSlipListPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        {/* Desktop : grid [colonne gauche 60% | aside 40%] */}
         <div className="hidden min-h-0 flex-1 xl:grid xl:grid-cols-[3fr_2fr] xl:gap-5">
-          {/* Colonne gauche : filtre fixe + liste scrollable */}
           <div className="flex min-h-0 flex-col gap-4">
             {filter}
             <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
           </div>
-          {/* Colonne droite : panel de détail */}
           <div className="h-full">
             {selectedSlip ? (
               <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
             ) : (
-              <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-slate-200 bg-slate-50">
-                <p className="text-sm text-slate-400">
-                  Sélectionnez un coupon pour voir le détail
-                </p>
+              <div className="flex h-full items-center justify-center rounded-[1.35rem] border border-dashed border-border bg-secondary">
+                <p className="text-sm text-muted-foreground">Sélectionnez un coupon pour voir le détail</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Mobile : filtre fixe + liste scrollable */}
         <div className="flex min-h-0 flex-1 flex-col gap-4 xl:hidden">
           {filter}
           <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
         </div>
       </PageContent>
 
-      {/* Mobile bottom sheet */}
       {isMobile && (
-        <Drawer.Root
-          open={selectedSlip !== null}
-          onOpenChange={(open) => !open && handleClose()}
-        >
+        <Drawer.Root open={selectedSlip !== null} onOpenChange={(open) => !open && handleClose()}>
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
-            <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl bg-white outline-none">
+            <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl bg-panel outline-none">
               <Drawer.Title className="sr-only">Détail du coupon</Drawer.Title>
-              <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-slate-300" />
+              <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border" />
               {selectedSlip && (
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
-                  <BetSlipDetailPanel
-                    data={selectedSlip}
-                    onClose={handleClose}
-                  />
+                  <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
                 </div>
               )}
             </Drawer.Content>

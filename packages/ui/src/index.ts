@@ -17,6 +17,8 @@ export * from "./components/feature-card";
 export * from "./components/input";
 export * from "./components/page";
 export * from "./components/page-shell";
+export * from "./components/progress-bar";
+export * from "./components/stat-list";
 export * from "./components/popover";
 export * from "./components/radio-group";
 export * from "./components/responsive-grid";

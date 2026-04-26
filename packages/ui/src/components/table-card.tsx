@@ -4,7 +4,7 @@ import { cn } from "@evcore/ui/lib/utils"
 
 type TableCardProps = {
   title: string
-  subtitle: string
+  subtitle?: string
   action?: React.ReactNode
   children: React.ReactNode
   className?: string
