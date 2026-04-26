@@ -42,8 +42,8 @@ Objectif : garder toute l'ambition de P0, mais l'exécuter dans un ordre qui év
 **P0-C — Conventions & consolidation**
 - [x] Arborescence de composants clarifiée
 - [x] Doublons supprimés (`count-card.tsx` fusionné dans `StatCard`, `TableCard` migré dans `@evcore/ui`)
-- [ ] `COMPONENTS.md` rédigé
-- [ ] Règles responsive formalisées et utilisées comme check de review
+- [x] `COMPONENTS.md` rédigé
+- [x] Règles responsive formalisées et utilisées comme check de review
 
 **P0-D — Infra globale**
 - [x] Dark mode posé au niveau des tokens + `ThemeProvider` (next-themes, `.dark` class, `suppressHydrationWarning`)
@@ -92,6 +92,10 @@ shadcn/ui copie les composants directement dans la codebase (pas de dépendance 
 - [x] `Separator`
 - [x] `Skeleton`
 - [x] `Sheet`
+- [x] `DropdownMenu`
+- [x] `Avatar`
+- [x] `Empty`
+- [x] `Sidebar`
 - [x] `Calendar` + `DatePicker` / `DateRangePicker` (composite manuel sur shadcn Calendar)
 
 **Nouveaux composants génériques ajoutés :**
@@ -218,7 +222,7 @@ Clarifier quoi va où et supprimer les doublons.
 - [ ] `fixture-status-badge.tsx` à déplacer dans `apps/web/components/`
 - [ ] `date-field.tsx` à supprimer (remplacé par `DatePicker` shadcn)
 - [x] `count-card.tsx` fusionné dans `StatCard` (audit page utilise `StatCard` directement)
-- [ ] `COMPONENTS.md` à rédiger dans `packages/ui/`
+- [x] `COMPONENTS.md` rédigé dans `packages/ui/`
 
 ---
 
@@ -228,8 +232,8 @@ Clarifier quoi va où et supprimer les doublons.
 
 - [x] Breakpoints Tailwind 4 : `sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`
 - [x] `<ResponsiveGrid>` dans `@evcore/ui` (`cols` par breakpoint, `gap` variant)
-- [ ] Règle formalisée : toute page testée à 375px / 768px / 1280px avant d'être considérée terminée
-- [ ] Règle : drawers Vaul uniquement comme interface de détail sur mobile
+- [x] Règle formalisée : toute page testée à 375px / 768px / 1280px avant d'être considérée terminée
+- [x] Règle : drawers Vaul uniquement comme interface de détail sur mobile
 
 ---
 
@@ -488,9 +492,9 @@ Le composant actuel est lisible pour un admin/dev mais opaque pour un user lambd
 
 ## P8 — Centre de formation (`/dashboard/formation`)
 
-La page `/dashboard/aide` actuelle est un fichier markdown brut (`aide-ligues.md`) rendu tel quel. Trop technique, trop dense, aucune entrée pédagogique pour un user qui débute.
+La page code `/dashboard/help` actuelle (libellé utilisateur : `Aide`) est un fichier markdown brut (`help-leagues.md`) rendu tel quel. Trop technique, trop dense, aucune entrée pédagogique pour un user qui débute.
 
-Objectif : transformer ça en un vrai centre de formation avec articles, vidéos, progression et niveaux de difficulté. Remplacer la route `/dashboard/aide` ou la faire coexister.
+Objectif : transformer ça en un vrai centre de formation avec articles, vidéos, progression et niveaux de difficulté. Remplacer la route `/dashboard/help` ou la faire coexister.
 
 ---
 
@@ -502,7 +506,7 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 | **Les bases** | Qu'est-ce que l'EV, les cotes, la probabilité, la value |
 | **Les 3 canaux EVCore** | Comment lire un pick EV / Sécurité / Confiance, différences, cas d'usage |
 | **Bankroll & discipline** | Gestion en unités, drawdown normal, psychologie long terme |
-| **Guide par ligue** | Contenu actuel `aide-ligues.md` restructuré par ligue |
+| **Guide par ligue** | Contenu actuel `help-leagues.md` restructuré par ligue |
 | **Comment utiliser l'app** | Walkthrough des pages : fixtures, coupons, bankroll, diagnostic |
 
 ---
@@ -512,7 +516,7 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 **Infrastructure contenu :**
 - [ ] Définir le format des fichiers de contenu : MDX avec frontmatter (`title`, `category`, `difficulty: beginner|intermediate|advanced`, `readTime`, `videoUrl?`, `thumbnail?`, `slug`)
 - [ ] Créer la structure de dossiers : `content/formation/articles/` + `content/formation/videos/`
-- [ ] Migrer le contenu de `aide-ligues.md` en articles individuels par ligue dans ce nouveau format
+- [ ] Migrer le contenu de `help-leagues.md` en articles individuels par ligue dans ce nouveau format
 - [ ] Créer les premiers articles "Les bases" (EV, probabilité, cotes) — contenu rédactionnel à écrire
 
 **Page d'accueil Formation (`/dashboard/formation`) :**

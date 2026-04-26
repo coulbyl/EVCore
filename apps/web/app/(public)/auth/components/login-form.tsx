@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EvButton, Input } from "@evcore/ui";
+import { Button, Input } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
 
 export function LoginForm() {
@@ -65,13 +65,13 @@ export function LoginForm() {
         />
       </label>
 
-      <EvButton
+      <Button
         type="submit"
         className="h-11 w-full justify-center rounded-lg"
         disabled={isSubmitting}
       >
         {isSubmitting ? "Connexion..." : "Se connecter"}
-      </EvButton>
+      </Button>
 
       <p className="text-sm text-slate-500">
         Pas encore de compte ?{" "}

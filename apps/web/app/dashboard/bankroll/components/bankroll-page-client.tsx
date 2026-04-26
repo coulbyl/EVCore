@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import {
   DataTable,
-  EvEmptyState,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
   FilterBar,
   Page,
   PageContent,
@@ -122,7 +125,7 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
     accessorFn: (row) => parseAmount(row.amount),
     cell: ({ row }) => {
       const tone = transactionTone(row.original.type);
-      const cls = tone === "positive" ? "text-emerald-600" : tone === "negative" ? "text-rose-600" : "";
+      const cls = tone === "positive" ? "text-success" : tone === "negative" ? "text-danger" : "";
       return (
         <span className={`tabular-nums font-semibold ${cls}`}>
           {formatSignedUnitsValue(parseAmount(row.original.amount))}
@@ -151,10 +154,14 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
 function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
   if (points.length === 0) {
     return (
-      <EvEmptyState
-        title="Pas assez de données"
-        description="Effectuez des transactions pour voir la courbe d'évolution."
-      />
+      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+        <EmptyHeader>
+          <EmptyTitle>Pas assez de données</EmptyTitle>
+          <EmptyDescription>
+            Effectuez des transactions pour voir la courbe d&apos;évolution.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
@@ -319,14 +326,16 @@ export function BankrollPageClient() {
             }
           >
             {hasError ? (
-              <EvEmptyState
-                title="Erreur"
-                description={
-                  hasError instanceof Error
-                    ? hasError.message
-                    : "Impossible de charger les données du portefeuille."
-                }
-              />
+              <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+                <EmptyHeader>
+                  <EmptyTitle>Erreur</EmptyTitle>
+                  <EmptyDescription>
+                    {hasError instanceof Error
+                      ? hasError.message
+                      : "Impossible de charger les données du portefeuille."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : isLoading ? (
               <div className="flex h-44 items-center justify-center">
                 <ProgressBar value={0} max={100} tone="accent" showValue={false} className="w-24" />
@@ -345,10 +354,14 @@ export function BankrollPageClient() {
               data={filteredTransactions}
               isLoading={isLoading}
               emptyState={
-                <EvEmptyState
-                  title="Aucune transaction"
-                  description="Aucune transaction ne correspond aux filtres courants."
-                />
+                <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+                  <EmptyHeader>
+                    <EmptyTitle>Aucune transaction</EmptyTitle>
+                    <EmptyDescription>
+                      Aucune transaction ne correspond aux filtres courants.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               }
               mobileCard={(row) => (
                 <div className="space-y-3 px-4 py-4">
@@ -359,7 +372,7 @@ export function BankrollPageClient() {
                         {formatDateShort(row.createdAt)} · {transactionTypeLabel(row.type)}
                       </p>
                     </div>
-                    <p className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-emerald-600" : "text-rose-600"}`}>
+                    <p className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}>
                       {formatSignedUnitsValue(parseAmount(row.amount))}
                     </p>
                   </div>

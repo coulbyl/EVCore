@@ -2,8 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import { HelpCircle, LogOut, Settings, Wallet } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@evcore/ui";
 import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 
@@ -21,19 +32,7 @@ export function AccountButton({
   currentUser: AuthSessionUser;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
 
   async function handleLogout() {
     try {
@@ -47,59 +46,77 @@ export function AccountButton({
   }
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-slate-900 text-[0.72rem] font-bold text-white ring-2 ring-white transition-opacity hover:opacity-80"
-      >
-        {getInitials(currentUser.fullName)}
-      </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border/80 bg-panel-strong p-0.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          aria-label="Ouvrir le menu du compte"
+        >
+          <Avatar size="default" className="ring-1 ring-border">
+            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-[0.72rem] font-bold">
+              {getInitials(currentUser.fullName)}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
 
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-border bg-white shadow-xl">
-          <div className="border-b border-border px-4 py-3">
-            <p className="text-sm font-semibold text-slate-900">
-              {currentUser.fullName}
-            </p>
-            <p className="text-xs text-slate-400">@{currentUser.username}</p>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="w-64 rounded-2xl border-border bg-panel-strong p-2 shadow-lg"
+      >
+        <DropdownMenuLabel className="px-3 py-2">
+          <div className="flex items-center gap-3">
+            <Avatar size="lg" className="ring-1 ring-border">
+              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-bold">
+                {getInitials(currentUser.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {currentUser.fullName}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                @{currentUser.username}
+              </p>
+            </div>
           </div>
-          <Link
-            href="/dashboard/bankroll"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <Wallet size={14} />
-            Portefeuille
-          </Link>
-          <Link
-            href="/dashboard/aide"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <HelpCircle size={14} />
-            Aide
-          </Link>
-          <Link
-            href="/dashboard/params/account"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            <Settings size={14} />
-            Paramètres
-          </Link>
-          <div className="border-t border-border" />
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-sm text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
-          >
-            <LogOut size={14} />
-            {isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
-          </button>
-        </div>
-      )}
-    </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/bankroll">
+              <Wallet />
+              Portefeuille
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/help">
+              <HelpCircle />
+              Aide
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/params/account">
+              <Settings />
+              Paramètres
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={isLoggingOut}
+          onSelect={(event) => {
+            event.preventDefault();
+            void handleLogout();
+          }}
+        >
+          <LogOut />
+          {isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

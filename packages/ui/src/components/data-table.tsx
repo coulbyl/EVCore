@@ -177,7 +177,7 @@ function DataTable<TData>({
                 <Skeleton key={i} className="h-24 w-full rounded-xl" />
               ))
             : data.length === 0
-              ? <p className="py-8 text-center text-sm text-muted-foreground">{emptyState ?? "Aucune donnée."}</p>
+              ? <div className="py-4 text-center text-sm text-muted-foreground">{emptyState ?? "Aucune donnée."}</div>
               : data.map((row, i) => <React.Fragment key={i}>{mobileCard(row, i)}</React.Fragment>)}
         </div>
         <div className={cn("hidden sm:block overflow-hidden rounded-[1.3rem] border border-border", className)}>

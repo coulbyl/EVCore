@@ -1,17 +1,17 @@
 import { cn } from "../utils/cn";
 
 const toneClasses = {
-  success: "bg-emerald-500",
-  warning: "bg-amber-400",
-  danger: "bg-rose-400",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
   accent: "bg-accent",
-  neutral: "bg-slate-400",
+  neutral: "bg-muted",
 } as const;
 
 const textToneClasses = {
-  success: "text-emerald-600",
-  warning: "text-amber-600",
-  danger: "text-rose-500",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-danger",
   accent: "text-accent",
   neutral: "text-muted-foreground",
 } as const;

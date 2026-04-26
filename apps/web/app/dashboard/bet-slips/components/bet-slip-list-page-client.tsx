@@ -2,7 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
-import { EvBadge, EvEmptyState, FilterBar, Page, PageContent, StatCard } from "@evcore/ui";
+import {
+  Badge,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+  FilterBar,
+  Page,
+  PageContent,
+  StatCard,
+} from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
@@ -125,9 +135,9 @@ function BetSlipCard({
             #{betSlip.id.slice(0, 8)}
           </h2>
         </div>
-        <EvBadge tone="accent">
+        <Badge variant="accent">
           {betSlip.type === "COMBO" ? "Combiné" : "Simples"} · {betSlip.itemCount} sélection{betSlip.itemCount > 1 ? "s" : ""}
-        </EvBadge>
+        </Badge>
       </div>
 
       <div className="mt-3 space-y-1.5 text-sm">
@@ -155,7 +165,12 @@ function BetSlipCard({
         )}
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Statut</span>
-          <EvBadge tone={summary.statusTone} className="py-0.5 text-[0.62rem]">{status}</EvBadge>
+          <Badge
+            variant={summary.statusTone === "danger" ? "destructive" : summary.statusTone}
+            className="py-0.5 text-[0.62rem]"
+          >
+            {status}
+          </Badge>
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center justify-between gap-3">
@@ -254,10 +269,14 @@ export function BetSlipListPageClient() {
 
   const items =
     filteredBetSlips.length === 0 ? (
-      <EvEmptyState
-        title="Aucun coupon"
-        description="Aucun coupon ne correspond à cette période et à ce filtre."
-      />
+      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+        <EmptyHeader>
+          <EmptyTitle>Aucun coupon</EmptyTitle>
+          <EmptyDescription>
+            Aucun coupon ne correspond à cette période et à ce filtre.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     ) : (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {filteredBetSlips.map((betSlip) => (

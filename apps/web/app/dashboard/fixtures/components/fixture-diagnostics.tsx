@@ -2,9 +2,12 @@
 
 import { Check, ShoppingCart } from "lucide-react";
 import {
+  Badge,
   DataTable,
-  EvBadge,
-  EvEmptyState,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
   ResponsiveGrid,
   StatCard,
 } from "@evcore/ui";
@@ -23,13 +26,13 @@ import type {
   FixtureRow,
 } from "@/domains/fixture/types/fixture";
 
-type EvBadgeTone = "accent" | "success" | "warning" | "danger" | "neutral";
+type BadgeVariant = "accent" | "success" | "warning" | "destructive" | "neutral";
 
-function fixtureStatusTone(status: string): EvBadgeTone {
+function fixtureStatusTone(status: string): BadgeVariant {
   const s = status.toLowerCase();
   if (s === "finished") return "neutral";
   if (s === "in_progress") return "accent";
-  if (s === "postponed" || s === "cancelled") return "danger";
+  if (s === "postponed" || s === "cancelled") return "destructive";
   return "warning";
 }
 
@@ -119,9 +122,9 @@ function makeEvaluatedColumns(
       header: "Statut",
       cell: ({ row }) =>
         row.original.status === "viable" ? (
-          <EvBadge tone="success">Viable</EvBadge>
+          <Badge variant="success">Viable</Badge>
         ) : (
-          <EvBadge tone="danger">Rejeté</EvBadge>
+          <Badge variant="destructive">Rejeté</Badge>
         ),
     },
     {
@@ -228,10 +231,14 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   if (!mr) {
     return (
       <div className="rounded-[1.7rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-        <EvEmptyState
-          title="Aucun diagnostic"
-          description="Pas de ModelRun disponible pour cette fixture."
-        />
+        <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+          <EmptyHeader>
+            <EmptyTitle>Aucun diagnostic</EmptyTitle>
+            <EmptyDescription>
+              Pas de ModelRun disponible pour cette fixture.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </div>
     );
   }
@@ -266,9 +273,9 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
             )}
           </p>
         </div>
-        <EvBadge tone={fixtureStatusTone(row.status)} className="shrink-0">
+        <Badge variant={fixtureStatusTone(row.status)} className="shrink-0">
           {fixtureStatusLabel(row.status)}
-        </EvBadge>
+        </Badge>
       </div>
 
       <div className="mt-5">

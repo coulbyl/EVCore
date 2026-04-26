@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-  EvButton,
   Input,
 } from "@evcore/ui";
 import { Loader2, Plus, Wallet, X } from "lucide-react";
@@ -61,10 +61,10 @@ export function DepositDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <EvButton className="gap-2">
+        <Button className="gap-2">
           <Plus size={14} />
           Ajouter un dépôt
-        </EvButton>
+        </Button>
       </DialogTrigger>
 
       <DialogContent
@@ -145,9 +145,9 @@ export function DepositDialog() {
             ) : null}
 
             <div className="mt-5 flex gap-2">
-              <EvButton
+              <Button
                 type="button"
-                tone="secondary"
+                variant="secondary"
                 className="flex-1"
                 onClick={() => {
                   setOpen(false);
@@ -155,8 +155,8 @@ export function DepositDialog() {
                 }}
               >
                 Annuler
-              </EvButton>
-              <EvButton
+              </Button>
+              <Button
                 type="submit"
                 className="flex-1 gap-2"
                 disabled={
@@ -173,7 +173,7 @@ export function DepositDialog() {
                 ) : (
                   "Confirmer"
                 )}
-              </EvButton>
+              </Button>
             </div>
           </form>
       </DialogContent>

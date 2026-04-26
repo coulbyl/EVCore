@@ -17,12 +17,12 @@ export function BetSlipButton() {
       <button
         type="button"
         onClick={open}
-        className="relative min-h-11 min-w-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:flex"
+        className="relative min-h-11 min-w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:flex"
         title="Mon coupon"
       >
         <ReceiptText size={18} />
         {count > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[0.55rem] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[0.55rem] font-bold text-accent-foreground">
             {count}
           </span>
         )}

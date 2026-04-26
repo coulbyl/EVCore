@@ -28,7 +28,7 @@ export function PageHeaderTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h1
-      className={cn("text-[1.1rem] font-bold text-slate-900", className)}
+      className={cn("text-[1.1rem] font-bold text-foreground", className)}
       {...props}
     />
   );

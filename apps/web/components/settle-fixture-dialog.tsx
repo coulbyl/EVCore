@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { CheckCircle, ClipboardCheck, Loader2, X } from "lucide-react";
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-  EvButton,
   Input,
 } from "@evcore/ui";
 import { declareFixtureResult } from "@/domains/dashboard/use-cases/declare-fixture-result";
@@ -108,14 +108,14 @@ export function SettleFixtureDialog({
       }}
     >
       <DialogTrigger asChild>
-        <EvButton
-          tone="secondary"
+        <Button
+          variant="secondary"
           size={triggerSize}
           className="gap-1.5 text-xs!"
         >
           <ClipboardCheck size={triggerSize === "xs" ? 10 : 13} />
           Déclarer résultat
-        </EvButton>
+        </Button>
       </DialogTrigger>
 
       <DialogContent

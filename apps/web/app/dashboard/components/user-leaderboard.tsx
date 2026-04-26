@@ -12,21 +12,21 @@ type PodiumStyle = {
 
 const PODIUM: [PodiumStyle, PodiumStyle, PodiumStyle] = [
   {
-    row: "bg-amber-50 border border-amber-200/70",
-    rankBg: "bg-amber-400",
-    rankText: "text-white",
+    row: "bg-warning/10 border border-warning/30",
+    rankBg: "bg-warning",
+    rankText: "text-accent-foreground",
     icon: "🥇",
   },
   {
-    row: "bg-slate-100 border border-slate-200/70",
-    rankBg: "bg-slate-400",
-    rankText: "text-white",
+    row: "bg-secondary border border-border",
+    rankBg: "bg-muted",
+    rankText: "text-accent-foreground",
     icon: "🥈",
   },
   {
-    row: "bg-orange-50 border border-orange-200/70",
-    rankBg: "bg-amber-700",
-    rankText: "text-white",
+    row: "bg-accent-soft border border-accent/20",
+    rankBg: "bg-accent",
+    rankText: "text-accent-foreground",
     icon: "🥉",
   },
 ];
@@ -41,17 +41,17 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
         className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${podium.row}`}
       >
         <span className="text-base leading-none">{podium.icon}</span>
-        <span className="min-w-0 flex-1 truncate text-[0.8rem] font-bold text-slate-800">
+        <span className="min-w-0 flex-1 truncate text-[0.8rem] font-bold text-foreground">
           {entry.username}
         </span>
         <div className="flex shrink-0 items-center gap-2.5">
-          <span className="hidden text-[0.62rem] tabular-nums text-slate-500 sm:block">
+          <span className="hidden text-[0.62rem] tabular-nums text-muted-foreground sm:block">
             {entry.settled} coupon{entry.settled > 1 ? "s" : ""} joué
             {entry.settled > 1 ? "s" : ""}
           </span>
           <span
             className={`text-[0.85rem] font-extrabold tabular-nums ${
-              positive ? "text-emerald-600" : "text-rose-600"
+              positive ? "text-success" : "text-danger"
             }`}
           >
             {entry.roi}
@@ -62,20 +62,20 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   }
 
   return (
-    <div className="group flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors hover:bg-slate-50">
-      <span className="w-5 shrink-0 text-center text-[0.62rem] font-bold tabular-nums text-slate-400">
+    <div className="group flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors hover:bg-panel">
+      <span className="w-5 shrink-0 text-center text-[0.62rem] font-bold tabular-nums text-muted-foreground">
         {String(entry.rank).padStart(2, "0")}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[0.78rem] font-medium text-slate-600 transition-colors group-hover:text-slate-900">
+      <span className="min-w-0 flex-1 truncate text-[0.78rem] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
         {entry.username}
       </span>
       <div className="flex shrink-0 items-center gap-2.5">
-        <span className="hidden text-[0.62rem] tabular-nums text-slate-400 sm:block">
+        <span className="hidden text-[0.62rem] tabular-nums text-muted-foreground sm:block">
           {entry.settled}
         </span>
         <span
           className={`text-[0.78rem] font-bold tabular-nums ${
-            positive ? "text-emerald-600" : "text-rose-600"
+            positive ? "text-success" : "text-danger"
           }`}
         >
           {entry.roi}
@@ -90,18 +90,18 @@ export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
     <div className="flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
-        <Flame size={14} className="shrink-0 text-orange-400" />
-        <h2 className="text-sm font-bold tracking-tight text-slate-800">
+        <Flame size={14} className="shrink-0 text-accent" />
+        <h2 className="text-sm font-bold tracking-tight text-foreground">
           Top joueurs
         </h2>
-        <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-slate-400">
+        <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
           ROI · ≥ 1 coupon joué
         </span>
       </div>
 
       {/* List */}
       {entries.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-400">
+        <p className="py-6 text-center text-sm text-muted-foreground">
           Pas encore assez de données.
         </p>
       ) : (

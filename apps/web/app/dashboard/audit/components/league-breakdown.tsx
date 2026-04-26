@@ -1,4 +1,4 @@
-import { DataTable, EvBadge, ProgressBar } from "@evcore/ui";
+import { Badge, DataTable, ProgressBar } from "@evcore/ui";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatCompactValue } from "@/helpers/number";
 import type { AuditLeagueRow } from "@/domains/audit/types/audit";
@@ -19,9 +19,9 @@ const COLUMNS: ColumnDef<AuditLeagueRow>[] = [
     header: "Active",
     cell: ({ row }) =>
       row.original.isActive ? (
-        <EvBadge tone="success">Active</EvBadge>
+        <Badge variant="success">Active</Badge>
       ) : (
-        <EvBadge tone="neutral">Inactive</EvBadge>
+        <Badge variant="neutral">Inactive</Badge>
       ),
   },
   {
@@ -69,9 +69,9 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
               <span className="font-mono text-[0.7rem] text-muted-foreground">{row.code}</span>
               <span className="text-sm text-foreground">{row.name}</span>
             </div>
-            <EvBadge tone={row.isActive ? "success" : "neutral"}>
+            <Badge variant={row.isActive ? "success" : "neutral"}>
               {row.isActive ? "Active" : "Inactive"}
-            </EvBadge>
+            </Badge>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {(

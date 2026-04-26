@@ -6,7 +6,7 @@ const toneClasses = {
   success: "border-success",
   warning: "border-warning",
   danger: "border-danger",
-  neutral: "border-slate-300",
+  neutral: "border-border",
 } as const;
 
 export function StatCard({

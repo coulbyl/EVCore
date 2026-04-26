@@ -17,7 +17,7 @@ export function BankrollWidget() {
       className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors ${
         isActive
           ? "border-accent bg-accent/8 text-accent"
-          : "border-border bg-white text-slate-700 hover:bg-slate-50"
+          : "border-border bg-panel-strong text-foreground hover:bg-secondary"
       }`}
       title="Portefeuille"
     >

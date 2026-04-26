@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EvButton, Input } from "@evcore/ui";
+import { Button, Input } from "@evcore/ui";
 import { register } from "@/domains/auth/use-cases/register";
 
 export function RegisterForm() {
@@ -121,13 +121,13 @@ export function RegisterForm() {
         />
       </label>
 
-      <EvButton
+      <Button
         type="submit"
         className="h-11 w-full justify-center rounded-lg"
         disabled={isSubmitting}
       >
         {isSubmitting ? "Création..." : "Créer un compte"}
-      </EvButton>
+      </Button>
 
       <p className="text-sm text-slate-500">
         Déjà inscrit ?{" "}

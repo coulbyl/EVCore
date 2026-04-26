@@ -14,10 +14,10 @@ const PICK_LABEL: Record<string, string> = {
 
 function PredictionResultDot({ correct }: { correct: boolean | null }) {
   if (correct === true)
-    return <span className="size-2 rounded-full bg-emerald-500" />;
+    return <span className="size-2 rounded-full bg-success" />;
   if (correct === false)
-    return <span className="size-2 rounded-full bg-rose-500" />;
-  return <span className="size-2 rounded-full bg-slate-300" />;
+    return <span className="size-2 rounded-full bg-danger" />;
+  return <span className="size-2 rounded-full bg-border" />;
 }
 
 function todayIso() {
@@ -49,22 +49,22 @@ export function PredictionsCard() {
     <div className="flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
-        <Target size={14} className="shrink-0 text-indigo-500" />
-        <h2 className="text-sm font-bold tracking-tight text-slate-800">
+        <Target size={14} className="shrink-0 text-accent" />
+        <h2 className="text-sm font-bold tracking-tight text-foreground">
           Prédictions du jour
         </h2>
         <div className="ml-auto flex items-center gap-2">
           {settled.length > 0 && (
-            <span className="text-[0.6rem] font-semibold tabular-nums text-slate-500">
+            <span className="text-[0.6rem] font-semibold tabular-nums text-muted-foreground">
               {correct}/{settled.length} ✓
             </span>
           )}
           {yesterdayLabel && (
-            <span className="text-[0.6rem] text-slate-400">
+            <span className="text-[0.6rem] text-muted-foreground">
               {yesterdayLabel}
             </span>
           )}
-          <span className="text-[0.6rem] font-medium uppercase tracking-wide text-slate-400">
+          <span className="text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
             {predictions.length} match{predictions.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -72,7 +72,7 @@ export function PredictionsCard() {
 
       {/* List */}
       {predictions.length === 0 ? (
-        <p className="py-6 text-center text-sm text-slate-400">
+        <p className="py-6 text-center text-sm text-muted-foreground">
           Aucune prédiction pour aujourd&apos;hui.
         </p>
       ) : (
@@ -87,19 +87,19 @@ export function PredictionsCard() {
             {predictions.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-slate-50"
+                className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-panel"
               >
                 <PredictionResultDot correct={p.correct} />
-                <span className="min-w-0 flex-1 truncate text-[0.78rem] font-semibold text-slate-700">
+                <span className="min-w-0 flex-1 truncate text-[0.78rem] font-semibold text-foreground">
                   {p.fixture}
                 </span>
-                <span className="shrink-0 rounded bg-indigo-50 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-indigo-600">
+                <span className="shrink-0 rounded bg-accent-soft px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-accent">
                   {PICK_LABEL[p.pick] ?? p.pick}
                 </span>
-                <span className="shrink-0 text-[0.72rem] font-semibold tabular-nums text-indigo-500">
+                <span className="shrink-0 text-[0.72rem] font-semibold tabular-nums text-accent">
                   {p.probability}
                 </span>
-                <span className="shrink-0 text-[0.6rem] text-slate-400">
+                <span className="shrink-0 text-[0.6rem] text-muted-foreground">
                   {p.kickoff}
                 </span>
               </div>
