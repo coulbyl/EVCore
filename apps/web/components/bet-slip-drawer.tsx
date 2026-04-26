@@ -34,7 +34,7 @@ function StakeInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-24 rounded-lg border border-border bg-slate-50 px-2 py-1.5 text-right text-xs font-semibold tabular-nums text-slate-700 focus:outline-none focus:ring-1 focus:ring-accent"
+      className="w-24 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-xs font-semibold tabular-nums text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
     />
   );
 }
@@ -63,16 +63,16 @@ function DraftItemRow({
             fixture={item.fixture}
             homeLogo={item.homeLogo}
             awayLogo={item.awayLogo}
-            className="text-xs font-semibold text-slate-800"
+            className="text-xs font-semibold text-foreground"
           />
-          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-slate-400">
+          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
             {item.competition} • {item.scheduledAt}
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="text-[0.65rem] text-slate-400">
+            <span className="text-[0.65rem] text-muted-foreground">
               {formatMarketForDisplay(item.market)}
             </span>
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[0.68rem] font-semibold text-slate-700">
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-[0.68rem] font-semibold text-secondary-foreground">
               {formatCombinedPickForDisplay({
                 market: item.market,
                 pick: item.pick,
@@ -81,12 +81,12 @@ function DraftItemRow({
               })}
             </span>
             {item.ev && (
-              <span className="text-[0.65rem] font-semibold text-emerald-600">
+              <span className="text-[0.65rem] font-semibold text-success">
                 Valeur {item.ev}
               </span>
             )}
             {odds !== null && Number.isFinite(odds) ? (
-              <span className="text-[0.65rem] font-semibold tabular-nums text-slate-700">
+              <span className="text-[0.65rem] font-semibold tabular-nums text-foreground">
                 @{odds.toFixed(2)}
               </span>
             ) : null}
@@ -95,7 +95,7 @@ function DraftItemRow({
         <button
           type="button"
           onClick={onRemove}
-          className="mt-0.5 shrink-0 rounded-lg p-2.5 text-rose-400 active:bg-rose-50 hover:bg-rose-50 hover:text-rose-600"
+          className="mt-0.5 shrink-0 rounded-lg p-2.5 text-danger active:bg-destructive/10 hover:bg-destructive/10 hover:text-destructive"
           aria-label="Supprimer"
         >
           <X size={14} />
@@ -103,7 +103,7 @@ function DraftItemRow({
       </div>
       {mode === "SIMPLE" ? (
         <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="text-[0.65rem] text-slate-400">
+          <div className="text-[0.65rem] text-muted-foreground">
             <span>Mise spécifique</span>
             {odds !== null && Number.isFinite(odds) ? (
               <span className="ml-2 tabular-nums">
@@ -209,34 +209,34 @@ export function BetSlipDrawer() {
   return (
     <Drawer.Root open={isOpen} onOpenChange={(open) => !open && close()}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-white outline-none sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[420px] sm:rounded-[1.5rem]">
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-sidebar/40" />
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-panel outline-none sm:bottom-4 sm:left-auto sm:right-4 sm:top-4 sm:w-[420px] sm:rounded-[1.5rem] sm:border sm:border-border">
           <Drawer.Title className="sr-only">Coupon en préparation</Drawer.Title>
           {/* Handle (mobile) */}
-          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
+          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <ReceiptText size={16} className="text-accent" />
-                <h2 className="text-sm font-semibold text-slate-800">
+                <h2 className="text-sm font-semibold text-foreground">
                   Coupon en préparation
                   {totalItems > 0 && (
-                    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-white">
+                    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-accent-foreground">
                       {totalItems}
                     </span>
                   )}
                 </h2>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {totalItems > 0
                   ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
                   : "Ajoutez vos sélections pour préparer votre coupon."}
               </p>
-              <p className="mt-2 text-xs font-semibold text-slate-700">
+              <p className="mt-2 text-xs font-semibold text-foreground">
                 Solde disponible :{" "}
-                <span className="tabular-nums text-slate-950">
+                <span className="tabular-nums text-foreground">
                   {bankroll.toLocaleString("fr-FR")} u
                 </span>
               </p>
@@ -246,7 +246,7 @@ export function BetSlipDrawer() {
                 <button
                   type="button"
                   onClick={clearDraft}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.7rem] font-semibold text-rose-500 hover:bg-rose-50"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.7rem] font-semibold text-danger hover:bg-destructive/10"
                 >
                   <Trash2 size={11} />
                   Vider
@@ -255,7 +255,7 @@ export function BetSlipDrawer() {
               <button
                 type="button"
                 onClick={close}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X size={16} />
               </button>
@@ -266,9 +266,9 @@ export function BetSlipDrawer() {
           <div className="flex-1 overflow-y-auto">
             {submitted ? (
               <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
-                <CheckCircle size={40} className="text-emerald-500" />
-                <p className="font-semibold text-slate-800">Coupon soumis !</p>
-                <p className="text-sm text-slate-500">
+                <CheckCircle size={40} className="text-success" />
+                <p className="font-semibold text-foreground">Coupon soumis !</p>
+                <p className="text-sm text-muted-foreground">
                   Retrouvez-le dans la section Mes coupons.
                 </p>
                 <button
@@ -277,32 +277,32 @@ export function BetSlipDrawer() {
                     setSubmitted(false);
                     close();
                   }}
-                  className="mt-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                 >
                   Fermer
                 </button>
               </div>
             ) : totalItems === 0 ? (
               <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-                <ReceiptText size={32} className="text-slate-300" />
-                <p className="text-sm font-semibold text-slate-500">
+                <ReceiptText size={32} className="text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">
                   Aucun coupon en préparation
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Placez des sélections depuis la page Matchs.
                 </p>
               </div>
             ) : (
               <div>
                 <div className="border-b border-border px-4 py-3">
-                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
                     <button
                       type="button"
                       onClick={() => setType("SIMPLE")}
                       className={`rounded-md px-3 py-2 text-xs font-bold transition-colors ${
                         !isCombo
-                          ? "bg-white text-slate-900 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
+                          ? "bg-panel text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       Simples
@@ -313,8 +313,8 @@ export function BetSlipDrawer() {
                       disabled={totalItems < 2}
                       className={`rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                         isCombo
-                          ? "bg-white text-slate-900 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
+                          ? "bg-panel text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       Combiné
@@ -348,22 +348,22 @@ export function BetSlipDrawer() {
 
           {/* Footer */}
           {!submitted && totalItems > 0 && (
-            <div className="border-t border-border bg-slate-50 px-5 py-4">
+            <div className="border-t border-border bg-panel-strong px-5 py-4">
               {submitError && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600">
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
                   <AlertCircle size={13} />
                   {submitError}
                 </div>
               )}
               {exceedsBalance && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/20 bg-warning/12 px-3 py-2 text-xs font-medium text-warning">
                   <AlertCircle size={13} />
                   Solde insuffisant : vous voulez miser{" "}
                   {totalStake.toLocaleString("fr-FR")} u.
                 </div>
               )}
               <div className="mb-3 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
+                <span className="text-muted-foreground">
                   {isCombo ? "Mise du combiné" : "Mise par sélection"}
                 </span>
                 <StakeInput
@@ -377,35 +377,35 @@ export function BetSlipDrawer() {
                 />
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Solde disponible</span>
-                <span className="font-semibold tabular-nums text-slate-800">
+                <span className="text-muted-foreground">Solde disponible</span>
+                <span className="font-semibold tabular-nums text-foreground">
                   {bankroll.toLocaleString("fr-FR")}
                 </span>
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-foreground">
                   Mise totale ({totalItems} sélection{totalItems > 1 ? "s" : ""}
                   )
                 </span>
-                <span className="font-bold tabular-nums text-slate-900">
+                <span className="font-bold tabular-nums text-foreground">
                   {totalStake.toLocaleString("fr-FR")}
                 </span>
               </div>
               {isCombo ? (
                 <div className="mb-4 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-foreground">
                     Cote totale
                   </span>
-                  <span className="font-bold tabular-nums text-slate-900">
+                  <span className="font-bold tabular-nums text-foreground">
                     {totalOdds.toFixed(2)}
                   </span>
                 </div>
               ) : null}
               <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-foreground">
                   Gain potentiel
                 </span>
-                <span className="font-bold tabular-nums text-emerald-600">
+                <span className="font-bold tabular-nums text-success">
                   {potentialReturn.toLocaleString("fr-FR")} u
                 </span>
               </div>
@@ -413,7 +413,7 @@ export function BetSlipDrawer() {
                 type="button"
                 disabled={isPending || exceedsBalance}
                 onClick={handleSubmit}
-                className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white disabled:opacity-60"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60"
               >
                 {isPending ? "Soumission…" : "Valider le coupon"}
               </button>

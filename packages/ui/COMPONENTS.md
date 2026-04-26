@@ -37,12 +37,14 @@ pnpm dlx shadcn@latest add <nom>     # copie le composant dans src/components/
 ```
 
 Ensuite :
+
 1. Vérifier que les dépendances ajoutées utilisent `catalog:` dans `package.json`
 2. Exporter depuis `src/index.ts`
 
 ### Composite manuel (non registré shadcn)
 
 Créer directement dans `packages/ui/src/components/<nom>.tsx` :
+
 - Utiliser uniquement des tokens CSS (`text-foreground`, `bg-panel`, `border-border`…)
 - Pas de couleurs Tailwind hardcodées (`bg-white`, `text-slate-700`…)
 - Exporter le type si nécessaire (ex : `export type FilterDef`)
@@ -54,16 +56,16 @@ Créer directement dans `packages/ui/src/components/<nom>.tsx` :
 
 Définis dans `src/styles/theme.css`, disponibles en light et dark :
 
-| Token | Usage |
-|---|---|
-| `bg-background` | Fond principal de la page |
-| `bg-panel` | Surfaces de premier niveau (cards, sidebar) |
-| `bg-panel-strong` | Surfaces renforcées (panels imbriqués) |
-| `bg-secondary` | Fond d'input, zones alternatives |
-| `text-foreground` | Texte principal |
-| `text-muted-foreground` | Labels, sous-titres, placeholders |
-| `border-border` | Bordures standard |
-| `text-accent` / `bg-accent` | Couleur d'accentuation EVCore (teal) |
+| Token                       | Usage                                       |
+| --------------------------- | ------------------------------------------- |
+| `bg-background`             | Fond principal de la page                   |
+| `bg-panel`                  | Surfaces de premier niveau (cards, sidebar) |
+| `bg-panel-strong`           | Surfaces renforcées (panels imbriqués)      |
+| `bg-secondary`              | Fond d'input, zones alternatives            |
+| `text-foreground`           | Texte principal                             |
+| `text-muted-foreground`     | Labels, sous-titres, placeholders           |
+| `border-border`             | Bordures standard                           |
+| `text-accent` / `bg-accent` | Couleur d'accentuation EVCore (teal)        |
 
 ---
 
@@ -88,33 +90,34 @@ Règles d'application :
 
 ### Primitifs shadcn (ne pas modifier directement)
 
-| Composant | Fichier | Usage |
-|---|---|---|
-| `Badge` | `badge.tsx` | Badge shadcn utilisé directement, avec variantes EVCore |
-| `Button` | `button.tsx` | Bouton shadcn utilisé directement |
-| `Calendar` | `calendar.tsx` | Calendrier Radix (base de `DatePicker`) |
-| `Card` | `card.tsx` | Card shadcn (préférer `TableCard` ou `StatCard`) |
-| `Checkbox` | `checkbox.tsx` | Case à cocher Radix |
-| `Command` | `command.tsx` | Palette de commande (base de `Combobox`) |
-| `Dialog` | `dialog.tsx` | Modale Radix |
-| `Empty` | `empty.tsx` | État vide shadcn composé (`EmptyHeader`, `EmptyTitle`, etc.) |
-| `Input` | `input.tsx` | Champ texte |
-| `Popover` | `popover.tsx` | Popover Radix (base de `DatePicker`, `Combobox`) |
-| `RadioGroup` | `radio-group.tsx` | Groupe de boutons radio Radix |
-| `Select` | `select.tsx` | Dropdown Radix |
-| `Separator` | `separator.tsx` | Ligne de séparation |
-| `Sheet` | `sheet.tsx` | Drawer latéral Radix (utilisé dans `FilterBar` mobile) |
-| `Skeleton` | `skeleton.tsx` | Placeholder de chargement |
-| `Switch` | `switch.tsx` | Toggle Radix |
-| `Table` | `table.tsx` | Table HTML stylée (base de `DataTable`) |
-| `Tabs` | `tabs.tsx` | Onglets Radix |
-| `Tooltip` | `tooltip.tsx` | Info au survol Radix |
+| Composant    | Fichier           | Usage                                                        |
+| ------------ | ----------------- | ------------------------------------------------------------ |
+| `Badge`      | `badge.tsx`       | Badge shadcn utilisé directement, avec variantes EVCore      |
+| `Button`     | `button.tsx`      | Bouton shadcn utilisé directement                            |
+| `Calendar`   | `calendar.tsx`    | Calendrier Radix (base de `DatePicker`)                      |
+| `Card`       | `card.tsx`        | Card shadcn (préférer `TableCard` ou `StatCard`)             |
+| `Checkbox`   | `checkbox.tsx`    | Case à cocher Radix                                          |
+| `Command`    | `command.tsx`     | Palette de commande (base de `Combobox`)                     |
+| `Dialog`     | `dialog.tsx`      | Modale Radix                                                 |
+| `Empty`      | `empty.tsx`       | État vide shadcn composé (`EmptyHeader`, `EmptyTitle`, etc.) |
+| `Input`      | `input.tsx`       | Champ texte                                                  |
+| `Popover`    | `popover.tsx`     | Popover Radix (base de `DatePicker`, `Combobox`)             |
+| `RadioGroup` | `radio-group.tsx` | Groupe de boutons radio Radix                                |
+| `Select`     | `select.tsx`      | Dropdown Radix                                               |
+| `Separator`  | `separator.tsx`   | Ligne de séparation                                          |
+| `Sheet`      | `sheet.tsx`       | Drawer latéral Radix (utilisé dans `FilterBar` mobile)       |
+| `Skeleton`   | `skeleton.tsx`    | Placeholder de chargement                                    |
+| `Switch`     | `switch.tsx`      | Toggle Radix                                                 |
+| `Table`      | `table.tsx`       | Table HTML stylée (base de `DataTable`)                      |
+| `Tabs`       | `tabs.tsx`        | Onglets Radix                                                |
+| `Tooltip`    | `tooltip.tsx`     | Info au survol Radix                                         |
 
 ---
 
 ### Composants EVCore
 
 #### `Badge`
+
 Badge shadcn avec variantes sémantiques EVCore.
 
 ```tsx
@@ -126,6 +129,7 @@ Badge shadcn avec variantes sémantiques EVCore.
 ```
 
 #### `Button`
+
 Bouton shadcn avec variantes standard.
 
 ```tsx
@@ -136,6 +140,7 @@ Bouton shadcn avec variantes standard.
 ```
 
 #### `Empty`
+
 État vide shadcn composé.
 
 ```tsx
@@ -154,6 +159,7 @@ Bouton shadcn avec variantes standard.
 ### Composites génériques
 
 #### `StatCard`
+
 Carte de métrique avec label, valeur et ton coloré.
 
 ```tsx
@@ -176,6 +182,7 @@ Carte de métrique avec label, valeur et ton coloré.
 ---
 
 #### `StatList`
+
 Liste verticale de paires clé/valeur.
 
 ```tsx
@@ -195,6 +202,7 @@ Liste verticale de paires clé/valeur.
 ---
 
 #### `ProgressBar`
+
 Barre de progression avec résolution de ton automatique.
 
 ```tsx
@@ -214,6 +222,7 @@ Barre de progression avec résolution de ton automatique.
 ---
 
 #### `TableCard`
+
 Container de section avec titre, sous-titre optionnel, et action.
 
 ```tsx
@@ -236,6 +245,7 @@ L'enfant est rendu dans un container avec `overflow-hidden rounded-[1.3rem] bord
 ---
 
 #### `DataTable`
+
 Table basée sur TanStack Table v8 + primitif `Table` shadcn.
 
 ```tsx
@@ -284,6 +294,7 @@ const COLUMNS: ColumnDef<MyRow>[] = [
 ---
 
 #### `FilterBar`
+
 Barre de filtres responsive (Sheet mobile / chips tablet / inline desktop).
 
 ```tsx
@@ -318,6 +329,7 @@ const [filters, setFilters] = useState<FilterState>({
 ---
 
 #### `DatePicker` / `DateRangePicker`
+
 Sélecteurs de date basés sur shadcn `Calendar`.
 
 ```tsx
@@ -337,6 +349,7 @@ Sélecteurs de date basés sur shadcn `Calendar`.
 ---
 
 #### `Combobox`
+
 Select avec recherche (Command + Popover).
 
 ```tsx
@@ -356,6 +369,7 @@ Select avec recherche (Command + Popover).
 ---
 
 #### `ResponsiveGrid`
+
 Grille responsive avec `cols` par breakpoint et `gap` sémantique.
 
 ```tsx
@@ -380,6 +394,7 @@ Grille responsive avec `cols` par breakpoint et `gap` sémantique.
 ### Composants de layout
 
 #### `Page` / `PageHeader` / `PageContent`
+
 Wrappers de mise en page des pages dashboard.
 
 ```tsx
@@ -390,25 +405,34 @@ export default function MyPage() {
         {/* contenu */}
       </PageContent>
     </Page>
-  )
+  );
 }
 ```
 
 #### `PageShell`
+
 Shell global avec sidebar nav + zone content. Utilisé dans le layout dashboard.
 
 #### `TopNav`
+
 Barre de navigation supérieure (titre, sous-titre, statut, date).
 
 #### `SectionHeader`
+
 Titre + sous-titre de section. Utilisé par `TableCard`.
 
 #### `ThemeProvider`
+
 Wrappeur `next-themes`. Placé dans le root layout via `Providers`.
 
 ```tsx
 // providers.tsx
-<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+<ThemeProvider
+  attribute="class"
+  defaultTheme="system"
+  enableSystem
+  disableTransitionOnChange
+>
   {children}
 </ThemeProvider>
 ```
@@ -417,10 +441,10 @@ Wrappeur `next-themes`. Placé dans le root layout via `Providers`.
 
 ## Ce qui n'appartient PAS à `@evcore/ui`
 
-| Composant | Où il va | Pourquoi |
-|---|---|---|
-| `EvAreaChart`, `EvBarChart` | `apps/web/components/charts/` | Dépend de Recharts, non partagé |
-| `AppShell`, `NotificationBell` | `apps/web/components/` | Logique app-web, pas générique |
-| `FixtureDiagnostics` | `apps/web/app/dashboard/fixtures/components/` | Feature-spécifique |
-| `BetSlipCard` | `apps/web/app/dashboard/bet-slips/components/` | Feature-spécifique |
-| `DepositDialog` | `apps/web/app/dashboard/bankroll/components/` | Feature-spécifique |
+| Composant                      | Où il va                                       | Pourquoi                        |
+| ------------------------------ | ---------------------------------------------- | ------------------------------- |
+| `EvAreaChart`, `EvBarChart`    | `apps/web/components/charts/`                  | Dépend de Recharts, non partagé |
+| `AppShell`, `NotificationBell` | `apps/web/components/`                         | Logique app-web, pas générique  |
+| `FixtureDiagnostics`           | `apps/web/app/dashboard/fixtures/components/`  | Feature-spécifique              |
+| `BetSlipCard`                  | `apps/web/app/dashboard/bet-slips/components/` | Feature-spécifique              |
+| `DepositDialog`                | `apps/web/app/dashboard/bankroll/components/`  | Feature-spécifique              |

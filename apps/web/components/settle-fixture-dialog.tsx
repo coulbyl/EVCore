@@ -31,7 +31,7 @@ function ScoreInput({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={id}
-        className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
+        className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
       >
         {label}
       </label>
@@ -41,7 +41,7 @@ function ScoreInput({
         min={0}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl border-border bg-slate-50 py-2 text-center text-lg font-semibold text-slate-900"
+        className="rounded-xl border-border bg-background py-2 text-center text-lg font-semibold text-foreground"
       />
     </div>
   );
@@ -120,105 +120,103 @@ export function SettleFixtureDialog({
 
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-sm rounded-[1.6rem] border border-border bg-white p-6 shadow-xl"
+        className="w-full max-w-sm rounded-[1.6rem] border border-border bg-panel p-6 shadow-xl"
       >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <DialogTitle className="text-base font-semibold text-slate-900">
-                Déclarer un résultat
-              </DialogTitle>
-              <DialogDescription className="mt-0.5 text-xs text-slate-500">
-                {fixtureName}
-              </DialogDescription>
-            </div>
-            <DialogClose asChild>
-              <button
-                type="button"
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X size={16} />
-              </button>
-            </DialogClose>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Déclarer un résultat
+            </DialogTitle>
+            <DialogDescription className="mt-0.5 text-xs text-muted-foreground">
+              {fixtureName}
+            </DialogDescription>
           </div>
+          <DialogClose asChild>
+            <button
+              type="button"
+              className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <X size={16} />
+            </button>
+          </DialogClose>
+        </div>
 
-          {state === "success" ? (
-            <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
-              <CheckCircle size={36} className="text-success" />
-              <p className="font-semibold text-slate-800">
-                Résultat enregistré
-              </p>
-              <p className="text-sm text-slate-500">
-                Les bets ont été settlés et la calibration lancée.
-              </p>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="mt-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700"
-              >
-                Fermer
-              </button>
+        {state === "success" ? (
+          <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
+            <CheckCircle size={36} className="text-success" />
+            <p className="font-semibold text-foreground">Résultat enregistré</p>
+            <p className="text-sm text-muted-foreground">
+              Les bets ont été settlés et la calibration lancée.
+            </p>
+            <Button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="mt-2"
+            >
+              Fermer
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={(e) => void handleSubmit(e)} className="mt-5">
+            <p className="mb-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Score final
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <ScoreInput
+                id="homeScore"
+                label="Domicile"
+                value={homeScore}
+                onChange={setHomeScore}
+              />
+              <ScoreInput
+                id="awayScore"
+                label="Extérieur"
+                value={awayScore}
+                onChange={setAwayScore}
+              />
             </div>
-          ) : (
-            <form onSubmit={(e) => void handleSubmit(e)} className="mt-5">
-              <p className="mb-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Score final
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <ScoreInput
-                  id="homeScore"
-                  label="Domicile"
-                  value={homeScore}
-                  onChange={setHomeScore}
-                />
-                <ScoreInput
-                  id="awayScore"
-                  label="Extérieur"
-                  value={awayScore}
-                  onChange={setAwayScore}
-                />
-              </div>
 
-              <p className="mb-3 mt-5 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                Score mi-temps{" "}
-                <span className="font-normal normal-case tracking-normal text-slate-400">
-                  (optionnel)
-                </span>
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <ScoreInput
-                  id="homeHt"
-                  label="Domicile MT"
-                  value={homeHt}
-                  onChange={setHomeHt}
-                />
-                <ScoreInput
-                  id="awayHt"
-                  label="Extérieur MT"
-                  value={awayHt}
-                  onChange={setAwayHt}
-                />
-              </div>
+            <p className="mb-3 mt-5 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Score mi-temps{" "}
+              <span className="font-normal normal-case tracking-normal text-muted-foreground">
+                (optionnel)
+              </span>
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <ScoreInput
+                id="homeHt"
+                label="Domicile MT"
+                value={homeHt}
+                onChange={setHomeHt}
+              />
+              <ScoreInput
+                id="awayHt"
+                label="Extérieur MT"
+                value={awayHt}
+                onChange={setAwayHt}
+              />
+            </div>
 
-              {state === "error" && (
-                <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600">
-                  {error}
-                </p>
+            {state === "error" && (
+              <p className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={
+                state === "loading" || homeScore === "" || awayScore === ""
+              }
+              className="mt-5 w-full gap-2"
+            >
+              {state === "loading" && (
+                <Loader2 size={14} className="animate-spin" />
               )}
-
-              <button
-                type="submit"
-                disabled={
-                  state === "loading" || homeScore === "" || awayScore === ""
-                }
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
-              >
-                {state === "loading" && (
-                  <Loader2 size={14} className="animate-spin" />
-                )}
-                Enregistrer et settler
-              </button>
-            </form>
-          )}
+              Enregistrer et settler
+            </Button>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

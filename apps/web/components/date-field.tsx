@@ -19,22 +19,22 @@ export function DateField({
   return (
     <label
       className={cn(
-        "relative rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm text-slate-600",
+        "relative rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground",
         className,
       )}
     >
-      <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
+      <span className="mb-0.5 block text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </span>
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="ev-date-input w-full min-w-0 appearance-none bg-transparent pr-8 text-slate-700 outline-none"
+        className="ev-date-input w-full min-w-0 appearance-none bg-transparent pr-8 text-foreground outline-none"
       />
       <CalendarDays
         size={16}
-        className="pointer-events-none absolute bottom-3 right-3 text-slate-400"
+        className="pointer-events-none absolute bottom-3 right-3 text-muted-foreground"
       />
     </label>
   );

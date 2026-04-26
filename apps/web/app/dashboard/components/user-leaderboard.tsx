@@ -112,7 +112,7 @@ export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
             scrollbarColor: "#cbd5e1 transparent",
           }}
         >
-          <div className="space-y-1.5">
+          <div className="flex flex-col gap-1.5">
             {entries.map((entry) => (
               <LeaderboardRow key={entry.rank} entry={entry} />
             ))}

@@ -17,15 +17,15 @@ Fenêtre de backtest : saisons **2023, 2024, 2025** (`2324`, `2425`, `2526`).
 
 #### Groupe A — Backtest possible → `isActive: false` en attente de validation
 
-| Ligue | Code | leagueId | Source odds historiques | The Odds API key |
-|---|---|---|---|---|
-| Pologne D1 (Ekstraklasa) | `POL1` | 106 | CSV `POL` `/new/` (2023–2025 ✅) | `soccer_poland_ekstraklasa` |
-| Suède D1 (Allsvenskan) | `SWE1` | 113 | CSV `SWE` `/new/` (2023–2025 ✅) | `soccer_sweden_allsvenskan` |
-| Suède D2 (Superettan) | `SWE2` | 114 | The Odds API historical (depuis 2022 ✅) | `soccer_sweden_superettan` |
-| Suisse D1 (Super League) | `SUI1` | 207 | CSV `SWZ` `/new/` (2023–2025 ✅) | `soccer_switzerland_superleague` |
-| Turquie D1 (Süper Lig) | `TUR1` | 203 | CSV `T1` `/mmz4281/` (2324–2526 ✅) | `soccer_turkey_super_league` |
-| USA MLS | `MLS` | 253 | CSV `USA` `/new/` (2023–2025 ✅) | `soccer_usa_mls` |
-| Norvège D1 (Eliteserien) | `NOR1` | 103 | CSV `NOR` `/new/` (2023–2025 ✅) | `soccer_norway_eliteserien` |
+| Ligue                    | Code   | leagueId | Source odds historiques                  | The Odds API key                 |
+| ------------------------ | ------ | -------- | ---------------------------------------- | -------------------------------- |
+| Pologne D1 (Ekstraklasa) | `POL1` | 106      | CSV `POL` `/new/` (2023–2025 ✅)         | `soccer_poland_ekstraklasa`      |
+| Suède D1 (Allsvenskan)   | `SWE1` | 113      | CSV `SWE` `/new/` (2023–2025 ✅)         | `soccer_sweden_allsvenskan`      |
+| Suède D2 (Superettan)    | `SWE2` | 114      | The Odds API historical (depuis 2022 ✅) | `soccer_sweden_superettan`       |
+| Suisse D1 (Super League) | `SUI1` | 207      | CSV `SWZ` `/new/` (2023–2025 ✅)         | `soccer_switzerland_superleague` |
+| Turquie D1 (Süper Lig)   | `TUR1` | 203      | CSV `T1` `/mmz4281/` (2324–2526 ✅)      | `soccer_turkey_super_league`     |
+| USA MLS                  | `MLS`  | 253      | CSV `USA` `/new/` (2023–2025 ✅)         | `soccer_usa_mls`                 |
+| Norvège D1 (Eliteserien) | `NOR1` | 103      | CSV `NOR` `/new/` (2023–2025 ✅)         | `soccer_norway_eliteserien`      |
 
 > `EXTRA_LEAGUE_DIVISION_CODES` à mettre à jour (worker ligne 19) : ajouter `POL`, `SWE`, `SWZ`, `USA`, `NOR`.
 > SWE2 utilise le worker `odds-historical-import` (The Odds API) — ajouter `SWE2: 'soccer_sweden_superettan'` dans `THE_ODDS_API_SPORT_KEYS`.
@@ -35,15 +35,15 @@ Fenêtre de backtest : saisons **2023, 2024, 2025** (`2324`, `2425`, `2526`).
 
 Pas d'historique odds disponible (ni CSV ni The Odds API). EV live fonctionnel une fois activé manuellement.
 
-| Ligue | Code | leagueId | API-Football odds live |
-|---|---|---|---|
-| Pologne D2 (I Liga) | `POL2` | 107 | ✅ Pinnacle |
-| Rép. Tchèque D1 (Czech Liga) | `CZE1` | 345 | ✅ Pinnacle |
-| Suisse D2 (Challenge League) | `SUI2` | 208 | ✅ Pinnacle |
-| Turquie D2 (1. Lig) | `TUR2` | 204 | ✅ Pinnacle |
-| Serbie D1 (Super Liga) | `SRB1` | 286 | ✅ Pinnacle |
-| Slovénie D1 (1. SNL) | `SVN1` | 373 | ✅ Pinnacle |
-| Norvège D2 (1. Division) | `NOR2` | 104 | ✅ Pinnacle |
+| Ligue                        | Code   | leagueId | API-Football odds live |
+| ---------------------------- | ------ | -------- | ---------------------- |
+| Pologne D2 (I Liga)          | `POL2` | 107      | ✅ Pinnacle            |
+| Rép. Tchèque D1 (Czech Liga) | `CZE1` | 345      | ✅ Pinnacle            |
+| Suisse D2 (Challenge League) | `SUI2` | 208      | ✅ Pinnacle            |
+| Turquie D2 (1. Lig)          | `TUR2` | 204      | ✅ Pinnacle            |
+| Serbie D1 (Super Liga)       | `SRB1` | 286      | ✅ Pinnacle            |
+| Slovénie D1 (1. SNL)         | `SVN1` | 373      | ✅ Pinnacle            |
+| Norvège D2 (1. Division)     | `NOR2` | 104      | ✅ Pinnacle            |
 
 ---
 
@@ -53,10 +53,18 @@ Fichier : `apps/backend/src/modules/etl/workers/odds-csv-import.worker.ts` — l
 
 ```ts
 // Avant
-const EXTRA_LEAGUE_DIVISION_CODES = new Set(['JPN', 'MEX']);
+const EXTRA_LEAGUE_DIVISION_CODES = new Set(["JPN", "MEX"]);
 
 // Après
-const EXTRA_LEAGUE_DIVISION_CODES = new Set(['JPN', 'MEX', 'POL', 'SWE', 'SWZ', 'USA', 'NOR']);
+const EXTRA_LEAGUE_DIVISION_CODES = new Set([
+  "JPN",
+  "MEX",
+  "POL",
+  "SWE",
+  "SWZ",
+  "USA",
+  "NOR",
+]);
 ```
 
 ---
@@ -83,6 +91,7 @@ NOR1: 'soccer_norway_eliteserien',
 Fichier : `packages/db/src/seed.ts` — tableau `COMPETITIONS`.
 
 Groupe A (`isActive: false`, backtest possible) :
+
 ```ts
 // Calendrier août-mai
 { leagueId: 106, code: "POL1", name: "Ekstraklasa", country: "Poland", isActive: false, csvDivisionCode: "POL" },
@@ -96,6 +105,7 @@ Groupe A (`isActive: false`, backtest possible) :
 ```
 
 Groupe B (`isActive: false`, pas de backtest — ne pas activer sans source historique) :
+
 ```ts
 // Calendrier août-mai
 { leagueId: 107, code: "POL2", name: "I Liga", country: "Poland", isActive: false, csvDivisionCode: null },
@@ -132,6 +142,7 @@ POST /backtest/:competitionCode
 ```
 
 Critères de passage pour activer (`isActive: true`) :
+
 - ROI simulé ≥ -5%
 - Brier Score < 0.65
 - Calibration Error ≤ 5%

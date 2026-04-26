@@ -108,7 +108,7 @@ export function CompetitionRanking({ stats }: { stats: CompetitionStat[] }) {
             scrollbarColor: "#cbd5e1 transparent",
           }}
         >
-          <div className="space-y-0.5">
+          <div className="flex flex-col gap-0.5">
             {stats.map((stat, i) => (
               <CompetitionRow key={stat.competitionId} stat={stat} index={i} />
             ))}

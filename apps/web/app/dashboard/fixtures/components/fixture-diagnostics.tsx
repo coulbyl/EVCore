@@ -26,7 +26,12 @@ import type {
   FixtureRow,
 } from "@/domains/fixture/types/fixture";
 
-type BadgeVariant = "accent" | "success" | "warning" | "destructive" | "neutral";
+type BadgeVariant =
+  | "accent"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "neutral";
 
 function fixtureStatusTone(status: string): BadgeVariant {
   const s = status.toLowerCase();
@@ -88,7 +93,9 @@ const CANDIDATE_COLUMNS: ColumnDef<FixturePickSnapshot>[] = [
     cell: ({ row }) => {
       const v = parseFloat(row.original.ev);
       return (
-        <span className={`tabular-nums font-semibold ${v >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+        <span
+          className={`tabular-nums font-semibold ${v >= 0 ? "text-success" : "text-danger"}`}
+        >
           {formatEv(row.original.ev)}
         </span>
       );
@@ -101,7 +108,9 @@ const CANDIDATE_COLUMNS: ColumnDef<FixturePickSnapshot>[] = [
     cell: ({ row }) => {
       const v = parseFloat(row.original.qualityScore);
       return (
-        <span className={`tabular-nums font-semibold ${v >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+        <span
+          className={`tabular-nums font-semibold ${v >= 0 ? "text-success" : "text-danger"}`}
+        >
           {row.original.qualityScore}
         </span>
       );
@@ -183,13 +192,15 @@ function PlacePickButton({
       }}
       disabled={disabled}
       title={
-        inSlip ? "Déjà dans le coupon"
-        : alreadyInUserTicket ? "Déjà dans vos coupons"
-        : "Placer ce pick"
+        inSlip
+          ? "Déjà dans le coupon"
+          : alreadyInUserTicket
+            ? "Déjà dans vos coupons"
+            : "Placer ce pick"
       }
       className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
         inSlip
-          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          ? "border-success/20 bg-success/12 text-success"
           : disabled
             ? "cursor-not-allowed border-border bg-secondary text-muted-foreground"
             : "border-border bg-panel text-muted-foreground hover:border-accent hover:text-accent"
@@ -260,7 +271,10 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
           <p className="mt-2 text-sm text-muted-foreground">
             {mr.pick && mr.market ? (
               <span className="font-medium text-foreground">
-                {formatCombinedPickForDisplay({ market: mr.market, pick: mr.pick })}
+                {formatCombinedPickForDisplay({
+                  market: mr.market,
+                  pick: mr.pick,
+                })}
               </span>
             ) : (
               "Sélection non disponible"
@@ -283,10 +297,30 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
           Entrées modèle
         </p>
         <ResponsiveGrid cols={{ base: 2, sm: 4 }} gap="sm">
-          <StatCard compact tone="neutral" label="Prob. estimée" value={mr.probEstimated ?? "—"} />
-          <StatCard compact tone="neutral" label="λ Dom." value={mr.lambdaHome ?? "—"} />
-          <StatCard compact tone="neutral" label="λ Ext." value={mr.lambdaAway ?? "—"} />
-          <StatCard compact tone="neutral" label="Buts attendus" value={mr.expectedTotalGoals ?? "—"} />
+          <StatCard
+            compact
+            tone="neutral"
+            label="Prob. estimée"
+            value={mr.probEstimated ?? "—"}
+          />
+          <StatCard
+            compact
+            tone="neutral"
+            label="λ Dom."
+            value={mr.lambdaHome ?? "—"}
+          />
+          <StatCard
+            compact
+            tone="neutral"
+            label="λ Ext."
+            value={mr.lambdaAway ?? "—"}
+          />
+          <StatCard
+            compact
+            tone="neutral"
+            label="Buts attendus"
+            value={mr.expectedTotalGoals ?? "—"}
+          />
         </ResponsiveGrid>
       </div>
 

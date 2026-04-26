@@ -22,8 +22,8 @@ function formatAmount(value: string | number) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -38,10 +38,10 @@ function totalOdds(data: BetSlipView) {
 type ItemStatus = "WON" | "LOST" | "PENDING" | "VOID";
 
 const STATUS_BAR: Record<ItemStatus, string> = {
-  WON: "bg-emerald-400",
-  LOST: "bg-rose-400",
-  PENDING: "bg-amber-400",
-  VOID: "bg-slate-300",
+  WON: "bg-success",
+  LOST: "bg-destructive",
+  PENDING: "bg-warning",
+  VOID: "bg-border",
 };
 
 const STATUS_LABEL: Record<ItemStatus, string> = {
@@ -64,7 +64,7 @@ function PnlDisplay({
     const isPos = raw >= 0;
     return (
       <p
-        className={`text-base font-bold tabular-nums ${isPos ? "text-emerald-600" : "text-rose-600"}`}
+        className={`text-base font-bold tabular-nums ${isPos ? "text-success" : "text-danger"}`}
       >
         {isPos ? "+" : ""}
         {raw.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}
@@ -78,10 +78,12 @@ function PnlDisplay({
       (Number(item.odds) - 1)
     ).toLocaleString("fr-FR", { maximumFractionDigits: 0 });
     return (
-      <p className="text-sm tabular-nums text-slate-400">+{potential} pot.</p>
+      <p className="text-sm tabular-nums text-muted-foreground">
+        +{potential} pot.
+      </p>
     );
   }
-  return <p className="text-xs text-slate-400">—</p>;
+  return <p className="text-xs text-muted-foreground">—</p>;
 }
 
 function BetItem({
@@ -92,7 +94,7 @@ function BetItem({
   slipType: BetSlipView["type"];
 }) {
   const status = item.betStatus as ItemStatus;
-  const bar = STATUS_BAR[status] ?? "bg-slate-300";
+  const bar = STATUS_BAR[status] ?? "bg-border";
 
   const pickLabel = formatCombinedPickForDisplay({
     market: item.market,
@@ -110,37 +112,37 @@ function BetItem({
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 px-4 py-3.5">
         {/* Row 1: fixture + score */}
         <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-sm font-semibold text-slate-900">
+          <p className="min-w-0 truncate text-sm font-semibold text-foreground">
             {item.fixture}
           </p>
           {item.homeScore !== null && item.awayScore !== null ? (
-            <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold tabular-nums text-slate-600">
+            <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums text-secondary-foreground">
               {item.homeScore} – {item.awayScore}
             </span>
           ) : null}
         </div>
 
         {/* Row 2: pick + market */}
-        <p className="text-xs text-slate-500">
-          <span className="font-medium text-slate-700">{pickLabel}</span>
-          <span className="mx-1 text-slate-300">·</span>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{pickLabel}</span>
+          <span className="mx-1 text-border">·</span>
           {marketLabel}
         </p>
 
         {/* Row 3: metrics + P&L */}
         <div className="flex items-end justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             {item.odds ? (
               <span>
                 Cote{" "}
-                <span className="font-semibold text-slate-600">
+                <span className="font-semibold text-foreground">
                   {item.odds}
                 </span>
               </span>
             ) : null}
             <span>
               EV{" "}
-              <span className="font-semibold text-emerald-600">
+              <span className="font-semibold text-success">
                 {item.ev.startsWith("+") ? item.ev : `+${item.ev}`}
               </span>
             </span>
@@ -150,7 +152,7 @@ function BetItem({
               ) : (
                 <>
                   Mise{" "}
-                  <span className="font-semibold text-slate-600">
+                  <span className="font-semibold text-foreground">
                     {formatAmount(item.stake)}
                   </span>
                 </>
@@ -164,7 +166,7 @@ function BetItem({
           </div>
           <div className="shrink-0 text-right">
             <PnlDisplay item={item} slipType={slipType} />
-            <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
               {STATUS_LABEL[status]}
             </p>
           </div>
@@ -237,16 +239,16 @@ export function BetSlipDetailPanel({
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Coupon
           </p>
-          <p className="text-base font-semibold text-slate-900">
+          <p className="text-base font-semibold text-foreground">
             #{data.id.slice(0, 8)}
           </p>
-          <p className="text-xs font-semibold text-slate-600">
+          <p className="text-xs font-semibold text-foreground">
             {data.type === "COMBO" ? "Combiné" : "Simples"}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {formatDateLong(data.createdAt)}
           </p>
         </div>
@@ -260,7 +262,7 @@ export function BetSlipDetailPanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white text-slate-400 transition-colors hover:text-slate-700"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-panel text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <X size={14} />
           </button>
@@ -270,7 +272,7 @@ export function BetSlipDetailPanel({
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Summary */}
-        <div className="space-y-2.5 border-b border-border px-4 py-4">
+        <div className="flex flex-col gap-2.5 border-b border-border px-4 py-4">
           <DetailRow label="Utilisateur" value={`@${data.username}`} />
           {data.type === "COMBO" && (
             <DetailRow label="Cote totale" value={comboTotalOdds.toFixed(2)} />
@@ -284,8 +286,8 @@ export function BetSlipDetailPanel({
               <div
                 className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold ${
                   realPnl >= 0
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-rose-50 text-rose-700"
+                    ? "bg-success/12 text-success"
+                    : "bg-destructive/10 text-destructive"
                 }`}
               >
                 <span>
@@ -314,7 +316,7 @@ export function BetSlipDetailPanel({
                 label="Gain potentiel"
                 value={formatAmount(String(potentialReturn))}
               />
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 {pendingSelections} sélection
                 {pendingSelections > 1 ? "s" : ""} en attente de résultat
               </p>

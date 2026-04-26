@@ -83,7 +83,7 @@ export function PredictionsCard() {
             scrollbarColor: "#cbd5e1 transparent",
           }}
         >
-          <div className="space-y-0.5">
+          <div className="flex flex-col gap-0.5">
             {predictions.map((p) => (
               <div
                 key={p.id}

@@ -108,7 +108,13 @@ export function FixturesFilters({ filters }: Props) {
   }
 
   return (
-    <div className={isPending ? "pointer-events-none opacity-60 transition-opacity" : "transition-opacity"}>
+    <div
+      className={
+        isPending
+          ? "pointer-events-none opacity-60 transition-opacity"
+          : "transition-opacity"
+      }
+    >
       <FilterBar
         filters={FILTER_DEFS}
         value={state}

@@ -136,13 +136,17 @@ export function OperatorPerformanceCard() {
 
       <div className="mt-4 border-t border-border pt-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs text-muted-foreground">Rendement du modèle</span>
+          <span className="text-xs text-muted-foreground">
+            Rendement du modèle
+          </span>
           {isLoading ? (
             <div className="h-5 w-16 animate-pulse rounded-lg bg-secondary" />
           ) : data?.globalRoi != null ? (
             <RoiBadge roi={data.globalRoi} count={data.globalRoiBetCount} />
           ) : (
-            <span className="text-xs text-muted-foreground">Pas assez de données</span>
+            <span className="text-xs text-muted-foreground">
+              Pas assez de données
+            </span>
           )}
         </div>
       </div>

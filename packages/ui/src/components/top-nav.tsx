@@ -28,7 +28,9 @@ export function TopNav({
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{subtitle}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {subtitle}
+            </p>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">

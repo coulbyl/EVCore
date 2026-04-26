@@ -49,7 +49,11 @@ export function KpiDelta({
     const rawPercent = percentMatch?.[1] ?? "0";
     const percentValue = `${rawPercent.replace(",", ".")}%`;
     return (
-      <div className={compact ? "flex flex-col gap-1" : "flex items-center gap-2 px-2"}>
+      <div
+        className={
+          compact ? "flex flex-col gap-1" : "flex items-center gap-2 px-2"
+        }
+      >
         <div className={compact ? "flex items-center gap-1.5" : "contents"}>
           <span
             className={`${compact ? "text-[0.78rem]" : "text-sm"} font-semibold text-foreground`}

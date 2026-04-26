@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Area,
@@ -8,18 +8,18 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
 
 type EvAreaChartProps = {
-  data: Record<string, unknown>[]
-  xKey: string
-  yKey: string
-  color?: string
-  height?: number
-  formatY?: (value: number) => string
-  gradientId?: string
-  className?: string
-}
+  data: Record<string, unknown>[];
+  xKey: string;
+  yKey: string;
+  color?: string;
+  height?: number;
+  formatY?: (value: number) => string;
+  gradientId?: string;
+  className?: string;
+};
 
 function EvAreaChart({
   data,
@@ -34,23 +34,38 @@ function EvAreaChart({
   return (
     <div className={className}>
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.22} />
               <stop offset="100%" stopColor={color} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="var(--border)"
+            vertical={false}
+          />
           <XAxis
             dataKey={xKey}
-            tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+            tick={{
+              fontSize: 10,
+              fill: "var(--muted-foreground)",
+              fontFamily: "inherit",
+            }}
             axisLine={false}
             tickLine={false}
             tickMargin={8}
           />
           <YAxis
-            tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+            tick={{
+              fontSize: 10,
+              fill: "var(--muted-foreground)",
+              fontFamily: "inherit",
+            }}
             axisLine={false}
             tickLine={false}
             tickMargin={8}
@@ -80,7 +95,7 @@ function EvAreaChart({
         </AreaChart>
       </ResponsiveContainer>
     </div>
-  )
+  );
 }
 
-export { EvAreaChart }
+export { EvAreaChart };

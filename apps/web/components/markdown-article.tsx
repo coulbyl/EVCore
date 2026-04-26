@@ -227,7 +227,10 @@ export function MarkdownArticle({ content }: { content: string }) {
 
           if (block.level === 1) {
             return (
-              <header key={`${block.type}-${index}`} className="flex flex-col gap-3">
+              <header
+                key={`${block.type}-${index}`}
+                className="flex flex-col gap-3"
+              >
                 <div className="inline-flex rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-accent">
                   Documentation
                 </div>

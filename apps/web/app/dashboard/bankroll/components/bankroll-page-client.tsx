@@ -63,15 +63,22 @@ type TrendPoint = {
 
 function transactionTypeLabel(type: BankrollTransactionType) {
   switch (type) {
-    case "DEPOSIT": return "Dépôt";
-    case "BET_PLACED": return "Mise";
-    case "BET_WON": return "Gain";
-    case "BET_VOID": return "Remboursement";
-    default: return type;
+    case "DEPOSIT":
+      return "Dépôt";
+    case "BET_PLACED":
+      return "Mise";
+    case "BET_WON":
+      return "Gain";
+    case "BET_VOID":
+      return "Remboursement";
+    default:
+      return type;
   }
 }
 
-function transactionTone(type: BankrollTransactionType): "positive" | "negative" | "neutral" {
+function transactionTone(
+  type: BankrollTransactionType,
+): "positive" | "negative" | "neutral" {
   switch (type) {
     case "DEPOSIT":
     case "BET_WON":
@@ -97,7 +104,11 @@ function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
   const byDay = new Map<string, TrendPoint>();
   for (const row of [...rows].reverse()) {
     const day = toIsoDay(row.createdAt);
-    byDay.set(day, { day, label: formatDateShort(day), balance: row.balanceAfter });
+    byDay.set(day, {
+      day,
+      label: formatDateShort(day),
+      balance: row.balanceAfter,
+    });
   }
   return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
 }
@@ -112,7 +123,9 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
     id: "date",
     header: "Date",
     accessorFn: (row) => formatDateShort(row.createdAt),
-    cell: ({ getValue }) => <span className="text-muted-foreground">{getValue<string>()}</span>,
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">{getValue<string>()}</span>
+    ),
   },
   {
     id: "type",
@@ -125,7 +138,12 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
     accessorFn: (row) => parseAmount(row.amount),
     cell: ({ row }) => {
       const tone = transactionTone(row.original.type);
-      const cls = tone === "positive" ? "text-success" : tone === "negative" ? "text-danger" : "";
+      const cls =
+        tone === "positive"
+          ? "text-success"
+          : tone === "negative"
+            ? "text-danger"
+            : "";
       return (
         <span className={`tabular-nums font-semibold ${cls}`}>
           {formatSignedUnitsValue(parseAmount(row.original.amount))}
@@ -138,14 +156,18 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
     id: "detail",
     header: "Match / note",
     accessorFn: (row) => row.detailLabel,
-    cell: ({ getValue }) => <span className="text-muted-foreground">{getValue<string>()}</span>,
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">{getValue<string>()}</span>
+    ),
   },
   {
     id: "balance",
     header: "Solde après",
     accessorFn: (row) => row.balanceAfter,
     cell: ({ getValue }) => (
-      <span className="tabular-nums font-semibold">{formatUnitsValue(getValue<number>())}</span>
+      <span className="tabular-nums font-semibold">
+        {formatUnitsValue(getValue<number>())}
+      </span>
     ),
     meta: { align: "right" },
   },
@@ -235,13 +257,15 @@ export function BankrollPageClient() {
     let runningBalance = currentBalance;
     return (transactionsQuery.data ?? []).map((transaction) => {
       const amount = parseAmount(transaction.amount);
-      const metadata = transaction.betId ? betMetadata.get(transaction.betId) : undefined;
+      const metadata = transaction.betId
+        ? betMetadata.get(transaction.betId)
+        : undefined;
       const detailLabel =
         transaction.type === "DEPOSIT"
-          ? (transaction.note || "Dépôt")
+          ? transaction.note || "Dépôt"
           : metadata
             ? `${metadata.fixture} (${formatMarketForDisplay(metadata.market)})`
-            : (transaction.note || "Pari");
+            : transaction.note || "Pari";
       const row = { ...transaction, balanceAfter: runningBalance, detailLabel };
       runningBalance -= amount;
       return row;
@@ -270,17 +294,26 @@ export function BankrollPageClient() {
     [enrichedTransactions],
   );
 
-  const roi = totalDeposited > 0 ? ((currentBalance - totalDeposited) / totalDeposited) * 100 : null;
+  const roi =
+    totalDeposited > 0
+      ? ((currentBalance - totalDeposited) / totalDeposited) * 100
+      : null;
 
-  const trendPoints = useMemo(() => buildTrendPoints(filteredTransactions), [filteredTransactions]);
+  const trendPoints = useMemo(
+    () => buildTrendPoints(filteredTransactions),
+    [filteredTransactions],
+  );
 
-  const isLoading = balanceQuery.isLoading || transactionsQuery.isLoading || betSlipsQuery.isLoading;
+  const isLoading =
+    balanceQuery.isLoading ||
+    transactionsQuery.isLoading ||
+    betSlipsQuery.isLoading;
   const hasError = balanceQuery.error || transactionsQuery.error;
 
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           <section className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard
               icon={<Wallet size={14} />}
@@ -312,7 +345,9 @@ export function BankrollPageClient() {
             filters={BANKROLL_FILTERS}
             value={filterState}
             onChange={setFilterState}
-            onReset={() => setFilterState({ from: "", to: todayIso(), type: "ALL" })}
+            onReset={() =>
+              setFilterState({ from: "", to: todayIso(), type: "ALL" })
+            }
           />
 
           <TableCard
@@ -338,7 +373,13 @@ export function BankrollPageClient() {
               </Empty>
             ) : isLoading ? (
               <div className="flex h-44 items-center justify-center">
-                <ProgressBar value={0} max={100} tone="accent" showValue={false} className="w-24" />
+                <ProgressBar
+                  value={0}
+                  max={100}
+                  tone="accent"
+                  showValue={false}
+                  className="w-24"
+                />
               </div>
             ) : (
               <BankrollTrendChart points={trendPoints} />
@@ -364,15 +405,20 @@ export function BankrollPageClient() {
                 </Empty>
               }
               mobileCard={(row) => (
-                <div className="space-y-3 px-4 py-4">
+                <div className="flex flex-col gap-3 px-4 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{row.detailLabel}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {row.detailLabel}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDateShort(row.createdAt)} · {transactionTypeLabel(row.type)}
+                        {formatDateShort(row.createdAt)} ·{" "}
+                        {transactionTypeLabel(row.type)}
                       </p>
                     </div>
-                    <p className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}>
+                    <p
+                      className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
+                    >
                       {formatSignedUnitsValue(parseAmount(row.amount))}
                     </p>
                   </div>

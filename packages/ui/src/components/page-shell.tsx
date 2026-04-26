@@ -84,7 +84,9 @@ export function PageShell({
                         <span
                           className={cn(
                             "size-2 rounded-full transition-colors",
-                            item.active ? "bg-sidebar-primary" : "bg-sidebar-foreground/25",
+                            item.active
+                              ? "bg-sidebar-primary"
+                              : "bg-sidebar-foreground/25",
                           )}
                         />
                         <span>{item.label}</span>

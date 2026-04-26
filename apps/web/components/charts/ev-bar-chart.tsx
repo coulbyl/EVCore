@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Bar,
@@ -8,23 +8,23 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
 
 type BarDef = {
-  key: string
-  color: string
-  label: string
-}
+  key: string;
+  color: string;
+  label: string;
+};
 
 type EvBarChartProps = {
-  data: Record<string, unknown>[]
-  xKey: string
-  bars: BarDef[]
-  height?: number
-  layout?: "vertical" | "horizontal"
-  formatY?: (value: number) => string
-  className?: string
-}
+  data: Record<string, unknown>[];
+  xKey: string;
+  bars: BarDef[];
+  height?: number;
+  layout?: "vertical" | "horizontal";
+  formatY?: (value: number) => string;
+  className?: string;
+};
 
 function EvBarChart({
   data,
@@ -54,13 +54,21 @@ function EvBarChart({
             <>
               <XAxis
                 dataKey={xKey}
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+                tick={{
+                  fontSize: 10,
+                  fill: "var(--muted-foreground)",
+                  fontFamily: "inherit",
+                }}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+                tick={{
+                  fontSize: 10,
+                  fill: "var(--muted-foreground)",
+                  fontFamily: "inherit",
+                }}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -72,7 +80,11 @@ function EvBarChart({
             <>
               <XAxis
                 type="number"
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+                tick={{
+                  fontSize: 10,
+                  fill: "var(--muted-foreground)",
+                  fontFamily: "inherit",
+                }}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -81,7 +93,11 @@ function EvBarChart({
               <YAxis
                 dataKey={xKey}
                 type="category"
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontFamily: "inherit" }}
+                tick={{
+                  fontSize: 10,
+                  fill: "var(--muted-foreground)",
+                  fontFamily: "inherit",
+                }}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -112,7 +128,7 @@ function EvBarChart({
         </BarChart>
       </ResponsiveContainer>
     </div>
-  )
+  );
 }
 
-export { EvBarChart }
+export { EvBarChart };

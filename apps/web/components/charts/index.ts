@@ -1,2 +1,2 @@
-export { EvAreaChart } from "./ev-area-chart"
-export { EvBarChart } from "./ev-bar-chart"
+export { EvAreaChart } from "./ev-area-chart";
+export { EvBarChart } from "./ev-bar-chart";

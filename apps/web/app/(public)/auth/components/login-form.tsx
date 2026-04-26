@@ -30,28 +30,28 @@ export function LoginForm() {
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       ) : null}
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+        <span className="mb-1.5 block text-sm font-medium text-foreground">
           Email ou username
         </span>
         <Input
           required
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          className="h-11 rounded-lg border-border bg-white text-sm text-slate-900"
+          className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
           placeholder="amine ou amine@evcore.app"
         />
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">
+        <span className="mb-1.5 block text-sm font-medium text-foreground">
           Mot de passe
         </span>
         <Input
@@ -60,7 +60,7 @@ export function LoginForm() {
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="h-11 rounded-lg border-border bg-white text-sm text-slate-900"
+          className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
           placeholder="••••••••"
         />
       </label>
@@ -73,7 +73,7 @@ export function LoginForm() {
         {isSubmitting ? "Connexion..." : "Se connecter"}
       </Button>
 
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted-foreground">
         Pas encore de compte ?{" "}
         <Link href="/auth/register" className="font-medium text-accent">
           Créer un compte

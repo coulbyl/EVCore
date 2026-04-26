@@ -9,7 +9,7 @@ export function AuditOverviewSection({
   overview: AuditOverview;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <CountCard label="Matchs" value={overview.counts.fixtures} />
         <CountCard label="Analyses" value={overview.counts.modelRuns} />

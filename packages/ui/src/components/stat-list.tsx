@@ -24,8 +24,16 @@ export function StatList({
   return (
     <ul className={cn("flex flex-col gap-1.5", className)}>
       {items.map((item) => (
-        <li key={item.label} className="flex items-center justify-between gap-3">
-          <span className={cn("text-xs text-muted-foreground", item.mono && "font-mono")}>
+        <li
+          key={item.label}
+          className="flex items-center justify-between gap-3"
+        >
+          <span
+            className={cn(
+              "text-xs text-muted-foreground",
+              item.mono && "font-mono",
+            )}
+          >
             {item.label}
           </span>
           <span

@@ -36,7 +36,11 @@ export function AppearanceSection() {
             htmlFor={`theme-${value}`}
             className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-border bg-background px-3 py-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/10"
           >
-            <RadioGroupItem id={`theme-${value}`} value={value} className="sr-only" />
+            <RadioGroupItem
+              id={`theme-${value}`}
+              value={value}
+              className="sr-only"
+            />
             <Icon className="size-5 text-muted-foreground" />
             {label}
           </label>

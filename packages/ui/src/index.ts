@@ -17,6 +17,7 @@ export * from "./components/feature-card";
 export * from "./components/input";
 export * from "./components/page";
 export * from "./components/page-shell";
+export * from "./components/pagination";
 export * from "./components/progress-bar";
 export * from "./components/stat-list";
 export * from "./components/popover";

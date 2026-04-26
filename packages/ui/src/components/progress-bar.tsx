@@ -18,7 +18,10 @@ const textToneClasses = {
 
 type ProgressBarTone = keyof typeof toneClasses;
 
-function resolveTone(pct: number, thresholds?: { success: number; warning: number }): ProgressBarTone {
+function resolveTone(
+  pct: number,
+  thresholds?: { success: number; warning: number },
+): ProgressBarTone {
   if (!thresholds) return "accent";
   if (pct >= thresholds.success) return "success";
   if (pct >= thresholds.warning) return "warning";
@@ -48,13 +51,21 @@ export function ProgressBar({
   return (
     <div className={cn("flex items-center gap-2", className)}>
       {showValue && (
-        <span className={cn("min-w-[2.5rem] text-right tabular-nums text-xs font-semibold", textToneClasses[resolved])}>
+        <span
+          className={cn(
+            "min-w-[2.5rem] text-right tabular-nums text-xs font-semibold",
+            textToneClasses[resolved],
+          )}
+        >
           {pct}%
         </span>
       )}
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
         <div
-          className={cn("h-full rounded-full transition-all", toneClasses[resolved])}
+          className={cn(
+            "h-full rounded-full transition-all",
+            toneClasses[resolved],
+          )}
           style={{ width: `${pct}%` }}
         />
       </div>

@@ -9,8 +9,12 @@ const COLUMNS: ColumnDef<AuditLeagueRow>[] = [
     header: "Ligue",
     cell: ({ row }) => (
       <span>
-        <span className="font-mono text-[0.7rem] text-muted-foreground">{row.original.code}</span>
-        <span className="ml-2 text-sm text-muted-foreground">{row.original.name}</span>
+        <span className="font-mono text-[0.7rem] text-muted-foreground">
+          {row.original.code}
+        </span>
+        <span className="ml-2 text-sm text-muted-foreground">
+          {row.original.name}
+        </span>
       </span>
     ),
   },
@@ -63,10 +67,12 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
       columns={COLUMNS}
       data={rows}
       mobileCard={(row) => (
-        <div className="space-y-3 p-4">
+        <div className="flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[0.7rem] text-muted-foreground">{row.code}</span>
+              <span className="font-mono text-[0.7rem] text-muted-foreground">
+                {row.code}
+              </span>
               <span className="text-sm text-foreground">{row.name}</span>
             </div>
             <Badge variant={row.isActive ? "success" : "neutral"}>
@@ -82,8 +88,13 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
                 ["Stats", formatCompactValue(row.teamStats)],
               ] as const
             ).map(([label, val]) => (
-              <div key={label} className="rounded-lg border border-border bg-secondary px-3 py-2">
-                <p className="text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+              <div
+                key={label}
+                className="rounded-lg border border-border bg-secondary px-3 py-2"
+              >
+                <p className="text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  {label}
+                </p>
                 <p className="mt-0.5 font-semibold text-foreground">{val}</p>
               </div>
             ))}

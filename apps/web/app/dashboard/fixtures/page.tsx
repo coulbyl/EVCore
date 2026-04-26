@@ -37,9 +37,9 @@ async function FixturesContent({
     return <FixturesTable rows={rows} total={total} isAdmin={isAdmin} />;
   } catch {
     return (
-      <div className="rounded-[1.3rem] border border-rose-200 bg-rose-50 p-6 text-center">
-        <p className="font-semibold text-rose-700">Backend indisponible</p>
-        <p className="mt-1 text-sm text-rose-500">
+      <div className="rounded-[1.3rem] border border-destructive/20 bg-destructive/10 p-6 text-center">
+        <p className="font-semibold text-destructive">Backend indisponible</p>
+        <p className="mt-1 text-sm text-danger">
           Vérifiez que le serveur est démarré.
         </p>
       </div>
@@ -68,7 +68,7 @@ export default async function FixturesPage({
           <div className="min-h-0 flex-1">
             <Suspense
               fallback={
-                <div className="py-16 text-center text-sm text-slate-400">
+                <div className="py-16 text-center text-sm text-muted-foreground">
                   Chargement des matchs...
                 </div>
               }

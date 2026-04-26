@@ -7,11 +7,13 @@ export const locales: Locale[] = ["fr", "en"];
 
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
-  const locale = (cookieStore.get("NEXT_LOCALE")?.value ?? defaultLocale) as Locale;
+  const locale = (cookieStore.get("NEXT_LOCALE")?.value ??
+    defaultLocale) as Locale;
   const validLocale = locales.includes(locale) ? locale : defaultLocale;
 
   return {
     locale: validLocale,
-    messages: (await import(`./messages/${validLocale}.json`)).default as Record<string, string>,
+    messages: (await import(`./messages/${validLocale}.json`))
+      .default as Record<string, string>,
   };
 });

@@ -40,7 +40,9 @@ export function PipelineStatus({ workers }: { workers: WorkerStatus[] }) {
             <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               Dernière exécution {worker.lastRun}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">{worker.detail}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {worker.detail}
+            </p>
           </div>
         ))}
       </div>
