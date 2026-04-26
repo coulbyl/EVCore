@@ -19,7 +19,8 @@ import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
 import { formatSignedUnitsValue, formatUnitsValue } from "@/helpers/number";
-import { TableCard } from "@/components/table-card";
+import { TableCard } from "@evcore/ui";
+import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
 const TYPE_OPTIONS: Array<{
@@ -139,106 +140,56 @@ function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
 function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
   if (points.length === 0) {
     return (
-      <div className="flex h-65 items-center justify-center bg-white">
-        <p className="text-sm text-slate-400">
+      <div className="flex h-44 items-center justify-center bg-panel-strong">
+        <p className="text-sm text-muted-foreground">
           Pas assez de données pour afficher la courbe.
         </p>
       </div>
     );
   }
 
-  const width = 100;
-  const height = 100;
-  const minY = Math.min(...points.map((point) => point.balance));
-  const maxY = Math.max(...points.map((point) => point.balance));
-  const range = maxY - minY || 1;
-
-  const coordinates = points.map((point, index) => {
-    const x = points.length === 1 ? 50 : (index / (points.length - 1)) * width;
-    const y = height - ((point.balance - minY) / range) * height;
-    return { x, y, point };
-  });
-
-  const line = coordinates.map(({ x, y }) => `${x},${y}`).join(" ");
-  const area = `0,100 ${line} 100,100`;
+  const minY = Math.min(...points.map((p) => p.balance));
+  const maxY = Math.max(...points.map((p) => p.balance));
 
   return (
-    <div className="bg-white p-4 sm:p-5">
+    <div className="bg-panel-strong p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Évolution récente
           </p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatUnitsValue(points[points.length - 1]?.balance ?? 0)} u
           </p>
         </div>
-        <div className="text-right text-xs text-slate-500">
+        <div className="text-right text-xs text-muted-foreground">
           <p>{points[0]?.label}</p>
           <p className="mt-1">{points[points.length - 1]?.label}</p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <svg
-          viewBox="0 0 100 100"
-          className="h-45 w-full overflow-visible"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="bankroll-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(37 99 235 / 0.26)" />
-              <stop offset="100%" stopColor="rgb(37 99 235 / 0.03)" />
-            </linearGradient>
-          </defs>
+      <EvAreaChart
+        data={points}
+        xKey="label"
+        yKey="balance"
+        color="#2563eb"
+        height={140}
+        className="mt-4"
+        formatY={(v) => `${formatUnitsValue(v)}u`}
+      />
 
-          <line x1="0" y1="100" x2="100" y2="100" stroke="#e2e8f0" />
-          <line x1="0" y1="0" x2="0" y2="100" stroke="#e2e8f0" />
-          <polygon points={area} fill="url(#bankroll-area)" />
-          <polyline
-            points={line}
-            fill="none"
-            stroke="#2563eb"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-
-          {coordinates.map(({ x, y, point }) => (
-            <g key={`${point.day}-${point.balance}`}>
-              <circle
-                cx={x}
-                cy={y}
-                r="2"
-                fill="#2563eb"
-                vectorEffect="non-scaling-stroke"
-              />
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="mt-3 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">Plus bas</p>
-          <p className="mt-1 font-semibold text-slate-800">
-            {formatUnitsValue(minY)} u
-          </p>
+      <div className="mt-3 grid gap-3 text-xs text-muted-foreground sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+          <p className="uppercase tracking-[0.14em] text-muted-foreground">Plus bas</p>
+          <p className="mt-1 font-semibold text-foreground">{formatUnitsValue(minY)} u</p>
         </div>
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">
-            Plus haut
-          </p>
-          <p className="mt-1 font-semibold text-slate-800">
-            {formatUnitsValue(maxY)} u
-          </p>
+        <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+          <p className="uppercase tracking-[0.14em] text-muted-foreground">Plus haut</p>
+          <p className="mt-1 font-semibold text-foreground">{formatUnitsValue(maxY)} u</p>
         </div>
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">
-            Jours affichés
-          </p>
-          <p className="mt-1 font-semibold text-slate-800">{points.length}</p>
+        <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+          <p className="uppercase tracking-[0.14em] text-muted-foreground">Jours affichés</p>
+          <p className="mt-1 font-semibold text-foreground">{points.length}</p>
         </div>
       </div>
     </div>

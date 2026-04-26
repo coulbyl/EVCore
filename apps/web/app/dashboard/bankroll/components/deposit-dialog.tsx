@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
   EvButton,
+  Input,
 } from "@evcore/ui";
 import { Loader2, Plus, Wallet, X } from "lucide-react";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
@@ -100,7 +101,7 @@ export function DepositDialog() {
                 >
                   Montant
                 </label>
-                <input
+                <Input
                   id="deposit-amount"
                   type="number"
                   min={1}
@@ -108,7 +109,7 @@ export function DepositDialog() {
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   placeholder="50000"
-                  className="h-11 w-full rounded-xl border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="h-11 rounded-xl border-border bg-slate-50 text-sm font-semibold text-slate-900"
                 />
                 {amountIsInvalid ? (
                   <p className="text-xs text-rose-600">
@@ -124,13 +125,13 @@ export function DepositDialog() {
                 >
                   Note
                 </label>
-                <input
+                <Input
                   id="deposit-note"
                   type="text"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   placeholder="Dépôt initial"
-                  className="h-11 w-full rounded-xl border border-border bg-slate-50 px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                  className="h-11 rounded-xl border-border bg-slate-50 text-sm text-slate-900"
                 />
               </div>
             </div>

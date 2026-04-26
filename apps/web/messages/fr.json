@@ -1,0 +1,60 @@
+{
+  "common": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue",
+    "empty": "Aucune donnée",
+    "reset": "Réinitialiser",
+    "apply": "Appliquer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "seeAll": "Voir tout"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "fixtures": "Fixtures",
+    "bankroll": "Bankroll",
+    "betSlips": "Coupons",
+    "audit": "Audit",
+    "settings": "Paramètres"
+  },
+  "filters": {
+    "label": "Filtres",
+    "resetAll": "Tout réinitialiser",
+    "apply": "Appliquer"
+  },
+  "table": {
+    "empty": "Aucune donnée.",
+    "noResults": "Aucun résultat pour ces filtres."
+  },
+  "theme": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "locale": {
+    "fr": "Français",
+    "en": "English"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "logout": "Se déconnecter",
+    "emailOrUsername": "Email ou username",
+    "password": "Mot de passe",
+    "noAccount": "Pas encore de compte ?",
+    "alreadyAccount": "Déjà un compte ?"
+  },
+  "account": {
+    "title": "Paramètres opérateur",
+    "appearance": "Apparence",
+    "language": "Langue",
+    "notifications": "Notifications",
+    "account": "Compte",
+    "bankroll": "Bankroll",
+    "theme": "Thème",
+    "savePreferences": "Enregistrer les préférences"
+  }
+}

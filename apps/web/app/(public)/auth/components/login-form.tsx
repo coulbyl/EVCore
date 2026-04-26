@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EvButton } from "@evcore/ui";
+import { EvButton, Input } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
 
 export function LoginForm() {
@@ -41,11 +41,11 @@ export function LoginForm() {
         <span className="mb-1.5 block text-sm font-medium text-slate-700">
           Email ou username
         </span>
-        <input
+        <Input
           required
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-accent"
+          className="h-11 rounded-lg border-border bg-white text-sm text-slate-900"
           placeholder="amine ou amine@evcore.app"
         />
       </label>
@@ -54,13 +54,13 @@ export function LoginForm() {
         <span className="mb-1.5 block text-sm font-medium text-slate-700">
           Mot de passe
         </span>
-        <input
+        <Input
           required
           type="password"
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-accent"
+          className="h-11 rounded-lg border-border bg-white text-sm text-slate-900"
           placeholder="••••••••"
         />
       </label>

@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
   EvButton,
+  Input,
 } from "@evcore/ui";
 import { declareFixtureResult } from "@/domains/dashboard/use-cases/declare-fixture-result";
 
@@ -34,13 +35,13 @@ function ScoreInput({
       >
         {label}
       </label>
-      <input
+      <Input
         id={id}
         type="number"
         min={0}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-border bg-slate-50 px-3 py-2 text-center text-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/40"
+        className="rounded-xl border-border bg-slate-50 py-2 text-center text-lg font-semibold text-slate-900"
       />
     </div>
   );
