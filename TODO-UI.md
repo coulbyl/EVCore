@@ -54,8 +54,10 @@ Objectif : garder toute l'ambition de P0, mais l'exécuter dans un ordre qui év
 - [x] Migration charts bankroll (`BankrollTrendChart` SVG → `EvAreaChart`)
 - [x] Migration filtres fixtures (`fixtures-filters.tsx` → `FilterBar`)
 - [x] Migration table fixtures (`fixtures-table.tsx` → `DataTable`)
-- [ ] Migration filtres bankroll/bet-slips
-- [ ] Migration tables diagnostic/audit
+- [x] Migration filtres bankroll → `FilterBar`, table transactions → `DataTable`
+- [x] Migration filtres bet-slips → `FilterBar`, résumé période → `StatCard compact ×3`
+- [x] Migration audit : `bets-breakdown` → `TableCard + StatList`, `league-breakdown` → `DataTable + ProgressBar`
+- [ ] Migration `fixture-diagnostics.tsx` → `DataTable`
 - [x] Construction de `/dashboard/params/account` (Apparence, Langue, placeholders Notifications/Bankroll)
 
 **Definition of done de P0 :**
@@ -92,10 +94,17 @@ shadcn/ui copie les composants directement dans la codebase (pas de dépendance 
 - [x] `Sheet`
 - [x] `Calendar` + `DatePicker` / `DateRangePicker` (composite manuel sur shadcn Calendar)
 
+**Nouveaux composants génériques ajoutés :**
+
+- [x] `ProgressBar` — valeur/max, tons auto via `thresholds` (success/warning/danger)
+- [x] `StatList` — liste clé/valeur avec tons (positive/negative/warning/neutral)
+- [x] `StatCard` étendu — prop `icon`, couleurs hardcodées → tokens sémantiques
+- [x] `TableCard` — `subtitle` rendu optionnel
+
 **Re-exporté proprement :**
 
-- [x] `packages/ui/src/index.ts` exporte tous les composants (24 exports)
-- [x] Composants existants harmonisés avec les tokens (pas de couleurs hardcodées dans les primitifs)
+- [x] `packages/ui/src/index.ts` exporte tous les composants (26 exports)
+- [x] Règle appliquée : zéro classe de design hors de `@evcore/ui` dans les pages et features
 
 ---
 
@@ -156,8 +165,8 @@ Aujourd'hui chaque page réinvente ses filtres (`fixtures-filters.tsx`, date pic
 **Migration :**
 
 - [x] `fixtures-filters.tsx` → `FilterBar`
-- [ ] Date pickers inline de `bankroll-page-client.tsx` → `FilterDateRange`
-- [ ] Filtre date/type de `bet-slips` → `FilterBar`
+- [x] `bankroll-page-client.tsx` → `FilterBar` (from/to/type)
+- [x] `bet-slip-list-page-client.tsx` → `FilterBar` (type/from/to)
 
 ---
 
@@ -184,8 +193,9 @@ Les tables actuelles sont du CSS custom avec sticky columns gérées manuellemen
 **Migration :**
 
 - [x] `fixtures-table.tsx` → `DataTable`
+- [x] `league-breakdown.tsx` → `DataTable(mobileCard)` + `ProgressBar`
+- [x] `bets-breakdown.tsx` → `TableCard + StatList` (panneaux stats, pas de table)
 - [ ] `fixture-diagnostics.tsx` → `DataTable`
-- [ ] `bets-breakdown.tsx`, `league-breakdown.tsx` → `DataTable`
 
 ---
 
