@@ -71,8 +71,8 @@ catalog:
   # ETL & async
   "@nestjs/bullmq": "^11.0.4"
   "@nestjs/config": "^4.0.3"
-  bullmq: "^5.70.1"
-  ioredis: "^5.9.3"
+  bullmq: "^5.76.2"
+  ioredis: "^5.10.1"
   cheerio: "^1.2.0"
   zod: "^4.3.6"
   pino: "^10.3.1"
