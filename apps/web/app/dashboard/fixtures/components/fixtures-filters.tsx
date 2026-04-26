@@ -4,7 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { TIME_SLOTS } from "@/constants/time-slots";
 import { COMPETITIONS } from "@/constants/competitions";
-import { Button } from "@evcore/ui";
+import { EvButton } from "@evcore/ui";
 import {
   BET_STATUS_OPTIONS,
   DECISION_OPTIONS,
@@ -172,12 +172,12 @@ export function FixturesFilters({ filters }: Props) {
           </select>
         </label>
 
-        <Button
+        <EvButton
           type="submit"
           className="col-span-2 mt-1 h-11 w-full rounded-xl"
         >
           {isPending ? "Filtrage..." : "Filtrer"}
-        </Button>
+        </EvButton>
       </div>
 
       {/* Desktop : une ligne */}
@@ -293,9 +293,9 @@ export function FixturesFilters({ filters }: Props) {
         </label>
 
         <div className="flex items-end">
-          <Button type="submit" className="h-11 w-full rounded-xl lg:w-auto">
+          <EvButton type="submit" className="h-11 w-full rounded-xl lg:w-auto">
             {isPending ? "Filtrage..." : "Filtrer"}
-          </Button>
+          </EvButton>
         </div>
       </div>
     </form>

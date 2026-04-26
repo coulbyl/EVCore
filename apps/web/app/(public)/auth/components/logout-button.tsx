@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
-import { Button } from "@evcore/ui";
+import { EvButton } from "@evcore/ui";
 import { logout } from "@/domains/auth/use-cases/logout";
 
 export function LogoutButton({
@@ -28,7 +28,7 @@ export function LogoutButton({
   }
 
   return (
-    <Button
+    <EvButton
       type="button"
       tone={tone}
       className={className}
@@ -37,6 +37,6 @@ export function LogoutButton({
     >
       <LogOut size={16} />
       {isSubmitting ? "Déconnexion..." : "Déconnexion"}
-    </Button>
+    </EvButton>
   );
 }

@@ -1,54 +1,61 @@
 "use client";
 
+import * as React from "react";
+import { Slot } from "radix-ui";
 import { cva, type VariantProps } from "class-variance-authority";
-import { type ButtonHTMLAttributes, type ReactNode } from "react";
-import { cn } from "../utils/cn";
+
+import { cn } from "@evcore/ui/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl border font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
-      tone: {
-        primary: "border-accent bg-accent text-white hover:bg-[#246dc9]",
-        secondary: "border-border bg-white text-slate-700 hover:bg-slate-50",
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:opacity-95 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-xs hover:opacity-95 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        outline:
+          "border border-border bg-background text-foreground shadow-xs hover:bg-secondary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:opacity-95 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
         ghost:
-          "border-transparent bg-transparent text-slate-600 hover:bg-slate-100",
+          "text-foreground hover:bg-secondary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        xs: "px-2 py-1 text-xs",
-        sm: "px-4 py-2 text-sm",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-6",
+        icon: "size-9",
       },
     },
     defaultVariants: {
-      tone: "primary",
-      size: "sm",
+      variant: "default",
+      size: "default",
     },
   },
 );
 
-interface ButtonProps
-  extends
-    ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  children: ReactNode;
-  className?: string;
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot.Root : "button";
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
 }
 
-export const Button = ({
-  children,
-  className,
-  tone,
-  size,
-  type = "button",
-  ...props
-}: ButtonProps) => {
-  return (
-    <button
-      className={cn(buttonVariants({ tone, size }), className)}
-      type={type}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
+export { Button, buttonVariants };

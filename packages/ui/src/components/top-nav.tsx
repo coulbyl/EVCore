@@ -1,4 +1,4 @@
-import { Button } from "./button";
+import { EvButton } from "./ev-button";
 
 export function TopNav({
   title,
@@ -35,7 +35,7 @@ export function TopNav({
           <span>{dateLabel}</span>
           <span className="text-slate-300">|</span>
           <span className="font-medium text-slate-700">{statusLabel}</span>
-          <Button tone="secondary">Refresh</Button>
+          <EvButton tone="secondary">Refresh</EvButton>
         </div>
       </div>
     </header>

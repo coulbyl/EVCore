@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, EmptyState, Page, PageContent } from "@evcore/ui";
+import { EvButton, EvEmptyState, Page, PageContent } from "@evcore/ui";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -390,14 +390,14 @@ export function BankrollPageClient() {
 
           <section className="rounded-[1.6rem] border border-border bg-white p-3 sm:p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Button
+              <EvButton
                 tone={isFiltersOpen ? "primary" : "secondary"}
                 className="gap-2"
                 onClick={() => setIsFiltersOpen((value) => !value)}
               >
                 <SlidersHorizontal size={14} />
                 {isFiltersOpen ? "Fermer" : "Filtrer"}
-              </Button>
+              </EvButton>
 
               {from ? (
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
@@ -463,7 +463,7 @@ export function BankrollPageClient() {
                 </select>
 
                 <div className="flex gap-2 xl:justify-end">
-                  <Button
+                  <EvButton
                     tone="secondary"
                     onClick={() => {
                       const resetTo = todayIso();
@@ -476,8 +476,8 @@ export function BankrollPageClient() {
                     }}
                   >
                     Réinitialiser
-                  </Button>
-                  <Button
+                  </EvButton>
+                  <EvButton
                     onClick={() => {
                       setFrom(draftFrom);
                       setTo(draftTo);
@@ -486,7 +486,7 @@ export function BankrollPageClient() {
                     }}
                   >
                     Appliquer
-                  </Button>
+                  </EvButton>
                 </div>
               </div>
             ) : null}
@@ -535,7 +535,7 @@ export function BankrollPageClient() {
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="bg-white p-3">
-                <EmptyState
+                <EvEmptyState
                   title="Aucune transaction"
                   description="Aucune transaction ne correspond aux filtres courants."
                 />

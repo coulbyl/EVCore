@@ -1,4 +1,4 @@
-import { Badge, Page, PageContent } from "@evcore/ui";
+import { EvBadge, Page, PageContent } from "@evcore/ui";
 
 export default function AccountSettingsPage() {
   return (
@@ -19,7 +19,7 @@ export default function AccountSettingsPage() {
                   applicatives.
                 </p>
               </div>
-              <Badge tone="neutral">Placeholder</Badge>
+              <EvBadge tone="neutral">Placeholder</EvBadge>
             </div>
           </section>
 

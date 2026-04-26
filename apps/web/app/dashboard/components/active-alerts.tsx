@@ -1,4 +1,4 @@
-import { Badge } from "@evcore/ui";
+import { EvBadge } from "@evcore/ui";
 import type { AlertItem } from "@/domains/dashboard/types/dashboard";
 
 export function ActiveAlerts({ alerts }: { alerts: AlertItem[] }) {
@@ -13,7 +13,7 @@ export function ActiveAlerts({ alerts }: { alerts: AlertItem[] }) {
             Points d&apos;attention
           </h2>
         </div>
-        <Badge tone="danger">{alerts.length} ouvertes</Badge>
+        <EvBadge tone="danger">{alerts.length} ouvertes</EvBadge>
       </div>
       <div className="mt-4 space-y-3">
         {alerts.map((alert) => (
@@ -23,7 +23,7 @@ export function ActiveAlerts({ alerts }: { alerts: AlertItem[] }) {
           >
             <div className="flex items-center justify-between gap-3">
               <p className="font-semibold text-slate-800">{alert.title}</p>
-              <Badge
+              <EvBadge
                 tone={
                   alert.severity === "high"
                     ? "danger"
@@ -37,7 +37,7 @@ export function ActiveAlerts({ alerts }: { alerts: AlertItem[] }) {
                   : alert.severity === "medium"
                     ? "moyenne"
                     : "faible"}
-              </Badge>
+              </EvBadge>
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {alert.detail}

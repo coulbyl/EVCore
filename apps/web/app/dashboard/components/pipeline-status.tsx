@@ -1,4 +1,4 @@
-import { Badge } from "@evcore/ui";
+import { EvBadge } from "@evcore/ui";
 import { workerStatusLabel } from "@/domains/dashboard/helpers/worker-status-label";
 import type { WorkerStatus } from "@/domains/dashboard/types/dashboard";
 
@@ -25,7 +25,7 @@ export function PipelineStatus({ workers }: { workers: WorkerStatus[] }) {
               <p className="text-sm font-semibold text-slate-800">
                 {worker.worker}
               </p>
-              <Badge
+              <EvBadge
                 tone={
                   worker.status === "healthy"
                     ? "success"
@@ -35,7 +35,7 @@ export function PipelineStatus({ workers }: { workers: WorkerStatus[] }) {
                 }
               >
                 {workerStatusLabel(worker.status)}
-              </Badge>
+              </EvBadge>
             </div>
             <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">
               Dernière exécution {worker.lastRun}

@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { Button } from "@evcore/ui";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+  EvButton,
+} from "@evcore/ui";
 import { Loader2, Plus, Wallet, X } from "lucide-react";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
 
@@ -43,7 +50,7 @@ export function DepositDialog() {
       Number.parseFloat(amount) < 1);
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
@@ -52,35 +59,36 @@ export function DepositDialog() {
         }
       }}
     >
-      <Dialog.Trigger asChild>
-        <Button className="gap-2">
+      <DialogTrigger asChild>
+        <EvButton className="gap-2">
           <Plus size={14} />
           Ajouter un dépôt
-        </Button>
-      </Dialog.Trigger>
+        </EvButton>
+      </DialogTrigger>
 
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border bg-white p-6 shadow-xl focus:outline-none">
+      <DialogContent
+        showCloseButton={false}
+        className="w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-border bg-white p-6 shadow-xl"
+      >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <Dialog.Title className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <DialogTitle className="flex items-center gap-2 text-base font-semibold text-slate-900">
                 <Wallet size={16} className="text-accent" />
                 Ajouter un dépôt
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-slate-500">
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-sm text-slate-500">
                 Ajoutez un dépôt pour mettre à jour votre solde et votre
                 historique.
-              </Dialog.Description>
+              </DialogDescription>
             </div>
-            <Dialog.Close asChild>
+            <DialogClose asChild>
               <button
                 type="button"
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               >
                 <X size={16} />
               </button>
-            </Dialog.Close>
+            </DialogClose>
           </div>
 
           <form onSubmit={(event) => void handleSubmit(event)} className="mt-5">
@@ -136,7 +144,7 @@ export function DepositDialog() {
             ) : null}
 
             <div className="mt-5 flex gap-2">
-              <Button
+              <EvButton
                 type="button"
                 tone="secondary"
                 className="flex-1"
@@ -146,8 +154,8 @@ export function DepositDialog() {
                 }}
               >
                 Annuler
-              </Button>
-              <Button
+              </EvButton>
+              <EvButton
                 type="submit"
                 className="flex-1 gap-2"
                 disabled={
@@ -164,11 +172,10 @@ export function DepositDialog() {
                 ) : (
                   "Confirmer"
                 )}
-              </Button>
+              </EvButton>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

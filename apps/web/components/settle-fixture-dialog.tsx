@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import { CheckCircle, ClipboardCheck, Loader2, X } from "lucide-react";
-import { Button } from "@evcore/ui";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+  EvButton,
+} from "@evcore/ui";
 import { declareFixtureResult } from "@/domains/dashboard/use-cases/declare-fixture-result";
 
 type State = "idle" | "loading" | "success" | "error";
@@ -92,44 +99,45 @@ export function SettleFixtureDialog({
   }
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
         if (!v) reset();
       }}
     >
-      <Dialog.Trigger asChild>
-        <Button
+      <DialogTrigger asChild>
+        <EvButton
           tone="secondary"
           size={triggerSize}
           className="gap-1.5 text-xs!"
         >
           <ClipboardCheck size={triggerSize === "xs" ? 10 : 13} />
           Déclarer résultat
-        </Button>
-      </Dialog.Trigger>
+        </EvButton>
+      </DialogTrigger>
 
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[1.6rem] border border-border bg-white p-6 shadow-xl focus:outline-none">
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-sm rounded-[1.6rem] border border-border bg-white p-6 shadow-xl"
+      >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Dialog.Title className="text-base font-semibold text-slate-900">
+              <DialogTitle className="text-base font-semibold text-slate-900">
                 Déclarer un résultat
-              </Dialog.Title>
-              <Dialog.Description className="mt-0.5 text-xs text-slate-500">
+              </DialogTitle>
+              <DialogDescription className="mt-0.5 text-xs text-slate-500">
                 {fixtureName}
-              </Dialog.Description>
+              </DialogDescription>
             </div>
-            <Dialog.Close asChild>
+            <DialogClose asChild>
               <button
                 type="button"
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               >
                 <X size={16} />
               </button>
-            </Dialog.Close>
+            </DialogClose>
           </div>
 
           {state === "success" ? (
@@ -210,8 +218,7 @@ export function SettleFixtureDialog({
               </button>
             </form>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </DialogContent>
+    </Dialog>
   );
 }

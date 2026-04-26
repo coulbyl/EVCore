@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { Badge, Page, PageContent } from "@evcore/ui";
+import { EvBadge, Page, PageContent } from "@evcore/ui";
 import { useAuditOverview } from "@/domains/audit/use-cases/get-audit-overview";
 import { AuditOverviewSection } from "./components/audit-overview-section";
 
@@ -22,14 +22,14 @@ function AuditPageContent() {
               </h2>
             </div>
             {overview && (
-              <Badge tone="neutral">
+              <EvBadge tone="neutral">
                 {new Date(overview.generatedAt).toLocaleTimeString("fr-FR", {
                   hour: "2-digit",
                   minute: "2-digit",
                   timeZone: "UTC",
                 })}{" "}
                 UTC
-              </Badge>
+              </EvBadge>
             )}
           </div>
           <div className="mt-4">

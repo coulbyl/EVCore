@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
-import { Badge, EmptyState, Page, PageContent } from "@evcore/ui";
+import { EvBadge, EvEmptyState, Page, PageContent } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -132,10 +132,10 @@ function BetSlipCard({
             #{betSlip.id.slice(0, 8)}
           </h2>
         </div>
-        <Badge tone="accent">
+        <EvBadge tone="accent">
           {betSlip.type === "COMBO" ? "Combiné" : "Simples"} ·{" "}
           {betSlip.itemCount} sélection{betSlip.itemCount > 1 ? "s" : ""}
-        </Badge>
+        </EvBadge>
       </div>
 
       <div className="mt-3 space-y-1.5 text-sm">
@@ -176,9 +176,9 @@ function BetSlipCard({
         )}
         <div className="flex items-center justify-between gap-3">
           <span className="text-slate-500">Statut</span>
-          <Badge tone={summary.statusTone} className="py-0.5 text-[0.62rem]">
+          <EvBadge tone={summary.statusTone} className="py-0.5 text-[0.62rem]">
             {status}
-          </Badge>
+          </EvBadge>
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center justify-between gap-3">
@@ -325,7 +325,7 @@ export function BetSlipListPageClient() {
 
   const items =
     filteredBetSlips.length === 0 ? (
-      <EmptyState
+      <EvEmptyState
         title="Aucun coupon"
         description="Aucun coupon ne correspond à cette période et à ce filtre."
       />

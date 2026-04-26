@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { Badge } from "@evcore/ui";
+import { EvBadge } from "@evcore/ui";
 import {
   formatMarketForDisplay,
   formatCombinedPickForDisplay,
@@ -157,9 +157,9 @@ function BetItem({
               )}
             </span>
             {slipType === "SIMPLE" && item.stakeOverride ? (
-              <Badge tone="warning" className="py-0 text-[0.65rem]">
+              <EvBadge tone="warning" className="py-0 text-[0.65rem]">
                 Perso {formatAmount(item.stakeOverride)}
-              </Badge>
+              </EvBadge>
             ) : null}
           </div>
           <div className="shrink-0 text-right">
@@ -251,10 +251,10 @@ export function BetSlipDetailPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone={statusTone}>{status}</Badge>
-          <Badge tone="accent">
+          <EvBadge tone={statusTone}>{status}</EvBadge>
+          <EvBadge tone="accent">
             {data.itemCount} sélection{data.itemCount > 1 ? "s" : ""}
-          </Badge>
+          </EvBadge>
           <button
             type="button"
             onClick={onClose}

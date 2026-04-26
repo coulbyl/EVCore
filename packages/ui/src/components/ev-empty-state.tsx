@@ -1,6 +1,6 @@
-import { Badge } from "./badge";
+import { EvBadge } from "./ev-badge";
 
-export function EmptyState({
+export function EvEmptyState({
   title,
   description,
 }: {
@@ -9,7 +9,7 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-3xl border border-dashed border-border bg-panel/70 p-8 text-center">
-      <Badge tone="accent">Setup</Badge>
+      <EvBadge tone="accent">Setup</EvBadge>
       <h3 className="mt-4 text-lg font-semibold text-slate-800">{title}</h3>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
         {description}
