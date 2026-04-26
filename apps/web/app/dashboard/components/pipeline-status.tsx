@@ -7,10 +7,10 @@ export function PipelineStatus({ workers }: { workers: WorkerStatus[] }) {
     <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             État du pipeline
           </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
+          <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
             ETL et scoring
           </h2>
         </div>
@@ -19,28 +19,30 @@ export function PipelineStatus({ workers }: { workers: WorkerStatus[] }) {
         {workers.map((worker) => (
           <div
             key={worker.worker}
-            className="rounded-2xl border border-border bg-slate-50 px-4 py-3"
+            className="rounded-2xl border border-border bg-panel px-4 py-3"
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-foreground">
                 {worker.worker}
               </p>
               <Badge
-                tone={
+                variant={
                   worker.status === "healthy"
                     ? "success"
                     : worker.status === "watch"
                       ? "warning"
-                      : "danger"
+                      : "destructive"
                 }
               >
                 {workerStatusLabel(worker.status)}
               </Badge>
             </div>
-            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">
+            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               Dernière exécution {worker.lastRun}
             </p>
-            <p className="mt-2 text-sm text-slate-600">{worker.detail}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {worker.detail}
+            </p>
           </div>
         ))}
       </div>

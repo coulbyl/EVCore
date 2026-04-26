@@ -1,3 +1,4 @@
+/* ── Light tokens ──────────────────────────────────────────────────────── */
 :root {
   --background: #e5ebf2;
   --foreground: #162033;
@@ -6,6 +7,12 @@
   --sidebar: #142033;
   --sidebar-muted: #24344d;
   --sidebar-foreground: #f8fafc;
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--sidebar-muted);
+  --sidebar-accent-foreground: var(--sidebar-foreground);
+  --sidebar-border: rgba(248, 250, 252, 0.1);
+  --sidebar-ring: var(--ring);
   --border: rgba(24, 33, 47, 0.1);
   --muted: #64748b;
   --accent: #0f766e;
@@ -15,24 +22,122 @@
   --warning: #a16207;
   --pending: #c08b18;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+
+  --card: var(--panel-strong);
+  --card-foreground: var(--foreground);
+  --popover: var(--panel-strong);
+  --popover-foreground: var(--foreground);
+  --primary: var(--accent);
+  --primary-foreground: #ffffff;
+  --secondary: #dbe5ef;
+  --secondary-foreground: var(--foreground);
+  --muted-foreground: var(--muted);
+  --accent-foreground: #ffffff;
+  --destructive: #be123c;
+  --destructive-foreground: #ffffff;
+  --input: rgba(24, 33, 47, 0.14);
+  --ring: rgba(15, 118, 110, 0.34);
+
+  /* ── Canal identities ── */
+  --canal-ev: #d97706;
+  --canal-ev-soft: rgba(217, 119, 6, 0.11);
+  --canal-sv: #0f766e;
+  --canal-sv-soft: rgba(15, 118, 110, 0.11);
+  --canal-conf: #4f46e5;
+  --canal-conf-soft: rgba(79, 70, 229, 0.11);
+}
+
+/* ── Dark tokens ───────────────────────────────────────────────────────── */
+.dark {
+  --background: #0d1520;
+  --foreground: #e2e8f0;
+  --panel: #111e2e;
+  --panel-strong: #162033;
+  --sidebar: #0a1118;
+  --sidebar-muted: #131f2e;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: #0d1520;
+  --sidebar-accent: #182638;
+  --sidebar-accent-foreground: var(--sidebar-foreground);
+  --sidebar-border: rgba(203, 213, 225, 0.1);
+  --sidebar-ring: var(--ring);
+  --border: rgba(226, 232, 240, 0.08);
+  --muted: #64748b;
+  --accent: #14b8a6;
+  --accent-soft: rgba(20, 184, 166, 0.14);
+  --success: #22c55e;
+  --danger: #f97316;
+  --warning: #eab308;
+  --pending: #f59e0b;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+
+  --card: var(--panel-strong);
+  --card-foreground: var(--foreground);
+  --popover: var(--panel-strong);
+  --popover-foreground: var(--foreground);
+  --primary: var(--accent);
+  --primary-foreground: #0d1520;
+  --secondary: #1e2d3d;
+  --secondary-foreground: var(--foreground);
+  --muted-foreground: #8ca0b8;
+  --accent-foreground: #0d1520;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --input: rgba(226, 232, 240, 0.1);
+  --ring: rgba(20, 184, 166, 0.40);
+
+  /* ── Canal identities ── */
+  --canal-ev: #f59e0b;
+  --canal-ev-soft: rgba(245, 158, 11, 0.13);
+  --canal-sv: #14b8a6;
+  --canal-sv-soft: rgba(20, 184, 166, 0.13);
+  --canal-conf: #818cf8;
+  --canal-conf-soft: rgba(129, 140, 248, 0.13);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-panel: var(--panel);
   --color-panel-strong: var(--panel-strong);
   --color-sidebar: var(--sidebar);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-warning: var(--warning);
   --color-pending: var(--pending);
+  --color-canal-ev: var(--canal-ev);
+  --color-canal-ev-soft: var(--canal-ev-soft);
+  --color-canal-sv: var(--canal-sv);
+  --color-canal-sv-soft: var(--canal-sv-soft);
+  --color-canal-conf: var(--canal-conf);
+  --color-canal-conf-soft: var(--canal-conf-soft);
 }
 
 html,
@@ -46,12 +151,22 @@ html {
   color-scheme: light;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   color: var(--foreground);
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), rgba(236, 242, 247, 0.88) 44%, rgba(218, 226, 235, 0.92) 100%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(232, 238, 245, 0.2));
+    radial-gradient(circle at top left, rgba(32, 45, 66, 0.98), rgba(24, 36, 55, 0.96) 42%, rgba(18, 29, 46, 0.98) 100%),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(13, 21, 32, 0.18));
   overflow-y: auto;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(15, 25, 40, 0.98), rgba(11, 18, 30, 0.96) 44%, rgba(8, 14, 24, 0.98) 100%),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(13, 21, 32, 0.2));
 }
 
 @media (min-width: 1024px) {
@@ -127,8 +242,8 @@ pre {
 
 .ev-grid-glow {
   background-image:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 30%),
-    radial-gradient(circle at 20% 8%, rgba(59, 130, 246, 0.05), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(236, 242, 247, 0.2));
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 30%),
+    radial-gradient(circle at 18% 8%, rgba(36, 52, 77, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(24, 36, 55, 0.36), rgba(18, 29, 46, 0.2));
   background-size: auto;
 }

@@ -30,11 +30,12 @@ export function fixtureStatusLabel(
 
 export function fixtureStatusBadgeClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === "finished") return "border-slate-200 bg-slate-100 text-slate-500";
-  if (s === "in_progress") return "border-blue-200 bg-blue-50 text-blue-600";
+  if (s === "finished")
+    return "border-border bg-secondary text-muted-foreground";
+  if (s === "in_progress") return "border-accent/20 bg-accent-soft text-accent";
   if (s === "postponed" || s === "cancelled")
-    return "border-rose-200 bg-rose-50 text-rose-600";
-  return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-destructive/20 bg-destructive/10 text-destructive";
+  return "border-warning/20 bg-warning/12 text-warning";
 }
 
 type LocalePickFormat = "fr" | "en";

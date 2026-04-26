@@ -348,6 +348,7 @@ describe('EtlService', () => {
         season: 2023,
         competitionCode: 'J1',
         leagueId: 98,
+        syncScope: 'backfill',
       },
       { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: 0 },
     );
@@ -359,6 +360,7 @@ describe('EtlService', () => {
         season: 2024,
         competitionCode: 'J1',
         leagueId: 98,
+        syncScope: 'backfill',
       },
       {
         ...BULLMQ_DEFAULT_JOB_OPTIONS,
@@ -373,6 +375,7 @@ describe('EtlService', () => {
         season: 2025,
         competitionCode: 'J1',
         leagueId: 98,
+        syncScope: 'backfill',
       },
       {
         ...BULLMQ_DEFAULT_JOB_OPTIONS,

@@ -30,7 +30,7 @@ export function LogoutButton({
   return (
     <Button
       type="button"
-      tone={tone}
+      variant={tone === "primary" ? "default" : tone}
       className={className}
       onClick={handleLogout}
       disabled={isSubmitting}

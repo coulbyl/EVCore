@@ -14,15 +14,15 @@ function AuditPageContent() {
         <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Vue d&apos;ensemble
               </p>
-              <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
+              <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
                 Snapshot DB
               </h2>
             </div>
             {overview && (
-              <Badge tone="neutral">
+              <Badge variant="neutral">
                 {new Date(overview.generatedAt).toLocaleTimeString("fr-FR", {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -36,7 +36,7 @@ function AuditPageContent() {
             {overview ? (
               <AuditOverviewSection overview={overview} />
             ) : (
-              <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-slate-400">
+              <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                 Chargement…
               </div>
             )}

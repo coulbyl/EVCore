@@ -52,6 +52,11 @@ export class BankrollRepository {
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
+      include: {
+        bet: {
+          select: { isSafeValue: true },
+        },
+      },
     });
   }
 

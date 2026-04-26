@@ -10,7 +10,7 @@
     "./card": "./src/components/card.tsx",
     "./code": "./src/components/code.tsx",
     "./components/*": "./src/components/*.tsx",
-    "./empty-state": "./src/components/empty-state.tsx",
+    "./feature-card": "./src/components/feature-card.tsx",
     "./globals.css": "./src/styles/globals.css",
     "./styles/theme.css": "./src/styles/theme.css",
     "./lib/utils": "./src/lib/utils.ts",
@@ -40,7 +40,14 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "@tanstack/react-table": "catalog:",
+    "cmdk": "catalog:",
+    "next-themes": "catalog:",
+    "date-fns": "catalog:",
+    "lucide-react": "catalog:",
+    "radix-ui": "^1.4.3",
     "react": "catalog:",
+    "react-day-picker": "catalog:",
     "react-dom": "catalog:",
     "tailwind-merge": "^3.3.1"
   }

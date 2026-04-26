@@ -1,14 +1,23 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { Button, EmptyState, Page, PageContent } from "@evcore/ui";
+import { useMemo, useState } from "react";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  LineChart,
-  SlidersHorizontal,
-  Wallet,
-} from "lucide-react";
+  DataTable,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+  FilterBar,
+  Page,
+  PageContent,
+  ProgressBar,
+  StatCard,
+  StatList,
+  TableCard,
+} from "@evcore/ui";
+import type { FilterDef, FilterState } from "@evcore/ui";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
 import { useBankrollTransactions } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
 import type {
@@ -18,19 +27,28 @@ import type {
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
-import { formatSignedUnitsValue, formatUnitsValue } from "@/helpers/number";
-import { TableCard } from "@/components/table-card";
+import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { CanalBadge } from "@/components/canal-badge";
+import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
-const TYPE_OPTIONS: Array<{
-  value: "ALL" | BankrollTransactionType;
-  label: string;
-}> = [
+const TYPE_OPTIONS = [
   { value: "ALL", label: "Tous les types" },
   { value: "DEPOSIT", label: "Dépôt" },
   { value: "BET_PLACED", label: "Mise" },
   { value: "BET_WON", label: "Gain" },
   { value: "BET_VOID", label: "Remboursement" },
+] as const;
+
+const BANKROLL_FILTERS: FilterDef[] = [
+  { key: "from", type: "date", label: "Du" },
+  { key: "to", type: "date", label: "Au" },
+  {
+    key: "type",
+    type: "select",
+    label: "Type",
+    options: TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+  },
 ];
 
 type EnrichedTransaction = BankrollTransaction & {
@@ -43,41 +61,6 @@ type TrendPoint = {
   label: string;
   balance: number;
 };
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  tone = "text-slate-950",
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  tone?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-slate-50 px-3 py-3 sm:px-4 sm:py-4">
-      <div className="flex items-center gap-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-[0.68rem] sm:tracking-[0.18em]">
-        {icon}
-        {label}
-      </div>
-      <p
-        className={`mt-2 text-[1.05rem] font-semibold sm:mt-3 sm:text-3xl ${tone}`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function formatPercent(value: number | null) {
-  if (value === null || Number.isNaN(value)) {
-    return "--";
-  }
-
-  const prefix = value > 0 ? "+" : "";
-  return `${prefix}${value.toFixed(2)}%`;
-}
 
 function transactionTypeLabel(type: BankrollTransactionType) {
   switch (type) {
@@ -94,16 +77,18 @@ function transactionTypeLabel(type: BankrollTransactionType) {
   }
 }
 
-function transactionTone(type: BankrollTransactionType) {
+function transactionTone(
+  type: BankrollTransactionType,
+): "positive" | "negative" | "neutral" {
   switch (type) {
     case "DEPOSIT":
     case "BET_WON":
     case "BET_VOID":
-      return "text-emerald-600";
+      return "positive";
     case "BET_PLACED":
-      return "text-rose-600";
+      return "negative";
     default:
-      return "text-slate-700";
+      return "neutral";
   }
 }
 
@@ -116,12 +101,8 @@ function toIsoDay(value: string) {
 }
 
 function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
-  if (rows.length === 0) {
-    return [];
-  }
-
+  if (rows.length === 0) return [];
   const byDay = new Map<string, TrendPoint>();
-
   for (const row of [...rows].reverse()) {
     const day = toIsoDay(row.createdAt);
     byDay.set(day, {
@@ -130,133 +111,135 @@ function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
       balance: row.balanceAfter,
     });
   }
-
-  return Array.from(byDay.values()).sort((left, right) =>
-    left.day.localeCompare(right.day),
-  );
+  return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
 }
+
+function formatPercent(value: number | null) {
+  if (value === null || Number.isNaN(value)) return "--";
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
+  {
+    id: "date",
+    header: "Date",
+    accessorFn: (row) => formatDateShort(row.createdAt),
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">{getValue<string>()}</span>
+    ),
+  },
+  {
+    id: "type",
+    header: "Type",
+    accessorFn: (row) => transactionTypeLabel(row.type),
+  },
+  {
+    id: "amount",
+    header: "Montant",
+    accessorFn: (row) => parseAmount(row.amount),
+    cell: ({ row }) => {
+      const tone = transactionTone(row.original.type);
+      const cls =
+        tone === "positive"
+          ? "text-success"
+          : tone === "negative"
+            ? "text-danger"
+            : "";
+      return (
+        <div className="flex items-center justify-end gap-2">
+          {row.original.canal && <CanalBadge canal={row.original.canal} />}
+          <span className={`tabular-nums font-semibold ${cls}`}>
+            {formatSignedCurrency(parseAmount(row.original.amount))}
+          </span>
+        </div>
+      );
+    },
+    meta: { align: "right" },
+  },
+  {
+    id: "detail",
+    header: "Match / note",
+    accessorFn: (row) => row.detailLabel,
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">{getValue<string>()}</span>
+    ),
+  },
+  {
+    id: "balance",
+    header: "Solde après",
+    accessorFn: (row) => row.balanceAfter,
+    cell: ({ getValue }) => (
+      <span className="tabular-nums font-semibold">
+        {formatCurrency(getValue<number>())}
+      </span>
+    ),
+    meta: { align: "right" },
+  },
+];
 
 function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
   if (points.length === 0) {
     return (
-      <div className="flex h-65 items-center justify-center bg-white">
-        <p className="text-sm text-slate-400">
-          Pas assez de données pour afficher la courbe.
-        </p>
-      </div>
+      <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+        <EmptyHeader>
+          <EmptyTitle>Pas assez de données</EmptyTitle>
+          <EmptyDescription>
+            Effectuez des transactions pour voir la courbe d&apos;évolution.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
-  const width = 100;
-  const height = 100;
-  const minY = Math.min(...points.map((point) => point.balance));
-  const maxY = Math.max(...points.map((point) => point.balance));
-  const range = maxY - minY || 1;
-
-  const coordinates = points.map((point, index) => {
-    const x = points.length === 1 ? 50 : (index / (points.length - 1)) * width;
-    const y = height - ((point.balance - minY) / range) * height;
-    return { x, y, point };
-  });
-
-  const line = coordinates.map(({ x, y }) => `${x},${y}`).join(" ");
-  const area = `0,100 ${line} 100,100`;
+  const minY = Math.min(...points.map((p) => p.balance));
+  const maxY = Math.max(...points.map((p) => p.balance));
 
   return (
-    <div className="bg-white p-4 sm:p-5">
+    <div className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Évolution récente
           </p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">
-            {formatUnitsValue(points[points.length - 1]?.balance ?? 0)} u
+          <p className="mt-2 text-2xl font-semibold text-foreground">
+            {formatCurrency(points[points.length - 1]?.balance ?? 0, true)}
           </p>
         </div>
-        <div className="text-right text-xs text-slate-500">
+        <div className="text-right text-xs text-muted-foreground">
           <p>{points[0]?.label}</p>
           <p className="mt-1">{points[points.length - 1]?.label}</p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <svg
-          viewBox="0 0 100 100"
-          className="h-45 w-full overflow-visible"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="bankroll-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(37 99 235 / 0.26)" />
-              <stop offset="100%" stopColor="rgb(37 99 235 / 0.03)" />
-            </linearGradient>
-          </defs>
+      <EvAreaChart
+        data={points}
+        xKey="label"
+        yKey="balance"
+        color="#2563eb"
+        height={140}
+        className="mt-4"
+        formatY={(v) => formatCurrency(v, true)}
+      />
 
-          <line x1="0" y1="100" x2="100" y2="100" stroke="#e2e8f0" />
-          <line x1="0" y1="0" x2="0" y2="100" stroke="#e2e8f0" />
-          <polygon points={area} fill="url(#bankroll-area)" />
-          <polyline
-            points={line}
-            fill="none"
-            stroke="#2563eb"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-
-          {coordinates.map(({ x, y, point }) => (
-            <g key={`${point.day}-${point.balance}`}>
-              <circle
-                cx={x}
-                cy={y}
-                r="2"
-                fill="#2563eb"
-                vectorEffect="non-scaling-stroke"
-              />
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="mt-3 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">Plus bas</p>
-          <p className="mt-1 font-semibold text-slate-800">
-            {formatUnitsValue(minY)} u
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">
-            Plus haut
-          </p>
-          <p className="mt-1 font-semibold text-slate-800">
-            {formatUnitsValue(maxY)} u
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
-          <p className="uppercase tracking-[0.14em] text-slate-400">
-            Jours affichés
-          </p>
-          <p className="mt-1 font-semibold text-slate-800">{points.length}</p>
-        </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <StatList
+          items={[
+            { label: "Plus bas", value: formatCurrency(minY) },
+            { label: "Plus haut", value: formatCurrency(maxY) },
+            { label: "Jours affichés", value: String(points.length) },
+          ]}
+        />
       </div>
     </div>
   );
 }
 
 export function BankrollPageClient() {
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState(todayIso);
-  const [typeFilter, setTypeFilter] = useState<"ALL" | BankrollTransactionType>(
-    "ALL",
-  );
-  const [draftFrom, setDraftFrom] = useState("");
-  const [draftTo, setDraftTo] = useState(todayIso);
-  const [draftTypeFilter, setDraftTypeFilter] = useState<
-    "ALL" | BankrollTransactionType
-  >("ALL");
+  const [filterState, setFilterState] = useState<FilterState>({
+    from: "",
+    to: todayIso(),
+    type: "ALL",
+  });
 
   const balanceQuery = useBankrollBalance();
   const transactionsQuery = useBankrollTransactions();
@@ -266,71 +249,54 @@ export function BankrollPageClient() {
 
   const betMetadata = useMemo(() => {
     const mapping = new Map<string, { fixture: string; market: string }>();
-
     for (const betSlip of betSlipsQuery.data ?? []) {
       for (const item of betSlip.items) {
-        mapping.set(item.betId, {
-          fixture: item.fixture,
-          market: item.market,
-        });
+        mapping.set(item.betId, { fixture: item.fixture, market: item.market });
       }
     }
-
     return mapping;
   }, [betSlipsQuery.data]);
 
   const enrichedTransactions = useMemo<EnrichedTransaction[]>(() => {
     let runningBalance = currentBalance;
-
     return (transactionsQuery.data ?? []).map((transaction) => {
       const amount = parseAmount(transaction.amount);
       const metadata = transaction.betId
         ? betMetadata.get(transaction.betId)
         : undefined;
-
       const detailLabel =
         transaction.type === "DEPOSIT"
           ? transaction.note || "Dépôt"
           : metadata
             ? `${metadata.fixture} (${formatMarketForDisplay(metadata.market)})`
             : transaction.note || "Pari";
-
-      const row = {
-        ...transaction,
-        balanceAfter: runningBalance,
-        detailLabel,
-      };
-
+      const row = { ...transaction, balanceAfter: runningBalance, detailLabel };
       runningBalance -= amount;
       return row;
     });
   }, [betMetadata, currentBalance, transactionsQuery.data]);
 
   const filteredTransactions = useMemo(() => {
-    return enrichedTransactions.filter((transaction) => {
-      const day = toIsoDay(transaction.createdAt);
+    const from = (filterState.from as string) || "";
+    const to = (filterState.to as string) || "";
+    const type = (filterState.type as string) || "ALL";
 
-      if (from && day < from) {
-        return false;
-      }
-
-      if (to && day > to) {
-        return false;
-      }
-
-      if (typeFilter !== "ALL" && transaction.type !== typeFilter) {
-        return false;
-      }
-
+    return enrichedTransactions.filter((t) => {
+      const day = toIsoDay(t.createdAt);
+      if (from && day < from) return false;
+      if (to && day > to) return false;
+      if (type !== "ALL" && t.type !== type) return false;
       return true;
     });
-  }, [enrichedTransactions, from, to, typeFilter]);
+  }, [enrichedTransactions, filterState]);
 
-  const totalDeposited = useMemo(() => {
-    return enrichedTransactions
-      .filter((transaction) => transaction.type === "DEPOSIT")
-      .reduce((sum, transaction) => sum + parseAmount(transaction.amount), 0);
-  }, [enrichedTransactions]);
+  const totalDeposited = useMemo(
+    () =>
+      enrichedTransactions
+        .filter((t) => t.type === "DEPOSIT")
+        .reduce((sum, t) => sum + parseAmount(t.amount), 0),
+    [enrichedTransactions],
+  );
 
   const roi =
     totalDeposited > 0
@@ -342,11 +308,6 @@ export function BankrollPageClient() {
     [filteredTransactions],
   );
 
-  const activeFilterCount =
-    (from ? 1 : 0) +
-    (to !== todayIso() ? 1 : 0) +
-    (typeFilter !== "ALL" ? 1 : 0);
-
   const isLoading =
     balanceQuery.isLoading ||
     transactionsQuery.isLoading ||
@@ -356,270 +317,127 @@ export function BankrollPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="space-y-5">
-          <section className="rounded-[1.6rem] border border-border bg-white p-4 sm:p-6">
-            <div className="flex flex-col gap-4">
-              <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-                <KpiCard
-                  icon={<Wallet size={14} className="text-accent" />}
-                  label="Solde actuel"
-                  value={`${formatUnitsValue(currentBalance)} u`}
-                />
-                <KpiCard
-                  icon={
-                    <ArrowDownLeft size={14} className="text-emerald-600" />
-                  }
-                  label="Total déposé"
-                  value={`${formatUnitsValue(totalDeposited)} u`}
-                />
-                <KpiCard
-                  icon={<ArrowUpRight size={14} className="text-slate-700" />}
-                  label="ROI net"
-                  value={formatPercent(roi)}
-                  tone={(roi ?? 0) >= 0 ? "text-emerald-600" : "text-rose-600"}
-                />
-              </div>
-
-              <div className="flex justify-stretch sm:justify-end">
-                <div className="w-full sm:w-auto">
-                  <DepositDialog />
-                </div>
-              </div>
-            </div>
+        <div className="flex flex-col gap-5">
+          <section className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+            <StatCard
+              icon={<Wallet size={14} />}
+              label="Solde actuel"
+              value={formatCurrency(currentBalance, true)}
+              tone="accent"
+            />
+            <StatCard
+              icon={<ArrowDownLeft size={14} />}
+              label="Total déposé"
+              value={formatCurrency(totalDeposited, true)}
+              tone="neutral"
+            />
+            <StatCard
+              icon={<ArrowUpRight size={14} />}
+              label="ROI net"
+              value={formatPercent(roi)}
+              tone={(roi ?? 0) >= 0 ? "success" : "danger"}
+            />
           </section>
 
-          <section className="rounded-[1.6rem] border border-border bg-white p-3 sm:p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                tone={isFiltersOpen ? "primary" : "secondary"}
-                className="gap-2"
-                onClick={() => setIsFiltersOpen((value) => !value)}
-              >
-                <SlidersHorizontal size={14} />
-                {isFiltersOpen ? "Fermer" : "Filtrer"}
-              </Button>
-
-              {from ? (
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  Du {formatDateShort(from)}
-                </span>
-              ) : null}
-
-              {to !== todayIso() ? (
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  Au {formatDateShort(to)}
-                </span>
-              ) : null}
-
-              {typeFilter !== "ALL" ? (
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  {
-                    TYPE_OPTIONS.find((option) => option.value === typeFilter)
-                      ?.label
-                  }
-                </span>
-              ) : null}
-
-              {activeFilterCount > 0 ? (
-                <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
-                  {activeFilterCount} actif{activeFilterCount > 1 ? "s" : ""}
-                </span>
-              ) : null}
+          <div className="flex justify-stretch sm:justify-end">
+            <div className="w-full sm:w-auto">
+              <DepositDialog />
             </div>
-
-            {isFiltersOpen ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_0.9fr_auto] xl:items-center">
-                <input
-                  type="date"
-                  value={draftFrom}
-                  max={draftTo || undefined}
-                  onChange={(event) => setDraftFrom(event.target.value)}
-                  className="h-10 rounded-xl border border-border bg-slate-50 px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-
-                <input
-                  type="date"
-                  value={draftTo}
-                  min={draftFrom || undefined}
-                  onChange={(event) => setDraftTo(event.target.value)}
-                  className="h-10 rounded-xl border border-border bg-slate-50 px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-
-                <select
-                  id="bankroll-type-filter"
-                  value={draftTypeFilter}
-                  onChange={(event) =>
-                    setDraftTypeFilter(
-                      event.target.value as "ALL" | BankrollTransactionType,
-                    )
-                  }
-                  className="h-10 w-full rounded-xl border border-border bg-slate-50 px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent/40"
-                >
-                  {TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="flex gap-2 xl:justify-end">
-                  <Button
-                    tone="secondary"
-                    onClick={() => {
-                      const resetTo = todayIso();
-                      setDraftFrom("");
-                      setDraftTo(resetTo);
-                      setDraftTypeFilter("ALL");
-                      setFrom("");
-                      setTo(resetTo);
-                      setTypeFilter("ALL");
-                    }}
-                  >
-                    Réinitialiser
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setFrom(draftFrom);
-                      setTo(draftTo);
-                      setTypeFilter(draftTypeFilter);
-                      setIsFiltersOpen(false);
-                    }}
-                  >
-                    Appliquer
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </section>
-
-          <div className="grid gap-5">
-            <TableCard
-              title="Évolution du solde"
-              subtitle="Le solde jour après jour, calculé à partir des mouvements récents."
-              action={
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <LineChart size={14} />
-                  {trendPoints.length} point{trendPoints.length > 1 ? "s" : ""}
-                </div>
-              }
-            >
-              {hasError ? (
-                <div className="flex h-65 items-center justify-center bg-white px-6 text-center text-sm text-rose-600">
-                  {hasError instanceof Error
-                    ? hasError.message
-                    : "Impossible de charger les données du portefeuille."}
-                </div>
-              ) : isLoading ? (
-                <div className="flex h-65 items-center justify-center bg-white text-sm text-slate-400">
-                  Chargement...
-                </div>
-              ) : (
-                <BankrollTrendChart points={trendPoints} />
-              )}
-            </TableCard>
           </div>
+
+          <FilterBar
+            filters={BANKROLL_FILTERS}
+            value={filterState}
+            onChange={setFilterState}
+            onReset={() =>
+              setFilterState({ from: "", to: todayIso(), type: "ALL" })
+            }
+          />
+
+          <TableCard
+            title="Évolution du solde"
+            subtitle="Le solde jour après jour, calculé à partir des mouvements récents."
+            action={
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <LineChart size={14} />
+                {trendPoints.length} point{trendPoints.length > 1 ? "s" : ""}
+              </div>
+            }
+          >
+            {hasError ? (
+              <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+                <EmptyHeader>
+                  <EmptyTitle>Erreur</EmptyTitle>
+                  <EmptyDescription>
+                    {hasError instanceof Error
+                      ? hasError.message
+                      : "Impossible de charger les données du portefeuille."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : isLoading ? (
+              <div className="flex h-44 items-center justify-center">
+                <ProgressBar
+                  value={0}
+                  max={100}
+                  tone="accent"
+                  showValue={false}
+                  className="w-24"
+                />
+              </div>
+            ) : (
+              <BankrollTrendChart points={trendPoints} />
+            )}
+          </TableCard>
 
           <TableCard
             title="Historique des mouvements"
             subtitle="Les 200 derniers mouvements, avec le solde après chaque opération."
           >
-            {hasError ? (
-              <div className="bg-white px-6 py-10 text-sm text-rose-600">
-                {hasError instanceof Error
-                  ? hasError.message
-                  : "Impossible de charger l’historique."}
-              </div>
-            ) : isLoading ? (
-              <div className="bg-white px-6 py-10 text-sm text-slate-400">
-                Chargement...
-              </div>
-            ) : filteredTransactions.length === 0 ? (
-              <div className="bg-white p-3">
-                <EmptyState
-                  title="Aucune transaction"
-                  description="Aucune transaction ne correspond aux filtres courants."
-                />
-              </div>
-            ) : (
-              <>
-                <div className="hidden bg-white md:block">
-                  <table className="w-full table-fixed">
-                    <thead className="border-b border-border bg-slate-50">
-                      <tr className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Type</th>
-                        <th className="px-4 py-3 text-right">Montant</th>
-                        <th className="px-4 py-3">Match / note</th>
-                        <th className="px-4 py-3 text-right">Solde après</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredTransactions.map((transaction) => (
-                        <tr
-                          key={transaction.id}
-                          className="border-b border-border/80 bg-white align-top last:border-b-0"
-                        >
-                          <td className="px-4 py-3 text-sm text-slate-500">
-                            {formatDateShort(transaction.createdAt)}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                            {transactionTypeLabel(transaction.type)}
-                          </td>
-                          <td
-                            className={`px-4 py-3 text-right text-sm font-semibold tabular-nums ${transactionTone(
-                              transaction.type,
-                            )}`}
-                          >
-                            {formatSignedUnitsValue(
-                              parseAmount(transaction.amount),
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            {transaction.detailLabel}
-                          </td>
-                          <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums text-slate-900">
-                            {formatUnitsValue(transaction.balanceAfter)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="divide-y divide-border bg-white md:hidden">
-                  {filteredTransactions.map((transaction) => (
-                    <div key={transaction.id} className="space-y-3 px-4 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {transaction.detailLabel}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {formatDateShort(transaction.createdAt)} •{" "}
-                            {transactionTypeLabel(transaction.type)}
-                          </p>
-                        </div>
-                        <p
-                          className={`text-sm font-semibold tabular-nums ${transactionTone(
-                            transaction.type,
-                          )}`}
-                        >
-                          {formatSignedUnitsValue(
-                            parseAmount(transaction.amount),
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Solde après</span>
-                        <span className="font-semibold tabular-nums text-slate-800">
-                          {formatUnitsValue(transaction.balanceAfter)} u
-                        </span>
-                      </div>
+            <DataTable
+              columns={COLUMNS}
+              data={filteredTransactions}
+              isLoading={isLoading}
+              emptyState={
+                <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
+                  <EmptyHeader>
+                    <EmptyTitle>Aucune transaction</EmptyTitle>
+                    <EmptyDescription>
+                      Aucune transaction ne correspond aux filtres courants.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              }
+              mobileCard={(row) => (
+                <div className="flex flex-col gap-3 px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {row.detailLabel}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDateShort(row.createdAt)} ·{" "}
+                        {transactionTypeLabel(row.type)}
+                      </p>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      {row.canal && <CanalBadge canal={row.canal} />}
+                      <p
+                        className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
+                      >
+                        {formatSignedCurrency(parseAmount(row.amount))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Solde après</span>
+                    <span className="font-semibold tabular-nums text-foreground">
+                      {formatCurrency(row.balanceAfter)}
+                    </span>
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            />
           </TableCard>
         </div>
       </PageContent>

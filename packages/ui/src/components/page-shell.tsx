@@ -1,5 +1,20 @@
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { cn } from "../utils/cn";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarSeparator,
+  SidebarTrigger,
+} from "./sidebar";
 
 type NavItem = {
   label: string;
@@ -20,74 +35,108 @@ export function PageShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className="hidden h-full w-[296px] shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[linear-gradient(180deg,#1b2432_0%,#202c3d_100%)] text-sidebar-foreground lg:flex">
-        <div className="border-b border-white/10 px-6 py-5">
-          <div className="flex items-center gap-3">
+    <SidebarProvider
+      className="min-h-screen bg-background text-foreground lg:h-screen lg:overflow-hidden"
+      style={
+        {
+          "--sidebar-width": "18.5rem",
+          "--sidebar-width-icon": "3.25rem",
+        } as CSSProperties
+      }
+    >
+      <Sidebar
+        variant="inset"
+        collapsible="offcanvas"
+        className="border-sidebar-border/70"
+      >
+        <SidebarHeader className="gap-0 border-b border-sidebar-border/70 px-4 py-5">
+          <a
+            href="/dashboard"
+            className="flex items-center gap-3 rounded-xl px-2 py-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+          >
             <img
               src="/icons/icon.svg"
               alt="EVCore"
               className="size-9 rounded-xl"
             />
-            <p className="text-base font-bold tracking-tight text-white">
-              EVCore
-            </p>
-          </div>
-        </div>
-        <nav className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150",
-                item.active
-                  ? "bg-sidebar-muted text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                  : "text-slate-300 hover:bg-white/6 hover:text-white",
-              )}
-              href={item.href}
-            >
-              <span
-                className={cn(
-                  "h-2.5 w-2.5 rounded-full",
-                  item.active ? "bg-cyan-300" : "bg-white/20",
-                )}
-              />
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        {sidebarFooter ? (
-          <div className="border-t border-white/10 px-6 py-5">
-            {sidebarFooter}
-          </div>
-        ) : null}
-      </aside>
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-slate-100">
-        <div className="sticky top-0 z-30 border-b border-white/70 bg-white/90 backdrop-blur supports-backdrop-filter:bg-white/75">
-          <div className="hidden items-center justify-end px-5 py-3 lg:flex">
-            {actions}
-          </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:hidden">
-            <div className="flex min-w-0 items-center gap-2">
-              <img
-                src="/icons/icon.svg"
-                alt="EVCore"
-                className="size-7 rounded-lg"
-              />
-              <p className="text-sm font-bold tracking-tight text-slate-900">
-                EVCore
+            <div className="min-w-0">
+              <p className="text-base font-bold tracking-tight">EVCore</p>
+              <p className="text-xs text-sidebar-foreground/60">
+                Console de pilotage
               </p>
             </div>
-            {actions}
-          </div>
-        </div>
+          </a>
+        </SidebarHeader>
 
-        <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-4 lg:overflow-hidden lg:p-5 lg:pb-5">
+        <SidebarContent className="px-3 py-4">
+          <SidebarGroup className="p-0">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={item.active}
+                      tooltip={item.label}
+                      className="h-11 rounded-xl px-3.5"
+                    >
+                      <a href={item.href}>
+                        <span
+                          className={cn(
+                            "size-2 rounded-full transition-colors",
+                            item.active
+                              ? "bg-sidebar-primary"
+                              : "bg-sidebar-foreground/25",
+                          )}
+                        />
+                        <span>{item.label}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        {sidebarFooter ? (
+          <>
+            <SidebarSeparator />
+            <SidebarFooter className="p-4">{sidebarFooter}</SidebarFooter>
+          </>
+        ) : null}
+      </Sidebar>
+
+      <SidebarInset className="min-h-screen overflow-hidden bg-transparent">
+        <header className="sticky top-0 z-30 border-b border-border/70 bg-panel-strong/90 backdrop-blur supports-backdrop-filter:bg-panel-strong/75">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
+            <div className="flex min-w-0 items-center gap-2">
+              <SidebarTrigger className="md:hidden" />
+              <a
+                href="/dashboard"
+                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 md:hidden"
+              >
+                <img
+                  src="/icons/icon.svg"
+                  alt="EVCore"
+                  className="size-7 rounded-lg"
+                />
+                <p className="truncate text-sm font-bold tracking-tight text-foreground">
+                  EVCore
+                </p>
+              </a>
+            </div>
+            {actions ? (
+              <div className="flex items-center gap-2">{actions}</div>
+            ) : null}
+          </div>
+        </header>
+
+        <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-4 lg:p-5 lg:pb-5">
           <div className="h-full w-full">{children}</div>
         </main>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-white/88 lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-panel-strong/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-panel-strong/88 md:hidden">
           <div
             className="grid gap-1"
             style={{
@@ -101,30 +150,25 @@ export function PageShell({
                 className={cn(
                   "flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
                   item.active
-                    ? "bg-[linear-gradient(180deg,#1b2432_0%,#24344d_100%)] text-white shadow-[0_12px_24px_rgba(15,23,42,0.16)]"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                    ? "border border-border bg-secondary text-foreground"
+                    : "border border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
                 href={item.href}
               >
                 <span
                   className={cn(
                     "h-1.5 w-6 rounded-full",
-                    item.active ? "bg-cyan-300" : "bg-slate-300",
+                    item.active ? "bg-accent" : "bg-border",
                   )}
                 />
-                <span
-                  className={cn(
-                    "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
-                    item.active ? "text-white" : "text-slate-500",
-                  )}
-                >
+                <span className="max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap">
                   {item.mobileLabel ?? item.label}
                 </span>
               </a>
             ))}
           </div>
         </nav>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

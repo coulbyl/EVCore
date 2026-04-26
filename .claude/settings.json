@@ -1,5 +1,14 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm --filter backend typecheck*)",
+      "Bash(pnpm --filter web typecheck*)",
+      "Bash(pnpm --filter backend lint*)",
+      "Bash(pnpm --filter web lint*)",
+      "Bash(pnpm --filter backend test*)"
+    ],
     "deny": [
       "Read(.env)",
       "Read(apps/backend/.env)",

@@ -11,7 +11,7 @@ export function Code({
   return (
     <code
       className={cn(
-        "font-mono text-[0.78rem] tracking-tight text-slate-700",
+        "font-mono text-[0.78rem] tracking-tight text-foreground",
         className,
       )}
     >

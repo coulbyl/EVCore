@@ -381,6 +381,7 @@ function toBetSlipView(
         homeScore: item.fixture.homeScore,
         awayScore: item.fixture.awayScore,
         pnl: computePnl(status, stake, odds),
+        canal: item.bet.isSafeValue ? 'SV' : 'EV',
       };
     }),
   };

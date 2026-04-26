@@ -1,0 +1,60 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "An error occurred",
+    "empty": "No data",
+    "reset": "Reset",
+    "apply": "Apply",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "seeAll": "See all"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "fixtures": "Fixtures",
+    "bankroll": "Bankroll",
+    "betSlips": "Bet slips",
+    "audit": "Audit",
+    "settings": "Settings"
+  },
+  "filters": {
+    "label": "Filters",
+    "resetAll": "Reset all",
+    "apply": "Apply"
+  },
+  "table": {
+    "empty": "No data.",
+    "noResults": "No results for these filters."
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "locale": {
+    "fr": "Français",
+    "en": "English"
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Create account",
+    "logout": "Sign out",
+    "emailOrUsername": "Email or username",
+    "password": "Password",
+    "noAccount": "No account yet?",
+    "alreadyAccount": "Already have an account?"
+  },
+  "account": {
+    "title": "Operator settings",
+    "appearance": "Appearance",
+    "language": "Language",
+    "notifications": "Notifications",
+    "account": "Account",
+    "bankroll": "Bankroll",
+    "theme": "Theme",
+    "savePreferences": "Save preferences"
+  }
+}

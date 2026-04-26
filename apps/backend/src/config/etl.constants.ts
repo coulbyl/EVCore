@@ -114,6 +114,14 @@ export const THE_ODDS_API_SPORT_KEYS = {
   I2: 'soccer_italy_serie_b',
   // Other domestic leagues
   POR: 'soccer_portugal_primeira_liga',
+  // New leagues
+  POL1: 'soccer_poland_ekstraklasa',
+  SWE1: 'soccer_sweden_allsvenskan',
+  SWE2: 'soccer_sweden_superettan',
+  SUI1: 'soccer_switzerland_superleague',
+  TUR1: 'soccer_turkey_super_league',
+  MLS: 'soccer_usa_mls',
+  NOR1: 'soccer_norway_eliteserien',
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',

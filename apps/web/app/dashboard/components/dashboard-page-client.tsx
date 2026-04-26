@@ -13,7 +13,7 @@ import { PerformanceCard } from "./performance-card";
 import { OperatorPerformanceCard } from "./operator-performance-card";
 import { PipelineStatus } from "./pipeline-status";
 import { UserLeaderboard } from "./user-leaderboard";
-import { PredictionsCard } from "./predictions-card";
+import { CanalCards } from "./canal-cards";
 
 export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
   const [pnlDate, setPnlDate] = useState<string | undefined>(undefined);
@@ -30,7 +30,7 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           {isAdmin ? (
             <PerformanceCard
               pnl={pnl}
@@ -51,7 +51,7 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
             </div>
           ) : null}
 
-          <PredictionsCard />
+          <CanalCards pnl={pnl} />
 
           <div className="grid gap-5 xl:grid-cols-2">
             <CompetitionRanking stats={competitionStats ?? []} />

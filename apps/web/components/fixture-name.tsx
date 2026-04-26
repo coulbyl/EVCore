@@ -17,7 +17,7 @@ export function FixtureName({
   fixture,
   homeLogo,
   awayLogo,
-  className = "text-sm font-semibold text-slate-800",
+  className = "text-sm font-semibold text-foreground",
   logoPosition = "start",
 }: {
   fixture: string;
@@ -35,7 +35,7 @@ export function FixtureName({
       {logoPosition === "start" && <TeamLogo src={homeLogo} name={home} />}
       <span>{home}</span>
       {logoPosition === "end" && <TeamLogo src={homeLogo} name={home} />}
-      <span className="font-normal text-slate-400">vs</span>
+      <span className="font-normal text-muted-foreground">vs</span>
       {logoPosition === "start" && <TeamLogo src={awayLogo} name={away} />}
       <span>{away}</span>
       {logoPosition === "end" && <TeamLogo src={awayLogo} name={away} />}

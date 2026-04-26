@@ -16,6 +16,7 @@ export type BetSlipItemView = {
   awayScore: number | null;
   /** Gain net réel (>0) ou perte (<0) en unités de mise. null si le pari est encore en attente. */
   pnl: string | null;
+  canal: 'EV' | 'SV';
 };
 
 export type BetSlipView = {

@@ -24,6 +24,7 @@ export type StatsSyncJobData = {
   season: number;
   competitionCode: string;
   leagueId: number;
+  syncScope?: 'routine' | 'backfill';
 };
 
 const logger = createLogger('stats-sync-worker');
@@ -41,7 +42,7 @@ export class StatsSyncWorker {
   ) {}
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
-    const { season, competitionCode } = job.data;
+    const { season, competitionCode, syncScope = 'routine' } = job.data;
     const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info({ competitionCode, season }, 'Starting stats sync');
@@ -49,6 +50,7 @@ export class StatsSyncWorker {
     const competitionMeta = await loadActiveCompetition(
       this.prisma,
       competitionCode,
+      { allowInactive: syncScope === 'backfill' },
     );
     if (!competitionMeta) {
       logger.info(

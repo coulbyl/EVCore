@@ -19,7 +19,7 @@ export function InfoTooltip({
       <HoverCard.Trigger asChild>
         <button
           type="button"
-          className="flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+          className="flex items-center text-muted-foreground hover:text-foreground focus:outline-none"
           aria-label={`En savoir plus sur ${label}`}
         >
           <Info size={11} strokeWidth={2} />
@@ -30,13 +30,13 @@ export function InfoTooltip({
           side={side}
           align="start"
           sideOffset={8}
-          className="z-50 w-64 rounded-2xl border border-border bg-white p-4 shadow-lg"
+          className="z-50 w-64 rounded-2xl border border-border bg-panel p-4 shadow-lg"
         >
-          <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {label}
           </p>
-          <p className="text-sm leading-6 text-slate-700">{description}</p>
-          <HoverCard.Arrow className="fill-white" />
+          <p className="text-sm leading-6 text-foreground">{description}</p>
+          <HoverCard.Arrow className="fill-panel" />
         </HoverCard.Content>
       </HoverCard.Portal>
     </HoverCard.Root>

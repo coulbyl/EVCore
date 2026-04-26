@@ -1,38 +1,78 @@
-import { type JSX, type ReactNode } from "react";
-import { cn } from "../utils/cn";
+import * as React from "react";
 
-export function Card({
-  className,
-  title,
-  children,
-  href,
-}: {
-  className?: string;
-  title: string;
-  children: ReactNode;
-  href?: string;
-}): JSX.Element {
-  const content = (
-    <>
-      <h2 className="text-base font-semibold text-slate-800">
-        {title} <span className="text-slate-400">-&gt;</span>
-      </h2>
-      <p className="mt-2 text-sm text-slate-600">{children}</p>
-    </>
-  );
+import { cn } from "@evcore/ui/lib/utils";
 
-  const classes = cn(
-    "block rounded-2xl border border-border bg-white p-5 transition-colors hover:bg-slate-50",
-    className,
-  );
-
-  if (!href) {
-    return <div className={classes}>{content}</div>;
-  }
-
+function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <a className={classes} href={href}>
-      {content}
-    </a>
+    <div
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-xs",
+        className,
+      )}
+      {...props}
+    />
   );
 }
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("leading-none font-semibold", className)}
+      {...props}
+    />
+  );
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-muted-foreground text-sm", className)}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6", className)}
+      {...props}
+    />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center px-6", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+};

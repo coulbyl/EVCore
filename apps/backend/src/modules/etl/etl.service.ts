@@ -481,7 +481,7 @@ export class EtlService implements OnApplicationBootstrap {
     competitionCode: string,
     seasons: number[],
   ): Promise<void> {
-    const competition = await this.loadActiveCompetition(competitionCode);
+    const competition = await this.loadCompetition(competitionCode);
     if (!competition.csvDivisionCode) {
       throw new Error(
         `Competition ${competitionCode} has no CSV division code configured`,
@@ -577,7 +577,7 @@ export class EtlService implements OnApplicationBootstrap {
     competitionCode: string,
     seasons: number[],
   ): Promise<void> {
-    const competition = await this.loadActiveCompetition(competitionCode);
+    const competition = await this.loadCompetition(competitionCode);
     const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
       syncType: 'fixtures',
       season,
@@ -596,12 +596,13 @@ export class EtlService implements OnApplicationBootstrap {
     competitionCode: string,
     seasons: number[],
   ): Promise<void> {
-    const competition = await this.loadActiveCompetition(competitionCode);
+    const competition = await this.loadCompetition(competitionCode);
     const jobs: LeagueSyncJobData[] = seasons.map((season) => ({
       syncType: 'stats',
       season,
       competitionCode,
       leagueId: competition.leagueId,
+      syncScope: 'backfill',
     }));
     await this.enqueueLeagueSeasonJobs('stats', jobs);
   }
@@ -715,6 +716,27 @@ export class EtlService implements OnApplicationBootstrap {
     });
     if (!competition) {
       throw new Error(`Unknown or inactive competition: ${competitionCode}`);
+    }
+    return competition;
+  }
+
+  private async loadCompetition(
+    competitionCode: string,
+  ): Promise<CompetitionRow> {
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode },
+      select: {
+        leagueId: true,
+        code: true,
+        name: true,
+        country: true,
+        csvDivisionCode: true,
+        seasonStartMonth: true,
+        apiSeasonOverride: true,
+      },
+    });
+    if (!competition) {
+      throw new Error(`Unknown competition: ${competitionCode}`);
     }
     return competition;
   }

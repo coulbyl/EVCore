@@ -41,6 +41,7 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
+                isSafeValue: true,
               },
             },
             fixture: {
@@ -120,6 +121,7 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
+                isSafeValue: true,
               },
             },
             fixture: {

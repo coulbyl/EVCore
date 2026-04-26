@@ -6,19 +6,21 @@ const toneClasses = {
   success: "border-success",
   warning: "border-warning",
   danger: "border-danger",
-  neutral: "border-slate-300",
+  neutral: "border-border",
 } as const;
 
 export function StatCard({
   label,
   value,
   delta,
+  icon,
   tone = "accent",
   compact = false,
 }: {
   label: string;
   value: string;
   delta?: ReactNode;
+  icon?: ReactNode;
   tone?: keyof typeof toneClasses;
   compact?: boolean;
 }) {
@@ -37,17 +39,18 @@ export function StatCard({
       >
         <p
           className={cn(
-            "font-semibold uppercase text-slate-500",
+            "flex items-center gap-1.5 font-semibold uppercase text-muted-foreground",
             compact
               ? "text-[0.58rem] tracking-[0.18em]"
               : "text-[0.68rem] tracking-[0.2em]",
           )}
         >
+          {icon}
           {label}
         </p>
         <p
           className={cn(
-            "mt-3 font-semibold tracking-tight text-slate-950",
+            "mt-3 font-semibold tracking-tight text-foreground",
             compact ? "mt-1 text-[1.8rem] leading-none" : "text-[2.35rem]",
           )}
         >

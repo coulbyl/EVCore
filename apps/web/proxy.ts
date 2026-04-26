@@ -53,7 +53,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (!request.cookies.has("NEXT_LOCALE")) {
+    const acceptLanguage = request.headers.get("accept-language") ?? "";
+    const locale = acceptLanguage.startsWith("en") ? "en" : "fr";
+    response.cookies.set("NEXT_LOCALE", locale, { path: "/", sameSite: "lax" });
+  }
+  return response;
 }
 
 export const config = {
