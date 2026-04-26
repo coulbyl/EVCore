@@ -1,8 +1,15 @@
 "use client";
 
-import { ShoppingCart, Check } from "lucide-react";
+import { Check, ShoppingCart } from "lucide-react";
 import {
-  fixtureStatusBadgeClass,
+  DataTable,
+  EvBadge,
+  EvEmptyState,
+  ResponsiveGrid,
+  StatCard,
+} from "@evcore/ui";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
   fixtureStatusLabel,
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
@@ -16,42 +23,129 @@ import type {
   FixtureRow,
 } from "@/domains/fixture/types/fixture";
 
-function rejectionReasonLabel(reason?: string): string {
-  if (!reason) return "--";
+type EvBadgeTone = "accent" | "success" | "warning" | "danger" | "neutral";
 
-  const labels: Record<string, string> = {
-    odds_below_floor: "Cote trop basse",
-    odds_above_cap: "Cote trop haute",
-    ev_below_threshold: "Valeur insuffisante",
-    ev_above_hard_cap: "Valeur au-dessus du plafond",
-    ev_above_soft_cap: "Valeur au-dessus du plafond (calibration)",
-    filtered_longshot: "Grande cote écartée",
-    market_suspended: "Marché suspendu",
-    probability_too_low: "Probabilité insuffisante",
-    quality_score_below_threshold: "Qualité insuffisante",
-    under_high_lambda: "Nbre de but élevé",
-  };
-
-  return labels[reason] ?? reason;
+function fixtureStatusTone(status: string): EvBadgeTone {
+  const s = status.toLowerCase();
+  if (s === "finished") return "neutral";
+  if (s === "in_progress") return "accent";
+  if (s === "postponed" || s === "cancelled") return "danger";
+  return "warning";
 }
 
-function ModelInput({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  return (
-    <div className="min-w-0 rounded-[0.9rem] bg-white/75 px-2 py-2 sm:px-3">
-      <p className="truncate text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[0.62rem]">
-        {label}
-      </p>
-      <p className="mt-1 truncate text-[0.92rem] font-semibold text-slate-900 sm:text-[1.02rem]">
-        {value ?? "—"}
-      </p>
-    </div>
-  );
+function formatEv(raw: string): string {
+  const v = parseFloat(raw);
+  if (Number.isNaN(v)) return raw;
+  return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+}
+
+const REJECTION_LABELS: Record<string, string> = {
+  odds_below_floor: "Cote trop basse",
+  odds_above_cap: "Cote trop haute",
+  ev_below_threshold: "Valeur insuffisante",
+  ev_above_hard_cap: "Valeur au-dessus du plafond",
+  ev_above_soft_cap: "Valeur au-dessus du plafond (calibration)",
+  filtered_longshot: "Grande cote écartée",
+  market_suspended: "Marché suspendu",
+  probability_too_low: "Probabilité insuffisante",
+  quality_score_below_threshold: "Qualité insuffisante",
+  under_high_lambda: "Nbre de but élevé",
+};
+
+function rejectionReasonLabel(reason?: string): string {
+  if (!reason) return "--";
+  return REJECTION_LABELS[reason] ?? reason;
+}
+
+const CANDIDATE_COLUMNS: ColumnDef<FixturePickSnapshot>[] = [
+  {
+    id: "market",
+    header: "Marché",
+    cell: ({ row }) => (
+      <span className="font-medium text-foreground">
+        {formatCombinedPickForDisplay(row.original)}
+      </span>
+    ),
+  },
+  {
+    id: "prob",
+    header: "Prob. %",
+    accessorFn: (row) => `${(Number(row.probability) * 100).toFixed(2)}`,
+    meta: { align: "right" },
+  },
+  {
+    id: "odds",
+    header: "Cote",
+    accessorKey: "odds",
+    meta: { align: "right" },
+  },
+  {
+    id: "ev",
+    header: "Valeur",
+    cell: ({ row }) => {
+      const v = parseFloat(row.original.ev);
+      return (
+        <span className={`tabular-nums font-semibold ${v >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+          {formatEv(row.original.ev)}
+        </span>
+      );
+    },
+    meta: { align: "right" },
+  },
+  {
+    id: "quality",
+    header: "Qualité",
+    cell: ({ row }) => {
+      const v = parseFloat(row.original.qualityScore);
+      return (
+        <span className={`tabular-nums font-semibold ${v >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+          {row.original.qualityScore}
+        </span>
+      );
+    },
+    meta: { align: "right" },
+  },
+];
+
+function makeEvaluatedColumns(
+  fixtureId: string,
+  alreadyInUserTicket: boolean,
+  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void,
+): ColumnDef<FixtureEvaluatedPickSnapshot>[] {
+  return [
+    ...(CANDIDATE_COLUMNS as unknown as ColumnDef<FixtureEvaluatedPickSnapshot>[]),
+    {
+      id: "status",
+      header: "Statut",
+      cell: ({ row }) =>
+        row.original.status === "viable" ? (
+          <EvBadge tone="success">Viable</EvBadge>
+        ) : (
+          <EvBadge tone="danger">Rejeté</EvBadge>
+        ),
+    },
+    {
+      id: "reason",
+      header: "Raison",
+      cell: ({ row }) => (
+        <span className="text-[0.82rem] text-muted-foreground">
+          {rejectionReasonLabel(row.original.rejectionReason)}
+        </span>
+      ),
+    },
+    {
+      id: "action",
+      header: "",
+      cell: ({ row }) => (
+        <PlacePickButton
+          snap={row.original}
+          fixtureId={fixtureId}
+          alreadyInUserTicket={alreadyInUserTicket}
+          onPlace={onPlace}
+        />
+      ),
+    },
+  ];
 }
 
 function PlacePickButton({
@@ -74,165 +168,32 @@ function PlacePickButton({
     comboPick: snap.comboPick,
   });
   const inSlip = isInSlip(key);
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (inSlip || alreadyInUserTicket) return;
-    onPlace(snap);
-  }
-
   const disabled = alreadyInUserTicket && !inSlip;
 
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (inSlip || alreadyInUserTicket) return;
+        onPlace(snap);
+      }}
       disabled={disabled}
       title={
-        inSlip
-          ? "Déjà dans le coupon"
-          : alreadyInUserTicket
-            ? "Déjà dans vos coupons"
-            : "Placer ce pick"
+        inSlip ? "Déjà dans le coupon"
+        : alreadyInUserTicket ? "Déjà dans vos coupons"
+        : "Placer ce pick"
       }
       className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
         inSlip
           ? "border-emerald-300 bg-emerald-50 text-emerald-700"
           : disabled
-            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-            : "border-slate-200 bg-white text-slate-500 hover:border-accent hover:text-accent"
+            ? "cursor-not-allowed border-border bg-secondary text-muted-foreground"
+            : "border-border bg-panel text-muted-foreground hover:border-accent hover:text-accent"
       }`}
     >
       {inSlip ? <Check size={13} /> : <ShoppingCart size={13} />}
     </button>
-  );
-}
-
-function DiagnosticTable({
-  title,
-  rows,
-  evaluated = false,
-  alreadyInUserTicket = false,
-  fixtureId,
-  onPlace,
-}: {
-  title: string;
-  rows: FixturePickSnapshot[] | FixtureEvaluatedPickSnapshot[];
-  evaluated?: boolean;
-  alreadyInUserTicket?: boolean;
-  fixtureId?: string;
-  onPlace?: (snap: FixtureEvaluatedPickSnapshot) => void;
-}) {
-  if (rows.length === 0) return null;
-
-  const showActions = evaluated && onPlace != null;
-
-  return (
-    <div className="mt-5">
-      <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
-        {title}
-      </p>
-      <div className="max-h-96 overflow-auto rounded-[1.1rem] border border-slate-100 bg-white">
-        {" "}
-        <table className="min-w-190 w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 text-left text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-              <th className="sticky top-0 left-0 z-20 w-38 min-w-38 bg-white px-3 py-3 pr-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:px-4 sm:pr-4">
-                Marché
-              </th>
-              <th className="sticky top-0 left-38 z-20 w-19 min-w-19 bg-white px-3 py-3 pr-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:px-4 sm:pr-4">
-                Prob. %
-              </th>
-              <th className="sticky top-0 w-20.5 min-w-20.5 bg-white px-3 py-3 pr-3 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-20 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                Cote
-              </th>
-              <th className="sticky top-0 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-3 pr-4">
-                Valeur
-              </th>
-              <th className="sticky top-0 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)] px-4 py-3 pr-4">
-                Qualité
-              </th>
-              <th className="sticky top-0 bg-white px-4 py-3 pr-4 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                Statut
-              </th>
-              <th className="sticky top-0 bg-white px-4 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                Raison
-              </th>
-              {showActions && <th className="px-4 py-3" />}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {rows.map((row, index) => {
-              const snapshot = row as FixtureEvaluatedPickSnapshot;
-              const isEvaluated = evaluated;
-              const isViable = snapshot.status === "viable";
-
-              return (
-                <tr key={`${title}-${index}`} className="align-middle">
-                  <td className="sticky left-0 z-10 min-w-38 bg-white px-3 py-3 pr-3 font-medium text-slate-800 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)] sm:px-4 sm:pr-4">
-                    {formatCombinedPickForDisplay(row)}
-                  </td>
-                  <td className="sticky left-38 z-10 min-w-19 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 shadow-[10px_0_14px_-14px_rgba(15,23,42,0.2)] sm:px-4 sm:pr-4">
-                    {(Number(row.probability) * 100).toFixed(2)}
-                  </td>
-                  <td className="min-w-20.5 bg-white px-3 py-3 pr-3 tabular-nums text-slate-700 sm:px-4 sm:pr-4 md:sticky md:left-57 md:z-10 md:shadow-[10px_0_14px_-14px_rgba(15,23,42,0.35)]">
-                    {row.odds}
-                  </td>
-                  <td
-                    className={`px-4 py-3 pr-4 tabular-nums font-semibold ${
-                      parseFloat(row.ev) >= 0
-                        ? "text-emerald-600"
-                        : "text-rose-600"
-                    }`}
-                  >
-                    {row.ev}
-                  </td>
-                  <td
-                    className={`px-4 py-3 pr-4 tabular-nums font-semibold ${
-                      parseFloat(row.qualityScore) >= 0
-                        ? "text-emerald-600"
-                        : "text-rose-600"
-                    }`}
-                  >
-                    {row.qualityScore}
-                  </td>
-                  <td className="px-4 py-3 pr-4">
-                    {isEvaluated ? (
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.08em] ${
-                          isViable
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-rose-200 bg-rose-50 text-rose-600"
-                        }`}
-                      >
-                        {isViable ? "Viable" : "Rejeté"}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">--</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-[0.82rem] text-slate-500">
-                    {isEvaluated
-                      ? rejectionReasonLabel(snapshot.rejectionReason)
-                      : "--"}
-                  </td>
-                  {showActions && fixtureId && (
-                    <td className="px-3 py-3">
-                      <PlacePickButton
-                        snap={snapshot}
-                        fixtureId={fixtureId}
-                        alreadyInUserTicket={alreadyInUserTicket}
-                        onPlace={onPlace}
-                      />
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
   );
 }
 
@@ -261,75 +222,84 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       stakeOverride: null,
     };
     addItem(item);
-    if (shouldOpen) {
-      open();
-    }
+    if (shouldOpen) open();
   }
 
   if (!mr) {
     return (
       <div className="rounded-[1.7rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-        <p className="text-sm text-slate-500">Aucun diagnostic disponible.</p>
+        <EvEmptyState
+          title="Aucun diagnostic"
+          description="Pas de ModelRun disponible pour cette fixture."
+        />
       </div>
     );
   }
 
+  const alreadyInUserTicket = false;
+  const evaluatedColumns = makeEvaluatedColumns(
+    row.fixtureId,
+    alreadyInUserTicket,
+    handlePlacePick,
+  );
+
   return (
     <div className="rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
-      <div className="border-b border-slate-100 pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <p className="min-w-0 text-base font-semibold leading-tight text-slate-900 sm:text-lg">
+      <div className="flex items-start justify-between gap-3 border-b border-border pb-4">
+        <div className="min-w-0">
+          <p className="text-base font-semibold leading-tight text-foreground sm:text-lg">
             {row.fixture}
           </p>
-          <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] ${fixtureStatusBadgeClass(row.status)}`}
-          >
-            {fixtureStatusLabel(row.status)}
-          </span>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {mr.pick && mr.market ? (
+              <span className="font-medium text-foreground">
+                {formatCombinedPickForDisplay({ market: mr.market, pick: mr.pick })}
+              </span>
+            ) : (
+              "Sélection non disponible"
+            )}
+            {score && (
+              <>
+                {" · "}
+                <span className="font-medium text-foreground">{score}</span>
+              </>
+            )}
+          </p>
         </div>
-        <p className="mt-2 text-sm text-slate-600">
-          {mr.pick && mr.market ? (
-            <span className="font-medium text-slate-800">
-              {formatCombinedPickForDisplay({
-                market: mr.market,
-                pick: mr.pick,
-              })}
-            </span>
-          ) : (
-            "Sélection non disponible"
-          )}
-          {score ? (
-            <>
-              {" · "}
-              <span className="font-medium text-slate-700">{score}</span>
-            </>
-          ) : null}
-        </p>
+        <EvBadge tone={fixtureStatusTone(row.status)} className="shrink-0">
+          {fixtureStatusLabel(row.status)}
+        </EvBadge>
       </div>
 
-      <div className="mt-6">
-        <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+      <div className="mt-5">
+        <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Entrées modèle
         </p>
-        <div className="grid grid-cols-4 gap-2 rounded-[1.1rem] border border-slate-100 bg-slate-50 px-2 py-2.5 sm:gap-3 sm:px-4 sm:py-4">
-          <ModelInput label="Prob. estimée" value={mr.probEstimated} />
-          <ModelInput label="λ Dom." value={mr.lambdaHome} />
-          <ModelInput label="λ Ext." value={mr.lambdaAway} />
-          <ModelInput label="Buts attendus" value={mr.expectedTotalGoals} />
-        </div>
+        <ResponsiveGrid cols={{ base: 2, sm: 4 }} gap="sm">
+          <StatCard compact tone="neutral" label="Prob. estimée" value={mr.probEstimated ?? "—"} />
+          <StatCard compact tone="neutral" label="λ Dom." value={mr.lambdaHome ?? "—"} />
+          <StatCard compact tone="neutral" label="λ Ext." value={mr.lambdaAway ?? "—"} />
+          <StatCard compact tone="neutral" label="Buts attendus" value={mr.expectedTotalGoals ?? "—"} />
+        </ResponsiveGrid>
       </div>
 
-      <DiagnosticTable
-        title={`Sélections candidates (${mr.candidatePicks.length})`}
-        rows={mr.candidatePicks}
-      />
-      <DiagnosticTable
-        title={`Sélections évaluées (${mr.evaluatedPicks.length})`}
-        rows={mr.evaluatedPicks}
-        evaluated
-        fixtureId={row.fixtureId}
-        onPlace={handlePlacePick}
-      />
+      {mr.candidatePicks.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Sélections candidates ({mr.candidatePicks.length})
+          </p>
+          <DataTable columns={CANDIDATE_COLUMNS} data={mr.candidatePicks} />
+        </div>
+      )}
+
+      {mr.evaluatedPicks.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Sélections évaluées ({mr.evaluatedPicks.length})
+          </p>
+          <DataTable columns={evaluatedColumns} data={mr.evaluatedPicks} />
+        </div>
+      )}
     </div>
   );
 }
