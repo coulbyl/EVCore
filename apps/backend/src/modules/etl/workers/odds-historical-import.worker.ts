@@ -449,16 +449,23 @@ function buildSnapshotTimestamp(scheduledAt: Date): string {
 
 /**
  * Normalize a team name for fuzzy matching: strip accents, lowercase,
- * remove common suffixes (FC, CF, SC, etc.).
+ * remove common suffixes (FC, CF, SC, etc.), and normalize separators.
  */
-function normalizeTeam(name: string): string {
+export function normalizeTeam(name: string): string {
   return name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[øØ]/g, 'o')
+    .replace(/[łŁ]/g, 'l')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[æÆ]/g, 'ae')
+    .replace(/[œŒ]/g, 'oe')
+    .replace(/ß/g, 'ss')
+    .replace(/([A-Za-z])\./g, '$1')
     .toLowerCase()
     .replace(/\butd\b/g, 'united')
-    .replace(/\b(fc|afc|cf|sc|ac|ss|as)\b/g, '')
-    .replace(/[.\-']/g, ' ')
+    .replace(/\b(fc|afc|cf|sc|ac|ss|as|ff|if|bk|aif|bois|ik)\b/g, '')
+    .replace(/[.\-'/]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -501,7 +508,7 @@ const TEAM_ALIASES: Record<string, string[]> = {
   'kyoto sanga': ['kyoto purple sanga'],
 };
 
-function teamMatches(
+export function teamMatches(
   team: { name: string; shortName: string },
   eventName: string,
 ): boolean {
@@ -513,13 +520,27 @@ function teamMatches(
     ...(TEAM_ALIASES[n] ?? []),
   ];
 
-  return candidates.some(
-    (c) =>
-      c === norm ||
-      norm.startsWith(`${c} `) ||
-      c.startsWith(`${norm} `) ||
-      norm.endsWith(` ${c}`) ||
-      c.endsWith(` ${norm}`),
+  return candidates.some((c) => namesEquivalent(c, norm));
+}
+
+function namesEquivalent(left: string, right: string): boolean {
+  if (
+    left === right ||
+    left.startsWith(`${right} `) ||
+    right.startsWith(`${left} `) ||
+    left.endsWith(` ${right}`) ||
+    right.endsWith(` ${left}`)
+  ) {
+    return true;
+  }
+
+  const stripTrailingS = (value: string): string =>
+    value.endsWith('s') ? value.slice(0, -1) : value;
+
+  return (
+    stripTrailingS(left) === right ||
+    stripTrailingS(right) === left ||
+    stripTrailingS(left) === stripTrailingS(right)
   );
 }
 
