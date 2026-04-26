@@ -27,7 +27,7 @@ import type {
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
-import { formatSignedUnitsValue, formatUnitsValue } from "@/helpers/number";
+import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
@@ -146,7 +146,7 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
             : "";
       return (
         <span className={`tabular-nums font-semibold ${cls}`}>
-          {formatSignedUnitsValue(parseAmount(row.original.amount))}
+          {formatSignedCurrency(parseAmount(row.original.amount))}
         </span>
       );
     },
@@ -166,7 +166,7 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
     accessorFn: (row) => row.balanceAfter,
     cell: ({ getValue }) => (
       <span className="tabular-nums font-semibold">
-        {formatUnitsValue(getValue<number>())}
+        {formatCurrency(getValue<number>())}
       </span>
     ),
     meta: { align: "right" },
@@ -198,7 +198,7 @@ function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
             Évolution récente
           </p>
           <p className="mt-2 text-2xl font-semibold text-foreground">
-            {formatUnitsValue(points[points.length - 1]?.balance ?? 0)} u
+            {formatCurrency(points[points.length - 1]?.balance ?? 0, true)}
           </p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
@@ -214,14 +214,14 @@ function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
         color="#2563eb"
         height={140}
         className="mt-4"
-        formatY={(v) => `${formatUnitsValue(v)}u`}
+        formatY={(v) => formatCurrency(v, true)}
       />
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <StatList
           items={[
-            { label: "Plus bas", value: `${formatUnitsValue(minY)} u` },
-            { label: "Plus haut", value: `${formatUnitsValue(maxY)} u` },
+            { label: "Plus bas", value: formatCurrency(minY) },
+            { label: "Plus haut", value: formatCurrency(maxY) },
             { label: "Jours affichés", value: String(points.length) },
           ]}
         />
@@ -318,13 +318,13 @@ export function BankrollPageClient() {
             <StatCard
               icon={<Wallet size={14} />}
               label="Solde actuel"
-              value={`${formatUnitsValue(currentBalance)} u`}
+              value={formatCurrency(currentBalance, true)}
               tone="accent"
             />
             <StatCard
               icon={<ArrowDownLeft size={14} />}
               label="Total déposé"
-              value={`${formatUnitsValue(totalDeposited)} u`}
+              value={formatCurrency(totalDeposited, true)}
               tone="neutral"
             />
             <StatCard
@@ -419,13 +419,13 @@ export function BankrollPageClient() {
                     <p
                       className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
                     >
-                      {formatSignedUnitsValue(parseAmount(row.amount))}
+                      {formatSignedCurrency(parseAmount(row.amount))}
                     </p>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Solde après</span>
                     <span className="font-semibold tabular-nums text-foreground">
-                      {formatUnitsValue(row.balanceAfter)} u
+                      {formatCurrency(row.balanceAfter)}
                     </span>
                   </div>
                 </div>

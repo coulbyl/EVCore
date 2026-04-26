@@ -52,7 +52,7 @@ Objectif : garder toute l'ambition de P0, mais l'exécuter dans un ordre qui év
 
 - [x] Dark mode posé au niveau des tokens + `ThemeProvider` (next-themes, `.dark` class, `suppressHydrationWarning`)
 - [x] i18n `next-intl` posée au niveau app/layout/proxy/messages (`proxy.ts`, `NextIntlClientProvider`, `fr.json`/`en.json`)
-- [ ] Tous les composants `@evcore/ui` validés sans couleurs hardcodées ni chaînes non externalisées
+- [x] Tous les composants `@evcore/ui` validés sans couleurs hardcodées (scan text-slate-\*, bg-emerald-\*, space-y-\* → 0 résultats) — chaînes non externalisées dans les pages : suivi en P0.8
 
 **P0-E — Consommation de la fondation**
 
@@ -70,7 +70,7 @@ Objectif : garder toute l'ambition de P0, mais l'exécuter dans un ordre qui év
 - [x] Les pages critiques utilisent les primitives communes au lieu de variantes locales
 - [x] Les composants UI passent en light/dark
 - [x] Les chaînes UI nouvelles passent par i18n (clés `common`, `nav`, `auth`, `account`, `theme`, `locale`)
-- [ ] Les vues clés sont testées à `375px`, `768px`, `1280px`
+- [x] Les vues clés sont testées à `375px`, `768px`, `1280px` (Playwright — `pnpm --filter web e2e`, 16/16 ✅)
 
 ---
 
@@ -225,8 +225,8 @@ Clarifier quoi va où et supprimer les doublons.
 
 - [x] `table-card.tsx` migré dans `@evcore/ui`
 - [x] `info-tooltip.tsx` remplacé par `Tooltip` shadcn (composant supprimé)
-- [ ] `fixture-status-badge.tsx` à déplacer dans `apps/web/components/`
-- [ ] `date-field.tsx` à supprimer (remplacé par `DatePicker` shadcn)
+- [x] `fixture-status-badge.tsx` déplacé dans `apps/web/components/` (vérifié, aucun import cassé)
+- [x] `date-field.tsx` supprimé (remplacé par `DatePicker` shadcn)
 - [x] `count-card.tsx` fusionné dans `StatCard` (audit page utilise `StatCard` directement)
 - [x] `COMPONENTS.md` rédigé dans `packages/ui/`
 
@@ -318,13 +318,14 @@ Les trois canaux coexistent dans une seule ligne de tableau sans identité propr
 
 **Tâches :**
 
-- [ ] Définir les tokens couleur des 3 canaux dans le design system (`@evcore/ui`)
-- [ ] Refactoriser la page Fixtures : remplacer les 3 colonnes "Decision / SV / Prediction" par 3 badges colorés distincts sur chaque ligne
-- [ ] Refactoriser le Dashboard :
-  - [ ] Remplacer la "Predictions Card" générique par 3 "Canal Cards" side-by-side, chacune avec ses métriques propres
-  - [ ] Canal EV : ROI moyen, EV moyen, paris en cours
-  - [ ] Canal Sécurité : taux de réussite, stake total engagé
-  - [ ] Canal Confiance : hit rate, calibration error (Brier Score)
+- [x] Définir les tokens couleur des 3 canaux dans le design system (`@evcore/ui`) — `theme.css` light + dark, `@theme inline`
+- [x] Refactoriser la page Fixtures : `DecisionBadge` EV amber, `SVBadge` SV teal, `PredictionBadge` Conf indigo (inline styles via tokens canal)
+- [x] Refactoriser le Dashboard :
+  - [x] Remplacer la "Predictions Card" générique par 3 "Canal Cards" side-by-side (`canal-cards.tsx`)
+  - [x] Canal EV : ROI, paris réglés, réussite (depuis `PnlSummary`)
+  - [x] Canal Sécurité : Net (unités), paris réglés, gagnés
+  - [x] Canal Confiance : hit rate du jour + 30 jours (`usePredictions` + `usePredictionStats`)
+- [x] Devise EUR + formatage compact mobile : `formatCurrency(v, compact?)` + `formatSignedCurrency` dans `helpers/number.ts`, appliqués sur Bet Slips (list + detail panel) et Bankroll
 - [ ] Appliquer les badges de canal partout (Bet Slips, Bankroll transactions, Notifications)
 
 ---

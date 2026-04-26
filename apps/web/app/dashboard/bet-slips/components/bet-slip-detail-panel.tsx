@@ -7,17 +7,11 @@ import {
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
+import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
 import type {
   BetSlipView,
   BetSlipItemView,
 } from "@/domains/bet-slip/types/bet-slip";
-
-function formatAmount(value: string | number) {
-  return Number(value).toLocaleString("fr-FR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -66,20 +60,16 @@ function PnlDisplay({
       <p
         className={`text-base font-bold tabular-nums ${isPos ? "text-success" : "text-danger"}`}
       >
-        {isPos ? "+" : ""}
-        {raw.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}
+        {formatSignedCurrency(raw)}
       </p>
     );
   }
   if (item.betStatus === "VOID") return null;
   if (item.odds !== null) {
-    const potential = (
-      Number(item.stake) *
-      (Number(item.odds) - 1)
-    ).toLocaleString("fr-FR", { maximumFractionDigits: 0 });
+    const potential = Number(item.stake) * (Number(item.odds) - 1);
     return (
       <p className="text-sm tabular-nums text-muted-foreground">
-        +{potential} pot.
+        +{formatCurrency(potential)} pot.
       </p>
     );
   }
@@ -153,14 +143,14 @@ function BetItem({
                 <>
                   Mise{" "}
                   <span className="font-semibold text-foreground">
-                    {formatAmount(item.stake)}
+                    {formatCurrency(item.stake)}
                   </span>
                 </>
               )}
             </span>
             {slipType === "SIMPLE" && item.stakeOverride ? (
               <Badge variant="warning" className="py-0 text-[0.65rem]">
-                Perso {formatAmount(item.stakeOverride)}
+                Perso {formatCurrency(item.stakeOverride)}
               </Badge>
             ) : null}
           </div>
@@ -279,7 +269,7 @@ export function BetSlipDetailPanel({
           )}
           <DetailRow
             label="Total misé"
-            value={formatAmount(String(totalStake))}
+            value={formatCurrency(totalStake)}
           />
           {hasPnl && (
             <>
@@ -294,18 +284,13 @@ export function BetSlipDetailPanel({
                   {pendingCount > 0 ? "Gain net partiel" : "Gain net"}
                 </span>
                 <span className="tabular-nums">
-                  {realPnl >= 0 ? "+" : ""}
-                  {realPnl.toLocaleString("fr-FR", {
-                    maximumFractionDigits: 2,
-                  })}
+                  {formatSignedCurrency(realPnl)}
                 </span>
               </div>
               {retourTotal > 0 && (
                 <DetailRow
                   label="Retour total"
-                  value={retourTotal.toLocaleString("fr-FR", {
-                    maximumFractionDigits: 2,
-                  })}
+                  value={formatCurrency(retourTotal)}
                 />
               )}
             </>
@@ -314,7 +299,7 @@ export function BetSlipDetailPanel({
             <>
               <DetailRow
                 label="Gain potentiel"
-                value={formatAmount(String(potentialReturn))}
+                value={formatCurrency(potentialReturn)}
               />
               <p className="text-xs text-muted-foreground">
                 {pendingSelections} sélection

@@ -27,12 +27,26 @@ import { FixtureDiagnostics } from "./fixture-diagnostics";
 function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
   if (!decision)
     return <span className="text-xs text-muted-foreground">—</span>;
+  if (decision === "BET") {
+    return (
+      <span
+        className="inline-flex items-center rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
+        style={{
+          color: "var(--canal-ev)",
+          background: "var(--canal-ev-soft)",
+          border: "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
+        }}
+      >
+        BET
+      </span>
+    );
+  }
   return (
     <Badge
-      variant={decision === "BET" ? "success" : "neutral"}
+      variant="neutral"
       className="rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
     >
-      {decision === "BET" ? "BET" : "NO BET"}
+      NO BET
     </Badge>
   );
 }
@@ -45,30 +59,53 @@ const PICK_LABEL: Record<string, string> = {
 
 function PredictionBadge({ pred }: { pred: FixturePrediction }) {
   const label = PICK_LABEL[pred.pick] ?? pred.pick;
-  const variant =
-    pred.correct === true
-      ? "success"
-      : pred.correct === false
-        ? "destructive"
-        : "accent";
+  // settled: success/danger; pending: canal-conf color
+  if (pred.correct === true) {
+    return (
+      <Badge
+        variant="success"
+        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      >
+        → {label} {pred.probability}
+      </Badge>
+    );
+  }
+  if (pred.correct === false) {
+    return (
+      <Badge
+        variant="destructive"
+        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      >
+        → {label} {pred.probability}
+      </Badge>
+    );
+  }
   return (
-    <Badge
-      variant={variant}
-      className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      style={{
+        color: "var(--canal-conf)",
+        background: "var(--canal-conf-soft)",
+        border: "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
+      }}
     >
       → {label} {pred.probability}
-    </Badge>
+    </span>
   );
 }
 
 function SVBadge() {
   return (
-    <Badge
-      variant="accent"
-      className="rounded-full px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
+      style={{
+        color: "var(--canal-sv)",
+        background: "var(--canal-sv-soft)",
+        border: "1px solid color-mix(in srgb, var(--canal-sv) 22%, transparent)",
+      }}
     >
-      Safe
-    </Badge>
+      SV
+    </span>
   );
 }
 
@@ -83,7 +120,7 @@ function SVRow({ sv }: { sv: FixtureSvBet }) {
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
       <span className="text-muted-foreground">{pickLabel}</span>
-      <span className="font-semibold text-accent">{sv.ev}</span>
+      <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>{sv.ev}</span>
       {sv.betStatus && sv.betStatus !== "PENDING" && (
         <BetResultBadge status={sv.betStatus} />
       )}
@@ -323,7 +360,7 @@ function FixtureMobileCard({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               {mr?.decision === "BET" && mr.ev && (
-                <span className="text-sm font-bold text-success">{mr.ev}</span>
+                <span className="text-sm font-bold" style={{ color: "var(--canal-ev)" }}>{mr.ev}</span>
               )}
               {row.prediction && <PredictionBadge pred={row.prediction} />}
               <DecisionBadge decision={mr?.decision ?? null} />
@@ -482,12 +519,12 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
         return (
           <div className="flex flex-col gap-1 tabular-nums text-sm font-semibold">
             {mr?.ev ? (
-              <div className="text-success">{mr.ev}</div>
+              <div style={{ color: "var(--canal-ev)" }}>{mr.ev}</div>
             ) : (
               <span className="text-muted-foreground">—</span>
             )}
             {row.original.safeValueBet && (
-              <div className="text-accent">{row.original.safeValueBet.ev}</div>
+              <div style={{ color: "var(--canal-sv)" }}>{row.original.safeValueBet.ev}</div>
             )}
           </div>
         );

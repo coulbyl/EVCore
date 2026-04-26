@@ -15,6 +15,7 @@ import {
 } from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
+import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
@@ -50,12 +51,6 @@ const SLIP_FILTERS: FilterDef[] = [
   { key: "to", type: "date", label: "Au" },
 ];
 
-function formatAmount(value: string | number) {
-  return Number(value).toLocaleString("fr-FR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
 
 function totalOdds(betSlip: BetSlipView) {
   return betSlip.items.reduce((product, item) => {
@@ -171,7 +166,7 @@ function BetSlipCard({
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Total misé</span>
           <span className="font-semibold tabular-nums text-foreground">
-            {formatAmount(summary.totalStake)}
+            {formatCurrency(summary.totalStake)}
           </span>
         </div>
         {betSlip.type === "COMBO" && (
@@ -190,8 +185,7 @@ function BetSlipCard({
             <span
               className={`font-bold tabular-nums ${summary.netPnl >= 0 ? "text-success" : "text-danger"}`}
             >
-              {summary.netPnl >= 0 ? "+" : ""}
-              {formatAmount(summary.netPnl)}
+              {formatSignedCurrency(summary.netPnl)}
             </span>
           </div>
         )}
@@ -212,7 +206,7 @@ function BetSlipCard({
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">Gain potentiel</span>
             <span className="font-semibold tabular-nums text-success">
-              {formatAmount(summary.potentialReturn)}
+              {formatCurrency(summary.potentialReturn)}
             </span>
           </div>
         )}
@@ -287,13 +281,13 @@ export function BetSlipListPageClient() {
           compact
           tone="neutral"
           label="Misé"
-          value={formatAmount(periodSummary.stake)}
+          value={formatCurrency(periodSummary.stake, true)}
         />
         <StatCard
           compact
           tone={periodSummary.net >= 0 ? "success" : "danger"}
           label="Net réglé"
-          value={`${periodSummary.net >= 0 ? "+" : ""}${formatAmount(periodSummary.net)}`}
+          value={formatSignedCurrency(periodSummary.net, true)}
         />
         <StatCard
           compact

@@ -3,6 +3,20 @@ const COMPACT_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
+const CURRENCY_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+const CURRENCY_COMPACT_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  style: "currency",
+  currency: "EUR",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 const UNITS_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
@@ -41,6 +55,31 @@ export function formatUnitsValue(value: string | number) {
   }
 
   return UNITS_NUMBER_FORMATTER.format(parsedValue);
+}
+
+/**
+ * Format a monetary value with EUR symbol.
+ * compact=true: values ≥ 1 000 rendered as "1,2 k€" — suited for StatCard on mobile.
+ */
+export function formatCurrency(
+  value: string | number,
+  compact = false,
+): string {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
+  return compact && Math.abs(n) >= 1000
+    ? CURRENCY_COMPACT_FORMATTER.format(n)
+    : CURRENCY_FORMATTER.format(n);
+}
+
+export function formatSignedCurrency(
+  value: string | number,
+  compact = false,
+): string {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
+  const prefix = n > 0 ? "+" : "";
+  return `${prefix}${formatCurrency(n, compact)}`;
 }
 
 export function formatSignedUnitsValue(value: string | number) {

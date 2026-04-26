@@ -37,6 +37,14 @@
   --destructive-foreground: #ffffff;
   --input: rgba(24, 33, 47, 0.14);
   --ring: rgba(15, 118, 110, 0.34);
+
+  /* ── Canal identities ── */
+  --canal-ev: #d97706;
+  --canal-ev-soft: rgba(217, 119, 6, 0.11);
+  --canal-sv: #0f766e;
+  --canal-sv-soft: rgba(15, 118, 110, 0.11);
+  --canal-conf: #4f46e5;
+  --canal-conf-soft: rgba(79, 70, 229, 0.11);
 }
 
 /* ── Dark tokens ───────────────────────────────────────────────────────── */
@@ -78,6 +86,14 @@
   --destructive-foreground: #ffffff;
   --input: rgba(226, 232, 240, 0.1);
   --ring: rgba(20, 184, 166, 0.40);
+
+  /* ── Canal identities ── */
+  --canal-ev: #f59e0b;
+  --canal-ev-soft: rgba(245, 158, 11, 0.13);
+  --canal-sv: #14b8a6;
+  --canal-sv-soft: rgba(20, 184, 166, 0.13);
+  --canal-conf: #818cf8;
+  --canal-conf-soft: rgba(129, 140, 248, 0.13);
 }
 
 @theme inline {
@@ -116,6 +132,12 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-warning: var(--warning);
   --color-pending: var(--pending);
+  --color-canal-ev: var(--canal-ev);
+  --color-canal-ev-soft: var(--canal-ev-soft);
+  --color-canal-sv: var(--canal-sv);
+  --color-canal-sv-soft: var(--canal-sv-soft);
+  --color-canal-conf: var(--canal-conf);
+  --color-canal-conf-soft: var(--canal-conf-soft);
 }
 
 html,
