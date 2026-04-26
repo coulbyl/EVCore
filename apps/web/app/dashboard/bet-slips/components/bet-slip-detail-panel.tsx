@@ -271,10 +271,7 @@ export function BetSlipDetailPanel({
           {data.type === "COMBO" && (
             <DetailRow label="Cote totale" value={comboTotalOdds.toFixed(2)} />
           )}
-          <DetailRow
-            label="Total misé"
-            value={formatCurrency(totalStake)}
-          />
+          <DetailRow label="Total misé" value={formatCurrency(totalStake)} />
           {hasPnl && (
             <>
               <div

@@ -51,7 +51,6 @@ const SLIP_FILTERS: FilterDef[] = [
   { key: "to", type: "date", label: "Au" },
 ];
 
-
 function totalOdds(betSlip: BetSlipView) {
   return betSlip.items.reduce((product, item) => {
     const odds = Number(item.odds ?? 1);

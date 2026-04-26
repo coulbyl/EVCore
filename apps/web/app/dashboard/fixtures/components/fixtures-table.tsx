@@ -34,7 +34,8 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
         style={{
           color: "var(--canal-ev)",
           background: "var(--canal-ev-soft)",
-          border: "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
+          border:
+            "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
         }}
       >
         BET
@@ -86,7 +87,8 @@ function PredictionBadge({ pred }: { pred: FixturePrediction }) {
       style={{
         color: "var(--canal-conf)",
         background: "var(--canal-conf-soft)",
-        border: "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
+        border:
+          "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
       }}
     >
       → {label} {pred.probability}
@@ -101,7 +103,8 @@ function SVBadge() {
       style={{
         color: "var(--canal-sv)",
         background: "var(--canal-sv-soft)",
-        border: "1px solid color-mix(in srgb, var(--canal-sv) 22%, transparent)",
+        border:
+          "1px solid color-mix(in srgb, var(--canal-sv) 22%, transparent)",
       }}
     >
       SV
@@ -120,7 +123,9 @@ function SVRow({ sv }: { sv: FixtureSvBet }) {
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
       <span className="text-muted-foreground">{pickLabel}</span>
-      <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>{sv.ev}</span>
+      <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>
+        {sv.ev}
+      </span>
       {sv.betStatus && sv.betStatus !== "PENDING" && (
         <BetResultBadge status={sv.betStatus} />
       )}
@@ -360,7 +365,12 @@ function FixtureMobileCard({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               {mr?.decision === "BET" && mr.ev && (
-                <span className="text-sm font-bold" style={{ color: "var(--canal-ev)" }}>{mr.ev}</span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "var(--canal-ev)" }}
+                >
+                  {mr.ev}
+                </span>
               )}
               {row.prediction && <PredictionBadge pred={row.prediction} />}
               <DecisionBadge decision={mr?.decision ?? null} />
@@ -524,7 +534,9 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
               <span className="text-muted-foreground">—</span>
             )}
             {row.original.safeValueBet && (
-              <div style={{ color: "var(--canal-sv)" }}>{row.original.safeValueBet.ev}</div>
+              <div style={{ color: "var(--canal-sv)" }}>
+                {row.original.safeValueBet.ev}
+              </div>
             )}
           </div>
         );

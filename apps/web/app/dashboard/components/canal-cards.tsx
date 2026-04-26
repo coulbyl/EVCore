@@ -55,7 +55,10 @@ function CanalShell({ canal, icon, label, children }: CanalShellProps) {
       <div className="flex items-center gap-2">
         <span
           className="flex size-7 shrink-0 items-center justify-center rounded-lg"
-          style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 14%, transparent)` }}
+          style={{
+            color: s.color,
+            background: `color-mix(in srgb, ${s.color} 14%, transparent)`,
+          }}
         >
           {icon}
         </span>
@@ -172,11 +175,19 @@ function CanalConfCard() {
       : "—";
 
   return (
-    <CanalShell canal="conf" icon={<Target size={14} />} label="Canal Confiance">
+    <CanalShell
+      canal="conf"
+      icon={<Target size={14} />}
+      label="Canal Confiance"
+    >
       <Stat
         label="Aujourd'hui"
         value={`${correct}/${settled.length}`}
-        sub={predictions.length > settled.length ? `(${predictions.length - settled.length} en attente)` : undefined}
+        sub={
+          predictions.length > settled.length
+            ? `(${predictions.length - settled.length} en attente)`
+            : undefined
+        }
       />
       <Stat label="Taux du jour" value={todayRate} />
       <Stat

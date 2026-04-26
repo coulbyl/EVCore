@@ -10,7 +10,10 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
 
-  reporter: [["html", { outputFolder: "playwright-report", open: "never" }], ["list"]],
+  reporter: [
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["list"],
+  ],
 
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,

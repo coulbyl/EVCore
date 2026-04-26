@@ -17,10 +17,7 @@ describe('OddsHistoricalImportWorker helpers', () => {
       ),
     ).toBe(true);
     expect(
-      teamMatches(
-        { name: 'AIK Stockholm', shortName: 'AIK Stockholm' },
-        'AIK',
-      ),
+      teamMatches({ name: 'AIK Stockholm', shortName: 'AIK Stockholm' }, 'AIK'),
     ).toBe(true);
     expect(
       teamMatches(
@@ -38,16 +35,10 @@ describe('OddsHistoricalImportWorker helpers', () => {
       ),
     ).toBe(true);
     expect(
-      teamMatches(
-        { name: 'Halmstad', shortName: 'Halmstad' },
-        'Halmstads BK',
-      ),
+      teamMatches({ name: 'Halmstad', shortName: 'Halmstad' }, 'Halmstads BK'),
     ).toBe(true);
     expect(
-      teamMatches(
-        { name: 'Sirius', shortName: 'Sirius' },
-        'IK Sirius',
-      ),
+      teamMatches({ name: 'Sirius', shortName: 'Sirius' }, 'IK Sirius'),
     ).toBe(true);
     expect(
       teamMatches(
