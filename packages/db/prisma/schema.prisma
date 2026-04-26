@@ -260,9 +260,10 @@ model Bet {
   source        BetSource     @default(MODEL)
   userId        String?       @db.Uuid
   user          User?         @relation(fields: [userId], references: [id])
-  betSlipItems  BetSlipItem[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  betSlipItems         BetSlipItem[]
+  bankrollTransactions BankrollTransaction[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@unique([fixtureId, pickKey, userId])
   @@index([modelRunId])
@@ -348,6 +349,7 @@ model BankrollTransaction {
   type      BankrollTransactionType
   amount    Decimal                 @db.Decimal(14, 2)
   betId     String?                 @db.Uuid
+  bet       Bet?                    @relation(fields: [betId], references: [id])
   note      String?
   createdAt DateTime                @default(now())
 

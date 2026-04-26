@@ -28,6 +28,7 @@ import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
 import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { CanalBadge } from "@/components/canal-badge";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
@@ -145,9 +146,12 @@ const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
             ? "text-danger"
             : "";
       return (
-        <span className={`tabular-nums font-semibold ${cls}`}>
-          {formatSignedCurrency(parseAmount(row.original.amount))}
-        </span>
+        <div className="flex items-center justify-end gap-2">
+          {row.original.canal && <CanalBadge canal={row.original.canal} />}
+          <span className={`tabular-nums font-semibold ${cls}`}>
+            {formatSignedCurrency(parseAmount(row.original.amount))}
+          </span>
+        </div>
       );
     },
     meta: { align: "right" },
@@ -416,11 +420,14 @@ export function BankrollPageClient() {
                         {transactionTypeLabel(row.type)}
                       </p>
                     </div>
-                    <p
-                      className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
-                    >
-                      {formatSignedCurrency(parseAmount(row.amount))}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {row.canal && <CanalBadge canal={row.canal} />}
+                      <p
+                        className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
+                      >
+                        {formatSignedCurrency(parseAmount(row.amount))}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Solde après</span>

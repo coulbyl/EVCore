@@ -326,7 +326,7 @@ Les trois canaux coexistent dans une seule ligne de tableau sans identité propr
   - [x] Canal Sécurité : Net (unités), paris réglés, gagnés
   - [x] Canal Confiance : hit rate du jour + 30 jours (`usePredictions` + `usePredictionStats`)
 - [x] Devise EUR + formatage compact mobile : `formatCurrency(v, compact?)` + `formatSignedCurrency` dans `helpers/number.ts`, appliqués sur Bet Slips (list + detail panel) et Bankroll
-- [ ] Appliquer les badges de canal partout (Bet Slips, Bankroll transactions, Notifications)
+- [x] Badges canal sur Bet Slips (detail panel — badge EV/SV par sélection) et Bankroll transactions (colonne + mobile card) — `CanalBadge` composant partagé extrait dans `components/canal-badge.tsx`; `canal` exposé via `BetSlipItemView` + `BankrollTransaction` (backend : `Bet.isSafeValue` → `canal`, migration Prisma `add_bet_bankroll_relation`)
 
 ---
 

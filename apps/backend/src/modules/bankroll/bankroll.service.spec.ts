@@ -185,6 +185,7 @@ describe('BankrollService', () => {
           type: BankrollTransactionType.DEPOSIT,
           amount: new Decimal('50000'),
           betId: null,
+          bet: null,
           note: 'Init',
           createdAt: new Date('2026-04-18T10:00:00Z'),
           userId: 'u1',

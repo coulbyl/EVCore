@@ -32,6 +32,7 @@ export class BankrollService {
       betId: r.betId,
       note: r.note,
       createdAt: r.createdAt.toISOString(),
+      canal: r.bet ? (r.bet.isSafeValue ? 'SV' : 'EV') : null,
     }));
   }
 

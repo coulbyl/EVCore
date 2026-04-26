@@ -8,6 +8,7 @@ import {
 } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
 import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { CanalBadge } from "@/components/canal-badge";
 import type {
   BetSlipView,
   BetSlipItemView,
@@ -112,12 +113,15 @@ function BetItem({
           ) : null}
         </div>
 
-        {/* Row 2: pick + market */}
-        <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{pickLabel}</span>
-          <span className="mx-1 text-border">·</span>
-          {marketLabel}
-        </p>
+        {/* Row 2: pick + market + canal */}
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{pickLabel}</span>
+            <span className="mx-1 text-border">·</span>
+            {marketLabel}
+          </p>
+          <CanalBadge canal={item.canal} />
+        </div>
 
         {/* Row 3: metrics + P&L */}
         <div className="flex items-end justify-between gap-2">
