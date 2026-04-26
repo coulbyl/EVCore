@@ -57,7 +57,7 @@ Objectif : garder toute l'ambition de P0, mais l'exécuter dans un ordre qui év
 - [x] Migration filtres bankroll → `FilterBar`, table transactions → `DataTable`
 - [x] Migration filtres bet-slips → `FilterBar`, résumé période → `StatCard compact ×3`
 - [x] Migration audit : `bets-breakdown` → `TableCard + StatList`, `league-breakdown` → `DataTable + ProgressBar`
-- [ ] Migration `fixture-diagnostics.tsx` → `DataTable`
+- [x] Migration `fixture-diagnostics.tsx` → `DataTable` + `StatCard compact × 4` dans `ResponsiveGrid`, EV formatté `+14.7%`
 - [x] Construction de `/dashboard/params/account` (Apparence, Langue, placeholders Notifications/Bankroll)
 
 **Definition of done de P0 :**
@@ -195,7 +195,7 @@ Les tables actuelles sont du CSS custom avec sticky columns gérées manuellemen
 - [x] `fixtures-table.tsx` → `DataTable`
 - [x] `league-breakdown.tsx` → `DataTable(mobileCard)` + `ProgressBar`
 - [x] `bets-breakdown.tsx` → `TableCard + StatList` (panneaux stats, pas de table)
-- [ ] `fixture-diagnostics.tsx` → `DataTable`
+- [x] `fixture-diagnostics.tsx` → `DataTable` (candidatePicks + evaluatedPicks)
 
 ---
 
