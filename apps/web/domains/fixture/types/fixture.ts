@@ -86,6 +86,7 @@ export type FixtureStatusFilter = "ALL" | "SCHEDULED" | "LIVE" | "FINISHED";
 export type FixtureTimeSlotFilter = "ALL" | TimeSlotKey;
 export type FixtureCompetitionFilter = "ALL" | string;
 export type FixtureBetStatusFilter = "ALL" | "WON" | "LOST" | "PENDING";
+export type FixtureCanalFilter = "ALL" | "EV" | "SV" | "CONF";
 
 export type FixtureFilters = {
   date: string;
@@ -94,4 +95,5 @@ export type FixtureFilters = {
   status: FixtureStatusFilter;
   timeSlot: FixtureTimeSlotFilter;
   betStatus: FixtureBetStatusFilter;
+  canal: FixtureCanalFilter;
 };

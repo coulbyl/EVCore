@@ -38,7 +38,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
             "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
         }}
       >
-        BET
+        Jouer
       </span>
     );
   }
@@ -47,7 +47,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
       variant="neutral"
       className="rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
     >
-      NO BET
+      Passer
     </Badge>
   );
 }
@@ -512,6 +512,7 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       header: "Pick",
       cell: ({ row }) => {
         const mr = row.original.modelRun;
+        const sv = row.original.safeValueBet;
         return (
           <div className="flex flex-col gap-1 text-sm text-foreground">
             {mr?.market && mr?.pick ? (
@@ -526,16 +527,21 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
             ) : (
               <span className="text-muted-foreground">—</span>
             )}
-            {row.original.safeValueBet && (
-              <div className="flex items-center gap-1.5">
+            {sv && (
+              <div
+                className="ml-1 flex items-center gap-1.5 border-l-2 pl-2"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--canal-sv) 35%, transparent)",
+                }}
+              >
                 <SVBadge />
                 <span className="text-xs text-muted-foreground">
                   {formatCombinedPickForDisplay({
-                    market: row.original.safeValueBet.market,
-                    pick: row.original.safeValueBet.pick,
-                    comboMarket:
-                      row.original.safeValueBet.comboMarket ?? undefined,
-                    comboPick: row.original.safeValueBet.comboPick ?? undefined,
+                    market: sv.market,
+                    pick: sv.pick,
+                    comboMarket: sv.comboMarket ?? undefined,
+                    comboPick: sv.comboPick ?? undefined,
                   })}
                 </span>
               </div>
@@ -557,9 +563,14 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
               )?.odds ?? null)
             : null;
         return (
-          <span className="tabular-nums text-sm font-medium text-foreground">
-            {odds ?? <span className="text-muted-foreground">—</span>}
-          </span>
+          <div className="flex flex-col gap-0.5 tabular-nums text-sm font-medium">
+            <span className="text-foreground">
+              {odds ?? <span className="text-muted-foreground">—</span>}
+            </span>
+            {row.original.safeValueBet && (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </div>
         );
       },
     },
@@ -569,17 +580,26 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       meta: { align: "right" },
       cell: ({ row }) => {
         const mr = row.original.modelRun;
+        const sv = row.original.safeValueBet;
         return (
-          <div className="flex flex-col gap-1 tabular-nums text-sm font-semibold">
+          <div className="tabular-nums text-sm font-semibold">
             {mr?.ev ? (
-              <div style={{ color: "var(--canal-ev)" }}>{mr.ev}</div>
+              <span>
+                <span style={{ color: "var(--canal-ev)" }}>{mr.ev}</span>
+                {sv && (
+                  <>
+                    <span className="mx-1 text-border">·</span>
+                    <span
+                      className="text-[0.7rem]"
+                      style={{ color: "var(--canal-sv)" }}
+                    >
+                      sv {sv.ev}
+                    </span>
+                  </>
+                )}
+              </span>
             ) : (
               <span className="text-muted-foreground">—</span>
-            )}
-            {row.original.safeValueBet && (
-              <div style={{ color: "var(--canal-sv)" }}>
-                {row.original.safeValueBet.ev}
-              </div>
             )}
           </div>
         );

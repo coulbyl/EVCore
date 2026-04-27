@@ -7,6 +7,7 @@ import { TIME_SLOTS } from "@/constants/time-slots";
 import { COMPETITIONS } from "@/constants/competitions";
 import {
   BET_STATUS_OPTIONS,
+  CANAL_OPTIONS,
   DECISION_OPTIONS,
   STATUS_OPTIONS,
 } from "@/domains/fixture/constants/filters";
@@ -59,6 +60,12 @@ const FILTER_DEFS: FilterDef[] = [
     type: "select",
     options: BET_STATUS_OPTIONS,
   },
+  {
+    key: "canal",
+    label: "Canal",
+    type: "select",
+    options: CANAL_OPTIONS,
+  },
 ];
 
 function filtersToState(f: FixtureFilters): FilterState {
@@ -69,6 +76,7 @@ function filtersToState(f: FixtureFilters): FilterState {
     status: f.status,
     timeSlot: f.timeSlot,
     betStatus: f.betStatus,
+    canal: f.canal,
   };
 }
 
@@ -93,6 +101,7 @@ export function FixturesFilters({ filters }: Props) {
       params.set("status", (next.status as string) ?? "ALL");
       params.set("timeSlot", (next.timeSlot as string) ?? "ALL");
       params.set("betStatus", (next.betStatus as string) ?? "ALL");
+      params.set("canal", (next.canal as string) ?? "ALL");
       router.push(`${pathname}?${params.toString()}`);
     });
   }
@@ -104,6 +113,7 @@ export function FixturesFilters({ filters }: Props) {
     params.set("status", "ALL");
     params.set("timeSlot", "ALL");
     params.set("betStatus", "ALL");
+    params.set("canal", "ALL");
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
