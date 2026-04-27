@@ -112,13 +112,43 @@ function SVBadge() {
   );
 }
 
-function SVRow({ sv }: { sv: FixtureSvBet }) {
+function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
+  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
   const pickLabel = formatCombinedPickForDisplay({
     market: sv.market,
     pick: sv.pick,
     comboMarket: sv.comboMarket ?? undefined,
     comboPick: sv.comboPick ?? undefined,
   });
+  const inSlip = isInSlip(sv.betId);
+  const canAdd = sv.betStatus === "PENDING" && row.status !== "FINISHED";
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(sv.betId);
+      return;
+    }
+    const item: BetSlipDraftItem = {
+      betId: sv.betId,
+      fixtureId: row.fixtureId,
+      fixture: row.fixture,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
+      competition: row.competition,
+      scheduledAt: row.scheduledAt,
+      market: sv.market,
+      pick: sv.pick,
+      comboMarket: sv.comboMarket ?? undefined,
+      comboPick: sv.comboPick ?? undefined,
+      odds: null,
+      ev: sv.ev,
+      stakeOverride: null,
+    };
+    addItem(item);
+    if (draft.items.length === 0) open();
+  }
+
   return (
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
@@ -128,6 +158,19 @@ function SVRow({ sv }: { sv: FixtureSvBet }) {
       </span>
       {sv.betStatus && sv.betStatus !== "PENDING" && (
         <BetResultBadge status={sv.betStatus} />
+      )}
+      {canAdd && (
+        <button
+          type="button"
+          onClick={handleClick}
+          className={`flex size-6 items-center justify-center rounded-md border transition-colors ${
+            inSlip
+              ? "border-success/20 bg-success/12 text-success"
+              : "border-border bg-panel text-muted-foreground hover:border-accent hover:text-accent"
+          }`}
+        >
+          {inSlip ? <Check size={11} /> : <ShoppingCart size={11} />}
+        </button>
       )}
     </div>
   );
@@ -385,7 +428,7 @@ function FixtureMobileCard({
                 <BetResultBadge status={mr.betStatus} />
               </div>
             )}
-          {row.safeValueBet && <SVRow sv={row.safeValueBet} />}
+          {row.safeValueBet && <SVRow sv={row.safeValueBet} row={row} />}
         </div>
       </button>
 

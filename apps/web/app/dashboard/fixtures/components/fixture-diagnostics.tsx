@@ -219,8 +219,17 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   function handlePlacePick(snap: FixtureEvaluatedPickSnapshot) {
     if (!mr) return;
     const shouldOpen = draft.items.length === 0;
-    const item: BetSlipDraftItem = {
-      modelRunId: mr.modelRunId,
+
+    // If the chosen pick matches the SV bet, reuse its betId so the slip
+    // item inherits isSafeValue=true and shows the SV canal badge.
+    const sv = row.safeValueBet;
+    const matchesSv =
+      sv?.market === snap.market &&
+      sv?.pick === snap.pick &&
+      (sv?.comboMarket ?? null) === (snap.comboMarket ?? null) &&
+      (sv?.comboPick ?? null) === (snap.comboPick ?? null);
+
+    const base = {
       fixtureId: row.fixtureId,
       fixture: row.fixture,
       homeLogo: row.homeLogo,
@@ -235,6 +244,12 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       ev: snap.ev,
       stakeOverride: null,
     };
+
+    const item: BetSlipDraftItem =
+      matchesSv && sv
+        ? { ...base, betId: sv.betId }
+        : { ...base, modelRunId: mr.modelRunId };
+
     addItem(item);
     if (shouldOpen) open();
   }
