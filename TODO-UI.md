@@ -475,35 +475,29 @@ Le composant actuel est lisible pour un admin/dev mais opaque pour un user lambd
 
 **Tâches :**
 
-- [ ] **Section "Entrées modèle" → renommer et simplifier**
-  - [ ] Remplacer `λ Dom.` / `λ Ext.` par une phrase lisible : "Le modèle prédit ~1.8 buts dom. · ~0.9 buts ext."
-  - [ ] Garder "Prob. estimée" et "Buts attendus" tels quels (compréhensibles)
+- [x] **Section "Entrées modèle" → renommée "Prédiction modèle"**
+  - [x] `λ Dom.` / `λ Ext.` remplacés par une phrase lisible : "Le modèle prédit ~X buts dom. · ~Y buts ext."
+  - [x] StatCards : "Prob. estimée" + "Valeur (EV)" en % signé
 
-- [ ] **Ajouter la section "Pourquoi ce pick ?" avec les features**
-  - [ ] Afficher les 4 facteurs depuis `ModelRun.features` : `forme_recente`, `xg`, `performance_dom_ext`, `volatilite_ligue`
-  - [ ] Une barre de progression horizontale par facteur (score 0–1 → largeur visuelle)
-  - [ ] Label lisible par facteur : "Forme récente", "Expected Goals (xG)", "Avantage dom./ext.", "Stabilité de la ligue"
-  - [ ] Code couleur : vert si le facteur favorise le pick, ambre si neutre, rose si défavorable
+- [x] **Section "Pourquoi ce pick ?" avec les features**
+  - [x] 4 barres de facteurs (`recentForm`, `xg`, `performanceDomExt`, `volatiliteLigue`)
+  - [x] Code couleur : vert ≥65%, ambre ≥40%, rouge <40%
+  - [x] Labels lisibles : "Forme récente", "Expected Goals (xG)", "Avantage dom./ext.", "Stabilité de la ligue"
 
-- [ ] **Fusionner ou hiérarchiser les deux tables**
-  - [ ] Option A : une seule table "Tous les marchés" avec colonne Statut (Viable / Écarté)
-  - [ ] Option B : conserver deux tables mais ajouter une phrase d'intro explicative : "Le modèle a analysé N marchés. X ont passé tous les filtres."
-  - [ ] Choisir l'option en fonction du feedback utilisateur
+- [x] **Tables fusionnées → "Marchés analysés"** (Option A)
+  - [x] Une seule table avec colonne Statut (Viable / raison de rejet inline)
+  - [x] Intro : "N marchés · Y viables · Z écartés"
 
-- [ ] **Formater "Valeur" (EV) en pourcentage signé**
-  - [ ] `0.147` → `+14.7%` (emerald), `-0.05` → `-5.0%` (rose)
-  - [ ] Même chose pour "Qualité" si conservé
+- [x] **EV en % signé partout** (`+14.7%` / `-5.0%`)
 
-- [ ] **Masquer ou réduire "Qualité" pour les users lambda**
-  - [ ] Envisager de ne l'afficher qu'en mode "Détail technique" (toggle visible par les admins)
+- [x] **"Qualité" (qualityScore) supprimé** de la vue principale
 
-- [ ] **Raisons de rejet : améliorer la lisibilité**
-  - [ ] Ajouter une icône par type de raison (🔒 marché suspendu, 📉 valeur insuffisante, 🎯 probabilité trop faible…)
-  - [ ] Optionnel : tooltip avec une explication courte au survol
+- [x] **Hiérarchie visuelle**
+  - [x] Pick retenu mis en avant en haut (canal badge EV + pick + EV + prob)
+  - [x] Decision NO_BET : message explicite au lieu du silence
 
-- [ ] **Hiérarchie visuelle générale**
-  - [ ] Le pick retenu (celui avec `decision: BET`) doit être mis en avant visuellement en haut du diagnostic, pas noyé dans la table
-  - [ ] Les picks "Viable" dans la table évaluée doivent se distinguer clairement des picks "Rejeté" (fond légèrement coloré sur la ligne ?)
+- [ ] **Raisons de rejet : icônes par type** (🔒 suspendu, 📉 valeur insuffisante…) — quick win pour plus tard
+- [ ] **Masquer les données techniques** (λ, features) en mode "vue simplifiée" pour users non-admin
 
 ---
 
