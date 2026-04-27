@@ -19,6 +19,7 @@ import type { FilterDef, FilterState } from "@evcore/ui";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useBankrollTransactions } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
 import type {
   BankrollTransaction,
@@ -241,6 +242,7 @@ export function BankrollPageClient() {
     type: "ALL",
   });
 
+  const isMobile = useIsMobile();
   const balanceQuery = useBankrollBalance();
   const transactionsQuery = useBankrollTransactions();
   const betSlipsQuery = useBetSlips();
@@ -318,25 +320,30 @@ export function BankrollPageClient() {
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5">
-          <section className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard
+              compact={isMobile}
               icon={<Wallet size={14} />}
               label="Solde actuel"
               value={formatCurrency(currentBalance, true)}
               tone="accent"
             />
             <StatCard
+              compact={isMobile}
               icon={<ArrowDownLeft size={14} />}
               label="Total déposé"
               value={formatCurrency(totalDeposited, true)}
               tone="neutral"
             />
-            <StatCard
-              icon={<ArrowUpRight size={14} />}
-              label="ROI net"
-              value={formatPercent(roi)}
-              tone={(roi ?? 0) >= 0 ? "success" : "danger"}
-            />
+            <div className="col-span-2 sm:col-span-1">
+              <StatCard
+                compact={isMobile}
+                icon={<ArrowUpRight size={14} />}
+                label="ROI net"
+                value={formatPercent(roi)}
+                tone={(roi ?? 0) >= 0 ? "success" : "danger"}
+              />
+            </div>
           </section>
 
           <div className="flex justify-stretch sm:justify-end">
