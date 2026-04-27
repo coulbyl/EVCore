@@ -51,3 +51,7 @@ combo-labs.txt
 pr-desc.md
 VPS_SETUP.md
 logs/
+
+# Playwright
+test-results/
+playwright-report/
