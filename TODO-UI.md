@@ -327,6 +327,10 @@ Les trois canaux coexistent dans une seule ligne de tableau sans identité propr
   - [x] Canal Confiance : hit rate du jour + 30 jours (`usePredictions` + `usePredictionStats`)
 - [x] Devise EUR + formatage compact mobile : `formatCurrency(v, compact?)` + `formatSignedCurrency` dans `helpers/number.ts`, appliqués sur Bet Slips (list + detail panel) et Bankroll
 - [x] Badges canal sur Bet Slips (detail panel — badge EV/SV par sélection) et Bankroll transactions (colonne + mobile card) — `CanalBadge` composant partagé extrait dans `components/canal-badge.tsx`; `canal` exposé via `BetSlipItemView` + `BankrollTransaction` (backend : `Bet.isSafeValue` → `canal`, migration Prisma `add_bet_bankroll_relation`)
+- [x] **Fixtures table UX** : étiquettes DÉCISION traduites (Jouer / Passer), valeurs EV+SV inline (`+0.380 · sv +0.053`), connecteur visuel teal sur sous-ligne SV (bordure gauche), cote SV exposée depuis `oddsSnapshot`, filtre Canal (EV / Safe Value / Confiance) dans la FilterBar
+- [x] **Responsive polish** : grilles stat 2-col + `compact` sur mobile pour Bankroll et Bet Slips (pattern `grid-cols-2 sm:grid-cols-3`, dernier card `col-span-2 sm:col-span-1`); overflow mobile card Fixtures corrigé (badges sur ligne séparée avec `flex-wrap`)
+- [x] **Topbar mobile** : texte "EVCore" masqué sous `sm` (icône seule), `BankrollWidget` affiche la devise EUR + compact seulement au-dessus de 1 M€, `BetSlipButton` redessiné (pill avec accent, libellé "Coupon", FAB mobile flottant quand count > 0)
+- [x] **FilterBar desktop** : largeur uniforme `w-[155px]` + `w-full` sur `SelectTrigger` (supprime les largeurs incohérentes par contenu)
 
 ---
 
