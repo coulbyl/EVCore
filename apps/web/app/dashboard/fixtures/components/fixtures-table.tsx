@@ -153,6 +153,9 @@ function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
       <span className="text-muted-foreground">{pickLabel}</span>
+      {sv.odds && (
+        <span className="text-muted-foreground">{sv.odds}</span>
+      )}
       <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>
         {sv.ev}
       </span>
@@ -354,6 +357,16 @@ function FixtureMobileCard({
           comboPick: mr.comboPick ?? undefined,
         })
       : null;
+  const evOdds =
+    mr?.market && mr?.pick
+      ? (mr.evaluatedPicks.find(
+          (p) =>
+            p.market === mr.market &&
+            p.pick === mr.pick &&
+            (p.comboMarket ?? null) === (mr.comboMarket ?? null) &&
+            (p.comboPick ?? null) === (mr.comboPick ?? null),
+        )?.odds ?? null)
+      : null;
 
   return (
     <div
@@ -408,11 +421,18 @@ function FixtureMobileCard({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               {mr?.decision === "BET" && mr.ev && (
-                <span
-                  className="text-sm font-bold"
-                  style={{ color: "var(--canal-ev)" }}
-                >
-                  {mr.ev}
+                <span className="flex items-baseline gap-1 tabular-nums">
+                  {evOdds && (
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {evOdds}
+                    </span>
+                  )}
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: "var(--canal-ev)" }}
+                  >
+                    {mr.ev}
+                  </span>
                 </span>
               )}
               {row.prediction && <PredictionBadge pred={row.prediction} />}
