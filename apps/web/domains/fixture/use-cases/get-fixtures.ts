@@ -3,7 +3,10 @@ import { serverApiRequest } from "@/lib/api/server-api";
 
 export type FixturesResult = { rows: FixtureRow[]; total: number };
 
-function filterByCanal(rows: FixtureRow[], canal: FixtureFilters["canal"]): FixtureRow[] {
+function filterByCanal(
+  rows: FixtureRow[],
+  canal: FixtureFilters["canal"],
+): FixtureRow[] {
   if (canal === "ALL") return rows;
   return rows.filter((row) => {
     if (canal === "EV") return row.modelRun?.decision === "BET";

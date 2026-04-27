@@ -42,7 +42,11 @@ function TeamLogos({
   );
 }
 
-function ResultBadge({ status }: { status: "WON" | "LOST" | "PENDING" | null }) {
+function ResultBadge({
+  status,
+}: {
+  status: "WON" | "LOST" | "PENDING" | null;
+}) {
   if (!status || status === "PENDING") return null;
   return (
     <Badge
@@ -106,9 +110,7 @@ function WhySection({
   probEstimated: string | null;
   odds: string | null;
 }) {
-  const hasFactors =
-    factors &&
-    Object.values(factors).some((v) => v !== null);
+  const hasFactors = factors && Object.values(factors).some((v) => v !== null);
 
   return (
     <div className="mt-3 border-t border-border pt-3">
@@ -118,11 +120,7 @@ function WhySection({
       {hasFactors ? (
         <div className="flex flex-col gap-2">
           {FACTOR_DEFS.map((f) => (
-            <FactorBar
-              key={f.key}
-              label={f.label}
-              value={factors[f.key]}
-            />
+            <FactorBar key={f.key} label={f.label} value={factors[f.key]} />
           ))}
         </div>
       ) : (
@@ -201,7 +199,9 @@ export function EvPickCard({ row }: { row: FixtureRow }) {
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         {pickLabel && (
-          <span className="text-sm font-medium text-foreground">{pickLabel}</span>
+          <span className="text-sm font-medium text-foreground">
+            {pickLabel}
+          </span>
         )}
         {odds && (
           <span className="tabular-nums text-sm text-muted-foreground">
@@ -274,7 +274,9 @@ export function SvPickCard({ row }: { row: FixtureRow }) {
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         {pickLabel && (
-          <span className="text-sm font-medium text-foreground">{pickLabel}</span>
+          <span className="text-sm font-medium text-foreground">
+            {pickLabel}
+          </span>
         )}
         {sv.odds && (
           <span className="tabular-nums text-sm text-muted-foreground">
@@ -336,12 +338,18 @@ export function ConfPickCard({ row }: { row: FixtureRow }) {
           {pred.probability}
         </span>
         {pred.correct === true && (
-          <Badge variant="success" className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase">
+          <Badge
+            variant="success"
+            className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase"
+          >
             Correct
           </Badge>
         )}
         {pred.correct === false && (
-          <Badge variant="destructive" className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase">
+          <Badge
+            variant="destructive"
+            className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase"
+          >
             Incorrect
           </Badge>
         )}

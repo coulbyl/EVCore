@@ -83,13 +83,7 @@ export default async function AccountSettingsPage() {
               title: t("bankroll"),
               description: t("bankrollDescription"),
               preferenceHint: t("preferenceHint"),
-              stakeUnit: t("stakeUnit"),
               displayCurrency: t("displayCurrency"),
-              stakeOptions: [
-                { value: "1u", label: t("stakeUnits.one") },
-                { value: "2u", label: t("stakeUnits.two") },
-                { value: "5u", label: t("stakeUnits.five") },
-              ],
               currencyOptions: [
                 { value: "EUR", label: t("currencies.eur") },
                 { value: "USD", label: t("currencies.usd") },

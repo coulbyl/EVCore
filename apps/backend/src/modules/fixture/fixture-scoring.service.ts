@@ -323,7 +323,10 @@ export class FixtureScoringService {
               comboMarket: svBet.comboMarket ?? null,
               comboPick: svBet.comboPick ?? null,
               ev: formatSigned(toNumber(svBet.ev), 3),
-              odds: svBet.oddsSnapshot != null ? toNumber(svBet.oddsSnapshot).toFixed(2) : null,
+              odds:
+                svBet.oddsSnapshot != null
+                  ? toNumber(svBet.oddsSnapshot).toFixed(2)
+                  : null,
               betStatus: svBetStatus,
               probEstimated: svBet.probEstimated
                 ? `${(toNumber(svBet.probEstimated) * 100).toFixed(1)}%`

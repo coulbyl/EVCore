@@ -301,7 +301,7 @@ La page `/dashboard/params/account` est actuellement un placeholder "À venir". 
 - [x] Section **Langue** : RadioGroup (FR / EN), `useOptimistic` + cookie + `router.refresh()`
 - [x] Section **Notifications** : préférences par type (ROI_ALERT, WEEKLY_REPORT…)
 - [x] Section **Compte** : email, username, "Modifier le mot de passe"
-- [x] Section **Bankroll** : unité de stake, devise d'affichage
+- [x] Section **Bankroll** : devise d'affichage
 - [ ] Endpoint `PATCH /auth/me` + persistance en base (thème + locale)
 
 ---

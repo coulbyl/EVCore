@@ -68,7 +68,6 @@
     "notificationDescription": "Choisissez les alertes importantes à garder visibles dans l'app.",
     "bankrollDescription": "Préparez vos préférences bankroll et devise avant la persistance backend.",
     "preferenceHint": "Préférence locale pour l'instant, persistance au commit suivant.",
-    "stakeUnit": "Unité de mise",
     "displayCurrency": "Devise d'affichage",
     "notificationTypes": {
       "roiAlert": "Alerte ROI",
@@ -81,11 +80,6 @@
       "marketSuspension": "Prévenu quand un marché est auto-suspendu.",
       "brierAlert": "Prévenu quand la calibration se dégrade.",
       "weeklyReport": "Recevoir le récapitulatif hebdomadaire opérateur."
-    },
-    "stakeUnits": {
-      "one": "1u",
-      "two": "2u",
-      "five": "5u"
     },
     "currencies": {
       "eur": "EUR",

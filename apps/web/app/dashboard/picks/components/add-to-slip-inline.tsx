@@ -72,9 +72,7 @@ export function AddToSlipInline({
       if (draft.items.length === 0) open();
     }
 
-    return (
-      <SlipButton inSlip={inSlip} onClick={handleClick} canal="EV" />
-    );
+    return <SlipButton inSlip={inSlip} onClick={handleClick} canal="EV" />;
   }
 
   // SV canal
@@ -135,7 +133,7 @@ function SlipButton({
           : "border-border bg-secondary text-muted-foreground hover:text-foreground"
       }`}
       style={
-        !inSlip ? { "--hover-color": canalColor } as React.CSSProperties : {}
+        !inSlip ? ({ "--hover-color": canalColor } as React.CSSProperties) : {}
       }
     >
       {inSlip ? <Check size={12} /> : <ShoppingCart size={12} />}

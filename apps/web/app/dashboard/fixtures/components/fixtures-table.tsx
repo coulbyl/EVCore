@@ -153,9 +153,7 @@ function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
       <span className="text-muted-foreground">{pickLabel}</span>
-      {sv.odds && (
-        <span className="text-muted-foreground">{sv.odds}</span>
-      )}
+      {sv.odds && <span className="text-muted-foreground">{sv.odds}</span>}
       <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>
         {sv.ev}
       </span>
@@ -419,7 +417,10 @@ function FixtureMobileCard({
               <span className="mx-1.5">·</span>
               {formatKickoff(row.scheduledAt)}
             </p>
-            <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
+            <ChevronRight
+              size={14}
+              className="shrink-0 text-muted-foreground"
+            />
           </div>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

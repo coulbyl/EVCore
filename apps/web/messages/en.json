@@ -68,7 +68,6 @@
     "notificationDescription": "Choose the important alerts you want to keep visible in the app.",
     "bankrollDescription": "Prepare your bankroll and currency preferences before backend persistence.",
     "preferenceHint": "Local preference for now, persistence comes in the next commit.",
-    "stakeUnit": "Stake unit",
     "displayCurrency": "Display currency",
     "notificationTypes": {
       "roiAlert": "ROI alert",
@@ -81,11 +80,6 @@
       "marketSuspension": "Get notified when a market is auto-suspended.",
       "brierAlert": "Get notified when calibration degrades.",
       "weeklyReport": "Receive the weekly operator recap."
-    },
-    "stakeUnits": {
-      "one": "1u",
-      "two": "2u",
-      "five": "5u"
     },
     "currencies": {
       "eur": "EUR",
