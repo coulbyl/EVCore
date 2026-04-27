@@ -1,14 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { RadioGroup, RadioGroupItem } from "@evcore/ui";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { SettingsSectionCard } from "./settings-section-card";
 
 export function AppearanceSection() {
   const { theme, setTheme } = useTheme();
   const t = useTranslations("account");
   const tTheme = useTranslations("theme");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const options = [
     { value: "light", label: tTheme("light"), icon: SunIcon },
@@ -17,16 +24,9 @@ export function AppearanceSection() {
   ] as const;
 
   return (
-    <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-        {t("appearance")}
-      </p>
-      <h3 className="mt-2 text-base font-semibold tracking-tight text-foreground">
-        {t("theme")}
-      </h3>
-
+    <SettingsSectionCard eyebrow={t("appearance")} title={t("theme")}>
       <RadioGroup
-        value={theme ?? "system"}
+        value={mounted ? (theme ?? "system") : "system"}
         onValueChange={setTheme}
         className="mt-4 grid grid-cols-3 gap-3"
       >
@@ -46,6 +46,6 @@ export function AppearanceSection() {
           </label>
         ))}
       </RadioGroup>
-    </div>
+    </SettingsSectionCard>
   );
 }

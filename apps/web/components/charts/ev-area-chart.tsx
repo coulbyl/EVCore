@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { CHART_AXIS_TICK, CHART_TOOLTIP_CONTENT_STYLE } from "./chart-theme";
 
 type EvAreaChartProps = {
   data: Record<string, unknown>[];
@@ -51,21 +52,13 @@ function EvAreaChart({
           />
           <XAxis
             dataKey={xKey}
-            tick={{
-              fontSize: 10,
-              fill: "var(--muted-foreground)",
-              fontFamily: "inherit",
-            }}
+            tick={CHART_AXIS_TICK}
             axisLine={false}
             tickLine={false}
             tickMargin={8}
           />
           <YAxis
-            tick={{
-              fontSize: 10,
-              fill: "var(--muted-foreground)",
-              fontFamily: "inherit",
-            }}
+            tick={CHART_AXIS_TICK}
             axisLine={false}
             tickLine={false}
             tickMargin={8}
@@ -73,14 +66,7 @@ function EvAreaChart({
             width={formatY ? 48 : 32}
           />
           <Tooltip
-            contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              borderRadius: "0.75rem",
-              fontSize: 12,
-              fontFamily: "inherit",
-              color: "var(--foreground)",
-            }}
+            contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             cursor={{ stroke: "var(--border)", strokeWidth: 1 }}
           />
           <Area

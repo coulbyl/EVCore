@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Loader2, TrendingUp, Shield, Brain } from "lucide-react";
 import { Page, PageContent, StatCard } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import { usePicksOfTheDay } from "@/domains/fixture/use-cases/get-picks-of-the-day";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
@@ -69,6 +70,7 @@ function CanalSection({
 // ── main ──────────────────────────────────────────────────────────────────────
 
 export function PicksPageClient() {
+  const t = useTranslations("picks");
   const { data, isLoading, isError } = usePicksOfTheDay();
   const isMobile = useIsMobile();
 
@@ -88,21 +90,21 @@ export function PicksPageClient() {
             <StatCard
               compact={isMobile}
               icon={<TrendingUp size={14} />}
-              label="Canal EV"
+              label={t("evChannel")}
               value={String(ev.length)}
               tone="accent"
             />
             <StatCard
               compact={isMobile}
               icon={<Shield size={14} />}
-              label="Safe Value"
+              label={t("safeValue")}
               value={String(sv.length)}
               tone="success"
             />
             <StatCard
               compact={isMobile}
               icon={<Brain size={14} />}
-              label="Confiance"
+              label={t("confidence")}
               value={String(conf.length)}
               tone="neutral"
             />
@@ -120,14 +122,14 @@ export function PicksPageClient() {
             {/* Error */}
             {isError && !isLoading && (
               <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
-                Impossible de charger les picks du jour.
+                {t("loadError")}
               </div>
             )}
 
             {/* Empty */}
             {!isLoading && !isError && !hasAny && (
               <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
-                Aucun pick pour aujourd'hui.
+                {t("empty")}
               </div>
             )}
 
@@ -135,7 +137,7 @@ export function PicksPageClient() {
             {!isLoading && !isError && hasAny && (
               <div className="flex flex-col gap-6 pb-2">
                 <CanalSection
-                  title="Canal EV"
+                  title={t("evChannel")}
                   color="var(--canal-ev)"
                   count={ev.length}
                 >
@@ -145,7 +147,7 @@ export function PicksPageClient() {
                 </CanalSection>
 
                 <CanalSection
-                  title="Safe Value"
+                  title={t("safeValue")}
                   color="var(--canal-sv)"
                   count={sv.length}
                 >
@@ -155,7 +157,7 @@ export function PicksPageClient() {
                 </CanalSection>
 
                 <CanalSection
-                  title="Confiance"
+                  title={t("confidence")}
                   color="var(--canal-conf)"
                   count={conf.length}
                 >

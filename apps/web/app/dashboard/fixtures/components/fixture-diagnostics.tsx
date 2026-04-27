@@ -11,6 +11,7 @@ import {
   StatCard,
 } from "@evcore/ui";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 import {
   fixtureStatusLabel,
   formatCombinedPickForDisplay,
@@ -28,7 +29,13 @@ import { CanalBadge } from "@/components/canal-badge";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-type BadgeVariant = "accent" | "success" | "warning" | "destructive" | "neutral";
+type BadgeVariant =
+  | "accent"
+  | "success"
+  | "warning"
+  | "destructive"
+  | "neutral";
+type Translator = ReturnType<typeof useTranslations>;
 
 function fixtureStatusTone(status: string): BadgeVariant {
   const s = status.toLowerCase();
@@ -44,32 +51,14 @@ function formatEv(raw: string): string {
   return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
 }
 
-const REJECTION_LABELS: Record<string, string> = {
-  odds_below_floor: "Cote trop basse",
-  odds_above_cap: "Cote trop haute",
-  ev_below_threshold: "Valeur insuffisante",
-  ev_above_hard_cap: "Valeur au-dessus du plafond",
-  ev_above_soft_cap: "Valeur au-dessus du plafond (calibration)",
-  filtered_longshot: "Grande cote écartée",
-  market_suspended: "Marché suspendu",
-  probability_too_low: "Probabilité insuffisante",
-  quality_score_below_threshold: "Qualité insuffisante",
-  under_high_lambda: "Nbre de buts élevé",
-};
-
-function rejectionLabel(reason?: string): string {
+function rejectionLabel(reason: string | undefined, t: Translator): string {
   if (!reason) return "—";
-  return REJECTION_LABELS[reason] ?? reason;
+  const key = `rejection.${reason}` as const;
+  const translated = t.has(key) ? t(key) : reason;
+  return translated;
 }
 
 // ── factor bars ───────────────────────────────────────────────────────────────
-
-const FACTOR_DEFS: { key: keyof FixtureModelFactors; label: string }[] = [
-  { key: "recentForm", label: "Forme récente" },
-  { key: "xg", label: "Expected Goals (xG)" },
-  { key: "performanceDomExt", label: "Avantage dom./ext." },
-  { key: "volatiliteLigue", label: "Stabilité de la ligue" },
-];
 
 function FactorBar({ label, value }: { label: string; value: number | null }) {
   if (value === null) return null;
@@ -109,11 +98,13 @@ function PlacePickButton({
   fixtureId,
   alreadyInUserTicket,
   onPlace,
+  t,
 }: {
   snap: FixtureEvaluatedPickSnapshot;
   fixtureId: string;
   alreadyInUserTicket: boolean;
   onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
+  t: Translator;
 }) {
   const { isInSlip } = useBetSlip();
   const key = draftItemKey({
@@ -137,10 +128,10 @@ function PlacePickButton({
       disabled={disabled}
       title={
         inSlip
-          ? "Déjà dans le coupon"
+          ? t("actions.alreadyInSlip")
           : alreadyInUserTicket
-            ? "Déjà dans vos coupons"
-            : "Placer ce pick"
+            ? t("actions.alreadyInTickets")
+            : t("actions.placePick")
       }
       className={`flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border text-[0.7rem] font-semibold transition-colors ${
         inSlip
@@ -160,11 +151,12 @@ function makeMarketsColumns(
   alreadyInUserTicket: boolean,
   onPlace: (snap: FixtureEvaluatedPickSnapshot) => void,
   fixtureStatus: string,
+  t: Translator,
 ): ColumnDef<FixtureEvaluatedPickSnapshot>[] {
   return [
     {
       id: "market",
-      header: "Marché",
+      header: t("table.market"),
       cell: ({ row }) => (
         <span className="font-medium text-foreground">
           {formatCombinedPickForDisplay(row.original)}
@@ -173,19 +165,19 @@ function makeMarketsColumns(
     },
     {
       id: "prob",
-      header: "Prob.",
+      header: t("table.probability"),
       accessorFn: (row) => `${(Number(row.probability) * 100).toFixed(1)}%`,
       meta: { align: "right" },
     },
     {
       id: "odds",
-      header: "Cote",
+      header: t("table.odds"),
       accessorKey: "odds",
       meta: { align: "right" },
     },
     {
       id: "ev",
-      header: "Valeur",
+      header: t("table.value"),
       cell: ({ row }) => {
         const v = parseFloat(row.original.ev);
         return (
@@ -200,12 +192,14 @@ function makeMarketsColumns(
     },
     {
       id: "status",
-      header: "Statut",
+      header: t("table.status"),
       cell: ({ row }) =>
         row.original.status === "viable" ? (
-          <Badge variant="success">Viable</Badge>
+          <Badge variant="success">{t("table.viable")}</Badge>
         ) : (
-          <Badge variant="neutral">{rejectionLabel(row.original.rejectionReason)}</Badge>
+          <Badge variant="neutral">
+            {rejectionLabel(row.original.rejectionReason, t)}
+          </Badge>
         ),
     },
     {
@@ -218,6 +212,7 @@ function makeMarketsColumns(
             fixtureId={fixtureId}
             alreadyInUserTicket={alreadyInUserTicket}
             onPlace={onPlace}
+            t={t}
           />
         ),
     },
@@ -227,9 +222,16 @@ function makeMarketsColumns(
 // ── main component ────────────────────────────────────────────────────────────
 
 export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
+  const t = useTranslations("fixtureDiagnostics");
   const mr = row.modelRun;
   const score = formatScore(row.score, row.htScore);
   const { draft, addItem, open } = useBetSlip();
+  const factorDefs: { key: keyof FixtureModelFactors; label: string }[] = [
+    { key: "recentForm", label: t("factors.recentForm") },
+    { key: "xg", label: t("factors.xg") },
+    { key: "performanceDomExt", label: t("factors.performanceDomExt") },
+    { key: "volatiliteLigue", label: t("factors.volatiliteLigue") },
+  ];
 
   function handlePlacePick(snap: FixtureEvaluatedPickSnapshot) {
     if (!mr) return;
@@ -272,10 +274,8 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       <div className="rounded-[1.7rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
         <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
           <EmptyHeader>
-            <EmptyTitle>Aucun diagnostic</EmptyTitle>
-            <EmptyDescription>
-              Pas de ModelRun disponible pour cette fixture.
-            </EmptyDescription>
+            <EmptyTitle>{t("empty.title")}</EmptyTitle>
+            <EmptyDescription>{t("empty.description")}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       </div>
@@ -288,17 +288,19 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
     alreadyInUserTicket,
     handlePlacePick,
     row.status,
+    t,
   );
 
   const hasFactors =
     mr.factors && Object.values(mr.factors).some((v) => v !== null);
 
-  const viableCount = mr.evaluatedPicks.filter((p) => p.status === "viable").length;
+  const viableCount = mr.evaluatedPicks.filter(
+    (p) => p.status === "viable",
+  ).length;
   const totalCount = mr.evaluatedPicks.length;
 
   return (
     <div className="rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
-
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border pb-4">
         <div className="min-w-0">
@@ -344,7 +346,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
 
       {mr.decision === "NO_BET" && (
         <div className="mt-4 rounded-[1rem] border border-dashed border-border bg-panel/60 px-3 py-2.5 text-sm text-muted-foreground">
-          Aucun marché ne répond aux critères — décision{" "}
+          {t("noBet.message")} {t("noBet.decision")}{" "}
           <span className="font-semibold text-foreground">NO_BET</span>
         </div>
       )}
@@ -353,10 +355,10 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       {hasFactors && mr.factors && (
         <div className="mt-5">
           <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Pourquoi ce pick ?
+            {t("sections.whyThisPick")}
           </p>
           <div className="flex flex-col gap-2">
-            {FACTOR_DEFS.map((f) => (
+            {factorDefs.map((f) => (
               <FactorBar
                 key={f.key}
                 label={f.label}
@@ -370,33 +372,40 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       {/* Prédiction modèle */}
       <div className="mt-5">
         <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Prédiction modèle
+          {t("sections.modelPrediction")}
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard compact tone="neutral" label="Prob. estimée" value={mr.probEstimated ?? "—"} />
+          <StatCard
+            compact
+            tone="neutral"
+            label={t("stats.estimatedProbability")}
+            value={mr.probEstimated ?? "—"}
+          />
           <StatCard
             compact
             tone={mr.ev && parseFloat(mr.ev) >= 0 ? "success" : "danger"}
-            label="Valeur (EV)"
+            label={t("stats.evValue")}
             value={mr.ev ? formatEv(mr.ev) : "—"}
           />
-          {(mr.lambdaHome !== null || mr.lambdaAway !== null) ? (
+          {mr.lambdaHome !== null || mr.lambdaAway !== null ? (
             <div className="col-span-2 flex items-center rounded-[1.15rem] border border-border bg-panel-strong px-3 py-2.5">
               <p className="text-[0.72rem] leading-snug text-muted-foreground">
-                Le modèle prédit{" "}
+                {t("predictionSummary.modelPredicts")}{" "}
                 <span className="font-semibold text-foreground">
-                  ~{mr.lambdaHome ?? "?"} buts
+                  ~{mr.lambdaHome ?? "?"}
                 </span>{" "}
-                dom. ·{" "}
+                {t("predictionSummary.homeGoals")} ·{" "}
                 <span className="font-semibold text-foreground">
-                  ~{mr.lambdaAway ?? "?"} buts
+                  ~{mr.lambdaAway ?? "?"}
                 </span>{" "}
-                ext.
+                {t("predictionSummary.awayGoals")}
                 {mr.expectedTotalGoals && (
                   <>
-                    {" "}→{" "}
+                    {" "}
+                    →{" "}
                     <span className="font-semibold text-foreground">
-                      {mr.expectedTotalGoals} attendus
+                      {mr.expectedTotalGoals}{" "}
+                      {t("predictionSummary.expectedGoals")}
                     </span>
                   </>
                 )}
@@ -404,8 +413,18 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
             </div>
           ) : (
             <>
-              <StatCard compact tone="neutral" label="λ Dom." value={mr.lambdaHome ?? "—"} />
-              <StatCard compact tone="neutral" label="λ Ext." value={mr.lambdaAway ?? "—"} />
+              <StatCard
+                compact
+                tone="neutral"
+                label={t("stats.lambdaHome")}
+                value={mr.lambdaHome ?? "—"}
+              />
+              <StatCard
+                compact
+                tone="neutral"
+                label={t("stats.lambdaAway")}
+                value={mr.lambdaAway ?? "—"}
+              />
             </>
           )}
         </div>
@@ -416,13 +435,31 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         <div className="mt-5">
           <div className="mb-2 flex items-baseline gap-2">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Marchés analysés
+              {t("sections.analyzedMarkets")}
             </p>
             <span className="text-[0.72rem] text-muted-foreground">
-              {totalCount} marché{totalCount > 1 ? "s" : ""} ·{" "}
-              <span className="text-success font-medium">{viableCount} viable{viableCount > 1 ? "s" : ""}</span>
+              {totalCount}{" "}
+              {totalCount > 1
+                ? t("marketsSummary.markets")
+                : t("marketsSummary.market")}{" "}
+              ·{" "}
+              <span className="text-success font-medium">
+                {viableCount}{" "}
+                {viableCount > 1
+                  ? t("marketsSummary.viables")
+                  : t("marketsSummary.viable")}
+              </span>
               {totalCount - viableCount > 0 && (
-                <> · <span className="text-danger font-medium">{totalCount - viableCount} écarté{totalCount - viableCount > 1 ? "s" : ""}</span></>
+                <>
+                  {" "}
+                  ·{" "}
+                  <span className="text-danger font-medium">
+                    {totalCount - viableCount}{" "}
+                    {totalCount - viableCount > 1
+                      ? t("marketsSummary.rejectedPlural")
+                      : t("marketsSummary.rejected")}
+                  </span>
+                </>
               )}
             </span>
           </div>

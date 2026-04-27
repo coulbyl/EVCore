@@ -18,6 +18,7 @@ import {
 import type { FilterDef, FilterState } from "@evcore/ui";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useBankrollTransactions } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
@@ -33,29 +34,12 @@ import { CanalBadge } from "@/components/canal-badge";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
-const TYPE_OPTIONS = [
-  { value: "ALL", label: "Tous les types" },
-  { value: "DEPOSIT", label: "Dépôt" },
-  { value: "BET_PLACED", label: "Mise" },
-  { value: "BET_WON", label: "Gain" },
-  { value: "BET_VOID", label: "Remboursement" },
-] as const;
-
-const BANKROLL_FILTERS: FilterDef[] = [
-  { key: "from", type: "date", label: "Du" },
-  { key: "to", type: "date", label: "Au" },
-  {
-    key: "type",
-    type: "select",
-    label: "Type",
-    options: TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-  },
-];
-
 type EnrichedTransaction = BankrollTransaction & {
   balanceAfter: number;
   detailLabel: string;
 };
+
+type Translator = ReturnType<typeof useTranslations>;
 
 type TrendPoint = {
   day: string;
@@ -63,16 +47,16 @@ type TrendPoint = {
   balance: number;
 };
 
-function transactionTypeLabel(type: BankrollTransactionType) {
+function transactionTypeLabel(type: BankrollTransactionType, t: Translator) {
   switch (type) {
     case "DEPOSIT":
-      return "Dépôt";
+      return t("filter.deposit");
     case "BET_PLACED":
-      return "Mise";
+      return t("filter.stake");
     case "BET_WON":
-      return "Gain";
+      return t("filter.win");
     case "BET_VOID":
-      return "Remboursement";
+      return t("filter.refund");
     default:
       return type;
   }
@@ -120,72 +104,108 @@ function formatPercent(value: number | null) {
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-const COLUMNS: ColumnDef<EnrichedTransaction>[] = [
-  {
-    id: "date",
-    header: "Date",
-    accessorFn: (row) => formatDateShort(row.createdAt),
-    cell: ({ getValue }) => (
-      <span className="text-muted-foreground">{getValue<string>()}</span>
-    ),
-  },
-  {
-    id: "type",
-    header: "Type",
-    accessorFn: (row) => transactionTypeLabel(row.type),
-  },
-  {
-    id: "amount",
-    header: "Montant",
-    accessorFn: (row) => parseAmount(row.amount),
-    cell: ({ row }) => {
-      const tone = transactionTone(row.original.type);
-      const cls =
-        tone === "positive"
-          ? "text-success"
-          : tone === "negative"
-            ? "text-danger"
-            : "";
-      return (
-        <div className="flex items-center justify-end gap-2">
-          {row.original.canal && <CanalBadge canal={row.original.canal} />}
-          <span className={`tabular-nums font-semibold ${cls}`}>
-            {formatSignedCurrency(parseAmount(row.original.amount))}
-          </span>
-        </div>
-      );
-    },
-    meta: { align: "right" },
-  },
-  {
-    id: "detail",
-    header: "Match / note",
-    accessorFn: (row) => row.detailLabel,
-    cell: ({ getValue }) => (
-      <span className="text-muted-foreground">{getValue<string>()}</span>
-    ),
-  },
-  {
-    id: "balance",
-    header: "Solde après",
-    accessorFn: (row) => row.balanceAfter,
-    cell: ({ getValue }) => (
-      <span className="tabular-nums font-semibold">
-        {formatCurrency(getValue<number>())}
-      </span>
-    ),
-    meta: { align: "right" },
-  },
-];
+function buildTypeOptions(t: Translator) {
+  return [
+    { value: "ALL", label: t("filter.allTypes") },
+    { value: "DEPOSIT", label: t("filter.deposit") },
+    { value: "BET_PLACED", label: t("filter.stake") },
+    { value: "BET_WON", label: t("filter.win") },
+    { value: "BET_VOID", label: t("filter.refund") },
+  ] as const;
+}
 
-function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
+function buildBankrollFilters(t: Translator): FilterDef[] {
+  const typeOptions = buildTypeOptions(t);
+
+  return [
+    { key: "from", type: "date", label: t("filter.from") },
+    { key: "to", type: "date", label: t("filter.to") },
+    {
+      key: "type",
+      type: "select",
+      label: t("filter.type"),
+      options: typeOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
+    },
+  ];
+}
+
+function buildColumns(t: Translator): ColumnDef<EnrichedTransaction>[] {
+  return [
+    {
+      id: "date",
+      header: t("table.date"),
+      accessorFn: (row) => formatDateShort(row.createdAt),
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue<string>()}</span>
+      ),
+    },
+    {
+      id: "type",
+      header: t("table.type"),
+      accessorFn: (row) => transactionTypeLabel(row.type, t),
+    },
+    {
+      id: "amount",
+      header: t("table.amount"),
+      accessorFn: (row) => parseAmount(row.amount),
+      cell: ({ row }) => {
+        const tone = transactionTone(row.original.type);
+        const cls =
+          tone === "positive"
+            ? "text-success"
+            : tone === "negative"
+              ? "text-danger"
+              : "";
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {row.original.canal && <CanalBadge canal={row.original.canal} />}
+            <span className={`tabular-nums font-semibold ${cls}`}>
+              {formatSignedCurrency(parseAmount(row.original.amount))}
+            </span>
+          </div>
+        );
+      },
+      meta: { align: "right" },
+    },
+    {
+      id: "detail",
+      header: t("table.detail"),
+      accessorFn: (row) => row.detailLabel,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue<string>()}</span>
+      ),
+    },
+    {
+      id: "balance",
+      header: t("table.balanceAfter"),
+      accessorFn: (row) => row.balanceAfter,
+      cell: ({ getValue }) => (
+        <span className="tabular-nums font-semibold">
+          {formatCurrency(getValue<number>())}
+        </span>
+      ),
+      meta: { align: "right" },
+    },
+  ];
+}
+
+function BankrollTrendChart({
+  points,
+  t,
+}: {
+  points: TrendPoint[];
+  t: Translator;
+}) {
   if (points.length === 0) {
     return (
       <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
         <EmptyHeader>
-          <EmptyTitle>Pas assez de données</EmptyTitle>
+          <EmptyTitle>{t("trend.notEnoughData")}</EmptyTitle>
           <EmptyDescription>
-            Effectuez des transactions pour voir la courbe d&apos;évolution.
+            {t("trend.notEnoughDataDescription")}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -200,7 +220,7 @@ function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Évolution récente
+            {t("trend.recent")}
           </p>
           <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatCurrency(points[points.length - 1]?.balance ?? 0, true)}
@@ -225,9 +245,9 @@ function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <StatList
           items={[
-            { label: "Plus bas", value: formatCurrency(minY) },
-            { label: "Plus haut", value: formatCurrency(maxY) },
-            { label: "Jours affichés", value: String(points.length) },
+            { label: t("trend.lowest"), value: formatCurrency(minY) },
+            { label: t("trend.highest"), value: formatCurrency(maxY) },
+            { label: t("trend.displayedDays"), value: String(points.length) },
           ]}
         />
       </div>
@@ -236,6 +256,8 @@ function BankrollTrendChart({ points }: { points: TrendPoint[] }) {
 }
 
 export function BankrollPageClient() {
+  const tCommon = useTranslations("common");
+  const t = useTranslations("bankrollPage");
   const [filterState, setFilterState] = useState<FilterState>({
     from: "",
     to: todayIso(),
@@ -243,6 +265,8 @@ export function BankrollPageClient() {
   });
 
   const isMobile = useIsMobile();
+  const bankrollFilters = useMemo(() => buildBankrollFilters(t), [t]);
+  const columns = useMemo(() => buildColumns(t), [t]);
   const balanceQuery = useBankrollBalance();
   const transactionsQuery = useBankrollTransactions();
   const betSlipsQuery = useBetSlips();
@@ -268,15 +292,15 @@ export function BankrollPageClient() {
         : undefined;
       const detailLabel =
         transaction.type === "DEPOSIT"
-          ? transaction.note || "Dépôt"
+          ? transaction.note || t("fallback.deposit")
           : metadata
             ? `${metadata.fixture} (${formatMarketForDisplay(metadata.market)})`
-            : transaction.note || "Pari";
+            : transaction.note || t("fallback.bet");
       const row = { ...transaction, balanceAfter: runningBalance, detailLabel };
       runningBalance -= amount;
       return row;
     });
-  }, [betMetadata, currentBalance, transactionsQuery.data]);
+  }, [betMetadata, currentBalance, t, transactionsQuery.data]);
 
   const filteredTransactions = useMemo(() => {
     const from = (filterState.from as string) || "";
@@ -324,14 +348,14 @@ export function BankrollPageClient() {
             <StatCard
               compact={isMobile}
               icon={<Wallet size={14} />}
-              label="Solde actuel"
+              label={t("stats.currentBalance")}
               value={formatCurrency(currentBalance, true)}
               tone="accent"
             />
             <StatCard
               compact={isMobile}
               icon={<ArrowDownLeft size={14} />}
-              label="Total déposé"
+              label={t("stats.totalDeposited")}
               value={formatCurrency(totalDeposited, true)}
               tone="neutral"
             />
@@ -339,7 +363,7 @@ export function BankrollPageClient() {
               <StatCard
                 compact={isMobile}
                 icon={<ArrowUpRight size={14} />}
-                label="ROI net"
+                label={t("stats.netRoi")}
                 value={formatPercent(roi)}
                 tone={(roi ?? 0) >= 0 ? "success" : "danger"}
               />
@@ -353,7 +377,7 @@ export function BankrollPageClient() {
           </div>
 
           <FilterBar
-            filters={BANKROLL_FILTERS}
+            filters={bankrollFilters}
             value={filterState}
             onChange={setFilterState}
             onReset={() =>
@@ -362,23 +386,24 @@ export function BankrollPageClient() {
           />
 
           <TableCard
-            title="Évolution du solde"
-            subtitle="Le solde jour après jour, calculé à partir des mouvements récents."
+            title={t("trend.title")}
+            subtitle={t("trend.subtitle")}
             action={
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <LineChart size={14} />
-                {trendPoints.length} point{trendPoints.length > 1 ? "s" : ""}
+                {trendPoints.length}{" "}
+                {trendPoints.length > 1 ? t("trend.points") : t("trend.point")}
               </div>
             }
           >
             {hasError ? (
               <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
                 <EmptyHeader>
-                  <EmptyTitle>Erreur</EmptyTitle>
+                  <EmptyTitle>{tCommon("error")}</EmptyTitle>
                   <EmptyDescription>
                     {hasError instanceof Error
                       ? hasError.message
-                      : "Impossible de charger les données du portefeuille."}
+                      : t("trend.portfolioLoadError")}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -393,24 +418,24 @@ export function BankrollPageClient() {
                 />
               </div>
             ) : (
-              <BankrollTrendChart points={trendPoints} />
+              <BankrollTrendChart points={trendPoints} t={t} />
             )}
           </TableCard>
 
           <TableCard
-            title="Historique des mouvements"
-            subtitle="Les 200 derniers mouvements, avec le solde après chaque opération."
+            title={t("history.title")}
+            subtitle={t("history.subtitle")}
           >
             <DataTable
-              columns={COLUMNS}
+              columns={columns}
               data={filteredTransactions}
               isLoading={isLoading}
               emptyState={
                 <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
                   <EmptyHeader>
-                    <EmptyTitle>Aucune transaction</EmptyTitle>
+                    <EmptyTitle>{t("history.emptyTitle")}</EmptyTitle>
                     <EmptyDescription>
-                      Aucune transaction ne correspond aux filtres courants.
+                      {t("history.emptyDescription")}
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -424,7 +449,7 @@ export function BankrollPageClient() {
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {formatDateShort(row.createdAt)} ·{" "}
-                        {transactionTypeLabel(row.type)}
+                        {transactionTypeLabel(row.type, t)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -437,7 +462,7 @@ export function BankrollPageClient() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Solde après</span>
+                    <span>{t("table.balanceAfter")}</span>
                     <span className="font-semibold tabular-nums text-foreground">
                       {formatCurrency(row.balanceAfter)}
                     </span>

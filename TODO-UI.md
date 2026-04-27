@@ -143,7 +143,7 @@ Remplacer le SVG custom et poser la base pour tous les graphes futurs (ROI curve
 **Conventions de style :**
 
 - [ ] Palette de couleurs chart EVCore via tokens CSS vars
-- [ ] Tooltip unifié
+- [x] Tooltip unifié
 - [ ] Axes : labels `text-[0.62rem] uppercase tracking`
 
 ---
@@ -255,7 +255,7 @@ Le dark mode est une décision de design system, pas une feature page — il fau
 - [x] `next-themes` ajouté au catalog + `apps/web`
 - [x] `ThemeProvider` intégré dans le root layout via `Providers` + `suppressHydrationWarning` sur `<html>`
 - [x] Audit complet des composants `@evcore/ui` : couleurs hardcodées Tailwind restantes à remplacer
-- [ ] Charts Recharts : tooltips et axes en mode dark
+- [x] Charts Recharts : tooltips et axes en mode dark
 
 **Préférence utilisateur (Account settings) :**
 
@@ -299,9 +299,9 @@ La page `/dashboard/params/account` est actuellement un placeholder "À venir". 
 
 - [x] Section **Apparence** : RadioGroup card (Clair / Sombre / Système), `useTheme`, i18n
 - [x] Section **Langue** : RadioGroup (FR / EN), `useOptimistic` + cookie + `router.refresh()`
-- [ ] Section **Notifications** : préférences par type (ROI_ALERT, WEEKLY_REPORT…)
-- [ ] Section **Compte** : email, username, "Modifier le mot de passe"
-- [ ] Section **Bankroll** : unité de stake, devise d'affichage
+- [x] Section **Notifications** : préférences par type (ROI_ALERT, WEEKLY_REPORT…)
+- [x] Section **Compte** : email, username, "Modifier le mot de passe"
+- [x] Section **Bankroll** : unité de stake, devise d'affichage
 - [ ] Endpoint `PATCH /auth/me` + persistance en base (thème + locale)
 
 ---

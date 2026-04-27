@@ -55,6 +55,184 @@
     "account": "Compte",
     "bankroll": "Bankroll",
     "theme": "Thème",
-    "savePreferences": "Enregistrer les préférences"
+    "savePreferences": "Enregistrer les préférences",
+    "profile": "Profil",
+    "profileDescription": "Consultez vos informations de compte et les actions sensibles.",
+    "fullName": "Nom complet",
+    "email": "Email",
+    "username": "Username",
+    "role": "Rôle",
+    "password": "Mot de passe",
+    "changePassword": "Modifier le mot de passe",
+    "changePasswordHint": "Le flow de changement de mot de passe sera branché au prochain commit.",
+    "notificationDescription": "Choisissez les alertes importantes à garder visibles dans l'app.",
+    "bankrollDescription": "Préparez vos préférences bankroll et devise avant la persistance backend.",
+    "preferenceHint": "Préférence locale pour l'instant, persistance au commit suivant.",
+    "stakeUnit": "Unité de mise",
+    "displayCurrency": "Devise d'affichage",
+    "notificationTypes": {
+      "roiAlert": "Alerte ROI",
+      "marketSuspension": "Marché suspendu",
+      "brierAlert": "Alerte Brier",
+      "weeklyReport": "Rapport hebdo"
+    },
+    "notificationHelp": {
+      "roiAlert": "Prévenu quand un marché passe sous son seuil ROI.",
+      "marketSuspension": "Prévenu quand un marché est auto-suspendu.",
+      "brierAlert": "Prévenu quand la calibration se dégrade.",
+      "weeklyReport": "Recevoir le récapitulatif hebdomadaire opérateur."
+    },
+    "stakeUnits": {
+      "one": "1u",
+      "two": "2u",
+      "five": "5u"
+    },
+    "currencies": {
+      "eur": "EUR",
+      "usd": "USD",
+      "gbp": "GBP"
+    },
+    "roles": {
+      "ADMIN": "Admin",
+      "OPERATOR": "Opérateur"
+    }
+  },
+  "picks": {
+    "pageTitle": "Picks du jour",
+    "evChannel": "Canal EV",
+    "safeValue": "Safe Value",
+    "confidence": "Confiance",
+    "loadError": "Impossible de charger les picks du jour.",
+    "empty": "Aucun pick pour aujourd'hui."
+  },
+  "performance": {
+    "headline": "Performance globale",
+    "title": "Gains & pertes",
+    "pendingResults": "En attente de résultats",
+    "resetDate": "Tout",
+    "roi": "ROI",
+    "netGain": "Gain net",
+    "winRate": "Réussite",
+    "onStakedCapital": "sur capital misé",
+    "capitalShort": "capital",
+    "stakeUnits": "unités de mise",
+    "stakeShort": "mise",
+    "settledBets": "paris réglés",
+    "settledShort": "réglés",
+    "won": "gagnés",
+    "lost": "perdus"
+  },
+  "bankrollPage": {
+    "filter": {
+      "allTypes": "Tous les types",
+      "deposit": "Dépôt",
+      "stake": "Mise",
+      "win": "Gain",
+      "refund": "Remboursement",
+      "from": "Du",
+      "to": "Au",
+      "type": "Type"
+    },
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "amount": "Montant",
+      "detail": "Match / note",
+      "balanceAfter": "Solde après"
+    },
+    "stats": {
+      "currentBalance": "Solde actuel",
+      "totalDeposited": "Total déposé",
+      "netRoi": "ROI net"
+    },
+    "trend": {
+      "title": "Évolution du solde",
+      "subtitle": "Le solde jour après jour, calculé à partir des mouvements récents.",
+      "recent": "Évolution récente",
+      "notEnoughData": "Pas assez de données",
+      "notEnoughDataDescription": "Effectuez des transactions pour voir la courbe d'évolution.",
+      "lowest": "Plus bas",
+      "highest": "Plus haut",
+      "displayedDays": "Jours affichés",
+      "point": "point",
+      "points": "points",
+      "portfolioLoadError": "Impossible de charger les données du portefeuille."
+    },
+    "history": {
+      "title": "Historique des mouvements",
+      "subtitle": "Les 200 derniers mouvements, avec le solde après chaque opération.",
+      "emptyTitle": "Aucune transaction",
+      "emptyDescription": "Aucune transaction ne correspond aux filtres courants."
+    },
+    "fallback": {
+      "deposit": "Dépôt",
+      "bet": "Pari"
+    }
+  },
+  "fixtureDiagnostics": {
+    "rejection": {
+      "odds_below_floor": "Cote trop basse",
+      "odds_above_cap": "Cote trop haute",
+      "ev_below_threshold": "Valeur insuffisante",
+      "ev_above_hard_cap": "Valeur au-dessus du plafond",
+      "ev_above_soft_cap": "Valeur au-dessus du plafond (calibration)",
+      "filtered_longshot": "Grande cote écartée",
+      "market_suspended": "Marché suspendu",
+      "probability_too_low": "Probabilité insuffisante",
+      "quality_score_below_threshold": "Qualité insuffisante",
+      "under_high_lambda": "Nbre de buts élevé"
+    },
+    "factors": {
+      "recentForm": "Forme récente",
+      "xg": "Expected Goals (xG)",
+      "performanceDomExt": "Avantage dom./ext.",
+      "volatiliteLigue": "Stabilité de la ligue"
+    },
+    "actions": {
+      "alreadyInSlip": "Déjà dans le coupon",
+      "alreadyInTickets": "Déjà dans vos coupons",
+      "placePick": "Placer ce pick"
+    },
+    "table": {
+      "market": "Marché",
+      "probability": "Prob.",
+      "odds": "Cote",
+      "value": "Valeur",
+      "status": "Statut",
+      "viable": "Viable"
+    },
+    "empty": {
+      "title": "Aucun diagnostic",
+      "description": "Pas de ModelRun disponible pour cette fixture."
+    },
+    "noBet": {
+      "message": "Aucun marché ne répond aux critères",
+      "decision": "décision"
+    },
+    "sections": {
+      "whyThisPick": "Pourquoi ce pick ?",
+      "modelPrediction": "Prédiction modèle",
+      "analyzedMarkets": "Marchés analysés"
+    },
+    "stats": {
+      "estimatedProbability": "Prob. estimée",
+      "evValue": "Valeur (EV)",
+      "lambdaHome": "λ Dom.",
+      "lambdaAway": "λ Ext."
+    },
+    "predictionSummary": {
+      "modelPredicts": "Le modèle prédit",
+      "homeGoals": "buts dom.",
+      "awayGoals": "buts ext.",
+      "expectedGoals": "attendus"
+    },
+    "marketsSummary": {
+      "market": "marché",
+      "markets": "marchés",
+      "viable": "viable",
+      "viables": "viables",
+      "rejected": "écarté",
+      "rejectedPlural": "écartés"
+    }
   }
 }
