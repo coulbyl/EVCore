@@ -17,6 +17,13 @@ export type EvaluatedPickSnapshot = PickSnapshot & {
   rejectionReason?: string;
 };
 
+export type ModelRunFactors = {
+  recentForm: number | null;
+  xg: number | null;
+  performanceDomExt: number | null;
+  volatiliteLigue: number | null;
+};
+
 export type ModelRunFeatureDiagnostics = {
   predictionSource: PredictionSource | null;
   lambdaHome: string | null;
@@ -24,6 +31,7 @@ export type ModelRunFeatureDiagnostics = {
   expectedTotalGoals: string | null;
   candidatePicks: PickSnapshot[];
   evaluatedPicks: EvaluatedPickSnapshot[];
+  factors: ModelRunFactors;
 };
 
 export function extractModelRunFeatureDiagnostics(
@@ -37,6 +45,12 @@ export function extractModelRunFeatureDiagnostics(
       expectedTotalGoals: null,
       candidatePicks: [],
       evaluatedPicks: [],
+      factors: {
+        recentForm: null,
+        xg: null,
+        performanceDomExt: null,
+        volatiliteLigue: null,
+      },
     };
   }
 
@@ -52,6 +66,12 @@ export function extractModelRunFeatureDiagnostics(
       lh !== null && la !== null ? (lh + la).toFixed(2) : null,
     candidatePicks: readCandidatePicks(features),
     evaluatedPicks: readEvaluatedPicks(features),
+    factors: {
+      recentForm: readFiniteNumber(features, 'recentForm'),
+      xg: readFiniteNumber(features, 'xg'),
+      performanceDomExt: readFiniteNumber(features, 'performanceDomExt'),
+      volatiliteLigue: readFiniteNumber(features, 'volatiliteLigue'),
+    },
   };
 }
 

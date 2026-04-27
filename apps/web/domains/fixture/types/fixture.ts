@@ -5,6 +5,13 @@ import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
 // Fixture domain types — indépendants du concept "audit"
 // ---------------------------------------------------------------------------
 
+export type FixtureModelFactors = {
+  recentForm: number | null;
+  xg: number | null;
+  performanceDomExt: number | null;
+  volatiliteLigue: number | null;
+};
+
 export type FixtureModelRun = {
   modelRunId: string;
   decision: "BET" | "NO_BET";
@@ -24,6 +31,7 @@ export type FixtureModelRun = {
   expectedTotalGoals: string | null;
   candidatePicks: FixturePickSnapshot[];
   evaluatedPicks: FixtureEvaluatedPickSnapshot[];
+  factors: FixtureModelFactors | null;
 };
 
 export type FixturePickSnapshot = {

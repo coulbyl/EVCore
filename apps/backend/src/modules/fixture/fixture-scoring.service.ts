@@ -34,6 +34,12 @@ export type ScoredFixtureModelRun = {
   expectedTotalGoals: string | null;
   candidatePicks: PickSnapshot[];
   evaluatedPicks: EvaluatedPickSnapshot[];
+  factors: {
+    recentForm: number | null;
+    xg: number | null;
+    performanceDomExt: number | null;
+    volatiliteLigue: number | null;
+  } | null;
 };
 
 export type ScoredFixtureSvBet = {
@@ -306,6 +312,7 @@ export class FixtureScoringService {
               expectedTotalGoals: featureDiag?.expectedTotalGoals ?? null,
               candidatePicks: featureDiag?.candidatePicks ?? [],
               evaluatedPicks: featureDiag?.evaluatedPicks ?? [],
+              factors: featureDiag?.factors ?? null,
             }
           : null,
         safeValueBet: svBet
