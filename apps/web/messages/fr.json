@@ -48,43 +48,43 @@
     "alreadyAccount": "Déjà un compte ?"
   },
   "account": {
-    "title": "Paramètres opérateur",
+    "title": "Mes paramètres",
     "appearance": "Apparence",
     "language": "Langue",
     "notifications": "Notifications",
     "account": "Compte",
-    "bankroll": "Bankroll",
+    "bankroll": "Devise",
     "theme": "Thème",
-    "savePreferences": "Enregistrer les préférences",
+    "savePreferences": "Enregistrer",
+    "savedAutomatically": "Enregistré automatiquement.",
     "profile": "Profil",
-    "profileDescription": "Consultez vos informations de compte et les actions sensibles.",
+    "profileDescription": "Vos informations de compte.",
     "fullName": "Nom complet",
     "email": "Email",
-    "username": "Username",
+    "username": "Identifiant",
     "role": "Rôle",
     "password": "Mot de passe",
     "changePassword": "Modifier le mot de passe",
-    "changePasswordHint": "Le flow de changement de mot de passe sera branché au prochain commit.",
-    "notificationDescription": "Choisissez les alertes importantes à garder visibles dans l'app.",
-    "bankrollDescription": "Préparez vos préférences bankroll et devise avant la persistance backend.",
-    "preferenceHint": "Préférence locale pour l'instant, persistance au commit suivant.",
+    "changePasswordHint": "La modification du mot de passe sera disponible prochainement.",
+    "notificationDescription": "Choisissez les alertes à recevoir dans l'application.",
+    "bankrollDescription": "Choisissez la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
     "notificationTypes": {
-      "roiAlert": "Alerte ROI",
+      "roiAlert": "Alerte performance",
       "marketSuspension": "Marché suspendu",
-      "brierAlert": "Alerte Brier",
-      "weeklyReport": "Rapport hebdo"
+      "brierAlert": "Alerte calibration",
+      "weeklyReport": "Rapport hebdomadaire"
     },
     "notificationHelp": {
-      "roiAlert": "Prévenu quand un marché passe sous son seuil ROI.",
-      "marketSuspension": "Prévenu quand un marché est auto-suspendu.",
-      "brierAlert": "Prévenu quand la calibration se dégrade.",
-      "weeklyReport": "Recevoir le récapitulatif hebdomadaire opérateur."
+      "roiAlert": "Alerte quand la rentabilité d'un marché chute sous le seuil.",
+      "marketSuspension": "Alerte quand un marché est suspendu automatiquement.",
+      "brierAlert": "Alerte quand la précision du modèle se dégrade.",
+      "weeklyReport": "Résumé de la semaine chaque lundi matin."
     },
     "currencies": {
-      "eur": "EUR",
-      "usd": "USD",
-      "gbp": "GBP"
+      "xof": "Franc CFA (XOF)",
+      "usd": "Dollar ($)",
+      "eur": "Euro (€)"
     },
     "roles": {
       "ADMIN": "Admin",
@@ -115,6 +115,55 @@
     "settledShort": "réglés",
     "won": "gagnés",
     "lost": "perdus"
+  },
+  "audit": {
+    "bets": "Paris",
+    "settledBets": "Paris réglés",
+    "fixtures": "Matchs",
+    "modelRuns": "Analyses",
+    "betsByStatus": "Paris par statut",
+    "betsByMarket": "Paris par marché",
+    "learningLoop": "Boucle d'apprentissage",
+    "proposals": "Propositions",
+    "activeSuspensions": "Suspensions actives"
+  },
+  "dashboard": {
+    "predictions": {
+      "title": "Prédictions du jour",
+      "empty": "Aucune prédiction pour aujourd'hui.",
+      "home": "Domicile",
+      "away": "Extérieur",
+      "draw": "Nul",
+      "yesterday": "hier"
+    },
+    "leagueRanking": {
+      "title": "Classement ligues",
+      "period": "30j · ROI moteur",
+      "empty": "Aucune donnée sur 30 jours.",
+      "model": "Moteur",
+      "myBets": "Mes paris"
+    },
+    "operatorCard": {
+      "headline": "Mes performances",
+      "title": "Résumé de mes coupons",
+      "slips": "Coupons",
+      "created": "créés",
+      "settled": "réglés",
+      "settledLong": "paris réglés",
+      "winRate": "Réussite",
+      "allTime": "Tout",
+      "modelReturn": "Rendement du modèle",
+      "notEnoughData": "Pas assez de données",
+      "winForm": "En forme",
+      "neutral": "Neutre",
+      "toWatch": "À surveiller",
+      "pendingResult": "en attente de résultat",
+      "pendingResults": "en attente de résultats"
+    }
+  },
+  "betSlips": {
+    "emptyTitle": "Aucun coupon",
+    "emptyDescription": "Aucun coupon ne correspond à cette période et à ce filtre."
   },
   "bankrollPage": {
     "filter": {

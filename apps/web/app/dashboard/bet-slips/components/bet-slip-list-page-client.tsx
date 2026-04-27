@@ -15,8 +15,9 @@ import {
 } from "@evcore/ui";
 import type { FilterDef, FilterState } from "@evcore/ui";
 import { formatDateLong, todayIso, daysAgoIso } from "@/lib/date";
-import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { useCurrencyFormat } from "@/providers/currency-provider";
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { BetSlipView } from "@/domains/bet-slip/types/bet-slip";
 import { BetSlipDetailPanel } from "./bet-slip-detail-panel";
@@ -125,6 +126,7 @@ function BetSlipCard({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { formatAmount, formatSigned } = useCurrencyFormat();
   const summary = couponSummary(betSlip);
   const { settledCount, pendingCount, status } = summary;
   const isPartial = settledCount > 0 && pendingCount > 0;
@@ -165,7 +167,7 @@ function BetSlipCard({
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Total misé</span>
           <span className="font-semibold tabular-nums text-foreground">
-            {formatCurrency(summary.totalStake)}
+            {formatAmount(summary.totalStake)}
           </span>
         </div>
         {betSlip.type === "COMBO" && (
@@ -184,7 +186,7 @@ function BetSlipCard({
             <span
               className={`font-bold tabular-nums ${summary.netPnl >= 0 ? "text-success" : "text-danger"}`}
             >
-              {formatSignedCurrency(summary.netPnl)}
+              {formatSigned(summary.netPnl)}
             </span>
           </div>
         )}
@@ -205,7 +207,7 @@ function BetSlipCard({
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground">Gain potentiel</span>
             <span className="font-semibold tabular-nums text-success">
-              {formatCurrency(summary.potentialReturn)}
+              {formatAmount(summary.potentialReturn)}
             </span>
           </div>
         )}
@@ -225,6 +227,8 @@ function BetSlipCard({
 }
 
 export function BetSlipListPageClient() {
+  const t = useTranslations("betSlips");
+  const { formatAmount, formatSigned } = useCurrencyFormat();
   const [filterState, setFilterState] = useState<FilterState>({
     type: "ALL",
     from: daysAgoIso(7),
@@ -280,13 +284,13 @@ export function BetSlipListPageClient() {
           compact
           tone="neutral"
           label="Misé"
-          value={formatCurrency(periodSummary.stake, true)}
+          value={formatAmount(periodSummary.stake, true)}
         />
         <StatCard
           compact
           tone={periodSummary.net >= 0 ? "success" : "danger"}
           label="Net réglé"
-          value={formatSignedCurrency(periodSummary.net, true)}
+          value={formatSigned(periodSummary.net, true)}
         />
         <div className="col-span-2 sm:col-span-1">
           <StatCard
@@ -312,10 +316,8 @@ export function BetSlipListPageClient() {
     filteredBetSlips.length === 0 ? (
       <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
         <EmptyHeader>
-          <EmptyTitle>Aucun coupon</EmptyTitle>
-          <EmptyDescription>
-            Aucun coupon ne correspond à cette période et à ce filtre.
-          </EmptyDescription>
+          <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
+          <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     ) : (

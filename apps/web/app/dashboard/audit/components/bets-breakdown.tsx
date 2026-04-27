@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { StatList, TableCard } from "@evcore/ui";
 import type { StatListItem } from "@evcore/ui";
 import type { AuditOverview } from "@/domains/audit/types/audit";
@@ -16,18 +19,20 @@ export function BetsBreakdown({
   | "adjustmentProposals"
   | "activeSuspensions"
 >) {
+  const t = useTranslations("audit");
+
   const learningItems: StatListItem[] = [
     {
-      label: "Paris réglés",
+      label: t("settledBets"),
       value: settledBets < 50 ? `${settledBets} / 50` : String(settledBets),
       tone: settledBets >= 50 ? "positive" : "warning",
     },
     {
-      label: "Propositions",
+      label: t("proposals"),
       value: String(adjustmentProposals),
     },
     {
-      label: "Suspensions actives",
+      label: t("activeSuspensions"),
       value: String(activeSuspensions),
       tone: activeSuspensions > 0 ? "negative" : "neutral",
     },
@@ -35,7 +40,7 @@ export function BetsBreakdown({
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <TableCard title="Paris par statut">
+      <TableCard title={t("betsByStatus")}>
         <div className="p-4">
           <StatList
             items={betsByStatus.map((r) => ({
@@ -47,7 +52,7 @@ export function BetsBreakdown({
         </div>
       </TableCard>
 
-      <TableCard title="Paris par marché">
+      <TableCard title={t("betsByMarket")}>
         <div className="p-4">
           <StatList
             items={betsByMarket.map((r) => ({
@@ -59,7 +64,7 @@ export function BetsBreakdown({
         </div>
       </TableCard>
 
-      <TableCard title="Boucle d'apprentissage">
+      <TableCard title={t("learningLoop")}>
         <div className="p-4">
           <StatList items={learningItems} />
         </div>

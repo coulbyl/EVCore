@@ -51,7 +51,7 @@ export default async function AccountSettingsPage() {
               eyebrow: t("notifications"),
               title: t("notifications"),
               description: t("notificationDescription"),
-              preferenceHint: t("preferenceHint"),
+              preferenceHint: t("savedAutomatically"),
               items: [
                 {
                   key: "roiAlert",
@@ -79,15 +79,15 @@ export default async function AccountSettingsPage() {
 
           <BankrollPreferencesSection
             labels={{
-              eyebrow: t("bankroll"),
+              eyebrow: t("account"),
               title: t("bankroll"),
               description: t("bankrollDescription"),
-              preferenceHint: t("preferenceHint"),
+              savedAutomatically: t("savedAutomatically"),
               displayCurrency: t("displayCurrency"),
               currencyOptions: [
-                { value: "EUR", label: t("currencies.eur") },
+                { value: "XOF", label: t("currencies.xof") },
                 { value: "USD", label: t("currencies.usd") },
-                { value: "GBP", label: t("currencies.gbp") },
+                { value: "EUR", label: t("currencies.eur") },
               ],
             }}
           />

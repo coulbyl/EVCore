@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 function RoiBadge({ roi, count }: { roi: string; count: number }) {
+  const t = useTranslations("dashboard.operatorCard");
   const value = parseFloat(roi);
   const isPositive = value > 0;
   const isNeutral = value >= -5 && value <= 0;
-  const label = isPositive ? "En forme" : isNeutral ? "Neutre" : "À surveiller";
+  const label = isPositive
+    ? t("winForm")
+    : isNeutral
+      ? t("neutral")
+      : t("toWatch");
   const cls = isPositive
     ? "bg-success/10 text-success border-success/30"
     : isNeutral
@@ -27,6 +33,8 @@ function RoiBadge({ roi, count }: { roi: string; count: number }) {
 }
 
 export function OperatorPerformanceCard() {
+  const t = useTranslations("dashboard.operatorCard");
+  const tPerf = useTranslations("performance");
   const [date, setDate] = useState<string | undefined>(undefined);
   const { data, isLoading } = useOperatorSummary(date);
   const isMobile = useIsMobile();
@@ -45,10 +53,10 @@ export function OperatorPerformanceCard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Mes performances
+            {t("headline")}
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-            Résumé de mes coupons
+            {t("title")}
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -66,7 +74,7 @@ export function OperatorPerformanceCard() {
               onClick={() => setDate(undefined)}
               className="h-9 cursor-pointer rounded-xl border border-border bg-panel px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              Tout
+              {t("allTime")}
             </button>
           )}
         </div>
@@ -74,34 +82,36 @@ export function OperatorPerformanceCard() {
 
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
         <div className={slotCls}>
-          <p className={labelCls}>Coupons</p>
+          <p className={labelCls}>{t("slips")}</p>
           {isLoading ? (
             skeleton
           ) : (
             <p className={valueCls}>{data?.slipCount ?? 0}</p>
           )}
-          <p className={subCls}>créés</p>
+          <p className={subCls}>{t("created")}</p>
         </div>
 
         <div className={slotCls}>
-          <p className={labelCls}>Paris</p>
+          <p className={labelCls}>{tPerf("settledShort")}</p>
           {isLoading ? (
             skeleton
           ) : (
             <p className={valueCls}>{data?.settledBets ?? 0}</p>
           )}
-          <p className={subCls}>{isMobile ? "réglés" : "paris réglés"}</p>
+          <p className={subCls}>{isMobile ? t("settled") : t("settledLong")}</p>
         </div>
 
         <div className={slotCls}>
-          <p className={labelCls}>Réussite</p>
+          <p className={labelCls}>{t("winRate")}</p>
           {isLoading ? (
             skeleton
           ) : (
             <p className={valueCls}>{data?.winRate ?? "—"}</p>
           )}
           <p className={subCls}>
-            {data ? `${data.wonBets} gagnés · ${data.lostBets} perdus` : "—"}
+            {data
+              ? `${data.wonBets} ${tPerf("won")} · ${data.lostBets} ${tPerf("lost")}`
+              : "—"}
           </p>
         </div>
       </div>
@@ -110,10 +120,10 @@ export function OperatorPerformanceCard() {
         <div className="mt-3">
           <div className="mb-1.5 flex items-center justify-between gap-3">
             <span className="text-xs font-semibold text-success">
-              {data.wonBets} gagnés
+              {data.wonBets} {tPerf("won")}
             </span>
             <span className="text-xs font-semibold text-danger">
-              {data.lostBets} perdus
+              {data.lostBets} {tPerf("lost")}
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
@@ -137,7 +147,7 @@ export function OperatorPerformanceCard() {
       <div className="mt-4 border-t border-border pt-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs text-muted-foreground">
-            Rendement du modèle
+            {t("modelReturn")}
           </span>
           {isLoading ? (
             <div className="h-5 w-16 animate-pulse rounded-lg bg-secondary" />
@@ -145,7 +155,7 @@ export function OperatorPerformanceCard() {
             <RoiBadge roi={data.globalRoi} count={data.globalRoiBetCount} />
           ) : (
             <span className="text-xs text-muted-foreground">
-              Pas assez de données
+              {t("notEnoughData")}
             </span>
           )}
         </div>

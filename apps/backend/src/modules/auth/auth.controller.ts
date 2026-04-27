@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -16,6 +17,7 @@ import { AuthSessionGuard } from './auth-session.guard';
 import type { AuthSession } from './auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -59,5 +61,16 @@ export class AuthController {
   @UseGuards(AuthSessionGuard)
   me(@CurrentSession() session: AuthSession) {
     return { session };
+  }
+
+  @Patch('me')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthSessionGuard)
+  async updateMe(
+    @CurrentSession() session: AuthSession,
+    @Body() body: UpdateMeDto,
+  ) {
+    const user = await this.authService.updateMe(session.user.id, body);
+    return { user };
   }
 }

@@ -7,6 +7,9 @@ export type AuthSessionUser = {
   role: "ADMIN" | "OPERATOR";
   emailVerified: boolean;
   avatarUrl: string | null;
+  theme: string | null;
+  locale: string | null;
+  currency: string | null;
 };
 
 export type AuthSession = {

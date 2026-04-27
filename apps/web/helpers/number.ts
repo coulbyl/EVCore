@@ -1,21 +1,50 @@
+export type AppCurrency = "XOF" | "USD" | "EUR";
+
 const COMPACT_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
-const CURRENCY_FORMATTER = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
+function makeCurrencyFormatter(currency: AppCurrency) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
 
-const CURRENCY_COMPACT_FORMATTER = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
+function makeCurrencyCompactFormatter(currency: AppCurrency) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
+}
+
+const formatterCache = new Map<
+  AppCurrency,
+  ReturnType<typeof makeCurrencyFormatter>
+>();
+const compactFormatterCache = new Map<
+  AppCurrency,
+  ReturnType<typeof makeCurrencyCompactFormatter>
+>();
+
+function getCurrencyFormatter(currency: AppCurrency) {
+  if (!formatterCache.has(currency)) {
+    formatterCache.set(currency, makeCurrencyFormatter(currency));
+  }
+  return formatterCache.get(currency)!;
+}
+
+function getCompactCurrencyFormatter(currency: AppCurrency) {
+  if (!compactFormatterCache.has(currency)) {
+    compactFormatterCache.set(currency, makeCurrencyCompactFormatter(currency));
+  }
+  return compactFormatterCache.get(currency)!;
+}
 
 const UNITS_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
@@ -66,29 +95,29 @@ export function formatUnitsValue(value: string | number, compact = false) {
   return UNITS_NUMBER_FORMATTER.format(parsedValue);
 }
 
-/**
- * Format a monetary value with EUR symbol.
- * compact=true: values ≥ 1 000 rendered as "1,2 k€" — suited for StatCard on mobile.
- */
 export function formatCurrency(
   value: string | number,
   compact = false,
+  currency: AppCurrency = "XOF",
 ): string {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
-  return compact && Math.abs(n) >= 1_000_000
-    ? CURRENCY_COMPACT_FORMATTER.format(n)
-    : CURRENCY_FORMATTER.format(n);
+  const formatter =
+    compact && Math.abs(n) >= 1_000_000
+      ? getCompactCurrencyFormatter(currency)
+      : getCurrencyFormatter(currency);
+  return formatter.format(n);
 }
 
 export function formatSignedCurrency(
   value: string | number,
   compact = false,
+  currency: AppCurrency = "XOF",
 ): string {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
   const prefix = n > 0 ? "+" : "";
-  return `${prefix}${formatCurrency(n, compact)}`;
+  return `${prefix}${formatCurrency(n, compact, currency)}`;
 }
 
 export function formatSignedUnitsValue(value: string | number) {

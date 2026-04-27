@@ -7,7 +7,7 @@ import {
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
-import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { useCurrencyFormat } from "@/providers/currency-provider";
 import { CanalBadge } from "@/components/canal-badge";
 import type {
   BetSlipView,
@@ -53,6 +53,7 @@ function PnlDisplay({
   item: BetSlipItemView;
   slipType: BetSlipView["type"];
 }) {
+  const { formatAmount, formatSigned } = useCurrencyFormat();
   if (slipType === "COMBO") return null;
   if (item.pnl !== null) {
     const raw = Number(item.pnl);
@@ -61,7 +62,7 @@ function PnlDisplay({
       <p
         className={`text-base font-bold tabular-nums ${isPos ? "text-success" : "text-danger"}`}
       >
-        {formatSignedCurrency(raw)}
+        {formatSigned(raw)}
       </p>
     );
   }
@@ -70,7 +71,7 @@ function PnlDisplay({
     const potential = Number(item.stake) * (Number(item.odds) - 1);
     return (
       <p className="text-sm tabular-nums text-muted-foreground">
-        +{formatCurrency(potential)} pot.
+        +{formatAmount(potential)} pot.
       </p>
     );
   }
@@ -84,6 +85,7 @@ function BetItem({
   item: BetSlipItemView;
   slipType: BetSlipView["type"];
 }) {
+  const { formatAmount } = useCurrencyFormat();
   const status = item.betStatus as ItemStatus;
   const bar = STATUS_BAR[status] ?? "bg-border";
 
@@ -147,14 +149,14 @@ function BetItem({
                 <>
                   Mise{" "}
                   <span className="font-semibold text-foreground">
-                    {formatCurrency(item.stake)}
+                    {formatAmount(item.stake)}
                   </span>
                 </>
               )}
             </span>
             {slipType === "SIMPLE" && item.stakeOverride ? (
               <Badge variant="warning" className="py-0 text-[0.65rem]">
-                Perso {formatCurrency(item.stakeOverride)}
+                Perso {formatAmount(item.stakeOverride)}
               </Badge>
             ) : null}
           </div>
@@ -177,6 +179,7 @@ export function BetSlipDetailPanel({
   data: BetSlipView;
   onClose: () => void;
 }) {
+  const { formatAmount, formatSigned } = useCurrencyFormat();
   const totalStake =
     data.type === "COMBO"
       ? Number(data.unitStake)
@@ -271,7 +274,7 @@ export function BetSlipDetailPanel({
           {data.type === "COMBO" && (
             <DetailRow label="Cote totale" value={comboTotalOdds.toFixed(2)} />
           )}
-          <DetailRow label="Total misé" value={formatCurrency(totalStake)} />
+          <DetailRow label="Total misé" value={formatAmount(totalStake)} />
           {hasPnl && (
             <>
               <div
@@ -285,13 +288,13 @@ export function BetSlipDetailPanel({
                   {pendingCount > 0 ? "Gain net partiel" : "Gain net"}
                 </span>
                 <span className="tabular-nums">
-                  {formatSignedCurrency(realPnl)}
+                  {formatSigned(realPnl)}
                 </span>
               </div>
               {retourTotal > 0 && (
                 <DetailRow
                   label="Retour total"
-                  value={formatCurrency(retourTotal)}
+                  value={formatAmount(retourTotal)}
                 />
               )}
             </>
@@ -300,7 +303,7 @@ export function BetSlipDetailPanel({
             <>
               <DetailRow
                 label="Gain potentiel"
-                value={formatCurrency(potentialReturn)}
+                value={formatAmount(potentialReturn)}
               />
               <p className="text-xs text-muted-foreground">
                 {pendingSelections} sélection

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@evcore/ui";
+import { clientApiRequest } from "@/lib/api/client-api";
+import { useCurrencyFormat } from "@/providers/currency-provider";
+import type { AppCurrency } from "@/helpers/number";
 import { SettingsSectionCard } from "./settings-section-card";
-
-type Currency = "EUR" | "USD" | "GBP";
 
 export function BankrollPreferencesSection({
   labels,
@@ -13,12 +13,21 @@ export function BankrollPreferencesSection({
     eyebrow: string;
     title: string;
     description: string;
-    preferenceHint: string;
+    savedAutomatically: string;
     displayCurrency: string;
-    currencyOptions: Array<{ value: Currency; label: string }>;
+    currencyOptions: Array<{ value: AppCurrency; label: string }>;
   };
 }) {
-  const [currency, setCurrency] = useState<Currency>("EUR");
+  const { currency, setCurrency } = useCurrencyFormat();
+
+  function handleCurrencyChange(value: string) {
+    const next = value as AppCurrency;
+    setCurrency(next);
+    void clientApiRequest("/auth/me", {
+      method: "PATCH",
+      body: { currency: next },
+    });
+  }
 
   return (
     <SettingsSectionCard
@@ -33,7 +42,7 @@ export function BankrollPreferencesSection({
           </p>
           <RadioGroup
             value={currency}
-            onValueChange={(value) => setCurrency(value as Currency)}
+            onValueChange={handleCurrencyChange}
             className="mt-3 grid grid-cols-3 gap-3"
           >
             {labels.currencyOptions.map((option) => (
@@ -55,7 +64,7 @@ export function BankrollPreferencesSection({
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        {labels.preferenceHint}
+        {labels.savedAutomatically}
       </p>
     </SettingsSectionCard>
   );
