@@ -23,7 +23,7 @@ export function BankrollWidget() {
     >
       <Wallet size={16} />
       <span className="tabular-nums">
-        {isLoading ? "..." : `${formatUnitsValue(data?.balance ?? 0)} u`}
+        {isLoading ? "..." : `${formatUnitsValue(data?.balance ?? 0, true)} u`}
       </span>
     </Link>
   );
