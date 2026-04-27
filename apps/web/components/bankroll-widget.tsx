@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
-import { formatUnitsValue } from "@/helpers/number";
+import { formatCurrency } from "@/helpers/number";
 
 export function BankrollWidget() {
   const pathname = usePathname();
@@ -23,7 +23,7 @@ export function BankrollWidget() {
     >
       <Wallet size={16} />
       <span className="tabular-nums">
-        {isLoading ? "..." : `${formatUnitsValue(data?.balance ?? 0, true)} u`}
+        {isLoading ? "..." : formatCurrency(data?.balance ?? "0", true)}
       </span>
     </Link>
   );

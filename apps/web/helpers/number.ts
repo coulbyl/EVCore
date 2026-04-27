@@ -59,7 +59,7 @@ export function formatUnitsValue(value: string | number, compact = false) {
     return typeof value === "string" ? value : String(value);
   }
 
-  if (compact && Math.abs(parsedValue) >= 1000) {
+  if (compact && Math.abs(parsedValue) >= 1_000_000) {
     return UNITS_COMPACT_FORMATTER.format(parsedValue);
   }
 
@@ -76,7 +76,7 @@ export function formatCurrency(
 ): string {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
-  return compact && Math.abs(n) >= 1000
+  return compact && Math.abs(n) >= 1_000_000
     ? CURRENCY_COMPACT_FORMATTER.format(n)
     : CURRENCY_FORMATTER.format(n);
 }
