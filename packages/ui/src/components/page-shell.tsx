@@ -121,7 +121,7 @@ export function PageShell({
                   alt="EVCore"
                   className="size-7 rounded-lg"
                 />
-                <p className="truncate text-sm font-bold tracking-tight text-foreground">
+                <p className="hidden truncate text-sm font-bold tracking-tight text-foreground sm:block">
                   EVCore
                 </p>
               </a>
