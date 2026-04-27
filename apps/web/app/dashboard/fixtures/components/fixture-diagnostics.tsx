@@ -123,6 +123,7 @@ function makeEvaluatedColumns(
   fixtureId: string,
   alreadyInUserTicket: boolean,
   onPlace: (snap: FixtureEvaluatedPickSnapshot) => void,
+  fixtureStatus: string,
 ): ColumnDef<FixtureEvaluatedPickSnapshot>[] {
   return [
     ...(CANDIDATE_COLUMNS as unknown as ColumnDef<FixtureEvaluatedPickSnapshot>[]),
@@ -148,14 +149,15 @@ function makeEvaluatedColumns(
     {
       id: "action",
       header: "",
-      cell: ({ row }) => (
-        <PlacePickButton
-          snap={row.original}
-          fixtureId={fixtureId}
-          alreadyInUserTicket={alreadyInUserTicket}
-          onPlace={onPlace}
-        />
-      ),
+      cell: ({ row }) =>
+        fixtureStatus === "FINISHED" ? null : (
+          <PlacePickButton
+            snap={row.original}
+            fixtureId={fixtureId}
+            alreadyInUserTicket={alreadyInUserTicket}
+            onPlace={onPlace}
+          />
+        ),
     },
   ];
 }
@@ -274,6 +276,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
     row.fixtureId,
     alreadyInUserTicket,
     handlePlacePick,
+    row.status,
   );
 
   return (
