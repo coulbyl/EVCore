@@ -55,6 +55,7 @@ export type FixtureSvBet = {
   comboMarket: string | null;
   comboPick: string | null;
   ev: string;
+  odds: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
   probEstimated: string | null;
 };

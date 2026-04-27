@@ -568,7 +568,9 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
               {odds ?? <span className="text-muted-foreground">—</span>}
             </span>
             {row.original.safeValueBet && (
-              <span className="text-xs text-muted-foreground">—</span>
+              <span className="text-xs text-muted-foreground">
+                {row.original.safeValueBet.odds ?? "—"}
+              </span>
             )}
           </div>
         );

@@ -43,6 +43,7 @@ export type ScoredFixtureSvBet = {
   comboMarket: string | null;
   comboPick: string | null;
   ev: string;
+  odds: string | null;
   betStatus: 'WON' | 'LOST' | 'PENDING' | null;
   probEstimated: string | null;
 };
@@ -194,6 +195,7 @@ export class FixtureScoringService {
                   comboMarket: true,
                   comboPick: true,
                   ev: true,
+                  oddsSnapshot: true,
                   probEstimated: true,
                   status: true,
                   isSafeValue: true,
@@ -314,6 +316,7 @@ export class FixtureScoringService {
               comboMarket: svBet.comboMarket ?? null,
               comboPick: svBet.comboPick ?? null,
               ev: formatSigned(toNumber(svBet.ev), 3),
+              odds: svBet.oddsSnapshot != null ? toNumber(svBet.oddsSnapshot).toFixed(2) : null,
               betStatus: svBetStatus,
               probEstimated: svBet.probEstimated
                 ? `${(toNumber(svBet.probEstimated) * 100).toFixed(1)}%`
