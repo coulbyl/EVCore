@@ -419,26 +419,27 @@ function FixtureMobileCard({
               <span className="mx-1.5">·</span>
               {formatKickoff(row.scheduledAt)}
             </p>
-            <div className="flex shrink-0 items-center gap-2">
-              {mr?.decision === "BET" && mr.ev && (
-                <span className="flex items-baseline gap-1 tabular-nums">
-                  {evOdds && (
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {evOdds}
-                    </span>
-                  )}
-                  <span
-                    className="text-sm font-bold"
-                    style={{ color: "var(--canal-ev)" }}
-                  >
-                    {mr.ev}
+            <ChevronRight size={14} className="shrink-0 text-muted-foreground" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {mr?.decision === "BET" && mr.ev && (
+              <span className="flex items-baseline gap-1 tabular-nums">
+                {evOdds && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {evOdds}
                   </span>
+                )}
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "var(--canal-ev)" }}
+                >
+                  {mr.ev}
                 </span>
-              )}
-              {row.prediction && <PredictionBadge pred={row.prediction} />}
-              <DecisionBadge decision={mr?.decision ?? null} />
-              <ChevronRight size={14} className="text-muted-foreground" />
-            </div>
+              </span>
+            )}
+            {row.prediction && <PredictionBadge pred={row.prediction} />}
+            <DecisionBadge decision={mr?.decision ?? null} />
           </div>
 
           {mr?.decision === "BET" &&
