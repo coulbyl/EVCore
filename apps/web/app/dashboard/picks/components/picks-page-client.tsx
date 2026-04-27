@@ -81,10 +81,10 @@ export function PicksPageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex flex-col gap-5">
-          {/* Stats */}
-          <section className="grid grid-cols-3 gap-3 sm:gap-4">
+      <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+        <div className="flex h-full min-h-0 flex-col gap-5">
+          {/* Stats — fixed */}
+          <section className="shrink-0 grid grid-cols-3 gap-3 sm:gap-4">
             <StatCard
               compact={isMobile}
               icon={<TrendingUp size={14} />}
@@ -108,61 +108,64 @@ export function PicksPageClient() {
             />
           </section>
 
-          {/* Loading */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <Loader2 size={22} className="animate-spin" />
-            </div>
-          )}
+          {/* Scrollable content */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {/* Loading */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-16 text-muted-foreground">
+                <Loader2 size={22} className="animate-spin" />
+              </div>
+            )}
 
-          {/* Error */}
-          {isError && !isLoading && (
-            <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
-              Impossible de charger les picks du jour.
-            </div>
-          )}
+            {/* Error */}
+            {isError && !isLoading && (
+              <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
+                Impossible de charger les picks du jour.
+              </div>
+            )}
 
-          {/* Empty */}
-          {!isLoading && !isError && !hasAny && (
-            <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
-              Aucun pick pour aujourd'hui.
-            </div>
-          )}
+            {/* Empty */}
+            {!isLoading && !isError && !hasAny && (
+              <div className="rounded-[1.2rem] border border-dashed border-border bg-panel/70 p-8 text-center text-sm text-muted-foreground">
+                Aucun pick pour aujourd'hui.
+              </div>
+            )}
 
-          {/* Canal sections */}
-          {!isLoading && !isError && hasAny && (
-            <div className="flex flex-col gap-6">
-              <CanalSection
-                title="Canal EV"
-                color="var(--canal-ev)"
-                count={ev.length}
-              >
-                {ev.map((row) => (
-                  <EvPickCard key={row.fixtureId} row={row} />
-                ))}
-              </CanalSection>
+            {/* Canal sections */}
+            {!isLoading && !isError && hasAny && (
+              <div className="flex flex-col gap-6 pb-2">
+                <CanalSection
+                  title="Canal EV"
+                  color="var(--canal-ev)"
+                  count={ev.length}
+                >
+                  {ev.map((row) => (
+                    <EvPickCard key={row.fixtureId} row={row} />
+                  ))}
+                </CanalSection>
 
-              <CanalSection
-                title="Safe Value"
-                color="var(--canal-sv)"
-                count={sv.length}
-              >
-                {sv.map((row) => (
-                  <SvPickCard key={row.fixtureId} row={row} />
-                ))}
-              </CanalSection>
+                <CanalSection
+                  title="Safe Value"
+                  color="var(--canal-sv)"
+                  count={sv.length}
+                >
+                  {sv.map((row) => (
+                    <SvPickCard key={row.fixtureId} row={row} />
+                  ))}
+                </CanalSection>
 
-              <CanalSection
-                title="Confiance"
-                color="var(--canal-conf)"
-                count={conf.length}
-              >
-                {conf.map((row) => (
-                  <ConfPickCard key={row.fixtureId} row={row} />
-                ))}
-              </CanalSection>
-            </div>
-          )}
+                <CanalSection
+                  title="Confiance"
+                  color="var(--canal-conf)"
+                  count={conf.length}
+                >
+                  {conf.map((row) => (
+                    <ConfPickCard key={row.fixtureId} row={row} />
+                  ))}
+                </CanalSection>
+              </div>
+            )}
+          </div>
         </div>
       </PageContent>
     </Page>
