@@ -38,7 +38,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
             "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
         }}
       >
-        BET
+        Jouer
       </span>
     );
   }
@@ -47,7 +47,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
       variant="neutral"
       className="rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
     >
-      NO BET
+      Passer
     </Badge>
   );
 }
@@ -112,22 +112,66 @@ function SVBadge() {
   );
 }
 
-function SVRow({ sv }: { sv: FixtureSvBet }) {
+function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
+  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
   const pickLabel = formatCombinedPickForDisplay({
     market: sv.market,
     pick: sv.pick,
     comboMarket: sv.comboMarket ?? undefined,
     comboPick: sv.comboPick ?? undefined,
   });
+  const inSlip = isInSlip(sv.betId);
+  const canAdd = sv.betStatus === "PENDING" && row.status !== "FINISHED";
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(sv.betId);
+      return;
+    }
+    const item: BetSlipDraftItem = {
+      betId: sv.betId,
+      fixtureId: row.fixtureId,
+      fixture: row.fixture,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
+      competition: row.competition,
+      scheduledAt: row.scheduledAt,
+      market: sv.market,
+      pick: sv.pick,
+      comboMarket: sv.comboMarket ?? undefined,
+      comboPick: sv.comboPick ?? undefined,
+      odds: null,
+      ev: sv.ev,
+      stakeOverride: null,
+    };
+    addItem(item);
+    if (draft.items.length === 0) open();
+  }
+
   return (
     <div className="flex items-center gap-2 text-xs">
       <SVBadge />
       <span className="text-muted-foreground">{pickLabel}</span>
+      {sv.odds && <span className="text-muted-foreground">{sv.odds}</span>}
       <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>
         {sv.ev}
       </span>
       {sv.betStatus && sv.betStatus !== "PENDING" && (
         <BetResultBadge status={sv.betStatus} />
+      )}
+      {canAdd && (
+        <button
+          type="button"
+          onClick={handleClick}
+          className={`flex size-6 items-center justify-center rounded-md border transition-colors ${
+            inSlip
+              ? "border-success/20 bg-success/12 text-success"
+              : "border-border bg-panel text-muted-foreground hover:border-accent hover:text-accent"
+          }`}
+        >
+          {inSlip ? <Check size={11} /> : <ShoppingCart size={11} />}
+        </button>
       )}
     </div>
   );
@@ -311,6 +355,16 @@ function FixtureMobileCard({
           comboPick: mr.comboPick ?? undefined,
         })
       : null;
+  const evOdds =
+    mr?.market && mr?.pick
+      ? (mr.evaluatedPicks.find(
+          (p) =>
+            p.market === mr.market &&
+            p.pick === mr.pick &&
+            (p.comboMarket ?? null) === (mr.comboMarket ?? null) &&
+            (p.comboPick ?? null) === (mr.comboPick ?? null),
+        )?.odds ?? null)
+      : null;
 
   return (
     <div
@@ -363,19 +417,30 @@ function FixtureMobileCard({
               <span className="mx-1.5">·</span>
               {formatKickoff(row.scheduledAt)}
             </p>
-            <div className="flex shrink-0 items-center gap-2">
-              {mr?.decision === "BET" && mr.ev && (
+            <ChevronRight
+              size={14}
+              className="shrink-0 text-muted-foreground"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {mr?.decision === "BET" && mr.ev && (
+              <span className="flex items-baseline gap-1 tabular-nums">
+                {evOdds && (
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {evOdds}
+                  </span>
+                )}
                 <span
                   className="text-sm font-bold"
                   style={{ color: "var(--canal-ev)" }}
                 >
                   {mr.ev}
                 </span>
-              )}
-              {row.prediction && <PredictionBadge pred={row.prediction} />}
-              <DecisionBadge decision={mr?.decision ?? null} />
-              <ChevronRight size={14} className="text-muted-foreground" />
-            </div>
+              </span>
+            )}
+            {row.prediction && <PredictionBadge pred={row.prediction} />}
+            <DecisionBadge decision={mr?.decision ?? null} />
           </div>
 
           {mr?.decision === "BET" &&
@@ -385,7 +450,7 @@ function FixtureMobileCard({
                 <BetResultBadge status={mr.betStatus} />
               </div>
             )}
-          {row.safeValueBet && <SVRow sv={row.safeValueBet} />}
+          {row.safeValueBet && <SVRow sv={row.safeValueBet} row={row} />}
         </div>
       </button>
 
@@ -469,6 +534,7 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       header: "Pick",
       cell: ({ row }) => {
         const mr = row.original.modelRun;
+        const sv = row.original.safeValueBet;
         return (
           <div className="flex flex-col gap-1 text-sm text-foreground">
             {mr?.market && mr?.pick ? (
@@ -483,16 +549,21 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
             ) : (
               <span className="text-muted-foreground">—</span>
             )}
-            {row.original.safeValueBet && (
-              <div className="flex items-center gap-1.5">
+            {sv && (
+              <div
+                className="ml-1 flex items-center gap-1.5 border-l-2 pl-2"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--canal-sv) 35%, transparent)",
+                }}
+              >
                 <SVBadge />
                 <span className="text-xs text-muted-foreground">
                   {formatCombinedPickForDisplay({
-                    market: row.original.safeValueBet.market,
-                    pick: row.original.safeValueBet.pick,
-                    comboMarket:
-                      row.original.safeValueBet.comboMarket ?? undefined,
-                    comboPick: row.original.safeValueBet.comboPick ?? undefined,
+                    market: sv.market,
+                    pick: sv.pick,
+                    comboMarket: sv.comboMarket ?? undefined,
+                    comboPick: sv.comboPick ?? undefined,
                   })}
                 </span>
               </div>
@@ -514,9 +585,16 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
               )?.odds ?? null)
             : null;
         return (
-          <span className="tabular-nums text-sm font-medium text-foreground">
-            {odds ?? <span className="text-muted-foreground">—</span>}
-          </span>
+          <div className="flex flex-col gap-0.5 tabular-nums text-sm font-medium">
+            <span className="text-foreground">
+              {odds ?? <span className="text-muted-foreground">—</span>}
+            </span>
+            {row.original.safeValueBet && (
+              <span className="text-xs text-muted-foreground">
+                {row.original.safeValueBet.odds ?? "—"}
+              </span>
+            )}
+          </div>
         );
       },
     },
@@ -526,17 +604,26 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       meta: { align: "right" },
       cell: ({ row }) => {
         const mr = row.original.modelRun;
+        const sv = row.original.safeValueBet;
         return (
-          <div className="flex flex-col gap-1 tabular-nums text-sm font-semibold">
+          <div className="tabular-nums text-sm font-semibold">
             {mr?.ev ? (
-              <div style={{ color: "var(--canal-ev)" }}>{mr.ev}</div>
+              <span>
+                <span style={{ color: "var(--canal-ev)" }}>{mr.ev}</span>
+                {sv && (
+                  <>
+                    <span className="mx-1 text-border">·</span>
+                    <span
+                      className="text-[0.7rem]"
+                      style={{ color: "var(--canal-sv)" }}
+                    >
+                      sv {sv.ev}
+                    </span>
+                  </>
+                )}
+              </span>
             ) : (
               <span className="text-muted-foreground">—</span>
-            )}
-            {row.original.safeValueBet && (
-              <div style={{ color: "var(--canal-sv)" }}>
-                {row.original.safeValueBet.ev}
-              </div>
             )}
           </div>
         );

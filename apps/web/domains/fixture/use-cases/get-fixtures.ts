@@ -3,6 +3,19 @@ import { serverApiRequest } from "@/lib/api/server-api";
 
 export type FixturesResult = { rows: FixtureRow[]; total: number };
 
+function filterByCanal(
+  rows: FixtureRow[],
+  canal: FixtureFilters["canal"],
+): FixtureRow[] {
+  if (canal === "ALL") return rows;
+  return rows.filter((row) => {
+    if (canal === "EV") return row.modelRun?.decision === "BET";
+    if (canal === "SV") return row.safeValueBet !== null;
+    if (canal === "CONF") return row.prediction !== null;
+    return true;
+  });
+}
+
 /** Récupère les fixtures depuis le backend avec tous les filtres appliqués côté serveur.
  *  Endpoint : GET /fixture (fixture module — single responsibility) */
 export async function getFixtures(
@@ -17,7 +30,11 @@ export async function getFixtures(
   if (filters.timeSlot !== "ALL") params.set("timeSlot", filters.timeSlot);
   if (filters.betStatus !== "ALL") params.set("betStatus", filters.betStatus);
 
-  return serverApiRequest<FixturesResult>(`/fixture?${params.toString()}`, {
-    fallbackErrorMessage: "Impossible de charger les fixtures.",
-  });
+  const result = await serverApiRequest<FixturesResult>(
+    `/fixture?${params.toString()}`,
+    { fallbackErrorMessage: "Impossible de charger les fixtures." },
+  );
+
+  const rows = filterByCanal(result.rows, filters.canal);
+  return { rows, total: result.total };
 }

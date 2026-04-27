@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { RadioGroup, RadioGroupItem } from "@evcore/ui";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
+import { SettingsSectionCard } from "./settings-section-card";
 
 type Locale = "fr" | "en";
 
@@ -24,11 +25,7 @@ export function LanguageSection({ currentLocale }: { currentLocale: Locale }) {
   }
 
   return (
-    <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-        {t("language")}
-      </p>
-
+    <SettingsSectionCard eyebrow={t("language")}>
       <RadioGroup
         value={optimisticLocale}
         onValueChange={handleChange}
@@ -45,6 +42,6 @@ export function LanguageSection({ currentLocale }: { currentLocale: Locale }) {
           </label>
         ))}
       </RadioGroup>
-    </div>
+    </SettingsSectionCard>
   );
 }

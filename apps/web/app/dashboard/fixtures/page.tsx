@@ -22,6 +22,7 @@ function parseFilters(
     status: (str("status") as FixtureFilters["status"]) ?? "ALL",
     timeSlot: (str("timeSlot") as FixtureFilters["timeSlot"]) ?? "ALL",
     betStatus: (str("betStatus") as FixtureFilters["betStatus"]) ?? "ALL",
+    canal: (str("canal") as FixtureFilters["canal"]) ?? "ALL",
   };
 }
 

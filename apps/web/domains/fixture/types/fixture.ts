@@ -5,6 +5,13 @@ import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
 // Fixture domain types — indépendants du concept "audit"
 // ---------------------------------------------------------------------------
 
+export type FixtureModelFactors = {
+  recentForm: number | null;
+  xg: number | null;
+  performanceDomExt: number | null;
+  volatiliteLigue: number | null;
+};
+
 export type FixtureModelRun = {
   modelRunId: string;
   decision: "BET" | "NO_BET";
@@ -24,6 +31,7 @@ export type FixtureModelRun = {
   expectedTotalGoals: string | null;
   candidatePicks: FixturePickSnapshot[];
   evaluatedPicks: FixtureEvaluatedPickSnapshot[];
+  factors: FixtureModelFactors | null;
 };
 
 export type FixturePickSnapshot = {
@@ -55,6 +63,7 @@ export type FixtureSvBet = {
   comboMarket: string | null;
   comboPick: string | null;
   ev: string;
+  odds: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
   probEstimated: string | null;
 };
@@ -86,6 +95,7 @@ export type FixtureStatusFilter = "ALL" | "SCHEDULED" | "LIVE" | "FINISHED";
 export type FixtureTimeSlotFilter = "ALL" | TimeSlotKey;
 export type FixtureCompetitionFilter = "ALL" | string;
 export type FixtureBetStatusFilter = "ALL" | "WON" | "LOST" | "PENDING";
+export type FixtureCanalFilter = "ALL" | "EV" | "SV" | "CONF";
 
 export type FixtureFilters = {
   date: string;
@@ -94,4 +104,5 @@ export type FixtureFilters = {
   status: FixtureStatusFilter;
   timeSlot: FixtureTimeSlotFilter;
   betStatus: FixtureBetStatusFilter;
+  canal: FixtureCanalFilter;
 };

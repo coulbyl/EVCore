@@ -3,6 +3,7 @@
 import { formatCompactValue } from "@/helpers/number";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PnlSummary } from "@/domains/dashboard/types/dashboard";
+import { useTranslations } from "next-intl";
 
 export function PerformanceCard({
   pnl,
@@ -15,6 +16,7 @@ export function PerformanceCard({
   onDateChange: (value?: string) => void;
   onResetDate: () => void;
 }) {
+  const t = useTranslations("performance");
   const isMobile = useIsMobile();
   const lostBets = Math.max(0, pnl.settledBets - pnl.wonBets);
   const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
@@ -62,16 +64,16 @@ export function PerformanceCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Performance globale
+            {t("headline")}
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-            Gains &amp; pertes
+            {t("title")}
           </h2>
         </div>
         <div className="flex items-center gap-2">
           {pnl.settledBets === 0 && (
             <span className="rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">
-              En attente de résultats
+              {t("pendingResults")}
             </span>
           )}
           <input
@@ -88,7 +90,7 @@ export function PerformanceCard({
               onClick={onResetDate}
               className="h-9 rounded-xl border border-border bg-panel px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              Tout
+              {t("resetDate")}
             </button>
           )}
         </div>
@@ -101,7 +103,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
           >
-            ROI
+            {t("roi")}
           </p>
           <p
             className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${roiTone.value}`}
@@ -111,7 +113,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
           >
-            {isMobile ? "capital" : "sur capital misé"}
+            {isMobile ? t("capitalShort") : t("onStakedCapital")}
           </p>
         </div>
 
@@ -121,7 +123,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
           >
-            Gain net
+            {t("netGain")}
           </p>
           <p
             className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${netTone.value}`}
@@ -131,7 +133,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
           >
-            {isMobile ? "mise" : "unités de mise"}
+            {isMobile ? t("stakeShort") : t("stakeUnits")}
           </p>
         </div>
 
@@ -141,7 +143,7 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
           >
-            Réussite
+            {t("winRate")}
           </p>
           <p
             className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight text-foreground`}
@@ -151,7 +153,8 @@ export function PerformanceCard({
           <p
             className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
           >
-            {compactSettledBets} {isMobile ? "réglés" : "paris réglés"}
+            {compactSettledBets}{" "}
+            {isMobile ? t("settledShort") : t("settledBets")}
           </p>
         </div>
       </div>
@@ -159,10 +162,10 @@ export function PerformanceCard({
       <div className="mt-3">
         <div className="mb-1.5 flex items-center justify-between gap-3">
           <span className="text-xs font-semibold text-success">
-            {pnl.wonBets} gagnés
+            {pnl.wonBets} {t("won")}
           </span>
           <span className="text-xs font-semibold text-danger">
-            {lostBets} perdus
+            {lostBets} {t("lost")}
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">

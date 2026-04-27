@@ -43,6 +43,12 @@ export function AppShell({
           active: pathname.startsWith("/dashboard/fixtures"),
         },
         {
+          label: "Picks du jour",
+          mobileLabel: "Picks",
+          href: "/dashboard/picks",
+          active: pathname.startsWith("/dashboard/picks"),
+        },
+        {
           label: "Mes coupons",
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),

@@ -143,7 +143,7 @@ Remplacer le SVG custom et poser la base pour tous les graphes futurs (ROI curve
 **Conventions de style :**
 
 - [ ] Palette de couleurs chart EVCore via tokens CSS vars
-- [ ] Tooltip unifié
+- [x] Tooltip unifié
 - [ ] Axes : labels `text-[0.62rem] uppercase tracking`
 
 ---
@@ -255,7 +255,7 @@ Le dark mode est une décision de design system, pas une feature page — il fau
 - [x] `next-themes` ajouté au catalog + `apps/web`
 - [x] `ThemeProvider` intégré dans le root layout via `Providers` + `suppressHydrationWarning` sur `<html>`
 - [x] Audit complet des composants `@evcore/ui` : couleurs hardcodées Tailwind restantes à remplacer
-- [ ] Charts Recharts : tooltips et axes en mode dark
+- [x] Charts Recharts : tooltips et axes en mode dark
 
 **Préférence utilisateur (Account settings) :**
 
@@ -299,9 +299,9 @@ La page `/dashboard/params/account` est actuellement un placeholder "À venir". 
 
 - [x] Section **Apparence** : RadioGroup card (Clair / Sombre / Système), `useTheme`, i18n
 - [x] Section **Langue** : RadioGroup (FR / EN), `useOptimistic` + cookie + `router.refresh()`
-- [ ] Section **Notifications** : préférences par type (ROI_ALERT, WEEKLY_REPORT…)
-- [ ] Section **Compte** : email, username, "Modifier le mot de passe"
-- [ ] Section **Bankroll** : unité de stake, devise d'affichage
+- [x] Section **Notifications** : préférences par type (ROI_ALERT, WEEKLY_REPORT…)
+- [x] Section **Compte** : email, username, "Modifier le mot de passe"
+- [x] Section **Bankroll** : devise d'affichage
 - [ ] Endpoint `PATCH /auth/me` + persistance en base (thème + locale)
 
 ---
@@ -327,6 +327,10 @@ Les trois canaux coexistent dans une seule ligne de tableau sans identité propr
   - [x] Canal Confiance : hit rate du jour + 30 jours (`usePredictions` + `usePredictionStats`)
 - [x] Devise EUR + formatage compact mobile : `formatCurrency(v, compact?)` + `formatSignedCurrency` dans `helpers/number.ts`, appliqués sur Bet Slips (list + detail panel) et Bankroll
 - [x] Badges canal sur Bet Slips (detail panel — badge EV/SV par sélection) et Bankroll transactions (colonne + mobile card) — `CanalBadge` composant partagé extrait dans `components/canal-badge.tsx`; `canal` exposé via `BetSlipItemView` + `BankrollTransaction` (backend : `Bet.isSafeValue` → `canal`, migration Prisma `add_bet_bankroll_relation`)
+- [x] **Fixtures table UX** : étiquettes DÉCISION traduites (Jouer / Passer), valeurs EV+SV inline (`+0.380 · sv +0.053`), connecteur visuel teal sur sous-ligne SV (bordure gauche), cote SV exposée depuis `oddsSnapshot`, filtre Canal (EV / Safe Value / Confiance) dans la FilterBar
+- [x] **Responsive polish** : grilles stat 2-col + `compact` sur mobile pour Bankroll et Bet Slips (pattern `grid-cols-2 sm:grid-cols-3`, dernier card `col-span-2 sm:col-span-1`); overflow mobile card Fixtures corrigé (badges sur ligne séparée avec `flex-wrap`)
+- [x] **Topbar mobile** : texte "EVCore" masqué sous `sm` (icône seule), `BankrollWidget` affiche la devise EUR + compact seulement au-dessus de 1 M€, `BetSlipButton` redessiné (pill avec accent, libellé "Coupon", FAB mobile flottant quand count > 0)
+- [x] **FilterBar desktop** : largeur uniforme `w-[155px]` + `w-full` sur `SelectTrigger` (supprime les largeurs incohérentes par contenu)
 
 ---
 
@@ -342,15 +346,17 @@ Page centrale de l'expérience quotidienne. Le dashboard actuel est trop dense. 
 
 **Tâches :**
 
-- [ ] Créer la route `/dashboard/picks`
-- [ ] Brief du matin : nombre de picks par canal pour aujourd'hui, statut global (BET / NO_BET / en attente)
-- [ ] Pick cards par canal, tri chronologique par heure de match
-- [ ] Section expandable "Pourquoi ce pick ?" sur chaque card :
-  - [ ] Barre de contribution des 4 facteurs (`forme_recente`, `xg`, `performance_dom_ext`, `volatilite_ligue`) depuis `ModelRun.features`
-  - [ ] Probabilité estimée vs cote disponible
-  - [ ] EV affiché clairement
-- [ ] Statut en temps réel post-match : résultat correct / incorrect avec polling (interval 60s)
-- [ ] Ajouter le lien "Picks du jour" dans la navigation principale
+- [x] Créer la route `/dashboard/picks`
+- [x] Brief du matin : nombre de picks par canal (3 StatCards EV / SV / Confiance)
+- [x] Pick cards par canal (`EvPickCard`, `SvPickCard`, `ConfPickCard`) — tri par EV desc (hérité du backend)
+- [x] Section expandable "Pourquoi ce pick ?" sur chaque card EV :
+  - [x] Barre de contribution des 4 facteurs (`recentForm`, `xg`, `performanceDomExt`, `volatiliteLigue`) depuis `ModelRun.features`
+  - [x] Probabilité estimée vs cote disponible
+  - [x] EV affiché clairement
+- [x] Statut en temps réel post-match : résultat (Gagné / Perdu) via polling 60s (`usePicksOfTheDay`)
+- [x] Ajouter le lien "Picks du jour" dans la navigation principale
+- [x] `AddToSlipInline` : bouton panier inline sur les cards EV et SV (paris PENDING uniquement)
+- [x] Scroll : seul le contenu (canal sections) scroll — stats fixées en haut
 
 ---
 
@@ -447,7 +453,7 @@ Récompenser les bonnes métriques (calibration, patience, volume statistiquemen
 
 Améliorations rapides sans nouvelle page ni nouvelle API.
 
-- [ ] **Feature breakdown sur les pick cards** : afficher une barre horizontale de contribution des 4 facteurs depuis `ModelRun.features` — données déjà en DB, jamais affichées
+- [x] **Feature breakdown sur les pick cards** : barres de contribution des 4 facteurs depuis `ModelRun.features` — intégré dans `EvPickCard` (section "Pourquoi ce pick ?" P2)
 - [ ] **Bankroll — projection 30 jours** : ajouter une ligne pointillée sur le trend chart indiquant la trajectoire actuelle (calcul client-side depuis transactions)
 - [ ] **Bankroll — stats de période** : afficher ROI de la période sélectionnée directement sous le sélecteur de dates
 - [ ] **Fixtures — preset filters** : ajouter des raccourcis "Picks EV du jour", "Picks SV du jour", "Matchs en cours" au-dessus du tableau de filtres
@@ -469,35 +475,29 @@ Le composant actuel est lisible pour un admin/dev mais opaque pour un user lambd
 
 **Tâches :**
 
-- [ ] **Section "Entrées modèle" → renommer et simplifier**
-  - [ ] Remplacer `λ Dom.` / `λ Ext.` par une phrase lisible : "Le modèle prédit ~1.8 buts dom. · ~0.9 buts ext."
-  - [ ] Garder "Prob. estimée" et "Buts attendus" tels quels (compréhensibles)
+- [x] **Section "Entrées modèle" → renommée "Prédiction modèle"**
+  - [x] `λ Dom.` / `λ Ext.` remplacés par une phrase lisible : "Le modèle prédit ~X buts dom. · ~Y buts ext."
+  - [x] StatCards : "Prob. estimée" + "Valeur (EV)" en % signé
 
-- [ ] **Ajouter la section "Pourquoi ce pick ?" avec les features**
-  - [ ] Afficher les 4 facteurs depuis `ModelRun.features` : `forme_recente`, `xg`, `performance_dom_ext`, `volatilite_ligue`
-  - [ ] Une barre de progression horizontale par facteur (score 0–1 → largeur visuelle)
-  - [ ] Label lisible par facteur : "Forme récente", "Expected Goals (xG)", "Avantage dom./ext.", "Stabilité de la ligue"
-  - [ ] Code couleur : vert si le facteur favorise le pick, ambre si neutre, rose si défavorable
+- [x] **Section "Pourquoi ce pick ?" avec les features**
+  - [x] 4 barres de facteurs (`recentForm`, `xg`, `performanceDomExt`, `volatiliteLigue`)
+  - [x] Code couleur : vert ≥65%, ambre ≥40%, rouge <40%
+  - [x] Labels lisibles : "Forme récente", "Expected Goals (xG)", "Avantage dom./ext.", "Stabilité de la ligue"
 
-- [ ] **Fusionner ou hiérarchiser les deux tables**
-  - [ ] Option A : une seule table "Tous les marchés" avec colonne Statut (Viable / Écarté)
-  - [ ] Option B : conserver deux tables mais ajouter une phrase d'intro explicative : "Le modèle a analysé N marchés. X ont passé tous les filtres."
-  - [ ] Choisir l'option en fonction du feedback utilisateur
+- [x] **Tables fusionnées → "Marchés analysés"** (Option A)
+  - [x] Une seule table avec colonne Statut (Viable / raison de rejet inline)
+  - [x] Intro : "N marchés · Y viables · Z écartés"
 
-- [ ] **Formater "Valeur" (EV) en pourcentage signé**
-  - [ ] `0.147` → `+14.7%` (emerald), `-0.05` → `-5.0%` (rose)
-  - [ ] Même chose pour "Qualité" si conservé
+- [x] **EV en % signé partout** (`+14.7%` / `-5.0%`)
 
-- [ ] **Masquer ou réduire "Qualité" pour les users lambda**
-  - [ ] Envisager de ne l'afficher qu'en mode "Détail technique" (toggle visible par les admins)
+- [x] **"Qualité" (qualityScore) supprimé** de la vue principale
 
-- [ ] **Raisons de rejet : améliorer la lisibilité**
-  - [ ] Ajouter une icône par type de raison (🔒 marché suspendu, 📉 valeur insuffisante, 🎯 probabilité trop faible…)
-  - [ ] Optionnel : tooltip avec une explication courte au survol
+- [x] **Hiérarchie visuelle**
+  - [x] Pick retenu mis en avant en haut (canal badge EV + pick + EV + prob)
+  - [x] Decision NO_BET : message explicite au lieu du silence
 
-- [ ] **Hiérarchie visuelle générale**
-  - [ ] Le pick retenu (celui avec `decision: BET`) doit être mis en avant visuellement en haut du diagnostic, pas noyé dans la table
-  - [ ] Les picks "Viable" dans la table évaluée doivent se distinguer clairement des picks "Rejeté" (fond légèrement coloré sur la ligne ?)
+- [ ] **Raisons de rejet : icônes par type** (🔒 suspendu, 📉 valeur insuffisante…) — quick win pour plus tard
+- [ ] **Masquer les données techniques** (λ, features) en mode "vue simplifiée" pour users non-admin
 
 ---
 

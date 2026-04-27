@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { CHART_AXIS_TICK, CHART_TOOLTIP_CONTENT_STYLE } from "./chart-theme";
 
 type BarDef = {
   key: string;
@@ -54,21 +55,13 @@ function EvBarChart({
             <>
               <XAxis
                 dataKey={xKey}
-                tick={{
-                  fontSize: 10,
-                  fill: "var(--muted-foreground)",
-                  fontFamily: "inherit",
-                }}
+                tick={CHART_AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
               />
               <YAxis
-                tick={{
-                  fontSize: 10,
-                  fill: "var(--muted-foreground)",
-                  fontFamily: "inherit",
-                }}
+                tick={CHART_AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -80,11 +73,7 @@ function EvBarChart({
             <>
               <XAxis
                 type="number"
-                tick={{
-                  fontSize: 10,
-                  fill: "var(--muted-foreground)",
-                  fontFamily: "inherit",
-                }}
+                tick={CHART_AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -93,11 +82,7 @@ function EvBarChart({
               <YAxis
                 dataKey={xKey}
                 type="category"
-                tick={{
-                  fontSize: 10,
-                  fill: "var(--muted-foreground)",
-                  fontFamily: "inherit",
-                }}
+                tick={CHART_AXIS_TICK}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={8}
@@ -106,14 +91,7 @@ function EvBarChart({
             </>
           )}
           <Tooltip
-            contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              borderRadius: "0.75rem",
-              fontSize: 12,
-              fontFamily: "inherit",
-              color: "var(--foreground)",
-            }}
+            contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
             cursor={{ fill: "var(--secondary)", opacity: 0.5 }}
           />
           {bars.map((bar) => (

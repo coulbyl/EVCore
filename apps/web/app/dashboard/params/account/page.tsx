@@ -1,7 +1,10 @@
 import { Page, PageContent } from "@evcore/ui";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppearanceSection } from "./components/appearance-section";
+import { AccountProfileSection } from "./components/account-profile-section";
+import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { LanguageSection } from "./components/language-section";
+import { NotificationsSection } from "./components/notifications-section";
 
 export default async function AccountSettingsPage() {
   const locale = (await getLocale()) as "fr" | "en";
@@ -20,22 +23,74 @@ export default async function AccountSettingsPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
+          <AccountProfileSection
+            labels={{
+              eyebrow: t("account"),
+              title: t("profile"),
+              description: t("profileDescription"),
+              fullName: t("fullName"),
+              email: t("email"),
+              username: t("username"),
+              role: t("role"),
+              password: t("password"),
+              changePassword: t("changePassword"),
+              changePasswordHint: t("changePasswordHint"),
+              loading: "…",
+              roles: {
+                ADMIN: t("roles.ADMIN"),
+                OPERATOR: t("roles.OPERATOR"),
+              },
+            }}
+          />
+
           <AppearanceSection />
           <LanguageSection currentLocale={locale} />
 
-          <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              {t("notifications")}
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">À venir.</p>
-          </div>
+          <NotificationsSection
+            labels={{
+              eyebrow: t("notifications"),
+              title: t("notifications"),
+              description: t("notificationDescription"),
+              preferenceHint: t("preferenceHint"),
+              items: [
+                {
+                  key: "roiAlert",
+                  label: t("notificationTypes.roiAlert"),
+                  help: t("notificationHelp.roiAlert"),
+                },
+                {
+                  key: "marketSuspension",
+                  label: t("notificationTypes.marketSuspension"),
+                  help: t("notificationHelp.marketSuspension"),
+                },
+                {
+                  key: "brierAlert",
+                  label: t("notificationTypes.brierAlert"),
+                  help: t("notificationHelp.brierAlert"),
+                },
+                {
+                  key: "weeklyReport",
+                  label: t("notificationTypes.weeklyReport"),
+                  help: t("notificationHelp.weeklyReport"),
+                },
+              ],
+            }}
+          />
 
-          <div className="rounded-[1.6rem] border border-border bg-panel-strong p-5 ev-shell-shadow">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              {t("bankroll")}
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">À venir.</p>
-          </div>
+          <BankrollPreferencesSection
+            labels={{
+              eyebrow: t("bankroll"),
+              title: t("bankroll"),
+              description: t("bankrollDescription"),
+              preferenceHint: t("preferenceHint"),
+              displayCurrency: t("displayCurrency"),
+              currencyOptions: [
+                { value: "EUR", label: t("currencies.eur") },
+                { value: "USD", label: t("currencies.usd") },
+                { value: "GBP", label: t("currencies.gbp") },
+              ],
+            }}
+          />
         </div>
       </PageContent>
     </Page>

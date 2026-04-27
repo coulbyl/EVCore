@@ -55,6 +55,178 @@
     "account": "Account",
     "bankroll": "Bankroll",
     "theme": "Theme",
-    "savePreferences": "Save preferences"
+    "savePreferences": "Save preferences",
+    "profile": "Profile",
+    "profileDescription": "Review your account details and sensitive actions.",
+    "fullName": "Full name",
+    "email": "Email",
+    "username": "Username",
+    "role": "Role",
+    "password": "Password",
+    "changePassword": "Change password",
+    "changePasswordHint": "The password change flow will be connected in the next commit.",
+    "notificationDescription": "Choose the important alerts you want to keep visible in the app.",
+    "bankrollDescription": "Prepare your bankroll and currency preferences before backend persistence.",
+    "preferenceHint": "Local preference for now, persistence comes in the next commit.",
+    "displayCurrency": "Display currency",
+    "notificationTypes": {
+      "roiAlert": "ROI alert",
+      "marketSuspension": "Market suspension",
+      "brierAlert": "Brier alert",
+      "weeklyReport": "Weekly report"
+    },
+    "notificationHelp": {
+      "roiAlert": "Get notified when a market drops below its ROI threshold.",
+      "marketSuspension": "Get notified when a market is auto-suspended.",
+      "brierAlert": "Get notified when calibration degrades.",
+      "weeklyReport": "Receive the weekly operator recap."
+    },
+    "currencies": {
+      "eur": "EUR",
+      "usd": "USD",
+      "gbp": "GBP"
+    },
+    "roles": {
+      "ADMIN": "Admin",
+      "OPERATOR": "Operator"
+    }
+  },
+  "picks": {
+    "pageTitle": "Today's picks",
+    "evChannel": "EV Channel",
+    "safeValue": "Safe Value",
+    "confidence": "Confidence",
+    "loadError": "Unable to load today's picks.",
+    "empty": "No picks for today."
+  },
+  "performance": {
+    "headline": "Overall performance",
+    "title": "Gains & losses",
+    "pendingResults": "Waiting for results",
+    "resetDate": "All",
+    "roi": "ROI",
+    "netGain": "Net gain",
+    "winRate": "Win rate",
+    "onStakedCapital": "on staked capital",
+    "capitalShort": "capital",
+    "stakeUnits": "stake units",
+    "stakeShort": "stake",
+    "settledBets": "settled bets",
+    "settledShort": "settled",
+    "won": "won",
+    "lost": "lost"
+  },
+  "bankrollPage": {
+    "filter": {
+      "allTypes": "All types",
+      "deposit": "Deposit",
+      "stake": "Stake",
+      "win": "Win",
+      "refund": "Refund",
+      "from": "From",
+      "to": "To",
+      "type": "Type"
+    },
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "amount": "Amount",
+      "detail": "Match / note",
+      "balanceAfter": "Balance after"
+    },
+    "stats": {
+      "currentBalance": "Current balance",
+      "totalDeposited": "Total deposited",
+      "netRoi": "Net ROI"
+    },
+    "trend": {
+      "title": "Balance trend",
+      "subtitle": "Balance day by day, calculated from recent movements.",
+      "recent": "Recent trend",
+      "notEnoughData": "Not enough data",
+      "notEnoughDataDescription": "Create transactions to display the trend curve.",
+      "lowest": "Lowest",
+      "highest": "Highest",
+      "displayedDays": "Days shown",
+      "point": "point",
+      "points": "points",
+      "portfolioLoadError": "Unable to load wallet data."
+    },
+    "history": {
+      "title": "Movement history",
+      "subtitle": "The latest 200 movements, with the balance after each operation.",
+      "emptyTitle": "No transactions",
+      "emptyDescription": "No transactions match the current filters."
+    },
+    "fallback": {
+      "deposit": "Deposit",
+      "bet": "Bet"
+    }
+  },
+  "fixtureDiagnostics": {
+    "rejection": {
+      "odds_below_floor": "Odds too low",
+      "odds_above_cap": "Odds too high",
+      "ev_below_threshold": "Insufficient value",
+      "ev_above_hard_cap": "Value above hard cap",
+      "ev_above_soft_cap": "Value above cap (calibration)",
+      "filtered_longshot": "Long shot filtered out",
+      "market_suspended": "Market suspended",
+      "probability_too_low": "Probability too low",
+      "quality_score_below_threshold": "Quality too low",
+      "under_high_lambda": "High goals count"
+    },
+    "factors": {
+      "recentForm": "Recent form",
+      "xg": "Expected Goals (xG)",
+      "performanceDomExt": "Home/away edge",
+      "volatiliteLigue": "League stability"
+    },
+    "actions": {
+      "alreadyInSlip": "Already in slip",
+      "alreadyInTickets": "Already in your slips",
+      "placePick": "Place this pick"
+    },
+    "table": {
+      "market": "Market",
+      "probability": "Prob.",
+      "odds": "Odds",
+      "value": "Value",
+      "status": "Status",
+      "viable": "Viable"
+    },
+    "empty": {
+      "title": "No diagnostics",
+      "description": "No ModelRun available for this fixture."
+    },
+    "noBet": {
+      "message": "No market meets the criteria",
+      "decision": "decision"
+    },
+    "sections": {
+      "whyThisPick": "Why this pick?",
+      "modelPrediction": "Model prediction",
+      "analyzedMarkets": "Analyzed markets"
+    },
+    "stats": {
+      "estimatedProbability": "Estimated prob.",
+      "evValue": "Value (EV)",
+      "lambdaHome": "λ Home",
+      "lambdaAway": "λ Away"
+    },
+    "predictionSummary": {
+      "modelPredicts": "The model predicts",
+      "homeGoals": "home goals",
+      "awayGoals": "away goals",
+      "expectedGoals": "expected"
+    },
+    "marketsSummary": {
+      "market": "market",
+      "markets": "markets",
+      "viable": "viable",
+      "viables": "viable",
+      "rejected": "rejected",
+      "rejectedPlural": "rejected"
+    }
   }
 }

@@ -275,7 +275,7 @@ export function BetSlipListPageClient() {
 
   const filter = (
     <div className="shrink-0 flex flex-col gap-4 rounded-[1.1rem] border border-border bg-panel p-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard
           compact
           tone="neutral"
@@ -288,12 +288,14 @@ export function BetSlipListPageClient() {
           label="Net réglé"
           value={formatSignedCurrency(periodSummary.net, true)}
         />
-        <StatCard
-          compact
-          tone="warning"
-          label="En attente"
-          value={String(periodSummary.pending)}
-        />
+        <div className="col-span-2 sm:col-span-1">
+          <StatCard
+            compact
+            tone="warning"
+            label="En attente"
+            value={String(periodSummary.pending)}
+          />
+        </div>
       </div>
       <FilterBar
         filters={SLIP_FILTERS}
