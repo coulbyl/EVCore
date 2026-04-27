@@ -346,15 +346,17 @@ Page centrale de l'expérience quotidienne. Le dashboard actuel est trop dense. 
 
 **Tâches :**
 
-- [ ] Créer la route `/dashboard/picks`
-- [ ] Brief du matin : nombre de picks par canal pour aujourd'hui, statut global (BET / NO_BET / en attente)
-- [ ] Pick cards par canal, tri chronologique par heure de match
-- [ ] Section expandable "Pourquoi ce pick ?" sur chaque card :
-  - [ ] Barre de contribution des 4 facteurs (`forme_recente`, `xg`, `performance_dom_ext`, `volatilite_ligue`) depuis `ModelRun.features`
-  - [ ] Probabilité estimée vs cote disponible
-  - [ ] EV affiché clairement
-- [ ] Statut en temps réel post-match : résultat correct / incorrect avec polling (interval 60s)
-- [ ] Ajouter le lien "Picks du jour" dans la navigation principale
+- [x] Créer la route `/dashboard/picks`
+- [x] Brief du matin : nombre de picks par canal (3 StatCards EV / SV / Confiance)
+- [x] Pick cards par canal (`EvPickCard`, `SvPickCard`, `ConfPickCard`) — tri par EV desc (hérité du backend)
+- [x] Section expandable "Pourquoi ce pick ?" sur chaque card EV :
+  - [x] Barre de contribution des 4 facteurs (`recentForm`, `xg`, `performanceDomExt`, `volatiliteLigue`) depuis `ModelRun.features`
+  - [x] Probabilité estimée vs cote disponible
+  - [x] EV affiché clairement
+- [x] Statut en temps réel post-match : résultat (Gagné / Perdu) via polling 60s (`usePicksOfTheDay`)
+- [x] Ajouter le lien "Picks du jour" dans la navigation principale
+- [x] `AddToSlipInline` : bouton panier inline sur les cards EV et SV (paris PENDING uniquement)
+- [x] Scroll : seul le contenu (canal sections) scroll — stats fixées en haut
 
 ---
 
@@ -451,7 +453,7 @@ Récompenser les bonnes métriques (calibration, patience, volume statistiquemen
 
 Améliorations rapides sans nouvelle page ni nouvelle API.
 
-- [ ] **Feature breakdown sur les pick cards** : afficher une barre horizontale de contribution des 4 facteurs depuis `ModelRun.features` — données déjà en DB, jamais affichées
+- [x] **Feature breakdown sur les pick cards** : barres de contribution des 4 facteurs depuis `ModelRun.features` — intégré dans `EvPickCard` (section "Pourquoi ce pick ?" P2)
 - [ ] **Bankroll — projection 30 jours** : ajouter une ligne pointillée sur le trend chart indiquant la trajectoire actuelle (calcul client-side depuis transactions)
 - [ ] **Bankroll — stats de période** : afficher ROI de la période sélectionnée directement sous le sélecteur de dates
 - [ ] **Fixtures — preset filters** : ajouter des raccourcis "Picks EV du jour", "Picks SV du jour", "Matchs en cours" au-dessus du tableau de filtres
