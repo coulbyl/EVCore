@@ -12,33 +12,51 @@ export function BetSlipButton() {
 
   if (hiddenOnPage) return null;
 
+  const hasItems = count > 0;
+  const displayCount = count > 9 ? "9+" : count;
+
   return (
     <>
+      {/* Topbar button — always visible */}
       <button
         type="button"
         onClick={open}
-        className="relative min-h-11 min-w-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:flex"
         title="Mon coupon"
+        className={`relative flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors ${
+          hasItems
+            ? "border-accent/30 bg-accent/8 text-accent hover:bg-accent/12"
+            : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
       >
-        <ReceiptText size={18} />
-        {count > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[0.55rem] font-bold text-accent-foreground">
-            {count}
+        <ReceiptText size={16} />
+        <span className="hidden sm:inline">Coupon</span>
+        {hasItems && (
+          <span
+            className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold ${
+              hasItems
+                ? "bg-accent text-accent-foreground"
+                : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            {displayCount}
           </span>
         )}
       </button>
 
-      {/* <button
-        type="button"
-        onClick={open}
-        className="fixed right-4 bottom-24 z-30 flex min-h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_16px_40px_rgba(15,23,42,0.28)] sm:hidden"
-      >
-        <ReceiptText size={16} />
-        <span>Mon coupon</span>
-        <span className="flex min-w-6 items-center justify-center rounded-full bg-white/14 px-1.5 py-0.5 text-[0.68rem] font-bold">
-          {count}
-        </span>
-      </button> */}
+      {/* Mobile FAB — only when there are items */}
+      {hasItems && (
+        <button
+          type="button"
+          onClick={open}
+          className="fixed bottom-20 right-4 z-30 flex items-center gap-2 rounded-full border border-accent/25 bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-[0_8px_32px_rgba(15,23,42,0.32)] transition-all sm:hidden"
+        >
+          <ReceiptText size={15} />
+          <span>Mon coupon</span>
+          <span className="flex min-w-5 items-center justify-center rounded-full bg-white/18 px-1.5 text-[0.68rem] font-bold">
+            {displayCount}
+          </span>
+        </button>
+      )}
     </>
   );
 }
