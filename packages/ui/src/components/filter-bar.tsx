@@ -130,7 +130,7 @@ function FilterControl({
           {def.label}
         </span>
         <Select value={value as string} onValueChange={onChange}>
-          <SelectTrigger className="h-9 text-sm">
+          <SelectTrigger className="h-9 w-full text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -321,10 +321,10 @@ function FilterBar({
 
       {/* Desktop: barre inline complète */}
       <div
-        className={cn("hidden lg:flex items-end gap-3 flex-wrap", className)}
+        className={cn("hidden lg:flex items-end gap-4 flex-wrap", className)}
       >
         {filters.map((def) => (
-          <div key={def.key} className="min-w-[140px]">
+          <div key={def.key} className="w-[155px]">
             <FilterControl
               def={def}
               value={value[def.key]}
