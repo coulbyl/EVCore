@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Drawer } from "vaul";
 import { ShoppingCart, Check, ChevronRight } from "lucide-react";
 import { Badge, DataTable, type ColumnDef } from "@evcore/ui";
@@ -677,6 +678,7 @@ export function FixturesTable({
   total: number;
   isAdmin: boolean;
 }) {
+  const t = useTranslations("table");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -697,7 +699,7 @@ export function FixturesTable({
         emptyState={
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <p className="text-2xl">🎯</p>
-            <p className="font-semibold text-foreground">Aucun match trouvé</p>
+            <p className="font-semibold text-foreground">{t("noResults")}</p>
             <p className="text-sm text-muted-foreground">
               Ajustez les filtres ou changez de date.
             </p>

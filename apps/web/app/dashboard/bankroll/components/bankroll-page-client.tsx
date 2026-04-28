@@ -29,7 +29,7 @@ import type {
 import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
-import { formatCurrency, formatSignedCurrency } from "@/helpers/number";
+import { useCurrencyFormat } from "@/providers/currency-provider";
 import { CanalBadge } from "@/components/canal-badge";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
@@ -132,7 +132,13 @@ function buildBankrollFilters(t: Translator): FilterDef[] {
   ];
 }
 
-function buildColumns(t: Translator): ColumnDef<EnrichedTransaction>[] {
+type AmountFormatter = (v: string | number, compact?: boolean) => string;
+
+function buildColumns(
+  t: Translator,
+  formatAmount: AmountFormatter,
+  formatSigned: AmountFormatter,
+): ColumnDef<EnrichedTransaction>[] {
   return [
     {
       id: "date",
@@ -163,7 +169,7 @@ function buildColumns(t: Translator): ColumnDef<EnrichedTransaction>[] {
           <div className="flex items-center justify-end gap-2">
             {row.original.canal && <CanalBadge canal={row.original.canal} />}
             <span className={`tabular-nums font-semibold ${cls}`}>
-              {formatSignedCurrency(parseAmount(row.original.amount))}
+              {formatSigned(parseAmount(row.original.amount))}
             </span>
           </div>
         );
@@ -184,7 +190,7 @@ function buildColumns(t: Translator): ColumnDef<EnrichedTransaction>[] {
       accessorFn: (row) => row.balanceAfter,
       cell: ({ getValue }) => (
         <span className="tabular-nums font-semibold">
-          {formatCurrency(getValue<number>())}
+          {formatAmount(getValue<number>())}
         </span>
       ),
       meta: { align: "right" },
@@ -199,6 +205,7 @@ function BankrollTrendChart({
   points: TrendPoint[];
   t: Translator;
 }) {
+  const { formatAmount } = useCurrencyFormat();
   if (points.length === 0) {
     return (
       <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
@@ -223,7 +230,7 @@ function BankrollTrendChart({
             {t("trend.recent")}
           </p>
           <p className="mt-2 text-2xl font-semibold text-foreground">
-            {formatCurrency(points[points.length - 1]?.balance ?? 0, true)}
+            {formatAmount(points[points.length - 1]?.balance ?? 0, true)}
           </p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
@@ -239,14 +246,14 @@ function BankrollTrendChart({
         color="#2563eb"
         height={140}
         className="mt-4"
-        formatY={(v) => formatCurrency(v, true)}
+        formatY={(v) => formatAmount(v, true)}
       />
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <StatList
           items={[
-            { label: t("trend.lowest"), value: formatCurrency(minY) },
-            { label: t("trend.highest"), value: formatCurrency(maxY) },
+            { label: t("trend.lowest"), value: formatAmount(minY) },
+            { label: t("trend.highest"), value: formatAmount(maxY) },
             { label: t("trend.displayedDays"), value: String(points.length) },
           ]}
         />
@@ -258,6 +265,7 @@ function BankrollTrendChart({
 export function BankrollPageClient() {
   const tCommon = useTranslations("common");
   const t = useTranslations("bankrollPage");
+  const { formatAmount, formatSigned } = useCurrencyFormat();
   const [filterState, setFilterState] = useState<FilterState>({
     from: "",
     to: todayIso(),
@@ -266,7 +274,10 @@ export function BankrollPageClient() {
 
   const isMobile = useIsMobile();
   const bankrollFilters = useMemo(() => buildBankrollFilters(t), [t]);
-  const columns = useMemo(() => buildColumns(t), [t]);
+  const columns = useMemo(
+    () => buildColumns(t, formatAmount, formatSigned),
+    [t, formatAmount, formatSigned],
+  );
   const balanceQuery = useBankrollBalance();
   const transactionsQuery = useBankrollTransactions();
   const betSlipsQuery = useBetSlips();
@@ -349,14 +360,14 @@ export function BankrollPageClient() {
               compact={isMobile}
               icon={<Wallet size={14} />}
               label={t("stats.currentBalance")}
-              value={formatCurrency(currentBalance, true)}
+              value={formatAmount(currentBalance, true)}
               tone="accent"
             />
             <StatCard
               compact={isMobile}
               icon={<ArrowDownLeft size={14} />}
               label={t("stats.totalDeposited")}
-              value={formatCurrency(totalDeposited, true)}
+              value={formatAmount(totalDeposited, true)}
               tone="neutral"
             />
             <div className="col-span-2 sm:col-span-1">
@@ -457,14 +468,14 @@ export function BankrollPageClient() {
                       <p
                         className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
                       >
-                        {formatSignedCurrency(parseAmount(row.amount))}
+                        {formatSigned(parseAmount(row.amount))}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("table.balanceAfter")}</span>
                     <span className="font-semibold tabular-nums text-foreground">
-                      {formatCurrency(row.balanceAfter)}
+                      {formatAmount(row.balanceAfter)}
                     </span>
                   </div>
                 </div>

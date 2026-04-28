@@ -1,16 +1,11 @@
 "use client";
 
 import { Target } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   usePredictions,
   usePredictionStats,
 } from "@/domains/dashboard/use-cases/get-predictions";
-
-const PICK_LABEL: Record<string, string> = {
-  HOME: "Domicile",
-  AWAY: "Extérieur",
-  DRAW: "Nul",
-};
 
 function PredictionResultDot({ correct }: { correct: boolean | null }) {
   if (correct === true)
@@ -31,6 +26,7 @@ function yesterdayIso() {
 }
 
 export function PredictionsCard() {
+  const t = useTranslations("dashboard.predictions");
   const today = todayIso();
   const yesterday = yesterdayIso();
 
@@ -40,9 +36,15 @@ export function PredictionsCard() {
   const settled = predictions.filter((p) => p.correct !== null);
   const correct = settled.filter((p) => p.correct === true).length;
 
+  const pickLabel: Record<string, string> = {
+    HOME: t("home"),
+    AWAY: t("away"),
+    DRAW: t("draw"),
+  };
+
   const yesterdayLabel =
     yesterdayStats && yesterdayStats.total > 0
-      ? `${yesterdayStats.correct}/${yesterdayStats.total} hier`
+      ? `${yesterdayStats.correct}/${yesterdayStats.total} ${t("yesterday")}`
       : null;
 
   return (
@@ -51,7 +53,7 @@ export function PredictionsCard() {
       <div className="mb-3 flex items-center gap-2">
         <Target size={14} className="shrink-0 text-accent" />
         <h2 className="text-sm font-bold tracking-tight text-foreground">
-          Prédictions du jour
+          {t("title")}
         </h2>
         <div className="ml-auto flex items-center gap-2">
           {settled.length > 0 && (
@@ -73,7 +75,7 @@ export function PredictionsCard() {
       {/* List */}
       {predictions.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Aucune prédiction pour aujourd&apos;hui.
+          {t("empty")}
         </p>
       ) : (
         <div
@@ -94,7 +96,7 @@ export function PredictionsCard() {
                   {p.fixture}
                 </span>
                 <span className="shrink-0 rounded bg-accent-soft px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-accent">
-                  {PICK_LABEL[p.pick] ?? p.pick}
+                  {pickLabel[p.pick] ?? p.pick}
                 </span>
                 <span className="shrink-0 text-[0.72rem] font-semibold tabular-nums text-accent">
                   {p.probability}

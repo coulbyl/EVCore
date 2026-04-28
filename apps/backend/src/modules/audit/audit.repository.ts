@@ -148,4 +148,22 @@ export class AuditRepository {
       leagueBreakdown,
     };
   }
+
+  async updateCompetitionIsActive(code: string, isActive: boolean) {
+    try {
+      return this.prisma.client.competition.update({
+        where: { code },
+        data: { isActive },
+        select: { code: true, name: true, isActive: true },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return null;
+      }
+      throw error;
+    }
+  }
 }

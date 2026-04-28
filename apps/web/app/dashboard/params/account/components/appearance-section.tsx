@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { RadioGroup, RadioGroupItem } from "@evcore/ui";
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { clientApiRequest } from "@/lib/api/client-api";
 import { SettingsSectionCard } from "./settings-section-card";
 
 export function AppearanceSection() {
@@ -23,11 +24,19 @@ export function AppearanceSection() {
     { value: "system", label: tTheme("system"), icon: MonitorIcon },
   ] as const;
 
+  function handleThemeChange(value: string) {
+    setTheme(value);
+    void clientApiRequest("/auth/me", {
+      method: "PATCH",
+      body: { theme: value },
+    });
+  }
+
   return (
     <SettingsSectionCard eyebrow={t("appearance")} title={t("theme")}>
       <RadioGroup
         value={mounted ? (theme ?? "system") : "system"}
-        onValueChange={setTheme}
+        onValueChange={handleThemeChange}
         className="mt-4 grid grid-cols-3 gap-3"
       >
         {options.map(({ value, label, icon: Icon }) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CompetitionStat } from "@/domains/dashboard/types/dashboard";
 
 function RoiChip({ roi }: { roi: string | null }) {
@@ -30,10 +31,10 @@ function CompetitionRow({
   stat: CompetitionStat;
   index: number;
 }) {
+  const t = useTranslations("dashboard.leagueRanking");
   const pos = String(index + 1).padStart(2, "0");
   return (
     <div className="group rounded-xl px-2.5 py-2.5 transition-colors hover:bg-panel">
-      {/* Ligne 1 : index + code + nom + nb matchs */}
       <div className="flex items-center gap-2.5">
         <span className="w-5 shrink-0 text-center text-[0.6rem] font-bold tabular-nums text-muted-foreground">
           {pos}
@@ -49,10 +50,9 @@ function CompetitionRow({
         </span>
       </div>
 
-      {/* Ligne 2 : stats moteur */}
       <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-7">
         <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Moteur
+          {t("model")}
         </span>
         <RoiChip roi={stat.model.roi} />
         {stat.model.winRate && (
@@ -65,11 +65,10 @@ function CompetitionRow({
         </span>
       </div>
 
-      {/* Ligne 3 : mes picks (si présents) */}
       {stat.myPicks && (
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 pl-7">
           <span className="text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-accent">
-            Mes paris
+            {t("myBets")}
           </span>
           <RoiChip roi={stat.myPicks.roi} />
           <span className="text-[0.58rem] text-muted-foreground">
@@ -82,23 +81,22 @@ function CompetitionRow({
 }
 
 export function CompetitionRanking({ stats }: { stats: CompetitionStat[] }) {
+  const t = useTranslations("dashboard.leagueRanking");
   return (
     <div className="flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
-      {/* Header */}
       <div className="mb-3 flex items-center gap-2">
         <Trophy size={14} className="shrink-0 text-warning" />
         <h2 className="text-sm font-bold tracking-tight text-foreground">
-          Classement ligues
+          {t("title")}
         </h2>
         <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
-          30j · ROI moteur
+          {t("period")}
         </span>
       </div>
 
-      {/* List */}
       {stats.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Aucune donnée sur 30 jours.
+          {t("empty")}
         </p>
       ) : (
         <div

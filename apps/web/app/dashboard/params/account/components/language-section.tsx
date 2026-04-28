@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { RadioGroup, RadioGroupItem } from "@evcore/ui";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
+import { clientApiRequest } from "@/lib/api/client-api";
 import { SettingsSectionCard } from "./settings-section-card";
 
 type Locale = "fr" | "en";
@@ -20,6 +21,10 @@ export function LanguageSection({ currentLocale }: { currentLocale: Locale }) {
     startTransition(() => {
       setOptimisticLocale(next);
       document.cookie = `NEXT_LOCALE=${next}; path=/; samesite=lax`;
+      void clientApiRequest("/auth/me", {
+        method: "PATCH",
+        body: { locale: next },
+      });
       router.refresh();
     });
   }

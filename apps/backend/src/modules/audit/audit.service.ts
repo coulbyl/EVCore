@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
@@ -224,6 +224,21 @@ export class AuditService {
       settledBets: data.settledBets,
       adjustmentProposals: data.adjustmentProposals,
       activeSuspensions: data.activeSuspensions,
+    };
+  }
+
+  async updateCompetitionActive(code: string, isActive: boolean) {
+    const competition = await this.repo.updateCompetitionIsActive(
+      code,
+      isActive,
+    );
+    if (!competition) {
+      throw new NotFoundException(`Competition ${code} not found`);
+    }
+    return {
+      code: competition.code,
+      name: competition.name,
+      isActive: competition.isActive,
     };
   }
 }

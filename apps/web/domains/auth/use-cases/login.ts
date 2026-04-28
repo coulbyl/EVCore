@@ -1,6 +1,7 @@
 "use client";
 
 import { authRequest } from "./auth-request";
+import { applyLocaleFromSession } from "./apply-locale";
 import type { AuthSession } from "../types/auth";
 
 export type LoginInput = {
@@ -13,5 +14,6 @@ export async function login(input: LoginInput): Promise<AuthSession> {
     body: input,
   });
 
+  applyLocaleFromSession(payload.session);
   return payload.session;
 }

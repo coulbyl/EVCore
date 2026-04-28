@@ -6,7 +6,11 @@ import {
 import type { Response } from 'express';
 import { PrismaService } from '@/prisma.service';
 import { AUTH_SESSION_TTL_MS } from './auth.constants';
-import type { AuthSession, AuthenticatedRequest } from './auth.types';
+import type {
+  AuthSession,
+  AuthSessionUser,
+  AuthenticatedRequest,
+} from './auth.types';
 import {
   buildExpiredSessionCookie,
   buildSessionCookie,
@@ -19,6 +23,7 @@ import {
 } from './auth.utils';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+import type { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
 export class AuthService {
@@ -56,6 +61,9 @@ export class AuthService {
         role: true,
         emailVerified: true,
         avatarUrl: true,
+        theme: true,
+        locale: true,
+        currency: true,
       },
     });
 
@@ -84,6 +92,9 @@ export class AuthService {
         role: true,
         emailVerified: true,
         avatarUrl: true,
+        theme: true,
+        locale: true,
+        currency: true,
         passwordHash: true,
       },
     });
@@ -106,6 +117,9 @@ export class AuthService {
           role: user.role,
           emailVerified: user.emailVerified,
           avatarUrl: user.avatarUrl,
+          theme: user.theme,
+          locale: user.locale,
+          currency: user.currency,
         },
       },
     };
@@ -140,6 +154,9 @@ export class AuthService {
             role: true,
             emailVerified: true,
             avatarUrl: true,
+            theme: true,
+            locale: true,
+            currency: true,
           },
         },
       },
@@ -167,6 +184,30 @@ export class AuthService {
       'Set-Cookie',
       buildExpiredSessionCookie(process.env.NODE_ENV === 'production'),
     );
+  }
+
+  async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
+    return this.prisma.client.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.theme !== undefined && { theme: dto.theme }),
+        ...(dto.locale !== undefined && { locale: dto.locale }),
+        ...(dto.currency !== undefined && { currency: dto.currency }),
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        fullName: true,
+        bio: true,
+        role: true,
+        emailVerified: true,
+        avatarUrl: true,
+        theme: true,
+        locale: true,
+        currency: true,
+      },
+    });
   }
 
   private extractSessionToken(request: AuthenticatedRequest): string | null {

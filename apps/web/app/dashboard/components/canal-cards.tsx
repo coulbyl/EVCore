@@ -1,6 +1,7 @@
 "use client";
 
 import { TrendingUp, Shield, Target } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   usePredictions,
   usePredictionStats,
@@ -109,19 +110,25 @@ const SKELETON = <div className="h-4 w-12 animate-pulse rounded bg-border" />;
 // ---------------------------------------------------------------------------
 
 function CanalEvCard({ pnl }: { pnl: PnlSummary | null }) {
+  const t = useTranslations("performance");
+  const tPicks = useTranslations("picks");
   return (
-    <CanalShell canal="ev" icon={<TrendingUp size={14} />} label="Canal EV">
+    <CanalShell
+      canal="ev"
+      icon={<TrendingUp size={14} />}
+      label={tPicks("evChannel")}
+    >
       {pnl ? (
         <>
-          <Stat label="ROI" value={pnl.roi} />
-          <Stat label="Paris réglés" value={pnl.settledBets} />
-          <Stat label="Réussite" value={pnl.winRate} />
+          <Stat label={t("roi")} value={pnl.roi} />
+          <Stat label={t("settledBets")} value={pnl.settledBets} />
+          <Stat label={t("winRate")} value={pnl.winRate} />
         </>
       ) : (
         <>
-          <Stat label="ROI" value={SKELETON} />
-          <Stat label="Paris réglés" value={SKELETON} />
-          <Stat label="Réussite" value={SKELETON} />
+          <Stat label={t("roi")} value={SKELETON} />
+          <Stat label={t("settledBets")} value={SKELETON} />
+          <Stat label={t("winRate")} value={SKELETON} />
         </>
       )}
     </CanalShell>
@@ -133,23 +140,29 @@ function CanalEvCard({ pnl }: { pnl: PnlSummary | null }) {
 // ---------------------------------------------------------------------------
 
 function CanalSvCard({ pnl }: { pnl: PnlSummary | null }) {
+  const t = useTranslations("performance");
+  const tPicks = useTranslations("picks");
   return (
-    <CanalShell canal="sv" icon={<Shield size={14} />} label="Canal Sécurité">
+    <CanalShell
+      canal="sv"
+      icon={<Shield size={14} />}
+      label={tPicks("safeValue")}
+    >
       {pnl ? (
         <>
-          <Stat label="Net" value={pnl.netUnits} sub="u" />
-          <Stat label="Paris réglés" value={pnl.settledBets} />
+          <Stat label={t("netGain")} value={pnl.netUnits} sub="u" />
+          <Stat label={t("settledBets")} value={pnl.settledBets} />
           <Stat
-            label="Gagnés"
+            label={t("won")}
             value={`${pnl.wonBets}`}
             sub={`/ ${pnl.settledBets}`}
           />
         </>
       ) : (
         <>
-          <Stat label="Net" value={SKELETON} />
-          <Stat label="Paris réglés" value={SKELETON} />
-          <Stat label="Gagnés" value={SKELETON} />
+          <Stat label={t("netGain")} value={SKELETON} />
+          <Stat label={t("settledBets")} value={SKELETON} />
+          <Stat label={t("won")} value={SKELETON} />
         </>
       )}
     </CanalShell>
@@ -174,11 +187,12 @@ function CanalConfCard() {
       ? `${Math.round((correct / settled.length) * 100)}%`
       : "—";
 
+  const tPicks = useTranslations("picks");
   return (
     <CanalShell
       canal="conf"
       icon={<Target size={14} />}
-      label="Canal Confiance"
+      label={tPicks("confidence")}
     >
       <Stat
         label="Aujourd'hui"

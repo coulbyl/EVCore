@@ -67,6 +67,7 @@ type DataTableProps<TData> = {
   getRowCanExpand?: (row: TData) => boolean;
   renderSubRow?: (row: TData) => React.ReactNode;
   onRowClick?: (row: TData) => void;
+  rowClassName?: (row: TData) => string | undefined;
   mobileCard?: (row: TData, index: number) => React.ReactNode;
   initialSorting?: SortingState;
   columnVisibility?: VisibilityState;
@@ -138,6 +139,7 @@ function DataTable<TData>({
   getRowCanExpand,
   renderSubRow,
   onRowClick,
+  rowClassName,
   mobileCard,
   initialSorting = [],
   columnVisibility,
@@ -304,6 +306,7 @@ function DataTable<TData>({
                 className={cn(
                   row.getIsExpanded() && "bg-secondary/50",
                   (row.getCanExpand() || onRowClick) && "cursor-pointer",
+                  rowClassName?.(row.original),
                 )}
                 onClick={
                   onRowClick

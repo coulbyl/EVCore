@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
-import { formatCurrency } from "@/helpers/number";
+import { useCurrencyFormat } from "@/providers/currency-provider";
 
 export function BankrollWidget() {
   const pathname = usePathname();
   const { data, isLoading } = useBankrollBalance();
+  const { formatAmount } = useCurrencyFormat();
   const isActive = pathname.startsWith("/dashboard/bankroll");
 
   return (
@@ -23,7 +24,7 @@ export function BankrollWidget() {
     >
       <Wallet size={16} />
       <span className="tabular-nums">
-        {isLoading ? "..." : formatCurrency(data?.balance ?? "0", true)}
+        {isLoading ? "..." : formatAmount(data?.balance ?? "0", true)}
       </span>
     </Link>
   );

@@ -284,6 +284,9 @@ model User {
   role                 UserRole              @default(OPERATOR)
   emailVerified        Boolean               @default(false)
   avatarUrl            String?
+  theme                String?
+  locale               String?
+  currency             String?
   sessions             Session[]
   betSlips             BetSlip[]
   betSlipItems         BetSlipItem[]

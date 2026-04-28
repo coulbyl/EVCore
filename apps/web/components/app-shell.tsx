@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, Badge, PageShell } from "@evcore/ui";
 import { Settings, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
@@ -26,49 +27,50 @@ export function AppShell({
   currentUser: AuthSessionUser;
 }) {
   const pathname = usePathname();
+  const tNav = useTranslations("nav");
   const isAdmin = currentUser.role === "ADMIN";
 
   const navItems = useMemo(
     () =>
       [
         {
-          label: "Tableau de bord",
-          mobileLabel: "Accueil",
+          label: tNav("dashboard"),
+          mobileLabel: tNav("dashboard"),
           href: "/dashboard",
           active: pathname === "/dashboard",
         },
         {
-          label: "Matchs",
+          label: tNav("fixtures"),
           href: "/dashboard/fixtures",
           active: pathname.startsWith("/dashboard/fixtures"),
         },
         {
-          label: "Picks du jour",
-          mobileLabel: "Picks",
+          label: tNav("picks"),
+          mobileLabel: tNav("picks"),
           href: "/dashboard/picks",
           active: pathname.startsWith("/dashboard/picks"),
         },
         {
-          label: "Mes coupons",
+          label: tNav("betSlips"),
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },
         isAdmin
           ? {
-              label: "Audit",
+              label: tNav("audit"),
               href: "/dashboard/audit",
               active: pathname === "/dashboard/audit",
             }
           : null,
         isAdmin
           ? {
-              label: "Glossaire",
+              label: tNav("glossary"),
               href: "/dashboard/glossaire",
               active: pathname === "/dashboard/glossaire",
             }
           : null,
       ].filter((item): item is NonNullable<typeof item> => item !== null),
-    [isAdmin, pathname],
+    [isAdmin, pathname, tNav],
   );
 
   return (

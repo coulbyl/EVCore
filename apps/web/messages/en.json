@@ -15,10 +15,14 @@
   "nav": {
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
+    "picks": "Today's picks",
+    "performance": "Performance",
     "bankroll": "Bankroll",
     "betSlips": "Bet slips",
     "audit": "Audit",
-    "settings": "Settings"
+    "glossary": "Glossary",
+    "settings": "Settings",
+    "help": "Help"
   },
   "filters": {
     "label": "Filters",
@@ -45,46 +49,47 @@
     "emailOrUsername": "Email or username",
     "password": "Password",
     "noAccount": "No account yet?",
-    "alreadyAccount": "Already have an account?"
+    "alreadyAccount": "Already have an account?",
+    "logoutLoading": "Signing out..."
   },
   "account": {
-    "title": "Operator settings",
+    "title": "My settings",
     "appearance": "Appearance",
     "language": "Language",
     "notifications": "Notifications",
     "account": "Account",
-    "bankroll": "Bankroll",
+    "bankroll": "Currency",
     "theme": "Theme",
-    "savePreferences": "Save preferences",
+    "savePreferences": "Save",
+    "savedAutomatically": "Saved automatically.",
     "profile": "Profile",
-    "profileDescription": "Review your account details and sensitive actions.",
+    "profileDescription": "Your account information.",
     "fullName": "Full name",
     "email": "Email",
     "username": "Username",
     "role": "Role",
     "password": "Password",
     "changePassword": "Change password",
-    "changePasswordHint": "The password change flow will be connected in the next commit.",
-    "notificationDescription": "Choose the important alerts you want to keep visible in the app.",
-    "bankrollDescription": "Prepare your bankroll and currency preferences before backend persistence.",
-    "preferenceHint": "Local preference for now, persistence comes in the next commit.",
+    "changePasswordHint": "Password change will be available soon.",
+    "notificationDescription": "Choose which alerts you want to receive in the app.",
+    "bankrollDescription": "Choose the currency displayed in the app.",
     "displayCurrency": "Display currency",
     "notificationTypes": {
-      "roiAlert": "ROI alert",
+      "roiAlert": "Performance alert",
       "marketSuspension": "Market suspension",
-      "brierAlert": "Brier alert",
+      "brierAlert": "Calibration alert",
       "weeklyReport": "Weekly report"
     },
     "notificationHelp": {
-      "roiAlert": "Get notified when a market drops below its ROI threshold.",
-      "marketSuspension": "Get notified when a market is auto-suspended.",
-      "brierAlert": "Get notified when calibration degrades.",
-      "weeklyReport": "Receive the weekly operator recap."
+      "roiAlert": "Alert when a market drops below its ROI threshold.",
+      "marketSuspension": "Alert when a market is auto-suspended.",
+      "brierAlert": "Alert when model accuracy degrades.",
+      "weeklyReport": "Weekly summary every Monday morning."
     },
     "currencies": {
-      "eur": "EUR",
-      "usd": "USD",
-      "gbp": "GBP"
+      "xof": "CFA Franc (XOF)",
+      "usd": "Dollar ($)",
+      "eur": "Euro (€)"
     },
     "roles": {
       "ADMIN": "Admin",
@@ -115,6 +120,55 @@
     "settledShort": "settled",
     "won": "won",
     "lost": "lost"
+  },
+  "audit": {
+    "bets": "Bets",
+    "settledBets": "Settled bets",
+    "fixtures": "Fixtures",
+    "modelRuns": "Analyses",
+    "betsByStatus": "Bets by status",
+    "betsByMarket": "Bets by market",
+    "learningLoop": "Learning loop",
+    "proposals": "Proposals",
+    "activeSuspensions": "Active suspensions"
+  },
+  "dashboard": {
+    "predictions": {
+      "title": "Today's predictions",
+      "empty": "No predictions for today.",
+      "home": "Home",
+      "away": "Away",
+      "draw": "Draw",
+      "yesterday": "yesterday"
+    },
+    "leagueRanking": {
+      "title": "League ranking",
+      "period": "30d · model ROI",
+      "empty": "No data over 30 days.",
+      "model": "Model",
+      "myBets": "My bets"
+    },
+    "operatorCard": {
+      "headline": "My performance",
+      "title": "My bet slips summary",
+      "slips": "Slips",
+      "created": "created",
+      "settled": "settled",
+      "settledLong": "settled bets",
+      "winRate": "Win rate",
+      "allTime": "All",
+      "modelReturn": "Model return",
+      "notEnoughData": "Not enough data",
+      "winForm": "On form",
+      "neutral": "Neutral",
+      "toWatch": "To watch",
+      "pendingResult": "pending result",
+      "pendingResults": "pending results"
+    }
+  },
+  "betSlips": {
+    "emptyTitle": "No bet slips",
+    "emptyDescription": "No bet slip matches this period and filter."
   },
   "bankrollPage": {
     "filter": {
@@ -161,6 +215,60 @@
     "fallback": {
       "deposit": "Deposit",
       "bet": "Bet"
+    }
+  },
+  "performancePage": {
+    "title": "Performance",
+    "overview": "Overview",
+    "calibration": "Model calibration",
+    "calibrationHint": "Brier score after each automatic recalibration (0 = perfect).",
+    "weights": "Weight timeline",
+    "weightsHint": "Contribution of each factor, adjusted automatically.",
+    "competitions": "ROI by competition",
+    "competitionsPeriod": "Last 30 days",
+    "backtest": "Backtest",
+    "backtestHint": "Historical simulation used to estimate how reliable the model is. The latest result is kept in this browser.",
+    "runBacktest": "Run backtest",
+    "backtestRunning": "Backtest running…",
+    "backtestIdle": "Run a simulation to see how the model would have performed on past data.",
+    "backtestFreshTitle": "Latest run result",
+    "backtestStoredTitle": "Latest result saved on this device",
+    "backtestGeneratedAt": "Calculated on {date} at {time}.",
+    "backtestEmptyTitle": "No market breakdown available",
+    "backtestEmpty": "The backtest completed, but no market-by-market breakdown was returned.",
+    "marketBreakdown": "Market breakdown",
+    "marketBreakdownHint": "Each bar shows the simulated return for one bet type.",
+    "roiSimulated": "Simulated return",
+    "maxDrawdown": "Worst drawdown",
+    "currentWeights": "Current weights",
+    "noCalibrationData": "No recalibration has been applied yet.",
+    "noWeightData": "No learning data yet.",
+    "stats": {
+      "winRate": "Win rate",
+      "netUnits": "Net gain",
+      "settledBets": "Settled bets",
+      "calibrationError": "Calibration error",
+      "brierScore": "Model accuracy",
+      "analyzedBets": "Bets tested"
+    },
+    "chart": {
+      "roi": "Return"
+    },
+    "factors": {
+      "recentForm": "Recent form",
+      "xg": "Expected Goals (xG)",
+      "domExtPerf": "Home/away edge",
+      "leagueVolat": "League stability"
+    },
+    "table": {
+      "competition": "Competition",
+      "analyzed": "Matches 30d",
+      "modelRoi": "Model ROI",
+      "modelWinRate": "Win rate",
+      "myRoi": "My bets",
+      "matches": "matches",
+      "best": "Best ROI",
+      "worst": "Lowest ROI"
     }
   },
   "fixtureDiagnostics": {

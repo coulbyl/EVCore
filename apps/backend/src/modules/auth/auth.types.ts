@@ -10,6 +10,9 @@ export type AuthSessionUser = {
   role: UserRole;
   emailVerified: boolean;
   avatarUrl: string | null;
+  theme: string | null;
+  locale: string | null;
+  currency: string | null;
 };
 
 export type AuthSession = {
