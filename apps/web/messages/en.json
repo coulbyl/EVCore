@@ -21,7 +21,8 @@
     "betSlips": "Bet slips",
     "audit": "Audit",
     "glossary": "Glossary",
-    "settings": "Settings"
+    "settings": "Settings",
+    "help": "Help"
   },
   "filters": {
     "label": "Filters",
@@ -48,7 +49,8 @@
     "emailOrUsername": "Email or username",
     "password": "Password",
     "noAccount": "No account yet?",
-    "alreadyAccount": "Already have an account?"
+    "alreadyAccount": "Already have an account?",
+    "logoutLoading": "Signing out..."
   },
   "account": {
     "title": "My settings",

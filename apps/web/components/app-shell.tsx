@@ -51,11 +51,6 @@ export function AppShell({
           active: pathname.startsWith("/dashboard/picks"),
         },
         {
-          label: tNav("performance"),
-          href: "/dashboard/performance",
-          active: pathname.startsWith("/dashboard/performance"),
-        },
-        {
           label: tNav("betSlips"),
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),

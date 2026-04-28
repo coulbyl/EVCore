@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HelpCircle, LogOut, Settings, Wallet } from "lucide-react";
+import { HelpCircle, LogOut, Settings, Sprout, Wallet } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -17,6 +17,7 @@ import {
 } from "@evcore/ui";
 import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
+import { useTranslations } from "next-intl";
 
 function getInitials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
@@ -32,6 +33,9 @@ export function AccountButton({
   currentUser: AuthSessionUser;
 }) {
   const router = useRouter();
+  const tNav = useTranslations("nav");
+  const tAuth = useTranslations("auth");
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -88,19 +92,25 @@ export function AccountButton({
           <DropdownMenuItem asChild>
             <Link href="/dashboard/bankroll">
               <Wallet />
-              Portefeuille
+              {tNav("bankroll")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/help">
               <HelpCircle />
-              Aide
+              {tNav("help")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/performance">
+              <Sprout />
+              {tNav("performance")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/params/account">
               <Settings />
-              Paramètres
+              {tNav("settings")}
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -114,7 +124,7 @@ export function AccountButton({
           }}
         >
           <LogOut />
-          {isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
+          {isLoggingOut ? tAuth("logoutLoading") : tAuth("logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

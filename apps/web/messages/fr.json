@@ -11,17 +11,19 @@
     "confirm": "Confirmer",
     "back": "Retour",
     "seeAll": "Voir tout"
+
   },
   "nav": {
-    "dashboard": "Dashboard",
-    "fixtures": "Fixtures",
+    "dashboard": "Tableau de bord",
+    "fixtures": "Matchs",
     "picks": "Picks du jour",
     "performance": "Performance",
-    "bankroll": "Bankroll",
+    "bankroll": "Portefeuille",
     "betSlips": "Coupons",
     "audit": "Audit",
     "glossary": "Glossaire",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "help": "Aide"
   },
   "filters": {
     "label": "Filtres",
@@ -48,7 +50,8 @@
     "emailOrUsername": "Email ou username",
     "password": "Mot de passe",
     "noAccount": "Pas encore de compte ?",
-    "alreadyAccount": "Déjà un compte ?"
+    "alreadyAccount": "Déjà un compte ?",
+    "logoutLoading": "Déconnexion..."
   },
   "account": {
     "title": "Mes paramètres",
