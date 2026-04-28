@@ -15,9 +15,12 @@
   "nav": {
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
+    "picks": "Picks du jour",
+    "performance": "Performance",
     "bankroll": "Bankroll",
     "betSlips": "Coupons",
     "audit": "Audit",
+    "glossary": "Glossaire",
     "settings": "Paramètres"
   },
   "filters": {
@@ -210,6 +213,60 @@
     "fallback": {
       "deposit": "Dépôt",
       "bet": "Pari"
+    }
+  },
+  "performancePage": {
+    "title": "Performance",
+    "overview": "Vue d'ensemble",
+    "calibration": "Calibration du modèle",
+    "calibrationHint": "Score Brier après chaque recalibration automatique (0 = parfait).",
+    "weights": "Évolution des poids",
+    "weightsHint": "Contribution de chaque facteur, ajustée automatiquement.",
+    "competitions": "ROI par compétition",
+    "competitionsPeriod": "30 derniers jours",
+    "backtest": "Backtest",
+    "backtestHint": "Simulation du modèle sur l'historique pour estimer sa robustesse. Le dernier résultat est conservé dans ce navigateur.",
+    "runBacktest": "Lancer le backtest",
+    "backtestRunning": "Backtest en cours…",
+    "backtestIdle": "Lancez une simulation pour voir comment le modèle aurait performé sur les données passées.",
+    "backtestFreshTitle": "Résultat du dernier lancement",
+    "backtestStoredTitle": "Dernier résultat enregistré sur cet appareil",
+    "backtestGeneratedAt": "Calculé le {date} à {time}.",
+    "backtestEmptyTitle": "Pas de détail par marché",
+    "backtestEmpty": "Le backtest s'est terminé, mais aucun découpage par marché n'a été renvoyé.",
+    "marketBreakdown": "Résultat par marché",
+    "marketBreakdownHint": "Chaque barre montre le rendement simulé d'un type de pari.",
+    "roiSimulated": "Rendement simulé",
+    "maxDrawdown": "Pire baisse",
+    "currentWeights": "Poids actuels",
+    "noCalibrationData": "Aucune recalibration effectuée.",
+    "noWeightData": "Pas encore de données d'apprentissage.",
+    "stats": {
+      "winRate": "Réussite",
+      "netUnits": "Gain net",
+      "settledBets": "Paris réglés",
+      "calibrationError": "Erreur calibration",
+      "brierScore": "Précision du modèle",
+      "analyzedBets": "Paris testés"
+    },
+    "chart": {
+      "roi": "Rendement"
+    },
+    "factors": {
+      "recentForm": "Forme récente",
+      "xg": "Expected Goals (xG)",
+      "domExtPerf": "Avantage dom./ext.",
+      "leagueVolat": "Stabilité de la ligue"
+    },
+    "table": {
+      "competition": "Compétition",
+      "analyzed": "Matchs 30j",
+      "modelRoi": "ROI Modèle",
+      "modelWinRate": "Réussite",
+      "myRoi": "Mes paris",
+      "matches": "matchs",
+      "best": "Meilleur ROI",
+      "worst": "ROI le plus faible"
     }
   },
   "fixtureDiagnostics": {

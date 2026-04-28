@@ -377,22 +377,31 @@ Transparence totale sur les 3 modèles. C'est l'argument de confiance de l'app �
 
 **Tâches :**
 
-- [ ] Créer la route `/dashboard/performance`
+- [x] Créer la route `/dashboard/performance`
 - [ ] Section "Vue d'ensemble" :
+  - [x] Résumé PnL : ROI, réussite, gain net, paris réglés
   - [ ] ROI global par canal (EV / Sécurité / Confiance) sur période glissante
   - [ ] Sélecteur de période (7j / 30j / saison)
-- [ ] Section "Calibration" :
+- [x] Section "Calibration" :
+  - [x] Courbe d'erreur de calibration (Brier score) sur les recalibrations appliquées
+  - [x] Affichage des poids actuels
+  - [x] Visible uniquement pour les admins
   - [ ] Reliability diagram interactif par canal (axe X = proba estimée, axe Y = fréquence réelle)
-  - [ ] Brier Score actuel avec tendance (flèche haut/bas vs semaine précédente)
-- [ ] Section "ROI par compétition × canal" :
-  - [ ] Table avec filtre par canal, données depuis `competition-stats`
-  - [ ] Highlights : meilleure et pire compétition
-- [ ] Section "Évolution des poids" :
-  - [ ] Timeline des `AdjustmentProposal` appliqués
-  - [ ] Graphe linéaire montrant l'évolution de chaque poids au fil du temps
+  - [ ] Tendance comparative vs semaine précédente
+- [x] Section "ROI par compétition × canal" :
+  - [x] Table ROI par compétition depuis `competition-stats`
+  - [x] Highlights : meilleure et pire compétition
+  - [ ] Filtre par canal
+- [x] Section "Évolution des poids" :
+  - [x] Timeline des `AdjustmentProposal` appliqués
+  - [x] Graphe linéaire montrant l'évolution de chaque poids au fil du temps
+  - [x] Visible uniquement pour les admins
   - [ ] Badge "auto-appliqué" vs "rollback"
-- [ ] Section "Résultats backtest" :
-  - [ ] Afficher les sorties du module `/backtest` : ROI simulé, win rate, max drawdown, Brier Score par saison
+- [x] Section "Résultats backtest" :
+  - [x] Afficher les sorties agrégées du module `/backtest` : rendement simulé, précision du modèle, pire baisse, paris testés
+  - [x] Détail du rendement par marché
+  - [x] Conserver le dernier résultat en localStorage
+  - [ ] Vue par saison
   - [ ] Comparaison Canal EV vs Canal Sécurité sur les mêmes données historiques
 
 ---

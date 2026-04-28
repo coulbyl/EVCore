@@ -15,9 +15,12 @@
   "nav": {
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
+    "picks": "Today's picks",
+    "performance": "Performance",
     "bankroll": "Bankroll",
     "betSlips": "Bet slips",
     "audit": "Audit",
+    "glossary": "Glossary",
     "settings": "Settings"
   },
   "filters": {
@@ -210,6 +213,60 @@
     "fallback": {
       "deposit": "Deposit",
       "bet": "Bet"
+    }
+  },
+  "performancePage": {
+    "title": "Performance",
+    "overview": "Overview",
+    "calibration": "Model calibration",
+    "calibrationHint": "Brier score after each automatic recalibration (0 = perfect).",
+    "weights": "Weight timeline",
+    "weightsHint": "Contribution of each factor, adjusted automatically.",
+    "competitions": "ROI by competition",
+    "competitionsPeriod": "Last 30 days",
+    "backtest": "Backtest",
+    "backtestHint": "Historical simulation used to estimate how reliable the model is. The latest result is kept in this browser.",
+    "runBacktest": "Run backtest",
+    "backtestRunning": "Backtest running…",
+    "backtestIdle": "Run a simulation to see how the model would have performed on past data.",
+    "backtestFreshTitle": "Latest run result",
+    "backtestStoredTitle": "Latest result saved on this device",
+    "backtestGeneratedAt": "Calculated on {date} at {time}.",
+    "backtestEmptyTitle": "No market breakdown available",
+    "backtestEmpty": "The backtest completed, but no market-by-market breakdown was returned.",
+    "marketBreakdown": "Market breakdown",
+    "marketBreakdownHint": "Each bar shows the simulated return for one bet type.",
+    "roiSimulated": "Simulated return",
+    "maxDrawdown": "Worst drawdown",
+    "currentWeights": "Current weights",
+    "noCalibrationData": "No recalibration has been applied yet.",
+    "noWeightData": "No learning data yet.",
+    "stats": {
+      "winRate": "Win rate",
+      "netUnits": "Net gain",
+      "settledBets": "Settled bets",
+      "calibrationError": "Calibration error",
+      "brierScore": "Model accuracy",
+      "analyzedBets": "Bets tested"
+    },
+    "chart": {
+      "roi": "Return"
+    },
+    "factors": {
+      "recentForm": "Recent form",
+      "xg": "Expected Goals (xG)",
+      "domExtPerf": "Home/away edge",
+      "leagueVolat": "League stability"
+    },
+    "table": {
+      "competition": "Competition",
+      "analyzed": "Matches 30d",
+      "modelRoi": "Model ROI",
+      "modelWinRate": "Win rate",
+      "myRoi": "My bets",
+      "matches": "matches",
+      "best": "Best ROI",
+      "worst": "Lowest ROI"
     }
   },
   "fixtureDiagnostics": {
