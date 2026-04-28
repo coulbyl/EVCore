@@ -212,7 +212,9 @@ export function BacktestSection() {
         {report && generatedAt ? (
           <div className="rounded-[1.2rem] border border-border bg-panel px-4 py-3 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">
-              {isStoredResult ? t("backtestStoredTitle") : t("backtestFreshTitle")}
+              {isStoredResult
+                ? t("backtestStoredTitle")
+                : t("backtestFreshTitle")}
             </p>
             <p className="mt-1">
               {t("backtestGeneratedAt", {
