@@ -287,9 +287,7 @@ export function BetSlipDetailPanel({
                 <span>
                   {pendingCount > 0 ? "Gain net partiel" : "Gain net"}
                 </span>
-                <span className="tabular-nums">
-                  {formatSigned(realPnl)}
-                </span>
+                <span className="tabular-nums">{formatSigned(realPnl)}</span>
               </div>
               {retourTotal > 0 && (
                 <DetailRow
