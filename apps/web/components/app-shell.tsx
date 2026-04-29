@@ -4,20 +4,13 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Avatar, AvatarFallback, Badge, PageShell } from "@evcore/ui";
+import { Badge, PageShell } from "@evcore/ui";
 import { Settings, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
+import { UserAvatar } from "./user-avatar";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
-
-function getInitials(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return (parts[0]?.[0] ?? "?").toUpperCase();
-  return (
-    (parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")
-  ).toUpperCase();
-}
 
 export function AppShell({
   children,
@@ -73,9 +66,14 @@ export function AppShell({
     [isAdmin, pathname, tNav],
   );
 
+  const mobileNavItems = navItems.filter((item) =>
+    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(item.href),
+  );
+
   return (
     <PageShell
       navItems={navItems}
+      mobileNavItems={mobileNavItems}
       actions={
         <div className="relative flex items-center gap-2">
           <BankrollWidget />
@@ -86,11 +84,12 @@ export function AppShell({
       sidebarFooter={
         <div className="rounded-2xl border border-sidebar-border/80 bg-sidebar-accent/70 p-3">
           <div className="flex items-center gap-3">
-            <Avatar className="ring-1 ring-sidebar-border">
-              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-[0.72rem] font-bold">
-                {getInitials(currentUser.fullName)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              avatarUrl={currentUser.avatarUrl}
+              username={currentUser.fullName}
+              size={32}
+              className="ring-1 ring-sidebar-border"
+            />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="truncate text-sm font-semibold text-sidebar-foreground">

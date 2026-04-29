@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUrl, Matches } from 'class-validator';
 
 export class UpdateMeDto {
   @IsOptional()
@@ -15,4 +15,9 @@ export class UpdateMeDto {
   @IsString()
   @IsIn(['XOF', 'USD', 'EUR'])
   currency?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @Matches(/^https:\/\/api\.dicebear\.com\//)
+  avatarUrl?: string;
 }

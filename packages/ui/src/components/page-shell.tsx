@@ -25,15 +25,18 @@ type NavItem = {
 
 export function PageShell({
   navItems,
+  mobileNavItems,
   actions,
   sidebarFooter,
   children,
 }: {
   navItems: NavItem[];
+  mobileNavItems?: NavItem[];
   actions?: ReactNode;
   sidebarFooter?: ReactNode;
   children: ReactNode;
 }) {
+  const bottomNavItems = mobileNavItems ?? navItems;
   return (
     <SidebarProvider
       className="min-h-screen bg-background text-foreground lg:h-screen lg:overflow-hidden"
@@ -140,10 +143,10 @@ export function PageShell({
           <div
             className="grid gap-1"
             style={{
-              gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${bottomNavItems.length}, minmax(0, 1fr))`,
             }}
           >
-            {navItems.map((item) => (
+            {bottomNavItems.map((item) => (
               <a
                 key={item.label}
                 aria-current={item.active ? "page" : undefined}

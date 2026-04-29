@@ -425,9 +425,54 @@ async function seedAdminUser() {
   console.log(`[db:seed] admin user created: ${email}`);
 }
 
+const BADGES = [
+  {
+    code: "vol_50",
+    name: "Vétéran",
+    description: "50 paris réglés — seuil de significativité statistique.",
+  },
+  {
+    code: "vol_150",
+    name: "Expert",
+    description: "150 paris réglés — base solide pour la calibration.",
+  },
+  {
+    code: "vol_300",
+    name: "Maître",
+    description: "300 paris réglés — données suffisantes pour le modèle long terme.",
+  },
+  {
+    code: "streak_5",
+    name: "En feu",
+    description: "5 prédictions Canal Confiance correctes consécutives.",
+  },
+  {
+    code: "patience",
+    name: "Patience",
+    description: "Traverser un drawdown ≥ 10 % sans override manuel.",
+  },
+  {
+    code: "calibre",
+    name: "Calibré",
+    description: "Brier Score < 0,20 sur 50+ prédictions.",
+  },
+] as const;
+
+async function seedBadges() {
+  for (const badge of BADGES) {
+    await prisma.badge.upsert({
+      where: { code: badge.code },
+      update: { name: badge.name, description: badge.description },
+      create: badge,
+    });
+  }
+  console.log(`[db:seed] badges upserted: ${BADGES.length}`);
+}
+
 async function main() {
   await seedCompetitions();
   await seedAdminUser();
+  await seedBadges();
 }
 
 main()

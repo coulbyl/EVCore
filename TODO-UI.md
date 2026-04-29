@@ -420,29 +420,29 @@ Récompenser les bonnes métriques (calibration, patience, volume statistiquemen
 
 **Tâches :**
 
-- [ ] Système de badges :
-  - [ ] **Milestones volume** : 50 / 150 / 300 paris réglés (seuils de significativité statistique du modèle)
-  - [ ] **Hit streak** (Canal Confiance) : N prédictions correctes consécutives
-  - [ ] **Patience** : traverser un drawdown ≥ 10% sans override
-  - [ ] **Calibré** : Brier Score < 0.20 sur 50+ prédictions
-- [ ] Afficher les badges sur le profil utilisateur et le leaderboard
-- [ ] Enrichir le leaderboard :
-  - [ ] Ajouter colonne "Badges"
-  - [ ] Ajouter delta ROI vs semaine précédente (+0.3% ↑)
-  - [ ] Conserver le podium top 3 existant
-- [ ] Weekly brief narratif (email + in-app) :
-  - [ ] Phrase générée côté backend résumant la semaine : picks, ROI, Brier Score, meilleure compétition
-  - [ ] Afficher le brief dans le dashboard le lundi matin
-- [ ] **Avatars utilisateur** (style Netflix) :
-  - [ ] Créer une bibliothèque d'avatars illustrés thématiques (football, stats, maths — pas de photos)
-  - [ ] Sélecteur d'avatar sur la page compte : grille de choix, aperçu en temps réel
-  - [ ] Deux catégories : avatars disponibles dès le départ + avatars verrouillés (débloqués via badges)
-    - [ ] Milestone 50 paris → débloque un avatar
-    - [ ] Milestone 150 paris → débloque un avatar
-    - [ ] Hit streak Canal Confiance → débloque un avatar
-    - [ ] Brier Score < 0.20 → débloque un avatar "Calibré"
-  - [ ] Avatar affiché sur le leaderboard à côté du username
-  - [ ] Indicateur visuel sur les avatars verrouillés (cadenas + condition de déblocage)
+- [x] Système de badges :
+  - [x] **Milestones volume** : 50 / 150 / 300 paris réglés — badges `vol_50`, `vol_150`, `vol_300` dans `GamificationService.checkAndAwardBadges()`
+  - [x] **Hit streak** (Canal Confiance) : 5 prédictions correctes consécutives — badge `streak_5` via `hasConsecutiveCorrect()`
+  - [x] **Patience** : traverser un drawdown ≥ 10% sans override — badge `patience`
+  - [x] **Calibré** : Brier Score < 0.20 sur 50+ prédictions — badge `calibre` via `checkBrierBadge()`
+- [x] Afficher les badges sur le profil utilisateur et le leaderboard — `BadgesSection` dans `/dashboard/params/account`, `BadgeChips` dans `user-leaderboard.tsx`
+- [x] Enrichir le leaderboard :
+  - [x] Ajouter colonne "Badges" — `BadgeChips` (jusqu'à 3 emojis + `+N` overflow)
+  - [x] Ajouter delta ROI vs semaine précédente (+0.3% ↑) — `RoiDeltaChip` avec TrendingUp/Down, `roiDelta` calculé backend (buckets 7j courant vs 7j précédents)
+  - [x] Conserver le podium top 3 existant
+- [x] Weekly brief narratif (email + in-app) :
+  - [x] Phrase générée côté backend résumant la semaine : picks, ROI, meilleure compétition — `generateWeeklyReport()` dans `RiskService` + `findBestCompetitionThisWeek()`
+  - [x] Afficher le brief dans le dashboard le lundi matin — `WeeklyBrief` widget (affiché si `getDay() === 1`), lit `GET /notifications?type=WEEKLY_REPORT&limit=1`
+- [x] **Avatars utilisateur** (style Netflix) :
+  - [x] Créer une bibliothèque d'avatars illustrés thématiques — 10 SVGs dans `public/avatars/` (6 libres + 4 verrouillés par badge)
+  - [x] Sélecteur d'avatar sur la page compte : grille de choix, aperçu en temps réel — `AvatarSection` dans `/dashboard/params/account`
+  - [x] Deux catégories : avatars disponibles dès le départ + avatars verrouillés (débloqués via badges)
+    - [x] `vol_50` → `avatar-analyst.svg`
+    - [x] `vol_150` → `avatar-strategist.svg`
+    - [x] `streak_5` → `avatar-striker.svg`
+    - [x] `calibre` → `avatar-scientist.svg`
+  - [x] Avatar affiché sur le leaderboard à côté du username — `UserAvatar` composant partagé dans `apps/web/components/user-avatar.tsx`
+  - [x] Indicateur visuel sur les avatars verrouillés (cadenas + condition de déblocage au survol)
 
 ---
 
@@ -511,8 +511,8 @@ Le composant actuel est lisible pour un admin/dev mais opaque pour un user lambd
   - [x] Pick retenu mis en avant en haut (canal badge EV + pick + EV + prob)
   - [x] Decision NO_BET : message explicite au lieu du silence
 
-- [ ] **Raisons de rejet : icônes par type** (🔒 suspendu, 📉 valeur insuffisante…) — quick win pour plus tard
-- [ ] **Masquer les données techniques** (λ, features) en mode "vue simplifiée" pour users non-admin
+- [x] **Raisons de rejet : icônes par type** — `RejectionIcon` avec `REJECTION_ICON_MAP` Lucide (TrendingDown, ShieldOff, Shield, Lock, EyeOff, Database, CheckCircle) dans `fixture-diagnostics.tsx`
+- [x] **Masquer les données techniques** (λ, features) en mode "vue simplifiée" pour users non-admin — prop `isAdmin` threaded depuis server page → `FixturesTable` → `FixtureDiagnostics`, colonne `qualityScore` + section lambda + features JSON conditionnels
 
 ---
 
