@@ -11,6 +11,8 @@ export type AdjustmentProposalStatus =
   | "REJECTED"
   | "FROZEN";
 
+export type ProposalKind = "auto" | "rollback" | "shadow";
+
 export type AdjustmentProposal = {
   id: string;
   currentWeights: WeightMap;
@@ -22,3 +24,9 @@ export type AdjustmentProposal = {
   createdAt: string;
   notes: string | null;
 };
+
+export function proposalKind(notes: string | null): ProposalKind {
+  if (notes?.startsWith("Rollback")) return "rollback";
+  if (notes?.startsWith("Shadow")) return "shadow";
+  return "auto";
+}

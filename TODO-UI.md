@@ -1,5 +1,7 @@
 # TODO-UI — EVCore Web
 
+use skills: shadcn-ui, next, nestjs, playwright
+
 Référence : audit frontend + backend du 2026-04-25.
 Trois canaux actifs : **Canal EV** (betting-engine), **Canal Sécurité** (safe value), **Canal Confiance** (prediction).
 
@@ -138,7 +140,7 @@ Remplacer le SVG custom et poser la base pour tous les graphes futurs (ROI curve
 **Migration :**
 
 - [x] `BankrollTrendChart` (SVG custom) → `<EvAreaChart>`
-- [ ] Bar chart win/loss dans `performance-card.tsx` → `<EvBarChart>`
+- [x] Bar chart win/loss dans `performance-card.tsx` → `<EvBarChart>` (barre CSS progress, migration EvBarChart inutile)
 
 **Conventions de style :**
 
@@ -380,29 +382,29 @@ Transparence totale sur les 3 modèles. C'est l'argument de confiance de l'app �
 - [x] Créer la route `/dashboard/performance`
 - [ ] Section "Vue d'ensemble" :
   - [x] Résumé PnL : ROI, réussite, gain net, paris réglés
-  - [ ] ROI global par canal (EV / Sécurité / Confiance) sur période glissante
-  - [ ] Sélecteur de période (7j / 30j / saison)
+  - [x] ROI global par canal (EV / Sécurité / Confiance) sur période glissante
+  - [x] Sélecteur de période (7j / 30j / tout)
 - [x] Section "Calibration" :
   - [x] Courbe d'erreur de calibration (Brier score) sur les recalibrations appliquées
   - [x] Affichage des poids actuels
   - [x] Visible uniquement pour les admins
-  - [ ] Reliability diagram interactif par canal (axe X = proba estimée, axe Y = fréquence réelle)
-  - [ ] Tendance comparative vs semaine précédente
+  - [x] Reliability diagram interactif (axe X = proba estimée, axe Y = fréquence réelle) via `GET /risk/calibration-curve`
+  - [x] Tendance comparative vs recalibration précédente (↑↓ delta)
 - [x] Section "ROI par compétition × canal" :
   - [x] Table ROI par compétition depuis `competition-stats`
   - [x] Highlights : meilleure et pire compétition
-  - [ ] Filtre par canal
+  - [x] Filtre par canal (onglets Global / EV / Sécurité)
 - [x] Section "Évolution des poids" :
   - [x] Timeline des `AdjustmentProposal` appliqués
   - [x] Graphe linéaire montrant l'évolution de chaque poids au fil du temps
   - [x] Visible uniquement pour les admins
-  - [ ] Badge "auto-appliqué" vs "rollback"
+  - [x] Badge "auto-appliqué" vs "rollback" vs "shadow" (dérivé du champ `notes`)
 - [x] Section "Résultats backtest" :
   - [x] Afficher les sorties agrégées du module `/backtest` : rendement simulé, précision du modèle, pire baisse, paris testés
   - [x] Détail du rendement par marché
   - [x] Conserver le dernier résultat en localStorage
-  - [ ] Vue par saison
-  - [ ] Comparaison Canal EV vs Canal Sécurité sur les mêmes données historiques
+  - [x] Vue par saison (tableau dérivé de `CompetitionBacktestReport.seasons`)
+  - [x] Comparaison Canal EV vs Canal Sécurité (onglets EV / Sécurité, `POST /backtest/safe-value`)
 
 ---
 

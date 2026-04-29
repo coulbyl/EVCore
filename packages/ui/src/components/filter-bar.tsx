@@ -242,7 +242,11 @@ function FilterBar({
   }
 
   function handleResetAll() {
-    onReset ? onReset() : onChange({});
+    if (onReset) {
+      onReset();
+    } else {
+      onChange({});
+    }
   }
 
   return (

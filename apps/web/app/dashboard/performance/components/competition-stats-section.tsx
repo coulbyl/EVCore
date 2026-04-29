@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Badge,
   DataTable,
@@ -8,11 +9,17 @@ import {
   EmptyHeader,
   EmptyTitle,
   TableCard,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   type ColumnDef,
 } from "@evcore/ui";
 import { cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
-import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
+import {
+  useCompetitionStats,
+  type CompetitionStatCanal,
+} from "@/domains/dashboard/use-cases/get-competition-stats";
 import type { CompetitionStat } from "@/domains/dashboard/types/dashboard";
 
 function parseRoi(value: string | null) {
@@ -36,7 +43,8 @@ export function CompetitionStatsSection() {
   const t = useTranslations("performancePage");
   const tableT = useTranslations("table");
   const common = useTranslations("common");
-  const { data, error, isLoading } = useCompetitionStats();
+  const [canal, setCanal] = useState<CompetitionStatCanal>("ALL");
+  const { data, error, isLoading } = useCompetitionStats(canal);
   const rows = data ?? [];
 
   const rankedRows = [...rows]
@@ -132,7 +140,22 @@ export function CompetitionStatsSection() {
   ];
 
   return (
-    <TableCard title={t("competitions")} subtitle={t("competitionsPeriod")}>
+    <TableCard
+      title={t("competitions")}
+      subtitle={t("competitionsPeriod")}
+      action={
+        <Tabs
+          value={canal}
+          onValueChange={(v) => setCanal(v as CompetitionStatCanal)}
+        >
+          <TabsList>
+            <TabsTrigger value="ALL">{t("canalGlobal")}</TabsTrigger>
+            <TabsTrigger value="EV">{t("canalEv")}</TabsTrigger>
+            <TabsTrigger value="SV">{t("canalSv")}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      }
+    >
       <DataTable
         columns={columns}
         data={rows}

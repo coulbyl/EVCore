@@ -1,13 +1,28 @@
 "use client";
 
-import { StatCard } from "@evcore/ui";
+import { useState } from "react";
+import { StatCard, Tabs, TabsList, TabsTrigger } from "@evcore/ui";
 import { useTranslations } from "next-intl";
-import { useDashboardSummary } from "@/domains/dashboard/use-cases/get-dashboard-summary";
+import {
+  usePnlByCanal,
+  type PnlPeriod,
+} from "@/domains/dashboard/use-cases/get-pnl-by-canal";
+
+const PERIODS: { value: PnlPeriod; labelKey: string }[] = [
+  { value: "7d", labelKey: "period7d" },
+  { value: "30d", labelKey: "period30d" },
+  { value: "all", labelKey: "periodAll" },
+];
+
+type Canal = "global" | "ev" | "sv";
 
 export function OverviewSection() {
   const t = useTranslations("performancePage");
-  const { data } = useDashboardSummary();
-  const pnl = data?.pnlSummary;
+  const [period, setPeriod] = useState<PnlPeriod>("30d");
+  const [canal, setCanal] = useState<Canal>("global");
+  const { data, isLoading } = usePnlByCanal(period);
+
+  const pnl = isLoading ? undefined : data?.[canal];
 
   return (
     <section>
@@ -18,6 +33,26 @@ export function OverviewSection() {
         <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
           {t("overview")}
         </h2>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={canal} onValueChange={(v) => setCanal(v as Canal)}>
+          <TabsList>
+            <TabsTrigger value="global">{t("canalGlobal")}</TabsTrigger>
+            <TabsTrigger value="ev">{t("canalEv")}</TabsTrigger>
+            <TabsTrigger value="sv">{t("canalSv")}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as PnlPeriod)}>
+          <TabsList>
+            {PERIODS.map((p) => (
+              <TabsTrigger key={p.value} value={p.value}>
+                {t(p.labelKey)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

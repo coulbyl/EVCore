@@ -62,6 +62,15 @@ export type CompetitionStat = {
   myPicks: CompetitionMyPicks | null;
 };
 
+export type PnlPeriod = '7d' | '30d' | 'all';
+
+export type PnlByCanalResponse = {
+  period: PnlPeriod;
+  global: PnlSummary;
+  ev: PnlSummary;
+  sv: PnlSummary;
+};
+
 export type LeaderboardEntry = {
   rank: number;
   username: string;

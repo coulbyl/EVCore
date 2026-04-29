@@ -19,6 +19,8 @@ import type {
   CompetitionStat,
   DashboardSummary,
   LeaderboardEntry,
+  PnlByCanalResponse,
+  PnlPeriod,
   PnlSummary,
   WorkerStatus,
 } from './dashboard.types';
@@ -26,6 +28,12 @@ import type {
 const MIN_SETTLED_MODEL = 10;
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
+
+function periodToDate(period: PnlPeriod): Date | null {
+  if (period === 'all') return null;
+  const days = period === '7d' ? 7 : 30;
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
 type UnreadNotification = SummaryData['unreadNotifications'][number];
 
 @Injectable()
@@ -149,7 +157,13 @@ export class DashboardService {
       }));
   }
 
-  private buildPnlSummary(settled: SummaryData['settledBets']): PnlSummary {
+  private buildPnlSummary(
+    settled: {
+      status: string;
+      stakePct: { toString(): string };
+      oddsSnapshot: { toString(): string } | null;
+    }[],
+  ): PnlSummary {
     const won = settled.filter((b) => b.status === 'WON');
     const lost = settled.filter((b) => b.status === 'LOST');
     const settledCount = won.length + lost.length;
@@ -181,10 +195,29 @@ export class DashboardService {
     return `${normalized.slice(0, 177)}...`;
   }
 
-  async getCompetitionStats(userId: string): Promise<CompetitionStat[]> {
+  async getPnlByCanal(period: PnlPeriod): Promise<PnlByCanalResponse> {
+    const since = periodToDate(period);
+    const bets = await this.repo.getSettledBetsForPnl(since);
+
+    const allBets = bets;
+    const evBets = bets.filter((b) => !b.isSafeValue);
+    const svBets = bets.filter((b) => b.isSafeValue);
+
+    return {
+      period,
+      global: this.buildPnlSummary(allBets),
+      ev: this.buildPnlSummary(evBets),
+      sv: this.buildPnlSummary(svBets),
+    };
+  }
+
+  async getCompetitionStats(
+    userId: string,
+    canal?: 'EV' | 'SV',
+  ): Promise<CompetitionStat[]> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [analyzedRuns, modelBets, userBets] =
-      await this.repo.getCompetitionData(userId, since);
+      await this.repo.getCompetitionData(userId, since, canal);
 
     // Compter les fixtures analysées par compétition
     const activeByComp = new Map<string, number>();

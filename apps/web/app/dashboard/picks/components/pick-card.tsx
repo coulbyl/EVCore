@@ -4,15 +4,12 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@evcore/ui";
 import { CanalBadge } from "@/components/canal-badge";
-import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type {
   FixtureRow,
   FixtureModelFactors,
 } from "@/domains/fixture/types/fixture";
-import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
 import { AddToSlipInline } from "./add-to-slip-inline";
 
 // ── helpers ─────────────────────────────────────────────────────────────────

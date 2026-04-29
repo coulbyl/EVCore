@@ -11,6 +11,14 @@ import { RISK_CONSTANTS } from './risk.constants';
 
 const logger = createLogger('risk-service');
 
+export type CalibrationBin = {
+  minProb: number;
+  maxProb: number;
+  avgProb: number;
+  actualRate: number;
+  count: number;
+};
+
 export type RoiCheckResult = {
   market: Market;
   betCount: number;
@@ -116,6 +124,41 @@ export class RiskService {
         'Brier score alert sent',
       );
     }
+  }
+
+  async getCalibrationCurve(): Promise<CalibrationBin[]> {
+    const bets = await this.prisma.client.bet.findMany({
+      where: {
+        status: { in: ['WON', 'LOST'] },
+        source: 'MODEL',
+      },
+      select: { status: true, probEstimated: true },
+    });
+
+    const BIN_COUNT = 10;
+    const bins: { sumProb: number; wins: number; count: number }[] = Array.from(
+      { length: BIN_COUNT },
+      () => ({ sumProb: 0, wins: 0, count: 0 }),
+    );
+
+    for (const bet of bets) {
+      const prob = new Decimal(bet.probEstimated.toString()).toNumber();
+      const idx = Math.min(Math.floor(prob * BIN_COUNT), BIN_COUNT - 1);
+      bins[idx].sumProb += prob;
+      bins[idx].count += 1;
+      if (bet.status === 'WON') bins[idx].wins += 1;
+    }
+
+    return bins
+      .map((bin, i) => ({
+        minProb: i / BIN_COUNT,
+        maxProb: (i + 1) / BIN_COUNT,
+        avgProb:
+          bin.count > 0 ? bin.sumProb / bin.count : (i + 0.5) / BIN_COUNT,
+        actualRate: bin.count > 0 ? bin.wins / bin.count : 0,
+        count: bin.count,
+      }))
+      .filter((bin) => bin.count > 0);
   }
 
   async generateWeeklyReport(): Promise<WeeklyReportResult> {

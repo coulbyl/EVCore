@@ -11,7 +11,6 @@
     "confirm": "Confirmer",
     "back": "Retour",
     "seeAll": "Voir tout"
-
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -270,7 +269,25 @@
       "matches": "matchs",
       "best": "Meilleur ROI",
       "worst": "ROI le plus faible"
-    }
+    },
+    "proposalHistory": "Historique des recalibrations",
+    "latestBrierScore": "Dernier Brier Score",
+    "reliabilityDiagram": "Diagramme de fiabilité",
+    "reliabilityDiagramHint": "Probabilité estimée par le modèle vs fréquence réelle des victoires (la diagonale = calibration parfaite).",
+    "reliabilityX": "Prob. estimée",
+    "reliabilityY": "Fréquence réelle",
+    "backtestTabEv": "Canal EV",
+    "backtestTabSv": "Canal Sécurité",
+    "backtestSvIdle": "Lancez une simulation pour voir comment le Canal Sécurité aurait performé sur les données passées.",
+    "svAvgOdds": "Cote moyenne",
+    "seasonBreakdown": "Détail par saison",
+    "season": "Saison",
+    "canalGlobal": "Global",
+    "canalEv": "EV",
+    "canalSv": "Sécurité",
+    "period7d": "7 jours",
+    "period30d": "30 jours",
+    "periodAll": "Tout"
   },
   "fixtureDiagnostics": {
     "rejection": {
