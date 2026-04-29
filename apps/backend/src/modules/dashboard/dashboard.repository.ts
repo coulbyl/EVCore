@@ -148,7 +148,29 @@ export class DashboardRepository {
     };
   }
 
-  getCompetitionData(userId: string, since: Date) {
+  getSettledBetsForPnl(since: Date | null) {
+    return this.prisma.client.bet.findMany({
+      where: {
+        source: BetSource.MODEL,
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        ...(since
+          ? {
+              modelRun: {
+                fixture: { scheduledAt: { gte: since } },
+              },
+            }
+          : {}),
+      },
+      select: {
+        status: true,
+        stakePct: true,
+        oddsSnapshot: true,
+        isSafeValue: true,
+      },
+    });
+  }
+
+  getCompetitionData(userId: string, since: Date, canal?: 'EV' | 'SV') {
     const fixtureFilter = { scheduledAt: { gte: since } };
     const competitionSelect = {
       select: { id: true, name: true, code: true },
@@ -156,6 +178,12 @@ export class DashboardRepository {
     const seasonSelect = {
       select: { competition: competitionSelect },
     } as const;
+    const canalFilter =
+      canal === 'EV'
+        ? { isSafeValue: false }
+        : canal === 'SV'
+          ? { isSafeValue: true }
+          : {};
 
     return Promise.all([
       // Fixtures analysées par compétition (30 derniers jours)
@@ -173,6 +201,7 @@ export class DashboardRepository {
           status: { in: [BetStatus.WON, BetStatus.LOST] },
           fixture: fixtureFilter,
           oddsSnapshot: { not: null },
+          ...canalFilter,
         },
         select: {
           status: true,

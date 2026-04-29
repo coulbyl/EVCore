@@ -42,6 +42,11 @@ export class RiskController {
     return { market, suspended };
   }
 
+  @Get('calibration-curve')
+  async calibrationCurve() {
+    return this.risk.getCalibrationCurve();
+  }
+
   @Post('report/weekly')
   @HttpCode(HttpStatus.OK)
   async weeklyReport(): Promise<WeeklyReportResponseDto> {

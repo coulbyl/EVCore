@@ -292,6 +292,7 @@ model User {
   betSlipItems         BetSlipItem[]
   bets                 Bet[]
   bankrollTransactions BankrollTransaction[]
+  badges               UserBadge[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -468,4 +469,28 @@ model Prediction {
   @@unique([fixtureId])
   @@index([competition, createdAt])
   @@map("prediction")
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  name        String
+  description String
+  iconUrl     String?
+  createdAt   DateTime    @default(now())
+  users       UserBadge[]
+
+  @@map("badge")
+}
+
+model UserBadge {
+  id         String   @id @default(cuid())
+  userId     String   @db.Uuid
+  badgeCode  String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  badge      Badge    @relation(fields: [badgeCode], references: [code])
+
+  @@unique([userId, badgeCode])
+  @@map("user_badge")
 }

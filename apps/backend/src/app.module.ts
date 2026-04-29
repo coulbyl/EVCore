@@ -17,6 +17,7 @@ import { BetSlipModule } from './modules/bet-slip/bet-slip.module';
 import { BetModule } from './modules/bet/bet.module';
 import { BankrollModule } from './modules/bankroll/bankroll.module';
 import { PredictionModule } from './modules/prediction/prediction.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PredictionModule } from './modules/prediction/prediction.module';
     PredictionModule,
     DashboardModule,
     AuditModule,
+    GamificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,6 +14,16 @@ export type BacktestMarketPerformance = {
   maxDrawdown: NumericLike;
 };
 
+export type BacktestSeasonSummary = {
+  seasonId: string;
+  fixtureCount: number;
+  analyzedCount: number;
+  brierScore: NumericLike;
+  roiSimulated: NumericLike;
+  maxDrawdownSimulated: NumericLike;
+  reportGeneratedAt: string;
+};
+
 export type CompetitionBacktestReport = {
   competitionId: string;
   competitionCode: string;
@@ -26,6 +36,7 @@ export type CompetitionBacktestReport = {
   aggregateRoi: NumericLike;
   maxDrawdownSimulated: NumericLike;
   marketPerformance: BacktestMarketPerformance[];
+  seasons?: BacktestSeasonSummary[];
   reportGeneratedAt: string;
 };
 
@@ -46,3 +57,36 @@ export type BacktestSeasonReport = {
 export type BacktestResponse =
   | CompetitionBacktestReport[]
   | BacktestSeasonReport;
+
+export type SafeValueSeasonResult = {
+  seasonId: string;
+  competitionCode: string;
+  competitionName: string;
+  picksPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  roi: number;
+  winRate: number;
+  avgOdds: number;
+  avgEv: number;
+};
+
+export type SafeValueAggregate = {
+  picksPlaced: number;
+  wins: number;
+  losses: number;
+  voids: number;
+  roi: number;
+  winRate: number;
+  avgOdds: number;
+  avgEv: number;
+  daysWithPicks: number;
+  marketPerformance: BacktestMarketPerformance[];
+};
+
+export type SafeValueBacktestReport = {
+  seasons: SafeValueSeasonResult[];
+  aggregate: SafeValueAggregate;
+  generatedAt: string;
+};

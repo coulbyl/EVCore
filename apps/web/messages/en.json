@@ -269,7 +269,25 @@
       "matches": "matches",
       "best": "Best ROI",
       "worst": "Lowest ROI"
-    }
+    },
+    "proposalHistory": "Calibration history",
+    "latestBrierScore": "Latest Brier Score",
+    "reliabilityDiagram": "Reliability diagram",
+    "reliabilityDiagramHint": "Model estimated probability vs actual win frequency (the diagonal = perfect calibration).",
+    "reliabilityX": "Est. probability",
+    "reliabilityY": "Actual frequency",
+    "backtestTabEv": "EV channel",
+    "backtestTabSv": "Safety channel",
+    "backtestSvIdle": "Run a simulation to see how the Safety channel would have performed on past data.",
+    "svAvgOdds": "Average odds",
+    "seasonBreakdown": "Season breakdown",
+    "season": "Season",
+    "canalGlobal": "Global",
+    "canalEv": "EV",
+    "canalSv": "Safety",
+    "period7d": "7 days",
+    "period30d": "30 days",
+    "periodAll": "All"
   },
   "fixtureDiagnostics": {
     "rejection": {

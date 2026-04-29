@@ -1,14 +1,19 @@
 import { Page, PageContent } from "@evcore/ui";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
+import { ProfileHeroSection } from "./components/profile-hero-section";
+import { BadgesSection } from "./components/badges-section";
 import { AppearanceSection } from "./components/appearance-section";
-import { AccountProfileSection } from "./components/account-profile-section";
-import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { LanguageSection } from "./components/language-section";
 import { NotificationsSection } from "./components/notifications-section";
+import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 
 export default async function AccountSettingsPage() {
-  const locale = (await getLocale()) as "fr" | "en";
-  const t = await getTranslations("account");
+  const [locale, t, session] = await Promise.all([
+    getLocale(),
+    getTranslations("account"),
+    getCurrentSession(),
+  ]);
 
   return (
     <Page className="flex h-full flex-col">
@@ -23,60 +28,55 @@ export default async function AccountSettingsPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <AccountProfileSection
-            labels={{
-              eyebrow: t("account"),
-              title: t("profile"),
-              description: t("profileDescription"),
-              fullName: t("fullName"),
-              email: t("email"),
-              username: t("username"),
-              role: t("role"),
-              password: t("password"),
-              changePassword: t("changePassword"),
-              changePasswordHint: t("changePasswordHint"),
-              loading: "…",
-              roles: {
-                ADMIN: t("roles.ADMIN"),
-                OPERATOR: t("roles.OPERATOR"),
-              },
-            }}
-          />
+          {/* Hero — avatar + identité + infos compte */}
+          {session ? (
+            <ProfileHeroSection user={session.user} />
+          ) : null}
 
+          {/* Badges de progression */}
+          <div className="lg:col-span-2">
+            <BadgesSection />
+          </div>
+
+          {/* Apparence + Langue côte à côte */}
           <AppearanceSection />
-          <LanguageSection currentLocale={locale} />
+          <LanguageSection currentLocale={(locale as "fr" | "en") ?? "fr"} />
 
-          <NotificationsSection
-            labels={{
-              eyebrow: t("notifications"),
-              title: t("notifications"),
-              description: t("notificationDescription"),
-              preferenceHint: t("savedAutomatically"),
-              items: [
-                {
-                  key: "roiAlert",
-                  label: t("notificationTypes.roiAlert"),
-                  help: t("notificationHelp.roiAlert"),
-                },
-                {
-                  key: "marketSuspension",
-                  label: t("notificationTypes.marketSuspension"),
-                  help: t("notificationHelp.marketSuspension"),
-                },
-                {
-                  key: "brierAlert",
-                  label: t("notificationTypes.brierAlert"),
-                  help: t("notificationHelp.brierAlert"),
-                },
-                {
-                  key: "weeklyReport",
-                  label: t("notificationTypes.weeklyReport"),
-                  help: t("notificationHelp.weeklyReport"),
-                },
-              ],
-            }}
-          />
+          {/* Notifications — pleine largeur */}
+          <div className="lg:col-span-2">
+            <NotificationsSection
+              labels={{
+                eyebrow: t("notifications"),
+                title: t("notifications"),
+                description: t("notificationDescription"),
+                preferenceHint: t("savedAutomatically"),
+                items: [
+                  {
+                    key: "roiAlert",
+                    label: t("notificationTypes.roiAlert"),
+                    help: t("notificationHelp.roiAlert"),
+                  },
+                  {
+                    key: "marketSuspension",
+                    label: t("notificationTypes.marketSuspension"),
+                    help: t("notificationHelp.marketSuspension"),
+                  },
+                  {
+                    key: "brierAlert",
+                    label: t("notificationTypes.brierAlert"),
+                    help: t("notificationHelp.brierAlert"),
+                  },
+                  {
+                    key: "weeklyReport",
+                    label: t("notificationTypes.weeklyReport"),
+                    help: t("notificationHelp.weeklyReport"),
+                  },
+                ],
+              }}
+            />
+          </div>
 
+          {/* Bankroll */}
           <BankrollPreferencesSection
             labels={{
               eyebrow: t("account"),

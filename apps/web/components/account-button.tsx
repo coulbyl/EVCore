@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HelpCircle, LogOut, Settings, Sprout, Wallet } from "lucide-react";
 import {
-  Avatar,
-  AvatarFallback,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -17,15 +15,8 @@ import {
 } from "@evcore/ui";
 import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
+import { UserAvatar } from "@/components/user-avatar";
 import { useTranslations } from "next-intl";
-
-function getInitials(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return (parts[0]?.[0] ?? "?").toUpperCase();
-  return (
-    (parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")
-  ).toUpperCase();
-}
 
 export function AccountButton({
   currentUser,
@@ -57,11 +48,12 @@ export function AccountButton({
           className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border/80 bg-panel-strong p-0.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           aria-label="Ouvrir le menu du compte"
         >
-          <Avatar size="default" className="ring-1 ring-border">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-[0.72rem] font-bold">
-              {getInitials(currentUser.fullName)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            avatarUrl={currentUser.avatarUrl}
+            username={currentUser.fullName}
+            size={32}
+            className="ring-1 ring-border"
+          />
         </button>
       </DropdownMenuTrigger>
 
@@ -72,11 +64,12 @@ export function AccountButton({
       >
         <DropdownMenuLabel className="px-3 py-2">
           <div className="flex items-center gap-3">
-            <Avatar size="lg" className="ring-1 ring-border">
-              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-bold">
-                {getInitials(currentUser.fullName)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              avatarUrl={currentUser.avatarUrl}
+              username={currentUser.fullName}
+              size={40}
+              className="ring-1 ring-border"
+            />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-foreground">
                 {currentUser.fullName}

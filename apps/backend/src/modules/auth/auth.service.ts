@@ -193,6 +193,7 @@ export class AuthService {
         ...(dto.theme !== undefined && { theme: dto.theme }),
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.currency !== undefined && { currency: dto.currency }),
+        ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
       },
       select: {
         id: true,
