@@ -720,6 +720,7 @@ export class BacktestService {
         analysisEntries,
         writeAnalysisLog: false,
       });
+      report.seasonName = season.name;
       reports.push(report);
     }
 

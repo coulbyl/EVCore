@@ -27,6 +27,7 @@ export * from "./components/popover";
 export * from "./components/radio-group";
 export * from "./components/responsive-grid";
 export * from "./components/select";
+export * from "./components/drawer";
 export * from "./components/separator";
 export * from "./components/section-header";
 export * from "./components/sheet";

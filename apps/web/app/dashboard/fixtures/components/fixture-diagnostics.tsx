@@ -15,7 +15,10 @@ import {
   fixtureStatusLabel,
   formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
-import { formatScore } from "@/domains/fixture/helpers/fixture";
+import {
+  formatScore,
+  isFixtureBettable,
+} from "@/domains/fixture/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
@@ -124,14 +127,14 @@ function EvaluatedPickItem({
   fixtureId,
   alreadyInUserTicket,
   onPlace,
-  fixtureStatus,
+  bettable,
   t,
 }: {
   snap: FixtureEvaluatedPickSnapshot;
   fixtureId: string;
   alreadyInUserTicket: boolean;
   onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
-  fixtureStatus: string;
+  bettable: boolean;
   t: Translator;
 }) {
   const prob = `${(Number(snap.probability) * 100).toFixed(1)}%`;
@@ -167,7 +170,7 @@ function EvaluatedPickItem({
           </div>
         </div>
 
-        {fixtureStatus === "FINISHED" ? null : (
+        {bettable ? (
           <div onClick={(e) => e.stopPropagation()}>
             <PlacePickButton
               snap={snap}
@@ -177,7 +180,7 @@ function EvaluatedPickItem({
               t={t}
             />
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-2">
@@ -464,7 +467,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
                   fixtureId={row.fixtureId}
                   alreadyInUserTicket={alreadyInUserTicket}
                   onPlace={handlePlacePick}
-                  fixtureStatus={row.status}
+                  bettable={isFixtureBettable(row)}
                   t={t}
                 />
               ))}

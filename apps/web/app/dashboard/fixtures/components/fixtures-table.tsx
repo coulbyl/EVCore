@@ -2,17 +2,22 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ShoppingCart, Check, ChevronRight } from "lucide-react";
 import {
   Badge,
   DataTable,
-  Sheet,
-  SheetContent,
-  SheetTitle,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   type ColumnDef,
 } from "@evcore/ui";
 import { SettleFixtureDialog } from "@/components/settle-fixture-dialog";
-import { formatScore, formatKickoff } from "@/domains/fixture/helpers/fixture";
+import {
+  formatScore,
+  formatKickoff,
+  isFixtureBettable,
+} from "@/domains/fixture/helpers/fixture";
 import {
   fixtureStatusBadgeClass,
   fixtureStatusLabel,
@@ -128,7 +133,7 @@ function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
     comboPick: sv.comboPick ?? undefined,
   });
   const inSlip = isInSlip(sv.betId);
-  const canAdd = sv.betStatus === "PENDING" && row.status !== "FINISHED";
+  const canAdd = sv.betStatus === "PENDING" && isFixtureBettable(row);
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -247,7 +252,7 @@ function AddToSlipButton({
     !mr.betId ||
     !mr.market ||
     !mr.pick ||
-    row.status === "FINISHED"
+    !isFixtureBettable(row)
   ) {
     return null;
   }
@@ -692,6 +697,7 @@ export function FixturesTable({
   isAdmin: boolean;
 }) {
   const t = useTranslations("table");
+  const isMobile = useIsMobile();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -737,14 +743,19 @@ export function FixturesTable({
         </p>
       )}
 
-      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
-          className="z-50 flex max-h-[92dvh] flex-col rounded-t-[1.6rem] border-t border-border bg-panel-strong focus:outline-none sm:inset-y-3 sm:right-3 sm:left-auto sm:bottom-auto sm:w-[min(760px,calc(100vw-1.5rem))] sm:max-h-none sm:rounded-[1.6rem] sm:border sm:shadow-[0_24px_80px_rgba(15,23,42,0.18)] sm:[left:auto] sm:[right:0.75rem]"
+      <Drawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        direction={isMobile ? "bottom" : "right"}
+      >
+        <DrawerContent
+          className={
+            isMobile
+              ? "z-50 flex max-h-[92dvh] flex-col rounded-t-[1.6rem] border-t border-border bg-panel-strong focus:outline-none"
+              : "z-50 inset-y-3 right-3 flex h-[calc(100dvh-1.5rem)] w-[min(760px,calc(100vw-1.5rem))] flex-col rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_24px_80px_rgba(15,23,42,0.18)] focus:outline-none"
+          }
         >
-          <SheetTitle className="sr-only">Diagnostic fixture</SheetTitle>
-          <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" />
+          <DrawerTitle className="sr-only">Diagnostic fixture</DrawerTitle>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10 sm:p-5">
             {selectedRow ? (
               <FixtureDiagnostics row={selectedRow} />
@@ -756,8 +767,8 @@ export function FixturesTable({
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

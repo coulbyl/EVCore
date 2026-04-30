@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
-import { Sheet, SheetContent, SheetTitle } from "@evcore/ui";
+import { Drawer, DrawerContent, DrawerTitle } from "@evcore/ui";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
@@ -128,6 +129,7 @@ function DraftItemRow({
 }
 
 export function BetSlipDrawer() {
+  const isMobile = useIsMobile();
   const {
     draft,
     isOpen,
@@ -210,14 +212,19 @@ export function BetSlipDrawer() {
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && close()}>
-      <SheetContent
-        side="bottom"
-        showCloseButton={false}
-        className="z-50 flex h-[92dvh] min-h-0 flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none sm:inset-y-4 sm:right-4 sm:left-auto sm:bottom-auto sm:h-[calc(100dvh-2rem)] sm:w-[420px] sm:rounded-[1.5rem] sm:border sm:[left:auto] sm:[right:1rem]"
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => !open && close()}
+      direction={isMobile ? "bottom" : "right"}
+    >
+      <DrawerContent
+        className={
+          isMobile
+            ? "z-50 flex h-[92dvh] min-h-0 flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
+            : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[420px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
+        }
       >
-        <SheetTitle className="sr-only">Coupon en préparation</SheetTitle>
-        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
+        <DrawerTitle className="sr-only">Coupon en préparation</DrawerTitle>
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -420,7 +427,7 @@ export function BetSlipDrawer() {
             </button>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }

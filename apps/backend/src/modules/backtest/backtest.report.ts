@@ -68,6 +68,7 @@ export type CalibrationPoint = {
 
 export type BacktestReport = {
   seasonId: string;
+  seasonName?: string;
   fixtureCount: number;
   analyzedCount: number;
   skippedCount: number;

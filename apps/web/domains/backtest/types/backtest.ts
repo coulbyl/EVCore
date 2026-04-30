@@ -16,6 +16,9 @@ export type BacktestMarketPerformance = {
 
 export type BacktestSeasonSummary = {
   seasonId: string;
+  seasonName?: string;
+  competitionCode?: string;
+  competitionName?: string;
   fixtureCount: number;
   analyzedCount: number;
   brierScore: NumericLike;

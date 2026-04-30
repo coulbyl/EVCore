@@ -167,7 +167,13 @@ function normalizeEvReport(
   if (!sourceResponse) return null;
   if (Array.isArray(sourceResponse)) {
     const agg = aggregateBacktestReports(sourceResponse);
-    const seasons = sourceResponse.flatMap((r) => r.seasons ?? []);
+    const seasons = sourceResponse.flatMap((r) =>
+      (r.seasons ?? []).map((s) => ({
+        ...s,
+        competitionCode: r.competitionCode,
+        competitionName: r.competitionName,
+      })),
+    );
     return { ...agg, seasons: seasons.length > 0 ? seasons : undefined };
   }
   return {
@@ -226,13 +232,21 @@ function EvTabContent({
 
   const seasonColumns: ColumnDef<BacktestSeasonSummary>[] = [
     {
-      id: "seasonId",
+      id: "season",
       header: t("season"),
-      accessorKey: "seasonId",
+      accessorFn: (row) =>
+        `${row.competitionCode ?? ""} ${row.seasonName ?? row.seasonId}`.trim(),
       cell: ({ row }) => (
-        <span className="font-mono text-xs">
-          {row.original.seasonId.slice(0, 8)}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          {row.original.competitionCode && (
+            <span className="text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              {row.original.competitionCode}
+            </span>
+          )}
+          <span className="text-xs font-semibold text-foreground">
+            {row.original.seasonName ?? row.original.seasonId.slice(0, 8)}
+          </span>
+        </div>
       ),
     },
     {
@@ -392,6 +406,37 @@ function EvTabContent({
                 data={report.seasons}
                 className="border-0"
                 initialSorting={[{ id: "roi", desc: true }]}
+                mobileCard={(season) => {
+                  const roi = toNumber(season.roiSimulated) ?? 0;
+                  return (
+                    <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border last:border-0">
+                      <div className="min-w-0">
+                        {season.competitionCode && (
+                          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            {season.competitionCode}
+                          </p>
+                        )}
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          {season.seasonName ?? season.seasonId.slice(0, 8)}
+                        </p>
+                        <p className="mt-0.5 text-[0.65rem] text-muted-foreground">
+                          {season.analyzedCount}{" "}
+                          {t("stats.analyzedBets").toLowerCase()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 text-xs tabular-nums">
+                        <span className="text-muted-foreground">
+                          {formatDecimal(season.brierScore, 3)}
+                        </span>
+                        <span
+                          className={`font-semibold ${roi >= 0 ? "text-success" : "text-danger"}`}
+                        >
+                          {formatBacktestPercent(roi)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }}
               />
             </div>
           ) : null}

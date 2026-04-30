@@ -156,9 +156,12 @@ export class FixtureScoringService {
       where.status = filters.status as FixtureStatus;
     }
 
-    if (filters.competition) {
-      where.season = { competition: { code: filters.competition } };
-    }
+    where.season = {
+      competition: {
+        isActive: true,
+        ...(filters.competition ? { code: filters.competition } : {}),
+      },
+    };
 
     const [total, fixtures] = await Promise.all([
       this.prisma.client.fixture.count({ where: dateRange }),
