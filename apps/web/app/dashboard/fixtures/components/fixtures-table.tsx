@@ -377,10 +377,17 @@ function FixtureMobileCard({
     <div
       className={`rounded-[1.2rem] border p-4 transition-colors ${selected ? "border-accent bg-accent/5" : "border-border bg-panel-strong"}`}
     >
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onSelect}
-        className="w-full cursor-pointer text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
+        className="w-full cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <div className="flex flex-col gap-2.5">
           <div className="flex items-start justify-between gap-3">
@@ -459,7 +466,7 @@ function FixtureMobileCard({
             )}
           {row.safeValueBet && <SVRow sv={row.safeValueBet} row={row} />}
         </div>
-      </button>
+      </div>
 
       {mr?.decision === "BET" && (
         <div className="mt-3 flex gap-2 border-t border-border pt-3">

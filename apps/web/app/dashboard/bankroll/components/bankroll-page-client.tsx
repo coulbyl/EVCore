@@ -435,6 +435,7 @@ export function BankrollPageClient() {
               columns={columns}
               data={filteredTransactions}
               isLoading={isLoading}
+              pagination={{ pageSize: 25, pageSizeOptions: [10, 25, 50, 100] }}
               emptyState={
                 <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
                   <EmptyHeader>

@@ -28,7 +28,7 @@ type DatePickerProps = {
 function DatePicker({
   value,
   onChange,
-  placeholder = "Choisir une date",
+  placeholder = "",
   className,
   disabled,
 }: DatePickerProps) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
-import { Drawer } from "vaul";
+import { Sheet, SheetContent, SheetTitle } from "@evcore/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
@@ -210,221 +210,217 @@ export function BetSlipDrawer() {
   }
 
   return (
-    <Drawer.Root open={isOpen} onOpenChange={(open) => !open && close()}>
-      <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-sidebar/40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.5rem] bg-panel outline-none sm:bottom-4 sm:left-auto sm:right-4 sm:top-4 sm:w-[420px] sm:rounded-[1.5rem] sm:border sm:border-border">
-          <Drawer.Title className="sr-only">Coupon en préparation</Drawer.Title>
-          {/* Handle (mobile) */}
-          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
+    <Sheet open={isOpen} onOpenChange={(open) => !open && close()}>
+      <SheetContent
+        side="bottom"
+        showCloseButton={false}
+        className="z-50 flex h-[92dvh] min-h-0 flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none sm:inset-y-4 sm:right-4 sm:left-auto sm:bottom-auto sm:h-[calc(100dvh-2rem)] sm:w-[420px] sm:rounded-[1.5rem] sm:border sm:[left:auto] sm:[right:1rem]"
+      >
+        <SheetTitle className="sr-only">Coupon en préparation</SheetTitle>
+        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border sm:hidden" />
 
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <ReceiptText size={16} className="text-accent" />
-                <h2 className="text-sm font-semibold text-foreground">
-                  Coupon en préparation
-                  {totalItems > 0 && (
-                    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-accent-foreground">
-                      {totalItems}
-                    </span>
-                  )}
-                </h2>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {totalItems > 0
-                  ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
-                  : "Ajoutez vos sélections pour préparer votre coupon."}
-              </p>
-              <p className="mt-2 text-xs font-semibold text-foreground">
-                Solde disponible :{" "}
-                <Amount value={bankroll} className="text-foreground" />
-              </p>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              {totalItems > 0 && (
-                <button
-                  type="button"
-                  onClick={clearDraft}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.7rem] font-semibold text-danger hover:bg-destructive/10"
-                >
-                  <Trash2 size={11} />
-                  Vider
-                </button>
-              )}
+              <ReceiptText size={16} className="text-accent" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Coupon en préparation
+                {totalItems > 0 && (
+                  <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-accent-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {totalItems > 0
+                ? `${totalItems} sélection${totalItems > 1 ? "s" : ""} prête${totalItems > 1 ? "s" : ""}`
+                : "Ajoutez vos sélections pour préparer votre coupon."}
+            </p>
+            <p className="mt-2 text-xs font-semibold text-foreground">
+              Solde disponible :{" "}
+              <Amount value={bankroll} className="text-foreground" />
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {totalItems > 0 && (
               <button
                 type="button"
-                onClick={close}
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                onClick={clearDraft}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.7rem] font-semibold text-danger hover:bg-destructive/10"
               >
-                <X size={16} />
+                <Trash2 size={11} />
+                Vider
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={close}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {submitted ? (
+            <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
+              <CheckCircle size={40} className="text-success" />
+              <p className="font-semibold text-foreground">Coupon soumis !</p>
+              <p className="text-sm text-muted-foreground">
+                Retrouvez-le dans la section Mes coupons.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  close();
+                }}
+                className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Fermer
               </button>
             </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            {submitted ? (
-              <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
-                <CheckCircle size={40} className="text-success" />
-                <p className="font-semibold text-foreground">Coupon soumis !</p>
-                <p className="text-sm text-muted-foreground">
-                  Retrouvez-le dans la section Mes coupons.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubmitted(false);
-                    close();
-                  }}
-                  className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                >
-                  Fermer
-                </button>
-              </div>
-            ) : totalItems === 0 ? (
-              <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-                <ReceiptText size={32} className="text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">
-                  Aucun coupon en préparation
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Placez des sélections depuis la page Matchs.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="border-b border-border px-4 py-3">
-                  <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
-                    <button
-                      type="button"
-                      onClick={() => setType("SIMPLE")}
-                      className={`rounded-md px-3 py-2 text-xs font-bold transition-colors ${
-                        !isCombo
-                          ? "bg-panel text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Simples
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setType("COMBO")}
-                      disabled={totalItems < 2}
-                      className={`rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
-                        isCombo
-                          ? "bg-panel text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Combiné
-                    </button>
-                  </div>
-                </div>
-                <div className="divide-y divide-border">
-                  {draft.items.map((item) => {
-                    const key = draftItemKey(item);
-                    return (
-                      <DraftItemRow
-                        key={key}
-                        item={item}
-                        unitStake={draft.unitStake}
-                        mode={isCombo ? "COMBO" : "SIMPLE"}
-                        onRemove={() => removeItem(key)}
-                        onStakeChange={(v) => {
-                          const n = parseFloat(v);
-                          setStakeOverride(
-                            key,
-                            v === "" || isNaN(n) ? null : n,
-                          );
-                        }}
-                      />
-                    );
-                  })}
+          ) : totalItems === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
+              <ReceiptText size={32} className="text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">
+                Aucun coupon en préparation
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Placez des sélections depuis la page Matchs.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div className="border-b border-border px-4 py-3">
+                <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
+                  <button
+                    type="button"
+                    onClick={() => setType("SIMPLE")}
+                    className={`rounded-md px-3 py-2 text-xs font-bold transition-colors ${
+                      !isCombo
+                        ? "bg-panel text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Simples
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType("COMBO")}
+                    disabled={totalItems < 2}
+                    className={`rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                      isCombo
+                        ? "bg-panel text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Combiné
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          {!submitted && totalItems > 0 && (
-            <div className="border-t border-border bg-panel-strong px-5 py-4">
-              {submitError && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
-                  <AlertCircle size={13} />
-                  {submitError}
-                </div>
-              )}
-              {exceedsBalance && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/20 bg-warning/12 px-3 py-2 text-xs font-medium text-warning">
-                  <AlertCircle size={13} />
-                  Solde insuffisant : vous voulez miser{" "}
-                  <Amount value={totalStake} className="text-warning" />.
-                </div>
-              )}
-              <div className="mb-3 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {isCombo ? "Mise du combiné" : "Mise par sélection"}
-                </span>
-                <StakeInput
-                  value={unitStakeInput}
-                  onChange={(v) => {
-                    setUnitStakeInput(v);
-                    const val = parseFloat(v);
-                    if (!isNaN(val) && val > 0) setUnitStake(val);
-                  }}
-                  placeholder="4000"
-                />
+              <div className="divide-y divide-border">
+                {draft.items.map((item) => {
+                  const key = draftItemKey(item);
+                  return (
+                    <DraftItemRow
+                      key={key}
+                      item={item}
+                      unitStake={draft.unitStake}
+                      mode={isCombo ? "COMBO" : "SIMPLE"}
+                      onRemove={() => removeItem(key)}
+                      onStakeChange={(v) => {
+                        const n = parseFloat(v);
+                        setStakeOverride(key, v === "" || isNaN(n) ? null : n);
+                      }}
+                    />
+                  );
+                })}
               </div>
-              <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Solde disponible</span>
-                <Amount
-                  value={bankroll}
-                  className="font-semibold text-foreground"
-                />
-              </div>
-              <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="font-semibold text-foreground">
-                  Mise totale ({totalItems} sélection{totalItems > 1 ? "s" : ""}
-                  )
-                </span>
-                <Amount
-                  value={totalStake}
-                  className="font-bold text-foreground"
-                />
-              </div>
-              {isCombo ? (
-                <div className="mb-4 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground">
-                    Cote totale
-                  </span>
-                  <span className="font-bold tabular-nums text-foreground">
-                    {totalOdds.toFixed(2)}
-                  </span>
-                </div>
-              ) : null}
-              <div className="mb-4 flex items-center justify-between text-xs">
-                <span className="font-semibold text-foreground">
-                  Gain potentiel
-                </span>
-                <Amount
-                  value={potentialReturn}
-                  className="font-bold text-success"
-                />
-              </div>
-              <button
-                type="button"
-                disabled={isPending || exceedsBalance}
-                onClick={handleSubmit}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60"
-              >
-                {isPending ? "Soumission…" : "Valider le coupon"}
-              </button>
             </div>
           )}
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+        </div>
+
+        {/* Footer */}
+        {!submitted && totalItems > 0 && (
+          <div className="shrink-0 border-t border-border bg-panel-strong px-5 py-4">
+            {submitError && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                <AlertCircle size={13} />
+                {submitError}
+              </div>
+            )}
+            {exceedsBalance && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/20 bg-warning/12 px-3 py-2 text-xs font-medium text-warning">
+                <AlertCircle size={13} />
+                Solde insuffisant : vous voulez miser{" "}
+                <Amount value={totalStake} className="text-warning" />.
+              </div>
+            )}
+            <div className="mb-3 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {isCombo ? "Mise du combiné" : "Mise par sélection"}
+              </span>
+              <StakeInput
+                value={unitStakeInput}
+                onChange={(v) => {
+                  setUnitStakeInput(v);
+                  const val = parseFloat(v);
+                  if (!isNaN(val) && val > 0) setUnitStake(val);
+                }}
+                placeholder="4000"
+              />
+            </div>
+            <div className="mb-4 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Solde disponible</span>
+              <Amount
+                value={bankroll}
+                className="font-semibold text-foreground"
+              />
+            </div>
+            <div className="mb-4 flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground">
+                Mise totale ({totalItems} sélection{totalItems > 1 ? "s" : ""})
+              </span>
+              <Amount
+                value={totalStake}
+                className="font-bold text-foreground"
+              />
+            </div>
+            {isCombo ? (
+              <div className="mb-4 flex items-center justify-between text-xs">
+                <span className="font-semibold text-foreground">
+                  Cote totale
+                </span>
+                <span className="font-bold tabular-nums text-foreground">
+                  {totalOdds.toFixed(2)}
+                </span>
+              </div>
+            ) : null}
+            <div className="mb-4 flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground">
+                Gain potentiel
+              </span>
+              <Amount
+                value={potentialReturn}
+                className="font-bold text-success"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={isPending || exceedsBalance}
+              onClick={handleSubmit}
+              className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60"
+            >
+              {isPending ? "Soumission…" : "Valider le coupon"}
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
