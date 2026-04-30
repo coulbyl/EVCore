@@ -211,6 +211,13 @@ export function getPickMinSelectionOdds(
     return Decimal.max(leagueFloor, new Decimal('2.50'));
   }
 
+  // Backtest 2026-04-30: SUI1 HOME shorts (odds 1.80–1.99) blocked by the 2.00 floor
+  // went 11W/3L (+35.8% ROI, avg EV 0.167) — a genuine edge hidden by the floor.
+  // Lower to 1.80; EV soft cap 0.30 and max cap 2.99 bound the selection window.
+  if (competitionCode === 'SUI1' && market === 'ONE_X_TWO' && pick === 'HOME') {
+    return new Decimal('1.80');
+  }
+
   // J1 audit 2026-04-25: HOME is structurally unreliable — 46 bets 19W/27L (-6.3% ROI).
   // Per-season win rate varies from 18% (S1) to 59% (S3) despite similar odds range.
   // High-EV HOME picks lose more often than low-EV ones (avg EV 0.328 on losses vs
@@ -331,6 +338,12 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   // and let the empirical 1X2 blend handle the remaining directional calibration
   // instead of pushing lambda lower again.
   I2: 0.95,
+  // TUR1: Süper Lig historical goal rate is lower than the global default 1.40.
+  // Backtest 2026-04-30: 12 UNDER bets blocked by under_high_lambda (λ > 2.5)
+  // went 9W/3L with an average of 2.33 actual goals — model overestimates scoring.
+  // Anchor 1.25 pulls lambda toward the observed rate and raises P(UNDER), allowing
+  // high-confidence UNDER picks to reach the EV threshold.
+  TUR1: 1.25,
   // UCL: computed from team_stats (1,432 records, April 2026 — 3 seasons).
   // avg_xg_for=1.843, avg_xg_against=1.335, avg_lambda=1.589.
   // Previous value 1.35 was based on "elite defenses" assumption (~2.7 goals/game)
@@ -436,6 +449,19 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // the average above 0.65. Blend 0.40 applies stronger correction to reduce the
   // systematic HOME over-confidence across all seasons.
   J1: new Decimal('0.40'),
+  // Backtest 2026-04-30: SUI1 Brier 0.6503 (FAIL, threshold 0.65). S2 drives it up
+  // (0.6599). Poisson over-predicts HOME wins in the balanced Swiss league — blend
+  // toward empirical team win-rates to reduce the directional bias.
+  SUI1: new Decimal('0.20'),
+  // Backtest 2026-04-30: UEL Brier 0.659, CalibErr 0.057 (both FAIL). Poisson
+  // over-predicts HOME probability (modeled ~43% vs actual ~30% win rate). HOME
+  // blocked in PICK_EV_FLOOR_MAP — only DRAW survives (+89.8% ROI, 6b).
+  // Blend 0.20 gives best DRAW ROI; CalibErr structurally above threshold (S2 noise).
+  UEL: new Decimal('0.20'),
+  // Backtest 2026-04-30: POL1 Brier 0.6710 (FAIL). Poisson over-predicts HOME in
+  // the balanced Polish Ekstraklasa (actual HOME win rate ~36% vs model ~41%).
+  // Blend 0.20 améliore partiellement — Brier reste ~0.662 (S3 bruitée, trop court).
+  POL1: new Decimal('0.20'),
 };
 
 export function getLeagueThreeWayEmpiricalBlendWeight(
@@ -460,6 +486,12 @@ const MODEL_SCORE_THRESHOLD_DEFAULT = new Decimal('0.60');
 const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier A — efficient markets
   PL: new Decimal('0.58'),
+  // Backtest 2026-04-30: TUR1 HOME in 0.60-0.62 range → 0W/8L (-100% ROI).
+  // Above 0.63 HOME signal recovers (5W/2L, ~+67%). Zone 0.62-0.63 is neutral
+  // on HOME (1W/1L) but contains 2 UNDER wins (score 0.620/0.621). Threshold
+  // set at 0.62 to recover those UNDER bets without reopening the toxic sub-0.62
+  // HOME population.
+  TUR1: new Decimal('0.62'),
   // Lowered 0.60 → 0.55: 730/929 fixtures (78%) were skipped — SA tactical style produces
   // max_prob 0.52-0.57 on balanced matches. Combined with HOME floor 3.00 + UNDER eliminated,
   // newly unlocked fixtures feed better-filtered picks.
@@ -604,6 +636,10 @@ export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
 //
 // Keys: "${competitionCode}|${market}|${pick}"
 const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
+  // Backtest 2026-04-30: SUI1 HOME over-confidence above EV 0.30 — EV [0.30-0.40)
+  // → 1W/3L (-45.5%), EV [0.40+] → 0W/5L (-100%). Zone [0.00-0.30) is the only
+  // profitable window (+24.5% ROI, 8 bets). Same pattern as EL1/D2/CH HOME.
+  'SUI1|ONE_X_TWO|HOME': new Decimal('0.30'),
   // Audit 2026-04-04: EL1 HOME — EV [0.15–0.25) was the only profitable bucket
   // (+4.5% ROI on 33 bets). EV > 0.25 → -32% ROI on 16 bets; EV > 0.40 → -32%
   // on 16 bets. The model is increasingly wrong as confidence rises — cap at 0.25.
@@ -640,6 +676,19 @@ const PICK_EV_SOFT_CAP_MAP: Record<string, Decimal> = {
   // overconfidence pattern to UEL AWAY (high EV, low actual win rate). EV soft cap
   // at 0.35 eliminates the overconfident segment — more targeted than a prob gate.
   'UECL|ONE_X_TWO|AWAY': new Decimal('0.35'),
+  // Backtest 2026-04-30: NOR1 HOME over-confidence above EV 0.40 — EV [0.50+]
+  // → 1W/2L (-33%). Zone [0.08-0.40) is clean (5W/0L). Cap at 0.40.
+  'NOR1|ONE_X_TWO|HOME': new Decimal('0.40'),
+  // Backtest 2026-04-30: MLS HOME over-confidence above EV 0.30 — EV [0.30-0.40)
+  // → 0W/4L (-100%), EV [0.40+] → all losses. Zone [0.20-0.30) is the only
+  // profitable window (+38% ROI, 7 bets). Cap at 0.30 to match the floor.
+  'MLS|ONE_X_TWO|HOME': new Decimal('0.30'),
+  // Backtest 2026-04-30: POL1 HOME over-confidence above EV 0.40 — EV [0.40+]
+  // → 1W/5L (-54.7%). Zone [0.25-0.40) is the only profitable window (7b, +70% ROI).
+  'POL1|ONE_X_TWO|HOME': new Decimal('0.40'),
+  // Backtest 2026-04-30: MLS BTTS NO over-confidence above EV 0.40 — EV [0.40+]
+  // → all losses. Zone [0.30-0.40) is the only profitable window (+82.5%, 4 bets).
+  'MLS|BTTS|NO': new Decimal('0.40'),
 };
 
 // Per-(competition, market, pick) EV floor — overrides the league EV threshold
@@ -821,6 +870,53 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'POR|ONE_X_TWO|DRAW': new Decimal('0.20'),
   // L1 backtest 2026-04-25: DRAW surfaced once at 3.71 odds — 0W/1L. No signal.
   'L1|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-30: TUR1 OVER_UNDER OVER → 0W/2L (-100% ROI). Insufficient
+  // data and no viable signal. Block until the UNDER direction accumulates 50+ bets.
+  'TUR1|OVER_UNDER|OVER': new Decimal('0.99'),
+  // Backtest 2026-04-30: SUI1 ONE_X_TWO DRAW → 1 bet at odds 3.90, score 0.601,
+  // lost. No pattern on 3 seasons. Block to keep focus on HOME signal.
+  'SUI1|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Backtest 2026-04-30: UCL HOME EV [0.08-0.20) → 1W/4L (-52.8%); only reliable
+  // above EV 0.20 (4W/5L, +38.3%). Floor at 0.20 eliminates the toxic low-EV zone.
+  'UCL|ONE_X_TWO|HOME': new Decimal('0.20'),
+  // Backtest 2026-04-30: UCL DRAW (1b, 0W/1L) and 74 rejected draws went 9W/65L
+  // (-28.3%). No edge anywhere — block. UNDER and UNDER_3_5 also isolated losses.
+  'UCL|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  'UCL|OVER_UNDER|UNDER': new Decimal('0.99'),
+  'UCL|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Backtest 2026-04-30: UEL HOME 3W/7L (-30%) baseline; no EV window shows edge
+  // (blend 0.30 makes it worse: 2W/7L, -47%). Signal structurally absent — block.
+  // FHW HOME (1b, 0W/1L) and OVER_HT (1b, 0W/1L) also blocked.
+  'UEL|ONE_X_TWO|HOME': new Decimal('0.99'),
+  'UEL|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  'UEL|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // Backtest 2026-04-30: UECL FHW AWAY — 1b placed (0W/1L) + 2 rejected (0W/2L).
+  // Consistent losses, no edge. Block.
+  'UECL|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-30: MLS FIRST_HALF_WINNER is structurally broken across all
+  // directions (HOME 15b 4W/11L -44%; DRAW 3b 0W/3L -100%; AWAY 1b 0W/1L -100%).
+  // No EV window or odds slice shows a viable edge. Disable all three.
+  'MLS|FIRST_HALF_WINNER|HOME': new Decimal('0.99'),
+  'MLS|FIRST_HALF_WINNER|DRAW': new Decimal('0.99'),
+  'MLS|FIRST_HALF_WINNER|AWAY': new Decimal('0.99'),
+  // Backtest 2026-04-30: MLS ONE_X_TWO HOME EV [0.00-0.20) → 2W/4L (-23.5%);
+  // EV [0.30+] → 0W/7L (-100%). Only EV [0.20-0.30) shows edge (4W/3L, +38% ROI).
+  // Floor 0.20 cuts the low-signal picks; soft cap 0.30 is applied separately.
+  'MLS|ONE_X_TWO|HOME': new Decimal('0.20'),
+  // Backtest 2026-04-30: POL1 HOME below EV 0.25 consistently negative (12b, ROI -30%).
+  // Profitable window starts at EV 0.25 (7b [0.25-0.40), 4W/3L, +70% ROI).
+  'POL1|ONE_X_TWO|HOME': new Decimal('0.25'),
+  // Backtest 2026-04-30: MLS BTTS NO EV [0.00-0.30) → -10% on 22 bets; EV [0.40+]
+  // → 0W/1L (-100%). Only EV [0.30-0.40) is profitable (3W/1L, +82.5% ROI, avg
+  // odds 2.50). Floor 0.30 and soft cap 0.40 isolate this window.
+  'MLS|BTTS|NO': new Decimal('0.30'),
+  // Backtest 2026-04-30: NOR1 AWAY (1b, 0W/1L) and OVER (1b, 0W/1L) — 39 AWAY
+  // candidates went 4W/35L (-27.8%). No edge in either direction.
+  'NOR1|ONE_X_TWO|AWAY': new Decimal('0.99'),
+  'NOR1|OVER_UNDER|OVER': new Decimal('0.99'),
+  // MLS OVER/OVER_HT: 2 bets total, 0W/2L — too sparse and negative.
+  'MLS|OVER_UNDER|OVER': new Decimal('0.99'),
+  'MLS|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
   // L1 backtest 2026-04-19: BTTS NO is the wrong side of the market (2W/6L, -23.8%),
   // while BTTS YES stays mildly positive. Remove NO and keep the lighter YES branch.
   'L1|BTTS|NO': new Decimal('0.99'),
@@ -968,6 +1064,14 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // [1.80-2.49] = 17 bets 9W/8L +20% ROI; [2.50-2.75] = 5 bets 1W/4L -47%;
   // [3.00+] = 2 bets 0W/2L -100%. Cut above 2.49 — same approach as F2 HOME.
   'MX1|ONE_X_TWO|HOME': new Decimal('2.49'),
+  // Backtest 2026-04-30: single TUR1 HOME bet at odds 3.26 (bucket 3.0-4.99) lost.
+  // All profitable HOME bets sit in 2.0-2.99. Cap to eliminate the mid/long-odds
+  // segment where model over-confidence is structural.
+  'TUR1|ONE_X_TWO|HOME': new Decimal('2.99'),
+  // Backtest 2026-04-30: SUI1 HOME bucket 3.0-4.99 → 1 bet at odds 3.00 (EV 0.885)
+  // lost. EV > 0.90 is a hard-cap signal; the inflated EV at 3.00 confirms model
+  // over-confidence. Cap at 2.99 to eliminate this segment entirely.
+  'SUI1|ONE_X_TWO|HOME': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(

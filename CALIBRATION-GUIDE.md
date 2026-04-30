@@ -85,6 +85,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/evcore
 
 on va travailler sur la calibration, backtest de ces ligues
 
-TUR1, SVN1, SWE1, CZE1, POL1, NOR1, MLS, SUI1, SRB1 et TUR2
+TUR1, TUR2, SUI1, MLS, POL1, SRB1, SVN1, SWE1, CZE1, , NOR1,
 
 on va traiter league après league
