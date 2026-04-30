@@ -90,3 +90,5 @@ catalog:
   cmdk: "^1.1.1"
   vaul: "^1.1.2"
   next-intl: "^4.9.1"
+  react-hook-form: "^7.74.0"
+  "@hookform/resolvers": "^5.2.2"

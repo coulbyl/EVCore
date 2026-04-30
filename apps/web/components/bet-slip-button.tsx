@@ -29,7 +29,6 @@ export function BetSlipButton() {
         }`}
       >
         <ReceiptText size={16} />
-        <span className="hidden sm:inline">Coupon</span>
         {hasItems && (
           <span
             className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold ${

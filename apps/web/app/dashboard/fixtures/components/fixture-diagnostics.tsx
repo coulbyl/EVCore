@@ -3,14 +3,13 @@
 import { Check, ShoppingCart } from "lucide-react";
 import {
   Badge,
-  DataTable,
+  cn,
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
   StatCard,
 } from "@evcore/ui";
-import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import {
   fixtureStatusLabel,
@@ -22,10 +21,13 @@ import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type {
   FixtureEvaluatedPickSnapshot,
-  FixtureModelFactors,
   FixtureRow,
 } from "@/domains/fixture/types/fixture";
 import { CanalBadge } from "@/components/canal-badge";
+import {
+  FixtureFactorBar,
+  type FixtureFactorDef,
+} from "@/components/fixture-factor-bar";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,36 +62,7 @@ function rejectionLabel(reason: string | undefined, t: Translator): string {
 
 // ── factor bars ───────────────────────────────────────────────────────────────
 
-function FactorBar({ label, value }: { label: string; value: number | null }) {
-  if (value === null) return null;
-  const pct = Math.min(Math.max(value, 0), 1) * 100;
-  const color =
-    pct >= 65
-      ? "var(--color-success)"
-      : pct >= 40
-        ? "var(--canal-ev)"
-        : "var(--color-destructive)";
-
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-40 shrink-0 text-[0.72rem] text-muted-foreground">
-        {label}
-      </span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct.toFixed(0)}%`, background: color }}
-        />
-      </div>
-      <span
-        className="w-9 shrink-0 text-right text-[0.72rem] font-semibold tabular-nums"
-        style={{ color }}
-      >
-        {pct.toFixed(0)}%
-      </span>
-    </div>
-  );
-}
+// shared via `@/components/fixture-factor-bar`
 
 // ── merged markets table ──────────────────────────────────────────────────────
 
@@ -146,77 +119,80 @@ function PlacePickButton({
   );
 }
 
-function makeMarketsColumns(
-  fixtureId: string,
-  alreadyInUserTicket: boolean,
-  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void,
-  fixtureStatus: string,
-  t: Translator,
-): ColumnDef<FixtureEvaluatedPickSnapshot>[] {
-  return [
-    {
-      id: "market",
-      header: t("table.market"),
-      cell: ({ row }) => (
-        <span className="font-medium text-foreground">
-          {formatCombinedPickForDisplay(row.original)}
-        </span>
-      ),
-    },
-    {
-      id: "prob",
-      header: t("table.probability"),
-      accessorFn: (row) => `${(Number(row.probability) * 100).toFixed(1)}%`,
-      meta: { align: "right" },
-    },
-    {
-      id: "odds",
-      header: t("table.odds"),
-      accessorKey: "odds",
-      meta: { align: "right" },
-    },
-    {
-      id: "ev",
-      header: t("table.value"),
-      cell: ({ row }) => {
-        const v = parseFloat(row.original.ev);
-        return (
-          <span
-            className={`tabular-nums font-semibold ${v >= 0 ? "text-success" : "text-danger"}`}
-          >
-            {formatEv(row.original.ev)}
-          </span>
-        );
-      },
-      meta: { align: "right" },
-    },
-    {
-      id: "status",
-      header: t("table.status"),
-      cell: ({ row }) =>
-        row.original.status === "viable" ? (
-          <Badge variant="success">{t("table.viable")}</Badge>
-        ) : (
-          <Badge variant="neutral">
-            {rejectionLabel(row.original.rejectionReason, t)}
+function EvaluatedPickItem({
+  snap,
+  fixtureId,
+  alreadyInUserTicket,
+  onPlace,
+  fixtureStatus,
+  t,
+}: {
+  snap: FixtureEvaluatedPickSnapshot;
+  fixtureId: string;
+  alreadyInUserTicket: boolean;
+  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
+  fixtureStatus: string;
+  t: Translator;
+}) {
+  const prob = `${(Number(snap.probability) * 100).toFixed(1)}%`;
+  const evLabel = formatEv(snap.ev);
+  const evNum = parseFloat(snap.ev);
+
+  return (
+    <div className="rounded-[1.1rem] border border-border bg-panel-strong p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {formatCombinedPickForDisplay(snap)}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+              {t("table.probability")}:{" "}
+              <span className="font-semibold text-foreground">{prob}</span>
+            </span>
+            <span className="tabular-nums">
+              {t("table.odds")}:{" "}
+              <span className="font-semibold text-foreground">{snap.odds}</span>
+            </span>
+            <span
+              className={cn(
+                "tabular-nums font-semibold",
+                !Number.isNaN(evNum) && evNum >= 0
+                  ? "text-success"
+                  : "text-danger",
+              )}
+            >
+              {evLabel}
+            </span>
+          </div>
+        </div>
+
+        {fixtureStatus === "FINISHED" ? null : (
+          <div onClick={(e) => e.stopPropagation()}>
+            <PlacePickButton
+              snap={snap}
+              fixtureId={fixtureId}
+              alreadyInUserTicket={alreadyInUserTicket}
+              onPlace={onPlace}
+              t={t}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-2">
+        {snap.status === "viable" ? (
+          <Badge variant="success" className="rounded-full">
+            {t("table.viable")}
           </Badge>
-        ),
-    },
-    {
-      id: "action",
-      header: "",
-      cell: ({ row }) =>
-        fixtureStatus === "FINISHED" ? null : (
-          <PlacePickButton
-            snap={row.original}
-            fixtureId={fixtureId}
-            alreadyInUserTicket={alreadyInUserTicket}
-            onPlace={onPlace}
-            t={t}
-          />
-        ),
-    },
-  ];
+        ) : (
+          <Badge variant="neutral" className="rounded-full">
+            {rejectionLabel(snap.rejectionReason, t)}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── main component ────────────────────────────────────────────────────────────
@@ -226,11 +202,31 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   const mr = row.modelRun;
   const score = formatScore(row.score, row.htScore);
   const { draft, addItem, open } = useBetSlip();
-  const factorDefs: { key: keyof FixtureModelFactors; label: string }[] = [
-    { key: "recentForm", label: t("factors.recentForm") },
-    { key: "xg", label: t("factors.xg") },
-    { key: "performanceDomExt", label: t("factors.performanceDomExt") },
-    { key: "volatiliteLigue", label: t("factors.volatiliteLigue") },
+  const factorDefs: FixtureFactorDef[] = [
+    {
+      key: "recentForm",
+      label: t("factors.recentForm"),
+      kind: "directional",
+      hint: t("factorHints.recentForm"),
+    },
+    {
+      key: "xg",
+      label: t("factors.xg"),
+      kind: "directional",
+      hint: t("factorHints.xg"),
+    },
+    {
+      key: "performanceDomExt",
+      label: t("factors.performanceDomExt"),
+      kind: "directional",
+      hint: t("factorHints.performanceDomExt"),
+    },
+    {
+      key: "volatiliteLigue",
+      label: t("factors.volatiliteLigue"),
+      kind: "absolute",
+      hint: t("factorHints.volatiliteLigue"),
+    },
   ];
 
   function handlePlacePick(snap: FixtureEvaluatedPickSnapshot) {
@@ -283,13 +279,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   }
 
   const alreadyInUserTicket = false;
-  const marketsColumns = makeMarketsColumns(
-    row.fixtureId,
-    alreadyInUserTicket,
-    handlePlacePick,
-    row.status,
-    t,
-  );
 
   const hasFactors =
     mr.factors && Object.values(mr.factors).some((v) => v !== null);
@@ -359,10 +348,12 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
           </p>
           <div className="flex flex-col gap-2">
             {factorDefs.map((f) => (
-              <FactorBar
+              <FixtureFactorBar
                 key={f.key}
                 label={f.label}
                 value={mr.factors![f.key]}
+                kind={f.kind}
+                hint={f.hint}
               />
             ))}
           </div>
@@ -463,7 +454,22 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
               )}
             </span>
           </div>
-          <DataTable columns={marketsColumns} data={mr.evaluatedPicks} />
+
+          <div className="max-h-[min(40dvh,520px)] min-h-0 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2">
+              {mr.evaluatedPicks.map((snap) => (
+                <EvaluatedPickItem
+                  key={`${snap.market}:${snap.pick}:${snap.comboMarket ?? ""}:${snap.comboPick ?? ""}`}
+                  snap={snap}
+                  fixtureId={row.fixtureId}
+                  alreadyInUserTicket={alreadyInUserTicket}
+                  onPlace={handlePlacePick}
+                  fixtureStatus={row.status}
+                  t={t}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

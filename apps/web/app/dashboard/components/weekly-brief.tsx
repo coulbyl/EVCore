@@ -14,7 +14,9 @@ export function WeeklyBrief() {
   if (isLoading || !brief) return null;
 
   const narrative =
-    (brief.payload?.narrative as string | undefined) ?? brief.body.split("\n")[0] ?? brief.title;
+    (brief.payload?.narrative as string | undefined) ??
+    brief.body.split("\n")[0] ??
+    brief.title;
 
   const roiOneXTwo = brief.payload?.roiOneXTwo;
   const positive = roiOneXTwo !== undefined ? roiOneXTwo >= 0 : false;
@@ -37,8 +39,7 @@ export function WeeklyBrief() {
               positive ? "text-success" : "text-danger"
             }`}
           >
-            ROI 1X2 :{" "}
-            {roiOneXTwo >= 0 ? "+" : ""}
+            ROI 1X2 : {roiOneXTwo >= 0 ? "+" : ""}
             {(roiOneXTwo * 100).toFixed(1)} %
           </p>
         )}

@@ -50,8 +50,8 @@ export function StatCard({
         </p>
         <p
           className={cn(
-            "mt-3 font-semibold tracking-tight text-foreground",
-            compact ? "mt-1 text-[1.8rem] leading-none" : "text-[2.35rem]",
+            "mt-3 break-words font-medium text-foreground",
+            compact ? "mt-1 text-xs" : "text-lg",
           )}
         >
           {value}

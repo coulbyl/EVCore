@@ -18,6 +18,7 @@ import { BetModule } from './modules/bet/bet.module';
 import { BankrollModule } from './modules/bankroll/bankroll.module';
 import { PredictionModule } from './modules/prediction/prediction.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
+import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { GamificationModule } from './modules/gamification/gamification.module';
     DashboardModule,
     AuditModule,
     GamificationModule,
+    AdminUsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

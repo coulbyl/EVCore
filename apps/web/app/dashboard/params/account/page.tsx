@@ -29,9 +29,7 @@ export default async function AccountSettingsPage() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Hero — avatar + identité + infos compte */}
-          {session ? (
-            <ProfileHeroSection user={session.user} />
-          ) : null}
+          {session ? <ProfileHeroSection /> : null}
 
           {/* Badges de progression */}
           <div className="lg:col-span-2">

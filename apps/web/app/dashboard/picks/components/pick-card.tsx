@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import { CanalBadge } from "@/components/canal-badge";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
@@ -10,6 +11,10 @@ import type {
   FixtureRow,
   FixtureModelFactors,
 } from "@/domains/fixture/types/fixture";
+import {
+  FixtureFactorBar,
+  type FixtureFactorDef,
+} from "@/components/fixture-factor-bar";
 import { AddToSlipInline } from "./add-to-slip-inline";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -57,46 +62,7 @@ function ResultBadge({
 
 // ── factor bars ──────────────────────────────────────────────────────────────
 
-const FACTOR_DEFS: {
-  key: keyof FixtureModelFactors;
-  label: string;
-}[] = [
-  { key: "recentForm", label: "Forme récente" },
-  { key: "xg", label: "Expected Goals (xG)" },
-  { key: "performanceDomExt", label: "Avantage dom./ext." },
-  { key: "volatiliteLigue", label: "Stabilité de la ligue" },
-];
-
-function FactorBar({ label, value }: { label: string; value: number | null }) {
-  if (value === null) return null;
-  const pct = Math.min(Math.max(value, 0), 1) * 100;
-  const color =
-    pct >= 65
-      ? "var(--color-success)"
-      : pct >= 40
-        ? "var(--canal-ev)"
-        : "var(--color-destructive)";
-
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-40 shrink-0 text-[0.72rem] text-muted-foreground">
-        {label}
-      </span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct.toFixed(0)}%`, background: color }}
-        />
-      </div>
-      <span
-        className="w-9 shrink-0 text-right text-[0.72rem] font-semibold tabular-nums"
-        style={{ color }}
-      >
-        {pct.toFixed(0)}%
-      </span>
-    </div>
-  );
-}
+// shared via `@/components/fixture-factor-bar`
 
 function WhySection({
   factors,
@@ -107,6 +73,34 @@ function WhySection({
   probEstimated: string | null;
   odds: string | null;
 }) {
+  const t = useTranslations("fixtureDiagnostics");
+  const factorDefs: FixtureFactorDef[] = [
+    {
+      key: "recentForm",
+      label: t("factors.recentForm"),
+      kind: "directional",
+      hint: t("factorHints.recentForm"),
+    },
+    {
+      key: "xg",
+      label: t("factors.xg"),
+      kind: "directional",
+      hint: t("factorHints.xg"),
+    },
+    {
+      key: "performanceDomExt",
+      label: t("factors.performanceDomExt"),
+      kind: "directional",
+      hint: t("factorHints.performanceDomExt"),
+    },
+    {
+      key: "volatiliteLigue",
+      label: t("factors.volatiliteLigue"),
+      kind: "absolute",
+      hint: t("factorHints.volatiliteLigue"),
+    },
+  ];
+
   const hasFactors = factors && Object.values(factors).some((v) => v !== null);
 
   return (
@@ -116,8 +110,14 @@ function WhySection({
       </p>
       {hasFactors ? (
         <div className="flex flex-col gap-2">
-          {FACTOR_DEFS.map((f) => (
-            <FactorBar key={f.key} label={f.label} value={factors[f.key]} />
+          {factorDefs.map((f) => (
+            <FixtureFactorBar
+              key={f.key}
+              label={f.label}
+              value={factors[f.key]}
+              kind={f.kind}
+              hint={f.hint}
+            />
           ))}
         </div>
       ) : (

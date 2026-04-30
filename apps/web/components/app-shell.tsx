@@ -10,15 +10,10 @@ import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
 import { UserAvatar } from "./user-avatar";
-import type { AuthSessionUser } from "@/domains/auth/types/auth";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 
-export function AppShell({
-  children,
-  currentUser,
-}: {
-  children: React.ReactNode;
-  currentUser: AuthSessionUser;
-}) {
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
   const isAdmin = currentUser.role === "ADMIN";
@@ -57,6 +52,13 @@ export function AppShell({
           : null,
         isAdmin
           ? {
+              label: tNav("users"),
+              href: "/dashboard/users",
+              active: pathname.startsWith("/dashboard/users"),
+            }
+          : null,
+        isAdmin
+          ? {
               label: tNav("glossary"),
               href: "/dashboard/glossaire",
               active: pathname === "/dashboard/glossaire",
@@ -67,7 +69,9 @@ export function AppShell({
   );
 
   const mobileNavItems = navItems.filter((item) =>
-    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(item.href),
+    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(
+      item.href,
+    ),
   );
 
   return (

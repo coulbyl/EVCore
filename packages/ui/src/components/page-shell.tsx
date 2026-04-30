@@ -110,7 +110,7 @@ export function PageShell({
         ) : null}
       </Sidebar>
 
-      <SidebarInset className="min-h-screen overflow-hidden bg-transparent">
+      <SidebarInset className="h-dvh overflow-hidden bg-transparent">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-panel-strong/90 backdrop-blur supports-backdrop-filter:bg-panel-strong/75">
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">

@@ -279,27 +279,22 @@ export function BetSlipListPageClient() {
 
   const filter = (
     <div className="shrink-0 flex flex-col gap-4 rounded-[1.1rem] border border-border bg-panel p-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard
-          compact
           tone="neutral"
           label="Misé"
-          value={formatAmount(periodSummary.stake, true)}
+          value={formatAmount(periodSummary.stake)}
         />
         <StatCard
-          compact
           tone={periodSummary.net >= 0 ? "success" : "danger"}
           label="Net réglé"
-          value={formatSigned(periodSummary.net, true)}
+          value={formatSigned(periodSummary.net)}
         />
-        <div className="col-span-2 sm:col-span-1">
-          <StatCard
-            compact
-            tone="warning"
-            label="En attente"
-            value={String(periodSummary.pending)}
-          />
-        </div>
+        <StatCard
+          tone="warning"
+          label="En attente"
+          value={String(periodSummary.pending)}
+        />
       </div>
       <FilterBar
         filters={SLIP_FILTERS}

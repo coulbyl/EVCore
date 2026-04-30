@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
-import { Mail, AtSign, ShieldCheck } from "lucide-react";
+import { Mail, AtSign, ShieldCheck, FingerprintPattern } from "lucide-react";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
+import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
 import {
-  FREE_AVATARS,
-  LOCKED_AVATARS,
-  AVATAR_OPTIONS,
-} from "@/lib/avatars";
-import type { AuthSessionUser } from "@/domains/auth/types/auth";
+  useCurrentUser,
+  useSetCurrentUser,
+} from "@/domains/auth/context/current-user-context";
 
 const BADGE_NAME: Record<string, string> = {
   vol_50: "50 paris réglés",
@@ -37,7 +36,7 @@ function InfoRow({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Icon size={13} className="shrink-0 text-muted-foreground" />
-      <span className="w-16 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <span className="truncate text-sm text-foreground">{value}</span>
@@ -45,13 +44,21 @@ function InfoRow({
   );
 }
 
-export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
-  const [selected, setSelected] = useState<string | null>(user.avatarUrl);
+export function ProfileHeroSection() {
+  const currentUser = useCurrentUser();
+  const setCurrentUser = useSetCurrentUser();
+  const [selected, setSelected] = useState<string | null>(
+    currentUser.avatarUrl,
+  );
   const [saving, setSaving] = useState(false);
   const { data: badges } = useMyBadges();
   const unlockedBadges = new Set(
     (badges ?? []).filter((b) => b.unlockedAt !== null).map((b) => b.code),
   );
+
+  useEffect(() => {
+    setSelected(currentUser.avatarUrl);
+  }, [currentUser.avatarUrl]);
 
   async function handleSelect(avatarUrl: string) {
     if (avatarUrl === selected || saving) return;
@@ -63,6 +70,7 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
         body: { avatarUrl },
         fallbackErrorMessage: "Impossible de sauvegarder l'avatar.",
       });
+      setCurrentUser({ ...currentUser, avatarUrl });
     } finally {
       setSaving(false);
     }
@@ -76,10 +84,12 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
       <div className="grid gap-6 p-5 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-7">
         {/* ── Left: avatar + picker ── */}
         <div className="flex flex-col items-center gap-4 sm:items-start">
-          <div className={`transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
+          <div
+            className={`transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}
+          >
             <UserAvatar
               avatarUrl={selected}
-              username={user.username}
+              username={currentUser.username}
               size={80}
             />
           </div>
@@ -151,7 +161,9 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
                     <Tooltip key={avatar.url}>
                       <TooltipTrigger asChild>{btn}</TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        Requiert : {BADGE_NAME[avatar.requiredBadge] ?? avatar.requiredBadge}
+                        Requiert :{" "}
+                        {BADGE_NAME[avatar.requiredBadge] ??
+                          avatar.requiredBadge}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -167,27 +179,34 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
           {/* Identity */}
           <div>
             <h2 className="text-xl font-bold tracking-tight text-foreground">
-              {user.fullName}
+              {currentUser.fullName}
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                @{user.username}
+                @{currentUser.username}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-accent/12 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-accent">
                 <ShieldCheck size={10} />
-                {ROLE_LABEL[user.role] ?? user.role}
+                {ROLE_LABEL[currentUser.role] ?? currentUser.role}
               </span>
             </div>
           </div>
 
           {/* Info rows */}
           <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
-            <InfoRow icon={Mail} label="Email" value={user.email} />
+            <InfoRow icon={Mail} label="Email" value={currentUser.email} />
             <InfoRow
               icon={AtSign}
               label="Identifiant"
-              value={`@${user.username}`}
+              value={`@${currentUser.username}`}
             />
+            {currentUser.bio && (
+              <InfoRow
+                icon={FingerprintPattern}
+                label="Biographie"
+                value={currentUser.bio}
+              />
+            )}
           </div>
 
           {/* Password */}

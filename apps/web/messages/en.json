@@ -20,6 +20,7 @@
     "bankroll": "Bankroll",
     "betSlips": "Bet slips",
     "audit": "Audit",
+    "users": "Users",
     "glossary": "Glossary",
     "settings": "Settings",
     "help": "Help"
@@ -304,9 +305,15 @@
     },
     "factors": {
       "recentForm": "Recent form",
-      "xg": "Expected Goals (xG)",
+      "xg": "Chances (xG)",
       "performanceDomExt": "Home/away edge",
       "volatiliteLigue": "League stability"
+    },
+    "factorHints": {
+      "recentForm": "Who’s in better form? 50% = balanced. <50% favors away, >50% favors home.",
+      "xg": "Who creates more chances? (xG) 50% = balanced. <50% favors away, >50% favors home.",
+      "performanceDomExt": "Home vs away edge. 50% = balanced. <50% favors away, >50% favors home.",
+      "volatiliteLigue": "League unpredictability: higher = more random (not a home/away edge)."
     },
     "actions": {
       "alreadyInSlip": "Already in slip",

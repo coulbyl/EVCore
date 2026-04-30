@@ -49,7 +49,7 @@ export function BankrollPreferencesSection({
               <label
                 key={option.value}
                 htmlFor={`currency-${option.value}`}
-                className="flex cursor-pointer items-center justify-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/10"
+                className="relative flex cursor-pointer items-center justify-center rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/10"
               >
                 <RadioGroupItem
                   id={`currency-${option.value}`}

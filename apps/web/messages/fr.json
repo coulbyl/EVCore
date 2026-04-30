@@ -20,6 +20,7 @@
     "bankroll": "Portefeuille",
     "betSlips": "Coupons",
     "audit": "Audit",
+    "users": "Utilisateurs",
     "glossary": "Glossaire",
     "settings": "Paramètres",
     "help": "Aide"
@@ -304,9 +305,15 @@
     },
     "factors": {
       "recentForm": "Forme récente",
-      "xg": "Expected Goals (xG)",
+      "xg": "Occasions (xG)",
       "performanceDomExt": "Avantage dom./ext.",
       "volatiliteLigue": "Stabilité de la ligue"
+    },
+    "factorHints": {
+      "recentForm": "Qui est le plus en forme ? 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
+      "xg": "Qui se crée le plus d’occasions ? (xG) 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
+      "performanceDomExt": "Avantage à domicile vs à l’extérieur. 50% = équilibre. <50% avantage extérieur, >50% avantage domicile.",
+      "volatiliteLigue": "Imprévisibilité de la ligue : plus c’est haut, plus c’est aléatoire (pas un avantage dom./ext.)."
     },
     "actions": {
       "alreadyInSlip": "Déjà dans le coupon",

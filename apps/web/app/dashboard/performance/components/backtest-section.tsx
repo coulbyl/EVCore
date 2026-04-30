@@ -37,6 +37,7 @@ import {
   formatUnits,
   toNumber,
 } from "./formatters";
+import { useIsMobile } from "@evcore/ui/hooks/use-mobile";
 
 const STORAGE_KEY_EV = "evcore:performance-backtest-result";
 const STORAGE_KEY_SV = "evcore:performance-backtest-sv-result";
@@ -187,6 +188,7 @@ function EvTabContent({
   common: ReturnType<typeof useTranslations>;
 }) {
   const mutation = useRunBacktest();
+  const isMobile = useIsMobile();
   const [storedResponse, setStoredResponse] = useState<BacktestResponse | null>(
     null,
   );
@@ -331,25 +333,25 @@ function EvTabContent({
               label={t("roiSimulated")}
               value={formatBacktestPercent(toNumber(report.roiSimulated))}
               tone="accent"
-              compact
+              compact={isMobile}
             />
             <StatCard
               label={t("stats.brierScore")}
               value={formatDecimal(report.brierScore, 3)}
               tone="warning"
-              compact
+              compact={isMobile}
             />
             <StatCard
               label={t("maxDrawdown")}
               value={formatUnits(report.maxDrawdownSimulated)}
               tone="danger"
-              compact
+              compact={isMobile}
             />
             <StatCard
               label={t("stats.analyzedBets")}
               value={formatInteger(report.analyzedCount)}
               tone="neutral"
-              compact
+              compact={isMobile}
             />
           </div>
 
