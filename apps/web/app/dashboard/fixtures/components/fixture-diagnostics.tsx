@@ -4,14 +4,12 @@ import { Check, ShoppingCart } from "lucide-react";
 import {
   Badge,
   cn,
-  DataTable,
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
   StatCard,
 } from "@evcore/ui";
-import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import {
   fixtureStatusLabel,
@@ -197,79 +195,6 @@ function EvaluatedPickItem({
   );
 }
 
-function makeMarketsColumns(
-  fixtureId: string,
-  alreadyInUserTicket: boolean,
-  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void,
-  fixtureStatus: string,
-  t: Translator,
-): ColumnDef<FixtureEvaluatedPickSnapshot>[] {
-  return [
-    {
-      id: "market",
-      header: t("table.market"),
-      cell: ({ row }) => (
-        <span className="font-medium text-foreground">
-          {formatCombinedPickForDisplay(row.original)}
-        </span>
-      ),
-    },
-    {
-      id: "prob",
-      header: t("table.probability"),
-      accessorFn: (row) => `${(Number(row.probability) * 100).toFixed(1)}%`,
-      meta: { align: "right" },
-    },
-    {
-      id: "odds",
-      header: t("table.odds"),
-      accessorKey: "odds",
-      meta: { align: "right" },
-    },
-    {
-      id: "ev",
-      header: t("table.value"),
-      cell: ({ row }) => {
-        const v = parseFloat(row.original.ev);
-        return (
-          <span
-            className={`tabular-nums font-semibold ${v >= 0 ? "text-success" : "text-danger"}`}
-          >
-            {formatEv(row.original.ev)}
-          </span>
-        );
-      },
-      meta: { align: "right" },
-    },
-    {
-      id: "status",
-      header: t("table.status"),
-      cell: ({ row }) =>
-        row.original.status === "viable" ? (
-          <Badge variant="success">{t("table.viable")}</Badge>
-        ) : (
-          <Badge variant="neutral">
-            {rejectionLabel(row.original.rejectionReason, t)}
-          </Badge>
-        ),
-    },
-    {
-      id: "action",
-      header: "",
-      cell: ({ row }) =>
-        fixtureStatus === "FINISHED" ? null : (
-          <PlacePickButton
-            snap={row.original}
-            fixtureId={fixtureId}
-            alreadyInUserTicket={alreadyInUserTicket}
-            onPlace={onPlace}
-            t={t}
-          />
-        ),
-    },
-  ];
-}
-
 // ── main component ────────────────────────────────────────────────────────────
 
 export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
@@ -354,13 +279,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
   }
 
   const alreadyInUserTicket = false;
-  const marketsColumns = makeMarketsColumns(
-    row.fixtureId,
-    alreadyInUserTicket,
-    handlePlacePick,
-    row.status,
-    t,
-  );
 
   const hasFactors =
     mr.factors && Object.values(mr.factors).some((v) => v !== null);
@@ -537,21 +455,21 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
             </span>
           </div>
 
-          <DataTable
-            columns={marketsColumns}
-            data={mr.evaluatedPicks}
-            className="max-h-[55dvh] min-h-0 overflow-y-auto"
-            mobileCard={(snap) => (
-              <EvaluatedPickItem
-                snap={snap}
-                fixtureId={row.fixtureId}
-                alreadyInUserTicket={alreadyInUserTicket}
-                onPlace={handlePlacePick}
-                fixtureStatus={row.status}
-                t={t}
-              />
-            )}
-          />
+          <div className="max-h-[min(40dvh,520px)] min-h-0 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2">
+              {mr.evaluatedPicks.map((snap) => (
+                <EvaluatedPickItem
+                  key={`${snap.market}:${snap.pick}:${snap.comboMarket ?? ""}:${snap.comboPick ?? ""}`}
+                  snap={snap}
+                  fixtureId={row.fixtureId}
+                  alreadyInUserTicket={alreadyInUserTicket}
+                  onPlace={handlePlacePick}
+                  fixtureStatus={row.status}
+                  t={t}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

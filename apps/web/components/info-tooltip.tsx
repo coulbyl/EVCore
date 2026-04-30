@@ -46,7 +46,7 @@ export function InfoTooltip({
           <p className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {label}
           </p>
-          <p className="text-sm leading-6 text-foreground">{description}</p>
+          <p className="text-sm text-foreground">{description}</p>
           <HoverCard.Arrow className="fill-panel" />
         </HoverCard.Content>
       </HoverCard.Portal>

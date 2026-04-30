@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Drawer } from "vaul";
 import { ShoppingCart, Check, ChevronRight } from "lucide-react";
-import { Badge, DataTable, type ColumnDef } from "@evcore/ui";
+import {
+  Badge,
+  DataTable,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  type ColumnDef,
+} from "@evcore/ui";
 import { SettleFixtureDialog } from "@/components/settle-fixture-dialog";
 import { formatScore, formatKickoff } from "@/domains/fixture/helpers/fixture";
 import {
@@ -724,26 +730,27 @@ export function FixturesTable({
         </p>
       )}
 
-      <Drawer.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 z-40 bg-sidebar/45 backdrop-blur-[2px]" />
-          <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-[1.6rem] bg-panel-strong focus:outline-none sm:inset-y-3 sm:right-3 sm:left-auto sm:w-[min(760px,calc(100vw-1.5rem))] sm:max-h-none sm:rounded-[1.6rem] sm:border sm:border-border sm:shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
-            <Drawer.Title className="sr-only">Diagnostic fixture</Drawer.Title>
-            <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" />
-            <div className="overflow-y-auto p-4 pb-10 sm:p-5">
-              {selectedRow ? (
-                <FixtureDiagnostics row={selectedRow} />
-              ) : (
-                <div className="flex min-h-80 items-center justify-center rounded-[1.7rem] border border-border bg-panel p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Sélectionnez un match pour voir le diagnostic.
-                  </p>
-                </div>
-              )}
-            </div>
-          </Drawer.Content>
-        </Drawer.Portal>
-      </Drawer.Root>
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="z-50 flex max-h-[92dvh] flex-col rounded-t-[1.6rem] border-t border-border bg-panel-strong focus:outline-none sm:inset-y-3 sm:right-3 sm:left-auto sm:bottom-auto sm:w-[min(760px,calc(100vw-1.5rem))] sm:max-h-none sm:rounded-[1.6rem] sm:border sm:shadow-[0_24px_80px_rgba(15,23,42,0.18)] sm:[left:auto] sm:[right:0.75rem]"
+        >
+          <SheetTitle className="sr-only">Diagnostic fixture</SheetTitle>
+          <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border sm:hidden" />
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10 sm:p-5">
+            {selectedRow ? (
+              <FixtureDiagnostics row={selectedRow} />
+            ) : (
+              <div className="flex min-h-80 items-center justify-center rounded-[1.7rem] border border-border bg-panel p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez un match pour voir le diagnostic.
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
