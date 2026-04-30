@@ -6,6 +6,7 @@ import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session"
 import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
 import { redirect } from "next/navigation";
+import { CurrentUserProvider } from "@/domains/auth/context/current-user-context";
 
 export default async function DashboardLayout({
   children,
@@ -24,7 +25,9 @@ export default async function DashboardLayout({
   return (
     <CurrencyProvider initialCurrency={initialCurrency}>
       <BetSlipProvider>
-        <AppShell currentUser={session.user}>{children}</AppShell>
+        <CurrentUserProvider initialUser={session.user}>
+          <AppShell>{children}</AppShell>
+        </CurrentUserProvider>
         <BetSlipDrawer />
         <PwaInstallBanner />
       </BetSlipProvider>

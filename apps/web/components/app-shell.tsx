@@ -10,15 +10,10 @@ import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
 import { UserAvatar } from "./user-avatar";
-import type { AuthSessionUser } from "@/domains/auth/types/auth";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 
-export function AppShell({
-  children,
-  currentUser,
-}: {
-  children: React.ReactNode;
-  currentUser: AuthSessionUser;
-}) {
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
   const isAdmin = currentUser.role === "ADMIN";

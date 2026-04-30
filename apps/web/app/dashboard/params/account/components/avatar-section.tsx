@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { AVATAR_OPTIONS, FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
+import {
+  useCurrentUser,
+  useSetCurrentUser,
+} from "@/domains/auth/context/current-user-context";
 import { SettingsSectionCard } from "./settings-section-card";
 
 const BADGE_NAME: Record<string, string> = {
@@ -22,6 +27,9 @@ export function AvatarSection({
   currentAvatarUrl: string | null;
   username: string;
 }) {
+  const router = useRouter();
+  const currentUser = useCurrentUser();
+  const setCurrentUser = useSetCurrentUser();
   const [selected, setSelected] = useState<string | null>(currentAvatarUrl);
   const [saving, setSaving] = useState(false);
   const { data: badges } = useMyBadges();
@@ -39,6 +47,8 @@ export function AvatarSection({
         body: { avatarUrl },
         fallbackErrorMessage: "Impossible de sauvegarder l'avatar.",
       });
+      setCurrentUser({ ...currentUser, avatarUrl });
+      router.refresh();
     } finally {
       setSaving(false);
     }
