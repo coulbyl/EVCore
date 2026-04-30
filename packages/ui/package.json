@@ -38,17 +38,20 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@tanstack/react-table": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "@tanstack/react-table": "catalog:",
     "cmdk": "catalog:",
-    "next-themes": "catalog:",
     "date-fns": "catalog:",
     "lucide-react": "catalog:",
+    "next-themes": "catalog:",
     "radix-ui": "^1.4.3",
     "react": "catalog:",
     "react-day-picker": "catalog:",
     "react-dom": "catalog:",
-    "tailwind-merge": "^3.3.1"
+    "react-hook-form": "catalog:",
+    "tailwind-merge": "^3.3.1",
+    "zod": "catalog:"
   }
 }
