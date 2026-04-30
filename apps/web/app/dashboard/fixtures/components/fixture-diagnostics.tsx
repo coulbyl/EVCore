@@ -3,6 +3,7 @@
 import { Check, ShoppingCart } from "lucide-react";
 import {
   Badge,
+  cn,
   DataTable,
   Empty,
   EmptyDescription,
@@ -117,6 +118,82 @@ function PlacePickButton({
     >
       {inSlip ? <Check size={13} /> : <ShoppingCart size={13} />}
     </button>
+  );
+}
+
+function EvaluatedPickItem({
+  snap,
+  fixtureId,
+  alreadyInUserTicket,
+  onPlace,
+  fixtureStatus,
+  t,
+}: {
+  snap: FixtureEvaluatedPickSnapshot;
+  fixtureId: string;
+  alreadyInUserTicket: boolean;
+  onPlace: (snap: FixtureEvaluatedPickSnapshot) => void;
+  fixtureStatus: string;
+  t: Translator;
+}) {
+  const prob = `${(Number(snap.probability) * 100).toFixed(1)}%`;
+  const evLabel = formatEv(snap.ev);
+  const evNum = parseFloat(snap.ev);
+
+  return (
+    <div className="rounded-[1.1rem] border border-border bg-panel-strong p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {formatCombinedPickForDisplay(snap)}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+              {t("table.probability")}:{" "}
+              <span className="font-semibold text-foreground">{prob}</span>
+            </span>
+            <span className="tabular-nums">
+              {t("table.odds")}:{" "}
+              <span className="font-semibold text-foreground">{snap.odds}</span>
+            </span>
+            <span
+              className={cn(
+                "tabular-nums font-semibold",
+                !Number.isNaN(evNum) && evNum >= 0
+                  ? "text-success"
+                  : "text-danger",
+              )}
+            >
+              {evLabel}
+            </span>
+          </div>
+        </div>
+
+        {fixtureStatus === "FINISHED" ? null : (
+          <div onClick={(e) => e.stopPropagation()}>
+            <PlacePickButton
+              snap={snap}
+              fixtureId={fixtureId}
+              alreadyInUserTicket={alreadyInUserTicket}
+              onPlace={onPlace}
+              t={t}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-2">
+        {snap.status === "viable" ? (
+          <Badge variant="success" className="rounded-full">
+            {t("table.viable")}
+          </Badge>
+        ) : (
+          <Badge variant="neutral" className="rounded-full">
+            {rejectionLabel(snap.rejectionReason, t)}
+          </Badge>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -459,7 +536,22 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
               )}
             </span>
           </div>
-          <DataTable columns={marketsColumns} data={mr.evaluatedPicks} />
+
+          <DataTable
+            columns={marketsColumns}
+            data={mr.evaluatedPicks}
+            className="max-h-[55dvh] min-h-0 overflow-y-auto"
+            mobileCard={(snap) => (
+              <EvaluatedPickItem
+                snap={snap}
+                fixtureId={row.fixtureId}
+                alreadyInUserTicket={alreadyInUserTicket}
+                onPlace={handlePlacePick}
+                fixtureStatus={row.status}
+                t={t}
+              />
+            )}
+          />
         </div>
       )}
     </div>
