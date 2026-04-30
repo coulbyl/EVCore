@@ -439,7 +439,8 @@ const BADGES = [
   {
     code: "vol_300",
     name: "Maître",
-    description: "300 paris réglés — données suffisantes pour le modèle long terme.",
+    description:
+      "300 paris réglés — données suffisantes pour le modèle long terme.",
   },
   {
     code: "streak_5",

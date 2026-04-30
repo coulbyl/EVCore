@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
-import { Mail, AtSign, ShieldCheck } from "lucide-react";
+import { Mail, AtSign, ShieldCheck, FingerprintPattern } from "lucide-react";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
-import {
-  FREE_AVATARS,
-  LOCKED_AVATARS,
-  AVATAR_OPTIONS,
-} from "@/lib/avatars";
+import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 
 const BADGE_NAME: Record<string, string> = {
@@ -37,7 +33,7 @@ function InfoRow({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Icon size={13} className="shrink-0 text-muted-foreground" />
-      <span className="w-16 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <span className="truncate text-sm text-foreground">{value}</span>
@@ -76,7 +72,9 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
       <div className="grid gap-6 p-5 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-7">
         {/* ── Left: avatar + picker ── */}
         <div className="flex flex-col items-center gap-4 sm:items-start">
-          <div className={`transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}>
+          <div
+            className={`transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}
+          >
             <UserAvatar
               avatarUrl={selected}
               username={user.username}
@@ -151,7 +149,9 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
                     <Tooltip key={avatar.url}>
                       <TooltipTrigger asChild>{btn}</TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        Requiert : {BADGE_NAME[avatar.requiredBadge] ?? avatar.requiredBadge}
+                        Requiert :{" "}
+                        {BADGE_NAME[avatar.requiredBadge] ??
+                          avatar.requiredBadge}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -188,6 +188,13 @@ export function ProfileHeroSection({ user }: { user: AuthSessionUser }) {
               label="Identifiant"
               value={`@${user.username}`}
             />
+            {user.bio && (
+              <InfoRow
+                icon={FingerprintPattern}
+                label="Biographie"
+                value={user.bio}
+              />
+            )}
           </div>
 
           {/* Password */}

@@ -16,6 +16,8 @@ import {
   formatCombinedPickForDisplay,
   formatMarketForDisplay,
 } from "@/helpers/fixture";
+import { useCurrencyFormat } from "@/providers/currency-provider";
+import { Amount } from "./amount";
 
 function StakeInput({
   value,
@@ -52,6 +54,7 @@ function DraftItemRow({
   onRemove: () => void;
   onStakeChange: (v: string) => void;
 }) {
+  const { formatAmount } = useCurrencyFormat();
   const odds = item.odds ? Number.parseFloat(item.odds) : null;
   const stake = item.stakeOverride ?? unitStake;
 
@@ -107,7 +110,7 @@ function DraftItemRow({
             <span>Mise spécifique</span>
             {odds !== null && Number.isFinite(odds) ? (
               <span className="ml-2 tabular-nums">
-                Gain pot. {(stake * odds).toLocaleString("fr-FR")} u
+                Gain pot. {formatAmount(stake * odds)}
               </span>
             ) : null}
           </div>
@@ -236,9 +239,7 @@ export function BetSlipDrawer() {
               </p>
               <p className="mt-2 text-xs font-semibold text-foreground">
                 Solde disponible :{" "}
-                <span className="tabular-nums text-foreground">
-                  {bankroll.toLocaleString("fr-FR")} u
-                </span>
+                <Amount value={bankroll} className="text-foreground" />
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -359,7 +360,7 @@ export function BetSlipDrawer() {
                 <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/20 bg-warning/12 px-3 py-2 text-xs font-medium text-warning">
                   <AlertCircle size={13} />
                   Solde insuffisant : vous voulez miser{" "}
-                  {totalStake.toLocaleString("fr-FR")} u.
+                  <Amount value={totalStake} className="text-warning" />.
                 </div>
               )}
               <div className="mb-3 flex items-center justify-between text-xs">
@@ -378,18 +379,20 @@ export function BetSlipDrawer() {
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Solde disponible</span>
-                <span className="font-semibold tabular-nums text-foreground">
-                  {bankroll.toLocaleString("fr-FR")}
-                </span>
+                <Amount
+                  value={bankroll}
+                  className="font-semibold text-foreground"
+                />
               </div>
               <div className="mb-4 flex items-center justify-between text-xs">
                 <span className="font-semibold text-foreground">
                   Mise totale ({totalItems} sélection{totalItems > 1 ? "s" : ""}
                   )
                 </span>
-                <span className="font-bold tabular-nums text-foreground">
-                  {totalStake.toLocaleString("fr-FR")}
-                </span>
+                <Amount
+                  value={totalStake}
+                  className="font-bold text-foreground"
+                />
               </div>
               {isCombo ? (
                 <div className="mb-4 flex items-center justify-between text-xs">
@@ -405,9 +408,10 @@ export function BetSlipDrawer() {
                 <span className="font-semibold text-foreground">
                   Gain potentiel
                 </span>
-                <span className="font-bold tabular-nums text-success">
-                  {potentialReturn.toLocaleString("fr-FR")} u
-                </span>
+                <Amount
+                  value={potentialReturn}
+                  className="font-bold text-success"
+                />
               </div>
               <button
                 type="button"

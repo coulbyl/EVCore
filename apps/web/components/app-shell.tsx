@@ -67,7 +67,9 @@ export function AppShell({
   );
 
   const mobileNavItems = navItems.filter((item) =>
-    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(item.href),
+    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(
+      item.href,
+    ),
   );
 
   return (

@@ -691,7 +691,7 @@ export function FixturesTable({
   }
 
   return (
-    <div className="h-full lg:flex lg:min-h-0 lg:flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <DataTable
         columns={columns}
         data={rows}
@@ -715,7 +715,7 @@ export function FixturesTable({
           />
         )}
         pagination={{ pageSize: 25, pageSizeOptions: [10, 25, 50] }}
-        className="lg:flex-1 lg:overflow-y-auto"
+        className="flex-1"
       />
 
       {rows.length > 0 && (

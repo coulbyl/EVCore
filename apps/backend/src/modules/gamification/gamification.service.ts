@@ -76,7 +76,11 @@ export class GamificationService {
     );
   }
 
-  async checkBrierBadge(userId: string, brierScore: number, predCount: number): Promise<void> {
+  async checkBrierBadge(
+    userId: string,
+    brierScore: number,
+    predCount: number,
+  ): Promise<void> {
     if (predCount >= 50 && brierScore < 0.2) {
       await this.awardBadge(userId, 'calibre');
     }

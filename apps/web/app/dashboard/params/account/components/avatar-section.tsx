@@ -96,7 +96,8 @@ export function AvatarSection({
                 <Tooltip key={avatar.url}>
                   <TooltipTrigger asChild>{chip}</TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs">
-                    Requiert : {BADGE_NAME[avatar.requiredBadge] ?? avatar.requiredBadge}
+                    Requiert :{" "}
+                    {BADGE_NAME[avatar.requiredBadge] ?? avatar.requiredBadge}
                   </TooltipContent>
                 </Tooltip>
               );

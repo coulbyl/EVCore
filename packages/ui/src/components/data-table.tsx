@@ -222,7 +222,7 @@ function DataTable<TData>({
 
   const tableEl = (
     <Table>
-      <TableHeader>
+      <TableHeader className="sticky top-0 z-30 bg-panel">
         {table.getHeaderGroups().map((hg) => (
           <TableRow key={hg.id} className="bg-panel hover:bg-panel">
             {hg.headers.map((header) => {
@@ -448,8 +448,8 @@ function DataTable<TData>({
 
   if (mobileCard) {
     return (
-      <>
-        <div className="flex flex-col gap-2 sm:hidden">
+      <div className={cn("flex min-h-0 flex-col", className)}>
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto sm:hidden">
           {isLoading ? (
             Array.from({ length: loadingRows }).map((_, i) => (
               <Skeleton key={i} className="h-24 w-full rounded-xl" />
@@ -466,17 +466,12 @@ function DataTable<TData>({
             ))
           )}
         </div>
-        <div
-          className={cn(
-            "hidden overflow-hidden rounded-[1.3rem] border border-border sm:block",
-            className,
-          )}
-        >
+        {paginationEl ? <div className="sm:hidden">{paginationEl}</div> : null}
+        <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-[1.3rem] border border-border sm:flex sm:overflow-y-auto">
           {tableEl}
           {paginationEl}
         </div>
-        {paginationEl ? <div className="sm:hidden">{paginationEl}</div> : null}
-      </>
+      </div>
     );
   }
 

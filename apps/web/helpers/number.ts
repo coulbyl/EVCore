@@ -5,45 +5,25 @@ const COMPACT_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
-function makeCurrencyFormatter(currency: AppCurrency) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
+const CURRENCY_SYMBOL: Record<AppCurrency, string> = {
+  XOF: "F",
+  USD: "$",
+  EUR: "€",
+};
 
-function makeCurrencyCompactFormatter(currency: AppCurrency) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency,
-    notation: "compact",
-    maximumFractionDigits: 1,
-  });
-}
+const PLAIN_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
 
-const formatterCache = new Map<
-  AppCurrency,
-  ReturnType<typeof makeCurrencyFormatter>
->();
-const compactFormatterCache = new Map<
-  AppCurrency,
-  ReturnType<typeof makeCurrencyCompactFormatter>
->();
+const PLAIN_COMPACT_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 
-function getCurrencyFormatter(currency: AppCurrency) {
-  if (!formatterCache.has(currency)) {
-    formatterCache.set(currency, makeCurrencyFormatter(currency));
-  }
-  return formatterCache.get(currency)!;
-}
-
-function getCompactCurrencyFormatter(currency: AppCurrency) {
-  if (!compactFormatterCache.has(currency)) {
-    compactFormatterCache.set(currency, makeCurrencyCompactFormatter(currency));
-  }
-  return compactFormatterCache.get(currency)!;
+function applySymbol(numStr: string, currency: AppCurrency): string {
+  const sym = CURRENCY_SYMBOL[currency];
+  return currency === "USD" ? `${sym}${numStr}` : `${numStr} ${sym}`;
 }
 
 const UNITS_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {
@@ -102,11 +82,11 @@ export function formatCurrency(
 ): string {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return typeof value === "string" ? value : "—";
-  const formatter =
+  const numStr =
     compact && Math.abs(n) >= 1_000_000
-      ? getCompactCurrencyFormatter(currency)
-      : getCurrencyFormatter(currency);
-  return formatter.format(n);
+      ? PLAIN_COMPACT_FORMATTER.format(n)
+      : PLAIN_FORMATTER.format(n);
+  return applySymbol(numStr, currency);
 }
 
 export function formatSignedCurrency(

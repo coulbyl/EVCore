@@ -24,7 +24,7 @@ export function BankrollWidget() {
     >
       <Wallet size={16} />
       <span className="tabular-nums">
-        {isLoading ? "..." : formatAmount(data?.balance ?? "0", true)}
+        {isLoading ? "..." : formatAmount(data?.balance ?? "0")}
       </span>
     </Link>
   );

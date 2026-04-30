@@ -20,7 +20,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useBankrollTransactions } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
 import type {
   BankrollTransaction,
@@ -31,6 +30,7 @@ import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { CanalBadge } from "@/components/canal-badge";
+import { Amount } from "@/components/amount";
 import { EvAreaChart } from "@/components/charts/ev-area-chart";
 import { DepositDialog } from "./deposit-dialog";
 
@@ -229,8 +229,8 @@ function BankrollTrendChart({
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {t("trend.recent")}
           </p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">
-            {formatAmount(points[points.length - 1]?.balance ?? 0, true)}
+          <p className="mt-2 text-lg font-semibold text-foreground">
+            {formatAmount(points[points.length - 1]?.balance ?? 0)}
           </p>
         </div>
         <div className="text-right text-xs text-muted-foreground">
@@ -272,7 +272,6 @@ export function BankrollPageClient() {
     type: "ALL",
   });
 
-  const isMobile = useIsMobile();
   const bankrollFilters = useMemo(() => buildBankrollFilters(t), [t]);
   const columns = useMemo(
     () => buildColumns(t, formatAmount, formatSigned),
@@ -355,30 +354,25 @@ export function BankrollPageClient() {
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5">
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard
-              compact={isMobile}
               icon={<Wallet size={14} />}
               label={t("stats.currentBalance")}
-              value={formatAmount(currentBalance, true)}
+              value={formatAmount(currentBalance)}
               tone="accent"
             />
             <StatCard
-              compact={isMobile}
               icon={<ArrowDownLeft size={14} />}
               label={t("stats.totalDeposited")}
-              value={formatAmount(totalDeposited, true)}
+              value={formatAmount(totalDeposited)}
               tone="neutral"
             />
-            <div className="col-span-2 sm:col-span-1">
-              <StatCard
-                compact={isMobile}
-                icon={<ArrowUpRight size={14} />}
-                label={t("stats.netRoi")}
-                value={formatPercent(roi)}
-                tone={(roi ?? 0) >= 0 ? "success" : "danger"}
-              />
-            </div>
+            <StatCard
+              icon={<ArrowUpRight size={14} />}
+              label={t("stats.netRoi")}
+              value={formatPercent(roi)}
+              tone={(roi ?? 0) >= 0 ? "success" : "danger"}
+            />
           </section>
 
           <div className="flex justify-stretch sm:justify-end">
@@ -465,18 +459,19 @@ export function BankrollPageClient() {
                     </div>
                     <div className="flex items-center gap-2">
                       {row.canal && <CanalBadge canal={row.canal} />}
-                      <p
-                        className={`text-sm font-semibold tabular-nums ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
-                      >
-                        {formatSigned(parseAmount(row.amount))}
-                      </p>
+                      <Amount
+                        value={parseAmount(row.amount)}
+                        signed
+                        className={`text-sm font-semibold ${transactionTone(row.type) === "positive" ? "text-success" : "text-danger"}`}
+                      />
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("table.balanceAfter")}</span>
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {formatAmount(row.balanceAfter)}
-                    </span>
+                    <Amount
+                      value={row.balanceAfter}
+                      className="font-semibold text-foreground"
+                    />
                   </div>
                 </div>
               )}

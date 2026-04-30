@@ -1,6 +1,5 @@
 use skills: shadcn-ui, next, nestjs, playwright
 
-
 # Plan P4 + P7
 
 ## P7 — Diagnostic fixture (2 items restants)
@@ -11,15 +10,15 @@ use skills: shadcn-ui, next, nestjs, playwright
 
 La colonne "Statut" du tableau "Marchés analysés" affiche le motif de rejet sous forme de texte brut. Ajouter une icône devant chaque type de rejet pour scanner visuellement plus vite.
 
-| Code rejet                   | Icône Lucide       | Sens                          |
-| ---------------------------- | ------------------ | ----------------------------- |
-| `ev_below_threshold`         | `TrendingDown`     | Valeur insuffisante           |
-| `ev_above_hard_cap`          | `ShieldOff`        | Au-dessus du plafond dur      |
-| `ev_above_soft_cap`          | `Shield`           | Au-dessus du plafond calibré  |
-| `market_suspended`           | `Lock`             | Marché suspendu               |
-| `no_odds`                    | `EyeOff`           | Cotes indisponibles           |
-| `insufficient_data`          | `Database`         | Données insuffisantes         |
-| Viable (`BET`)               | `CheckCircle`      | Sélection retenue             |
+| Code rejet           | Icône Lucide   | Sens                         |
+| -------------------- | -------------- | ---------------------------- |
+| `ev_below_threshold` | `TrendingDown` | Valeur insuffisante          |
+| `ev_above_hard_cap`  | `ShieldOff`    | Au-dessus du plafond dur     |
+| `ev_above_soft_cap`  | `Shield`       | Au-dessus du plafond calibré |
+| `market_suspended`   | `Lock`         | Marché suspendu              |
+| `no_odds`            | `EyeOff`       | Cotes indisponibles          |
+| `insufficient_data`  | `Database`     | Données insuffisantes        |
+| Viable (`BET`)       | `CheckCircle`  | Sélection retenue            |
 
 Livrable : composant `RejectionIcon` inline dans `fixture-diagnostics.tsx`, pas de nouvelle dépendance.
 
@@ -93,14 +92,14 @@ model UserBadge {
 
 **Seed des 6 badges MVP :**
 
-| Code               | Condition                                          |
-| ------------------ | -------------------------------------------------- |
-| `vol_50`           | 50 paris réglés                                    |
-| `vol_150`          | 150 paris réglés                                   |
-| `vol_300`          | 300 paris réglés                                   |
-| `streak_5`         | 5 prédictions Canal Confiance correctes consécutives |
-| `patience`         | Traverser un drawdown ≥ 10 % sans override manuel  |
-| `calibre`          | Brier Score < 0,20 sur 50+ prédictions             |
+| Code       | Condition                                            |
+| ---------- | ---------------------------------------------------- |
+| `vol_50`   | 50 paris réglés                                      |
+| `vol_150`  | 150 paris réglés                                     |
+| `vol_300`  | 300 paris réglés                                     |
+| `streak_5` | 5 prédictions Canal Confiance correctes consécutives |
+| `patience` | Traverser un drawdown ≥ 10 % sans override manuel    |
+| `calibre`  | Brier Score < 0,20 sur 50+ prédictions               |
 
 ---
 
@@ -113,6 +112,7 @@ model UserBadge {
 - `gamification.controller.ts` : `GET /gamification/badges/me` (badges de l'utilisateur connecté).
 
 **Intégration :** appeler `checkAndAwardBadges` depuis :
+
 - `BettingEngineService` après settlement
 - `RiskService.checkBrierScore` après calcul
 

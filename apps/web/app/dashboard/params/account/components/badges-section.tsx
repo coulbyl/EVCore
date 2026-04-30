@@ -53,15 +53,21 @@ export function BadgesSection() {
                     </span>
                     {unlocked && badge.unlockedAt && (
                       <span className="text-[0.6rem] text-muted-foreground">
-                        {new Date(badge.unlockedAt).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {new Date(badge.unlockedAt).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          },
+                        )}
                       </span>
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[200px] text-center text-xs">
+                <TooltipContent
+                  side="bottom"
+                  className="max-w-[200px] text-center text-xs"
+                >
                   {unlocked ? badge.description : `🔒 ${badge.description}`}
                 </TooltipContent>
               </Tooltip>
