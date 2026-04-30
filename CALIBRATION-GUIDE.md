@@ -12,8 +12,8 @@ Critere principal:
 
 ## Workflow
 
-1. Verifier que le backend de backtest tourne localement.
-2. Lancer le backtest de la ligue via `POST /backtest/{competitionCode}`.
+1. Le backend de backtest tourne localement sur le port 3001.
+2. Lancer le backtest de la ligue via `POST /backtest/{competitionCode}`. via curl, il retourne le resultat du backtest
 3. Recuperer et lire la reponse complete du backtest.
 4. Extraire les metriques globales:
    - nombre total de paris
@@ -80,3 +80,12 @@ Critere principal:
 - La base de donnees est accessible via Docker si une analyse plus poussee est necessaire.
 - La logique de calibration vit principalement dans le moteur de betting et ses constantes.
 - La restitution utilisateur des signaux de ligue vit dans l'aide web.
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/evcore
+
+
+on va travailler sur la calibration, backtest de ces ligues
+
+TUR1, SVN1, SWE1, CZE1, POL1, NOR1, MLS, SUI1, SRB1 et TUR2
+
+on va traiter league après league
