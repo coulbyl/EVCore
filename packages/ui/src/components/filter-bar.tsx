@@ -8,11 +8,10 @@ import { cn } from "@evcore/ui/lib/utils";
 import { Button } from "@evcore/ui/components/button";
 import { Badge } from "@evcore/ui/components/badge";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@evcore/ui/components/sheet";
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@evcore/ui/components/drawer";
 import {
   Select,
   SelectContent,
@@ -349,12 +348,10 @@ function FilterBar({
         )}
       </div>
 
-      {/* Mobile Sheet */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-[1.5rem]">
-          <SheetHeader>
-            <SheetTitle>Filtres</SheetTitle>
-          </SheetHeader>
+      {/* Mobile Drawer */}
+      <Drawer open={mobileOpen} onOpenChange={setMobileOpen} direction="bottom">
+        <DrawerContent className="max-h-[85vh] rounded-t-[1.5rem] px-4 pb-6 pt-4">
+          <DrawerTitle className="text-base font-semibold">Filtres</DrawerTitle>
           <Separator className="my-4" />
           <div className="flex flex-col gap-4 overflow-y-auto">
             {filters.map((def) => (
@@ -378,8 +375,8 @@ function FilterBar({
               Appliquer
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

@@ -8,15 +8,15 @@ Dernière mise à jour : 30 avril 2026.
 
 ## Ligues exclues (MISSING_ODDS)
 
-| Code | Compétition | Pays | Fixtures analysées | Raison |
-|------|-------------|------|-------------------|--------|
-| **TUR2** | TFF 1. Lig | Turquie 🇹🇷 | 905 / 1 040 sans cotes | Pinnacle ne couvre pas la D2 turque |
-| **SRB1** | SuperLiga | Serbie 🇷🇸 | 717 / 841 sans cotes | Pinnacle ne couvre pas la D1 serbe |
-| **CZE1** | Fortuna Liga | Tchéquie 🇨🇿 | Non évalué | Absence de cotes confirmée |
-| **SVN1** | PrvaLiga | Slovénie 🇸🇮 | 15 / 76 analysées | Données insuffisantes + absence de cotes |
-| **NOR2** | 1. divisjon | Norvège 🇳🇴 | Non évalué | Pinnacle ne couvre pas la D2 norvégienne |
-| **SUI2** | Challenge League | Suisse 🇨🇭 | Non évalué | Pinnacle ne couvre pas la D2 suisse |
-| **POL2** | I liga | Pologne 🇵🇱 | Non évalué | Pinnacle ne couvre pas la D2 polonaise |
+| Code     | Compétition      | Pays        | Fixtures analysées     | Raison                                   |
+| -------- | ---------------- | ----------- | ---------------------- | ---------------------------------------- |
+| **TUR2** | TFF 1. Lig       | Turquie 🇹🇷  | 905 / 1 040 sans cotes | Pinnacle ne couvre pas la D2 turque      |
+| **SRB1** | SuperLiga        | Serbie 🇷🇸   | 717 / 841 sans cotes   | Pinnacle ne couvre pas la D1 serbe       |
+| **CZE1** | Fortuna Liga     | Tchéquie 🇨🇿 | Non évalué             | Absence de cotes confirmée               |
+| **SVN1** | PrvaLiga         | Slovénie 🇸🇮 | 15 / 76 analysées      | Données insuffisantes + absence de cotes |
+| **NOR2** | 1. divisjon      | Norvège 🇳🇴  | Non évalué             | Pinnacle ne couvre pas la D2 norvégienne |
+| **SUI2** | Challenge League | Suisse 🇨🇭   | Non évalué             | Pinnacle ne couvre pas la D2 suisse      |
+| **POL2** | I liga           | Pologne 🇵🇱  | Non évalué             | Pinnacle ne couvre pas la D2 polonaise   |
 
 ---
 
@@ -41,10 +41,10 @@ Pour qu'une ligue puisse entrer dans le backtest et le moteur de paris, il faut 
 
 ## Priorités suggérées
 
-| Priorité | Ligue | Justification |
-|----------|-------|---------------|
-| 🔴 Haute | **TUR2** | Forte audience, 1 040 fixtures disponibles, marché actif sur Pinnacle pour certaines compétitions voisines |
-| 🟡 Moyenne | **CZE1** | Ligue D1 d'un marché UEFA actif ; bonne couverture supposée sur d'autres bookmakers |
-| 🟡 Moyenne | **SRB1** | D1 des Balkans, intéressant pour diversifier le portefeuille |
-| 🟢 Basse | **NOR2 / SUI2 / POL2** | Ligues D2 — n'intégrer qu'après validation de leurs D1 respectives |
-| 🟢 Basse | **SVN1** | Trop peu de fixtures (76 total) pour espérer un backtest significatif même avec les cotes |
+| Priorité   | Ligue                  | Justification                                                                                              |
+| ---------- | ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 🔴 Haute   | **TUR2**               | Forte audience, 1 040 fixtures disponibles, marché actif sur Pinnacle pour certaines compétitions voisines |
+| 🟡 Moyenne | **CZE1**               | Ligue D1 d'un marché UEFA actif ; bonne couverture supposée sur d'autres bookmakers                        |
+| 🟡 Moyenne | **SRB1**               | D1 des Balkans, intéressant pour diversifier le portefeuille                                               |
+| 🟢 Basse   | **NOR2 / SUI2 / POL2** | Ligues D2 — n'intégrer qu'après validation de leurs D1 respectives                                         |
+| 🟢 Basse   | **SVN1**               | Trop peu de fixtures (76 total) pour espérer un backtest significatif même avec les cotes                  |

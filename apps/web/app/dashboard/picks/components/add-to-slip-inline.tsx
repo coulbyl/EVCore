@@ -4,6 +4,7 @@ import { Check, ShoppingCart } from "lucide-react";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
+import { isFixtureBettable } from "@/domains/fixture/helpers/fixture";
 
 type Canal = "EV" | "SV";
 
@@ -25,7 +26,7 @@ export function AddToSlipInline({
       !mr.market ||
       !mr.pick ||
       mr.betStatus !== "PENDING" ||
-      row.status === "FINISHED"
+      !isFixtureBettable(row)
     ) {
       return null;
     }
@@ -77,7 +78,7 @@ export function AddToSlipInline({
 
   // SV canal
   const sv = row.safeValueBet;
-  if (!sv || sv.betStatus !== "PENDING" || row.status === "FINISHED") {
+  if (!sv || sv.betStatus !== "PENDING" || !isFixtureBettable(row)) {
     return null;
   }
 

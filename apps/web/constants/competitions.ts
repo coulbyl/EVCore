@@ -24,7 +24,12 @@ export const COMPETITIONS: Competition[] = [
   { code: "EL2", name: "League Two", country: "England" },
   // Autres ligues
   { code: "J1", name: "J1 League", country: "Japan" },
+  { code: "MLS", name: "Major League Soccer", country: "USA" },
   { code: "MX1", name: "Liga MX", country: "Mexico" },
+  { code: "NOR1", name: "Eliteserien", country: "Norway" },
+  { code: "POL1", name: "Ekstraklasa", country: "Poland" },
+  { code: "SUI1", name: "Super League", country: "Switzerland" },
+  { code: "TUR1", name: "Süper Lig", country: "Turkey" },
   // Compétitions européennes
   { code: "UCL", name: "Champions League", country: "Europe" },
   { code: "UEL", name: "Europa League", country: "Europe" },

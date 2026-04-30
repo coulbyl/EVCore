@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Drawer } from "vaul";
 import {
   Badge,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -284,16 +286,19 @@ export function BetSlipListPageClient() {
           tone="neutral"
           label="Misé"
           value={formatAmount(periodSummary.stake)}
+          compact
         />
         <StatCard
           tone={periodSummary.net >= 0 ? "success" : "danger"}
           label="Net réglé"
           value={formatSigned(periodSummary.net)}
+          compact
         />
         <StatCard
           tone="warning"
           label="En attente"
           value={String(periodSummary.pending)}
+          compact
         />
       </div>
       <FilterBar
@@ -356,26 +361,20 @@ export function BetSlipListPageClient() {
       </PageContent>
 
       {isMobile && (
-        <Drawer.Root
+        <Drawer
           open={selectedSlip !== null}
           onOpenChange={(open) => !open && handleClose()}
+          direction="bottom"
         >
-          <Drawer.Portal>
-            <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
-            <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl bg-panel outline-none">
-              <Drawer.Title className="sr-only">Détail du coupon</Drawer.Title>
-              <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-border" />
-              {selectedSlip && (
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
-                  <BetSlipDetailPanel
-                    data={selectedSlip}
-                    onClose={handleClose}
-                  />
-                </div>
-              )}
-            </Drawer.Content>
-          </Drawer.Portal>
-        </Drawer.Root>
+          <DrawerContent className="z-50 flex max-h-[92dvh] flex-col rounded-t-3xl bg-panel outline-none">
+            <DrawerTitle className="sr-only">Détail du coupon</DrawerTitle>
+            {selectedSlip && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-2">
+                <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
+              </div>
+            )}
+          </DrawerContent>
+        </Drawer>
       )}
     </Page>
   );
