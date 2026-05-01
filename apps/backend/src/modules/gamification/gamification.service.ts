@@ -4,16 +4,13 @@ import { createLogger } from '@utils/logger';
 
 const logger = createLogger('gamification-service');
 
-const BADGE_CODES = [
-  'vol_50',
-  'vol_150',
-  'vol_300',
-  'streak_5',
-  'patience',
-  'calibre',
-] as const;
-
-type BadgeCode = (typeof BADGE_CODES)[number];
+type BadgeCode =
+  | 'vol_50'
+  | 'vol_150'
+  | 'vol_300'
+  | 'streak_5'
+  | 'patience'
+  | 'calibre';
 
 export type UserBadgeDto = {
   code: string;

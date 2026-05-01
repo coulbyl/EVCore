@@ -199,6 +199,7 @@ describe('BankrollService', () => {
           type: BankrollTransactionType.DEPOSIT,
           amount: '50000.00',
           betId: null,
+          canal: null,
           note: 'Init',
           createdAt: '2026-04-18T10:00:00.000Z',
         },

@@ -1,5 +1,4 @@
 import { Page, PageContent } from "@evcore/ui";
-import { getTranslations } from "next-intl/server";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import { BacktestSection } from "./components/backtest-section";
 import { CalibrationSection } from "./components/calibration-section";
@@ -9,7 +8,6 @@ import { WeightsTimelineSection } from "./components/weights-timeline-section";
 
 export default async function PerformancePage() {
   const session = await getCurrentSession();
-  const t = await getTranslations("performancePage");
   const isAdmin = session?.user.role === "ADMIN";
 
   return (

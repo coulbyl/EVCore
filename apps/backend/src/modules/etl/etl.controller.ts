@@ -463,7 +463,6 @@ export class EtlController {
   }
 
   private resolveSeasonYears(seasonsParam: string | undefined): number[] {
-    console.log(seasonsParam, ' params ---');
     if (!seasonsParam?.trim()) {
       throw new BadRequestException(
         'seasons query param is required (e.g. ?seasons=2022,2023)',

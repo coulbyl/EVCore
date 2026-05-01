@@ -122,8 +122,8 @@ export function useFormationProgress() {
     [],
   );
 
-  const hydrateRemote = useCallback((items: RemoteFormationProgressItem[]) => {
-    if (!items || items.length === 0) return;
+  const hydrateRemote = useCallback((items: unknown) => {
+    if (!Array.isArray(items) || items.length === 0) return;
     setProgress((current) => {
       const next: StoredProgress = {
         ...current,
@@ -131,12 +131,35 @@ export function useFormationProgress() {
         watched: { ...current.watched },
       };
 
-      for (const item of items) {
+      for (const item of items as RemoteFormationProgressItem[]) {
+        if (!item || typeof item !== "object") continue;
+        if (
+          (item as RemoteFormationProgressItem).contentType !== "ARTICLE" &&
+          (item as RemoteFormationProgressItem).contentType !== "VIDEO"
+        ) {
+          continue;
+        }
+        if (typeof (item as RemoteFormationProgressItem).slug !== "string") {
+          continue;
+        }
+        if (
+          typeof (item as RemoteFormationProgressItem).completedAt !== "string"
+        ) {
+          continue;
+        }
+
         const target =
-          item.contentType === "ARTICLE" ? next.read : next.watched;
-        const existing = target[item.slug];
-        if (!existing || existing < item.completedAt) {
-          target[item.slug] = item.completedAt;
+          (item as RemoteFormationProgressItem).contentType === "ARTICLE"
+            ? next.read
+            : next.watched;
+        const existing = target[(item as RemoteFormationProgressItem).slug];
+        if (
+          !existing ||
+          existing < (item as RemoteFormationProgressItem).completedAt
+        ) {
+          target[(item as RemoteFormationProgressItem).slug] = (
+            item as RemoteFormationProgressItem
+          ).completedAt;
         }
       }
 

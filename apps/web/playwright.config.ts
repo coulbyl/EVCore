@@ -28,6 +28,16 @@ export default defineConfig({
       testMatch: /auth\.setup\.ts/,
     },
     {
+      name: "recording-desktop-1280",
+      use: {
+        viewport: { width: 1280, height: 720 },
+        storageState: "playwright/.auth/user.json",
+        video: { mode: "on", size: { width: 1280, height: 720 } },
+      },
+      dependencies: ["setup"],
+      testMatch: /formation-intro-video\.spec\.ts/,
+    },
+    {
       name: "mobile-375",
       use: {
         viewport: { width: 375, height: 667 },

@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  GraduationCap,
-  HelpCircle,
-  LogOut,
-  Settings,
-  Sprout,
-  Wallet,
-} from "lucide-react";
+import { GraduationCap, LogOut, Settings, Sprout, Wallet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
