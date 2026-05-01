@@ -27,8 +27,11 @@
 
 # Docs & misc
 **/*.md
+**/*.mdx
 !CLAUDE.md
-!apps/web/content/*.md
+# Keep Formation content in Docker build context (nested folders).
+!apps/web/content/**/*.md
+!apps/web/content/**/*.mdx
 **/docs
 .github
 

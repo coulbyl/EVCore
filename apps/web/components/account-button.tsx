@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  GraduationCap,
-  HelpCircle,
-  LogOut,
-  Settings,
-  Sprout,
-  Wallet,
-} from "lucide-react";
+import { GraduationCap, LogOut, Settings, Sprout, Wallet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,12 +86,6 @@ export function AccountButton({
             <Link href="/dashboard/bankroll">
               <Wallet />
               {tNav("bankroll")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/help">
-              <HelpCircle />
-              {tNav("help")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

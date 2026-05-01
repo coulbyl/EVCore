@@ -11,10 +11,10 @@ export function isFixtureBettable(fixture: {
   scheduledAt: string;
 }): boolean {
   if (NON_BETTABLE_STATUSES.has(fixture.status)) return false;
-  // const cutoff =
-  //   new Date(fixture.scheduledAt).getTime() + BETTABLE_CUTOFF_MINUTES * 60_000;
-  // return Date.now() < cutoff;
-  return true; // for now, disable cutoff logic to avoid blocking bets due to incomplete scheduledAt date, display formatted hour like "19:00"
+  const kickoff = new Date(fixture.scheduledAt).getTime();
+  if (!Number.isFinite(kickoff)) return true; // do not block if backend returns an invalid date
+  const cutoff = kickoff + BETTABLE_CUTOFF_MINUTES * 60_000;
+  return Date.now() < cutoff;
 }
 
 /** Formate le score d'un fixture terminé.

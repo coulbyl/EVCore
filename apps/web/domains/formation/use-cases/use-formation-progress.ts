@@ -16,6 +16,12 @@ type StoredProgress = {
   };
 };
 
+export type RemoteFormationProgressItem = {
+  contentType: "ARTICLE" | "VIDEO";
+  slug: string;
+  completedAt: string;
+};
+
 function safeParseProgress(raw: string | null): StoredProgress {
   if (!raw) return { read: {}, watched: {} };
   try {
@@ -116,6 +122,52 @@ export function useFormationProgress() {
     [],
   );
 
+  const hydrateRemote = useCallback((items: unknown) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    setProgress((current) => {
+      const next: StoredProgress = {
+        ...current,
+        read: { ...current.read },
+        watched: { ...current.watched },
+      };
+
+      for (const item of items as RemoteFormationProgressItem[]) {
+        if (!item || typeof item !== "object") continue;
+        if (
+          (item as RemoteFormationProgressItem).contentType !== "ARTICLE" &&
+          (item as RemoteFormationProgressItem).contentType !== "VIDEO"
+        ) {
+          continue;
+        }
+        if (typeof (item as RemoteFormationProgressItem).slug !== "string") {
+          continue;
+        }
+        if (
+          typeof (item as RemoteFormationProgressItem).completedAt !== "string"
+        ) {
+          continue;
+        }
+
+        const target =
+          (item as RemoteFormationProgressItem).contentType === "ARTICLE"
+            ? next.read
+            : next.watched;
+        const existing = target[(item as RemoteFormationProgressItem).slug];
+        if (
+          !existing ||
+          existing < (item as RemoteFormationProgressItem).completedAt
+        ) {
+          target[(item as RemoteFormationProgressItem).slug] = (
+            item as RemoteFormationProgressItem
+          ).completedAt;
+        }
+      }
+
+      writeProgress(next);
+      return next;
+    });
+  }, []);
+
   return {
     progress,
     counts,
@@ -123,6 +175,7 @@ export function useFormationProgress() {
     markCompleted,
     unmarkCompleted,
     setRecent,
+    hydrateRemote,
     storageKey: STORAGE_KEY,
   };
 }

@@ -1,15 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, TrendingUp, Shield, Brain } from "lucide-react";
-import { Page, PageContent, StatCard } from "@evcore/ui";
+import {
+  Badge,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  Page,
+  PageContent,
+  StatCard,
+} from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { usePicksOfTheDay } from "@/domains/fixture/use-cases/get-picks-of-the-day";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
-import { EvPickCard } from "./pick-card";
-import { SvPickCard } from "./pick-card";
-import { ConfPickCard } from "./pick-card";
+import { CanalBadge } from "@/components/canal-badge";
+import { formatCombinedPickForDisplay } from "@/helpers/fixture";
+import { formatKickoff } from "@/domains/fixture/helpers/fixture";
+import { AddToSlipInline } from "./add-to-slip-inline";
+import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 
 // ── canal grouping ────────────────────────────────────────────────────────────
 
@@ -67,12 +77,161 @@ function CanalSection({
   );
 }
 
+function TeamLogos({
+  homeLogo,
+  awayLogo,
+}: {
+  homeLogo: string | null;
+  awayLogo: string | null;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      {homeLogo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={homeLogo} alt="" className="size-5 object-contain" />
+      ) : (
+        <div className="size-5 rounded-full bg-secondary" />
+      )}
+      {awayLogo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={awayLogo} alt="" className="size-5 object-contain" />
+      ) : (
+        <div className="size-5 rounded-full bg-secondary" />
+      )}
+    </div>
+  );
+}
+
+function PickListItem({
+  row,
+  canal,
+  active,
+  onSelect,
+}: {
+  row: FixtureRow;
+  canal: "EV" | "SV" | "CONF";
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const mr = row.modelRun;
+  const sv = row.safeValueBet;
+  const pickLabel =
+    canal === "EV" && mr?.market && mr.pick
+      ? formatCombinedPickForDisplay({
+          market: mr.market,
+          pick: mr.pick,
+          comboMarket: mr.comboMarket ?? undefined,
+          comboPick: mr.comboPick ?? undefined,
+        })
+      : canal === "SV" && sv
+        ? formatCombinedPickForDisplay({
+            market: sv.market,
+            pick: sv.pick,
+            comboMarket: sv.comboMarket ?? undefined,
+            comboPick: sv.comboPick ?? undefined,
+          })
+        : null;
+
+  const odds =
+    canal === "EV" && mr?.market && mr.pick
+      ? (mr.evaluatedPicks.find(
+          (p) =>
+            p.market === mr.market &&
+            p.pick === mr.pick &&
+            (p.comboMarket ?? null) === (mr.comboMarket ?? null) &&
+            (p.comboPick ?? null) === (mr.comboPick ?? null),
+        )?.odds ?? null)
+      : canal === "SV"
+        ? (sv?.odds ?? null)
+        : null;
+
+  const evValue =
+    canal === "EV"
+      ? (mr?.ev ?? null)
+      : canal === "SV"
+        ? (sv?.ev ?? null)
+        : null;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`group flex items-start gap-3 rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+        active
+          ? "border-accent/30 bg-accent/10"
+          : "border-border bg-panel-strong hover:bg-secondary"
+      }`}
+      data-testid="pick-list-item"
+    >
+      <TeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-semibold text-foreground group-hover:text-accent">
+            {row.fixture}
+          </p>
+          <CanalBadge canal={canal} />
+        </div>
+
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {row.competition}
+          {" · "}
+          {formatKickoff(row.scheduledAt)}
+        </p>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {pickLabel ? (
+            <Badge variant="secondary" className="text-[0.68rem]">
+              {pickLabel}
+            </Badge>
+          ) : null}
+          {odds ? (
+            <Badge variant="outline" className="text-[0.68rem] tabular-nums">
+              {odds}
+            </Badge>
+          ) : null}
+          {evValue ? (
+            <span
+              className="text-xs font-semibold tabular-nums"
+              style={{
+                color:
+                  canal === "EV"
+                    ? "var(--canal-ev)"
+                    : canal === "SV"
+                      ? "var(--canal-sv)"
+                      : "var(--canal-conf)",
+              }}
+            >
+              {evValue}
+            </span>
+          ) : null}
+
+          {canal === "EV" ? (
+            <AddToSlipInline row={row} canal="EV" />
+          ) : canal === "SV" ? (
+            <AddToSlipInline row={row} canal="SV" />
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 export function PicksPageClient() {
   const t = useTranslations("picks");
   const { data, isLoading, isError } = usePicksOfTheDay();
   const isMobile = useIsMobile();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { ev, sv, conf } = useMemo(
     () => groupByCanal(data?.rows ?? []),
@@ -80,6 +239,21 @@ export function PicksPageClient() {
   );
 
   const hasAny = ev.length + sv.length + conf.length > 0;
+
+  const selectedRow =
+    (data?.rows ?? []).find((r) => r.fixtureId === selectedId) ?? null;
+
+  const defaultSelection =
+    ev[0]?.fixtureId ?? sv[0]?.fixtureId ?? conf[0]?.fixtureId ?? null;
+
+  useEffect(() => {
+    if (!selectedId && defaultSelection) setSelectedId(defaultSelection);
+  }, [defaultSelection, selectedId]);
+
+  function handleSelect(row: FixtureRow) {
+    setSelectedId(row.fixtureId);
+    if (isMobile) setDrawerOpen(true);
+  }
 
   return (
     <Page className="flex h-full flex-col">
@@ -111,7 +285,7 @@ export function PicksPageClient() {
           </section>
 
           {/* Scrollable content */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-hidden">
             {/* Loading */}
             {isLoading && (
               <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -135,39 +309,90 @@ export function PicksPageClient() {
 
             {/* Canal sections */}
             {!isLoading && !isError && hasAny && (
-              <div className="flex flex-col gap-6 pb-2">
-                <CanalSection
-                  title={t("evChannel")}
-                  color="var(--canal-ev)"
-                  count={ev.length}
-                >
-                  {ev.map((row) => (
-                    <EvPickCard key={row.fixtureId} row={row} />
-                  ))}
-                </CanalSection>
+              <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-5">
+                <div className="min-h-0 overflow-y-auto pr-0 lg:pr-1">
+                  <div className="flex flex-col gap-6 pb-2">
+                    <CanalSection
+                      title={t("evChannel")}
+                      color="var(--canal-ev)"
+                      count={ev.length}
+                    >
+                      {ev.map((row) => (
+                        <PickListItem
+                          key={row.fixtureId}
+                          row={row}
+                          canal="EV"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
 
-                <CanalSection
-                  title={t("safeValue")}
-                  color="var(--canal-sv)"
-                  count={sv.length}
-                >
-                  {sv.map((row) => (
-                    <SvPickCard key={row.fixtureId} row={row} />
-                  ))}
-                </CanalSection>
+                    <CanalSection
+                      title={t("safeValue")}
+                      color="var(--canal-sv)"
+                      count={sv.length}
+                    >
+                      {sv.map((row) => (
+                        <PickListItem
+                          key={`${row.fixtureId}-sv`}
+                          row={row}
+                          canal="SV"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
 
-                <CanalSection
-                  title={t("confidence")}
-                  color="var(--canal-conf)"
-                  count={conf.length}
-                >
-                  {conf.map((row) => (
-                    <ConfPickCard key={row.fixtureId} row={row} />
-                  ))}
-                </CanalSection>
+                    <CanalSection
+                      title={t("confidence")}
+                      color="var(--canal-conf)"
+                      count={conf.length}
+                    >
+                      {conf.map((row) => (
+                        <PickListItem
+                          key={`${row.fixtureId}-conf`}
+                          row={row}
+                          canal="CONF"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
+                  </div>
+                </div>
+
+                <div className="hidden min-h-0 overflow-y-auto lg:block">
+                  {selectedRow ? (
+                    <FixtureDiagnostics row={selectedRow} />
+                  ) : (
+                    <div className="flex min-h-80 items-center justify-center rounded-[1.7rem] border border-border bg-panel p-6 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Sélectionnez un pick pour voir le diagnostic.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
+
+          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerContent className="z-50 flex max-h-[92dvh] flex-col rounded-t-[1.6rem] border-t border-border bg-panel-strong focus:outline-none">
+              <DrawerTitle className="sr-only">Diagnostic pick</DrawerTitle>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10 sm:p-5">
+                {selectedRow ? (
+                  <FixtureDiagnostics row={selectedRow} />
+                ) : (
+                  <div className="flex min-h-80 items-center justify-center rounded-[1.7rem] border border-border bg-panel p-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Sélectionnez un pick pour voir le diagnostic.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </DrawerContent>
+          </Drawer>
         </div>
       </PageContent>
     </Page>

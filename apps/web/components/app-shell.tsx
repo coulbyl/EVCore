@@ -75,9 +75,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   const mobileNavItems = navItems.filter((item) =>
-    ["/dashboard", "/dashboard/fixtures", "/dashboard/bet-slips"].includes(
-      item.href,
-    ),
+    [
+      "/dashboard",
+      "/dashboard/picks",
+      "/dashboard/fixtures",
+      "/dashboard/bet-slips",
+    ].includes(item.href),
   );
 
   return (

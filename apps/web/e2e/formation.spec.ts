@@ -36,7 +36,7 @@ test("formation — ouvrir un article et marquer comme terminé @responsive", as
 test("formation — ouvrir une vidéo et afficher le player @responsive", async ({
   page,
 }) => {
-  await page.goto("/dashboard/formation/app/intro-formation");
+  await page.goto("/dashboard/formation/bases/intro-formation");
   await expect(page.locator("h1").first()).toBeVisible();
   await expect(page.locator("iframe, video").first()).toBeVisible();
 });

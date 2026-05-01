@@ -222,6 +222,7 @@ export function FormationPageClient({
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORY_ORDER.map((cat) => {
               const catItems = byCategory.get(cat) ?? [];
+              if (catItems.length === 0) return null;
               const completed = countCompleted(catItems, isCompleted);
               const pct = percent(completed, catItems.length);
               return (

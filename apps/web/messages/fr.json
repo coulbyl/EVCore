@@ -13,7 +13,7 @@
     "seeAll": "Voir tout"
   },
   "nav": {
-    "dashboard": "Tableau de bord",
+    "dashboard": "Accueil",
     "fixtures": "Matchs",
     "picks": "Picks du jour",
     "performance": "Performance",
@@ -142,8 +142,8 @@
   },
   "picks": {
     "pageTitle": "Picks du jour",
-    "evChannel": "Canal EV",
-    "safeValue": "Safe Value",
+    "evChannel": "Valeur",
+    "safeValue": "Safe",
     "confidence": "Confiance",
     "loadError": "Impossible de charger les picks du jour.",
     "empty": "Aucun pick pour aujourd'hui."
@@ -177,6 +177,16 @@
     "activeSuspensions": "Suspensions actives"
   },
   "dashboard": {
+    "announcements": {
+      "title": "Nouveautés",
+      "dismiss": "Plus tard",
+      "close": "Fermer l'annonce",
+      "closeItem": "Masquer cette annonce",
+      "formation": {
+        "title": "Centre de formation",
+        "description": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape. NB: les contenus sont en editions donc pas encore parfaits, mais n'hésitez pas à les consulter et à nous faire part de vos retours !"
+      }
+    },
     "predictions": {
       "title": "Prédictions du jour",
       "empty": "Aucune prédiction pour aujourd'hui.",

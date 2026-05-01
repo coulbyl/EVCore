@@ -32,9 +32,15 @@ export default async function FormationCategoryLayout({
   if (!FORMATION_CATEGORIES.includes(category as FormationCategory)) notFound();
 
   const items = await getFormationIndex();
-  const categoryItems = items.filter(
-    (item) => item.category === (category as FormationCategory),
-  );
+  const categoryItems = items
+    .filter((item) => item.category === (category as FormationCategory))
+    .slice()
+    .sort((a, b) => {
+      const ao = a.order ?? Number.POSITIVE_INFINITY;
+      const bo = b.order ?? Number.POSITIVE_INFINITY;
+      if (ao !== bo) return ao - bo;
+      return a.title.localeCompare(b.title);
+    });
 
   return (
     <FormationCategoryShell

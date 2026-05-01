@@ -30,7 +30,7 @@ import type {
   FixturePrediction,
 } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
-import { FixtureDiagnostics } from "./fixture-diagnostics";
+import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 
 // ---------------------------------------------------------------------------
 // Cell badge helpers
@@ -733,13 +733,12 @@ export function FixturesTable({
             onSelect={() => handleRowClick(row)}
           />
         )}
-        pagination={{ pageSize: 25, pageSizeOptions: [10, 25, 50] }}
         className="flex-1"
       />
 
       {rows.length > 0 && (
-        <p className="mt-2 text-center text-xs text-muted-foreground sm:hidden">
-          {rows.length} / {total} fixture{total > 1 ? "s" : ""}
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          {rows.length} / {total} match{total > 1 ? "s" : ""}
         </p>
       )}
 

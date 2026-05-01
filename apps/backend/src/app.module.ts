@@ -19,6 +19,7 @@ import { BankrollModule } from './modules/bankroll/bankroll.module';
 import { PredictionModule } from './modules/prediction/prediction.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
+import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AdminUsersModule } from './modules/admin-users/admin-users.module';
     AuditModule,
     GamificationModule,
     AdminUsersModule,
+    FormationProgressModule,
   ],
   controllers: [AppController],
   providers: [AppService],

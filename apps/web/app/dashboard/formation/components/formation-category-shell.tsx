@@ -36,6 +36,7 @@ import type {
   FormationCategory,
   FormationContentMeta,
 } from "@/domains/formation/types/formation";
+import { FormationProgressSync } from "./formation-progress-sync";
 
 function percent(completed: number, total: number): number {
   if (total <= 0) return 0;
@@ -248,6 +249,7 @@ export function FormationCategoryShell({
 
   return (
     <Page className="flex h-full flex-col">
+      <FormationProgressSync />
       <div className="sticky top-0 z-20 mb-3 shrink-0 backdrop-blur supports-backdrop-filter:bg-panel-strong/95 sm:mb-4">
         <div className="flex flex-col gap-3 rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_14%,transparent)_0%,transparent_70%)] px-4 py-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:px-6 sm:py-5">
           <div className="flex flex-wrap items-center gap-2">

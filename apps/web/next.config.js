@@ -5,6 +5,11 @@ const withNextIntl = createNextIntlPlugin("./i18n.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  // Ensure runtime access to `content/formation/**` when using `output: "standalone"`.
+  // These files are read via `fs` at runtime, so they must be included in Next.js output file tracing.
+  outputFileTracingIncludes: {
+    "/*": ["./content/formation/**/*"],
+  },
   async headers() {
     return [
       {

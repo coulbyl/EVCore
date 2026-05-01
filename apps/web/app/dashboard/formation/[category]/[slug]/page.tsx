@@ -60,9 +60,15 @@ export default async function FormationCategoryItemPage({
 
   // Ensure category items exist (layout also fetches) — used only to compute next actions safely.
   const index = await getFormationIndex();
-  const categoryItems = index.filter(
-    (entry) => entry.category === (category as FormationCategory),
-  );
+  const categoryItems = index
+    .filter((entry) => entry.category === (category as FormationCategory))
+    .slice()
+    .sort((a, b) => {
+      const ao = a.order ?? Number.POSITIVE_INFINITY;
+      const bo = b.order ?? Number.POSITIVE_INFINITY;
+      if (ao !== bo) return ao - bo;
+      return a.title.localeCompare(b.title);
+    });
   const currentIndex = categoryItems.findIndex(
     (entry) => entry.slug === item.slug,
   );

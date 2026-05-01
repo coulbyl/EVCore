@@ -23,7 +23,7 @@ const PLAIN_COMPACT_FORMATTER = new Intl.NumberFormat("fr-FR", {
 
 function applySymbol(numStr: string, currency: AppCurrency): string {
   const sym = CURRENCY_SYMBOL[currency];
-  return currency === "USD" ? `${sym}${numStr}` : `${numStr} ${sym}`;
+  return currency === "USD" ? `${sym}${numStr}` : `${numStr}\u00A0${sym}`;
 }
 
 const UNITS_NUMBER_FORMATTER = new Intl.NumberFormat("fr-FR", {

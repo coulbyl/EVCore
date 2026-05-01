@@ -6,7 +6,31 @@ import type {
   FormationContentType,
 } from "../types/formation";
 
-const CONTENT_ROOT = path.join(process.cwd(), "content", "formation");
+const DEFAULT_CONTENT_ROOT = path.join(process.cwd(), "content", "formation");
+const MONOREPO_CONTENT_ROOT = path.join(
+  process.cwd(),
+  "apps",
+  "web",
+  "content",
+  "formation",
+);
+
+let resolvedContentRoot: string | null = null;
+
+async function getContentRoot(): Promise<string> {
+  if (resolvedContentRoot) return resolvedContentRoot;
+
+  try {
+    await fs.access(DEFAULT_CONTENT_ROOT);
+    resolvedContentRoot = DEFAULT_CONTENT_ROOT;
+    return resolvedContentRoot;
+  } catch {
+    // fallback below
+  }
+
+  resolvedContentRoot = MONOREPO_CONTENT_ROOT;
+  return resolvedContentRoot;
+}
 
 type FrontmatterParseResult = {
   data: Record<string, unknown>;
@@ -158,12 +182,18 @@ function parseMeta(
       ? Math.max(1, Math.round(data.readTime))
       : estimateReadTimeMinutes(content);
 
+  const order =
+    typeof data.order === "number" && Number.isFinite(data.order)
+      ? data.order
+      : undefined;
+
   return {
     type,
     slug: typeof data.slug === "string" ? data.slug : slugFromFilename,
     title,
     category,
     difficulty,
+    order,
     readTime,
     summary: typeof data.summary === "string" ? data.summary : undefined,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
@@ -206,8 +236,9 @@ function scoreMatch(text: string, query: string): number {
 }
 
 export async function getFormationIndex(): Promise<FormationContentMeta[]> {
-  const articlesDir = path.join(CONTENT_ROOT, "articles");
-  const videosDir = path.join(CONTENT_ROOT, "videos");
+  const contentRoot = await getContentRoot();
+  const articlesDir = path.join(contentRoot, "articles");
+  const videosDir = path.join(contentRoot, "videos");
 
   const [articlePaths, videoPaths] = await Promise.all([
     listMarkdownFilesRecursively(articlesDir),
@@ -233,8 +264,9 @@ export async function getFormationContentBySlug(
   type: FormationContentType,
   slug: string,
 ): Promise<FormationContentItem | null> {
+  const contentRoot = await getContentRoot();
   const dir = path.join(
-    CONTENT_ROOT,
+    contentRoot,
     type === "article" ? "articles" : "videos",
   );
 
@@ -257,11 +289,10 @@ export async function searchFormationContent({
   const query = q.trim();
   if (query.length < 2) return [];
 
-  const articlesDir = path.join(CONTENT_ROOT, "articles");
-  const videosDir = path.join(CONTENT_ROOT, "videos");
+  const contentRoot = await getContentRoot();
   const [articlePaths, videoPaths] = await Promise.all([
-    listMarkdownFilesRecursively(articlesDir),
-    listMarkdownFilesRecursively(videosDir),
+    listMarkdownFilesRecursively(path.join(contentRoot, "articles")),
+    listMarkdownFilesRecursively(path.join(contentRoot, "videos")),
   ]);
 
   const candidates = await Promise.all([

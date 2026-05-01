@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, FixtureStatus, BetSource } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { toNumber } from '@utils/prisma.utils';
-import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
+import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import type {
@@ -163,67 +163,64 @@ export class FixtureScoringService {
       },
     };
 
-    const [total, fixtures] = await Promise.all([
-      this.prisma.client.fixture.count({ where: dateRange }),
-      this.prisma.client.fixture.findMany({
-        where,
-        select: {
-          id: true,
-          scheduledAt: true,
-          status: true,
-          homeScore: true,
-          awayScore: true,
-          homeHtScore: true,
-          awayHtScore: true,
-          homeTeam: { select: { name: true, logoUrl: true } },
-          awayTeam: { select: { name: true, logoUrl: true } },
-          season: {
-            select: {
-              competition: { select: { code: true, name: true } },
-            },
-          },
-          oddsSnapshots: { select: { id: true }, take: 1 },
-          predictions: {
-            select: { pick: true, probability: true, correct: true },
-            take: 1,
-            orderBy: { createdAt: 'desc' },
-          },
-          modelRuns: {
-            select: {
-              id: true,
-              decision: true,
-              deterministicScore: true,
-              finalScore: true,
-              features: true,
-              analyzedAt: true,
-              bets: {
-                select: {
-                  id: true,
-                  market: true,
-                  pick: true,
-                  comboMarket: true,
-                  comboPick: true,
-                  ev: true,
-                  oddsSnapshot: true,
-                  probEstimated: true,
-                  status: true,
-                  isSafeValue: true,
-                  source: true,
-                },
-                orderBy: { ev: 'desc' },
-                take: 5,
-              },
-            },
-            orderBy: { analyzedAt: 'desc' },
-            take: 1,
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where,
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+        homeTeam: { select: { name: true, logoUrl: true } },
+        awayTeam: { select: { name: true, logoUrl: true } },
+        season: {
+          select: {
+            competition: { select: { code: true, name: true } },
           },
         },
-        orderBy: [
-          { season: { competition: { name: 'asc' } } },
-          { scheduledAt: 'asc' },
-        ],
-      }),
-    ]);
+        oddsSnapshots: { select: { id: true }, take: 1 },
+        predictions: {
+          select: { pick: true, probability: true, correct: true },
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
+        modelRuns: {
+          select: {
+            id: true,
+            decision: true,
+            deterministicScore: true,
+            finalScore: true,
+            features: true,
+            analyzedAt: true,
+            bets: {
+              select: {
+                id: true,
+                market: true,
+                pick: true,
+                comboMarket: true,
+                comboPick: true,
+                ev: true,
+                oddsSnapshot: true,
+                probEstimated: true,
+                status: true,
+                isSafeValue: true,
+                source: true,
+              },
+              orderBy: { ev: 'desc' },
+              take: 5,
+            },
+          },
+          orderBy: { analyzedAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: [
+        { season: { competition: { name: 'asc' } } },
+        { scheduledAt: 'asc' },
+      ],
+    });
 
     const filteredFixtures = filters.timeSlot
       ? fixtures.filter((f) =>
@@ -281,7 +278,7 @@ export class FixtureScoringService {
         awayLogo: f.awayTeam.logoUrl ?? null,
         competition: f.season.competition.name,
         competitionCode: f.season.competition.code,
-        scheduledAt: formatTimeUtc(f.scheduledAt),
+        scheduledAt: f.scheduledAt.toISOString(),
         status: f.status,
         score:
           f.homeScore !== null && f.awayScore !== null
@@ -354,6 +351,6 @@ export class FixtureScoringService {
       rows = rows.filter((r) => r.modelRun?.betStatus === filters.betStatus);
     }
 
-    return { rows: sortByReliability(rows), total };
+    return { rows: sortByReliability(rows), total: rows.length };
   }
 }

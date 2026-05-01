@@ -14,8 +14,12 @@ import { OperatorPerformanceCard } from "./operator-performance-card";
 import { PipelineStatus } from "./pipeline-status";
 import { UserLeaderboard } from "./user-leaderboard";
 import { CanalCards } from "./canal-cards";
+import { Announcements } from "@/components/announcements";
+import { GraduationCap } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
+  const tFormation = useTranslations("dashboard.announcements.formation");
   const [pnlDate, setPnlDate] = useState<string | undefined>(undefined);
   const { data } = useDashboardSummary(pnlDate);
   const { data: competitionStats } = useCompetitionStats();
@@ -31,6 +35,18 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5">
+          <Announcements
+            items={[
+              {
+                id: "formation",
+                icon: <GraduationCap size={16} />,
+                title: tFormation("title"),
+                description: tFormation("description"),
+                href: "/dashboard/formation",
+              },
+            ]}
+          />
+
           {isAdmin ? (
             <PerformanceCard
               pnl={pnl}
