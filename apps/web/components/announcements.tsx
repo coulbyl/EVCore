@@ -78,9 +78,7 @@ export function Announcements({
               </AlertTitle>
 
               {news.description ? (
-                <AlertDescription>
-                  <p className="line-clamp-1">{news.description}</p>
-                </AlertDescription>
+                <AlertDescription>{news.description}</AlertDescription>
               ) : (
                 <AlertDescription />
               )}

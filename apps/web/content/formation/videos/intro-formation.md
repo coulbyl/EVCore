@@ -1,7 +1,8 @@
 ---
 title: "Découvrir EVCore : comment lire un pick"
-category: app
+category: bases
 difficulty: beginner
+order: 1
 readTime: 4
 slug: intro-formation
 summary: "Une courte vidéo pour comprendre les éléments d'un pick dans l'app."
@@ -16,7 +17,7 @@ chapters:
     { "label": "Lire l'EV", "start": 135 },
     { "label": "Conclusion", "start": 220 },
   ]
-related: ["les-3-canaux", "ev-probabilites-cotes"]
+related: ["comment-lire-un-pick", "les-3-canaux", "ev-probabilites-cotes"]
 ---
 
 ## À propos de cette vidéo

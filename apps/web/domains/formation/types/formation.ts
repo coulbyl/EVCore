@@ -28,6 +28,7 @@ export type FormationContentMeta = {
   title: string;
   category: FormationCategory;
   difficulty: FormationDifficulty;
+  order?: number;
   readTime: number;
   summary?: string;
   updatedAt?: string;

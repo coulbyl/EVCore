@@ -182,12 +182,18 @@ function parseMeta(
       ? Math.max(1, Math.round(data.readTime))
       : estimateReadTimeMinutes(content);
 
+  const order =
+    typeof data.order === "number" && Number.isFinite(data.order)
+      ? data.order
+      : undefined;
+
   return {
     type,
     slug: typeof data.slug === "string" ? data.slug : slugFromFilename,
     title,
     category,
     difficulty,
+    order,
     readTime,
     summary: typeof data.summary === "string" ? data.summary : undefined,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
