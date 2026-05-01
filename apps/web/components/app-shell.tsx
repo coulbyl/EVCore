@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Badge, PageShell } from "@evcore/ui";
-import { Settings, Wallet } from "lucide-react";
+import { GraduationCap, Settings, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
@@ -37,6 +37,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           mobileLabel: tNav("picks"),
           href: "/dashboard/picks",
           active: pathname.startsWith("/dashboard/picks"),
+        },
+        {
+          label: tNav("formation"),
+          href: "/dashboard/formation",
+          active: pathname.startsWith("/dashboard/formation"),
+          icon: GraduationCap,
         },
         {
           label: tNav("betSlips"),

@@ -22,8 +22,46 @@
     "audit": "Audit",
     "users": "Users",
     "glossary": "Glossary",
+    "formation": "Training",
     "settings": "Settings",
     "help": "Help"
+  },
+  "formation": {
+    "label": "Training",
+    "title": "Training center",
+    "subtitle": "Articles and videos to understand each pick and improve step by step.",
+    "progress": "Progress",
+    "open": "Open",
+    "browse": "Browse",
+    "contents": "Contents",
+    "otherItems": "Other items",
+    "upNext": "Up next",
+    "recommended": "Recommended",
+    "library": "Library",
+    "searchPlaceholder": "Search an article or a video…",
+    "allCategories": "All categories",
+    "allDifficulties": "All levels",
+    "noResults": "No results for these filters.",
+    "itemsCount": "{count} items",
+    "toc": "Navigation",
+    "articles": "Articles",
+    "videos": "Videos",
+    "article": "Article",
+    "video": "Video",
+    "markCompleted": "Mark as completed",
+    "completed": "Completed",
+    "categories": {
+      "bases": "Basics",
+      "channels": "EVCore channels",
+      "bankroll": "Bankroll & discipline",
+      "leagues": "League guide",
+      "app": "Using the app"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
   },
   "filters": {
     "label": "Filters",

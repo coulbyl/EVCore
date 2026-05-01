@@ -22,8 +22,46 @@
     "audit": "Audit",
     "users": "Utilisateurs",
     "glossary": "Glossaire",
+    "formation": "Formation",
     "settings": "Paramètres",
     "help": "Aide"
+  },
+  "formation": {
+    "label": "Formation",
+    "title": "Centre de formation",
+    "subtitle": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape.",
+    "progress": "Progression",
+    "open": "Ouvrir",
+    "browse": "Parcourir",
+    "contents": "Contenus",
+    "otherItems": "Autres contenus",
+    "upNext": "À suivre",
+    "recommended": "Recommandé",
+    "library": "Bibliothèque",
+    "searchPlaceholder": "Rechercher un article ou une vidéo…",
+    "allCategories": "Toutes les catégories",
+    "allDifficulties": "Tous les niveaux",
+    "noResults": "Aucun résultat pour ces filtres.",
+    "itemsCount": "{count} contenus",
+    "toc": "Navigation",
+    "articles": "Articles",
+    "videos": "Vidéos",
+    "article": "Article",
+    "video": "Vidéo",
+    "markCompleted": "Marquer comme terminé",
+    "completed": "Terminé",
+    "categories": {
+      "bases": "Les bases",
+      "channels": "Les 3 canaux EVCore",
+      "bankroll": "Bankroll & discipline",
+      "leagues": "Guide par ligue",
+      "app": "Comment utiliser l'app"
+    },
+    "difficulty": {
+      "beginner": "Débutant",
+      "intermediate": "Intermédiaire",
+      "advanced": "Avancé"
+    }
   },
   "filters": {
     "label": "Filtres",

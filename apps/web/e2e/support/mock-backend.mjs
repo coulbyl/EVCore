@@ -92,6 +92,6 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify(body));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "127.0.0.1", () => {
   process.stdout.write(`Mock backend ready on :${PORT}\n`);
 });
