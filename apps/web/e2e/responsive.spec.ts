@@ -11,6 +11,7 @@ import { test, expect } from "@playwright/test";
 const PAGES = [
   { name: "dashboard", path: "/dashboard" },
   { name: "fixtures", path: "/dashboard/fixtures" },
+  { name: "formation", path: "/dashboard/formation" },
   { name: "bankroll", path: "/dashboard/bankroll" },
   { name: "bet-slips", path: "/dashboard/bet-slips" },
   { name: "picks", path: "/dashboard/picks" },
