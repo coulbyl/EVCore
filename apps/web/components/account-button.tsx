@@ -96,12 +96,6 @@ export function AccountButton({
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/help">
-              <HelpCircle />
-              {tNav("help")}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link href="/dashboard/formation">
               <GraduationCap />
               {tNav("formation")}
