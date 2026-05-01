@@ -361,7 +361,6 @@ Scénarios minimaux :
 4. **Recherche Phase 1** ➖ (partiel)
 
 - [x] Recherche full-text au niveau catégorie (title/summary + contenu) + fallback filtre local
-- [ ] (Optionnel) Recherche globale cross-catégories
 
 5. **Migration `help-leagues.md`** ✅
 
