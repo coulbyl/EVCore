@@ -287,6 +287,12 @@ Objectif : sync multi-device + base pour “recommandé pour vous”.
 - Front : au login, hydrater le store depuis backend, puis écrire localStorage (cache).
 - Offline-first : si request échoue, buffer local puis retry (optionnel).
 
+**Statut (2026-05-01)**
+
+- Modèle DB + migration ajoutés (`packages/db/prisma`).
+- Endpoints backend implémentés (`apps/backend/src/modules/formation-progress`).
+- Front : sync au chargement Formation + POST/DELETE sur action completion (optimistic + rollback).
+
 ---
 
 ## 6) Recherche
@@ -368,11 +374,11 @@ Scénarios minimaux :
 - [x] Générer `apps/web/content/formation/articles/leagues/*` (+ `leagues-intro.md`)
 - [x] Extraire “Comment lire un pick” en article dédié
 
-6. **Backend Phase 2** ⏳ (à faire)
+6. **Backend Phase 2** ✅ (implémenté)
 
-- Prisma : modèle `UserContentProgress` + migration.
+- Prisma : modèle `UserContentProgress` + migration (à appliquer en env).
 - NestJS : module + endpoints + guard + DTO validation.
-- Front : sync login + optimistic updates.
+- Front : sync au chargement Formation + optimistic updates (rollback en cas d’échec).
 
 7. **E2E** ✅ (tests ajoutés, exécution à valider hors sandbox)
 

@@ -43,7 +43,7 @@ export function DashboardPageClient({ isAdmin }: { isAdmin: boolean }) {
                 title: tFormation("title"),
                 description: tFormation("description"),
                 href: "/dashboard/formation",
-              }
+              },
             ]}
           />
 

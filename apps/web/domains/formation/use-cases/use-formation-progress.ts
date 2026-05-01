@@ -16,6 +16,12 @@ type StoredProgress = {
   };
 };
 
+export type RemoteFormationProgressItem = {
+  contentType: "ARTICLE" | "VIDEO";
+  slug: string;
+  completedAt: string;
+};
+
 function safeParseProgress(raw: string | null): StoredProgress {
   if (!raw) return { read: {}, watched: {} };
   try {
@@ -116,6 +122,29 @@ export function useFormationProgress() {
     [],
   );
 
+  const hydrateRemote = useCallback((items: RemoteFormationProgressItem[]) => {
+    if (!items || items.length === 0) return;
+    setProgress((current) => {
+      const next: StoredProgress = {
+        ...current,
+        read: { ...current.read },
+        watched: { ...current.watched },
+      };
+
+      for (const item of items) {
+        const target =
+          item.contentType === "ARTICLE" ? next.read : next.watched;
+        const existing = target[item.slug];
+        if (!existing || existing < item.completedAt) {
+          target[item.slug] = item.completedAt;
+        }
+      }
+
+      writeProgress(next);
+      return next;
+    });
+  }, []);
+
   return {
     progress,
     counts,
@@ -123,6 +152,7 @@ export function useFormationProgress() {
     markCompleted,
     unmarkCompleted,
     setRecent,
+    hydrateRemote,
     storageKey: STORAGE_KEY,
   };
 }

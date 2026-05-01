@@ -69,6 +69,11 @@ enum UserRole {
   OPERATOR
 }
 
+enum FormationContentType {
+  ARTICLE
+  VIDEO
+}
+
 enum AdjustmentStatus {
   PENDING
   APPLIED
@@ -292,11 +297,28 @@ model User {
   betSlipItems         BetSlipItem[]
   bets                 Bet[]
   bankrollTransactions BankrollTransaction[]
+  contentProgress      UserContentProgress[]
   badges               UserBadge[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
   @@map("users")
+}
+
+model UserContentProgress {
+  id          String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId      String               @db.Uuid
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentType FormationContentType
+  slug        String
+  completedAt DateTime
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([userId, contentType, slug])
+  @@index([userId])
+  @@index([completedAt])
+  @@map("user_content_progress")
 }
 
 model Session {

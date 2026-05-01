@@ -5,6 +5,7 @@ import { Button } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { useFormationProgress } from "@/domains/formation/use-cases/use-formation-progress";
 import type { FormationContentType } from "@/domains/formation/types/formation";
+import { clientApiRequest } from "@/lib/api/client-api";
 
 export function FormationCompletionButton({
   type,
@@ -21,9 +22,33 @@ export function FormationCompletionButton({
   return (
     <Button
       variant={completed ? "secondary" : "outline"}
-      onClick={() =>
-        completed ? unmarkCompleted(type, slug) : markCompleted(type, slug)
-      }
+      onClick={async () => {
+        const apiType = type === "article" ? "ARTICLE" : "VIDEO";
+
+        if (completed) {
+          unmarkCompleted(type, slug);
+          try {
+            await clientApiRequest(`/formation/progress/${apiType}/${slug}`, {
+              method: "DELETE",
+              fallbackErrorMessage: "",
+            });
+          } catch {
+            markCompleted(type, slug);
+          }
+          return;
+        }
+
+        markCompleted(type, slug);
+        try {
+          await clientApiRequest(`/formation/progress`, {
+            method: "POST",
+            body: { contentType: apiType, slug },
+            fallbackErrorMessage: "",
+          });
+        } catch {
+          unmarkCompleted(type, slug);
+        }
+      }}
       className="rounded-xl shadow-xs"
       data-testid="formation-completion-button"
     >

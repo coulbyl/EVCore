@@ -66,7 +66,11 @@ export function Announcements({
             key={news.id}
             className="group relative pr-16 transition-colors hover:bg-secondary/35"
           >
-            <Link href={news.href} className="contents" onClick={() => dismiss(news.id)}>              
+            <Link
+              href={news.href}
+              className="contents"
+              onClick={() => dismiss(news.id)}
+            >
               <AlertTitle>
                 <span className="min-w-0 truncate group-hover:text-accent flex items-center gap-1">
                   {news.icon ? news.icon : null} {news.title}

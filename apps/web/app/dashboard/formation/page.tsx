@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getFormationIndex } from "@/domains/formation/server/formation-content";
 import { FormationPageClient } from "./components/formation-page-client";
+import { FormationProgressSync } from "./components/formation-progress-sync";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("formation");
@@ -10,5 +11,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function FormationPage() {
   const items = await getFormationIndex();
-  return <FormationPageClient items={items} />;
+  return (
+    <>
+      <FormationProgressSync />
+      <FormationPageClient items={items} />
+    </>
+  );
 }
