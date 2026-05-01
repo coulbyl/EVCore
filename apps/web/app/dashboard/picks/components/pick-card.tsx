@@ -6,7 +6,7 @@ import { Badge } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { CanalBadge } from "@/components/canal-badge";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
-import { formatKickoff } from "@/domains/fixture/helpers/fixture";
+import { formatKickoff, formatScore } from "@/domains/fixture/helpers/fixture";
 import type {
   FixtureRow,
   FixtureModelFactors,
@@ -49,7 +49,9 @@ function ResultBadge({
 }: {
   status: "WON" | "LOST" | "PENDING" | null;
 }) {
-  if (!status || status === "PENDING") return null;
+  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (status === "PENDING")
+    return <span className="text-xs text-muted-foreground">En attente</span>;
   return (
     <Badge
       variant={status === "WON" ? "success" : "destructive"}
@@ -154,6 +156,7 @@ export function EvPickCard({ row }: { row: FixtureRow }) {
   const mr = row.modelRun;
   if (!mr || mr.decision !== "BET") return null;
 
+  const score = formatScore(row.score, row.htScore);
   const pickLabel =
     mr.market && mr.pick
       ? formatCombinedPickForDisplay({
@@ -195,11 +198,21 @@ export function EvPickCard({ row }: { row: FixtureRow }) {
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {pickLabel && (
-          <span className="text-sm font-medium text-foreground">
-            {pickLabel}
-          </span>
-        )}
+        <div className="flex min-w-0 items-center gap-2">
+          {pickLabel && (
+            <span className="truncate text-sm font-medium text-foreground">
+              {pickLabel}
+            </span>
+          )}
+          {score && (
+            <>
+              <span className="text-border">·</span>
+              <span className="shrink-0 font-semibold tabular-nums text-sm text-muted-foreground">
+                {score}
+              </span>
+            </>
+          )}
+        </div>
         {odds && (
           <span className="tabular-nums text-sm text-muted-foreground">
             {odds}
@@ -243,6 +256,7 @@ export function SvPickCard({ row }: { row: FixtureRow }) {
   const sv = row.safeValueBet;
   if (!sv) return null;
 
+  const score = formatScore(row.score, row.htScore);
   const pickLabel = formatCombinedPickForDisplay({
     market: sv.market,
     pick: sv.pick,
@@ -270,11 +284,21 @@ export function SvPickCard({ row }: { row: FixtureRow }) {
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {pickLabel && (
-          <span className="text-sm font-medium text-foreground">
-            {pickLabel}
-          </span>
-        )}
+        <div className="flex min-w-0 items-center gap-2">
+          {pickLabel && (
+            <span className="truncate text-sm font-medium text-foreground">
+              {pickLabel}
+            </span>
+          )}
+          {score && (
+            <>
+              <span className="text-border">·</span>
+              <span className="shrink-0 font-semibold tabular-nums text-sm text-muted-foreground">
+                {score}
+              </span>
+            </>
+          )}
+        </div>
         {sv.odds && (
           <span className="tabular-nums text-sm text-muted-foreground">
             {sv.odds}
