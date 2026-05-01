@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useMemo } from "react";
 import {
   BookOpen,
+  ChevronRight,
   GraduationCap,
   Shapes,
   Shield,
   Sparkles,
+  Video,
 } from "lucide-react";
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -79,7 +82,7 @@ export function FormationPageClient({
   items: FormationContentMeta[];
 }) {
   const t = useTranslations("formation");
-  const { isCompleted } = useFormationProgress();
+  const { isCompleted, progress } = useFormationProgress();
 
   const total = items.length;
   const totalCompleted = useMemo(
@@ -87,6 +90,19 @@ export function FormationPageClient({
     [isCompleted, items],
   );
   const totalPercent = percent(totalCompleted, total);
+
+  const recent = progress.recent;
+  const recentItem = useMemo(() => {
+    if (!recent) return null;
+    return (
+      items.find(
+        (item) =>
+          item.slug === recent.slug &&
+          item.type === recent.type &&
+          item.category === recent.category,
+      ) ?? null
+    );
+  }, [items, recent]);
 
   const byCategory = useMemo(() => {
     const map = new Map<FormationCategory, FormationContentMeta[]>();
@@ -157,6 +173,52 @@ export function FormationPageClient({
           </div>
 
           {/* Categories */}
+          {recentItem ? (
+            <section className="rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_18%,transparent)_0%,transparent_74%)] p-4 shadow-[0_16px_44px_rgba(15,23,42,0.10)] sm:p-5">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {t("lastRead")}
+              </p>
+
+              <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold text-foreground">
+                    {recentItem.title}
+                  </p>
+                  {recentItem.summary ? (
+                    <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                      {recentItem.summary}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="gap-1">
+                      {recentItem.type === "article" ? (
+                        <BookOpen size={12} />
+                      ) : (
+                        <Video size={12} />
+                      )}
+                      {recentItem.type === "article"
+                        ? t("article")
+                        : t("video")}
+                    </Badge>
+                    <Badge variant="outline" className="tabular-nums">
+                      {t(`categories.${recentItem.category}`)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Button asChild className="rounded-2xl">
+                  <Link
+                    href={`/dashboard/formation/${recentItem.category}/${recentItem.slug}`}
+                  >
+                    {t("continue")}
+                    <ChevronRight size={16} data-icon="inline-end" />
+                  </Link>
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORY_ORDER.map((cat) => {
               const catItems = byCategory.get(cat) ?? [];

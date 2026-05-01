@@ -195,6 +195,16 @@ async function readContentFile(
   return { ...meta, content };
 }
 
+function scoreMatch(text: string, query: string): number {
+  const hay = text.toLowerCase();
+  const needle = query.toLowerCase();
+  if (!needle) return 0;
+  const index = hay.indexOf(needle);
+  if (index === -1) return 0;
+  // Earlier matches score slightly higher.
+  return 1 + Math.max(0, 30 - Math.floor(index / 20));
+}
+
 export async function getFormationIndex(): Promise<FormationContentMeta[]> {
   const articlesDir = path.join(CONTENT_ROOT, "articles");
   const videosDir = path.join(CONTENT_ROOT, "videos");
@@ -209,9 +219,11 @@ export async function getFormationIndex(): Promise<FormationContentMeta[]> {
     ...videoPaths.map((fullPath) => readContentFile("video", fullPath)),
   ]);
 
-  const metas: FormationContentMeta[] = [
-    ...items.map(({ content: _c, ...meta }) => meta),
-  ];
+  const metas: FormationContentMeta[] = items.map((item) => {
+    const { content, ...meta } = item;
+    void content;
+    return meta;
+  });
 
   metas.sort((a, b) => a.title.localeCompare(b.title));
   return metas;
@@ -233,4 +245,47 @@ export async function getFormationContentBySlug(
   }
 
   return null;
+}
+
+export async function searchFormationContent({
+  category,
+  q,
+}: {
+  category: FormationContentMeta["category"];
+  q: string;
+}): Promise<Array<{ type: FormationContentType; slug: string }>> {
+  const query = q.trim();
+  if (query.length < 2) return [];
+
+  const articlesDir = path.join(CONTENT_ROOT, "articles");
+  const videosDir = path.join(CONTENT_ROOT, "videos");
+  const [articlePaths, videoPaths] = await Promise.all([
+    listMarkdownFilesRecursively(articlesDir),
+    listMarkdownFilesRecursively(videosDir),
+  ]);
+
+  const candidates = await Promise.all([
+    ...articlePaths.map(async (fullPath) => ({
+      type: "article" as const,
+      item: await readContentFile("article", fullPath),
+    })),
+    ...videoPaths.map(async (fullPath) => ({
+      type: "video" as const,
+      item: await readContentFile("video", fullPath),
+    })),
+  ]);
+
+  const scored = candidates
+    .filter(({ item }) => item.category === category)
+    .map(({ type, item }) => {
+      const titleScore = scoreMatch(item.title, query) * 3;
+      const summaryScore = scoreMatch(item.summary ?? "", query) * 2;
+      const contentScore = scoreMatch(item.content, query);
+      const score = titleScore + summaryScore + contentScore;
+      return { type, slug: item.slug, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored.map(({ type, slug }) => ({ type, slug }));
 }

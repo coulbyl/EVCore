@@ -6,6 +6,8 @@ Objectif : transformer l’actuelle aide “markdown brut” (`/dashboard/help` 
 
 Format d’inspiration validé : `~/lab/coulby-connect/apps/web/app/(customer)/(dashboard)/help` (landing en sections + pages détail `[slug]` avec métadonnées, étapes/tips/warnings, related).
 
+**État (2026-05-01)** : Phase 1 (web) implémentée avec navigation **par catégorie** + lecture intégrée (liste ↔ contenu) + progression localStorage + mobile bottom sheet. Les anciennes routes `/dashboard/formation/articles/[slug]` et `/dashboard/formation/videos/[slug]` redirigent vers la nouvelle structure.
+
 ---
 
 ## 0) Portée & contraintes
@@ -30,56 +32,50 @@ Format d’inspiration validé : `~/lab/coulby-connect/apps/web/app/(customer)/(
 
 ### 1.1 `/dashboard/formation` (Accueil)
 
-Pattern cible : landing “Help” en **sections empilées** (inspiré de Coulby Connect) + contenu data-driven (index MDX).
+Pattern final : **hub de catégories** (cartes cliquables) → expérience “master/detail” par catégorie.
 
 **Sections**
 
 - Hero : titre + description (“Comprenez chaque pick, maîtrisez le système”).
-- Search bar (filtre texte + filtres category/difficulty) + action secondaire optionnelle (ex: “Contacter support” → non requis sur EVCore).
-- Grille de catégories (5) avec icône, nombre d’items, progression par catégorie.
-- “Tutoriels / À regarder” : liste d’articles/vidéos en cards (format type/durée) — équivalent Coulby “Tutorials”.
-- “FAQ / À retenir” (optionnel) : accordéon de questions fréquentes sur EV, canaux, bankroll — équivalent Coulby “FAQ”.
-- “Recommandé pour vous” : 2–3 items (heuristiques Phase 1, API Phase 2).
-- Barre de progression globale : `X / Y` contenus terminés.
-- Recherche (Phase 1 : filtre local/serveur, Phase 2 : index).
+- “Dernier lu / Continuer” : reprend automatiquement le dernier contenu ouvert (localStorage).
+- Grille de catégories (5) avec icône, nombre d’items, progression par catégorie, CTA “Parcourir”.
+- Progression globale : `X / Y` contenus terminés.
 
 **Interactions**
 
-- Filtrer par catégorie / difficulté.
-- Ouvrir un article ou une vidéo.
+- Cliquer une catégorie → ouvre la page catégorie (lecture).
 
-### 1.2 `/dashboard/formation/articles/[slug]` (Article)
+### 1.2 `/dashboard/formation/[category]` (Lecture par catégorie)
 
-Pattern cible : page détail type Coulby “Help detail” mais alimentée par MDX (au lieu de mock data inline).
+Pattern cible : **liste d’items (gauche) + zone de lecture (droite)**, sans navigation “catalogue” (pas de Recommended/Library).
 
 **Affichage**
 
-- Titre + méta (difficulté, temps de lecture estimé).
-- Intro/summary (si présent dans le frontmatter).
-- Contenu MDX (callouts, tableaux, encadrés “À retenir”, code blocks).
-- Blocs structurés optionnels si le contenu s’y prête (inspiré Coulby) :
-  - “Étapes” (liste)
-  - “Tips” (liste)
-  - “Attention” (callout warning)
-- Navigation : “Précédent / Suivant” dans la même catégorie.
-- “Articles liés” (related) : 3–6 items max, déterminés par frontmatter (`related?: string[]`) ou heuristique (même catégorie).
-- CTA : “Marquer comme lu” (Phase 1 : localStorage, Phase 2 : backend).
+- Breadcrumb premium en haut (Formation → Catégorie).
+- Sidebar : recherche + progression catégorie + liste d’items (cliquables) + état “Terminé”.
+- Zone de lecture : header item + CTA “Marquer comme terminé” + contenu.
 
 **Accessibilité**
 
 - Titres structurés (h1/h2/h3) et table des matières optionnelle.
 - Contrastes OK via tokens, pas de `dark:` hardcodé.
 
-### 1.3 `/dashboard/formation/videos/[slug]` (Vidéo)
+**Mobile**
 
-Pattern cible : page détail similaire “demo/video” Coulby : player + durée + chapitres + related + CTA “vu”.
+- La liste d’items s’ouvre dans un **bottom sheet (Drawer)** via un bouton fixe “Contenus”.
+
+### 1.3 `/dashboard/formation/[category]/[slug]` (Lecture d’un item)
 
 **Affichage**
 
-- Player (YouTube/Vimeo embed ou fichier vidéo HTML5).
-- Chapitres (timestamps) + description.
-- Contenus liés (articles recommandés).
-- CTA : “Marquer comme vu”.
+- Article : carte de lecture (max-width) + header item + CTA completion.
+- Vidéo : carte player + chapitres + description + CTA completion.
+- Navigation : boutons “Précédent / Suivant” + section “Related” (autres contenus de la catégorie).
+
+### 1.4 Routes legacy (compat)
+
+- `/dashboard/formation/articles/[slug]` → redirect vers `/dashboard/formation/{category}/{slug}`
+- `/dashboard/formation/videos/[slug]` → redirect vers `/dashboard/formation/{category}/{slug}` (en conservant `?t=...`)
 
 ---
 
@@ -310,12 +306,10 @@ Objectif : sync multi-device + base pour “recommandé pour vous”.
 ### 7.1 Stratégie
 
 - Garder `/dashboard/help` en place au début (feature flag / coexistence).
-- Extraire `help-leagues.md` en articles “Guide par ligue” :
-  - 1 ligue = 1 article `leagues-<slug>.mdx`
-  - Ajouter `summary` + difficulté par défaut (`beginner`).
+- Extraire `help-leagues.md` en articles “Guide par ligue” (1 ligue = 1 fichier) + un fichier intro commun.
 - Une fois la page Formation stable :
   - Mettre un lien “Formation” dans la nav.
-  - Soit rediriger `/dashboard/help` → `/dashboard/formation?category=leagues`
+  - Option : rediriger `/dashboard/help` → `/dashboard/formation/leagues`
   - Soit conserver `/dashboard/help` comme “legacy” pendant une période.
 
 ---
@@ -343,47 +337,50 @@ Scénarios minimaux :
 
 ## 9) Ordre d’exécution (checklist)
 
-1. **Content skeleton**
+1. **Content skeleton** ✅
 
-- Créer dossiers `apps/web/content/formation/articles` et `apps/web/content/formation/videos`.
-- Ajouter 2–3 premiers articles “Les bases” + 1 vidéo exemple.
+- [x] Créer `apps/web/content/formation/articles` et `apps/web/content/formation/videos`
+- [x] Ajouter 3 articles “Les bases” + 1 vidéo exemple
 
-2. **Index & pages (Next.js)**
+2. **Index & pages (Next.js)** ✅
 
-- Implémenter `listContent()` + `getContentBySlug()`.
-- Construire `/dashboard/formation` (liste + filtres + progression Phase 1).
-- Construire `/articles/[slug]` et `/videos/[slug]`.
+- [x] Implémenter index + `getFormationContentBySlug()`
+- [x] Construire `/dashboard/formation` (hub catégories)
+- [x] Construire navigation par catégorie `/dashboard/formation/[category]/[slug]`
+- [x] Ajouter redirects legacy `/dashboard/formation/articles/[slug]` + `/dashboard/formation/videos/[slug]`
 
-3. **Progression Phase 1**
+3. **Progression Phase 1** ✅
 
-- Hook + localStorage, UI progression par catégorie/global.
+- [x] Hook localStorage + UI progression global/catégorie
 
-4. **Recherche Phase 1**
+4. **Recherche Phase 1** ➖ (partiel)
 
-- Filtre simple (titre/summary), puis option contenu si besoin.
+- [ ] Recherche full-text (titre/summary + contenu) au niveau catégorie (ou global)
 
-5. **Migration `help-leagues.md`**
+5. **Migration `help-leagues.md`** ✅
 
-- Découper en articles et publier “Guide par ligue”.
-- Ajouter un lien depuis l’ancienne page Help (ou redirection plus tard).
+- [x] Script : `apps/web/scripts/split-help-leagues.mjs`
+- [x] Générer `apps/web/content/formation/articles/leagues/*` (+ `leagues-intro.md`)
+- [x] Extraire “Comment lire un pick” en article dédié
 
-6. **Backend Phase 2**
+6. **Backend Phase 2** ⏳ (à faire)
 
 - Prisma : modèle `UserContentProgress` + migration.
 - NestJS : module + endpoints + guard + DTO validation.
 - Front : sync login + optimistic updates.
 
-7. **E2E**
+7. **E2E** ✅ (tests ajoutés, exécution à valider hors sandbox)
 
-- Playwright sur les vues clés + backend e2e.
+- [x] Playwright : `apps/web/e2e/formation.spec.ts` + update responsive
+- [ ] Valider exécution e2e en local/CI (le sandbox peut bloquer le port mock backend)
 
 ---
 
 ## 10) Definition of Done (P8)
 
 - `/dashboard/formation` + pages article/vidéo opérationnelles.
-- Contenu minimal en place (au moins : 3 articles “Les bases” + 1 “Guide par ligue” migré + 1 vidéo).
+- Contenu minimal en place (au moins : 3 articles “Les bases” + guides ligues + 1 vidéo).
 - Progression Phase 1 fonctionnelle + UI claire.
-- Recherche Phase 1 fonctionnelle.
+- Recherche Phase 1 fonctionnelle (au moins titre/summary) — idéalement full-text.
 - Playwright : scénarios clés + responsive OK.
 - Phase 2 (si incluse dans la livraison) : persistance backend + sync multi-device validées.

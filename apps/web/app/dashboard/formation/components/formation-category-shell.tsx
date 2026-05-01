@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -57,8 +57,10 @@ export function FormationCategoryShell({
 
   const [query, setQuery] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [remoteMatches, setRemoteMatches] = useState<Set<string> | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filtered = useMemo(() => {
+  const localFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
     return items.filter(
@@ -67,6 +69,13 @@ export function FormationCategoryShell({
         (item.summary ?? "").toLowerCase().includes(q),
     );
   }, [items, query]);
+
+  const filtered = useMemo(() => {
+    if (!remoteMatches) return localFiltered;
+    return items.filter((item) =>
+      remoteMatches.has(`${item.type}:${item.slug}`),
+    );
+  }, [items, localFiltered, remoteMatches]);
 
   const completedCount = useMemo(() => {
     let count = 0;
@@ -77,6 +86,37 @@ export function FormationCategoryShell({
   }, [isCompleted, items]);
 
   const pct = percent(completedCount, items.length);
+
+  // Debounced remote full-text search (title/summary + content)
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setRemoteMatches(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = window.setTimeout(() => {
+      void fetch(
+        `/api/formation/search?category=${encodeURIComponent(category)}&q=${encodeURIComponent(
+          q,
+        )}`,
+      )
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          const matches: Array<{ type: string; slug: string }> =
+            json?.matches ?? [];
+          setRemoteMatches(new Set(matches.map((m) => `${m.type}:${m.slug}`)));
+        })
+        .catch(() => {
+          setRemoteMatches(null);
+        })
+        .finally(() => setIsSearching(false));
+    }, 220);
+
+    return () => window.clearTimeout(timer);
+  }, [category, query]);
 
   const list = (mode: "sidebar" | "drawer") => (
     <Card
@@ -111,6 +151,11 @@ export function FormationCategoryShell({
             placeholder={t("searchPlaceholder")}
             className="h-10 rounded-2xl"
           />
+          {isSearching ? (
+            <Badge variant="secondary" className="shrink-0 tabular-nums">
+              …
+            </Badge>
+          ) : null}
         </div>
       </CardHeader>
 

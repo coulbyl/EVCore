@@ -8,6 +8,12 @@ const STORAGE_KEY = "evcore:formation:progress:v1";
 type StoredProgress = {
   read: Record<string, string>;
   watched: Record<string, string>;
+  recent?: {
+    category: string;
+    type: FormationContentType;
+    slug: string;
+    openedAt: string;
+  };
 };
 
 function safeParseProgress(raw: string | null): StoredProgress {
@@ -17,6 +23,7 @@ function safeParseProgress(raw: string | null): StoredProgress {
     return {
       read: parsed.read ?? {},
       watched: parsed.watched ?? {},
+      recent: parsed.recent,
     };
   } catch {
     return { read: {}, watched: {} };
@@ -94,12 +101,28 @@ export function useFormationProgress() {
     };
   }, [progress]);
 
+  const setRecent = useCallback(
+    (input: { category: string; type: FormationContentType; slug: string }) => {
+      const openedAt = new Date().toISOString();
+      setProgress((current) => {
+        const next: StoredProgress = {
+          ...current,
+          recent: { ...input, openedAt },
+        };
+        writeProgress(next);
+        return next;
+      });
+    },
+    [],
+  );
+
   return {
     progress,
     counts,
     isCompleted,
     markCompleted,
     unmarkCompleted,
+    setRecent,
     storageKey: STORAGE_KEY,
   };
 }
