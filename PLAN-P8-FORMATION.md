@@ -6,7 +6,7 @@ Objectif : transformer l’actuelle aide “markdown brut” (`/dashboard/help` 
 
 Format d’inspiration validé : `~/lab/coulby-connect/apps/web/app/(customer)/(dashboard)/help` (landing en sections + pages détail `[slug]` avec métadonnées, étapes/tips/warnings, related).
 
-**État (2026-05-01)** : Phase 1 (web) implémentée avec navigation **par catégorie** + lecture intégrée (liste ↔ contenu) + progression localStorage + mobile bottom sheet. Les anciennes routes `/dashboard/formation/articles/[slug]` et `/dashboard/formation/videos/[slug]` redirigent vers la nouvelle structure.
+**État (2026-05-01)** : Phase 1 (web) implémentée avec navigation **par catégorie** + lecture intégrée (liste ↔ contenu) + progression localStorage + “Dernier lu / Continuer” + navigation “Précédent/Suivant + Related” + recherche full-text par catégorie + mobile bottom sheet. Les anciennes routes `/dashboard/formation/articles/[slug]` et `/dashboard/formation/videos/[slug]` redirigent vers la nouvelle structure.
 
 ---
 
@@ -243,12 +243,17 @@ Si Option B (ou si on veut standardiser les balises même en Option A) :
 ### 5.1 Phase 1 — localStorage (rapide, itératif)
 
 - Clé : `evcore:formation:progress:v1`
-- Valeur : `{ read: Record<string, string>, watched: Record<string, string> }` (slug → ISO date)
+- Valeur :
+  - `read: Record<string, string>` (slug → ISO date)
+  - `watched: Record<string, string>` (slug → ISO date)
+  - `recent?: { category; type; slug; openedAt }` (dernier contenu ouvert)
 - API front :
   - `useFormationProgress()` (client hook)
-  - `markRead(slug)`, `markUnread(slug)`, idem vidéos
+  - `markCompleted(type, slug)`, `unmarkCompleted(type, slug)`
+  - `setRecent({ category, type, slug })` (alimenté via `FormationRecentTracker`)
 - Calcul :
   - Progression par catégorie via intersection `slugs` (content index) × `read`.
+  - “Dernier lu / Continuer” basé sur `progress.recent`.
 
 ### 5.2 Phase 2 — backend (NestJS + DB)
 
@@ -288,9 +293,9 @@ Objectif : sync multi-device + base pour “recommandé pour vous”.
 
 ### 6.1 Phase 1 (sans infra)
 
-- Recherche par `title`, `summary`, et (optionnel) contenu brut (sans MDX compilé) :
-  - Lire les fichiers et filtrer côté serveur (accueil Formation) + passer résultats au client.
-  - Pour une recherche live, utiliser un filtre côté client sur l’index déjà chargé.
+- Recherche par catégorie (Phase 1) :
+  - Filtre local immédiat (title/summary) sur l’index chargé.
+  - Full-text (title/summary + contenu) via un endpoint Next `GET /api/formation/search?category=...&q=...` (debounced, `q.length >= 2`).
 
 ### 6.2 Phase 2 (scalable)
 
@@ -355,7 +360,8 @@ Scénarios minimaux :
 
 4. **Recherche Phase 1** ➖ (partiel)
 
-- [ ] Recherche full-text (titre/summary + contenu) au niveau catégorie (ou global)
+- [x] Recherche full-text au niveau catégorie (title/summary + contenu) + fallback filtre local
+- [ ] (Optionnel) Recherche globale cross-catégories
 
 5. **Migration `help-leagues.md`** ✅
 
