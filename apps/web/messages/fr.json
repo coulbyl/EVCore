@@ -13,7 +13,7 @@
     "seeAll": "Voir tout"
   },
   "nav": {
-    "dashboard": "Tableau de bord",
+    "dashboard": "Accueil",
     "fixtures": "Matchs",
     "picks": "Picks du jour",
     "performance": "Performance",
@@ -142,8 +142,8 @@
   },
   "picks": {
     "pageTitle": "Picks du jour",
-    "evChannel": "Canal EV",
-    "safeValue": "Safe Value",
+    "evChannel": "Valeur",
+    "safeValue": "Safe",
     "confidence": "Confiance",
     "loadError": "Impossible de charger les picks du jour.",
     "empty": "Aucun pick pour aujourd'hui."
