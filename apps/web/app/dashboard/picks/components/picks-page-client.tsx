@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, TrendingUp, Shield, Brain } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Badge,
   Drawer,
@@ -10,6 +11,9 @@ import {
   Page,
   PageContent,
   StatCard,
+  FilterBar,
+  type FilterDef,
+  type FilterState,
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { usePicksOfTheDay } from "@/domains/fixture/use-cases/get-picks-of-the-day";
@@ -17,9 +21,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import { CanalBadge } from "@/components/canal-badge";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
-import { formatKickoff } from "@/domains/fixture/helpers/fixture";
+import { formatKickoff, formatScore } from "@/domains/fixture/helpers/fixture";
 import { AddToSlipInline } from "./add-to-slip-inline";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
+import { todayIso } from "@/lib/date";
 
 // ── canal grouping ────────────────────────────────────────────────────────────
 
@@ -102,6 +107,71 @@ function TeamLogos({
   );
 }
 
+function ResultBadge({
+  status,
+}: {
+  status: "WON" | "LOST" | "PENDING" | null;
+}) {
+  if (!status) return null;
+  if (status === "PENDING")
+    return <span className="text-xs text-muted-foreground">En attente</span>;
+  return (
+    <Badge
+      variant={status === "WON" ? "success" : "destructive"}
+      className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-widest"
+    >
+      {status === "WON" ? "Gagné" : "Perdu"}
+    </Badge>
+  );
+}
+
+const CONF_PICK_LABEL: Record<string, string> = {
+  HOME: "DOM",
+  AWAY: "EXT",
+  DRAW: "NUL",
+};
+
+function PredictionBadge({ pred }: { pred: FixtureRow["prediction"] }) {
+  if (!pred) return null;
+  const label = CONF_PICK_LABEL[pred.pick] ?? pred.pick;
+
+  if (pred.correct === true) {
+    return (
+      <Badge
+        variant="success"
+        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      >
+        → {label} {pred.probability}
+      </Badge>
+    );
+  }
+
+  if (pred.correct === false) {
+    return (
+      <Badge
+        variant="destructive"
+        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      >
+        → {label} {pred.probability}
+      </Badge>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
+      style={{
+        color: "var(--canal-conf)",
+        background: "var(--canal-conf-soft)",
+        border:
+          "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
+      }}
+    >
+      → {label} {pred.probability}
+    </span>
+  );
+}
+
 function PickListItem({
   row,
   canal,
@@ -152,6 +222,14 @@ function PickListItem({
         ? (sv?.ev ?? null)
         : null;
 
+  const score = formatScore(row.score, row.htScore);
+  const betStatus =
+    canal === "EV"
+      ? (mr?.betStatus ?? null)
+      : canal === "SV"
+        ? (sv?.betStatus ?? null)
+        : null;
+
   return (
     <div
       role="button"
@@ -192,6 +270,12 @@ function PickListItem({
               {pickLabel}
             </Badge>
           ) : null}
+          {canal === "CONF" ? <PredictionBadge pred={row.prediction} /> : null}
+          {score ? (
+            <Badge variant="outline" className="text-[0.68rem] tabular-nums">
+              {score}
+            </Badge>
+          ) : null}
           {odds ? (
             <Badge variant="outline" className="text-[0.68rem] tabular-nums">
               {odds}
@@ -213,6 +297,8 @@ function PickListItem({
             </span>
           ) : null}
 
+          <ResultBadge status={betStatus} />
+
           {canal === "EV" ? (
             <AddToSlipInline row={row} canal="EV" />
           ) : canal === "SV" ? (
@@ -226,12 +312,31 @@ function PickListItem({
 
 // ── main ──────────────────────────────────────────────────────────────────────
 
+const FILTER_DEFS: FilterDef[] = [
+  {
+    key: "date",
+    label: "Date",
+    type: "date",
+  },
+];
+
 export function PicksPageClient() {
   const t = useTranslations("picks");
-  const { data, isLoading, isError } = usePicksOfTheDay();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const date = searchParams.get("date") ?? todayIso();
+  const { data, isLoading, isError } = usePicksOfTheDay(date);
+
+  const [filters, setFilters] = useState<FilterState>({ date });
+
+  useEffect(() => {
+    setFilters({ date });
+  }, [date]);
 
   const { ev, sv, conf } = useMemo(
     () => groupByCanal(data?.rows ?? []),
@@ -250,9 +355,24 @@ export function PicksPageClient() {
     if (!selectedId && defaultSelection) setSelectedId(defaultSelection);
   }, [defaultSelection, selectedId]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    const stillExists = (data?.rows ?? []).some(
+      (r) => r.fixtureId === selectedId,
+    );
+    if (!stillExists && defaultSelection) setSelectedId(defaultSelection);
+  }, [data?.rows, defaultSelection, selectedId]);
+
   function handleSelect(row: FixtureRow) {
     setSelectedId(row.fixtureId);
     if (isMobile) setDrawerOpen(true);
+  }
+
+  function handleFiltersChange(next: FilterState) {
+    setFilters(next);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("date", (next.date as string) ?? todayIso());
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
@@ -281,6 +401,14 @@ export function PicksPageClient() {
               label={t("confidence")}
               value={String(conf.length)}
               tone="neutral"
+            />
+          </section>
+
+          <section className="shrink-0">
+            <FilterBar
+              filters={FILTER_DEFS}
+              value={filters}
+              onChange={handleFiltersChange}
             />
           </section>
 
