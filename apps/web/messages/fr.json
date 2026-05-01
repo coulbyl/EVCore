@@ -177,6 +177,16 @@
     "activeSuspensions": "Suspensions actives"
   },
   "dashboard": {
+    "announcements": {
+      "title": "Nouveautés",
+      "dismiss": "Plus tard",
+      "close": "Fermer l'annonce",
+      "closeItem": "Masquer cette annonce",
+      "formation": {
+        "title": "Centre de formation",
+        "description": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape."
+      }
+    },
     "predictions": {
       "title": "Prédictions du jour",
       "empty": "Aucune prédiction pour aujourd'hui.",
