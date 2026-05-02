@@ -380,7 +380,7 @@ Transparence totale sur les 3 modèles. C'est l'argument de confiance de l'app �
 **Tâches :**
 
 - [x] Créer la route `/dashboard/performance`
-- [ ] Section "Vue d'ensemble" :
+- [x] Section "Vue d'ensemble" :
   - [x] Résumé PnL : ROI, réussite, gain net, paris réglés
   - [x] ROI global par canal (EV / Sécurité / Confiance) sur période glissante
   - [x] Sélecteur de période (7j / 30j / tout)
@@ -469,9 +469,9 @@ Récompenser les bonnes métriques (calibration, patience, volume statistiquemen
 Améliorations rapides sans nouvelle page ni nouvelle API.
 
 - [x] **Feature breakdown sur les pick cards** : barres de contribution des 4 facteurs depuis `ModelRun.features` — intégré dans `EvPickCard` (section "Pourquoi ce pick ?" P2)
-- [ ] **Bankroll — projection 30 jours** : ajouter une ligne pointillée sur le trend chart indiquant la trajectoire actuelle (calcul client-side depuis transactions)
-- [ ] **Bankroll — stats de période** : afficher ROI de la période sélectionnée directement sous le sélecteur de dates
-- [ ] **Fixtures — preset filters** : ajouter des raccourcis "Picks EV du jour", "Picks SV du jour", "Matchs en cours" au-dessus du tableau de filtres
+- [x] **Bankroll — projection 30 jours** : ajouter une ligne pointillée sur le trend chart indiquant la trajectoire actuelle (calcul client-side depuis transactions)
+- [x] **Bankroll — stats de période** : afficher ROI de la période sélectionnée directement sous le sélecteur de dates
+- ~~**Fixtures — preset filters**~~ : redondant avec le FilterBar existant (canal + décision + date suffisent)
 - [ ] **Page compte** : compléter les quick wins non couverts par P0.9
   - [ ] Ajouter le fuseau horaire si non traité dans la première version P0.9
 
@@ -541,41 +541,51 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 
 **Infrastructure contenu :**
 
-- [ ] Définir le format des fichiers de contenu : MDX avec frontmatter (`title`, `category`, `difficulty: beginner|intermediate|advanced`, `readTime`, `videoUrl?`, `thumbnail?`, `slug`)
-- [ ] Créer la structure de dossiers : `content/formation/articles/` + `content/formation/videos/`
-- [ ] Migrer le contenu de `help-leagues.md` en articles individuels par ligue dans ce nouveau format
-- [ ] Créer les premiers articles "Les bases" (EV, probabilité, cotes) — contenu rédactionnel à écrire
+- [x] Définir le format des fichiers de contenu : MDX avec frontmatter (`title`, `category`, `difficulty: beginner|intermediate|advanced`, `readTime`, `videoUrl?`, `thumbnail?`, `slug`)
+- [x] Créer la structure de dossiers : `content/formation/articles/` + `content/formation/videos/`
+- [x] Migrer le contenu de `help-leagues.md` en articles individuels par ligue dans ce nouveau format (24 ligues)
+- [x] Créer les premiers articles "Les bases" (EV, probabilité, cotes, erreurs, canaux, bankroll)
 
 **Page d'accueil Formation (`/dashboard/formation`) :**
 
-- [ ] Hero : titre + courte description ("Comprenez chaque pick, maîtrisez le système")
-- [ ] Grille de cards par catégorie avec icône, nombre d'articles, badge "Nouveau" si contenu récent
-- [ ] Section "Recommandé pour vous" : 2–3 articles selon le niveau et ce que l'utilisateur n'a pas encore lu
-- [ ] Barre de progression globale : "X / Y articles lus"
+- [x] Hero : titre + courte description ("Comprenez chaque pick, maîtrisez le système")
+- [x] Grille de cards par catégorie avec icône, nombre d'articles, badge "Nouveau" si contenu récent
+- [x] Section "Recommandé pour vous" : 2–3 articles selon le niveau et ce que l'utilisateur n'a pas encore lu
+- [x] Barre de progression globale : "X / Y articles lus"
 
 **Page article (`/dashboard/formation/articles/[slug]`) :**
 
-- [ ] Rendu MDX avec syntaxe enrichie (callouts, tableaux stylés, encadrés "À retenir")
-- [ ] Indicateur de temps de lecture estimé
-- [ ] Badge niveau (Débutant / Intermédiaire / Avancé)
-- [ ] Navigation "Article précédent / suivant" dans la même catégorie
-- [ ] Bouton "Marquer comme lu" (persisté en localStorage ou en base)
+- [x] Rendu MDX avec syntaxe enrichie (callouts, tableaux stylés, encadrés "À retenir")
+- [x] Indicateur de temps de lecture estimé
+- [x] Badge niveau (Débutant / Intermédiaire / Avancé)
+- [x] Navigation "Article précédent / suivant" dans la même catégorie
+- [x] Bouton "Marquer comme lu" (persisté en localStorage ou en base)
 
 **Page vidéo (`/dashboard/formation/videos/[slug]`) :**
 
-- [ ] Lecteur vidéo embarqué (YouTube iframe ou vidéo hébergée)
-- [ ] Description + chapitres cliquables (timestamps)
-- [ ] Articles liés en dessous
+- [x] Lecteur vidéo embarqué (YouTube iframe ou vidéo hébergée)
+- [x] Description + chapitres cliquables (timestamps)
+- [x] Articles liés en dessous
 
 **Système de progression :**
 
-- [ ] Tracking des articles lus et vidéos vues (localStorage en phase 1, table `UserProgress` en base pour phase 2)
-- [ ] Indicateur de progression par catégorie (3/5 articles lus)
+- [x] Tracking des articles lus et vidéos vues (localStorage en phase 1, table `UserProgress` en base pour phase 2)
+- [x] Indicateur de progression par catégorie (3/5 articles lus)
 - [ ] Badge "Diplômé" débloqué quand toutes les bases sont lues — lié au système de badges P4
 
 **Recherche :**
 
-- [ ] Barre de recherche full-text sur les titres et contenus des articles
+- [x] Barre de recherche full-text sur les titres et contenus des articles
+
+**Contenu manquant (rédactionnel) :**
+
+- [x] Enrichir `les-3-canaux.md`
+- [x] Enrichir `bankroll-unites-discipline.md`
+- [x] Enrichir `comment-lire-un-pick.md`
+- [x] Catégorie `bases` : `canal-ev.md`, `canal-sv.md`, `canal-confiance.md` (les canaux font partie des bases)
+- [x] Catégorie `app` : `guide-picks-du-jour.md`, `guide-fixtures.md`, `guide-bankroll.md`
+- [ ] Catégorie `app` : `guide-coupons.md` (guide coupon / bet slip)
+- [ ] Vidéo intro : remplacer le placeholder YouTube par une vraie vidéo
 
 ---
 

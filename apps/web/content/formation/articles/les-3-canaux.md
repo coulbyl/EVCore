@@ -1,31 +1,37 @@
 ---
-title: "Les 3 canaux EVCore : EV, Sécurité, Confiance"
+title: "Les 3 canaux EVCore"
 category: bases
 difficulty: beginner
-order: 3
-readTime: 5
+order: 1
+readTime: 3
 slug: les-3-canaux
-summary: "Comprendre ce que chaque canal optimise et quand l'utiliser."
-updatedAt: "2026-05-01"
-related: ["intro-formation", "comment-lire-un-pick", "ev-probabilites-cotes"]
+summary: "Vue d'ensemble des 3 canaux du moteur : EV, Sécurité et Confiance. Par où commencer et lequel suivre."
+updatedAt: "2026-05-02"
+related:
+  ["canal-ev", "canal-sv", "canal-confiance", "cotes-probabilites-implicites"]
 ---
 
-## Canal EV
+## Trois angles, un seul moteur
 
-Le canal EV recherche des situations où la cote du marché semble **sous-évaluer** une issue.
+EVCore analyse chaque match sous trois angles distincts et produit trois types de signaux :
 
-## Canal Sécurité (Safe Value)
+**Canal EV** — Le moteur détecte quand une cote de bookmaker est supérieure à sa valeur réelle. Si la probabilité estimée dépasse la probabilité implicite de la cote, il y a une opportunité. C'est le canal principal du système, orienté rendement long terme.
 
-Le canal Sécurité privilégie des paris plus “robustes” : probabilités élevées, risque réduit, sélection plus stricte.
+**Canal Sécurité (SV)** — Même logique que l'EV, mais avec un filtre de probabilité plus strict. Seuls les signaux les plus robustes passent. Moins de picks, moins de variance, taux de réussite plus élevé.
 
-## Canal Confiance (Prediction)
+**Canal Confiance** — Le moteur prédit V1 ou V2 avec une probabilité estimée. Si tu fais confiance à cette probabilité, tu peux parier sur l'issue prédite. C'est une approche orientée résultat, distincte de la logique prix d'EV et SV.
 
-Le canal Confiance est orienté “prédiction du jour” : l’objectif est de proposer des picks lisibles et suivables au quotidien.
+## Ce que tu verras dans l'app
 
-> À retenir : les canaux ne sont pas “bons” ou “mauvais” — ils ont des objectifs différents.
+Les trois canaux apparaissent sur la page **Picks du jour** avec un bouton d'ajout au coupon. Chaque signal est une proposition de pari — la différence est dans la logique qui le génère.
 
-## Pour aller plus loin
+Dans la page **Matchs**, le filtre "Canal" te permet d'isoler chacun.
 
-- Démarrer par la vidéo : `intro-formation`
-- Lire un pick : `comment-lire-un-pick`
-- Comprendre l’EV : `ev-probabilites-cotes`
+## Par où commencer
+
+Avant de lire les articles détaillés sur chaque canal, comprends d'abord comment fonctionne une cote et ce qu'est l'EV :
+
+- Décoder une cote : `cotes-probabilites-implicites`
+- Comprendre l'EV : `ev-probabilites-cotes`
+
+Ensuite, chaque canal a son propre article : `canal-ev`, `canal-sv`, `canal-confiance`.

@@ -5,11 +5,22 @@ import {
   type Notification,
   NotificationType,
   type Prisma,
+  UserRole,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
 
 const logger = createLogger('notification-service');
+
+const OPERATOR_TYPES: NotificationType[] = [
+  NotificationType.ROI_ALERT,
+  NotificationType.MARKET_SUSPENSION,
+  NotificationType.WEEKLY_REPORT,
+];
+
+export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
+  isRead: boolean;
+};
 
 type SaveNotificationInput = {
   type: NotificationType;
@@ -33,6 +44,12 @@ export class NotificationService {
     private readonly mail: MailService,
   ) {}
 
+  private allowedTypes(role: UserRole): NotificationType[] {
+    return role === UserRole.ADMIN
+      ? Object.values(NotificationType)
+      : OPERATOR_TYPES;
+  }
+
   async sendRoiAlert(
     market: Market,
     roi: number,
@@ -44,11 +61,7 @@ export class NotificationService {
       type: NotificationType.ROI_ALERT,
       title,
       body,
-      payload: {
-        market,
-        roi,
-        betCount,
-      },
+      payload: { market, roi, betCount },
     });
     await this.mail.sendRoiAlert({ market: String(market), roi, betCount });
   }
@@ -64,11 +77,7 @@ export class NotificationService {
       type: NotificationType.MARKET_SUSPENSION,
       title,
       body,
-      payload: {
-        market,
-        roi,
-        betCount,
-      },
+      payload: { market, roi, betCount },
     });
     await this.mail.sendMarketSuspension({
       market: String(market),
@@ -87,10 +96,7 @@ export class NotificationService {
       type: NotificationType.BRIER_ALERT,
       title,
       body,
-      payload: {
-        seasonId,
-        brierScore,
-      },
+      payload: { seasonId, brierScore },
     });
     await this.mail.sendBrierAlert({ seasonId, brierScore });
   }
@@ -106,11 +112,7 @@ export class NotificationService {
       type: NotificationType.ETL_FAILURE,
       title,
       body,
-      payload: {
-        queue,
-        jobName,
-        errorMessage,
-      },
+      payload: { queue, jobName, errorMessage },
     });
     await this.mail.sendEtlFailure({ queue, jobName, errorMessage });
   }
@@ -131,9 +133,7 @@ export class NotificationService {
       type: NotificationType.WEIGHT_ADJUSTMENT,
       title,
       body,
-      payload: {
-        ...payload,
-      },
+      payload: { ...payload },
     });
     await this.mail.sendWeightAdjustment(payload);
   }
@@ -149,11 +149,7 @@ export class NotificationService {
       type: NotificationType.XG_UNAVAILABLE_REPORT,
       title,
       body,
-      payload: {
-        season,
-        unavailableCount,
-        externalIds,
-      },
+      payload: { season, unavailableCount, externalIds },
     });
     await this.mail.sendXgUnavailableReport({
       season,
@@ -194,36 +190,72 @@ export class NotificationService {
     limit: number;
     offset: number;
     unread?: boolean;
+    userId: string;
+    role: UserRole;
   }): Promise<{
-    data: Notification[];
+    data: NotificationView[];
     total: number;
     limit: number;
     offset: number;
   }> {
-    const where = query.unread === true ? { read: false } : undefined;
-    const [data, total] = await Promise.all([
+    const types = this.allowedTypes(query.role);
+    const where: Prisma.NotificationWhereInput = {
+      type: { in: types },
+      ...(query.unread ? { reads: { none: { userId: query.userId } } } : {}),
+    };
+    const [raw, total] = await Promise.all([
       this.prisma.client.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: query.limit,
         skip: query.offset,
+        include: {
+          reads: { where: { userId: query.userId }, select: { readAt: true } },
+        },
       }),
       this.prisma.client.notification.count({ where }),
     ]);
+    const data: NotificationView[] = raw.map(
+      ({ reads, read: _r, readAt: _ra, ...n }) => ({
+        ...n,
+        isRead: reads.length > 0,
+      }),
+    );
     return { data, total, limit: query.limit, offset: query.offset };
   }
 
-  async markRead(id: string): Promise<void> {
-    await this.prisma.client.notification.update({
-      where: { id },
-      data: { read: true, readAt: new Date() },
+  async unreadCount(
+    userId: string,
+    role: UserRole,
+  ): Promise<{ count: number }> {
+    const types = this.allowedTypes(role);
+    const count = await this.prisma.client.notification.count({
+      where: {
+        type: { in: types },
+        reads: { none: { userId } },
+      },
+    });
+    return { count };
+  }
+
+  async markRead(notificationId: string, userId: string): Promise<void> {
+    await this.prisma.client.userNotificationRead.upsert({
+      where: { userId_notificationId: { userId, notificationId } },
+      create: { userId, notificationId },
+      update: {},
     });
   }
 
-  async markAllRead(): Promise<void> {
-    await this.prisma.client.notification.updateMany({
-      where: { read: false },
-      data: { read: true, readAt: new Date() },
+  async markAllRead(userId: string, role: UserRole): Promise<void> {
+    const types = this.allowedTypes(role);
+    const unread = await this.prisma.client.notification.findMany({
+      where: { type: { in: types }, reads: { none: { userId } } },
+      select: { id: true },
+    });
+    if (unread.length === 0) return;
+    await this.prisma.client.userNotificationRead.createMany({
+      data: unread.map((n) => ({ userId, notificationId: n.id })),
+      skipDuplicates: true,
     });
   }
 

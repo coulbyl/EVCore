@@ -299,6 +299,7 @@ model User {
   bankrollTransactions BankrollTransaction[]
   contentProgress      UserContentProgress[]
   badges               UserBadge[]
+  notificationReads    UserNotificationRead[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -421,17 +422,30 @@ model MarketSuspension {
 
 // In-app notifications — persisted for dashboard and future mobile app.
 model Notification {
-  id        String           @id @default(cuid())
+  id        String                 @id @default(cuid())
   type      NotificationType
   title     String
   body      String
   payload   Json? // extra context (market, roi, betCount, etc.)
-  read      Boolean          @default(false)
+  read      Boolean                @default(false)
   readAt    DateTime?
-  createdAt DateTime         @default(now())
+  createdAt DateTime               @default(now())
+  reads     UserNotificationRead[]
 
   @@index([read, createdAt])
   @@map("notification")
+}
+
+// Per-user read tracking for system-wide notifications.
+model UserNotificationRead {
+  userId         String       @db.Uuid
+  notificationId String
+  readAt         DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, notificationId])
+  @@map("user_notification_read")
 }
 
 model NationalTeamEloRating {

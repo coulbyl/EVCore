@@ -23,8 +23,34 @@
     "users": "Utilisateurs",
     "glossary": "Glossaire",
     "formation": "Formation",
+    "notifications": "Notifications",
     "settings": "Paramètres",
     "help": "Aide"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification",
+    "emptyDescription": "Vous êtes à jour.",
+    "markAllRead": "Tout marquer comme lu",
+    "unread": "Non lues",
+    "all": "Toutes",
+    "viewAll": "Voir tout",
+    "isRead": "Lu",
+    "justNow": "À l'instant",
+    "types": {
+      "ROI_ALERT": "Alerte performance",
+      "MARKET_SUSPENSION": "Marché suspendu",
+      "BRIER_ALERT": "Alerte calibration",
+      "WEEKLY_REPORT": "Rapport hebdomadaire",
+      "ETL_FAILURE": "Erreur pipeline",
+      "WEIGHT_ADJUSTMENT": "Ajustement des poids",
+      "XG_UNAVAILABLE_REPORT": "Données xG manquantes"
+    },
+    "severity": {
+      "high": "Critique",
+      "medium": "Moyenne",
+      "low": "Faible"
+    }
   },
   "formation": {
     "label": "Formation",
@@ -258,7 +284,9 @@
       "displayedDays": "Jours affichés",
       "point": "point",
       "points": "points",
-      "portfolioLoadError": "Impossible de charger les données du portefeuille."
+      "portfolioLoadError": "Impossible de charger les données du portefeuille.",
+      "periodRoi": "ROI sur la période :",
+      "projection": "Projection 30j"
     },
     "history": {
       "title": "Historique des mouvements",

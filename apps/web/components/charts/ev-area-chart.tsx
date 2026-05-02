@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,6 +21,8 @@ type EvAreaChartProps = {
   formatY?: (value: number) => string;
   gradientId?: string;
   className?: string;
+  projectionKey?: string;
+  projectionColor?: string;
 };
 
 function EvAreaChart({
@@ -31,6 +34,8 @@ function EvAreaChart({
   formatY,
   gradientId = "ev-area-gradient",
   className,
+  projectionKey,
+  projectionColor,
 }: EvAreaChartProps) {
   return (
     <div className={className}>
@@ -77,7 +82,20 @@ function EvAreaChart({
             fill={`url(#${gradientId})`}
             dot={false}
             activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
+            connectNulls={false}
           />
+          {projectionKey && (
+            <Line
+              type="monotone"
+              dataKey={projectionKey}
+              stroke={projectionColor ?? color}
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              dot={false}
+              activeDot={{ r: 3, strokeWidth: 0 }}
+              connectNulls={false}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

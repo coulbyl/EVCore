@@ -9,6 +9,7 @@ import { GraduationCap, Settings, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
+import { NotificationBell } from "./notification-bell";
 import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 
@@ -90,6 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       actions={
         <div className="relative flex items-center gap-2">
           <BankrollWidget />
+          <NotificationBell />
           <BetSlipButton />
           <AccountButton currentUser={currentUser} />
         </div>
