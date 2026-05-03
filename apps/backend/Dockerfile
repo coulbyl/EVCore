@@ -51,13 +51,14 @@ ENV NODE_ENV=production
 ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/prisma-engines/schema-engine
 
 # curl is required by ETL workers (fetchJsonViaCurl spawns it)
-RUN apk add --no-cache curl
+# logrotate handles safe log retention for the file logger.
+RUN apk add --no-cache curl logrotate
 
 # Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 --ingroup nodejs nestjs \
- && mkdir -p /app/logs /app/prisma-engines \
- && chown nestjs:nodejs /app/logs /app/prisma-engines
+ && mkdir -p /app/logs /app/prisma-engines /app/logrotate /app/crontabs \
+ && chown nestjs:nodejs /app/logs /app/prisma-engines /app/logrotate /app/crontabs
 
 # Production node_modules (includes built @evcore/db, @evcore/transactional, prisma CLI)
 COPY --from=builder --chown=nestjs:nodejs /deploy/node_modules ./node_modules
@@ -75,7 +76,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/backend/package.json ./packa
 
 # Entrypoint: run migrations then start the app
 COPY --chown=nestjs:nodejs apps/backend/entrypoint.sh ./entrypoint.sh
+COPY --chown=nestjs:nodejs apps/backend/logrotate.conf ./logrotate.conf
+COPY --chown=nestjs:nodejs apps/backend/run-logrotate.sh ./run-logrotate.sh
 RUN chmod +x entrypoint.sh
+RUN chmod +x run-logrotate.sh
 
 USER nestjs
 
