@@ -19,6 +19,12 @@ const SESSION = {
       role: "ADMIN",
       emailVerified: true,
       avatarUrl: null,
+      theme: "system",
+      locale: "fr",
+      currency: "XOF",
+      unitMode: null,
+      unitAmount: null,
+      unitPercent: null,
     },
   },
 };

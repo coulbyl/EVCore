@@ -6,7 +6,7 @@ order: 7
 readTime: 5
 slug: comment-lire-un-pick
 summary: "Décrypter les informations d'une carte pick : badge canal, EV, probabilité estimée, cote, et section 'Pourquoi ce pick ?'."
-updatedAt: "2026-05-02"
+updatedAt: "2026-05-03"
 related:
   [
     "les-3-canaux",
@@ -34,6 +34,8 @@ EV : +14,7 %   Probabilité estimée : 58 %   Cote : 2,10
 - 🟡 `EV` — signal Expected Value (rendement long terme)
 - 🟢 `SV` — signal Safe Value (probabilité plus élevée, moins de variance)
 - 🔵 `CONF` — signal Confiance (V1 ou V2 prédits avec probabilité estimée)
+- 🟠 `NUL` — signal dédié aux matchs nuls
+- 🔴 `BB` — signal But-But (les deux équipes marquent)
 
 ### La sélection
 
@@ -44,6 +46,8 @@ Le marché recommandé : victoire domicile, plus de 2,5 buts, les deux équipes 
 `+14,7 %` signifie que le modèle évalue ce pari 14,7 % au-dessus de son prix de marché. En théorie, sur un grand nombre de paris similaires, tu gagnes en moyenne +14,7 % par unité misée.
 
 Ce n'est pas une promesse sur ce match précis. C'est une mesure de valeur statistique.
+
+> Cette lecture concerne surtout les picks `EV` et `SV`. Les canaux `CONF`, `NUL` et `BB` sont d'abord lus comme des prédictions, pas comme des écarts de prix.
 
 ### La probabilité estimée vs la cote
 

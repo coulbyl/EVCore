@@ -5,18 +5,18 @@ difficulty: beginner
 order: 1
 readTime: 4
 slug: guide-picks-du-jour
-summary: "Comment lire, filtrer et ajouter au coupon les picks générés chaque matin par les 3 canaux."
-updatedAt: "2026-05-02"
+summary: "Comment lire, filtrer et ajouter au coupon les picks générés chaque matin par les 5 canaux."
+updatedAt: "2026-05-03"
 related: ["guide-fixtures", "comment-lire-un-pick", "canal-ev", "canal-sv"]
 ---
 
 ## La page du matin
 
-La page **Picks du jour** (`/picks`) est l'écran central de l'expérience quotidienne. Elle s'organise en 3 sections, une par canal.
+La page **Picks du jour** (`/picks`) est l'écran central de l'expérience quotidienne. Elle regroupe les signaux du jour par canal.
 
 Chaque matin, consulte cette page avant les premiers matchs.
 
-## Les 3 sections canal
+## Les 5 sections canal
 
 ### Section Canal EV
 
@@ -42,9 +42,19 @@ Picks avec signal SV positif. Format identique aux picks EV, avec un badge `SV` 
 
 Prédictions de résultat (pas de recommandation de mise directe). Affiche le résultat prédit et la probabilité estimée.
 
+### Section Canal NUL
+
+Prédictions dédiées aux matchs nuls. Elles sont séparées du canal Confiance pour rendre ce type de lecture plus visible quand il apparaît.
+
+### Section Canal BB
+
+Prédictions **But-But** : les deux équipes marquent, en `OUI` ou `NON` selon le signal affiché.
+
 ## Ajouter un pick au coupon
 
 Sur les picks EV et SV, un bouton **"+ Coupon"** apparaît. Il ajoute directement le pari à ton coupon actif.
+
+Les canaux **Confiance**, **NUL** et **BB** sont d'abord des canaux de lecture et de diagnostic. Ils n'ajoutent pas directement un pari depuis cette page.
 
 > Seuls les paris en statut "À venir" (PENDING) peuvent être ajoutés.
 
@@ -54,11 +64,13 @@ La page se met à jour automatiquement après chaque match (polling toutes les 6
 
 ## Statistiques du jour
 
-En haut de page, 3 StatCards résument la journée :
+En haut de page, 5 StatCards résument la journée :
 
-- **EV** : nombre de picks, ROI moyen estimé
-- **SV** : nombre de picks, taux de réussite moyen estimé
-- **Confiance** : hit rate du jour (mis à jour après les matchs)
+- **EV** : nombre de picks du canal valeur
+- **SV** : nombre de picks du canal Safe Value
+- **Confiance** : volume des prédictions 1X2
+- **NUL** : volume des signaux dédiés aux matchs nuls
+- **BB** : volume des signaux But-But
 
 ## Astuce : scroll fixé
 

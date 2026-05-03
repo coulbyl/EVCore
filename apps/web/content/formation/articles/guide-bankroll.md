@@ -6,7 +6,7 @@ order: 3
 readTime: 4
 slug: guide-bankroll
 summary: "Lire le solde, suivre l'évolution, filtrer les transactions et comprendre la projection 30 jours."
-updatedAt: "2026-05-02"
+updatedAt: "2026-05-03"
 related: ["bankroll-unites-discipline", "guide-picks-du-jour"]
 ---
 
@@ -72,6 +72,17 @@ Le bouton **"Déposer"** ouvre un formulaire pour enregistrer un dépôt dans ta
 ## Devise
 
 La devise affichée (XOF / EUR / USD) se configure dans **Paramètres → Compte → Devise**. Elle s'applique à tous les montants de l'app.
+
+## Mise par unité
+
+Dans **Paramètres → Compte**, EVCore permet aussi de configurer la **mise par unité** utilisée pour pré-remplir le coupon :
+
+- **Montant fixe** : tu entres une somme stable, par exemple `2 000 FCFA`
+- **% de la bankroll** : EVCore recalcule l'unité depuis le solde suivi dans l'app, par exemple `1%`
+
+Si aucun réglage n'est défini, le coupon reste utilisable avec la valeur par défaut de l'app.
+
+> Ce réglage aide à gagner du temps. Il ne bloque jamais l'édition manuelle du coupon.
 
 ## À lire ensuite
 

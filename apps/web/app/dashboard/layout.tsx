@@ -24,13 +24,13 @@ export default async function DashboardLayout({
 
   return (
     <CurrencyProvider initialCurrency={initialCurrency}>
-      <BetSlipProvider>
-        <CurrentUserProvider initialUser={session.user}>
+      <CurrentUserProvider initialUser={session.user}>
+        <BetSlipProvider>
           <AppShell>{children}</AppShell>
-        </CurrentUserProvider>
-        <BetSlipDrawer />
-        <PwaInstallBanner />
-      </BetSlipProvider>
+          <BetSlipDrawer />
+          <PwaInstallBanner />
+        </BetSlipProvider>
+      </CurrentUserProvider>
     </CurrencyProvider>
   );
 }

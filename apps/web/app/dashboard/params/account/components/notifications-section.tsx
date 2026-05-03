@@ -1,21 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Switch } from "@evcore/ui";
 import { SettingsSectionCard } from "./settings-section-card";
-
-type NotificationPreferenceKey =
-  | "roiAlert"
-  | "marketSuspension"
-  | "brierAlert"
-  | "weeklyReport";
-
-const DEFAULT_PREFERENCES: Record<NotificationPreferenceKey, boolean> = {
-  roiAlert: true,
-  marketSuspension: true,
-  brierAlert: false,
-  weeklyReport: true,
-};
 
 export function NotificationsSection({
   labels,
@@ -24,17 +9,15 @@ export function NotificationsSection({
     eyebrow: string;
     title: string;
     description: string;
-    preferenceHint: string;
+    availabilityHint: string;
+    statusLabel: string;
     items: Array<{
-      key: NotificationPreferenceKey;
+      key: string;
       label: string;
       help: string;
     }>;
   };
 }) {
-  const [preferences, setPreferences] =
-    useState<Record<NotificationPreferenceKey, boolean>>(DEFAULT_PREFERENCES);
-
   return (
     <SettingsSectionCard
       eyebrow={labels.eyebrow}
@@ -53,19 +36,15 @@ export function NotificationsSection({
               </p>
               <p className="mt-1 text-sm text-muted-foreground">{item.help}</p>
             </div>
-            <Switch
-              checked={preferences[item.key]}
-              onCheckedChange={(checked) =>
-                setPreferences((prev) => ({ ...prev, [item.key]: checked }))
-              }
-              aria-label={item.label}
-            />
+            <span className="shrink-0 rounded-full border border-border bg-panel px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {labels.statusLabel}
+            </span>
           </div>
         ))}
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        {labels.preferenceHint}
+        {labels.availabilityHint}
       </p>
     </SettingsSectionCard>
   );

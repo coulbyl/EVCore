@@ -3,7 +3,7 @@ title: "Guide par ligue — introduction"
 category: leagues
 difficulty: beginner
 slug: leagues-intro
-summary: "Abréviations, règles communes, et lecture des canaux (prédiction / Safe Value)."
+summary: "Abréviations, règles communes, et lecture des principaux canaux selon les ligues."
 ---
 
 ## Abréviations
@@ -28,9 +28,9 @@ Ces règles s'appliquent à toutes les ligues. Le moteur les vérifie automatiqu
 
 ---
 
-## Canal prédiction
+## Canaux de prediction
 
-Le dashboard affiche aussi un **canal prédiction** distinct du canal pari.
+Le dashboard affiche aussi des canaux de prediction distincts des canaux de pari.
 
 - **Un pari (`BET`)** signifie que le moteur voit de la valeur contre la cote bookmaker
 - **Une prédiction** signifie que le modèle voit une issue plus probable que les autres, même sans avantage de cote
@@ -61,10 +61,12 @@ Dans la carte "Prédictions du jour", le point de statut suit la même logique :
 
 ### Ce qu'il faut retenir
 
-- Une **prédiction n'est pas un conseil de mise**
+- Une **prediction n'est pas un conseil de mise**
 - Elle sert surtout à lire la conviction brute du modèle sur le **1X2**
 - Une prédiction à **55-60 %** est déjà un signal exploitable dans les ligues calibrées
 - Si la ligue est désactivée pour le canal prédiction, aucun badge n'apparaît même si un `BET` existe
+
+Le meme principe s'applique aussi aux canaux **NUL** et **BB** : ce sont des lectures specialisees du modele, pas automatiquement des picks de valeur comparables a `EV` ou `SV`.
 
 ---
 

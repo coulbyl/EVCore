@@ -89,7 +89,7 @@ Si le modèle dit souvent “60%”, alors l’événement doit arriver environ 
 ### Les bases (fondations)
 
 - EV : probabilités, cotes, EV, erreurs classiques
-- Les canaux EVCore (EV / Sécurité / Confiance) et quand utiliser chacun
+- Les canaux EVCore (EV / Sécurité / Confiance / NUL / BB) et quand utiliser chacun
 - Lire un pick : où regarder en premier, comment décider en 30 secondes
 
 ### Bankroll & discipline (survie long terme)

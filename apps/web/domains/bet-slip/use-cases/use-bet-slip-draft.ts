@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
+import type { AuthSessionUser } from "@/domains/auth/types/auth";
+import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
 import {
   draftItemKey,
   type BetSlipDraft,
@@ -11,30 +14,55 @@ const STORAGE_KEY = "evcore:bet-slip-draft";
 const DEFAULT_UNIT_STAKE = 4000;
 const DEFAULT_TYPE: BetSlipDraft["type"] = "SIMPLE";
 
-function emptyDraft(): BetSlipDraft {
-  return { items: [], unitStake: DEFAULT_UNIT_STAKE, type: DEFAULT_TYPE };
+function emptyDraft(unitStake = DEFAULT_UNIT_STAKE): BetSlipDraft {
+  return { items: [], unitStake, type: DEFAULT_TYPE };
 }
 
-function normalizeDraft(draft: Partial<BetSlipDraft>): BetSlipDraft {
+function resolveInitialUnit(
+  session: AuthSessionUser | null,
+  currentBalance: number | null,
+): number {
+  if (!session?.unitMode) return DEFAULT_UNIT_STAKE;
+  if (session.unitMode === "FIXED" && session.unitAmount) {
+    return Number(session.unitAmount);
+  }
+  if (
+    session.unitMode === "PCT" &&
+    session.unitPercent &&
+    currentBalance !== null
+  ) {
+    return Math.round(currentBalance * Number(session.unitPercent));
+  }
+  return DEFAULT_UNIT_STAKE;
+}
+
+function normalizeDraft(
+  draft: Partial<BetSlipDraft>,
+  fallbackUnitStake: number,
+): BetSlipDraft {
   const items = Array.isArray(draft.items) ? draft.items : [];
+  const hasExplicitStake = typeof draft.unitStake === "number";
   return {
     items,
     unitStake:
-      typeof draft.unitStake === "number"
-        ? draft.unitStake
-        : DEFAULT_UNIT_STAKE,
+      hasExplicitStake && items.length > 0
+        ? (draft.unitStake as number)
+        : fallbackUnitStake,
     type: draft.type === "COMBO" && items.length >= 2 ? "COMBO" : "SIMPLE",
   };
 }
 
-function loadDraft(): BetSlipDraft {
-  if (typeof window === "undefined") return emptyDraft();
+function loadDraft(fallbackUnitStake: number): BetSlipDraft {
+  if (typeof window === "undefined") return emptyDraft(fallbackUnitStake);
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyDraft();
-    return normalizeDraft(JSON.parse(raw) as Partial<BetSlipDraft>);
+    if (!raw) return emptyDraft(fallbackUnitStake);
+    return normalizeDraft(
+      JSON.parse(raw) as Partial<BetSlipDraft>,
+      fallbackUnitStake,
+    );
   } catch {
-    return emptyDraft();
+    return emptyDraft(fallbackUnitStake);
   }
 }
 
@@ -47,38 +75,52 @@ function saveDraft(draft: BetSlipDraft): void {
 }
 
 export function useBetSlipDraft() {
-  const [draft, setDraftState] = useState<BetSlipDraft>({
-    items: [],
-    unitStake: DEFAULT_UNIT_STAKE,
-    type: DEFAULT_TYPE,
-  });
+  const currentUser = useCurrentUser();
+  const shouldLoadBalance = currentUser.unitMode === "PCT";
+  const bankrollQuery = useBankrollBalance(shouldLoadBalance);
+  const currentBalance =
+    bankrollQuery.data?.balance !== undefined
+      ? Number.parseFloat(bankrollQuery.data.balance)
+      : null;
+  const initialUnitStake = resolveInitialUnit(currentUser, currentBalance);
+  const [draft, setDraftState] = useState<BetSlipDraft>(() =>
+    emptyDraft(initialUnitStake),
+  );
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
-    setDraftState(loadDraft());
-  }, []);
+    if (shouldLoadBalance && bankrollQuery.isPending && !bankrollQuery.data) {
+      return;
+    }
+    setDraftState(loadDraft(initialUnitStake));
+  }, [
+    bankrollQuery.data,
+    bankrollQuery.isPending,
+    initialUnitStake,
+    shouldLoadBalance,
+  ]);
 
   // Sync depuis d'autres onglets
   useEffect(() => {
     function onStorage(e: StorageEvent) {
       if (e.key === STORAGE_KEY) {
-        setDraftState(loadDraft());
+        setDraftState(loadDraft(initialUnitStake));
       }
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [initialUnitStake]);
 
   const setDraft = useCallback(
     (updater: (prev: BetSlipDraft) => BetSlipDraft) => {
       setDraftState((prev) => {
         const next = updater(prev);
-        const normalized = normalizeDraft(next);
+        const normalized = normalizeDraft(next, initialUnitStake);
         saveDraft(normalized);
         return normalized;
       });
     },
-    [],
+    [initialUnitStake],
   );
 
   const addItem = useCallback(
@@ -130,8 +172,8 @@ export function useBetSlipDraft() {
   );
 
   const clearDraft = useCallback(() => {
-    setDraft(() => emptyDraft());
-  }, [setDraft]);
+    setDraft(() => emptyDraft(initialUnitStake));
+  }, [initialUnitStake, setDraft]);
 
   /** Vérifie si la clé donnée correspond à un item dans le brouillon. */
   const isInSlip = useCallback(

@@ -83,7 +83,7 @@
     "completed": "Completed",
     "categories": {
       "bases": "Basics",
-      "channels": "EVCore channels",
+      "channels": "The 5 EVCore channels",
       "bankroll": "Bankroll & discipline",
       "leagues": "League guide",
       "app": "Using the app"
@@ -141,20 +141,35 @@
     "password": "Password",
     "changePassword": "Change password",
     "changePasswordHint": "Password change will be available soon.",
-    "notificationDescription": "Choose which alerts you want to receive in the app.",
+    "notificationDescription": "Notifications currently visible in the app for your role.",
+    "notificationAvailabilityHint": "Notification preferences are not configurable yet.",
+    "notificationVisibleStatus": "Visible",
     "bankrollDescription": "Choose the currency displayed in the app.",
     "displayCurrency": "Display currency",
+    "unitStake": "Unit stake",
+    "unitModeFixed": "Fixed amount",
+    "unitModePct": "% of bankroll",
+    "unitAmountPlaceholder": "e.g. 2,000",
+    "unitPctPlaceholder": "e.g. 1",
+    "unitPctSuffix": "%",
+    "unitOptionalHint": "Optional — pre-fills the bet slip each time it opens",
     "notificationTypes": {
       "roiAlert": "Performance alert",
       "marketSuspension": "Market suspension",
       "brierAlert": "Calibration alert",
-      "weeklyReport": "Weekly report"
+      "weeklyReport": "Weekly report",
+      "etlFailure": "Pipeline error",
+      "weightAdjustment": "Weight adjustment",
+      "xgUnavailableReport": "Missing xG data"
     },
     "notificationHelp": {
       "roiAlert": "Alert when a market drops below its ROI threshold.",
       "marketSuspension": "Alert when a market is auto-suspended.",
       "brierAlert": "Alert when model accuracy degrades.",
-      "weeklyReport": "Weekly summary every Monday morning."
+      "weeklyReport": "Weekly summary every Monday morning.",
+      "etlFailure": "Alert when an ETL job fails permanently.",
+      "weightAdjustment": "Alert when model weights are auto-applied or rolled back.",
+      "xgUnavailableReport": "Report when fixtures remain without xG data after sync."
     },
     "currencies": {
       "xof": "CFA Franc (XOF)",

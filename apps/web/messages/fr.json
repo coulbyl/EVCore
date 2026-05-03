@@ -83,7 +83,7 @@
     "completed": "Terminé",
     "categories": {
       "bases": "Les bases",
-      "channels": "Les 3 canaux EVCore",
+      "channels": "Les 5 canaux EVCore",
       "bankroll": "Bankroll & discipline",
       "leagues": "Guide par ligue",
       "app": "Comment utiliser l'app"
@@ -141,20 +141,35 @@
     "password": "Mot de passe",
     "changePassword": "Modifier le mot de passe",
     "changePasswordHint": "La modification du mot de passe sera disponible prochainement.",
-    "notificationDescription": "Choisissez les alertes à recevoir dans l'application.",
+    "notificationDescription": "Notifications actuellement visibles dans l'application selon votre rôle.",
+    "notificationAvailabilityHint": "Les préférences de notification ne sont pas configurables pour le moment.",
+    "notificationVisibleStatus": "Visible",
     "bankrollDescription": "Choisissez la devise affichée dans l'application.",
     "displayCurrency": "Devise d'affichage",
+    "unitStake": "Mise par unité",
+    "unitModeFixed": "Montant fixe",
+    "unitModePct": "% de la bankroll",
+    "unitAmountPlaceholder": "ex. 2 000",
+    "unitPctPlaceholder": "ex. 1",
+    "unitPctSuffix": "%",
+    "unitOptionalHint": "Optionnel — pré-remplit le coupon à chaque ouverture",
     "notificationTypes": {
       "roiAlert": "Alerte performance",
       "marketSuspension": "Marché suspendu",
       "brierAlert": "Alerte calibration",
-      "weeklyReport": "Rapport hebdomadaire"
+      "weeklyReport": "Rapport hebdomadaire",
+      "etlFailure": "Erreur pipeline",
+      "weightAdjustment": "Ajustement des poids",
+      "xgUnavailableReport": "Données xG manquantes"
     },
     "notificationHelp": {
       "roiAlert": "Alerte quand la rentabilité d'un marché chute sous le seuil.",
       "marketSuspension": "Alerte quand un marché est suspendu automatiquement.",
       "brierAlert": "Alerte quand la précision du modèle se dégrade.",
-      "weeklyReport": "Résumé de la semaine chaque lundi matin."
+      "weeklyReport": "Résumé de la semaine chaque lundi matin.",
+      "etlFailure": "Alerte quand un job ETL échoue de manière définitive.",
+      "weightAdjustment": "Alerte quand les poids du modèle sont appliqués ou annulés.",
+      "xgUnavailableReport": "Rapport quand des matchs restent sans données xG après synchronisation."
     },
     "currencies": {
       "xof": "Franc CFA (XOF)",
