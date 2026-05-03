@@ -171,6 +171,11 @@
     "evChannel": "EV Channel",
     "safeValue": "Safe Value",
     "confidence": "Confidence",
+    "matchNull": "DRAW",
+    "btts": "BTTS",
+    "bttsLabel": "BTTS — Both Teams To Score",
+    "bttsYes": "BTTS YES",
+    "bttsNo": "BTTS NO",
     "loadError": "Unable to load today's picks.",
     "empty": "No picks for today."
   },

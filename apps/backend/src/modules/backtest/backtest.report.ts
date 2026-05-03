@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market, PredictionChannel } from '@evcore/db';
 
 export type ValidationVerdict = 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
 
@@ -30,6 +30,7 @@ export type CompetitionBacktestReport = {
   roi: MetricResult;
   overallVerdict: ValidationVerdict;
   predictionBacktest: PredictionBacktestResult | null;
+  predictionBacktests?: ChannelPredictionBacktestResult[];
   marketPerformance: BacktestMarketPerformance[];
   byMarket: ValidationMarketSummary[];
   reportGeneratedAt: Date;
@@ -78,6 +79,7 @@ export type BacktestReport = {
   maxDrawdownSimulated: Decimal;
   averageEvSimulated: Decimal;
   predictionBacktest: PredictionBacktestSummary;
+  predictionBacktests?: ChannelPredictionBacktestSummary[];
   marketPerformance: BacktestMarketPerformance[];
   reportGeneratedAt: Date;
 };
@@ -114,6 +116,14 @@ export type PredictionCalibrationRecommendation = {
 export type PredictionBacktestResult = PredictionBacktestSummary & {
   competition: string;
   recommendation: PredictionCalibrationRecommendation;
+};
+
+export type ChannelPredictionBacktestSummary = PredictionBacktestSummary & {
+  channel: PredictionChannel;
+};
+
+export type ChannelPredictionBacktestResult = PredictionBacktestResult & {
+  channel: PredictionChannel;
 };
 
 export type BacktestPickPerformance = {

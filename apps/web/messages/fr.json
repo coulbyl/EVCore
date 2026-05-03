@@ -171,6 +171,11 @@
     "evChannel": "Valeur",
     "safeValue": "Safe",
     "confidence": "Confiance",
+    "matchNull": "NUL",
+    "btts": "BB",
+    "bttsLabel": "BB — Les deux équipes marquent",
+    "bttsYes": "BB OUI",
+    "bttsNo": "BB NON",
     "loadError": "Impossible de charger les picks du jour.",
     "empty": "Aucun pick pour aujourd'hui."
   },

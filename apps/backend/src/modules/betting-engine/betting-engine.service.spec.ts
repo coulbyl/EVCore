@@ -58,7 +58,7 @@ function makeCongestionServiceMock(score = 0): CongestionService {
 
 function makePredictionServiceMock(): PredictionService {
   return {
-    createPrediction: vi.fn().mockResolvedValue(undefined),
+    createPredictions: vi.fn().mockResolvedValue(undefined),
     settlePredictions: vi.fn().mockResolvedValue({ settled: 0 }),
   } as unknown as PredictionService;
 }

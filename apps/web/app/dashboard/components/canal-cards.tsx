@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, Shield, Target } from "lucide-react";
+import { TrendingUp, Shield, Target, Minus, Activity } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   usePredictions,
@@ -22,7 +22,7 @@ function thirtyDaysAgoIso() {
 // ---------------------------------------------------------------------------
 
 type CanalShellProps = {
-  canal: "ev" | "sv" | "conf";
+  canal: "ev" | "sv" | "conf" | "draw" | "btts";
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
@@ -43,6 +43,16 @@ const CANAL_STYLES = {
     color: "var(--canal-conf)",
     soft: "var(--canal-conf-soft)",
     border: "color-mix(in srgb, var(--canal-conf) 20%, transparent)",
+  },
+  draw: {
+    color: "var(--canal-draw)",
+    soft: "var(--canal-draw-soft)",
+    border: "color-mix(in srgb, var(--canal-draw) 20%, transparent)",
+  },
+  btts: {
+    color: "var(--canal-btts)",
+    soft: "var(--canal-btts-soft)",
+    border: "color-mix(in srgb, var(--canal-btts) 20%, transparent)",
   },
 } as const;
 
@@ -177,8 +187,8 @@ function CanalConfCard() {
   const today = todayIso();
   const from = thirtyDaysAgoIso();
 
-  const { data: predictions = [] } = usePredictions(today);
-  const { data: stats } = usePredictionStats(from, today);
+  const { data: predictions = [] } = usePredictions(today, "CONF");
+  const { data: stats } = usePredictionStats(from, today, "CONF");
 
   const settled = predictions.filter((p) => p.correct !== null);
   const correct = settled.filter((p) => p.correct === true).length;
@@ -213,16 +223,72 @@ function CanalConfCard() {
   );
 }
 
+function PredictionCanalCard({
+  canal,
+  channel,
+  icon,
+  label,
+}: {
+  canal: "draw" | "btts";
+  channel: "DRAW" | "BTTS";
+  icon: React.ReactNode;
+  label: string;
+}) {
+  const today = todayIso();
+  const from = thirtyDaysAgoIso();
+  const { data: predictions = [] } = usePredictions(today, channel);
+  const { data: stats } = usePredictionStats(from, today, channel);
+  const settled = predictions.filter((p) => p.correct !== null);
+  const correct = settled.filter((p) => p.correct === true).length;
+  const todayRate =
+    settled.length > 0
+      ? `${Math.round((correct / settled.length) * 100)}%`
+      : "—";
+
+  return (
+    <CanalShell canal={canal} icon={icon} label={label}>
+      <Stat
+        label="Aujourd'hui"
+        value={`${correct}/${settled.length}`}
+        sub={
+          predictions.length > settled.length
+            ? `(${predictions.length - settled.length} en attente)`
+            : undefined
+        }
+      />
+      <Stat label="Taux du jour" value={todayRate} />
+      <Stat
+        label="30 jours"
+        value={stats ? stats.hitRate : SKELETON}
+        sub={stats ? `${stats.correct}/${stats.total} picks` : undefined}
+      />
+    </CanalShell>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public export
 // ---------------------------------------------------------------------------
 
 export function CanalCards({ pnl }: { pnl: PnlSummary | null }) {
+  const tPicks = useTranslations("picks");
   return (
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <CanalEvCard pnl={pnl} />
       <CanalSvCard pnl={pnl} />
       <CanalConfCard />
+      <PredictionCanalCard
+        canal="draw"
+        channel="DRAW"
+        icon={<Minus size={14} />}
+        label={tPicks("matchNull")}
+      />
+      <PredictionCanalCard
+        canal="btts"
+        channel="BTTS"
+        icon={<Activity size={14} />}
+        label={tPicks("btts")}
+      />
     </section>
   );
 }

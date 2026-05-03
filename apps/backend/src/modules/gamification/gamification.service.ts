@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PredictionChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { createLogger } from '@utils/logger';
 
@@ -53,7 +54,10 @@ export class GamificationService {
       }),
       this.prisma.client.prediction.findMany({
         orderBy: { createdAt: 'desc' },
-        where: { correct: { not: null } },
+        where: {
+          channel: PredictionChannel.CONF,
+          correct: { not: null },
+        },
         select: { correct: true },
         take: 200,
       }),

@@ -921,7 +921,7 @@ export class BettingEngineService {
     }
 
     // Canal Confiance — après les canaux EV et Safe Value, sur les mêmes probabilities.
-    await this.predictionService.createPrediction({
+    await this.predictionService.createPredictions({
       fixtureId,
       modelRunId: modelRun.id,
       competition: competitionCode ?? '',

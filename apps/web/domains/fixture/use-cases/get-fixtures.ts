@@ -12,6 +12,8 @@ function filterByCanal(
     if (canal === "EV") return row.modelRun?.decision === "BET";
     if (canal === "SV") return row.safeValueBet !== null;
     if (canal === "CONF") return row.prediction !== null;
+    if (canal === "DRAW") return row.drawPrediction !== null;
+    if (canal === "BTTS") return row.bttsPrediction !== null;
     return true;
   });
 }

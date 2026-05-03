@@ -3,7 +3,12 @@ import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
-import { BetStatus, FixtureStatus, Market } from '@evcore/db';
+import {
+  BetStatus,
+  FixtureStatus,
+  Market,
+  type PredictionChannel,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import type {
@@ -24,6 +29,8 @@ import {
   calibrationError,
   getOneXTwoOutcome,
   type BacktestOddsBucketPerformance,
+  type ChannelPredictionBacktestResult,
+  type ChannelPredictionBacktestSummary,
   type BacktestMarketPerformance,
   type PredictionBacktestResult,
   type PredictionBacktestSummary,
@@ -238,12 +245,32 @@ type PredictionCandidate = {
   correct: boolean;
 };
 
+type PredictionCandidateBuckets = Record<
+  PredictionChannel,
+  PredictionCandidate[]
+>;
+
 const PREDICTION_VALIDATION_HIT_RATE = 0.55;
 const PREDICTION_VALIDATION_COVERAGE_RATE = 0.1;
 const PREDICTION_LOWERING_HIT_RATE = 0.7;
-const PREDICTION_THRESHOLD_SCAN = [
+const PREDICTION_CHANNEL_CONF = 'CONF' as PredictionChannel;
+const PREDICTION_CHANNEL_DRAW = 'DRAW' as PredictionChannel;
+const PREDICTION_CHANNEL_BTTS = 'BTTS' as PredictionChannel;
+const CONF_THRESHOLD_SCAN = [
   0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
 ];
+const DRAW_THRESHOLD_SCAN = [
+  0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.45, 0.5,
+];
+const BTTS_THRESHOLD_SCAN = [0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65, 0.7, 0.75];
+
+function createPredictionCandidateBuckets(): PredictionCandidateBuckets {
+  return {
+    CONF: [],
+    DRAW: [],
+    BTTS: [],
+  };
+}
 
 @Injectable()
 export class BacktestService {
@@ -295,7 +322,7 @@ export class BacktestService {
 
     const oneXTwoPredictions: OneXTwoPrediction[] = [];
     const calibrationPoints: CalibrationPoint[] = [];
-    const predictionCandidates: PredictionCandidate[] = [];
+    const predictionCandidates = createPredictionCandidateBuckets();
     let analyzedCount = 0;
     let skippedCount = 0;
     let roiProfit = new Decimal(0);
@@ -393,15 +420,12 @@ export class BacktestService {
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
       );
-      predictionCandidates.push(
-        buildPredictionCandidate(
-          {
-            home: computed.probabilities.home,
-            draw: computed.probabilities.draw,
-            away: computed.probabilities.away,
-          },
-          actual,
-        ),
+      appendPredictionCandidates(
+        predictionCandidates,
+        computed.probabilities,
+        actual,
+        fixture.homeScore,
+        fixture.awayScore,
       );
       analyzedCount++;
 
@@ -617,6 +641,11 @@ export class BacktestService {
       (stats) => buildMarketPerformance(stats),
     ).sort((a, b) => a.market.localeCompare(b.market));
     const predictionBacktest = buildPredictionBacktestSummary(
+      PREDICTION_CHANNEL_CONF,
+      competitionCode ?? null,
+      predictionCandidates[PREDICTION_CHANNEL_CONF],
+    );
+    const predictionBacktests = buildPredictionBacktestSummaries(
       competitionCode ?? null,
       predictionCandidates,
     );
@@ -636,10 +665,23 @@ export class BacktestService {
       ),
       averageEvSimulated,
       predictionBacktest,
+      predictionBacktests,
       marketPerformance,
       reportGeneratedAt: new Date(),
     };
 
+    const predictionChannelStats = Object.fromEntries(
+      (report.predictionBacktests ?? []).map((pb) => [
+        `prediction_${pb.channel.toLowerCase()}`,
+        {
+          hitRate: pb.hitRate,
+          coverageRate: pb.coverageRate,
+          verdict: pb.verdict,
+          threshold: pb.threshold,
+          predicted: pb.predicted,
+        },
+      ]),
+    );
     logger.info(
       {
         seasonId,
@@ -651,9 +693,7 @@ export class BacktestService {
         roiSimulated: report.roiSimulated.toNumber(),
         maxDrawdownSimulated: report.maxDrawdownSimulated.toNumber(),
         averageEvSimulated: report.averageEvSimulated.toNumber(),
-        predictionHitRate: report.predictionBacktest.hitRate,
-        predictionCoverageRate: report.predictionBacktest.coverageRate,
-        predictionVerdict: report.predictionBacktest.verdict,
+        ...predictionChannelStats,
       },
       'Backtest complete',
     );
@@ -1557,14 +1597,18 @@ function getSafeValuePickLabel(pick: ViablePick): string {
   return pick.pick;
 }
 
-function buildPredictionCandidate(
+function appendPredictionCandidates(
+  buckets: PredictionCandidateBuckets,
   probabilities: {
     home: Decimal;
     draw: Decimal;
     away: Decimal;
+    bttsYes: Decimal;
   },
   actual: 'HOME' | 'DRAW' | 'AWAY',
-): PredictionCandidate {
+  homeScore: number,
+  awayScore: number,
+): void {
   const pHome = probabilities.home.toNumber();
   const pDraw = probabilities.draw.toNumber();
   const pAway = probabilities.away.toNumber();
@@ -1577,20 +1621,31 @@ function buildPredictionCandidate(
         : 'AWAY';
   const probability = Math.max(pHome, pDraw, pAway);
 
-  return {
+  buckets[PREDICTION_CHANNEL_CONF].push({
     probability,
     correct: pick === actual,
-  };
+  });
+  buckets[PREDICTION_CHANNEL_DRAW].push({
+    probability: pDraw,
+    correct: actual === 'DRAW',
+  });
+  buckets[PREDICTION_CHANNEL_BTTS].push({
+    probability: probabilities.bttsYes.toNumber(),
+    correct: homeScore > 0 && awayScore > 0,
+  });
 }
 
 function buildPredictionBacktestSummary(
+  channel: PredictionChannel,
   competitionCode: string | null,
   candidates: PredictionCandidate[],
-): PredictionBacktestSummary {
-  const config = getPredictionConfig(competitionCode);
-  const thresholds = buildPredictionThresholdGrid(config.threshold).map(
-    (threshold) =>
-      summarizePredictionThreshold(candidates, threshold, config.minSampleN),
+): ChannelPredictionBacktestSummary {
+  const config = getPredictionConfig(channel, competitionCode);
+  const thresholds = buildPredictionThresholdGrid(
+    channel,
+    config.threshold,
+  ).map((threshold) =>
+    summarizePredictionThreshold(candidates, threshold, config.minSampleN),
   );
   const current =
     thresholds.find((entry) => entry.threshold === config.threshold) ??
@@ -1601,6 +1656,7 @@ function buildPredictionBacktestSummary(
     );
 
   return {
+    channel,
     enabled: config.enabled,
     threshold: config.threshold,
     minSampleN: config.minSampleN,
@@ -1614,17 +1670,61 @@ function buildPredictionBacktestSummary(
   };
 }
 
+function buildPredictionBacktestSummaries(
+  competitionCode: string | null,
+  candidates: PredictionCandidateBuckets,
+): ChannelPredictionBacktestSummary[] {
+  return [
+    buildPredictionBacktestSummary(
+      PREDICTION_CHANNEL_CONF,
+      competitionCode,
+      candidates[PREDICTION_CHANNEL_CONF],
+    ),
+    buildPredictionBacktestSummary(
+      PREDICTION_CHANNEL_DRAW,
+      competitionCode,
+      candidates[PREDICTION_CHANNEL_DRAW],
+    ),
+    buildPredictionBacktestSummary(
+      PREDICTION_CHANNEL_BTTS,
+      competitionCode,
+      candidates[PREDICTION_CHANNEL_BTTS],
+    ),
+  ];
+}
+
 function buildCompetitionPredictionBacktest(
+  channel: PredictionChannel,
   competitionCode: string,
   reports: BacktestReport[],
-): PredictionBacktestResult | null {
-  const summaries = reports.map((report) => report.predictionBacktest);
-  if (summaries.length === 0) return null;
+): ChannelPredictionBacktestResult | null {
+  const summaries = reports.map((report) => {
+    const channelSummary = (report.predictionBacktests ?? []).find(
+      (item) => item.channel === channel,
+    );
+    if (channelSummary) return channelSummary;
 
-  const currentConfig = getPredictionConfig(competitionCode);
-  const thresholdGrid = buildPredictionThresholdGrid(currentConfig.threshold);
+    if (channel === PREDICTION_CHANNEL_CONF) {
+      return {
+        ...report.predictionBacktest,
+        channel: PREDICTION_CHANNEL_CONF,
+      };
+    }
+
+    return undefined;
+  });
+  const availableSummaries = summaries.filter(
+    (summary): summary is ChannelPredictionBacktestSummary => summary != null,
+  );
+  if (availableSummaries.length === 0) return null;
+
+  const currentConfig = getPredictionConfig(channel, competitionCode);
+  const thresholdGrid = buildPredictionThresholdGrid(
+    channel,
+    currentConfig.threshold,
+  );
   const thresholds = thresholdGrid.map((threshold) => {
-    const aggregate = summaries.reduce(
+    const aggregate = availableSummaries.reduce(
       (acc, summary) => {
         const entry = summary.thresholds.find(
           (item) => item.threshold === threshold,
@@ -1663,6 +1763,7 @@ function buildCompetitionPredictionBacktest(
 
   return {
     competition: competitionCode,
+    channel,
     enabled: currentConfig.enabled,
     threshold: currentConfig.threshold,
     minSampleN: currentConfig.minSampleN,
@@ -1768,9 +1869,18 @@ function buildPredictionCalibrationRecommendation(
   };
 }
 
-function buildPredictionThresholdGrid(currentThreshold: number): number[] {
+function getPredictionThresholdScan(channel: PredictionChannel): number[] {
+  if (channel === PREDICTION_CHANNEL_DRAW) return DRAW_THRESHOLD_SCAN;
+  if (channel === PREDICTION_CHANNEL_BTTS) return BTTS_THRESHOLD_SCAN;
+  return CONF_THRESHOLD_SCAN;
+}
+
+function buildPredictionThresholdGrid(
+  channel: PredictionChannel,
+  currentThreshold: number,
+): number[] {
   return Array.from(
-    new Set([...PREDICTION_THRESHOLD_SCAN, currentThreshold]),
+    new Set([...getPredictionThresholdScan(channel), currentThreshold]),
   ).sort((a, b) => a - b);
 }
 
@@ -1876,10 +1986,29 @@ function buildCompetitionReport(input: {
     new Decimal(0),
   );
   const byMarket = buildMarketSummaries(reports);
-  const predictionBacktest = buildCompetitionPredictionBacktest(
-    competition.code,
-    reports,
+  const predictionBacktests = [
+    buildCompetitionPredictionBacktest(
+      PREDICTION_CHANNEL_CONF,
+      competition.code,
+      reports,
+    ),
+    buildCompetitionPredictionBacktest(
+      PREDICTION_CHANNEL_DRAW,
+      competition.code,
+      reports,
+    ),
+    buildCompetitionPredictionBacktest(
+      PREDICTION_CHANNEL_BTTS,
+      competition.code,
+      reports,
+    ),
+  ].filter(
+    (report): report is ChannelPredictionBacktestResult => report !== null,
   );
+  const predictionBacktest =
+    predictionBacktests.find(
+      (report) => report.channel === PREDICTION_CHANNEL_CONF,
+    ) ?? null;
 
   const insufficient =
     totalAnalyzed < BACKTEST_CONSTANTS.MIN_FIXTURES_FOR_VALIDATION;
@@ -1955,6 +2084,7 @@ function buildCompetitionReport(input: {
     roi,
     overallVerdict,
     predictionBacktest,
+    predictionBacktests,
     marketPerformance,
     byMarket,
     reportGeneratedAt: new Date(),

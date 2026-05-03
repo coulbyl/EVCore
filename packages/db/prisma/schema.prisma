@@ -96,6 +96,12 @@ enum NotificationType {
   XG_UNAVAILABLE_REPORT
 }
 
+enum PredictionChannel {
+  CONF
+  DRAW
+  BTTS
+}
+
 // ─────────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────────
@@ -495,6 +501,7 @@ model Prediction {
   modelRunId  String    @db.Uuid
   modelRun    ModelRun  @relation(fields: [modelRunId], references: [id])
   competition String // code ligue (BL1, PL, etc.)
+  channel     PredictionChannel @default(CONF)
   market      Market    @default(ONE_X_TWO)
   pick        String // HOME | DRAW | AWAY
   probability Decimal   @db.Decimal(5, 4)
@@ -502,8 +509,8 @@ model Prediction {
   settledAt   DateTime?
   createdAt   DateTime  @default(now())
 
-  @@unique([fixtureId])
-  @@index([competition, createdAt])
+  @@unique([fixtureId, channel])
+  @@index([competition, channel, createdAt])
   @@map("prediction")
 }
 

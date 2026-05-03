@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
-import type { Prisma } from '@evcore/db';
+import type { Market, Prisma, PredictionChannel } from '@evcore/db';
 
 export type PredictionCreateInput = {
   fixtureId: string;
   modelRunId: string;
   competition: string;
+  channel: PredictionChannel;
+  market: Market;
   pick: string;
   probability: Prisma.Decimal;
 };
@@ -15,7 +17,8 @@ export type PredictionRow = {
   fixtureId: string;
   modelRunId: string;
   competition: string;
-  market: string;
+  channel: PredictionChannel;
+  market: Market;
   pick: string;
   probability: Prisma.Decimal;
   correct: boolean | null;
@@ -29,42 +32,69 @@ export class PredictionRepository {
 
   async upsert(input: PredictionCreateInput): Promise<void> {
     await this.prisma.client.prediction.upsert({
-      where: { fixtureId: input.fixtureId },
+      where: {
+        fixtureId_channel: {
+          fixtureId: input.fixtureId,
+          channel: input.channel,
+        },
+      },
       create: {
         fixtureId: input.fixtureId,
         modelRunId: input.modelRunId,
         competition: input.competition,
+        channel: input.channel,
+        market: input.market,
         pick: input.pick,
         probability: input.probability,
       },
       update: {
         modelRunId: input.modelRunId,
+        competition: input.competition,
+        market: input.market,
         pick: input.pick,
         probability: input.probability,
       },
     });
   }
 
-  async settlePending(fixtureId: string, correct: boolean): Promise<number> {
-    const result = await this.prisma.client.prediction.updateMany({
-      where: { fixtureId, correct: null },
-      data: { correct, settledAt: new Date() },
+  async deleteForFixtureChannel(
+    fixtureId: string,
+    channel: PredictionChannel,
+  ): Promise<void> {
+    await this.prisma.client.prediction.deleteMany({
+      where: { fixtureId, channel },
     });
-    return result.count;
   }
 
-  findByDate(date: { gte: Date; lte: Date }, competition?: string) {
+  async settleById(id: string, correct: boolean): Promise<void> {
+    await this.prisma.client.prediction.update({
+      where: { id },
+      data: { correct, settledAt: new Date() },
+    });
+  }
+
+  findByDate(
+    date: { gte: Date; lte: Date },
+    competition?: string,
+    channel?: PredictionChannel,
+  ) {
     const where: Prisma.PredictionWhereInput = {
       fixture: { scheduledAt: date },
       ...(competition ? { competition } : {}),
+      ...(channel ? { channel } : {}),
     };
     return this.prisma.client.prediction.findMany({
       where,
-      orderBy: [{ competition: 'asc' }, { fixture: { scheduledAt: 'asc' } }],
+      orderBy: [
+        { channel: 'asc' },
+        { competition: 'asc' },
+        { fixture: { scheduledAt: 'asc' } },
+      ],
       select: {
         id: true,
         fixtureId: true,
         competition: true,
+        channel: true,
         market: true,
         pick: true,
         probability: true,
@@ -86,11 +116,13 @@ export class PredictionRepository {
     from: Date,
     to: Date,
     competition?: string,
+    channel?: PredictionChannel,
   ): Promise<{ competition: string; correct: boolean | null }[]> {
     const where: Prisma.PredictionWhereInput = {
       fixture: { scheduledAt: { gte: from, lte: to } },
       correct: { not: null },
       ...(competition ? { competition } : {}),
+      ...(channel ? { channel } : {}),
     };
     return this.prisma.client.prediction.findMany({
       where,
@@ -98,9 +130,10 @@ export class PredictionRepository {
     }) as Promise<{ competition: string; correct: boolean | null }[]>;
   }
 
-  findForFixture(fixtureId: string): Promise<PredictionRow | null> {
-    return this.prisma.client.prediction.findUnique({
-      where: { fixtureId },
-    }) as Promise<PredictionRow | null>;
+  findPendingForFixture(fixtureId: string): Promise<PredictionRow[]> {
+    return this.prisma.client.prediction.findMany({
+      where: { fixtureId, correct: null },
+      orderBy: { channel: 'asc' },
+    }) as Promise<PredictionRow[]>;
   }
 }

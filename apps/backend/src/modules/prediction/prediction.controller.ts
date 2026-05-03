@@ -14,7 +14,11 @@ export class PredictionController {
   @Get()
   list(@Query() query: PredictionListQueryDto) {
     const today = new Date().toISOString().slice(0, 10);
-    return this.predictionService.list(query.date ?? today, query.competition);
+    return this.predictionService.list(
+      query.date ?? today,
+      query.competition,
+      query.channel,
+    );
   }
 
   @Get('stats')
@@ -24,6 +28,7 @@ export class PredictionController {
       query.from ?? today,
       query.to ?? today,
       query.competition,
+      query.channel,
     );
   }
 }

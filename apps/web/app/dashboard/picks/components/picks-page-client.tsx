@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, TrendingUp, Shield, Brain } from "lucide-react";
+import {
+  Loader2,
+  TrendingUp,
+  Shield,
+  Brain,
+  Minus,
+  Activity,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Badge,
@@ -32,14 +39,18 @@ function groupByCanal(rows: FixtureRow[]) {
   const ev: FixtureRow[] = [];
   const sv: FixtureRow[] = [];
   const conf: FixtureRow[] = [];
+  const matchNul: FixtureRow[] = [];
+  const btts: FixtureRow[] = [];
 
   for (const row of rows) {
     if (row.modelRun?.decision === "BET") ev.push(row);
     if (row.safeValueBet !== null) sv.push(row);
     if (row.prediction !== null) conf.push(row);
+    if (row.drawPrediction !== null) matchNul.push(row);
+    if (row.bttsPrediction !== null) btts.push(row);
   }
 
-  return { ev, sv, conf };
+  return { ev, sv, conf, matchNul, btts };
 }
 
 // ── section ───────────────────────────────────────────────────────────────────
@@ -131,9 +142,37 @@ const CONF_PICK_LABEL: Record<string, string> = {
   DRAW: "NUL",
 };
 
-function PredictionBadge({ pred }: { pred: FixtureRow["prediction"] }) {
+function PredictionBadge({
+  pred,
+  canal,
+}: {
+  pred: FixtureRow["prediction"];
+  canal: "CONF" | "DRAW" | "BTTS";
+}) {
+  const t = useTranslations("picks");
   if (!pred) return null;
-  const label = CONF_PICK_LABEL[pred.pick] ?? pred.pick;
+  const bttsLabel =
+    pred.pick === "YES"
+      ? t("bttsYes")
+      : pred.pick === "NO"
+        ? t("bttsNo")
+        : null;
+  const label =
+    canal === "BTTS" && bttsLabel != null
+      ? bttsLabel
+      : (CONF_PICK_LABEL[pred.pick] ?? pred.pick);
+  const canalColor =
+    canal === "DRAW"
+      ? "var(--canal-draw)"
+      : canal === "BTTS"
+        ? "var(--canal-btts)"
+        : "var(--canal-conf)";
+  const canalSoft =
+    canal === "DRAW"
+      ? "var(--canal-draw-soft)"
+      : canal === "BTTS"
+        ? "var(--canal-btts-soft)"
+        : "var(--canal-conf-soft)";
 
   if (pred.correct === true) {
     return (
@@ -161,10 +200,9 @@ function PredictionBadge({ pred }: { pred: FixtureRow["prediction"] }) {
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
       style={{
-        color: "var(--canal-conf)",
-        background: "var(--canal-conf-soft)",
-        border:
-          "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
+        color: canalColor,
+        background: canalSoft,
+        border: `1px solid color-mix(in srgb, ${canalColor} 22%, transparent)`,
       }}
     >
       → {label} {pred.probability}
@@ -179,12 +217,28 @@ function PickListItem({
   onSelect,
 }: {
   row: FixtureRow;
-  canal: "EV" | "SV" | "CONF";
+  canal: "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
   active: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("picks");
   const mr = row.modelRun;
   const sv = row.safeValueBet;
+  const prediction =
+    canal === "DRAW"
+      ? row.drawPrediction
+      : canal === "BTTS"
+        ? row.bttsPrediction
+        : row.prediction;
+
+  function resolvePredLabel(pick: string): string {
+    if (canal === "BTTS") {
+      if (pick === "YES") return t("bttsYes");
+      if (pick === "NO") return t("bttsNo");
+    }
+    return CONF_PICK_LABEL[pick] ?? pick;
+  }
+
   const pickLabel =
     canal === "EV" && mr?.market && mr.pick
       ? formatCombinedPickForDisplay({
@@ -200,7 +254,9 @@ function PickListItem({
             comboMarket: sv.comboMarket ?? undefined,
             comboPick: sv.comboPick ?? undefined,
           })
-        : null;
+        : canal !== "EV" && canal !== "SV" && prediction
+          ? resolvePredLabel(prediction.pick)
+          : null;
 
   const odds =
     canal === "EV" && mr?.market && mr.pick
@@ -270,7 +326,9 @@ function PickListItem({
               {pickLabel}
             </Badge>
           ) : null}
-          {canal === "CONF" ? <PredictionBadge pred={row.prediction} /> : null}
+          {canal !== "EV" && canal !== "SV" ? (
+            <PredictionBadge pred={prediction} canal={canal} />
+          ) : null}
           {score ? (
             <Badge variant="outline" className="text-[0.68rem] tabular-nums">
               {score}
@@ -290,7 +348,11 @@ function PickListItem({
                     ? "var(--canal-ev)"
                     : canal === "SV"
                       ? "var(--canal-sv)"
-                      : "var(--canal-conf)",
+                      : canal === "DRAW"
+                        ? "var(--canal-draw)"
+                        : canal === "BTTS"
+                          ? "var(--canal-btts)"
+                          : "var(--canal-conf)",
               }}
             >
               {evValue}
@@ -338,18 +400,24 @@ export function PicksPageClient() {
     setFilters({ date });
   }, [date]);
 
-  const { ev, sv, conf } = useMemo(
+  const { ev, sv, conf, matchNul, btts } = useMemo(
     () => groupByCanal(data?.rows ?? []),
     [data],
   );
 
-  const hasAny = ev.length + sv.length + conf.length > 0;
+  const hasAny =
+    ev.length + sv.length + conf.length + matchNul.length + btts.length > 0;
 
   const selectedRow =
     (data?.rows ?? []).find((r) => r.fixtureId === selectedId) ?? null;
 
   const defaultSelection =
-    ev[0]?.fixtureId ?? sv[0]?.fixtureId ?? conf[0]?.fixtureId ?? null;
+    ev[0]?.fixtureId ??
+    sv[0]?.fixtureId ??
+    conf[0]?.fixtureId ??
+    matchNul[0]?.fixtureId ??
+    btts[0]?.fixtureId ??
+    null;
 
   useEffect(() => {
     if (!selectedId && defaultSelection) setSelectedId(defaultSelection);
@@ -380,7 +448,7 @@ export function PicksPageClient() {
       <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
           {/* Stats — fixed */}
-          <section className="shrink-0 grid grid-cols-3 gap-3 sm:gap-4">
+          <section className="shrink-0 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
             <StatCard
               compact={isMobile}
               icon={<TrendingUp size={14} />}
@@ -401,6 +469,20 @@ export function PicksPageClient() {
               label={t("confidence")}
               value={String(conf.length)}
               tone="neutral"
+            />
+            <StatCard
+              compact={isMobile}
+              icon={<Minus size={14} />}
+              label={t("matchNull")}
+              value={String(matchNul.length)}
+              tone="warning"
+            />
+            <StatCard
+              compact={isMobile}
+              icon={<Activity size={14} />}
+              label={t("btts")}
+              value={String(btts.length)}
+              tone="danger"
             />
           </section>
 
@@ -482,6 +564,38 @@ export function PicksPageClient() {
                           key={`${row.fixtureId}-conf`}
                           row={row}
                           canal="CONF"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
+
+                    <CanalSection
+                      title={t("matchNull")}
+                      color="var(--canal-draw)"
+                      count={matchNul.length}
+                    >
+                      {matchNul.map((row) => (
+                        <PickListItem
+                          key={`${row.fixtureId}-draw`}
+                          row={row}
+                          canal="DRAW"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
+
+                    <CanalSection
+                      title={t("bttsLabel")}
+                      color="var(--canal-btts)"
+                      count={btts.length}
+                    >
+                      {btts.map((row) => (
+                        <PickListItem
+                          key={`${row.fixtureId}-btts`}
+                          row={row}
+                          canal="BTTS"
                           active={row.fixtureId === selectedId}
                           onSelect={() => handleSelect(row)}
                         />

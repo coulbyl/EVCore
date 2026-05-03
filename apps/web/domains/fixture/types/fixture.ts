@@ -51,6 +51,8 @@ export type FixtureEvaluatedPickSnapshot = FixturePickSnapshot & {
 };
 
 export type FixturePrediction = {
+  channel: "CONF" | "DRAW" | "BTTS";
+  market: string;
   pick: string;
   probability: string;
   correct: boolean | null;
@@ -84,6 +86,8 @@ export type FixtureRow = {
   modelRun: FixtureModelRun | null;
   safeValueBet: FixtureSvBet | null;
   prediction: FixturePrediction | null;
+  drawPrediction: FixturePrediction | null;
+  bttsPrediction: FixturePrediction | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -95,7 +99,7 @@ export type FixtureStatusFilter = "ALL" | "SCHEDULED" | "LIVE" | "FINISHED";
 export type FixtureTimeSlotFilter = "ALL" | TimeSlotKey;
 export type FixtureCompetitionFilter = "ALL" | string;
 export type FixtureBetStatusFilter = "ALL" | "WON" | "LOST" | "PENDING";
-export type FixtureCanalFilter = "ALL" | "EV" | "SV" | "CONF";
+export type FixtureCanalFilter = "ALL" | "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
 
 export type FixtureFilters = {
   date: string;

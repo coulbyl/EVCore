@@ -55,6 +55,8 @@ export type ScoredFixtureSvBet = {
 };
 
 export type ScoredFixturePrediction = {
+  channel: 'CONF' | 'DRAW' | 'BTTS';
+  market: string;
   pick: string;
   probability: string;
   correct: boolean | null;
@@ -76,6 +78,8 @@ export type ScoredFixtureRow = {
   modelRun: ScoredFixtureModelRun | null;
   safeValueBet: ScoredFixtureSvBet | null;
   prediction: ScoredFixturePrediction | null;
+  drawPrediction: ScoredFixturePrediction | null;
+  bttsPrediction: ScoredFixturePrediction | null;
 };
 
 export type ScoredFixturesResult = {
@@ -182,9 +186,15 @@ export class FixtureScoringService {
         },
         oddsSnapshots: { select: { id: true }, take: 1 },
         predictions: {
-          select: { pick: true, probability: true, correct: true },
-          take: 1,
-          orderBy: { createdAt: 'desc' },
+          select: {
+            channel: true,
+            market: true,
+            pick: true,
+            probability: true,
+            correct: true,
+            createdAt: true,
+          },
+          orderBy: [{ channel: 'asc' }, { createdAt: 'desc' }],
         },
         modelRuns: {
           select: {
@@ -271,6 +281,24 @@ export class FixtureScoringService {
         ? extractModelRunFeatureDiagnostics(run.features)
         : null;
 
+      const predictionsByChannel = new Map<
+        'CONF' | 'DRAW' | 'BTTS',
+        (typeof f.predictions)[number]
+      >(f.predictions.map((prediction) => [prediction.channel, prediction]));
+      const mapPrediction = (
+        channel: 'CONF' | 'DRAW' | 'BTTS',
+      ): ScoredFixturePrediction | null => {
+        const prediction = predictionsByChannel.get(channel);
+        if (!prediction) return null;
+        return {
+          channel,
+          market: prediction.market,
+          pick: prediction.pick,
+          probability: `${(toNumber(prediction.probability) * 100).toFixed(0)}%`,
+          correct: prediction.correct,
+        };
+      };
+
       return {
         fixtureId: f.id,
         fixture: `${f.homeTeam.name} vs ${f.awayTeam.name}`,
@@ -333,13 +361,9 @@ export class FixtureScoringService {
                 : null,
             }
           : null,
-        prediction: f.predictions[0]
-          ? {
-              pick: f.predictions[0].pick,
-              probability: `${(toNumber(f.predictions[0].probability) * 100).toFixed(0)}%`,
-              correct: f.predictions[0].correct,
-            }
-          : null,
+        prediction: mapPrediction('CONF'),
+        drawPrediction: mapPrediction('DRAW'),
+        bttsPrediction: mapPrediction('BTTS'),
       };
     });
 

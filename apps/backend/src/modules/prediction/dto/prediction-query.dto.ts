@@ -1,4 +1,5 @@
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import { PredictionChannel } from '@evcore/db';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -11,6 +12,10 @@ export class PredictionListQueryDto {
   @IsOptional()
   @IsString()
   competition?: string;
+
+  @IsOptional()
+  @IsEnum(PredictionChannel)
+  channel?: PredictionChannel;
 }
 
 export class PredictionStatsQueryDto {
@@ -27,4 +32,8 @@ export class PredictionStatsQueryDto {
   @IsOptional()
   @IsString()
   competition?: string;
+
+  @IsOptional()
+  @IsEnum(PredictionChannel)
+  channel?: PredictionChannel;
 }
