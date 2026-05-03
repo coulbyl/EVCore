@@ -457,6 +457,11 @@ const BADGES = [
     name: "Calibré",
     description: "Brier Score < 0,20 sur 50+ prédictions.",
   },
+  {
+    code: "graduate",
+    name: "Diplômé",
+    description: "Tous les contenus de base de la formation sont terminés.",
+  },
 ] as const;
 
 async function seedBadges() {

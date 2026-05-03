@@ -75,4 +75,4 @@ Quand un marché est "écarté", une icône et un texte expliquent pourquoi :
 ## À lire ensuite
 
 - Comprendre l'EV d'un pick : `ev-probabilites-cotes`
-- Utiliser le coupon : `guide-bankroll`
+- Utiliser le coupon : `guide-coupons`

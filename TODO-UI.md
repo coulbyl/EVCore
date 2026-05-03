@@ -3,7 +3,7 @@
 use skills: shadcn-ui, next, nestjs, playwright
 
 Référence : audit frontend + backend du 2026-04-25.
-Trois canaux actifs : **Canal EV** (betting-engine), **Canal Sécurité** (safe value), **Canal Confiance** (prediction).
+Cinq canaux actifs : **Canal EV** (betting-engine), **Canal Sécurité** (safe value), **Canal Confiance** (prediction), **Canal NUL** et **Canal BB**.
 
 ---
 
@@ -312,9 +312,9 @@ La page `/dashboard/params/account` est actuellement un placeholder "À venir". 
 
 ---
 
-## P1 — Identité visuelle des 3 canaux
+## P1 — Identité visuelle des canaux
 
-Les trois canaux coexistent dans une seule ligne de tableau sans identité propre. Refactoring visuel pour que chaque canal soit reconnaissable partout dans l'app.
+Les canaux coexistent dans l'app et doivent rester reconnaissables partout dans l'interface.
 
 **Palette à fixer :**
 
@@ -324,7 +324,7 @@ Les trois canaux coexistent dans une seule ligne de tableau sans identité propr
 
 **Tâches :**
 
-- [x] Définir les tokens couleur des 3 canaux dans le design system (`@evcore/ui`) — `theme.css` light + dark, `@theme inline`
+- [x] Définir les tokens couleur des canaux dans le design system (`@evcore/ui`) — `theme.css` light + dark, `@theme inline`
 - [x] Refactoriser la page Fixtures : `DecisionBadge` EV amber, `SVBadge` SV teal, `PredictionBadge` Conf indigo (inline styles via tokens canal)
 - [x] Refactoriser le Dashboard :
   - [x] Remplacer la "Predictions Card" générique par 3 "Canal Cards" side-by-side (`canal-cards.tsx`)
@@ -368,7 +368,7 @@ Page centrale de l'expérience quotidienne. Le dashboard actuel est trop dense. 
 
 ## P3 — Page Performance (`/dashboard/performance`)
 
-Transparence totale sur les 3 modèles. C'est l'argument de confiance de l'app — montrer que le système est mesurable et calibré.
+Transparence totale sur les modèles et canaux suivis. C'est l'argument de confiance de l'app — montrer que le système est mesurable et calibré.
 
 **Données disponibles :**
 
@@ -454,13 +454,13 @@ Récompenser les bonnes métriques (calibration, patience, volume statistiquemen
 
 **Tâches :**
 
-- [ ] Ajouter icône cloche dans la navigation avec badge de count non-lu
-- [ ] Créer la page `/dashboard/notifications` :
-  - [ ] Liste paginée de toutes les notifications
+- [x] Ajouter icône cloche dans la navigation avec badge de count non-lu
+- [x] Créer la page `/dashboard/notifications` :
+  - [x] Liste paginée de toutes les notifications
   - [ ] Filtre par type
-  - [ ] Marquer tout comme lu / marquer individuellement
-  - [ ] Différenciation visuelle par sévérité (critique / haute / normale)
-- [ ] Sur le dashboard, remplacer la liste de 3 alertes par un composant "Dernières alertes" avec lien "Voir tout →"
+  - [x] Marquer tout comme lu / marquer individuellement
+  - [x] Différenciation visuelle par sévérité (critique / haute / normale)
+- [x] Sur le dashboard, remplacer la liste de 3 alertes par un composant "Dernières alertes" avec lien "Voir tout →"
 
 ---
 
@@ -472,8 +472,6 @@ Améliorations rapides sans nouvelle page ni nouvelle API.
 - [x] **Bankroll — projection 30 jours** : ajouter une ligne pointillée sur le trend chart indiquant la trajectoire actuelle (calcul client-side depuis transactions)
 - [x] **Bankroll — stats de période** : afficher ROI de la période sélectionnée directement sous le sélecteur de dates
 - ~~**Fixtures — preset filters**~~ : redondant avec le FilterBar existant (canal + décision + date suffisent)
-- [ ] **Page compte** : compléter les quick wins non couverts par P0.9
-  - [ ] Ajouter le fuseau horaire si non traité dans la première version P0.9
 
 ---
 
@@ -530,7 +528,7 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 | Catégorie | Contenu |
 |---|---|
 | **Les bases** | Qu'est-ce que l'EV, les cotes, la probabilité, la value |
-| **Les 3 canaux EVCore** | Comment lire un pick EV / Sécurité / Confiance, différences, cas d'usage |
+| **Les canaux EVCore** | Comment lire un pick EV / Sécurité / Confiance / NUL / BB, différences, cas d'usage |
 | **Bankroll & discipline** | Gestion en unités, drawdown normal, psychologie long terme |
 | **Guide par ligue** | Contenu actuel `help-leagues.md` restructuré par ligue |
 | **Comment utiliser l'app** | Walkthrough des pages : fixtures, coupons, bankroll, diagnostic |
@@ -571,7 +569,7 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 
 - [x] Tracking des articles lus et vidéos vues (localStorage en phase 1, table `UserProgress` en base pour phase 2)
 - [x] Indicateur de progression par catégorie (3/5 articles lus)
-- [ ] Badge "Diplômé" débloqué quand toutes les bases sont lues — lié au système de badges P4
+- [x] Badge "Diplômé" débloqué quand toutes les bases sont lues — lié au système de badges P4
 
 **Recherche :**
 
@@ -584,7 +582,7 @@ Objectif : transformer ça en un vrai centre de formation avec articles, vidéos
 - [x] Enrichir `comment-lire-un-pick.md`
 - [x] Catégorie `bases` : `canal-ev.md`, `canal-sv.md`, `canal-confiance.md` (les canaux font partie des bases)
 - [x] Catégorie `app` : `guide-picks-du-jour.md`, `guide-fixtures.md`, `guide-bankroll.md`
-- [ ] Catégorie `app` : `guide-coupons.md` (guide coupon / bet slip)
+- [x] Catégorie `app` : `guide-coupons.md` (guide coupon / bet slip)
 - [ ] Vidéo intro : remplacer le placeholder YouTube par une vraie vidéo
 
 ---

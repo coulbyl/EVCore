@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '@modules/auth/auth.module';
+import { GamificationModule } from '@modules/gamification/gamification.module';
 import { FormationProgressController } from './formation-progress.controller';
 import { FormationProgressRepository } from './formation-progress.repository';
 import { FormationProgressService } from './formation-progress.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, GamificationModule],
   controllers: [FormationProgressController],
   providers: [FormationProgressRepository, FormationProgressService],
 })
