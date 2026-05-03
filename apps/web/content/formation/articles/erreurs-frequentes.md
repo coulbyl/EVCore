@@ -1,95 +1,87 @@
 ---
-title: "Les bases : erreurs fréquentes (et quand ne pas miser)"
+title: "Erreurs fréquentes et quand ne pas miser"
 category: bases
 difficulty: beginner
-order: 6
-readTime: 6
+order: 8
+readTime: 5
 slug: erreurs-frequentes
-summary: "Les pièges classiques (petit échantillon, tilt, “cote jolie”, sur-mise) et un checklist simple pour dire non."
-updatedAt: "2026-05-01"
+summary: "Les cinq pièges les plus courants — petit échantillon, tilt, cote basse 'sûre', sur-mise — et une règle simple pour chacun."
+updatedAt: "2026-05-02"
 related:
   [
-    "comment-lire-un-pick",
-    "ev-probabilites-cotes",
     "bankroll-unites-discipline",
+    "ev-probabilites-cotes",
+    "comment-lire-un-pick",
   ]
 ---
 
-## Le but : éviter les erreurs qui coûtent cher
+## La règle de base
 
-Même avec de bons picks, les pertes viennent souvent de décisions “humaines”.
+Même avec de bons picks, les pertes viennent souvent de décisions humaines prises dans le mauvais état d'esprit.
 
-Ce cours te donne une règle simple :
+> Si tu ne peux pas expliquer en dix secondes pourquoi tu mises, ne mise pas.
 
-> Si tu ne peux pas expliquer en 10 secondes **pourquoi** tu mises, tu ne mises pas.
+---
 
-## Erreur 1 — Miser parce que “ça paraît sûr”
+## Erreur 1 — "Cette cote est basse, c'est presque sûr"
 
-Une cote basse ne veut pas dire “gratuit”.
+Une cote basse ne garantit rien. Une cote de 1,30 signifie que le bookmaker estime l'issue à environ 77 % — mais ça peut perdre. Et si la vraie probabilité est 72 %, la cote est **surévaluée** : tu paies trop cher pour une probabilité ordinaire.
 
-- `1.30` peut perdre.
-- `1.30` peut être **surévalué** (mauvais prix).
+Ce n'est pas "sûr" qui compte. C'est **si le prix est bon** pour la probabilité estimée. C'est exactement ce que mesure l'EV.
 
-Ce qu’on veut, ce n’est pas “sûr”, c’est **un bon prix** pour une probabilité.
+---
 
-## Erreur 2 — Confondre EV et résultat
+## Erreur 2 — Changer de plan après 2 ou 3 pertes
 
-Une EV positive ne garantit pas de gagner sur **ce match**.
+Une EV positive ne garantit pas de gagner les prochains paris. Elle garantit une tendance à long terme.
 
-- EV = “bon pari” **à long terme**.
-- Résultat = variance **à court terme**.
+Après 3 pertes : normal.  
+Après 5 pertes : normal.  
+Après 10 pertes : commence à être remarquable, mais pas encore une preuve de dysfonctionnement.
 
-Si tu changes de stratégie après 2–3 pertes, tu t’exposes au pire scénario : couper les bons paris au mauvais moment.
+Changer de stratégie pendant une série négative revient à couper les bons paris au pire moment. La règle : **50 paris minimum avant toute réévaluation sérieuse**.
 
-## Erreur 3 — Sur-miser (ou “rattraper” une perte)
+---
 
-Le classique :
+## Erreur 3 — Sur-miser pour "rattraper"
 
-- “J’ai perdu hier, je double aujourd’hui.”
+"J'ai perdu hier, je double aujourd'hui pour récupérer."
 
-C’est le chemin le plus rapide vers le tilt.
+C'est la logique la plus rapide vers le tilt. Elle brise la gestion en unités et transforme quelques pertes normales en une perte importante.
 
-Règle simple :
+La règle est simple : une mise = une unité, sans exception. Le cours `bankroll-unites-discipline` développe ce point.
 
-- une mise = une **unité** (ou une fraction stable)
-- pas “d’exception” parce que tu es pressé de récupérer
+---
 
-La gestion d’unités se travaille dans le cours Bankroll.
+## Erreur 4 — Miser hors du cadre de la ligue
 
-## Erreur 4 — Jouer hors du cadre de la ligue
+Chaque ligue a ses zones validées par le backtest (à jouer / peu de données / à éviter). Un pick EV qui sort de la zone validée de sa ligue mérite une vérification avant d'être joué.
 
-Dans EVCore, chaque ligue a ses **zones** (à jouer / rare / éviter).
+Le guide par ligue (section Formation → Guide par ligue) liste les zones pour chaque compétition suivie par EVCore.
 
-Si ton pick est “en dehors”, tu as 2 options :
+---
 
-- ne pas jouer
-- comprendre **pourquoi** (avant de jouer)
+## Erreur 5 — Tirer des conclusions sur un petit échantillon
 
-## Erreur 5 — Petit échantillon = fausses conclusions
+- "Cette ligue marche trop bien" après 3 paris.
+- "Le système ne fonctionne pas" après 4 pertes.
 
-Deux pièges :
+Deux fois la même erreur, dans deux directions opposées. La variance sur 5 ou 10 paris est trop haute pour que n'importe quel résultat soit significatif.
 
-- “Cette ligue marche trop bien” après 3 paris.
-- “Ça ne marche pas” après 4 pertes.
+Un échantillon devient exploitable à partir de **50 paris réglés** sur un même type de signal.
 
-À la place :
+---
 
-- tu suis un cadre
-- tu notes
-- tu laisses le temps à l’échantillon d’exister
-
-## Quand ne pas miser (checklist)
+## Quand ne pas miser
 
 Ne mise pas si :
 
-- tu ne sais pas expliquer le signal (en 10 secondes)
-- tu ne respectes pas les règles de la ligue
-- tu es en “mode rattrapage”
-- tu augmentes la mise sans raison claire
-- tu n’acceptes pas l’idée que ce pick peut perdre (variance)
+- tu es en mode "rattrapage" après une perte
+- tu augmentes ta mise sans raison claire
+- tu n'acceptes pas que ce pick peut perdre
 
-## Suite logique
+---
 
-- Comprendre l’EV : `ev-probabilites-cotes`
-- Lire une cote rapidement : `cotes-probabilites-implicites`
-- Protéger ton capital : `bankroll-unites-discipline`
+## Ce que ça change dans la pratique
+
+Suivre ces règles ne garantit pas de gagner à court terme. Ça garantit de ne pas s'auto-saboter. La discipline est le seul levier que tu contrôles — le modèle gère le reste.

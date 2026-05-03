@@ -11,6 +11,7 @@ const BADGE_EMOJI: Record<string, string> = {
   streak_5: "⚡",
   patience: "🧘",
   calibre: "🎯",
+  graduate: "🎓",
 };
 
 export function BadgesSection() {

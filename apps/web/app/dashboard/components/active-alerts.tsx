@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@evcore/ui";
 import type { AlertItem } from "@/domains/dashboard/types/dashboard";
 
@@ -13,7 +14,15 @@ export function ActiveAlerts({ alerts }: { alerts: AlertItem[] }) {
             Points d&apos;attention
           </h2>
         </div>
-        <Badge variant="destructive">{alerts.length} ouvertes</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="destructive">{alerts.length} ouvertes</Badge>
+          <Link
+            href="/dashboard/notifications"
+            className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Voir tout →
+          </Link>
+        </div>
       </div>
       <div className="mt-4 flex flex-col gap-3">
         {alerts.map((alert) => (

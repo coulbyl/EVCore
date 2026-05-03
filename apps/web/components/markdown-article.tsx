@@ -15,6 +15,15 @@ type MarkdownBlock =
       items: string[];
     }
   | {
+      type: "orderedList";
+      items: string[];
+    }
+  | {
+      type: "table";
+      headers: string[];
+      rows: string[][];
+    }
+  | {
       type: "code";
       language: string;
       code: string;
@@ -118,6 +127,40 @@ function parseMarkdown(content: string): MarkdownBlock[] {
       continue;
     }
 
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length) {
+        const current = (lines[i] ?? "").trim();
+        if (!/^\d+\.\s+/.test(current)) break;
+        items.push(current.replace(/^\d+\.\s+/, "").trim());
+        i += 1;
+      }
+      blocks.push({ type: "orderedList", items });
+      continue;
+    }
+
+    if (trimmed.startsWith("|")) {
+      const tableLines: string[] = [];
+      while (i < lines.length) {
+        const current = (lines[i] ?? "").trim();
+        if (!current.startsWith("|")) break;
+        tableLines.push(current);
+        i += 1;
+      }
+      const parseRow = (row: string) =>
+        row
+          .split("|")
+          .slice(1, -1)
+          .map((cell) => cell.trim());
+      const [headerRow, , ...dataRows] = tableLines;
+      const headers = headerRow ? parseRow(headerRow) : [];
+      const rows = dataRows.filter((r) => !/^[\s|:-]+$/.test(r)).map(parseRow);
+      if (headers.length > 0) {
+        blocks.push({ type: "table", headers, rows });
+      }
+      continue;
+    }
+
     const paragraphLines: string[] = [];
     while (i < lines.length) {
       const current = (lines[i] ?? "").trim();
@@ -127,7 +170,9 @@ function parseMarkdown(content: string): MarkdownBlock[] {
         current.startsWith("```") ||
         current.startsWith(">") ||
         current.startsWith("- ") ||
-        /^(#{1,3})\s+/.test(current)
+        current.startsWith("|") ||
+        /^(#{1,3})\s+/.test(current) ||
+        /^\d+\.\s+/.test(current)
       ) {
         break;
       }
@@ -294,6 +339,62 @@ export function MarkdownArticle({ content }: { content: string }) {
                 </li>
               ))}
             </ul>
+          );
+        }
+
+        if (block.type === "orderedList") {
+          return (
+            <ol
+              key={`${block.type}-${index}`}
+              className="flex flex-col gap-2 pl-5 text-[0.96rem] text-muted-foreground sm:text-base"
+            >
+              {block.items.map((item, itemIndex) => (
+                <li key={`${index}-${itemIndex}`} className="list-decimal pl-1">
+                  {renderInline(item)}
+                </li>
+              ))}
+            </ol>
+          );
+        }
+
+        if (block.type === "table") {
+          return (
+            <div
+              key={`${block.type}-${index}`}
+              className="overflow-x-auto rounded-2xl border border-border"
+            >
+              <table className="w-full text-[0.9rem]">
+                <thead>
+                  <tr className="border-b border-border bg-panel">
+                    {block.headers.map((header, hi) => (
+                      <th
+                        key={hi}
+                        className="px-4 py-2.5 text-left text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                      >
+                        {renderInline(header)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, ri) => (
+                    <tr
+                      key={ri}
+                      className="border-b border-border/50 last:border-0 odd:bg-background/30"
+                    >
+                      {row.map((cell, ci) => (
+                        <td
+                          key={ci}
+                          className="px-4 py-2.5 text-muted-foreground"
+                        >
+                          {renderInline(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           );
         }
 

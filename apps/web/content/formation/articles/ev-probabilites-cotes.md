@@ -1,66 +1,63 @@
 ---
-title: "Les bases : probabilités, cotes et EV"
+title: "L'EV (Expected Value) : la valeur attendue d'un pari"
 category: bases
 difficulty: beginner
-order: 5
-readTime: 6
+order: 3
+readTime: 5
 slug: ev-probabilites-cotes
-summary: "Comprendre l'EV (value) en reliant probabilités et cotes."
-updatedAt: "2026-05-01"
-related:
-  [
-    "cotes-probabilites-implicites",
-    "erreurs-frequentes",
-    "bankroll-unites-discipline",
-  ]
+summary: "Ce que mesure l'EV, comment la calculer, et pourquoi une EV positive ne garantit pas de gagner ce soir."
+updatedAt: "2026-05-02"
+related: ["cotes-probabilites-implicites", "canal-ev", "erreurs-frequentes"]
 ---
 
-## Pourquoi on parle d’EV ?
+## Pourquoi l'EV et pas "la cote la plus haute" ?
 
-L’EV (Expected Value) mesure la **valeur attendue** d’un pari : si tu pouvais rejouer la même situation un grand nombre de fois, est-ce que tu gagnerais en moyenne ?
+Une cote élevée ne suffit pas — elle peut simplement refléter une issue peu probable. Ce qui compte, c'est l'**écart** entre la probabilité que tu estimes et la probabilité que la cote suppose.
 
-En clair : l’EV te dit si le **prix** (la cote) est bon par rapport à la **probabilité**.
+L'EV (Expected Value, ou valeur attendue) mesure cet écart. Si tu pouvais rejouer un pari un grand nombre de fois dans des conditions identiques, l'EV prédit le gain ou la perte **par unité misée, en moyenne**.
 
-## Les 3 ingrédients
+## La formule
 
-1. **Probabilité estimée** (ex: 60%) : la chance de succès _selon le modèle_.
-2. **Cote du marché** (ex: 2.10) : ce que le bookmaker “paye” si ça passe.
-3. **EV** : la comparaison des deux.
-
-Si tu n’es pas à l’aise avec les cotes, commence par : `cotes-probabilites-implicites`.
-
-## Exemple rapide
-
-Si le modèle estime 60% et que la cote est 2.10 :
-
-```txt
-EV = (0.60 × 2.10) - 1 = +0.26
+```
+EV = (probabilité estimée × cote) − 1
 ```
 
-Interprétation :
+- **Probabilité estimée** : ce que le modèle EVCore calcule (entre 0 et 1).
+- **Cote** : le multiplicateur du bookmaker (format décimal).
+- **−1** : on soustrait la mise, qui est toujours de 1 unité.
 
-- `+0.26` signifie “+26%” de valeur attendue **par unité** misée (en théorie, sur le long terme).
-- ce n’est pas une promesse de gagner “ce soir”.
+## Exemple
 
-> À retenir : EV positive = bon pari statistique. Résultat = variance.
+Le modèle estime à 62 % la probabilité d'un résultat. La cote bookmaker est 2.10.
 
-## Comment lire l’EV sans formule
+```
+EV = (0,62 × 2,10) − 1 = 1,302 − 1 = +0,302
+```
 
-Pose-toi cette question :
+EV de **+30,2 %**. Sur 100 paris identiques, tu gagnerais en théorie 30,2 unités de plus que tu n'en mises.
 
-> “Est-ce que la cote paye assez pour le risque ?”
+Pour comparaison : si la cote était 1.50 pour la même probabilité estimée à 62 % :
 
-Si tu as une probabilité estimée “haute” mais une cote trop basse, le pari peut être _sûr_… mais **mal payé**.
+```
+EV = (0,62 × 1,50) − 1 = 0,93 − 1 = −0,07
+```
 
-## Erreurs classiques
+EV de **−7 %**. Même si l'issue est probable, le prix est mauvais — le pari est perdant à long terme.
 
-- Confondre “EV positif” et “ça va passer”.
-- Changer de stratégie après 2–3 matchs (petit échantillon).
-- Sur-miser parce qu’on “le sent bien”.
+## EV positive ≠ gagner ce soir
 
-Pour un checklist simple : `erreurs-frequentes`.
+C'est le point le plus important.
 
-## Suite logique
+Un pari avec EV +25 % et probabilité estimée à 55 % **perd 45 % du temps**. Sur 10 paris, tu peux parfaitement en perdre 5 ou 6 — et être statistiquement en bonne voie.
 
-- Apprendre à lire le prix (cote) : `cotes-probabilites-implicites`
-- Garder un cadre de mise : `bankroll-unites-discipline`
+L'EV est une loi des grands nombres. Elle ne prédit pas le résultat du prochain match. Elle dit qu'en jouant des paris EV positifs de façon répétée, le rendement converge vers la valeur attendue sur le long terme.
+
+> Résultat = variance. EV = signal. Les confondre, c'est la principale source de mauvaises décisions.
+
+## Le seuil EVCore
+
+EVCore ne retient un signal que si l'EV est supérieure ou égale à **8 %** (`EV ≥ 0,08`). En dessous, l'écart entre probabilité estimée et cote est trop faible pour être statistiquement fiable après prise en compte des marges et de l'incertitude du modèle.
+
+## Prochaine étape
+
+Maintenant que tu comprends l'EV, tu peux lire comment EVCore l'applique dans chaque canal : `canal-ev`.

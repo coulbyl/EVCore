@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { FormationContentType } from "../types/formation";
 
 const STORAGE_KEY = "evcore:formation:progress:v1";
@@ -22,6 +31,8 @@ export type RemoteFormationProgressItem = {
   completedAt: string;
 };
 
+type FormationProgressValue = ReturnType<typeof useFormationProgressValue>;
+
 function safeParseProgress(raw: string | null): StoredProgress {
   if (!raw) return { read: {}, watched: {} };
   try {
@@ -40,14 +51,27 @@ function writeProgress(next: StoredProgress) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-export function useFormationProgress() {
+function useFormationProgressValue() {
   const [progress, setProgress] = useState<StoredProgress>({
     read: {},
     watched: {},
   });
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     setProgress(safeParseProgress(localStorage.getItem(STORAGE_KEY)));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function onStorage(event: StorageEvent) {
+      if (event.key !== STORAGE_KEY) return;
+      setProgress(safeParseProgress(event.newValue));
+    }
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const isCompleted = useCallback(
@@ -178,4 +202,30 @@ export function useFormationProgress() {
     hydrateRemote,
     storageKey: STORAGE_KEY,
   };
+}
+
+const FormationProgressContext = createContext<FormationProgressValue | null>(
+  null,
+);
+
+export function FormationProgressProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const value = useFormationProgressValue();
+
+  return createElement(FormationProgressContext.Provider, { value }, children);
+}
+
+export function useFormationProgress() {
+  const value = useContext(FormationProgressContext);
+
+  if (!value) {
+    throw new Error(
+      "useFormationProgress must be used within FormationProgressProvider",
+    );
+  }
+
+  return value;
 }

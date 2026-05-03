@@ -54,14 +54,7 @@ function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
       </span>
     );
   }
-  return (
-    <Badge
-      variant="neutral"
-      className="rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
-    >
-      Passer
-    </Badge>
-  );
+  return null;
 }
 
 const PICK_LABEL: Record<string, string> = {
@@ -71,7 +64,29 @@ const PICK_LABEL: Record<string, string> = {
 };
 
 function PredictionBadge({ pred }: { pred: FixturePrediction }) {
-  const label = PICK_LABEL[pred.pick] ?? pred.pick;
+  const t = useTranslations("picks");
+  const bttsLabel =
+    pred.pick === "YES"
+      ? t("bttsYes")
+      : pred.pick === "NO"
+        ? t("bttsNo")
+        : null;
+  const label =
+    pred.channel === "BTTS" && bttsLabel != null
+      ? bttsLabel
+      : (PICK_LABEL[pred.pick] ?? pred.pick);
+  const canalColor =
+    pred.channel === "DRAW"
+      ? "var(--canal-draw)"
+      : pred.channel === "BTTS"
+        ? "var(--canal-btts)"
+        : "var(--canal-conf)";
+  const canalSoft =
+    pred.channel === "DRAW"
+      ? "var(--canal-draw-soft)"
+      : pred.channel === "BTTS"
+        ? "var(--canal-btts-soft)"
+        : "var(--canal-conf-soft)";
   // settled: success/danger; pending: canal-conf color
   if (pred.correct === true) {
     return (
@@ -97,10 +112,9 @@ function PredictionBadge({ pred }: { pred: FixturePrediction }) {
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
       style={{
-        color: "var(--canal-conf)",
-        background: "var(--canal-conf-soft)",
-        border:
-          "1px solid color-mix(in srgb, var(--canal-conf) 22%, transparent)",
+        color: canalColor,
+        background: canalSoft,
+        border: `1px solid color-mix(in srgb, ${canalColor} 22%, transparent)`,
       }}
     >
       → {label} {pred.probability}
@@ -459,6 +473,12 @@ function FixtureMobileCard({
               </span>
             )}
             {row.prediction && <PredictionBadge pred={row.prediction} />}
+            {row.drawPrediction && (
+              <PredictionBadge pred={row.drawPrediction} />
+            )}
+            {row.bttsPrediction && (
+              <PredictionBadge pred={row.bttsPrediction} />
+            )}
             <DecisionBadge decision={mr?.decision ?? null} />
           </div>
 
@@ -542,9 +562,17 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <DecisionBadge decision={row.original.modelRun?.decision ?? null} />
-          {row.original.prediction && (
-            <PredictionBadge pred={row.original.prediction} />
-          )}
+          <div className="flex flex-wrap gap-1">
+            {row.original.prediction && (
+              <PredictionBadge pred={row.original.prediction} />
+            )}
+            {row.original.drawPrediction && (
+              <PredictionBadge pred={row.original.drawPrediction} />
+            )}
+            {row.original.bttsPrediction && (
+              <PredictionBadge pred={row.original.bttsPrediction} />
+            )}
+          </div>
         </div>
       ),
     },

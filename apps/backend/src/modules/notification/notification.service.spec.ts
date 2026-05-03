@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Market, NotificationType } from '@evcore/db';
+import { Market, NotificationType, UserRole } from '@evcore/db';
 import { NotificationService } from './notification.service';
 import type { PrismaService } from '@/prisma.service';
 import type { MailService } from '@modules/mail/mail.service';
@@ -13,6 +13,10 @@ function makePrisma(): PrismaService {
         count: vi.fn().mockResolvedValue(0),
         update: vi.fn().mockResolvedValue({}),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      userNotificationRead: {
+        upsert: vi.fn().mockResolvedValue({}),
+        createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     },
   } as unknown as PrismaService;
@@ -162,7 +166,7 @@ describe('NotificationService — mail delegation', () => {
 });
 
 describe('NotificationService — list & mark read', () => {
-  it('returns paginated notifications', async () => {
+  it('returns paginated notifications with isRead derived from reads', async () => {
     const fakeNotif = {
       id: 'n1',
       type: NotificationType.ROI_ALERT,
@@ -172,44 +176,62 @@ describe('NotificationService — list & mark read', () => {
       read: false,
       readAt: null,
       createdAt: new Date(),
+      reads: [],
     };
     const prisma = makePrisma();
     vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
-      fakeNotif,
+      fakeNotif as never,
     ]);
     vi.mocked(prisma.client.notification.count).mockResolvedValue(1);
 
     const service = new NotificationService(prisma, makeMail());
-    const result = await service.list({ limit: 20, offset: 0, unread: true });
+    const result = await service.list({
+      limit: 20,
+      offset: 0,
+      unread: true,
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
 
     expect(result.total).toBe(1);
     expect(result.data).toHaveLength(1);
-    expect(prisma.client.notification.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { read: false }, take: 20, skip: 0 }),
+    expect(result.data[0]?.isRead).toBe(false);
+  });
+
+  it('marks a single notification as read via upsert', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.markRead('notif-id-1', 'user-1');
+
+    expect(prisma.client.userNotificationRead.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId_notificationId: {
+            userId: 'user-1',
+            notificationId: 'notif-id-1',
+          },
+        },
+      }),
     );
   });
 
-  it('marks a single notification as read', async () => {
+  it('marks all visible notifications as read', async () => {
     const prisma = makePrisma();
+    vi.mocked(prisma.client.notification.findMany).mockResolvedValue([
+      { id: 'n1' } as never,
+      { id: 'n2' } as never,
+    ]);
     const service = new NotificationService(prisma, makeMail());
 
-    await service.markRead('notif-id-1');
+    await service.markAllRead('user-1', UserRole.OPERATOR);
 
-    expect(prisma.client.notification.update).toHaveBeenCalledWith({
-      where: { id: 'notif-id-1' },
-      data: expect.objectContaining({ read: true, readAt: expect.any(Date) }),
-    });
-  });
-
-  it('marks all notifications as read', async () => {
-    const prisma = makePrisma();
-    const service = new NotificationService(prisma, makeMail());
-
-    await service.markAllRead();
-
-    expect(prisma.client.notification.updateMany).toHaveBeenCalledWith({
-      where: { read: false },
-      data: expect.objectContaining({ read: true }),
+    expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
+      data: [
+        { userId: 'user-1', notificationId: 'n1' },
+        { userId: 'user-1', notificationId: 'n2' },
+      ],
+      skipDuplicates: true,
     });
   });
 });

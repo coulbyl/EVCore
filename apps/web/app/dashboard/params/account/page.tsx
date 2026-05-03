@@ -47,29 +47,64 @@ export default async function AccountSettingsPage() {
                 eyebrow: t("notifications"),
                 title: t("notifications"),
                 description: t("notificationDescription"),
-                preferenceHint: t("savedAutomatically"),
-                items: [
-                  {
-                    key: "roiAlert",
-                    label: t("notificationTypes.roiAlert"),
-                    help: t("notificationHelp.roiAlert"),
-                  },
-                  {
-                    key: "marketSuspension",
-                    label: t("notificationTypes.marketSuspension"),
-                    help: t("notificationHelp.marketSuspension"),
-                  },
-                  {
-                    key: "brierAlert",
-                    label: t("notificationTypes.brierAlert"),
-                    help: t("notificationHelp.brierAlert"),
-                  },
-                  {
-                    key: "weeklyReport",
-                    label: t("notificationTypes.weeklyReport"),
-                    help: t("notificationHelp.weeklyReport"),
-                  },
-                ],
+                availabilityHint: t("notificationAvailabilityHint"),
+                statusLabel: t("notificationVisibleStatus"),
+                items:
+                  session?.user.role === "ADMIN"
+                    ? [
+                        {
+                          key: "roiAlert",
+                          label: t("notificationTypes.roiAlert"),
+                          help: t("notificationHelp.roiAlert"),
+                        },
+                        {
+                          key: "marketSuspension",
+                          label: t("notificationTypes.marketSuspension"),
+                          help: t("notificationHelp.marketSuspension"),
+                        },
+                        {
+                          key: "brierAlert",
+                          label: t("notificationTypes.brierAlert"),
+                          help: t("notificationHelp.brierAlert"),
+                        },
+                        {
+                          key: "weeklyReport",
+                          label: t("notificationTypes.weeklyReport"),
+                          help: t("notificationHelp.weeklyReport"),
+                        },
+                        {
+                          key: "etlFailure",
+                          label: t("notificationTypes.etlFailure"),
+                          help: t("notificationHelp.etlFailure"),
+                        },
+                        {
+                          key: "weightAdjustment",
+                          label: t("notificationTypes.weightAdjustment"),
+                          help: t("notificationHelp.weightAdjustment"),
+                        },
+                        {
+                          key: "xgUnavailableReport",
+                          label: t("notificationTypes.xgUnavailableReport"),
+                          help: t("notificationHelp.xgUnavailableReport"),
+                        },
+                      ]
+                    : [
+                        {
+                          key: "roiAlert",
+                          label: t("notificationTypes.roiAlert"),
+                          help: t("notificationHelp.roiAlert"),
+                        },
+                        {
+                          key: "marketSuspension",
+                          label: t("notificationTypes.marketSuspension"),
+                          help: t("notificationHelp.marketSuspension"),
+                        },
+                        {
+                          key: "weeklyReport",
+                          label: t("notificationTypes.weeklyReport"),
+                          help: t("notificationHelp.weeklyReport"),
+                        },
+                      ],
               }}
             />
           </div>
@@ -87,6 +122,13 @@ export default async function AccountSettingsPage() {
                 { value: "USD", label: t("currencies.usd") },
                 { value: "EUR", label: t("currencies.eur") },
               ],
+              unitStake: t("unitStake"),
+              unitModeFixed: t("unitModeFixed"),
+              unitModePct: t("unitModePct"),
+              unitAmountPlaceholder: t("unitAmountPlaceholder"),
+              unitPctPlaceholder: t("unitPctPlaceholder"),
+              unitPctSuffix: t("unitPctSuffix"),
+              unitOptionalHint: t("unitOptionalHint"),
             }}
           />
         </div>

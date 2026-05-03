@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
-import { getPredictionConfig } from './prediction.constants';
+import { Market, PredictionChannel } from '@evcore/db';
+import {
+  getPredictionConfig,
+  PREDICTION_CHANNELS,
+} from './prediction.constants';
 import { PredictionRepository } from './prediction.repository';
 import type { ThreeWayProba } from '@modules/betting-engine/betting-engine.utils';
 
@@ -13,6 +17,7 @@ export type PredictionListItem = {
   id: string;
   fixtureId: string;
   competition: string;
+  channel: PredictionChannel;
   fixture: string;
   kickoff: string;
   market: string;
@@ -39,38 +44,33 @@ export type PredictionStats = {
 export class PredictionService {
   constructor(private readonly repo: PredictionRepository) {}
 
-  async createPrediction(opts: {
+  async createPredictions(opts: {
     fixtureId: string;
     modelRunId: string;
     competition: string;
-    probabilities: ThreeWayProba;
+    probabilities: ThreeWayProba & { bttsYes: Decimal };
   }): Promise<void> {
     const { fixtureId, modelRunId, competition, probabilities } = opts;
 
-    const config = getPredictionConfig(competition);
-    if (!config.enabled) return;
+    for (const channel of PREDICTION_CHANNELS) {
+      const config = getPredictionConfig(channel, competition);
+      const candidate = buildPredictionCandidate(channel, probabilities);
 
-    const pHome = probabilities.home;
-    const pDraw = probabilities.draw;
-    const pAway = probabilities.away;
+      if (!config.enabled || candidate.probability.lt(config.threshold)) {
+        await this.repo.deleteForFixtureChannel(fixtureId, channel);
+        continue;
+      }
 
-    const pMax = Decimal.max(pHome, pDraw, pAway);
-    if (pMax.lt(config.threshold)) return;
-
-    const pick =
-      pHome.gte(pDraw) && pHome.gte(pAway)
-        ? 'HOME'
-        : pDraw.gte(pAway)
-          ? 'DRAW'
-          : 'AWAY';
-
-    await this.repo.upsert({
-      fixtureId,
-      modelRunId,
-      competition,
-      pick,
-      probability: new Decimal(pMax.toFixed(4)),
-    });
+      await this.repo.upsert({
+        fixtureId,
+        modelRunId,
+        competition,
+        channel,
+        market: candidate.market,
+        pick: candidate.pick,
+        probability: new Decimal(candidate.probability.toFixed(4)),
+      });
+    }
   }
 
   async settlePredictions(
@@ -80,39 +80,47 @@ export class PredictionService {
   ): Promise<{ settled: number }> {
     if (homeScore === null || awayScore === null) return { settled: 0 };
 
-    const actual =
-      homeScore > awayScore ? 'HOME' : homeScore < awayScore ? 'AWAY' : 'DRAW';
+    const predictions = await this.repo.findPendingForFixture(fixtureId);
+    if (predictions.length === 0) return { settled: 0 };
 
-    const prediction = await this.repo.findForFixture(fixtureId);
-    if (!prediction || prediction.correct !== null) return { settled: 0 };
+    for (const prediction of predictions) {
+      const actualPick = resolveActualPick(
+        prediction.market,
+        homeScore,
+        awayScore,
+      );
+      await this.repo.settleById(prediction.id, prediction.pick === actualPick);
+    }
 
-    const correct = prediction.pick === actual;
-    const count = await this.repo.settlePending(fixtureId, correct);
-    return { settled: count };
+    return { settled: predictions.length };
   }
 
   async list(
     date: string,
     competition?: string,
+    channel?: PredictionChannel,
   ): Promise<PredictionListItem[]> {
     const day = new Date(date);
     const rows = await this.repo.findByDate(
       { gte: startOfUtcDay(day), lte: endOfUtcDay(day) },
       competition,
+      channel,
     );
     return rows.map((r) => this.toListItem(r));
   }
 
-  async stats(
-    from: string,
-    to: string,
-    competition?: string,
-  ): Promise<PredictionStats> {
-    const rows = await this.repo.findForStats(
-      new Date(from),
-      new Date(to),
-      competition,
-    );
+  async stats(input: {
+    from: string;
+    to: string;
+    competition?: string;
+    channel?: PredictionChannel;
+  }): Promise<PredictionStats> {
+    const rows = await this.repo.findForStats({
+      from: new Date(input.from),
+      to: new Date(input.to),
+      competition: input.competition,
+      channel: input.channel,
+    });
 
     const total = rows.length;
     const correct = rows.filter((r) => r.correct === true).length;
@@ -150,6 +158,7 @@ export class PredictionService {
       id: r.id,
       fixtureId: r.fixtureId,
       competition: r.competition,
+      channel: r.channel,
       fixture: `${r.fixture.homeTeam.name} vs ${r.fixture.awayTeam.name}`,
       kickoff: formatTimeUtc(r.fixture.scheduledAt),
       market: r.market,
@@ -160,4 +169,63 @@ export class PredictionService {
       createdAt: r.createdAt.toISOString(),
     };
   }
+}
+
+export type ChannelPredictionCandidate = {
+  market: Market;
+  pick: string;
+  probability: Decimal;
+};
+
+export function buildPredictionCandidate(
+  channel: PredictionChannel,
+  probabilities: ThreeWayProba & { bttsYes: Decimal },
+): ChannelPredictionCandidate {
+  if (channel === PredictionChannel.DRAW) {
+    return {
+      market: Market.ONE_X_TWO,
+      pick: 'DRAW',
+      probability: probabilities.draw,
+    };
+  }
+
+  if (channel === PredictionChannel.BTTS) {
+    return {
+      market: Market.BTTS,
+      pick: 'YES',
+      probability: probabilities.bttsYes,
+    };
+  }
+
+  const pHome = probabilities.home;
+  const pDraw = probabilities.draw;
+  const pAway = probabilities.away;
+  const pMax = Decimal.max(pHome, pDraw, pAway);
+
+  return {
+    market: Market.ONE_X_TWO,
+    pick:
+      pHome.gte(pDraw) && pHome.gte(pAway)
+        ? 'HOME'
+        : pDraw.gte(pAway)
+          ? 'DRAW'
+          : 'AWAY',
+    probability: pMax,
+  };
+}
+
+export function resolveActualPick(
+  market: Market,
+  homeScore: number,
+  awayScore: number,
+): string {
+  if (market === Market.BTTS) {
+    return homeScore > 0 && awayScore > 0 ? 'YES' : 'NO';
+  }
+
+  return homeScore > awayScore
+    ? 'HOME'
+    : homeScore < awayScore
+      ? 'AWAY'
+      : 'DRAW';
 }

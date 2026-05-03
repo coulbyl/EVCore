@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Badge,
   DataTable,
@@ -35,6 +35,37 @@ function roleLabel(role: AdminUserRole) {
   return role === "ADMIN" ? "Admin" : "Utilisateur";
 }
 
+function UserRoleSelect({
+  user,
+  onChange,
+}: {
+  user: AdminUserRow;
+  onChange: (role: AdminUserRole) => void;
+}) {
+  return (
+    <Select
+      value={user.role}
+      onValueChange={(value) => onChange(value as AdminUserRole)}
+    >
+      <SelectTrigger className="h-9 w-[160px] rounded-lg bg-panel-strong">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="OPERATOR">{roleLabel("OPERATOR")}</SelectItem>
+        <SelectItem value="ADMIN">{roleLabel("ADMIN")}</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function formatCreatedAt(value: string) {
+  return new Date(value).toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 export function UsersPageClient() {
   const tCommon = useTranslations("common");
   const [q, setQ] = useState("");
@@ -49,6 +80,16 @@ export function UsersPageClient() {
 
   const usersQuery = useAdminUsers(query);
   const updateUser = useUpdateAdminUser();
+
+  const handleRoleChange = useCallback(
+    (userId: string, nextRole: AdminUserRole) => {
+      void updateUser.mutateAsync({
+        userId,
+        role: nextRole,
+      });
+    },
+    [updateUser],
+  );
 
   const columns = useMemo<ColumnDef<AdminUserRow>[]>(() => {
     return [
@@ -78,23 +119,10 @@ export function UsersPageClient() {
         id: "role",
         header: "Rôle",
         cell: ({ row }) => (
-          <Select
-            value={row.original.role}
-            onValueChange={(value) => {
-              void updateUser.mutateAsync({
-                userId: row.original.id,
-                role: value as AdminUserRole,
-              });
-            }}
-          >
-            <SelectTrigger className="h-9 w-[160px] rounded-lg bg-panel-strong">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OPERATOR">{roleLabel("OPERATOR")}</SelectItem>
-              <SelectItem value="ADMIN">{roleLabel("ADMIN")}</SelectItem>
-            </SelectContent>
-          </Select>
+          <UserRoleSelect
+            user={row.original}
+            onChange={(nextRole) => handleRoleChange(row.original.id, nextRole)}
+          />
         ),
       },
       {
@@ -109,15 +137,10 @@ export function UsersPageClient() {
       {
         id: "createdAt",
         header: "Créé le",
-        accessorFn: (row) =>
-          new Date(row.createdAt).toLocaleDateString("fr-FR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          }),
+        accessorFn: (row) => formatCreatedAt(row.createdAt),
       },
     ];
-  }, [updateUser]);
+  }, [handleRoleChange]);
 
   const total = usersQuery.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -172,6 +195,52 @@ export function UsersPageClient() {
           data={usersQuery.data?.items ?? []}
           isLoading={usersQuery.isLoading}
           className="overflow-visible"
+          mobileCard={(user) => (
+            <div className="rounded-2xl border border-border bg-panel-strong p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <UserAvatar
+                    avatarUrl={user.avatarUrl}
+                    username={user.fullName}
+                    size={40}
+                    className="ring-1 ring-border"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {user.fullName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      @{user.username}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <Badge variant={user.emailVerified ? "success" : "neutral"}>
+                  {user.emailVerified ? "Vérifié" : "À vérifier"}
+                </Badge>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">Créé le</span>
+                  <span className="font-medium text-foreground">
+                    {formatCreatedAt(user.createdAt)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">Rôle</span>
+                  <UserRoleSelect
+                    user={user}
+                    onChange={(nextRole) => handleRoleChange(user.id, nextRole)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           emptyState={
             <Empty className="rounded-3xl border border-dashed border-border bg-panel/70 p-8">
               <EmptyHeader>

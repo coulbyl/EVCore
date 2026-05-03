@@ -13,6 +13,9 @@ export type AuthSessionUser = {
   theme: string | null;
   locale: string | null;
   currency: string | null;
+  unitMode: string | null;
+  unitAmount: string | null;
+  unitPercent: string | null;
 };
 
 export type AuthSession = {

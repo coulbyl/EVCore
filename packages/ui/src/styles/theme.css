@@ -45,6 +45,10 @@
   --canal-sv-soft: rgba(15, 118, 110, 0.11);
   --canal-conf: #4f46e5;
   --canal-conf-soft: rgba(79, 70, 229, 0.11);
+  --canal-draw: #b45309;
+  --canal-draw-soft: rgba(180, 83, 9, 0.11);
+  --canal-btts: #be185d;
+  --canal-btts-soft: rgba(190, 24, 93, 0.11);
 }
 
 /* ── Dark tokens ───────────────────────────────────────────────────────── */
@@ -94,6 +98,10 @@
   --canal-sv-soft: rgba(20, 184, 166, 0.13);
   --canal-conf: #818cf8;
   --canal-conf-soft: rgba(129, 140, 248, 0.13);
+  --canal-draw: #fb923c;
+  --canal-draw-soft: rgba(251, 146, 60, 0.13);
+  --canal-btts: #f472b6;
+  --canal-btts-soft: rgba(244, 114, 182, 0.13);
 }
 
 @theme inline {
@@ -138,6 +146,10 @@
   --color-canal-sv-soft: var(--canal-sv-soft);
   --color-canal-conf: var(--canal-conf);
   --color-canal-conf-soft: var(--canal-conf-soft);
+  --color-canal-draw: var(--canal-draw);
+  --color-canal-draw-soft: var(--canal-draw-soft);
+  --color-canal-btts: var(--canal-btts);
+  --color-canal-btts-soft: var(--canal-btts-soft);
 }
 
 html,

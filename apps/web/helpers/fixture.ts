@@ -139,8 +139,8 @@ export function formatDiagnosticPickForDisplay(
   }
 
   if (market === "BTTS") {
-    if (pick === "YES") return "BB Oui";
-    if (pick === "NO") return "BB Non";
+    if (pick === "YES") return "BB OUI";
+    if (pick === "NO") return "BB NON";
   }
 
   if (market === "FIRST_HALF_WINNER") {

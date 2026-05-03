@@ -3,6 +3,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Prisma } from '@evcore/db';
+import type { UnitMode } from '@evcore/db';
 import type { Response } from 'express';
 import { PrismaService } from '@/prisma.service';
 import { AUTH_SESSION_TTL_MS } from './auth.constants';
@@ -64,6 +66,9 @@ export class AuthService {
         theme: true,
         locale: true,
         currency: true,
+        unitMode: true,
+        unitAmount: true,
+        unitPercent: true,
       },
     });
 
@@ -72,7 +77,7 @@ export class AuthService {
       token,
       session: {
         sessionId: session.id,
-        user,
+        user: this.toSessionUser(user),
       },
     };
   }
@@ -95,6 +100,9 @@ export class AuthService {
         theme: true,
         locale: true,
         currency: true,
+        unitMode: true,
+        unitAmount: true,
+        unitPercent: true,
         passwordHash: true,
       },
     });
@@ -120,6 +128,9 @@ export class AuthService {
           theme: user.theme,
           locale: user.locale,
           currency: user.currency,
+          unitMode: user.unitMode,
+          unitAmount: user.unitAmount?.toString() ?? null,
+          unitPercent: user.unitPercent?.toString() ?? null,
         },
       },
     };
@@ -157,6 +168,9 @@ export class AuthService {
             theme: true,
             locale: true,
             currency: true,
+            unitMode: true,
+            unitAmount: true,
+            unitPercent: true,
           },
         },
       },
@@ -168,7 +182,7 @@ export class AuthService {
 
     return {
       sessionId: row.id,
-      user: row.user,
+      user: this.toSessionUser(row.user),
     };
   }
 
@@ -187,13 +201,20 @@ export class AuthService {
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<AuthSessionUser> {
-    return this.prisma.client.user.update({
+    const user = await this.prisma.client.user.update({
       where: { id: userId },
       data: {
         ...(dto.theme !== undefined && { theme: dto.theme }),
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.currency !== undefined && { currency: dto.currency }),
         ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
+        ...(dto.unitMode !== undefined && { unitMode: dto.unitMode }),
+        ...(dto.unitAmount !== undefined && {
+          unitAmount: new Prisma.Decimal(dto.unitAmount),
+        }),
+        ...(dto.unitPercent !== undefined && {
+          unitPercent: new Prisma.Decimal(dto.unitPercent),
+        }),
       },
       select: {
         id: true,
@@ -207,8 +228,12 @@ export class AuthService {
         theme: true,
         locale: true,
         currency: true,
+        unitMode: true,
+        unitAmount: true,
+        unitPercent: true,
       },
     });
+    return this.toSessionUser(user);
   }
 
   private extractSessionToken(request: AuthenticatedRequest): string | null {
@@ -228,5 +253,28 @@ export class AuthService {
     });
 
     return { token, session };
+  }
+
+  private toSessionUser(user: {
+    id: string;
+    email: string;
+    username: string;
+    fullName: string;
+    bio: string | null;
+    role: AuthSessionUser['role'];
+    emailVerified: boolean;
+    avatarUrl: string | null;
+    theme: string | null;
+    locale: string | null;
+    currency: string | null;
+    unitMode: UnitMode | null;
+    unitAmount: Prisma.Decimal | null;
+    unitPercent: Prisma.Decimal | null;
+  }): AuthSessionUser {
+    return {
+      ...user,
+      unitAmount: user.unitAmount?.toString() ?? null,
+      unitPercent: user.unitPercent?.toString() ?? null,
+    };
   }
 }

@@ -1,80 +1,70 @@
 ---
-title: "Les bases : cotes, probabilité implicite et marge (vig)"
+title: "Lire une cote : probabilité implicite et marge bookmaker"
 category: bases
 difficulty: beginner
-order: 4
-readTime: 6
+order: 2
+readTime: 5
 slug: cotes-probabilites-implicites
-summary: "Comprendre ce que “dit” une cote, calculer 1/cote, et pourquoi la marge fausse les probabilités."
-updatedAt: "2026-05-01"
-related: ["ev-probabilites-cotes", "erreurs-frequentes", "comment-lire-un-pick"]
+summary: "Ce qu'une cote exprime vraiment, comment calculer la probabilité cachée derrière, et pourquoi la marge bookmaker biaise tout."
+updatedAt: "2026-05-02"
+related: ["ev-probabilites-cotes", "canal-ev", "erreurs-frequentes"]
 ---
 
-## Pourquoi c’est important
+## Une cote n'est pas une vérité
 
-Si tu sais lire une cote, tu comprends déjà **la moitié** d’un pick.
+Une cote décrit un **prix**, pas une probabilité objective. Le bookmaker la fixe pour attirer les mises de deux côtés tout en gardant une marge — pas pour refléter fidèlement ce qui va se passer.
 
-Dans EVCore, on compare en permanence :
+EVCore compare en permanence ce que **le modèle pense** (probabilité estimée) avec ce que **le marché paie** (probabilité implicite de la cote). Comprendre cette conversion est indispensable pour lire un pick.
 
-- ce que **le modèle pense** (probabilité estimée),
-- et ce que **le marché paye** (cote).
+## La cote décimale, simplement
 
-## La cote (odds), simplement
+En format décimal (celui utilisé par EVCore) :
 
-En cote décimale :
+- Cote `2.00` : si tu mises 1 et que tu gagnes, tu récupères 2 en tout — soit un gain net de 1.
+- Cote `1.50` : tu récupères 1.50 — gain net de 0.50.
+- Cote `3.00` : tu récupères 3 — gain net de 2.
 
-- une cote de `2.00` signifie : _si je mise 1 et que je gagne, je récupère 2 au total_.
-- le gain net est donc `2 - 1 = 1`.
+## La probabilité implicite
 
-## La probabilité implicite (1 / cote)
+La probabilité implicite est la probabilité que la cote suppose pour être "neutre" (ni gagnante ni perdante pour le bookmaker, avant marge).
 
-La probabilité implicite = la probabilité “cachée” dans la cote.
-
-Formule :
-
-```text
-probabilité implicite = 1 / cote
+```
+probabilité implicite = 1 ÷ cote
 ```
 
 Exemples :
 
-- `2.50` → `1 / 2.50 = 0.40` → `40%`
-- `1.80` → `1 / 1.80 = 0.555…` → `55.6%`
+| Cote | Probabilité implicite |
+| ---- | --------------------- |
+| 2.00 | 50 %                  |
+| 2.50 | 40 %                  |
+| 1.80 | 55,6 %                |
+| 4.00 | 25 %                  |
 
-## La marge (vig) : pourquoi ça ne colle pas à 100%
+## La marge bookmaker (la "vig")
 
-Un bookmaker ajoute une marge (sa commission).
+Sur un marché 1N2 (domicile / nul / extérieur), la somme des probabilités implicites dépasse toujours 100 %. L'excédent, c'est la marge.
 
-Sur un marché `1N2` (domicile / nul / extérieur), si tu fais :
+Exemple réel :
 
-```text
-(1/homeOdds) + (1/drawOdds) + (1/awayOdds)
-```
+| Issue     | Cote | Probabilité implicite |
+| --------- | ---- | --------------------- |
+| Domicile  | 2.10 | 47,6 %                |
+| Nul       | 3.40 | 29,4 %                |
+| Extérieur | 3.60 | 27,8 %                |
+| **Total** |      | **104,8 %**           |
 
-Tu obtiens souvent `> 1` (ex: `1.04`).  
-Ce “surplus” correspond à la marge.
+La marge est ici de **4,8 %**. C'est la part que le bookmaker prélève en moyenne sur chaque euro misé.
 
-Conséquence : la probabilité implicite est une **approximation**, pas une vérité absolue.
+Conséquence directe : la probabilité implicite **sur-estime** légèrement la probabilité réelle de chaque issue. Pour qu'un pari soit rentable à long terme, ton estimation doit dépasser cette probabilité implicite d'une marge suffisante — c'est exactement ce que mesure l'EV.
 
-## Exemple guidé (1 minute)
+## Ce qu'il faut retenir
 
-Supposons :
+- Une cote = un prix, pas une certitude.
+- `1 ÷ cote` donne la probabilité implicite.
+- La somme des probabilités implicites d'un marché est toujours supérieure à 100 % : c'est la marge.
+- Battre le bookmaker, c'est trouver des cotes dont la probabilité implicite est inférieure à la probabilité réelle.
 
-- Home `2.10` → `1/2.10 = 47.6%`
-- Draw `3.40` → `29.4%`
-- Away `3.60` → `27.8%`
+## Prochaine étape
 
-Somme ≈ `104.8%` → marge ≈ `4.8%`.
-
-## Erreurs fréquentes
-
-- Confondre “probabilité implicite” et “probabilité vraie”.
-- Oublier que 2.00 ne veut pas dire “50% certain”.
-- Comparer des cotes sans regarder le **marché** (1N2 vs Over/Under, etc.).
-
-## À retenir (checklist)
-
-- Une cote décrit _le prix_, pas “la vérité”.
-- `1 / cote` te donne une probabilité implicite rapide.
-- Sur 1N2, la somme des implicites est souvent `> 100%` : c’est la marge.
-- La suite logique : comprendre l’**EV** (valeur attendue).
+Maintenant que tu sais lire une cote, tu peux comprendre ce qu'EVCore calcule : `ev-probabilites-cotes`.

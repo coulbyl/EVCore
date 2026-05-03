@@ -47,6 +47,8 @@ type TrendPoint = {
   balance: number;
 };
 
+type ChartPoint = Record<string, unknown>;
+
 function transactionTypeLabel(type: BankrollTransactionType, t: Translator) {
   switch (type) {
     case "DEPOSIT":
@@ -97,6 +99,41 @@ function buildTrendPoints(rows: EnrichedTransaction[]): TrendPoint[] {
     });
   }
   return Array.from(byDay.values()).sort((a, b) => a.day.localeCompare(b.day));
+}
+
+function buildChartData(
+  trendPoints: TrendPoint[],
+  projectionDays = 30,
+): ChartPoint[] {
+  if (trendPoints.length === 0) return [];
+
+  const n = Math.min(trendPoints.length, 14);
+  const recent = trendPoints.slice(-n);
+  const slope =
+    n > 1
+      ? (recent[recent.length - 1]!.balance - recent[0]!.balance) / (n - 1)
+      : 0;
+  const last = trendPoints[trendPoints.length - 1]!;
+
+  const result: ChartPoint[] = trendPoints.map((p, i) => ({
+    ...p,
+    projection: i === trendPoints.length - 1 ? p.balance : null,
+  }));
+
+  const lastDate = new Date(`${last.day}T00:00:00`);
+  for (let i = 1; i <= projectionDays; i++) {
+    const d = new Date(lastDate);
+    d.setDate(d.getDate() + i);
+    const day = d.toISOString().slice(0, 10);
+    result.push({
+      day,
+      label: formatDateShort(day),
+      balance: null,
+      projection: Math.max(0, last.balance + slope * i),
+    });
+  }
+
+  return result;
 }
 
 function formatPercent(value: number | null) {
@@ -221,6 +258,7 @@ function BankrollTrendChart({
 
   const minY = Math.min(...points.map((p) => p.balance));
   const maxY = Math.max(...points.map((p) => p.balance));
+  const chartData = buildChartData(points);
 
   return (
     <div className="p-4 sm:p-5">
@@ -233,20 +271,31 @@ function BankrollTrendChart({
             {formatAmount(points[points.length - 1]?.balance ?? 0)}
           </p>
         </div>
-        <div className="text-right text-xs text-muted-foreground">
-          <p>{points[0]?.label}</p>
-          <p className="mt-1">{points[points.length - 1]?.label}</p>
+        <div className="flex items-center gap-3 text-right text-xs text-muted-foreground">
+          <div>
+            <p>{points[0]?.label}</p>
+            <p className="mt-1">{points[points.length - 1]?.label}</p>
+          </div>
+          <div className="flex items-center gap-1 rounded-md border border-border/50 px-2 py-1">
+            <span
+              className="inline-block h-px w-4 border-t border-dashed"
+              style={{ borderColor: "#2563eb" }}
+            />
+            <span>{t("trend.projection")}</span>
+          </div>
         </div>
       </div>
 
       <EvAreaChart
-        data={points}
+        data={chartData}
         xKey="label"
         yKey="balance"
         color="#2563eb"
         height={140}
         className="mt-4"
         formatY={(v) => formatAmount(v, true)}
+        projectionKey="projection"
+        projectionColor="#2563eb"
       />
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -344,6 +393,17 @@ export function BankrollPageClient() {
     [filteredTransactions],
   );
 
+  const periodRoi = useMemo(() => {
+    const staked = filteredTransactions
+      .filter((tx) => tx.type === "BET_PLACED")
+      .reduce((sum, tx) => sum + Math.abs(parseAmount(tx.amount)), 0);
+    if (staked === 0) return null;
+    const netPnL = filteredTransactions
+      .filter((tx) => tx.type === "BET_WON" || tx.type === "BET_PLACED")
+      .reduce((sum, tx) => sum + parseAmount(tx.amount), 0);
+    return (netPnL / staked) * 100;
+  }, [filteredTransactions]);
+
   const isLoading =
     balanceQuery.isLoading ||
     transactionsQuery.isLoading ||
@@ -381,14 +441,26 @@ export function BankrollPageClient() {
             </div>
           </div>
 
-          <FilterBar
-            filters={bankrollFilters}
-            value={filterState}
-            onChange={setFilterState}
-            onReset={() =>
-              setFilterState({ from: "", to: todayIso(), type: "ALL" })
-            }
-          />
+          <div>
+            <FilterBar
+              filters={bankrollFilters}
+              value={filterState}
+              onChange={setFilterState}
+              onReset={() =>
+                setFilterState({ from: "", to: todayIso(), type: "ALL" })
+              }
+            />
+            {periodRoi !== null && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t("trend.periodRoi")}{" "}
+                <span
+                  className={`font-semibold ${periodRoi >= 0 ? "text-success" : "text-danger"}`}
+                >
+                  {formatPercent(periodRoi)}
+                </span>
+              </p>
+            )}
+          </div>
 
           <TableCard
             title={t("trend.title")}
