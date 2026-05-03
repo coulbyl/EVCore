@@ -2,10 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type {
-  PaginatedNotifications,
-  NotificationView,
-} from "../types/notification";
+import type { PaginatedNotifications } from "../types/notification";
 
 export async function fetchNotifications(params: {
   limit?: number;

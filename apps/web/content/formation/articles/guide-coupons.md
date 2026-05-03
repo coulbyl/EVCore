@@ -7,7 +7,13 @@ readTime: 5
 slug: guide-coupons
 summary: "Ajouter des sélections, régler la mise, choisir simple ou combiné, puis relire l'historique de ses coupons."
 updatedAt: "2026-05-03"
-related: ["guide-picks-du-jour", "guide-fixtures", "guide-bankroll", "bankroll-unites-discipline"]
+related:
+  [
+    "guide-picks-du-jour",
+    "guide-fixtures",
+    "guide-bankroll",
+    "bankroll-unites-discipline",
+  ]
 ---
 
 ## Le rôle du coupon
