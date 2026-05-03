@@ -24,11 +24,11 @@ export class PredictionController {
   @Get('stats')
   stats(@Query() query: PredictionStatsQueryDto) {
     const today = new Date().toISOString().slice(0, 10);
-    return this.predictionService.stats(
-      query.from ?? today,
-      query.to ?? today,
-      query.competition,
-      query.channel,
-    );
+    return this.predictionService.stats({
+      from: query.from ?? today,
+      to: query.to ?? today,
+      competition: query.competition,
+      channel: query.channel,
+    });
   }
 }

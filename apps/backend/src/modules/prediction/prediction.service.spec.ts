@@ -17,7 +17,13 @@ function d(v: number | string) {
   return new Decimal(v);
 }
 
-function makeProba(home: number, draw: number, away: number, bttsYes = 0.5) {
+function makeProba(input: {
+  home: number;
+  draw: number;
+  away: number;
+  bttsYes?: number;
+}) {
+  const { home, draw, away, bttsYes = 0.5 } = input;
   return {
     home: d(home),
     draw: d(draw),
@@ -52,7 +58,7 @@ describe('buildPredictionCandidate — CONF channel', () => {
   it('picks HOME when home probability is highest', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.CONF,
-      makeProba(0.55, 0.25, 0.2),
+      makeProba({ home: 0.55, draw: 0.25, away: 0.2 }),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('HOME');
@@ -62,7 +68,7 @@ describe('buildPredictionCandidate — CONF channel', () => {
   it('picks DRAW when draw probability is highest', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.CONF,
-      makeProba(0.3, 0.45, 0.25),
+      makeProba({ home: 0.3, draw: 0.45, away: 0.25 }),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('DRAW');
@@ -72,7 +78,7 @@ describe('buildPredictionCandidate — CONF channel', () => {
   it('picks AWAY when away probability is highest', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.CONF,
-      makeProba(0.25, 0.3, 0.45),
+      makeProba({ home: 0.25, draw: 0.3, away: 0.45 }),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('AWAY');
@@ -82,7 +88,7 @@ describe('buildPredictionCandidate — CONF channel', () => {
   it('picks HOME on home=draw tie (home checked first)', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.CONF,
-      makeProba(0.4, 0.4, 0.2),
+      makeProba({ home: 0.4, draw: 0.4, away: 0.2 }),
     );
     expect(result.pick).toBe('HOME');
     expect(result.probability.toNumber()).toBe(0.4);
@@ -91,7 +97,7 @@ describe('buildPredictionCandidate — CONF channel', () => {
   it('picks DRAW on draw=away tie (draw checked before away)', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.CONF,
-      makeProba(0.2, 0.4, 0.4),
+      makeProba({ home: 0.2, draw: 0.4, away: 0.4 }),
     );
     expect(result.pick).toBe('DRAW');
     expect(result.probability.toNumber()).toBe(0.4);
@@ -102,7 +108,7 @@ describe('buildPredictionCandidate — DRAW channel', () => {
   it('always returns market ONE_X_TWO, pick DRAW and draw probability', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.DRAW,
-      makeProba(0.55, 0.28, 0.17),
+      makeProba({ home: 0.55, draw: 0.28, away: 0.17 }),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('DRAW');
@@ -113,7 +119,7 @@ describe('buildPredictionCandidate — DRAW channel', () => {
     // draw is the smallest here — canal DRAW still tracks it
     const result = buildPredictionCandidate(
       PredictionChannel.DRAW,
-      makeProba(0.65, 0.1, 0.25),
+      makeProba({ home: 0.65, draw: 0.1, away: 0.25 }),
     );
     expect(result.pick).toBe('DRAW');
     expect(result.probability.toNumber()).toBe(0.1);
@@ -124,7 +130,7 @@ describe('buildPredictionCandidate — BTTS channel', () => {
   it('returns market BTTS, pick YES and bttsYes probability', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.BTTS,
-      makeProba(0.4, 0.3, 0.3, 0.62),
+      makeProba({ home: 0.4, draw: 0.3, away: 0.3, bttsYes: 0.62 }),
     );
     expect(result.market).toBe(Market.BTTS);
     expect(result.pick).toBe('YES');
@@ -134,9 +140,8 @@ describe('buildPredictionCandidate — BTTS channel', () => {
   it('ignores 1X2 probabilities entirely', () => {
     const low = buildPredictionCandidate(
       PredictionChannel.BTTS,
-      makeProba(0.8, 0.1, 0.1, 0.45),
+      makeProba({ home: 0.8, draw: 0.1, away: 0.1, bttsYes: 0.45 }),
     );
-    expect((result) => low.probability.toNumber()).not.toThrow();
     expect(low.probability.toNumber()).toBe(0.45);
     expect(low.pick).toBe('YES');
   });
@@ -212,7 +217,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-1',
       modelRunId: 'run-1',
       competition: 'PL',
-      probabilities: makeProba(0.6, 0.25, 0.15, 0.45),
+      probabilities: makeProba({
+        home: 0.6,
+        draw: 0.25,
+        away: 0.15,
+        bttsYes: 0.45,
+      }),
     });
 
     expect(repo.upsert).toHaveBeenCalledWith(
@@ -230,7 +240,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-1',
       modelRunId: 'run-1',
       competition: 'PL',
-      probabilities: makeProba(0.5, 0.3, 0.2, 0.45),
+      probabilities: makeProba({
+        home: 0.5,
+        draw: 0.3,
+        away: 0.2,
+        bttsYes: 0.45,
+      }),
     });
 
     expect(repo.deleteForFixtureChannel).toHaveBeenCalledWith(
@@ -245,7 +260,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-1',
       modelRunId: 'run-1',
       competition: 'PL',
-      probabilities: makeProba(0.4, 0.9, 0.1, 0.45),
+      probabilities: makeProba({
+        home: 0.4,
+        draw: 0.9,
+        away: 0.1,
+        bttsYes: 0.45,
+      }),
     });
 
     expect(repo.deleteForFixtureChannel).toHaveBeenCalledWith(
@@ -260,7 +280,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-1',
       modelRunId: 'run-1',
       competition: 'PL',
-      probabilities: makeProba(0.4, 0.3, 0.3, 0.6),
+      probabilities: makeProba({
+        home: 0.4,
+        draw: 0.3,
+        away: 0.3,
+        bttsYes: 0.6,
+      }),
     });
 
     expect(repo.upsert).toHaveBeenCalledWith(
@@ -272,21 +297,23 @@ describe('PredictionService.createPredictions', () => {
     );
   });
 
-  it('upserts DRAW pick with market ONE_X_TWO when league and threshold allow', async () => {
-    // POR: DRAW enabled at 0.35
+  it('deletes DRAW pick when the league keeps DRAW disabled despite a high draw probability', async () => {
+    // POR: DRAW threshold exists but the channel stays disabled.
     await service.createPredictions({
       fixtureId: 'fix-2',
       modelRunId: 'run-2',
       competition: 'POR',
-      probabilities: makeProba(0.35, 0.4, 0.25, 0.45),
+      probabilities: makeProba({
+        home: 0.35,
+        draw: 0.4,
+        away: 0.25,
+        bttsYes: 0.45,
+      }),
     });
 
-    expect(repo.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        channel: PredictionChannel.DRAW,
-        market: Market.ONE_X_TWO,
-        pick: 'DRAW',
-      }),
+    expect(repo.deleteForFixtureChannel).toHaveBeenCalledWith(
+      'fix-2',
+      PredictionChannel.DRAW,
     );
   });
 
@@ -296,7 +323,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-3',
       modelRunId: 'run-3',
       competition: 'BL1',
-      probabilities: makeProba(0.55, 0.25, 0.2, 0.6),
+      probabilities: makeProba({
+        home: 0.55,
+        draw: 0.25,
+        away: 0.2,
+        bttsYes: 0.6,
+      }),
     });
 
     const upsertCalls = vi
@@ -316,7 +348,12 @@ describe('PredictionService.createPredictions', () => {
       fixtureId: 'fix-1',
       modelRunId: 'run-1',
       competition: 'PL',
-      probabilities: makeProba(0.666666, 0.2, 0.13, 0.333333),
+      probabilities: makeProba({
+        home: 0.666666,
+        draw: 0.2,
+        away: 0.13,
+        bttsYes: 0.333333,
+      }),
     });
 
     const upsertArg = vi

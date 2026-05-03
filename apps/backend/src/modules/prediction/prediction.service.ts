@@ -85,7 +85,7 @@ export class PredictionService {
 
     for (const prediction of predictions) {
       const actualPick = resolveActualPick(
-        prediction.market as Market,
+        prediction.market,
         homeScore,
         awayScore,
       );
@@ -109,18 +109,18 @@ export class PredictionService {
     return rows.map((r) => this.toListItem(r));
   }
 
-  async stats(
-    from: string,
-    to: string,
-    competition?: string,
-    channel?: PredictionChannel,
-  ): Promise<PredictionStats> {
-    const rows = await this.repo.findForStats(
-      new Date(from),
-      new Date(to),
-      competition,
-      channel,
-    );
+  async stats(input: {
+    from: string;
+    to: string;
+    competition?: string;
+    channel?: PredictionChannel;
+  }): Promise<PredictionStats> {
+    const rows = await this.repo.findForStats({
+      from: new Date(input.from),
+      to: new Date(input.to),
+      competition: input.competition,
+      channel: input.channel,
+    });
 
     const total = rows.length;
     const correct = rows.filter((r) => r.correct === true).length;

@@ -32,8 +32,6 @@ import {
   type ChannelPredictionBacktestResult,
   type ChannelPredictionBacktestSummary,
   type BacktestMarketPerformance,
-  type PredictionBacktestResult,
-  type PredictionBacktestSummary,
   type BacktestPickPerformance,
   type BacktestReport,
   type CalibrationPoint,
@@ -420,13 +418,15 @@ export class BacktestService {
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
       );
-      appendPredictionCandidates(
-        predictionCandidates,
-        computed.probabilities,
+      appendPredictionCandidates({
+        buckets: predictionCandidates,
+        probabilities: computed.probabilities,
         actual,
-        fixture.homeScore,
-        fixture.awayScore,
-      );
+        score: {
+          home: fixture.homeScore,
+          away: fixture.awayScore,
+        },
+      });
       analyzedCount++;
 
       const odds = oddsByFixture.get(fixture.id);
@@ -1597,18 +1597,21 @@ function getSafeValuePickLabel(pick: ViablePick): string {
   return pick.pick;
 }
 
-function appendPredictionCandidates(
-  buckets: PredictionCandidateBuckets,
+function appendPredictionCandidates(input: {
+  buckets: PredictionCandidateBuckets;
   probabilities: {
     home: Decimal;
     draw: Decimal;
     away: Decimal;
     bttsYes: Decimal;
-  },
-  actual: 'HOME' | 'DRAW' | 'AWAY',
-  homeScore: number,
-  awayScore: number,
-): void {
+  };
+  actual: 'HOME' | 'DRAW' | 'AWAY';
+  score: {
+    home: number;
+    away: number;
+  };
+}): void {
+  const { buckets, probabilities, actual, score } = input;
   const pHome = probabilities.home.toNumber();
   const pDraw = probabilities.draw.toNumber();
   const pAway = probabilities.away.toNumber();
@@ -1631,7 +1634,7 @@ function appendPredictionCandidates(
   });
   buckets[PREDICTION_CHANNEL_BTTS].push({
     probability: probabilities.bttsYes.toNumber(),
-    correct: homeScore > 0 && awayScore > 0,
+    correct: score.home > 0 && score.away > 0,
   });
 }
 

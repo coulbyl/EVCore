@@ -112,12 +112,13 @@ export class PredictionRepository {
     });
   }
 
-  findForStats(
-    from: Date,
-    to: Date,
-    competition?: string,
-    channel?: PredictionChannel,
-  ): Promise<{ competition: string; correct: boolean | null }[]> {
+  findForStats(input: {
+    from: Date;
+    to: Date;
+    competition?: string;
+    channel?: PredictionChannel;
+  }): Promise<{ competition: string; correct: boolean | null }[]> {
+    const { from, to, competition, channel } = input;
     const where: Prisma.PredictionWhereInput = {
       fixture: { scheduledAt: { gte: from, lte: to } },
       correct: { not: null },

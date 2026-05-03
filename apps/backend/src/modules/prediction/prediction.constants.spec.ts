@@ -41,15 +41,15 @@ describe('getPredictionConfig — CONF channel', () => {
 });
 
 describe('getPredictionConfig — DRAW channel', () => {
-  it('returns the POR DRAW config (enabled, threshold 0.35)', () => {
+  it('returns the POR DRAW config (disabled, threshold 0.35)', () => {
     const cfg = getPredictionConfig(PredictionChannel.DRAW, 'POR');
-    expect(cfg.enabled).toBe(true);
+    expect(cfg.enabled).toBe(false);
     expect(cfg.threshold).toBe(0.35);
   });
 
-  it('returns the MX1 DRAW config (enabled, threshold 0.36)', () => {
+  it('returns the MX1 DRAW config (disabled, threshold 0.36)', () => {
     const cfg = getPredictionConfig(PredictionChannel.DRAW, 'MX1');
-    expect(cfg.enabled).toBe(true);
+    expect(cfg.enabled).toBe(false);
     expect(cfg.threshold).toBe(0.36);
   });
 
@@ -79,16 +79,16 @@ describe('getPredictionConfig — DRAW channel', () => {
 });
 
 describe('getPredictionConfig — BTTS channel', () => {
-  it('returns the PL BTTS config (enabled, threshold 0.55)', () => {
+  it('returns the PL BTTS config (enabled, threshold 0.58)', () => {
     const cfg = getPredictionConfig(PredictionChannel.BTTS, 'PL');
     expect(cfg.enabled).toBe(true);
-    expect(cfg.threshold).toBe(0.55);
+    expect(cfg.threshold).toBe(0.58);
   });
 
-  it('returns the SA BTTS config (enabled, threshold 0.58)', () => {
+  it('returns the SA BTTS config (enabled, threshold 0.52)', () => {
     const cfg = getPredictionConfig(PredictionChannel.BTTS, 'SA');
     expect(cfg.enabled).toBe(true);
-    expect(cfg.threshold).toBe(0.58);
+    expect(cfg.threshold).toBe(0.52);
   });
 
   it('returns the ERD BTTS config (enabled, threshold 0.6)', () => {
@@ -140,21 +140,21 @@ describe('getPredictionConfig — channel isolation', () => {
     expect(draw.threshold).not.toBe(btts.threshold);
   });
 
-  it('MX1: CONF disabled but DRAW enabled — canaux indépendants', () => {
+  it('MX1: CONF and BTTS enabled, DRAW disabled — canaux indépendants', () => {
     expect(getPredictionConfig(PredictionChannel.CONF, 'MX1').enabled).toBe(
-      false,
-    );
-    expect(getPredictionConfig(PredictionChannel.DRAW, 'MX1').enabled).toBe(
       true,
     );
-    expect(getPredictionConfig(PredictionChannel.BTTS, 'MX1').enabled).toBe(
+    expect(getPredictionConfig(PredictionChannel.DRAW, 'MX1').enabled).toBe(
       false,
+    );
+    expect(getPredictionConfig(PredictionChannel.BTTS, 'MX1').enabled).toBe(
+      true,
     );
   });
 
-  it('SA: CONF disabled but BTTS enabled — canaux indépendants', () => {
+  it('SA: CONF and BTTS enabled, DRAW disabled — canaux indépendants', () => {
     expect(getPredictionConfig(PredictionChannel.CONF, 'SA').enabled).toBe(
-      false,
+      true,
     );
     expect(getPredictionConfig(PredictionChannel.BTTS, 'SA').enabled).toBe(
       true,
