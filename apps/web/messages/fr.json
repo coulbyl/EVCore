@@ -25,7 +25,8 @@
     "formation": "Formation",
     "notifications": "Notifications",
     "settings": "Paramètres",
-    "help": "Aide"
+    "help": "Aide",
+    "summary": "Résumé"
   },
   "notifications": {
     "title": "Notifications",
