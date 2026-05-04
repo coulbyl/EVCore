@@ -412,11 +412,11 @@ export function PicksPageClient() {
     (data?.rows ?? []).find((r) => r.fixtureId === selectedId) ?? null;
 
   const defaultSelection =
-    ev[0]?.fixtureId ??
     sv[0]?.fixtureId ??
+    btts[0]?.fixtureId ??
     conf[0]?.fixtureId ??
     matchNul[0]?.fixtureId ??
-    btts[0]?.fixtureId ??
+    ev[0]?.fixtureId ??
     null;
 
   useEffect(() => {
@@ -451,17 +451,17 @@ export function PicksPageClient() {
           <section className="shrink-0 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
             <StatCard
               compact={isMobile}
-              icon={<TrendingUp size={14} />}
-              label={t("evChannel")}
-              value={String(ev.length)}
-              tone="accent"
-            />
-            <StatCard
-              compact={isMobile}
               icon={<Shield size={14} />}
               label={t("safeValue")}
               value={String(sv.length)}
               tone="success"
+            />
+            <StatCard
+              compact={isMobile}
+              icon={<Activity size={14} />}
+              label={t("btts")}
+              value={String(btts.length)}
+              tone="danger"
             />
             <StatCard
               compact={isMobile}
@@ -479,10 +479,10 @@ export function PicksPageClient() {
             />
             <StatCard
               compact={isMobile}
-              icon={<Activity size={14} />}
-              label={t("btts")}
-              value={String(btts.length)}
-              tone="danger"
+              icon={<TrendingUp size={14} />}
+              label={t("evChannel")}
+              value={String(ev.length)}
+              tone="accent"
             />
           </section>
 
@@ -523,22 +523,6 @@ export function PicksPageClient() {
                 <div className="min-h-0 overflow-y-auto pr-0 lg:pr-1">
                   <div className="flex flex-col gap-6 pb-2">
                     <CanalSection
-                      title={t("evChannel")}
-                      color="var(--canal-ev)"
-                      count={ev.length}
-                    >
-                      {ev.map((row) => (
-                        <PickListItem
-                          key={row.fixtureId}
-                          row={row}
-                          canal="EV"
-                          active={row.fixtureId === selectedId}
-                          onSelect={() => handleSelect(row)}
-                        />
-                      ))}
-                    </CanalSection>
-
-                    <CanalSection
                       title={t("safeValue")}
                       color="var(--canal-sv)"
                       count={sv.length}
@@ -548,6 +532,22 @@ export function PicksPageClient() {
                           key={`${row.fixtureId}-sv`}
                           row={row}
                           canal="SV"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
+                      ))}
+                    </CanalSection>
+
+                    <CanalSection
+                      title={t("bttsLabel")}
+                      color="var(--canal-btts)"
+                      count={btts.length}
+                    >
+                      {btts.map((row) => (
+                        <PickListItem
+                          key={`${row.fixtureId}-btts`}
+                          row={row}
+                          canal="BTTS"
                           active={row.fixtureId === selectedId}
                           onSelect={() => handleSelect(row)}
                         />
@@ -587,15 +587,15 @@ export function PicksPageClient() {
                     </CanalSection>
 
                     <CanalSection
-                      title={t("bttsLabel")}
-                      color="var(--canal-btts)"
-                      count={btts.length}
+                      title={t("evChannel")}
+                      color="var(--canal-ev)"
+                      count={ev.length}
                     >
-                      {btts.map((row) => (
+                      {ev.map((row) => (
                         <PickListItem
-                          key={`${row.fixtureId}-btts`}
+                          key={row.fixtureId}
                           row={row}
-                          canal="BTTS"
+                          canal="EV"
                           active={row.fixtureId === selectedId}
                           onSelect={() => handleSelect(row)}
                         />
