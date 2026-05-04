@@ -40,6 +40,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           active: pathname.startsWith("/dashboard/picks"),
         },
         {
+          label: tNav("summary"),
+          href: "/dashboard/summary",
+          active: pathname.startsWith("/dashboard/summary"),
+        },
+        {
           label: tNav("formation"),
           href: "/dashboard/formation",
           active: pathname.startsWith("/dashboard/formation"),
