@@ -75,7 +75,7 @@ export class SummaryRepository {
         },
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as BetWithFixture[];
+    }) as unknown as Promise<BetWithFixture[]>;
   }
 
   findSettledPredictions(
@@ -97,6 +97,6 @@ export class SummaryRepository {
         },
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as PredictionWithFixture[];
+    }) as unknown as Promise<PredictionWithFixture[]>;
   }
 }
