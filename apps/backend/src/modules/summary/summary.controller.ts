@@ -10,11 +10,6 @@ export class SummaryController {
 
   @Get()
   getSummary(@Query() query: SummaryQueryDto) {
-    return this.service.getSummary(
-      query.channel,
-      query.period,
-      query.from,
-      query.to,
-    );
+    return this.service.getSummary(query);
   }
 }

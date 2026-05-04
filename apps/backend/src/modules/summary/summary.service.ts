@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PredictionChannel } from '@evcore/db';
-import { formatDateUtc, parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
+import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { toNumber } from '@utils/prisma.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import { SummaryRepository } from './summary.repository';
@@ -32,9 +32,7 @@ function periodDateRange(
   return { from: fromDate, to: toDate };
 }
 
-function buildProgression(
-  picks: SummaryPickRow[],
-): SummaryProgressionPoint[] {
+function buildProgression(picks: SummaryPickRow[]): SummaryProgressionPoint[] {
   const sorted = [...picks].sort((a, b) =>
     a.scheduledAt.localeCompare(b.scheduledAt),
   );
@@ -63,13 +61,14 @@ function buildProgression(
 export class SummaryService {
   constructor(private readonly repo: SummaryRepository) {}
 
-  async getSummary(
-    channel: SummaryChannel = 'SV',
-    period: SummaryPeriod | undefined,
-    from: string | undefined,
-    to: string | undefined,
-  ): Promise<SummaryResponse> {
-    const range = periodDateRange(period, from, to);
+  async getSummary(query: {
+    channel?: SummaryChannel;
+    period?: SummaryPeriod;
+    from?: string;
+    to?: string;
+  }): Promise<SummaryResponse> {
+    const channel = query.channel ?? 'SV';
+    const range = periodDateRange(query.period, query.from, query.to);
     const picks = await this.fetchPicks(channel, range);
 
     const won = picks.filter((p) => p.result === 'WON');

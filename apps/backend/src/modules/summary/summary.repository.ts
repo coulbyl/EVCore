@@ -55,7 +55,7 @@ export type PredictionWithFixture = {
 export class SummaryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findSettledBets(
+  findSettledBets(
     isSafeValue: boolean,
     from: Date,
     to: Date,
@@ -78,7 +78,7 @@ export class SummaryRepository {
     }) as unknown as BetWithFixture[];
   }
 
-  async findSettledPredictions(
+  findSettledPredictions(
     channel: PredictionChannel,
     from: Date,
     to: Date,
