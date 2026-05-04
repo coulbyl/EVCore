@@ -29,6 +29,14 @@ import type {
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
+const CANAL_COLOR: Record<SummaryChannel, string> = {
+  EV: "var(--canal-ev)",
+  SV: "var(--canal-sv)",
+  CONF: "var(--canal-conf)",
+  DRAW: "var(--canal-draw)",
+  BTTS: "var(--canal-btts)",
+};
+
 const DEFAULT_CHANNEL: SummaryChannel = "SV";
 const DEFAULT_PERIOD: SummaryPeriod = "7d";
 
@@ -145,7 +153,7 @@ function SummaryPickItem({ row }: { row: SummaryPickRow }) {
           {row.ev ? (
             <span
               className="text-xs font-semibold tabular-nums"
-              style={{ color: "var(--canal-sv)" }}
+              style={{ color: CANAL_COLOR[row.channel] }}
             >
               {row.ev}
             </span>
