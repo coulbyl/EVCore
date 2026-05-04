@@ -84,7 +84,9 @@ function buildPickLabel(row: SummaryPickRow): string {
       comboPick: row.comboPick ?? undefined,
     });
   }
-  return PRED_PICK_LABEL[row.pick] ?? formatPickForDisplay(row.pick, row.market);
+  return (
+    PRED_PICK_LABEL[row.pick] ?? formatPickForDisplay(row.pick, row.market)
+  );
 }
 
 function formatChartDate(iso: string): string {
@@ -330,13 +332,19 @@ export function SummaryPageClient() {
             ) : (
               <div className="flex flex-col gap-2">
                 {won.map((row) => (
-                  <SummaryPickItem key={row.fixtureId + row.channel} row={row} />
+                  <SummaryPickItem
+                    key={row.fixtureId + row.channel}
+                    row={row}
+                  />
                 ))}
                 {won.length > 0 && lost.length > 0 ? (
                   <GroupDivider label="Perdus" />
                 ) : null}
                 {lost.map((row) => (
-                  <SummaryPickItem key={row.fixtureId + row.channel} row={row} />
+                  <SummaryPickItem
+                    key={row.fixtureId + row.channel}
+                    row={row}
+                  />
                 ))}
               </div>
             )}

@@ -2,7 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type { SummaryChannel, SummaryPeriod, SummaryResponse } from "../types/summary";
+import type {
+  SummaryChannel,
+  SummaryPeriod,
+  SummaryResponse,
+} from "../types/summary";
 
 type SummaryParams = {
   channel: SummaryChannel;
