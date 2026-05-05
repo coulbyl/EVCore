@@ -39,6 +39,10 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // BL1 backtest 2026-04-19: 0.50 keeps validation while materially
     // improving coverage versus 0.60 (40.7% vs 14.1%).
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    // BL1 backtest 2026-05-05: strongest DRAW signal after I2. All 3 seasons
+    // PASS: 2023-24 +17.8%, 2024-25 +14.1%, 2025-26 +33.4%. Aggregate
+    // (186 picks, ~62/s): HR 35.5%, ROI +21.4%. threshold 0.28 = 1/3.57.
+    DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
     // BL1 backtest 2026-05-03: 0.56 covered 83% of fixtures — too broad.
     // 0.60 keeps 65% hit rate with 45% coverage, a meaningful selector.
     BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
@@ -73,9 +77,10 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
   },
   POR: {
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
-    // POR backtest 2026-05-03: draw probs never exceed 0.28; hit rate 34% at
-    // best — structural Poisson limitation. No prediction produced at 0.35.
-    DRAW: { enabled: false, threshold: 0.35, minSampleN: 6 },
+    // POR backtest 2026-05-05: 1/drawOdds signal validates where Poisson failed.
+    // 2/3 seasons PASS: 2023-24 +37.0%, 2024-25 +0.9% (borderline), 2025-26 +8.9%.
+    // Aggregate (257 picks, ~86/s): HR 35.8%, ROI +12.7%. threshold 0.30 = 1/3.33.
+    DRAW: { enabled: true, threshold: 0.30, minSampleN: 10 },
   },
   LL: {
     // LL backtest 2026-04-19: 0.50 keeps validation while materially
