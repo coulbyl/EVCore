@@ -1657,7 +1657,12 @@ function buildPredictionBacktestSummary(
     channel,
     config.threshold,
   ).map((threshold) =>
-    summarizePredictionThreshold(candidates, threshold, config.minSampleN, channel),
+    summarizePredictionThreshold(
+      candidates,
+      threshold,
+      config.minSampleN,
+      channel,
+    ),
   );
   const current =
     thresholds.find((entry) => entry.threshold === config.threshold) ??
@@ -1934,6 +1939,7 @@ function buildPredictionThresholdGrid(
   ).sort((a, b) => a - b);
 }
 
+// eslint-disable-next-line max-params -- grouped below
 function summarizePredictionThreshold(
   candidates: PredictionCandidate[],
   threshold: number,
