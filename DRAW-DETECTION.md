@@ -25,11 +25,11 @@ L'analyse Serie A (1 100 matchs, 3 saisons) a établi que les cotes bookmaker so
 
 ### Validation framework DRAW
 
-| Métrique | Seuil | Raison |
-|---|---|---|
-| ROI simulé | ≥ +5% | Métrique primaire — le profit est la seule mesure qui compte |
-| Hit rate | ≥ 32% | Plancher minimum (taux de nul moyen SA ~28%) |
-| Volume | ≥ 10 picks | Données suffisantes pour éviter le bruit |
+| Métrique   | Seuil      | Raison                                                       |
+| ---------- | ---------- | ------------------------------------------------------------ |
+| ROI simulé | ≥ +5%      | Métrique primaire — le profit est la seule mesure qui compte |
+| Hit rate   | ≥ 32%      | Plancher minimum (taux de nul moyen SA ~28%)                 |
+| Volume     | ≥ 10 picks | Données suffisantes pour éviter le bruit                     |
 
 ---
 
@@ -37,30 +37,30 @@ L'analyse Serie A (1 100 matchs, 3 saisons) a établi que les cotes bookmaker so
 
 ### Actives
 
-| Ligue | Threshold | Cote < | Picks/s | HR agg | ROI agg | Saisons PASS | Notes |
-|---|---|---|---|---|---|---|---|
-| **I2** | 0.30 | 3.33 | ~224 | 36.3% | +11.1% | 3/3 | Signal le plus fort et le plus stable |
-| **BL1** | 0.28 | 3.57 | ~62 | 35.5% | +21.4% | 3/3 | Seule ligue avec SA à passer les 3 saisons |
-| **POR** | 0.30 | 3.33 | ~86 | 35.8% | +12.7% | 2/3 | 2024-25 borderline (+0.9%) — à surveiller |
-| **SA** | 0.30 | 3.33 | ~117 | variable | variable | 1/3 | 2025-26 saison à faible draw rate (26.5%) — à recalibrer fin de saison |
+| Ligue   | Threshold | Cote < | Picks/s | HR agg   | ROI agg  | Saisons PASS | Notes                                                                  |
+| ------- | --------- | ------ | ------- | -------- | -------- | ------------ | ---------------------------------------------------------------------- |
+| **I2**  | 0.30      | 3.33   | ~224    | 36.3%    | +11.1%   | 3/3          | Signal le plus fort et le plus stable                                  |
+| **BL1** | 0.28      | 3.57   | ~62     | 35.5%    | +21.4%   | 3/3          | Seule ligue avec SA à passer les 3 saisons                             |
+| **POR** | 0.30      | 3.33   | ~86     | 35.8%    | +12.7%   | 2/3          | 2024-25 borderline (+0.9%) — à surveiller                              |
+| **SA**  | 0.30      | 3.33   | ~117    | variable | variable | 1/3          | 2025-26 saison à faible draw rate (26.5%) — à recalibrer fin de saison |
 
 ### Désactivées — signal absent ou insuffisant
 
-| Ligue | Meilleur ROI agrégat | Raison de désactivation |
-|---|---|---|
-| LL | +4.8% à 0.28 | Inconsistant : 2023-24 exceptionnelle, 2024-25 efface tout |
-| SP2 | +11.7% à 0.35 | Signal concentré aux cotes < 2.86 (draws favoris), volatile |
-| L1 | -7.8% (meilleur) | ROI structurellement négatif sur 2/3 saisons |
-| D2 | +29.1% à 0.30 | Volume insuffisant (~14 picks/s), 2/3 saisons INSUFFICIENT_DATA |
-| ERD | +17.4% à 0.30 | Volume insuffisant (~12 picks/s), 1s validable seulement |
-| SWE1 | +10.9% à 0.30 | INSUFFICIENT_DATA toutes saisons (~11 picks/s) |
-| CZE1 | +14.2% à 0.26 | HR agrégat 31.4% — juste sous le plancher 32% |
-| TUR1 | +8.0% à 0.26 | HR agrégat 31.1%, 1/3 saisons PASS |
-| TUR2 | +9.5% à 0.26 | Inconsistant : 2023-24 FAIL, 2024-25 PASS, 2025-26 FAIL |
-| J1 | +10.3% à 0.34 | INSUFFICIENT_DATA toutes saisons (~7 picks/s) |
-| PL | -1.6% (meilleur) | ROI négatif, ligue à faible draw rate (~25%) |
-| EL1/EL2/UEL/UECL/UCL | Variable | Volume trop faible en compétitions européennes |
-| MX1/UNL/NOR1 | Négatif ou bruit | ROI négatif ou volume insuffisant |
+| Ligue                | Meilleur ROI agrégat | Raison de désactivation                                         |
+| -------------------- | -------------------- | --------------------------------------------------------------- |
+| LL                   | +4.8% à 0.28         | Inconsistant : 2023-24 exceptionnelle, 2024-25 efface tout      |
+| SP2                  | +11.7% à 0.35        | Signal concentré aux cotes < 2.86 (draws favoris), volatile     |
+| L1                   | -7.8% (meilleur)     | ROI structurellement négatif sur 2/3 saisons                    |
+| D2                   | +29.1% à 0.30        | Volume insuffisant (~14 picks/s), 2/3 saisons INSUFFICIENT_DATA |
+| ERD                  | +17.4% à 0.30        | Volume insuffisant (~12 picks/s), 1s validable seulement        |
+| SWE1                 | +10.9% à 0.30        | INSUFFICIENT_DATA toutes saisons (~11 picks/s)                  |
+| CZE1                 | +14.2% à 0.26        | HR agrégat 31.4% — juste sous le plancher 32%                   |
+| TUR1                 | +8.0% à 0.26         | HR agrégat 31.1%, 1/3 saisons PASS                              |
+| TUR2                 | +9.5% à 0.26         | Inconsistant : 2023-24 FAIL, 2024-25 PASS, 2025-26 FAIL         |
+| J1                   | +10.3% à 0.34        | INSUFFICIENT_DATA toutes saisons (~7 picks/s)                   |
+| PL                   | -1.6% (meilleur)     | ROI négatif, ligue à faible draw rate (~25%)                    |
+| EL1/EL2/UEL/UECL/UCL | Variable             | Volume trop faible en compétitions européennes                  |
+| MX1/UNL/NOR1         | Négatif ou bruit     | ROI négatif ou volume insuffisant                               |
 
 ---
 
@@ -70,13 +70,13 @@ L'analyse Serie A (1 100 matchs, 3 saisons) a établi que les cotes bookmaker so
 
 ### Ligues à réexaminer en priorité
 
-| Ligue | Raison | Signal attendu |
-|---|---|---|
-| **CZE1** | HR à 31.4% (juste sous le plancher), ROI +14.2% | Ajouter HR floor à 31% ? Vérifier si 2025-26 passe |
-| **TUR1** | ROI +8%, 2025-26 PASS seule — voir si la tendance se confirme | Fort signal en 2025-26 |
-| **TUR2** | 2024-25 et 2025-26 tous les deux positifs — potentiel | Vérifier si le signal stabilise |
-| **SA** | Saison 2025-26 atypique (26.5% nuls), signal 2023-24/24-25 fort | Réévaluer avec saison complète |
-| **D2/ERD** | Volume trop faible sur 3 saisons — attendre une 4e saison | Confirmer si volume augmente |
+| Ligue      | Raison                                                          | Signal attendu                                     |
+| ---------- | --------------------------------------------------------------- | -------------------------------------------------- |
+| **CZE1**   | HR à 31.4% (juste sous le plancher), ROI +14.2%                 | Ajouter HR floor à 31% ? Vérifier si 2025-26 passe |
+| **TUR1**   | ROI +8%, 2025-26 PASS seule — voir si la tendance se confirme   | Fort signal en 2025-26                             |
+| **TUR2**   | 2024-25 et 2025-26 tous les deux positifs — potentiel           | Vérifier si le signal stabilise                    |
+| **SA**     | Saison 2025-26 atypique (26.5% nuls), signal 2023-24/24-25 fort | Réévaluer avec saison complète                     |
+| **D2/ERD** | Volume trop faible sur 3 saisons — attendre une 4e saison       | Confirmer si volume augmente                       |
 
 ### Ligues à ne pas réexaminer
 
@@ -90,13 +90,13 @@ L'analyse Serie A (1 100 matchs, 3 saisons) a établi que les cotes bookmaker so
 
 Ces améliorations peuvent renforcer le signal existant mais ne remplacent pas le travail de validation par ligue :
 
-| Approche | Impact attendu | Complexité |
-|---|---|---|
-| **teamDrawRate rolling** | Filtrage secondaire sur les équipes à fort taux historique (Juventus 36.4%, etc.) | Faible — données déjà en features JSONB |
-| **Gate composite** | `drawOdds < 3.33 ET ≥ 1 équipe draw > 32%` : +19 pts sur hit rate (DRAW-SA-ANALYSIS.md) | Moyenne — requête rolling sur 38 derniers matchs |
-| **Dixon-Coles ρ** | Corriger la sous-représentation des scores 0-0 / 1-1 dans le Poisson | Haute — refactoring du moteur de probabilités |
+| Approche                 | Impact attendu                                                                          | Complexité                                       |
+| ------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **teamDrawRate rolling** | Filtrage secondaire sur les équipes à fort taux historique (Juventus 36.4%, etc.)       | Faible — données déjà en features JSONB          |
+| **Gate composite**       | `drawOdds < 3.33 ET ≥ 1 équipe draw > 32%` : +19 pts sur hit rate (DRAW-SA-ANALYSIS.md) | Moyenne — requête rolling sur 38 derniers matchs |
+| **Dixon-Coles ρ**        | Corriger la sous-représentation des scores 0-0 / 1-1 dans le Poisson                    | Haute — refactoring du moteur de probabilités    |
 
 ---
 
-*Analyse initiale : DRAW-SA-ANALYSIS.md (1 100 fixtures SA, 3 saisons 2023-26)*
-*Backtest complet 26 ligues : 2026-05-05*
+_Analyse initiale : DRAW-SA-ANALYSIS.md (1 100 fixtures SA, 3 saisons 2023-26)_
+_Backtest complet 26 ligues : 2026-05-05_

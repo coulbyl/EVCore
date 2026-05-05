@@ -41,10 +41,10 @@ describe('getPredictionConfig — CONF channel', () => {
 });
 
 describe('getPredictionConfig — DRAW channel', () => {
-  it('returns the POR DRAW config (disabled, threshold 0.35)', () => {
+  it('returns the POR DRAW config (enabled, threshold 0.30)', () => {
     const cfg = getPredictionConfig(PredictionChannel.DRAW, 'POR');
-    expect(cfg.enabled).toBe(false);
-    expect(cfg.threshold).toBe(0.35);
+    expect(cfg.enabled).toBe(true);
+    expect(cfg.threshold).toBe(0.3);
   });
 
   it('returns the MX1 DRAW config (disabled, threshold 0.36)', () => {
@@ -59,10 +59,10 @@ describe('getPredictionConfig — DRAW channel', () => {
     expect(cfg.threshold).toBe(0.34);
   });
 
-  it('falls back to DRAW_DEFAULT for BL1 (no DRAW config defined)', () => {
+  it('returns the BL1 DRAW config (enabled, threshold 0.28)', () => {
     const cfg = getPredictionConfig(PredictionChannel.DRAW, 'BL1');
-    expect(cfg.enabled).toBe(false);
-    expect(cfg.threshold).toBe(0.99);
+    expect(cfg.enabled).toBe(true);
+    expect(cfg.threshold).toBe(0.28);
   });
 
   it('falls back to DRAW_DEFAULT for unknown league', () => {
@@ -117,7 +117,7 @@ describe('getPredictionConfig — BTTS channel', () => {
 });
 
 describe('getPredictionConfig — channel isolation', () => {
-  it('BL1: CONF and BTTS enabled, DRAW falls to default', () => {
+  it('BL1: CONF, DRAW and BTTS all enabled independently', () => {
     expect(getPredictionConfig(PredictionChannel.CONF, 'BL1').enabled).toBe(
       true,
     );
@@ -125,7 +125,7 @@ describe('getPredictionConfig — channel isolation', () => {
       true,
     );
     expect(getPredictionConfig(PredictionChannel.DRAW, 'BL1').enabled).toBe(
-      false,
+      true,
     );
   });
 
@@ -152,7 +152,7 @@ describe('getPredictionConfig — channel isolation', () => {
     );
   });
 
-  it('SA: CONF and BTTS enabled, DRAW disabled — canaux indépendants', () => {
+  it('SA: CONF, DRAW and BTTS all enabled independently', () => {
     expect(getPredictionConfig(PredictionChannel.CONF, 'SA').enabled).toBe(
       true,
     );
@@ -160,7 +160,7 @@ describe('getPredictionConfig — channel isolation', () => {
       true,
     );
     expect(getPredictionConfig(PredictionChannel.DRAW, 'SA').enabled).toBe(
-      false,
+      true,
     );
   });
 });

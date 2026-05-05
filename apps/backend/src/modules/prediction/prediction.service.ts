@@ -192,9 +192,7 @@ export function buildPredictionCandidate(
     return {
       market: Market.ONE_X_TWO,
       pick: 'DRAW',
-      probability: drawOdds
-        ? new Decimal(1).div(drawOdds)
-        : probabilities.draw,
+      probability: drawOdds ? new Decimal(1).div(drawOdds) : probabilities.draw,
     };
   }
 
