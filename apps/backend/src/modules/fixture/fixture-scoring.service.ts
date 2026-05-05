@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, FixtureStatus, BetSource } from '@evcore/db';
+import { Prisma, FixtureStatus, BetSource, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
@@ -60,6 +60,7 @@ export type ScoredFixturePrediction = {
   pick: string;
   probability: string;
   correct: boolean | null;
+  odds: string | null;
 };
 
 export type ScoredFixtureRow = {
@@ -184,7 +185,19 @@ export class FixtureScoringService {
             competition: { select: { code: true, name: true } },
           },
         },
-        oddsSnapshots: { select: { id: true }, take: 1 },
+        oddsSnapshots: {
+          select: {
+            market: true,
+            homeOdds: true,
+            drawOdds: true,
+            awayOdds: true,
+            pick: true,
+            odds: true,
+          },
+          where: { market: { in: [Market.ONE_X_TWO, Market.BTTS] } },
+          orderBy: { snapshotAt: 'desc' as const },
+          take: 6,
+        },
         predictions: {
           select: {
             channel: true,
@@ -290,12 +303,34 @@ export class FixtureScoringService {
       ): ScoredFixturePrediction | null => {
         const prediction = predictionsByChannel.get(channel);
         if (!prediction) return null;
+
+        let odds: string | null = null;
+        if (channel === 'CONF' || channel === 'DRAW') {
+          const snap = f.oddsSnapshots.find(
+            (s) => s.market === Market.ONE_X_TWO,
+          );
+          if (snap) {
+            if (prediction.pick === 'HOME')
+              odds = snap.homeOdds ? toNumber(snap.homeOdds).toFixed(2) : null;
+            else if (prediction.pick === 'DRAW')
+              odds = snap.drawOdds ? toNumber(snap.drawOdds).toFixed(2) : null;
+            else if (prediction.pick === 'AWAY')
+              odds = snap.awayOdds ? toNumber(snap.awayOdds).toFixed(2) : null;
+          }
+        } else {
+          const snap = f.oddsSnapshots.find(
+            (s) => s.market === Market.BTTS && s.pick === prediction.pick,
+          );
+          if (snap?.odds) odds = toNumber(snap.odds).toFixed(2);
+        }
+
         return {
           channel,
           market: prediction.market,
           pick: prediction.pick,
           probability: `${(toNumber(prediction.probability) * 100).toFixed(0)}%`,
           correct: prediction.correct,
+          odds,
         };
       };
 

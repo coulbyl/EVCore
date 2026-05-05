@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PredictionChannel } from '@evcore/db';
+import { Market, PredictionChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { toNumber } from '@utils/prisma.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
-import { SummaryRepository } from './summary.repository';
+import {
+  SummaryRepository,
+  type PredictionWithFixture,
+} from './summary.repository';
 import type {
   SummaryChannel,
   SummaryPeriod,
@@ -12,6 +15,26 @@ import type {
   SummaryResponse,
   SummaryStats,
 } from './summary.types';
+
+function extractPredictionOdds(
+  pred: PredictionWithFixture,
+  channel: 'CONF' | 'DRAW' | 'BTTS',
+): string | null {
+  const snapshots = pred.fixture.oddsSnapshots;
+  if (!snapshots.length) return null;
+
+  if (channel === 'CONF' || channel === 'DRAW') {
+    const snap = snapshots[0];
+    if (pred.pick === 'HOME') return snap.homeOdds?.toString() ?? null;
+    if (pred.pick === 'DRAW') return snap.drawOdds?.toString() ?? null;
+    if (pred.pick === 'AWAY') return snap.awayOdds?.toString() ?? null;
+    return null;
+  }
+
+  // BTTS: find the snapshot matching the pick (YES / NO)
+  const snap = snapshots.find((s) => s.pick === pred.pick);
+  return snap?.odds?.toString() ?? null;
+}
 
 function periodDateRange(
   period: SummaryPeriod | undefined,
@@ -127,8 +150,14 @@ export class SummaryService {
       DRAW: PredictionChannel.DRAW,
       BTTS: PredictionChannel.BTTS,
     };
+    const oddsMarketMap: Record<'CONF' | 'DRAW' | 'BTTS', Market> = {
+      CONF: Market.ONE_X_TWO,
+      DRAW: Market.ONE_X_TWO,
+      BTTS: Market.BTTS,
+    };
     const predictions = await this.repo.findSettledPredictions(
       channelMap[channel],
+      oddsMarketMap[channel],
       range.from,
       range.to,
     );
@@ -144,7 +173,7 @@ export class SummaryService {
       pick: pred.pick,
       comboMarket: null,
       comboPick: null,
-      odds: null,
+      odds: extractPredictionOdds(pred, channel),
       ev: null,
       result: pred.correct ? 'WON' : 'LOST',
       channel,

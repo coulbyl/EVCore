@@ -1,10 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, LayoutList, XCircle } from "lucide-react";
+import {
+  ChartNoAxesColumn,
+  CheckCircle2,
+  LayoutList,
+  X,
+  XCircle,
+} from "lucide-react";
 import {
   Badge,
+  Button,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
   FilterBar,
   Page,
   PageContent,
@@ -15,6 +25,7 @@ import {
 import { useSummary } from "@/domains/summary/use-cases/get-summary";
 import { EvLineChart } from "@/components/charts/ev-line-chart";
 import { CanalBadge } from "@/components/canal-badge";
+import { Amount } from "@/components/amount";
 import {
   formatCombinedPickForDisplay,
   formatPickForDisplay,
@@ -26,6 +37,189 @@ import type {
   SummaryPeriod,
   SummaryPickRow,
 } from "@/domains/summary/types/summary";
+
+// ── simulation ────────────────────────────────────────────────────────────────
+
+type SimResult = {
+  count: number;
+  totalStaked: number;
+  totalReturned: number;
+  net: number;
+  roi: number;
+};
+
+function runSimulation(picks: SummaryPickRow[], stake: number): SimResult {
+  const count = picks.length;
+  const totalStaked = count * stake;
+  const totalReturned = picks.reduce((acc, p) => {
+    if (p.result === "WON" && p.odds !== null) {
+      return acc + stake * parseFloat(p.odds);
+    }
+    return acc;
+  }, 0);
+  const net = totalReturned - totalStaked;
+  const roi = totalStaked > 0 ? (net / totalStaked) * 100 : 0;
+  return { count, totalStaked, totalReturned, net, roi };
+}
+
+function SimulationDrawer({
+  open,
+  onClose,
+  picks,
+  isMobile,
+}: {
+  open: boolean;
+  onClose: () => void;
+  picks: SummaryPickRow[];
+  isMobile: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [stakeInput, setStakeInput] = useState("");
+  const [result, setResult] = useState<SimResult | null>(null);
+
+  function handleSimulate() {
+    const stake = parseFloat(stakeInput.replace(",", "."));
+    if (!isFinite(stake) || stake <= 0) return;
+    setResult(runSimulation(picks, stake));
+  }
+
+  function handleClose() {
+    setStakeInput("");
+    setResult(null);
+    onClose();
+  }
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(o) => !o && handleClose()}
+      direction={isMobile ? "bottom" : "right"}
+    >
+      <DrawerContent
+        className={
+          isMobile
+            ? "z-50 flex max-h-[92dvh] min-h-0 flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
+            : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[380px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
+        }
+      >
+        <DrawerTitle className="sr-only">Simulation de gains</DrawerTitle>
+
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2">
+            <ChartNoAxesColumn size={16} className="text-muted-foreground" />
+            <span className="text-sm font-semibold">Simulation de gains</span>
+          </div>
+          <button
+            onClick={handleClose}
+            className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
+          <p className="text-sm text-muted-foreground">
+            Si tu avais misé la même somme sur chacun des{" "}
+            <span className="font-semibold text-foreground">
+              {picks.length} picks
+            </span>{" "}
+            de la période filtrée, voici ce que tu aurais gagné ou perdu.
+          </p>
+
+          {/* Input */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Mise par pick
+            </label>
+            <input
+              ref={inputRef}
+              type="number"
+              min={0}
+              step={1}
+              value={stakeInput}
+              onChange={(e) => {
+                setStakeInput(e.target.value);
+                setResult(null);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleSimulate()}
+              placeholder="Ex : 50"
+              className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
+          <Button
+            onClick={handleSimulate}
+            disabled={!stakeInput || parseFloat(stakeInput) <= 0}
+            className="w-full"
+          >
+            Simuler
+          </Button>
+
+          {/* Results */}
+          {result !== null ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Résultat
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-secondary/50 p-3">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Picks
+                  </p>
+                  <p className="mt-1 text-xl font-bold tabular-nums">
+                    {result.count}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-secondary/50 p-3">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Total misé
+                  </p>
+                  <p className="mt-1 text-xl font-bold">
+                    <Amount value={result.totalStaked} />
+                  </p>
+                </div>
+                <div className="rounded-xl bg-secondary/50 p-3">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Retourné
+                  </p>
+                  <p className="mt-1 text-xl font-bold">
+                    <Amount value={result.totalReturned} />
+                  </p>
+                </div>
+                <div
+                  className={`rounded-xl p-3 ${
+                    result.net >= 0 ? "bg-success/10" : "bg-destructive/10"
+                  }`}
+                >
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Gain net
+                  </p>
+                  <p
+                    className={`mt-1 text-xl font-bold ${
+                      result.net >= 0 ? "text-success" : "text-destructive"
+                    }`}
+                  >
+                    <Amount value={result.net} signed />
+                  </p>
+                  <p
+                    className={`mt-0.5 text-xs tabular-nums ${
+                      result.roi >= 0 ? "text-success" : "text-destructive"
+                    }`}
+                  >
+                    ROI {result.roi >= 0 ? "+" : ""}
+                    {result.roi.toFixed(1)} %
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -198,6 +392,7 @@ export function SummaryPageClient() {
     (searchParams.get("period") as SummaryPeriod) ?? DEFAULT_PERIOD;
 
   const [filters, setFilters] = useState<FilterState>({ channel, period });
+  const [simOpen, setSimOpen] = useState(false);
 
   const { data, isLoading, isError } = useSummary({ channel, period });
 
@@ -306,11 +501,24 @@ export function SummaryPageClient() {
 
           {/* Pick list */}
           <section className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {isLoading
-                ? "Chargement…"
-                : `Picks résolus (${data?.stats.total ?? 0})`}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {isLoading
+                  ? "Chargement…"
+                  : `Picks résolus (${data?.stats.total ?? 0})`}
+              </p>
+              {!isLoading && (data?.stats.total ?? 0) > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSimOpen(true)}
+                  className="h-7 gap-1.5 text-xs"
+                >
+                  <ChartNoAxesColumn size={12} />
+                  Simulateur
+                </Button>
+              ) : null}
+            </div>
 
             {isError ? (
               <p className="text-sm text-destructive">
@@ -351,6 +559,13 @@ export function SummaryPageClient() {
           </section>
         </div>
       </PageContent>
+
+      <SimulationDrawer
+        open={simOpen}
+        onClose={() => setSimOpen(false)}
+        picks={data?.picks ?? []}
+        isMobile={isMobile}
+      />
     </Page>
   );
 }

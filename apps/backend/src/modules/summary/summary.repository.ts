@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetSource, BetStatus, PredictionChannel } from '@evcore/db';
+import { BetSource, BetStatus, Market, PredictionChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 const FIXTURE_INCLUDE = {
@@ -33,6 +33,14 @@ export type BetWithFixture = {
   };
 };
 
+type OddsSnapshotRow = {
+  homeOdds: { toString(): string } | null;
+  drawOdds: { toString(): string } | null;
+  awayOdds: { toString(): string } | null;
+  pick: string | null;
+  odds: { toString(): string } | null;
+};
+
 export type PredictionWithFixture = {
   id: string;
   channel: string;
@@ -48,6 +56,7 @@ export type PredictionWithFixture = {
     season: {
       competition: { name: string; code: string };
     };
+    oddsSnapshots: OddsSnapshotRow[];
   };
 };
 
@@ -80,6 +89,7 @@ export class SummaryRepository {
 
   findSettledPredictions(
     channel: PredictionChannel,
+    oddsMarket: Market,
     from: Date,
     to: Date,
   ): Promise<PredictionWithFixture[]> {
@@ -93,7 +103,13 @@ export class SummaryRepository {
       },
       include: {
         fixture: {
-          include: FIXTURE_INCLUDE,
+          include: {
+            ...FIXTURE_INCLUDE,
+            oddsSnapshots: {
+              where: { market: oddsMarket },
+              orderBy: { snapshotAt: 'desc' },
+            },
+          },
         },
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
