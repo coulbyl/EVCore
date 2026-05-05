@@ -1,9 +1,11 @@
 "use client";
 
+import { format } from "date-fns";
 import { formatCompactValue } from "@/helpers/number";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PnlSummary } from "@/domains/dashboard/types/dashboard";
 import { useTranslations } from "next-intl";
+import { DatePicker } from "@evcore/ui";
 
 export function PerformanceCard({
   pnl,
@@ -76,13 +78,13 @@ export function PerformanceCard({
               {t("pendingResults")}
             </span>
           )}
-          <input
-            type="date"
-            value={pnlDate ?? ""}
-            onChange={(e) =>
-              onDateChange(e.target.value !== "" ? e.target.value : undefined)
+          <DatePicker
+            value={pnlDate ? new Date(pnlDate + "T12:00:00") : undefined}
+            onChange={(date) =>
+              onDateChange(date ? format(date, "yyyy-MM-dd") : undefined)
             }
-            className="h-9 rounded-xl border border-border bg-panel px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+            placeholder={t("filterByDate")}
+            className="h-9 text-xs"
           />
           {pnlDate && (
             <button

@@ -251,6 +251,9 @@ type PredictionCandidateBuckets = Record<
 const PREDICTION_VALIDATION_HIT_RATE = 0.55;
 const PREDICTION_VALIDATION_COVERAGE_RATE = 0.1;
 const PREDICTION_LOWERING_HIT_RATE = 0.7;
+// DRAW channel uses ROI as primary metric — hit rate for draws cannot reach 55%.
+const DRAW_VALIDATION_ROI = 0.05; // +5% minimum ROI
+const DRAW_VALIDATION_HIT_RATE = 0.32; // secondary floor (structural draw rate SA ~28%)
 const PREDICTION_CHANNEL_CONF = 'CONF' as PredictionChannel;
 const PREDICTION_CHANNEL_DRAW = 'DRAW' as PredictionChannel;
 const PREDICTION_CHANNEL_BTTS = 'BTTS' as PredictionChannel;
@@ -418,9 +421,11 @@ export class BacktestService {
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
       );
+      const odds = oddsByFixture.get(fixture.id);
       appendPredictionCandidates({
         buckets: predictionCandidates,
         probabilities: computed.probabilities,
+        drawOdds: odds?.drawOdds ?? null,
         actual,
         score: {
           home: fixture.homeScore,
@@ -428,8 +433,6 @@ export class BacktestService {
         },
       });
       analyzedCount++;
-
-      const odds = oddsByFixture.get(fixture.id);
       if (!odds) {
         analysisEntries.push(
           buildAnalysisEntry({
@@ -1605,16 +1608,22 @@ function appendPredictionCandidates(input: {
     away: Decimal;
     bttsYes: Decimal;
   };
+  drawOdds: Decimal | null;
   actual: 'HOME' | 'DRAW' | 'AWAY';
   score: {
     home: number;
     away: number;
   };
 }): void {
-  const { buckets, probabilities, actual, score } = input;
+  const { buckets, probabilities, drawOdds, actual, score } = input;
   const pHome = probabilities.home.toNumber();
   const pDraw = probabilities.draw.toNumber();
   const pAway = probabilities.away.toNumber();
+  // For DRAW channel, mirror the live signal: 1/drawOdds when odds are
+  // available, Poisson fallback otherwise.
+  const pDrawSignal = drawOdds
+    ? new Decimal(1).div(drawOdds).toNumber()
+    : pDraw;
 
   const pick =
     pHome >= pDraw && pHome >= pAway
@@ -1629,7 +1638,7 @@ function appendPredictionCandidates(input: {
     correct: pick === actual,
   });
   buckets[PREDICTION_CHANNEL_DRAW].push({
-    probability: pDraw,
+    probability: pDrawSignal,
     correct: actual === 'DRAW',
   });
   buckets[PREDICTION_CHANNEL_BTTS].push({
@@ -1648,7 +1657,12 @@ function buildPredictionBacktestSummary(
     channel,
     config.threshold,
   ).map((threshold) =>
-    summarizePredictionThreshold(candidates, threshold, config.minSampleN),
+    summarizePredictionThreshold(
+      candidates,
+      threshold,
+      config.minSampleN,
+      channel,
+    ),
   );
   const current =
     thresholds.find((entry) => entry.threshold === config.threshold) ??
@@ -1656,6 +1670,7 @@ function buildPredictionBacktestSummary(
       candidates,
       config.threshold,
       config.minSampleN,
+      channel,
     );
 
   return {
@@ -1668,6 +1683,7 @@ function buildPredictionBacktestSummary(
     correct: current.correct,
     hitRate: current.hitRate,
     coverageRate: current.coverageRate,
+    roiSimulated: current.roiSimulated,
     verdict: current.verdict,
     thresholds,
   };
@@ -1736,17 +1752,20 @@ function buildCompetitionPredictionBacktest(
         acc.total += entry.total;
         acc.predicted += entry.predicted;
         acc.correct += entry.correct;
+        acc.profit += entry.profit;
         return acc;
       },
-      { total: 0, predicted: 0, correct: 0 },
+      { total: 0, predicted: 0, correct: 0, profit: 0 },
     );
 
     return summarizePredictionTotals(
       aggregate.total,
       aggregate.predicted,
       aggregate.correct,
+      aggregate.profit,
       threshold,
       currentConfig.minSampleN,
+      channel,
     );
   });
 
@@ -1756,12 +1775,14 @@ function buildCompetitionPredictionBacktest(
       [],
       currentConfig.threshold,
       currentConfig.minSampleN,
+      channel,
     );
   const recommendation = buildPredictionCalibrationRecommendation(
     currentConfig.enabled,
     current,
     thresholds,
     currentConfig.minSampleN,
+    channel,
   );
 
   return {
@@ -1775,6 +1796,7 @@ function buildCompetitionPredictionBacktest(
     correct: current.correct,
     hitRate: current.hitRate,
     coverageRate: current.coverageRate,
+    roiSimulated: current.roiSimulated,
     verdict: current.verdict,
     thresholds,
     recommendation,
@@ -1787,7 +1809,9 @@ function buildPredictionCalibrationRecommendation(
   current: PredictionThresholdBacktest,
   thresholds: PredictionThresholdBacktest[],
   minSampleN: number,
+  channel?: PredictionChannel,
 ): PredictionCalibrationRecommendation {
+  const isDraw = channel === PREDICTION_CHANNEL_DRAW;
   const passing = thresholds.filter((entry) => entry.verdict === 'PASS');
   const lowerPassing = passing.filter(
     (entry) => entry.threshold < current.threshold,
@@ -1796,25 +1820,47 @@ function buildPredictionCalibrationRecommendation(
     (entry) => entry.threshold > current.threshold,
   );
 
+  const formatRoi = (roi: number | null) =>
+    roi !== null ? `ROI ${roi >= 0 ? '+' : ''}${(roi * 100).toFixed(1)}%` : '';
+
   if (!enabled) {
     const candidate = passing[0];
     if (!candidate) {
       return {
         enabled: false,
         threshold: current.threshold,
-        reason:
-          'Canal désactivé: aucun seuil ne valide simultanément hit rate, couverture et volume minimal.',
+        reason: isDraw
+          ? 'Canal DRAW désactivé: aucun seuil ne valide simultanément ROI ≥ +5%, hit rate ≥ 32% et volume minimal.'
+          : 'Canal désactivé: aucun seuil ne valide simultanément hit rate, couverture et volume minimal.',
       };
     }
 
     return {
       enabled: true,
       threshold: candidate.threshold,
-      reason: `Canal désactivé aujourd'hui, mais ${formatPct(candidate.hitRate)} sur ${candidate.predicted} prédictions à ${candidate.threshold.toFixed(2)} valide une activation.`,
+      reason: isDraw
+        ? `Canal DRAW désactivé aujourd'hui, mais ${formatRoi(candidate.roiSimulated)} sur ${candidate.predicted} prédictions à ${candidate.threshold.toFixed(3)} (cote < ${(1 / candidate.threshold).toFixed(2)}) valide une activation.`
+        : `Canal désactivé aujourd'hui, mais ${formatPct(candidate.hitRate)} sur ${candidate.predicted} prédictions à ${candidate.threshold.toFixed(2)} valide une activation.`,
     };
   }
 
   if (current.verdict === 'PASS') {
+    if (isDraw) {
+      if (lowerPassing.length > 0) {
+        const candidate = lowerPassing[0];
+        return {
+          enabled: true,
+          threshold: candidate.threshold,
+          reason: `DRAW validé: ${formatRoi(current.roiSimulated)}, ${formatPct(current.hitRate)} HR. Abaisser à ${candidate.threshold.toFixed(3)} (cote < ${(1 / candidate.threshold).toFixed(2)}) augmente la couverture tout en restant valide.`,
+        };
+      }
+      return {
+        enabled: true,
+        threshold: current.threshold,
+        reason: `DRAW validé: ${formatRoi(current.roiSimulated)}, ${formatPct(current.hitRate)} HR sur ${current.predicted} prédictions (cote < ${(1 / current.threshold).toFixed(2)}).`,
+      };
+    }
+
     if (
       current.hitRate > PREDICTION_LOWERING_HIT_RATE &&
       lowerPassing.length > 0
@@ -1836,22 +1882,25 @@ function buildPredictionCalibrationRecommendation(
 
   const lacksVolume =
     current.predicted < minSampleN ||
-    current.coverageRate < PREDICTION_VALIDATION_COVERAGE_RATE;
+    (!isDraw && current.coverageRate < PREDICTION_VALIDATION_COVERAGE_RATE);
   if (lacksVolume) {
     const candidate = lowerPassing[0];
     if (candidate) {
       return {
         enabled: true,
         threshold: candidate.threshold,
-        reason: `Seuil actuel trop strict (${current.predicted} prédictions, couverture ${formatPct(current.coverageRate)}). ${candidate.threshold.toFixed(2)} restaure un volume valide.`,
+        reason: isDraw
+          ? `Seuil actuel trop strict (${current.predicted} prédictions). ${candidate.threshold.toFixed(3)} restaure un volume valide.`
+          : `Seuil actuel trop strict (${current.predicted} prédictions, couverture ${formatPct(current.coverageRate)}). ${candidate.threshold.toFixed(2)} restaure un volume valide.`,
       };
     }
 
     return {
       enabled: false,
       threshold: current.threshold,
-      reason:
-        'Seuil actuel trop strict et aucun seuil plus bas ne respecte les critères minimaux de couverture et de volume.',
+      reason: isDraw
+        ? 'Seuil actuel trop strict et aucun seuil plus bas ne respecte le volume minimal.'
+        : 'Seuil actuel trop strict et aucun seuil plus bas ne respecte les critères minimaux de couverture et de volume.',
     };
   }
 
@@ -1860,15 +1909,18 @@ function buildPredictionCalibrationRecommendation(
     return {
       enabled: true,
       threshold: candidate.threshold,
-      reason: `Hit rate sous le plancher à ${current.threshold.toFixed(2)} (${formatPct(current.hitRate)}). Monter à ${candidate.threshold.toFixed(2)} repasse en zone valide.`,
+      reason: isDraw
+        ? `DRAW sous validation à ${current.threshold.toFixed(3)} (${formatRoi(current.roiSimulated)}, ${formatPct(current.hitRate)} HR). Monter à ${candidate.threshold.toFixed(3)} (cote < ${(1 / candidate.threshold).toFixed(2)}) repasse en zone valide.`
+        : `Hit rate sous le plancher à ${current.threshold.toFixed(2)} (${formatPct(current.hitRate)}). Monter à ${candidate.threshold.toFixed(2)} repasse en zone valide.`,
     };
   }
 
   return {
     enabled: false,
     threshold: current.threshold,
-    reason:
-      'Aucun seuil ne maintient un hit rate valide avec le volume actuel. Désactivation recommandée en attendant recalibration.',
+    reason: isDraw
+      ? `Aucun seuil ne valide le ROI DRAW avec le volume actuel (ROI actuel: ${formatRoi(current.roiSimulated)}). Désactivation recommandée en attendant recalibration.`
+      : 'Aucun seuil ne maintient un hit rate valide avec le volume actuel. Désactivation recommandée en attendant recalibration.',
   };
 }
 
@@ -1887,10 +1939,12 @@ function buildPredictionThresholdGrid(
   ).sort((a, b) => a - b);
 }
 
+// eslint-disable-next-line max-params -- grouped below
 function summarizePredictionThreshold(
   candidates: PredictionCandidate[],
   threshold: number,
   minSampleN: number,
+  channel?: PredictionChannel,
 ): PredictionThresholdBacktest {
   const predictedCandidates = candidates.filter(
     (candidate) => candidate.probability >= threshold,
@@ -1899,13 +1953,24 @@ function summarizePredictionThreshold(
   const correct = predictedCandidates.filter(
     (candidate) => candidate.correct,
   ).length;
+  // For DRAW: probability stores 1/drawOdds, so actual odds = 1/probability.
+  // profit = Σ(odds−1 if correct, −1 otherwise).
+  const profit =
+    channel === PREDICTION_CHANNEL_DRAW
+      ? predictedCandidates.reduce((acc, c) => {
+          const odds = c.probability > 0 ? 1 / c.probability : 0;
+          return acc + (c.correct ? odds - 1 : -1);
+        }, 0)
+      : 0;
 
   return summarizePredictionTotals(
     candidates.length,
     predicted,
     correct,
+    profit,
     threshold,
     minSampleN,
+    channel,
   );
 }
 
@@ -1914,18 +1979,35 @@ function summarizePredictionTotals(
   total: number,
   predicted: number,
   correct: number,
+  profit: number,
   threshold: number,
   minSampleN: number,
+  channel?: PredictionChannel,
 ): PredictionThresholdBacktest {
   const hitRate = predicted > 0 ? correct / predicted : 0;
   const coverageRate = total > 0 ? predicted / total : 0;
-  const verdict: ValidationVerdict =
-    predicted < minSampleN
-      ? 'INSUFFICIENT_DATA'
-      : hitRate >= PREDICTION_VALIDATION_HIT_RATE &&
-          coverageRate >= PREDICTION_VALIDATION_COVERAGE_RATE
+  const roiSimulated =
+    channel === PREDICTION_CHANNEL_DRAW && predicted > 0
+      ? profit / predicted
+      : null;
+
+  let verdict: ValidationVerdict;
+  if (predicted < minSampleN) {
+    verdict = 'INSUFFICIENT_DATA';
+  } else if (channel === PREDICTION_CHANNEL_DRAW) {
+    verdict =
+      roiSimulated !== null &&
+      roiSimulated >= DRAW_VALIDATION_ROI &&
+      hitRate >= DRAW_VALIDATION_HIT_RATE
         ? 'PASS'
         : 'FAIL';
+  } else {
+    verdict =
+      hitRate >= PREDICTION_VALIDATION_HIT_RATE &&
+      coverageRate >= PREDICTION_VALIDATION_COVERAGE_RATE
+        ? 'PASS'
+        : 'FAIL';
+  }
 
   return {
     threshold,
@@ -1934,6 +2016,8 @@ function summarizePredictionTotals(
     correct,
     hitRate,
     coverageRate,
+    profit,
+    roiSimulated,
     verdict,
   };
 }

@@ -49,12 +49,18 @@ export class PredictionService {
     modelRunId: string;
     competition: string;
     probabilities: ThreeWayProba & { bttsYes: Decimal };
+    drawOdds?: Decimal | null;
   }): Promise<void> {
-    const { fixtureId, modelRunId, competition, probabilities } = opts;
+    const { fixtureId, modelRunId, competition, probabilities, drawOdds } =
+      opts;
 
     for (const channel of PREDICTION_CHANNELS) {
       const config = getPredictionConfig(channel, competition);
-      const candidate = buildPredictionCandidate(channel, probabilities);
+      const candidate = buildPredictionCandidate(
+        channel,
+        probabilities,
+        drawOdds,
+      );
 
       if (!config.enabled || candidate.probability.lt(config.threshold)) {
         await this.repo.deleteForFixtureChannel(fixtureId, channel);
@@ -180,12 +186,13 @@ export type ChannelPredictionCandidate = {
 export function buildPredictionCandidate(
   channel: PredictionChannel,
   probabilities: ThreeWayProba & { bttsYes: Decimal },
+  drawOdds?: Decimal | null,
 ): ChannelPredictionCandidate {
   if (channel === PredictionChannel.DRAW) {
     return {
       market: Market.ONE_X_TWO,
       pick: 'DRAW',
-      probability: probabilities.draw,
+      probability: drawOdds ? new Decimal(1).div(drawOdds) : probabilities.draw,
     };
   }
 

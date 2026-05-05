@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
 import { useTranslations } from "next-intl";
+import { DatePicker } from "@evcore/ui";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -60,13 +62,11 @@ export function OperatorPerformanceCard() {
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={date ?? ""}
-            onChange={(e) =>
-              setDate(e.target.value !== "" ? e.target.value : undefined)
-            }
-            className="h-9 cursor-pointer rounded-xl border border-border bg-panel px-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+          <DatePicker
+            value={date ? new Date(date + "T12:00:00") : undefined}
+            onChange={(d) => setDate(d ? format(d, "yyyy-MM-dd") : undefined)}
+            placeholder={t("filterByDate")}
+            className="h-9 text-xs"
           />
           {date && (
             <button

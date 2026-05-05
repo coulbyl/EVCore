@@ -87,6 +87,7 @@ export class SummaryRepository {
     }) as unknown as Promise<BetWithFixture[]>;
   }
 
+  // eslint-disable-next-line max-params
   findSettledPredictions(
     channel: PredictionChannel,
     oddsMarket: Market,

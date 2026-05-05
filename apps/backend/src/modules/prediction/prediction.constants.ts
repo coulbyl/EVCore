@@ -39,6 +39,10 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // BL1 backtest 2026-04-19: 0.50 keeps validation while materially
     // improving coverage versus 0.60 (40.7% vs 14.1%).
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    // BL1 backtest 2026-05-05: strongest DRAW signal after I2. All 3 seasons
+    // PASS: 2023-24 +17.8%, 2024-25 +14.1%, 2025-26 +33.4%. Aggregate
+    // (186 picks, ~62/s): HR 35.5%, ROI +21.4%. threshold 0.28 = 1/3.57.
+    DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
     // BL1 backtest 2026-05-03: 0.56 covered 83% of fixtures — too broad.
     // 0.60 keeps 65% hit rate with 45% coverage, a meaningful selector.
     BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
@@ -73,9 +77,10 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
   },
   POR: {
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
-    // POR backtest 2026-05-03: draw probs never exceed 0.28; hit rate 34% at
-    // best — structural Poisson limitation. No prediction produced at 0.35.
-    DRAW: { enabled: false, threshold: 0.35, minSampleN: 6 },
+    // POR backtest 2026-05-05: 1/drawOdds signal validates where Poisson failed.
+    // 2/3 seasons PASS: 2023-24 +37.0%, 2024-25 +0.9% (borderline), 2025-26 +8.9%.
+    // Aggregate (257 picks, ~86/s): HR 35.8%, ROI +12.7%. threshold 0.30 = 1/3.33.
+    DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
   },
   LL: {
     // LL backtest 2026-04-19: 0.50 keeps validation while materially
@@ -94,6 +99,11 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
   I2: {
     // I2 backtest 2026-04-19: no tested threshold clears the hit-rate floor.
     CONF: { enabled: false, threshold: 0.55, minSampleN: 10 },
+    // I2 backtest 2026-05-05: strongest DRAW signal in the panel.
+    // Aggregate 3 seasons (672 picks): HR 36.3%, ROI +11.1% at 0.30.
+    // Consistent: 2023-24 +16.4%, 2024-25 +12.3%, 2025-26 +6.5%.
+    // threshold 0.30 = 1/3.33 → selects drawOdds < 3.33.
+    DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
   },
   ERD: {
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
@@ -152,6 +162,11 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // SA backtest 2026-05-03: CONF signal never used (default 0.99). Scan
     // shows 65.4% hit rate at 0.50 on 335 picks — strong, activating now.
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    // SA analysis 2026-05-05: 1/drawOdds signal. Bracket [3.20–3.33) is the
+    // sweet spot: [3.20–3.40) shows +13.6% ROI on 213 fixtures (SQL analysis).
+    // threshold 0.30 = 1/3.33 → selects drawOdds < 3.33, centred on the best bracket.
+    // Validation metric: ROI ≥ +5% + HR ≥ 32% (not hit rate 55% — see DRAW-SA-ANALYSIS.md).
+    DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
     // SA backtest 2026-05-03: 0.58 produced only 3 picks (INSUFFICIENT_DATA).
     // Serie A is a low-BTTS league; 0.52 is the only valid threshold
     // (60% hit rate, 115 picks, 12% coverage).

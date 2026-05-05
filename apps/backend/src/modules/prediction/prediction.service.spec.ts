@@ -298,11 +298,11 @@ describe('PredictionService.createPredictions', () => {
   });
 
   it('deletes DRAW pick when the league keeps DRAW disabled despite a high draw probability', async () => {
-    // POR: DRAW threshold exists but the channel stays disabled.
+    // SP2: DRAW explicitly disabled after backtest (enabled: false, threshold 0.35).
     await service.createPredictions({
       fixtureId: 'fix-2',
       modelRunId: 'run-2',
-      competition: 'POR',
+      competition: 'SP2',
       probabilities: makeProba({
         home: 0.35,
         draw: 0.4,
@@ -318,7 +318,7 @@ describe('PredictionService.createPredictions', () => {
   });
 
   it('processes all three channels independently in one call', async () => {
-    // BL1: CONF enabled (0.5), DRAW no config (disabled), BTTS enabled (0.56)
+    // BL1: CONF enabled (0.5), DRAW enabled (0.28) but 0.25 < threshold → deleted, BTTS enabled (0.60)
     await service.createPredictions({
       fixtureId: 'fix-3',
       modelRunId: 'run-3',
