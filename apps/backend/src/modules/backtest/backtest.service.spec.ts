@@ -37,6 +37,7 @@ function makePredictionBacktestSummary(
     correct: number;
     hitRate: number;
     coverageRate: number;
+    roiSimulated: number | null;
     verdict: 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
     thresholds: {
       threshold: number;
@@ -45,6 +46,8 @@ function makePredictionBacktestSummary(
       correct: number;
       hitRate: number;
       coverageRate: number;
+      profit: number;
+      roiSimulated: number | null;
       verdict: 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
     }[];
   }> = {},
@@ -65,6 +68,7 @@ function makePredictionBacktestSummary(
     correct,
     hitRate,
     coverageRate,
+    roiSimulated: overrides.roiSimulated ?? null,
     verdict: overrides.verdict ?? 'PASS',
     thresholds: overrides.thresholds ?? [
       {
@@ -74,6 +78,8 @@ function makePredictionBacktestSummary(
         correct,
         hitRate,
         coverageRate,
+        profit: 0,
+        roiSimulated: null,
         verdict: overrides.verdict ?? 'PASS',
       },
     ],
@@ -901,6 +907,8 @@ describe('BacktestService.runCompetitionBacktest', () => {
             correct: 18,
             hitRate: 0.6,
             coverageRate: 0.3,
+            profit: 0,
+            roiSimulated: null,
             verdict: 'PASS',
           },
           {
@@ -910,6 +918,8 @@ describe('BacktestService.runCompetitionBacktest', () => {
             correct: 15,
             hitRate: 0.75,
             coverageRate: 0.2,
+            profit: 0,
+            roiSimulated: null,
             verdict: 'PASS',
           },
           {
@@ -919,6 +929,8 @@ describe('BacktestService.runCompetitionBacktest', () => {
             correct: 7,
             hitRate: 0.7,
             coverageRate: 0.1,
+            profit: 0,
+            roiSimulated: null,
             verdict: 'PASS',
           },
         ],
@@ -984,6 +996,8 @@ describe('BacktestService.runCompetitionBacktest', () => {
             correct: 17,
             hitRate: 17 / 35,
             coverageRate: 0.35,
+            profit: 0,
+            roiSimulated: null,
             verdict: 'FAIL',
           },
           {
@@ -993,6 +1007,8 @@ describe('BacktestService.runCompetitionBacktest', () => {
             correct: 6,
             hitRate: 6 / 9,
             coverageRate: 0.09,
+            profit: 0,
+            roiSimulated: null,
             verdict: 'INSUFFICIENT_DATA',
           },
         ],

@@ -91,6 +91,9 @@ export type PredictionThresholdBacktest = {
   correct: number;
   hitRate: number;
   coverageRate: number;
+  // profit = Σ(odds−1 if correct, −1 if incorrect). Used to compute roiSimulated.
+  profit: number;
+  roiSimulated: number | null;
   verdict: ValidationVerdict;
 };
 
@@ -103,6 +106,7 @@ export type PredictionBacktestSummary = {
   correct: number;
   hitRate: number;
   coverageRate: number;
+  roiSimulated: number | null;
   verdict: ValidationVerdict;
   thresholds: PredictionThresholdBacktest[];
 };
