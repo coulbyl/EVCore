@@ -94,6 +94,11 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
   I2: {
     // I2 backtest 2026-04-19: no tested threshold clears the hit-rate floor.
     CONF: { enabled: false, threshold: 0.55, minSampleN: 10 },
+    // I2 backtest 2026-05-05: strongest DRAW signal in the panel.
+    // Aggregate 3 seasons (672 picks): HR 36.3%, ROI +11.1% at 0.30.
+    // Consistent: 2023-24 +16.4%, 2024-25 +12.3%, 2025-26 +6.5%.
+    // threshold 0.30 = 1/3.33 → selects drawOdds < 3.33.
+    DRAW: { enabled: true, threshold: 0.30, minSampleN: 10 },
   },
   ERD: {
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
