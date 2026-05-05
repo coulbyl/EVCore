@@ -98,18 +98,18 @@ Le moteur expose deux familles de canaux :
 
 **Canaux basés sur l'EV (Bet)**
 
-| Canal | Critère | Marché | Pick |
-| ----- | ------- | ------ | ---- |
-| **EV** | EV ≥ 8% | 1X2, O/U, BTTS, DC, HT/FT, combos | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| Canal             | Critère           | Marché                            | Pick                                    |
+| ----------------- | ----------------- | --------------------------------- | --------------------------------------- |
+| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, combos | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                | HOME / DRAW / AWAY / OVER / UNDER / YES |
 
 **Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
 
-| Canal | Critère | Marché | Signal |
-| ----- | ------- | ------ | ------ |
-| **CONF** (Confiance) | P_max ≥ seuil ligue | ONE_X_TWO | argmax(HOME, DRAW, AWAY) |
-| **BTTS** | P(BTTS) ≥ seuil ligue | BTTS | YES uniquement |
-| **DRAW** (Nul) | 1/drawOdds ≥ seuil ligue | ONE_X_TWO | DRAW uniquement |
+| Canal                | Critère                  | Marché    | Signal                   |
+| -------------------- | ------------------------ | --------- | ------------------------ |
+| **CONF** (Confiance) | P_max ≥ seuil ligue      | ONE_X_TWO | argmax(HOME, DRAW, AWAY) |
+| **BTTS**             | P(BTTS) ≥ seuil ligue    | BTTS      | YES uniquement           |
+| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue | ONE_X_TWO | DRAW uniquement          |
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32).
 

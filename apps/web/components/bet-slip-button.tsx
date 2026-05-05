@@ -22,7 +22,7 @@ export function BetSlipButton() {
         type="button"
         onClick={open}
         title="Mon coupon"
-        className={`relative flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors ${
+        className={`relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3 ${
           hasItems
             ? "border-accent/30 bg-accent/8 text-accent hover:bg-accent/12"
             : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -31,7 +31,7 @@ export function BetSlipButton() {
         <ReceiptText size={16} />
         {hasItems && (
           <span
-            className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold ${
+            className={`hidden h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold md:flex ${
               hasItems
                 ? "bg-accent text-accent-foreground"
                 : "bg-secondary text-muted-foreground"

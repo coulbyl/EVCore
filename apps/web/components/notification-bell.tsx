@@ -13,7 +13,7 @@ export function NotificationBell() {
     <Link
       href="/dashboard/notifications"
       title="Notifications"
-      className="relative flex min-h-11 items-center justify-center rounded-xl border border-border bg-panel-strong px-3 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+      className="relative flex size-9 items-center justify-center rounded-xl border border-border bg-panel-strong text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:size-auto md:min-h-11 md:px-3"
     >
       <Bell size={16} />
       {display && (
