@@ -6,6 +6,7 @@ Construire un moteur autonome de sélection de paris sportifs basé sur :
 
 - 📊 Probabilités estimées
 - 📈 Expected Value (EV)
+- 🎯 Architecture multi-canal (EV, SV, Confiance, BTTS, Nul)
 - 🔁 Auto-évaluation et calibration
 - 🧠 Apprentissage progressif contrôlé
 - ⚖️ Équilibre mathématique + gestion du risque
@@ -34,7 +35,7 @@ Le système ne sera **pas un chatbot**, mais un moteur décisionnel autonome.
 - ❌ Pas de dépendance LLM pour les données brutes
 - ✅ Données déterministes obligatoires
 - ✅ Apprentissage validé par backend (Option B)
-- ✅ EV prioritaire sur taux de réussite
+- ✅ EV prioritaire sur taux de réussite (canaux EV/SV) — hit rate prioritaire sur les canaux Confiance/BTTS/Nul
 - ✅ Volume modéré, variance contrôlée
 - ✅ “No Bet” autorisé
 
@@ -90,6 +91,29 @@ Ces 4 marchés partagent le même modèle sous-jacent (probabilité de buts par 
 | **Over/Under 2.5** | Total buts dans le match                     |
 | **BTTS**           | Les deux équipes marquent (Yes/No)           |
 | **Double Chance**  | 1X, X2, 12 — dérivé des probabilités 1X2     |
+
+### Canaux de décision
+
+Le moteur expose deux familles de canaux :
+
+**Canaux basés sur l'EV (Bet)**
+
+| Canal | Critère | Marché | Pick |
+| ----- | ------- | ------ | ---- |
+| **EV** | EV ≥ 8% | 1X2, O/U, BTTS, DC, HT/FT, combos | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC | HOME / DRAW / AWAY / OVER / UNDER / YES |
+
+**Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
+
+| Canal | Critère | Marché | Signal |
+| ----- | ------- | ------ | ------ |
+| **CONF** (Confiance) | P_max ≥ seuil ligue | ONE_X_TWO | argmax(HOME, DRAW, AWAY) |
+| **BTTS** | P(BTTS) ≥ seuil ligue | BTTS | YES uniquement |
+| **DRAW** (Nul) | 1/drawOdds ≥ seuil ligue | ONE_X_TWO | DRAW uniquement |
+
+Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32).
+
+---
 
 ### Combos-match (Phase 2)
 
@@ -398,6 +422,7 @@ Ce projet n’est pas :
 C’est :
 
 > Un moteur probabiliste discipliné,
+> Multi-canal (EV, SV, Confiance, BTTS, Nul),
 > Mesurable,
 > Auto-calibré,
 > Construit pour survivre à la variance.
@@ -571,8 +596,10 @@ Domaine : **evcore.live**
 
 ## Signification
 
-- **EV** → _Expected Value_, cœur mathématique du système
+- **EV** → _Expected Value_, concept fondateur — le moteur ne génère un pick que lorsqu'il y a un avantage mathématique mesurable
 - **Core** → moteur central, discipline, fondation structurelle
+
+Le système a évolué au-delà du seul canal EV : il opère sur 5 canaux (EV, SV, Confiance, BTTS, Nul), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
 
 Le nom reflète :
 

@@ -274,6 +274,40 @@
 
 ---
 
+---
+
+### Bloc 7 — Canaux de prédiction (CONF / BTTS / DRAW)
+
+> Canaux indépendants de l'EV — décision basée sur seuils probabilistes par ligue, calibrés par backtest avant activation.
+
+**CONF (Confiance)**
+
+- [x] `prediction.service.ts` — argmax 1X2 si P_max ≥ seuil ligue
+- [x] Seuils actifs : PL (0.55), BL1 (0.50), SP2 (0.55), LL (0.50), POR (0.50), SA (0.55), L1 (0.50), I2 (0.50), UCL/UEL/UECL (0.60) et 10+ ligues supplémentaires
+- [x] Endpoint `GET /predictions` avec filtres `channel`, `date`, `status`
+
+**BTTS (BB — Both Teams To Score)**
+
+- [x] Signal : P(BTTS) depuis modèle Poisson (`computeBttsProb`)
+- [x] Seuils actifs : BL1 (0.60), PL (0.58), SA (0.62), LL (0.55), SP2 (0.58), D2 (0.60), CH (0.52), I2 (0.58), POR (0.58) et 10+ ligues supplémentaires
+
+**DRAW (Nul)**
+
+- [x] Signal `1/drawOdds` (probabilité implicite bookmaker) — Poisson en fallback
+- [x] Verdict backtest DRAW : ROI ≥ +5% + HR ≥ 32% + volume ≥ 10 picks
+- [x] Ligues actives : I2 (0.30 — ROI +11.1%), BL1 (0.28 — ROI +21.4%), POR (0.30 — ROI +12.7%), SA (0.30)
+- [~] Évaluation ligues supplémentaires (feat/implementing-draw-channel)
+- [x] Documentation `DRAW-DETECTION.md` — historique signal, tableau ligues actives/désactivées
+
+**UI & Récap**
+
+- [x] Badge canal (EV, SV, CONF, BTTS, DRAW) dans picks-du-jour
+- [x] Boutons cote et panier pour canaux CONF/DRAW/BTTS
+- [x] Ordre d'affichage : SV → BB → CONF → DRAW → EV
+- [x] Page Récap avec filtres canal/période, stats et courbe progression
+
+---
+
 ## Phase 3 (après stabilisation Phase 2)
 
 - [ ] Python worker (backtesting avancé, calibration scikit-learn)

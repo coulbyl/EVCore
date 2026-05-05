@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**EVCore** is an autonomous, value-driven sports betting engine built around Expected Value (EV) mathematics. It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
+**EVCore** is an autonomous, value-driven sports betting engine operating across **5 prediction channels**: EV (Expected Value ≥ 8%), SV (Safe Value — high confidence + positive edge), Confiance (argmax outcome above league threshold), BTTS (both teams score), and Nul (draw via bookmaker implied probability). It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
 
 Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
 Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.
