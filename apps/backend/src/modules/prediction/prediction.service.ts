@@ -49,12 +49,18 @@ export class PredictionService {
     modelRunId: string;
     competition: string;
     probabilities: ThreeWayProba & { bttsYes: Decimal };
+    drawOdds?: Decimal | null;
   }): Promise<void> {
-    const { fixtureId, modelRunId, competition, probabilities } = opts;
+    const { fixtureId, modelRunId, competition, probabilities, drawOdds } =
+      opts;
 
     for (const channel of PREDICTION_CHANNELS) {
       const config = getPredictionConfig(channel, competition);
-      const candidate = buildPredictionCandidate(channel, probabilities);
+      const candidate = buildPredictionCandidate(
+        channel,
+        probabilities,
+        drawOdds,
+      );
 
       if (!config.enabled || candidate.probability.lt(config.threshold)) {
         await this.repo.deleteForFixtureChannel(fixtureId, channel);
