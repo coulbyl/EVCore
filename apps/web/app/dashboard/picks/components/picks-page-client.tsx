@@ -29,7 +29,10 @@ import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import { CanalBadge } from "@/components/canal-badge";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
 import { formatKickoff, formatScore } from "@/domains/fixture/helpers/fixture";
-import { AddToSlipInline } from "./add-to-slip-inline";
+import {
+  AddToSlipInline,
+  AddPredictionToSlipInline,
+} from "./add-to-slip-inline";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { todayIso } from "@/lib/date";
 
@@ -269,7 +272,7 @@ function PickListItem({
         )?.odds ?? null)
       : canal === "SV"
         ? (sv?.odds ?? null)
-        : null;
+        : (prediction?.odds ?? null);
 
   const evValue =
     canal === "EV"
@@ -365,7 +368,9 @@ function PickListItem({
             <AddToSlipInline row={row} canal="EV" />
           ) : canal === "SV" ? (
             <AddToSlipInline row={row} canal="SV" />
-          ) : null}
+          ) : (
+            <AddPredictionToSlipInline row={row} canal={canal} />
+          )}
         </div>
       </div>
     </div>

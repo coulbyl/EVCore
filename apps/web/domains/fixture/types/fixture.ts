@@ -56,6 +56,7 @@ export type FixturePrediction = {
   pick: string;
   probability: string;
   correct: boolean | null;
+  odds: string | null;
 };
 
 export type FixtureSvBet = {

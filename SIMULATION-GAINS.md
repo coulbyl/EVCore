@@ -51,13 +51,13 @@ LOST → gain   = −stake
 
 ### Agrégats affichés
 
-| Label | Calcul |
-|---|---|
-| Picks | nombre total de picks simulés |
-| Total misé | `count × stake` |
-| Retourné | `Σ (stake × odds)` sur les picks WON |
-| Gain net | `retourné − misé` |
-| ROI | `gain net / misé × 100` |
+| Label      | Calcul                               |
+| ---------- | ------------------------------------ |
+| Picks      | nombre total de picks simulés        |
+| Total misé | `count × stake`                      |
+| Retourné   | `Σ (stake × odds)` sur les picks WON |
+| Gain net   | `retourné − misé`                    |
+| ROI        | `gain net / misé × 100`              |
 
 Le **gain net** et le **ROI** sont colorés en vert si positifs, rouge si négatifs.
 

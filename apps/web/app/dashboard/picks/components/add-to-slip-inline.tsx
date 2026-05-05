@@ -2,11 +2,22 @@
 
 import { Check, ShoppingCart } from "lucide-react";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
-import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import { isFixtureBettable } from "@/domains/fixture/helpers/fixture";
 
-type Canal = "EV" | "SV";
+type Canal = "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
+
+const CANAL_COLOR: Record<Canal, string> = {
+  EV: "var(--canal-ev)",
+  SV: "var(--canal-sv)",
+  CONF: "var(--canal-conf)",
+  DRAW: "var(--canal-draw)",
+  BTTS: "var(--canal-btts)",
+};
 
 export function AddToSlipInline({
   row,
@@ -113,6 +124,61 @@ export function AddToSlipInline({
   return <SlipButton inSlip={inSlip} onClick={handleSvClick} canal="SV" />;
 }
 
+// ── CONF / DRAW / BTTS ────────────────────────────────────────────────────────
+
+export function AddPredictionToSlipInline({
+  row,
+  canal,
+}: {
+  row: FixtureRow;
+  canal: "CONF" | "DRAW" | "BTTS";
+}) {
+  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
+
+  const prediction =
+    canal === "DRAW"
+      ? row.drawPrediction
+      : canal === "BTTS"
+        ? row.bttsPrediction
+        : row.prediction;
+
+  if (!prediction || prediction.correct !== null || !isFixtureBettable(row)) {
+    return null;
+  }
+
+  const key = draftItemKey({
+    fixtureId: row.fixtureId,
+    market: prediction.market,
+    pick: prediction.pick,
+  });
+  const inSlip = isInSlip(key);
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(key);
+      return;
+    }
+    const item: BetSlipDraftItem = {
+      fixtureId: row.fixtureId,
+      fixture: row.fixture,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
+      competition: row.competition,
+      scheduledAt: row.scheduledAt,
+      market: prediction!.market,
+      pick: prediction!.pick,
+      odds: prediction!.odds,
+      ev: null,
+      stakeOverride: null,
+    };
+    addItem(item);
+    if (draft.items.length === 0) open();
+  }
+
+  return <SlipButton inSlip={inSlip} onClick={handleClick} canal={canal} />;
+}
+
 function SlipButton({
   inSlip,
   onClick,
@@ -122,7 +188,7 @@ function SlipButton({
   onClick: (e: React.MouseEvent) => void;
   canal: Canal;
 }) {
-  const canalColor = canal === "EV" ? "var(--canal-ev)" : "var(--canal-sv)";
+  const canalColor = CANAL_COLOR[canal];
   return (
     <button
       type="button"

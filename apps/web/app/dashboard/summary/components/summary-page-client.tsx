@@ -2,7 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChartNoAxesColumn, CheckCircle2, LayoutList, X, XCircle } from "lucide-react";
+import {
+  ChartNoAxesColumn,
+  CheckCircle2,
+  LayoutList,
+  X,
+  XCircle,
+} from "lucide-react";
 import {
   Badge,
   Button,
@@ -19,6 +25,7 @@ import {
 import { useSummary } from "@/domains/summary/use-cases/get-summary";
 import { EvLineChart } from "@/components/charts/ev-line-chart";
 import { CanalBadge } from "@/components/canal-badge";
+import { Amount } from "@/components/amount";
 import {
   formatCombinedPickForDisplay,
   formatPickForDisplay,
@@ -115,7 +122,9 @@ function SimulationDrawer({
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
           <p className="text-sm text-muted-foreground">
             Si tu avais misé la même somme sur chacun des{" "}
-            <span className="font-semibold text-foreground">{picks.length} picks</span>{" "}
+            <span className="font-semibold text-foreground">
+              {picks.length} picks
+            </span>{" "}
             de la période filtrée, voici ce que tu aurais gagné ou perdu.
           </p>
 
@@ -167,16 +176,16 @@ function SimulationDrawer({
                   <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
                     Total misé
                   </p>
-                  <p className="mt-1 text-xl font-bold tabular-nums">
-                    {result.totalStaked.toFixed(2)}
+                  <p className="mt-1 text-xl font-bold">
+                    <Amount value={result.totalStaked} />
                   </p>
                 </div>
                 <div className="rounded-xl bg-secondary/50 p-3">
                   <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
                     Retourné
                   </p>
-                  <p className="mt-1 text-xl font-bold tabular-nums">
-                    {result.totalReturned.toFixed(2)}
+                  <p className="mt-1 text-xl font-bold">
+                    <Amount value={result.totalReturned} />
                   </p>
                 </div>
                 <div
@@ -188,12 +197,11 @@ function SimulationDrawer({
                     Gain net
                   </p>
                   <p
-                    className={`mt-1 text-xl font-bold tabular-nums ${
+                    className={`mt-1 text-xl font-bold ${
                       result.net >= 0 ? "text-success" : "text-destructive"
                     }`}
                   >
-                    {result.net >= 0 ? "+" : ""}
-                    {result.net.toFixed(2)}
+                    <Amount value={result.net} signed />
                   </p>
                   <p
                     className={`mt-0.5 text-xs tabular-nums ${
