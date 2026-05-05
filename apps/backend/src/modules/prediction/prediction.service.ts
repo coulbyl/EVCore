@@ -186,12 +186,15 @@ export type ChannelPredictionCandidate = {
 export function buildPredictionCandidate(
   channel: PredictionChannel,
   probabilities: ThreeWayProba & { bttsYes: Decimal },
+  drawOdds?: Decimal | null,
 ): ChannelPredictionCandidate {
   if (channel === PredictionChannel.DRAW) {
     return {
       market: Market.ONE_X_TWO,
       pick: 'DRAW',
-      probability: probabilities.draw,
+      probability: drawOdds
+        ? new Decimal(1).div(drawOdds)
+        : probabilities.draw,
     };
   }
 

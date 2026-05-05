@@ -770,6 +770,12 @@ export class BettingEngineService {
           shadow_congestion: shadowCongestion,
           shadow_lineups: null,
           shadow_injuries: null,
+          homeDrawRate: effectiveHomeStats
+            ? Number(effectiveHomeStats.drawRate)
+            : null,
+          awayDrawRate: effectiveAwayStats
+            ? Number(effectiveAwayStats.drawRate)
+            : null,
           candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
           evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks),
         },
@@ -926,6 +932,7 @@ export class BettingEngineService {
       modelRunId: modelRun.id,
       competition: competitionCode ?? '',
       probabilities,
+      drawOdds: latestOdds?.drawOdds ?? null,
     });
 
     return {

@@ -152,6 +152,11 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // SA backtest 2026-05-03: CONF signal never used (default 0.99). Scan
     // shows 65.4% hit rate at 0.50 on 335 picks — strong, activating now.
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    // SA analysis 2026-05-05: 1/drawOdds signal. Bracket [3.20–3.40) shows
+    // +13.6% ROI on 213 fixtures; <3.00 adds +7.8% ROI on 83 fixtures.
+    // threshold 0.293 = 1/3.41 → selects drawOdds < 3.41 (covers both sweet spots).
+    // Validation metric: ROI ≥ +5% (not hit rate — see DRAW-SA-ANALYSIS.md).
+    DRAW: { enabled: true, threshold: 0.293, minSampleN: 10 },
     // SA backtest 2026-05-03: 0.58 produced only 3 picks (INSUFFICIENT_DATA).
     // Serie A is a low-BTTS league; 0.52 is the only valid threshold
     // (60% hit rate, 115 picks, 12% coverage).
