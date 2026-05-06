@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, FixtureStatus, BetSource, Market } from '@evcore/db';
+import { Prisma, FixtureStatus, BetSource } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
@@ -12,7 +12,7 @@ import type {
 import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
 // ---------------------------------------------------------------------------
-// Output type
+// Output types
 // ---------------------------------------------------------------------------
 
 export type ScoredFixtureModelRun = {
@@ -74,7 +74,6 @@ export type ScoredFixtureRow = {
   status: string;
   score: string | null;
   htScore: string | null;
-  hasOdds: boolean;
   alreadyInUserTicket: boolean;
   modelRun: ScoredFixtureModelRun | null;
   safeValueBet: ScoredFixtureSvBet | null;
@@ -86,6 +85,7 @@ export type ScoredFixtureRow = {
 export type ScoredFixturesResult = {
   rows: ScoredFixtureRow[];
   total: number;
+  nextCursor: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -107,34 +107,36 @@ function matchesTimeSlot(date: Date, slot: keyof typeof TIME_SLOTS): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Sort: BET (EV desc) → NO_BET (finalScore desc) → sans modelRun
+// Cursor helpers
 // ---------------------------------------------------------------------------
 
-function sortByReliability(rows: ScoredFixtureRow[]): ScoredFixtureRow[] {
-  return rows.sort((a, b) => {
-    const aHasRun = a.modelRun !== null;
-    const bHasRun = b.modelRun !== null;
+type FixtureCursor = {
+  competitionName: string;
+  scheduledAt: string;
+  id: string;
+};
 
-    if (!aHasRun && !bHasRun) return 0;
-    if (!aHasRun) return 1;
-    if (!bHasRun) return -1;
+function decodeCursor(raw: string): FixtureCursor | null {
+  try {
+    return JSON.parse(
+      Buffer.from(raw, 'base64url').toString('utf8'),
+    ) as FixtureCursor;
+  } catch {
+    return null;
+  }
+}
 
-    const aIsBet = a.modelRun?.decision === 'BET';
-    const bIsBet = b.modelRun?.decision === 'BET';
-
-    if (aIsBet !== bIsBet) return aIsBet ? -1 : 1;
-
-    if (aIsBet) {
-      return (
-        parseFloat(b.modelRun?.ev ?? '0') - parseFloat(a.modelRun?.ev ?? '0')
-      );
-    }
-
-    return (
-      parseFloat(b.modelRun?.finalScore ?? '0') -
-      parseFloat(a.modelRun?.finalScore ?? '0')
-    );
-  });
+function encodeCursor(fixture: {
+  id: string;
+  scheduledAt: Date;
+  season: { competition: { name: string } };
+}): string {
+  const payload: FixtureCursor = {
+    competitionName: fixture.season.competition.name,
+    scheduledAt: fixture.scheduledAt.toISOString(),
+    id: fixture.id,
+  };
+  return Buffer.from(JSON.stringify(payload)).toString('base64url');
 }
 
 // ---------------------------------------------------------------------------
@@ -149,24 +151,55 @@ export class FixtureScoringService {
       FixtureScoringQueryDto,
       'decision' | 'status' | 'competition' | 'timeSlot' | 'betStatus'
     > = {},
-    userId?: string,
+    options: {
+      userId?: string;
+      cursor?: string;
+      limit?: number;
+    } = {},
   ): Promise<ScoredFixturesResult> {
-    const dateRange: Prisma.FixtureWhereInput = {
+    const { userId, cursor, limit = 25 } = options;
+
+    const baseWhere: Prisma.FixtureWhereInput = {
       scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) },
-    };
-
-    const where: Prisma.FixtureWhereInput = { ...dateRange };
-
-    if (filters.status) {
-      where.status = filters.status as FixtureStatus;
-    }
-
-    where.season = {
-      competition: {
-        isActive: true,
-        ...(filters.competition ? { code: filters.competition } : {}),
+      ...(filters.status ? { status: filters.status as FixtureStatus } : {}),
+      season: {
+        competition: {
+          isActive: true,
+          ...(filters.competition ? { code: filters.competition } : {}),
+        },
       },
     };
+
+    const decoded = cursor ? decodeCursor(cursor) : null;
+    const where: Prisma.FixtureWhereInput = decoded
+      ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                {
+                  season: {
+                    competition: { name: { gt: decoded.competitionName } },
+                  },
+                },
+                {
+                  season: {
+                    competition: { name: { equals: decoded.competitionName } },
+                  },
+                  scheduledAt: { gt: new Date(decoded.scheduledAt) },
+                },
+                {
+                  season: {
+                    competition: { name: { equals: decoded.competitionName } },
+                  },
+                  scheduledAt: { equals: new Date(decoded.scheduledAt) },
+                  id: { gt: decoded.id },
+                },
+              ],
+            },
+          ],
+        }
+      : baseWhere;
 
     const fixtures = await this.prisma.client.fixture.findMany({
       where,
@@ -185,19 +218,6 @@ export class FixtureScoringService {
             competition: { select: { code: true, name: true } },
           },
         },
-        oddsSnapshots: {
-          select: {
-            market: true,
-            homeOdds: true,
-            drawOdds: true,
-            awayOdds: true,
-            pick: true,
-            odds: true,
-          },
-          where: { market: { in: [Market.ONE_X_TWO, Market.BTTS] } },
-          orderBy: { snapshotAt: 'desc' as const },
-          take: 6,
-        },
         predictions: {
           select: {
             channel: true,
@@ -205,9 +225,8 @@ export class FixtureScoringService {
             pick: true,
             probability: true,
             correct: true,
-            createdAt: true,
           },
-          orderBy: [{ channel: 'asc' }, { createdAt: 'desc' }],
+          orderBy: { channel: 'asc' },
         },
         modelRuns: {
           select: {
@@ -242,14 +261,19 @@ export class FixtureScoringService {
       orderBy: [
         { season: { competition: { name: 'asc' } } },
         { scheduledAt: 'asc' },
+        { id: 'asc' },
       ],
+      take: limit + 1,
     });
 
+    const hasMore = fixtures.length > limit;
+    const fixturesPage = hasMore ? fixtures.slice(0, limit) : fixtures;
+
     const filteredFixtures = filters.timeSlot
-      ? fixtures.filter((f) =>
+      ? fixturesPage.filter((f) =>
           matchesTimeSlot(f.scheduledAt, filters.timeSlot!),
         )
-      : fixtures;
+      : fixturesPage;
 
     const userFixtureIds =
       userId && filteredFixtures.length > 0
@@ -297,40 +321,26 @@ export class FixtureScoringService {
       const predictionsByChannel = new Map<
         'CONF' | 'DRAW' | 'BTTS',
         (typeof f.predictions)[number]
-      >(f.predictions.map((prediction) => [prediction.channel, prediction]));
+      >(f.predictions.map((p) => [p.channel, p]));
+
       const mapPrediction = (
         channel: 'CONF' | 'DRAW' | 'BTTS',
       ): ScoredFixturePrediction | null => {
-        const prediction = predictionsByChannel.get(channel);
-        if (!prediction) return null;
+        const p = predictionsByChannel.get(channel);
+        if (!p) return null;
 
-        let odds: string | null = null;
-        if (channel === 'CONF' || channel === 'DRAW') {
-          const snap = f.oddsSnapshots.find(
-            (s) => s.market === Market.ONE_X_TWO,
-          );
-          if (snap) {
-            if (prediction.pick === 'HOME')
-              odds = snap.homeOdds ? toNumber(snap.homeOdds).toFixed(2) : null;
-            else if (prediction.pick === 'DRAW')
-              odds = snap.drawOdds ? toNumber(snap.drawOdds).toFixed(2) : null;
-            else if (prediction.pick === 'AWAY')
-              odds = snap.awayOdds ? toNumber(snap.awayOdds).toFixed(2) : null;
-          }
-        } else {
-          const snap = f.oddsSnapshots.find(
-            (s) => s.market === Market.BTTS && s.pick === prediction.pick,
-          );
-          if (snap?.odds) odds = toNumber(snap.odds).toFixed(2);
-        }
+        const targetMarket = channel === 'BTTS' ? 'BTTS' : 'ONE_X_TWO';
+        const evalSnap = featureDiag?.evaluatedPicks.find(
+          (ep) => ep.market === targetMarket && ep.pick === p.pick,
+        );
 
         return {
           channel,
-          market: prediction.market,
-          pick: prediction.pick,
-          probability: `${(toNumber(prediction.probability) * 100).toFixed(0)}%`,
-          correct: prediction.correct,
-          odds,
+          market: p.market,
+          pick: p.pick,
+          probability: `${(toNumber(p.probability) * 100).toFixed(0)}%`,
+          correct: p.correct,
+          odds: evalSnap?.odds ?? null,
         };
       };
 
@@ -351,7 +361,6 @@ export class FixtureScoringService {
           f.homeHtScore !== null && f.awayHtScore !== null
             ? `${f.homeHtScore} - ${f.awayHtScore}`
             : null,
-        hasOdds: f.oddsSnapshots.length > 0,
         alreadyInUserTicket: userFixtureIds.has(f.id),
         modelRun: run
           ? {
@@ -410,6 +419,10 @@ export class FixtureScoringService {
       rows = rows.filter((r) => r.modelRun?.betStatus === filters.betStatus);
     }
 
-    return { rows: sortByReliability(rows), total: rows.length };
+    const lastFixture = fixturesPage[fixturesPage.length - 1];
+    const nextCursor =
+      hasMore && lastFixture ? encodeCursor(lastFixture) : null;
+
+    return { rows, total: rows.length, nextCursor };
   }
 }

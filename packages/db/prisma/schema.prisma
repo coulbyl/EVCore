@@ -519,6 +519,7 @@ model Prediction {
 
   @@unique([fixtureId, channel])
   @@index([competition, channel, createdAt])
+  @@index([fixtureId, channel, createdAt])
   @@map("prediction")
 }
 

@@ -1,4 +1,13 @@
-import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class FixtureScoringQueryDto {
   @IsOptional()
@@ -25,4 +34,15 @@ export class FixtureScoringQueryDto {
   @IsOptional()
   @IsIn(['WON', 'LOST', 'PENDING'])
   betStatus?: 'WON' | 'LOST' | 'PENDING';
+
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

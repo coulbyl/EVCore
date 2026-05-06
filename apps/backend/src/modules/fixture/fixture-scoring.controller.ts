@@ -29,7 +29,11 @@ export class FixtureScoringController {
         timeSlot: query.timeSlot,
         betStatus: query.betStatus,
       },
-      session.user.id,
+      {
+        userId: session.user.id,
+        cursor: query.cursor,
+        limit: query.limit,
+      },
     );
   }
 }
