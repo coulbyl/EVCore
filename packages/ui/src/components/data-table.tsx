@@ -76,6 +76,8 @@ type DataTableProps<TData> = {
     pageSize?: number;
     pageSizeOptions?: number[];
   };
+  /** Rendered at the bottom of the scroll container — use for infinite-scroll sentinels. */
+  afterContent?: React.ReactNode;
 };
 
 // ── DataTable ──────────────────────────────────────────────────────────────
@@ -145,6 +147,7 @@ function DataTable<TData>({
   columnVisibility,
   className,
   pagination,
+  afterContent,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
   const [expanded, setExpanded] = React.useState<ExpandedState>({});
@@ -465,11 +468,13 @@ function DataTable<TData>({
               </React.Fragment>
             ))
           )}
+          {afterContent}
         </div>
         {paginationEl ? <div className="sm:hidden">{paginationEl}</div> : null}
         <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-[1.3rem] border border-border sm:flex sm:overflow-y-auto">
           {tableEl}
           {paginationEl}
+          {afterContent}
         </div>
       </div>
     );
@@ -484,6 +489,7 @@ function DataTable<TData>({
     >
       {tableEl}
       {paginationEl}
+      {afterContent}
     </div>
   );
 }

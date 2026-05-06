@@ -5,6 +5,8 @@ export type SummaryStats = {
   total: number;
   won: number;
   lost: number;
+  roi: string | null;
+  roiPickCount: number;
 };
 
 export type SummaryProgressionPoint = {

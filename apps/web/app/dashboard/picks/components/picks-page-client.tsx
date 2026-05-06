@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2,
   TrendingUp,
@@ -397,7 +397,16 @@ export function PicksPageClient() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const date = searchParams.get("date") ?? todayIso();
-  const { data, isLoading, isError } = usePicksOfTheDay(date);
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = usePicksOfTheDay(date);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState<FilterState>({ date });
 
@@ -405,16 +414,20 @@ export function PicksPageClient() {
     setFilters({ date });
   }, [date]);
 
-  const { ev, sv, conf, matchNul, btts } = useMemo(
-    () => groupByCanal(data?.rows ?? []),
+  const allRows = useMemo(
+    () => data?.pages.flatMap((p) => p.rows) ?? [],
     [data],
+  );
+
+  const { ev, sv, conf, matchNul, btts } = useMemo(
+    () => groupByCanal(allRows),
+    [allRows],
   );
 
   const hasAny =
     ev.length + sv.length + conf.length + matchNul.length + btts.length > 0;
 
-  const selectedRow =
-    (data?.rows ?? []).find((r) => r.fixtureId === selectedId) ?? null;
+  const selectedRow = allRows.find((r) => r.fixtureId === selectedId) ?? null;
 
   const defaultSelection =
     sv[0]?.fixtureId ??
@@ -430,11 +443,27 @@ export function PicksPageClient() {
 
   useEffect(() => {
     if (!selectedId) return;
-    const stillExists = (data?.rows ?? []).some(
-      (r) => r.fixtureId === selectedId,
-    );
+    const stillExists = allRows.some((r) => r.fixtureId === selectedId);
     if (!stillExists && defaultSelection) setSelectedId(defaultSelection);
-  }, [data?.rows, defaultSelection, selectedId]);
+  }, [allRows, defaultSelection, selectedId]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasNextPage) return;
+    const root = sentinel.closest(
+      '[class*="overflow-y-auto"]',
+    ) as HTMLElement | null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { root, threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleSelect(row: FixtureRow) {
     setSelectedId(row.fixtureId);
@@ -606,6 +635,16 @@ export function PicksPageClient() {
                         />
                       ))}
                     </CanalSection>
+
+                    <div ref={sentinelRef} className="h-4" />
+                    {isFetchingNextPage && (
+                      <div className="flex justify-center py-3">
+                        <Loader2
+                          size={18}
+                          className="animate-spin text-muted-foreground"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 

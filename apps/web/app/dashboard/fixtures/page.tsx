@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { Page, PageContent } from "@evcore/ui";
 import { todayIso } from "@/lib/date";
-import { getFixtures } from "@/domains/fixture/use-cases/get-fixtures";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import type { FixtureFilters } from "@/domains/fixture/types/fixture";
 import { FixturesFilters } from "./components/fixtures-filters";
@@ -26,28 +25,6 @@ function parseFilters(
   };
 }
 
-async function FixturesContent({
-  filters,
-  isAdmin,
-}: {
-  filters: FixtureFilters;
-  isAdmin: boolean;
-}) {
-  try {
-    const { rows, total } = await getFixtures(filters);
-    return <FixturesTable rows={rows} total={total} isAdmin={isAdmin} />;
-  } catch {
-    return (
-      <div className="rounded-[1.3rem] border border-destructive/20 bg-destructive/10 p-6 text-center">
-        <p className="font-semibold text-destructive">Backend indisponible</p>
-        <p className="mt-1 text-sm text-danger">
-          Vérifiez que le serveur est démarré.
-        </p>
-      </div>
-    );
-  }
-}
-
 export default async function FixturesPage({
   searchParams,
 }: {
@@ -67,15 +44,7 @@ export default async function FixturesPage({
           </Suspense>
 
           <div className="min-h-0 flex-1">
-            <Suspense
-              fallback={
-                <div className="py-16 text-center text-sm text-muted-foreground">
-                  Chargement des matchs...
-                </div>
-              }
-            >
-              <FixturesContent filters={filters} isAdmin={isAdmin} />
-            </Suspense>
+            <FixturesTable filters={filters} isAdmin={isAdmin} />
           </div>
         </div>
       </PageContent>

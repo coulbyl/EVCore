@@ -285,11 +285,15 @@ export class BetSlipService {
     return toBetSlipView(betSlip);
   }
 
-  async getSummary(userId: string, date?: Date): Promise<BetSlipSummaryView> {
+  async getSummary(
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<BetSlipSummaryView> {
     const [{ slipCount, wonBets, lostBets, pendingBets }, globalBets] =
       await Promise.all([
-        this.repository.getUserSummary(userId, date),
-        this.repository.getGlobalModelBets(date),
+        this.repository.getUserSummary(userId, from, to),
+        this.repository.getGlobalModelBets(from, to),
       ]);
 
     const settledBets = wonBets + lostBets;

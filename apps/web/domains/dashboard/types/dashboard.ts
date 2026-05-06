@@ -67,3 +67,33 @@ export type LeaderboardEntry = {
   settled: number;
   won: number;
 };
+
+export type ChannelStatus =
+  | "GREEN"
+  | "ORANGE"
+  | "RED"
+  | "INACTIVE"
+  | "INSUFFICIENT_DATA";
+
+export type ChannelHealthItem = {
+  channel: "EV" | "SV" | "CONF" | "BTTS" | "DRAW";
+  status: ChannelStatus;
+  primaryMetric: number;
+  primaryMetricType: "ROI" | "HIT_RATE";
+  roi: number | null;
+  hitRate: number | null;
+  vsThreshold: number | null;
+  sampleSize: number;
+};
+
+export type ChannelStatsItem = {
+  channel: "EV" | "SV" | "CONF" | "BTTS" | "DRAW";
+  hitRate: number | null;
+  avgThreshold: number | null;
+  vsThreshold: number | null;
+  roi: number | null;
+  netUnits: number | null;
+  sampleSize: number;
+  oddsAvailabilityRate: number;
+  trend: "UP" | "FLAT" | "DOWN";
+};

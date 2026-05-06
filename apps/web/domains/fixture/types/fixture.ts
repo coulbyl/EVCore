@@ -82,7 +82,6 @@ export type FixtureRow = {
   status: string;
   score: string | null;
   htScore: string | null;
-  hasOdds: boolean;
   alreadyInUserTicket: boolean;
   modelRun: FixtureModelRun | null;
   safeValueBet: FixtureSvBet | null;

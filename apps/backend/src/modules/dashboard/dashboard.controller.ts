@@ -1,10 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { IsDateString, IsIn, IsOptional } from 'class-validator';
+import { IsDateString, IsOptional } from 'class-validator';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { DashboardService } from './dashboard.service';
-import type { PnlPeriod } from './dashboard.types';
+import type { ChannelHealthItem, ChannelStatsItem } from './dashboard.types';
 
 class DashboardSummaryQueryDto {
   @IsOptional()
@@ -14,8 +14,12 @@ class DashboardSummaryQueryDto {
 
 class PnlQueryDto {
   @IsOptional()
-  @IsIn(['7d', '30d', 'all'])
-  period?: PnlPeriod;
+  @IsDateString()
+  from?: string;
+
+  @IsOptional()
+  @IsDateString()
+  to?: string;
 }
 
 @Controller('dashboard')
@@ -29,7 +33,14 @@ export class DashboardController {
 
   @Get('pnl')
   getPnlByCanal(@Query() query: PnlQueryDto) {
-    return this.dashboardService.getPnlByCanal(query.period ?? '30d');
+    const today = new Date().toISOString().slice(0, 10);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    return this.dashboardService.getPnlByCanal(
+      query.from ?? thirtyDaysAgo,
+      query.to ?? today,
+    );
   }
 
   @Get('competition-stats')
@@ -48,5 +59,15 @@ export class DashboardController {
   @Get('leaderboard')
   getLeaderboard() {
     return this.dashboardService.getLeaderboard();
+  }
+
+  @Get('channel-health')
+  getChannelHealth(): Promise<ChannelHealthItem[]> {
+    return this.dashboardService.getChannelHealth();
+  }
+
+  @Get('channel-stats')
+  getChannelStats(): Promise<ChannelStatsItem[]> {
+    return this.dashboardService.getChannelStats();
   }
 }

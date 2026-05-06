@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BetStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 
 @Injectable()
 export class BetSlipRepository {
@@ -60,10 +59,16 @@ export class BetSlipRepository {
     });
   }
 
-  async getUserSummary(userId: string, date?: Date) {
-    const fixtureFilter = date
-      ? { scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) } }
-      : undefined;
+  async getUserSummary(userId: string, from?: Date, to?: Date) {
+    const fixtureFilter =
+      from || to
+        ? {
+            scheduledAt: {
+              ...(from ? { gte: from } : {}),
+              ...(to ? { lte: to } : {}),
+            },
+          }
+        : undefined;
     const itemWhere = (status: BetStatus) => ({
       userId,
       bet: { status },
@@ -79,10 +84,16 @@ export class BetSlipRepository {
     return { slipCount, wonBets, lostBets, pendingBets };
   }
 
-  getGlobalModelBets(date?: Date) {
-    const fixtureFilter = date
-      ? { scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) } }
-      : undefined;
+  getGlobalModelBets(from?: Date, to?: Date) {
+    const fixtureFilter =
+      from || to
+        ? {
+            scheduledAt: {
+              ...(from ? { gte: from } : {}),
+              ...(to ? { lte: to } : {}),
+            },
+          }
+        : undefined;
     return this.prisma.client.bet.findMany({
       where: {
         modelRun: { decision: 'BET' },

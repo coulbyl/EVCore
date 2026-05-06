@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
-import { DatePicker } from "@evcore/ui";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -34,11 +31,16 @@ function RoiBadge({ roi, count }: { roi: string; count: number }) {
   );
 }
 
-export function OperatorPerformanceCard() {
+export function OperatorPerformanceCard({
+  from,
+  to,
+}: {
+  from?: string;
+  to?: string;
+}) {
   const t = useTranslations("dashboard.operatorCard");
   const tPerf = useTranslations("performance");
-  const [date, setDate] = useState<string | undefined>(undefined);
-  const { data, isLoading } = useOperatorSummary(date);
+  const { data, isLoading } = useOperatorSummary(from, to);
   const isMobile = useIsMobile();
 
   const slotCls = `min-w-0 rounded-[1.15rem] border border-border bg-panel ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"}`;
@@ -60,23 +62,6 @@ export function OperatorPerformanceCard() {
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
             {t("title")}
           </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <DatePicker
-            value={date ? new Date(date + "T12:00:00") : undefined}
-            onChange={(d) => setDate(d ? format(d, "yyyy-MM-dd") : undefined)}
-            placeholder={t("filterByDate")}
-            className="h-9 text-xs"
-          />
-          {date && (
-            <button
-              type="button"
-              onClick={() => setDate(undefined)}
-              className="h-9 cursor-pointer rounded-xl border border-border bg-panel px-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {t("allTime")}
-            </button>
-          )}
         </div>
       </div>
 

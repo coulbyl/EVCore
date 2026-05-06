@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ShoppingCart, Check, ChevronRight } from "lucide-react";
+import { Loader2, ShoppingCart, Check, ChevronRight } from "lucide-react";
 import {
   Badge,
   DataTable,
@@ -31,6 +31,8 @@ import type {
 } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
+import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
+import type { FixtureFilters } from "@/domains/fixture/types/fixture";
 
 // ---------------------------------------------------------------------------
 // Cell badge helpers
@@ -716,12 +718,10 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
 // ---------------------------------------------------------------------------
 
 export function FixturesTable({
-  rows,
-  total,
+  filters,
   isAdmin,
 }: {
-  rows: FixtureRow[];
-  total: number;
+  filters: FixtureFilters;
   isAdmin: boolean;
 }) {
   const t = useTranslations("table");
@@ -729,7 +729,36 @@ export function FixturesTable({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const selectedRow = rows.find((r) => r.fixtureId === selectedId) ?? null;
+  const {
+    allRows,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFixtures(filters);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasNextPage) return;
+    const root = sentinel.closest(
+      '[class*="overflow-y-auto"]',
+    ) as HTMLElement | null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { root, threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const selectedRow = allRows.find((r) => r.fixtureId === selectedId) ?? null;
   const columns = makeColumns(isAdmin);
 
   function handleRowClick(row: FixtureRow) {
@@ -737,11 +766,34 @@ export function FixturesTable({
     setDrawerOpen(true);
   }
 
+  if (isError) {
+    return (
+      <div className="rounded-[1.3rem] border border-destructive/20 bg-destructive/10 p-6 text-center">
+        <p className="font-semibold text-destructive">Backend indisponible</p>
+        <p className="mt-1 text-sm text-danger">
+          Vérifiez que le serveur est démarré.
+        </p>
+      </div>
+    );
+  }
+
+  const sentinel = (
+    <>
+      <div ref={sentinelRef} className="h-4" />
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-3">
+          <Loader2 size={18} className="animate-spin text-muted-foreground" />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <DataTable
         columns={columns}
-        data={rows}
+        data={allRows}
+        isLoading={isLoading}
         onRowClick={handleRowClick}
         emptyState={
           <div className="flex flex-col items-center gap-3 py-12 text-center">
@@ -761,14 +813,9 @@ export function FixturesTable({
             onSelect={() => handleRowClick(row)}
           />
         )}
+        afterContent={sentinel}
         className="flex-1"
       />
-
-      {rows.length > 0 && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          {rows.length} / {total} match{total > 1 ? "s" : ""}
-        </p>
-      )}
 
       <Drawer
         open={drawerOpen}

@@ -21,6 +21,7 @@ export type PredictionStatsResult = {
   total: number;
   correct: number;
   hitRate: string;
+  roi: string;
   byCompetition: {
     competition: string;
     total: number;
