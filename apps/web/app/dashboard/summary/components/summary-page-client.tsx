@@ -6,6 +6,7 @@ import {
   ChartNoAxesColumn,
   CheckCircle2,
   LayoutList,
+  TrendingUp,
   X,
   XCircle,
 } from "lucide-react";
@@ -445,7 +446,7 @@ export function SummaryPageClient() {
           </section>
 
           {/* Stats */}
-          <section className="grid grid-cols-3 gap-3 sm:gap-4">
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <StatCard
               compact={isMobile}
               icon={<LayoutList size={14} />}
@@ -474,6 +475,24 @@ export function SummaryPageClient() {
               delta={
                 data && data.stats.total > 0
                   ? `${Math.round((data.stats.lost / data.stats.total) * 100)}%`
+                  : undefined
+              }
+            />
+            <StatCard
+              compact={isMobile}
+              icon={<TrendingUp size={14} />}
+              label="ROI"
+              value={isLoading ? "—" : (data?.stats.roi ?? "—")}
+              tone={
+                data?.stats.roi == null
+                  ? "neutral"
+                  : data.stats.roi.startsWith("+")
+                    ? "success"
+                    : "danger"
+              }
+              delta={
+                data?.stats.roiPickCount
+                  ? `${data.stats.roiPickCount} picks`
                   : undefined
               }
             />

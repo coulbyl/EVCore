@@ -4,7 +4,7 @@ import { useState } from "react";
 import { StatCard, Tabs, TabsList, TabsTrigger } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import {
-  usePnlByCanal,
+  usePnlByCanalByPeriod,
   type PnlPeriod,
 } from "@/domains/dashboard/use-cases/get-pnl-by-canal";
 
@@ -20,7 +20,7 @@ export function OverviewSection() {
   const t = useTranslations("performancePage");
   const [period, setPeriod] = useState<PnlPeriod>("30d");
   const [canal, setCanal] = useState<Canal>("global");
-  const { data, isLoading } = usePnlByCanal(period);
+  const { data, isLoading } = usePnlByCanalByPeriod(period);
 
   const pnl = isLoading ? undefined : data?.[canal];
 

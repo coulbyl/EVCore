@@ -55,6 +55,24 @@ function periodDateRange(
   return { from: fromDate, to: toDate };
 }
 
+function computeFlatStakeRoi(picks: SummaryPickRow[]): {
+  roi: string | null;
+  roiPickCount: number;
+} {
+  const withOdds = picks.filter((p) => p.odds !== null);
+  if (!withOdds.length) return { roi: null, roiPickCount: 0 };
+  const totalReturned = withOdds.reduce((acc, p) => {
+    if (p.result === 'WON' && p.odds !== null) {
+      return acc + parseFloat(p.odds);
+    }
+    return acc;
+  }, 0);
+  const net = totalReturned - withOdds.length;
+  const roiPct = (net / withOdds.length) * 100;
+  const sign = roiPct >= 0 ? '+' : '';
+  return { roi: `${sign}${roiPct.toFixed(1)}%`, roiPickCount: withOdds.length };
+}
+
 function buildProgression(picks: SummaryPickRow[]): SummaryProgressionPoint[] {
   const sorted = [...picks].sort((a, b) =>
     a.scheduledAt.localeCompare(b.scheduledAt),
@@ -97,10 +115,13 @@ export class SummaryService {
     const won = picks.filter((p) => p.result === 'WON');
     const lost = picks.filter((p) => p.result === 'LOST');
 
+    const { roi, roiPickCount } = computeFlatStakeRoi(picks);
     const stats: SummaryStats = {
       total: picks.length,
       won: won.length,
       lost: lost.length,
+      roi,
+      roiPickCount,
     };
 
     const sorted = [

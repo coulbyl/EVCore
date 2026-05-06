@@ -21,10 +21,12 @@ export class BetSlipController {
   @Get('summary')
   getSummary(
     @CurrentSession() session: AuthSession,
-    @Query('date') date?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    const parsed = date ? new Date(date) : undefined;
-    return this.betSlipService.getSummary(session.user.id, parsed);
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(`${to}T23:59:59.999Z`) : undefined;
+    return this.betSlipService.getSummary(session.user.id, fromDate, toDate);
   }
 
   @Get()

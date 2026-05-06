@@ -2,30 +2,20 @@
 
 import { TrendingUp, Shield, Target, Minus, Activity } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  usePredictions,
-  usePredictionStats,
-} from "@/domains/dashboard/use-cases/get-predictions";
-import type { PnlSummary } from "@/domains/dashboard/types/dashboard";
+import { usePredictionStats } from "@/domains/dashboard/use-cases/get-predictions";
+import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
+import { usePnlByCanal } from "@/domains/dashboard/use-cases/get-pnl-by-canal";
+import type {
+  ChannelHealthItem,
+  ChannelStatus,
+} from "@/domains/dashboard/types/dashboard";
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-function thirtyDaysAgoIso() {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 30);
-  return d.toISOString().slice(0, 10);
-}
-
-// ---------------------------------------------------------------------------
-// Shared card shell
-// ---------------------------------------------------------------------------
-
-type CanalShellProps = {
-  canal: "ev" | "sv" | "conf" | "draw" | "btts";
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
+const STATUS_DOT: Record<ChannelStatus, string> = {
+  GREEN: "bg-success",
+  ORANGE: "bg-warning",
+  RED: "bg-danger",
+  INACTIVE: "bg-muted-foreground/30",
+  INSUFFICIENT_DATA: "bg-muted-foreground/50",
 };
 
 const CANAL_STYLES = {
@@ -56,7 +46,41 @@ const CANAL_STYLES = {
   },
 } as const;
 
-function CanalShell({ canal, icon, label, children }: CanalShellProps) {
+type Canal = keyof typeof CANAL_STYLES;
+
+const SKELETON = <div className="h-4 w-12 animate-pulse rounded bg-border" />;
+
+type StatRow = { label: string; value: React.ReactNode; sub?: string };
+
+function Stat({ label, value, sub }: StatRow) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="tabular-nums text-sm font-semibold text-foreground">
+        {value}
+        {sub && (
+          <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">
+            {sub}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function CanalCard({
+  canal,
+  icon,
+  label,
+  status,
+  rows,
+}: {
+  canal: Canal;
+  icon: React.ReactNode;
+  label: string;
+  status?: ChannelStatus;
+  rows: [StatRow, StatRow, StatRow];
+}) {
   const s = CANAL_STYLES[canal];
   return (
     <div
@@ -79,215 +103,114 @@ function CanalShell({ canal, icon, label, children }: CanalShellProps) {
         >
           {label}
         </span>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  sub,
-  highlight,
-}: {
-  label: string;
-  value: React.ReactNode;
-  sub?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span
-        className={`tabular-nums text-sm font-semibold ${highlight ? "text-foreground" : "text-foreground"}`}
-      >
-        {value}
-        {sub && (
-          <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">
-            {sub}
-          </span>
-        )}
-      </span>
-    </div>
-  );
-}
-
-const SKELETON = <div className="h-4 w-12 animate-pulse rounded bg-border" />;
-
-// ---------------------------------------------------------------------------
-// Canal EV
-// ---------------------------------------------------------------------------
-
-function CanalEvCard({ pnl }: { pnl: PnlSummary | null }) {
-  const t = useTranslations("performance");
-  const tPicks = useTranslations("picks");
-  return (
-    <CanalShell
-      canal="ev"
-      icon={<TrendingUp size={14} />}
-      label={tPicks("evChannel")}
-    >
-      {pnl ? (
-        <>
-          <Stat label={t("roi")} value={pnl.roi} />
-          <Stat label={t("settledBets")} value={pnl.settledBets} />
-          <Stat label={t("winRate")} value={pnl.winRate} />
-        </>
-      ) : (
-        <>
-          <Stat label={t("roi")} value={SKELETON} />
-          <Stat label={t("settledBets")} value={SKELETON} />
-          <Stat label={t("winRate")} value={SKELETON} />
-        </>
-      )}
-    </CanalShell>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Canal Sécurité
-// ---------------------------------------------------------------------------
-
-function CanalSvCard({ pnl }: { pnl: PnlSummary | null }) {
-  const t = useTranslations("performance");
-  const tPicks = useTranslations("picks");
-  return (
-    <CanalShell
-      canal="sv"
-      icon={<Shield size={14} />}
-      label={tPicks("safeValue")}
-    >
-      {pnl ? (
-        <>
-          <Stat label={t("netGain")} value={pnl.netUnits} sub="u" />
-          <Stat label={t("settledBets")} value={pnl.settledBets} />
-          <Stat
-            label={t("won")}
-            value={`${pnl.wonBets}`}
-            sub={`/ ${pnl.settledBets}`}
+        {status && (
+          <span
+            className={`ml-auto size-2 shrink-0 rounded-full ${STATUS_DOT[status]}`}
           />
-        </>
-      ) : (
-        <>
-          <Stat label={t("netGain")} value={SKELETON} />
-          <Stat label={t("settledBets")} value={SKELETON} />
-          <Stat label={t("won")} value={SKELETON} />
-        </>
-      )}
-    </CanalShell>
+        )}
+      </div>
+      {rows.map((r, i) => (
+        <Stat key={i} label={r.label} value={r.value} sub={r.sub} />
+      ))}
+    </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Canal Confiance
-// ---------------------------------------------------------------------------
-
-function CanalConfCard() {
-  const today = todayIso();
-  const from = thirtyDaysAgoIso();
-
-  const { data: predictions = [] } = usePredictions(today, "CONF");
-  const { data: stats } = usePredictionStats(from, today, "CONF");
-
-  const settled = predictions.filter((p) => p.correct !== null);
-  const correct = settled.filter((p) => p.correct === true).length;
-  const todayRate =
-    settled.length > 0
-      ? `${Math.round((correct / settled.length) * 100)}%`
-      : "—";
-
+export function CanalCards({ from, to }: { from: string; to: string }) {
+  const t = useTranslations("performance");
   const tPicks = useTranslations("picks");
-  return (
-    <CanalShell
-      canal="conf"
-      icon={<Target size={14} />}
-      label={tPicks("confidence")}
-    >
-      <Stat
-        label="Aujourd'hui"
-        value={`${correct}/${settled.length}`}
-        sub={
-          predictions.length > settled.length
-            ? `(${predictions.length - settled.length} en attente)`
-            : undefined
-        }
-      />
-      <Stat label="Taux du jour" value={todayRate} />
-      <Stat
-        label="30 jours"
-        value={stats ? stats.hitRate : SKELETON}
-        sub={stats ? `${stats.correct}/${stats.total} picks` : undefined}
-      />
-    </CanalShell>
-  );
-}
+  const { data: healthItems = [] } = useChannelHealth();
+  const { data: pnlByCanal } = usePnlByCanal(from, to);
+  const { data: confStats } = usePredictionStats(from, to, "CONF");
+  const { data: drawStats } = usePredictionStats(from, to, "DRAW");
+  const { data: bttsStats } = usePredictionStats(from, to, "BTTS");
 
-function PredictionCanalCard({
-  canal,
-  channel,
-  icon,
-  label,
-}: {
-  canal: "draw" | "btts";
-  channel: "DRAW" | "BTTS";
-  icon: React.ReactNode;
-  label: string;
-}) {
-  const today = todayIso();
-  const from = thirtyDaysAgoIso();
-  const { data: predictions = [] } = usePredictions(today, channel);
-  const { data: stats } = usePredictionStats(from, today, channel);
-  const settled = predictions.filter((p) => p.correct !== null);
-  const correct = settled.filter((p) => p.correct === true).length;
-  const todayRate =
-    settled.length > 0
-      ? `${Math.round((correct / settled.length) * 100)}%`
-      : "—";
+  const findStatus = (ch: ChannelHealthItem["channel"]) =>
+    healthItems.find((h) => h.channel === ch)?.status;
 
-  return (
-    <CanalShell canal={canal} icon={icon} label={label}>
-      <Stat
-        label="Aujourd'hui"
-        value={`${correct}/${settled.length}`}
-        sub={
-          predictions.length > settled.length
-            ? `(${predictions.length - settled.length} en attente)`
-            : undefined
-        }
-      />
-      <Stat label="Taux du jour" value={todayRate} />
-      <Stat
-        label="30 jours"
-        value={stats ? stats.hitRate : SKELETON}
-        sub={stats ? `${stats.correct}/${stats.total} picks` : undefined}
-      />
-    </CanalShell>
-  );
-}
+  const ev = pnlByCanal?.ev ?? null;
+  const sv = pnlByCanal?.sv ?? null;
 
-// ---------------------------------------------------------------------------
-// Public export
-// ---------------------------------------------------------------------------
-
-export function CanalCards({ pnl }: { pnl: PnlSummary | null }) {
-  const tPicks = useTranslations("picks");
   return (
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <CanalEvCard pnl={pnl} />
-      <CanalSvCard pnl={pnl} />
-      <CanalConfCard />
-      <PredictionCanalCard
+      <CanalCard
+        canal="ev"
+        icon={<TrendingUp size={14} />}
+        label={tPicks("evChannel")}
+        status={findStatus("EV")}
+        rows={[
+          { label: t("roi"), value: ev ? ev.roi : SKELETON },
+          { label: t("settledBets"), value: ev ? ev.settledBets : SKELETON },
+          { label: t("winRate"), value: ev ? ev.winRate : SKELETON },
+        ]}
+      />
+      <CanalCard
+        canal="sv"
+        icon={<Shield size={14} />}
+        label={tPicks("safeValue")}
+        status={findStatus("SV")}
+        rows={[
+          { label: t("roi"), value: sv ? sv.roi : SKELETON },
+          { label: t("settledBets"), value: sv ? sv.settledBets : SKELETON },
+          { label: t("winRate"), value: sv ? sv.winRate : SKELETON },
+        ]}
+      />
+      <CanalCard
+        canal="conf"
+        icon={<Target size={14} />}
+        label={tPicks("confidence")}
+        status={findStatus("CONF")}
+        rows={[
+          { label: t("roi"), value: confStats ? confStats.roi : SKELETON },
+          {
+            label: t("settledBets"),
+            value: confStats
+              ? `${confStats.correct}/${confStats.total}`
+              : SKELETON,
+          },
+          {
+            label: t("winRate"),
+            value: confStats ? confStats.hitRate : SKELETON,
+          },
+        ]}
+      />
+      <CanalCard
         canal="draw"
-        channel="DRAW"
         icon={<Minus size={14} />}
         label={tPicks("matchNull")}
+        status={findStatus("DRAW")}
+        rows={[
+          { label: t("roi"), value: drawStats ? drawStats.roi : SKELETON },
+          {
+            label: t("settledBets"),
+            value: drawStats
+              ? `${drawStats.correct}/${drawStats.total}`
+              : SKELETON,
+          },
+          {
+            label: t("winRate"),
+            value: drawStats ? drawStats.hitRate : SKELETON,
+          },
+        ]}
       />
-      <PredictionCanalCard
+      <CanalCard
         canal="btts"
-        channel="BTTS"
         icon={<Activity size={14} />}
         label={tPicks("btts")}
+        status={findStatus("BTTS")}
+        rows={[
+          { label: t("roi"), value: bttsStats ? bttsStats.roi : SKELETON },
+          {
+            label: t("settledBets"),
+            value: bttsStats
+              ? `${bttsStats.correct}/${bttsStats.total}`
+              : SKELETON,
+          },
+          {
+            label: t("winRate"),
+            value: bttsStats ? bttsStats.hitRate : SKELETON,
+          },
+        ]}
       />
     </section>
   );

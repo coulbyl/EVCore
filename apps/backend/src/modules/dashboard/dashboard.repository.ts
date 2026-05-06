@@ -3,7 +3,9 @@ import {
   BetSource,
   BetStatus,
   FixtureStatus,
+  Market,
   NotificationType,
+  PredictionChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
@@ -148,18 +150,17 @@ export class DashboardRepository {
     };
   }
 
-  getSettledBetsForPnl(since: Date | null) {
+  getSettledBetsForPnl(opts: { since: Date | null; until: Date | null }) {
+    const scheduledAt = {
+      ...(opts.since ? { gte: opts.since } : {}),
+      ...(opts.until ? { lte: opts.until } : {}),
+    };
+    const hasRange = opts.since !== null || opts.until !== null;
     return this.prisma.client.bet.findMany({
       where: {
         source: BetSource.MODEL,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
-        ...(since
-          ? {
-              modelRun: {
-                fixture: { scheduledAt: { gte: since } },
-              },
-            }
-          : {}),
+        ...(hasRange ? { modelRun: { fixture: { scheduledAt } } } : {}),
       },
       select: {
         status: true,
@@ -227,6 +228,43 @@ export class DashboardRepository {
         },
       }),
     ]);
+  }
+
+  findRecentModelBets(isSafeValue: boolean, take: number) {
+    return this.prisma.client.bet.findMany({
+      where: {
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        source: BetSource.MODEL,
+        isSafeValue,
+        oddsSnapshot: { not: null },
+      },
+      select: { status: true, oddsSnapshot: true, stakePct: true },
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+  }
+
+  findRecentSettledPredictions(channel: PredictionChannel, take: number) {
+    const market =
+      channel === PredictionChannel.BTTS ? Market.BTTS : Market.ONE_X_TWO;
+    return this.prisma.client.prediction.findMany({
+      where: { channel, correct: { not: null } },
+      select: {
+        correct: true,
+        pick: true,
+        fixture: {
+          select: {
+            oddsSnapshots: {
+              where: { market },
+              orderBy: { snapshotAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { settledAt: 'desc' },
+      take,
+    });
   }
 
   getLeaderboardData() {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
-import type { Market, Prisma, PredictionChannel } from '@evcore/db';
+import { Market, PredictionChannel } from '@evcore/db';
+import type { Prisma } from '@evcore/db';
 
 export type PredictionCreateInput = {
   fixtureId: string;
@@ -117,8 +118,10 @@ export class PredictionRepository {
     to: Date;
     competition?: string;
     channel?: PredictionChannel;
-  }): Promise<{ competition: string; correct: boolean | null }[]> {
+  }) {
     const { from, to, competition, channel } = input;
+    const market =
+      channel === PredictionChannel.BTTS ? Market.BTTS : Market.ONE_X_TWO;
     const where: Prisma.PredictionWhereInput = {
       fixture: { scheduledAt: { gte: from, lte: to } },
       correct: { not: null },
@@ -127,8 +130,21 @@ export class PredictionRepository {
     };
     return this.prisma.client.prediction.findMany({
       where,
-      select: { competition: true, correct: true },
-    }) as Promise<{ competition: string; correct: boolean | null }[]>;
+      select: {
+        competition: true,
+        correct: true,
+        pick: true,
+        fixture: {
+          select: {
+            oddsSnapshots: {
+              where: { market },
+              orderBy: { snapshotAt: 'desc' as const },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
   }
 
   findPendingForFixture(fixtureId: string): Promise<PredictionRow[]> {

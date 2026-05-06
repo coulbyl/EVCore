@@ -14,15 +14,24 @@ export type OperatorSummary = {
   globalRoiBetCount: number;
 };
 
-async function fetchOperatorSummary(date?: string): Promise<OperatorSummary> {
-  const path = date ? `/bet-slips/summary?date=${date}` : "/bet-slips/summary";
-  return authRequest<OperatorSummary>(path, { method: "GET" });
+async function fetchOperatorSummary(
+  from?: string,
+  to?: string,
+): Promise<OperatorSummary> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.toString();
+  return authRequest<OperatorSummary>(
+    `/bet-slips/summary${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+  );
 }
 
-export function useOperatorSummary(date?: string) {
+export function useOperatorSummary(from?: string, to?: string) {
   return useQuery({
-    queryKey: ["operator-summary", date ?? null],
-    queryFn: () => fetchOperatorSummary(date),
+    queryKey: ["operator-summary", from ?? null, to ?? null],
+    queryFn: () => fetchOperatorSummary(from, to),
     staleTime: 60_000,
   });
 }

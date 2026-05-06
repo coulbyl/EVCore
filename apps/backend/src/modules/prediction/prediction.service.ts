@@ -32,6 +32,7 @@ export type PredictionStats = {
   total: number;
   correct: number;
   hitRate: string;
+  roi: string;
   byCompetition: {
     competition: string;
     total: number;
@@ -145,6 +146,7 @@ export class PredictionService {
       total,
       correct,
       hitRate,
+      roi: computePredRoi(rows),
       byCompetition: Array.from(byComp.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([comp, agg]) => ({
@@ -175,6 +177,33 @@ export class PredictionService {
       createdAt: r.createdAt.toISOString(),
     };
   }
+}
+
+type StatsRow = Awaited<
+  ReturnType<PredictionRepository['findForStats']>
+>[number];
+
+function pickOddsFromRow(row: StatsRow): number | null {
+  const snap = row.fixture.oddsSnapshots[0];
+  if (!snap) return null;
+  if (row.pick === 'HOME') return snap.homeOdds ? Number(snap.homeOdds) : null;
+  if (row.pick === 'AWAY') return snap.awayOdds ? Number(snap.awayOdds) : null;
+  if (row.pick === 'DRAW') return snap.drawOdds ? Number(snap.drawOdds) : null;
+  return snap.odds ? Number(snap.odds) : null;
+}
+
+function computePredRoi(rows: StatsRow[]): string {
+  const withOdds = rows
+    .filter((r): r is StatsRow & { correct: boolean } => r.correct !== null)
+    .map((r) => ({ correct: r.correct, odds: pickOddsFromRow(r) }))
+    .filter((r): r is { correct: boolean; odds: number } => r.odds !== null);
+  if (!withOdds.length) return '—';
+  const returned = withOdds.reduce(
+    (acc, r) => acc + (r.correct ? r.odds : 0),
+    0,
+  );
+  const roi = ((returned - withOdds.length) / withOdds.length) * 100;
+  return `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`;
 }
 
 export type ChannelPredictionCandidate = {
