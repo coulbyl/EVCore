@@ -134,6 +134,7 @@ export function AddPredictionToSlipInline({
   canal: "CONF" | "DRAW" | "BTTS";
 }) {
   const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
+  const modelRunId = row.modelRun?.modelRunId;
 
   const prediction =
     canal === "DRAW"
@@ -142,7 +143,12 @@ export function AddPredictionToSlipInline({
         ? row.bttsPrediction
         : row.prediction;
 
-  if (!prediction || prediction.correct !== null || !isFixtureBettable(row)) {
+  if (
+    !prediction ||
+    !modelRunId ||
+    prediction.correct !== null ||
+    !isFixtureBettable(row)
+  ) {
     return null;
   }
 
@@ -160,6 +166,7 @@ export function AddPredictionToSlipInline({
       return;
     }
     const item: BetSlipDraftItem = {
+      modelRunId,
       fixtureId: row.fixtureId,
       fixture: row.fixture,
       homeLogo: row.homeLogo,

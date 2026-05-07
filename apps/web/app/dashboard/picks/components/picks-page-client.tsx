@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   TrendingUp,
@@ -397,16 +397,7 @@ export function PicksPageClient() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const date = searchParams.get("date") ?? todayIso();
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = usePicksOfTheDay(date);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const { data, isLoading, isError } = usePicksOfTheDay(date);
 
   const [filters, setFilters] = useState<FilterState>({ date });
 
@@ -414,10 +405,7 @@ export function PicksPageClient() {
     setFilters({ date });
   }, [date]);
 
-  const allRows = useMemo(
-    () => data?.pages.flatMap((p) => p.rows) ?? [],
-    [data],
-  );
+  const allRows = useMemo(() => data?.rows ?? [], [data]);
 
   const { ev, sv, conf, matchNul, btts } = useMemo(
     () => groupByCanal(allRows),
@@ -446,24 +434,6 @@ export function PicksPageClient() {
     const stillExists = allRows.some((r) => r.fixtureId === selectedId);
     if (!stillExists && defaultSelection) setSelectedId(defaultSelection);
   }, [allRows, defaultSelection, selectedId]);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasNextPage) return;
-    const root = sentinel.closest(
-      '[class*="overflow-y-auto"]',
-    ) as HTMLElement | null;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
-          void fetchNextPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleSelect(row: FixtureRow) {
     setSelectedId(row.fixtureId);
@@ -635,16 +605,6 @@ export function PicksPageClient() {
                         />
                       ))}
                     </CanalSection>
-
-                    <div ref={sentinelRef} className="h-4" />
-                    {isFetchingNextPage && (
-                      <div className="flex justify-center py-3">
-                        <Loader2
-                          size={18}
-                          className="animate-spin text-muted-foreground"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
 
