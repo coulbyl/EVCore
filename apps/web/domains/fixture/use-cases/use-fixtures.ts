@@ -1,32 +1,22 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type { FixtureFilters, FixtureRow } from "../types/fixture";
 
-type FixturesPage = {
+type FixturesResponse = {
   rows: FixtureRow[];
   total: number;
-  nextCursor: string | null;
 };
 
-const FIXTURES_PAGE_LIMIT = 25;
-
-function buildParams(
-  filters: FixtureFilters,
-  cursor?: string,
-): URLSearchParams {
-  const params = new URLSearchParams({
-    date: filters.date,
-    limit: String(FIXTURES_PAGE_LIMIT),
-  });
+function buildParams(filters: FixtureFilters): URLSearchParams {
+  const params = new URLSearchParams({ date: filters.date });
   if (filters.competition !== "ALL")
     params.set("competition", filters.competition);
   if (filters.decision !== "ALL") params.set("decision", filters.decision);
   if (filters.status !== "ALL") params.set("status", filters.status);
   if (filters.timeSlot !== "ALL") params.set("timeSlot", filters.timeSlot);
   if (filters.betStatus !== "ALL") params.set("betStatus", filters.betStatus);
-  if (cursor) params.set("cursor", cursor);
   return params;
 }
 
@@ -46,22 +36,18 @@ function filterByCanal(
 }
 
 export function useFixtures(filters: FixtureFilters) {
-  const query = useInfiniteQuery({
+  const query = useQuery({
     queryKey: ["fixtures", filters],
-    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      clientApiRequest<FixturesPage>(
-        `/fixture?${buildParams(filters, pageParam).toString()}`,
+    queryFn: () =>
+      clientApiRequest<FixturesResponse>(
+        `/fixture?${buildParams(filters).toString()}`,
         { fallbackErrorMessage: "Impossible de charger les fixtures." },
       ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 30_000,
   });
 
-  const allRows = (query.data?.pages ?? []).flatMap((p) =>
-    filterByCanal(p.rows, filters.canal),
-  );
-  const total = query.data?.pages[query.data.pages.length - 1]?.total ?? 0;
+  const allRows = filterByCanal(query.data?.rows ?? [], filters.canal);
+  const total = query.data?.total ?? 0;
 
   return { ...query, allRows, total };
 }

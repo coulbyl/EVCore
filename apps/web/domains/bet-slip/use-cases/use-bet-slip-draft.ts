@@ -18,6 +18,16 @@ function emptyDraft(unitStake = DEFAULT_UNIT_STAKE): BetSlipDraft {
   return { items: [], unitStake, type: DEFAULT_TYPE };
 }
 
+function isValidDraftItem(item: unknown): item is BetSlipDraftItem {
+  if (!item || typeof item !== "object") return false;
+
+  const draftItem = item as Partial<BetSlipDraftItem>;
+  return Boolean(
+    draftItem.betId ||
+    (draftItem.modelRunId && draftItem.market && draftItem.pick),
+  );
+}
+
 function resolveInitialUnit(
   session: AuthSessionUser | null,
   currentBalance: number | null,
@@ -40,7 +50,9 @@ function normalizeDraft(
   draft: Partial<BetSlipDraft>,
   fallbackUnitStake: number,
 ): BetSlipDraft {
-  const items = Array.isArray(draft.items) ? draft.items : [];
+  const items = Array.isArray(draft.items)
+    ? draft.items.filter(isValidDraftItem)
+    : [];
   const hasExplicitStake = typeof draft.unitStake === "number";
   return {
     items,

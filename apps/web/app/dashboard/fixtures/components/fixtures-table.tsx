@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Loader2, ShoppingCart, Check, ChevronRight } from "lucide-react";
@@ -729,34 +729,7 @@ export function FixturesTable({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const {
-    allRows,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useFixtures(filters);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasNextPage) return;
-    const root = sentinel.closest(
-      '[class*="overflow-y-auto"]',
-    ) as HTMLElement | null;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
-          void fetchNextPage();
-        }
-      },
-      { root, threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { allRows, isLoading, isError } = useFixtures(filters);
 
   const selectedRow = allRows.find((r) => r.fixtureId === selectedId) ?? null;
   const columns = makeColumns(isAdmin);
@@ -776,17 +749,6 @@ export function FixturesTable({
       </div>
     );
   }
-
-  const sentinel = (
-    <>
-      <div ref={sentinelRef} className="h-4" />
-      {isFetchingNextPage && (
-        <div className="flex justify-center py-3">
-          <Loader2 size={18} className="animate-spin text-muted-foreground" />
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -813,7 +775,6 @@ export function FixturesTable({
             onSelect={() => handleRowClick(row)}
           />
         )}
-        afterContent={sentinel}
         className="flex-1"
       />
 

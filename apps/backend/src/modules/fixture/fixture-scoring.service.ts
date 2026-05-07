@@ -157,7 +157,8 @@ export class FixtureScoringService {
       limit?: number;
     } = {},
   ): Promise<ScoredFixturesResult> {
-    const { userId, cursor, limit = 25 } = options;
+    const { userId, cursor, limit } = options;
+    const usePagination = limit != null;
 
     const baseWhere: Prisma.FixtureWhereInput = {
       scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) },
@@ -170,7 +171,7 @@ export class FixtureScoringService {
       },
     };
 
-    const decoded = cursor ? decodeCursor(cursor) : null;
+    const decoded = usePagination && cursor ? decodeCursor(cursor) : null;
     const where: Prisma.FixtureWhereInput = decoded
       ? {
           AND: [
@@ -263,10 +264,10 @@ export class FixtureScoringService {
         { scheduledAt: 'asc' },
         { id: 'asc' },
       ],
-      take: limit + 1,
+      ...(usePagination ? { take: limit + 1 } : {}),
     });
 
-    const hasMore = fixtures.length > limit;
+    const hasMore = usePagination && fixtures.length > limit;
     const fixturesPage = hasMore ? fixtures.slice(0, limit) : fixtures;
 
     const filteredFixtures = filters.timeSlot
@@ -421,7 +422,9 @@ export class FixtureScoringService {
 
     const lastFixture = fixturesPage[fixturesPage.length - 1];
     const nextCursor =
-      hasMore && lastFixture ? encodeCursor(lastFixture) : null;
+      usePagination && hasMore && lastFixture
+        ? encodeCursor(lastFixture)
+        : null;
 
     return { rows, total: rows.length, nextCursor };
   }
