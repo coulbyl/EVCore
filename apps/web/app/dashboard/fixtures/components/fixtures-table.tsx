@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Loader2, ShoppingCart, Check, ChevronRight } from "lucide-react";
+import { ShoppingCart, Check, ChevronRight } from "lucide-react";
 import {
   Badge,
   DataTable,
