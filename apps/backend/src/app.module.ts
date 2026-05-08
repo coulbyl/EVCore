@@ -21,6 +21,7 @@ import { GamificationModule } from './modules/gamification/gamification.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 import { SummaryModule } from './modules/summary/summary.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { SummaryModule } from './modules/summary/summary.module';
     AdminUsersModule,
     FormationProgressModule,
     SummaryModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

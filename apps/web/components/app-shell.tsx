@@ -112,6 +112,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           : null,
         isAdmin
           ? {
+              label: tNav("announcements"),
+              href: "/dashboard/announcements",
+              active: pathname.startsWith("/dashboard/announcements"),
+            }
+          : null,
+        isAdmin
+          ? {
               label: tNav("glossary"),
               href: "/dashboard/glossaire",
               active: pathname === "/dashboard/glossaire",

@@ -5,6 +5,7 @@ import {
   Page,
   PageContent,
   FilterBar,
+  Skeleton,
   type FilterDef,
   type FilterState,
 } from "@evcore/ui";
@@ -12,8 +13,7 @@ import { OperatorPerformanceCard } from "./operator-performance-card";
 import { Announcements } from "@/components/announcements";
 import { DashboardSharedSection } from "./dashboard-shared-section";
 import { CanalCards } from "./canal-cards";
-import { GraduationCap } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useDashboardAnnouncements } from "@/domains/announcements/use-cases/get-dashboard-announcements";
 
 const FILTER_DEFS: FilterDef[] = [
   { key: "range", label: "Période", type: "daterange" },
@@ -38,8 +38,8 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 export function DashboardPageClientOperator() {
-  const tFormation = useTranslations("dashboard.announcements.formation");
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const announcementsQuery = useDashboardAnnouncements();
 
   const range = filters.range as DateRange | undefined;
   const fromIso = range?.from ? isoDate(range.from) : isoDate(thirtyDaysAgo());
@@ -49,17 +49,21 @@ export function DashboardPageClientOperator() {
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5">
-          <Announcements
-            items={[
-              {
-                id: "formation",
-                icon: <GraduationCap size={16} />,
-                title: tFormation("title"),
-                description: tFormation("description"),
-                href: "/dashboard/formation",
-              },
-            ]}
-          />
+          {announcementsQuery.isLoading ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-20 rounded-2xl" />
+            </div>
+          ) : (
+            <Announcements
+              items={(announcementsQuery.data ?? []).map((item) => ({
+                id: item.id,
+                title: item.title,
+                description: item.description ?? undefined,
+                href: item.href,
+              }))}
+            />
+          )}
 
           <FilterBar
             filters={FILTER_DEFS}

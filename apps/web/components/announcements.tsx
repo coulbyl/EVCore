@@ -15,8 +15,33 @@ type Announcement = {
   href: string;
 };
 
-function storageKey(id: string) {
-  return `evcore:dashboard:announcements:dismissed:${id}:v1`;
+export type AnnouncementItem = Announcement;
+
+const DISMISSED_STORAGE_KEY = "evcore:dashboard:announcements:dismissed:v1";
+
+type DismissedStore = {
+  ids: string[];
+};
+
+function readDismissedIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DISMISSED_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw) as Partial<DismissedStore>;
+    return Array.isArray(parsed.ids)
+      ? parsed.ids.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDismissedIds(ids: string[]): void {
+  localStorage.setItem(
+    DISMISSED_STORAGE_KEY,
+    JSON.stringify({ ids } satisfies DismissedStore),
+  );
 }
 
 export function Announcements({
@@ -30,12 +55,14 @@ export function Announcements({
   const [dismissed, setDismissed] = useState<Record<string, true>>({});
 
   useEffect(() => {
-    const next: Record<string, true> = {};
-    for (const item of items) {
-      if (localStorage.getItem(storageKey(item.id)) === "1") {
-        next[item.id] = true;
-      }
-    }
+    const itemIds = new Set(items.map((item) => item.id));
+    const cleanedIds = readDismissedIds().filter((id) => itemIds.has(id));
+    writeDismissedIds(cleanedIds);
+
+    const next = Object.fromEntries(
+      cleanedIds.map((id) => [id, true] as const),
+    ) as Record<string, true>;
+
     setDismissed(next);
   }, [items]);
 
@@ -47,7 +74,8 @@ export function Announcements({
   if (visible.length === 0) return null;
 
   function dismiss(id: string) {
-    localStorage.setItem(storageKey(id), "1");
+    const nextIds = Array.from(new Set([...readDismissedIds(), id]));
+    writeDismissedIds(nextIds);
     setDismissed((current) => ({ ...current, [id]: true }));
   }
 

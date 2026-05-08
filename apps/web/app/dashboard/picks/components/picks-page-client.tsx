@@ -28,7 +28,6 @@ import {
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { todayIso } from "@/lib/date";
 
-
 const FILTER_DEFS: FilterDef[] = [
   {
     key: "date",
@@ -256,7 +255,6 @@ export function PicksPageClient() {
   );
 }
 
-
 function groupByCanal(rows: FixtureRow[]) {
   const ev: FixtureRow[] = [];
   const sv: FixtureRow[] = [];
@@ -274,7 +272,6 @@ function groupByCanal(rows: FixtureRow[]) {
 
   return { ev, sv, conf, matchNul, btts };
 }
-
 
 function CanalSection({
   title,

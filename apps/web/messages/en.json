@@ -21,6 +21,7 @@
     "betSlips": "Bet slips",
     "audit": "Audit",
     "users": "Users",
+    "announcements": "Announcements",
     "glossary": "Glossary",
     "formation": "Training",
     "notifications": "Notifications",
@@ -229,11 +230,7 @@
       "title": "What's new",
       "dismiss": "Later",
       "close": "Dismiss announcement",
-      "closeItem": "Hide this announcement",
-      "formation": {
-        "title": "Training center",
-        "description": "Articles and videos to understand each pick and improve step by step."
-      }
+      "closeItem": "Hide this announcement"
     },
     "predictions": {
       "title": "Today's predictions",

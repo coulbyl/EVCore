@@ -560,7 +560,7 @@ export function SummaryPageClient() {
               <div className="flex flex-col gap-2">
                 {won.map((row) => (
                   <SummaryPickItem
-                    key={row.fixtureId + row.channel}
+                    key={row.fixtureId + row.channel + row.market + row.pick}
                     row={row}
                   />
                 ))}
@@ -569,7 +569,7 @@ export function SummaryPageClient() {
                 ) : null}
                 {lost.map((row) => (
                   <SummaryPickItem
-                    key={row.fixtureId + row.channel}
+                    key={row.fixtureId + row.channel + row.market + row.pick}
                     row={row}
                   />
                 ))}
