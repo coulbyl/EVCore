@@ -49,3 +49,10 @@ export function formatDateShort(iso: string): string {
   if (!parsed) return iso;
   return format(parsed, "dd/MM/yy", { locale: fr });
 }
+
+/** "2026-04-11T18:30:00Z" → "11/04/2026 18:30" */
+export function formatDateTime(iso: string): string {
+  const parsed = parseDateValue(iso);
+  if (!parsed) return iso;
+  return format(parsed, "dd/MM/yyyy HH:mm", { locale: fr });
+}

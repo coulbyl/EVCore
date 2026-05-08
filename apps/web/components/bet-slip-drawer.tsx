@@ -19,6 +19,7 @@ import {
 } from "@/helpers/fixture";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { Amount } from "./amount";
+import { formatDate, formatTime } from "@/lib/date";
 
 function StakeInput({
   value,
@@ -70,7 +71,8 @@ function DraftItemRow({
             className="text-xs font-semibold text-foreground"
           />
           <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {item.competition} • {item.scheduledAt}
+            {item.competition} • {formatDate(item.scheduledAt)} •{" "}
+            {formatTime(item.scheduledAt)}
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <span className="text-[0.65rem] text-muted-foreground">
