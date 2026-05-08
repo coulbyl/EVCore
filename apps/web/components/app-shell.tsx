@@ -4,20 +4,61 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Badge, PageShell } from "@evcore/ui";
-import { GraduationCap, Settings, Wallet } from "lucide-react";
+import {
+  Badge,
+  PageShell,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@evcore/ui";
+import { GraduationCap, Settings, Trophy, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
 import { NotificationBell } from "./notification-bell";
 import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
+import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
+import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
+
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: "Admin",
+  OPERATOR: "Membre",
+};
+
+const BADGE_EMOJI: Record<string, string> = {
+  vol_50: "🏅",
+  vol_150: "🥈",
+  vol_300: "🥇",
+  streak_5: "⚡",
+  patience: "🧘",
+  calibre: "🎯",
+  graduate: "🎓",
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
   const isAdmin = currentUser.role === "ADMIN";
+  const { data: leaderboard } = useLeaderboard();
+  const { data: badges } = useMyBadges();
+
+  const myLeaderboardEntry = useMemo(
+    () =>
+      (leaderboard ?? []).find(
+        (entry) =>
+          entry.username.toLowerCase() === currentUser.username.toLowerCase(),
+      ) ?? null,
+    [currentUser.username, leaderboard],
+  );
+
+  const unlockedBadges = useMemo(
+    () => (badges ?? []).filter((badge) => badge.unlockedAt !== null),
+    [badges],
+  );
+
+  const highlightedBadges = unlockedBadges.slice(0, 3);
 
   const navItems = useMemo(
     () =>
@@ -102,7 +143,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       }
       sidebarFooter={
-        <div className="rounded-2xl border border-sidebar-border/80 bg-sidebar-accent/70 p-3">
+        <div className="flex flex-col gap-3 rounded-2xl border border-sidebar-border/80 bg-sidebar-accent/70 p-3">
           <div className="flex items-center gap-3">
             <UserAvatar
               avatarUrl={currentUser.avatarUrl}
@@ -119,7 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   variant="outline"
                   className="border-sidebar-border bg-sidebar/40 text-[0.62rem] text-sidebar-foreground"
                 >
-                  {currentUser.role === "ADMIN" ? "Admin" : "Membre"}
+                  {ROLE_LABEL[currentUser.role] ?? currentUser.role}
                 </Badge>
               </div>
               <p className="truncate text-xs text-sidebar-foreground/65">
@@ -128,7 +169,64 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          {myLeaderboardEntry ? (
+            <div className="rounded-xl border border-sidebar-border/70 bg-sidebar/45 px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <Trophy size={13} className="shrink-0 text-warning" />
+                <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/70">
+                  Classement
+                </span>
+              </div>
+              <div className="mt-2 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-lg font-bold tabular-nums text-sidebar-foreground">
+                    #{myLeaderboardEntry.rank}
+                  </p>
+                  <p className="text-[0.68rem] text-sidebar-foreground/65">
+                    {myLeaderboardEntry.settled} coupon
+                    {myLeaderboardEntry.settled > 1 ? "s" : ""} joué
+                    {myLeaderboardEntry.settled > 1 ? "s" : ""}
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="border-sidebar-border bg-sidebar text-sidebar-foreground"
+                >
+                  ROI {myLeaderboardEntry.roi}
+                </Badge>
+              </div>
+            </div>
+          ) : null}
+
+          {highlightedBadges.length > 0 ? (
+            <div className="rounded-xl border border-sidebar-border/70 bg-sidebar/35 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/70">
+                  Mérites
+                </span>
+                <span className="text-[0.68rem] text-sidebar-foreground/65">
+                  {unlockedBadges.length} badge
+                  {unlockedBadges.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                {highlightedBadges.map((badge) => (
+                  <Tooltip key={badge.code}>
+                    <TooltipTrigger asChild>
+                      <div className="flex size-8 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sm text-sidebar-foreground">
+                        {BADGE_EMOJI[badge.code] ?? "🏆"}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {badge.name}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-2">
             <Link
               href="/dashboard/bankroll"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-sidebar-border/70 bg-sidebar/40 px-3 py-2 text-xs font-medium text-sidebar-foreground transition-colors hover:bg-sidebar/70"

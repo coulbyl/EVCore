@@ -31,7 +31,7 @@ export function BetSlipButton() {
         <ReceiptText size={16} />
         {hasItems && (
           <span
-            className={`hidden h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold md:flex ${
+            className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.58rem] font-bold md:static md:h-5 md:min-w-5 md:text-[0.6rem] ${
               hasItems
                 ? "bg-accent text-accent-foreground"
                 : "bg-secondary text-muted-foreground"
