@@ -294,7 +294,9 @@ export function AnnouncementsAdminPageClient() {
                     <FormItem>
                       <FormLabel>
                         Lien{" "}
-                        <span className="text-muted-foreground">(optionnel)</span>
+                        <span className="text-muted-foreground">
+                          (optionnel)
+                        </span>
                       </FormLabel>
                       <FormControl>
                         <Input

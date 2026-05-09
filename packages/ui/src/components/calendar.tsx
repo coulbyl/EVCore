@@ -11,6 +11,7 @@ import {
   getDefaultClassNames,
   type DayButton,
 } from "react-day-picker";
+import { fr } from "date-fns/locale";
 
 import { cn } from "@evcore/ui/lib/utils";
 import { Button, buttonVariants } from "@evcore/ui/components/button";
@@ -31,6 +32,7 @@ function Calendar({
 
   return (
     <DayPicker
+      locale={fr}
       showOutsideDays={showOutsideDays}
       className={cn(
         "group/calendar bg-background p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",

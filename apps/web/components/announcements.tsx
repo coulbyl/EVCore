@@ -120,7 +120,10 @@ export function Announcements({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent aria-describedby={undefined} className="bg-panel-strong sm:max-w-lg">
+        <DialogContent
+          aria-describedby={undefined}
+          className="bg-panel-strong sm:max-w-lg"
+        >
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {current.title}

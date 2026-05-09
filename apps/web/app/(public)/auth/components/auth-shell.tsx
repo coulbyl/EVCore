@@ -95,7 +95,10 @@ export function AuthShell({
               {children}
             </div>
             <p className="mt-6 text-center text-xs text-muted-foreground/60">
-              <Link href="/" className="hover:text-muted-foreground transition-colors">
+              <Link
+                href="/"
+                className="hover:text-muted-foreground transition-colors"
+              >
                 ← Retour à l&apos;accueil
               </Link>
             </p>

@@ -11,6 +11,11 @@ export function todayIso(): string {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+/** Date → "2026-04-11" */
+export function toISODate(d: Date): string {
+  return format(d, "yyyy-MM-dd");
+}
+
 /** "2026-04-11" — N jours avant aujourd'hui */
 export function daysAgoIso(n: number): string {
   return format(subDays(new Date(), n), "yyyy-MM-dd");

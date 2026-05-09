@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-
 type OgMeta = {
   title: string | null;
   description: string | null;
@@ -46,11 +45,7 @@ export function LinkPreviewCard({ url }: { url: string }) {
     >
       {meta.image && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={meta.image}
-          alt=""
-          className="w-1/3 shrink-0 object-cover"
-        />
+        <img src={meta.image} alt="" className="w-1/3 shrink-0 object-cover" />
       )}
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5 py-2">
         {meta.siteName && (

@@ -172,9 +172,9 @@ export default function LandingPage() {
             className="mx-auto mt-6 max-w-xl text-base leading-relaxed sm:text-lg"
             style={{ color: "#94a3b8" }}
           >
-            Investissez un montant fixe sur chaque sélection du système.
-            Pas d&apos;impulsion, pas d&apos;improvisation — une stratégie
-            répétée match après match.
+            Investissez un montant fixe sur chaque sélection du système. Pas
+            d&apos;impulsion, pas d&apos;improvisation — une stratégie répétée
+            match après match.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -274,7 +274,10 @@ export default function LandingPage() {
                 >
                   {c.title}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#64748b" }}>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: "#64748b" }}
+                >
                   {c.body}
                 </p>
               </div>
