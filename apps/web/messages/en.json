@@ -230,7 +230,9 @@
       "title": "What's new",
       "dismiss": "Later",
       "close": "Dismiss announcement",
-      "closeItem": "Hide this announcement"
+      "closeItem": "Hide this announcement",
+      "read": "Read",
+      "markAsRead": "Mark as read"
     },
     "predictions": {
       "title": "Today's predictions",

@@ -1,10 +1,11 @@
 export type Announcement = {
   id: string;
   title: string;
-  description: string | null;
-  href: string;
+  description: string;
+  href: string | null;
   published: boolean;
   publishedAt: string | null;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy: {
@@ -16,9 +17,10 @@ export type Announcement = {
 
 export type CreateAnnouncementInput = {
   title: string;
-  description?: string;
-  href: string;
+  description: string;
+  href?: string;
   published?: boolean;
+  expiresAt?: string;
 };
 
 export type UpdateAnnouncementInput = {
@@ -27,4 +29,5 @@ export type UpdateAnnouncementInput = {
   description?: string;
   href?: string;
   published?: boolean;
+  expiresAt?: string;
 };

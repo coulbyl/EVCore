@@ -1,176 +1,134 @@
-# EVCore - TODO
+# EVCore — TODO
 
-## Ajout de nouvelles compétitions
-
-### Contexte
-
-Le seed (`packages/db/src/seed.ts`) est la source de vérité pour les compétitions. Le worker CSV `odds-csv-import.worker.ts` gère deux types de sources :
-
-- **Path standard** (`mmz4281/{season}/{code}.csv`) — fichier par saison, format `Div,Date,HomeTeam,...`
-- **Path `/new/`** (`new/{code}.csv`) — fichier unique toutes saisons, format `Country,League,Season,Date,Home,Away,...` — déclenché par `EXTRA_LEAGUE_DIVISION_CODES` (ligne 19 du worker)
+## Feature: Refonte des annonces
 
 ---
 
-### Tableau confirmé (IDs, CSV codes et Odds API vérifiés)
+### 1. Schéma Prisma — `packages/db/prisma/schema.prisma`
 
-Fenêtre de backtest : saisons **2023, 2024, 2025** (`2324`, `2425`, `2526`).
+**Modèle `Announcement` (ligne ~324) :**
 
-#### Groupe A — Backtest possible → `isActive: false` en attente de validation
+- Changer `description String?` → `description String` (required, type rich text / HTML sérialisé — supprimer la contrainte de longueur)
+- Changer `href String` → `href String?` (optionnel)
+- Ajouter `expiresAt DateTime?`
 
-| Ligue                    | Code   | leagueId | Source odds historiques                  | The Odds API key                 |
-| ------------------------ | ------ | -------- | ---------------------------------------- | -------------------------------- |
-| Pologne D1 (Ekstraklasa) | `POL1` | 106      | CSV `POL` `/new/` (2023–2025 ✅)         | `soccer_poland_ekstraklasa`      |
-| Suède D1 (Allsvenskan)   | `SWE1` | 113      | CSV `SWE` `/new/` (2023–2025 ✅)         | `soccer_sweden_allsvenskan`      |
-| Suède D2 (Superettan)    | `SWE2` | 114      | The Odds API historical (depuis 2022 ✅) | `soccer_sweden_superettan`       |
-| Suisse D1 (Super League) | `SUI1` | 207      | CSV `SWZ` `/new/` (2023–2025 ✅)         | `soccer_switzerland_superleague` |
-| Turquie D1 (Süper Lig)   | `TUR1` | 203      | CSV `T1` `/mmz4281/` (2324–2526 ✅)      | `soccer_turkey_super_league`     |
-| USA MLS                  | `MLS`  | 253      | CSV `USA` `/new/` (2023–2025 ✅)         | `soccer_usa_mls`                 |
-| Norvège D1 (Eliteserien) | `NOR1` | 103      | CSV `NOR` `/new/` (2023–2025 ✅)         | `soccer_norway_eliteserien`      |
-
-> `EXTRA_LEAGUE_DIVISION_CODES` à mettre à jour (worker ligne 19) : ajouter `POL`, `SWE`, `SWZ`, `USA`, `NOR`.
-> SWE2 utilise le worker `odds-historical-import` (The Odds API) — ajouter `SWE2: 'soccer_sweden_superettan'` dans `THE_ODDS_API_SPORT_KEYS`.
-> Ligues à calendrier civil (SWE1, SWE2, MLS, NOR1) : `seasonStartMonth: 2` → ETL calcule `season=2026`. Seasons CSV filtrées sur `2023`, `2024`, `2025` (colonne `Season` des fichiers `/new/`).
-
-#### Groupe B — Pas de backtest possible → `isActive: false` indéfiniment
-
-Pas d'historique odds disponible (ni CSV ni The Odds API). EV live fonctionnel une fois activé manuellement.
-
-| Ligue                        | Code   | leagueId | API-Football odds live |
-| ---------------------------- | ------ | -------- | ---------------------- |
-| Pologne D2 (I Liga)          | `POL2` | 107      | ✅ Pinnacle            |
-| Rép. Tchèque D1 (Czech Liga) | `CZE1` | 345      | ✅ Pinnacle            |
-| Suisse D2 (Challenge League) | `SUI2` | 208      | ✅ Pinnacle            |
-| Turquie D2 (1. Lig)          | `TUR2` | 204      | ✅ Pinnacle            |
-| Serbie D1 (Super Liga)       | `SRB1` | 286      | ✅ Pinnacle            |
-| Slovénie D1 (1. SNL)         | `SVN1` | 373      | ✅ Pinnacle            |
-| Norvège D2 (1. Division)     | `NOR2` | 104      | ✅ Pinnacle            |
+> Ne pas générer de migration. Lancer `db generate` + `db build` uniquement. La migration sera lancée manuellement.
 
 ---
 
-### Étape 1 — `EXTRA_LEAGUE_DIVISION_CODES` dans le worker
+### 2. Backend — DTOs
 
-Fichier : `apps/backend/src/modules/etl/workers/odds-csv-import.worker.ts` — ligne 19.
+**`apps/backend/src/modules/announcements/dto/create-announcement.dto.ts`**
 
-```ts
-// Avant
-const EXTRA_LEAGUE_DIVISION_CODES = new Set(["JPN", "MEX"]);
+- `description` : retirer `@IsOptional`, retirer `@MaxLength(500)`, type `string` (HTML/JSON)
+- `href` : ajouter `@IsOptional`, retirer la contrainte required
+- Ajouter `expiresAt?: Date` avec `@IsOptional`, `@IsDateString()`
 
-// Après
-const EXTRA_LEAGUE_DIVISION_CODES = new Set([
-  "JPN",
-  "MEX",
-  "POL",
-  "SWE",
-  "SWZ",
-  "USA",
-  "NOR",
-]);
+**`apps/backend/src/modules/announcements/dto/update-announcement.dto.ts`**
+
+- Mêmes changements que Create (tous les champs restent optionnels pour le PATCH)
+
+**`apps/web/domains/announcements/types/announcements.ts`**
+
+- `description: string | undefined` → `description: string` (required)
+- `href: string` → `href?: string`
+- Ajouter `expiresAt?: string`
+- Mettre à jour `CreateAnnouncementInput` et `UpdateAnnouncementInput` en conséquence
+
+---
+
+### 3. Backend — Service
+
+**`apps/backend/src/modules/announcements/announcements.service.ts`**
+
+- `listPublished()` : ajouter un filtre pour exclure les annonces dont `expiresAt` est dans le passé
+  ```
+  where: { published: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
+  ```
+
+---
+
+### 4. Frontend — Rich Text Editor (création d'annonce)
+
+**`apps/web/app/dashboard/announcements/components/announcements-admin-page-client.tsx`**
+
+Remplacer le `<textarea>` de `description` par un éditeur **Tiptap** (retenu sur Lexical : extensions officielles couvrent tous les besoins, `Node.create()` suffit pour `CopyBlock`, meilleure ergonomie React).
+
+Dépendances à installer au moment du dev :
+
+@tiptap/starter-kit embarque bold, italic, listes, paragraphe. @tiptap/extension-link pour les liens. CopyBlock sera une extension locale dans le projet.
+
+pnpm --filter ui add @tiptap/react @tiptap/pm @tiptap/starter-kit @tiptap/extension-link
+
+check pour voir si on ajoute dans catalog:
+
+**Fonctionnalités attendues de l'éditeur :**
+
+| Extension                | Comportement                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| Bold / Italic            | Formatage inline classique                                                             |
+| BulletList / OrderedList | Listes                                                                                 |
+| Link                     | Insertion d'un lien avec preview URL inline (titre + favicon)                          |
+| CopyBlock                | Composant custom — affiche un texte avec bouton "copier" intégré (ex. un code `h12GR`) |
+
+**Règles :**
+
+- `description` devient required dans le formulaire
+- `href` : retirer le `required`, champ optionnel
+- Ajouter un champ `expiresAt` (date picker) — optionnel
+- Adapter la validation client en conséquence (titre + description suffisent pour submit)
+
+---
+
+### 5. Frontend — Composant d'affichage dashboard
+
+**`apps/web/components/announcements.tsx`**
+
+Refonte complète du composant. Comportement actuel (Alert cards toutes visibles + dismiss localStorage) → remplacé par :
+
+**Nouvelle logique :**
+
+- Afficher **une seule annonce à la fois**, la plus récente non lue
+- Quand elle est marquée lue → passer à la suivante dans la queue (ordre `publishedAt desc`)
+- Les annonces dont `expiresAt` est dépassé sont considérées comme lues (filtrées côté backend — voir §3)
+- Persistance du "lu" : conserver le mécanisme localStorage existant (`"evcore:dashboard:announcements:dismissed:v1"`)
+
+**Nouveau layout (ligne dans le dashboard) :**
+
+```
+[Titre de l'annonce]                [Lire →]
+```
+
+**Dialog (au clic sur "Lire") :**
+
+- **Header** : titre de l'annonce
+- **Content** : rendu rich text (lecture seule) — avec support des blocs copiables
+- **Footer** :
+  - Si `href` défini → bouton "Marquer comme lu" navigue vers `href` ET marque comme lu
+  - Sinon → bouton "Marquer comme lu" ferme le dialog et marque comme lu
+
+**Props du composant (à adapter) :**
+
+```typescript
+{ items: Announcement[], className?: string }
 ```
 
 ---
 
-### Étape 2 — `THE_ODDS_API_SPORT_KEYS` dans etl.constants.ts
+### 6. Dashboard — Intégration
 
-Fichier : `apps/backend/src/config/etl.constants.ts` — objet `THE_ODDS_API_SPORT_KEYS`.
+**`apps/web/app/dashboard/components/dashboard-page-client-operator.tsx`**
 
-```ts
-// À ajouter
-POL1: 'soccer_poland_ekstraklasa',
-SWE1: 'soccer_sweden_allsvenskan',
-SWE2: 'soccer_sweden_superettan',
-SUI1: 'soccer_switzerland_superleague',
-TUR1: 'soccer_turkey_super_league',
-MLS:  'soccer_usa_mls',
-NOR1: 'soccer_norway_eliteserien',
-```
+- Le composant `<Announcements>` garde sa position en haut du dashboard
+- Adapter le mapping si les props changent (ex. `href` devient optionnel)
 
 ---
 
-### Étape 3 — Ajouter au seed
+### Ordre d'implémentation
 
-Fichier : `packages/db/src/seed.ts` — tableau `COMPETITIONS`.
-
-Groupe A (`isActive: false`, backtest possible) :
-
-```ts
-// Calendrier août-mai
-{ leagueId: 106, code: "POL1", name: "Ekstraklasa", country: "Poland", isActive: false, csvDivisionCode: "POL" },
-{ leagueId: 207, code: "SUI1", name: "Super League", country: "Switzerland", isActive: false, csvDivisionCode: "SWZ" },
-{ leagueId: 203, code: "TUR1", name: "Süper Lig", country: "Turkey", isActive: false, csvDivisionCode: "T1" },
-// Calendrier civil (seasonStartMonth: 2 = mars)
-{ leagueId: 113, code: "SWE1", name: "Allsvenskan", country: "Sweden", isActive: false, csvDivisionCode: "SWE", seasonStartMonth: 2 },
-{ leagueId: 114, code: "SWE2", name: "Superettan", country: "Sweden", isActive: false, csvDivisionCode: null, seasonStartMonth: 2 },
-{ leagueId: 253, code: "MLS", name: "Major League Soccer", country: "USA", isActive: false, csvDivisionCode: "USA", seasonStartMonth: 2 },
-{ leagueId: 103, code: "NOR1", name: "Eliteserien", country: "Norway", isActive: false, csvDivisionCode: "NOR", seasonStartMonth: 2 },
-```
-
-Groupe B (`isActive: false`, pas de backtest — ne pas activer sans source historique) :
-
-```ts
-// Calendrier août-mai
-{ leagueId: 107, code: "POL2", name: "I Liga", country: "Poland", isActive: false, csvDivisionCode: null },
-{ leagueId: 345, code: "CZE1", name: "Czech Liga", country: "Czech Republic", isActive: false, csvDivisionCode: null },
-{ leagueId: 208, code: "SUI2", name: "Challenge League", country: "Switzerland", isActive: false, csvDivisionCode: null },
-{ leagueId: 204, code: "TUR2", name: "1. Lig", country: "Turkey", isActive: false, csvDivisionCode: null },
-{ leagueId: 286, code: "SRB1", name: "Super Liga", country: "Serbia", isActive: false, csvDivisionCode: null },
-{ leagueId: 373, code: "SVN1", name: "1. SNL", country: "Slovenia", isActive: false, csvDivisionCode: null },
-// Calendrier civil
-{ leagueId: 104, code: "NOR2", name: "1. Division", country: "Norway", isActive: false, csvDivisionCode: null, seasonStartMonth: 2 },
-```
-
----
-
-### Étape 4 — Appliquer et syncer
-
-```bash
-# Seed en local
-pnpm --filter @repo/db db:seed
-
-# Pour chaque nouvelle ligue active
-POST /etl/sync/fixtures/:competitionCode
-POST /etl/sync/stats/:competitionCode
-POST /rolling-stats/backfill/:competitionCode/:season
-POST /etl/sync/odds-csv/:competitionCode  # si csvDivisionCode non null
-```
-
----
-
-### Étape 5 — Backtest et validation (suivre CALIBRATION-GUIDE.md)
-
-```bash
-POST /backtest/:competitionCode
-```
-
-Critères de passage pour activer (`isActive: true`) :
-
-- ROI simulé ≥ -5%
-- Brier Score < 0.65
-- Calibration Error ≤ 5%
-
-Si une ligue ne passe pas → rester `isActive: false`, documenter dans CALIBRATION-GUIDE.md.
-
----
-
-### Checklist
-
-- [x] Confirmer tous les `leagueId` via API-Football
-- [x] Confirmer tous les `csvDivisionCode` via football-data.co.uk
-- [x] Confirmer disponibilité sur The Odds API
-- [x] Confirmer odds Pinnacle sur API-Football (toutes ligues)
-- [ ] Ajouter `POL`, `SWE`, `SWZ`, `USA`, `NOR` dans `EXTRA_LEAGUE_DIVISION_CODES` (worker ligne 19)
-- [ ] Ajouter les 7 clés Odds API dans `THE_ODDS_API_SPORT_KEYS` (`etl.constants.ts`)
-- [ ] Ajouter les 14 compétitions dans `packages/db/src/seed.ts`
-- [ ] Lancer `db:seed` en local
-- [ ] Sync ETL + rolling stats pour chaque ligue
-- [ ] Backtest Pologne D1 (`POL1`)
-- [ ] Backtest Rép. Tchèque D1 (`CZE1`)
-- [ ] Backtest Suède D1 (`SWE1`)
-- [ ] Backtest Suisse D1 (`SUI1`)
-- [ ] Backtest Turquie D1 (`TUR1`)
-- [ ] Backtest USA MLS (`MLS`)
-- [ ] Backtest Serbie D1 (`SRB1`)
-- [ ] Backtest Slovénie D1 (`SVN1`)
-- [ ] Backtest Norvège D1 (`NOR1`)
-- [ ] Backtest ligues D2 (si données suffisantes après D1 validées)
-- [ ] Activer (`isActive: true`) les ligues qui passent le backtest
-- [ ] Mettre à jour ROADMAP.md
+1. Schéma Prisma + `db generate` + `db build`
+2. DTOs backend + types frontend
+3. Service : filtre `expiresAt`
+4. Intégrer Tiptap + extension CopyBlock dans le formulaire admin
+5. Refonte du composant `announcements.tsx` + dialog
+6. Vérifier l'intégration dans le dashboard opérateur

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import {
   Badge,
   Button,
@@ -8,9 +11,14 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
   Skeleton,
-  Textarea,
 } from "@evcore/ui";
 import { Megaphone, Send, Trash2 } from "lucide-react";
 import { useAdminAnnouncements } from "@/domains/announcements/use-cases/get-admin-announcements";
@@ -18,27 +26,60 @@ import { useCreateAdminAnnouncement } from "@/domains/announcements/use-cases/cr
 import { useDeleteAdminAnnouncement } from "@/domains/announcements/use-cases/delete-admin-announcement";
 import { useUpdateAdminAnnouncement } from "@/domains/announcements/use-cases/update-admin-announcement";
 import { formatDateTime } from "@/lib/date";
+import { RichTextEditor } from "@/components/rich-text-editor";
+
+const createSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Le titre est requis.")
+    .max(120, "120 caractères max."),
+  description: z
+    .string()
+    .refine(
+      (v) => v.replace(/<[^>]*>/g, "").trim() !== "",
+      "Le contenu est requis.",
+    ),
+  href: z.string().max(500, "500 caractères max.").optional(),
+  expiresAt: z.string().optional(),
+});
+
+type CreateValues = z.infer<typeof createSchema>;
+
+function plainTextExcerpt(html: string, maxLen = 120): string {
+  const text = html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
+}
 
 export function AnnouncementsAdminPageClient() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [href, setHref] = useState("/dashboard/formation");
+  const [editorKey, setEditorKey] = useState(0);
+
   const announcementsQuery = useAdminAnnouncements();
   const createAnnouncement = useCreateAdminAnnouncement();
   const updateAnnouncement = useUpdateAdminAnnouncement();
   const deleteAnnouncement = useDeleteAdminAnnouncement();
 
-  async function handleCreate() {
-    if (!title.trim() || !href.trim()) return;
+  const form = useForm<CreateValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: { title: "", description: "", href: "", expiresAt: "" },
+    mode: "onTouched",
+  });
+
+  async function onSubmit(values: CreateValues) {
     await createAnnouncement.mutateAsync({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      href: href.trim(),
+      title: values.title,
+      description: values.description,
+      href: values.href?.trim() || undefined,
       published: true,
+      expiresAt: values.expiresAt
+        ? new Date(values.expiresAt).toISOString()
+        : undefined,
     });
-    setTitle("");
-    setDescription("");
-    setHref("/dashboard/formation");
+    form.reset();
+    setEditorKey((k) => k + 1);
   }
 
   return (
@@ -50,38 +91,109 @@ export function AnnouncementsAdminPageClient() {
       </div>
 
       <section className="shrink-0 rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5">
-        <div className="flex flex-col gap-4">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Titre de l'annonce"
-            className="h-11 rounded-lg bg-background"
-          />
-          <Textarea
-            rows={4}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description courte (optionnelle)"
-            className="rounded-lg bg-background"
-          />
-          <Input
-            value={href}
-            onChange={(e) => setHref(e.target.value)}
-            placeholder="/dashboard/formation"
-            className="h-11 rounded-lg bg-background"
-          />
-          <Button
-            type="button"
-            onClick={() => void handleCreate()}
-            disabled={
-              createAnnouncement.isPending || !title.trim() || !href.trim()
-            }
-            className="self-end rounded-xl"
+        <Form {...form}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={form.handleSubmit(onSubmit)}
           >
-            <Send data-icon="inline-start" />
-            {createAnnouncement.isPending ? "Création..." : "Créer l'annonce"}
-          </Button>
-        </div>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Titre</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Titre de l'annonce"
+                      className="h-11 rounded-lg bg-background"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contenu</FormLabel>
+                  <FormControl>
+                    <RichTextEditor
+                      key={editorKey}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Contenu de l'annonce…"
+                      className="bg-background"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="href"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Lien{" "}
+                      <span className="text-muted-foreground">(optionnel)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="/dashboard/formation"
+                        className="h-11 rounded-lg bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="expiresAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Expiration{" "}
+                      <span className="text-muted-foreground">
+                        (optionnelle)
+                      </span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        className="ev-date-input h-11 rounded-lg bg-background"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <Button
+                type="submit"
+                disabled={createAnnouncement.isPending}
+                className="rounded-xl"
+              >
+                <Send data-icon="inline-start" />
+                {createAnnouncement.isPending
+                  ? "Création..."
+                  : "Créer l'annonce"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </section>
 
       <section className="flex min-h-0 flex-1 flex-col gap-3">
@@ -124,14 +236,19 @@ export function AnnouncementsAdminPageClient() {
                           {item.published ? "Publiée" : "Brouillon"}
                         </Badge>
                       </div>
-                      {item.description ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {item.description}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {plainTextExcerpt(item.description)}
+                      </p>
+                      {item.href ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Lien: {item.href}
                         </p>
                       ) : null}
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Lien: {item.href}
-                      </p>
+                      {item.expiresAt ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Expire: {formatDateTime(item.expiresAt)}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-muted-foreground">
                         Publication:{" "}
                         {item.publishedAt
