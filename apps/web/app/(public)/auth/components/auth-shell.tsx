@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { BarChart3, ReceiptText, Wallet } from "lucide-react";
 
 export function AuthShell({
@@ -70,7 +71,7 @@ export function AuthShell({
           </div>
 
           <p className="mt-8 border-t border-sidebar-border pt-6 text-sm leading-7 text-sidebar-foreground/65">
-            Connectez-vous ou créez un compte en moins d’une minute.
+            Connectez-vous ou créez un compte en moins d&apos;une minute.
           </p>
         </section>
 
@@ -93,6 +94,11 @@ export function AuthShell({
             <div className="mt-8 rounded-[1.1rem] border border-border bg-panel px-4 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:px-5">
               {children}
             </div>
+            <p className="mt-6 text-center text-xs text-muted-foreground/60">
+              <Link href="/" className="hover:text-muted-foreground transition-colors">
+                ← Retour à l&apos;accueil
+              </Link>
+            </p>
           </div>
         </section>
       </div>
