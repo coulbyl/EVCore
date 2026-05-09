@@ -230,7 +230,9 @@
       "title": "Nouveautés",
       "dismiss": "Plus tard",
       "close": "Fermer l'annonce",
-      "closeItem": "Masquer cette annonce"
+      "closeItem": "Masquer cette annonce",
+      "read": "Lire",
+      "markAsRead": "Marquer comme lu"
     },
     "predictions": {
       "title": "Prédictions du jour",

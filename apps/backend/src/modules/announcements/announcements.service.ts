@@ -6,10 +6,11 @@ import type { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 export type AnnouncementView = {
   id: string;
   title: string;
-  description: string | null;
-  href: string;
+  description: string;
+  href: string | null;
   published: boolean;
   publishedAt: string | null;
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy: {
@@ -22,10 +23,11 @@ export type AnnouncementView = {
 type AnnouncementRecord = {
   id: string;
   title: string;
-  description: string | null;
-  href: string;
+  description: string;
+  href: string | null;
   published: boolean;
   publishedAt: Date | null;
+  expiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   createdBy: {
@@ -47,6 +49,7 @@ export class AnnouncementsService {
       href: announcement.href,
       published: announcement.published,
       publishedAt: announcement.publishedAt?.toISOString() ?? null,
+      expiresAt: announcement.expiresAt?.toISOString() ?? null,
       createdAt: announcement.createdAt.toISOString(),
       updatedAt: announcement.updatedAt.toISOString(),
       createdBy: announcement.createdBy
@@ -66,6 +69,7 @@ export class AnnouncementsService {
     href: true,
     published: true,
     publishedAt: true,
+    expiresAt: true,
     createdAt: true,
     updatedAt: true,
     createdBy: {
@@ -78,8 +82,12 @@ export class AnnouncementsService {
   } as const;
 
   async listPublished(): Promise<AnnouncementView[]> {
+    const now = new Date();
     const items = await this.prisma.client.announcement.findMany({
-      where: { published: true },
+      where: {
+        published: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
       orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
       select: this.baseSelect,
     });
@@ -103,10 +111,11 @@ export class AnnouncementsService {
     const created = await this.prisma.client.announcement.create({
       data: {
         title: dto.title.trim(),
-        description: dto.description?.trim() || null,
-        href: dto.href.trim(),
+        description: dto.description,
+        href: dto.href?.trim() ?? null,
         published: dto.published ?? false,
         publishedAt: dto.published ? new Date() : null,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
         createdById: userId,
       },
       select: this.baseSelect,
@@ -135,11 +144,8 @@ export class AnnouncementsService {
       where: { id },
       data: {
         title: dto.title?.trim(),
-        description:
-          dto.description !== undefined
-            ? dto.description.trim() || null
-            : undefined,
-        href: dto.href?.trim(),
+        description: dto.description,
+        href: dto.href !== undefined ? dto.href.trim() || null : undefined,
         published: dto.published,
         publishedAt:
           dto.published === undefined
@@ -149,6 +155,12 @@ export class AnnouncementsService {
                 ? undefined
                 : new Date()
               : null,
+        expiresAt:
+          dto.expiresAt !== undefined
+            ? dto.expiresAt
+              ? new Date(dto.expiresAt)
+              : null
+            : undefined,
       },
       select: this.baseSelect,
     });

@@ -59,8 +59,8 @@ export function DashboardPageClientOperator() {
               items={(announcementsQuery.data ?? []).map((item) => ({
                 id: item.id,
                 title: item.title,
-                description: item.description ?? undefined,
-                href: item.href,
+                description: item.description,
+                href: item.href ?? undefined,
               }))}
             />
           )}

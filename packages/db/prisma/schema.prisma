@@ -322,16 +322,17 @@ model User {
 }
 
 model Announcement {
-  id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   title       String
-  description String?
-  href        String
-  published   Boolean  @default(false)
+  description String
+  href        String?
+  published   Boolean   @default(false)
   publishedAt DateTime?
-  createdById String?  @db.Uuid
-  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime?
+  createdById String?   @db.Uuid
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([published, publishedAt])
   @@index([createdAt])

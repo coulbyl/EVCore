@@ -1,4 +1,10 @@
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateAnnouncementDto {
   @IsOptional()
@@ -8,7 +14,6 @@ export class UpdateAnnouncementDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
   description?: string;
 
   @IsOptional()
@@ -19,4 +24,8 @@ export class UpdateAnnouncementDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  expiresAt?: string;
 }
