@@ -2,7 +2,6 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import { useEffect, useState } from "react";
 import {
   Bold,
@@ -40,13 +39,16 @@ export function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ code: false, codeBlock: false }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-primary underline cursor-pointer",
-          target: "_blank",
-          rel: "noopener noreferrer",
+      StarterKit.configure({
+        code: false,
+        codeBlock: false,
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "text-primary underline cursor-pointer",
+            target: "_blank",
+            rel: "noopener noreferrer",
+          },
         },
       }),
       CopyBlockExtension,

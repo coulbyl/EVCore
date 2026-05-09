@@ -20,9 +20,12 @@ import {
   Page,
   PageContent,
   StatCard,
+  type DateRange,
   type FilterDef,
   type FilterState,
 } from "@evcore/ui";
+
+import { isoToDate, toISODate } from "@/lib/date";
 import { useSummary } from "@/domains/summary/use-cases/get-summary";
 import { EvLineChart } from "@/components/charts/ev-line-chart";
 import { CanalBadge } from "@/components/canal-badge";
@@ -35,7 +38,6 @@ import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type {
   SummaryChannel,
-  SummaryPeriod,
   SummaryPickRow,
 } from "@/domains/summary/types/summary";
 
@@ -233,7 +235,6 @@ const CANAL_COLOR: Record<SummaryChannel, string> = {
 };
 
 const DEFAULT_CHANNEL: SummaryChannel = "SV";
-const DEFAULT_PERIOD: SummaryPeriod = "7d";
 
 const FILTER_DEFS: FilterDef[] = [
   {
@@ -249,14 +250,9 @@ const FILTER_DEFS: FilterDef[] = [
     ],
   },
   {
-    key: "period",
+    key: "daterange",
     label: "Période",
-    type: "select",
-    options: [
-      { value: "7d", label: "7 derniers jours" },
-      { value: "30d", label: "30 derniers jours" },
-      { value: "3m", label: "3 derniers mois" },
-    ],
+    type: "daterange",
   },
 ];
 
@@ -389,13 +385,27 @@ export function SummaryPageClient() {
 
   const channel =
     (searchParams.get("channel") as SummaryChannel) ?? DEFAULT_CHANNEL;
-  const period =
-    (searchParams.get("period") as SummaryPeriod) ?? DEFAULT_PERIOD;
+  const fromParam = searchParams.get("from") ?? undefined;
+  const toParam = searchParams.get("to") ?? undefined;
 
-  const [filters, setFilters] = useState<FilterState>({ channel, period });
+  const [filters, setFilters] = useState<FilterState>({
+    channel,
+    daterange: fromParam
+      ? {
+          from: isoToDate(fromParam),
+          to: toParam ? isoToDate(toParam) : undefined,
+        }
+      : undefined,
+  });
   const [simOpen, setSimOpen] = useState(false);
 
-  const { data, isLoading, isError } = useSummary({ channel, period });
+  const daterange = filters.daterange as DateRange | undefined;
+
+  const { data, isLoading, isError } = useSummary({
+    channel,
+    from: daterange?.from ? toISODate(daterange.from) : undefined,
+    to: daterange?.to ? toISODate(daterange.to) : undefined,
+  });
 
   const chartData = useMemo(
     () =>
@@ -421,13 +431,16 @@ export function SummaryPageClient() {
     const params = new URLSearchParams(searchParams.toString());
     if (next.channel) params.set("channel", next.channel as string);
     else params.delete("channel");
-    if (next.period) params.set("period", next.period as string);
-    else params.delete("period");
+    const dr = next.daterange as DateRange | undefined;
+    if (dr?.from) params.set("from", toISODate(dr.from));
+    else params.delete("from");
+    if (dr?.to) params.set("to", toISODate(dr.to));
+    else params.delete("to");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   function handleReset() {
-    setFilters({ channel: DEFAULT_CHANNEL, period: DEFAULT_PERIOD });
+    setFilters({ channel: DEFAULT_CHANNEL });
     router.push(pathname);
   }
 
@@ -442,6 +455,7 @@ export function SummaryPageClient() {
               value={filters}
               onChange={handleFiltersChange}
               onReset={handleReset}
+              className="[&>div]:w-[260px]"
             />
           </section>
 
