@@ -42,7 +42,7 @@ export class CouponComposerService {
     date: string,
   ): ScoredPick[] {
     const d = new Date(`${date}T12:00:00.000Z`);
-    const dow = DOW_LABELS[(d.getUTCDay() + 6) % 7]!;
+    const dow = DOW_LABELS[(d.getUTCDay() + 6) % 7];
 
     return picks.map((pick) => {
       const canalBase = CANAL_BASE_WEIGHT[pick.canal];
@@ -87,7 +87,7 @@ export class CouponComposerService {
     const candidates: ComposedCoupon[] = [];
 
     // Greedy combination builder — try all subsets up to MAX_LEGS
-    this.buildCombinations(sorted, [], oddsMin, oddsMax, candidates);
+    this.buildCombinations(sorted, [], { oddsMin, oddsMax, out: candidates });
 
     // Deduplicate by leg fingerprint, sort by jointProbability desc
     const seen = new Set<string>();
@@ -109,9 +109,7 @@ export class CouponComposerService {
   private buildCombinations(
     remaining: ScoredPick[],
     current: ScoredPick[],
-    oddsMin: number,
-    oddsMax: number,
-    out: ComposedCoupon[],
+    ctx: { oddsMin: number; oddsMax: number; out: ComposedCoupon[] },
   ): void {
     if (current.length > MAX_LEGS) return;
 
@@ -121,26 +119,20 @@ export class CouponComposerService {
       const distinctFixtures = new Set(current.map((p) => p.fixtureId));
       if (
         distinctFixtures.size >= MIN_DISTINCT_FIXTURES &&
-        combinedOdds >= oddsMin &&
-        combinedOdds <= oddsMax
+        combinedOdds >= ctx.oddsMin &&
+        combinedOdds <= ctx.oddsMax
       ) {
-        out.push(this.buildCoupon(current, combinedOdds));
+        ctx.out.push(this.buildCoupon(current, combinedOdds));
       }
     }
 
-    if (combinedOdds > oddsMax || current.length === MAX_LEGS) return;
+    if (combinedOdds > ctx.oddsMax || current.length === MAX_LEGS) return;
 
     for (let i = 0; i < remaining.length; i++) {
-      const next = remaining[i]!;
+      const next = remaining[i];
       // No two legs from the same fixture
       if (current.some((p) => p.fixtureId === next.fixtureId)) continue;
-      this.buildCombinations(
-        remaining.slice(i + 1),
-        [...current, next],
-        oddsMin,
-        oddsMax,
-        out,
-      );
+      this.buildCombinations(remaining.slice(i + 1), [...current, next], ctx);
     }
   }
 

@@ -31,12 +31,11 @@ export class AiEngineController {
     @Query() query: CouponQueryDto,
   ): Promise<{ generated: boolean }> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    await this.aiEngine.generateCoupons(
-      date,
-      query.windowDays,
-      query.oddsMin,
-      query.oddsMax,
-    );
+    await this.aiEngine.generateCoupons(date, {
+      windowDays: query.windowDays,
+      oddsMin: query.oddsMin,
+      oddsMax: query.oddsMax,
+    });
     return { generated: true };
   }
 

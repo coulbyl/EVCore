@@ -6,14 +6,19 @@ import { createLogger } from '@utils/logger';
 
 const logger = createLogger('coupon-settlement');
 
+type MatchScores = {
+  homeScore: number;
+  awayScore: number;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+};
+
 function resolveIsCorrect(
   market: Market,
   pick: string,
-  homeScore: number,
-  awayScore: number,
-  homeHtScore: number | null,
-  awayHtScore: number | null,
+  scores: MatchScores,
 ): boolean | null {
+  const { homeScore, awayScore, homeHtScore, awayHtScore } = scores;
   switch (market) {
     case Market.ONE_X_TWO: {
       if (pick === 'HOME') return homeScore > awayScore;
@@ -102,14 +107,12 @@ export class CouponSettlementService {
         continue;
       }
 
-      const isCorrect = resolveIsCorrect(
-        leg.market,
-        leg.pick,
-        fixture.homeScore,
-        fixture.awayScore,
-        fixture.homeHtScore,
-        fixture.awayHtScore,
-      );
+      const isCorrect = resolveIsCorrect(leg.market, leg.pick, {
+        homeScore: fixture.homeScore,
+        awayScore: fixture.awayScore,
+        homeHtScore: fixture.homeHtScore,
+        awayHtScore: fixture.awayHtScore,
+      });
 
       if (isCorrect === null) {
         allResolved = false;

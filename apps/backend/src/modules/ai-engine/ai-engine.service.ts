@@ -22,10 +22,13 @@ export class AiEngineService {
 
   async generateCoupons(
     date: string,
-    windowDays = DEFAULT_WINDOW_DAYS,
-    oddsMin = DEFAULT_ODDS_MIN,
-    oddsMax = DEFAULT_ODDS_MAX,
+    opts: { windowDays?: number; oddsMin?: number; oddsMax?: number } = {},
   ): Promise<void> {
+    const {
+      windowDays = DEFAULT_WINDOW_DAYS,
+      oddsMin = DEFAULT_ODDS_MIN,
+      oddsMax = DEFAULT_ODDS_MAX,
+    } = opts;
     logger.info({ date, windowDays, oddsMin, oddsMax }, 'Generating coupons');
 
     await this.repo.deletePendingForDate(new Date(`${date}T00:00:00.000Z`));
@@ -44,10 +47,9 @@ export class AiEngineService {
     }
 
     for (const coupon of coupons) {
-      const lastScheduledAt = coupon.legs.reduce(
-        (latest, leg) => (leg.scheduledAt > latest ? leg.scheduledAt : latest),
-        coupon.legs[0]!.scheduledAt,
-      );
+      const lastScheduledAt = coupon.legs
+        .map((leg) => leg.scheduledAt)
+        .reduce((a, b) => (a > b ? a : b));
 
       await this.repo.upsertProposal({
         forDate: new Date(`${date}T00:00:00.000Z`),
