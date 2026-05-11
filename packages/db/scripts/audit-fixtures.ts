@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
- * Diagnostics moteur par jour — run with: pnpm --filter @evcore/db db:audit:fixtures [YYYY-MM-DD]
- * Par défaut : aujourd'hui UTC.
+ * Diagnostics moteur par canal — run with: pnpm --filter @evcore/db db:audit:fixtures [YYYY-MM-DD]
+ * Affiche les picks groupés par canal : EV, SV, BB, NUL, CONF.
  * Écrit packages/db/reports/audit-fixtures-YYYY-MM-DD.txt.
  */
 import "dotenv/config";
@@ -82,15 +82,25 @@ function rejectionLabel(reason: string): string {
 }
 
 function betStatusLabel(status: string): string {
-  if (status === "WON") return "GAGNE";
-  if (status === "LOST") return "PERDU";
+  if (status === "WON") return "GAGNÉ ✓";
+  if (status === "LOST") return "PERDU ✗";
   if (status === "VOID") return "NUL (remboursé)";
-  return "EN COURS";
+  return "En cours";
+}
+
+function predResultLabel(correct: boolean | null): string {
+  if (correct === true) return "CORRECT ✓";
+  if (correct === false) return "INCORRECT ✗";
+  return "En cours";
 }
 
 function fmtSigned(n: number, decimals = 4): string {
   const s = n.toFixed(decimals);
   return n >= 0 ? `+${s}` : s;
+}
+
+function fmtPct(n: number, decimals = 1): string {
+  return `${(n * 100).toFixed(decimals)}%`;
 }
 
 // ── Types features JSON ──────────────────────────────────────────────────────
@@ -181,6 +191,99 @@ function getModelScoreThreshold(code: string): number {
   return map[code] ?? 0.6;
 }
 
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function renderFixtureHeader(
+  home: string,
+  away: string,
+  comp: string,
+  homeScore: number | null,
+  awayScore: number | null,
+  homeHtScore: number | null,
+  awayHtScore: number | null,
+): string {
+  const score =
+    homeScore !== null && awayScore !== null
+      ? `${homeScore} - ${awayScore}`
+      : null;
+  const htScore =
+    homeHtScore !== null && awayHtScore !== null
+      ? `MT ${homeHtScore}-${awayHtScore}`
+      : null;
+  const scoreStr = score
+    ? htScore
+      ? `${score} (${htScore})`
+      : score
+    : "À jouer";
+  return `[${comp}] ${home} vs ${away}  ${scoreStr}`;
+}
+
+function renderModelContext(
+  feat: unknown,
+  comp: string,
+  detScore: string,
+  finalScore: string,
+): string[] {
+  const out: string[] = [];
+  const modelThreshold = getModelScoreThreshold(comp).toFixed(2);
+  const lambdaHome = readNumber(feat, "lambdaHome");
+  const lambdaAway = readNumber(feat, "lambdaAway");
+  const predictionSource = readString(feat, "predictionSource");
+  const floorHit = readBool(feat, "lambdaFloorHit");
+  const shadowLine = readNumber(feat, "shadow_lineMovement");
+  const shadowH2h = readNumber(feat, "shadow_h2h");
+  const shadowCong = readNumber(feat, "shadow_congestion");
+
+  const srcPart = predictionSource ? `  source=${predictionSource}` : "";
+  out.push(
+    `  Modèle   : det=${detScore} → final=${finalScore}  seuil=${modelThreshold}${srcPart}`,
+  );
+
+  if (lambdaHome !== null && lambdaAway !== null) {
+    const floor = floorHit ? " [λ_away plafonné]" : "";
+    out.push(
+      `  Poisson  : λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${(lambdaHome + lambdaAway).toFixed(2)}${floor}`,
+    );
+  } else if (lambdaHome !== null) {
+    out.push(`  λV1      : ${lambdaHome.toFixed(2)}`);
+  } else if (lambdaAway !== null) {
+    out.push(`  λV2      : ${lambdaAway.toFixed(2)}`);
+  }
+
+  const shadowParts: string[] = [];
+  if (shadowLine !== null) shadowParts.push(`line=${fmtSigned(shadowLine, 4)}`);
+  if (shadowH2h !== null) shadowParts.push(`h2h=${fmtSigned(shadowH2h, 4)}`);
+  if (shadowCong !== null) shadowParts.push(`cong=${fmtSigned(shadowCong, 4)}`);
+  if (shadowParts.length > 0) {
+    out.push(`  Shadow   : ${shadowParts.join("  ")}`);
+  }
+
+  return out;
+}
+
+function renderBetPickLine(bet: {
+  market: string;
+  pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
+  ev: unknown;
+  qualityScore: unknown;
+  probEstimated: unknown;
+  oddsSnapshot: unknown;
+  isSafeValue: boolean;
+  status: string;
+}): string {
+  const label = pickLabel(bet.market, bet.pick, bet.comboMarket, bet.comboPick);
+  const ev = Number(bet.ev);
+  const prob = Number(bet.probEstimated);
+  const qs =
+    bet.qualityScore != null ? Number(bet.qualityScore).toFixed(4) : "—";
+  const odds =
+    bet.oddsSnapshot != null ? Number(bet.oddsSnapshot).toFixed(2) : "—";
+  const canal = bet.isSafeValue ? "[SV]" : "[EV]";
+  return `  Pick ${canal}  ${label.padEnd(28)}  Prob: ${fmtPct(prob)}  Cote: ${odds}  EV: ${fmtSigned(ev, 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`;
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -207,6 +310,15 @@ async function main(): Promise<void> {
       season: {
         select: { competition: { select: { code: true, name: true } } },
       },
+      predictions: {
+        select: {
+          channel: true,
+          market: true,
+          pick: true,
+          probability: true,
+          correct: true,
+        },
+      },
       modelRuns: {
         select: {
           decision: true,
@@ -224,6 +336,8 @@ async function main(): Promise<void> {
               ev: true,
               qualityScore: true,
               probEstimated: true,
+              oddsSnapshot: true,
+              isSafeValue: true,
               status: true,
             },
             orderBy: [
@@ -248,163 +362,426 @@ async function main(): Promise<void> {
   const generatedAt =
     new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
 
-  w("═══════════════════════════════════════════════════════");
-  w(`  EVCore — Diagnostics moteur — ${dateLabel}`);
-  w(`  Généré : ${generatedAt}`);
-  w(`  Fixtures : ${fixtures.length}`);
-  w("═══════════════════════════════════════════════════════");
-  w();
+  // ── Catégoriser ──────────────────────────────────────────────────────────────
 
-  // ── Sélections (BET) ────────────────────────────────────────────────────────
-
-  const betFixtures = fixtures.filter(
-    (f) => f.modelRuns[0]?.decision === "BET",
+  const evFixtures = fixtures.filter((f) =>
+    f.modelRuns[0]?.bets.some((b) => !b.isSafeValue),
+  );
+  const svFixtures = fixtures.filter((f) =>
+    f.modelRuns[0]?.bets.some((b) => b.isSafeValue),
+  );
+  const bttsFixtures = fixtures.filter((f) =>
+    f.predictions.some((p) => p.channel === "BTTS"),
+  );
+  const drawFixtures = fixtures.filter((f) =>
+    f.predictions.some((p) => p.channel === "DRAW"),
+  );
+  const confFixtures = fixtures.filter((f) =>
+    f.predictions.some((p) => p.channel === "CONF"),
   );
   const noBetFixtures = fixtures.filter(
     (f) => f.modelRuns.length > 0 && f.modelRuns[0]?.decision === "NO_BET",
   );
   const noRunFixtures = fixtures.filter((f) => f.modelRuns.length === 0);
 
-  w(`── Sélections BET (${betFixtures.length}) ─────────────────────────────`);
+  const betFixtureCount = fixtures.filter(
+    (f) => f.modelRuns[0]?.decision === "BET",
+  ).length;
 
-  if (betFixtures.length === 0) {
-    w("  Aucune sélection ce jour.");
+  // ── Résumé canaux ─────────────────────────────────────────────────────────
+
+  const evBets = evFixtures.flatMap(
+    (f) => f.modelRuns[0]?.bets.filter((b) => !b.isSafeValue) ?? [],
+  );
+  const svBets = svFixtures.flatMap(
+    (f) => f.modelRuns[0]?.bets.filter((b) => b.isSafeValue) ?? [],
+  );
+  const bttsPreds = bttsFixtures.flatMap((f) =>
+    f.predictions.filter((p) => p.channel === "BTTS"),
+  );
+  const drawPreds = drawFixtures.flatMap((f) =>
+    f.predictions.filter((p) => p.channel === "DRAW"),
+  );
+  const confPreds = confFixtures.flatMap((f) =>
+    f.predictions.filter((p) => p.channel === "CONF"),
+  );
+
+  function countBetRes(bets: Array<{ status: string }>) {
+    return {
+      won: bets.filter((b) => b.status === "WON").length,
+      lost: bets.filter((b) => b.status === "LOST").length,
+      pending: bets.filter(
+        (b) => b.status !== "WON" && b.status !== "LOST" && b.status !== "VOID",
+      ).length,
+    };
   }
 
-  let selIdx = 0;
-  for (const f of betFixtures) {
-    selIdx++;
+  function countPredRes(preds: Array<{ correct: boolean | null }>) {
+    return {
+      won: preds.filter((p) => p.correct === true).length,
+      lost: preds.filter((p) => p.correct === false).length,
+      pending: preds.filter((p) => p.correct === null).length,
+    };
+  }
+
+  const evStats = countBetRes(evBets);
+  const svStats = countBetRes(svBets);
+  const bttsStats = countPredRes(bttsPreds);
+  const drawStats = countPredRes(drawPreds);
+  const confStats = countPredRes(confPreds);
+
+  // ── En-tête ───────────────────────────────────────────────────────────────
+
+  w("═══════════════════════════════════════════════════════");
+  w(`  EVCore — Picks par canal — ${dateLabel}`);
+  w(`  Généré : ${generatedAt}`);
+  w(
+    `  Fixtures : ${fixtures.length}  |  BET: ${betFixtureCount}  NO_BET: ${noBetFixtures.length}  Sans run: ${noRunFixtures.length}`,
+  );
+  w("═══════════════════════════════════════════════════════");
+  w();
+
+  const p = (s: string, n: number) => s.padEnd(n);
+  const pL = (s: string, n: number) => s.padStart(n);
+
+  w(
+    "── Résumé canaux ──────────────────────────────────────────────────────────",
+  );
+  w();
+  w(
+    `  ${p("Canal", 8)}${pL("Picks", 7)}${pL("Correct", 9)}${pL("Incorrect", 11)}${pL("En cours", 10)}`,
+  );
+  w("  " + "─".repeat(45));
+
+  const cRow = (
+    label: string,
+    count: number,
+    won: number,
+    lost: number,
+    pending: number,
+  ) =>
+    w(
+      `  ${p(label, 8)}${pL(String(count), 7)}${pL(String(won), 9)}${pL(String(lost), 11)}${pL(String(pending), 10)}`,
+    );
+
+  cRow("EV", evBets.length, evStats.won, evStats.lost, evStats.pending);
+  cRow("SV", svBets.length, svStats.won, svStats.lost, svStats.pending);
+  cRow(
+    "BB",
+    bttsPreds.length,
+    bttsStats.won,
+    bttsStats.lost,
+    bttsStats.pending,
+  );
+  cRow(
+    "NUL",
+    drawPreds.length,
+    drawStats.won,
+    drawStats.lost,
+    drawStats.pending,
+  );
+  cRow(
+    "CONF",
+    confPreds.length,
+    confStats.won,
+    confStats.lost,
+    confStats.pending,
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // EV — Expected Value
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `━━━ EV — Expected Value (${evBets.length} picks, ${evFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+  );
+
+  if (evFixtures.length === 0) {
+    w("  Aucune sélection EV ce jour.");
+  }
+
+  let idx = 0;
+  for (const f of evFixtures) {
+    idx++;
     const run = f.modelRuns[0]!;
     const feat = run.features;
-
-    const home = f.homeTeam.name;
-    const away = f.awayTeam.name;
     const comp = f.season.competition.code;
-
-    const score =
-      f.homeScore !== null && f.awayScore !== null
-        ? `${f.homeScore} - ${f.awayScore}`
-        : null;
-    const htScore =
-      f.homeHtScore !== null && f.awayHtScore !== null
-        ? `MT ${f.homeHtScore} - ${f.awayHtScore}`
-        : null;
-
-    const lambdaHome = readNumber(feat, "lambdaHome");
-    const lambdaAway = readNumber(feat, "lambdaAway");
-    const predictionSource = readString(feat, "predictionSource");
-    const floorHit = readBool(feat, "lambdaFloorHit");
-    const shadowLine = readNumber(feat, "shadow_lineMovement");
-    const shadowH2h = readNumber(feat, "shadow_h2h");
-    const shadowCong = readNumber(feat, "shadow_congestion");
-    const candidatePicks = readPicks(feat, "candidatePicks");
-    const evaluatedPicks = readPicks(feat, "evaluatedPicks");
-
     const detScore = run.deterministicScore
       ? Number(run.deterministicScore).toFixed(3)
       : "—";
     const finalScore = run.finalScore ? Number(run.finalScore).toFixed(3) : "—";
-    const modelThreshold = getModelScoreThreshold(comp).toFixed(2);
-
-    const scoreStr = score
-      ? htScore
-        ? `${score} (${htScore})`
-        : score
-      : "En cours / À jouer";
 
     w();
-    w(`── Sélection ${selIdx} ─────────────────────────────────────────`);
-    w(`${home} vs ${away}`);
-    w(`[${comp}]  ${scoreStr}`);
-    w();
-    w("Entrées modèle");
-    w(`  Score det / final  : ${detScore} / ${finalScore}`);
-    w(`  Seuil modèle       : ${modelThreshold}`);
-    if (predictionSource !== null) {
-      w(`  Source prédiction  : ${predictionSource}`);
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+
+    for (const bet of run.bets.filter((b) => !b.isSafeValue)) {
+      w(renderBetPickLine(bet));
     }
-    if (lambdaHome !== null) {
-      w(`  λ V1               : ${lambdaHome.toFixed(2)}`);
-    }
-    if (lambdaAway !== null) {
-      w(`  λ V2               : ${lambdaAway.toFixed(2)}`);
-    }
-    if (lambdaHome !== null && lambdaAway !== null) {
-      w(`  Buts attendus      : ${(lambdaHome + lambdaAway).toFixed(2)}`);
-    }
-    if (floorHit) {
-      w(`  lambdaFloorHit     : oui (λ_away plafonné)`);
-    }
-    if (shadowLine !== null || shadowH2h !== null || shadowCong !== null) {
-      w("  Facteurs shadow    :");
-      if (shadowLine !== null)
-        w(`    lineMovement  : ${shadowLine.toFixed(4)}`);
-      if (shadowH2h !== null) w(`    h2h           : ${shadowH2h.toFixed(4)}`);
-      if (shadowCong !== null)
-        w(`    congestion    : ${shadowCong.toFixed(4)}`);
+    for (const line of renderModelContext(feat, comp, detScore, finalScore)) {
+      w(line);
     }
 
-    // ── Bets persistés dans le pool ──────────────────────────────────────────
-    if (run.bets.length > 0) {
-      w();
-      w(`Bets pool (${run.bets.length})`);
-      for (const bet of run.bets) {
-        const label = pickLabel(
-          bet.market,
-          bet.pick,
-          bet.comboMarket,
-          bet.comboPick,
-        ).padEnd(28);
-        const qs =
-          bet.qualityScore !== null ? Number(bet.qualityScore).toFixed(4) : "—";
-        w(
-          `  ${label}  Prob.: ${(Number(bet.probEstimated) * 100).toFixed(1)}%  EV: ${fmtSigned(Number(bet.ev), 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`,
-        );
-      }
-    }
-
-    if (candidatePicks.length > 0) {
-      w();
-      w(`Picks candidats (${candidatePicks.length})`);
-      for (const p of candidatePicks) {
-        const label = pickLabel(
-          p.market,
-          p.pick,
-          p.comboMarket,
-          p.comboPick,
-        ).padEnd(28);
-        w(
-          `  ${label}  Prob.: ${p.probability.toFixed(4)}  Cote: ${p.odds.toFixed(2)}  EV: ${fmtSigned(p.ev, 4)}  Qualité: ${p.qualityScore.toFixed(4)}`,
-        );
-      }
-    }
-
+    const evaluatedPicks = readPicks(feat, "evaluatedPicks");
     if (evaluatedPicks.length > 0) {
-      w();
-      w(`Picks évalués (${evaluatedPicks.length})`);
-      for (const p of evaluatedPicks) {
+      w(`  Évalués (${evaluatedPicks.length}) :`);
+      for (const ep of evaluatedPicks) {
         const label = pickLabel(
-          p.market,
-          p.pick,
-          p.comboMarket,
-          p.comboPick,
-        ).padEnd(28);
-        const statusLabel =
-          p.status === "viable"
+          ep.market,
+          ep.pick,
+          ep.comboMarket,
+          ep.comboPick,
+        ).padEnd(26);
+        const st =
+          ep.status === "viable"
             ? "Viable"
-            : `Rejeté  (${p.rejectionReason ? rejectionLabel(p.rejectionReason) : "?"})`;
+            : `Rejeté (${ep.rejectionReason ? rejectionLabel(ep.rejectionReason) : "?"})`;
         w(
-          `  ${label}  Prob.: ${p.probability.toFixed(4)}  Cote: ${p.odds.toFixed(2)}  EV: ${fmtSigned(p.ev, 4)}  Qualité: ${p.qualityScore.toFixed(4)}  ${statusLabel}`,
+          `    ${label}  P: ${fmtPct(ep.probability)}  Cote: ${ep.odds.toFixed(2)}  EV: ${fmtSigned(ep.ev, 3)}  ${st}`,
         );
       }
     }
   }
 
-  // ── NO_BET — picks évalués pour comprendre le rejet ─────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SV — Safe Value
+  // ─────────────────────────────────────────────────────────────────────────────
 
   w();
   w(
-    `── NO_BET (${noBetFixtures.length}) — picks évalués ──────────────────────`,
+    `━━━ SV — Safe Value (${svBets.length} picks, ${svFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+  );
+
+  if (svFixtures.length === 0) {
+    w("  Aucune sélection SV ce jour.");
+  }
+
+  idx = 0;
+  for (const f of svFixtures) {
+    idx++;
+    const run = f.modelRuns[0]!;
+    const feat = run.features;
+    const comp = f.season.competition.code;
+    const detScore = run.deterministicScore
+      ? Number(run.deterministicScore).toFixed(3)
+      : "—";
+    const finalScore = run.finalScore ? Number(run.finalScore).toFixed(3) : "—";
+
+    w();
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+
+    for (const bet of run.bets.filter((b) => b.isSafeValue)) {
+      w(renderBetPickLine(bet));
+    }
+    for (const line of renderModelContext(feat, comp, detScore, finalScore)) {
+      w(line);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BB — Les deux équipes marquent (BTTS)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `━━━ BB — Les deux équipes marquent (${bttsPreds.length} picks, ${bttsFixtures.length} matchs) ━━━━━━━━━━━━`,
+  );
+
+  if (bttsFixtures.length === 0) {
+    w("  Aucun pronostic BB ce jour.");
+  }
+
+  idx = 0;
+  for (const f of bttsFixtures) {
+    idx++;
+    const pred = f.predictions.find((p) => p.channel === "BTTS")!;
+    const run = f.modelRuns[0];
+    const feat = run?.features;
+    const comp = f.season.competition.code;
+    const prob = Number(pred.probability);
+    const lambdaHome = readNumber(feat, "lambdaHome");
+    const lambdaAway = readNumber(feat, "lambdaAway");
+    const floorHit = readBool(feat, "lambdaFloorHit");
+    const source = readString(feat, "predictionSource");
+
+    const pickLbl =
+      pred.pick === "YES"
+        ? "BB OUI"
+        : pred.pick === "NO"
+          ? "BB NON"
+          : pred.pick;
+
+    // Validate result from actual score
+    let resultHint = "";
+    if (f.homeScore !== null && f.awayScore !== null) {
+      const bothScored = f.homeScore > 0 && f.awayScore > 0;
+      if (pred.pick === "YES" && bothScored)
+        resultHint = "  ← Les deux ont marqué ✓";
+      else if (pred.pick === "YES" && !bothScored)
+        resultHint = "  ← Pas les deux ✗";
+      else if (pred.pick === "NO" && !bothScored) resultHint = "  ← Correct ✓";
+      else if (pred.pick === "NO" && bothScored)
+        resultHint = "  ← Les deux ont marqué ✗";
+    }
+
+    w();
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+    w(
+      `  Pick     : ${pickLbl.padEnd(12)}  P=${fmtPct(prob)}  ${predResultLabel(pred.correct)}${resultHint}`,
+    );
+
+    if (lambdaHome !== null && lambdaAway !== null) {
+      const xg = lambdaHome + lambdaAway;
+      const floor = floorHit ? " [λ_away plafonné]" : "";
+      w(
+        `  Poisson  : λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${xg.toFixed(2)}${floor}`,
+      );
+      const lambdaMin = Math.min(lambdaHome, lambdaAway);
+      const hint =
+        xg >= 2.5 && lambdaMin >= 0.7
+          ? "↑ xG élevé + λ_min solide → BB fort"
+          : lambdaMin < 0.5
+            ? "↓ λ_min faible → équipe peu prolixe"
+            : xg < 1.8
+              ? "↓ xG faible → pick BB risqué"
+              : "~ Signal BB modéré";
+      w(`  Signal   : ${hint}`);
+    }
+    if (source) w(`  Source   : ${source}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // NUL — Match nul (DRAW)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `━━━ NUL — Match nul (${drawPreds.length} picks, ${drawFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+  );
+
+  if (drawFixtures.length === 0) {
+    w("  Aucun pronostic NUL ce jour.");
+  }
+
+  idx = 0;
+  for (const f of drawFixtures) {
+    idx++;
+    const pred = f.predictions.find((p) => p.channel === "DRAW")!;
+    const run = f.modelRuns[0];
+    const feat = run?.features;
+    const comp = f.season.competition.code;
+    const prob = Number(pred.probability);
+    const lambdaHome = readNumber(feat, "lambdaHome");
+    const lambdaAway = readNumber(feat, "lambdaAway");
+    const source = readString(feat, "predictionSource");
+
+    let resultHint = "";
+    if (f.homeScore !== null && f.awayScore !== null) {
+      const isDraw = f.homeScore === f.awayScore;
+      resultHint = isDraw
+        ? "  ← Match nul ✓"
+        : `  ← ${f.homeScore}-${f.awayScore} ✗`;
+    }
+
+    w();
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+    w(
+      `  Pick     : NUL  P=${fmtPct(prob)}  ${predResultLabel(pred.correct)}${resultHint}`,
+    );
+
+    if (lambdaHome !== null && lambdaAway !== null) {
+      const xg = lambdaHome + lambdaAway;
+      const balance = Math.abs(lambdaHome - lambdaAway);
+      w(
+        `  Poisson  : λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${xg.toFixed(2)}  |Δλ|=${balance.toFixed(2)}`,
+      );
+      const hint =
+        balance <= 0.2 && xg < 2.2
+          ? "↑ Équilibre fort + faible xG → NUL solide"
+          : balance <= 0.3
+            ? "~ Bon équilibre λ"
+            : balance > 0.6
+              ? "↓ Déséquilibre λ élevé → NUL improbable"
+              : "~ Signal NUL modéré";
+      w(`  Signal   : ${hint}`);
+    }
+    if (source) w(`  Source   : ${source}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // CONF — Confiance (argmax 1X2)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `━━━ CONF — Confiance (${confPreds.length} picks, ${confFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━`,
+  );
+
+  if (confFixtures.length === 0) {
+    w("  Aucun pronostic CONF ce jour.");
+  }
+
+  idx = 0;
+  for (const f of confFixtures) {
+    idx++;
+    const pred = f.predictions.find((p) => p.channel === "CONF")!;
+    const run = f.modelRuns[0];
+    const feat = run?.features;
+    const comp = f.season.competition.code;
+    const prob = Number(pred.probability);
+    const modelThreshold = getModelScoreThreshold(comp);
+    const lambdaHome = readNumber(feat, "lambdaHome");
+    const lambdaAway = readNumber(feat, "lambdaAway");
+    const source = readString(feat, "predictionSource");
+
+    w();
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+    w(
+      `  Pick     : ${singlePickLabel(pred.market, pred.pick).padEnd(10)}  P=${fmtPct(prob)}  seuil ligue=${modelThreshold.toFixed(2)}  ${predResultLabel(pred.correct)}`,
+    );
+
+    if (lambdaHome !== null && lambdaAway !== null) {
+      w(
+        `  Poisson  : λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${(lambdaHome + lambdaAway).toFixed(2)}`,
+      );
+    }
+
+    if (run) {
+      const detScore = run.deterministicScore
+        ? Number(run.deterministicScore).toFixed(3)
+        : "—";
+      const finalScoreStr = run.finalScore
+        ? Number(run.finalScore).toFixed(3)
+        : "—";
+      const finalScoreNum = run.finalScore ? Number(run.finalScore) : null;
+      const flag =
+        finalScoreNum !== null
+          ? finalScoreNum >= modelThreshold
+            ? "✓ score > seuil"
+            : "✗ score < seuil"
+          : "";
+      w(`  Modèle   : det=${detScore} → final=${finalScoreStr}  ${flag}`);
+    }
+    if (source) w(`  Source   : ${source}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // NO_BET — picks évalués pour comprendre le rejet
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `── NO_BET (${noBetFixtures.length}) — raisons de rejet ───────────────────────────────────────────────`,
   );
 
   if (noBetFixtures.length === 0) {
@@ -414,8 +791,6 @@ async function main(): Promise<void> {
   for (const f of noBetFixtures) {
     const run = f.modelRuns[0]!;
     const feat = run.features;
-    const home = f.homeTeam.name;
-    const away = f.awayTeam.name;
     const comp = f.season.competition.code;
     const score =
       f.homeScore !== null && f.awayScore !== null
@@ -441,18 +816,13 @@ async function main(): Promise<void> {
     w();
     const lambdaInfo =
       lambdaHome !== null && lambdaAway !== null
-        ? `  λH=${lambdaHome.toFixed(2)}  λA=${lambdaAway.toFixed(2)}  xG=${(lambdaHome + lambdaAway).toFixed(2)}`
+        ? `  λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${(lambdaHome + lambdaAway).toFixed(2)}`
         : "";
     w(
-      `  [${comp}]  ${home} vs ${away}  ${score}  score=${detScore}→${finalScore}${lambdaInfo}`,
+      `  [${comp}] ${f.homeTeam.name} vs ${f.awayTeam.name}  ${score}  score=${detScore}→${finalScore}${lambdaInfo}`,
     );
-    w(`    Seuil modèle       : ${modelThreshold.toFixed(2)}`);
-    if (predictionSource !== null) {
-      w(`    Source prédiction  : ${predictionSource}`);
-    }
-    if (fallbackReason !== null) {
-      w(`    Raison fallback    : ${fallbackReason}`);
-    }
+    if (predictionSource) w(`    source=${predictionSource}`);
+    if (fallbackReason) w(`    fallback=${fallbackReason}`);
     if (
       isSenior !== null ||
       hasMarketOdds !== null ||
@@ -461,39 +831,41 @@ async function main(): Promise<void> {
       hasAwayElo !== null
     ) {
       w(
-        `    Contexte source    : senior=${isSenior ?? "?"}  marketOdds=${hasMarketOdds ?? "?"}  pinnacle=${hasPinnacleOdds ?? "?"}  eloHome=${hasHomeElo ?? "?"}  eloAway=${hasAwayElo ?? "?"}`,
+        `    contexte: senior=${isSenior ?? "?"}  marketOdds=${hasMarketOdds ?? "?"}  pinnacle=${hasPinnacleOdds ?? "?"}  eloHome=${hasHomeElo ?? "?"}  eloAway=${hasAwayElo ?? "?"}`,
       );
     }
 
-    if (evaluatedPicks.length > 0) {
-      for (const p of evaluatedPicks) {
-        const label = pickLabel(
-          p.market,
-          p.pick,
-          p.comboMarket,
-          p.comboPick,
-        ).padEnd(26);
-        const statusLabel =
-          p.status === "viable"
-            ? finalScoreNum !== null && finalScoreNum < modelThreshold
-              ? `Viable pick-level, mais NO_BET (score modèle < ${modelThreshold.toFixed(2)})`
-              : "Viable"
-            : `Rejeté  (${p.rejectionReason ? rejectionLabel(p.rejectionReason) : "?"})`;
-        w(
-          `    ${label}  EV: ${fmtSigned(p.ev, 4)}  P: ${(p.probability * 100).toFixed(1)}%  ${statusLabel}`,
-        );
-      }
-    } else {
-      w("    Aucun pick évalué en base.");
+    const scoreFlag =
+      finalScoreNum !== null && finalScoreNum < modelThreshold
+        ? ` (score < seuil ${modelThreshold.toFixed(2)})`
+        : "";
+
+    for (const ep of evaluatedPicks) {
+      const label = pickLabel(
+        ep.market,
+        ep.pick,
+        ep.comboMarket,
+        ep.comboPick,
+      ).padEnd(26);
+      const st =
+        ep.status === "viable"
+          ? `Viable pick-level${scoreFlag}`
+          : `Rejeté (${ep.rejectionReason ? rejectionLabel(ep.rejectionReason) : "?"})`;
+      w(
+        `    ${label}  EV: ${fmtSigned(ep.ev, 3)}  P: ${fmtPct(ep.probability)}  ${st}`,
+      );
+    }
+    if (evaluatedPicks.length === 0) {
+      w("    Aucun pick évalué.");
     }
   }
 
-  // ── Sans run ────────────────────────────────────────────────────────────────
+  // ── Sans run ──────────────────────────────────────────────────────────────
 
   if (noRunFixtures.length > 0) {
     w();
     w(
-      `── Sans model run (${noRunFixtures.length}) ────────────────────────────`,
+      `── Sans model run (${noRunFixtures.length}) ───────────────────────────────────────────────────────`,
     );
     for (const f of noRunFixtures) {
       const comp = f.season.competition.code;

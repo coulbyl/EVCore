@@ -107,6 +107,34 @@ enum PredictionChannel {
   BTTS
 }
 
+enum CouponLegCanal {
+  EV
+  SV
+  BB
+  NUL
+  CONF
+
+  @@map("coupon_leg_canal")
+}
+
+enum CouponProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+
+  @@map("coupon_proposal_status")
+}
+
+enum CouponResult {
+  WON
+  LOST
+  PARTIAL
+  VOID
+
+  @@map("coupon_result")
+}
+
 // ─────────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────────
@@ -188,6 +216,7 @@ model Fixture {
   teamStats          TeamStats[]
   oddsSnapshots      OddsSnapshot[]
   predictions        Prediction[]
+  couponLegs         CouponProposalLeg[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
@@ -564,4 +593,54 @@ model UserBadge {
 
   @@unique([userId, badgeCode])
   @@map("user_badge")
+}
+
+// ─────────────────────────────────────────────
+// AI ENGINE — Coupon proposals
+// ─────────────────────────────────────────────
+
+model CouponProposal {
+  id                     String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  forDate                DateTime             @db.Date
+  signalWindowDays       Int
+  targetOddsMin          Decimal              @db.Decimal(6, 2)
+  targetOddsMax          Decimal              @db.Decimal(6, 2)
+  combinedOdds           Decimal              @db.Decimal(8, 3)
+  jointProbability       Decimal              @db.Decimal(5, 4)
+  signalScore            Decimal              @db.Decimal(5, 4)
+  status                 CouponProposalStatus @default(PENDING)
+  result                 CouponResult?
+  reasoning              Json?
+  rank                   Int                  @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
+  lastFixtureScheduledAt DateTime
+  legs                   CouponProposalLeg[]
+  generatedAt            DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@unique([forDate, signalWindowDays, targetOddsMin, targetOddsMax, rank])
+  @@index([forDate, status])
+  @@index([status, lastFixtureScheduledAt])
+  @@map("coupon_proposal")
+}
+
+model CouponProposalLeg {
+  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String         @db.Uuid
+  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  fixtureId        String         @db.Uuid
+  fixture          Fixture        @relation(fields: [fixtureId], references: [id])
+  canal            CouponLegCanal
+  market           Market
+  pick             String
+  probability      Decimal        @db.Decimal(5, 4)
+  oddsSnapshot     Decimal?       @db.Decimal(6, 3)
+  signalScore      Decimal        @db.Decimal(5, 4)
+  featureSnapshot  Json
+  isCorrect        Boolean?
+  settledAt        DateTime?
+  createdAt        DateTime       @default(now())
+
+  @@index([couponProposalId])
+  @@index([fixtureId])
+  @@map("coupon_proposal_leg")
 }

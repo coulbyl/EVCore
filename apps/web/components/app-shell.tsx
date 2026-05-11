@@ -96,6 +96,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },
+        {
+          label: tNav("coupons"),
+          href: "/dashboard/coupons",
+          active: pathname.startsWith("/dashboard/coupons"),
+        },
         isAdmin
           ? {
               label: tNav("audit"),

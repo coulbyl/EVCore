@@ -22,6 +22,7 @@ import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 import { SummaryModule } from './modules/summary/summary.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { AiEngineModule } from './modules/ai-engine/ai-engine.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
     FormationProgressModule,
     SummaryModule,
     AnnouncementsModule,
+    AiEngineModule,
   ],
   controllers: [AppController],
   providers: [AppService],

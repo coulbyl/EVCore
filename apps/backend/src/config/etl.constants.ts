@@ -169,6 +169,7 @@ export const BULLMQ_QUEUES = {
   ELO_SYNC: 'elo-sync',
   BETTING_ENGINE: 'betting-engine',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
+  AI_ENGINE: 'ai-engine',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
