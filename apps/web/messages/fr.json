@@ -27,7 +27,8 @@
     "notifications": "Notifications",
     "settings": "Paramètres",
     "help": "Aide",
-    "summary": "Résumé"
+    "summary": "Résumé",
+    "coupons": "Propositions"
   },
   "notifications": {
     "title": "Notifications",
@@ -464,5 +465,11 @@
       "rejected": "écarté",
       "rejectedPlural": "écartés"
     }
+  },
+  "coupons": {
+    "pageTitle": "Propositions",
+    "empty": "Aucun coupon généré pour cette date.",
+    "loadError": "Impossible de charger les propositions de coupons.",
+    "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers."
   }
 }

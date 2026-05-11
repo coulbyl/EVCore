@@ -27,6 +27,7 @@
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
     "db:audit:fri-xg": "tsx scripts/fri-xg-audit.ts",
     "db:audit:fri-elo": "tsx scripts/fri-elo-audit.ts",
+    "db:analyze:signals": "tsx scripts/analyze-signals.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
