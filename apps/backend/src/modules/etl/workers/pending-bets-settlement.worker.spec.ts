@@ -6,6 +6,7 @@ import type { FixtureService } from '../../fixture/fixture.service';
 import type { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import type { NotificationService } from '../../notification/notification.service';
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
+import type { CouponSettlementService } from '../../ai-engine/coupon-settlement.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
 vi.mock('node:child_process', () => ({
@@ -116,6 +117,10 @@ describe('PendingBetsSettlementWorker', () => {
     }),
   } satisfies Partial<AdjustmentService>;
 
+  const couponSettlement = {
+    settleReadyProposals: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<CouponSettlementService>;
+
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
@@ -127,6 +132,7 @@ describe('PendingBetsSettlementWorker', () => {
     Object.assign(worker, {
       notification: notification as unknown as NotificationService,
       config: config as unknown as ConfigService,
+      couponSettlement: couponSettlement as unknown as CouponSettlementService,
     });
     fixtureService.syncFixtureState.mockResolvedValue(undefined);
     bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 1 });

@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { CouponResult, Market } from '@evcore/db';
+import { BetStatus, CouponResult, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import {
+  resolveFirstHalfBetStatus,
+  resolveHalfTimeFullTimeBetStatus,
+  resolvePickBetStatus,
+} from '../betting-engine/betting-engine.utils';
 import { AiEngineRepository } from './ai-engine.repository';
 import { createLogger } from '@utils/logger';
 
@@ -19,37 +24,28 @@ function resolveIsCorrect(
   scores: MatchScores,
 ): boolean | null {
   const { homeScore, awayScore, homeHtScore, awayHtScore } = scores;
-  switch (market) {
-    case Market.ONE_X_TWO: {
-      if (pick === 'HOME') return homeScore > awayScore;
-      if (pick === 'DRAW') return homeScore === awayScore;
-      if (pick === 'AWAY') return awayScore > homeScore;
-      return null;
-    }
-    case Market.BTTS:
-      if (pick === 'YES') return homeScore > 0 && awayScore > 0;
-      if (pick === 'NO') return !(homeScore > 0 && awayScore > 0);
-      return null;
-    case Market.OVER_UNDER: {
-      const total = homeScore + awayScore;
-      if (pick === 'OVER') return total > 2.5;
-      if (pick === 'UNDER') return total < 2.5;
-      if (pick === 'OVER_1_5') return total > 1.5;
-      if (pick === 'UNDER_1_5') return total < 1.5;
-      if (pick === 'OVER_3_5') return total > 3.5;
-      if (pick === 'UNDER_3_5') return total < 3.5;
-      return null;
-    }
-    case Market.FIRST_HALF_WINNER: {
-      if (homeHtScore === null || awayHtScore === null) return null;
-      if (pick === 'HOME') return homeHtScore > awayHtScore;
-      if (pick === 'DRAW') return homeHtScore === awayHtScore;
-      if (pick === 'AWAY') return awayHtScore > homeHtScore;
-      return null;
-    }
-    default:
-      return null;
+
+  let status: BetStatus;
+  if (market === Market.HALF_TIME_FULL_TIME) {
+    status = resolveHalfTimeFullTimeBetStatus({
+      pick,
+      homeHtScore,
+      awayHtScore,
+      homeScore,
+      awayScore,
+    });
+  } else if (
+    market === Market.OVER_UNDER_HT ||
+    market === Market.FIRST_HALF_WINNER
+  ) {
+    status = resolveFirstHalfBetStatus(pick, homeHtScore, awayHtScore);
+  } else {
+    status = resolvePickBetStatus(pick, homeScore, awayScore);
   }
+
+  if (status === BetStatus.WON) return true;
+  if (status === BetStatus.LOST) return false;
+  return null; // VOID — scores not yet available or unknown pick
 }
 
 @Injectable()

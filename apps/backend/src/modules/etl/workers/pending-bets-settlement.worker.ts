@@ -13,6 +13,7 @@ import {
 } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
+import { CouponSettlementService } from '../../ai-engine/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
@@ -30,6 +31,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(ConfigService)
   private config!: ConfigService;
+
+  @Inject(CouponSettlementService)
+  private couponSettlement!: CouponSettlementService;
 
   constructor(
     private readonly fixtureService: FixtureService,
@@ -143,6 +147,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       },
       'Pending bets settlement sync complete',
     );
+
+    if (finishedFixtures > 0) {
+      await this.couponSettlement.settleReadyProposals();
+    }
 
     if (settledBets > 0) {
       const calibration = await this.adjustmentService.runCalibrationCheck();
