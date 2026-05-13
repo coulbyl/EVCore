@@ -124,7 +124,6 @@ describe('PendingBetsSettlementWorker', () => {
   const worker = new PendingBetsSettlementWorker(
     fixtureService as unknown as FixtureService,
     bettingEngineService as unknown as BettingEngineService,
-    couponSettlement as unknown as CouponSettlementService,
     adjustmentService as unknown as AdjustmentService,
   );
 
@@ -133,6 +132,7 @@ describe('PendingBetsSettlementWorker', () => {
     Object.assign(worker, {
       notification: notification as unknown as NotificationService,
       config: config as unknown as ConfigService,
+      couponSettlement: couponSettlement as unknown as CouponSettlementService,
     });
     fixtureService.syncFixtureState.mockResolvedValue(undefined);
     bettingEngineService.settleOpenBets.mockResolvedValue({ settled: 1 });

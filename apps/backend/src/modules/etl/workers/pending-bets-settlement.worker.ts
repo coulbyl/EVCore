@@ -32,10 +32,12 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   @Inject(ConfigService)
   private config!: ConfigService;
 
+  @Inject(CouponSettlementService)
+  private couponSettlement!: CouponSettlementService;
+
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly bettingEngineService: BettingEngineService,
-    private readonly couponSettlement: CouponSettlementService,
     private readonly adjustmentService: AdjustmentService,
   ) {
     super();
