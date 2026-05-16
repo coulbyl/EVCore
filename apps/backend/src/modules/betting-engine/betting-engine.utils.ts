@@ -406,6 +406,8 @@ const PICK_CONDITIONS: Record<string, (h: number, a: number) => boolean> = {
   UNDER: (h, a) => h + a <= 2,
   OVER_3_5: (h, a) => h + a > 3,
   UNDER_3_5: (h, a) => h + a <= 3,
+  OVER_4_5: (h, a) => h + a > 4,
+  UNDER_4_5: (h, a) => h + a <= 4,
   YES: (h, a) => h >= 1 && a >= 1, // BTTS YES
   NO: (h, a) => h === 0 || a === 0, // BTTS NO
   '1X': (h, a) => h >= a,

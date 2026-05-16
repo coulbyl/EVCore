@@ -9,6 +9,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
 Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.
 
+## Database access
+
+The PostgreSQL database runs in Docker. **Never use `psql` directly or `prisma db execute`** — they are not available in this environment.
+
+Always use:
+
+```bash
+docker exec evcore-postgres psql -U postgres -d evcore -c "YOUR SQL HERE"
+```
+
+Column names in this project use camelCase in Postgres (Prisma default). Always quote them: `"scheduledAt"`, `"couponProposalId"`, `"isCorrect"`, etc.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # Next.js: ALWAYS read docs before coding

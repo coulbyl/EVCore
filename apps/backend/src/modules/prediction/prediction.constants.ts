@@ -1,4 +1,10 @@
+import Decimal from 'decimal.js';
 import { PredictionChannel } from '@evcore/db';
+
+// CONF picks are rejected when the argmax outcome leads the 2nd-best by less
+// than this margin — prevents "barely-CONF" picks where all three outcomes
+// cluster near 33% (model has no real conviction).
+export const CONF_MIN_MARGIN = new Decimal('0.05');
 
 export type PredictionLeagueConfig = {
   enabled: boolean;

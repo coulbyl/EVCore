@@ -279,7 +279,7 @@ type AdditionalMarketOdds = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
-  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
 };
 
 type CurlJsonResponse = {
@@ -449,17 +449,19 @@ function extractDoubleChanceOdds(
 ): AdditionalMarketOdds['doubleChanceOdds'] {
   if (!dcBet) return null;
 
-  const homeDrawOdd = dcBet.values.find((v) => v.value === 'Home/Draw')?.odd;
-  const drawAwayOdd = dcBet.values.find((v) => v.value === 'Draw/Away')?.odd;
-  const homeAwayOdd = dcBet.values.find((v) => v.value === 'Home/Away')?.odd;
+  // API-Football returns 'Home' (= 1X) and 'Away' (= X2).
+  // '12' (no draw) is not provided — stored as null and skipped by the engine.
+  const homeDrawOdd =
+    dcBet.values.find((v) => v.value === 'Home' || v.value === 'Home/Draw')
+      ?.odd ?? undefined;
+  const drawAwayOdd =
+    dcBet.values.find((v) => v.value === 'Away' || v.value === 'Draw/Away')
+      ?.odd ?? undefined;
 
-  if (
-    homeDrawOdd === undefined ||
-    drawAwayOdd === undefined ||
-    homeAwayOdd === undefined
-  ) {
-    return null;
-  }
+  if (homeDrawOdd === undefined || drawAwayOdd === undefined) return null;
+
+  const homeAwayOdd =
+    dcBet.values.find((v) => v.value === 'Home/Away')?.odd ?? null;
 
   return { '1X': homeDrawOdd, X2: drawAwayOdd, '12': homeAwayOdd };
 }

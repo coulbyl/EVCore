@@ -443,23 +443,101 @@ export class DashboardService {
   }
 
   async getChannelStats(): Promise<ChannelStatsItem[]> {
-    const health = await this.getChannelHealth();
-    return health.map((item) => ({
-      channel: item.channel,
-      hitRate: item.hitRate,
-      avgThreshold:
-        item.channel === 'CONF'
-          ? avgThresholdForChannel(PredictionChannel.CONF)
-          : item.channel === 'BTTS'
-            ? avgThresholdForChannel(PredictionChannel.BTTS)
+    const [evBets, svBets, confPreds, bttsPreds, drawPreds] = await Promise.all(
+      [
+        this.repo.findRecentModelBets(false, 200),
+        this.repo.findRecentModelBets(true, 200),
+        this.repo.findRecentSettledPredictions(PredictionChannel.CONF, 200),
+        this.repo.findRecentSettledPredictions(PredictionChannel.BTTS, 200),
+        this.repo.findRecentSettledPredictions(PredictionChannel.DRAW, 200),
+      ],
+    );
+
+    const confItems = confPreds.map(predToFlatItem);
+    const bttsItems = bttsPreds.map(predToFlatItem);
+    const drawItems = drawPreds.map(predToFlatItem);
+
+    const confHr = hitRate(confItems);
+    const bttsHr = hitRate(bttsItems);
+    const drawHr = hitRate(drawItems);
+    const confThreshold = avgThresholdForChannel(PredictionChannel.CONF);
+    const bttsThreshold = avgThresholdForChannel(PredictionChannel.BTTS);
+
+    // Reverse desc→asc for chronological drawdown computation
+    const evChron = [...evBets].reverse();
+    const svChron = [...svBets].reverse();
+    const confChron = [...confItems].reverse();
+    const bttsChron = [...bttsItems].reverse();
+    const drawChron = [...drawItems].reverse();
+
+    return [
+      {
+        channel: 'EV',
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: flatBetRoi(evBets),
+        netUnits: netUnitsFromBets(evBets),
+        maxDrawdown: maxDrawdownFromBets(evChron),
+        sampleSize: evBets.length,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+      {
+        channel: 'SV',
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: flatBetRoi(svBets),
+        netUnits: netUnitsFromBets(svBets),
+        maxDrawdown: maxDrawdownFromBets(svChron),
+        sampleSize: svBets.length,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+      {
+        channel: 'CONF',
+        hitRate: confHr,
+        avgThreshold: confThreshold,
+        vsThreshold:
+          confHr !== null && confThreshold !== null
+            ? confHr - confThreshold
             : null,
-      vsThreshold: item.vsThreshold,
-      roi: item.roi,
-      netUnits: null,
-      sampleSize: item.sampleSize,
-      oddsAvailabilityRate: 1,
-      trend: 'FLAT' as const,
-    }));
+        roi: flatPredRoi(confItems),
+        netUnits: netUnitsFromItems(confItems),
+        maxDrawdown: maxDrawdownFromItems(confChron),
+        sampleSize: confItems.length,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+      {
+        channel: 'BTTS',
+        hitRate: bttsHr,
+        avgThreshold: bttsThreshold,
+        vsThreshold:
+          bttsHr !== null && bttsThreshold !== null
+            ? bttsHr - bttsThreshold
+            : null,
+        roi: flatPredRoi(bttsItems),
+        netUnits: netUnitsFromItems(bttsItems),
+        maxDrawdown: maxDrawdownFromItems(bttsChron),
+        sampleSize: bttsItems.length,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+      {
+        channel: 'DRAW',
+        hitRate: drawHr,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: flatPredRoi(drawItems),
+        netUnits: netUnitsFromItems(drawItems),
+        maxDrawdown: maxDrawdownFromItems(drawChron),
+        sampleSize: drawItems.length,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+    ];
   }
 
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -585,6 +663,59 @@ function flatBetRoi(
 function hitRate(items: FlatItem[]): number | null {
   if (!items.length) return null;
   return (items.filter((i) => i.correct).length / items.length) * 100;
+}
+
+type FlatBet = { status: string; oddsSnapshot: { toString(): string } | null };
+
+function netUnitsFromBets(bets: FlatBet[]): number | null {
+  if (!bets.length) return null;
+  return bets.reduce((acc, b) => {
+    const odds = b.oddsSnapshot ? parseFloat(b.oddsSnapshot.toString()) : null;
+    if (odds === null) return acc;
+    return acc + (b.status === 'WON' ? odds - 1 : -1);
+  }, 0);
+}
+
+function netUnitsFromItems(items: FlatItem[]): number | null {
+  const withOdds = items.filter((i) => i.odds !== null);
+  if (!withOdds.length) return null;
+  return withOdds.reduce(
+    (acc, i) => acc + (i.correct ? (i.odds ?? 0) - 1 : -1),
+    0,
+  );
+}
+
+// bets must be in chronological order (oldest first)
+function maxDrawdownFromBets(bets: FlatBet[]): number | null {
+  if (!bets.length) return null;
+  let peak = 0;
+  let running = 0;
+  let maxDD = 0;
+  for (const b of bets) {
+    const odds = b.oddsSnapshot ? parseFloat(b.oddsSnapshot.toString()) : null;
+    if (odds === null) continue;
+    running += b.status === 'WON' ? odds - 1 : -1;
+    if (running > peak) peak = running;
+    const dd = peak - running;
+    if (dd > maxDD) maxDD = dd;
+  }
+  return maxDD;
+}
+
+// items must be in chronological order (oldest first)
+function maxDrawdownFromItems(items: FlatItem[]): number | null {
+  const withOdds = items.filter((i) => i.odds !== null);
+  if (!withOdds.length) return null;
+  let peak = 0;
+  let running = 0;
+  let maxDD = 0;
+  for (const item of withOdds) {
+    running += item.correct ? (item.odds ?? 0) - 1 : -1;
+    if (running > peak) peak = running;
+    const dd = peak - running;
+    if (dd > maxDD) maxDD = dd;
+  }
+  return maxDD;
 }
 
 function avgThresholdForChannel(channel: PredictionChannel): number | null {

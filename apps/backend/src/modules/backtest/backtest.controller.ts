@@ -1,9 +1,13 @@
 import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { BacktestService } from './backtest.service';
+import { GridSearchService } from './grid-search.service';
 
 @Controller('backtest')
 export class BacktestController {
-  constructor(private readonly backtestService: BacktestService) {}
+  constructor(
+    private readonly backtestService: BacktestService,
+    private readonly gridSearchService: GridSearchService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
@@ -12,6 +16,12 @@ export class BacktestController {
   }
 
   // Declared before `:competitionCode` so NestJS matches the static path first.
+  @Post('grid-search/:competitionCode')
+  @HttpCode(HttpStatus.OK)
+  runGridSearch(@Param('competitionCode') competitionCode: string) {
+    return this.gridSearchService.runGridSearch(competitionCode);
+  }
+
   @Post('safe-value')
   @HttpCode(HttpStatus.OK)
   runSafeValueBacktest() {

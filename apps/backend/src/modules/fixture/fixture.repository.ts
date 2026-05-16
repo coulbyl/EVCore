@@ -156,7 +156,7 @@ export type UpsertOddsSnapshotInput = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
-  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -184,7 +184,7 @@ export type UpsertSecondaryMarketOddsInput = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
-  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   source?: OddsSnapshotSource;
 };
 

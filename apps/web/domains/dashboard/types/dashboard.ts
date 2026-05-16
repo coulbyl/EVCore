@@ -93,6 +93,7 @@ export type ChannelStatsItem = {
   vsThreshold: number | null;
   roi: number | null;
   netUnits: number | null;
+  maxDrawdown: number | null;
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: "UP" | "FLAT" | "DOWN";

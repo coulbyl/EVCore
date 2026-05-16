@@ -233,9 +233,15 @@ type BacktestAnalysisEntry = {
     | null;
 };
 
+export type GridSearchParams = {
+  evFloor: Decimal;
+  modelScoreThreshold: Decimal;
+};
+
 type RunBacktestOptions = {
   analysisEntries?: BacktestAnalysisEntry[];
   writeAnalysisLog?: boolean;
+  gridSearchOverrides?: GridSearchParams;
 };
 
 type PredictionCandidate = {
@@ -450,9 +456,9 @@ export class BacktestService {
         continue;
       }
 
-      const modelScoreThreshold = getModelScoreThreshold(
-        competitionCode ?? null,
-      );
+      const modelScoreThreshold =
+        options.gridSearchOverrides?.modelScoreThreshold ??
+        getModelScoreThreshold(competitionCode ?? null);
       if (computed.deterministicScore.lessThan(modelScoreThreshold)) {
         analysisEntries.push(
           buildAnalysisEntry({
@@ -489,6 +495,7 @@ export class BacktestService {
         distAway,
         lambdaFloorHit,
         competitionCode,
+        minEv: options.gridSearchOverrides?.evFloor,
       });
 
       if (!pick) {
@@ -501,6 +508,7 @@ export class BacktestService {
             distAway,
             lambdaFloorHit,
             competitionCode: competitionCode ?? null,
+            minEv: options.gridSearchOverrides?.evFloor,
           },
         );
         analysisEntries.push(
@@ -1391,9 +1399,14 @@ export class BacktestService {
       });
       const evPickKey = evPick ? `${evPick.market}|${evPick.pick}|-|-` : null;
 
+      const svLambdaTotal =
+        distHome.reduce((sum, p, k) => sum + k * p, 0) +
+        distAway.reduce((sum, p, k) => sum + k * p, 0);
       const svPick = this.bettingEngine.selectSafeValuePickForBacktest({
         evaluatedPicks,
         evPickKey,
+        lambdaTotal: svLambdaTotal,
+        competitionCode,
       });
       if (!svPick) continue;
 

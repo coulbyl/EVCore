@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Page, PageContent } from "@evcore/ui";
 import { FilterBar, type FilterDef, type FilterState } from "@evcore/ui";
 import { CanalCards } from "./canal-cards";
+import { ChannelPerformanceTable } from "./channel-performance-table";
 import { DashboardSharedSection } from "./dashboard-shared-section";
 
 const FILTER_DEFS: FilterDef[] = [
@@ -49,6 +50,8 @@ export function DashboardPageClientAdmin() {
           />
 
           <CanalCards from={fromIso} to={toIso} />
+
+          <ChannelPerformanceTable />
 
           <DashboardSharedSection />
         </div>

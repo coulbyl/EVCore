@@ -5,6 +5,7 @@ import { Market, PredictionChannel } from '@evcore/db';
 import {
   getPredictionConfig,
   PREDICTION_CHANNELS,
+  CONF_MIN_MARGIN,
 } from './prediction.constants';
 import { PredictionRepository } from './prediction.repository';
 import type { ThreeWayProba } from '@modules/betting-engine/betting-engine.utils';
@@ -66,6 +67,21 @@ export class PredictionService {
       if (!config.enabled || candidate.probability.lt(config.threshold)) {
         await this.repo.deleteForFixtureChannel(fixtureId, channel);
         continue;
+      }
+
+      // CONF: reject when the argmax barely leads — the model has no real conviction
+      // when all three outcomes are close to 33%. Require a 5pp margin over 2nd-best
+      // to avoid "fallback CONF" picks that mirror the EV channel's fallback problem.
+      if (channel === PredictionChannel.CONF) {
+        const sorted = [
+          probabilities.home,
+          probabilities.draw,
+          probabilities.away,
+        ].sort((a, b) => b.minus(a).toNumber());
+        if (sorted[0].minus(sorted[1]).lt(CONF_MIN_MARGIN)) {
+          await this.repo.deleteForFixtureChannel(fixtureId, channel);
+          continue;
+        }
       }
 
       await this.repo.upsert({

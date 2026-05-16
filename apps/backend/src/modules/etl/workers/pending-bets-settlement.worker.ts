@@ -148,9 +148,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       'Pending bets settlement sync complete',
     );
 
-    if (finishedFixtures > 0) {
-      await this.couponSettlement.settleReadyProposals();
-    }
+    // Always attempt coupon settlement — the guard `finishedFixtures > 0` was a
+    // bug: once fixtures were already finished from a prior run, subsequent worker
+    // executions had finishedFixtures=0 and coupons were never settled.
+    await this.couponSettlement.settleReadyProposals();
 
     if (settledBets > 0) {
       const calibration = await this.adjustmentService.runCalibrationCheck();

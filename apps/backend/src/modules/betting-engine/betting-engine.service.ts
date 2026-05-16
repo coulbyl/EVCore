@@ -65,13 +65,17 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
-  SAFE_VALUE_MIN_PROBABILITY,
+  getSvMinProbability,
+  getSvMinOdds,
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MIN_ODDS,
   SAFE_VALUE_MAX_ODDS,
+  SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
   UNDER_HIGH_LAMBDA_THRESHOLD,
-  UNDER_HIGH_LAMBDA_EV_FLOOR,
+  EV_MIN_PROBABILITY_THRESHOLD,
   COMBOS_ENABLED,
+  isHtftCalibrated,
+  FALLBACK_MIN_QUALITY_SCORE,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
@@ -194,6 +198,7 @@ export class BettingEngineService {
     distAway: number[];
     lambdaFloorHit: boolean;
     competitionCode?: string | null;
+    minEv?: Decimal;
   }): ViablePick | null {
     return this.selectBestViablePick(
       input.probabilities,
@@ -204,6 +209,7 @@ export class BettingEngineService {
       input.lambdaFloorHit,
       new Set<Market>(),
       input.competitionCode,
+      input.minEv,
     );
   }
 
@@ -215,6 +221,7 @@ export class BettingEngineService {
     distAway: number[];
     lambdaFloorHit: boolean;
     competitionCode?: string | null;
+    minEv?: Decimal;
   }): EvaluatedPick[] {
     return this.listEvaluatedPicks(
       input.probabilities,
@@ -225,17 +232,22 @@ export class BettingEngineService {
       input.lambdaFloorHit,
       new Set<Market>(),
       input.competitionCode ?? null,
+      input.minEv,
     );
   }
 
   selectSafeValuePickForBacktest(input: {
     evaluatedPicks: EvaluatedPick[];
     evPickKey: string | null;
+    lambdaTotal?: number;
+    competitionCode?: string | null;
   }): ViablePick | null {
     return this.selectSafeValuePick(
       input.evaluatedPicks,
       new Set<Market>(),
       input.evPickKey,
+      input.lambdaTotal ?? 0,
+      input.competitionCode ?? null,
     );
   }
 
@@ -859,10 +871,15 @@ export class BettingEngineService {
     // Safe value pass — only when the model score threshold is met (same guard as EV).
     // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
     if (deterministicDecision === Decision.BET && latestOdds !== null) {
+      const svLambdaTotal =
+        distHome.reduce((sum, p, k) => sum + k * p, 0) +
+        distAway.reduce((sum, p, k) => sum + k * p, 0);
       const svPick = this.selectSafeValuePick(
         evaluatedPicks,
         suspendedMarkets,
         evPickKey,
+        svLambdaTotal,
+        competitionCode,
       );
 
       if (svPick !== null) {
@@ -1546,11 +1563,11 @@ export class BettingEngineService {
       const row1X = dcRows.find((r) => r.pick === '1X');
       const rowX2 = dcRows.find((r) => r.pick === 'X2');
       const row12 = dcRows.find((r) => r.pick === '12');
-      if (row1X?.odds && rowX2?.odds && row12?.odds) {
+      if (row1X?.odds && rowX2?.odds) {
         doubleChanceOdds = {
           '1X': new Decimal(row1X.odds.toString()),
           X2: new Decimal(rowX2.odds.toString()),
-          '12': new Decimal(row12.odds.toString()),
+          '12': row12?.odds ? new Decimal(row12.odds.toString()) : null,
         };
       }
     }
@@ -1743,10 +1760,15 @@ export class BettingEngineService {
   //   - Not already the EV pick (excludedPickKey)
   //
   // Returns the candidate with the highest probability (then highest EV as tiebreak).
+  // When the winner is Under 3.5 or Under 4.5 at high lambda, also evaluates the
+  // symmetric Over counterparts (Over 2.5, Over 3.5) and upgrades to the better
+  // qualityScore — fixing the structural Under bias at high expected goals (section 7).
   private selectSafeValuePick(
     evaluatedPicks: EvaluatedPick[],
     suspendedMarkets: Set<Market>,
     excludedPickKey: string | null,
+    lambdaTotal = 0,
+    competitionCode: string | null = null,
   ): ViablePick | null {
     const safeValueMarkets = new Set<Market>([
       Market.ONE_X_TWO,
@@ -1755,13 +1777,16 @@ export class BettingEngineService {
       Market.OVER_UNDER_HT,
     ]);
 
-    const candidates = evaluatedPicks.filter((pick) => {
+    const svMinProbability = getSvMinProbability(competitionCode);
+    const svMinOdds = getSvMinOdds(competitionCode);
+
+    const isEligibleSvPick = (pick: EvaluatedPick): boolean => {
       if (pick.isCombo) return false;
       if (!safeValueMarkets.has(pick.market)) return false;
-      if (pick.probability.lessThan(SAFE_VALUE_MIN_PROBABILITY)) return false;
+      if (pick.probability.lessThan(svMinProbability)) return false;
       if (pick.ev.lessThan(SAFE_VALUE_MIN_EV)) return false;
       if (pick.ev.greaterThan(EV_HARD_CAP)) return false;
-      if (pick.odds.lessThan(SAFE_VALUE_MIN_ODDS)) return false;
+      if (pick.odds.lessThan(svMinOdds)) return false;
       if (pick.odds.greaterThan(SAFE_VALUE_MAX_ODDS)) return false;
       if (suspendedMarkets.has(pick.market)) return false;
       const pickKey = buildBetPickKey({
@@ -1772,17 +1797,64 @@ export class BettingEngineService {
       });
       if (excludedPickKey !== null && pickKey === excludedPickKey) return false;
       return true;
-    });
+    };
 
+    const candidates = evaluatedPicks.filter(isEligibleSvPick);
     if (candidates.length === 0) return null;
 
     // Best by probability DESC, then EV DESC
-    return candidates.reduce((best, c) => {
+    const bestPick = candidates.reduce((best, c) => {
       const cmpProb = c.probability.comparedTo(best.probability);
       if (cmpProb > 0) return c;
       if (cmpProb < 0) return best;
       return c.ev.comparedTo(best.ev) > 0 ? c : best;
     });
+
+    // Symmetric Over/Under comparison at high lambda: when the SV winner is
+    // Under 3.5 or Under 4.5, the model is predicting a high-scoring game —
+    // Over 2.5 or Over 3.5 may offer better qualityScore at lower but still
+    // viable probability. Probability floor is intentionally relaxed here.
+    if (
+      bestPick.market === Market.OVER_UNDER &&
+      (bestPick.pick === 'UNDER_3_5' || bestPick.pick === 'UNDER_4_5') &&
+      lambdaTotal >= SV_UNDER_LAMBDA_COMPARISON_THRESHOLD
+    ) {
+      const overCounterparts = evaluatedPicks.filter(
+        (p): p is ViablePick =>
+          p.rejectionReason === undefined &&
+          !p.isCombo &&
+          p.market === Market.OVER_UNDER &&
+          (p.pick === 'OVER' || p.pick === 'OVER_3_5') &&
+          p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
+          p.ev.lessThanOrEqualTo(EV_HARD_CAP) &&
+          p.odds.greaterThanOrEqualTo(SAFE_VALUE_MIN_ODDS) &&
+          p.odds.lessThanOrEqualTo(SAFE_VALUE_MAX_ODDS) &&
+          !suspendedMarkets.has(p.market) &&
+          (excludedPickKey === null ||
+            buildBetPickKey({
+              market: p.market,
+              pick: p.pick,
+              comboMarket: null,
+              comboPick: null,
+            }) !== excludedPickKey),
+      );
+
+      const bestOver =
+        overCounterparts.length > 0
+          ? overCounterparts.reduce((a, b) =>
+              b.qualityScore.comparedTo(a.qualityScore) > 0 ? b : a,
+            )
+          : null;
+
+      if (
+        bestOver &&
+        bestOver.qualityScore.greaterThan(bestPick.qualityScore)
+      ) {
+        return bestOver;
+      }
+    }
+
+    return bestPick;
   }
 
   // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
@@ -1795,8 +1867,9 @@ export class BettingEngineService {
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
     competitionCode: string | null = null,
+    overrideMinEv?: Decimal,
   ): ViablePick | null {
-    const viable = this.listViablePicks(
+    const evaluated = this.listEvaluatedPicks(
       probabilities,
       odds,
       deterministicScore,
@@ -1805,34 +1878,34 @@ export class BettingEngineService {
       lambdaFloorHit,
       suspendedMarkets,
       competitionCode,
+      overrideMinEv,
     );
 
-    return viable[0] ?? null;
-  }
+    // Detect if the ideal pick (highest qualityScore overall) was rejected.
+    // If so, apply a stricter floor to prevent selecting a poor substitute
+    // just because it is "best remaining" after the dominant candidate was blocked.
+    const topByQuality = evaluated.reduce<(typeof evaluated)[number] | null>(
+      (best, p) =>
+        best === null || p.qualityScore.greaterThan(best.qualityScore)
+          ? p
+          : best,
+      null,
+    );
+    const primaryWasRejected = topByQuality?.rejectionReason !== undefined;
 
-  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
-  private listViablePicks(
-    probabilities: MatchProbabilities,
-    odds: FullOddsSnapshot,
-    deterministicScore: Decimal,
-    distHome: number[],
-    distAway: number[],
-    lambdaFloorHit: boolean,
-    suspendedMarkets: Set<Market>,
-    competitionCode: string | null = null,
-  ): ViablePick[] {
-    return this.listEvaluatedPicks(
-      probabilities,
-      odds,
-      deterministicScore,
-      distHome,
-      distAway,
-      lambdaFloorHit,
-      suspendedMarkets,
-      competitionCode,
-    )
-      .filter((pick): pick is ViablePick => pick.rejectionReason === undefined)
+    const viable = evaluated
+      .filter((p): p is ViablePick => p.rejectionReason === undefined)
       .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
+
+    if (primaryWasRejected) {
+      return (
+        viable.find((p) =>
+          p.qualityScore.greaterThanOrEqualTo(FALLBACK_MIN_QUALITY_SCORE),
+        ) ?? null
+      );
+    }
+
+    return viable[0] ?? null;
   }
 
   // eslint-disable-next-line max-params
@@ -1908,7 +1981,7 @@ export class BettingEngineService {
       .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
   }
 
-  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
+  // eslint-disable-next-line max-params -- Nine domain parameters; grouping into an object would obscure intent.
   private listEvaluatedPicks(
     probabilities: MatchProbabilities,
     odds: FullOddsSnapshot,
@@ -1918,8 +1991,9 @@ export class BettingEngineService {
     lambdaFloorHit: boolean,
     suspendedMarkets: Set<Market>,
     competitionCode: string | null = null,
+    overrideMinEv?: Decimal,
   ): EvaluatedPick[] {
-    const minEv = getLeagueEvThreshold(competitionCode);
+    const minEv = overrideMinEv ?? getLeagueEvThreshold(competitionCode);
     const lambdaTotal =
       distHome.reduce((sum, p, k) => sum + k * p, 0) +
       distAway.reduce((sum, p, k) => sum + k * p, 0);
@@ -2076,6 +2150,7 @@ export class BettingEngineService {
         ['12', probabilities.dc12],
       ] as const) {
         const dcOdds = odds.doubleChanceOdds[pick];
+        if (dcOdds === null) continue;
         const ev = calcEV(dcProba, dcOdds);
         candidates.push({
           market: Market.DOUBLE_CHANCE,
@@ -2793,16 +2868,31 @@ function getPickRejectionReason(
     return 'ev_above_hard_cap';
   }
 
+  // HT/FT markets require calibrated leagues — secondary leagues lack the
+  // half-time decomposition history to avoid bivariate Poisson overestimation.
+  if (
+    (pick.market === Market.HALF_TIME_FULL_TIME ||
+      pick.market === Market.FIRST_HALF_WINNER) &&
+    !isHtftCalibrated(competitionCode)
+  ) {
+    return 'market_suspended';
+  }
+
   // Under-2.5 bets at high expected-goal totals: the independent Poisson model
-  // overestimates P(Under) due to real-match overdispersion. Require a stricter
-  // EV floor to compensate — calibrated on April 2026 prod losses (λ 2.57–3.23).
+  // overestimates P(Under) due to real-match overdispersion. Reject outright when
+  // λ ≥ 2.3 — lowered from 2.5 after May 2026 live diagnostic (losses at λ 2.30–2.80).
   if (
     pick.market === Market.OVER_UNDER &&
     pick.pick === 'UNDER' &&
-    lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD &&
-    pick.ev.lessThan(UNDER_HIGH_LAMBDA_EV_FLOOR)
+    lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD
   ) {
     return 'under_high_lambda';
+  }
+
+  // Minimum probability floor for all markets — picks below 40% are empirically
+  // losing even with positive EV (model overestimates edge on low-P candidates).
+  if (pick.probability.lessThan(EV_MIN_PROBABILITY_THRESHOLD)) {
+    return 'probability_too_low';
   }
 
   if (pick.market === Market.ONE_X_TWO) {
