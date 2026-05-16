@@ -28,12 +28,14 @@ export function PageShell({
   mobileNavItems,
   actions,
   sidebarFooter,
+  logoBadge,
   children,
 }: {
   navItems: NavItem[];
   mobileNavItems?: NavItem[];
   actions?: ReactNode;
   sidebarFooter?: ReactNode;
+  logoBadge?: ReactNode;
   children: ReactNode;
 }) {
   const bottomNavItems = mobileNavItems ?? navItems;
@@ -57,11 +59,14 @@ export function PageShell({
             href="/dashboard"
             className="flex items-center gap-3 rounded-xl px-2 py-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
-            <img
-              src="/icons/icon.svg"
-              alt="EVCore"
-              className="size-9 rounded-xl"
-            />
+            <div className="relative shrink-0">
+              <img
+                src="/icons/icon.svg"
+                alt="EVCore"
+                className="size-9 rounded-xl"
+              />
+              {logoBadge}
+            </div>
             <div className="min-w-0">
               <p className="text-base font-bold tracking-tight">EVCore</p>
               <p className="text-xs text-sidebar-foreground/60">
@@ -119,11 +124,14 @@ export function PageShell({
                 href="/dashboard"
                 className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 md:hidden"
               >
-                <img
-                  src="/icons/icon.svg"
-                  alt="EVCore"
-                  className="size-7 rounded-lg"
-                />
+                <div className="relative shrink-0">
+                  <img
+                    src="/icons/icon.svg"
+                    alt="EVCore"
+                    className="size-7 rounded-lg"
+                  />
+                  {logoBadge}
+                </div>
                 <p className="hidden truncate text-sm font-bold tracking-tight text-foreground sm:block">
                   EVCore
                 </p>

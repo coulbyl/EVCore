@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { isWC2026Active } from "@/lib/events/world-cup-2026";
 import { useTranslations } from "next-intl";
 import {
   Badge,
@@ -142,10 +143,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ].includes(item.href),
   );
 
+  const wc2026Active = isWC2026Active();
+
   return (
     <PageShell
       navItems={navItems}
       mobileNavItems={mobileNavItems}
+      logoBadge={
+        wc2026Active ? (
+          <span className="absolute -bottom-1 -right-1 animate-pulse text-[10px]">
+            🏆
+          </span>
+        ) : null
+      }
       actions={
         <div className="relative flex items-center gap-2">
           <BankrollWidget />

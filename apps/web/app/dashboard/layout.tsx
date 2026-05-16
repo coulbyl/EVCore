@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { WC2026Banner } from "@/components/events/wc2026/wc2026-banner";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
 import { BetSlipProvider } from "@/domains/bet-slip/context/bet-slip-provider";
 import { BetSlipDrawer } from "@/components/bet-slip-drawer";
@@ -26,6 +27,7 @@ export default async function DashboardLayout({
     <CurrencyProvider initialCurrency={initialCurrency}>
       <CurrentUserProvider initialUser={session.user}>
         <BetSlipProvider>
+          <WC2026Banner />
           <AppShell>{children}</AppShell>
           <BetSlipDrawer />
           <PwaInstallBanner />

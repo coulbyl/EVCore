@@ -33,8 +33,8 @@ Chaque composant thématique lit `isWC2026Active()` ou `isWC2026Countdown()` —
 
 ## 1. Splash Screen
 
-**Quand :** au chargement de l'app pendant le tournoi (une fois par session).  
-**Durée :** 2.5 secondes, skip possible.
+le splash screen sera utile que sur mobile, de manniere  naturel, il y a e dejà un splash screen sur le pwa. il va juste falloir mettre pour le wc26
+
 
 ### Contenu visuel
 
