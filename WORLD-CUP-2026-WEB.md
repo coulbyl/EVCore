@@ -33,8 +33,7 @@ Chaque composant thématique lit `isWC2026Active()` ou `isWC2026Countdown()` —
 
 ## 1. Splash Screen
 
-le splash screen sera utile que sur mobile, de manniere  naturel, il y a e dejà un splash screen sur le pwa. il va juste falloir mettre pour le wc26
-
+le splash screen sera utile que sur mobile, de manniere naturel, il y a e dejà un splash screen sur le pwa. il va juste falloir mettre pour le wc26
 
 ### Contenu visuel
 

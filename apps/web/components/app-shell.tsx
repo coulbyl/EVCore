@@ -82,15 +82,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           active: pathname.startsWith("/dashboard/picks"),
         },
         {
-          label: tNav("summary"),
-          href: "/dashboard/summary",
-          active: pathname.startsWith("/dashboard/summary"),
-        },
-        {
-          label: tNav("formation"),
-          href: "/dashboard/formation",
-          active: pathname.startsWith("/dashboard/formation"),
-          icon: GraduationCap,
+          label: tNav("wc2026"),
+          href: "/dashboard/wc2026",
+          active: pathname.startsWith("/dashboard/wc2026"),
         },
         {
           label: tNav("betSlips"),
@@ -101,6 +95,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           label: tNav("coupons"),
           href: "/dashboard/coupons",
           active: pathname.startsWith("/dashboard/coupons"),
+        },
+        {
+          label: tNav("summary"),
+          href: "/dashboard/summary",
+          active: pathname.startsWith("/dashboard/summary"),
+        },
+        {
+          label: tNav("formation"),
+          href: "/dashboard/formation",
+          active: pathname.startsWith("/dashboard/formation"),
+          icon: GraduationCap,
         },
         isAdmin
           ? {

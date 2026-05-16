@@ -16,9 +16,10 @@
     "dashboard": "Accueil",
     "fixtures": "Matchs",
     "picks": "Picks du jour",
+    "wc2026": "Coupe du monde 2026",
     "performance": "Performance",
     "bankroll": "Portefeuille",
-    "betSlips": "Coupons",
+    "betSlips": "Mes coupons",
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
@@ -28,7 +29,7 @@
     "settings": "Paramètres",
     "help": "Aide",
     "summary": "Résumé",
-    "coupons": "Propositions"
+    "coupons": "Coupons IA"
   },
   "notifications": {
     "title": "Notifications",

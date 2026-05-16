@@ -173,6 +173,7 @@ export const BULLMQ_QUEUES = {
   BETTING_ENGINE: 'betting-engine',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
+  STANDINGS_SYNC: 'standings-sync',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
@@ -193,6 +194,7 @@ export const ETL_CRON_SCHEDULES = {
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
   ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
+  STANDINGS_SYNC: '0 1 * * *', // 01:00 UTC daily — refresh group standings (active during WC/tournament phases)
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)

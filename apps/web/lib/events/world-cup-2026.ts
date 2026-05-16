@@ -5,14 +5,11 @@ export const WC2026 = {
 } as const;
 
 export function isWC2026Active(now = new Date()): boolean {
-  return true // for testing purposes, always return true
   return now >= WC2026.start && now <= WC2026.end;
 }
 
 export function isWC2026Countdown(now = new Date()): boolean {
-  const thirtyDaysBefore = new Date(
-    WC2026.start.getTime() - 30 * 86_400_000,
-  );
+  const thirtyDaysBefore = new Date(WC2026.start.getTime() - 30 * 86_400_000);
   return now >= thirtyDaysBefore && now < WC2026.start;
 }
 
