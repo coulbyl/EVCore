@@ -67,7 +67,7 @@ export class GridSearchService {
       );
     }
 
-    const testSeason = seasons[seasons.length - 1]!;
+    const testSeason = seasons[seasons.length - 1];
     const trainSeasons = seasons.slice(0, -1);
 
     logger.info(

@@ -1763,6 +1763,7 @@ export class BettingEngineService {
   // When the winner is Under 3.5 or Under 4.5 at high lambda, also evaluates the
   // symmetric Over counterparts (Over 2.5, Over 3.5) and upgrades to the better
   // qualityScore — fixing the structural Under bias at high expected goals (section 7).
+  // eslint-disable-next-line max-params -- grouped below
   private selectSafeValuePick(
     evaluatedPicks: EvaluatedPick[],
     suspendedMarkets: Set<Market>,
