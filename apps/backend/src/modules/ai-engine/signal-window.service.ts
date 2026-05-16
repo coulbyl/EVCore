@@ -38,13 +38,17 @@ function readNumber(features: unknown, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-function hitRate(correct: number, incorrect: number): number | null {
-  return correct + incorrect > 0 ? correct / (correct + incorrect) : null;
+function hitRate(correct: number, total: number): number | null {
+  return total > 0 ? correct / total : null;
 }
 
-function dowIndex(date: Date): number {
-  return (date.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
-}
+type AggEntry = {
+  canal: Canal;
+  correct: boolean;
+  dow: number; // Mon=0 … Sun=6
+  league: string;
+  count: number;
+};
 
 @Injectable()
 export class SignalWindowService {
@@ -53,99 +57,127 @@ export class SignalWindowService {
   async computeSignalWindow(windowDays: number): Promise<SignalWindow> {
     const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
 
-    const [bets, predictions] = await Promise.all([
-      this.prisma.client.bet.findMany({
-        where: {
-          status: { in: ['WON', 'LOST'] },
-          createdAt: { gte: since },
-          source: 'MODEL',
-        },
-        select: {
-          isSafeValue: true,
-          status: true,
-          fixture: {
-            select: {
-              scheduledAt: true,
-              season: { select: { competition: { select: { code: true } } } },
-            },
-          },
-        },
-      }),
-      this.prisma.client.prediction.findMany({
-        where: {
-          correct: { not: null },
-          createdAt: { gte: since },
-        },
-        select: {
-          channel: true,
-          correct: true,
-          competition: true,
-          fixture: { select: { scheduledAt: true } },
-        },
-      }),
-    ]);
-
-    type Record_ = {
-      canal: Canal;
+    type BetAggRow = {
+      is_safe: boolean;
+      is_won: boolean;
+      dow: number;
+      league: string;
+      cnt: bigint;
+    };
+    type PredAggRow = {
+      channel: string;
       correct: boolean;
       dow: number;
       league: string;
+      cnt: bigint;
     };
-    const records: Record_[] = [];
 
-    for (const b of bets) {
-      const canal: Canal = b.isSafeValue ? 'SV' : 'EV';
-      records.push({
-        canal,
-        correct: b.status === 'WON',
-        dow: dowIndex(b.fixture.scheduledAt),
-        league: b.fixture.season.competition.code,
+    // Aggregate at the DB level — never load individual rows into Node.js heap
+    const [betRows, predRows] = await Promise.all([
+      this.prisma.client.$queryRaw<BetAggRow[]>`
+        SELECT
+          b."isSafeValue"                                   AS is_safe,
+          (b.status = 'WON')                                AS is_won,
+          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)  AS dow,
+          c.code                                            AS league,
+          COUNT(*)                                          AS cnt
+        FROM bet b
+        JOIN fixture     f ON f.id = b."fixtureId"
+        JOIN season      s ON s.id = f."seasonId"
+        JOIN competition c ON c.id = s."competitionId"
+        WHERE b.status IN ('WON', 'LOST')
+          AND b."createdAt" >= ${since}
+          AND b.source = 'MODEL'
+        GROUP BY b."isSafeValue", b.status,
+                 EXTRACT(ISODOW FROM f."scheduledAt"), c.code
+      `,
+      this.prisma.client.$queryRaw<PredAggRow[]>`
+        SELECT
+          p.channel                                         AS channel,
+          p.correct                                         AS correct,
+          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)  AS dow,
+          p.competition                                     AS league,
+          COUNT(*)                                          AS cnt
+        FROM prediction p
+        JOIN fixture f ON f.id = p."fixtureId"
+        WHERE p.correct IS NOT NULL
+          AND p."createdAt" >= ${since}
+          AND p.channel IN ('BTTS', 'DRAW', 'CONF')
+        GROUP BY p.channel, p.correct,
+                 EXTRACT(ISODOW FROM f."scheduledAt"), p.competition
+      `,
+    ]);
+
+    const entries: AggEntry[] = [];
+
+    for (const r of betRows) {
+      entries.push({
+        canal: r.is_safe ? 'SV' : 'EV',
+        correct: r.is_won,
+        dow: Number(r.dow),
+        league: r.league,
+        count: Number(r.cnt),
       });
     }
 
-    for (const p of predictions) {
+    for (const r of predRows) {
       const canal: Canal =
-        p.channel === 'BTTS' ? 'BB' : p.channel === 'DRAW' ? 'NUL' : 'CONF';
-      records.push({
+        r.channel === 'BTTS' ? 'BB' : r.channel === 'DRAW' ? 'NUL' : 'CONF';
+      entries.push({
         canal,
-        correct: p.correct === true,
-        dow: dowIndex(p.fixture.scheduledAt),
-        league: p.competition,
+        correct: r.correct,
+        dow: Number(r.dow),
+        league: r.league,
+        count: Number(r.cnt),
       });
     }
 
     const canals: Canal[] = ['EV', 'SV', 'BB', 'NUL', 'CONF'];
 
+    function hitsFor(filter: (e: AggEntry) => boolean): {
+      correct: number;
+      total: number;
+    } {
+      let correct = 0;
+      let total = 0;
+      for (const e of entries) {
+        if (!filter(e)) continue;
+        total += e.count;
+        if (e.correct) correct += e.count;
+      }
+      return { correct, total };
+    }
+
     const canalHitRates = Object.fromEntries(
       canals.map((c) => {
-        const sub = records.filter((r) => r.canal === c);
-        const correct = sub.filter((r) => r.correct).length;
-        return [c, hitRate(correct, sub.length - correct)];
+        const { correct, total } = hitsFor((e) => e.canal === c);
+        return [c, hitRate(correct, total)];
       }),
     ) as Record<Canal, number | null>;
 
     const canalDowFactors = Object.fromEntries(
       canals.map((c) => {
-        const sub = records.filter((r) => r.canal === c);
         const dowMap = Object.fromEntries(
           DOW_LABELS.map((label, i) => {
-            const d = sub.filter((r) => r.dow === i);
-            const correct = d.filter((r) => r.correct).length;
-            return [label, hitRate(correct, d.length - correct)];
+            const { correct, total } = hitsFor(
+              (e) => e.canal === c && e.dow === i,
+            );
+            return [label, hitRate(correct, total)];
           }),
         );
         return [c, dowMap];
       }),
     ) as Record<Canal, Record<string, number | null>>;
 
-    const allLeagues = [...new Set(records.map((r) => r.league))];
+    const allLeagues = [...new Set(entries.map((e) => e.league))];
     const canalLeagueHitRates = Object.fromEntries(
       canals.map((c) => {
         const leagueMap = Object.fromEntries(
           allLeagues.map((l) => {
-            const sub = records.filter((r) => r.canal === c && r.league === l);
-            const correct = sub.filter((r) => r.correct).length;
-            return [l, hitRate(correct, sub.length - correct)];
+            const { correct, total } = hitsFor(
+              (e) => e.canal === c && e.league === l,
+            );
+            return [l, hitRate(correct, total)];
           }),
         );
         return [c, leagueMap];
