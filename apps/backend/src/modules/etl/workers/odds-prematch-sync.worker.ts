@@ -185,6 +185,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         htftOdds: additionalOdds.htftOdds,
         ouHtOdds: additionalOdds.ouHtOdds,
         firstHalfWinnerOdds: additionalOdds.firstHalfWinnerOdds,
+        doubleChanceOdds: additionalOdds.doubleChanceOdds,
       });
 
       // Store secondary market odds from all other priority bookmakers.
@@ -209,7 +210,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           secondary.bttsYesOdds !== null ||
           Object.keys(secondary.htftOdds).length > 0 ||
           Object.keys(secondary.ouHtOdds).length > 0 ||
-          secondary.firstHalfWinnerOdds !== null;
+          secondary.firstHalfWinnerOdds !== null ||
+          secondary.doubleChanceOdds !== null;
         if (!hasData) continue;
         await this.fixtureService.upsertSecondaryMarketOdds({
           fixtureId,
@@ -221,6 +223,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           htftOdds: secondary.htftOdds,
           ouHtOdds: secondary.ouHtOdds,
           firstHalfWinnerOdds: secondary.firstHalfWinnerOdds,
+          doubleChanceOdds: secondary.doubleChanceOdds,
         });
       }
 
@@ -258,7 +261,14 @@ type OneXTwoOdds = {
 type AdditionalMarketOdds = {
   overUnderOdds: Partial<
     Record<
-      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      | 'OVER_1_5'
+      | 'UNDER_1_5'
+      | 'OVER'
+      | 'UNDER'
+      | 'OVER_3_5'
+      | 'UNDER_3_5'
+      | 'OVER_4_5'
+      | 'UNDER_4_5',
       number
     >
   >;
@@ -269,6 +279,7 @@ type AdditionalMarketOdds = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
 };
 
 type CurlJsonResponse = {
@@ -374,6 +385,7 @@ export function extractAdditionalMarketOdds(
       htftOdds: {},
       ouHtOdds: {},
       firstHalfWinnerOdds: null,
+      doubleChanceOdds: null,
     };
   }
 
@@ -387,6 +399,9 @@ export function extractAdditionalMarketOdds(
   const fhwBet = bk.bets.find(
     (b) => b.id === API_FOOTBALL_BET_IDS.FIRST_HALF_WINNER,
   );
+  const dcBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.DOUBLE_CHANCE,
+  );
 
   const overUnderOdds = extractOverUnderOdds(ouBet);
   const bttsYesOdds =
@@ -395,6 +410,7 @@ export function extractAdditionalMarketOdds(
   const htftOdds = extractHalfTimeFullTimeOdds(bk);
   const ouHtOdds = extractOverUnderHtOdds(ouHtBet);
   const firstHalfWinnerOdds = extractFirstHalfWinnerOdds(fhwBet);
+  const doubleChanceOdds = extractDoubleChanceOdds(dcBet);
 
   return {
     overUnderOdds,
@@ -403,25 +419,16 @@ export function extractAdditionalMarketOdds(
     htftOdds,
     ouHtOdds,
     firstHalfWinnerOdds,
+    doubleChanceOdds,
   };
 }
 
 function extractOverUnderOdds(
   overUnderBet: OddsBookmaker['bets'][number] | undefined,
-): Partial<
-  Record<
-    'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
-    number
-  >
-> {
+): AdditionalMarketOdds['overUnderOdds'] {
   if (!overUnderBet) return {};
 
-  const odds: Partial<
-    Record<
-      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
-      number
-    >
-  > = {};
+  const odds: AdditionalMarketOdds['overUnderOdds'] = {};
 
   for (const value of overUnderBet.values) {
     if (value.value === 'Over 1.5') odds['OVER_1_5'] = value.odd;
@@ -430,9 +437,31 @@ function extractOverUnderOdds(
     if (value.value === 'Under 2.5') odds['UNDER'] = value.odd;
     if (value.value === 'Over 3.5') odds['OVER_3_5'] = value.odd;
     if (value.value === 'Under 3.5') odds['UNDER_3_5'] = value.odd;
+    if (value.value === 'Over 4.5') odds['OVER_4_5'] = value.odd;
+    if (value.value === 'Under 4.5') odds['UNDER_4_5'] = value.odd;
   }
 
   return odds;
+}
+
+function extractDoubleChanceOdds(
+  dcBet: OddsBookmaker['bets'][number] | undefined,
+): AdditionalMarketOdds['doubleChanceOdds'] {
+  if (!dcBet) return null;
+
+  const homeDrawOdd = dcBet.values.find((v) => v.value === 'Home/Draw')?.odd;
+  const drawAwayOdd = dcBet.values.find((v) => v.value === 'Draw/Away')?.odd;
+  const homeAwayOdd = dcBet.values.find((v) => v.value === 'Home/Away')?.odd;
+
+  if (
+    homeDrawOdd === undefined ||
+    drawAwayOdd === undefined ||
+    homeAwayOdd === undefined
+  ) {
+    return null;
+  }
+
+  return { '1X': homeDrawOdd, X2: drawAwayOdd, '12': homeAwayOdd };
 }
 
 // Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365 → Unibet → Marathonbet → Bwin.

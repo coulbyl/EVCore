@@ -138,7 +138,14 @@ export type UpsertOddsSnapshotInput = {
   awayOdds: number;
   overUnderOdds: Partial<
     Record<
-      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      | 'OVER_1_5'
+      | 'UNDER_1_5'
+      | 'OVER'
+      | 'UNDER'
+      | 'OVER_3_5'
+      | 'UNDER_3_5'
+      | 'OVER_4_5'
+      | 'UNDER_4_5',
       number
     >
   >;
@@ -149,6 +156,7 @@ export type UpsertOddsSnapshotInput = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -158,7 +166,14 @@ export type UpsertSecondaryMarketOddsInput = {
   snapshotAt: Date;
   overUnderOdds: Partial<
     Record<
-      'OVER_1_5' | 'UNDER_1_5' | 'OVER' | 'UNDER' | 'OVER_3_5' | 'UNDER_3_5',
+      | 'OVER_1_5'
+      | 'UNDER_1_5'
+      | 'OVER'
+      | 'UNDER'
+      | 'OVER_3_5'
+      | 'UNDER_3_5'
+      | 'OVER_4_5'
+      | 'UNDER_4_5',
       number
     >
   >;
@@ -169,6 +184,7 @@ export type UpsertSecondaryMarketOddsInput = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', number>
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
+  doubleChanceOdds: { '1X': number; X2: number; '12': number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -593,7 +609,8 @@ export class FixtureRepository {
       | 'BTTS'
       | 'HALF_TIME_FULL_TIME'
       | 'OVER_UNDER_HT'
-      | 'FIRST_HALF_WINNER',
+      | 'FIRST_HALF_WINNER'
+      | 'DOUBLE_CHANCE',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -687,6 +704,28 @@ export class FixtureRepository {
             ),
           ]
         : []),
+      ...(data.doubleChanceOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              '1X',
+              data.doubleChanceOdds['1X'],
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              'X2',
+              data.doubleChanceOdds['X2'],
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              '12',
+              data.doubleChanceOdds['12'],
+            ),
+          ]
+        : []),
     ]);
 
     return oneXTwoId;
@@ -734,6 +773,28 @@ export class FixtureRepository {
               'FIRST_HALF_WINNER',
               'AWAY',
               data.firstHalfWinnerOdds.away,
+            ),
+          ]
+        : []),
+      ...(data.doubleChanceOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              '1X',
+              data.doubleChanceOdds['1X'],
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              'X2',
+              data.doubleChanceOdds['X2'],
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DOUBLE_CHANCE',
+              '12',
+              data.doubleChanceOdds['12'],
             ),
           ]
         : []),

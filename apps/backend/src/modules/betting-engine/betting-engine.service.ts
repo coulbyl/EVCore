@@ -1389,6 +1389,7 @@ export class BettingEngineService {
       htftBookmaker,
       ouHtBookmaker,
       fhwBookmaker,
+      dcBookmaker,
     ] = await Promise.all([
       this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
       this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
@@ -1403,9 +1404,10 @@ export class BettingEngineService {
         Market.FIRST_HALF_WINNER,
         cutoff,
       ),
+      this.findBestBookmakerForMarket(fixtureId, Market.DOUBLE_CHANCE, cutoff),
     ]);
 
-    const [ouRows, bttsYesRow, bttsNoRow, htftRows, ouHtRows, fhwRows] =
+    const [ouRows, bttsYesRow, bttsNoRow, htftRows, ouHtRows, fhwRows, dcRows] =
       await Promise.all([
         ouBookmaker
           ? this.prisma.client.oddsSnapshot.findMany({
@@ -1475,12 +1477,24 @@ export class BettingEngineService {
               orderBy: { snapshotAt: 'desc' },
             })
           : null,
+        dcBookmaker
+          ? this.prisma.client.oddsSnapshot.findMany({
+              where: {
+                fixtureId,
+                bookmaker: dcBookmaker,
+                market: Market.DOUBLE_CHANCE,
+              },
+              select: { pick: true, odds: true },
+              orderBy: { snapshotAt: 'desc' },
+            })
+          : null,
       ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
     const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
     const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
     let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
+    let doubleChanceOdds: FullOddsSnapshot['doubleChanceOdds'] = null;
 
     for (const row of ouRows ?? []) {
       if (!row.pick || !row.odds) continue;
@@ -1491,7 +1505,9 @@ export class BettingEngineService {
           row.pick === 'OVER' ||
           row.pick === 'UNDER' ||
           row.pick === 'OVER_3_5' ||
-          row.pick === 'UNDER_3_5')
+          row.pick === 'UNDER_3_5' ||
+          row.pick === 'OVER_4_5' ||
+          row.pick === 'UNDER_4_5')
       ) {
         overUnderOdds[row.pick] = new Decimal(row.odds.toString());
       }
@@ -1526,6 +1542,18 @@ export class BettingEngineService {
         };
       }
     }
+    if (dcRows !== null) {
+      const row1X = dcRows.find((r) => r.pick === '1X');
+      const rowX2 = dcRows.find((r) => r.pick === 'X2');
+      const row12 = dcRows.find((r) => r.pick === '12');
+      if (row1X?.odds && rowX2?.odds && row12?.odds) {
+        doubleChanceOdds = {
+          '1X': new Decimal(row1X.odds.toString()),
+          X2: new Decimal(rowX2.odds.toString()),
+          '12': new Decimal(row12.odds.toString()),
+        };
+      }
+    }
 
     return {
       bookmaker: best.bookmaker,
@@ -1543,6 +1571,7 @@ export class BettingEngineService {
       htftOdds,
       ouHtOdds,
       firstHalfWinnerOdds,
+      doubleChanceOdds,
     };
   }
 
@@ -1591,6 +1620,7 @@ export class BettingEngineService {
       htftOdds: {},
       ouHtOdds: {},
       firstHalfWinnerOdds: null,
+      doubleChanceOdds: null,
     };
   }
 
@@ -1691,6 +1721,7 @@ export class BettingEngineService {
         htftOdds: {},
         ouHtOdds: {},
         firstHalfWinnerOdds: null,
+        doubleChanceOdds: null,
       },
       offeredBy: {
         home: bestHome.bookmaker,
@@ -1967,6 +1998,16 @@ export class BettingEngineService {
         probability: probabilities.under35,
         odds: odds.overUnderOdds['UNDER_3_5'],
       },
+      {
+        pick: 'OVER_4_5',
+        probability: probabilities.over45,
+        odds: odds.overUnderOdds['OVER_4_5'],
+      },
+      {
+        pick: 'UNDER_4_5',
+        probability: probabilities.under45,
+        odds: odds.overUnderOdds['UNDER_4_5'],
+      },
     ];
 
     for (const candidate of overUnderCandidates) {
@@ -2025,6 +2066,33 @@ export class BettingEngineService {
         ),
         isCombo: false,
       });
+    }
+
+    // Singles DOUBLE_CHANCE
+    if (odds.doubleChanceOdds !== null) {
+      for (const [pick, dcProba] of [
+        ['1X', probabilities.dc1X],
+        ['X2', probabilities.dcX2],
+        ['12', probabilities.dc12],
+      ] as const) {
+        const dcOdds = odds.doubleChanceOdds[pick];
+        const ev = calcEV(dcProba, dcOdds);
+        candidates.push({
+          market: Market.DOUBLE_CHANCE,
+          pick,
+          probability: dcProba,
+          odds: dcOdds,
+          ev,
+          qualityScore: buildQualityScore(
+            ev,
+            deterministicScore,
+            Market.DOUBLE_CHANCE,
+            pick,
+            dcOdds,
+          ),
+          isCombo: false,
+        });
+      }
     }
 
     // Singles HALF_TIME_FULL_TIME
@@ -2224,6 +2292,8 @@ function mapProbabilitiesToNumber(
     under25: probabilities.under25.toNumber(),
     over35: probabilities.over35.toNumber(),
     under35: probabilities.under35.toNumber(),
+    over45: probabilities.over45.toNumber(),
+    under45: probabilities.under45.toNumber(),
     bttsYes: probabilities.bttsYes.toNumber(),
     bttsNo: probabilities.bttsNo.toNumber(),
     dc1X: probabilities.dc1X.toNumber(),
@@ -2426,6 +2496,8 @@ function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
     under25: zero,
     over35: zero,
     under35: zero,
+    over45: zero,
+    under45: zero,
     bttsYes: zero,
     bttsNo: zero,
     dc1X: home.plus(draw),
@@ -2476,6 +2548,8 @@ function eloProbabilities(
     under25: zero,
     over35: zero,
     under35: zero,
+    over45: zero,
+    under45: zero,
     bttsYes: zero,
     bttsNo: zero,
     dc1X: home.plus(drawProb),
@@ -2541,6 +2615,9 @@ function getPickOddsFromSnapshot(
     if (pick === 'DRAW') return odds.firstHalfWinnerOdds.draw;
     if (pick === 'AWAY') return odds.firstHalfWinnerOdds.away;
   }
+  if (market === Market.DOUBLE_CHANCE && odds.doubleChanceOdds !== null) {
+    return odds.doubleChanceOdds[pick as '1X' | 'X2' | '12'] ?? null;
+  }
   return null;
 }
 
@@ -2576,6 +2653,8 @@ function getModelProbabilityForPick(
     if (pick === 'UNDER') return probabilities.under25;
     if (pick === 'OVER_3_5') return probabilities.over35;
     if (pick === 'UNDER_3_5') return probabilities.under35;
+    if (pick === 'OVER_4_5') return probabilities.over45;
+    if (pick === 'UNDER_4_5') return probabilities.under45;
   }
   if (market === Market.BTTS) {
     if (pick === 'YES') return probabilities.bttsYes;

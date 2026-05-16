@@ -125,6 +125,8 @@ export const THE_ODDS_API_SPORT_KEYS = {
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',
+  // FIFA World Cup — clé active uniquement pendant le tournoi (11 juin–19 juillet 2026)
+  WC26: 'soccer_fifa_world_cup',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).
@@ -153,6 +155,7 @@ export const API_FOOTBALL_BOOKMAKERS = {
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
+  DOUBLE_CHANCE: 2,
   OVER_UNDER_25: 5,
   OVER_UNDER_FIRST_HALF: 6,
   HALF_TIME_FULL_TIME: 7,

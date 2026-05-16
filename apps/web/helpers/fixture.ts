@@ -47,6 +47,7 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     BTTS: "Les deux marquent",
     OVER_UNDER: "Plus/Moins",
     OVER_UNDER_25: "Plus/Moins",
+    DOUBLE_CHANCE: "Double chance",
     HALF_TIME_FULL_TIME: "Mi-temps / Fin de match",
     OVER_UNDER_HT: "Plus/Moins MT",
     FIRST_HALF_WINNER: "Résultat MT",
@@ -57,6 +58,7 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     BTTS: "Both Teams Score",
     OVER_UNDER: "Over/Under",
     OVER_UNDER_25: "Over/Under",
+    DOUBLE_CHANCE: "Double Chance",
     HALF_TIME_FULL_TIME: "Half Time / Full Time",
     OVER_UNDER_HT: "Over/Under HT",
     FIRST_HALF_WINNER: "HT Result",
@@ -88,6 +90,12 @@ export function formatPickForDisplay(pick: string, market: string): string {
     if (p === "NO") return "Non";
   }
 
+  if (market === "DOUBLE_CHANCE") {
+    if (p === "1X") return "Dom. ou Nul";
+    if (p === "X2") return "Nul ou Ext.";
+    if (p === "12") return "Dom. ou Ext.";
+  }
+
   if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
     if (p === "OVER_1_5") return "Plus de 1.5";
     if (p === "UNDER_1_5") return "Moins de 1.5";
@@ -95,6 +103,8 @@ export function formatPickForDisplay(pick: string, market: string): string {
     if (p === "UNDER") return "Moins de 2.5";
     if (p === "OVER_3_5") return "Plus de 3.5";
     if (p === "UNDER_3_5") return "Moins de 3.5";
+    if (p === "OVER_4_5") return "Plus de 4.5";
+    if (p === "UNDER_4_5") return "Moins de 4.5";
   }
 
   if (market === "OVER_UNDER_HT") {
@@ -149,6 +159,12 @@ export function formatDiagnosticPickForDisplay(
     if (pick === "AWAY") return "Ext. MT";
   }
 
+  if (market === "DOUBLE_CHANCE") {
+    if (pick === "1X") return "Dom. ou Nul";
+    if (pick === "X2") return "Nul ou Ext.";
+    if (pick === "12") return "Dom. ou Ext.";
+  }
+
   if (market === "OVER_UNDER" || market === "OVER_UNDER_25") {
     if (pick === "OVER") return "Plus de 2.5";
     if (pick === "UNDER") return "Moins de 2.5";
@@ -156,6 +172,8 @@ export function formatDiagnosticPickForDisplay(
     if (pick === "UNDER_1_5") return "Moins de 1.5";
     if (pick === "OVER_3_5") return "Plus de 3.5";
     if (pick === "UNDER_3_5") return "Moins de 3.5";
+    if (pick === "OVER_4_5") return "Plus de 4.5";
+    if (pick === "UNDER_4_5") return "Moins de 4.5";
   }
 
   if (market === "OVER_UNDER_HT") {

@@ -15,6 +15,8 @@ export type DerivedMarketsProba = {
   under25: Decimal;
   over35: Decimal;
   under35: Decimal;
+  over45: Decimal;
+  under45: Decimal;
   bttsYes: Decimal;
   bttsNo: Decimal;
   dc1X: Decimal;
@@ -165,6 +167,7 @@ function deriveMarketsFromDistributions(
   let under15 = 0;
   let under25 = 0;
   let under35 = 0;
+  let under45 = 0;
 
   for (let h = 0; h <= Math.min(1, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(1 - h, awayDist.length - 1); a++) {
@@ -181,10 +184,16 @@ function deriveMarketsFromDistributions(
       under35 += homeDist[h] * awayDist[a];
     }
   }
+  for (let h = 0; h <= Math.min(4, homeDist.length - 1); h++) {
+    for (let a = 0; a <= Math.min(4 - h, awayDist.length - 1); a++) {
+      under45 += homeDist[h] * awayDist[a];
+    }
+  }
 
   const over15 = Math.max(0, 1 - under15);
   const over25 = Math.max(0, 1 - under25);
   const over35 = Math.max(0, 1 - under35);
+  const over45 = Math.max(0, 1 - under45);
   // Uses the same truncated+normalized distributions for coherence with 1X2.
   const bttsYes = (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0));
   const bttsNo = 1 - bttsYes;
@@ -198,6 +207,8 @@ function deriveMarketsFromDistributions(
     under25: new Decimal(under25),
     over35: new Decimal(over35),
     under35: new Decimal(under35),
+    over45: new Decimal(over45),
+    under45: new Decimal(under45),
     bttsYes: new Decimal(bttsYes),
     bttsNo: new Decimal(bttsNo),
     dc1X: oneXTwo.home.plus(oneXTwo.draw),

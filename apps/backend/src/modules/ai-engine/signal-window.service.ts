@@ -254,6 +254,9 @@ export class SignalWindowService {
       WCQE: 0.6,
       FRI: 0.45,
       UNL: 0.6,
+      // Seuil conservateur — pas de backtest disponible sur confrontations inter-confederation.
+      // Recalibrer après 20+ matchs observés. N'affecte aucune autre ligue.
+      WC26: 0.52,
     };
 
     const picks: ScoredPick[] = [];
