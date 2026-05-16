@@ -20,6 +20,7 @@ import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker'
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
 import { AiEngineCouponWorker } from './workers/ai-engine-coupon.worker';
+import { StandingsSyncWorker } from './workers/standings-sync.worker';
 import { AiEngineModule } from '../ai-engine/ai-engine.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
@@ -37,6 +38,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.BETTING_ENGINE },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
       { name: BULLMQ_QUEUES.AI_ENGINE },
+      { name: BULLMQ_QUEUES.STANDINGS_SYNC },
     ),
     AuthModule,
     AdjustmentModule,
@@ -61,6 +63,7 @@ import { AuthModule } from '../auth/auth.module';
     BettingEngineAnalysisWorker,
     AiEngineCouponWorker,
     OddsHistoricalImportWorker,
+    StandingsSyncWorker,
   ],
   exports: [EtlService],
 })

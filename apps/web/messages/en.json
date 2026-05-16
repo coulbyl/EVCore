@@ -16,9 +16,10 @@
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
     "picks": "Today's picks",
+    "wc2026": "WC2026",
     "performance": "Performance",
     "bankroll": "Bankroll",
-    "betSlips": "Bet slips",
+    "betSlips": "My bet slips",
     "audit": "Audit",
     "users": "Users",
     "announcements": "Announcements",
@@ -28,7 +29,7 @@
     "settings": "Settings",
     "help": "Help",
     "summary": "Summary",
-    "coupons": "Proposals"
+    "coupons": "AI coupons"
   },
   "notifications": {
     "title": "Notifications",

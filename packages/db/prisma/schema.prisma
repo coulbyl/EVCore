@@ -140,35 +140,64 @@ enum CouponResult {
 // ─────────────────────────────────────────────
 
 model Competition {
-  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  leagueId          Int      @unique
-  code              String   @unique
+  id                String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  leagueId          Int        @unique
+  code              String     @unique
   name              String
   country           String
   isActive          Boolean
-  includeInBacktest Boolean  @default(true)
+  includeInBacktest Boolean    @default(true)
   csvDivisionCode   String?
   seasonStartMonth  Int?
   apiSeasonOverride Int?
   seasons           Season[]
   teams             Team[]
-  createdAt         DateTime @default(now())
+  standings         Standing[]
+  createdAt         DateTime   @default(now())
 
   @@map("competition")
 }
 
 model Season {
-  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  competitionId String      @db.Uuid
+  id            String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  competitionId String     @db.Uuid
   competition   Competition @relation(fields: [competitionId], references: [id])
   name          String // e.g. "2022-23"
   startDate     DateTime
   endDate       DateTime
   fixtures      Fixture[]
-  createdAt     DateTime    @default(now())
+  standings     Standing[]
+  createdAt     DateTime   @default(now())
 
   @@unique([competitionId, name])
   @@map("season")
+}
+
+model Standing {
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  competitionId String      @db.Uuid
+  seasonId      String      @db.Uuid
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  season        Season      @relation(fields: [seasonId], references: [id])
+  teamApiId     Int
+  teamName      String
+  teamLogo      String
+  group         String
+  rank          Int
+  points        Int
+  played        Int
+  win           Int
+  draw          Int
+  lose          Int
+  goalsFor      Int
+  goalsAgainst  Int
+  goalsDiff     Int
+  form          String?
+  description   String?
+  syncedAt      DateTime    @updatedAt
+
+  @@unique([competitionId, seasonId, teamApiId])
+  @@map("standing")
 }
 
 model Team {

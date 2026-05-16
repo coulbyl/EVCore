@@ -6,16 +6,19 @@ import { FixtureService } from './fixture.service';
 import { FixtureScoringService } from './fixture-scoring.service';
 import { FixtureScoringController } from './fixture-scoring.controller';
 import { MatchLegDetectionService } from './match-leg-detection.service';
+import { StandingRepository } from './standing.repository';
+import { StandingController } from './standing.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [FixtureScoringController],
+  controllers: [FixtureScoringController, StandingController],
   providers: [
     FixtureRepository,
     FixtureService,
     FixtureScoringService,
     MatchLegDetectionService,
+    StandingRepository,
   ],
-  exports: [FixtureService, MatchLegDetectionService],
+  exports: [FixtureService, MatchLegDetectionService, StandingRepository],
 })
 export class FixtureModule {}

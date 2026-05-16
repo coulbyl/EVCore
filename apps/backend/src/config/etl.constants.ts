@@ -125,6 +125,8 @@ export const THE_ODDS_API_SPORT_KEYS = {
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',
+  // FIFA World Cup — clé active uniquement pendant le tournoi (11 juin–19 juillet 2026)
+  WC26: 'soccer_fifa_world_cup',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).
@@ -153,6 +155,7 @@ export const API_FOOTBALL_BOOKMAKERS = {
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
+  DOUBLE_CHANCE: 2,
   OVER_UNDER_25: 5,
   OVER_UNDER_FIRST_HALF: 6,
   HALF_TIME_FULL_TIME: 7,
@@ -170,6 +173,7 @@ export const BULLMQ_QUEUES = {
   BETTING_ENGINE: 'betting-engine',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
+  STANDINGS_SYNC: 'standings-sync',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
@@ -190,6 +194,7 @@ export const ETL_CRON_SCHEDULES = {
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
   ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
+  STANDINGS_SYNC: '0 1 * * *', // 01:00 UTC daily — refresh group standings (active during WC/tournament phases)
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)

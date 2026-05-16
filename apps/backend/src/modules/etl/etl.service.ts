@@ -28,6 +28,7 @@ import type {
   LeagueSyncType,
 } from './workers/league-sync.worker';
 import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
+import type { StandingsSyncJobData } from './workers/standings-sync.worker';
 import { THE_ODDS_API_SPORT_KEYS } from '../../config/etl.constants';
 
 const logger = createLogger('etl-service');
@@ -122,6 +123,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly bettingEngineQueue: Queue<BettingEngineAnalysisJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT)
     private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
+    @InjectQueue(BULLMQ_QUEUES.STANDINGS_SYNC)
+    private readonly standingsSyncQueue: Queue<StandingsSyncJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
@@ -179,6 +182,10 @@ export class EtlService implements OnApplicationBootstrap {
       BETTING_ENGINE_ANALYSIS: config.get<string>(
         'ETL_BETTING_ENGINE_ANALYSIS_CRON',
         ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
+      ),
+      STANDINGS_SYNC: config.get<string>(
+        'ETL_STANDINGS_SYNC_CRON',
+        ETL_CRON_SCHEDULES.STANDINGS_SYNC,
       ),
     };
     this.leagueSeasonSyncs = {
@@ -522,6 +529,32 @@ export class EtlService implements OnApplicationBootstrap {
       'elo-sync',
       {} satisfies EloSyncJobData,
       BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
+  async triggerStandingsSync(
+    competitionCode: string,
+    season: number,
+  ): Promise<void> {
+    logger.info(
+      { competitionCode, season },
+      'Triggering standings sync for league season',
+    );
+
+    const competition = await this.loadCompetition(competitionCode);
+    await this.standingsSyncQueue.add(
+      'standings-sync',
+      {
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+        season,
+      } satisfies StandingsSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+
+    logger.info(
+      { competitionCode, season },
+      'Standings sync job enqueued for league season',
     );
   }
 

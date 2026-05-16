@@ -10,6 +10,11 @@ import {
   Layers,
   Clock,
 } from "lucide-react";
+import {
+  daysUntilWC2026,
+  isWC2026Active,
+  isWC2026Countdown,
+} from "@/lib/events/world-cup-2026";
 
 const STATS = [
   { label: "Taux de réussite", value: "59.2%", sub: "résultat validé" },
@@ -97,6 +102,12 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
+  const now = new Date();
+  const wc2026Active = isWC2026Active(now);
+  const wc2026Countdown = isWC2026Countdown(now);
+  const showWC2026 = wc2026Active || wc2026Countdown;
+  const daysLeft = wc2026Countdown ? daysUntilWC2026(now) : 0;
+
   return (
     <main
       className="min-h-dvh overflow-x-hidden"
@@ -145,6 +156,31 @@ export default function LandingPage() {
         />
 
         <div className="relative mx-auto max-w-3xl">
+          {showWC2026 ? (
+            <div
+              className="mb-5 inline-flex max-w-2xl flex-wrap items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold"
+              style={{
+                borderColor: "rgba(201,168,76,0.28)",
+                background: "rgba(201,168,76,0.08)",
+                color: "#f3d37a",
+              }}
+            >
+              <span>🏆 Coupe du monde 2026</span>
+              <span style={{ opacity: 0.45 }}>•</span>
+              <span>
+                {wc2026Countdown
+                  ? `J-${daysLeft} avant le tournoi`
+                  : "Tournoi en cours sur EVCore"}
+              </span>
+              <Link
+                href="/dashboard/wc2026"
+                className="underline underline-offset-2"
+              >
+                Voir l&apos;espace dédié
+              </Link>
+            </div>
+          ) : null}
+
           <span
             className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-widest"
             style={{
@@ -176,6 +212,59 @@ export default function LandingPage() {
             d&apos;impulsion, pas d&apos;improvisation — une stratégie répétée
             match après match.
           </p>
+
+          {showWC2026 ? (
+            <div
+              className="mx-auto mt-8 grid max-w-2xl gap-3 text-left sm:grid-cols-3"
+              style={{ color: "#dbe5f1" }}
+            >
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: "rgba(201,168,76,0.08)",
+                  border: "1px solid rgba(201,168,76,0.18)",
+                }}
+              >
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#f3d37a]">
+                  Focus
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                  Un espace dédié pour suivre les groupes, les picks et les
+                  coupons IA liés à la compétition.
+                </p>
+              </div>
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#2dd4bf]">
+                  Lecture
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                  Le tournoi se vit comme un cycle court: moins d&apos;émotion,
+                  plus de discipline sur chaque sélection.
+                </p>
+              </div>
+              <div
+                className="rounded-2xl p-4"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#2dd4bf]">
+                  Navigation
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                  L&apos;expérience WC2026 est aussi disponible dans le
+                  dashboard pour préparer et suivre les matchs jour après jour.
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
@@ -434,8 +523,9 @@ export default function LandingPage() {
             className="mx-auto mt-4 max-w-md text-sm leading-relaxed"
             style={{ color: "#64748b" }}
           >
-            Accès sur invitation. L&apos;objectif n&apos;est pas de multiplier
-            les paris, mais de construire un portefeuille avec méthode.
+            {showWC2026
+              ? "La Coupe du monde 2026 se prépare avec une lecture claire des matchs, des groupes et des coupons IA. L'objectif reste le même : investir avec méthode."
+              : "Accès sur invitation. L'objectif n'est pas de multiplier les paris, mais de construire un portefeuille avec méthode."}
           </p>
           <Link
             href="/auth/register"

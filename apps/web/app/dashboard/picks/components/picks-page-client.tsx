@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import { usePicksOfTheDay } from "@/domains/fixture/use-cases/get-picks-of-the-day";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePickCelebration } from "@/hooks/use-pick-celebration";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import { CanalBadge } from "@/components/canal-badge";
 import { formatCombinedPickForDisplay } from "@/helpers/fixture";
@@ -55,6 +56,7 @@ export function PicksPageClient() {
   }, [date]);
 
   const allRows = useMemo(() => data?.rows ?? [], [data]);
+  usePickCelebration(allRows, date);
 
   const { ev, sv, conf, matchNul, btts } = useMemo(
     () => groupByCanal(allRows),

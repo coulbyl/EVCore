@@ -318,6 +318,16 @@ const COMPETITIONS = [
     csvDivisionCode: null,
     apiSeasonOverride: 2024,
   },
+  {
+    leagueId: 1,
+    code: "WC26",
+    name: "FIFA World Cup 2026",
+    country: "World",
+    isActive: false, // activer manuellement à J-7 du tournoi (11 juin 2026)
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2026,
+  },
 ];
 
 async function seedCompetitions() {
@@ -325,7 +335,7 @@ async function seedCompetitions() {
     await prisma.competition.upsert({
       where: { leagueId: competition.leagueId },
       update: {
-        isActive: competition.isActive,
+        // isActive intentionally excluded — managed via UI/migrations, not seed
         includeInBacktest: competition.includeInBacktest ?? true,
         csvDivisionCode: competition.csvDivisionCode,
         apiSeasonOverride: competition.apiSeasonOverride,

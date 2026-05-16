@@ -1059,12 +1059,17 @@ export class BacktestService {
             findLatestPickOdds(Market.OVER_UNDER, 'OVER_3_5') ?? undefined,
           UNDER_3_5:
             findLatestPickOdds(Market.OVER_UNDER, 'UNDER_3_5') ?? undefined,
+          OVER_4_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'OVER_4_5') ?? undefined,
+          UNDER_4_5:
+            findLatestPickOdds(Market.OVER_UNDER, 'UNDER_4_5') ?? undefined,
         },
         bttsYesOdds: findLatestPickOdds(Market.BTTS, 'YES'),
         bttsNoOdds: findLatestPickOdds(Market.BTTS, 'NO'),
         htftOdds,
         ouHtOdds,
         firstHalfWinnerOdds,
+        doubleChanceOdds: null,
       });
     }
 

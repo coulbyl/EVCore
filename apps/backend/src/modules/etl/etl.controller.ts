@@ -378,6 +378,39 @@ export class EtlController {
     return { status: 'ok' as const, competitionCode: code, seasons };
   }
 
+  @Post('sync/standings/:competitionCode')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger standings sync for a competition',
+    description:
+      'Fetches group standings from API Football for the given competition and season, ' +
+      'then upserts all entries into the `standing` table. ' +
+      'Example: POST /etl/sync/standings/WC26?season=2026',
+  })
+  @ApiParam({ name: 'competitionCode', example: 'WC26' })
+  @ApiOkResponse({
+    schema: {
+      example: { status: 'ok', competitionCode: 'WC26', season: 2026 },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid season query param.',
+  })
+  async triggerStandingsSync(
+    @Param('competitionCode') competitionCode: string,
+    @Query('season') seasonParam?: string,
+  ) {
+    const code = this.resolveCode(competitionCode);
+    const year = Number.parseInt(seasonParam ?? '', 10);
+    if (Number.isNaN(year) || year < 1900 || year > 2100) {
+      throw new BadRequestException(
+        'season query param must be a valid year (e.g. ?season=2026)',
+      );
+    }
+    await this.etlService.triggerStandingsSync(code, year);
+    return { status: 'ok' as const, competitionCode: code, season: year };
+  }
+
   @Post('sync/:type')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
