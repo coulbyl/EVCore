@@ -1901,6 +1901,7 @@ describe('BettingEngineService', () => {
           findUnique: vi.fn().mockResolvedValue({
             id: 'fixture-id',
             seasonId: 'season-id',
+            season: { competition: { code: 'SA' } },
             scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
             homeTeamId: 'home-team',
             awayTeamId: 'away-team',

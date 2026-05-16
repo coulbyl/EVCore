@@ -302,12 +302,16 @@ export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
 export const MAX_SELECTION_ODDS = new Decimal('4.0');
 
 // Under 2.5 bets at high expected-goal totals are systematically losing — the
-// independent Poisson model overestimates P(Under) when λ is high because real
-// football matches exhibit overdispersion (variance > mean). When λ_home + λ_away
-// exceeds this threshold, require a stricter EV floor before accepting UNDER picks.
-// Calibrated on April 2026 prod data: 5 Under-2.5 losses at λ_total 2.57–3.23.
-export const UNDER_HIGH_LAMBDA_THRESHOLD = 2.5;
-export const UNDER_HIGH_LAMBDA_EV_FLOOR = new Decimal('0.20');
+// independent Poisson model overestimates P(Under) due to real-match overdispersion.
+// When λ_home + λ_away exceeds this threshold, reject UNDER outright regardless of EV.
+// Lowered from 2.5 → 2.3 (May 2026 live diagnostic: losses at λ 2.30–2.80 confirmed).
+export const UNDER_HIGH_LAMBDA_THRESHOLD = 2.3;
+
+// Minimum probability for any pick on the EV channel.
+// Picks with P < 40% are statistically unlikely and empirically losing even when
+// the Poisson EV is positive (model overestimates P on edge cases).
+// May 2026 live diagnostic: 3 losses at P=32.6%, 34.4%, 46.8% on EV channel.
+export const EV_MIN_PROBABILITY_THRESHOLD = new Decimal('0.40');
 
 // Bayesian shrinkage — pulls raw Poisson lambdas toward the per-league mean goal rate.
 // Formula: rawLambda = α × (xgFor × xgAgainst / leagueAvg) + (1 - α) × anchor
@@ -622,6 +626,33 @@ export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
 // in marketPerformance stats. Re-enable once all leagues are calibrated and
 // a dedicated COMBO market key is added to the backtest reporting.
 export const COMBOS_ENABLED = false;
+
+// Leagues with sufficient HT/FT historical data for HALF_TIME_FULL_TIME and
+// FIRST_HALF_WINNER markets. Secondary leagues (SWE1, NOR1, etc.) lack the
+// half-time decomposition history needed to calibrate the bivariate Poisson model.
+// May 2026 diagnostic: MT V2 (P=32.6%) and similar HT/FT picks lost on unlisted leagues.
+const HTFT_CALIBRATED_LEAGUES = new Set([
+  'BL1',
+  'CH',
+  'L1',
+  'LL',
+  'PL',
+  'SA',
+  'EL1',
+]);
+
+export function isHtftCalibrated(
+  competitionCode: string | null | undefined,
+): boolean {
+  return (
+    competitionCode != null && HTFT_CALIBRATED_LEAGUES.has(competitionCode)
+  );
+}
+
+// Minimum qualityScore for a fallback EV pick (applied when the primary best
+// pick was rejected). Prevents selecting a poor substitute just because it is
+// the "best remaining" after rejection of the dominant candidate.
+export const FALLBACK_MIN_QUALITY_SCORE = new Decimal('0.09');
 
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
@@ -1093,6 +1124,44 @@ export function getPickMaxSelectionOdds(
 // Minimum probability for a safe value pick (strict — P < 0.68 is excluded).
 export const SAFE_VALUE_MIN_PROBABILITY = new Decimal('0.68');
 
+// Per-league SV minimum probability overrides.
+// 1.0 = effective ban (league is structurally mis-calibrated for SV).
+// SV backtest 2026-05-16 v1: MLS/D2/UECL HR 46-50% → disable.
+// EL1/EL2 floor raised to 0.78/0.76 → EL1 still 56% HR on remaining bets → disable.
+// POL1 50% HR unchanged → disable.
+// TUR1/SWE1 56% HR on 16 bets each → raise floor to 0.80.
+const SV_MIN_PROBABILITY_MAP: Partial<Record<string, Decimal>> = {
+  MLS: new Decimal('1.0'),
+  D2: new Decimal('1.0'),
+  UECL: new Decimal('1.0'),
+  EL1: new Decimal('1.0'),
+  POL1: new Decimal('1.0'),
+  TUR1: new Decimal('0.80'),
+  SWE1: new Decimal('0.80'),
+  EL2: new Decimal('0.76'),
+};
+
+export function getSvMinProbability(
+  competitionCode: string | null | undefined,
+): Decimal {
+  if (competitionCode == null) return SAFE_VALUE_MIN_PROBABILITY;
+  return SV_MIN_PROBABILITY_MAP[competitionCode] ?? SAFE_VALUE_MIN_PROBABILITY;
+}
+
+// Per-league SV minimum odds overrides.
+// SP2 backtest 2026-05-16: avg odds 1.39 with 62% HR → too-short odds erode edge.
+// Raise floor to 1.45 to remove sub-odds picks on Segunda División.
+const SV_MIN_ODDS_MAP: Partial<Record<string, Decimal>> = {
+  SP2: new Decimal('1.45'),
+};
+
+export function getSvMinOdds(
+  competitionCode: string | null | undefined,
+): Decimal {
+  if (competitionCode == null) return SAFE_VALUE_MIN_ODDS;
+  return SV_MIN_ODDS_MAP[competitionCode] ?? SAFE_VALUE_MIN_ODDS;
+}
+
 // Adverse line movement threshold: if odds drop by >10% over 7 days, exclude the pick.
 export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
 
@@ -1105,6 +1174,13 @@ export const SAFE_VALUE_MIN_EV = new Decimal('0.05');
 // picks where bookmaker margin erodes expected value disproportionately.
 export const SAFE_VALUE_MIN_ODDS = new Decimal('1.15');
 export const SAFE_VALUE_MAX_ODDS = new Decimal('2.20');
+
+// When the SV winner is Under 3.5 or Under 4.5 and λ_total ≥ this threshold,
+// the engine also evaluates Over 2.5 and Over 3.5 and selects the better
+// qualityScore — fixing the structural Under bias at high expected goals.
+// May 2026 diagnostic: SV systematically picks Under 4.5 (P=76%, EV=poor) over
+// Over 3.5 (P=58%, EV=potentially better) when λ_total ≈ 3.5–4.5.
+export const SV_UNDER_LAMBDA_COMPARISON_THRESHOLD = 3.0;
 
 // Flat stake used when KELLY_ENABLED=false (default — safe fallback)
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BacktestService } from './backtest.service';
+import type { GridSearchService } from './grid-search.service';
 import { BacktestController } from './backtest.controller';
 
 describe('BacktestController', () => {
@@ -21,9 +22,15 @@ describe('BacktestController', () => {
     } as unknown as BacktestService;
   }
 
+  function makeGridSearchService(): GridSearchService {
+    return {
+      runGridSearch: vi.fn().mockResolvedValue({ results: [] }),
+    } as unknown as GridSearchService;
+  }
+
   it('runs backtest for all competitions and returns reports', async () => {
     const service = makeService();
-    const controller = new BacktestController(service);
+    const controller = new BacktestController(service, makeGridSearchService());
 
     await expect(controller.runAll()).resolves.toEqual([
       { competitionCode: 'PL', overallVerdict: 'PASS' },
@@ -33,7 +40,7 @@ describe('BacktestController', () => {
 
   it('runs backtest for one competition (all seasons) and returns the report', async () => {
     const service = makeService();
-    const controller = new BacktestController(service);
+    const controller = new BacktestController(service, makeGridSearchService());
 
     await expect(controller.runCompetition('PL')).resolves.toEqual({
       competitionCode: 'PL',
@@ -44,7 +51,7 @@ describe('BacktestController', () => {
 
   it('runs backtest for one competition + one season and returns the report', async () => {
     const service = makeService();
-    const controller = new BacktestController(service);
+    const controller = new BacktestController(service, makeGridSearchService());
 
     await controller.runCompetitionSeason('PL', '2023-24');
 
@@ -56,7 +63,7 @@ describe('BacktestController', () => {
 
   it('delegates safe-value backtest to the service', async () => {
     const service = makeService();
-    const controller = new BacktestController(service);
+    const controller = new BacktestController(service, makeGridSearchService());
 
     await controller.runSafeValueBacktest();
 

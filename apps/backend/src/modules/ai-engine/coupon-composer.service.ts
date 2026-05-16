@@ -27,6 +27,10 @@ const ODDS_TIERS = [
 const MAX_COUPONS = 13;
 // C(25,5) = 53 130 combinations — combinatorial search stays well within heap
 const MAX_POOL_SIZE = 25;
+// A single fixture may appear in at most this many output coupons.
+// Without this cap, the highest-signal pick (e.g. P=0.96) saturates all coupons
+// and a single bad result kills the entire day.
+const MAX_FIXTURE_APPEARANCES = 3;
 // Fallback odds when oddsSnapshot is absent — conservative estimate per canal
 const FALLBACK_ODDS: Record<Canal, number> = {
   SV: 1.65,
@@ -115,6 +119,8 @@ export class CouponComposerService {
     // Pick the best coupons per odds tier (by jointProbability) to ensure variety
     const selected: ComposedCoupon[] = [];
     const usedKeys = new Set<string>();
+    // Track per-fixture appearance count to enforce MAX_FIXTURE_APPEARANCES
+    const fixtureAppearances = new Map<string, number>();
 
     for (const tier of ODDS_TIERS) {
       const tierCoupons = unique
@@ -129,7 +135,20 @@ export class CouponComposerService {
           .sort()
           .join('|');
         if (usedKeys.has(key)) continue;
+        // Skip if any fixture in this coupon has already hit the appearance cap
+        const blocked = c.legs.some(
+          (l) =>
+            (fixtureAppearances.get(l.fixtureId) ?? 0) >=
+            MAX_FIXTURE_APPEARANCES,
+        );
+        if (blocked) continue;
         usedKeys.add(key);
+        for (const l of c.legs) {
+          fixtureAppearances.set(
+            l.fixtureId,
+            (fixtureAppearances.get(l.fixtureId) ?? 0) + 1,
+          );
+        }
         selected.push(c);
         added++;
       }

@@ -67,7 +67,7 @@ export type FullOddsSnapshot = {
     Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
   >;
   firstHalfWinnerOdds: { home: Decimal; draw: Decimal; away: Decimal } | null;
-  doubleChanceOdds: { '1X': Decimal; X2: Decimal; '12': Decimal } | null;
+  doubleChanceOdds: { '1X': Decimal; X2: Decimal; '12': Decimal | null } | null;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

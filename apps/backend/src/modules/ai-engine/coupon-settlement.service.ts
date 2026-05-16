@@ -119,9 +119,25 @@ export class CouponSettlementService {
       legResults.push(isCorrect);
     }
 
+    // Early-fail: a coupon is LOST as soon as any leg loses — no need to wait
+    // for all legs to be resolved. Coupon combinatorics mean one loss = full loss.
+    const anyLost = legResults.some((r) => !r);
+    if (anyLost) {
+      await this.repo.updateResult(proposalId, CouponResult.LOST);
+      logger.info(
+        {
+          proposalId,
+          result: CouponResult.LOST,
+          resolvedLegs: legResults.length,
+        },
+        'Proposal early-failed: at least one leg lost',
+      );
+      return;
+    }
+
     if (!allResolved) {
       logger.info(
-        { proposalId },
+        { proposalId, resolvedLegs: legResults.length },
         'Proposal not fully resolved yet — retry later',
       );
       return;
@@ -129,11 +145,7 @@ export class CouponSettlementService {
 
     const correct = legResults.filter(Boolean).length;
     const result: CouponResult =
-      correct === legResults.length
-        ? CouponResult.WON
-        : correct === 0
-          ? CouponResult.LOST
-          : CouponResult.PARTIAL;
+      correct === legResults.length ? CouponResult.WON : CouponResult.PARTIAL;
 
     await this.repo.updateResult(proposalId, result);
     logger.info(
