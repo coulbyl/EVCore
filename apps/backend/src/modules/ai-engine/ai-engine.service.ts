@@ -38,11 +38,20 @@ export class AiEngineService {
       this.signalWindow.getTodayPool(date),
     ]);
 
+    const distinctFixtures = new Set(rawPicks.map((p) => p.fixtureId)).size;
+    logger.info(
+      { date, picks: rawPicks.length, distinctFixtures },
+      'Pool loaded',
+    );
+
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
     const coupons = this.composer.compose(scoredPicks, oddsMin, oddsMax);
 
     if (coupons.length === 0) {
-      logger.info({ date }, 'No viable coupons generated');
+      logger.info(
+        { date, picks: rawPicks.length, distinctFixtures, oddsMin, oddsMax },
+        'No viable coupons generated',
+      );
       return;
     }
 

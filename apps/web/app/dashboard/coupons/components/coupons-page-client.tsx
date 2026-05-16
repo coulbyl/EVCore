@@ -47,7 +47,8 @@ function StatusDot({
 }) {
   const base = "text-[0.6rem] font-bold uppercase tracking-widest text-white";
   if (result === "WON") return <span className={base}>Gagné ✓</span>;
-  if (result === "LOST") return <span className={`${base} opacity-80`}>Perdu</span>;
+  if (result === "LOST")
+    return <span className={`${base} opacity-80`}>Perdu</span>;
   if (status === "PENDING")
     return <span className={`${base} opacity-60 font-medium`}>En attente</span>;
   return null;
@@ -117,8 +118,7 @@ function LegRow({ leg }: { leg: CouponLegDto }) {
 }
 
 function CouponCard({ coupon }: { coupon: CouponProposalDto }) {
-  const displayResult =
-    coupon.result === "PARTIAL" ? "LOST" : coupon.result;
+  const displayResult = coupon.result === "PARTIAL" ? "LOST" : coupon.result;
   const headerBg =
     displayResult === "WON"
       ? "bg-success"
@@ -129,7 +129,9 @@ function CouponCard({ coupon }: { coupon: CouponProposalDto }) {
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-panel-strong shadow-sm">
       {/* Header */}
-      <div className={`flex items-center justify-between ${headerBg} px-4 py-2.5`}>
+      <div
+        className={`flex items-center justify-between ${headerBg} px-4 py-2.5`}
+      >
         <span className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-white">
           #{coupon.rank}
         </span>

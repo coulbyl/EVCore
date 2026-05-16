@@ -14,8 +14,19 @@ const CANAL_BASE_WEIGHT: Record<Canal, number> = {
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
 const MAX_LEGS = 5;
-const MAX_COUPONS = 3;
 const MIN_DISTINCT_FIXTURES = 2;
+
+// Distribute output coupons across odds tiers to ensure variety
+const ODDS_TIERS = [
+  { min: 2.5, max: 4.0, slots: 3 },
+  { min: 4.0, max: 10.0, slots: 4 },
+  { min: 10.0, max: 30.0, slots: 3 },
+  { min: 30.0, max: 50.0, slots: 3 },
+] as const;
+// Must equal the sum of all tier slots
+const MAX_COUPONS = 13;
+// C(25,5) = 53 130 combinations — combinatorial search stays well within heap
+const MAX_POOL_SIZE = 25;
 // Fallback odds when oddsSnapshot is absent — conservative estimate per canal
 const FALLBACK_ODDS: Record<Canal, number> = {
   SV: 1.65,
@@ -79,17 +90,17 @@ export class CouponComposerService {
     const distinctFixtures = new Set(scoredPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
 
-    // Sort picks by signalScore desc
-    const sorted = [...scoredPicks].sort(
-      (a, b) => b.signalScore - a.signalScore,
-    );
+    // Sort by signalScore desc and cap pool before combinatorial search
+    const pool = [...scoredPicks]
+      .sort((a, b) => b.signalScore - a.signalScore)
+      .slice(0, MAX_POOL_SIZE);
 
     const candidates: ComposedCoupon[] = [];
 
     // Greedy combination builder — try all subsets up to MAX_LEGS
-    this.buildCombinations(sorted, [], { oddsMin, oddsMax, out: candidates });
+    this.buildCombinations(pool, [], { oddsMin, oddsMax, out: candidates });
 
-    // Deduplicate by leg fingerprint, sort by jointProbability desc
+    // Deduplicate by leg fingerprint
     const seen = new Set<string>();
     const unique = candidates.filter((c) => {
       const key = c.legs
@@ -101,9 +112,35 @@ export class CouponComposerService {
       return true;
     });
 
-    unique.sort((a, b) => b.jointProbability - a.jointProbability);
+    // Pick the best coupons per odds tier (by jointProbability) to ensure variety
+    const selected: ComposedCoupon[] = [];
+    const usedKeys = new Set<string>();
 
-    return unique.slice(0, MAX_COUPONS).map((c, i) => ({ ...c, rank: i + 1 }));
+    for (const tier of ODDS_TIERS) {
+      const tierCoupons = unique
+        .filter((c) => c.combinedOdds >= tier.min && c.combinedOdds < tier.max)
+        .sort((a, b) => b.jointProbability - a.jointProbability);
+
+      let added = 0;
+      for (const c of tierCoupons) {
+        if (added >= tier.slots) break;
+        const key = c.legs
+          .map((l) => `${l.fixtureId}:${l.canal}:${l.market}:${l.pick}`)
+          .sort()
+          .join('|');
+        if (usedKeys.has(key)) continue;
+        usedKeys.add(key);
+        selected.push(c);
+        added++;
+      }
+    }
+
+    // Sort final selection by signalScore desc so rank reflects quality
+    selected.sort((a, b) => b.signalScore - a.signalScore);
+
+    return selected
+      .slice(0, MAX_COUPONS)
+      .map((c, i) => ({ ...c, rank: i + 1 }));
   }
 
   private buildCombinations(
