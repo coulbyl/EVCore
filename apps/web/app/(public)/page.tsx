@@ -176,7 +176,7 @@ export default function LandingPage() {
                 href="/dashboard/wc2026"
                 className="underline underline-offset-2"
               >
-                Voir l'espace dédié
+                Voir l&apos;espace dédié
               </Link>
             </div>
           ) : null}

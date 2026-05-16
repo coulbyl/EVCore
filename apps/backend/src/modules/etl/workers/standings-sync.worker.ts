@@ -16,6 +16,7 @@ import {
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
+import { Inject } from '@nestjs/common';
 
 export type StandingsSyncJobData = {
   season: number;
@@ -27,10 +28,12 @@ const logger = createLogger('standings-sync-worker');
 
 @Processor(BULLMQ_QUEUES.STANDINGS_SYNC)
 export class StandingsSyncWorker extends WorkerHost {
+  @Inject(ConfigService)
+  private config!: ConfigService;
+
   constructor(
     private readonly fixtureService: FixtureService,
     private readonly standingRepository: StandingRepository,
-    private readonly config: ConfigService,
     private readonly prisma: PrismaService,
   ) {
     super();
@@ -77,8 +80,6 @@ export class StandingsSyncWorker extends WorkerHost {
       return;
     }
 
-    console.log(parsed.data);
-
     if (parsed.data.results === 0 || parsed.data.response.length === 0) {
       logger.info(
         { competitionCode, season },
@@ -86,8 +87,6 @@ export class StandingsSyncWorker extends WorkerHost {
       );
       return;
     }
-
-    console.log(competitionMeta, ' meta');
 
     const competition = await this.fixtureService.upsertCompetition(
       toUpsertCompetitionInput(competitionMeta),
@@ -99,9 +98,8 @@ export class StandingsSyncWorker extends WorkerHost {
       endDate: seasonFallbackEndDate(season),
     });
 
-    const allGroups = parsed.data.response[0]!.league.standings;
+    const allGroups = parsed.data.response[0].league.standings;
 
-    console.log(allGroups, ' all groups ---');
     // Filter out the virtual "Ranking of third-placed teams" group
     const realGroups = allGroups.filter(
       (group) => group[0]?.group !== 'Ranking of third-placed teams',

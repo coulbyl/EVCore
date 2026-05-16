@@ -12,6 +12,7 @@ import {
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { useCoupons } from "@/domains/ai-engine/use-cases/use-coupons";
+import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { formatDiagnosticPickForDisplay } from "@/helpers/fixture";
 import type {
@@ -194,6 +195,7 @@ export function CouponsPageClient() {
   }
 
   const coupons = data ?? [];
+  useCouponCelebration(coupons);
 
   return (
     <Page className="flex h-full flex-col">
