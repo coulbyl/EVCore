@@ -12,10 +12,10 @@ catalog:
   "@types/node": "^22.0.0"
 
   # React ecosystem
-  react: "^19.2.5"
-  react-dom: "^19.2.5"
+  react: "^19.2.6"
+  react-dom: "^19.2.6"
   lucide-react: "^0.577.0"
-  next: "16.2.3"
+  next: "16.2.6"
   "@types/react": "19.2.14"
   "@types/react-dom": "19.2.3"
 
