@@ -122,7 +122,7 @@ function SimulationDrawer({
         </div>
 
         {/* Body */}
-        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
+        <div className="flex flex-col gap-6 p-5">
           <p className="text-sm text-muted-foreground">
             Si tu avais misé la même somme sur chacun des{" "}
             <span className="font-semibold text-foreground">

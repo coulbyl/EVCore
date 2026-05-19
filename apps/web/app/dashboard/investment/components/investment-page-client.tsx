@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
+import {
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+  Target,
+  Ticket,
+  TrendingUp,
+} from "lucide-react";
 import {
   Page,
   PageHeader,
@@ -11,11 +19,24 @@ import {
   Skeleton,
   Badge,
   Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Separator,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Calendar,
+  ProgressBar,
+  StatCard,
+  cn,
 } from "@evcore/ui";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -27,8 +48,8 @@ import {
 } from "@/helpers/fixture";
 import type {
   InvestmentCanal,
-  InvestmentPickDto,
   InvestmentCouponDto,
+  InvestmentPickDto,
 } from "@/domains/ai-engine/types/investment";
 
 const CANAL_COLOR: Record<InvestmentCanal, string> = {
@@ -47,10 +68,45 @@ const CANAL_LABEL: Record<InvestmentCanal, string> = {
   NUL: "Nul",
 };
 
+const CANAL_DESCRIPTION: Record<InvestmentCanal, string> = {
+  SV: "Sélections prudentes à rendement régulier.",
+  BB: "Matchs ouverts avec potentiel des deux côtés.",
+  CONF: "Angles les plus affirmés du modèle.",
+  NUL: "Scénarios de marché plus rares mais payants.",
+  EV: "Cotes plus agressives avec valeur attendue.",
+};
+
 const CANAL_ORDER: InvestmentCanal[] = ["SV", "BB", "CONF", "NUL", "EV"];
 
 function formatPct(n: number) {
   return `${(n * 100).toFixed(0)}%`;
+}
+
+function formatCount(value: number, singular: string, plural = `${singular}s`) {
+  return `${value} ${value > 1 ? plural : singular}`;
+}
+
+function summarizeDay(data: {
+  selections: Record<InvestmentCanal, InvestmentPickDto[]>;
+  coupons: InvestmentCouponDto[];
+}) {
+  const picks = CANAL_ORDER.flatMap((canal) => data.selections[canal] ?? []);
+  const settled = picks.filter((pick) => pick.isCorrect !== null);
+  const wins = settled.filter((pick) => pick.isCorrect).length;
+  const avgHitRate =
+    picks.length > 0
+      ? picks.reduce((sum, pick) => sum + pick.calibratedHitRate, 0) /
+        picks.length
+      : 0;
+
+  return {
+    totalPicks: picks.length,
+    totalCoupons: data.coupons.length,
+    settledCount: settled.length,
+    wins,
+    avgHitRate,
+    bestCoupon: data.coupons[0] ?? null,
+  };
 }
 
 function ResultBadge({ isCorrect }: { isCorrect: boolean | null }) {
@@ -77,57 +133,202 @@ function PickCard({
   const loc = locale === "en" ? "en" : "fr";
   const marketLabel = formatMarketForDisplay(pick.market, loc);
   const pickLabel = formatPickForDisplay(pick.pick, pick.market);
+  const confidencePct = Math.round(pick.calibratedHitRate * 100);
 
   return (
-    <div className="rounded-lg border bg-card p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium truncate">
-          {pick.homeTeam} <span className="text-muted-foreground">–</span>{" "}
-          {pick.awayTeam}
-        </span>
-        <Badge
-          className="shrink-0 text-[0.6rem] uppercase tracking-widest"
-          style={{ backgroundColor: color, color: "#fff" }}
-        >
-          {pick.canal}
-        </Badge>
-      </div>
+    <Card
+      className="relative gap-4 overflow-hidden rounded-[1.35rem] border-border/80 bg-gradient-to-br from-card via-card to-card/95 py-4 shadow-sm transition-colors hover:border-border"
+      style={{
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${color} 20%, transparent)`,
+      }}
+    >
+      <div
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ backgroundColor: color }}
+      />
 
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">{marketLabel}</span>
-        <span>·</span>
-        <span className="font-semibold text-foreground">{pickLabel}</span>
-        {pick.oddsSnapshot != null && (
-          <>
-            <span>·</span>
-            <span className="font-mono">@{pick.oddsSnapshot.toFixed(2)}</span>
-          </>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <span className="font-mono font-semibold text-foreground">
-            {formatPct(pick.calibratedHitRate)}
-          </span>
-          <span className="text-muted-foreground/60">prob. calibrée</span>
-          <ResultBadge isCorrect={pick.isCorrect} />
+      <CardHeader className="gap-3 px-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="truncate text-sm leading-snug">
+              {pick.homeTeam} <span className="text-muted-foreground">–</span>{" "}
+              {pick.awayTeam}
+            </CardTitle>
+            <CardDescription className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="font-semibold text-foreground">
+                {marketLabel}
+              </span>
+              <span>·</span>
+              <span className="font-semibold text-foreground">{pickLabel}</span>
+            </CardDescription>
+          </div>
+          <Badge
+            className="shrink-0 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em]"
+            style={{ backgroundColor: color, color: "#fff" }}
+          >
+            {pick.canal}
+          </Badge>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="uppercase tracking-widest text-[0.6rem] font-medium opacity-60">
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-4 px-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="rounded-full text-[0.68rem]">
             {pick.competition}
-          </span>
-          <span className="opacity-40">·</span>
-          <span className="opacity-60">{formatTime(pick.scheduledAt)}</span>
+          </Badge>
+          <Badge variant="neutral" className="rounded-full text-[0.68rem]">
+            {formatTime(pick.scheduledAt)}
+          </Badge>
+          {pick.oddsSnapshot != null && (
+            <Badge
+              variant="accent"
+              className="rounded-full font-mono text-[0.68rem]"
+            >
+              @{pick.oddsSnapshot.toFixed(2)}
+            </Badge>
+          )}
+          {pick.signalScore > 0 && (
+            <Badge variant="outline" className="rounded-full text-[0.68rem]">
+              Signal {pick.signalScore.toFixed(0)}
+            </Badge>
+          )}
         </div>
-      </div>
 
-      {pick.reasoning && (
-        <p className="text-xs text-muted-foreground italic leading-snug border-t pt-2 mt-0.5">
-          {pick.reasoning}
-        </p>
-      )}
-    </div>
+        <div className="rounded-xl border border-border/70 bg-background/30 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Probabilité calibrée
+            </span>
+            <ResultBadge isCorrect={pick.isCorrect} />
+          </div>
+          <ProgressBar
+            value={confidencePct}
+            max={100}
+            thresholds={{ success: 62, warning: 40 }}
+            showValue
+          />
+        </div>
+
+        {pick.reasoning && (
+          <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
+            {pick.reasoning}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function HeroInsights({
+  data,
+  date,
+}: {
+  data: {
+    selections: Record<InvestmentCanal, InvestmentPickDto[]>;
+    coupons: InvestmentCouponDto[];
+  } | null;
+  date: string;
+}) {
+  if (!data) return null;
+
+  const summary = summarizeDay(data);
+  const settledRate =
+    summary.settledCount > 0 ? summary.wins / summary.settledCount : 0;
+
+  return (
+    <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+      <Card className="gap-5 overflow-hidden rounded-[1.6rem] border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)] py-5">
+        <CardHeader className="gap-2 px-5">
+          <Badge
+            variant="accent"
+            className="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]"
+          >
+            Vue rapide
+          </Badge>
+          <CardTitle className="text-xl leading-tight">
+            Picks du {formatDateLabel(date)}
+          </CardTitle>
+          <CardDescription className="max-w-2xl text-sm leading-relaxed">
+            Une lecture plus éditoriale des meilleures sélections du jour, avec
+            densité d’information, confiance et coupons immédiatement visibles.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="grid grid-cols-1 gap-3 px-5 sm:grid-cols-3">
+          <StatCard
+            label="Volume"
+            value={formatCount(summary.totalPicks, "pick")}
+            icon={<Target className="size-3.5" />}
+            compact
+          />
+          <StatCard
+            label="Coupons"
+            value={formatCount(summary.totalCoupons, "coupon")}
+            icon={<Ticket className="size-3.5" />}
+            compact
+          />
+          <StatCard
+            label="Confiance Moy."
+            value={formatPct(summary.avgHitRate)}
+            icon={<Brain className="size-3.5" />}
+            compact
+            tone="success"
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[1.6rem] py-5">
+        <CardHeader className="gap-2 px-5">
+          <CardTitle className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Lecture du jour
+          </CardTitle>
+          <CardDescription className="text-sm">
+            {summary.settledCount > 0
+              ? `${summary.wins} bons résultats sur ${summary.settledCount} picks déjà réglés.`
+              : "Les résultats ne sont pas encore réglés pour cette sélection."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-5">
+          <div className="rounded-xl border border-border/70 bg-background/30 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Taux de réussite réglé
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                {summary.settledCount > 0 ? formatPct(settledRate) : "—"}
+              </span>
+            </div>
+            <ProgressBar
+              value={Math.round(settledRate * 100)}
+              max={100}
+              thresholds={{ success: 55, warning: 35 }}
+              showValue={false}
+            />
+          </div>
+
+          {summary.bestCoupon ? (
+            <div className="rounded-xl border border-border/70 bg-background/20 p-3">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Coupon #1
+                </span>
+                <Badge variant="success" className="rounded-full">
+                  @{summary.bestCoupon.combinedOdds.toFixed(2)}
+                </Badge>
+              </div>
+              <p className="text-sm font-medium">
+                {formatPct(summary.bestCoupon.jointProbability)} de probabilité
+                jointe sur {summary.bestCoupon.legs.length} matchs.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border/70 px-3 py-4 text-sm text-muted-foreground">
+              Aucun coupon disponible pour cette date.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
@@ -150,77 +351,114 @@ function CouponCard({
         : "text-muted-foreground";
 
   return (
-    <div
-      className={`rounded-lg border bg-card flex flex-col gap-3 ${isTop ? "p-5 border-primary/40 shadow-sm" : "p-4"}`}
+    <Card
+      className={cn(
+        "gap-4 rounded-[1.45rem] py-5",
+        isTop
+          ? "border-primary/30 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)] shadow-sm"
+          : "border-amber-500/30",
+      )}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isTop && (
-            <span className="text-[0.6rem] font-bold uppercase tracking-widest text-primary">
-              Meilleur
-            </span>
-          )}
-          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Coupon #{coupon.rank}
-          </span>
+      <CardHeader className="gap-3 px-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {isTop && (
+                <Badge
+                  variant="accent"
+                  className="rounded-full uppercase tracking-[0.16em]"
+                >
+                  Meilleur
+                </Badge>
+              )}
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Coupon #{coupon.rank}
+              </span>
+            </div>
+            <CardDescription className="text-sm">
+              {coupon.legs.length} sélections combinées pour une cote totale de{" "}
+              <span className="font-mono font-semibold text-foreground">
+                @{coupon.combinedOdds.toFixed(2)}
+              </span>
+            </CardDescription>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-background/30 px-3 py-2 text-right">
+            <p className="text-[0.68rem] uppercase tracking-[0.16em] text-muted-foreground">
+              Proba
+            </p>
+            <p className={cn("text-sm font-semibold", probColor)}>
+              {formatPct(coupon.jointProbability)}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-xs font-semibold ${probColor}`}>
-            {formatPct(coupon.jointProbability)} prob.
-          </span>
-          <span className="font-mono font-bold text-sm">
-            @{coupon.combinedOdds.toFixed(2)}
-          </span>
-        </div>
-      </div>
+      </CardHeader>
 
-      <Separator />
+      <CardContent className="flex flex-col gap-3 px-5">
+        <ProgressBar
+          value={Math.round(probPct)}
+          max={100}
+          thresholds={{ success: 40, warning: 25 }}
+          showValue={false}
+        />
 
-      <div className="flex flex-col gap-2">
-        {coupon.legs.map((leg) => {
-          const color = CANAL_COLOR[leg.canal];
-          const marketLabel = formatMarketForDisplay(leg.market, loc);
-          const pickLabel = formatPickForDisplay(leg.pick, leg.market);
-          return (
-            <div
-              key={`${leg.fixtureId}:${leg.canal}`}
-              className="flex flex-col gap-0.5 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="size-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="font-medium truncate">
-                  {leg.homeTeam} – {leg.awayTeam}
-                </span>
-                <div className="ml-auto flex items-center gap-2 shrink-0">
-                  <ResultBadge isCorrect={leg.isCorrect} />
-                  {leg.oddsSnapshot != null && (
-                    <span className="font-mono text-muted-foreground">
-                      @{leg.oddsSnapshot.toFixed(2)}
-                    </span>
-                  )}
+        <Separator />
+
+        <div className="flex flex-col gap-3">
+          {coupon.legs.map((leg) => {
+            const color = CANAL_COLOR[leg.canal];
+            const marketLabel = formatMarketForDisplay(leg.market, loc);
+            const pickLabel = formatPickForDisplay(leg.pick, leg.market);
+
+            return (
+              <div
+                key={`${leg.fixtureId}:${leg.canal}`}
+                className="rounded-xl border border-border/60 bg-background/20 p-3"
+              >
+                <div className="flex items-start gap-2">
+                  <span
+                    className="mt-1 size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="truncate text-sm font-medium">
+                        {leg.homeTeam} – {leg.awayTeam}
+                      </p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <ResultBadge isCorrect={leg.isCorrect} />
+                        {leg.oddsSnapshot != null && (
+                          <span className="font-mono text-xs text-muted-foreground">
+                            @{leg.oddsSnapshot.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span
+                        className="font-mono uppercase tracking-widest"
+                        style={{ color }}
+                      >
+                        {leg.canal}
+                      </span>
+                      <span>·</span>
+                      <span>
+                        {marketLabel} · {pickLabel}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 pl-3.5 text-muted-foreground">
-                <span className="font-mono uppercase tracking-widest text-[0.6rem]" style={{ color }}>
-                  {leg.canal}
-                </span>
-                <span className="opacity-40">·</span>
-                <span>{marketLabel} · {pickLabel}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {coupon.reasoning && (
-        <p className="text-xs text-muted-foreground italic leading-snug border-t pt-2">
-          {coupon.reasoning}
-        </p>
-      )}
-    </div>
+        {coupon.reasoning && (
+          <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
+            {coupon.reasoning}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -235,20 +473,49 @@ function CanalSection({
 }) {
   if (picks.length === 0) return null;
   const color = CANAL_COLOR[canal];
+  const avgHitRate =
+    picks.reduce((sum, pick) => sum + pick.calibratedHitRate, 0) / picks.length;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <span
-          className="size-2 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-        <h3 className="text-sm font-semibold">{CANAL_LABEL[canal]}</h3>
-        <span className="text-xs text-muted-foreground">
-          {picks.length} pick{picks.length > 1 ? "s" : ""}
-        </span>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 rounded-[1.4rem] border border-border/80 bg-background/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span
+            className="mt-1 size-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">{CANAL_LABEL[canal]}</h3>
+              <Badge variant="outline" className="rounded-full">
+                {formatCount(picks.length, "pick")}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {CANAL_DESCRIPTION[canal]}
+            </p>
+          </div>
+        </div>
+
+        <div className="min-w-40 rounded-xl border border-border/70 bg-card/70 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Moyenne
+            </span>
+            <span className="text-sm font-semibold text-foreground">
+              {formatPct(avgHitRate)}
+            </span>
+          </div>
+          <ProgressBar
+            value={Math.round(avgHitRate * 100)}
+            max={100}
+            thresholds={{ success: 62, warning: 40 }}
+            showValue={false}
+          />
+        </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {picks.map((pick) => (
           <PickCard
             key={`${pick.fixtureId}:${pick.canal}`}
@@ -257,17 +524,17 @@ function CanalSection({
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
 function SkeletonSection() {
   return (
     <div className="flex flex-col gap-3">
-      <Skeleton className="h-4 w-28" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <Skeleton className="h-28 rounded-[1.4rem]" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-lg" />
+          <Skeleton key={i} className="h-64 rounded-[1.35rem]" />
         ))}
       </div>
     </div>
@@ -330,7 +597,7 @@ export function InvestissementPageClient() {
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-7 px-2 text-sm font-medium min-w-28"
+                  className="h-7 min-w-28 px-2 text-sm font-medium"
                 >
                   {formatDateLabel(date)}
                 </Button>
@@ -368,81 +635,116 @@ export function InvestissementPageClient() {
 
       <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-8 pb-6">
-        {/* ── Top picks ─────────────────────────────────────────────── */}
-        <section className="flex flex-col gap-6">
-          <h2 className="text-base font-semibold">
-            Top picks — {formatDateLabel(date)}
-          </h2>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="flex flex-col gap-8 pb-6">
+              <HeroInsights data={data ?? null} date={date} />
 
-          {isLoading && (
-            <div className="flex flex-col gap-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <SkeletonSection key={i} />
-              ))}
+              <section className="flex flex-col gap-6">
+                <div>
+                  <h2 className="text-base font-semibold">Top picks</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Les sélections sont regroupées par stratégie pour réduire le
+                    bruit et accélérer la lecture.
+                  </p>
+                </div>
+
+                {isLoading && (
+                  <div className="flex flex-col gap-6">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <SkeletonSection key={i} />
+                    ))}
+                  </div>
+                )}
+
+                {isError && (
+                  <Empty className="rounded-[1.6rem] border-border bg-background/20">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <ShieldCheck className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>Chargement impossible</EmptyTitle>
+                      <EmptyDescription>
+                        Erreur de chargement. Réessayez plus tard.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+
+                {data && !hasAnyPicks && (
+                  <Empty className="rounded-[1.6rem] border-border bg-background/20">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Target className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>Aucun pick éligible</EmptyTitle>
+                      <EmptyDescription>
+                        Le moteur n’a pas retenu de sélection exploitable pour
+                        cette date.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+
+                {data && hasAnyPicks && (
+                  <div className="flex flex-col gap-7">
+                    {CANAL_ORDER.map((canal) => (
+                      <CanalSection
+                        key={canal}
+                        canal={canal}
+                        picks={data.selections[canal] ?? []}
+                        locale={locale}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="flex flex-col gap-4">
+                <div>
+                  <h2 className="text-base font-semibold">Coupons du jour</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Combinaisons prêtes à lire avec cote, proba jointe et détail
+                    de chaque jambe.
+                  </p>
+                </div>
+
+                {isLoading && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-72 rounded-[1.45rem]" />
+                    ))}
+                  </div>
+                )}
+
+                {data && data.coupons.length === 0 && !isLoading && (
+                  <Empty className="rounded-[1.6rem] border-border bg-background/20">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Ticket className="size-5" />
+                      </EmptyMedia>
+                      <EmptyTitle>Aucun coupon composé</EmptyTitle>
+                      <EmptyDescription>
+                        Aucune combinaison n’est proposée pour cette date.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+
+                {data && data.coupons.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {data.coupons.map((coupon) => (
+                      <CouponCard
+                        key={coupon.rank}
+                        coupon={coupon}
+                        locale={locale}
+                        isTop={coupon.rank === 1}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
-          )}
-
-          {isError && (
-            <p className="text-sm text-destructive">
-              Erreur de chargement. Réessayez plus tard.
-            </p>
-          )}
-
-          {data && !hasAnyPicks && (
-            <p className="text-sm text-muted-foreground">
-              Pas de pick éligible pour cette date.
-            </p>
-          )}
-
-          {data && hasAnyPicks && (
-            <div className="flex flex-col gap-6">
-              {CANAL_ORDER.map((canal) => (
-                <CanalSection
-                  key={canal}
-                  canal={canal}
-                  picks={data.selections[canal] ?? []}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ── Coupons ───────────────────────────────────────────────── */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold">Coupons du jour</h2>
-
-          {isLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-44 rounded-lg" />
-              ))}
-            </div>
-          )}
-
-          {data && data.coupons.length === 0 && !isLoading && (
-            <p className="text-sm text-muted-foreground">
-              Aucun coupon composé pour cette date.
-            </p>
-          )}
-
-          {data && data.coupons.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.coupons.map((coupon) => (
-                <CouponCard
-                  key={coupon.rank}
-                  coupon={coupon}
-                  locale={locale}
-                  isTop={coupon.rank === 1}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-        </div>
-        </div>
+          </div>
         </div>
       </PageContent>
     </Page>
