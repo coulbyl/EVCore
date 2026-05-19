@@ -136,86 +136,55 @@ function PickCard({
   const confidencePct = Math.round(pick.calibratedHitRate * 100);
 
   return (
-    <Card
-      className="relative gap-4 overflow-hidden rounded-[1.35rem] border-border/80 bg-gradient-to-br from-card via-card to-card/95 py-4 shadow-sm transition-colors hover:border-border"
-      style={{
-        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${color} 20%, transparent)`,
-      }}
+    <div
+      className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-3 pl-4 flex flex-col gap-1.5 transition-colors hover:border-border"
     >
       <div
-        className="absolute inset-y-0 left-0 w-1"
+        className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: color }}
       />
 
-      <CardHeader className="gap-3 px-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <CardTitle className="truncate text-sm leading-snug">
-              {pick.homeTeam} <span className="text-muted-foreground">–</span>{" "}
-              {pick.awayTeam}
-            </CardTitle>
-            <CardDescription className="flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="font-semibold text-foreground">
-                {marketLabel}
-              </span>
-              <span>·</span>
-              <span className="font-semibold text-foreground">{pickLabel}</span>
-            </CardDescription>
-          </div>
-          <Badge
-            className="shrink-0 rounded-full px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.18em]"
-            style={{ backgroundColor: color, color: "#fff" }}
-          >
-            {pick.canal}
-          </Badge>
-        </div>
-      </CardHeader>
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs font-semibold leading-snug truncate">
+          {pick.homeTeam} <span className="text-muted-foreground">–</span>{" "}
+          {pick.awayTeam}
+        </span>
+        <Badge
+          className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.16em]"
+          style={{ backgroundColor: color, color: "#fff" }}
+        >
+          {pick.canal}
+        </Badge>
+      </div>
 
-      <CardContent className="flex flex-col gap-4 px-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="rounded-full text-[0.68rem]">
-            {pick.competition}
-          </Badge>
-          <Badge variant="neutral" className="rounded-full text-[0.68rem]">
-            {formatTime(pick.scheduledAt)}
-          </Badge>
-          {pick.oddsSnapshot != null && (
-            <Badge
-              variant="accent"
-              className="rounded-full font-mono text-[0.68rem]"
-            >
-              @{pick.oddsSnapshot.toFixed(2)}
-            </Badge>
-          )}
-          {pick.signalScore > 0 && (
-            <Badge variant="outline" className="rounded-full text-[0.68rem]">
-              Signal {pick.signalScore.toFixed(0)}
-            </Badge>
-          )}
-        </div>
+      <div className="text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">{marketLabel}</span>
+        {" · "}
+        <span className="font-medium text-foreground">{pickLabel}</span>
+      </div>
 
-        <div className="rounded-xl border border-border/70 bg-background/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Probabilité calibrée
-            </span>
-            <ResultBadge isCorrect={pick.isCorrect} />
-          </div>
-          <ProgressBar
-            value={confidencePct}
-            max={100}
-            thresholds={{ success: 62, warning: 40 }}
-            showValue
-          />
-        </div>
-
-        {pick.reasoning && (
-          <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
-            {pick.reasoning}
-          </p>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+        <span className="uppercase tracking-widest text-[0.6rem]">{pick.competition}</span>
+        <span className="opacity-40">·</span>
+        <span>{formatTime(pick.scheduledAt)}</span>
+        {pick.oddsSnapshot != null && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="font-mono text-foreground">@{pick.oddsSnapshot.toFixed(2)}</span>
+          </>
         )}
-      </CardContent>
-    </Card>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="font-mono font-semibold text-foreground">{confidencePct}%</span>
+          <ResultBadge isCorrect={pick.isCorrect} />
+        </div>
+      </div>
+
+      {pick.reasoning && (
+        <p className="border-t border-border/50 pt-1.5 text-xs leading-snug text-muted-foreground">
+          {pick.reasoning}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -236,25 +205,19 @@ function HeroInsights({
     summary.settledCount > 0 ? summary.wins / summary.settledCount : 0;
 
   return (
-    <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-      <Card className="gap-5 overflow-hidden rounded-[1.6rem] border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)] py-5">
-        <CardHeader className="gap-2 px-5">
-          <Badge
-            variant="accent"
-            className="w-fit rounded-full px-3 py-1 uppercase tracking-[0.18em]"
-          >
-            Vue rapide
-          </Badge>
-          <CardTitle className="text-xl leading-tight">
-            Picks du {formatDateLabel(date)}
-          </CardTitle>
-          <CardDescription className="max-w-2xl text-sm leading-relaxed">
-            Une lecture plus éditoriale des meilleures sélections du jour, avec
-            densité d’information, confiance et coupons immédiatement visibles.
-          </CardDescription>
+    <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.25fr_0.75fr]">
+      <Card className="overflow-hidden rounded-[1.35rem] border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_32%)] py-3">
+        <CardHeader className="gap-1 px-4 pb-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="accent" className="w-fit rounded-full px-2.5 py-0.5 text-[0.6rem] uppercase tracking-[0.18em]">
+              Vue rapide
+            </Badge>
+            <CardTitle className="text-sm font-semibold">
+              Picks du {formatDateLabel(date)}
+            </CardTitle>
+          </div>
         </CardHeader>
-
-        <CardContent className="grid grid-cols-1 gap-3 px-5 sm:grid-cols-3">
+        <CardContent className="grid grid-cols-3 gap-2 px-4">
           <StatCard
             label="Volume"
             value={formatCount(summary.totalPicks, "pick")}
@@ -277,54 +240,47 @@ function HeroInsights({
         </CardContent>
       </Card>
 
-      <Card className="rounded-[1.6rem] py-5">
-        <CardHeader className="gap-2 px-5">
-          <CardTitle className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Lecture du jour
-          </CardTitle>
-          <CardDescription className="text-sm">
-            {summary.settledCount > 0
-              ? `${summary.wins} bons résultats sur ${summary.settledCount} picks déjà réglés.`
-              : "Les résultats ne sont pas encore réglés pour cette sélection."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 px-5">
-          <div className="rounded-xl border border-border/70 bg-background/30 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Taux de réussite réglé
-              </span>
-              <span className="text-sm font-semibold text-foreground">
-                {summary.settledCount > 0 ? formatPct(settledRate) : "—"}
-              </span>
-            </div>
-            <ProgressBar
-              value={Math.round(settledRate * 100)}
-              max={100}
-              thresholds={{ success: 55, warning: 35 }}
-              showValue={false}
-            />
+      <Card className="rounded-[1.35rem] py-3 border-amber-500/30 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.06),transparent_40%)]">
+        <CardHeader className="gap-1 px-4 pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Lecture du jour
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {summary.settledCount > 0
+                ? `${summary.wins} gagnés / ${summary.settledCount}`
+                : "Non réglé"}
+            </CardDescription>
           </div>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 px-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Taux de réussite
+            </span>
+            <span className="text-xs font-semibold text-foreground">
+              {summary.settledCount > 0 ? formatPct(settledRate) : "—"}
+            </span>
+          </div>
+          <ProgressBar
+            value={Math.round(settledRate * 100)}
+            max={100}
+            thresholds={{ success: 55, warning: 35 }}
+            showValue={false}
+          />
 
           {summary.bestCoupon ? (
-            <div className="rounded-xl border border-border/70 bg-background/20 p-3">
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Coupon #1
-                </span>
-                <Badge variant="success" className="rounded-full">
-                  @{summary.bestCoupon.combinedOdds.toFixed(2)}
-                </Badge>
-              </div>
-              <p className="text-sm font-medium">
-                {formatPct(summary.bestCoupon.jointProbability)} de probabilité
-                jointe sur {summary.bestCoupon.legs.length} matchs.
-              </p>
+            <div className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/20 px-3 py-2">
+              <span className="text-xs font-semibold text-muted-foreground">Coupon #1</span>
+              <span className="text-xs text-muted-foreground">
+                {formatPct(summary.bestCoupon.jointProbability)} · {summary.bestCoupon.legs.length} matchs
+              </span>
+              <Badge variant="success" className="rounded-full text-[0.6rem]">
+                @{summary.bestCoupon.combinedOdds.toFixed(2)}
+              </Badge>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border/70 px-3 py-4 text-sm text-muted-foreground">
-              Aucun coupon disponible pour cette date.
-            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Aucun coupon disponible.</p>
           )}
         </CardContent>
       </Card>

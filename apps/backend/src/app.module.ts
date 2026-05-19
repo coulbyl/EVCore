@@ -23,6 +23,7 @@ import { FormationProgressModule } from './modules/formation-progress/formation-
 import { SummaryModule } from './modules/summary/summary.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { AiEngineModule } from './modules/ai-engine/ai-engine.module';
+import { RedisModule } from './common/redis/redis.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AiEngineModule } from './modules/ai-engine/ai-engine.module';
         },
       }),
     }),
+    RedisModule,
     PrismaModule,
     EtlModule,
     BettingEngineModule,

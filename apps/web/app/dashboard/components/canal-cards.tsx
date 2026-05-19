@@ -134,17 +134,6 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   return (
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <CanalCard
-        canal="ev"
-        icon={<TrendingUp size={14} />}
-        label={tPicks("evChannel")}
-        status={findStatus("EV")}
-        rows={[
-          { label: t("roi"), value: ev ? ev.roi : SKELETON },
-          { label: t("settledBets"), value: ev ? ev.settledBets : SKELETON },
-          { label: t("winRate"), value: ev ? ev.winRate : SKELETON },
-        ]}
-      />
-      <CanalCard
         canal="sv"
         icon={<Shield size={14} />}
         label={tPicks("safeValue")}
@@ -153,6 +142,25 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
           { label: t("roi"), value: sv ? sv.roi : SKELETON },
           { label: t("settledBets"), value: sv ? sv.settledBets : SKELETON },
           { label: t("winRate"), value: sv ? sv.winRate : SKELETON },
+        ]}
+      />
+      <CanalCard
+        canal="btts"
+        icon={<Activity size={14} />}
+        label={tPicks("btts")}
+        status={findStatus("BTTS")}
+        rows={[
+          { label: t("roi"), value: bttsStats ? bttsStats.roi : SKELETON },
+          {
+            label: t("settledBets"),
+            value: bttsStats
+              ? `${bttsStats.correct}/${bttsStats.total}`
+              : SKELETON,
+          },
+          {
+            label: t("winRate"),
+            value: bttsStats ? bttsStats.hitRate : SKELETON,
+          },
         ]}
       />
       <CanalCard
@@ -194,22 +202,14 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         ]}
       />
       <CanalCard
-        canal="btts"
-        icon={<Activity size={14} />}
-        label={tPicks("btts")}
-        status={findStatus("BTTS")}
+        canal="ev"
+        icon={<TrendingUp size={14} />}
+        label={tPicks("evChannel")}
+        status={findStatus("EV")}
         rows={[
-          { label: t("roi"), value: bttsStats ? bttsStats.roi : SKELETON },
-          {
-            label: t("settledBets"),
-            value: bttsStats
-              ? `${bttsStats.correct}/${bttsStats.total}`
-              : SKELETON,
-          },
-          {
-            label: t("winRate"),
-            value: bttsStats ? bttsStats.hitRate : SKELETON,
-          },
+          { label: t("roi"), value: ev ? ev.roi : SKELETON },
+          { label: t("settledBets"), value: ev ? ev.settledBets : SKELETON },
+          { label: t("winRate"), value: ev ? ev.winRate : SKELETON },
         ]}
       />
     </section>

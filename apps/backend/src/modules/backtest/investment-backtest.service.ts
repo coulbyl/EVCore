@@ -429,9 +429,7 @@ function computeCorrelationMatrix(
 
 // ── CONF by league ─────────────────────────────────────────────────────────────
 
-function computeConfByLeague(
-  data: InvestmentPickRecord[],
-): {
+function computeConfByLeague(data: InvestmentPickRecord[]): {
   league: string;
   month: string;
   total: number;

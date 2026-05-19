@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
+import type Redis from 'ioredis';
 import { z } from 'zod';
 import { createLogger } from '@utils/logger';
+import { formatDateUtc } from '@utils/date.utils';
+import { REDIS_CLIENT } from '@common/redis/redis.module';
 import { INVESTMENT_PARAMS } from './investment.constants';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
@@ -13,6 +16,9 @@ import type {
   InvestmentCouponDto,
   InvestmentLegDto,
 } from './dto/investment-day.dto';
+
+const CACHE_TTL_PAST_SECONDS = 90 * 24 * 60 * 60; // 90 days
+const CACHE_TTL_TODAY_SECONDS = 2 * 60 * 60; // 2 hours
 
 const logger = createLogger('investment');
 
@@ -98,6 +104,7 @@ export class InvestmentService {
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
     private readonly config: ConfigService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.client = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY', ''),
@@ -108,10 +115,52 @@ export class InvestmentService {
     );
   }
 
+  private cacheKey(date: string): string {
+    return `investment:${date}`;
+  }
+
+  private cacheTtl(date: string): number | null {
+    const today = formatDateUtc(new Date());
+    if (date < today) return CACHE_TTL_PAST_SECONDS;
+    if (date === today) return CACHE_TTL_TODAY_SECONDS;
+    return null; // future — no cache
+  }
+
+  private async getFromCache(date: string): Promise<InvestmentDayDto | null> {
+    try {
+      const raw = await this.redis.get(this.cacheKey(date));
+      if (!raw) return null;
+      return JSON.parse(raw) as InvestmentDayDto;
+    } catch {
+      return null;
+    }
+  }
+
+  private async setCache(date: string, data: InvestmentDayDto): Promise<void> {
+    const ttl = this.cacheTtl(date);
+    if (ttl === null) return;
+    try {
+      await this.redis.set(
+        this.cacheKey(date),
+        JSON.stringify(data),
+        'EX',
+        ttl,
+      );
+    } catch {
+      // cache write failure is non-blocking
+    }
+  }
+
   async getInvestmentDay(
     date: string,
     windowDays: number = INVESTMENT_PARAMS.windowDays,
   ): Promise<InvestmentDayDto> {
+    const cached = await this.getFromCache(date);
+    if (cached) {
+      logger.debug({ date }, 'Investment day served from cache');
+      return cached;
+    }
+
     const [window, rawPicks] = await Promise.all([
       this.signalWindow.computeSignalWindow(windowDays),
       this.signalWindow.getTodayPool(date),
@@ -120,7 +169,9 @@ export class InvestmentService {
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
 
     if (scoredPicks.length === 0) {
-      return this.buildEmptyDay(date, windowDays);
+      const empty = this.buildEmptyDay(date, windowDays);
+      await this.setCache(date, empty);
+      return empty;
     }
 
     // Try Claude — fallback to deterministic on any failure
@@ -137,16 +188,13 @@ export class InvestmentService {
       claudeOutput = null;
     }
 
-    if (claudeOutput !== null) {
-      return this.buildAiCuratedDay(
-        date,
-        windowDays,
-        scoredPicks,
-        claudeOutput,
-      );
-    }
+    const result =
+      claudeOutput !== null
+        ? this.buildAiCuratedDay(date, windowDays, scoredPicks, claudeOutput)
+        : this.buildDeterministicDay(date, windowDays, scoredPicks);
 
-    return this.buildDeterministicDay(date, windowDays, scoredPicks);
+    await this.setCache(date, result);
+    return result;
   }
 
   // ─── Claude call ───────────────────────────────────────────────────────────
