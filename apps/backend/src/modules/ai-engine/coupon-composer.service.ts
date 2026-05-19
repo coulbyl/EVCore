@@ -1,37 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { CANAL_BASE_WEIGHT, INVESTMENT_PARAMS } from './investment.constants';
 import type { Canal, ScoredPick, SignalWindow } from './signal-window.service';
 
-// Canal base weights derived from 38-day hit rate analysis
-const CANAL_BASE_WEIGHT: Record<Canal, number> = {
-  SV: 0.74,
-  CONF: 0.66,
-  BB: 0.62,
-  EV: 0.36,
-  NUL: 0.2,
-};
-
-// Day-of-week labels aligned to Mon=0 … Sun=6
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
-const MAX_LEGS = 5;
 const MIN_DISTINCT_FIXTURES = 2;
-
-// Distribute output coupons across odds tiers to ensure variety
-const ODDS_TIERS = [
-  { min: 2.5, max: 4.0, slots: 3 },
-  { min: 4.0, max: 10.0, slots: 4 },
-  { min: 10.0, max: 30.0, slots: 3 },
-  { min: 30.0, max: 50.0, slots: 3 },
-] as const;
-// Must equal the sum of all tier slots
-const MAX_COUPONS = 13;
-// C(25,5) = 53 130 combinations — combinatorial search stays well within heap
 const MAX_POOL_SIZE = 25;
-// A single fixture may appear in at most this many output coupons.
-// Without this cap, the highest-signal pick (e.g. P=0.96) saturates all coupons
-// and a single bad result kills the entire day.
-const MAX_FIXTURE_APPEARANCES = 3;
-// Fallback odds when oddsSnapshot is absent — conservative estimate per canal
+
 const FALLBACK_ODDS: Record<Canal, number> = {
   SV: 1.65,
   CONF: 2.2,
@@ -61,13 +36,14 @@ export class CouponComposerService {
 
     return picks.map((pick) => {
       const canalBase = CANAL_BASE_WEIGHT[pick.canal];
-      const windowRate = window.canalHitRates[pick.canal] ?? canalBase;
+      const windowRate =
+        window.calibratedCanalHitRates[pick.canal] ?? canalBase;
       const dowRate = window.canalDowFactors[pick.canal]?.[dow] ?? windowRate;
       const leagueRate =
-        window.canalLeagueHitRates[pick.canal]?.[pick.competition] ??
+        window.calibratedCanalLeagueHitRates[pick.canal]?.[pick.competition] ??
         windowRate;
 
-      // Weighted score: 50% recent window, 30% dow factor, 20% league factor
+      // 50% canal calibrated rate, 30% dow factor, 20% league calibrated rate
       const signalScore = windowRate * 0.5 + dowRate * 0.3 + leagueRate * 0.2;
 
       const featureSnapshot = {
@@ -75,36 +51,32 @@ export class CouponComposerService {
         canal: pick.canal,
         league: pick.competition,
         dow,
-        windowHitRate: windowRate,
+        calibratedCanalHitRate: windowRate,
         dowHitRate: dowRate,
-        leagueHitRate: leagueRate,
+        calibratedLeagueHitRate: leagueRate,
         signalScore,
       };
 
-      return { ...pick, signalScore, featureSnapshot };
+      return {
+        ...pick,
+        calibratedHitRate: windowRate,
+        signalScore,
+        featureSnapshot,
+      };
     });
   }
 
-  compose(
-    scoredPicks: ScoredPick[],
-    oddsMin: number,
-    oddsMax: number,
-  ): ComposedCoupon[] {
-    // Check minimum pool diversity
+  compose(scoredPicks: ScoredPick[]): ComposedCoupon[] {
     const distinctFixtures = new Set(scoredPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
 
-    // Sort by signalScore desc and cap pool before combinatorial search
     const pool = [...scoredPicks]
       .sort((a, b) => b.signalScore - a.signalScore)
       .slice(0, MAX_POOL_SIZE);
 
     const candidates: ComposedCoupon[] = [];
+    this.buildCombinations(pool, [], candidates);
 
-    // Greedy combination builder — try all subsets up to MAX_LEGS
-    this.buildCombinations(pool, [], { oddsMin, oddsMax, out: candidates });
-
-    // Deduplicate by leg fingerprint
     const seen = new Set<string>();
     const unique = candidates.filter((c) => {
       const key = c.legs
@@ -116,79 +88,60 @@ export class CouponComposerService {
       return true;
     });
 
-    // Pick the best coupons per odds tier (by jointProbability) to ensure variety
-    const selected: ComposedCoupon[] = [];
-    const usedKeys = new Set<string>();
-    // Track per-fixture appearance count to enforce MAX_FIXTURE_APPEARANCES
-    const fixtureAppearances = new Map<string, number>();
+    const viable = unique
+      .filter(
+        (c) =>
+          c.jointProbability >= INVESTMENT_PARAMS.minCalibratedJointProbability,
+      )
+      .sort((a, b) => b.jointProbability - a.jointProbability);
 
-    for (const tier of ODDS_TIERS) {
-      const tierCoupons = unique
-        .filter((c) => c.combinedOdds >= tier.min && c.combinedOdds < tier.max)
-        .sort((a, b) => b.jointProbability - a.jointProbability);
-
-      let added = 0;
-      for (const c of tierCoupons) {
-        if (added >= tier.slots) break;
-        const key = c.legs
-          .map((l) => `${l.fixtureId}:${l.canal}:${l.market}:${l.pick}`)
-          .sort()
-          .join('|');
-        if (usedKeys.has(key)) continue;
-        // Skip if any fixture in this coupon has already hit the appearance cap
-        const blocked = c.legs.some(
-          (l) =>
-            (fixtureAppearances.get(l.fixtureId) ?? 0) >=
-            MAX_FIXTURE_APPEARANCES,
-        );
-        if (blocked) continue;
-        usedKeys.add(key);
-        for (const l of c.legs) {
-          fixtureAppearances.set(
-            l.fixtureId,
-            (fixtureAppearances.get(l.fixtureId) ?? 0) + 1,
-          );
-        }
-        selected.push(c);
-        added++;
-      }
-    }
-
-    // Sort final selection by signalScore desc so rank reflects quality
-    selected.sort((a, b) => b.signalScore - a.signalScore);
-
-    return selected
-      .slice(0, MAX_COUPONS)
+    return viable
+      .slice(0, INVESTMENT_PARAMS.maxCoupons)
       .map((c, i) => ({ ...c, rank: i + 1 }));
   }
 
   private buildCombinations(
     remaining: ScoredPick[],
     current: ScoredPick[],
-    ctx: { oddsMin: number; oddsMax: number; out: ComposedCoupon[] },
+    out: ComposedCoupon[],
   ): void {
-    if (current.length > MAX_LEGS) return;
+    if (current.length > INVESTMENT_PARAMS.maxLegs) return;
 
     const combinedOdds = this.computeCombinedOdds(current);
+    if (combinedOdds > INVESTMENT_PARAMS.maxCombinedOdds) return;
 
     if (current.length >= 2) {
       const distinctFixtures = new Set(current.map((p) => p.fixtureId));
-      if (
-        distinctFixtures.size >= MIN_DISTINCT_FIXTURES &&
-        combinedOdds >= ctx.oddsMin &&
-        combinedOdds <= ctx.oddsMax
-      ) {
-        ctx.out.push(this.buildCoupon(current, combinedOdds));
+      if (distinctFixtures.size >= MIN_DISTINCT_FIXTURES) {
+        out.push(this.buildCoupon(current, combinedOdds));
       }
     }
 
-    if (combinedOdds > ctx.oddsMax || current.length === MAX_LEGS) return;
+    if (current.length === INVESTMENT_PARAMS.maxLegs) return;
+
+    // Pre-compute counts for anti-correlation checks
+    const canalMarketCounts = new Map<string, number>();
+    const compCounts = new Map<string, number>();
+    for (const p of current) {
+      const cmKey = `${p.canal}:${p.market}`;
+      canalMarketCounts.set(cmKey, (canalMarketCounts.get(cmKey) ?? 0) + 1);
+      compCounts.set(p.competition, (compCounts.get(p.competition) ?? 0) + 1);
+    }
 
     for (let i = 0; i < remaining.length; i++) {
       const next = remaining[i];
-      // No two legs from the same fixture
+
+      // Anti-correlation: no two legs from the same fixture
       if (current.some((p) => p.fixtureId === next.fixtureId)) continue;
-      this.buildCombinations(remaining.slice(i + 1), [...current, next], ctx);
+
+      // Anti-correlation: max 1 leg per (canal, market)
+      const cmKey = `${next.canal}:${next.market}`;
+      if ((canalMarketCounts.get(cmKey) ?? 0) >= 1) continue;
+
+      // Anti-correlation: max 2 legs per competition
+      if ((compCounts.get(next.competition) ?? 0) >= 2) continue;
+
+      this.buildCombinations(remaining.slice(i + 1), [...current, next], out);
     }
   }
 
@@ -204,8 +157,9 @@ export class CouponComposerService {
     legs: ScoredPick[],
     combinedOdds: number,
   ): ComposedCoupon {
+    // Use calibrated hit rate (not raw probability) for joint probability
     const jointProbability = legs.reduce(
-      (acc, leg) => acc * leg.probability,
+      (acc, leg) => acc * leg.calibratedHitRate,
       1,
     );
     const signalScore =
@@ -217,8 +171,9 @@ export class CouponComposerService {
         canal: l.canal,
         pick: `${l.market}/${l.pick}`,
         signalScore: l.signalScore,
-        windowHitRate:
-          (l.featureSnapshot['windowHitRate'] as number | undefined) ?? null,
+        calibratedCanalHitRate:
+          (l.featureSnapshot['calibratedCanalHitRate'] as number | undefined) ??
+          null,
       })),
       combinedOdds,
       jointProbability,

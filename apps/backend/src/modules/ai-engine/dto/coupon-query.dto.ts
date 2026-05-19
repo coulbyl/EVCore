@@ -1,11 +1,4 @@
-import {
-  IsDateString,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CouponQueryDto {
@@ -19,16 +12,4 @@ export class CouponQueryDto {
   @Min(7)
   @Max(60)
   windowDays?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(2)
-  oddsMin?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Max(200)
-  oddsMax?: number;
 }

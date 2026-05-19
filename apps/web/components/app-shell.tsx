@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@evcore/ui";
-import { GraduationCap, Settings, Trophy, Wallet } from "lucide-react";
+import { GraduationCap, Settings, Trophy, TrendingUp, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
@@ -95,6 +95,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           label: tNav("coupons"),
           href: "/dashboard/coupons",
           active: pathname.startsWith("/dashboard/coupons"),
+        },
+        {
+          label: tNav("investissement"),
+          href: "/dashboard/investissement",
+          active: pathname.startsWith("/dashboard/investissement"),
+          icon: TrendingUp,
         },
         {
           label: tNav("summary"),

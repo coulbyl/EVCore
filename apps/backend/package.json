@@ -20,9 +20,8 @@
     "test:e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.97.1",
     "@evcore/db": "workspace:*",
-    "dotenv": "catalog:",
-    "prisma": "catalog:",
     "@evcore/transactional": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
@@ -37,10 +36,12 @@
     "class-validator": "^0.15.1",
     "date-fns": "catalog:",
     "decimal.js": "catalog:",
+    "dotenv": "catalog:",
     "ioredis": "catalog:",
     "nodemailer": "^8.0.5",
     "pino": "catalog:",
     "pino-pretty": "catalog:",
+    "prisma": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"

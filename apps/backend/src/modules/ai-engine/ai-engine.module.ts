@@ -5,6 +5,7 @@ import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { AiEngineService } from './ai-engine.service';
+import { InvestmentService } from './investment.service';
 import { AiEngineController } from './ai-engine.controller';
 
 @Module({
@@ -16,7 +17,8 @@ import { AiEngineController } from './ai-engine.controller';
     CouponComposerService,
     CouponSettlementService,
     AiEngineService,
+    InvestmentService,
   ],
-  exports: [AiEngineService, CouponSettlementService],
+  exports: [AiEngineService, CouponSettlementService, InvestmentService],
 })
 export class AiEngineModule {}

@@ -4,13 +4,10 @@ import { createLogger } from '@utils/logger';
 import { AiEngineRepository } from './ai-engine.repository';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
+import { INVESTMENT_PARAMS } from './investment.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 
 const logger = createLogger('ai-engine');
-
-const DEFAULT_WINDOW_DAYS = 14;
-const DEFAULT_ODDS_MIN = 2.5;
-const DEFAULT_ODDS_MAX = 50;
 
 @Injectable()
 export class AiEngineService {
@@ -22,14 +19,10 @@ export class AiEngineService {
 
   async generateCoupons(
     date: string,
-    opts: { windowDays?: number; oddsMin?: number; oddsMax?: number } = {},
+    opts: { windowDays?: number } = {},
   ): Promise<void> {
-    const {
-      windowDays = DEFAULT_WINDOW_DAYS,
-      oddsMin = DEFAULT_ODDS_MIN,
-      oddsMax = DEFAULT_ODDS_MAX,
-    } = opts;
-    logger.info({ date, windowDays, oddsMin, oddsMax }, 'Generating coupons');
+    const { windowDays = INVESTMENT_PARAMS.windowDays } = opts;
+    logger.info({ date, windowDays }, 'Generating coupons');
 
     await this.repo.deletePendingForDate(new Date(`${date}T00:00:00.000Z`));
 
@@ -45,11 +38,11 @@ export class AiEngineService {
     );
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
-    const coupons = this.composer.compose(scoredPicks, oddsMin, oddsMax);
+    const coupons = this.composer.compose(scoredPicks);
 
     if (coupons.length === 0) {
       logger.info(
-        { date, picks: rawPicks.length, distinctFixtures, oddsMin, oddsMax },
+        { date, picks: rawPicks.length, distinctFixtures },
         'No viable coupons generated',
       );
       return;
@@ -64,8 +57,8 @@ export class AiEngineService {
         forDate: new Date(`${date}T00:00:00.000Z`),
         rank: coupon.rank,
         signalWindowDays: windowDays,
-        targetOddsMin: oddsMin,
-        targetOddsMax: oddsMax,
+        targetOddsMin: 1.0,
+        targetOddsMax: INVESTMENT_PARAMS.maxCombinedOdds,
         combinedOdds: coupon.combinedOdds,
         jointProbability: coupon.jointProbability,
         signalScore: coupon.signalScore,
