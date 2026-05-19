@@ -11,8 +11,10 @@ import {
 import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
 import { AiEngineService } from './ai-engine.service';
 import { CouponSettlementService } from './coupon-settlement.service';
+import { InvestmentService } from './investment.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
+import type { InvestmentDayDto } from './dto/investment-day.dto';
 
 @ApiTags('ai-engine')
 @Controller('ai-engine')
@@ -20,6 +22,7 @@ export class AiEngineController {
   constructor(
     private readonly aiEngine: AiEngineService,
     private readonly settlement: CouponSettlementService,
+    private readonly investment: InvestmentService,
   ) {}
 
   @Get('coupons')
@@ -150,11 +153,7 @@ export class AiEngineController {
     @Query() query: CouponQueryDto,
   ): Promise<{ generated: boolean }> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    await this.aiEngine.generateCoupons(date, {
-      windowDays: query.windowDays,
-      oddsMin: query.oddsMin,
-      oddsMax: query.oddsMax,
-    });
+    await this.aiEngine.generateCoupons(date, { windowDays: query.windowDays });
     return { generated: true };
   }
 
@@ -175,6 +174,25 @@ export class AiEngineController {
   async settle(): Promise<{ settled: boolean }> {
     await this.settlement.settleReadyProposals();
     return { settled: true };
+  }
+
+  @Get('investment')
+  @ApiOperation({
+    summary: 'Get investment day — top picks + coupons',
+    description:
+      'Returns the investment analysis for a given date: top picks per canal (AI-curated or deterministic fallback) and up to 3 composed coupons. Defaults to today (UTC) when no date is provided.',
+  })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    example: '2026-05-20',
+    description: 'YYYY-MM-DD (UTC). Defaults to today.',
+  })
+  @ApiOkResponse({ description: 'Investment day data.' })
+  async getInvestment(@Query('date') date?: string): Promise<InvestmentDayDto> {
+    const d = date ?? formatDateUtc(new Date());
+    return this.investment.getInvestmentDay(d);
   }
 
   @Post('coupons/:id/settle')

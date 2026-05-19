@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@evcore/ui";
-import { GraduationCap, Settings, Trophy, Wallet } from "lucide-react";
+import { GraduationCap, Settings, Trophy, TrendingUp, Wallet } from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
@@ -71,9 +71,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           active: pathname === "/dashboard",
         },
         {
-          label: tNav("fixtures"),
-          href: "/dashboard/fixtures",
-          active: pathname.startsWith("/dashboard/fixtures"),
+          label: tNav("investissement"),
+          href: "/dashboard/investment",
+          active: pathname.startsWith("/dashboard/investment"),
+          icon: TrendingUp,
+        },
+        {
+          label: tNav("coupons"),
+          href: "/dashboard/coupons",
+          active: pathname.startsWith("/dashboard/coupons"),
         },
         {
           label: tNav("picks"),
@@ -82,24 +88,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           active: pathname.startsWith("/dashboard/picks"),
         },
         {
-          label: tNav("wc2026"),
-          href: "/dashboard/wc2026",
-          active: pathname.startsWith("/dashboard/wc2026"),
-        },
-        {
           label: tNav("betSlips"),
           href: "/dashboard/bet-slips",
           active: pathname.startsWith("/dashboard/bet-slips"),
         },
         {
-          label: tNav("coupons"),
-          href: "/dashboard/coupons",
-          active: pathname.startsWith("/dashboard/coupons"),
-        },
-        {
           label: tNav("summary"),
           href: "/dashboard/summary",
           active: pathname.startsWith("/dashboard/summary"),
+        },
+        {
+          label: tNav("fixtures"),
+          href: "/dashboard/fixtures",
+          active: pathname.startsWith("/dashboard/fixtures"),
+        },
+        {
+          label: tNav("wc2026"),
+          href: "/dashboard/wc2026",
+          active: pathname.startsWith("/dashboard/wc2026"),
         },
         {
           label: tNav("formation"),
@@ -139,14 +145,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [isAdmin, pathname, tNav],
   );
 
-  const mobileNavItems = navItems.filter((item) =>
-    [
-      "/dashboard",
-      "/dashboard/picks",
-      "/dashboard/fixtures",
-      "/dashboard/bet-slips",
-    ].includes(item.href),
-  );
+  const MOBILE_NAV_ORDER = [
+    "/dashboard",
+    "/dashboard/investment",
+    "/dashboard/picks",
+    "/dashboard/bet-slips",
+  ];
+
+  const mobileNavItems = MOBILE_NAV_ORDER
+    .map((href) => navItems.find((item) => item.href === href))
+    .filter((item): item is NonNullable<typeof item> => item !== undefined);
 
   const wc2026Active = isWC2026Active();
 

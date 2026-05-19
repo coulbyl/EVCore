@@ -1,15 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
+import {
+  type InvestmentCanal,
+  CANAL_BASE_WEIGHT,
+  INVESTMENT_PARAMS,
+} from './investment.constants';
 
-export type Canal = 'EV' | 'SV' | 'BB' | 'NUL' | 'CONF';
+export type Canal = InvestmentCanal;
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
 export type SignalWindow = {
-  canalHitRates: Record<Canal, number | null>;
+  calibratedCanalHitRates: Record<Canal, number>;
+  calibratedCanalLeagueHitRates: Record<Canal, Record<string, number>>;
   canalDowFactors: Record<Canal, Record<string, number | null>>;
-  canalLeagueHitRates: Record<Canal, Record<string, number | null>>;
 };
 
 export type ScoredPick = {
@@ -22,12 +27,16 @@ export type ScoredPick = {
   market: string;
   pick: string;
   probability: number;
+  calibratedHitRate: number;
   oddsSnapshot: number | null;
   lambdaHome: number | null;
   lambdaAway: number | null;
   xg: number | null;
   finalScore: number | null;
   modelThreshold: number | null;
+  recentForm: number | null;
+  modelProbabilities: Record<string, number>;
+  isCorrect: boolean | null;
   signalScore: number;
   featureSnapshot: Record<string, unknown>;
 };
@@ -38,17 +47,62 @@ function readNumber(features: unknown, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-function hitRate(correct: number, total: number): number | null {
-  return total > 0 ? correct / total : null;
+function readModelProbabilities(features: unknown): Record<string, number> {
+  if (!features || typeof features !== 'object') return {};
+  const probs = (features as Record<string, unknown>)['probabilities'];
+  if (!probs || typeof probs !== 'object') return {};
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(probs as Record<string, unknown>)) {
+    if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
+  }
+  return out;
 }
 
 type AggEntry = {
   canal: Canal;
   correct: boolean;
-  dow: number; // Mon=0 … Sun=6
+  dow: number;
   league: string;
   count: number;
+  day: Date;
 };
+
+function decayWeight(
+  dayMs: number,
+  nowMs: number,
+  halfLifeDays: number,
+): number {
+  const daysAgo = (nowMs - dayMs) / 86400000;
+  return Math.pow(0.5, daysAgo / halfLifeDays);
+}
+
+// eslint-disable-next-line max-params
+function hitsForWeighted(
+  entries: AggEntry[],
+  filter: (e: AggEntry) => boolean,
+  nowMs: number,
+  halfLifeDays: number,
+): { correct: number; total: number } {
+  let correct = 0;
+  let total = 0;
+  for (const e of entries) {
+    if (!filter(e)) continue;
+    const w = decayWeight(e.day.getTime(), nowMs, halfLifeDays) * e.count;
+    total += w;
+    if (e.correct) correct += w;
+  }
+  return { correct, total };
+}
+
+function calibrate(
+  weightedCorrect: number,
+  weightedTotal: number,
+  prior: number,
+): number {
+  const { k, capMin, capMax } = INVESTMENT_PARAMS;
+  const raw = (weightedCorrect + k * prior) / (weightedTotal + k);
+  return Math.min(capMax, Math.max(capMin, raw));
+}
 
 @Injectable()
 export class SignalWindowService {
@@ -56,8 +110,11 @@ export class SignalWindowService {
 
   async computeSignalWindow(windowDays: number): Promise<SignalWindow> {
     const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+    const nowMs = Date.now();
+    const halfLifeDays = INVESTMENT_PARAMS.decayHalfLifeDays;
 
     type BetAggRow = {
+      day: Date;
       is_safe: boolean;
       is_won: boolean;
       dow: number;
@@ -65,6 +122,7 @@ export class SignalWindowService {
       cnt: bigint;
     };
     type PredAggRow = {
+      day: Date;
       channel: string;
       correct: boolean;
       dow: number;
@@ -72,15 +130,15 @@ export class SignalWindowService {
       cnt: bigint;
     };
 
-    // Aggregate at the DB level — never load individual rows into Node.js heap
     const [betRows, predRows] = await Promise.all([
       this.prisma.client.$queryRaw<BetAggRow[]>`
         SELECT
-          b."isSafeValue"                                   AS is_safe,
-          (b.status = 'WON')                                AS is_won,
-          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)  AS dow,
-          c.code                                            AS league,
-          COUNT(*)                                          AS cnt
+          DATE(f."scheduledAt")                                   AS day,
+          b."isSafeValue"                                         AS is_safe,
+          (b.status = 'WON')                                      AS is_won,
+          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
+          c.code                                                  AS league,
+          COUNT(*)                                                AS cnt
         FROM bet b
         JOIN fixture     f ON f.id = b."fixtureId"
         JOIN season      s ON s.id = f."seasonId"
@@ -88,22 +146,23 @@ export class SignalWindowService {
         WHERE b.status IN ('WON', 'LOST')
           AND b."createdAt" >= ${since}
           AND b.source = 'MODEL'
-        GROUP BY b."isSafeValue", b.status,
+        GROUP BY DATE(f."scheduledAt"), b."isSafeValue", b.status,
                  EXTRACT(ISODOW FROM f."scheduledAt"), c.code
       `,
       this.prisma.client.$queryRaw<PredAggRow[]>`
         SELECT
-          p.channel                                         AS channel,
-          p.correct                                         AS correct,
-          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)  AS dow,
-          p.competition                                     AS league,
-          COUNT(*)                                          AS cnt
+          DATE(f."scheduledAt")                                   AS day,
+          p.channel                                               AS channel,
+          p.correct                                               AS correct,
+          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
+          p.competition                                           AS league,
+          COUNT(*)                                               AS cnt
         FROM prediction p
         JOIN fixture f ON f.id = p."fixtureId"
         WHERE p.correct IS NOT NULL
           AND p."createdAt" >= ${since}
           AND p.channel IN ('BTTS', 'DRAW', 'CONF')
-        GROUP BY p.channel, p.correct,
+        GROUP BY DATE(f."scheduledAt"), p.channel, p.correct,
                  EXTRACT(ISODOW FROM f."scheduledAt"), p.competition
       `,
     ]);
@@ -117,6 +176,7 @@ export class SignalWindowService {
         dow: Number(r.dow),
         league: r.league,
         count: Number(r.cnt),
+        day: r.day,
       });
     }
 
@@ -129,62 +189,69 @@ export class SignalWindowService {
         dow: Number(r.dow),
         league: r.league,
         count: Number(r.cnt),
+        day: r.day,
       });
     }
 
     const canals: Canal[] = ['EV', 'SV', 'BB', 'NUL', 'CONF'];
 
-    function hitsFor(filter: (e: AggEntry) => boolean): {
-      correct: number;
-      total: number;
-    } {
-      let correct = 0;
-      let total = 0;
-      for (const e of entries) {
-        if (!filter(e)) continue;
-        total += e.count;
-        if (e.correct) correct += e.count;
-      }
-      return { correct, total };
-    }
-
-    const canalHitRates = Object.fromEntries(
+    // Canal-level calibrated rates (bayesian smoothing + exponential decay)
+    const calibratedCanalHitRates = Object.fromEntries(
       canals.map((c) => {
-        const { correct, total } = hitsFor((e) => e.canal === c);
-        return [c, hitRate(correct, total)];
+        const prior = CANAL_BASE_WEIGHT[c];
+        const { correct, total } = hitsForWeighted(
+          entries,
+          (e) => e.canal === c,
+          nowMs,
+          halfLifeDays,
+        );
+        return [c, calibrate(correct, total, prior)];
       }),
-    ) as Record<Canal, number | null>;
+    ) as Record<Canal, number>;
 
+    // DOW factors (raw rates, fallback to null — caller applies canal-level fallback)
     const canalDowFactors = Object.fromEntries(
       canals.map((c) => {
         const dowMap = Object.fromEntries(
           DOW_LABELS.map((label, i) => {
-            const { correct, total } = hitsFor(
+            const { correct, total } = hitsForWeighted(
+              entries,
               (e) => e.canal === c && e.dow === i,
+              nowMs,
+              halfLifeDays,
             );
-            return [label, hitRate(correct, total)];
+            return [label, total > 0 ? correct / total : null];
           }),
         );
         return [c, dowMap];
       }),
     ) as Record<Canal, Record<string, number | null>>;
 
+    // League-level calibrated rates (prior = canal-level calibrated rate)
     const allLeagues = [...new Set(entries.map((e) => e.league))];
-    const canalLeagueHitRates = Object.fromEntries(
+    const calibratedCanalLeagueHitRates = Object.fromEntries(
       canals.map((c) => {
+        const canalPrior = calibratedCanalHitRates[c];
         const leagueMap = Object.fromEntries(
           allLeagues.map((l) => {
-            const { correct, total } = hitsFor(
+            const { correct, total } = hitsForWeighted(
+              entries,
               (e) => e.canal === c && e.league === l,
+              nowMs,
+              halfLifeDays,
             );
-            return [l, hitRate(correct, total)];
+            return [l, calibrate(correct, total, canalPrior)];
           }),
         );
         return [c, leagueMap];
       }),
-    ) as Record<Canal, Record<string, number | null>>;
+    ) as Record<Canal, Record<string, number>>;
 
-    return { canalHitRates, canalDowFactors, canalLeagueHitRates };
+    return {
+      calibratedCanalHitRates,
+      calibratedCanalLeagueHitRates,
+      canalDowFactors,
+    };
   }
 
   async getTodayPool(date: string): Promise<ScoredPick[]> {
@@ -214,6 +281,7 @@ export class SignalWindowService {
                 probEstimated: true,
                 oddsSnapshot: true,
                 isSafeValue: true,
+                status: true,
               },
             },
           },
@@ -226,6 +294,7 @@ export class SignalWindowService {
             market: true,
             pick: true,
             probability: true,
+            correct: true,
           },
         },
       },
@@ -254,8 +323,7 @@ export class SignalWindowService {
       WCQE: 0.6,
       FRI: 0.45,
       UNL: 0.6,
-      // Seuil conservateur — pas de backtest disponible sur confrontations inter-confederation.
-      // Recalibrer après 20+ matchs observés. N'affecte aucune autre ligue.
+      // Conservative — recalibrate after 20+ observed matches.
       WC26: 0.52,
     };
 
@@ -274,6 +342,9 @@ export class SignalWindowService {
       const finalScore = run?.finalScore ? Number(run.finalScore) : null;
       const modelThreshold = MODEL_THRESHOLD[comp] ?? 0.6;
 
+      const recentForm = readNumber(feat, 'recentForm');
+      const modelProbabilities = readModelProbabilities(feat);
+
       const base = {
         fixtureId: f.id,
         homeTeam: f.homeTeam.name,
@@ -285,12 +356,15 @@ export class SignalWindowService {
         xg,
         finalScore,
         modelThreshold,
+        recentForm,
+        modelProbabilities,
         featureSnapshot: {
           lambdaHome,
           lambdaAway,
           xg,
           finalScore,
           modelThreshold,
+          recentForm,
         } as Record<string, unknown>,
       };
 
@@ -301,14 +375,18 @@ export class SignalWindowService {
       if (run) {
         for (const bet of run.bets) {
           const canal: Canal = bet.isSafeValue ? 'SV' : 'EV';
+          const isCorrect =
+            bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
           picks.push({
             ...base,
             canal,
             market: bet.market,
             pick: bet.pick,
             probability: Number(bet.probEstimated),
+            calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
-            signalScore: 0, // computed in CouponComposerService
+            isCorrect,
+            signalScore: 0,
           });
         }
       }
@@ -339,7 +417,9 @@ export class SignalWindowService {
           market: pred.market,
           pick: pred.pick,
           probability: Number(pred.probability),
+          calibratedHitRate: 0,
           oddsSnapshot,
+          isCorrect: pred.correct ?? null,
           signalScore: 0,
         });
       }

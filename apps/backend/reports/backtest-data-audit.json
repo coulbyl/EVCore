@@ -1,0 +1,1615 @@
+{
+  "generatedAt": "2026-05-19T19:48:43.597Z",
+  "summary": {
+    "EV": {
+      "total": 370,
+      "won": 117,
+      "hitRate": 0.3162162162162162
+    },
+    "SV": {
+      "total": 191,
+      "won": 142,
+      "hitRate": 0.743455497382199
+    },
+    "BB": {
+      "total": 100,
+      "won": 64,
+      "hitRate": 0.64
+    },
+    "CONF": {
+      "total": 122,
+      "won": 74,
+      "hitRate": 0.6065573770491803
+    },
+    "NUL": {
+      "total": 13,
+      "won": 3,
+      "hitRate": 0.23076923076923078
+    }
+  },
+  "monthlyTotal": {
+    "2026-03": 45,
+    "2026-04": 320,
+    "2026-05": 431
+  },
+  "byLeague": {
+    "EV:BL1": {
+      "total": 24,
+      "won": 10,
+      "hitRate": 0.4166666666666667
+    },
+    "EV:CH": {
+      "total": 34,
+      "won": 9,
+      "hitRate": 0.2647058823529412
+    },
+    "EV:D2": {
+      "total": 17,
+      "won": 6,
+      "hitRate": 0.35294117647058826
+    },
+    "EV:EL1": {
+      "total": 42,
+      "won": 14,
+      "hitRate": 0.3333333333333333
+    },
+    "EV:EL2": {
+      "total": 37,
+      "won": 14,
+      "hitRate": 0.3783783783783784
+    },
+    "EV:ERD": {
+      "total": 7,
+      "won": 2,
+      "hitRate": 0.2857142857142857
+    },
+    "EV:F2": {
+      "total": 11,
+      "won": 3,
+      "hitRate": 0.2727272727272727
+    },
+    "EV:FRI": {
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    "EV:I2": {
+      "total": 24,
+      "won": 11,
+      "hitRate": 0.4583333333333333
+    },
+    "EV:J1": {
+      "total": 20,
+      "won": 4,
+      "hitRate": 0.2
+    },
+    "EV:L1": {
+      "total": 10,
+      "won": 1,
+      "hitRate": 0.1
+    },
+    "EV:LL": {
+      "total": 20,
+      "won": 6,
+      "hitRate": 0.3
+    },
+    "EV:MLS": {
+      "total": 6,
+      "won": 1,
+      "hitRate": 0.16666666666666666
+    },
+    "EV:MX1": {
+      "total": 6,
+      "won": 1,
+      "hitRate": 0.16666666666666666
+    },
+    "EV:NOR1": {
+      "total": 5,
+      "won": 2,
+      "hitRate": 0.4
+    },
+    "EV:PL": {
+      "total": 11,
+      "won": 2,
+      "hitRate": 0.18181818181818182
+    },
+    "EV:POL1": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "EV:POR": {
+      "total": 14,
+      "won": 5,
+      "hitRate": 0.35714285714285715
+    },
+    "EV:SA": {
+      "total": 19,
+      "won": 5,
+      "hitRate": 0.2631578947368421
+    },
+    "EV:SP2": {
+      "total": 25,
+      "won": 9,
+      "hitRate": 0.36
+    },
+    "EV:SRB1": {
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    "EV:SUI1": {
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    "EV:SWE1": {
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    "EV:TUR1": {
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    "EV:UCL": {
+      "total": 8,
+      "won": 3,
+      "hitRate": 0.375
+    },
+    "EV:UECL": {
+      "total": 8,
+      "won": 3,
+      "hitRate": 0.375
+    },
+    "EV:UEL": {
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    "EV:WCQE": {
+      "total": 4,
+      "won": 0,
+      "hitRate": 0
+    },
+    "SV:BL1": {
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    "SV:CH": {
+      "total": 19,
+      "won": 17,
+      "hitRate": 0.8947368421052632
+    },
+    "SV:D2": {
+      "total": 8,
+      "won": 7,
+      "hitRate": 0.875
+    },
+    "SV:EL1": {
+      "total": 14,
+      "won": 8,
+      "hitRate": 0.5714285714285714
+    },
+    "SV:EL2": {
+      "total": 14,
+      "won": 13,
+      "hitRate": 0.9285714285714286
+    },
+    "SV:ERD": {
+      "total": 7,
+      "won": 3,
+      "hitRate": 0.42857142857142855
+    },
+    "SV:F2": {
+      "total": 3,
+      "won": 3,
+      "hitRate": 1
+    },
+    "SV:I2": {
+      "total": 19,
+      "won": 14,
+      "hitRate": 0.7368421052631579
+    },
+    "SV:J1": {
+      "total": 19,
+      "won": 15,
+      "hitRate": 0.7894736842105263
+    },
+    "SV:L1": {
+      "total": 6,
+      "won": 4,
+      "hitRate": 0.6666666666666666
+    },
+    "SV:LL": {
+      "total": 10,
+      "won": 6,
+      "hitRate": 0.6
+    },
+    "SV:MLS": {
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    "SV:MX1": {
+      "total": 5,
+      "won": 2,
+      "hitRate": 0.4
+    },
+    "SV:NOR1": {
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    "SV:PL": {
+      "total": 7,
+      "won": 6,
+      "hitRate": 0.8571428571428571
+    },
+    "SV:POL1": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "SV:POR": {
+      "total": 10,
+      "won": 9,
+      "hitRate": 0.9
+    },
+    "SV:SA": {
+      "total": 12,
+      "won": 9,
+      "hitRate": 0.75
+    },
+    "SV:SP2": {
+      "total": 15,
+      "won": 13,
+      "hitRate": 0.8666666666666667
+    },
+    "SV:SRB1": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "SV:SUI1": {
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    "SV:SWE1": {
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    "SV:TUR1": {
+      "total": 3,
+      "won": 0,
+      "hitRate": 0
+    },
+    "SV:UCL": {
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    "SV:UECL": {
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    "BB:BL1": {
+      "total": 17,
+      "won": 10,
+      "hitRate": 0.5882352941176471
+    },
+    "BB:CH": {
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    "BB:D2": {
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    "BB:EL1": {
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    "BB:ERD": {
+      "total": 18,
+      "won": 12,
+      "hitRate": 0.6666666666666666
+    },
+    "BB:J1": {
+      "total": 8,
+      "won": 4,
+      "hitRate": 0.5
+    },
+    "BB:L1": {
+      "total": 5,
+      "won": 4,
+      "hitRate": 0.8
+    },
+    "BB:LL": {
+      "total": 3,
+      "won": 0,
+      "hitRate": 0
+    },
+    "BB:MLS": {
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    "BB:PL": {
+      "total": 7,
+      "won": 5,
+      "hitRate": 0.7142857142857143
+    },
+    "BB:POL1": {
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    "BB:SP2": {
+      "total": 21,
+      "won": 17,
+      "hitRate": 0.8095238095238095
+    },
+    "BB:SUI1": {
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    "BB:SWE1": {
+      "total": 5,
+      "won": 3,
+      "hitRate": 0.6
+    },
+    "BB:UCL": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "CONF:BL1": {
+      "total": 16,
+      "won": 7,
+      "hitRate": 0.4375
+    },
+    "CONF:CH": {
+      "total": 7,
+      "won": 4,
+      "hitRate": 0.5714285714285714
+    },
+    "CONF:CZE1": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "CONF:EL1": {
+      "total": 10,
+      "won": 9,
+      "hitRate": 0.9
+    },
+    "CONF:ERD": {
+      "total": 14,
+      "won": 10,
+      "hitRate": 0.7142857142857143
+    },
+    "CONF:F2": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "CONF:L1": {
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    "CONF:LL": {
+      "total": 8,
+      "won": 7,
+      "hitRate": 0.875
+    },
+    "CONF:MX1": {
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    "CONF:NOR1": {
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    "CONF:PL": {
+      "total": 5,
+      "won": 5,
+      "hitRate": 1
+    },
+    "CONF:POR": {
+      "total": 17,
+      "won": 10,
+      "hitRate": 0.5882352941176471
+    },
+    "CONF:SA": {
+      "total": 4,
+      "won": 4,
+      "hitRate": 1
+    },
+    "CONF:SP2": {
+      "total": 10,
+      "won": 5,
+      "hitRate": 0.5
+    },
+    "CONF:SRB1": {
+      "total": 9,
+      "won": 3,
+      "hitRate": 0.3333333333333333
+    },
+    "CONF:SWE1": {
+      "total": 8,
+      "won": 4,
+      "hitRate": 0.5
+    },
+    "CONF:TUR1": {
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    "NUL:I2": {
+      "total": 7,
+      "won": 2,
+      "hitRate": 0.2857142857142857
+    },
+    "NUL:POR": {
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    "NUL:SA": {
+      "total": 5,
+      "won": 1,
+      "hitRate": 0.2
+    }
+  },
+  "rawRows": [
+    {
+      "canal": "EV",
+      "league": "BL1",
+      "month": "2026-03",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "BL1",
+      "month": "2026-04",
+      "total": 13,
+      "won": 5,
+      "hitRate": 0.38461538461538464
+    },
+    {
+      "canal": "EV",
+      "league": "BL1",
+      "month": "2026-05",
+      "total": 9,
+      "won": 4,
+      "hitRate": 0.4444444444444444
+    },
+    {
+      "canal": "EV",
+      "league": "CH",
+      "month": "2026-03",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "CH",
+      "month": "2026-04",
+      "total": 30,
+      "won": 8,
+      "hitRate": 0.26666666666666666
+    },
+    {
+      "canal": "EV",
+      "league": "CH",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "D2",
+      "month": "2026-03",
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    {
+      "canal": "EV",
+      "league": "D2",
+      "month": "2026-04",
+      "total": 6,
+      "won": 2,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "D2",
+      "month": "2026-05",
+      "total": 7,
+      "won": 3,
+      "hitRate": 0.42857142857142855
+    },
+    {
+      "canal": "EV",
+      "league": "EL1",
+      "month": "2026-03",
+      "total": 4,
+      "won": 2,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "EL1",
+      "month": "2026-04",
+      "total": 38,
+      "won": 12,
+      "hitRate": 0.3157894736842105
+    },
+    {
+      "canal": "EV",
+      "league": "EL2",
+      "month": "2026-03",
+      "total": 4,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "EL2",
+      "month": "2026-04",
+      "total": 32,
+      "won": 14,
+      "hitRate": 0.4375
+    },
+    {
+      "canal": "EV",
+      "league": "EL2",
+      "month": "2026-05",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "ERD",
+      "month": "2026-04",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "ERD",
+      "month": "2026-05",
+      "total": 5,
+      "won": 2,
+      "hitRate": 0.4
+    },
+    {
+      "canal": "EV",
+      "league": "F2",
+      "month": "2026-03",
+      "total": 4,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "F2",
+      "month": "2026-04",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "F2",
+      "month": "2026-05",
+      "total": 4,
+      "won": 2,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "FRI",
+      "month": "2026-03",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "FRI",
+      "month": "2026-04",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "I2",
+      "month": "2026-03",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "EV",
+      "league": "I2",
+      "month": "2026-04",
+      "total": 11,
+      "won": 6,
+      "hitRate": 0.5454545454545454
+    },
+    {
+      "canal": "EV",
+      "league": "I2",
+      "month": "2026-05",
+      "total": 12,
+      "won": 4,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "J1",
+      "month": "2026-04",
+      "total": 7,
+      "won": 2,
+      "hitRate": 0.2857142857142857
+    },
+    {
+      "canal": "EV",
+      "league": "J1",
+      "month": "2026-05",
+      "total": 13,
+      "won": 2,
+      "hitRate": 0.15384615384615385
+    },
+    {
+      "canal": "EV",
+      "league": "L1",
+      "month": "2026-03",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "L1",
+      "month": "2026-04",
+      "total": 7,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "L1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "LL",
+      "month": "2026-03",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "LL",
+      "month": "2026-04",
+      "total": 9,
+      "won": 3,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "LL",
+      "month": "2026-05",
+      "total": 8,
+      "won": 2,
+      "hitRate": 0.25
+    },
+    {
+      "canal": "EV",
+      "league": "MLS",
+      "month": "2026-05",
+      "total": 6,
+      "won": 1,
+      "hitRate": 0.16666666666666666
+    },
+    {
+      "canal": "EV",
+      "league": "MX1",
+      "month": "2026-04",
+      "total": 4,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "MX1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "NOR1",
+      "month": "2026-05",
+      "total": 5,
+      "won": 2,
+      "hitRate": 0.4
+    },
+    {
+      "canal": "EV",
+      "league": "PL",
+      "month": "2026-04",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "PL",
+      "month": "2026-05",
+      "total": 8,
+      "won": 1,
+      "hitRate": 0.125
+    },
+    {
+      "canal": "EV",
+      "league": "POL1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "EV",
+      "league": "POR",
+      "month": "2026-04",
+      "total": 6,
+      "won": 2,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "POR",
+      "month": "2026-05",
+      "total": 8,
+      "won": 3,
+      "hitRate": 0.375
+    },
+    {
+      "canal": "EV",
+      "league": "SA",
+      "month": "2026-03",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "SA",
+      "month": "2026-04",
+      "total": 5,
+      "won": 2,
+      "hitRate": 0.4
+    },
+    {
+      "canal": "EV",
+      "league": "SA",
+      "month": "2026-05",
+      "total": 11,
+      "won": 2,
+      "hitRate": 0.18181818181818182
+    },
+    {
+      "canal": "EV",
+      "league": "SP2",
+      "month": "2026-03",
+      "total": 9,
+      "won": 4,
+      "hitRate": 0.4444444444444444
+    },
+    {
+      "canal": "EV",
+      "league": "SP2",
+      "month": "2026-04",
+      "total": 6,
+      "won": 2,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "EV",
+      "league": "SP2",
+      "month": "2026-05",
+      "total": 10,
+      "won": 3,
+      "hitRate": 0.3
+    },
+    {
+      "canal": "EV",
+      "league": "SRB1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "SUI1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "SWE1",
+      "month": "2026-05",
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "TUR1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "UCL",
+      "month": "2026-04",
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "UCL",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "UECL",
+      "month": "2026-04",
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "EV",
+      "league": "UECL",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "UEL",
+      "month": "2026-04",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "EV",
+      "league": "WCQE",
+      "month": "2026-03",
+      "total": 4,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "SV",
+      "league": "BL1",
+      "month": "2026-04",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "SV",
+      "league": "BL1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "CH",
+      "month": "2026-04",
+      "total": 14,
+      "won": 12,
+      "hitRate": 0.8571428571428571
+    },
+    {
+      "canal": "SV",
+      "league": "CH",
+      "month": "2026-05",
+      "total": 5,
+      "won": 5,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "D2",
+      "month": "2026-04",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "D2",
+      "month": "2026-05",
+      "total": 6,
+      "won": 5,
+      "hitRate": 0.8333333333333334
+    },
+    {
+      "canal": "SV",
+      "league": "EL1",
+      "month": "2026-04",
+      "total": 13,
+      "won": 7,
+      "hitRate": 0.5384615384615384
+    },
+    {
+      "canal": "SV",
+      "league": "EL1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "EL2",
+      "month": "2026-04",
+      "total": 14,
+      "won": 13,
+      "hitRate": 0.9285714285714286
+    },
+    {
+      "canal": "SV",
+      "league": "ERD",
+      "month": "2026-04",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "SV",
+      "league": "ERD",
+      "month": "2026-05",
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "SV",
+      "league": "F2",
+      "month": "2026-04",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "F2",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "I2",
+      "month": "2026-04",
+      "total": 6,
+      "won": 6,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "I2",
+      "month": "2026-05",
+      "total": 13,
+      "won": 8,
+      "hitRate": 0.6153846153846154
+    },
+    {
+      "canal": "SV",
+      "league": "J1",
+      "month": "2026-04",
+      "total": 5,
+      "won": 4,
+      "hitRate": 0.8
+    },
+    {
+      "canal": "SV",
+      "league": "J1",
+      "month": "2026-05",
+      "total": 14,
+      "won": 11,
+      "hitRate": 0.7857142857142857
+    },
+    {
+      "canal": "SV",
+      "league": "L1",
+      "month": "2026-04",
+      "total": 5,
+      "won": 3,
+      "hitRate": 0.6
+    },
+    {
+      "canal": "SV",
+      "league": "L1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "LL",
+      "month": "2026-04",
+      "total": 4,
+      "won": 3,
+      "hitRate": 0.75
+    },
+    {
+      "canal": "SV",
+      "league": "LL",
+      "month": "2026-05",
+      "total": 6,
+      "won": 3,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "SV",
+      "league": "MLS",
+      "month": "2026-05",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "SV",
+      "league": "MX1",
+      "month": "2026-04",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "SV",
+      "league": "MX1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "SV",
+      "league": "NOR1",
+      "month": "2026-05",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "SV",
+      "league": "PL",
+      "month": "2026-04",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "SV",
+      "league": "PL",
+      "month": "2026-05",
+      "total": 4,
+      "won": 4,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "POL1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "POR",
+      "month": "2026-04",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "SV",
+      "league": "POR",
+      "month": "2026-05",
+      "total": 7,
+      "won": 7,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "SA",
+      "month": "2026-04",
+      "total": 4,
+      "won": 3,
+      "hitRate": 0.75
+    },
+    {
+      "canal": "SV",
+      "league": "SA",
+      "month": "2026-05",
+      "total": 8,
+      "won": 6,
+      "hitRate": 0.75
+    },
+    {
+      "canal": "SV",
+      "league": "SP2",
+      "month": "2026-04",
+      "total": 4,
+      "won": 3,
+      "hitRate": 0.75
+    },
+    {
+      "canal": "SV",
+      "league": "SP2",
+      "month": "2026-05",
+      "total": 11,
+      "won": 10,
+      "hitRate": 0.9090909090909091
+    },
+    {
+      "canal": "SV",
+      "league": "SRB1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "SUI1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "SV",
+      "league": "SWE1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "TUR1",
+      "month": "2026-05",
+      "total": 3,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "SV",
+      "league": "UCL",
+      "month": "2026-04",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "UCL",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "SV",
+      "league": "UECL",
+      "month": "2026-04",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "SV",
+      "league": "UECL",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "BB",
+      "league": "BL1",
+      "month": "2026-05",
+      "total": 17,
+      "won": 10,
+      "hitRate": 0.5882352941176471
+    },
+    {
+      "canal": "BB",
+      "league": "CH",
+      "month": "2026-05",
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    {
+      "canal": "BB",
+      "league": "D2",
+      "month": "2026-05",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "BB",
+      "league": "EL1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "BB",
+      "league": "ERD",
+      "month": "2026-05",
+      "total": 18,
+      "won": 12,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "BB",
+      "league": "J1",
+      "month": "2026-05",
+      "total": 8,
+      "won": 4,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "BB",
+      "league": "L1",
+      "month": "2026-05",
+      "total": 5,
+      "won": 4,
+      "hitRate": 0.8
+    },
+    {
+      "canal": "BB",
+      "league": "LL",
+      "month": "2026-05",
+      "total": 3,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "BB",
+      "league": "MLS",
+      "month": "2026-05",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "BB",
+      "league": "PL",
+      "month": "2026-05",
+      "total": 7,
+      "won": 5,
+      "hitRate": 0.7142857142857143
+    },
+    {
+      "canal": "BB",
+      "league": "POL1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 1,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "BB",
+      "league": "SP2",
+      "month": "2026-05",
+      "total": 21,
+      "won": 17,
+      "hitRate": 0.8095238095238095
+    },
+    {
+      "canal": "BB",
+      "league": "SUI1",
+      "month": "2026-05",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "BB",
+      "league": "SWE1",
+      "month": "2026-05",
+      "total": 5,
+      "won": 3,
+      "hitRate": 0.6
+    },
+    {
+      "canal": "BB",
+      "league": "UCL",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "BL1",
+      "month": "2026-04",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "BL1",
+      "month": "2026-05",
+      "total": 14,
+      "won": 5,
+      "hitRate": 0.35714285714285715
+    },
+    {
+      "canal": "CONF",
+      "league": "CH",
+      "month": "2026-04",
+      "total": 5,
+      "won": 4,
+      "hitRate": 0.8
+    },
+    {
+      "canal": "CONF",
+      "league": "CH",
+      "month": "2026-05",
+      "total": 2,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "CONF",
+      "league": "CZE1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "EL1",
+      "month": "2026-04",
+      "total": 7,
+      "won": 6,
+      "hitRate": 0.8571428571428571
+    },
+    {
+      "canal": "CONF",
+      "league": "EL1",
+      "month": "2026-05",
+      "total": 3,
+      "won": 3,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "ERD",
+      "month": "2026-04",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "CONF",
+      "league": "ERD",
+      "month": "2026-05",
+      "total": 11,
+      "won": 8,
+      "hitRate": 0.7272727272727273
+    },
+    {
+      "canal": "CONF",
+      "league": "F2",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "L1",
+      "month": "2026-05",
+      "total": 3,
+      "won": 1,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "CONF",
+      "league": "LL",
+      "month": "2026-04",
+      "total": 5,
+      "won": 5,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "LL",
+      "month": "2026-05",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "CONF",
+      "league": "MX1",
+      "month": "2026-05",
+      "total": 1,
+      "won": 1,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "NOR1",
+      "month": "2026-05",
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    {
+      "canal": "CONF",
+      "league": "PL",
+      "month": "2026-04",
+      "total": 2,
+      "won": 2,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "PL",
+      "month": "2026-05",
+      "total": 3,
+      "won": 3,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "POR",
+      "month": "2026-04",
+      "total": 8,
+      "won": 5,
+      "hitRate": 0.625
+    },
+    {
+      "canal": "CONF",
+      "league": "POR",
+      "month": "2026-05",
+      "total": 9,
+      "won": 5,
+      "hitRate": 0.5555555555555556
+    },
+    {
+      "canal": "CONF",
+      "league": "SA",
+      "month": "2026-05",
+      "total": 4,
+      "won": 4,
+      "hitRate": 1
+    },
+    {
+      "canal": "CONF",
+      "league": "SP2",
+      "month": "2026-04",
+      "total": 3,
+      "won": 2,
+      "hitRate": 0.6666666666666666
+    },
+    {
+      "canal": "CONF",
+      "league": "SP2",
+      "month": "2026-05",
+      "total": 7,
+      "won": 3,
+      "hitRate": 0.42857142857142855
+    },
+    {
+      "canal": "CONF",
+      "league": "SRB1",
+      "month": "2026-05",
+      "total": 9,
+      "won": 3,
+      "hitRate": 0.3333333333333333
+    },
+    {
+      "canal": "CONF",
+      "league": "SWE1",
+      "month": "2026-05",
+      "total": 8,
+      "won": 4,
+      "hitRate": 0.5
+    },
+    {
+      "canal": "CONF",
+      "league": "TUR1",
+      "month": "2026-05",
+      "total": 4,
+      "won": 1,
+      "hitRate": 0.25
+    },
+    {
+      "canal": "NUL",
+      "league": "I2",
+      "month": "2026-05",
+      "total": 7,
+      "won": 2,
+      "hitRate": 0.2857142857142857
+    },
+    {
+      "canal": "NUL",
+      "league": "POR",
+      "month": "2026-05",
+      "total": 1,
+      "won": 0,
+      "hitRate": 0
+    },
+    {
+      "canal": "NUL",
+      "league": "SA",
+      "month": "2026-05",
+      "total": 5,
+      "won": 1,
+      "hitRate": 0.2
+    }
+  ]
+}
