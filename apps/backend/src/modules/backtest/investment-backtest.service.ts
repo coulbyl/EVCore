@@ -2,14 +2,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
-import { getPredictionConfig } from '@modules/prediction/prediction.constants';
 import { BacktestService, type InvestmentPickRecord } from './backtest.service';
 
 const logger = createLogger('investment-backtest');
 
 type Canal = InvestmentPickRecord['canal'];
 const CANALS: Canal[] = ['EV', 'SV', 'BB', 'NUL', 'CONF'];
-const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
 const CANAL_BASE_WEIGHT: Record<Canal, number> = {
   SV: 0.74,
@@ -110,14 +108,16 @@ type GridSearchRow = {
 
 // ── Bayesian calibration ───────────────────────────────────────────────────────
 
+type CalibrateCaps = { k: number; capMin: number; capMax: number };
+
+// eslint-disable-next-line max-params
 function calibrate(
   wins: number,
   n: number,
   prior: number,
-  k: number,
-  capMin: number,
-  capMax: number,
+  caps: CalibrateCaps,
 ): number {
+  const { k, capMin, capMax } = caps;
   const raw = (wins + k * prior) / (n + k);
   return Math.max(capMin, Math.min(capMax, raw));
 }
@@ -171,9 +171,7 @@ function computeCalibratedRates(
       correct,
       total,
       CANAL_BASE_WEIGHT[canal],
-      params.k,
-      params.capMin,
-      params.capMax,
+      params,
     );
   }
 
@@ -190,9 +188,7 @@ function computeCalibratedRates(
           correct,
           total,
           canalRates[canal],
-          params.k,
-          params.capMin,
-          params.capMax,
+          params,
         );
       }
     }
@@ -256,6 +252,7 @@ function composeCoupons(
     .slice(0, 3);
 }
 
+// eslint-disable-next-line max-params
 function buildCombinations(
   remaining: ScoredPick[],
   current: ScoredPick[],
@@ -288,7 +285,7 @@ function buildCombinations(
 
       if (current.length < params.maxLegs) {
         for (let i = 0; i < remaining.length; i++) {
-          const next = remaining[i]!;
+          const next = remaining[i];
           // Anti-correlation rules
           if (current.some((p) => p.fixtureId === next.fixtureId)) continue;
           if (
@@ -311,7 +308,7 @@ function buildCombinations(
   }
 
   for (let i = 0; i < remaining.length; i++) {
-    const next = remaining[i]!;
+    const next = remaining[i];
     if (current.some((p) => p.fixtureId === next.fixtureId)) continue;
     buildCombinations(remaining.slice(i + 1), [...current, next], params, out);
   }
@@ -394,8 +391,8 @@ function computeCorrelationMatrix(
 
   for (let i = 0; i < CANALS.length; i++) {
     for (let j = i; j < CANALS.length; j++) {
-      const a = CANALS[i]!;
-      const b = CANALS[j]!;
+      const a = CANALS[i];
+      const b = CANALS[j];
       let pAB = 0,
         pA = 0,
         pB = 0,
@@ -467,7 +464,7 @@ function computeConfByLeague(data: InvestmentPickRecord[]): {
 
 function toCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return '';
-  const headers = Object.keys(rows[0]!);
+  const headers = Object.keys(rows[0]);
   const lines = [
     headers.join(','),
     ...rows.map((r) =>

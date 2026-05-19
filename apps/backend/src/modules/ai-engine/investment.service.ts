@@ -100,6 +100,7 @@ export class InvestmentService {
   private readonly client: Anthropic;
   private readonly model: string;
 
+  // eslint-disable-next-line max-params
   constructor(
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
@@ -342,6 +343,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
 
   // ─── Response builders ─────────────────────────────────────────────────────
 
+  // eslint-disable-next-line max-params
   private buildAiCuratedDay(
     date: string,
     windowDays: number,
@@ -513,7 +515,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
 
     const fixtures: InvestmentFixtureInput[] = [];
     for (const [fixtureId, fixturePicks] of byFixture) {
-      const ref = fixturePicks[0]!;
+      const ref = fixturePicks[0];
       const probs = ref.modelProbabilities;
 
       fixtures.push({

@@ -76,6 +76,7 @@ function decayWeight(
   return Math.pow(0.5, daysAgo / halfLifeDays);
 }
 
+// eslint-disable-next-line max-params
 function hitsForWeighted(
   entries: AggEntry[],
   filter: (e: AggEntry) => boolean,
