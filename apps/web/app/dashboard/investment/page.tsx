@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { InvestissementPageClient } from "./components/investissement-page-client";
+import { InvestissementPageClient } from "./components/investment-page-client";
 
 export const metadata: Metadata = {
-  title: "Investissement — EVCore",
+  title: "Investment — EVCore",
 };
 
 export default function InvestissementPage() {

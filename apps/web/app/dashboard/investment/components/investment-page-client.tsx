@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import {
   Page,
@@ -11,6 +12,10 @@ import {
   Badge,
   Button,
   Separator,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Calendar,
 } from "@evcore/ui";
 import { useLocale } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -287,6 +292,7 @@ export function InvestissementPageClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const date = searchParams.get("date") ?? today;
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const locale = useLocale();
   const { data, isLoading, isError } = useInvestment(date);
 
@@ -295,8 +301,12 @@ export function InvestissementPageClient() {
 
   function navigate(days: number) {
     const next = shiftDate(date, days);
-    const params = new URLSearchParams({ date: next });
-    router.push(`/dashboard/investissement?${params.toString()}`);
+    navigateTo(next);
+  }
+
+  function navigateTo(iso: string) {
+    const params = new URLSearchParams({ date: iso });
+    router.push(`/dashboard/investment?${params.toString()}`);
   }
 
   return (
@@ -316,9 +326,29 @@ export function InvestissementPageClient() {
             >
               <ChevronLeft className="size-4" />
             </Button>
-            <span className="text-sm font-medium min-w-28 text-center">
-              {formatDateLabel(date)}
-            </span>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-7 px-2 text-sm font-medium min-w-28"
+                >
+                  {formatDateLabel(date)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={new Date(`${date}T12:00:00Z`)}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    const iso = d.toISOString().slice(0, 10);
+                    setCalendarOpen(false);
+                    navigateTo(iso);
+                  }}
+                  autoFocus
+                />
+              </PopoverContent>
+            </Popover>
             <Button
               variant="ghost"
               size="icon"
