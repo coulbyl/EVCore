@@ -4,10 +4,10 @@ import { ForgotPasswordTotpForm } from "./components/forgot-password-totp-form";
 export default function ForgotPasswordTotpPage() {
   return (
     <AuthShell
-      title="Réinitialiser avec TOTP"
-      subtitle="Entrez votre identifiant et le code de votre application d'authentification pour choisir un nouveau mot de passe."
+      title="Réinitialiser le mot de passe"
+      subtitle="Entrez votre identifiant et le code affiché dans votre application d'authentification (Google Authenticator, Authy…)."
       asideTitle="Récupérez votre compte sans email."
-      asideText="Votre application TOTP (Google Authenticator, Authy…) génère un code unique toutes les 30 secondes. Il prouve que vous avez accès à l'appareil configuré."
+      asideText="Votre application génère un code unique toutes les 30 secondes. Il prouve que vous avez accès à l'appareil configuré lors de l'inscription."
     >
       <ForgotPasswordTotpForm />
     </AuthShell>

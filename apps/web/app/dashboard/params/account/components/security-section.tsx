@@ -57,7 +57,7 @@ export function SecuritySection() {
           </div>
           {!isVerified ? (
             <Button size="sm" variant="outline" asChild>
-              <Link href="/auth/verify">Vérifier →</Link>
+              <Link href="/dashboard/params/account/security">Vérifier →</Link>
             </Button>
           ) : null}
         </div>
@@ -75,7 +75,7 @@ export function SecuritySection() {
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link href="/auth/verify">Configurer →</Link>
+              <Link href="/dashboard/params/account/security">Configurer →</Link>
             </Button>
           </div>
         )}

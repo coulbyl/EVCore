@@ -18,7 +18,6 @@ import {
   PasswordInput,
 } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
-import { isAccountVerified } from "@/domains/auth/types/auth";
 
 const loginSchema = z.object({
   identifier: z
@@ -46,14 +45,11 @@ export function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      const session = await login({
+      await login({
         identifier: values.identifier,
         password: values.password,
       });
-      const destination = isAccountVerified(session.user)
-        ? "/dashboard"
-        : "/auth/verify";
-      router.push(destination);
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Identifiants invalides.");
@@ -97,7 +93,15 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mot de passe</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Mot de passe</FormLabel>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
               <FormControl>
                 <PasswordInput
                   autoComplete="current-password"
@@ -118,20 +122,12 @@ export function LoginForm() {
           {isSubmitting ? "Connexion..." : "Se connecter"}
         </Button>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Pas encore de compte ?{" "}
-            <Link href="/auth/register" className="font-medium text-accent">
-              Créer un compte
-            </Link>
-          </span>
-          <Link
-            href="/auth/forgot-password"
-            className="hover:text-foreground transition-colors"
-          >
-            Mot de passe oublié
+        <p className="text-center text-sm text-muted-foreground">
+          Pas encore de compte ?{" "}
+          <Link href="/auth/register" className="font-medium text-accent">
+            Créer un compte
           </Link>
-        </div>
+        </p>
       </form>
     </Form>
   );
