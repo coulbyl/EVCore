@@ -21,18 +21,16 @@ import { resetPasswordWithTotp } from "@/domains/auth/use-cases/password-reset";
 
 const schema = z
   .object({
-    identifier: z
+    identifier: z.string().min(3, "Renseignez votre email ou nom d'utilisateur."),
+    newPassword: z
       .string()
-      .min(3, "Renseignez votre email ou nom d'utilisateur."),
+      .min(8, "8 caractères minimum.")
+      .max(128, "Mot de passe trop long."),
+    confirmPassword: z.string(),
     totpCode: z
       .string()
       .length(6, "Le code doit contenir exactement 6 chiffres.")
       .regex(/^\d{6}$/, "Le code ne contient que des chiffres."),
-    newPassword: z
-      .string()
-      .min(8, "Mot de passe trop court (8 caractères minimum).")
-      .max(128, "Mot de passe trop long."),
-    confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
     message: "Les mots de passe ne correspondent pas.",
@@ -61,17 +59,11 @@ export function ForgotPasswordTotpForm() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await resetPasswordWithTotp(
-        values.identifier,
-        values.totpCode,
-        values.newPassword,
-      );
+      await resetPasswordWithTotp(values.identifier, values.totpCode, values.newPassword);
       router.push("/auth/login?reset=totp");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Code invalide ou identifiant introuvable.",
+        err instanceof Error ? err.message : "Code invalide ou identifiant introuvable.",
       );
     } finally {
       setIsSubmitting(false);
@@ -80,12 +72,9 @@ export function ForgotPasswordTotpForm() {
 
   return (
     <Form {...form}>
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
@@ -97,11 +86,7 @@ export function ForgotPasswordTotpForm() {
             <FormItem>
               <FormLabel>Email ou nom d&apos;utilisateur</FormLabel>
               <FormControl>
-                <Input
-                  autoComplete="username"
-                  className="h-11 rounded-lg"
-                  {...field}
-                />
+                <Input autoComplete="username" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -118,7 +103,7 @@ export function ForgotPasswordTotpForm() {
                 <PasswordInput
                   autoComplete="new-password"
                   placeholder="8 caractères minimum"
-                  className="h-11 rounded-lg"
+                  className="h-11"
                   {...field}
                 />
               </FormControl>
@@ -126,7 +111,6 @@ export function ForgotPasswordTotpForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="confirmPassword"
@@ -134,11 +118,7 @@ export function ForgotPasswordTotpForm() {
             <FormItem>
               <FormLabel>Confirmer le mot de passe</FormLabel>
               <FormControl>
-                <PasswordInput
-                  autoComplete="new-password"
-                  className="h-11 rounded-lg"
-                  {...field}
-                />
+                <PasswordInput autoComplete="new-password" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,7 +136,7 @@ export function ForgotPasswordTotpForm() {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="000000"
-                  className="h-11 rounded-lg text-center text-lg tracking-[0.4em]"
+                  className="h-11 text-center text-lg tracking-[0.4em]"
                   {...field}
                 />
               </FormControl>
@@ -171,7 +151,7 @@ export function ForgotPasswordTotpForm() {
 
         <Link
           href="/auth/login"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           ← Retour à la connexion
         </Link>

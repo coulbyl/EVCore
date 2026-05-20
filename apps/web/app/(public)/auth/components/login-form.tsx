@@ -20,10 +20,7 @@ import {
 import { login } from "@/domains/auth/use-cases/login";
 
 const loginSchema = z.object({
-  identifier: z
-    .string()
-    .trim()
-    .min(1, "Renseignez votre email ou votre username."),
+  identifier: z.string().trim().min(1, "Renseignez votre email ou votre username."),
   password: z.string().min(1, "Renseignez votre mot de passe."),
 });
 
@@ -43,12 +40,8 @@ export function LoginForm() {
   async function onSubmit(values: LoginValues) {
     setError(null);
     setIsSubmitting(true);
-
     try {
-      await login({
-        identifier: values.identifier,
-        password: values.password,
-      });
+      await login({ identifier: values.identifier, password: values.password });
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -60,12 +53,9 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form
-        className="flex flex-col gap-5"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
@@ -77,11 +67,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email ou nom d&apos;utilisateur</FormLabel>
               <FormControl>
-                <Input
-                  autoComplete="username"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
+                <Input autoComplete="username" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -97,29 +83,21 @@ export function LoginForm() {
                 <FormLabel>Mot de passe</FormLabel>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Mot de passe oublié ?
                 </Link>
               </div>
               <FormControl>
-                <PasswordInput
-                  autoComplete="current-password"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
+                <PasswordInput autoComplete="current-password" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button
-          type="submit"
-          className="h-11 w-full justify-center rounded-lg"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Connexion..." : "Se connecter"}
+        <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Connexion…" : "Se connecter"}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">

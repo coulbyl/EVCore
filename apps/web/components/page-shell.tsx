@@ -96,7 +96,7 @@ export function PageShell({
                     >
                       <Link href={item.href}>
                         {item.icon && (
-                          <item.icon size={16} className="shrink-0" />
+                          <item.icon size={16} className="shrink-0 text-accent" />
                         )}
                         <span>{item.label}</span>
                       </Link>
@@ -120,10 +120,10 @@ export function PageShell({
         <header className="sticky top-0 z-30 border-b border-border/70 bg-panel-strong/90 backdrop-blur supports-backdrop-filter:bg-panel-strong/75">
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
-              <SidebarTrigger className="md:hidden" />
+              <SidebarTrigger className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground" />
               <Link
                 href="/dashboard"
-                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 md:hidden"
+                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
               >
                 <div className="relative shrink-0">
                   <img
@@ -168,7 +168,7 @@ export function PageShell({
                 )}
               >
                 {item.icon ? (
-                  <item.icon size={18} />
+                  <item.icon size={18} className="text-accent" />
                 ) : (
                   <span
                     className={cn(

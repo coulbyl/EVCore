@@ -7,6 +7,12 @@
 >
 > **Tokens** : toujours `bg-panel`, `text-foreground`, `text-muted-foreground`, `border-border`, etc.
 > Ne jamais utiliser de valeurs hex brutes ni `dark:` overrides manuels pour les couleurs de surfaces.
+>
+> **Règle `useIsMobile`** : à chaque page ou composant touché, supprimer tout `useIsMobile` utilisé pour switcher des classes.
+> Remplacer par des classes Tailwind responsive (`sm:`, `md:`, `lg:`).
+> Pour le texte conditionnel : `<span className="sm:hidden">court</span><span className="hidden sm:inline">long</span>`.
+> Pour les grilles : `grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))]`.
+> `useIsMobile` reste acceptable uniquement pour la logique comportementale (ex. ouvrir un Drawer vs Sheet).
 
 ---
 

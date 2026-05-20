@@ -15,10 +15,7 @@ import {
   FormMessage,
   Input,
 } from "@evcore/ui";
-import {
-  sendVerificationEmail,
-  verifyEmail,
-} from "@/domains/auth/use-cases/verify-email";
+import { sendVerificationEmail, verifyEmail } from "@/domains/auth/use-cases/verify-email";
 
 const schema = z.object({
   code: z
@@ -86,22 +83,17 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
 
   return (
     <Form {...form}>
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
         {sending ? (
-          <p className="text-sm text-muted-foreground">
-            Envoi du code en cours…
-          </p>
+          <p className="text-sm text-muted-foreground">Envoi du code en cours…</p>
         ) : sent ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="rounded-xl border border-border bg-panel px-4 py-3 text-sm text-muted-foreground">
             Un code à 6 chiffres a été envoyé à votre adresse email. Vérifiez
             aussi vos spams.
           </p>
@@ -118,7 +110,7 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="000000"
-                  className="h-11 rounded-lg text-center text-lg tracking-[0.4em]"
+                  className="h-12 text-center text-xl tracking-[0.5em]"
                   {...field}
                 />
               </FormControl>
@@ -127,11 +119,7 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
           )}
         />
 
-        <Button
-          type="submit"
-          className="h-11 w-full"
-          disabled={isSubmitting || !sent}
-        >
+        <Button type="submit" className="h-11 w-full" disabled={isSubmitting || !sent}>
           {isSubmitting ? "Vérification…" : "Confirmer"}
         </Button>
 
@@ -139,7 +127,7 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
           <button
             type="button"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground transition-colors hover:text-foreground"
           >
             ← Changer de méthode
           </button>

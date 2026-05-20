@@ -22,7 +22,7 @@ const schema = z
   .object({
     newPassword: z
       .string()
-      .min(8, "Mot de passe trop court (8 caractères minimum).")
+      .min(8, "8 caractères minimum.")
       .max(128, "Mot de passe trop long."),
     confirmPassword: z.string(),
   })
@@ -50,13 +50,10 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
           Lien invalide ou manquant.
         </div>
-        <Link
-          href="/auth/forgot-password"
-          className="text-sm text-accent hover:underline"
-        >
+        <Link href="/auth/forgot-password" className="text-sm text-accent hover:underline">
           Demander un nouveau lien →
         </Link>
       </div>
@@ -83,12 +80,9 @@ export function ResetPasswordForm() {
 
   return (
     <Form {...form}>
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
@@ -103,7 +97,7 @@ export function ResetPasswordForm() {
                 <PasswordInput
                   autoComplete="new-password"
                   placeholder="8 caractères minimum"
-                  className="h-11 rounded-lg"
+                  className="h-11"
                   {...field}
                 />
               </FormControl>
@@ -111,7 +105,6 @@ export function ResetPasswordForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="confirmPassword"
@@ -119,11 +112,7 @@ export function ResetPasswordForm() {
             <FormItem>
               <FormLabel>Confirmer le mot de passe</FormLabel>
               <FormControl>
-                <PasswordInput
-                  autoComplete="new-password"
-                  className="h-11 rounded-lg"
-                  {...field}
-                />
+                <PasswordInput autoComplete="new-password" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -131,9 +120,7 @@ export function ResetPasswordForm() {
         />
 
         <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
-          {isSubmitting
-            ? "Réinitialisation…"
-            : "Définir le nouveau mot de passe"}
+          {isSubmitting ? "Réinitialisation…" : "Définir le nouveau mot de passe"}
         </Button>
       </form>
     </Form>

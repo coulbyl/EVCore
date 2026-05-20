@@ -2,10 +2,17 @@
 
 import { format } from "date-fns";
 import { formatCompactValue } from "@/helpers/number";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { PnlSummary } from "@/domains/dashboard/types/dashboard";
 import { useTranslations } from "next-intl";
 import { DatePicker } from "@evcore/ui";
+
+const slotCls =
+  "min-w-0 rounded-[1.15rem] border px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-3";
+const labelCls =
+  "text-[0.56rem] tracking-[0.16em] sm:text-[0.68rem] sm:tracking-[0.2em] font-semibold uppercase text-muted-foreground";
+const valueCls =
+  "mt-1 text-[0.95rem] leading-none sm:text-[1.45rem] lg:text-[1.6rem] font-semibold tabular-nums tracking-tight";
+const subCls = "mt-1 text-[0.63rem] sm:mt-0.5 sm:text-xs text-muted-foreground";
 
 export function PerformanceCard({
   pnl,
@@ -19,50 +26,29 @@ export function PerformanceCard({
   onResetDate: () => void;
 }) {
   const t = useTranslations("performance");
-  const isMobile = useIsMobile();
   const lostBets = Math.max(0, pnl.settledBets - pnl.wonBets);
-  const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
   const roiPct = Number.parseFloat(pnl.roi.replace(",", "."));
+  const netUnits = Number.parseFloat(pnl.netUnits.replace(",", "."));
   const winBarPct =
     pnl.settledBets > 0 ? Math.round((pnl.wonBets / pnl.settledBets) * 100) : 0;
   const compactSettledBets = formatCompactValue(pnl.settledBets);
-  const compactRoi = isMobile ? formatCompactValue(pnl.roi) : pnl.roi;
-  const compactNetUnits = isMobile
-    ? formatCompactValue(pnl.netUnits)
-    : pnl.netUnits;
+
   const roiTone =
     Number.isFinite(roiPct) && roiPct > 0
-      ? {
-          card: "border-success/30 bg-success/10",
-          value: "text-success",
-        }
+      ? { card: "border-success/30 bg-success/10", value: "text-success" }
       : Number.isFinite(roiPct) && roiPct < 0
-        ? {
-            card: "border-danger/30 bg-danger/10",
-            value: "text-danger",
-          }
-        : {
-            card: "border-border bg-panel",
-            value: "text-foreground",
-          };
+        ? { card: "border-danger/30 bg-danger/10", value: "text-danger" }
+        : { card: "border-border bg-panel", value: "text-foreground" };
+
   const netTone =
     Number.isFinite(netUnits) && netUnits > 0
-      ? {
-          card: "border-success/30 bg-success/10",
-          value: "text-success",
-        }
+      ? { card: "border-success/30 bg-success/10", value: "text-success" }
       : Number.isFinite(netUnits) && netUnits < 0
-        ? {
-            card: "border-danger/30 bg-danger/10",
-            value: "text-danger",
-          }
-        : {
-            card: "border-border bg-panel",
-            value: "text-foreground",
-          };
+        ? { card: "border-danger/30 bg-danger/10", value: "text-danger" }
+        : { card: "border-border bg-panel", value: "text-foreground" };
 
   return (
-    <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
+    <section className="ev-shell-shadow rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
@@ -99,64 +85,34 @@ export function PerformanceCard({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
-        <div
-          className={`min-w-0 rounded-[1.15rem] border ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"} ${roiTone.card}`}
-        >
-          <p
-            className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
-          >
-            {t("roi")}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${roiTone.value}`}
-          >
-            {compactRoi}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
-          >
-            {isMobile ? t("capitalShort") : t("onStakedCapital")}
+        {/* ROI */}
+        <div className={`${slotCls} ${roiTone.card}`}>
+          <p className={labelCls}>{t("roi")}</p>
+          <p className={`${valueCls} ${roiTone.value}`}>{pnl.roi}</p>
+          <p className={subCls}>
+            <span className="sm:hidden">{t("capitalShort")}</span>
+            <span className="hidden sm:inline">{t("onStakedCapital")}</span>
           </p>
         </div>
 
-        <div
-          className={`min-w-0 rounded-[1.15rem] border ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"} ${netTone.card}`}
-        >
-          <p
-            className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
-          >
-            {t("netGain")}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight ${netTone.value}`}
-          >
-            {compactNetUnits}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
-          >
-            {isMobile ? t("stakeShort") : t("stakeUnits")}
+        {/* Net gain */}
+        <div className={`${slotCls} ${netTone.card}`}>
+          <p className={labelCls}>{t("netGain")}</p>
+          <p className={`${valueCls} ${netTone.value}`}>{pnl.netUnits}</p>
+          <p className={subCls}>
+            <span className="sm:hidden">{t("stakeShort")}</span>
+            <span className="hidden sm:inline">{t("stakeUnits")}</span>
           </p>
         </div>
 
-        <div
-          className={`min-w-0 rounded-[1.15rem] border border-border bg-panel ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"}`}
-        >
-          <p
-            className={`${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`}
-          >
-            {t("winRate")}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight text-foreground`}
-          >
-            {pnl.winRate}
-          </p>
-          <p
-            className={`${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`}
-          >
+        {/* Win rate */}
+        <div className={`${slotCls} border-border bg-panel`}>
+          <p className={labelCls}>{t("winRate")}</p>
+          <p className={`${valueCls} text-foreground`}>{pnl.winRate}</p>
+          <p className={subCls}>
             {compactSettledBets}{" "}
-            {isMobile ? t("settledShort") : t("settledBets")}
+            <span className="sm:hidden">{t("settledShort")}</span>
+            <span className="hidden sm:inline">{t("settledBets")}</span>
           </p>
         </div>
       </div>

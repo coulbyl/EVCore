@@ -45,24 +45,21 @@ export function ForgotPasswordForm() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-foreground">
-          Si un compte avec cet identifiant existe et dispose d'un email
+      <div className="flex flex-col gap-5">
+        <div className="rounded-xl border border-success/25 bg-success/8 px-4 py-3.5 text-sm text-foreground">
+          Si un compte correspond à cet identifiant et dispose d&apos;un email
           vérifié, vous recevrez un lien dans les prochaines minutes.
         </div>
         <p className="text-sm text-muted-foreground">
           Pas d&apos;email ?{" "}
-          <Link
-            href="/auth/forgot-password/totp"
-            className="text-accent hover:underline"
-          >
+          <Link href="/auth/forgot-password/totp" className="text-accent hover:underline">
             Utiliser mon application d&apos;authentification
           </Link>
         </p>
         <div className="border-t border-border pt-1">
           <Link
             href="/auth/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             ← Retour à la connexion
           </Link>
@@ -73,10 +70,7 @@ export function ForgotPasswordForm() {
 
   return (
     <Form {...form}>
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
+      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="identifier"
@@ -84,11 +78,7 @@ export function ForgotPasswordForm() {
             <FormItem>
               <FormLabel>Email ou nom d&apos;utilisateur</FormLabel>
               <FormControl>
-                <Input
-                  autoComplete="username"
-                  className="h-11 rounded-lg"
-                  {...field}
-                />
+                <Input autoComplete="username" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,16 +90,13 @@ export function ForgotPasswordForm() {
         </Button>
 
         <div className="flex flex-col gap-3 text-sm">
-          <Link
-            href="/auth/forgot-password/totp"
-            className="text-accent hover:underline"
-          >
+          <Link href="/auth/forgot-password/totp" className="text-accent hover:underline">
             Utiliser mon application d&apos;authentification →
           </Link>
           <div className="border-t border-border pt-3">
             <Link
               href="/auth/login"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground transition-colors hover:text-foreground"
             >
               ← Retour à la connexion
             </Link>

@@ -1,3 +1,4 @@
+import { cn } from "@evcore/ui/cn";
 import type { KpiDelta as KpiDeltaType } from "@/domains/dashboard/types/dashboard";
 
 export function KpiDelta({
@@ -9,7 +10,7 @@ export function KpiDelta({
 }) {
   if (typeof delta === "object") {
     return (
-      <div className={`flex items-center gap-2 ${compact ? "px-0" : "px-2"}`}>
+      <div className={cn("flex items-center gap-2", compact ? "px-0" : "px-0 sm:px-2")}>
         <span className="rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
           {delta.bet} BET
         </span>
@@ -27,13 +28,19 @@ export function KpiDelta({
     const [value, ...rest] = delta.split(" ");
     return (
       <div
-        className={`flex items-center gap-2 ${compact ? "flex-wrap px-0" : "px-2"}`}
+        className={cn(
+          "flex flex-wrap items-center gap-2 px-0",
+          !compact && "sm:flex-nowrap sm:px-2",
+        )}
       >
         <span className="rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
           {value}
         </span>
         <span
-          className={`font-medium uppercase text-muted-foreground ${compact ? "text-[0.62rem] tracking-widest" : "text-xs tracking-[0.12em]"}`}
+          className={cn(
+            "font-medium uppercase text-muted-foreground text-[0.62rem] tracking-widest",
+            !compact && "sm:text-xs sm:tracking-[0.12em]",
+          )}
         >
           {rest.join(" ")}
         </span>
@@ -50,18 +57,25 @@ export function KpiDelta({
     const percentValue = `${rawPercent.replace(",", ".")}%`;
     return (
       <div
-        className={
-          compact ? "flex flex-col gap-1" : "flex items-center gap-2 px-2"
-        }
+        className={cn(
+          "flex flex-col gap-1",
+          !compact && "sm:flex-row sm:items-center sm:gap-2 sm:px-2",
+        )}
       >
-        <div className={compact ? "flex items-center gap-1.5" : "contents"}>
+        <div className={cn("flex items-center gap-1.5", !compact && "sm:contents")}>
           <span
-            className={`${compact ? "text-[0.78rem]" : "text-sm"} font-semibold text-foreground`}
+            className={cn(
+              "text-[0.78rem] font-semibold text-foreground",
+              !compact && "sm:text-sm",
+            )}
           >
             {percentValue}
           </span>
           <div
-            className={`${compact ? "h-1.5 min-w-0 flex-1" : "h-2 w-20"} overflow-hidden rounded-full bg-secondary`}
+            className={cn(
+              "h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-secondary",
+              !compact && "sm:h-2 sm:w-20 sm:flex-none",
+            )}
           >
             <div
               className="h-full rounded-full bg-success"
@@ -70,7 +84,10 @@ export function KpiDelta({
           </div>
         </div>
         <span
-          className={`uppercase text-muted-foreground ${compact ? "block text-[0.56rem] tracking-[0.16em]" : "text-xs tracking-[0.12em]"}`}
+          className={cn(
+            "block uppercase text-muted-foreground text-[0.56rem] tracking-[0.16em]",
+            !compact && "sm:inline sm:text-xs sm:tracking-[0.12em]",
+          )}
         >
           couverture
         </span>
@@ -80,7 +97,10 @@ export function KpiDelta({
 
   return (
     <p
-      className={`${compact ? "px-0 text-[0.72rem]" : "px-2 text-sm"} text-muted-foreground`}
+      className={cn(
+        "px-0 text-[0.72rem] text-muted-foreground",
+        !compact && "sm:px-2 sm:text-sm",
+      )}
     >
       {delta}
     </p>
