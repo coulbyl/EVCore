@@ -56,15 +56,17 @@ export function ForgotPasswordForm() {
             href="/auth/forgot-password/totp"
             className="text-accent hover:underline"
           >
-            Réinitialiser avec une app TOTP
+            Utiliser mon application d&apos;authentification
           </Link>
         </p>
-        <Link
-          href="/auth/login"
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Retour à la connexion
-        </Link>
+        <div className="border-t border-border pt-1">
+          <Link
+            href="/auth/login"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Retour à la connexion
+          </Link>
+        </div>
       </div>
     );
   }
@@ -97,19 +99,21 @@ export function ForgotPasswordForm() {
           {isSubmitting ? "Envoi…" : "Envoyer un lien de réinitialisation"}
         </Button>
 
-        <div className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-col gap-3 text-sm">
           <Link
             href="/auth/forgot-password/totp"
             className="text-accent hover:underline"
           >
-            Réinitialiser avec une app TOTP →
+            Utiliser mon application d&apos;authentification →
           </Link>
-          <Link
-            href="/auth/login"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Retour à la connexion
-          </Link>
+          <div className="border-t border-border pt-3">
+            <Link
+              href="/auth/login"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Retour à la connexion
+            </Link>
+          </div>
         </div>
       </form>
     </Form>

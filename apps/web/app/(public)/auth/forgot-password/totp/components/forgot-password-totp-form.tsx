@@ -110,26 +110,6 @@ export function ForgotPasswordTotpForm() {
 
         <FormField
           control={form.control}
-          name="totpCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Code TOTP</FormLabel>
-              <FormControl>
-                <Input
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="000000"
-                  className="h-11 rounded-lg text-center text-lg tracking-[0.4em]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="newPassword"
           render={({ field }) => (
             <FormItem>
@@ -157,6 +137,26 @@ export function ForgotPasswordTotpForm() {
                 <PasswordInput
                   autoComplete="new-password"
                   className="h-11 rounded-lg"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="totpCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Code de votre application (6 chiffres)</FormLabel>
+              <FormControl>
+                <Input
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="h-11 rounded-lg text-center text-lg tracking-[0.4em]"
                   {...field}
                 />
               </FormControl>

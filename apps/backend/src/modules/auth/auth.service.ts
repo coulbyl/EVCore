@@ -13,6 +13,9 @@ import QRCode from 'qrcode';
 import type { Response } from 'express';
 import { PrismaService } from '@/prisma.service';
 import { MailService } from '@modules/mail/mail.service';
+import { createLogger } from '@utils/logger';
+
+const logger = createLogger('auth-service');
 import {
   AUTH_SESSION_TTL_MS,
   OTP_CODE_TTL_MS,
@@ -424,9 +427,8 @@ export class AuthService {
       },
     });
 
-    if (!user) return;
-
-    if (!user.emailVerified) {
+    if (!user) {
+      logger.debug({ identifier }, 'password-reset: identifier not found, silently ignored');
       return;
     }
 
@@ -442,10 +444,11 @@ export class AuthService {
     });
 
     if (recentCount >= PASSWORD_RESET_RATE_LIMIT_MAX) {
+      logger.warn({ userId: user.id, username: user.username, recentCount }, 'password-reset: rate limit reached');
       return;
     }
 
-    const { token, resetUrl } = await this.createResetToken(user.id, false);
+    const { resetUrl } = await this.createResetToken(user.id, false);
 
     await this.mail.sendPasswordReset(user.email, {
       username: user.username,
@@ -454,7 +457,7 @@ export class AuthService {
       isAdminGenerated: false,
     });
 
-    void token;
+    logger.info({ userId: user.id, username: user.username }, 'password-reset: email sent');
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {

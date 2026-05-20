@@ -79,7 +79,7 @@ export function RegisterForm() {
         password: values.password,
         bio: values.bio?.trim() ? values.bio.trim() : undefined,
       });
-      router.push("/auth/verify");
+      router.push("/dashboard");
       router.refresh();
     } catch (err) {
       setError(
