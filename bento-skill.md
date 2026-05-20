@@ -36,31 +36,30 @@ The bento box style is an innovative design approach that uses a CSS Grid layout
 - Letter spacing: `-0.02em` on headings ≥ `text-xl`
 
 ### Color Tokens
-| Token | Value | Use |
-|---|---|---|
-| `primary` | `#FAD4C0` | Accent fills, highlights |
-| `secondary` | `#80A1C1` | Supporting accents |
-| `success` | `#16A34A` | Positive deltas, confirmations |
-| `warning` | `#D97706` | Alerts, degraded states |
-| `danger` | `#DC2626` | Errors, negative deltas |
-| `surface` | `#FFF5E6` | Default cell background |
-| `surface-raised` | `#FFFFFF` | Elevated card surface |
-| `surface-subtle` | `#F5EDE0` | Muted or secondary cells |
-| `surface-inverted` | `#111827` | Dark accent cells |
-| `text` | `#111827` | Default body text |
-| `text-muted` | `#6B7280` | Secondary, captions |
-| `text-inverted` | `#F9FAFB` | Text on dark surfaces |
-| `border` | `#E5D5C5` | Cell borders |
-| `border-focus` | `#80A1C1` | Keyboard focus rings |
+All tokens are CSS custom properties defined in `packages/ui/src/styles/theme.css` and exposed via Tailwind v4 `@theme inline`. Light/dark switching is handled automatically via the `.dark` class.
 
-#### Dark Mode Overrides
-When `prefers-color-scheme: dark` or `.dark` class is applied:
-- `surface` → `#1C1917`
-- `surface-raised` → `#292524`
-- `surface-subtle` → `#1C1917`
-- `text` → `#F9FAFB`
-- `text-muted` → `#9CA3AF`
-- `border` → `#3F3631`
+| CSS variable | Tailwind class | Use |
+|---|---|---|
+| `--card` | `bg-card` | Default cell background |
+| `--panel` | `bg-panel` | Page-level surface, subtle cells |
+| `--panel-strong` | `bg-panel-strong` | Elevated card surface |
+| `--sidebar` | `bg-sidebar` | Inverted / dark accent cells |
+| `--foreground` | `text-foreground` | Default body text |
+| `--muted-foreground` | `text-muted-foreground` | Secondary text, captions |
+| `--sidebar-foreground` | `text-sidebar-foreground` | Text on inverted cells |
+| `--border` | `border-border` | Cell borders |
+| `--ring` | `ring-ring` | Keyboard focus rings |
+| `--accent` | `bg-accent` | Primary accent fill (teal) |
+| `--accent-soft` | `bg-accent-soft` | Subtle accent background |
+| `--success` | `text-success` | Positive deltas, confirmations |
+| `--warning` | `text-warning` | Alerts, degraded states |
+| `--danger` | `text-danger` | Errors, negative deltas |
+| `--skeleton` | `bg-skeleton` | Skeleton shimmer base |
+
+Canal identity tokens for sport prediction cells:
+`--canal-ev`, `--canal-sv`, `--canal-conf`, `--canal-draw`, `--canal-btts` — each with a `-soft` variant for backgrounds.
+
+Dark mode is applied automatically when the `html` element has the `.dark` class — no separate override needed.
 
 ### Spacing Scale
 `4 / 8 / 12 / 16 / 24 / 32 / 48 / 64` (px)
@@ -71,24 +70,18 @@ When `prefers-color-scheme: dark` or `.dark` class is applied:
 - Section vertical rhythm: multiples of 32px
 
 ### Elevation & Shadow Tokens
-| Level | Token | CSS Value | Use |
-|---|---|---|---|
-| 0 | `shadow-none` | `none` | Flat cells on colored background |
-| 1 | `shadow-sm` | `0 1px 3px rgba(0,0,0,0.06)` | Default resting card |
-| 2 | `shadow-md` | `0 4px 12px rgba(0,0,0,0.08)` | Hover / focused card |
-| 3 | `shadow-lg` | `0 8px 24px rgba(0,0,0,0.12)` | Dragged or modal card |
+Defined in `theme.css` as `--shadow-bento-*`, exposed as Tailwind utilities.
 
-Never stack more than one elevation per cell.
-
-### Border Radius Tokens
-| Token | Value | Use |
+| CSS variable | Tailwind class | Use |
 |---|---|---|
-| `radius-sm` | `8px` | Inner elements (badges, chips) |
-| `radius-md` | `12px` | Standard bento cell |
-| `radius-lg` | `16px` | Hero / feature cell |
-| `radius-xl` | `24px` | Marketing callout cell |
+| `--shadow-bento-rest` | `shadow-bento-rest` | Default resting cell |
+| `--shadow-bento-hover` | `shadow-bento-hover` | Hover / focused cell |
+| `--shadow-bento-drag` | `shadow-bento-drag` | Dragged or modal cell |
 
-All cells in a grid use the same radius level — never mix `radius-md` and `radius-lg` in the same grid instance.
+Dark mode values are stronger (higher opacity) and defined separately in `.dark` in `theme.css`. Never stack more than one elevation per cell.
+
+### Border Radius
+The single bento cell radius is `--radius-bento: 12px`, applied via the `bento-cell` or `bento-cell-interactive` utility class. Inner elements (badges, chips) use `rounded-sm` (8px). All cells in a grid share the same radius — never mix.
 
 ---
 
@@ -341,6 +334,42 @@ When generating design-system guidance, use this structure:
 
 ---
 
+## Usage concret dans un composant
+
+Les utilitaires `bento-grid`, `bento-rows`, `bento-cell`, `bento-cell-interactive` et `bento-skeleton` sont définis dans `globals.css` et disponibles comme n'importe quelle classe Tailwind. La `Card` shadcn sert de primitive de cellule.
+
+```tsx
+<div className="bento-grid bento-rows">
+  {/* Stat 2×1 */}
+  <Card className="col-span-6 row-span-1 bento-cell-interactive">
+    <CardHeader>
+      <CardTitle className="text-xs text-muted-foreground">EV moyen</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <span className="text-2xl font-bold tabular-nums">+12.4%</span>
+    </CardContent>
+  </Card>
+
+  {/* Feature 2×2 */}
+  <Card className="col-span-6 row-span-2 bento-cell-interactive">
+    <CardHeader><CardTitle>Performances</CardTitle></CardHeader>
+    <CardContent>{/* chart */}</CardContent>
+  </Card>
+
+  {/* Stat 1×1 — loading */}
+  <div className="col-span-3 row-span-1 bento-cell bento-skeleton" />
+
+  {/* Action cell — inverted */}
+  <Card className="col-span-3 row-span-1 bento-cell-interactive bg-sidebar text-sidebar-foreground">
+    <CardContent className="flex items-center justify-center h-full">
+      <Button variant="ghost">Lancer simulation</Button>
+    </CardContent>
+  </Card>
+</div>
+```
+
+---
+
 ## QA Checklist (Code Review)
 
 ### Grid
@@ -350,15 +379,15 @@ When generating design-system guidance, use this structure:
 - [ ] All cells collapse to full-width or half-width below 640px
 
 ### Cells
-- [ ] All cells share the same `border-radius` level within the grid
-- [ ] Shadow uses only `shadow-sm` at rest and `shadow-md` on hover
+- [ ] All cells use `bento-cell` or `bento-cell-interactive` — no hand-rolled border-radius or shadow
+- [ ] Interactive cells use `bento-cell-interactive`, static cells use `bento-cell`
 - [ ] `transition` is `150ms ease-out` for hover, `200ms ease-out` for entrance
 - [ ] No cell mixes more than 3 zones (header + body + one of media or footer)
 
 ### Tokens
-- [ ] No raw hex values — all colors reference a semantic token
-- [ ] No raw `px` gaps — all spacing references the scale
-- [ ] Dark mode overrides applied via `.dark` class or media query
+- [ ] No raw hex values — all colors reference a `--variable` or Tailwind semantic class
+- [ ] No raw `px` gaps — gap uses `var(--gap-bento)` via the `bento-grid` utility
+- [ ] Dark mode handled by `html.dark` — no manual dark: overrides needed for bento tokens
 
 ### Accessibility
 - [ ] Every interactive cell has a visible `focus-visible` ring

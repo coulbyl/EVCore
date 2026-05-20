@@ -50,6 +50,15 @@
   --canal-draw-soft: rgba(180, 83, 9, 0.11);
   --canal-btts: #be185d;
   --canal-btts-soft: rgba(190, 24, 93, 0.11);
+
+  /* ── Bento layout ── */
+  --gap-bento: 12px;
+  --gap-bento-compact: 8px;
+  --gap-bento-tablet: 10px;
+  --radius-bento: 12px;
+  --shadow-bento-rest: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-bento-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-bento-drag: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 /* ── Dark tokens ───────────────────────────────────────────────────────── */
@@ -104,6 +113,11 @@
   --canal-draw-soft: rgba(251, 146, 60, 0.13);
   --canal-btts: #f472b6;
   --canal-btts-soft: rgba(244, 114, 182, 0.13);
+
+  /* ── Bento layout ── */
+  --shadow-bento-rest: 0 1px 3px rgba(0, 0, 0, 0.16);
+  --shadow-bento-hover: 0 4px 12px rgba(0, 0, 0, 0.22);
+  --shadow-bento-drag: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
 
 @theme inline {
@@ -153,6 +167,15 @@
   --color-canal-draw-soft: var(--canal-draw-soft);
   --color-canal-btts: var(--canal-btts);
   --color-canal-btts-soft: var(--canal-btts-soft);
+
+  /* ── Bento layout ── */
+  --spacing-bento: var(--gap-bento);
+  --spacing-bento-compact: var(--gap-bento-compact);
+  --spacing-bento-tablet: var(--gap-bento-tablet);
+  --radius-bento: var(--radius-bento);
+  --shadow-bento-rest: var(--shadow-bento-rest);
+  --shadow-bento-hover: var(--shadow-bento-hover);
+  --shadow-bento-drag: var(--shadow-bento-drag);
 }
 
 html,
