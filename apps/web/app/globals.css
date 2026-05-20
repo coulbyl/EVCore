@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @source '../../../packages/ui/src/**/*.{ts,tsx}';
-@import '@evcore/ui/styles/theme.css';
+@import '@evcore/ui/globals.css';
 
 @theme inline {
   --font-sans: var(--font-geist-sans);

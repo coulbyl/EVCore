@@ -24,8 +24,8 @@
 
 ## Statut global
 
-- [ ] **0 — Fondations** (tokens + utilities)
-- [ ] **1 — Layouts globaux**
+- [x] **0 — Fondations** (tokens + utilities)
+- [x] **1 — Layouts globaux**
 - [ ] **2 — Auth flow**
 - [ ] **3 — Dashboard home**
 - [ ] **4 — Pages données** (picks, coupons, bet slips, summary)
@@ -48,25 +48,22 @@
 
 ---
 
-## 1 — Layouts globaux
+## 1 — Layouts globaux ✅
 
 ### `app/layout.tsx` (root)
-- [ ] Font Inter chargée via `next/font` — `font-sans` sur `<body>`
-- [ ] JetBrains Mono chargée — `font-mono` disponible globalement
-- [ ] `<body>` : background via token `--background`, pas de styles inline
-- [ ] TV : pas de scaling automatique non maîtrisé
+- [x] Fonts Geist Sans + Mono chargées via `next/font/local`
+- [x] `font-sans antialiased` sur `<body>`
+- [x] `font-sans` / `font-mono` enregistrés dans `@theme inline` via `globals.css`
+- [x] `@utility bento-*` disponibles globalement via `@import '@evcore/ui/globals.css'`
 
 ### `app/(public)/layout.tsx`
-- [ ] Centrage vertical + horizontal du contenu auth
-- [ ] Background utilisant les tokens (`--background`)
-- [ ] Responsive : plein écran mobile, carte centrée tablet+
+- [x] `h-dvh overflow-y-auto scrollbar-dark` — scroll naturel, pas de débordement
 
-### `app/dashboard/layout.tsx`
-- [ ] Sidebar : masquée sur mobile (drawer), visible tablet+, fixe desktop
-- [ ] Header mobile : hamburger + titre de page courant
-- [ ] Contenu principal : `overflow-y-auto` mobile, scroll interne desktop
-- [ ] TV : sidebar légèrement plus large (`w-72`), contenu `max-w-[1800px] mx-auto`
-- [ ] Transitions sidebar open/close : `150ms ease-out`
+### `app/dashboard/layout.tsx` + `page-shell.tsx`
+- [x] Sidebar : drawer mobile (offcanvas), fixe desktop via `SidebarProvider`
+- [x] Header : sticky, `bg-panel-strong/90 backdrop-blur`, tokens corrects
+- [x] Nav mobile : bottom bar fixe avec tokens `bg-panel-strong`
+- [x] TV : `2xl:max-w-[1800px] 2xl:mx-auto` sur le wrapper du contenu principal
 
 ---
 
