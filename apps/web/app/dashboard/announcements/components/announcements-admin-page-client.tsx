@@ -23,16 +23,17 @@ import {
   Input,
   Skeleton,
 } from "@evcore/ui";
-import { Megaphone, Plus, Send, Trash2, X } from "lucide-react";
+import { Megaphone, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { useAdminAnnouncements } from "@/domains/announcements/use-cases/get-admin-announcements";
 import { useCreateAdminAnnouncement } from "@/domains/announcements/use-cases/create-admin-announcement";
 import { useDeleteAdminAnnouncement } from "@/domains/announcements/use-cases/delete-admin-announcement";
 import { useUpdateAdminAnnouncement } from "@/domains/announcements/use-cases/update-admin-announcement";
+import type { Announcement } from "@/domains/announcements/types/announcements";
 import { formatDateTime } from "@/lib/date";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const createSchema = z.object({
+const formSchema = z.object({
   title: z
     .string()
     .trim()
@@ -48,7 +49,7 @@ const createSchema = z.object({
   expiresAt: z.string().optional(),
 });
 
-type CreateValues = z.infer<typeof createSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 function plainTextExcerpt(html: string, maxLen = 120): string {
   const text = html
@@ -58,8 +59,15 @@ function plainTextExcerpt(html: string, maxLen = 120): string {
   return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
 }
 
+function toDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function AnnouncementsAdminPageClient() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Announcement | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const isMobile = useIsMobile();
 
@@ -68,34 +76,75 @@ export function AnnouncementsAdminPageClient() {
   const updateAnnouncement = useUpdateAdminAnnouncement();
   const deleteAnnouncement = useDeleteAdminAnnouncement();
 
-  const form = useForm<CreateValues>({
-    resolver: zodResolver(createSchema),
+  const isEditing = editingItem !== null;
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: { title: "", description: "", href: "", expiresAt: "" },
     mode: "onTouched",
   });
 
-  async function onSubmit(values: CreateValues) {
-    await createAnnouncement.mutateAsync({
-      title: values.title,
-      description: values.description,
-      href: values.href?.trim() || undefined,
-      published: true,
-      expiresAt: values.expiresAt
-        ? new Date(values.expiresAt).toISOString()
-        : undefined,
-    });
-    form.reset();
+  function openCreate() {
+    setEditingItem(null);
+    form.reset({ title: "", description: "", href: "", expiresAt: "" });
     setEditorKey((k) => k + 1);
-    setDrawerOpen(false);
+    setDrawerOpen(true);
+  }
+
+  function openEdit(item: Announcement) {
+    setEditingItem(item);
+    form.reset({
+      title: item.title,
+      description: item.description,
+      href: item.href ?? "",
+      expiresAt: item.expiresAt ? toDatetimeLocal(item.expiresAt) : "",
+    });
+    setEditorKey((k) => k + 1);
+    setDrawerOpen(true);
   }
 
   function handleOpenChange(open: boolean) {
     if (!open) {
       form.reset();
       setEditorKey((k) => k + 1);
+      setEditingItem(null);
     }
     setDrawerOpen(open);
   }
+
+  async function onSubmit(values: FormValues) {
+    const href = values.href?.trim() || undefined;
+    const expiresAt = values.expiresAt
+      ? new Date(values.expiresAt).toISOString()
+      : undefined;
+
+    if (isEditing) {
+      await updateAnnouncement.mutateAsync({
+        id: editingItem.id,
+        title: values.title,
+        description: values.description,
+        href,
+        expiresAt,
+      });
+    } else {
+      await createAnnouncement.mutateAsync({
+        title: values.title,
+        description: values.description,
+        href,
+        published: true,
+        expiresAt,
+      });
+    }
+
+    form.reset();
+    setEditorKey((k) => k + 1);
+    setEditingItem(null);
+    setDrawerOpen(false);
+  }
+
+  const isPending = isEditing
+    ? updateAnnouncement.isPending
+    : createAnnouncement.isPending;
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -103,11 +152,7 @@ export function AnnouncementsAdminPageClient() {
         <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
           Annonces
         </p>
-        <Button
-          type="button"
-          className="rounded-xl"
-          onClick={() => setDrawerOpen(true)}
-        >
+        <Button type="button" className="rounded-xl" onClick={openCreate}>
           <Plus data-icon="inline-start" />
           Nouvelle annonce
         </Button>
@@ -174,7 +219,16 @@ export function AnnouncementsAdminPageClient() {
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => openEdit(item)}
+                      >
+                        <Pencil data-icon="inline-start" />
+                        Modifier
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"
@@ -222,14 +276,16 @@ export function AnnouncementsAdminPageClient() {
               : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[480px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
           }
         >
-          <DrawerTitle className="sr-only">Nouvelle annonce</DrawerTitle>
+          <DrawerTitle className="sr-only">
+            {isEditing ? "Modifier l'annonce" : "Nouvelle annonce"}
+          </DrawerTitle>
 
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <div className="flex items-center gap-2">
               <Megaphone size={16} className="text-accent" />
               <h2 className="text-sm font-semibold text-foreground">
-                Nouvelle annonce
+                {isEditing ? "Modifier l'annonce" : "Nouvelle annonce"}
               </h2>
             </div>
             <button
@@ -341,11 +397,17 @@ export function AnnouncementsAdminPageClient() {
             <Button
               type="submit"
               form="announcement-form"
-              disabled={createAnnouncement.isPending}
+              disabled={isPending}
               className="w-full rounded-xl"
             >
               <Send data-icon="inline-start" />
-              {createAnnouncement.isPending ? "Création..." : "Créer l'annonce"}
+              {isEditing
+                ? isPending
+                  ? "Sauvegarde..."
+                  : "Sauvegarder les modifications"
+                : isPending
+                  ? "Création..."
+                  : "Créer l'annonce"}
             </Button>
           </div>
         </DrawerContent>
