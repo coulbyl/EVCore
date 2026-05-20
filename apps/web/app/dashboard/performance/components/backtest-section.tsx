@@ -37,7 +37,6 @@ import {
   formatUnits,
   toNumber,
 } from "./formatters";
-import { useIsMobile } from "@evcore/ui/hooks/use-mobile";
 
 const STORAGE_KEY_EV = "evcore:performance-backtest-result";
 const STORAGE_KEY_SV = "evcore:performance-backtest-sv-result";
@@ -194,7 +193,6 @@ function EvTabContent({
   common: ReturnType<typeof useTranslations>;
 }) {
   const mutation = useRunBacktest();
-  const isMobile = useIsMobile();
   const [storedResponse, setStoredResponse] = useState<BacktestResponse | null>(
     null,
   );
@@ -342,30 +340,26 @@ function EvTabContent({
 
       {report ? (
         <>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
               label={t("roiSimulated")}
               value={formatBacktestPercent(toNumber(report.roiSimulated))}
               tone="accent"
-              compact={isMobile}
             />
             <StatCard
               label={t("stats.brierScore")}
               value={formatDecimal(report.brierScore, 3)}
               tone="warning"
-              compact={isMobile}
             />
             <StatCard
               label={t("maxDrawdown")}
               value={formatUnits(report.maxDrawdownSimulated)}
               tone="danger"
-              compact={isMobile}
             />
             <StatCard
               label={t("stats.analyzedBets")}
               value={formatInteger(report.analyzedCount)}
               tone="neutral"
-              compact={isMobile}
             />
           </div>
 
@@ -538,7 +532,7 @@ function SvTabContent({
 
       {report ? (
         <>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
               label={t("roiSimulated")}
               value={formatBacktestPercent(report.aggregate.roi)}

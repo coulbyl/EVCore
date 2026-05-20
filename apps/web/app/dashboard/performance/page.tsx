@@ -17,7 +17,7 @@ export default async function PerformancePage() {
           <OverviewSection />
 
           {isAdmin ? (
-            <div className="grid gap-5 xl:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-2">
               <CalibrationSection />
               <WeightsTimelineSection />
             </div>
