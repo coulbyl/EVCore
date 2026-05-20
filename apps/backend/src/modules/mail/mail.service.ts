@@ -5,15 +5,19 @@ import type { Transporter } from 'nodemailer';
 import { createLogger } from '@utils/logger';
 import {
   renderBrierAlert,
+  renderEmailVerification,
   renderEtlFailure,
   renderMarketSuspension,
+  renderPasswordReset,
   renderRoiAlert,
   renderWeightAdjustment,
   renderWeeklyReport,
   renderXgUnavailableReport,
   type BrierAlertProps,
+  type EmailVerificationProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
+  type PasswordResetProps,
   type RoiAlertProps,
   type WeightAdjustmentProps,
   type WeeklyReportProps,
@@ -27,12 +31,12 @@ export class MailService implements OnModuleInit {
   private transporter: Transporter | null = null;
   private readonly smtpEnabled: boolean;
   private readonly smtpFrom: string;
-  private readonly smtpTo: string;
+  private readonly smtpAdminTo: string;
 
   constructor(private readonly config: ConfigService) {
     this.smtpEnabled = config.get<string>('SMTP_ENABLED', 'false') !== 'false';
     this.smtpFrom = config.get<string>('SMTP_FROM', 'evcore@localhost');
-    this.smtpTo = config.get<string>('SMTP_TO', '');
+    this.smtpAdminTo = config.get<string>('SMTP_TO', '');
   }
 
   onModuleInit(): void {
@@ -59,30 +63,50 @@ export class MailService implements OnModuleInit {
     );
   }
 
+  async sendEmailVerification(
+    to: string,
+    props: EmailVerificationProps,
+  ): Promise<void> {
+    const { html, text } = await renderEmailVerification(props);
+    await this.sendTo(to, 'Vérification de votre email', html, text);
+  }
+
+  async sendPasswordReset(
+    to: string,
+    props: PasswordResetProps,
+  ): Promise<void> {
+    const { html, text } = await renderPasswordReset(props);
+    await this.sendTo(to, 'Réinitialisation de votre mot de passe', html, text);
+  }
+
   async sendRoiAlert(props: RoiAlertProps): Promise<void> {
     const { html, text } = await renderRoiAlert(props);
-    await this.send(`ROI Alert — ${props.market}`, html, text);
+    await this.sendToAdmin(`ROI Alert — ${props.market}`, html, text);
   }
 
   async sendMarketSuspension(props: MarketSuspensionProps): Promise<void> {
     const { html, text } = await renderMarketSuspension(props);
-    await this.send(`Market Suspended — ${props.market}`, html, text);
+    await this.sendToAdmin(`Market Suspended — ${props.market}`, html, text);
   }
 
   async sendBrierAlert(props: BrierAlertProps): Promise<void> {
     const { html, text } = await renderBrierAlert(props);
-    await this.send(`Brier Score Alert — Season ${props.seasonId}`, html, text);
+    await this.sendToAdmin(
+      `Brier Score Alert — Season ${props.seasonId}`,
+      html,
+      text,
+    );
   }
 
   async sendEtlFailure(props: EtlFailureProps): Promise<void> {
     const { html, text } = await renderEtlFailure(props);
-    await this.send(`ETL Failure — ${props.queue}`, html, text);
+    await this.sendToAdmin(`ETL Failure — ${props.queue}`, html, text);
   }
 
   async sendWeightAdjustment(props: WeightAdjustmentProps): Promise<void> {
     const action = props.isRollback ? 'rolled back' : 'auto-applied';
     const { html, text } = await renderWeightAdjustment(props);
-    await this.send(
+    await this.sendToAdmin(
       `Weight Adjustment ${action} — ${props.proposalId}`,
       html,
       text,
@@ -92,28 +116,44 @@ export class MailService implements OnModuleInit {
   async sendWeeklyReport(props: WeeklyReportProps): Promise<void> {
     const period = `${props.periodStart.slice(0, 10)} → ${props.periodEnd.slice(0, 10)}`;
     const { html, text } = await renderWeeklyReport(props);
-    await this.send(`Weekly Report — ${period}`, html, text);
+    await this.sendToAdmin(`Weekly Report — ${period}`, html, text);
   }
 
   async sendXgUnavailableReport(
     props: XgUnavailableReportProps,
   ): Promise<void> {
     const { html, text } = await renderXgUnavailableReport(props);
-    await this.send(
+    await this.sendToAdmin(
       `Stats Sync — ${props.unavailableCount} fixtures sans xG (${props.season})`,
       html,
       text,
     );
   }
 
-  private async send(
+  private async sendToAdmin(
     subject: string,
     html: string,
     text: string,
   ): Promise<void> {
-    if (!this.smtpEnabled || !this.transporter || !this.smtpTo) {
+    if (!this.smtpAdminTo) {
       logger.debug(
         { subject },
+        'SMTP_TO not configured — skipping admin email',
+      );
+      return;
+    }
+    await this.sendTo(this.smtpAdminTo, subject, html, text);
+  }
+
+  private async sendTo(
+    to: string,
+    subject: string,
+    html: string,
+    text: string,
+  ): Promise<void> {
+    if (!this.smtpEnabled || !this.transporter) {
+      logger.debug(
+        { subject, to },
         'SMTP disabled or unconfigured — skipping email',
       );
       return;
@@ -122,16 +162,17 @@ export class MailService implements OnModuleInit {
     try {
       await this.transporter.sendMail({
         from: this.smtpFrom,
-        to: this.smtpTo,
+        to,
         subject: `[EVCore] ${subject}`,
         html,
         text,
       });
-      logger.info({ subject }, 'Email sent');
+      logger.info({ subject, to }, 'Email sent');
     } catch (error) {
       logger.error(
         {
           subject,
+          to,
           error: error instanceof Error ? error.message : String(error),
         },
         'Failed to send email',

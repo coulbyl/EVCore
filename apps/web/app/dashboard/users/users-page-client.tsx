@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   Badge,
+  Button,
   DataTable,
   Empty,
   EmptyDescription,
@@ -22,6 +23,7 @@ import {
   cn,
   type ColumnDef,
 } from "@evcore/ui";
+import { Check, Copy, Link2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
 import type {
@@ -30,6 +32,7 @@ import type {
 } from "@/domains/admin-users/types/admin-users";
 import { useAdminUsers } from "@/domains/admin-users/use-cases/get-admin-users";
 import { useUpdateAdminUser } from "@/domains/admin-users/use-cases/update-admin-user";
+import { generateAdminResetLink } from "@/domains/admin-users/use-cases/generate-reset-link";
 
 function roleLabel(role: AdminUserRole) {
   return role === "ADMIN" ? "Admin" : "Utilisateur";
@@ -55,6 +58,52 @@ function UserRoleSelect({
         <SelectItem value="ADMIN">{roleLabel("ADMIN")}</SelectItem>
       </SelectContent>
     </Select>
+  );
+}
+
+function ResetLinkButton({ userId }: { userId: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "copied" | "error">(
+    "idle",
+  );
+
+  async function handleClick() {
+    setState("loading");
+    try {
+      const url = await generateAdminResetLink(userId);
+      await navigator.clipboard.writeText(url);
+      setState("copied");
+      setTimeout(() => setState("idle"), 3000);
+    } catch {
+      setState("error");
+      setTimeout(() => setState("idle"), 2000);
+    }
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="gap-1.5"
+      disabled={state === "loading"}
+      onClick={handleClick}
+    >
+      {state === "copied" ? (
+        <>
+          <Check className="size-3.5 text-green-500" />
+          Copié
+        </>
+      ) : state === "error" ? (
+        <>
+          <Link2 className="size-3.5 text-destructive" />
+          Erreur
+        </>
+      ) : (
+        <>
+          <Copy className="size-3.5" />
+          {state === "loading" ? "Génération…" : "Lien reset"}
+        </>
+      )}
+    </Button>
   );
 }
 
@@ -138,6 +187,11 @@ export function UsersPageClient() {
         id: "createdAt",
         header: "Créé le",
         accessorFn: (row) => formatCreatedAt(row.createdAt),
+      },
+      {
+        id: "resetLink",
+        header: "Accès",
+        cell: ({ row }) => <ResetLinkButton userId={row.original.id} />,
       },
     ];
   }, [handleRoleChange]);
@@ -237,6 +291,10 @@ export function UsersPageClient() {
                     user={user}
                     onChange={(nextRole) => handleRoleChange(user.id, nextRole)}
                   />
+                </div>
+
+                <div className="flex justify-end">
+                  <ResetLinkButton userId={user.id} />
                 </div>
               </div>
             </div>

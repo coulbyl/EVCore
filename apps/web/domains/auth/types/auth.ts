@@ -6,6 +6,8 @@ export type AuthSessionUser = {
   bio: string | null;
   role: "ADMIN" | "OPERATOR";
   emailVerified: boolean;
+  mfaMethod: "EMAIL" | "TOTP" | null;
+  totpVerified: boolean;
   avatarUrl: string | null;
   theme: string | null;
   locale: string | null;
@@ -14,6 +16,10 @@ export type AuthSessionUser = {
   unitAmount: string | null;
   unitPercent: string | null;
 };
+
+export function isAccountVerified(user: AuthSessionUser): boolean {
+  return user.emailVerified || user.totpVerified;
+}
 
 export type AuthSession = {
   sessionId: string;
