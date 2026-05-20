@@ -32,8 +32,8 @@
 
 - [x] **0 — Fondations** (tokens + utilities)
 - [x] **1 — Layouts globaux**
-- [ ] **2 — Auth flow**
-- [ ] **3 — Dashboard home**
+- [x] **2 — Auth flow**
+- [ ] **3 — Dashboard home** _(composants KPI migrés CSS-first, page principale à faire)_
 - [ ] **4 — Pages données** (picks, coupons, bet slips, summary)
 - [ ] **5 — Pages analytics** (performance, audit, bankroll, investment)
 - [ ] **6 — Pages contenu** (formation, glossaire, help, WC2026)
@@ -70,51 +70,56 @@
 - [x] Header : sticky, `bg-panel-strong/90 backdrop-blur`, tokens corrects
 - [x] Nav mobile : bottom bar fixe avec tokens `bg-panel-strong`
 - [x] TV : `2xl:max-w-[1800px] 2xl:mx-auto` sur le wrapper du contenu principal
+- [x] `SidebarTrigger` visible jusqu'à `lg:` (corrige tablettes Samsung/Surface) + style panel
+- [x] Icônes sidebar (desktop + mobile bottom bar) : `text-accent`
+- [x] `use-mobile.ts` (ui) : `MOBILE_BREAKPOINT` = 1024px pour Sheet vs inline sidebar correct
+
+### `components/account-button.tsx`
+- [x] Icônes menu compte : `text-accent`
+- [x] Hover items : `focus:bg-accent/8 focus:text-foreground` (aligné sidebar)
 
 ---
 
-## 2 — Auth flow
+## 2 — Auth flow ✅
 
-### Landing `(public)/page.tsx`
-- [ ] Grille bento 2 cellules : hero (texte + CTA) + visuel produit
-- [ ] Mobile : cellules empilées, hero full-width
-- [ ] Tokens : `bg-panel-strong`, `text-foreground`, `text-muted-foreground`
-- [ ] CTA : bouton `bg-accent text-accent-foreground`
+### Landing `(public)/page.tsx` ✅
+- [x] Hero split : texte + CTA gauche, `HeroPreview` (mock dashboard) droite à `lg:`
+- [x] Mobile : hero full-width empilé, preview masqué
+- [x] Données réelles backtest : SV 74.3%, CONF 60.7%, BB 64.0%, 5 578 picks / 105 saisons
+- [x] Header fixed unifié : strip WC2026 + nav dans un `<header>` avec `bg-background` (pas de saignement)
+- [x] Canaux bento : 3 cards avec métriques réelles, glow par canal
+- [x] Features grid asymétrique : `lg:col-span-7` / `lg:col-span-5`
+- [x] Steps : `sm:grid-cols-3` avec ligne connecteur
+- [x] CTA : shadow glow `rgba(15,118,110,0.35)` sur bouton primaire
 
-### `auth/components/auth-shell.tsx`
-- [ ] Carte centrée avec `bento-cell`, padding `24px`
-- [ ] Logo EVCore au-dessus de la carte
-- [ ] Mobile : carte full-width, pas de border-radius aux bords (< 380px)
+### `auth/components/auth-shell.tsx` ✅
+- [x] Layout `md:grid-cols-2` — aside visible à `md:`, form respirant
+- [x] Aside : features avec icônes dans `size-8 bg-accent/10 rounded-lg`
+- [x] Mobile : form plein écran sans carte, pas de border-radius aux bords
 
-### `auth/login/page.tsx` + `login-form.tsx`
-- [ ] Inputs : `--input` background, `--ring` focus
-- [ ] Label au-dessus de chaque input (jamais placeholder seul comme label)
-- [ ] Bouton submit : `w-full`, `bg-accent`
-- [ ] Lien "Mot de passe oublié" : `text-muted-foreground text-sm`
-- [ ] État loading : spinner dans le bouton, inputs `disabled`
-- [ ] État erreur : message sous le champ avec `text-danger` + icône `AlertCircle`
+### `auth/login/page.tsx` + `login-form.tsx` ✅
+- [x] Inputs `h-11`, labels au-dessus, erreur `bg-destructive/8 border-destructive/20`
+- [x] Bouton submit `h-11 w-full`, état loading géré
 
-### `auth/register/page.tsx` + `register-form.tsx`
-- [ ] Même shell que login
-- [ ] Validation inline : feedback immédiat après `blur`
+### `auth/register/page.tsx` + `register-form.tsx` ✅
+- [x] 2-col grid `sm:grid-cols-2` pour email+username, fullName+password
+- [x] Validation inline `mode: "onTouched"`
 
-### `auth/forgot-password/page.tsx` + `forgot-password-form.tsx`
-- [ ] Étape 1 : email input + bouton
-- [ ] Étape 2 (confirmation) : message de succès avec icône `MailCheck`
-- [ ] Retour vers login : lien `text-sm text-muted-foreground`
+### `auth/forgot-password/page.tsx` + `forgot-password-form.tsx` ✅
+- [x] Succès : card `bg-success/8 border-success/25` avec `MailCheck`
+- [x] Retour login en lien `text-accent`
 
-### `auth/forgot-password/totp/page.tsx` + form
-- [ ] Input TOTP : 6 chiffres, `font-mono text-2xl text-center`
-- [ ] Erreur : bordure `danger` + message
+### `auth/forgot-password/totp/page.tsx` + form ✅
+- [x] Passwords empilés (pas de 2-col dans le panel étroit)
+- [x] Erreur bordure + message
 
-### `auth/reset-password/page.tsx` + form
-- [ ] Indicateur de force du mot de passe (barre : `danger` → `warning` → `success`)
-- [ ] Confirmation password : validation de correspondance en temps réel
+### `auth/reset-password/page.tsx` + form ✅
+- [x] Passwords empilés, validation correspondance en temps réel
 
-### `auth/verify/page.tsx` + flows (email, totp-setup, choice)
-- [ ] Étapes claires avec indicateur de progression
-- [ ] QR code TOTP : centré, `200×200px`, fond blanc forcé même en dark
-- [ ] Codes backup : style `font-mono bg-panel p-3 rounded-md`
+### `auth/verify/page.tsx` + flows (email, totp-setup, choice) ✅
+- [x] `verify-choice-form.tsx` : boutons bento avec icône `size-8 bg-accent/10`
+- [x] `email-verify-flow.tsx` : input `h-12 tracking-[0.5em]`
+- [x] `totp-setup-flow.tsx` : QR code `bg-white p-3 rounded-xl border` (fond blanc forcé dark)
 
 ---
 
@@ -130,11 +135,13 @@
   ```
 - [ ] Mobile : toutes cellules `col-span-2` (full-width), ordre par importance
 
-### `components/kpi-cards.tsx` + `dashboard-kpi-card.tsx`
-- [ ] Variante par canal : bord gauche `4px solid var(--canal-*)`
-- [ ] Nombre principal : `text-2xl font-bold tabular-nums`
-- [ ] Delta : `kpi-delta.tsx` avec ▲/▼ + token `success`/`danger`
-- [ ] `bento-cell-interactive` si cliquable vers la page canal
+### `components/kpi-cards.tsx` + `dashboard-kpi-card.tsx` ✅ _(migration CSS-first)_
+- [x] CSS grid responsive : `grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))]`
+- [x] `dashboard-kpi-card.tsx` : prop `compact` supprimée, toujours responsive
+- [x] `kpi-delta.tsx` : ▲/▼ avec `text-success`/`text-destructive`, `sm:` classes
+- [x] `stat-card.tsx` (ui) : `compact=false` responsive via `sm:`, `compact=true` toujours compact
+- [ ] Variante par canal : bord gauche `4px solid var(--canal-*)` ← à faire
+- [ ] `bento-cell-interactive` si cliquable vers la page canal ← à faire
 
 ### `components/weekly-brief.tsx`
 - [ ] Cellule `2×2` minimum
@@ -166,6 +173,8 @@
 - [ ] Item #1 : accent visuel subtil (`bg-accent-soft`)
 
 ### `components/predictions-card.tsx` + `performance-card.tsx`
+- [x] `performance-card.tsx` : migration CSS-first (suppression `useIsMobile`, `sm:` classes)
+- [x] `operator-performance-card.tsx` : idem — texte conditionnel `sm:hidden`/`hidden sm:inline`
 - [ ] Sparkline ou mini-chart si données disponibles
 - [ ] Fallback texte si pas de données
 
