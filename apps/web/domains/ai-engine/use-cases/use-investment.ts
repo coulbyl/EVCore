@@ -11,7 +11,10 @@ export function useInvestment(date: string) {
       const params = new URLSearchParams({ date });
       return clientApiRequest<InvestmentDayDto>(
         `/ai-engine/investment?${params.toString()}`,
-        { fallbackErrorMessage: "Impossible de charger les données d'investissement." },
+        {
+          fallbackErrorMessage:
+            "Impossible de charger les données d'investissement.",
+        },
       );
     },
     staleTime: 120_000,
