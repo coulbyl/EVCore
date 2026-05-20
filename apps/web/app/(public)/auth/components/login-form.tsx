@@ -18,6 +18,7 @@ import {
   PasswordInput,
 } from "@evcore/ui";
 import { login } from "@/domains/auth/use-cases/login";
+import { isAccountVerified } from "@/domains/auth/types/auth";
 
 const loginSchema = z.object({
   identifier: z
@@ -45,8 +46,14 @@ export function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login({ identifier: values.identifier, password: values.password });
-      router.push("/dashboard");
+      const session = await login({
+        identifier: values.identifier,
+        password: values.password,
+      });
+      const destination = isAccountVerified(session.user)
+        ? "/dashboard"
+        : "/auth/verify";
+      router.push(destination);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Identifiants invalides.");
@@ -111,12 +118,20 @@ export function LoginForm() {
           {isSubmitting ? "Connexion..." : "Se connecter"}
         </Button>
 
-        <p className="text-sm text-muted-foreground">
-          Pas encore de compte ?{" "}
-          <Link href="/auth/register" className="font-medium text-accent">
-            Créer un compte
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Pas encore de compte ?{" "}
+            <Link href="/auth/register" className="font-medium text-accent">
+              Créer un compte
+            </Link>
+          </span>
+          <Link
+            href="/auth/forgot-password"
+            className="hover:text-foreground transition-colors"
+          >
+            Mot de passe oublié
           </Link>
-        </p>
+        </div>
       </form>
     </Form>
   );

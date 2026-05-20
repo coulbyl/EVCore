@@ -117,6 +117,11 @@ enum CouponLegCanal {
   @@map("coupon_leg_canal")
 }
 
+enum MfaMethod {
+  EMAIL
+  TOTP
+}
+
 enum CouponProposalStatus {
   PENDING
   ACCEPTED
@@ -357,6 +362,9 @@ model User {
   bio                  String?
   role                 UserRole              @default(OPERATOR)
   emailVerified        Boolean               @default(false)
+  mfaMethod            MfaMethod?
+  totpSecret           String?
+  totpVerified         Boolean               @default(false)
   avatarUrl            String?
   theme                String?
   locale               String?
@@ -373,10 +381,40 @@ model User {
   announcements        Announcement[]
   badges               UserBadge[]
   notificationReads    UserNotificationRead[]
+  verificationCodes    EmailVerificationCode[]
+  resetTokens          PasswordResetToken[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
   @@map("users")
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+  @@map("email_verification_code")
+}
+
+model PasswordResetToken {
+  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId           String   @db.Uuid
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash        String   @unique
+  expiresAt        DateTime
+  used             Boolean  @default(false)
+  isAdminGenerated Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_token")
 }
 
 model Announcement {

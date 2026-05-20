@@ -12,7 +12,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@evcore/ui";
-import { GraduationCap, Settings, Trophy, TrendingUp, Wallet } from "lucide-react";
+import {
+  GraduationCap,
+  Settings,
+  Trophy,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
@@ -152,9 +158,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/dashboard/bet-slips",
   ];
 
-  const mobileNavItems = MOBILE_NAV_ORDER
-    .map((href) => navItems.find((item) => item.href === href))
-    .filter((item): item is NonNullable<typeof item> => item !== undefined);
+  const mobileNavItems = MOBILE_NAV_ORDER.map((href) =>
+    navItems.find((item) => item.href === href),
+  ).filter((item): item is NonNullable<typeof item> => item !== undefined);
 
   const wc2026Active = isWC2026Active();
 

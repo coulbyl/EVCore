@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
-import { Mail, AtSign, ShieldCheck, FingerprintPattern } from "lucide-react";
-import { clientApiRequest } from "@/lib/api/client-api";
+import { useEffect, useRef, useState } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
+import {
+  Mail,
+  AtSign,
+  ShieldCheck,
+  FingerprintPattern,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
@@ -11,6 +18,8 @@ import {
   useCurrentUser,
   useSetCurrentUser,
 } from "@/domains/auth/context/current-user-context";
+import { clientApiRequest } from "@/lib/api/client-api";
+import { updateIdentity } from "@/domains/auth/use-cases/update-identity";
 
 const BADGE_NAME: Record<string, string> = {
   vol_50: "50 paris réglés",
@@ -24,22 +33,100 @@ const ROLE_LABEL: Record<string, string> = {
   OPERATOR: "Opérateur",
 };
 
-function InfoRow({
+type EditableField = "email" | "username" | null;
+
+function EditableInfoRow({
   icon: Icon,
   label,
+  field,
   value,
+  editing,
+  onStartEdit,
+  onSave,
+  onCancel,
+  saving,
+  error,
 }: {
   icon: React.ElementType;
   label: string;
+  field: EditableField;
   value: string;
+  editing: boolean;
+  onStartEdit: () => void;
+  onSave: (val: string) => void;
+  onCancel: () => void;
+  saving: boolean;
+  error: string | null;
 }) {
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setDraft(value);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [editing, value]);
+
+  function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") onSave(draft);
+    if (e.key === "Escape") onCancel();
+  }
+
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <Icon size={13} className="shrink-0 text-muted-foreground" />
       <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
-      <span className="truncate text-sm text-foreground">{value}</span>
+
+      {editing ? (
+        <div className="flex flex-1 items-center gap-1.5 min-w-0">
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKey}
+            disabled={saving}
+            className="flex-1 min-w-0 rounded-md border border-border bg-background px-2 py-0.5 text-sm text-foreground outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={() => onSave(draft)}
+            disabled={saving || draft.trim() === ""}
+            className="shrink-0 rounded-md p-1 text-accent hover:bg-accent/10 disabled:opacity-40"
+            title="Enregistrer"
+          >
+            <Check size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+            className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/40"
+            title="Annuler"
+          >
+            <X size={14} />
+          </button>
+          {error && (
+            <span className="text-[0.68rem] text-destructive whitespace-nowrap">
+              {error}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center gap-2 min-w-0">
+          <span className="truncate text-sm text-foreground">{value}</span>
+          <button
+            type="button"
+            onClick={onStartEdit}
+            className="ml-auto shrink-0 rounded-md p-1 text-muted-foreground opacity-0 hover:opacity-100 group-hover:opacity-60 hover:text-foreground transition-opacity"
+            title={`Modifier ${label.toLowerCase()}`}
+          >
+            <Pencil size={11} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -47,10 +134,16 @@ function InfoRow({
 export function ProfileHeroSection() {
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
+
   const [selected, setSelected] = useState<string | null>(
     currentUser.avatarUrl,
   );
-  const [saving, setSaving] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+
+  const [editingField, setEditingField] = useState<EditableField>(null);
+  const [fieldSaving, setFieldSaving] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+
   const { data: badges } = useMyBadges();
   const unlockedBadges = new Set(
     (badges ?? []).filter((b) => b.unlockedAt !== null).map((b) => b.code),
@@ -60,10 +153,10 @@ export function ProfileHeroSection() {
     setSelected(currentUser.avatarUrl);
   }, [currentUser.avatarUrl]);
 
-  async function handleSelect(avatarUrl: string) {
-    if (avatarUrl === selected || saving) return;
+  async function handleSelectAvatar(avatarUrl: string) {
+    if (avatarUrl === selected || avatarSaving) return;
     setSelected(avatarUrl);
-    setSaving(true);
+    setAvatarSaving(true);
     try {
       await clientApiRequest("/auth/me", {
         method: "PATCH",
@@ -72,8 +165,36 @@ export function ProfileHeroSection() {
       });
       setCurrentUser({ ...currentUser, avatarUrl });
     } finally {
-      setSaving(false);
+      setAvatarSaving(false);
     }
+  }
+
+  async function handleSaveField(field: "email" | "username", value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setFieldSaving(true);
+    setFieldError(null);
+    try {
+      const updated = await updateIdentity({ [field]: trimmed });
+      setCurrentUser({ ...currentUser, ...updated });
+      setEditingField(null);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Une erreur est survenue.";
+      setFieldError(msg);
+    } finally {
+      setFieldSaving(false);
+    }
+  }
+
+  function startEdit(field: EditableField) {
+    setFieldError(null);
+    setEditingField(field);
+  }
+
+  function cancelEdit() {
+    setFieldError(null);
+    setEditingField(null);
   }
 
   return (
@@ -85,7 +206,7 @@ export function ProfileHeroSection() {
         {/* ── Left: avatar + picker ── */}
         <div className="flex flex-col items-center gap-4 sm:items-start">
           <div
-            className={`transition-opacity ${saving ? "opacity-60" : "opacity-100"}`}
+            className={`transition-opacity ${avatarSaving ? "opacity-60" : "opacity-100"}`}
           >
             <UserAvatar
               avatarUrl={selected}
@@ -104,8 +225,8 @@ export function ProfileHeroSection() {
                 <button
                   key={avatar.url}
                   type="button"
-                  disabled={saving}
-                  onClick={() => handleSelect(avatar.url)}
+                  disabled={avatarSaving}
+                  onClick={() => handleSelectAvatar(avatar.url)}
                   className={`shrink-0 rounded-full transition-all ${
                     selected === avatar.url
                       ? "ring-2 ring-accent ring-offset-2 ring-offset-panel-strong"
@@ -132,8 +253,8 @@ export function ProfileHeroSection() {
                   <button
                     key={avatar.url}
                     type="button"
-                    disabled={isLocked || saving}
-                    onClick={() => !isLocked && handleSelect(avatar.url)}
+                    disabled={isLocked || avatarSaving}
+                    onClick={() => !isLocked && handleSelectAvatar(avatar.url)}
                     className={`relative shrink-0 rounded-full transition-all ${
                       isLocked
                         ? "cursor-not-allowed grayscale opacity-40"
@@ -193,30 +314,47 @@ export function ProfileHeroSection() {
           </div>
 
           {/* Info rows */}
-          <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
-            <InfoRow icon={Mail} label="Email" value={currentUser.email} />
-            <InfoRow
+          <div className="group divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
+            <EditableInfoRow
+              icon={Mail}
+              label="Email"
+              field="email"
+              value={currentUser.email}
+              editing={editingField === "email"}
+              onStartEdit={() => startEdit("email")}
+              onSave={(val) => handleSaveField("email", val)}
+              onCancel={cancelEdit}
+              saving={fieldSaving}
+              error={editingField === "email" ? fieldError : null}
+            />
+            <EditableInfoRow
               icon={AtSign}
               label="Identifiant"
+              field="username"
               value={`@${currentUser.username}`}
+              editing={editingField === "username"}
+              onStartEdit={() => startEdit("username")}
+              onSave={(val) =>
+                handleSaveField("username", val.replace(/^@/, ""))
+              }
+              onCancel={cancelEdit}
+              saving={fieldSaving}
+              error={editingField === "username" ? fieldError : null}
             />
             {currentUser.bio && (
-              <InfoRow
-                icon={FingerprintPattern}
-                label="Biographie"
-                value={currentUser.bio}
-              />
+              <div className="flex items-center gap-3 px-4 py-3">
+                <FingerprintPattern
+                  size={13}
+                  className="shrink-0 text-muted-foreground"
+                />
+                <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Biographie
+                </span>
+                <span className="truncate text-sm text-foreground">
+                  {currentUser.bio}
+                </span>
+              </div>
             )}
-          </div>
-
-          {/* Password */}
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" disabled>
-              Modifier le mot de passe
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              Disponible prochainement
-            </span>
           </div>
         </div>
       </div>

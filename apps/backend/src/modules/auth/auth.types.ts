@@ -9,6 +9,8 @@ export type AuthSessionUser = {
   bio: string | null;
   role: UserRole;
   emailVerified: boolean;
+  mfaMethod: 'EMAIL' | 'TOTP' | null;
+  totpVerified: boolean;
   avatarUrl: string | null;
   theme: string | null;
   locale: string | null;

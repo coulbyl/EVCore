@@ -136,9 +136,7 @@ function PickCard({
   const confidencePct = Math.round(pick.calibratedHitRate * 100);
 
   return (
-    <div
-      className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-3 pl-4 flex flex-col gap-1.5 transition-colors hover:border-border"
-    >
+    <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-3 pl-4 flex flex-col gap-1.5 transition-colors hover:border-border">
       <div
         className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: color }}
@@ -164,17 +162,23 @@ function PickCard({
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-        <span className="uppercase tracking-widest text-[0.6rem]">{pick.competition}</span>
+        <span className="uppercase tracking-widest text-[0.6rem]">
+          {pick.competition}
+        </span>
         <span className="opacity-40">·</span>
         <span>{formatTime(pick.scheduledAt)}</span>
         {pick.oddsSnapshot != null && (
           <>
             <span className="opacity-40">·</span>
-            <span className="font-mono text-foreground">@{pick.oddsSnapshot.toFixed(2)}</span>
+            <span className="font-mono text-foreground">
+              @{pick.oddsSnapshot.toFixed(2)}
+            </span>
           </>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <span className="font-mono font-semibold text-foreground">{confidencePct}%</span>
+          <span className="font-mono font-semibold text-foreground">
+            {confidencePct}%
+          </span>
           <ResultBadge isCorrect={pick.isCorrect} />
         </div>
       </div>
@@ -209,11 +213,14 @@ function HeroInsights({
       <Card className="overflow-hidden rounded-[1.35rem] border-primary/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_32%)] py-3">
         <CardHeader className="gap-1 px-4 pb-2">
           <div className="flex items-center gap-2">
-            <Badge variant="accent" className="w-fit rounded-full px-2.5 py-0.5 text-[0.6rem] uppercase tracking-[0.18em]">
+            <Badge
+              variant="accent"
+              className="w-fit rounded-full px-2.5 py-0.5 text-[0.6rem] uppercase tracking-[0.18em]"
+            >
               Vue rapide
             </Badge>
             <CardTitle className="text-sm font-semibold">
-              Picks du {formatDateLabel(date)}
+              Picks {formatDateWithPrep(date)}
             </CardTitle>
           </div>
         </CardHeader>
@@ -271,16 +278,21 @@ function HeroInsights({
 
           {summary.bestCoupon ? (
             <div className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/20 px-3 py-2">
-              <span className="text-xs font-semibold text-muted-foreground">Coupon #1</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                Coupon #1
+              </span>
               <span className="text-xs text-muted-foreground">
-                {formatPct(summary.bestCoupon.jointProbability)} · {summary.bestCoupon.legs.length} matchs
+                {formatPct(summary.bestCoupon.jointProbability)} ·{" "}
+                {summary.bestCoupon.legs.length} matchs
               </span>
               <Badge variant="success" className="rounded-full text-[0.6rem]">
                 @{summary.bestCoupon.combinedOdds.toFixed(2)}
               </Badge>
             </div>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground">Aucun coupon disponible.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Aucun coupon disponible.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -429,8 +441,6 @@ function CanalSection({
 }) {
   if (picks.length === 0) return null;
   const color = CANAL_COLOR[canal];
-  const avgHitRate =
-    picks.reduce((sum, pick) => sum + pick.calibratedHitRate, 0) / picks.length;
 
   return (
     <section className="flex flex-col gap-4">
@@ -451,23 +461,6 @@ function CanalSection({
               {CANAL_DESCRIPTION[canal]}
             </p>
           </div>
-        </div>
-
-        <div className="min-w-40 rounded-xl border border-border/70 bg-card/70 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Moyenne
-            </span>
-            <span className="text-sm font-semibold text-foreground">
-              {formatPct(avgHitRate)}
-            </span>
-          </div>
-          <ProgressBar
-            value={Math.round(avgHitRate * 100)}
-            max={100}
-            thresholds={{ success: 62, warning: 40 }}
-            showValue={false}
-          />
         </div>
       </div>
 
@@ -508,6 +501,13 @@ function formatDateLabel(iso: string): string {
   if (iso === today) return "Aujourd'hui";
   if (iso === daysAgoIso(1)) return "Hier";
   return formatDateLong(`${iso}T12:00:00Z`);
+}
+
+function formatDateWithPrep(iso: string): string {
+  const label = formatDateLabel(iso);
+  if (label === "Aujourd'hui") return "d'aujourd'hui";
+  if (label === "Hier") return "d'hier";
+  return `du ${label}`;
 }
 
 export function InvestissementPageClient() {

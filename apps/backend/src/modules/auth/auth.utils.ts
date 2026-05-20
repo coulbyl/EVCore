@@ -1,4 +1,6 @@
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
   randomBytes,
   scryptSync,
@@ -105,6 +107,60 @@ export function buildSessionCookie(token: string, secure: boolean): string {
   if (COOKIE_DOMAIN) parts.push(`Domain=${COOKIE_DOMAIN}`);
   if (secure) parts.push('Secure');
   return parts.join('; ');
+}
+
+export function generateOtpCode(): string {
+  return String(Math.floor(100000 + (randomBytes(4).readUInt32BE(0) % 900000)));
+}
+
+export function hashOtpCode(code: string): string {
+  return createHash('sha256').update(code).digest('hex');
+}
+
+export function generateResetToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+export function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+const AES_ALGO = 'aes-256-gcm';
+const AES_KEY_LEN = 32;
+const AES_IV_LEN = 12;
+const AES_TAG_LEN = 16;
+
+function deriveAesKey(secret: string): Buffer {
+  return scryptSync(secret, 'evcore-totp-salt', AES_KEY_LEN) as Buffer;
+}
+
+export function encryptTotpSecret(
+  plaintext: string,
+  appSecret: string,
+): string {
+  const key = deriveAesKey(appSecret);
+  const iv = randomBytes(AES_IV_LEN);
+  const cipher = createCipheriv(AES_ALGO, key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, 'utf8'),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString('base64');
+}
+
+export function decryptTotpSecret(
+  ciphertext: string,
+  appSecret: string,
+): string {
+  const key = deriveAesKey(appSecret);
+  const buf = Buffer.from(ciphertext, 'base64');
+  const iv = buf.subarray(0, AES_IV_LEN);
+  const tag = buf.subarray(AES_IV_LEN, AES_IV_LEN + AES_TAG_LEN);
+  const encrypted = buf.subarray(AES_IV_LEN + AES_TAG_LEN);
+  const decipher = createDecipheriv(AES_ALGO, key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(encrypted) + decipher.final('utf8');
 }
 
 export function buildExpiredSessionCookie(secure: boolean): string {

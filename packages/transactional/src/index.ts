@@ -6,6 +6,8 @@ export type { EtlFailureProps } from "./types";
 export type { WeightAdjustmentProps } from "./types";
 export type { WeeklyReportProps } from "./types";
 export type { XgUnavailableReportProps } from "./types";
+export type { EmailVerificationProps } from "./types";
+export type { PasswordResetProps } from "./types";
 
 export { renderRoiAlert } from "./emails/roi-alert";
 export { renderMarketSuspension } from "./emails/market-suspension";
@@ -14,3 +16,5 @@ export { renderEtlFailure } from "./emails/etl-failure";
 export { renderWeightAdjustment } from "./emails/weight-adjustment";
 export { renderWeeklyReport } from "./emails/weekly-report";
 export { renderXgUnavailableReport } from "./emails/xg-unavailable-report";
+export { renderEmailVerification } from "./emails/email-verification";
+export { renderPasswordReset } from "./emails/password-reset";

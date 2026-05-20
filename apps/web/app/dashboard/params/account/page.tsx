@@ -7,6 +7,7 @@ import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
 import { NotificationsSection } from "./components/notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
+import { SecuritySection } from "./components/security-section";
 
 export default async function AccountSettingsPage() {
   const [locale, t, session] = await Promise.all([
@@ -107,6 +108,11 @@ export default async function AccountSettingsPage() {
                       ],
               }}
             />
+          </div>
+
+          {/* Sécurité */}
+          <div className="lg:col-span-2">
+            <SecuritySection />
           </div>
 
           {/* Bankroll */}

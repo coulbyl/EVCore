@@ -165,7 +165,9 @@ async function run(): Promise<void> {
   }
 
   // ── 7. Backtest feasibility check ─────────────────────────────────────────
-  console.log('\n═══ FEASIBILITY GATES ═══════════════════════════════════════');
+  console.log(
+    '\n═══ FEASIBILITY GATES ═══════════════════════════════════════',
+  );
   const MINIMUM_PER_CANAL = 50;
   let allGatesPassed = true;
 
@@ -211,7 +213,10 @@ async function run(): Promise<void> {
     rawRows: rows,
   };
 
-  const reportsDir = path.join(path.dirname(new URL(import.meta.url).pathname), '../reports');
+  const reportsDir = path.join(
+    path.dirname(new URL(import.meta.url).pathname),
+    '../reports',
+  );
   await mkdir(reportsDir, { recursive: true });
   const outPath = path.join(reportsDir, 'backtest-data-audit.json');
   await writeFile(outPath, JSON.stringify(report, null, 2));

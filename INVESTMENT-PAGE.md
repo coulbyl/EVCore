@@ -15,7 +15,7 @@ Spécification de la page Investissement et refonte de la logique coupon.
 Audit des 43 coupons settlés (mai 2026 — feature coupon récente, c'est tout l'historique de la table `coupon_proposal`) :
 
 | Résultat | Count | Avg odds | Avg signal | Avg joint_prob |
-|----------|-------|----------|------------|----------------|
+| -------- | ----- | -------- | ---------- | -------------- |
 | WON      | 6     | 3.02     | 0.636      | 0.475          |
 | PARTIAL  | 9     | 3.44     | 0.621      | 0.411          |
 | LOST     | 28    | 8.30     | 0.658      | 0.370          |
@@ -27,6 +27,7 @@ Note : le diagnostic ci-dessous part de ces 43 coupons réels, mais la **calibra
 ### 1. jointProbability calculé sur des probabilités non calibrées
 
 `CouponComposerService.buildCoupon()` calcule :
+
 ```
 jointProbability = product(leg.probEstimated)
 ```
@@ -35,11 +36,11 @@ jointProbability = product(leg.probEstimated)
 
 Écart mesuré pour SV:UNDER_4_5 :
 
-| Source            | Probabilité |
-|-------------------|-------------|
-| Modèle Poisson    | ~0.88-0.92  |
-| Bookmaker (1/cote)| 0.727       |
-| **Hit rate réel** | **0.515**   |
+| Source             | Probabilité |
+| ------------------ | ----------- |
+| Modèle Poisson     | ~0.88-0.92  |
+| Bookmaker (1/cote) | 0.727       |
+| **Hit rate réel**  | **0.515**   |
 
 Un coupon 3 legs SV affiche `jointProbability = 0.73` (modèle) alors que la vraie probabilité calibrée est `0.515³ = 0.14`. Le filtre `jointProbability ≥ 0.45` est donc inopérant.
 
@@ -64,6 +65,7 @@ Remplacer `probEstimated` par ces taux dans le calcul de `jointProbability` — 
 ### Problème du hit rate brut
 
 Le hit rate brut sur 38 jours est trop nerveux sur les petits échantillons :
+
 - `SV:HOME = 7/7 → 1.00` — probablement pas une vraie proba de 100%
 - `CONF = 1/25 → 0.04` — peut amplifier une mauvaise période instable
 - `EV = 5/7 → 0.71` — échantillon trop petit pour être fiable
@@ -85,13 +87,13 @@ n           = total observations dans la fenêtre courte (38 jours)
 
 **Exemples illustratifs (k=10) :**
 
-| Canal | Brut (38j) | Prior canal | Calibré (k=10) |
-|-------|-----------|-------------|----------------|
-| SV:HOME | 7/7 = 1.00 | 0.74 | (7 + 7.4) / 17 = **0.79** |
-| EV | 5/7 = 0.71 | 0.36 | (5 + 3.6) / 17 = **0.51** |
-| BB | 19/30 = 0.63 | 0.62 | (19 + 6.2) / 40 = **0.63** |
-| CONF | 1/25 = 0.04 | 0.66 | (1 + 6.6) / 35 = **0.22** |
-| NUL | 0/4 = 0.00 | 0.20 | (0 + 2.0) / 14 = **0.14** |
+| Canal   | Brut (38j)   | Prior canal | Calibré (k=10)             |
+| ------- | ------------ | ----------- | -------------------------- |
+| SV:HOME | 7/7 = 1.00   | 0.74        | (7 + 7.4) / 17 = **0.79**  |
+| EV      | 5/7 = 0.71   | 0.36        | (5 + 3.6) / 17 = **0.51**  |
+| BB      | 19/30 = 0.63 | 0.62        | (19 + 6.2) / 40 = **0.63** |
+| CONF    | 1/25 = 0.04  | 0.66        | (1 + 6.6) / 35 = **0.22**  |
+| NUL     | 0/4 = 0.00   | 0.20        | (0 + 2.0) / 14 = **0.14**  |
 
 Effet attendu : CONF passe de 0.04 à 0.22 — toujours mauvais mais pas définitivement tué par un seul mauvais mois. La valeur finale dépend de `k` retenu par le backtest.
 
@@ -107,12 +109,12 @@ Effet attendu : CONF passe de 0.04 à 0.22 — toujours mauvais mais pas défini
 
 **Impact illustratif sur les coupons (hit rates calibrés k=10, threshold 0.35) :**
 
-| Combo                     | Joint prob calibrée | Verdict   |
-|---------------------------|---------------------|-----------|
-| SV + BB (2 legs)          | 0.79 × 0.63 = **0.50** | ✓ viable |
-| SV + BB + BB (3 legs)     | 0.79 × 0.63² = **0.31** | ✗ filtré |
-| SV + CONF (2 legs)        | 0.79 × 0.22 = **0.17** | ✗ filtré |
-| CONF × 3                  | 0.22³ = **0.01** | ✗ éliminé |
+| Combo                 | Joint prob calibrée     | Verdict   |
+| --------------------- | ----------------------- | --------- |
+| SV + BB (2 legs)      | 0.79 × 0.63 = **0.50**  | ✓ viable  |
+| SV + BB + BB (3 legs) | 0.79 × 0.63² = **0.31** | ✗ filtré  |
+| SV + CONF (2 legs)    | 0.79 × 0.22 = **0.17**  | ✗ filtré  |
+| CONF × 3              | 0.22³ = **0.01**        | ✗ éliminé |
 
 CONF reste pénalisé par ses vrais résultats. La question "CONF doit-il être globalement exclu des coupons ou seulement filtré" est tranchée par le backtest (voir section dédiée).
 
@@ -239,6 +241,7 @@ Le raw `features` contient ~7KB de bruit (matrice HT/FT, picks rejetés, shadow 
 Estimation : ~500 tokens/fixture × 20 fixtures = ~10K tokens input. Haiku 4.5 (200K contexte) traite ça en quelques secondes.
 
 **Output Claude (Zod-validé) :**
+
 ```json
 {
   "selections": {
@@ -259,6 +262,7 @@ Estimation : ~500 tokens/fixture × 20 fixtures = ~10K tokens input. Haiku 4.5 (
 ```
 
 **Contraintes dans le prompt :**
+
 - Max SV=5, BB=5, CONF=5, DRAW=5, EV=2
 - Max 3 coupons, max 3 legs par coupon
 - Pas 2 legs du même fixture dans un coupon
@@ -292,12 +296,12 @@ Claude peut refuser des requêtes liées aux paris sportifs selon le contexte du
 
 Positionner Claude comme **analyste de données sportives statistiques**, jamais comme conseiller de pari :
 
-| À éviter | À utiliser |
-|----------|------------|
+| À éviter                          | À utiliser                                         |
+| --------------------------------- | -------------------------------------------------- |
 | "sélectionne les meilleurs paris" | "évalue la qualité statistique de ces prédictions" |
-| "coupons gagnants" | "combinaisons à forte probabilité jointe calibrée" |
-| "maximise les gains" | "minimise l'incertitude statistique" |
-| "bets", "gambling" | "predictions", "selections", "picks" |
+| "coupons gagnants"                | "combinaisons à forte probabilité jointe calibrée" |
+| "maximise les gains"              | "minimise l'incertitude statistique"               |
+| "bets", "gambling"                | "predictions", "selections", "picks"               |
 
 **Stratégie de fallback (simplifiée) :**
 
@@ -367,14 +371,14 @@ Page Investissement
 
 **États UI à gérer explicitement :**
 
-| État | Comportement attendu |
-|------|----------------------|
-| Chargement | Skeleton cards par canal |
-| Aucun pick du jour | Message "Pas de pick éligible aujourd'hui" |
+| État                              | Comportement attendu                                                   |
+| --------------------------------- | ---------------------------------------------------------------------- |
+| Chargement                        | Skeleton cards par canal                                               |
+| Aucun pick du jour                | Message "Pas de pick éligible aujourd'hui"                             |
 | Fallback déterministe (Claude KO) | Badge discret "Sélection automatique" sur les picks, pas d'explication |
-| Erreur partielle Claude | Picks affichés, section coupons masquée si coupons invalides |
-| Coupon PENDING | Statut visible, pas de résultat |
-| Coupon settled (WON/LOST/PARTIAL) | Badge résultat coloré |
+| Erreur partielle Claude           | Picks affichés, section coupons masquée si coupons invalides           |
+| Coupon PENDING                    | Statut visible, pas de résultat                                        |
+| Coupon settled (WON/LOST/PARTIAL) | Badge résultat coloré                                                  |
 
 ### Navigation
 
@@ -484,13 +488,13 @@ Cette section est le cœur de la spec — pas une vérification finale. Les hype
 
 ### Données disponibles pour le backtest
 
-| Table | Volume | Période | Usage backtest |
-|-------|--------|---------|----------------|
-| `fixture` (FINISHED) | ~33 500 | 2023-02 → 2026-05 | Univers des matchs |
-| `model_run` | ~4 500 | depuis activation engine | Snapshots des features |
-| `prediction` (settled) | TBD via query | depuis activation | Hit rates par canal CONF/BTTS/DRAW |
-| `bet` (settled) | TBD via query | depuis activation | Hit rates par canal SV/EV |
-| `odds_snapshot` | TBD via query | — | Reconstitution des cotes du jour J |
+| Table                  | Volume        | Période                  | Usage backtest                     |
+| ---------------------- | ------------- | ------------------------ | ---------------------------------- |
+| `fixture` (FINISHED)   | ~33 500       | 2023-02 → 2026-05        | Univers des matchs                 |
+| `model_run`            | ~4 500        | depuis activation engine | Snapshots des features             |
+| `prediction` (settled) | TBD via query | depuis activation        | Hit rates par canal CONF/BTTS/DRAW |
+| `bet` (settled)        | TBD via query | depuis activation        | Hit rates par canal SV/EV          |
+| `odds_snapshot`        | TBD via query | —                        | Reconstitution des cotes du jour J |
 
 Un script de discovery `scripts/backtest-data-audit.ts` doit produire en sortie le volume settled par canal × ligue × mois pour confirmer la couverture avant de lancer le grid search.
 
@@ -541,6 +545,7 @@ Ne pas exécuter cet espace comme produit cartésien brut. La recherche se fait 
 5. tester la pondération par récence en dernier.
 
 Sélection : combinaison qui maximise le **ROI out-of-sample** sous contraintes :
+
 - Hit rate ≥ 35% sur l'ensemble des coupons
 - Drawdown max ≤ 30% du capital initial simulé
 - Au moins 50 coupons générés sur la période test (sinon échantillon insuffisant)
@@ -622,15 +627,15 @@ Le contenu de `backtest-selected-params.json` est versionné — toute modificat
 
 À suivre après déploiement pour valider la refonte. Les cibles sont calibrées sur le ROI/hit rate observés dans le backtest sur l'out-of-sample — pas des valeurs arbitraires.
 
-| Métrique | Cible | Fréquence | Source de la cible |
-|----------|-------|-----------|--------------------|
-| ROI réel coupons | ≥ ROI backtest out-of-sample - 5pp | Hebdo + mensuel | `backtest-selected-params.json` |
-| Hit rate coupons | ≥ hit rate backtest out-of-sample - 5pp | Hebdo | `backtest-selected-params.json` |
-| Distribution résultats par canal sur picks investissement | ≥ hit rate calibré - 10pp | Mensuel | matrice calibration |
-| Brier score picks investissement | ≤ Brier score backtest + 0.05 | Mensuel | backtest |
-| Drawdown max sur 30 jours glissants | ≤ drawdown max backtest × 1.3 | Quotidien | backtest |
-| Taux de refus Claude (fallback déterministe activé) | ≤ 5% | Hebdo | observation |
-| Drift de corrélation (`correlationFactor` actuel vs backtest) | écart ≤ 0.2 sur paires majeures | Mensuel | recalcul matrice |
+| Métrique                                                      | Cible                                   | Fréquence       | Source de la cible              |
+| ------------------------------------------------------------- | --------------------------------------- | --------------- | ------------------------------- |
+| ROI réel coupons                                              | ≥ ROI backtest out-of-sample - 5pp      | Hebdo + mensuel | `backtest-selected-params.json` |
+| Hit rate coupons                                              | ≥ hit rate backtest out-of-sample - 5pp | Hebdo           | `backtest-selected-params.json` |
+| Distribution résultats par canal sur picks investissement     | ≥ hit rate calibré - 10pp               | Mensuel         | matrice calibration             |
+| Brier score picks investissement                              | ≤ Brier score backtest + 0.05           | Mensuel         | backtest                        |
+| Drawdown max sur 30 jours glissants                           | ≤ drawdown max backtest × 1.3           | Quotidien       | backtest                        |
+| Taux de refus Claude (fallback déterministe activé)           | ≤ 5%                                    | Hebdo           | observation                     |
+| Drift de corrélation (`correlationFactor` actuel vs backtest) | écart ≤ 0.2 sur paires majeures         | Mensuel         | recalcul matrice                |
 
 Un écart durable sur 2-3 cibles déclenche un re-backtest et potentiellement une recalibration des hyperparamètres.
 
