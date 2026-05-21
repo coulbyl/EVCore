@@ -4,21 +4,21 @@
   --foreground: #162033;
   --panel: #f3f6fa;
   --panel-strong: #ffffff;
-  --sidebar: #142033;
-  --sidebar-muted: #24344d;
-  --sidebar-foreground: #f8fafc;
+  --sidebar: #f8fafc;
+  --sidebar-muted: #f1f5f9;
+  --sidebar-foreground: #1e293b;
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--sidebar-muted);
-  --sidebar-accent-foreground: var(--sidebar-foreground);
-  --sidebar-border: rgba(248, 250, 252, 0.1);
+  --sidebar-accent: #e2e8f0;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: rgba(24, 33, 47, 0.1);
   --sidebar-ring: var(--ring);
   --border: rgba(24, 33, 47, 0.1);
   --muted: #64748b;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.12);
   --success: #15803d;
-  --danger: #c2410c;
+  --danger: var(--destructive);
   --warning: #a16207;
   --pending: #c08b18;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
@@ -42,14 +42,23 @@
   /* ── Canal identities ── */
   --canal-ev: #d97706;
   --canal-ev-soft: rgba(217, 119, 6, 0.11);
-  --canal-sv: #0f766e;
-  --canal-sv-soft: rgba(15, 118, 110, 0.11);
+  --canal-sv: #0284c7;
+  --canal-sv-soft: rgba(2, 132, 199, 0.11);
   --canal-conf: #4f46e5;
   --canal-conf-soft: rgba(79, 70, 229, 0.11);
-  --canal-draw: #b45309;
-  --canal-draw-soft: rgba(180, 83, 9, 0.11);
+  --canal-draw: #7c3aed;
+  --canal-draw-soft: rgba(124, 58, 237, 0.11);
   --canal-btts: #be185d;
   --canal-btts-soft: rgba(190, 24, 93, 0.11);
+
+  /* ── Bento layout ── */
+  --gap-bento: 12px;
+  --gap-bento-compact: 8px;
+  --gap-bento-tablet: 10px;
+  --radius-bento: 12px;
+  --shadow-bento-rest: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-bento-hover: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-bento-drag: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 /* ── Dark tokens ───────────────────────────────────────────────────────── */
@@ -72,7 +81,7 @@
   --accent: #14b8a6;
   --accent-soft: rgba(20, 184, 166, 0.14);
   --success: #22c55e;
-  --danger: #f97316;
+  --danger: var(--destructive);
   --warning: #eab308;
   --pending: #f59e0b;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
@@ -96,14 +105,19 @@
   /* ── Canal identities ── */
   --canal-ev: #f59e0b;
   --canal-ev-soft: rgba(245, 158, 11, 0.13);
-  --canal-sv: #14b8a6;
-  --canal-sv-soft: rgba(20, 184, 166, 0.13);
+  --canal-sv: #38bdf8;
+  --canal-sv-soft: rgba(56, 189, 248, 0.13);
   --canal-conf: #818cf8;
   --canal-conf-soft: rgba(129, 140, 248, 0.13);
-  --canal-draw: #fb923c;
-  --canal-draw-soft: rgba(251, 146, 60, 0.13);
+  --canal-draw: #a78bfa;
+  --canal-draw-soft: rgba(167, 139, 250, 0.13);
   --canal-btts: #f472b6;
   --canal-btts-soft: rgba(244, 114, 182, 0.13);
+
+  /* ── Bento layout ── */
+  --shadow-bento-rest: 0 1px 3px rgba(0, 0, 0, 0.16);
+  --shadow-bento-hover: 0 4px 12px rgba(0, 0, 0, 0.22);
+  --shadow-bento-drag: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
 
 @theme inline {
@@ -153,6 +167,15 @@
   --color-canal-draw-soft: var(--canal-draw-soft);
   --color-canal-btts: var(--canal-btts);
   --color-canal-btts-soft: var(--canal-btts-soft);
+
+  /* ── Bento layout ── */
+  --spacing-bento: var(--gap-bento);
+  --spacing-bento-compact: var(--gap-bento-compact);
+  --spacing-bento-tablet: var(--gap-bento-tablet);
+  --radius-bento: var(--radius-bento);
+  --shadow-bento-rest: var(--shadow-bento-rest);
+  --shadow-bento-hover: var(--shadow-bento-hover);
+  --shadow-bento-drag: var(--shadow-bento-drag);
 }
 
 html,
@@ -163,18 +186,22 @@ body {
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark light;
 }
 
 html.dark {
   color-scheme: dark;
 }
 
+html:not(.dark) {
+  color-scheme: light;
+}
+
 body {
   color: var(--foreground);
   background:
-    radial-gradient(circle at top left, rgba(32, 45, 66, 0.98), rgba(24, 36, 55, 0.96) 42%, rgba(18, 29, 46, 0.98) 100%),
-    linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(13, 21, 32, 0.18));
+    radial-gradient(circle at top left, #eff3f8, #e8eef6 42%, #dde6f0 100%),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.03), rgba(229, 235, 242, 0.6));
   overflow-y: auto;
 }
 
@@ -212,7 +239,7 @@ pre {
 }
 
 ::selection {
-  background: rgba(15, 118, 110, 0.18);
+  background: var(--accent-soft);
 }
 
 .ev-shell-shadow {
@@ -257,8 +284,15 @@ pre {
 
 .ev-grid-glow {
   background-image:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.05), transparent 30%),
+    radial-gradient(circle at 18% 8%, rgba(15, 118, 110, 0.03), transparent 34%),
+    linear-gradient(180deg, rgba(229, 235, 242, 0.4), rgba(229, 235, 242, 0.15));
+  background-size: auto;
+}
+
+.dark .ev-grid-glow {
+  background-image:
     radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 30%),
     radial-gradient(circle at 18% 8%, rgba(36, 52, 77, 0.22), transparent 34%),
     linear-gradient(180deg, rgba(24, 36, 55, 0.36), rgba(18, 29, 46, 0.2));
-  background-size: auto;
 }

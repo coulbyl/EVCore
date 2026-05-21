@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T20:25:19.664Z",
+  "generatedAt": "2026-05-20T23:17:26.572Z",
   "trainSplit": {
     "start": "2023-08-01",
     "end": "2026-04-01"
@@ -10,15 +10,15 @@
   },
   "trainResult": {
     "totalCoupons": 1332,
-    "hitRate": "0.460",
-    "roi": "1.003",
+    "hitRate": "0.462",
+    "roi": "1.014",
     "maxDrawdown": "15.32",
     "activeDays": 508
   },
   "testResult": {
     "totalCoupons": 99,
-    "hitRate": "0.515",
-    "roi": "0.618",
+    "hitRate": "0.505",
+    "roi": "0.569",
     "maxDrawdown": "9.00",
     "activeDays": 35,
     "verdict": "PASS"
@@ -48,7 +48,7 @@
     "EV×BB": 2.0054043606448846,
     "EV×NUL": 2.382764501987443,
     "EV×CONF": 1.819092446873796,
-    "SV×SV": 1.5106781042471646,
+    "SV×SV": 1.5039880079638976,
     "SV×BB": 1.6184925818982756,
     "SV×NUL": 1.8700798867647122,
     "SV×CONF": 1.642627809513274,

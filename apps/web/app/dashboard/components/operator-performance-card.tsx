@@ -2,7 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { useOperatorSummary } from "@/domains/bet-slip/use-cases/get-operator-summary";
-import { useIsMobile } from "@/hooks/use-mobile";
+
+const slotCls =
+  "min-w-0 rounded-[1.15rem] border border-border bg-panel px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-3";
+const labelCls =
+  "text-[0.56rem] tracking-[0.16em] sm:text-[0.68rem] sm:tracking-[0.2em] font-semibold uppercase text-muted-foreground";
+const valueCls =
+  "mt-1 text-[0.95rem] leading-none sm:text-[1.45rem] lg:text-[1.6rem] font-semibold tabular-nums tracking-tight text-foreground";
+const subCls = "mt-1 text-[0.63rem] sm:mt-0.5 sm:text-xs text-muted-foreground";
 
 function RoiBadge({ roi, count }: { roi: string; count: number }) {
   const t = useTranslations("dashboard.operatorCard");
@@ -41,19 +48,13 @@ export function OperatorPerformanceCard({
   const t = useTranslations("dashboard.operatorCard");
   const tPerf = useTranslations("performance");
   const { data, isLoading } = useOperatorSummary(from, to);
-  const isMobile = useIsMobile();
-
-  const slotCls = `min-w-0 rounded-[1.15rem] border border-border bg-panel ${isMobile ? "px-2.5 py-2.5" : "rounded-2xl px-4 py-3"}`;
-  const labelCls = `${isMobile ? "text-[0.56rem] tracking-[0.16em]" : "text-[0.68rem] tracking-[0.2em]"} font-semibold uppercase text-muted-foreground`;
-  const valueCls = `${isMobile ? "mt-1 text-[0.95rem] leading-none" : "mt-1 text-[1.45rem] sm:text-[1.6rem]"} font-semibold tabular-nums tracking-tight text-foreground`;
-  const subCls = `${isMobile ? "mt-1 text-[0.63rem]" : "mt-0.5 text-xs"} text-muted-foreground`;
 
   const skeleton = (
     <div className="h-8 w-12 animate-pulse rounded-lg bg-secondary" />
   );
 
   return (
-    <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
+    <section className="ev-shell-shadow rounded-[1.6rem] border border-border bg-panel-strong p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
@@ -83,7 +84,10 @@ export function OperatorPerformanceCard({
           ) : (
             <p className={valueCls}>{data?.settledBets ?? 0}</p>
           )}
-          <p className={subCls}>{isMobile ? t("settled") : t("settledLong")}</p>
+          <p className={subCls}>
+            <span className="sm:hidden">{t("settled")}</span>
+            <span className="hidden sm:inline">{t("settledLong")}</span>
+          </p>
         </div>
 
         <div className={slotCls}>

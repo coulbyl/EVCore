@@ -462,14 +462,12 @@ export function SummaryPageClient() {
           {/* Stats */}
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <StatCard
-              compact={isMobile}
               icon={<LayoutList size={14} />}
               label="Total"
               value={isLoading ? "—" : String(data?.stats.total ?? 0)}
               tone="neutral"
             />
             <StatCard
-              compact={isMobile}
               icon={<CheckCircle2 size={14} />}
               label="Gagnés"
               value={isLoading ? "—" : String(data?.stats.won ?? 0)}
@@ -481,7 +479,6 @@ export function SummaryPageClient() {
               }
             />
             <StatCard
-              compact={isMobile}
               icon={<XCircle size={14} />}
               label="Perdus"
               value={isLoading ? "—" : String(data?.stats.lost ?? 0)}
@@ -493,7 +490,6 @@ export function SummaryPageClient() {
               }
             />
             <StatCard
-              compact={isMobile}
               icon={<TrendingUp size={14} />}
               label="ROI"
               value={isLoading ? "—" : (data?.stats.roi ?? "—")}

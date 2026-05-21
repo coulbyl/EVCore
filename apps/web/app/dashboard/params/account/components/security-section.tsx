@@ -75,7 +75,9 @@ export function SecuritySection() {
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link href="/dashboard/params/account/security">Configurer →</Link>
+              <Link href="/dashboard/params/account/security">
+                Configurer →
+              </Link>
             </Button>
           </div>
         )}

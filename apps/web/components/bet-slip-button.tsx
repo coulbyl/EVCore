@@ -2,6 +2,7 @@
 
 import { ReceiptText } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { cn } from "@evcore/ui/cn";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 
 export function BetSlipButton() {
@@ -17,25 +18,26 @@ export function BetSlipButton() {
 
   return (
     <>
-      {/* Topbar button — always visible */}
+      {/* Topbar button */}
       <button
         type="button"
         onClick={open}
         title="Mon coupon"
-        className={`relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3 ${
+        className={cn(
+          "relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
           hasItems
             ? "border-accent/30 bg-accent/8 text-accent hover:bg-accent/12"
-            : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
-        }`}
+            : "border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground",
+        )}
       >
         <ReceiptText size={16} />
         {hasItems && (
           <span
-            className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.58rem] font-bold md:static md:h-5 md:min-w-5 md:text-[0.6rem] ${
-              hasItems
-                ? "bg-accent text-accent-foreground"
-                : "bg-secondary text-muted-foreground"
-            }`}
+            className={cn(
+              "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.58rem] font-bold",
+              "bg-accent text-accent-foreground",
+              "md:static md:h-5 md:min-w-5 md:text-[0.6rem]",
+            )}
           >
             {displayCount}
           </span>

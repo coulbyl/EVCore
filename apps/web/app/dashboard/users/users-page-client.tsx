@@ -5,6 +5,12 @@ import {
   Badge,
   Button,
   DataTable,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -23,7 +29,14 @@ import {
   cn,
   type ColumnDef,
 } from "@evcore/ui";
-import { Check, Copy, Link2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Link2,
+  MoreHorizontal,
+  ShieldCheck,
+  UserX,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
 import type {
@@ -38,81 +51,91 @@ function roleLabel(role: AdminUserRole) {
   return role === "ADMIN" ? "Admin" : "Utilisateur";
 }
 
-function UserRoleSelect({
-  user,
-  onChange,
-}: {
-  user: AdminUserRow;
-  onChange: (role: AdminUserRole) => void;
-}) {
-  return (
-    <Select
-      value={user.role}
-      onValueChange={(value) => onChange(value as AdminUserRole)}
-    >
-      <SelectTrigger className="h-9 w-[160px] rounded-lg bg-panel-strong">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="OPERATOR">{roleLabel("OPERATOR")}</SelectItem>
-        <SelectItem value="ADMIN">{roleLabel("ADMIN")}</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
-
-function ResetLinkButton({ userId }: { userId: string }) {
-  const [state, setState] = useState<"idle" | "loading" | "copied" | "error">(
-    "idle",
-  );
-
-  async function handleClick() {
-    setState("loading");
-    try {
-      const url = await generateAdminResetLink(userId);
-      await navigator.clipboard.writeText(url);
-      setState("copied");
-      setTimeout(() => setState("idle"), 3000);
-    } catch {
-      setState("error");
-      setTimeout(() => setState("idle"), 2000);
-    }
-  }
-
-  return (
-    <Button
-      size="sm"
-      variant="outline"
-      className="gap-1.5"
-      disabled={state === "loading"}
-      onClick={handleClick}
-    >
-      {state === "copied" ? (
-        <>
-          <Check className="size-3.5 text-green-500" />
-          Copié
-        </>
-      ) : state === "error" ? (
-        <>
-          <Link2 className="size-3.5 text-destructive" />
-          Erreur
-        </>
-      ) : (
-        <>
-          <Copy className="size-3.5" />
-          {state === "loading" ? "Génération…" : "Lien reset"}
-        </>
-      )}
-    </Button>
-  );
-}
-
 function formatCreatedAt(value: string) {
   return new Date(value).toLocaleDateString("fr-FR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
+}
+
+function UserActions({
+  user,
+  onRoleChange,
+}: {
+  user: AdminUserRow;
+  onRoleChange: (role: AdminUserRole) => void;
+}) {
+  const [copyState, setCopyState] = useState<
+    "idle" | "loading" | "copied" | "error"
+  >("idle");
+
+  async function handleCopyResetLink() {
+    setCopyState("loading");
+    try {
+      const url = await generateAdminResetLink(user.id);
+      await navigator.clipboard.writeText(url);
+      setCopyState("copied");
+      setTimeout(() => setCopyState("idle"), 3000);
+    } catch {
+      setCopyState("error");
+      setTimeout(() => setCopyState("idle"), 2000);
+    }
+  }
+
+  const nextRole: AdminUserRole = user.role === "ADMIN" ? "OPERATOR" : "ADMIN";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-8 p-0 text-muted-foreground hover:text-foreground"
+        >
+          <MoreHorizontal size={16} />
+          <span className="sr-only">Actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          {user.fullName}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onRoleChange(nextRole)}>
+          <ShieldCheck size={14} className="mr-2 text-accent" />
+          Passer en {roleLabel(nextRole)}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleCopyResetLink}
+          disabled={copyState === "loading"}
+        >
+          {copyState === "copied" ? (
+            <Check size={14} className="mr-2 text-success" />
+          ) : copyState === "error" ? (
+            <Link2 size={14} className="mr-2 text-destructive" />
+          ) : (
+            <Copy size={14} className="mr-2" />
+          )}
+          {copyState === "copied"
+            ? "Lien copié"
+            : copyState === "error"
+              ? "Erreur"
+              : copyState === "loading"
+                ? "Génération…"
+                : "Copier le lien reset"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-muted-foreground focus:text-muted-foreground"
+          disabled
+        >
+          <UserX size={14} className="mr-2" />
+          Suspendre (bientôt)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function UsersPageClient() {
@@ -132,10 +155,7 @@ export function UsersPageClient() {
 
   const handleRoleChange = useCallback(
     (userId: string, nextRole: AdminUserRole) => {
-      void updateUser.mutateAsync({
-        userId,
-        role: nextRole,
-      });
+      void updateUser.mutateAsync({ userId, role: nextRole });
     },
     [updateUser],
   );
@@ -168,10 +188,11 @@ export function UsersPageClient() {
         id: "role",
         header: "Rôle",
         cell: ({ row }) => (
-          <UserRoleSelect
-            user={row.original}
-            onChange={(nextRole) => handleRoleChange(row.original.id, nextRole)}
-          />
+          <Badge
+            variant={row.original.role === "ADMIN" ? "neutral" : "secondary"}
+          >
+            {roleLabel(row.original.role)}
+          </Badge>
         ),
       },
       {
@@ -189,9 +210,18 @@ export function UsersPageClient() {
         accessorFn: (row) => formatCreatedAt(row.createdAt),
       },
       {
-        id: "resetLink",
-        header: "Accès",
-        cell: ({ row }) => <ResetLinkButton userId={row.original.id} />,
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <UserActions
+              user={row.original}
+              onRoleChange={(nextRole) =>
+                handleRoleChange(row.original.id, nextRole)
+              }
+            />
+          </div>
+        ),
       },
     ];
   }, [handleRoleChange]);
@@ -201,16 +231,19 @@ export function UsersPageClient() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             Administration
           </p>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
             Utilisateurs
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Recherchez un compte et ajustez son rôle.
+            {total > 0
+              ? `${total} compte${total > 1 ? "s" : ""} enregistré${total > 1 ? "s" : ""}`
+              : "Recherchez un compte et ajustez son rôle."}
           </p>
         </div>
 
@@ -221,8 +254,8 @@ export function UsersPageClient() {
               setQ(e.target.value);
               setPage(1);
             }}
-            placeholder="Rechercher (nom, email, identifiant)…"
-            className="h-10 rounded-lg bg-panel"
+            placeholder="Nom, email, identifiant…"
+            className="h-10 rounded-2xl bg-panel"
           />
           <Select
             value={role}
@@ -231,7 +264,7 @@ export function UsersPageClient() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="h-10 w-[180px] rounded-lg bg-panel">
+            <SelectTrigger className="h-10 w-full rounded-2xl bg-panel sm:w-[160px]">
               <SelectValue placeholder="Tous les rôles" />
             </SelectTrigger>
             <SelectContent>
@@ -243,6 +276,7 @@ export function UsersPageClient() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <DataTable
           columns={columns}
@@ -271,31 +305,26 @@ export function UsersPageClient() {
                     </p>
                   </div>
                 </div>
+                <UserActions
+                  user={user}
+                  onRoleChange={(nextRole) =>
+                    handleRoleChange(user.id, nextRole)
+                  }
+                />
+              </div>
 
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Badge
+                  variant={user.role === "ADMIN" ? "neutral" : "secondary"}
+                >
+                  {roleLabel(user.role)}
+                </Badge>
                 <Badge variant={user.emailVerified ? "success" : "neutral"}>
                   {user.emailVerified ? "Vérifié" : "À vérifier"}
                 </Badge>
-              </div>
-
-              <div className="mt-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-muted-foreground">Créé le</span>
-                  <span className="font-medium text-foreground">
-                    {formatCreatedAt(user.createdAt)}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-muted-foreground">Rôle</span>
-                  <UserRoleSelect
-                    user={user}
-                    onChange={(nextRole) => handleRoleChange(user.id, nextRole)}
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <ResetLinkButton userId={user.id} />
-                </div>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {formatCreatedAt(user.createdAt)}
+                </span>
               </div>
             </div>
           )}
@@ -310,6 +339,7 @@ export function UsersPageClient() {
         />
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>
           Page {page} / {pageCount} · {total} utilisateur{total > 1 ? "s" : ""}

@@ -321,7 +321,7 @@ export function BetSlipListPageClient() {
         </EmptyHeader>
       </Empty>
     ) : (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
         {filteredBetSlips.map((betSlip) => (
           <BetSlipCard
             key={betSlip.id}
@@ -336,7 +336,7 @@ export function BetSlipListPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="hidden min-h-0 flex-1 xl:grid xl:grid-cols-[3fr_2fr] xl:gap-5">
+        <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:gap-5">
           <div className="flex min-h-0 flex-col gap-4">
             {filter}
             <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
@@ -354,7 +354,7 @@ export function BetSlipListPageClient() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 xl:hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:hidden">
           {filter}
           <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
         </div>

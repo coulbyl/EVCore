@@ -21,29 +21,26 @@ import {
 import { register } from "@/domains/auth/use-cases/register";
 
 const registerSchema = z.object({
-  email: z.email("Cet email n’est pas valide."),
+  email: z.email("Cet email n'est pas valide."),
   username: z
     .string()
     .trim()
-    .min(3, "Choisissez un nom d’utilisateur (au moins 3 caractères).")
-    .max(32, "Nom d’utilisateur trop long (32 caractères max).")
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      "Le nom d’utilisateur doit contenir uniquement des lettres, chiffres ou _.",
-    ),
+    .min(3, "Au moins 3 caractères.")
+    .max(32, "32 caractères max.")
+    .regex(/^[a-zA-Z0-9_]+$/, "Lettres, chiffres ou _ uniquement."),
   fullName: z
     .string()
     .trim()
     .min(2, "Renseignez votre nom complet.")
-    .max(80, "Nom complet trop long (80 caractères max)."),
+    .max(80, "80 caractères max."),
   password: z
     .string()
-    .min(8, "Mot de passe trop court (8 caractères minimum).")
+    .min(8, "8 caractères minimum.")
     .max(128, "Mot de passe trop long."),
   bio: z
     .string()
     .trim()
-    .max(280, "Bio trop longue (280 caractères max).")
+    .max(280, "280 caractères max.")
     .optional()
     .or(z.literal("")),
 });
@@ -70,7 +67,6 @@ export function RegisterForm() {
   async function onSubmit(values: RegisterValues) {
     setError(null);
     setIsSubmitting(true);
-
     try {
       await register({
         email: values.email,
@@ -97,96 +93,98 @@ export function RegisterForm() {
         onSubmit={form.handleSubmit(onSubmit)}
       >
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Email + Username */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="username"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom d&apos;utilisateur</FormLabel>
+                <FormControl>
+                  <Input autoComplete="username" className="h-11" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nom d&apos;utilisateur</FormLabel>
-              <FormControl>
-                <Input
-                  autoComplete="username"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Full name + Password */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="fullName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom complet</FormLabel>
+                <FormControl>
+                  <Input autoComplete="name" className="h-11" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mot de passe</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    autoComplete="new-password"
+                    placeholder="8 caractères minimum"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nom complet</FormLabel>
-              <FormControl>
-                <Input
-                  autoComplete="name"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mot de passe</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  autoComplete="new-password"
-                  placeholder="8 caractères minimum"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        {/* Bio — full width, optional */}
         <FormField
           control={form.control}
           name="bio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bio</FormLabel>
+              <FormLabel>
+                Bio{" "}
+                <span className="text-[0.72rem] font-normal text-muted-foreground">
+                  — optionnel
+                </span>
+              </FormLabel>
               <FormControl>
                 <Textarea
-                  rows={3}
-                  placeholder="Optionnel"
-                  className="rounded-lg border-border bg-background text-sm text-foreground focus-visible:ring-accent/40"
+                  rows={2}
+                  placeholder="Quelques mots sur vous"
+                  className="resize-none"
                   {...field}
                 />
               </FormControl>
@@ -195,15 +193,11 @@ export function RegisterForm() {
           )}
         />
 
-        <Button
-          type="submit"
-          className="h-11 w-full justify-center rounded-lg"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Création..." : "Créer un compte"}
+        <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Création…" : "Créer un compte"}
         </Button>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground">
           Déjà inscrit ?{" "}
           <Link href="/auth/login" className="font-medium text-accent">
             Se connecter

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Mail, ShieldCheck } from "lucide-react";
-import { Button } from "@evcore/ui";
 import { EmailVerifyFlow } from "./email-verify-flow";
 import { TotpSetupFlow } from "./totp-setup-flow";
 
@@ -17,7 +17,7 @@ export function VerifyChoiceForm() {
     return <TotpSetupFlow onBack={() => setChoice(null)} />;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
         Choisissez votre méthode de vérification :
       </p>
@@ -25,14 +25,16 @@ export function VerifyChoiceForm() {
       <button
         type="button"
         onClick={() => setChoice("email")}
-        className="flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-left hover:border-accent/50 hover:bg-accent/5 transition-colors"
+        className="group flex items-start gap-4 rounded-xl border border-border bg-panel px-4 py-4 text-left transition-colors hover:border-accent/40 hover:bg-accent/5"
       >
-        <Mail className="mt-0.5 size-5 shrink-0 text-accent" />
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent transition-colors group-hover:bg-accent/15">
+          <Mail size={15} />
+        </div>
         <div>
           <p className="text-sm font-semibold text-foreground">
             Vérification par email
           </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[0.8rem] leading-5 text-muted-foreground">
             Recevez un code à 6 chiffres sur votre adresse email.
           </p>
         </div>
@@ -41,27 +43,29 @@ export function VerifyChoiceForm() {
       <button
         type="button"
         onClick={() => setChoice("totp")}
-        className="flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-left hover:border-accent/50 hover:bg-accent/5 transition-colors"
+        className="group flex items-start gap-4 rounded-xl border border-border bg-panel px-4 py-4 text-left transition-colors hover:border-accent/40 hover:bg-accent/5"
       >
-        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent" />
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent transition-colors group-hover:bg-accent/15">
+          <ShieldCheck size={15} />
+        </div>
         <div>
           <p className="text-sm font-semibold text-foreground">
             Application d&apos;authentification
           </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[0.8rem] leading-5 text-muted-foreground">
             Scannez un QR code avec Google Authenticator, Authy, etc.
           </p>
         </div>
       </button>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-1 text-xs text-muted-foreground"
-        asChild
-      >
-        <a href="/auth/login">Me connecter avec un autre compte</a>
-      </Button>
+      <div className="border-t border-border pt-2">
+        <Link
+          href="/auth/login"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          ← Me connecter avec un autre compte
+        </Link>
+      </div>
     </div>
   );
 }

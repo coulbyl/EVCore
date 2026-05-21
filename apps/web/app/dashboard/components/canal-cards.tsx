@@ -84,8 +84,12 @@ function CanalCard({
   const s = CANAL_STYLES[canal];
   return (
     <div
-      className="flex flex-col gap-3 rounded-[1.15rem] border p-4"
-      style={{ borderColor: s.border, background: s.soft }}
+      className="flex flex-col gap-3 rounded-[1.15rem] border border-l-[3px] p-4"
+      style={{
+        borderColor: s.border,
+        borderLeftColor: s.color,
+        background: s.soft,
+      }}
     >
       <div className="flex items-center gap-2">
         <span
@@ -132,7 +136,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   const sv = pnlByCanal?.sv ?? null;
 
   return (
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <CanalCard
         canal="sv"
         icon={<Shield size={14} />}

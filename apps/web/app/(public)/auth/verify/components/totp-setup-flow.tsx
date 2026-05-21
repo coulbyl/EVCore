@@ -76,29 +76,29 @@ export function TotpSetupFlow({ onBack }: { onBack: () => void }) {
   return (
     <Form {...form}>
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-5"
         onSubmit={form.handleSubmit(onSubmit)}
       >
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
         {isLoading ? (
-          <div className="flex h-40 items-center justify-center">
+          <div className="flex h-36 items-center justify-center">
             <p className="text-sm text-muted-foreground">
               Génération du QR code…
             </p>
           </div>
         ) : qrDataUrl ? (
-          <>
+          <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
               Scannez ce QR code avec Google Authenticator, Authy ou une
               application compatible TOTP.
             </p>
             <div className="flex justify-center">
-              <div className="rounded-xl border border-border bg-white p-3">
+              <div className="rounded-xl border border-border bg-white p-3 shadow-sm">
                 <Image
                   src={qrDataUrl}
                   alt="QR code TOTP"
@@ -113,20 +113,20 @@ export function TotpSetupFlow({ onBack }: { onBack: () => void }) {
                 <button
                   type="button"
                   onClick={() => setShowSecret((v) => !v)}
-                  className="text-xs text-muted-foreground underline underline-offset-2"
+                  className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
                 >
                   {showSecret
                     ? "Masquer la clé manuelle"
                     : "Entrer la clé manuellement"}
                 </button>
                 {showSecret ? (
-                  <p className="mt-2 rounded-lg bg-muted px-3 py-2 font-mono text-xs tracking-widest text-foreground">
+                  <p className="mt-2 rounded-xl border border-border bg-muted px-3 py-2.5 font-mono text-xs tracking-widest text-foreground">
                     {secret}
                   </p>
                 ) : null}
               </div>
             ) : null}
-          </>
+          </div>
         ) : null}
 
         <FormField
@@ -140,7 +140,7 @@ export function TotpSetupFlow({ onBack }: { onBack: () => void }) {
                   inputMode="numeric"
                   maxLength={6}
                   placeholder="000000"
-                  className="h-11 rounded-lg text-center text-lg tracking-[0.4em]"
+                  className="h-12 text-center text-xl tracking-[0.5em]"
                   {...field}
                 />
               </FormControl>
@@ -160,7 +160,7 @@ export function TotpSetupFlow({ onBack }: { onBack: () => void }) {
         <button
           type="button"
           onClick={onBack}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           ← Changer de méthode
         </button>

@@ -43,12 +43,8 @@ export function LoginForm() {
   async function onSubmit(values: LoginValues) {
     setError(null);
     setIsSubmitting(true);
-
     try {
-      await login({
-        identifier: values.identifier,
-        password: values.password,
-      });
+      await login({ identifier: values.identifier, password: values.password });
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -65,7 +61,7 @@ export function LoginForm() {
         onSubmit={form.handleSubmit(onSubmit)}
       >
         {error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
@@ -77,11 +73,7 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email ou nom d&apos;utilisateur</FormLabel>
               <FormControl>
-                <Input
-                  autoComplete="username"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
-                  {...field}
-                />
+                <Input autoComplete="username" className="h-11" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -97,7 +89,7 @@ export function LoginForm() {
                 <FormLabel>Mot de passe</FormLabel>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Mot de passe oublié ?
                 </Link>
@@ -105,7 +97,7 @@ export function LoginForm() {
               <FormControl>
                 <PasswordInput
                   autoComplete="current-password"
-                  className="h-11 rounded-lg border-border bg-background text-sm text-foreground"
+                  className="h-11"
                   {...field}
                 />
               </FormControl>
@@ -114,12 +106,8 @@ export function LoginForm() {
           )}
         />
 
-        <Button
-          type="submit"
-          className="h-11 w-full justify-center rounded-lg"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Connexion..." : "Se connecter"}
+        <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Connexion…" : "Se connecter"}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">

@@ -11,18 +11,7 @@ import {
   Sparkles,
   Video,
 } from "lucide-react";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Page,
-  PageContent,
-  ProgressBar,
-} from "@evcore/ui";
+import { Badge, Button, Page, PageContent, ProgressBar } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { useFormationProgress } from "@/domains/formation/use-cases/use-formation-progress";
 import type {
@@ -229,48 +218,48 @@ export function FormationPageClient({
                 <Link
                   key={cat}
                   href={`/dashboard/formation/${cat}`}
-                  className="group rounded-[1.6rem] border border-border/80 bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)] transition-colors hover:border-accent/30 hover:bg-secondary"
+                  className="bento-cell-interactive group flex flex-col gap-4 p-5"
                   data-testid="formation-category-link"
                 >
-                  <Card className="border-0 bg-transparent shadow-none">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <CardTitle className="text-base">
-                            {categoryLabel(t, cat)}
-                          </CardTitle>
-                          <CardDescription className="mt-1 text-sm">
-                            {completed} / {catItems.length}
-                          </CardDescription>
-                        </div>
-                        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border bg-secondary text-accent transition-colors group-hover:border-accent/30">
-                          {categoryIcon(cat)}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                          {pct}%
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t("itemsCount", { count: catItems.length })}
-                        </p>
-                      </div>
-                      <ProgressBar
-                        value={completed}
-                        max={Math.max(1, catItems.length)}
-                      />
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="gap-1">
-                          {t("open")}
-                        </Badge>
-                        <span className="text-xs font-semibold text-accent">
-                          {t("browse")} →
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold tracking-tight text-foreground">
+                        {categoryLabel(t, cat)}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {completed} / {catItems.length}{" "}
+                        {t("itemsCount", { count: catItems.length }).replace(
+                          /\d+\s*/,
+                          "",
+                        )}
+                      </p>
+                    </div>
+                    <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border bg-secondary text-accent transition-colors group-hover:border-accent/30">
+                      {categoryIcon(cat)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        {pct}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("itemsCount", { count: catItems.length })}
+                      </p>
+                    </div>
+                    <ProgressBar
+                      value={completed}
+                      max={Math.max(1, catItems.length)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="gap-1">
+                      {t("open")}
+                    </Badge>
+                    <span className="text-xs font-semibold text-accent">
+                      {t("browse")} →
+                    </span>
+                  </div>
                 </Link>
               );
             })}

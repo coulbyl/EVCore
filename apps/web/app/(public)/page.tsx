@@ -1,14 +1,18 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import {
+  ArrowRight,
+  ChevronRight,
+  Moon,
+  Sun,
   TrendingUp,
   Shield,
-  BarChart2,
-  ChevronRight,
-  ArrowRight,
   Layers,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import {
   daysUntilWC2026,
@@ -16,92 +20,189 @@ import {
   isWC2026Countdown,
 } from "@/lib/events/world-cup-2026";
 
-const STATS = [
-  { label: "Taux de réussite", value: "59.2%", sub: "résultat validé" },
-  { label: "ROI simulé", value: "+2.28%", sub: "sur 3 saisons" },
-  { label: "Edge moyen", value: "2.5%", sub: "par position" },
-  { label: "Positions analysées", value: "760", sub: "données vérifiées" },
-];
+/* ─── Data ─────────────────────────────────────────────────── */
 
 const CHANNELS = [
   {
-    tag: "SAFE",
-    title: "Safe Value",
-    body: "Haute confiance et avantage réel sur la cote. Le canal le plus sélectif — peu de positions, mais chaque entrée est justifiée.",
-    color: "#10b981",
-    bg: "rgba(16,185,129,0.08)",
-    border: "rgba(16,185,129,0.2)",
+    tag: "SV",
+    label: "Safe Value",
+    headline: "Le canal le plus sélectif.",
+    body: "Haute confiance et avantage réel sur la cote. Chaque position est justifiée par les données — pas par l'intuition.",
+    metric: "74.3%",
+    bets: 191,
+    criteria: ["Edge ≥ 8%", "Confiance modèle > 70%", "Cote confirmée"],
+    colorCls: "text-emerald-600 dark:text-emerald-400",
+    bgCls: "bg-emerald-500/[0.07] border-emerald-500/20",
+    tagCls:
+      "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    dotCls: "bg-emerald-600 dark:bg-emerald-400",
+    glowCls: "bg-emerald-500/10",
   },
   {
     tag: "CONF",
-    title: "Confiance",
-    body: "Issue dominante au-dessus du seuil de la compétition. Une prise de position claire sur l'issue la plus probable.",
-    color: "#3b82f6",
-    bg: "rgba(59,130,246,0.08)",
-    border: "rgba(59,130,246,0.2)",
+    label: "Confiance",
+    headline: "L'issue dominante, prouvée.",
+    body: "Issue argmax au-dessus du seuil de la compétition. Une lecture claire de la probabilité la plus probable, sans compromis.",
+    metric: "60.7%",
+    bets: 122,
+    criteria: [
+      "Issue dominante claire",
+      "Seuil de ligue validé",
+      "Modèle calibré",
+    ],
+    colorCls: "text-blue-600 dark:text-blue-400",
+    bgCls: "bg-blue-500/[0.07] border-blue-500/20",
+    tagCls:
+      "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    dotCls: "bg-blue-600 dark:bg-blue-400",
+    glowCls: "bg-blue-500/10",
   },
   {
     tag: "BB",
-    title: "Both Teams Score",
-    body: "Les deux équipes marquent. Statistique pure, sans biais sur le vainqueur. Canal stable sur les ligues à forte densité offensive.",
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.08)",
-    border: "rgba(245,158,11,0.2)",
-  },
-];
-
-const FEATURES = [
-  {
-    icon: Layers,
-    title: "Une mise par position",
-    body: "Chaque pick reçoit une mise unitaire définie. Pas de jackpot, pas de coup de chance — une allocation disciplinée, répétée.",
-  },
-  {
-    icon: BarChart2,
-    title: "Trois canaux indépendants",
-    body: "SAFE, CONF et BB fonctionnent séparément. Chaque canal a ses propres critères et son propre suivi de performance.",
-  },
-  {
-    icon: Shield,
-    title: "Contrôle du drawdown",
-    body: "Quand un canal sous-performe, le système ralentit automatiquement. La protection du capital prime sur le volume.",
-  },
-  {
-    icon: TrendingUp,
-    title: "ROI traçable sur la durée",
-    body: "Chaque position est enregistrée. Vous voyez exactement ce que chaque canal rapporte, mois après mois.",
-  },
-  {
-    icon: Clock,
-    title: "Décisions lisibles",
-    body: "Chaque entrée est justifiée par des données. Vous comprenez pourquoi une position a été prise — ou refusée.",
-  },
-  {
-    icon: ChevronRight,
-    title: "Accès sur invitation",
-    body: "EVCore n'est pas ouvert au grand public. Chaque membre est sélectionné pour maintenir la qualité du suivi.",
+    label: "Les deux équipes marquent",
+    headline: "Statistique pure. Pas de biais.",
+    body: "Les deux équipes marquent. Canal stable sur les ligues à forte densité offensive, indépendant du résultat final.",
+    metric: "64.0%",
+    bets: 100,
+    criteria: [
+      "Densité offensive élevée",
+      "Historique BTTS > 55%",
+      "Cote validée",
+    ],
+    colorCls: "text-amber-600 dark:text-amber-400",
+    bgCls: "bg-amber-500/[0.07] border-amber-500/20",
+    tagCls:
+      "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    dotCls: "bg-amber-600 dark:bg-amber-400",
+    glowCls: "bg-amber-500/10",
   },
 ];
 
 const STEPS = [
   {
     n: "01",
-    title: "Le moteur identifie les positions à valeur",
-    body: "Pour chaque match analysé, le système calcule l'avantage réel sur la cote proposée. Seules les positions avec un edge positif remontent.",
+    title: "Identification de la valeur",
+    body: "Pour chaque match analysé, le moteur calcule l'avantage réel sur la cote. Seules les positions à edge positif remontent.",
   },
   {
     n: "02",
-    title: "Le canal alloue une mise unitaire",
-    body: "SAFE, CONF ou BB — chaque canal attribue automatiquement une mise calibrée. Pas de décision subjective sur le montant.",
+    title: "Allocation de la mise",
+    body: "Le canal attribue automatiquement une mise calibrée. Pas de décision subjective, pas de sur-exposition.",
   },
   {
     n: "03",
-    title: "Votre portefeuille se construit dans le temps",
-    body: "Les résultats s'accumulent position par position. Vous suivez le ROI par canal, par période, avec un historique complet.",
+    title: "Construction du portefeuille",
+    body: "Les résultats s'accumulent. Vous suivez le ROI par canal, par période, avec un historique complet et auditable.",
   },
 ];
 
+/* ─── Dashboard preview (hero) ──────────────────────────────── */
+
+function HeroPreview() {
+  const channels = [
+    {
+      tag: "SV",
+      metric: "74.3%",
+      bets: 191,
+      color: "text-success",
+      bg: "bg-success/10 border-success/20",
+    },
+    {
+      tag: "CONF",
+      metric: "60.7%",
+      bets: 122,
+      color: "text-canal-sv",
+      bg: "bg-canal-sv/10 border-canal-sv/20",
+    },
+    {
+      tag: "BB",
+      metric: "64.0%",
+      bets: 100,
+      color: "text-canal-ev",
+      bg: "bg-canal-ev/10 border-canal-ev/20",
+    },
+  ];
+
+  return (
+    <div className="relative w-full max-w-sm">
+      {/* Glow */}
+      <div className="pointer-events-none absolute -inset-6 rounded-3xl bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(15,118,110,0.18),transparent_70%)]" />
+
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-panel shadow-[0_32px_80px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+        {/* Header */}
+        <div className="border-b border-border px-5 py-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[0.58rem] font-bold uppercase tracking-[0.28em] text-accent">
+                Portefeuille · 30 jours
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                +18.6%
+              </p>
+              <p className="text-xs text-muted-foreground">ROI global simulé</p>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-2.5 py-1 text-[0.65rem] font-semibold text-success">
+              <span className="size-1.5 animate-pulse rounded-full bg-success" />
+              Actif
+            </div>
+          </div>
+        </div>
+
+        {/* Channels */}
+        <div className="flex flex-col gap-2 p-4">
+          {channels.map((c) => (
+            <div
+              key={c.tag}
+              className={`flex items-center justify-between rounded-xl border px-3 py-2.5 ${c.bg}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`text-[0.6rem] font-black uppercase tracking-wider ${c.color}`}
+                >
+                  {c.tag}
+                </span>
+                <span className="text-[0.72rem] text-muted-foreground">
+                  {c.bets} paris
+                </span>
+              </div>
+              <span className={`text-sm font-bold tabular-nums ${c.color}`}>
+                {c.metric}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Win bar */}
+        <div className="px-4 pb-4">
+          <div className="mb-1.5 flex justify-between text-[0.65rem] text-muted-foreground">
+            <span>280 gagnés</span>
+            <span className="text-danger/70">133 perdus</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-success transition-all"
+              style={{ width: "67.8%" }}
+            />
+          </div>
+          <p className="mt-2 text-right text-[0.65rem] text-muted-foreground/60">
+            67.8% réussite · 413 paris réglés
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Page ──────────────────────────────────────────────────── */
+
 export default function LandingPage() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Pre-mount: assume dark (matches ThemeProvider defaultTheme="dark")
+  const isDark = !mounted || resolvedTheme === "dark";
+
   const now = new Date();
   const wc2026Active = isWC2026Active(now);
   const wc2026Countdown = isWC2026Countdown(now);
@@ -109,327 +210,346 @@ export default function LandingPage() {
   const daysLeft = wc2026Countdown ? daysUntilWC2026(now) : 0;
 
   return (
-    <main
-      className="min-h-dvh overflow-x-hidden"
-      style={{ background: "#0b1523", color: "#f1f5f9" }}
-    >
-      {/* ── Nav ── */}
-      <nav
-        className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4 sm:px-10"
-        style={{
-          background: "rgba(11,21,35,0.8)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <span
-          className="text-sm font-bold uppercase tracking-widest"
-          style={{ color: "#0f766e", letterSpacing: "0.2em" }}
-        >
-          EVCore
-        </span>
-        <Link
-          href="/auth/login"
-          className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-85"
-          style={{ background: "#0f766e", color: "#fff" }}
-        >
-          Accéder <ChevronRight size={14} />
-        </Link>
-      </nav>
+    <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
+      {/* ── Fixed header (strip + nav stacked) ── */}
+      <header className="fixed left-0 right-0 top-0 z-40 bg-background">
+        {showWC2026 && (
+          <div className="flex items-center justify-center gap-3 border-b border-warning/15 bg-warning/[0.06] px-4 py-2 text-xs font-semibold text-warning">
+            <span>🏆</span>
+            <span>Coupe du Monde 2026</span>
+            <span className="opacity-40">·</span>
+            <span className="font-normal text-warning/70">
+              {wc2026Countdown
+                ? `J-${daysLeft} avant le tournoi`
+                : "Tournoi en cours"}
+            </span>
+            <Link
+              href="/dashboard/wc2026"
+              className="ml-1 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100"
+            >
+              Voir l&apos;espace dédié <ChevronRight size={11} />
+            </Link>
+          </div>
+        )}
+        <nav className="flex items-center justify-between border-b border-border bg-background/85 px-6 py-4 backdrop-blur-md sm:px-10">
+          <span className="text-sm font-black uppercase tracking-[0.24em] text-accent">
+            EVCore
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              aria-label={isDark ? "Mode clair" : "Mode sombre"}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-panel text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+            <Link
+              href="/auth/login"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Connexion
+            </Link>
+            <Link
+              href="/auth/register"
+              className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-85"
+            >
+              Rejoindre <ChevronRight size={13} />
+            </Link>
+          </div>
+        </nav>
+      </header>
 
       {/* ── Hero ── */}
-      <section className="relative flex min-h-dvh flex-col items-center justify-center px-6 pb-20 pt-24 text-center sm:px-10">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15,118,110,0.18) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
+      <section
+        className={`relative flex min-h-dvh flex-col items-center justify-center px-6 pb-16 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:pb-0 ${showWC2026 ? "pt-36 lg:pt-32" : "pt-28 lg:pt-24"} mx-auto max-w-6xl`}
+      >
+        {/* Decorative */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_30%_40%,rgba(15,118,110,0.14)_0%,transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(rgba(100,116,139,0.07)_1px,transparent_1px)] [background-size:30px_30px]" />
 
-        <div className="relative mx-auto max-w-3xl">
-          {showWC2026 ? (
-            <div
-              className="mb-5 inline-flex max-w-2xl flex-wrap items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-xs font-semibold"
-              style={{
-                borderColor: "rgba(201,168,76,0.28)",
-                background: "rgba(201,168,76,0.08)",
-                color: "#f3d37a",
-              }}
-            >
-              <span>🏆 Coupe du monde 2026</span>
-              <span style={{ opacity: 0.45 }}>•</span>
-              <span>
-                {wc2026Countdown
-                  ? `J-${daysLeft} avant le tournoi`
-                  : "Tournoi en cours sur EVCore"}
-              </span>
-              <Link
-                href="/dashboard/wc2026"
-                className="underline underline-offset-2"
-              >
-                Voir l&apos;espace dédié
-              </Link>
-            </div>
-          ) : null}
-
-          <span
-            className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-widest"
-            style={{
-              borderColor: "rgba(15,118,110,0.4)",
-              color: "#2dd4bf",
-              background: "rgba(15,118,110,0.1)",
-            }}
-          >
+        {/* Left: copy */}
+        <div className="relative z-10 w-full max-w-xl text-center lg:text-left">
+          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/8 px-3.5 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-accent">
             Stratégie d&apos;investissement sportif
           </span>
 
-          <h1
-            className="text-4xl font-bold leading-tight tracking-tight sm:text-6xl"
-            style={{
-              color: "#f8fafc",
-              textShadow: "0 2px 40px rgba(15,118,110,0.15)",
-            }}
-          >
+          <h1 className="text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-[4.2rem]">
             Arrêtez de parier.
             <br />
-            <span style={{ color: "#2dd4bf" }}>Commencez à investir.</span>
+            <span className="text-accent">Commencez à investir.</span>
           </h1>
 
-          <p
-            className="mx-auto mt-6 max-w-xl text-base leading-relaxed sm:text-lg"
-            style={{ color: "#94a3b8" }}
-          >
-            Investissez un montant fixe sur chaque sélection du système. Pas
-            d&apos;impulsion, pas d&apos;improvisation — une stratégie répétée
+          <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-muted-foreground lg:mx-0 lg:text-[1.05rem]">
+            EVCore applique une mise unitaire fixe sur chaque sélection à valeur
+            positive. Pas d&apos;improvisation — une méthode reproductible,
             match après match.
           </p>
 
-          {showWC2026 ? (
-            <div
-              className="mx-auto mt-8 grid max-w-2xl gap-3 text-left sm:grid-cols-3"
-              style={{ color: "#dbe5f1" }}
-            >
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: "rgba(201,168,76,0.08)",
-                  border: "1px solid rgba(201,168,76,0.18)",
-                }}
-              >
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#f3d37a]">
-                  Focus
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                  Un espace dédié pour suivre les groupes, les picks et les
-                  coupons IA liés à la compétition.
-                </p>
-              </div>
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#2dd4bf]">
-                  Lecture
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                  Le tournoi se vit comme un cycle court: moins d&apos;émotion,
-                  plus de discipline sur chaque sélection.
-                </p>
-              </div>
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#2dd4bf]">
-                  Navigation
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                  L&apos;expérience WC2026 est aussi disponible dans le
-                  dashboard pour préparer et suivre les matchs jour après jour.
-                </p>
-              </div>
-            </div>
-          ) : null}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
+            {[
+              "67.8% de réussite (SV+CONF+BB)",
+              "5 578 picks · 105 saisons",
+              "Accès sur invitation",
+            ].map((s) => (
+              <span key={s} className="flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="text-accent/60" />
+                {s}
+              </span>
+            ))}
+          </div>
 
-          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
             <Link
               href="/auth/register"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold transition-opacity hover:opacity-90 sm:w-auto"
-              style={{ background: "#0f766e", color: "#fff" }}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-7 py-3.5 text-sm font-bold text-accent-foreground shadow-[0_8px_32px_rgba(15,118,110,0.35)] transition-all hover:opacity-90 hover:shadow-[0_12px_40px_rgba(15,118,110,0.4)] sm:w-auto"
             >
-              Rejoindre <ArrowRight size={15} />
+              Rejoindre la stratégie <ArrowRight size={15} />
             </Link>
             <Link
               href="/auth/login"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border px-7 py-3.5 text-sm font-semibold transition-colors hover:border-white/30 sm:w-auto"
-              style={{
-                borderColor: "rgba(255,255,255,0.12)",
-                color: "#cbd5e1",
-              }}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border px-7 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:w-auto"
             >
               Se connecter
             </Link>
           </div>
         </div>
-      </section>
 
-      {/* ── Stats ── */}
-      <section
-        className="px-6 py-16 sm:px-10"
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.02)",
-        }}
-      >
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-6 sm:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label} className="flex flex-col gap-1 text-center">
-              <span
-                className="text-3xl font-bold tabular-nums tracking-tight sm:text-4xl"
-                style={{ color: "#2dd4bf" }}
-              >
-                {s.value}
-              </span>
-              <span
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "#94a3b8" }}
-              >
-                {s.label}
-              </span>
-              <span className="text-[0.7rem]" style={{ color: "#475569" }}>
-                {s.sub}
-              </span>
-            </div>
-          ))}
+        {/* Right: dashboard preview */}
+        <div className="relative z-10 mt-14 flex w-full justify-center lg:mt-0 lg:w-auto lg:justify-end">
+          <HeroPreview />
         </div>
       </section>
 
       {/* ── Channels ── */}
-      <section className="px-6 py-20 sm:px-10">
-        <div className="mx-auto max-w-4xl">
-          <p
-            className="text-center text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
-            style={{ color: "#0f766e" }}
-          >
-            Canaux d&apos;investissement
-          </p>
-          <h2
-            className="mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: "#f1f5f9" }}
-          >
-            Trois segments. Trois edges prouvés.
-          </h2>
-          <p
-            className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed"
-            style={{ color: "#64748b" }}
-          >
-            Chaque canal opère selon ses propres critères et son propre bilan.
-            Vous investissez sur les canaux en performance, pas sur tous à la
-            fois.
-          </p>
+      <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14 text-center">
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
+              Canaux d&apos;investissement
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Trois segments. Trois edges.
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              Chaque canal opère selon ses propres critères. Vous investissez
+              sur les canaux en performance — pas sur tous à la fois.
+            </p>
+          </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             {CHANNELS.map((c) => (
               <div
                 key={c.tag}
-                className="flex flex-col gap-3 rounded-2xl p-5"
-                style={{ background: c.bg, border: `1px solid ${c.border}` }}
+                className={`relative flex flex-col gap-5 overflow-hidden rounded-2xl border p-6 ${c.bgCls}`}
               >
-                <span
-                  className="w-fit rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: c.border, color: c.color }}
-                >
-                  {c.tag}
-                </span>
-                <h3
-                  className="text-sm font-semibold"
-                  style={{ color: "#f1f5f9" }}
-                >
-                  {c.title}
-                </h3>
-                <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: "#64748b" }}
-                >
-                  {c.body}
-                </p>
+                {/* Subtle glow top-right */}
+                <div
+                  className={`pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-3xl ${c.glowCls}`}
+                />
+
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`rounded-lg border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest ${c.tagCls}`}
+                  >
+                    {c.tag}
+                  </span>
+                  <span
+                    className={`flex items-center gap-1 text-[0.65rem] font-semibold ${c.colorCls}`}
+                  >
+                    <span className={`size-1.5 rounded-full ${c.dotCls}`} />
+                    Actif
+                  </span>
+                </div>
+
+                <div>
+                  <p
+                    className={`text-2xl font-black tabular-nums ${c.colorCls}`}
+                  >
+                    {c.metric}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {c.bets} paris · réussite
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[0.82rem] font-semibold text-foreground">
+                    {c.headline}
+                  </p>
+                  <p className="mt-1.5 text-[0.8rem] leading-6 text-muted-foreground">
+                    {c.body}
+                  </p>
+                </div>
+
+                <ul className="mt-auto flex flex-col gap-1.5">
+                  {c.criteria.map((cr) => (
+                    <li
+                      key={cr}
+                      className="flex items-center gap-2 text-[0.75rem] text-muted-foreground"
+                    >
+                      <CheckCircle2 size={11} className={c.colorCls} />
+                      {cr}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section
-        className="px-6 py-20 sm:px-10"
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.015)",
-        }}
-      >
-        <div className="mx-auto max-w-4xl">
-          <p
-            className="text-center text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
-            style={{ color: "#0f766e" }}
-          >
-            Comment ça fonctionne
-          </p>
-          <h2
-            className="mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: "#f1f5f9" }}
-          >
-            Une position. Une mise. Un suivi.
-          </h2>
+      {/* ── Features bento ── */}
+      <section className="px-6 py-24 sm:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14 text-center">
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
+              Fonctionnalités
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Conçu pour l&apos;investisseur.
+            </h2>
+          </div>
 
-          <div className="mt-12 flex flex-col gap-8 sm:gap-0">
-            {STEPS.map((step, i) => (
-              <div key={step.n} className="relative flex gap-6 sm:gap-10">
-                {i < STEPS.length - 1 && (
+          {/* Bento grid — 12 cols */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-12 lg:gap-4">
+            {/* Large cell — col 1-7 */}
+            <div className="col-span-2 flex flex-col justify-between rounded-2xl border border-accent/20 bg-accent/[0.07] p-6 lg:col-span-7 lg:p-8">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-accent">
+                <Layers size={18} />
+              </div>
+              <div className="mt-8 lg:mt-12">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-accent/70">
+                  Discipline
+                </p>
+                <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
+                  Une mise. Répétée.
+                </h3>
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  Pas de jackpot, pas d&apos;improvisation. Chaque position
+                  reçoit une mise unitaire fixe. La régularité est la stratégie
+                  — pas l&apos;exception.
+                </p>
+              </div>
+              {/* Visual bar */}
+              <div className="mt-6 grid grid-cols-5 gap-1.5">
+                {[80, 80, 80, 80, 80].map((_, i) => (
                   <div
-                    className="absolute left-7 top-14 hidden h-full w-px sm:block"
-                    style={{
-                      background:
-                        "linear-gradient(to bottom, rgba(15,118,110,0.4), transparent)",
-                    }}
+                    key={i}
+                    className="h-1.5 rounded-full bg-accent/30"
+                    style={{ opacity: 0.4 + i * 0.12 }}
                   />
+                ))}
+              </div>
+            </div>
+
+            {/* Small cell — col 8-12 */}
+            <div className="col-span-2 flex flex-col justify-between rounded-2xl border border-border bg-panel p-6 sm:col-span-1 lg:col-span-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <Shield size={18} />
+              </div>
+              <div className="mt-6">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
+                  Risque
+                </p>
+                <h3 className="mt-2 text-lg font-bold text-foreground">
+                  Drawdown contrôlé
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Quand un canal sous-performe, le système ralentit
+                  automatiquement. La protection du capital prime toujours.
+                </p>
+              </div>
+            </div>
+
+            {/* Small cell — col 1-5 */}
+            <div className="col-span-2 flex flex-col justify-between rounded-2xl border border-border bg-panel p-6 sm:col-span-1 lg:col-span-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <Clock size={18} />
+              </div>
+              <div className="mt-6">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
+                  Transparence
+                </p>
+                <h3 className="mt-2 text-lg font-bold text-foreground">
+                  Décisions lisibles
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Vous comprenez pourquoi chaque position a été prise ou
+                  refusée. Pas de boîte noire.
+                </p>
+              </div>
+            </div>
+
+            {/* Large cell — col 6-12 */}
+            <div className="col-span-2 flex flex-col justify-between rounded-2xl border border-border bg-panel p-6 lg:col-span-7 lg:p-8">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <TrendingUp size={18} />
+              </div>
+              <div className="mt-8 lg:mt-10">
+                <p className="text-[0.6rem] font-bold uppercase tracking-widest text-muted-foreground/50">
+                  Philosophie
+                </p>
+                <h3 className="mt-2 text-xl font-bold text-foreground lg:text-2xl">
+                  Investir, pas parier.
+                </h3>
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  EVCore traite chaque position comme une décision
+                  d&apos;allocation de capital — avec une logique reproductible,
+                  des critères fixes, et un suivi complet.
+                </p>
+              </div>
+              {/* Stats row */}
+              <div className="mt-6 grid grid-cols-3 gap-3 border-t border-border pt-5">
+                {[
+                  { v: "59.2%", l: "Réussite" },
+                  { v: "+2.28%", l: "ROI simulé" },
+                  { v: "760", l: "Positions" },
+                ].map((s) => (
+                  <div key={s.l}>
+                    <p className="text-lg font-black tabular-nums text-foreground">
+                      {s.v}
+                    </p>
+                    <p className="text-[0.65rem] text-muted-foreground/60">
+                      {s.l}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="border-t border-border bg-panel/50 px-6 py-24 sm:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14 text-center">
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
+              Comment ça fonctionne
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Une position. Une mise. Un suivi.
+            </h2>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.n}
+                className="relative flex flex-col gap-4 rounded-2xl border border-border bg-panel p-6"
+              >
+                {/* Connector line */}
+                {i < STEPS.length - 1 && (
+                  <div className="absolute -right-2 top-1/2 hidden h-px w-4 -translate-y-1/2 bg-gradient-to-r from-border/40 to-transparent sm:block" />
                 )}
-                <div
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold"
-                  style={{
-                    background: "rgba(15,118,110,0.12)",
-                    color: "#2dd4bf",
-                    border: "1px solid rgba(15,118,110,0.2)",
-                  }}
-                >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10 text-xl font-black text-accent">
                   {step.n}
                 </div>
-                <div className="pb-10">
-                  <h3
-                    className="text-base font-semibold sm:text-lg"
-                    style={{ color: "#f1f5f9" }}
-                  >
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
                     {step.title}
                   </h3>
-                  <p
-                    className="mt-2 text-sm leading-relaxed"
-                    style={{ color: "#64748b" }}
-                  >
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {step.body}
                   </p>
                 </div>
@@ -439,114 +559,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section className="px-6 py-20 sm:px-10">
-        <div className="mx-auto max-w-4xl">
-          <p
-            className="text-center text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
-            style={{ color: "#0f766e" }}
-          >
-            Fonctionnalités
-          </p>
-          <h2
-            className="mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: "#f1f5f9" }}
-          >
-            Conçu pour l&apos;investisseur, pas pour le parieur
-          </h2>
+      {/* ── CTA final ── */}
+      <section className="border-t border-border px-6 py-28 text-center sm:px-10">
+        <div className="relative mx-auto max-w-2xl">
+          <div className="pointer-events-none absolute -inset-12 -z-10 bg-[radial-gradient(ellipse_80%_70%_at_50%_50%,rgba(15,118,110,0.14),transparent_70%)]" />
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="rounded-2xl p-5"
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-xl"
-                    style={{
-                      background: "rgba(15,118,110,0.15)",
-                      color: "#2dd4bf",
-                    }}
-                  >
-                    <Icon size={16} />
-                  </div>
-                  <h3
-                    className="mt-3 text-sm font-semibold"
-                    style={{ color: "#f1f5f9" }}
-                  >
-                    {f.title}
-                  </h3>
-                  <p
-                    className="mt-1.5 text-sm leading-relaxed"
-                    style={{ color: "#64748b" }}
-                  >
-                    {f.body}
-                  </p>
-                </div>
-              );
-            })}
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-accent">
+            Prêt à investir ?
+          </p>
+          <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            Une mise. Un edge.
+            <br />
+            <span className="text-accent">C&apos;est ça, investir.</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
+            {showWC2026
+              ? "La Coupe du monde 2026 se prépare avec une lecture claire des matchs et des coupons IA. L'objectif reste le même : investir avec méthode."
+              : "Accès sur invitation. L'objectif n'est pas de multiplier les paris — c'est de construire un portefeuille avec méthode."}
+          </p>
+
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/auth/register"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-8 py-4 text-sm font-bold text-accent-foreground shadow-[0_8px_40px_rgba(15,118,110,0.3)] transition-all hover:opacity-90 hover:shadow-[0_12px_48px_rgba(15,118,110,0.4)] sm:w-auto"
+            >
+              Rejoindre la stratégie <ArrowRight size={15} />
+            </Link>
+            <Link
+              href="/auth/login"
+              className="flex w-full items-center justify-center rounded-2xl border border-border px-8 py-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:w-auto"
+            >
+              Déjà membre
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── CTA final ── */}
-      <section
-        className="px-6 py-24 text-center sm:px-10"
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.015)",
-        }}
-      >
-        <div className="relative mx-auto max-w-2xl">
-          <div
-            className="pointer-events-none absolute inset-0 -z-10"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(15,118,110,0.12), transparent 70%)",
-            }}
-          />
-          <h2
-            className="text-3xl font-bold tracking-tight sm:text-4xl"
-            style={{ color: "#f8fafc" }}
-          >
-            Une mise. Un edge. Une durée.
-            <br />
-            <span style={{ color: "#2dd4bf" }}>C&apos;est ça, investir.</span>
-          </h2>
-          <p
-            className="mx-auto mt-4 max-w-md text-sm leading-relaxed"
-            style={{ color: "#64748b" }}
-          >
-            {showWC2026
-              ? "La Coupe du monde 2026 se prépare avec une lecture claire des matchs, des groupes et des coupons IA. L'objectif reste le même : investir avec méthode."
-              : "Accès sur invitation. L'objectif n'est pas de multiplier les paris, mais de construire un portefeuille avec méthode."}
-          </p>
-          <Link
-            href="/auth/register"
-            className="mt-8 inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-opacity hover:opacity-90"
-            style={{ background: "#0f766e", color: "#fff" }}
-          >
-            Rejoindre la stratégie <ArrowRight size={15} />
-          </Link>
-        </div>
-      </section>
-
       {/* ── Footer ── */}
-      <footer
-        className="px-6 py-8 text-center text-xs sm:px-10"
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          color: "#334155",
-        }}
-      >
-        © {new Date().getFullYear()} EVCore — Investir sur la valeur, pas sur
-        l&apos;émotion
+      <footer className="border-t border-border px-6 py-8 sm:px-10">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <span className="text-xs font-black uppercase tracking-[0.22em] text-accent/60">
+            EVCore
+          </span>
+          <p className="text-xs text-muted-foreground/35">
+            © {new Date().getFullYear()} — Investir sur la valeur, pas sur
+            l&apos;émotion
+          </p>
+        </div>
       </footer>
     </main>
   );

@@ -2,6 +2,24 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BarChart3, ReceiptText, Wallet } from "lucide-react";
 
+const FEATURES = [
+  {
+    icon: ReceiptText,
+    title: "Coupons centralisés",
+    body: "Toutes vos sélections et leur statut au même endroit.",
+  },
+  {
+    icon: Wallet,
+    title: "Portefeuille lisible",
+    body: "Dépôts et mouvements suivis simplement.",
+  },
+  {
+    icon: BarChart3,
+    title: "Indicateurs clairs",
+    body: "Des chiffres utiles, sans jargon superflu.",
+  },
+];
+
 export function AuthShell({
   title,
   subtitle,
@@ -16,94 +34,82 @@ export function AuthShell({
   asideText: string;
 }) {
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-background px-4 py-6 sm:px-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_50%_-12%,hsl(var(--accent)/0.16)_0%,transparent_70%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(hsl(var(--foreground)/0.035)_1px,transparent_1px)] [background-size:28px_28px]" />
+    <main className="relative flex min-h-dvh items-start justify-center bg-background px-4 pb-16 pt-10 sm:px-6 sm:pt-16 lg:items-center lg:py-12">
+      {/* Decorative background */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_-10%,hsl(var(--accent)/0.14)_0%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(hsl(var(--foreground)/0.03)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-      <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong/90 shadow-[0_24px_80px_rgba(2,8,23,0.22)] backdrop-blur lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[minmax(0,1.1fr)_420px]">
-        <section className="hidden flex-col justify-between bg-[linear-gradient(180deg,hsl(var(--sidebar))_0%,hsl(var(--panel-strong))_100%)] px-8 py-10 text-sidebar-foreground lg:flex">
-          <div className="max-w-xl">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-accent">
-              EVCore
-            </p>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-sidebar-foreground">
-              {asideTitle}
-            </h1>
-            <p className="mt-3 max-w-lg text-sm leading-7 text-sidebar-foreground/75">
-              {asideText}
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-2">
-            <div className="flex items-start gap-3 rounded-2xl border border-sidebar-border/80 bg-sidebar-foreground/6 px-4 py-3">
-              <ReceiptText className="mt-0.5 size-4 shrink-0 text-accent" />
-              <div>
-                <p className="text-sm font-semibold text-sidebar-foreground">
-                  Coupons au même endroit
-                </p>
-                <p className="mt-0.5 text-sm leading-6 text-sidebar-foreground/70">
-                  Retrouvez rapidement vos sélections et leur statut.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-2xl border border-sidebar-border/80 bg-sidebar-foreground/6 px-4 py-3">
-              <Wallet className="mt-0.5 size-4 shrink-0 text-accent" />
-              <div>
-                <p className="text-sm font-semibold text-sidebar-foreground">
-                  Portefeuille clair
-                </p>
-                <p className="mt-0.5 text-sm leading-6 text-sidebar-foreground/70">
-                  Suivez vos dépôts et mouvements simplement.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-2xl border border-sidebar-border/80 bg-sidebar-foreground/6 px-4 py-3">
-              <BarChart3 className="mt-0.5 size-4 shrink-0 text-accent" />
-              <div>
-                <p className="text-sm font-semibold text-sidebar-foreground">
-                  Indicateurs lisibles
-                </p>
-                <p className="mt-0.5 text-sm leading-6 text-sidebar-foreground/70">
-                  Des chiffres utiles, sans jargon.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p className="mt-8 border-t border-sidebar-border pt-6 text-sm leading-7 text-sidebar-foreground/65">
-            Connectez-vous ou créez un compte en moins d&apos;une minute.
-          </p>
-        </section>
-
-        <section className="flex flex-col justify-center bg-[linear-gradient(180deg,hsl(var(--panel))_0%,hsl(var(--background))_100%)] px-5 py-8 sm:px-8">
-          <div className="mx-auto w-full max-w-sm">
-            <div className="lg:hidden">
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+      <div className="relative w-full max-w-[900px]">
+        {/* Card container — visible at md+ */}
+        <div className="md:grid md:min-h-[580px] md:grid-cols-2 md:overflow-hidden md:rounded-[1.6rem] md:border md:border-border md:bg-panel-strong md:shadow-[0_24px_72px_rgba(2,8,23,0.16)]">
+          {/* ── Aside (left) ── tablet+ */}
+          <section className="hidden flex-col justify-between bg-sidebar px-8 py-10 text-sidebar-foreground md:flex lg:px-10 lg:py-12">
+            <div>
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.34em] text-accent">
                 EVCore
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Accès à votre compte
+              <h1 className="mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground lg:text-[1.35rem]">
+                {asideTitle}
+              </h1>
+              <p className="mt-3 max-w-xs text-sm leading-7 text-sidebar-foreground/60">
+                {asideText}
               </p>
             </div>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-              {title}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {subtitle}
-            </p>
-            <div className="mt-8 rounded-[1.1rem] border border-border bg-panel px-4 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:px-5">
-              {children}
+
+            <div className="mt-10 grid gap-2.5">
+              {FEATURES.map(({ icon: Icon, title: featureTitle, body }) => (
+                <div
+                  key={featureTitle}
+                  className="flex items-start gap-3 rounded-xl border border-sidebar-border/40 bg-sidebar-foreground/[0.04] px-4 py-3"
+                >
+                  <Icon className="mt-0.5 size-[15px] shrink-0 text-accent" />
+                  <div>
+                    <p className="text-[0.8rem] font-semibold leading-snug text-sidebar-foreground">
+                      {featureTitle}
+                    </p>
+                    <p className="mt-0.5 text-[0.75rem] leading-5 text-sidebar-foreground/55">
+                      {body}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="mt-6 text-center text-xs text-muted-foreground/60">
-              <Link
-                href="/"
-                className="hover:text-muted-foreground transition-colors"
-              >
-                ← Retour à l&apos;accueil
-              </Link>
+
+            <p className="mt-8 border-t border-sidebar-border/30 pt-5 text-[0.7rem] leading-relaxed text-sidebar-foreground/35">
+              Accès sécurisé · Données chiffrées
             </p>
-          </div>
-        </section>
+          </section>
+
+          {/* ── Form area (right) ── */}
+          <section className="flex flex-col justify-center md:px-8 md:py-10 lg:px-10">
+            <div className="mx-auto w-full max-w-sm">
+              {/* Mobile-only branding */}
+              <div className="mb-7 md:hidden">
+                <p className="text-[0.6rem] font-bold uppercase tracking-[0.32em] text-muted-foreground/60">
+                  EVCore
+                </p>
+              </div>
+
+              <h2 className="text-[1.45rem] font-semibold tracking-tight text-foreground">
+                {title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {subtitle}
+              </p>
+
+              <div className="mt-8">{children}</div>
+
+              <p className="mt-10 text-center text-xs text-muted-foreground/40">
+                <Link
+                  href="/"
+                  className="transition-colors hover:text-muted-foreground/70"
+                >
+                  ← Retour à l&apos;accueil
+                </Link>
+              </p>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
