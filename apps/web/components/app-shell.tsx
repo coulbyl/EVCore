@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   CalendarDays,
   ClipboardCheck,
@@ -33,6 +34,7 @@ import { UserAvatar } from "./user-avatar";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
+import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Admin",
@@ -56,6 +58,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAdmin = currentUser.role === "ADMIN";
   const { data: leaderboard } = useLeaderboard();
   const { data: badges } = useMyBadges();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   const myLeaderboardEntry = useMemo(
     () =>
@@ -164,8 +168,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               icon: BookOpen,
             }
           : null,
+        {
+          label: tNav("notifications"),
+          href: "/dashboard/notifications",
+          active: pathname.startsWith("/dashboard/notifications"),
+          icon: Bell,
+          badge: unreadCount,
+        },
       ].filter((item): item is NonNullable<typeof item> => item !== null),
-    [isAdmin, pathname, tNav],
+    [isAdmin, pathname, tNav, unreadCount],
+  );
+
+  const pageTitle = useMemo(
+    () => navItems.find((item) => item.active)?.label,
+    [navItems],
   );
 
   const MOBILE_NAV_ORDER = [
@@ -185,6 +201,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <PageShell
       navItems={navItems}
       mobileNavItems={mobileNavItems}
+      pageTitle={pageTitle}
       logoBadge={
         wc2026Active ? (
           <span className="absolute -bottom-1 -right-1 animate-pulse text-[10px]">
@@ -216,8 +233,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {currentUser.fullName}
                 </p>
                 <Badge
-                  variant="outline"
-                  className="shrink-0 border-sidebar-border bg-sidebar/40 text-[0.62rem] text-sidebar-foreground"
+                  variant="neutral"
+                  className="shrink-0 text-[0.62rem] text-sidebar-foreground/80"
                 >
                   {ROLE_LABEL[currentUser.role] ?? currentUser.role}
                 </Badge>
@@ -229,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/dashboard/params/account"
               title="Paramètres du compte"
-              className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar/50 hover:text-sidebar-foreground"
+              className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <Settings size={15} />
             </Link>

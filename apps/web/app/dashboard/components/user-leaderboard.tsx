@@ -1,6 +1,6 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import { AlertCircle, Flame } from "lucide-react";
 import type { LeaderboardEntry } from "@/domains/dashboard/types/dashboard";
 
 type PodiumStyle = {
@@ -85,10 +85,29 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   );
 }
 
-export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
+function SkeletonRow({ wide }: { wide?: boolean }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5">
+      <div className="bento-skeleton h-4 w-5 rounded-md" />
+      <div
+        className={`bento-skeleton h-3 rounded-md ${wide ? "flex-1" : "w-28"}`}
+      />
+      <div className="ml-auto bento-skeleton h-4 w-12 rounded-md" />
+    </div>
+  );
+}
+
+export function UserLeaderboard({
+  entries,
+  isLoading,
+  isError,
+}: {
+  entries: LeaderboardEntry[];
+  isLoading?: boolean;
+  isError?: boolean;
+}) {
   return (
     <div className="flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
-      {/* Header */}
       <div className="mb-3 flex items-center gap-2">
         <Flame size={14} className="shrink-0 text-accent" />
         <h2 className="text-sm font-bold tracking-tight text-foreground">
@@ -99,17 +118,35 @@ export function UserLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
         </span>
       </div>
 
-      {/* List */}
-      {entries.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          Pas encore assez de données.
-        </p>
+      {isLoading ? (
+        <div className="flex flex-col gap-1.5 py-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonRow key={i} wide={i > 2} />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-6 text-center">
+          <AlertCircle size={28} className="text-danger opacity-60" />
+          <p className="text-sm font-semibold text-foreground">
+            Impossible de charger le classement
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Vérifiez votre connexion et réessayez.
+          </p>
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <Flame size={32} className="text-muted-foreground opacity-30" />
+          <p className="text-sm text-muted-foreground">
+            Pas encore assez de données.
+          </p>
+        </div>
       ) : (
         <div
           className="max-h-65 overflow-y-auto"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#cbd5e1 transparent",
+            scrollbarColor: "var(--border) transparent",
           }}
         >
           <div className="flex flex-col gap-1.5">

@@ -52,7 +52,10 @@ export function ForgotPasswordForm() {
         </div>
         <p className="text-sm text-muted-foreground">
           Pas d&apos;email ?{" "}
-          <Link href="/auth/forgot-password/totp" className="text-accent hover:underline">
+          <Link
+            href="/auth/forgot-password/totp"
+            className="text-accent hover:underline"
+          >
             Utiliser mon application d&apos;authentification
           </Link>
         </p>
@@ -70,7 +73,10 @@ export function ForgotPasswordForm() {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <FormField
           control={form.control}
           name="identifier"
@@ -90,7 +96,10 @@ export function ForgotPasswordForm() {
         </Button>
 
         <div className="flex flex-col gap-3 text-sm">
-          <Link href="/auth/forgot-password/totp" className="text-accent hover:underline">
+          <Link
+            href="/auth/forgot-password/totp"
+            className="text-accent hover:underline"
+          >
             Utiliser mon application d&apos;authentification →
           </Link>
           <div className="border-t border-border pt-3">

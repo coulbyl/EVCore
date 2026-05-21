@@ -21,7 +21,9 @@ import { resetPasswordWithTotp } from "@/domains/auth/use-cases/password-reset";
 
 const schema = z
   .object({
-    identifier: z.string().min(3, "Renseignez votre email ou nom d'utilisateur."),
+    identifier: z
+      .string()
+      .min(3, "Renseignez votre email ou nom d'utilisateur."),
     newPassword: z
       .string()
       .min(8, "8 caractères minimum.")
@@ -59,11 +61,17 @@ export function ForgotPasswordTotpForm() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await resetPasswordWithTotp(values.identifier, values.totpCode, values.newPassword);
+      await resetPasswordWithTotp(
+        values.identifier,
+        values.totpCode,
+        values.newPassword,
+      );
       router.push("/auth/login?reset=totp");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Code invalide ou identifiant introuvable.",
+        err instanceof Error
+          ? err.message
+          : "Code invalide ou identifiant introuvable.",
       );
     } finally {
       setIsSubmitting(false);
@@ -72,7 +80,10 @@ export function ForgotPasswordTotpForm() {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {error ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
@@ -118,7 +129,11 @@ export function ForgotPasswordTotpForm() {
             <FormItem>
               <FormLabel>Confirmer le mot de passe</FormLabel>
               <FormControl>
-                <PasswordInput autoComplete="new-password" className="h-11" {...field} />
+                <PasswordInput
+                  autoComplete="new-password"
+                  className="h-11"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

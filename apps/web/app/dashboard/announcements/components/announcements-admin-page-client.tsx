@@ -148,22 +148,44 @@ export function AnnouncementsAdminPageClient() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <div className="flex shrink-0 items-center justify-between">
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-          Annonces
-        </p>
-        <Button type="button" className="rounded-xl" onClick={openCreate}>
+      <div className="flex shrink-0 items-center justify-between gap-3">
+        <div>
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            Administration
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+            Annonces
+          </h1>
+          {(announcementsQuery.data?.length ?? 0) > 0 ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {announcementsQuery.data?.length} annonce
+              {(announcementsQuery.data?.length ?? 0) > 1 ? "s" : ""} ·{" "}
+              {announcementsQuery.data?.filter((a) => a.published).length}{" "}
+              publiée
+              {(announcementsQuery.data?.filter((a) => a.published).length ??
+                0) > 1
+                ? "s"
+                : ""}
+            </p>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          className="shrink-0 rounded-2xl"
+          onClick={openCreate}
+        >
           <Plus data-icon="inline-start" />
-          Nouvelle annonce
+          <span className="hidden sm:inline">Nouvelle annonce</span>
+          <span className="sm:hidden">Nouvelle</span>
         </Button>
       </div>
 
       <section className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="flex shrink-0 items-center gap-2">
-          <Megaphone size={16} className="text-accent" />
-          <h2 className="text-sm font-semibold tracking-tight text-foreground">
-            Annonces existantes
-          </h2>
+        <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+          <Megaphone size={14} className="text-accent" />
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em]">
+            Existantes
+          </p>
         </div>
 
         {announcementsQuery.isLoading ? (

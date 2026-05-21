@@ -26,6 +26,7 @@ export type NavItem = {
   href: string;
   active?: boolean;
   icon?: LucideIcon;
+  badge?: number;
 };
 
 export function PageShell({
@@ -34,6 +35,7 @@ export function PageShell({
   actions,
   sidebarFooter,
   logoBadge,
+  pageTitle,
   children,
 }: {
   navItems: NavItem[];
@@ -41,13 +43,14 @@ export function PageShell({
   actions?: ReactNode;
   sidebarFooter?: ReactNode;
   logoBadge?: ReactNode;
+  pageTitle?: string;
   children: ReactNode;
 }) {
   const bottomNavItems = mobileNavItems ?? navItems;
 
   return (
     <SidebarProvider
-      className="h-dvh overflow-hidden bg-background text-foreground"
+      className="overflow-hidden bg-background text-foreground"
       style={
         {
           "--sidebar-width": "18.5rem",
@@ -96,9 +99,17 @@ export function PageShell({
                     >
                       <Link href={item.href}>
                         {item.icon && (
-                          <item.icon size={16} className="shrink-0 text-accent" />
+                          <item.icon
+                            size={16}
+                            className="shrink-0 text-accent"
+                          />
                         )}
-                        <span>{item.label}</span>
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge != null && item.badge > 0 && (
+                          <span className="ml-auto inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold tabular-nums text-destructive-foreground">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -121,19 +132,25 @@ export function PageShell({
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground" />
-              <Link
-                href="/dashboard"
-                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
-              >
-                <div className="relative shrink-0">
-                  <img
-                    src="/icons/icon.svg"
-                    alt="EVCore"
-                    className="size-7 rounded-lg"
-                  />
-                  {logoBadge}
-                </div>
-              </Link>
+              {pageTitle ? (
+                <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground lg:hidden">
+                  {pageTitle}
+                </span>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
+                >
+                  <div className="relative shrink-0">
+                    <img
+                      src="/icons/icon.svg"
+                      alt="EVCore"
+                      className="size-7 rounded-lg"
+                    />
+                    {logoBadge}
+                  </div>
+                </Link>
+              )}
             </div>
             {actions ? (
               <div className="flex items-center gap-2">{actions}</div>
@@ -161,22 +178,29 @@ export function PageShell({
                 href={item.href}
                 aria-current={item.active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
+                  "relative flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
                   item.active
                     ? "border border-border bg-secondary text-foreground"
                     : "border border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
-                {item.icon ? (
-                  <item.icon size={18} className="text-accent" />
-                ) : (
-                  <span
-                    className={cn(
-                      "h-1.5 w-6 rounded-full",
-                      item.active ? "bg-accent" : "bg-border",
-                    )}
-                  />
-                )}
+                <span className="relative">
+                  {item.icon ? (
+                    <item.icon size={18} className="text-accent" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "h-1.5 w-6 rounded-full",
+                        item.active ? "bg-accent" : "bg-border",
+                      )}
+                    />
+                  )}
+                  {item.badge != null && item.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.55rem] font-bold tabular-nums text-destructive-foreground">
+                      {item.badge > 9 ? "9+" : item.badge}
+                    </span>
+                  )}
+                </span>
                 <span className="max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap">
                   {item.mobileLabel ?? item.label}
                 </span>

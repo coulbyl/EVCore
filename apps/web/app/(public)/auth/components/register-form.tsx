@@ -54,7 +54,13 @@ export function RegisterForm() {
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { email: "", username: "", fullName: "", password: "", bio: "" },
+    defaultValues: {
+      email: "",
+      username: "",
+      fullName: "",
+      password: "",
+      bio: "",
+    },
     mode: "onTouched",
   });
 
@@ -72,7 +78,9 @@ export function RegisterForm() {
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible de créer le compte.");
+      setError(
+        err instanceof Error ? err.message : "Impossible de créer le compte.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +88,10 @@ export function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {error ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
@@ -96,7 +107,12 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" autoComplete="email" className="h-11" {...field} />
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    className="h-11"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

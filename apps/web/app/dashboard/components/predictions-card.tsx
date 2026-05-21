@@ -74,15 +74,16 @@ export function PredictionsCard() {
 
       {/* List */}
       {predictions.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          {t("empty")}
-        </p>
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <Target size={32} className="text-muted-foreground opacity-30" />
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        </div>
       ) : (
         <div
           className="max-h-64 overflow-y-auto"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#cbd5e1 transparent",
+            scrollbarColor: "var(--border) transparent",
           }}
         >
           <div className="flex flex-col gap-0.5">

@@ -15,7 +15,10 @@ import {
   FormMessage,
   Input,
 } from "@evcore/ui";
-import { sendVerificationEmail, verifyEmail } from "@/domains/auth/use-cases/verify-email";
+import {
+  sendVerificationEmail,
+  verifyEmail,
+} from "@/domains/auth/use-cases/verify-email";
 
 const schema = z.object({
   code: z
@@ -83,7 +86,10 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {error ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
@@ -91,7 +97,9 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
         ) : null}
 
         {sending ? (
-          <p className="text-sm text-muted-foreground">Envoi du code en cours…</p>
+          <p className="text-sm text-muted-foreground">
+            Envoi du code en cours…
+          </p>
         ) : sent ? (
           <p className="rounded-xl border border-border bg-panel px-4 py-3 text-sm text-muted-foreground">
             Un code à 6 chiffres a été envoyé à votre adresse email. Vérifiez
@@ -119,7 +127,11 @@ export function EmailVerifyFlow({ onBack }: { onBack: () => void }) {
           )}
         />
 
-        <Button type="submit" className="h-11 w-full" disabled={isSubmitting || !sent}>
+        <Button
+          type="submit"
+          className="h-11 w-full"
+          disabled={isSubmitting || !sent}
+        >
           {isSubmitting ? "Vérification…" : "Confirmer"}
         </Button>
 

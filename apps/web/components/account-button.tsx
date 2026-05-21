@@ -82,25 +82,37 @@ export function AccountButton({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/8 focus:text-foreground">
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
             <Link href="/dashboard/bankroll">
               <Wallet className="text-accent" />
               {tNav("bankroll")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/8 focus:text-foreground">
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
             <Link href="/dashboard/formation">
               <GraduationCap className="text-accent" />
               {tNav("formation")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/8 focus:text-foreground">
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
             <Link href="/dashboard/performance">
               <Sprout className="text-accent" />
               {tNav("performance")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/8 focus:text-foreground">
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
             <Link href="/dashboard/params/account">
               <Settings className="text-accent" />
               {tNav("settings")}

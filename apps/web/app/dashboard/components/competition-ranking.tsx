@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { AlertCircle, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { CompetitionStat } from "@/domains/dashboard/types/dashboard";
 
@@ -80,8 +80,28 @@ function CompetitionRow({
   );
 }
 
-export function CompetitionRanking({ stats }: { stats: CompetitionStat[] }) {
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5">
+      <div className="bento-skeleton h-3 w-5 rounded-md" />
+      <div className="bento-skeleton h-4 w-10 rounded-md" />
+      <div className="bento-skeleton h-3 flex-1 rounded-md" />
+      <div className="bento-skeleton h-3 w-8 rounded-md" />
+    </div>
+  );
+}
+
+export function CompetitionRanking({
+  stats,
+  isLoading,
+  isError,
+}: {
+  stats: CompetitionStat[];
+  isLoading?: boolean;
+  isError?: boolean;
+}) {
   const t = useTranslations("dashboard.leagueRanking");
+
   return (
     <div className="flex flex-col rounded-[1.35rem] border border-border bg-panel-strong p-4 sm:p-5 ev-shell-shadow">
       <div className="mb-3 flex items-center gap-2">
@@ -94,16 +114,33 @@ export function CompetitionRanking({ stats }: { stats: CompetitionStat[] }) {
         </span>
       </div>
 
-      {stats.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          {t("empty")}
-        </p>
+      {isLoading ? (
+        <div className="flex flex-col gap-1.5 py-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonRow key={i} />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-6 text-center">
+          <AlertCircle size={28} className="text-danger opacity-60" />
+          <p className="text-sm font-semibold text-foreground">
+            Impossible de charger les classements
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Vérifiez votre connexion et réessayez.
+          </p>
+        </div>
+      ) : stats.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <Trophy size={32} className="text-muted-foreground opacity-30" />
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        </div>
       ) : (
         <div
           className="max-h-65 overflow-y-auto"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#cbd5e1 transparent",
+            scrollbarColor: "var(--border) transparent",
           }}
         >
           <div className="flex flex-col gap-0.5">

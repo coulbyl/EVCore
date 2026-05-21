@@ -45,8 +45,16 @@ const DEFAULT_FILTERS: FilterState = {
 export function DashboardPageClientOperator() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const announcementsQuery = useDashboardAnnouncements();
-  const { data: competitionStats } = useCompetitionStats();
-  const { data: leaderboard } = useLeaderboard();
+  const {
+    data: competitionStats,
+    isLoading: competitionLoading,
+    isError: competitionError,
+  } = useCompetitionStats();
+  const {
+    data: leaderboard,
+    isLoading: leaderboardLoading,
+    isError: leaderboardError,
+  } = useLeaderboard();
 
   const range = filters.range as DateRange | undefined;
   const fromIso = range?.from ? isoDate(range.from) : isoDate(thirtyDaysAgo());
@@ -56,7 +64,6 @@ export function DashboardPageClientOperator() {
     <Page className="flex h-full flex-col">
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-4">
-
           {/* Announcements */}
           {announcementsQuery.isLoading ? (
             <div className="flex flex-col gap-2">
@@ -88,7 +95,6 @@ export function DashboardPageClientOperator() {
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
-
             {/* Row 1 : Performance (7) + Prédictions (5) */}
             <div className="col-span-2 sm:col-span-6 lg:col-span-7 flex flex-col">
               <OperatorPerformanceCard from={fromIso} to={toIso} />
@@ -104,12 +110,19 @@ export function DashboardPageClientOperator() {
 
             {/* Row 3 : Classement ligues + Top joueurs */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
-              <CompetitionRanking stats={competitionStats ?? []} />
+              <CompetitionRanking
+                stats={competitionStats ?? []}
+                isLoading={competitionLoading}
+                isError={competitionError}
+              />
             </div>
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
-              <UserLeaderboard entries={leaderboard ?? []} />
+              <UserLeaderboard
+                entries={leaderboard ?? []}
+                isLoading={leaderboardLoading}
+                isError={leaderboardError}
+              />
             </div>
-
           </div>
         </div>
       </PageContent>

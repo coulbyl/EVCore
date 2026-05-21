@@ -36,5 +36,5 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="scrollbar-dark h-dvh overflow-y-auto">{children}</div>;
+  return <div className="h-dvh overflow-y-auto">{children}</div>;
 }

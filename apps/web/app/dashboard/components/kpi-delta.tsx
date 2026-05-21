@@ -10,7 +10,12 @@ export function KpiDelta({
 }) {
   if (typeof delta === "object") {
     return (
-      <div className={cn("flex items-center gap-2", compact ? "px-0" : "px-0 sm:px-2")}>
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          compact ? "px-0" : "px-0 sm:px-2",
+        )}
+      >
         <span className="rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
           {delta.bet} BET
         </span>
@@ -62,7 +67,9 @@ export function KpiDelta({
           !compact && "sm:flex-row sm:items-center sm:gap-2 sm:px-2",
         )}
       >
-        <div className={cn("flex items-center gap-1.5", !compact && "sm:contents")}>
+        <div
+          className={cn("flex items-center gap-1.5", !compact && "sm:contents")}
+        >
           <span
             className={cn(
               "text-[0.78rem] font-semibold text-foreground",

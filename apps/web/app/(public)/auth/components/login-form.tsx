@@ -20,7 +20,10 @@ import {
 import { login } from "@/domains/auth/use-cases/login";
 
 const loginSchema = z.object({
-  identifier: z.string().trim().min(1, "Renseignez votre email ou votre username."),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Renseignez votre email ou votre username."),
   password: z.string().min(1, "Renseignez votre mot de passe."),
 });
 
@@ -53,7 +56,10 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {error ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
@@ -89,7 +95,11 @@ export function LoginForm() {
                 </Link>
               </div>
               <FormControl>
-                <PasswordInput autoComplete="current-password" className="h-11" {...field} />
+                <PasswordInput
+                  autoComplete="current-password"
+                  className="h-11"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

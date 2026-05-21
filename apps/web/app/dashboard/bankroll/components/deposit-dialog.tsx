@@ -69,7 +69,7 @@ export function DepositDialog() {
 
       <DialogContent
         showCloseButton={false}
-        className="w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-border bg-panel p-6 shadow-xl"
+        className="bento-cell w-[calc(100vw-2rem)] max-w-md bg-panel p-6"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

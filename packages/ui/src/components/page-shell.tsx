@@ -144,7 +144,9 @@ export function PageShell({
         </header>
 
         <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:pt-4 md:pb-4 lg:px-5 lg:pt-5 lg:pb-5">
-          <div className="mx-auto h-full w-full 2xl:max-w-[1800px]">{children}</div>
+          <div className="mx-auto h-full w-full 2xl:max-w-[1800px]">
+            {children}
+          </div>
         </main>
 
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-panel-strong/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-panel-strong/88 md:hidden">

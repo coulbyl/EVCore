@@ -120,7 +120,7 @@ export function SettleFixtureDialog({
 
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-sm rounded-[1.6rem] border border-border bg-panel p-6 shadow-xl"
+        className="bento-cell w-full max-w-sm bg-panel p-6"
       >
         <div className="flex items-start justify-between gap-3">
           <div>

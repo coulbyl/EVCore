@@ -53,7 +53,10 @@ export function ResetPasswordForm() {
         <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
           Lien invalide ou manquant.
         </div>
-        <Link href="/auth/forgot-password" className="text-sm text-accent hover:underline">
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-accent hover:underline"
+        >
           Demander un nouveau lien →
         </Link>
       </div>
@@ -80,7 +83,10 @@ export function ResetPasswordForm() {
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         {error ? (
           <div className="rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3 text-sm text-destructive">
             {error}
@@ -112,7 +118,11 @@ export function ResetPasswordForm() {
             <FormItem>
               <FormLabel>Confirmer le mot de passe</FormLabel>
               <FormControl>
-                <PasswordInput autoComplete="new-password" className="h-11" {...field} />
+                <PasswordInput
+                  autoComplete="new-password"
+                  className="h-11"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -120,7 +130,9 @@ export function ResetPasswordForm() {
         />
 
         <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Réinitialisation…" : "Définir le nouveau mot de passe"}
+          {isSubmitting
+            ? "Réinitialisation…"
+            : "Définir le nouveau mot de passe"}
         </Button>
       </form>
     </Form>

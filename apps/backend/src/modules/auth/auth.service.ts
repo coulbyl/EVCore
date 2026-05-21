@@ -428,7 +428,10 @@ export class AuthService {
     });
 
     if (!user) {
-      logger.debug({ identifier }, 'password-reset: identifier not found, silently ignored');
+      logger.debug(
+        { identifier },
+        'password-reset: identifier not found, silently ignored',
+      );
       return;
     }
 
@@ -444,7 +447,10 @@ export class AuthService {
     });
 
     if (recentCount >= PASSWORD_RESET_RATE_LIMIT_MAX) {
-      logger.warn({ userId: user.id, username: user.username, recentCount }, 'password-reset: rate limit reached');
+      logger.warn(
+        { userId: user.id, username: user.username, recentCount },
+        'password-reset: rate limit reached',
+      );
       return;
     }
 
@@ -457,7 +463,10 @@ export class AuthService {
       isAdminGenerated: false,
     });
 
-    logger.info({ userId: user.id, username: user.username }, 'password-reset: email sent');
+    logger.info(
+      { userId: user.id, username: user.username },
+      'password-reset: email sent',
+    );
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {

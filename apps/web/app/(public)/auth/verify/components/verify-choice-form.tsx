@@ -11,8 +11,10 @@ type Choice = "email" | "totp" | null;
 export function VerifyChoiceForm() {
   const [choice, setChoice] = useState<Choice>(null);
 
-  if (choice === "email") return <EmailVerifyFlow onBack={() => setChoice(null)} />;
-  if (choice === "totp") return <TotpSetupFlow onBack={() => setChoice(null)} />;
+  if (choice === "email")
+    return <EmailVerifyFlow onBack={() => setChoice(null)} />;
+  if (choice === "totp")
+    return <TotpSetupFlow onBack={() => setChoice(null)} />;
 
   return (
     <div className="flex flex-col gap-4">
