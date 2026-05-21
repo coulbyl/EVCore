@@ -131,7 +131,7 @@ const AES_IV_LEN = 12;
 const AES_TAG_LEN = 16;
 
 function deriveAesKey(secret: string): Buffer {
-  return scryptSync(secret, 'evcore-totp-salt', AES_KEY_LEN) as Buffer;
+  return scryptSync(secret, 'evcore-totp-salt', AES_KEY_LEN);
 }
 
 export function encryptTotpSecret(
@@ -160,7 +160,7 @@ export function decryptTotpSecret(
   const encrypted = buf.subarray(AES_IV_LEN + AES_TAG_LEN);
   const decipher = createDecipheriv(AES_ALGO, key, iv);
   decipher.setAuthTag(tag);
-  return decipher.update(encrypted) + decipher.final('utf8');
+  return decipher.update(encrypted).toString('utf8') + decipher.final('utf8');
 }
 
 export function buildExpiredSessionCookie(secure: boolean): string {

@@ -12,7 +12,6 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardCheck,
-  FileText,
   Globe,
   GraduationCap,
   LayoutDashboard,

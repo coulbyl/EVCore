@@ -38,7 +38,6 @@ type EditableField = "email" | "username" | null;
 function EditableInfoRow({
   icon: Icon,
   label,
-  field,
   value,
   editing,
   onStartEdit,

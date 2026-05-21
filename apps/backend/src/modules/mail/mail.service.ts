@@ -68,7 +68,7 @@ export class MailService implements OnModuleInit {
     props: EmailVerificationProps,
   ): Promise<void> {
     const { html, text } = await renderEmailVerification(props);
-    await this.sendTo(to, 'Vérification de votre email', html, text);
+    await this.sendTo(to, 'Vérification de votre email', { html, text });
   }
 
   async sendPasswordReset(
@@ -76,7 +76,10 @@ export class MailService implements OnModuleInit {
     props: PasswordResetProps,
   ): Promise<void> {
     const { html, text } = await renderPasswordReset(props);
-    await this.sendTo(to, 'Réinitialisation de votre mot de passe', html, text);
+    await this.sendTo(to, 'Réinitialisation de votre mot de passe', {
+      html,
+      text,
+    });
   }
 
   async sendRoiAlert(props: RoiAlertProps): Promise<void> {
@@ -142,14 +145,13 @@ export class MailService implements OnModuleInit {
       );
       return;
     }
-    await this.sendTo(this.smtpAdminTo, subject, html, text);
+    await this.sendTo(this.smtpAdminTo, subject, { html, text });
   }
 
   private async sendTo(
     to: string,
     subject: string,
-    html: string,
-    text: string,
+    body: { html: string; text: string },
   ): Promise<void> {
     if (!this.smtpEnabled || !this.transporter) {
       logger.debug(
@@ -164,8 +166,8 @@ export class MailService implements OnModuleInit {
         from: this.smtpFrom,
         to,
         subject: `[EVCore] ${subject}`,
-        html,
-        text,
+        html: body.html,
+        text: body.text,
       });
       logger.info({ subject, to }, 'Email sent');
     } catch (error) {
