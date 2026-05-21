@@ -122,6 +122,10 @@ export const THE_ODDS_API_SPORT_KEYS = {
   TUR1: 'soccer_turkey_super_league',
   MLS: 'soccer_usa_mls',
   NOR1: 'soccer_norway_eliteserien',
+  // Asie / Amériques / Nordiques
+  BRA1: 'soccer_brazil_campeonato',
+  CSL: 'soccer_china_superleague',
+  FIN1: 'soccer_finland_veikkausliiga',
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',
