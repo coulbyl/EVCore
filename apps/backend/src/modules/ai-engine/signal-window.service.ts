@@ -39,6 +39,12 @@ export type ScoredPick = {
   isCorrect: boolean | null;
   signalScore: number;
   featureSnapshot: Record<string, unknown>;
+  homeLogo: string | null;
+  awayLogo: string | null;
+  /** ID du bet MODEL existant (SV/EV uniquement). */
+  betId: string | null;
+  /** ID du ModelRun source (BB/NUL/CONF — pour création d'un bet USER). */
+  modelRunId: string | null;
 };
 
 function readNumber(features: unknown, key: string): number | null {
@@ -263,17 +269,21 @@ export class SignalWindowService {
       select: {
         id: true,
         scheduledAt: true,
-        homeTeam: { select: { name: true } },
-        awayTeam: { select: { name: true } },
-        season: { select: { competition: { select: { code: true } } } },
+        homeTeam: { select: { name: true, logoUrl: true } },
+        awayTeam: { select: { name: true, logoUrl: true } },
+        season: {
+          select: { competition: { select: { code: true, name: true } } },
+        },
         modelRuns: {
           select: {
+            id: true,
             finalScore: true,
             features: true,
             analyzedAt: true,
             bets: {
               where: { source: 'MODEL' },
               select: {
+                id: true,
                 market: true,
                 pick: true,
                 ev: true,
@@ -332,6 +342,7 @@ export class SignalWindowService {
     for (const f of fixtures) {
       const run = f.modelRuns[0];
       const comp = f.season.competition.code;
+      const competitionName = f.season.competition.name;
       const feat = run?.features;
       const lambdaHome = readNumber(feat, 'lambdaHome');
       const lambdaAway = readNumber(feat, 'lambdaAway');
@@ -349,7 +360,9 @@ export class SignalWindowService {
         fixtureId: f.id,
         homeTeam: f.homeTeam.name,
         awayTeam: f.awayTeam.name,
-        competition: comp,
+        homeLogo: f.homeTeam.logoUrl ?? null,
+        awayLogo: f.awayTeam.logoUrl ?? null,
+        competition: competitionName,
         scheduledAt: f.scheduledAt,
         lambdaHome,
         lambdaAway,
@@ -387,6 +400,8 @@ export class SignalWindowService {
             oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
             isCorrect,
             signalScore: 0,
+            betId: bet.id,
+            modelRunId: null,
           });
         }
       }
@@ -421,6 +436,8 @@ export class SignalWindowService {
           oddsSnapshot,
           isCorrect: pred.correct ?? null,
           signalScore: 0,
+          betId: null,
+          modelRunId: run?.id ?? null,
         });
       }
     }
