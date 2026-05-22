@@ -507,6 +507,22 @@ const TEAM_ALIASES: Record<string, string[]> = {
   // J1
   'sanfrecce hiroshima': ['hiroshima sanfrecce'],
   'kyoto sanga': ['kyoto purple sanga'],
+  // BRA1 — API uses regional suffix or full state name
+  'rb bragantino': ['bragantino sp'],
+  'atletico mg': ['atletico mineiro'],
+  // CSL — clubs rebranded or translated between seasons
+  'beijing guoan': ['beijing sinobo guoan'],
+  'chengdu better city': ['chengdu rongcheng'],
+  'dalian aerbin': ['dalian professional'],
+  'dalian zhixing': ['dalian yingbo'],
+  'meizhou kejia': ['meizhou hakka'],
+  'qingdao youth island': ['qingdao west coast'],
+  'qingdao jonoon': ['qingdao hainiu'],
+  'shandong luneng': ['shandong taishan'],
+  // FIN1 — abbreviations and reordered names
+  eif: ['ekenas'],
+  kooteepee: ['ktp'],
+  'turku ps': ['tps turku'],
 };
 
 export function teamMatches(

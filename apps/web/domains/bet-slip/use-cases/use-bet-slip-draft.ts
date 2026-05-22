@@ -24,7 +24,8 @@ function isValidDraftItem(item: unknown): item is BetSlipDraftItem {
   const draftItem = item as Partial<BetSlipDraftItem>;
   return Boolean(
     draftItem.betId ||
-    (draftItem.modelRunId && draftItem.market && draftItem.pick),
+    (draftItem.modelRunId && draftItem.market && draftItem.pick) ||
+    (draftItem.fixtureId && draftItem.market && draftItem.pick),
   );
 }
 

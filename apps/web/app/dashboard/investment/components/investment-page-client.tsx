@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Brain,
+  Check,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  ShoppingCart,
   Target,
   Ticket,
   TrendingUp,
@@ -51,6 +54,11 @@ import type {
   InvestmentCouponDto,
   InvestmentPickDto,
 } from "@/domains/ai-engine/types/investment";
+import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 
 const CANAL_COLOR: Record<InvestmentCanal, string> = {
   SV: "var(--canal-sv)",
@@ -122,6 +130,63 @@ function ResultBadge({ isCorrect }: { isCorrect: boolean | null }) {
   );
 }
 
+function SlipButton({ pick }: { pick: InvestmentPickDto }) {
+  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
+
+  if (pick.isCorrect !== null) return null;
+
+  const key = draftItemKey({
+    fixtureId: pick.fixtureId,
+    market: pick.market,
+    pick: pick.pick,
+  });
+  const inSlip = isInSlip(key);
+  const color = CANAL_COLOR[pick.canal];
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(key);
+      return;
+    }
+    const item: BetSlipDraftItem = {
+      fixtureId: pick.fixtureId,
+      fixture: `${pick.homeTeam} vs ${pick.awayTeam}`,
+      homeLogo: pick.homeLogo,
+      awayLogo: pick.awayLogo,
+      competition: pick.competition,
+      scheduledAt: pick.scheduledAt,
+      market: pick.market,
+      pick: pick.pick,
+      odds: pick.oddsSnapshot != null ? pick.oddsSnapshot.toFixed(2) : null,
+      ev: null,
+      stakeOverride: null,
+      ...(pick.betId
+        ? { betId: pick.betId }
+        : { modelRunId: pick.modelRunId ?? undefined }),
+    };
+    addItem(item);
+    if (draft.items.length === 0) open();
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={inSlip ? "Retirer du coupon" : "Ajouter au coupon"}
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-lg border transition-colors",
+        inSlip
+          ? "border-success/20 bg-success/12 text-success"
+          : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+      )}
+      style={!inSlip ? { color } : undefined}
+    >
+      {inSlip ? <Check size={12} /> : <ShoppingCart size={12} />}
+    </button>
+  );
+}
+
 function PickCard({
   pick,
   locale,
@@ -143,9 +208,28 @@ function PickCard({
       />
 
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold leading-snug truncate">
-          {pick.homeTeam} <span className="text-muted-foreground">–</span>{" "}
-          {pick.awayTeam}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-xs font-semibold leading-snug">
+          {pick.homeLogo && (
+            <Image
+              src={pick.homeLogo}
+              alt={pick.homeTeam}
+              width={14}
+              height={14}
+              className="size-3.5 shrink-0 object-contain"
+            />
+          )}
+          <span className="truncate">{pick.homeTeam}</span>
+          <span className="font-normal text-muted-foreground">–</span>
+          {pick.awayLogo && (
+            <Image
+              src={pick.awayLogo}
+              alt={pick.awayTeam}
+              width={14}
+              height={14}
+              className="size-3.5 shrink-0 object-contain"
+            />
+          )}
+          <span className="truncate">{pick.awayTeam}</span>
         </span>
         <Badge
           className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.16em]"
@@ -180,6 +264,7 @@ function PickCard({
             {confidencePct}%
           </span>
           <ResultBadge isCorrect={pick.isCorrect} />
+          <SlipButton pick={pick} />
         </div>
       </div>
 
@@ -197,6 +282,7 @@ function HeroInsights({
   date,
 }: {
   data: {
+    totalCandidates: number;
     selections: Record<InvestmentCanal, InvestmentPickDto[]>;
     coupons: InvestmentCouponDto[];
   } | null;
@@ -207,6 +293,8 @@ function HeroInsights({
   const summary = summarizeDay(data);
   const settledRate =
     summary.settledCount > 0 ? summary.wins / summary.settledCount : 0;
+  const MAX_SLOTS = 5 + 5 + 5 + 2 + 2; // SV+BB+CONF+NUL+EV
+  const isLowActivity = data.totalCandidates <= MAX_SLOTS;
 
   return (
     <section className="grid grid-cols-1 gap-3 lg:grid-cols-[1.25fr_0.75fr]">
@@ -222,11 +310,23 @@ function HeroInsights({
             <CardTitle className="text-sm font-semibold">
               Picks {formatDateWithPrep(date)}
             </CardTitle>
+            {isLowActivity && (
+              <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warning">
+                Faible activité
+              </span>
+            )}
           </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-2 px-4">
+        <CardContent className="grid grid-cols-4 gap-2 px-4">
           <StatCard
-            label="Volume"
+            label="Candidats"
+            value={String(data.totalCandidates)}
+            icon={<Brain className="size-3.5" />}
+            compact
+            tone={isLowActivity ? "warning" : undefined}
+          />
+          <StatCard
+            label="Sélectionnés"
             value={formatCount(summary.totalPicks, "pick")}
             icon={<Target className="size-3.5" />}
             compact
@@ -309,8 +409,40 @@ function CouponCard({
   locale: string;
   isTop: boolean;
 }) {
+  const { clearDraft, addItem, setType, isInSlip, open } = useBetSlip();
   const loc = locale === "en" ? "en" : "fr";
   const probPct = coupon.jointProbability * 100;
+
+  const isSettled = coupon.legs.some((l) => l.isCorrect !== null);
+  const allInSlip = coupon.legs.every((l) =>
+    isInSlip(
+      draftItemKey({ fixtureId: l.fixtureId, market: l.market, pick: l.pick }),
+    ),
+  );
+
+  function handlePlayCombo() {
+    clearDraft();
+    for (const leg of coupon.legs) {
+      addItem({
+        fixtureId: leg.fixtureId,
+        fixture: `${leg.homeTeam} vs ${leg.awayTeam}`,
+        homeLogo: leg.homeLogo,
+        awayLogo: leg.awayLogo,
+        competition: leg.competition,
+        scheduledAt: leg.scheduledAt,
+        market: leg.market,
+        pick: leg.pick,
+        odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
+        ev: null,
+        stakeOverride: null,
+        ...(leg.betId
+          ? { betId: leg.betId }
+          : { modelRunId: leg.modelRunId ?? undefined }),
+      });
+    }
+    setType("COMBO");
+    open();
+  }
   const probColor =
     probPct >= 40
       ? "text-emerald-500"
@@ -389,8 +521,30 @@ function CouponCard({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="truncate text-sm font-medium">
-                        {leg.homeTeam} – {leg.awayTeam}
+                      <p className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm font-medium">
+                        {leg.homeLogo && (
+                          <Image
+                            src={leg.homeLogo}
+                            alt={leg.homeTeam}
+                            width={14}
+                            height={14}
+                            className="size-3.5 shrink-0 object-contain"
+                          />
+                        )}
+                        <span className="truncate">{leg.homeTeam}</span>
+                        <span className="font-normal text-muted-foreground">
+                          –
+                        </span>
+                        {leg.awayLogo && (
+                          <Image
+                            src={leg.awayLogo}
+                            alt={leg.awayTeam}
+                            width={14}
+                            height={14}
+                            className="size-3.5 shrink-0 object-contain"
+                          />
+                        )}
+                        <span className="truncate">{leg.awayTeam}</span>
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
                         <ResultBadge isCorrect={leg.isCorrect} />
@@ -424,6 +578,29 @@ function CouponCard({
           <p className="rounded-xl border border-dashed border-border/70 bg-background/20 px-3 py-2 text-xs leading-snug text-muted-foreground">
             {coupon.reasoning}
           </p>
+        )}
+
+        {!isSettled && (
+          <button
+            type="button"
+            onClick={handlePlayCombo}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold transition-colors",
+              allInSlip
+                ? "border-success/20 bg-success/12 text-success"
+                : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {allInSlip ? (
+              <>
+                <Check size={12} /> Dans le coupon
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={12} /> Jouer ce coupon
+              </>
+            )}
+          </button>
         )}
       </CardContent>
     </Card>

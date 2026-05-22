@@ -26,7 +26,7 @@ const MAX_SELECTIONS: Record<Canal, number> = {
   SV: 5,
   BB: 5,
   CONF: 5,
-  NUL: 5,
+  NUL: 2,
   EV: 2,
 };
 
@@ -117,7 +117,7 @@ export class InvestmentService {
   }
 
   private cacheKey(date: string): string {
-    return `investment:${date}`;
+    return `investment:v2:${date}`;
   }
 
   private cacheTtl(date: string): number | null {
@@ -168,8 +168,9 @@ export class InvestmentService {
     ]);
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
+    const totalCandidates = scoredPicks.length;
 
-    if (scoredPicks.length === 0) {
+    if (totalCandidates === 0) {
       const empty = this.buildEmptyDay(date, windowDays);
       await this.setCache(date, empty);
       return empty;
@@ -191,8 +192,19 @@ export class InvestmentService {
 
     const result =
       claudeOutput !== null
-        ? this.buildAiCuratedDay(date, windowDays, scoredPicks, claudeOutput)
-        : this.buildDeterministicDay(date, windowDays, scoredPicks);
+        ? this.buildAiCuratedDay(
+            date,
+            windowDays,
+            totalCandidates,
+            scoredPicks,
+            claudeOutput,
+          )
+        : this.buildDeterministicDay(
+            date,
+            windowDays,
+            totalCandidates,
+            scoredPicks,
+          );
 
     await this.setCache(date, result);
     return result;
@@ -215,7 +227,7 @@ You work with structured probability data — not betting advice. Focus on minim
 Evaluate the following fixture predictions and select the highest-quality combinations.
 
 Rules:
-- Select at most: SV=5, BB=5, CONF=5, NUL=5, EV=2 picks per canal
+- Select at most: SV=5, BB=5, CONF=5, NUL=2, EV=2 picks per canal
 - Compose exactly 3 coupons with 2-3 legs each (max combinedOdds = ${INVESTMENT_PARAMS.maxCombinedOdds})
 - No two legs from the same fixtureId in a coupon
 - No two legs with the same canal+market in a coupon
@@ -347,6 +359,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
   private buildAiCuratedDay(
     date: string,
     windowDays: number,
+    totalCandidates: number,
     picks: ScoredPick[],
     output: ClaudeOutput,
   ): InvestmentDayDto {
@@ -399,13 +412,18 @@ ${JSON.stringify(fixtures, null, 2)}`;
         fixtureId: p.fixtureId,
         homeTeam: p.homeTeam,
         awayTeam: p.awayTeam,
+        homeLogo: p.homeLogo,
+        awayLogo: p.awayLogo,
         competition: p.competition,
+        scheduledAt: p.scheduledAt.toISOString(),
         canal: p.canal,
         market: p.market,
         pick: p.pick,
         oddsSnapshot: p.oddsSnapshot,
         isCorrect: p.isCorrect,
         calibratedHitRate: p.calibratedHitRate,
+        betId: p.betId,
+        modelRunId: p.modelRunId,
       }));
 
       return {
@@ -418,12 +436,21 @@ ${JSON.stringify(fixtures, null, 2)}`;
       };
     });
 
-    return { date, windowDays, isAiCurated: true, selections, coupons };
+    return {
+      date,
+      windowDays,
+      isAiCurated: true,
+      totalCandidates,
+      selections,
+      coupons,
+    };
   }
 
+  // eslint-disable-next-line max-params
   private buildDeterministicDay(
     date: string,
     windowDays: number,
+    totalCandidates: number,
     picks: ScoredPick[],
   ): InvestmentDayDto {
     // Sort by calibratedHitRate × signalScore desc
@@ -454,13 +481,18 @@ ${JSON.stringify(fixtures, null, 2)}`;
         fixtureId: l.fixtureId,
         homeTeam: l.homeTeam,
         awayTeam: l.awayTeam,
+        homeLogo: l.homeLogo,
+        awayLogo: l.awayLogo,
         competition: l.competition,
+        scheduledAt: l.scheduledAt.toISOString(),
         canal: l.canal,
         market: l.market,
         pick: l.pick,
         oddsSnapshot: l.oddsSnapshot,
         isCorrect: l.isCorrect,
         calibratedHitRate: l.calibratedHitRate,
+        betId: l.betId,
+        modelRunId: l.modelRunId,
       })),
       combinedOdds: c.combinedOdds,
       jointProbability: c.jointProbability,
@@ -468,7 +500,14 @@ ${JSON.stringify(fixtures, null, 2)}`;
       reasoning: null,
     }));
 
-    return { date, windowDays, isAiCurated: false, selections, coupons };
+    return {
+      date,
+      windowDays,
+      isAiCurated: false,
+      totalCandidates,
+      selections,
+      coupons,
+    };
   }
 
   private buildEmptyDay(date: string, windowDays: number): InvestmentDayDto {
@@ -476,6 +515,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
       date,
       windowDays,
       isAiCurated: false,
+      totalCandidates: 0,
       selections: { SV: [], BB: [], CONF: [], NUL: [], EV: [] },
       coupons: [],
     };
@@ -489,6 +529,8 @@ ${JSON.stringify(fixtures, null, 2)}`;
       fixtureId: pick.fixtureId,
       homeTeam: pick.homeTeam,
       awayTeam: pick.awayTeam,
+      homeLogo: pick.homeLogo,
+      awayLogo: pick.awayLogo,
       competition: pick.competition,
       scheduledAt: pick.scheduledAt.toISOString(),
       canal: pick.canal,
@@ -500,6 +542,8 @@ ${JSON.stringify(fixtures, null, 2)}`;
       isCorrect: pick.isCorrect,
       signalScore: pick.signalScore,
       reasoning,
+      betId: pick.betId,
+      modelRunId: pick.modelRunId,
     };
   }
 
