@@ -115,6 +115,17 @@ export class PendingBetsSettlementWorker extends WorkerHost {
           awayHtScore: nextState.awayHtScore,
         });
 
+        // Early settlement — resolve irrevocable outcomes (BTTS YES/NO, OVER/UNDER
+        // thresholds, HT markets) without waiting for FINISHED.
+        if (nextState.status === 'IN_PROGRESS') {
+          if (nextState.homeScore !== null && nextState.awayScore !== null) {
+            const { settled: earlySettled } =
+              await this.bettingEngineService.settleEarlyBets(fixture.id);
+            settledBets += earlySettled;
+          }
+          continue;
+        }
+
         if (nextState.status !== 'FINISHED') {
           continue;
         }

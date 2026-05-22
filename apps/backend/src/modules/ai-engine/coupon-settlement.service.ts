@@ -94,18 +94,32 @@ export class CouponSettlementService {
       }
 
       const fixture = fixtureMap.get(leg.fixtureId);
-      if (
-        !fixture ||
-        fixture.homeScore === null ||
-        fixture.awayScore === null
-      ) {
+      if (!fixture) {
+        allResolved = false;
+        continue;
+      }
+
+      // HT markets only need half-time scores — don't wait for full-time
+      const isHtMarket =
+        leg.market === Market.OVER_UNDER_HT ||
+        leg.market === Market.FIRST_HALF_WINNER;
+      const hasHtScores =
+        fixture.homeHtScore !== null && fixture.awayHtScore !== null;
+      const hasFtScores =
+        fixture.homeScore !== null && fixture.awayScore !== null;
+
+      if (isHtMarket && !hasHtScores) {
+        allResolved = false;
+        continue;
+      }
+      if (!isHtMarket && !hasFtScores) {
         allResolved = false;
         continue;
       }
 
       const isCorrect = resolveIsCorrect(leg.market, leg.pick, {
-        homeScore: fixture.homeScore,
-        awayScore: fixture.awayScore,
+        homeScore: fixture.homeScore ?? 0,
+        awayScore: fixture.awayScore ?? 0,
         homeHtScore: fixture.homeHtScore,
         awayHtScore: fixture.awayHtScore,
       });

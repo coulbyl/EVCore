@@ -35,7 +35,6 @@ export function PageShell({
   actions,
   sidebarFooter,
   logoBadge,
-  pageTitle,
   children,
 }: {
   navItems: NavItem[];
@@ -132,25 +131,19 @@ export function PageShell({
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground" />
-              {pageTitle ? (
-                <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground lg:hidden">
-                  {pageTitle}
-                </span>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
-                >
-                  <div className="relative shrink-0">
-                    <img
-                      src="/icons/icon.svg"
-                      alt="EVCore"
-                      className="size-7 rounded-lg"
-                    />
-                    {logoBadge}
-                  </div>
-                </Link>
-              )}
+              <Link
+                href="/dashboard"
+                className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"
+              >
+                <div className="relative shrink-0">
+                  <img
+                    src="/icons/icon.svg"
+                    alt="EVCore"
+                    className="size-7 rounded-lg"
+                  />
+                  {logoBadge}
+                </div>
+              </Link>
             </div>
             {actions ? (
               <div className="flex items-center gap-2">{actions}</div>
