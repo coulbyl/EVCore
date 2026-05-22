@@ -19,6 +19,7 @@ import {
   HALF_TIME_FULL_TIME_PICKS,
   computeJointProbability,
   resolveComboPickBetStatus,
+  resolveEarlyBetStatus,
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
@@ -275,6 +276,87 @@ export class BettingEngineService {
     };
   }
 
+  // Settle bets whose outcome is irrevocably known from in-progress scores
+  // (BTTS YES/NO, OVER/UNDER thresholds, HT markets). 1X2 and HTFT wait for FINISHED.
+  async settleEarlyBets(fixtureId: string): Promise<{ settled: number }> {
+    const fixture = await this.prisma.client.fixture.findUnique({
+      where: { id: fixtureId },
+      select: {
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+      },
+    });
+
+    if (!fixture || fixture.homeScore === null || fixture.awayScore === null) {
+      return { settled: 0 };
+    }
+
+    const bets = await this.prisma.client.bet.findMany({
+      where: { fixtureId, status: BetStatus.PENDING },
+      select: {
+        id: true,
+        market: true,
+        pick: true,
+        comboMarket: true,
+        comboPick: true,
+      },
+    });
+
+    let settled = 0;
+    for (const bet of bets) {
+      let status: BetStatus | null = null;
+
+      const scores = {
+        homeScore: fixture.homeScore,
+        awayScore: fixture.awayScore,
+        homeHtScore: fixture.homeHtScore,
+        awayHtScore: fixture.awayHtScore,
+      };
+
+      if (bet.comboMarket !== null && bet.comboPick !== null) {
+        // Combo: early-LOST if any leg is irrevocably LOST (e.g. UNDER exceeded)
+        const s1 = resolveEarlyBetStatus({
+          market: bet.market,
+          pick: bet.pick,
+          ...scores,
+        });
+        const s2 = resolveEarlyBetStatus({
+          market: bet.comboMarket,
+          pick: bet.comboPick,
+          ...scores,
+        });
+        if (s1 === BetStatus.LOST || s2 === BetStatus.LOST) {
+          status = BetStatus.LOST;
+        }
+        // Combo WON requires all legs confirmed — defer to settleOpenBets on FINISHED
+      } else {
+        status = resolveEarlyBetStatus({
+          market: bet.market,
+          pick: bet.pick,
+          ...scores,
+        });
+      }
+
+      if (status === null) continue;
+      await this.prisma.client.bet.update({
+        where: { id: bet.id },
+        data: { status },
+      });
+      settled++;
+    }
+
+    // Early-settle BTTS predictions in the same pass — same irrevocability logic
+    await this.predictionService.settleEarlyPredictions(
+      fixtureId,
+      fixture.homeScore,
+      fixture.awayScore,
+    );
+
+    return { settled };
+  }
+
   async settleOpenBets(fixtureId: string): Promise<{ settled: number }> {
     const fixture = await this.prisma.client.fixture.findUnique({
       where: { id: fixtureId },
@@ -291,8 +373,13 @@ export class BettingEngineService {
       return { settled: 0 };
     }
 
+    // Re-settle all bets (PENDING + already early-settled) using the definitive
+    // final score — this corrects any VAR-reversed early settlements automatically.
     const bets = await this.prisma.client.bet.findMany({
-      where: { fixtureId, status: BetStatus.PENDING },
+      where: {
+        fixtureId,
+        status: { in: [BetStatus.PENDING, BetStatus.WON, BetStatus.LOST] },
+      },
       select: {
         id: true,
         market: true,

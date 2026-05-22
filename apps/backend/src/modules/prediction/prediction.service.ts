@@ -96,6 +96,29 @@ export class PredictionService {
     }
   }
 
+  // Settle BTTS predictions early — once both teams have scored, the outcome
+  // is irrevocable (YES=WON, NO=LOST) and we don't need to wait for FINISHED.
+  async settleEarlyPredictions(
+    fixtureId: string,
+    homeScore: number,
+    awayScore: number,
+  ): Promise<{ settled: number }> {
+    const bothScored = homeScore >= 1 && awayScore >= 1;
+    if (!bothScored) return { settled: 0 };
+
+    const predictions = await this.repo.findPendingForFixture(fixtureId);
+    const bttsPending = predictions.filter((p) => p.market === Market.BTTS);
+    if (bttsPending.length === 0) return { settled: 0 };
+
+    for (const prediction of bttsPending) {
+      // YES=WON when both scored, NO=LOST when both scored
+      const correct = prediction.pick === 'YES';
+      await this.repo.settleById(prediction.id, correct);
+    }
+
+    return { settled: bttsPending.length };
+  }
+
   async settlePredictions(
     fixtureId: string,
     homeScore: number | null,
@@ -103,7 +126,9 @@ export class PredictionService {
   ): Promise<{ settled: number }> {
     if (homeScore === null || awayScore === null) return { settled: 0 };
 
-    const predictions = await this.repo.findPendingForFixture(fixtureId);
+    // Re-settle all predictions (PENDING + already early-settled) using the
+    // definitive final score — corrects any VAR-reversed early settlements.
+    const predictions = await this.repo.findAllForFixture(fixtureId);
     if (predictions.length === 0) return { settled: 0 };
 
     for (const prediction of predictions) {

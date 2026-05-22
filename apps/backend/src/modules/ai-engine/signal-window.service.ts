@@ -41,6 +41,10 @@ export type ScoredPick = {
   featureSnapshot: Record<string, unknown>;
   homeLogo: string | null;
   awayLogo: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
   /** ID du bet MODEL existant (SV/EV uniquement). */
   betId: string | null;
   /** ID du ModelRun source (BB/NUL/CONF — pour création d'un bet USER). */
@@ -269,6 +273,10 @@ export class SignalWindowService {
       select: {
         id: true,
         scheduledAt: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
         homeTeam: { select: { name: true, logoUrl: true } },
         awayTeam: { select: { name: true, logoUrl: true } },
         season: {
@@ -364,6 +372,10 @@ export class SignalWindowService {
         awayLogo: f.awayTeam.logoUrl ?? null,
         competition: competitionName,
         scheduledAt: f.scheduledAt,
+        homeScore: f.homeScore ?? null,
+        awayScore: f.awayScore ?? null,
+        homeHtScore: f.homeHtScore ?? null,
+        awayHtScore: f.awayHtScore ?? null,
         lambdaHome,
         lambdaAway,
         xg,

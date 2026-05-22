@@ -11,12 +11,10 @@ import {
   ShoppingCart,
   Target,
   Ticket,
-  TrendingUp,
 } from "lucide-react";
 import {
   Page,
   PageHeader,
-  PageHeaderTitle,
   PageHeaderActions,
   PageContent,
   Skeleton,
@@ -26,7 +24,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -49,6 +46,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
+import { formatScore } from "@/domains/fixture/helpers/fixture";
 import type {
   InvestmentCanal,
   InvestmentCouponDto,
@@ -90,10 +88,6 @@ function formatPct(n: number) {
   return `${(n * 100).toFixed(0)}%`;
 }
 
-function formatCount(value: number, singular: string, plural = `${singular}s`) {
-  return `${value} ${value > 1 ? plural : singular}`;
-}
-
 function summarizeDay(data: {
   selections: Record<InvestmentCanal, InvestmentPickDto[]>;
   coupons: InvestmentCouponDto[];
@@ -103,8 +97,7 @@ function summarizeDay(data: {
   const wins = settled.filter((pick) => pick.isCorrect).length;
   const avgHitRate =
     picks.length > 0
-      ? picks.reduce((sum, pick) => sum + pick.calibratedHitRate, 0) /
-        picks.length
+      ? picks.reduce((sum, pick) => sum + pick.probability, 0) / picks.length
       : 0;
 
   return {
@@ -198,7 +191,8 @@ function PickCard({
   const loc = locale === "en" ? "en" : "fr";
   const marketLabel = formatMarketForDisplay(pick.market, loc);
   const pickLabel = formatPickForDisplay(pick.pick, pick.market);
-  const confidencePct = Math.round(pick.calibratedHitRate * 100);
+  const confidencePct = Math.round(pick.probability * 100);
+  const scoreLabel = formatScore(pick.score, pick.htScore);
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-3 pl-4 flex flex-col gap-1.5 transition-colors hover:border-border">
@@ -231,12 +225,15 @@ function PickCard({
           )}
           <span className="truncate">{pick.awayTeam}</span>
         </span>
-        <Badge
-          className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.16em]"
-          style={{ backgroundColor: color, color: "#fff" }}
+        <span
+          className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums"
+          style={{
+            color,
+            background: `color-mix(in srgb, ${color} 14%, transparent)`,
+          }}
         >
-          {pick.canal}
-        </Badge>
+          {confidencePct}%
+        </span>
       </div>
 
       <div className="text-xs text-muted-foreground">
@@ -260,9 +257,9 @@ function PickCard({
           </>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <span className="font-mono font-semibold text-foreground">
-            {confidencePct}%
-          </span>
+          {scoreLabel && (
+            <span className="font-mono text-foreground">{scoreLabel}</span>
+          )}
           <ResultBadge isCorrect={pick.isCorrect} />
           <SlipButton pick={pick} />
         </div>
@@ -279,20 +276,16 @@ function PickCard({
 
 function HeroInsights({
   data,
-  date,
 }: {
   data: {
     totalCandidates: number;
     selections: Record<InvestmentCanal, InvestmentPickDto[]>;
     coupons: InvestmentCouponDto[];
   } | null;
-  date: string;
 }) {
   if (!data) return null;
 
   const summary = summarizeDay(data);
-  const settledRate =
-    summary.settledCount > 0 ? summary.wins / summary.settledCount : 0;
   const MAX_SLOTS = 5 + 5 + 5 + 2 + 2; // SV+BB+CONF+NUL+EV
   const isLowActivity = data.totalCandidates <= MAX_SLOTS;
 
@@ -307,9 +300,6 @@ function HeroInsights({
             >
               Vue rapide
             </Badge>
-            <CardTitle className="text-sm font-semibold">
-              Picks {formatDateWithPrep(date)}
-            </CardTitle>
             {isLowActivity && (
               <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warning">
                 Faible activité
@@ -327,13 +317,13 @@ function HeroInsights({
           />
           <StatCard
             label="Sélectionnés"
-            value={formatCount(summary.totalPicks, "pick")}
+            value={String(summary.totalPicks)}
             icon={<Target className="size-3.5" />}
             compact
           />
           <StatCard
             label="Coupons"
-            value={formatCount(summary.totalCoupons, "coupon")}
+            value={String(summary.totalCoupons)}
             icon={<Ticket className="size-3.5" />}
             compact
           />
@@ -344,56 +334,6 @@ function HeroInsights({
             compact
             tone="success"
           />
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-[1.35rem] py-3 border-amber-500/30 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.06),transparent_40%)]">
-        <CardHeader className="gap-1 px-4 pb-2">
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Lecture du jour
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {summary.settledCount > 0
-                ? `${summary.wins} gagnés / ${summary.settledCount}`
-                : "Non réglé"}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2 px-4">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Taux de réussite
-            </span>
-            <span className="text-xs font-semibold text-foreground">
-              {summary.settledCount > 0 ? formatPct(settledRate) : "—"}
-            </span>
-          </div>
-          <ProgressBar
-            value={Math.round(settledRate * 100)}
-            max={100}
-            thresholds={{ success: 55, warning: 35 }}
-            showValue={false}
-          />
-
-          {summary.bestCoupon ? (
-            <div className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/20 px-3 py-2">
-              <span className="text-xs font-semibold text-muted-foreground">
-                Coupon #1
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatPct(summary.bestCoupon.jointProbability)} ·{" "}
-                {summary.bestCoupon.legs.length} matchs
-              </span>
-              <Badge variant="success" className="rounded-full text-[0.6rem]">
-                @{summary.bestCoupon.combinedOdds.toFixed(2)}
-              </Badge>
-            </div>
-          ) : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Aucun coupon disponible.
-            </p>
-          )}
         </CardContent>
       </Card>
     </section>
@@ -620,25 +560,30 @@ function CanalSection({
   const color = CANAL_COLOR[canal];
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 rounded-[1.4rem] border border-border/80 bg-background/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span
-            className="mt-1 size-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold">{CANAL_LABEL[canal]}</h3>
-              <Badge variant="outline" className="rounded-full">
-                {formatCount(picks.length, "pick")}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {CANAL_DESCRIPTION[canal]}
-            </p>
-          </div>
-        </div>
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span
+          className="h-3.5 w-1 shrink-0 rounded-full"
+          style={{ background: color }}
+        />
+        <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {CANAL_LABEL[canal]}
+        </h3>
+        <span
+          className="rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums"
+          style={{
+            color,
+            background: `color-mix(in srgb, ${color} 14%, transparent)`,
+          }}
+        >
+          {picks.length}
+        </span>
+        <span className="text-[0.65rem] text-muted-foreground/60">
+          {CANAL_DESCRIPTION[canal]}
+          <span className="ml-1.5 tabular-nums opacity-70">
+            hist. {formatPct(picks[0]?.calibratedHitRate ?? 0)}
+          </span>
+        </span>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -680,13 +625,6 @@ function formatDateLabel(iso: string): string {
   return formatDateLong(`${iso}T12:00:00Z`);
 }
 
-function formatDateWithPrep(iso: string): string {
-  const label = formatDateLabel(iso);
-  if (label === "Aujourd'hui") return "d'aujourd'hui";
-  if (label === "Hier") return "d'hier";
-  return `du ${label}`;
-}
-
 export function InvestissementPageClient() {
   const today = todayIso();
   const searchParams = useSearchParams();
@@ -712,10 +650,7 @@ export function InvestissementPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageHeader>
-        <PageHeaderTitle>
-          <TrendingUp className="size-5 shrink-0" />
-          Investissement
-        </PageHeaderTitle>
+        <div />
         <PageHeaderActions>
           <div className="flex items-center gap-1">
             <Button
@@ -770,7 +705,7 @@ export function InvestissementPageClient() {
         <div className="flex h-full min-h-0 flex-col gap-5">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex flex-col gap-8 pb-6">
-              <HeroInsights data={data ?? null} date={date} />
+              <HeroInsights data={data ?? null} />
 
               <section className="flex flex-col gap-6">
                 <div>

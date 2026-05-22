@@ -197,6 +197,7 @@ function makeRepoMock(): PredictionRepository {
     deleteForFixtureChannel: vi.fn().mockResolvedValue(undefined),
     settleById: vi.fn().mockResolvedValue(undefined),
     findPendingForFixture: vi.fn().mockResolvedValue([]),
+    findAllForFixture: vi.fn().mockResolvedValue([]),
     findByDate: vi.fn().mockResolvedValue([]),
     findForStats: vi.fn().mockResolvedValue([]),
   } as unknown as PredictionRepository;
@@ -382,13 +383,13 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('returns { settled: 0 } when no pending predictions exist', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([]);
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([]);
     const result = await service.settlePredictions('fix-1', 2, 1);
     expect(result).toEqual({ settled: 0 });
   });
 
   it('settles CONF HOME prediction as correct on home win', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.CONF, Market.ONE_X_TWO, 'HOME'),
     ]);
 
@@ -399,7 +400,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles CONF HOME prediction as incorrect on away win', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.CONF, Market.ONE_X_TWO, 'HOME'),
     ]);
 
@@ -409,7 +410,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles DRAW channel prediction as correct on level score', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.DRAW, Market.ONE_X_TWO, 'DRAW'),
     ]);
 
@@ -419,7 +420,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles DRAW channel prediction as incorrect on decisive result', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.DRAW, Market.ONE_X_TWO, 'DRAW'),
     ]);
 
@@ -429,7 +430,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles BTTS YES prediction as correct when both teams scored', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.BTTS, Market.BTTS, 'YES'),
     ]);
 
@@ -439,7 +440,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles BTTS YES prediction as incorrect when only one team scored', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.BTTS, Market.BTTS, 'YES'),
     ]);
 
@@ -449,7 +450,7 @@ describe('PredictionService.settlePredictions', () => {
   });
 
   it('settles BTTS YES prediction as incorrect on 0-0', async () => {
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([
       makeRow(PredictionChannel.BTTS, Market.BTTS, 'YES'),
     ]);
 
@@ -458,7 +459,7 @@ describe('PredictionService.settlePredictions', () => {
     expect(repo.settleById).toHaveBeenCalledWith('row-1', false);
   });
 
-  it('settles multiple pending predictions (CONF + BTTS) independently', async () => {
+  it('settles multiple predictions (CONF + BTTS) independently using definitive final score', async () => {
     const confRow = {
       ...makeRow(PredictionChannel.CONF, Market.ONE_X_TWO, 'HOME'),
       id: 'conf-row',
@@ -467,7 +468,7 @@ describe('PredictionService.settlePredictions', () => {
       ...makeRow(PredictionChannel.BTTS, Market.BTTS, 'YES'),
       id: 'btts-row',
     };
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([confRow, bttsRow]);
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([confRow, bttsRow]);
 
     // 2-1: HOME wins, BTTS YES
     const result = await service.settlePredictions('fix-1', 2, 1);
@@ -477,10 +478,10 @@ describe('PredictionService.settlePredictions', () => {
     expect(repo.settleById).toHaveBeenCalledWith('btts-row', true);
   });
 
-  it('does not re-settle already settled predictions (findPendingForFixture filters them)', async () => {
-    // Repo only returns pending (correct: null) predictions — already settled
-    // rows are filtered at DB level. Verify we rely on that contract.
-    vi.mocked(repo.findPendingForFixture).mockResolvedValue([]);
+  it('re-settles all predictions on FINISHED to correct any VAR-reversed early settlements', async () => {
+    // findAllForFixture returns all predictions (including already-settled) so
+    // a VAR-reversed goal can flip a WON early settlement back to LOST.
+    vi.mocked(repo.findAllForFixture).mockResolvedValue([]);
 
     const result = await service.settlePredictions('fix-1', 2, 1);
 

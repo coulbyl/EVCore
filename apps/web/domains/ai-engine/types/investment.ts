@@ -17,6 +17,8 @@ export type InvestmentPickDto = {
   reasoning: string | null;
   betId: string | null;
   modelRunId: string | null;
+  score: string | null;
+  htScore: string | null;
   homeLogo: string | null;
   awayLogo: string | null;
 };

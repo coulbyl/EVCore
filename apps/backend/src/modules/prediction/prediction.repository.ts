@@ -153,4 +153,11 @@ export class PredictionRepository {
       orderBy: { channel: 'asc' },
     }) as Promise<PredictionRow[]>;
   }
+
+  findAllForFixture(fixtureId: string): Promise<PredictionRow[]> {
+    return this.prisma.client.prediction.findMany({
+      where: { fixtureId },
+      orderBy: { channel: 'asc' },
+    }) as Promise<PredictionRow[]>;
+  }
 }

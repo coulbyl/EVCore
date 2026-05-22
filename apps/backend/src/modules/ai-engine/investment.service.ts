@@ -158,8 +158,14 @@ export class InvestmentService {
   ): Promise<InvestmentDayDto> {
     const cached = await this.getFromCache(date);
     if (cached) {
-      logger.debug({ date }, 'Investment day served from cache');
-      return cached;
+      const today = formatDateUtc(new Date());
+      // Deterministic cache for today/future is stale-prone — always recompute.
+      // AI-curated cache is expensive to produce and stable enough to serve.
+      const serveFromCache = date < today || cached.isAiCurated;
+      if (serveFromCache) {
+        logger.debug({ date }, 'Investment day served from cache');
+        return cached;
+      }
     }
 
     const [window, rawPicks] = await Promise.all([
@@ -544,6 +550,14 @@ ${JSON.stringify(fixtures, null, 2)}`;
       reasoning,
       betId: pick.betId,
       modelRunId: pick.modelRunId,
+      score:
+        pick.homeScore !== null && pick.awayScore !== null
+          ? `${pick.homeScore} - ${pick.awayScore}`
+          : null,
+      htScore:
+        pick.homeHtScore !== null && pick.awayHtScore !== null
+          ? `${pick.homeHtScore} - ${pick.awayHtScore}`
+          : null,
     };
   }
 
