@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
-  BarChart2,
   CheckCircle2,
   ChartNoAxesColumn,
   LayoutList,

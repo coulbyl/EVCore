@@ -18,7 +18,7 @@ import {
   SelectValue,
   cn,
 } from "@evcore/ui";
-import { todayIso, daysAgoIso, toISODate, isoToDate } from "@/lib/date";
+import { daysAgoIso, toISODate, isoToDate } from "@/lib/date";
 import { useInvestmentIndices } from "@/domains/ai-engine/use-cases/use-investment-indices";
 import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investment-indices";
 
@@ -209,7 +209,7 @@ export function InvestmentIndicesDrawer({
             {/* Date range */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground">
-                Période d'analyse
+                Période d&apos;analyse
               </label>
               <div className="flex items-center gap-2">
                 <DateButton
@@ -407,7 +407,7 @@ export function InvestmentIndicesDrawer({
             <p className="text-[0.68rem] leading-snug text-muted-foreground">
               Un indice est fiable quand le hit rate réel ≥ la probabilité
               annoncée par le modèle. Cela indique que le modèle est calibré ou
-              meilleur qu'attendu à ce niveau de confiance.
+              meilleur qu&apos;attendu à ce niveau de confiance.
             </p>
           )}
         </div>
