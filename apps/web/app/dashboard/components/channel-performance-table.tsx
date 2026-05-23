@@ -6,7 +6,7 @@ import type { ChannelStatsItem } from "@/domains/dashboard/types/dashboard";
 const CANAL_LABEL: Record<ChannelStatsItem["channel"], string> = {
   EV: "EV",
   SV: "SV",
-  CONF: "CONF",
+  CONF: "VICTOIRE",
   BTTS: "BB",
   DRAW: "NUL",
 };

@@ -71,11 +71,11 @@ const CANAL_COLOR: Record<InvestmentCanal, string> = {
 };
 
 const CANAL_LABEL: Record<InvestmentCanal, string> = {
-  SV: "Safe Value",
-  EV: "Expected Value",
-  CONF: "Confiance",
-  BB: "BTTS",
-  NUL: "Nul",
+  SV: "SV",
+  EV: "EV",
+  CONF: "VICTOIRE",
+  BB: "BB",
+  NUL: "NUL",
 };
 
 const CANAL_DESCRIPTION: Record<InvestmentCanal, string> = {
@@ -251,7 +251,9 @@ function PickCard({
           {pick.competition}
         </span>
         <span className="opacity-40">·</span>
-        <span className="whitespace-nowrap">{formatTime(pick.scheduledAt)}</span>
+        <span className="whitespace-nowrap">
+          {formatTime(pick.scheduledAt)}
+        </span>
         {pick.oddsSnapshot != null && (
           <>
             <span className="opacity-40">·</span>
@@ -262,7 +264,9 @@ function PickCard({
         )}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {scoreLabel && (
-            <span className="whitespace-nowrap font-mono text-[0.7rem] text-foreground">{scoreLabel}</span>
+            <span className="whitespace-nowrap font-mono text-[0.7rem] text-foreground">
+              {scoreLabel}
+            </span>
           )}
           <ResultBadge isCorrect={pick.isCorrect} />
           <SlipButton pick={pick} />

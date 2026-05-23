@@ -6,7 +6,6 @@ import {
   CouponResult,
   Prisma,
   PredictionChannel,
-  Market,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 

@@ -25,6 +25,7 @@ import type { InvestmentIndicesResponse } from './dto/investment-indices.dto';
 @ApiTags('ai-engine')
 @Controller('ai-engine')
 export class AiEngineController {
+  // eslint-disable-next-line max-params
   constructor(
     private readonly aiEngine: AiEngineService,
     private readonly settlement: CouponSettlementService,

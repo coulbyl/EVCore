@@ -22,7 +22,7 @@ export function CanalBadge({ canal }: { canal: Canal }) {
       : canal === "BTTS"
         ? t("btts")
         : canal === "CONF"
-          ? "Conf."
+          ? "VICT"
           : canal;
 
   return (

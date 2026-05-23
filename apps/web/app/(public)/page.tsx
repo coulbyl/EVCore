@@ -40,7 +40,7 @@ const CHANNELS = [
   },
   {
     tag: "CONF",
-    label: "Confiance",
+    label: "VICTOIRE",
     headline: "L'issue dominante, prouvée.",
     body: "Issue argmax au-dessus du seuil de la compétition. Une lecture claire de la probabilité la plus probable, sans compromis.",
     metric: "60.7%",

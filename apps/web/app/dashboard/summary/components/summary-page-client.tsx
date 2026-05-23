@@ -244,7 +244,7 @@ const FILTER_DEFS: FilterDef[] = [
     options: [
       { value: "EV", label: "EV" },
       { value: "SV", label: "SV" },
-      { value: "CONF", label: "Confiance" },
+      { value: "CONF", label: "VICTOIRE" },
       { value: "DRAW", label: "NUL" },
       { value: "BTTS", label: "BB" },
     ],

@@ -16,9 +16,9 @@ export const DECISION_OPTIONS: {
 
 export const CANAL_OPTIONS: { value: FixtureCanalFilter; label: string }[] = [
   { value: "ALL", label: "Tous canaux" },
-  { value: "EV", label: "Canal EV" },
-  { value: "SV", label: "Safe Value" },
-  { value: "CONF", label: "Confiance" },
+  { value: "EV", label: "EV" },
+  { value: "SV", label: "SV" },
+  { value: "CONF", label: "VICTOIRE" },
   { value: "DRAW", label: "NUL" },
   { value: "BTTS", label: "BB" },
 ];

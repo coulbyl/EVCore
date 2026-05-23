@@ -25,12 +25,12 @@ import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investmen
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CANAL_OPTIONS: { value: InvestmentIndicesCanal; label: string }[] = [
-  { value: "SV", label: "Safe Value" },
-  { value: "EV", label: "Expected Value" },
-  { value: "CONF", label: "Confiance" },
-  { value: "BB", label: "BTTS" },
-  { value: "NUL", label: "Nul" },
-  { value: "COUPON", label: "Coupons" },
+  { value: "SV", label: "SV" },
+  { value: "EV", label: "EV" },
+  { value: "CONF", label: "VICTOIRE" },
+  { value: "BB", label: "BB" },
+  { value: "NUL", label: "NUL" },
+  { value: "COUPON", label: "COUPON" },
 ];
 
 const CANAL_COLOR: Record<InvestmentIndicesCanal, string> = {
@@ -198,7 +198,11 @@ export function InvestmentIndicesDrawer({
                 </SelectTrigger>
                 <SelectContent>
                   {CANAL_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      className="text-xs"
+                    >
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -310,11 +314,15 @@ export function InvestmentIndicesDrawer({
           )}
 
           {/* No data */}
-          {applied !== null && !isLoading && !isFetching && !isError && !hasRows && (
-            <p className="text-sm text-muted-foreground">
-              Aucune donnée résolue pour cette période.
-            </p>
-          )}
+          {applied !== null &&
+            !isLoading &&
+            !isFetching &&
+            !isError &&
+            !hasRows && (
+              <p className="text-sm text-muted-foreground">
+                Aucune donnée résolue pour cette période.
+              </p>
+            )}
 
           {/* Probability table */}
           {!isLoading && !isFetching && hasRows && (
@@ -366,7 +374,9 @@ export function InvestmentIndicesDrawer({
                         <div
                           className={cn(
                             "h-full rounded-full",
-                            row.isGood ? "bg-success" : "bg-muted-foreground/50",
+                            row.isGood
+                              ? "bg-success"
+                              : "bg-muted-foreground/50",
                           )}
                           style={{ width: `${barWidth}%` }}
                         />

@@ -30,7 +30,10 @@ import { isoToDate, toISODate, daysAgoIso } from "@/lib/date";
 import { useInvestmentSummary } from "@/domains/investment-summary/use-cases/use-investment-summary";
 import { EvLineChart } from "@/components/charts/ev-line-chart";
 import { Amount } from "@/components/amount";
-import { formatPickForDisplay, formatMarketForDisplay } from "@/helpers/fixture";
+import {
+  formatPickForDisplay,
+  formatMarketForDisplay,
+} from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type {
@@ -147,8 +150,8 @@ function SimulationDrawer({
           <p className="text-sm text-muted-foreground">
             Si tu avais misé la même somme sur chacun des{" "}
             <span className="font-semibold text-foreground">{itemCount}</span>{" "}
-            {isCouponMode ? "coupons" : "picks"} de la période filtrée, voici
-            ce que tu aurais gagné ou perdu.
+            {isCouponMode ? "coupons" : "picks"} de la période filtrée, voici ce
+            que tu aurais gagné ou perdu.
           </p>
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -254,10 +257,10 @@ const FILTER_DEFS: FilterDef[] = [
     options: [
       { value: "EV", label: "EV" },
       { value: "SV", label: "SV" },
-      { value: "CONF", label: "Confiance" },
+      { value: "CONF", label: "VICTOIRE" },
       { value: "NUL", label: "NUL" },
       { value: "BB", label: "BB" },
-      { value: "COUPON", label: "Coupon" },
+      { value: "COUPON", label: "COUPON" },
     ],
   },
   {
@@ -291,10 +294,7 @@ function PickItem({ row }: { row: InvestmentSummaryPickRow }) {
               {marketLabel} · {pickLabel}
             </Badge>
             {row.odds ? (
-              <Badge
-                variant="outline"
-                className="text-[0.68rem] tabular-nums"
-              >
+              <Badge variant="outline" className="text-[0.68rem] tabular-nums">
                 @{row.odds}
               </Badge>
             ) : null}
@@ -341,7 +341,8 @@ function CouponItem({ row }: { row: InvestmentSummaryCouponRow }) {
       </div>
       <div className="flex flex-col gap-1">
         {row.legs.map((leg, i) => {
-          const color = CANAL_COLOR[(leg.canal as InvestmentSummaryCanal) ?? "SV"];
+          const color =
+            CANAL_COLOR[(leg.canal as InvestmentSummaryCanal) ?? "SV"];
           return (
             <div
               key={i}
@@ -436,9 +437,7 @@ export function InvestmentSummaryPageClient() {
 
   const daterange = filters.daterange as DateRange | undefined;
   const effectiveFrom = daterange?.from ? toISODate(daterange.from) : undefined;
-  const effectiveTo = daterange?.to
-    ? toISODate(daterange.to)
-    : yesterday;
+  const effectiveTo = daterange?.to ? toISODate(daterange.to) : yesterday;
 
   const { data, isLoading, isError } = useInvestmentSummary({
     canal,
