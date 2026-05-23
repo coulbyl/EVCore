@@ -195,7 +195,7 @@ function PickCard({
   const loc = locale === "en" ? "en" : "fr";
   const marketLabel = formatMarketForDisplay(pick.market, loc);
   const pickLabel = formatPickForDisplay(pick.pick, pick.market);
-  const confidencePct = Math.round(pick.probability * 100);
+  const confidencePct = (pick.probability * 100).toFixed(1);
   const scoreLabel = formatScore(pick.score, pick.htScore);
 
   return (

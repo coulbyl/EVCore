@@ -15,7 +15,8 @@ function buildRows(
 ): InvestmentIndicesRow[] {
   const map = new Map<number, { total: number; won: number }>();
   for (const item of items) {
-    const pct = Math.round(item.prob * 100);
+    // Round to 1 decimal place: 0.6534 → 65.3
+    const pct = Math.round(item.prob * 1000) / 10;
     const entry = map.get(pct) ?? { total: 0, won: 0 };
     entry.total += 1;
     if (item.won) entry.won += 1;

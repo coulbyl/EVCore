@@ -11,6 +11,11 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   cn,
 } from "@evcore/ui";
 import { todayIso, daysAgoIso, toISODate, isoToDate } from "@/lib/date";
@@ -184,28 +189,21 @@ export function InvestmentIndicesDrawer({
             {/* Canal select */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground">Canal</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {CANAL_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setCanal(opt.value)}
-                    className={cn(
-                      "rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors",
-                      canal === opt.value
-                        ? "border-transparent text-background"
-                        : "border-border bg-secondary text-muted-foreground hover:text-foreground",
-                    )}
-                    style={
-                      canal === opt.value
-                        ? { backgroundColor: CANAL_COLOR[opt.value] }
-                        : undefined
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <Select
+                value={canal}
+                onValueChange={(v) => setCanal(v as InvestmentIndicesCanal)}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CANAL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Date range */}
@@ -361,7 +359,7 @@ export function InvestmentIndicesDrawer({
                     />
                     <div className="relative grid grid-cols-[48px_1fr_48px_48px_56px_28px] items-center gap-2">
                       <span className="text-xs font-bold tabular-nums">
-                        {row.probability}%
+                        {row.probability.toFixed(1)}%
                       </span>
                       {/* Mini bar */}
                       <div className="h-1 overflow-hidden rounded-full bg-border">

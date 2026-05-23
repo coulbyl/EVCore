@@ -7,7 +7,7 @@ export type InvestmentIndicesCanal =
   | "COUPON";
 
 export type InvestmentIndicesRow = {
-  probability: number; // integer percentage, e.g. 65 = 65%
+  probability: number; // 1-decimal percentage, e.g. 65.3 = 65.3%
   total: number;
   won: number;
   hitRate: number;
