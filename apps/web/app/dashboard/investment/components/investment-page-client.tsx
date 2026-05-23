@@ -13,6 +13,7 @@ import {
   Target,
   Ticket,
 } from "lucide-react";
+
 import {
   Page,
   PageHeader,
@@ -59,7 +60,6 @@ import {
   type BetSlipDraftItem,
 } from "@/domains/bet-slip/types/bet-slip";
 import { InvestmentIndicesDrawer } from "@/components/investment-indices-drawer";
-import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investment-indices";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const CANAL_COLOR: Record<InvestmentCanal, string> = {
@@ -555,14 +555,11 @@ function CanalSection({
   canal,
   picks,
   locale,
-  isMobile,
 }: {
   canal: InvestmentCanal;
   picks: InvestmentPickDto[];
   locale: string;
-  isMobile: boolean;
 }) {
-  const [indicesOpen, setIndicesOpen] = useState(false);
   if (picks.length === 0) return null;
   const color = CANAL_COLOR[canal];
 
@@ -591,14 +588,6 @@ function CanalSection({
             hist. {formatPct(picks[0]?.calibratedHitRate ?? 0)}
           </span>
         </span>
-        <button
-          type="button"
-          onClick={() => setIndicesOpen(true)}
-          className="ml-auto flex items-center gap-1 rounded-lg border border-border bg-secondary px-2 py-1 text-[0.65rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <BarChart2 size={11} />
-          Indice
-        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -610,13 +599,6 @@ function CanalSection({
           />
         ))}
       </div>
-
-      <InvestmentIndicesDrawer
-        canal={canal as InvestmentIndicesCanal}
-        open={indicesOpen}
-        onClose={() => setIndicesOpen(false)}
-        isMobile={isMobile}
-      />
     </section>
   );
 }
@@ -653,7 +635,7 @@ export function InvestissementPageClient() {
   const router = useRouter();
   const date = searchParams.get("date") ?? today;
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [couponIndicesOpen, setCouponIndicesOpen] = useState(false);
+  const [indicesOpen, setIndicesOpen] = useState(false);
   const locale = useLocale();
   const isMobile = useIsMobile();
   const { data, isLoading, isError } = useInvestment(date);
@@ -676,6 +658,15 @@ export function InvestissementPageClient() {
       <PageHeader>
         <div />
         <PageHeaderActions>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIndicesOpen(true)}
+            className="h-7 gap-1.5 text-xs"
+          >
+            <BarChart2 size={12} />
+            Indice de paris
+          </Button>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -785,7 +776,6 @@ export function InvestissementPageClient() {
                         canal={canal}
                         picks={data.selections[canal] ?? []}
                         locale={locale}
-                        isMobile={isMobile}
                       />
                     ))}
                   </div>
@@ -793,22 +783,12 @@ export function InvestissementPageClient() {
               </section>
 
               <section className="flex flex-col gap-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-semibold">Coupons du jour</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Combinaisons prêtes à lire avec cote, proba jointe et
-                      détail de chaque jambe.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setCouponIndicesOpen(true)}
-                    className="mt-0.5 flex shrink-0 items-center gap-1 rounded-lg border border-border bg-secondary px-2 py-1 text-[0.65rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <BarChart2 size={11} />
-                    Indice
-                  </button>
+                <div>
+                  <h2 className="text-base font-semibold">Coupons du jour</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Combinaisons prêtes à lire avec cote, proba jointe et détail
+                    de chaque jambe.
+                  </p>
                 </div>
 
                 {isLoading && (
@@ -852,9 +832,8 @@ export function InvestissementPageClient() {
       </PageContent>
 
       <InvestmentIndicesDrawer
-        canal="COUPON"
-        open={couponIndicesOpen}
-        onClose={() => setCouponIndicesOpen(false)}
+        open={indicesOpen}
+        onClose={() => setIndicesOpen(false)}
         isMobile={isMobile}
       />
     </Page>

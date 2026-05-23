@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, BarChart2, TrendingUp, TrendingDown } from "lucide-react";
+import { X, BarChart2, TrendingUp, TrendingDown, Filter } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -16,28 +16,38 @@ import {
 import { todayIso, daysAgoIso, toISODate, isoToDate } from "@/lib/date";
 import { useInvestmentIndices } from "@/domains/ai-engine/use-cases/use-investment-indices";
 import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investment-indices";
-import type { InvestmentPickDto } from "@/domains/ai-engine/types/investment";
 
-type Canal = InvestmentIndicesCanal;
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const CANAL_LABEL: Record<Canal, string> = {
-  SV: "Safe Value",
-  EV: "Expected Value",
-  CONF: "Confiance",
-  BB: "BTTS",
-  NUL: "Nul",
-  COUPON: "Coupons",
+const CANAL_OPTIONS: { value: InvestmentIndicesCanal; label: string }[] = [
+  { value: "SV", label: "Safe Value" },
+  { value: "EV", label: "Expected Value" },
+  { value: "CONF", label: "Confiance" },
+  { value: "BB", label: "BTTS" },
+  { value: "NUL", label: "Nul" },
+  { value: "COUPON", label: "Coupons" },
+];
+
+const CANAL_COLOR: Record<InvestmentIndicesCanal, string> = {
+  EV: "var(--canal-ev)",
+  SV: "var(--canal-sv)",
+  CONF: "var(--canal-conf)",
+  BB: "var(--canal-btts)",
+  NUL: "var(--canal-draw)",
+  COUPON: "var(--canal-sv)",
 };
+
+// ── DateButton ────────────────────────────────────────────────────────────────
 
 function DateButton({
   value,
   onChange,
-  label,
+  placeholder,
   maxDate,
 }: {
   value: string | undefined;
   onChange: (iso: string) => void;
-  label: string;
+  placeholder: string;
   maxDate?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -47,14 +57,17 @@ function DateButton({
         month: "short",
         year: "numeric",
       })
-    : label;
+    : placeholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 text-xs font-medium text-foreground hover:bg-secondary/80"
+          className={cn(
+            "flex h-8 flex-1 items-center justify-center rounded-lg border border-border bg-secondary px-3 text-xs font-medium transition-colors hover:bg-secondary/80",
+            value ? "text-foreground" : "text-muted-foreground",
+          )}
         >
           {display}
         </button>
@@ -84,37 +97,53 @@ function DateButton({
   );
 }
 
+// ── Main drawer ───────────────────────────────────────────────────────────────
+
 export function InvestmentIndicesDrawer({
-  canal,
   open,
   onClose,
   isMobile,
-  picks,
+  initialCanal,
 }: {
-  canal: Canal;
   open: boolean;
   onClose: () => void;
   isMobile: boolean;
-  picks?: InvestmentPickDto[];
+  initialCanal?: InvestmentIndicesCanal;
 }) {
   const yesterday = daysAgoIso(1);
+
+  const [canal, setCanal] = useState<InvestmentIndicesCanal>(
+    initialCanal ?? "SV",
+  );
   const [from, setFrom] = useState<string>(daysAgoIso(89));
   const [to, setTo] = useState<string>(yesterday);
 
-  const { data, isLoading, isError } = useInvestmentIndices({
-    canal,
-    from,
-    to,
-    enabled: open,
+  // Applied filters (only updated on "Filtrer" click)
+  const [applied, setApplied] = useState<{
+    canal: InvestmentIndicesCanal;
+    from: string;
+    to: string;
+  } | null>(null);
+
+  const { data, isLoading, isFetching, isError } = useInvestmentIndices({
+    canal: applied?.canal ?? canal,
+    from: applied?.from,
+    to: applied?.to,
+    enabled: applied !== null && open,
   });
+
+  function handleFilter() {
+    setApplied({ canal, from, to });
+  }
 
   function handleClose() {
     onClose();
   }
 
-  const buckets = data?.buckets ?? [];
-  const hasBuckets = buckets.length > 0;
-  const goodCount = buckets.filter((b) => b.isGood).length;
+  const rows = data?.rows ?? [];
+  const hasRows = rows.length > 0;
+  const goodCount = rows.filter((r) => r.isGood).length;
+  const color = CANAL_COLOR[applied?.canal ?? canal];
 
   return (
     <Drawer
@@ -125,22 +154,17 @@ export function InvestmentIndicesDrawer({
       <DrawerContent
         className={
           isMobile
-            ? "z-50 flex max-h-[90vh] flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
-            : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[420px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
+            ? "z-50 flex max-h-[92vh] flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
+            : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[440px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
         }
       >
-        <DrawerTitle className="sr-only">
-          Indice de paris — {CANAL_LABEL[canal]}
-        </DrawerTitle>
+        <DrawerTitle className="sr-only">Indice de paris</DrawerTitle>
 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <BarChart2 size={15} className="text-muted-foreground" />
             <span className="text-sm font-semibold">Indice de paris</span>
-            <span className="rounded-full border border-border px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-              {CANAL_LABEL[canal]}
-            </span>
           </div>
           <button
             onClick={handleClose}
@@ -150,93 +174,159 @@ export function InvestmentIndicesDrawer({
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5">
-          {/* Date range */}
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Période d'analyse
+          {/* Filters */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-secondary/30 p-4">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+              Filtres
             </p>
-            <div className="flex items-center gap-2">
-              <DateButton
-                value={from}
-                onChange={(v) => setFrom(v)}
-                label="Début"
-                maxDate={to}
-              />
-              <span className="text-xs text-muted-foreground">→</span>
-              <DateButton
-                value={to}
-                onChange={(v) => setTo(v)}
-                label="Fin"
-                maxDate={yesterday}
-              />
+
+            {/* Canal select */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Canal</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {CANAL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCanal(opt.value)}
+                    className={cn(
+                      "rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors",
+                      canal === opt.value
+                        ? "border-transparent text-background"
+                        : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                    style={
+                      canal === opt.value
+                        ? { backgroundColor: CANAL_COLOR[opt.value] }
+                        : undefined
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Date range */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">
+                Période d'analyse
+              </label>
+              <div className="flex items-center gap-2">
+                <DateButton
+                  value={from}
+                  onChange={setFrom}
+                  placeholder="Début"
+                  maxDate={to}
+                />
+                <span className="text-xs text-muted-foreground">→</span>
+                <DateButton
+                  value={to}
+                  onChange={setTo}
+                  placeholder="Fin"
+                  maxDate={yesterday}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleFilter}
+              className="w-full gap-2"
+              disabled={isLoading || isFetching}
+            >
+              <Filter size={13} />
+              {isLoading || isFetching ? "Chargement…" : "Filtrer"}
+            </Button>
           </div>
 
+          {/* Empty state before first filter */}
+          {applied === null && (
+            <p className="text-sm text-muted-foreground">
+              Sélectionne un canal et une période, puis clique sur Filtrer pour
+              afficher les indices.
+            </p>
+          )}
+
           {/* Summary banner */}
-          {data && (
-            <div className="flex items-center justify-between rounded-xl bg-secondary/50 px-4 py-3">
+          {applied !== null && data && (
+            <div
+              className="flex items-center justify-between rounded-xl border px-4 py-3"
+              style={{
+                borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
+                background: `color-mix(in srgb, ${color} 6%, transparent)`,
+              }}
+            >
               <div className="text-center">
-                <p className="text-[0.65rem] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[0.62rem] uppercase tracking-widest text-muted-foreground">
                   Total
                 </p>
-                <p className="text-base font-bold tabular-nums">
+                <p className="text-lg font-bold tabular-nums">
                   {data.summary.total}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[0.65rem] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[0.62rem] uppercase tracking-widest text-muted-foreground">
                   Gagnés
                 </p>
-                <p className="text-base font-bold tabular-nums text-success">
+                <p className="text-lg font-bold tabular-nums text-success">
                   {data.summary.won}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[0.65rem] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[0.62rem] uppercase tracking-widest text-muted-foreground">
                   Hit rate
                 </p>
-                <p className="text-base font-bold tabular-nums">
+                <p className="text-lg font-bold tabular-nums">
                   {(data.summary.hitRate * 100).toFixed(1)}%
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[0.65rem] uppercase tracking-widest text-muted-foreground">
-                  Bons indices
+                <p className="text-[0.62rem] uppercase tracking-widest text-muted-foreground">
+                  Fiables
                 </p>
-                <p className="text-base font-bold tabular-nums text-success">
-                  {goodCount}/{buckets.length}
+                <p className="text-lg font-bold tabular-nums text-success">
+                  {goodCount}/{rows.length}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Indices table */}
-          {isLoading ? (
-            <div className="flex flex-col gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-10 animate-pulse rounded-xl bg-secondary"
-                />
-              ))}
-            </div>
-          ) : isError ? (
+          {/* Error */}
+          {applied !== null && isError && (
             <p className="text-sm text-destructive">
               Impossible de charger les indices.
             </p>
-          ) : !hasBuckets ? (
+          )}
+
+          {/* Loading skeleton */}
+          {(isLoading || isFetching) && (
+            <div className="flex flex-col gap-1.5">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-9 animate-pulse rounded-xl bg-secondary"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* No data */}
+          {applied !== null && !isLoading && !isFetching && !isError && !hasRows && (
             <p className="text-sm text-muted-foreground">
               Aucune donnée résolue pour cette période.
             </p>
-          ) : (
+          )}
+
+          {/* Probability table */}
+          {!isLoading && !isFetching && hasRows && (
             <div className="flex flex-col gap-1">
-              {/* Header row */}
-              <div className="grid grid-cols-[1fr_48px_48px_56px_28px] items-center gap-2 px-3 pb-1">
+              {/* Header */}
+              <div className="grid grid-cols-[48px_1fr_48px_48px_56px_28px] items-center gap-2 px-3 pb-1">
                 <p className="text-[0.62rem] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Fourchette
+                  Proba
                 </p>
+                <div />
                 <p className="text-center text-[0.62rem] font-semibold uppercase tracking-widest text-muted-foreground">
                   Picks
                 </p>
@@ -249,51 +339,60 @@ export function InvestmentIndicesDrawer({
                 <div />
               </div>
 
-              {buckets.map((bucket) => {
-                const hitPct = (bucket.hitRate * 100).toFixed(1);
-                const barWidth = Math.round(bucket.hitRate * 100);
+              {rows.map((row) => {
+                const barWidth = Math.round(row.hitRate * 100);
                 return (
                   <div
-                    key={bucket.label}
+                    key={row.probability}
                     className={cn(
-                      "relative overflow-hidden rounded-xl border px-3 py-2.5",
-                      bucket.isGood
-                        ? "border-success/20 bg-success/6"
+                      "relative overflow-hidden rounded-xl border px-3 py-2",
+                      row.isGood
+                        ? "border-success/20 bg-success/5"
                         : "border-border bg-secondary/30",
                     )}
                   >
-                    {/* progress bar */}
+                    {/* Progress bar background */}
                     <div
                       className={cn(
                         "absolute inset-y-0 left-0 opacity-10",
-                        bucket.isGood ? "bg-success" : "bg-muted-foreground",
+                        row.isGood ? "bg-success" : "bg-muted-foreground",
                       )}
                       style={{ width: `${barWidth}%` }}
                     />
-                    <div className="relative grid grid-cols-[1fr_48px_48px_56px_28px] items-center gap-2">
-                      <span className="text-xs font-semibold">
-                        {bucket.label}
+                    <div className="relative grid grid-cols-[48px_1fr_48px_48px_56px_28px] items-center gap-2">
+                      <span className="text-xs font-bold tabular-nums">
+                        {row.probability}%
+                      </span>
+                      {/* Mini bar */}
+                      <div className="h-1 overflow-hidden rounded-full bg-border">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            row.isGood ? "bg-success" : "bg-muted-foreground/50",
+                          )}
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                      <span className="text-center text-xs tabular-nums text-muted-foreground">
+                        {row.total}
                       </span>
                       <span className="text-center text-xs tabular-nums text-muted-foreground">
-                        {bucket.total}
-                      </span>
-                      <span className="text-center text-xs tabular-nums text-muted-foreground">
-                        {bucket.won}
+                        {row.won}
                       </span>
                       <span
                         className={cn(
                           "text-right text-xs font-bold tabular-nums",
-                          bucket.isGood ? "text-success" : "text-foreground",
+                          row.isGood ? "text-success" : "text-foreground",
                         )}
                       >
-                        {hitPct}%
+                        {(row.hitRate * 100).toFixed(1)}%
                       </span>
                       <span className="flex justify-center">
-                        {bucket.isGood ? (
-                          <TrendingUp size={13} className="text-success" />
+                        {row.isGood ? (
+                          <TrendingUp size={12} className="text-success" />
                         ) : (
                           <TrendingDown
-                            size={13}
+                            size={12}
                             className="text-muted-foreground"
                           />
                         )}
@@ -306,11 +405,11 @@ export function InvestmentIndicesDrawer({
           )}
 
           {/* Legend */}
-          {hasBuckets && (
+          {hasRows && !isLoading && !isFetching && (
             <p className="text-[0.68rem] leading-snug text-muted-foreground">
-              Un indice est "bon" quand le hit rate réel est ≥ au milieu de la
-              fourchette de probabilité. Cela indique que le modèle est calibré
-              ou meilleur qu'attendu sur ce niveau de confiance.
+              Un indice est fiable quand le hit rate réel ≥ la probabilité
+              annoncée par le modèle. Cela indique que le modèle est calibré ou
+              meilleur qu'attendu à ce niveau de confiance.
             </p>
           )}
         </div>

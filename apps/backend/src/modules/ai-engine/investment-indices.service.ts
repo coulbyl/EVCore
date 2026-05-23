@@ -4,59 +4,35 @@ import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { AiEngineRepository } from './ai-engine.repository';
 import type { InvestmentIndicesCanal } from './dto/investment-indices-query.dto';
 import type {
-  InvestmentIndicesBucket,
+  InvestmentIndicesRow,
   InvestmentIndicesResponse,
 } from './dto/investment-indices.dto';
 
-// ─── Probability buckets ─────────────────────────────────────────────────────
+// ─── Individual probability rows ─────────────────────────────────────────────
 
-type Bucket = { label: string; min: number; max: number };
-
-const BUCKETS: Bucket[] = [
-  { label: '0–10%', min: 0.0, max: 0.1 },
-  { label: '10–20%', min: 0.1, max: 0.2 },
-  { label: '20–30%', min: 0.2, max: 0.3 },
-  { label: '30–40%', min: 0.3, max: 0.4 },
-  { label: '40–50%', min: 0.4, max: 0.5 },
-  { label: '50–55%', min: 0.5, max: 0.55 },
-  { label: '55–60%', min: 0.55, max: 0.6 },
-  { label: '60–65%', min: 0.6, max: 0.65 },
-  { label: '65–70%', min: 0.65, max: 0.7 },
-  { label: '70–75%', min: 0.7, max: 0.75 },
-  { label: '75–80%', min: 0.75, max: 0.8 },
-  { label: '80%+', min: 0.8, max: 1.01 },
-];
-
-function assignBucket(prob: number): Bucket | null {
-  return BUCKETS.find((b) => prob >= b.min && prob < b.max) ?? null;
-}
-
-function buildBuckets(
+function buildRows(
   items: { prob: number; won: boolean }[],
-): InvestmentIndicesBucket[] {
-  const map = new Map<string, { total: number; won: number; b: Bucket }>();
+): InvestmentIndicesRow[] {
+  const map = new Map<number, { total: number; won: number }>();
   for (const item of items) {
-    const b = assignBucket(item.prob);
-    if (!b) continue;
-    const entry = map.get(b.label) ?? { total: 0, won: 0, b };
+    const pct = Math.round(item.prob * 100);
+    const entry = map.get(pct) ?? { total: 0, won: 0 };
     entry.total += 1;
     if (item.won) entry.won += 1;
-    map.set(b.label, entry);
+    map.set(pct, entry);
   }
-  return BUCKETS.filter((b) => map.has(b.label)).map((b) => {
-    const { total, won } = map.get(b.label)!;
-    const hitRate = total > 0 ? won / total : 0;
-    const midpoint = (b.min + Math.min(b.max, 1.0)) / 2;
-    return {
-      label: b.label,
-      min: b.min,
-      max: b.max,
-      total,
-      won,
-      hitRate,
-      isGood: hitRate >= midpoint,
-    };
-  });
+  return [...map.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([pct, { total, won }]) => {
+      const hitRate = total > 0 ? won / total : 0;
+      return {
+        probability: pct,
+        total,
+        won,
+        hitRate,
+        isGood: hitRate >= pct / 100,
+      };
+    });
 }
 
 function dateRange(
@@ -143,14 +119,14 @@ export class InvestmentIndicesService {
       }));
     }
 
-    const buckets = buildBuckets(items);
+    const rows = buildRows(items);
     const totalWon = items.filter((i) => i.won).length;
 
     return {
       canal,
       from: range.fromIso,
       to: range.toIso,
-      buckets,
+      rows,
       summary: {
         total: items.length,
         won: totalWon,

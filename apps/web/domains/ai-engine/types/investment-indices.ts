@@ -6,10 +6,8 @@ export type InvestmentIndicesCanal =
   | "CONF"
   | "COUPON";
 
-export type InvestmentIndicesBucket = {
-  label: string;
-  min: number;
-  max: number;
+export type InvestmentIndicesRow = {
+  probability: number; // integer percentage, e.g. 65 = 65%
   total: number;
   won: number;
   hitRate: number;
@@ -20,7 +18,7 @@ export type InvestmentIndicesResponse = {
   canal: InvestmentIndicesCanal;
   from: string;
   to: string;
-  buckets: InvestmentIndicesBucket[];
+  rows: InvestmentIndicesRow[];
   summary: {
     total: number;
     won: number;
