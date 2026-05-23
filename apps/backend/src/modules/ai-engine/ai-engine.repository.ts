@@ -1,5 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { CouponProposalStatus, CouponResult, Prisma } from '@evcore/db';
+import {
+  BetSource,
+  BetStatus,
+  CouponProposalStatus,
+  CouponResult,
+  Prisma,
+  PredictionChannel,
+  Market,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 export type UpsertProposalInput = {
@@ -171,6 +179,64 @@ export class AiEngineRepository {
     return this.prisma.client.couponProposal.findUnique({
       where: { id },
       include: WITH_LEGS,
+    });
+  }
+
+  async findResolvedCouponsInRange(
+    from: Date,
+    to: Date,
+  ): Promise<CouponProposalWithLegs[]> {
+    return this.prisma.client.couponProposal.findMany({
+      where: {
+        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        forDate: { gte: from, lte: to },
+      },
+      include: WITH_LEGS,
+      orderBy: [{ forDate: 'asc' }, { rank: 'asc' }],
+    }) as unknown as Promise<CouponProposalWithLegs[]>;
+  }
+
+  async findSettledBetsForIndices(
+    isSafeValue: boolean,
+    from: Date,
+    to: Date,
+  ): Promise<{ probEstimated: Prisma.Decimal; status: string }[]> {
+    return this.prisma.client.bet.findMany({
+      where: {
+        isSafeValue,
+        source: BetSource.MODEL,
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: { probEstimated: true, status: true },
+    });
+  }
+
+  async findSettledPredictionsForIndices(
+    channel: PredictionChannel,
+    from: Date,
+    to: Date,
+  ): Promise<{ probability: Prisma.Decimal; correct: boolean | null }[]> {
+    return this.prisma.client.prediction.findMany({
+      where: {
+        channel,
+        correct: { not: null },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: { probability: true, correct: true },
+    });
+  }
+
+  async findResolvedCouponsForIndices(
+    from: Date,
+    to: Date,
+  ): Promise<{ jointProbability: Prisma.Decimal; result: CouponResult }[]> {
+    return this.prisma.client.couponProposal.findMany({
+      where: {
+        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        forDate: { gte: from, lte: to },
+      },
+      select: { jointProbability: true, result: true },
     });
   }
 

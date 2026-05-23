@@ -1,15 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma.module';
+import { SummaryModule } from '@modules/summary/summary.module';
 import { AiEngineRepository } from './ai-engine.repository';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { AiEngineService } from './ai-engine.service';
 import { InvestmentService } from './investment.service';
+import { InvestmentSummaryService } from './investment-summary.service';
+import { InvestmentIndicesService } from './investment-indices.service';
 import { AiEngineController } from './ai-engine.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, SummaryModule],
   controllers: [AiEngineController],
   providers: [
     AiEngineRepository,
@@ -18,6 +21,8 @@ import { AiEngineController } from './ai-engine.controller';
     CouponSettlementService,
     AiEngineService,
     InvestmentService,
+    InvestmentSummaryService,
+    InvestmentIndicesService,
   ],
   exports: [AiEngineService, CouponSettlementService, InvestmentService],
 })

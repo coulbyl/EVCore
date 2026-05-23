@@ -114,8 +114,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {
           label: tNav("summary"),
           href: "/dashboard/summary",
-          active: pathname.startsWith("/dashboard/summary"),
+          active:
+            pathname.startsWith("/dashboard/summary") &&
+            !pathname.startsWith("/dashboard/investment-summary"),
           icon: BarChart3,
+        },
+        {
+          label: tNav("investmentSummary"),
+          href: "/dashboard/investment-summary",
+          active: pathname.startsWith("/dashboard/investment-summary"),
+          icon: TrendingUp,
         },
         {
           label: tNav("fixtures"),
