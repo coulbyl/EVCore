@@ -262,7 +262,7 @@ function PickCard({
         )}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {scoreLabel && (
-            <span className="whitespace-nowrap font-mono text-foreground">{scoreLabel}</span>
+            <span className="whitespace-nowrap font-mono text-[0.7rem] text-foreground">{scoreLabel}</span>
           )}
           <ResultBadge isCorrect={pick.isCorrect} />
           <SlipButton pick={pick} />
