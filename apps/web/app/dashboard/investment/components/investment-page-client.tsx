@@ -246,23 +246,23 @@ function PickCard({
         <span className="font-medium text-foreground">{pickLabel}</span>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-        <span className="uppercase tracking-widest text-[0.6rem]">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
+        <span className="whitespace-nowrap uppercase tracking-widest text-[0.6rem]">
           {pick.competition}
         </span>
         <span className="opacity-40">·</span>
-        <span>{formatTime(pick.scheduledAt)}</span>
+        <span className="whitespace-nowrap">{formatTime(pick.scheduledAt)}</span>
         {pick.oddsSnapshot != null && (
           <>
             <span className="opacity-40">·</span>
-            <span className="font-mono text-foreground">
+            <span className="whitespace-nowrap font-mono text-foreground">
               @{pick.oddsSnapshot.toFixed(2)}
             </span>
           </>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {scoreLabel && (
-            <span className="font-mono text-foreground">{scoreLabel}</span>
+            <span className="whitespace-nowrap font-mono text-foreground">{scoreLabel}</span>
           )}
           <ResultBadge isCorrect={pick.isCorrect} />
           <SlipButton pick={pick} />
