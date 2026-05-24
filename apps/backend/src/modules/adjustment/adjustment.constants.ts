@@ -12,8 +12,10 @@ export const MAX_WEIGHT_CHANGE = 0.05;
 /**
  * Brier score above which recalibration is triggered.
  * Perfect calibration → 0, random model → 0.25, always-wrong → 1.
+ * Lowered 0.25 → 0.20 (2026-05-24): live ONE_X_TWO sits at 0.2239 with mean
+ * error +0.1446 (systematic over-confidence). 0.25 was never reachable in practice.
  */
-export const CALIBRATION_TRIGGER_THRESHOLD = 0.25;
+export const CALIBRATION_TRIGGER_THRESHOLD = 0.20;
 
 /** Brier score target below which no adjustment is needed. */
 export const BRIER_TARGET = 0.2;
