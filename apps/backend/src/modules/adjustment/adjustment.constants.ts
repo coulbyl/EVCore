@@ -15,7 +15,7 @@ export const MAX_WEIGHT_CHANGE = 0.05;
  * Lowered 0.25 → 0.20 (2026-05-24): live ONE_X_TWO sits at 0.2239 with mean
  * error +0.1446 (systematic over-confidence). 0.25 was never reachable in practice.
  */
-export const CALIBRATION_TRIGGER_THRESHOLD = 0.20;
+export const CALIBRATION_TRIGGER_THRESHOLD = 0.2;
 
 /** Brier score target below which no adjustment is needed. */
 export const BRIER_TARGET = 0.2;
