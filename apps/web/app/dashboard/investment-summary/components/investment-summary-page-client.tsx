@@ -129,7 +129,7 @@ function SimulationDrawer({
       <DrawerContent
         className={
           isMobile
-            ? "z-50 flex max-h-[85vh] flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
+            ? "z-50 flex h-[85vh] flex-col rounded-t-[1.5rem] border-t border-border bg-panel outline-none"
             : "z-50 inset-y-4 right-4 flex h-[calc(100dvh-2rem)] w-[380px] flex-col rounded-[1.5rem] border border-border bg-panel shadow-[0_24px_80px_rgba(15,23,42,0.18)] outline-none"
         }
       >

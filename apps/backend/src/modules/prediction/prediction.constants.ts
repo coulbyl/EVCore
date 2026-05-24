@@ -239,11 +239,48 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // SWE1 backtest 2026-05-03: BTTS 0.58 gives 60.6% hr with 17.3% coverage (104 picks).
     // Preferred over 0.55 for precision.
     BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    // SWE1 backtest 2026-05-24: DRAW ROI +10.9% on 43 preds at 0.30 (cote implicite < 3.33).
+    DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
   },
   SWE2: {
     // SWE2 backtest 2026-05-03: CONF no PASS. BTTS marginal at 0.55 (56.2%, 32%, 192 picks)
     // — passes criteria, monitor closely.
     BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+  },
+  KOR1: {
+    // KOR1 backtest 2026-05-24: DRAW ROI +23.2% on 140 preds at 0.26 — strong signal.
+    DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+    // KOR1 backtest 2026-05-24: BTTS 58.5% HR on 82 preds at 0.55.
+    BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    // KOR1: CONF no PASS threshold found.
+    CONF: { enabled: false, threshold: 0.99, minSampleN: 10 },
+  },
+  CSL: {
+    // CSL backtest 2026-05-24: CONF exceptional — 0.60 gives 70% HR on 167 preds,
+    // 0.65 gives 79% HR on 103 preds. Use 0.60 for volume + precision balance.
+    CONF: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    // CSL backtest 2026-05-24: DRAW ROI +18% on 80 preds at 0.28.
+    DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+    // CSL backtest 2026-05-24: BTTS 0.62 gives 74% HR on 68 preds — excellent precision.
+    BTTS: { enabled: true, threshold: 0.62, minSampleN: 10 },
+  },
+  FIN1: {
+    // FIN1 backtest 2026-05-24: CONF validates at 0.55 (65% HR, 52 preds). Prefer 0.55
+    // over 0.50 for precision (65% vs 60%).
+    CONF: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    // FIN1 backtest 2026-05-24: DRAW ROI +6.9% on 21 preds at 0.30. Marginal — monitor.
+    DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
+    // FIN1 backtest 2026-05-24: BTTS validates at 0.55 (62% HR, 68 preds).
+    BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+  },
+  BRA1: {
+    // BRA1 backtest 2026-05-24: CONF validates at 0.55 (60.6% HR, 175 predictions).
+    CONF: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    // BRA1 backtest 2026-05-24: DRAW ROI +20.7% on 29 predictions at 0.34. Marginal
+    // sample — monitor closely.
+    DRAW: { enabled: true, threshold: 0.34, minSampleN: 10 },
+    // BRA1 backtest 2026-05-24: BTTS prediction — no threshold validates.
+    BTTS: { enabled: false, threshold: 0.99, minSampleN: 10 },
   },
   MLS: {
     // MLS backtest 2026-05-03: CONF no PASS. BTTS high-BTTS league — coverage collapses

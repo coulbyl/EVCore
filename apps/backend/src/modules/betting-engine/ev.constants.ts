@@ -533,6 +533,17 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // but lower the fixture gate to 0.58 so balanced Segunda matches can reach market
   // evaluation instead of being discarded upfront.
   SP2: new Decimal('0.58'),
+  // Backtest 2026-05-24: SWE1 uses default 0.60 which blocks 389/600 fixtures (65%).
+  // Allsvenskan is a balanced league — scores cluster in [0.45-0.60]. Lowered to 0.55
+  // to unlock evaluation without opening noisy sub-0.50 territory.
+  SWE1: new Decimal('0.55'),
+  // Backtest 2026-05-24: BRA1 default 0.60 blocks 783/986 fixtures (79%). Brasileirão
+  // is a balanced, physically demanding league — deterministic scores cluster low.
+  // Lowered to 0.55 to unlock BTTS/OVER candidates; HOME blocked separately.
+  BRA1: new Decimal('0.55'),
+  // Backtest 2026-05-24: CSL default 0.60 blocks 249/723 fixtures. Balanced league,
+  // scores cluster at [0.45-0.60]. Lowered to 0.55; HOME blocked separately.
+  CSL: new Decimal('0.55'),
   // Lowered 0.75 → 0.60 (audit 2026-04-05): HA factor corrected to 1.02/0.98.
   // Lowered 0.60 → 0.50 (2026-04-18): ndjson audit showed the league is structurally
   // balanced and rarely clears a high deterministic score. A later 0.45 test re-opened
@@ -814,6 +825,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'MX1|OVER_UNDER|UNDER': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 OVER_3_5 surfaced once (odds 3.04) and lost.
   'MX1|OVER_UNDER|OVER_3_5': new Decimal('0.99'),
+  // Live audit 2026-05-24: MX1 UNDER_3_5 — 4 bets, 1W/3L, avg odds 1.54, -62.8% ROI.
+  // Consistent with MX1's high-scoring profile; structural loser. Block.
+  'MX1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
   // Audit 2026-04-25: MX1 OVER (25 bets, +2.2% ROI) is dragged by S1 (-28% on 11
   // bets). S2/S3 OVER are profitable (+15%/+92%) but S1 contaminates the signal.
   // No clean odds-range or EV cutoff separates wins from losses — the issue is
@@ -832,6 +846,9 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // Blend shifts probability toward actual 26.5% draw rate but J1 DRAWs lack exploitable
   // edge against Pinnacle lines at 3.5-4.0 odds.
   'J1|ONE_X_TWO|DRAW': new Decimal('0.99'),
+  // Live audit 2026-05-24: J1 OVER_3_5 — 7 bets, 0W/7L, avg odds 3.54, -100% ROI.
+  // High-goal lines at 3.5 never fire in J1 (avg ~2.5 goals/game). Eliminate.
+  'J1|OVER_UNDER|OVER_3_5': new Decimal('0.99'),
   // J1 backtest 2026-04-25: UNDER surfaced once (1.92 odds, LOSS -100%). No edge.
   'J1|OVER_UNDER|UNDER': new Decimal('0.99'),
   // J1 backtest 2026-04-25: OVER_HT surfaced once (3.2 odds, LOSS -100%). No edge.
@@ -945,6 +962,16 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // candidates went 4W/35L (-27.8%). No edge in either direction.
   'NOR1|ONE_X_TWO|AWAY': new Decimal('0.99'),
   'NOR1|OVER_UNDER|OVER': new Decimal('0.99'),
+  // Backtest 2026-05-24: SWE1 OVER 2 bets, 0W/2L, -100% ROI. No exploitable OVER signal.
+  'SWE1|OVER_UNDER|OVER': new Decimal('0.99'),
+  // Backtest 2026-05-24: BRA1 HOME 10 bets, 10% HR, -77.5% ROI. Model structurally
+  // over-predicts HOME in Brasileirão — away teams win far more than Poisson expects.
+  'BRA1|ONE_X_TWO|HOME': new Decimal('0.99'),
+  // Backtest 2026-05-24: CSL HOME 5 bets, 20% HR, -58.2% ROI. Same structural issue
+  // as BRA1 — Poisson over-predicts HOME in Chinese Super League.
+  'CSL|ONE_X_TWO|HOME': new Decimal('0.99'),
+  // Backtest 2026-05-24: BRA1 AWAY bucket 3.0-4.99 → 1 bet, 0% HR. Cap at 2.99.
+  'BRA1|ONE_X_TWO|AWAY': new Decimal('2.99'),
   // MLS OVER/OVER_HT: 2 bets total, 0W/2L — too sparse and negative.
   'MLS|OVER_UNDER|OVER': new Decimal('0.99'),
   'MLS|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
@@ -966,6 +993,18 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   // BL1 backtest 2026-04-24: UNDER_3_5 surfaced once at 2.35 and lost. The
   // league's high-scoring profile keeps this defensive total out of scope.
   'BL1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Live audit 2026-05-24: TUR1 UNDER_3_5 — 2 bets, 0W/2L, avg odds 1.83, -100% ROI.
+  // TUR1 avg ~2.7 goals; defensive totals at ≥3.5 are not reliable. Block.
+  'TUR1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Live audit 2026-05-24: MLS UNDER_3_5 — 2 bets, 0W/2L, avg odds 1.82, -100% ROI.
+  // Consistent with MLS OVER being blocked; defensive totals also lack edge.
+  'MLS|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Live audit 2026-05-24: NOR1 UNDER_3_5 — 3 bets, 1W/2L, avg odds 1.86, -48% ROI.
+  // NOR1 OVER already blocked; UNDER_3_5 also structural loser in this league.
+  'NOR1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
+  // Live audit 2026-05-24: L1 UNDER_3_5 — 6 bets, 3W/3L, avg odds 1.45, -26% ROI.
+  // 50% win rate requires 69% breakeven at 1.45; structural loser regardless of sample.
+  'L1|OVER_UNDER|UNDER_3_5': new Decimal('0.99'),
   // LL backtest 2026-04-24 after the FHW-DRAW tightening: HT UNDER 1.5 still
   // places 8 bets for 1W/7L (-77.1% ROI), and the two rejected low-EV cases
   // also lost. No clean odds window emerges; keep only the most extreme
@@ -1103,6 +1142,9 @@ const PICK_MAX_SELECTION_ODDS_MAP: Record<string, Decimal> = {
   // lost. EV > 0.90 is a hard-cap signal; the inflated EV at 3.00 confirms model
   // over-confidence. Cap at 2.99 to eliminate this segment entirely.
   'SUI1|ONE_X_TWO|HOME': new Decimal('2.99'),
+  // Backtest 2026-05-24: SWE1 HOME bucket 3.0-4.99 → 3 bets, 0% HR, -100% ROI.
+  // Long-shot HOME in Allsvenskan carries no exploitable edge. Cap at 2.99.
+  'SWE1|ONE_X_TWO|HOME': new Decimal('2.99'),
 };
 
 export function getPickMaxSelectionOdds(
