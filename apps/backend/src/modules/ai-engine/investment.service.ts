@@ -6,7 +6,10 @@ import { z } from 'zod';
 import { createLogger } from '@utils/logger';
 import { formatDateUtc } from '@utils/date.utils';
 import { REDIS_CLIENT } from '@common/redis/redis.module';
-import { INVESTMENT_PARAMS, MAX_INVESTMENT_SELECTIONS } from './investment.constants';
+import {
+  INVESTMENT_PARAMS,
+  MAX_INVESTMENT_SELECTIONS,
+} from './investment.constants';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import type { Canal, ScoredPick } from './signal-window.service';

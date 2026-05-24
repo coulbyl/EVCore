@@ -1,10 +1,10 @@
 export type InvestmentSummaryCanal =
-  | 'EV'
-  | 'SV'
-  | 'BB'
-  | 'NUL'
-  | 'CONF'
-  | 'COUPON';
+  | "EV"
+  | "SV"
+  | "BB"
+  | "NUL"
+  | "CONF"
+  | "COUPON";
 
 export type InvestmentSummaryStats = {
   total: number;
@@ -27,11 +27,11 @@ export type InvestmentSummaryPickRow = {
   awayLogo: string | null;
   competition: string;
   scheduledAt: string;
-  canal: Exclude<InvestmentSummaryCanal, 'COUPON'>;
+  canal: Exclude<InvestmentSummaryCanal, "COUPON">;
   market: string;
   pick: string;
   odds: string | null;
-  result: 'WON' | 'LOST';
+  result: "WON" | "LOST";
 };
 
 export type InvestmentSummaryCouponLeg = {
@@ -54,7 +54,7 @@ export type InvestmentSummaryCouponRow = {
   rank: number;
   combinedOdds: number;
   jointProbability: number;
-  result: 'WON' | 'LOST';
+  result: "WON" | "LOST";
   legs: InvestmentSummaryCouponLeg[];
 };
 
