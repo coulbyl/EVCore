@@ -218,12 +218,12 @@ export function EvPickCard({ row }: { row: FixtureRow }) {
             {odds}
           </span>
         )}
-        {mr.ev && (
+        {mr.probEstimated && (
           <span
             className="tabular-nums text-sm font-bold"
             style={{ color: "var(--canal-ev)" }}
           >
-            {mr.ev}
+            {mr.probEstimated}
           </span>
         )}
         <ResultBadge status={mr.betStatus} />
@@ -304,12 +304,14 @@ export function SvPickCard({ row }: { row: FixtureRow }) {
             {sv.odds}
           </span>
         )}
-        <span
-          className="tabular-nums text-sm font-bold"
-          style={{ color: "var(--canal-sv)" }}
-        >
-          {sv.ev}
-        </span>
+        {sv.probEstimated && (
+          <span
+            className="tabular-nums text-sm font-bold"
+            style={{ color: "var(--canal-sv)" }}
+          >
+            {sv.probEstimated}
+          </span>
+        )}
         <ResultBadge status={sv.betStatus} />
         <AddToSlipInline row={row} canal="SV" />
       </div>

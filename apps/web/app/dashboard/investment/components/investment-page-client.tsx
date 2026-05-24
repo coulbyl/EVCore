@@ -315,7 +315,7 @@ function HeroInsights({
             )}
           </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-4 gap-2 px-4">
+        <CardContent className="grid grid-cols-3 gap-2 px-4">
           <StatCard
             label="Candidats"
             value={String(data.totalCandidates)}
@@ -334,13 +334,6 @@ function HeroInsights({
             value={String(summary.totalCoupons)}
             icon={<Ticket className="size-3.5" />}
             compact
-          />
-          <StatCard
-            label="Confiance Moy."
-            value={formatPct(summary.avgHitRate)}
-            icon={<Brain className="size-3.5" />}
-            compact
-            tone="success"
           />
         </CardContent>
       </Card>
