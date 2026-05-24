@@ -84,6 +84,7 @@ function dateRange(
   return { from: fromDate, to: toDate };
 }
 
+// eslint-disable-next-line max-params
 function capByDay<T>(
   items: T[],
   getDate: (item: T) => string,
@@ -186,7 +187,7 @@ export class InvestmentSummaryService {
         }),
       );
     } else {
-      const predCanal = canal as 'CONF' | 'BB' | 'NUL';
+      const predCanal = canal;
       const predictions =
         await this.repo.findSettledPredictionsForInvestmentSummary(
           CANAL_TO_PREDICTION_CHANNEL[predCanal],
