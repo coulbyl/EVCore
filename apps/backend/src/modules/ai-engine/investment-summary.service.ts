@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { Market, PredictionChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
-import { SummaryService } from '@modules/summary/summary.service';
 import { AiEngineRepository } from './ai-engine.repository';
+import type { InvestmentSummaryPredictionRow } from './ai-engine.repository';
 import type { InvestmentSummaryCanal } from './dto/investment-summary-query.dto';
 import type {
   InvestmentSummaryPickRow,
@@ -10,28 +11,24 @@ import type {
   InvestmentSummaryResponse,
   InvestmentSummaryStats,
 } from './dto/investment-summary.dto';
-import type { SummaryChannel } from '@modules/summary/summary.types';
+import {
+  type InvestmentCanal,
+  MAX_INVESTMENT_SELECTIONS,
+} from './investment.constants';
 
-const CANAL_TO_CHANNEL: Record<
-  Exclude<InvestmentSummaryCanal, 'COUPON'>,
-  SummaryChannel
+const CANAL_TO_PREDICTION_CHANNEL: Record<
+  'CONF' | 'BB' | 'NUL',
+  PredictionChannel
 > = {
-  EV: 'EV',
-  SV: 'SV',
-  BB: 'BTTS',
-  NUL: 'DRAW',
-  CONF: 'CONF',
+  CONF: PredictionChannel.CONF,
+  BB: PredictionChannel.BTTS,
+  NUL: PredictionChannel.DRAW,
 };
 
-const CHANNEL_TO_CANAL: Record<
-  SummaryChannel,
-  Exclude<InvestmentSummaryCanal, 'COUPON'>
-> = {
-  EV: 'EV',
-  SV: 'SV',
-  BTTS: 'BB',
-  DRAW: 'NUL',
-  CONF: 'CONF',
+const CANAL_TO_ODDS_MARKET: Record<'CONF' | 'BB' | 'NUL', Market> = {
+  CONF: Market.ONE_X_TWO,
+  BB: Market.BTTS,
+  NUL: Market.ONE_X_TWO,
 };
 
 function buildProgression(
@@ -56,9 +53,10 @@ function buildProgression(
   return points;
 }
 
-function computeRoi(
-  items: { odds: number | null; result: 'WON' | 'LOST' }[],
-): { roi: string | null; roiPickCount: number } {
+function computeRoi(items: { odds: number | null; result: 'WON' | 'LOST' }[]): {
+  roi: string | null;
+  roiPickCount: number;
+} {
   const withOdds = items.filter((i) => i.odds !== null);
   if (!withOdds.length) return { roi: null, roiPickCount: 0 };
   const totalReturned = withOdds.reduce((acc, i) => {
@@ -86,12 +84,50 @@ function dateRange(
   return { from: fromDate, to: toDate };
 }
 
+function capByDay<T>(
+  items: T[],
+  getDate: (item: T) => string,
+  getScore: (item: T) => number,
+  maxPerDay: number,
+): T[] {
+  const byDate = new Map<string, T[]>();
+  for (const item of items) {
+    const date = getDate(item);
+    const bucket = byDate.get(date) ?? [];
+    bucket.push(item);
+    byDate.set(date, bucket);
+  }
+  const result: T[] = [];
+  for (const bucket of byDate.values()) {
+    const sorted = [...bucket].sort((a, b) => getScore(b) - getScore(a));
+    result.push(...sorted.slice(0, maxPerDay));
+  }
+  return result;
+}
+
+function extractPredictionOdds(
+  pred: InvestmentSummaryPredictionRow,
+  canal: 'CONF' | 'BB' | 'NUL',
+): string | null {
+  const snapshots = pred.fixture.oddsSnapshots;
+  if (!snapshots.length) return null;
+
+  if (canal === 'CONF' || canal === 'NUL') {
+    const snap = snapshots[0];
+    if (pred.pick === 'HOME') return snap.homeOdds?.toString() ?? null;
+    if (pred.pick === 'DRAW') return snap.drawOdds?.toString() ?? null;
+    if (pred.pick === 'AWAY') return snap.awayOdds?.toString() ?? null;
+    return null;
+  }
+
+  // BB (BTTS): find snapshot matching the pick (YES / NO)
+  const snap = snapshots.find((s) => s.pick === pred.pick);
+  return snap?.odds?.toString() ?? null;
+}
+
 @Injectable()
 export class InvestmentSummaryService {
-  constructor(
-    private readonly summary: SummaryService,
-    private readonly repo: AiEngineRepository,
-  ) {}
+  constructor(private readonly repo: AiEngineRepository) {}
 
   async getInvestmentSummary(query: {
     canal: InvestmentSummaryCanal;
@@ -104,11 +140,7 @@ export class InvestmentSummaryService {
       return this.buildCouponSummary(query.from, query.to);
     }
 
-    return this.buildPickSummary(
-      canal,
-      query.from,
-      query.to,
-    );
+    return this.buildPickSummary(canal, query.from, query.to);
   }
 
   private async buildPickSummary(
@@ -116,32 +148,110 @@ export class InvestmentSummaryService {
     from: string | undefined,
     to: string | undefined,
   ): Promise<InvestmentSummaryResponse> {
-    const channel = CANAL_TO_CHANNEL[canal];
-    const summaryData = await this.summary.getSummary({
-      channel,
-      from,
-      to,
-    });
+    const range = dateRange(from, to);
+    const maxPerDay = MAX_INVESTMENT_SELECTIONS[canal as InvestmentCanal];
 
-    const picks: InvestmentSummaryPickRow[] = summaryData.picks.map((p) => ({
-      fixtureId: p.fixtureId,
-      fixture: p.fixture,
-      homeLogo: p.homeLogo,
-      awayLogo: p.awayLogo,
-      competition: p.competition,
-      scheduledAt: p.scheduledAt,
-      canal: CHANNEL_TO_CANAL[p.channel],
-      market: p.market,
-      pick: p.pick,
-      odds: p.odds,
-      result: p.result,
-    }));
+    let picks: InvestmentSummaryPickRow[];
+
+    if (canal === 'EV' || canal === 'SV') {
+      const bets = await this.repo.findSettledBetsForInvestmentSummary(
+        canal === 'SV',
+        range.from,
+        range.to,
+      );
+
+      const capped = capByDay(
+        bets,
+        (b) => b.fixture.scheduledAt.toISOString().slice(0, 10),
+        (b) =>
+          b.qualityScore !== null
+            ? Number(b.qualityScore)
+            : Number(b.probEstimated),
+        maxPerDay,
+      );
+
+      picks = capped.map(
+        (b): InvestmentSummaryPickRow => ({
+          fixtureId: b.fixture.id,
+          fixture: `${b.fixture.homeTeam.name} vs ${b.fixture.awayTeam.name}`,
+          homeLogo: b.fixture.homeTeam.logoUrl ?? null,
+          awayLogo: b.fixture.awayTeam.logoUrl ?? null,
+          competition: b.fixture.season.competition.name,
+          scheduledAt: b.fixture.scheduledAt.toISOString(),
+          canal,
+          market: b.market,
+          pick: b.pick,
+          odds: b.oddsSnapshot?.toString() ?? null,
+          result: b.status === 'WON' ? 'WON' : 'LOST',
+        }),
+      );
+    } else {
+      const predCanal = canal as 'CONF' | 'BB' | 'NUL';
+      const predictions =
+        await this.repo.findSettledPredictionsForInvestmentSummary(
+          CANAL_TO_PREDICTION_CHANNEL[predCanal],
+          CANAL_TO_ODDS_MARKET[predCanal],
+          range.from,
+          range.to,
+        );
+
+      const capped = capByDay(
+        predictions,
+        (p) => p.fixture.scheduledAt.toISOString().slice(0, 10),
+        (p) => Number(p.probability),
+        maxPerDay,
+      );
+
+      picks = capped.map(
+        (p): InvestmentSummaryPickRow => ({
+          fixtureId: p.fixture.id,
+          fixture: `${p.fixture.homeTeam.name} vs ${p.fixture.awayTeam.name}`,
+          homeLogo: p.fixture.homeTeam.logoUrl ?? null,
+          awayLogo: p.fixture.awayTeam.logoUrl ?? null,
+          competition: p.fixture.season.competition.name,
+          scheduledAt: p.fixture.scheduledAt.toISOString(),
+          canal,
+          market: p.market,
+          pick: p.pick,
+          odds: extractPredictionOdds(p, predCanal),
+          result: p.correct ? 'WON' : 'LOST',
+        }),
+      );
+    }
+
+    const won = picks.filter((p) => p.result === 'WON');
+    const lost = picks.filter((p) => p.result === 'LOST');
+
+    const { roi, roiPickCount } = computeRoi(
+      picks.map((p) => ({
+        odds: p.odds !== null ? parseFloat(p.odds) : null,
+        result: p.result,
+      })),
+    );
+
+    const stats: InvestmentSummaryStats = {
+      total: picks.length,
+      won: won.length,
+      lost: lost.length,
+      roi,
+      roiPickCount,
+    };
+
+    const sorted = [
+      ...won.sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt)),
+      ...lost.sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt)),
+    ];
 
     return {
       canal,
-      stats: summaryData.stats,
-      progression: summaryData.progression,
-      picks,
+      stats,
+      progression: buildProgression(
+        picks.map((p) => ({
+          date: p.scheduledAt.slice(0, 10),
+          result: p.result,
+        })),
+      ),
+      picks: sorted,
       coupons: [],
     };
   }
@@ -157,9 +267,7 @@ export class InvestmentSummaryService {
     );
 
     const coupons: InvestmentSummaryCouponRow[] = proposals
-      .filter(
-        (p) => p.result === 'WON' || p.result === 'LOST',
-      )
+      .filter((p) => p.result === 'WON' || p.result === 'LOST')
       .map((p) => ({
         id: p.id,
         forDate: p.forDate.toISOString().slice(0, 10),

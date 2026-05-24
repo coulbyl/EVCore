@@ -10,6 +10,14 @@
 
 export type InvestmentCanal = 'EV' | 'SV' | 'BB' | 'NUL' | 'CONF';
 
+export const MAX_INVESTMENT_SELECTIONS: Record<InvestmentCanal, number> = {
+  SV: 5,
+  BB: 5,
+  CONF: 5,
+  NUL: 2,
+  EV: 2,
+} as const;
+
 export const CANAL_BASE_WEIGHT: Record<InvestmentCanal, number> = {
   SV: 0.74,
   CONF: 0.66,

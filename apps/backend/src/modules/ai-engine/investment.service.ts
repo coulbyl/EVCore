@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { createLogger } from '@utils/logger';
 import { formatDateUtc } from '@utils/date.utils';
 import { REDIS_CLIENT } from '@common/redis/redis.module';
-import { INVESTMENT_PARAMS } from './investment.constants';
+import { INVESTMENT_PARAMS, MAX_INVESTMENT_SELECTIONS } from './investment.constants';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import type { Canal, ScoredPick } from './signal-window.service';
@@ -22,13 +22,7 @@ const CACHE_TTL_TODAY_SECONDS = 2 * 60 * 60; // 2 hours
 
 const logger = createLogger('investment');
 
-const MAX_SELECTIONS: Record<Canal, number> = {
-  SV: 5,
-  BB: 5,
-  CONF: 5,
-  NUL: 2,
-  EV: 2,
-};
+const MAX_SELECTIONS = MAX_INVESTMENT_SELECTIONS;
 
 // ─── Claude I/O types ────────────────────────────────────────────────────────
 
