@@ -2,9 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
-  ChartNoAxesColumn,
   CheckCircle2,
+  ChartNoAxesColumn,
   LayoutList,
   TrendingUp,
   X,
@@ -25,23 +26,23 @@ import {
   type FilterState,
 } from "@evcore/ui";
 
-import { isoToDate, toISODate } from "@/lib/date";
-import { useSummary } from "@/domains/summary/use-cases/get-summary";
+import { isoToDate, toISODate, daysAgoIso } from "@/lib/date";
+import { useInvestmentSummary } from "@/domains/investment-summary/use-cases/use-investment-summary";
 import { EvLineChart } from "@/components/charts/ev-line-chart";
-import { CanalBadge } from "@/components/canal-badge";
 import { Amount } from "@/components/amount";
 import {
-  formatCombinedPickForDisplay,
   formatPickForDisplay,
+  formatMarketForDisplay,
 } from "@/helpers/fixture";
 import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type {
-  SummaryChannel,
-  SummaryPickRow,
-} from "@/domains/summary/types/summary";
+  InvestmentSummaryCanal,
+  InvestmentSummaryPickRow,
+  InvestmentSummaryCouponRow,
+} from "@/domains/investment-summary/types/investment-summary";
 
-// ── simulation ────────────────────────────────────────────────────────────────
+// ── Simulation ────────────────────────────────────────────────────────────────
 
 type SimResult = {
   count: number;
@@ -51,7 +52,10 @@ type SimResult = {
   roi: number;
 };
 
-function runSimulation(picks: SummaryPickRow[], stake: number): SimResult {
+function runPickSimulation(
+  picks: InvestmentSummaryPickRow[],
+  stake: number,
+): SimResult {
   const count = picks.length;
   const totalStaked = count * stake;
   const totalReturned = picks.reduce((acc, p) => {
@@ -65,25 +69,49 @@ function runSimulation(picks: SummaryPickRow[], stake: number): SimResult {
   return { count, totalStaked, totalReturned, net, roi };
 }
 
+function runCouponSimulation(
+  coupons: InvestmentSummaryCouponRow[],
+  stake: number,
+): SimResult {
+  const count = coupons.length;
+  const totalStaked = count * stake;
+  const totalReturned = coupons.reduce((acc, c) => {
+    return c.result === "WON" ? acc + stake * c.combinedOdds : acc;
+  }, 0);
+  const net = totalReturned - totalStaked;
+  const roi = totalStaked > 0 ? (net / totalStaked) * 100 : 0;
+  return { count, totalStaked, totalReturned, net, roi };
+}
+
 function SimulationDrawer({
   open,
   onClose,
   picks,
+  coupons,
+  isCouponMode,
   isMobile,
 }: {
   open: boolean;
   onClose: () => void;
-  picks: SummaryPickRow[];
+  picks: InvestmentSummaryPickRow[];
+  coupons: InvestmentSummaryCouponRow[];
+  isCouponMode: boolean;
   isMobile: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [stakeInput, setStakeInput] = useState("");
   const [result, setResult] = useState<SimResult | null>(null);
 
+  const itemCount = isCouponMode ? coupons.length : picks.length;
+
   function handleSimulate() {
     const stake = parseFloat(stakeInput.replace(",", "."));
     if (!isFinite(stake) || stake <= 0) return;
-    setResult(runSimulation(picks, stake));
+    setResult(
+      isCouponMode
+        ? runCouponSimulation(coupons, stake)
+        : runPickSimulation(picks, stake),
+    );
   }
 
   function handleClose() {
@@ -106,8 +134,6 @@ function SimulationDrawer({
         }
       >
         <DrawerTitle className="sr-only">Simulation de gains</DrawerTitle>
-
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <ChartNoAxesColumn size={16} className="text-muted-foreground" />
@@ -120,21 +146,16 @@ function SimulationDrawer({
             <X size={16} />
           </button>
         </div>
-
-        {/* Body */}
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
           <p className="text-sm text-muted-foreground">
             Si tu avais misé la même somme sur chacun des{" "}
-            <span className="font-semibold text-foreground">
-              {picks.length} picks
-            </span>{" "}
-            de la période filtrée, voici ce que tu aurais gagné ou perdu.
+            <span className="font-semibold text-foreground">{itemCount}</span>{" "}
+            {isCouponMode ? "coupons" : "picks"} de la période filtrée, voici ce
+            que tu aurais gagné ou perdu.
           </p>
-
-          {/* Input */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Mise par pick
+              {isCouponMode ? "Mise par coupon" : "Mise par pick"}
             </label>
             <input
               ref={inputRef}
@@ -151,7 +172,6 @@ function SimulationDrawer({
               className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
-
           <Button
             onClick={handleSimulate}
             disabled={!stakeInput || parseFloat(stakeInput) <= 0}
@@ -159,8 +179,6 @@ function SimulationDrawer({
           >
             Simuler
           </Button>
-
-          {/* Results */}
           {result !== null ? (
             <div className="flex flex-col gap-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -169,7 +187,7 @@ function SimulationDrawer({
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-secondary/50 p-3">
                   <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-                    Picks
+                    {isCouponMode ? "Coupons" : "Picks"}
                   </p>
                   <p className="mt-1 text-xl font-bold tabular-nums">
                     {result.count}
@@ -192,24 +210,18 @@ function SimulationDrawer({
                   </p>
                 </div>
                 <div
-                  className={`rounded-xl p-3 ${
-                    result.net >= 0 ? "bg-success/10" : "bg-destructive/10"
-                  }`}
+                  className={`rounded-xl p-3 ${result.net >= 0 ? "bg-success/10" : "bg-destructive/10"}`}
                 >
                   <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
                     Gain net
                   </p>
                   <p
-                    className={`mt-1 text-xl font-bold ${
-                      result.net >= 0 ? "text-success" : "text-destructive"
-                    }`}
+                    className={`mt-1 text-xl font-bold ${result.net >= 0 ? "text-success" : "text-destructive"}`}
                   >
                     <Amount value={result.net} signed />
                   </p>
                   <p
-                    className={`mt-0.5 text-xs tabular-nums ${
-                      result.roi >= 0 ? "text-success" : "text-destructive"
-                    }`}
+                    className={`mt-0.5 text-xs tabular-nums ${result.roi >= 0 ? "text-success" : "text-destructive"}`}
                   >
                     ROI {result.roi >= 0 ? "+" : ""}
                     {result.roi.toFixed(1)} %
@@ -224,29 +236,31 @@ function SimulationDrawer({
   );
 }
 
-// ── constants ─────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const CANAL_COLOR: Record<SummaryChannel, string> = {
+const CANAL_COLOR: Record<InvestmentSummaryCanal, string> = {
   EV: "var(--canal-ev)",
   SV: "var(--canal-sv)",
   CONF: "var(--canal-conf)",
-  DRAW: "var(--canal-draw)",
-  BTTS: "var(--canal-btts)",
+  NUL: "var(--canal-draw)",
+  BB: "var(--canal-btts)",
+  COUPON: "var(--canal-sv)",
 };
 
-const DEFAULT_CHANNEL: SummaryChannel = "SV";
+const DEFAULT_CANAL: InvestmentSummaryCanal = "SV";
 
 const FILTER_DEFS: FilterDef[] = [
   {
-    key: "channel",
+    key: "canal",
     label: "Canal",
     type: "select",
     options: [
       { value: "EV", label: "EV" },
       { value: "SV", label: "SV" },
       { value: "CONF", label: "VICTOIRE" },
-      { value: "DRAW", label: "NUL" },
-      { value: "BTTS", label: "BB" },
+      { value: "NUL", label: "NUL" },
+      { value: "BB", label: "BB" },
+      { value: "COUPON", label: "COUPON" },
     ],
   },
   {
@@ -256,101 +270,67 @@ const FILTER_DEFS: FilterDef[] = [
   },
 ];
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// ── Pick item ─────────────────────────────────────────────────────────────────
 
-const PRED_PICK_LABEL: Record<string, string> = {
-  HOME: "DOM",
-  AWAY: "EXT",
-  DRAW: "NUL",
-  YES: "BB OUI",
-  NO: "BB NON",
-};
+function PickItem({ row }: { row: InvestmentSummaryPickRow }) {
+  const color = CANAL_COLOR[row.canal];
+  const marketLabel = formatMarketForDisplay(row.market, "fr");
+  const pickLabel = formatPickForDisplay(row.pick, row.market);
 
-function buildPickLabel(row: SummaryPickRow): string {
-  if (row.channel === "EV" || row.channel === "SV") {
-    return formatCombinedPickForDisplay({
-      market: row.market,
-      pick: row.pick,
-      comboMarket: row.comboMarket ?? undefined,
-      comboPick: row.comboPick ?? undefined,
-    });
-  }
   return (
-    PRED_PICK_LABEL[row.pick] ?? formatPickForDisplay(row.pick, row.market)
-  );
-}
-
-function formatChartDate(iso: string): string {
-  return `${iso.slice(8)}/${iso.slice(5, 7)}`;
-}
-
-// ── subcomponents ─────────────────────────────────────────────────────────────
-
-function TeamLogos({
-  homeLogo,
-  awayLogo,
-}: {
-  homeLogo: string | null;
-  awayLogo: string | null;
-}) {
-  return (
-    <div className="flex shrink-0 items-center gap-0.5">
-      {homeLogo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={homeLogo} alt="" className="size-5 object-contain" />
-      ) : (
-        <div className="size-5 rounded-full bg-secondary" />
-      )}
-      {awayLogo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={awayLogo} alt="" className="size-5 object-contain" />
-      ) : (
-        <div className="size-5 rounded-full bg-secondary" />
-      )}
+    <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-3 pl-4">
+      <div
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ backgroundColor: color }}
+      />
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <p className="truncate text-sm font-semibold">{row.fixture}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.competition} · {formatKickoff(row.scheduledAt)}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <Badge variant="secondary" className="text-[0.68rem]">
+              {marketLabel} · {pickLabel}
+            </Badge>
+            {row.odds ? (
+              <Badge variant="outline" className="text-[0.68rem] tabular-nums">
+                @{row.odds}
+              </Badge>
+            ) : null}
+            <Badge
+              variant={row.result === "WON" ? "success" : "destructive"}
+              className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-widest"
+            >
+              {row.result === "WON" ? "Gagné" : "Perdu"}
+            </Badge>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-function SummaryPickItem({ row }: { row: SummaryPickRow }) {
-  const pickLabel = buildPickLabel(row);
+// ── Coupon item ───────────────────────────────────────────────────────────────
+
+function CouponItem({ row }: { row: InvestmentSummaryCouponRow }) {
+  const probPct = (row.jointProbability * 100).toFixed(0);
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border bg-panel-strong px-3 py-3">
-      <TeamLogos homeLogo={row.homeLogo} awayLogo={row.awayLogo} />
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 truncate text-sm font-semibold text-foreground">
-            {row.fixture}
-          </p>
-          <CanalBadge canal={row.channel} />
+    <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+            Coupon #{row.rank} · {row.forDate}
+          </span>
         </div>
-
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {row.competition}
-          {" · "}
-          {formatKickoff(row.scheduledAt)}
-        </p>
-
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {pickLabel ? (
-            <Badge variant="secondary" className="text-[0.68rem]">
-              {pickLabel}
-            </Badge>
-          ) : null}
-          {row.odds ? (
-            <Badge variant="outline" className="text-[0.68rem] tabular-nums">
-              {row.odds}
-            </Badge>
-          ) : null}
-          {row.ev ? (
-            <span
-              className="text-xs font-semibold tabular-nums"
-              style={{ color: CANAL_COLOR[row.channel] }}
-            >
-              {row.ev}
-            </span>
-          ) : null}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono tabular-nums text-muted-foreground">
+            @{row.combinedOdds.toFixed(2)}
+          </span>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {probPct}%
+          </span>
           <Badge
             variant={row.result === "WON" ? "success" : "destructive"}
             className="rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-widest"
@@ -358,6 +338,56 @@ function SummaryPickItem({ row }: { row: SummaryPickRow }) {
             {row.result === "WON" ? "Gagné" : "Perdu"}
           </Badge>
         </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        {row.legs.map((leg, i) => {
+          const color =
+            CANAL_COLOR[(leg.canal as InvestmentSummaryCanal) ?? "SV"];
+          return (
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/30 px-2.5 py-1.5"
+            >
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {leg.homeLogo && (
+                  <Image
+                    src={leg.homeLogo}
+                    alt=""
+                    width={12}
+                    height={12}
+                    className="size-3 object-contain"
+                  />
+                )}
+                {leg.awayLogo && (
+                  <Image
+                    src={leg.awayLogo}
+                    alt=""
+                    width={12}
+                    height={12}
+                    className="size-3 object-contain"
+                  />
+                )}
+                <span className="min-w-0 truncate text-xs">{leg.fixture}</span>
+              </div>
+              {leg.odds !== null && (
+                <span className="shrink-0 text-xs font-mono text-muted-foreground tabular-nums">
+                  @{leg.odds.toFixed(2)}
+                </span>
+              )}
+              {leg.isCorrect !== null && (
+                <span
+                  className={`shrink-0 text-[0.6rem] font-bold uppercase tracking-widest ${leg.isCorrect ? "text-success" : "text-destructive"}`}
+                >
+                  {leg.isCorrect ? "✓" : "✗"}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -375,21 +405,27 @@ function GroupDivider({ label }: { label: string }) {
   );
 }
 
-// ── main ──────────────────────────────────────────────────────────────────────
+function formatChartDate(iso: string): string {
+  return `${iso.slice(8)}/${iso.slice(5, 7)}`;
+}
 
-export function SummaryPageClient() {
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+export function InvestmentSummaryPageClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
 
-  const channel =
-    (searchParams.get("channel") as SummaryChannel) ?? DEFAULT_CHANNEL;
+  const canal =
+    (searchParams.get("canal") as InvestmentSummaryCanal) ?? DEFAULT_CANAL;
   const fromParam = searchParams.get("from") ?? undefined;
   const toParam = searchParams.get("to") ?? undefined;
 
+  const yesterday = daysAgoIso(1);
+
   const [filters, setFilters] = useState<FilterState>({
-    channel,
+    canal,
     daterange: fromParam
       ? {
           from: isoToDate(fromParam),
@@ -400,12 +436,16 @@ export function SummaryPageClient() {
   const [simOpen, setSimOpen] = useState(false);
 
   const daterange = filters.daterange as DateRange | undefined;
+  const effectiveFrom = daterange?.from ? toISODate(daterange.from) : undefined;
+  const effectiveTo = daterange?.to ? toISODate(daterange.to) : yesterday;
 
-  const { data, isLoading, isError } = useSummary({
-    channel,
-    from: daterange?.from ? toISODate(daterange.from) : undefined,
-    to: daterange?.to ? toISODate(daterange.to) : undefined,
+  const { data, isLoading, isError } = useInvestmentSummary({
+    canal,
+    from: effectiveFrom,
+    to: effectiveTo,
   });
+
+  const isCouponMode = canal === "COUPON";
 
   const chartData = useMemo(
     () =>
@@ -417,30 +457,44 @@ export function SummaryPageClient() {
     [data],
   );
 
-  const won = useMemo(
+  const wonPicks = useMemo(
     () => (data?.picks ?? []).filter((p) => p.result === "WON"),
     [data],
   );
-  const lost = useMemo(
+  const lostPicks = useMemo(
     () => (data?.picks ?? []).filter((p) => p.result === "LOST"),
     [data],
   );
+  const wonCoupons = useMemo(
+    () => (data?.coupons ?? []).filter((c) => c.result === "WON"),
+    [data],
+  );
+  const lostCoupons = useMemo(
+    () => (data?.coupons ?? []).filter((c) => c.result === "LOST"),
+    [data],
+  );
+
+  const totalItems = data?.stats.total ?? 0;
 
   function handleFiltersChange(next: FilterState) {
     setFilters(next);
     const params = new URLSearchParams(searchParams.toString());
-    if (next.channel) params.set("channel", next.channel as string);
-    else params.delete("channel");
+    if (next.canal) params.set("canal", next.canal as string);
+    else params.delete("canal");
     const dr = next.daterange as DateRange | undefined;
     if (dr?.from) params.set("from", toISODate(dr.from));
     else params.delete("from");
-    if (dr?.to) params.set("to", toISODate(dr.to));
-    else params.delete("to");
+    if (dr?.to) {
+      const iso = toISODate(dr.to);
+      params.set("to", iso > yesterday ? yesterday : iso);
+    } else {
+      params.delete("to");
+    }
     router.push(`${pathname}?${params.toString()}`);
   }
 
   function handleReset() {
-    setFilters({ channel: DEFAULT_CHANNEL });
+    setFilters({ canal: DEFAULT_CANAL });
     router.push(pathname);
   }
 
@@ -463,7 +517,7 @@ export function SummaryPageClient() {
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <StatCard
               icon={<LayoutList size={14} />}
-              label="Total"
+              label={isCouponMode ? "Coupons" : "Picks"}
               value={isLoading ? "—" : String(data?.stats.total ?? 0)}
               tone="neutral"
             />
@@ -502,7 +556,7 @@ export function SummaryPageClient() {
               }
               delta={
                 data?.stats.roiPickCount
-                  ? `${data.stats.roiPickCount} picks`
+                  ? `${data.stats.roiPickCount} ${isCouponMode ? "coupons" : "picks"}`
                   : undefined
               }
             />
@@ -528,15 +582,15 @@ export function SummaryPageClient() {
             </section>
           ) : null}
 
-          {/* Pick list */}
+          {/* Item list */}
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {isLoading
                   ? "Chargement…"
-                  : `Picks résolus (${data?.stats.total ?? 0})`}
+                  : `${isCouponMode ? "Coupons" : "Picks"} résolus (${totalItems})`}
               </p>
-              {!isLoading && (data?.stats.total ?? 0) > 0 ? (
+              {!isLoading && totalItems > 0 ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -551,7 +605,7 @@ export function SummaryPageClient() {
 
             {isError ? (
               <p className="text-sm text-destructive">
-                Impossible de charger le résumé.
+                Impossible de charger le résumé investment.
               </p>
             ) : isLoading ? (
               <div className="flex flex-col gap-2">
@@ -562,25 +616,37 @@ export function SummaryPageClient() {
                   />
                 ))}
               </div>
-            ) : (data?.stats.total ?? 0) === 0 ? (
+            ) : totalItems === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Aucun résultat pour cette période.
               </p>
-            ) : (
+            ) : isCouponMode ? (
               <div className="flex flex-col gap-2">
-                {won.map((row) => (
-                  <SummaryPickItem
-                    key={row.fixtureId + row.channel + row.market + row.pick}
-                    row={row}
-                  />
+                {wonCoupons.map((c) => (
+                  <CouponItem key={c.id} row={c} />
                 ))}
-                {won.length > 0 && lost.length > 0 ? (
+                {wonCoupons.length > 0 && lostCoupons.length > 0 ? (
                   <GroupDivider label="Perdus" />
                 ) : null}
-                {lost.map((row) => (
-                  <SummaryPickItem
-                    key={row.fixtureId + row.channel + row.market + row.pick}
-                    row={row}
+                {lostCoupons.map((c) => (
+                  <CouponItem key={c.id} row={c} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {wonPicks.map((p) => (
+                  <PickItem
+                    key={p.fixtureId + p.canal + p.market + p.pick}
+                    row={p}
+                  />
+                ))}
+                {wonPicks.length > 0 && lostPicks.length > 0 ? (
+                  <GroupDivider label="Perdus" />
+                ) : null}
+                {lostPicks.map((p) => (
+                  <PickItem
+                    key={p.fixtureId + p.canal + p.market + p.pick}
+                    row={p}
                   />
                 ))}
               </div>
@@ -593,6 +659,8 @@ export function SummaryPageClient() {
         open={simOpen}
         onClose={() => setSimOpen(false)}
         picks={data?.picks ?? []}
+        coupons={data?.coupons ?? []}
+        isCouponMode={isCouponMode}
         isMobile={isMobile}
       />
     </Page>

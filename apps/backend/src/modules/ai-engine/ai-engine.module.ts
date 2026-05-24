@@ -6,6 +6,8 @@ import { CouponComposerService } from './coupon-composer.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { AiEngineService } from './ai-engine.service';
 import { InvestmentService } from './investment.service';
+import { InvestmentSummaryService } from './investment-summary.service';
+import { InvestmentIndicesService } from './investment-indices.service';
 import { AiEngineController } from './ai-engine.controller';
 
 @Module({
@@ -18,6 +20,8 @@ import { AiEngineController } from './ai-engine.controller';
     CouponSettlementService,
     AiEngineService,
     InvestmentService,
+    InvestmentSummaryService,
+    InvestmentIndicesService,
   ],
   exports: [AiEngineService, CouponSettlementService, InvestmentService],
 })

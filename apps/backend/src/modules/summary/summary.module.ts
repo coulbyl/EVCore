@@ -8,5 +8,6 @@ import { SummaryRepository } from './summary.repository';
   imports: [AuthModule],
   controllers: [SummaryController],
   providers: [SummaryService, SummaryRepository],
+  exports: [SummaryService, SummaryRepository],
 })
 export class SummaryModule {}

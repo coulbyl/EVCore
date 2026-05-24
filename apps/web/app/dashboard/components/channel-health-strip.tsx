@@ -67,9 +67,9 @@ const STATUS_STYLES: Record<
 const CHANNEL_LABELS: Record<ChannelHealthItem["channel"], string> = {
   EV: "EV",
   SV: "SV",
-  CONF: "CONF",
+  CONF: "VICTOIRE",
   DRAW: "NUL",
-  BTTS: "BTTS",
+  BTTS: "BB",
 };
 
 function formatMetric(item: ChannelHealthItem): string {

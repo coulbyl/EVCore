@@ -9,6 +9,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -29,15 +30,22 @@ export type NavItem = {
   badge?: number;
 };
 
+export type NavGroup = {
+  label?: string;
+  items: NavItem[];
+};
+
 export function PageShell({
-  navItems,
+  navGroups,
+  pinnedNavItems,
   mobileNavItems,
   actions,
   sidebarFooter,
   logoBadge,
   children,
 }: {
-  navItems: NavItem[];
+  navGroups: NavGroup[];
+  pinnedNavItems?: NavItem[];
   mobileNavItems?: NavItem[];
   actions?: ReactNode;
   sidebarFooter?: ReactNode;
@@ -45,7 +53,8 @@ export function PageShell({
   pageTitle?: string;
   children: ReactNode;
 }) {
-  const bottomNavItems = mobileNavItems ?? navItems;
+  const allNavItems = navGroups.flatMap((g) => g.items);
+  const bottomNavItems = mobileNavItems ?? allNavItems;
 
   return (
     <SidebarProvider
@@ -84,44 +93,88 @@ export function PageShell({
           </Link>
         </SidebarHeader>
 
-        <SidebarContent className="px-3 py-4">
-          <SidebarGroup className="p-0">
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.active}
-                      tooltip={item.label}
-                      className="h-11 rounded-xl px-3.5"
-                    >
-                      <Link href={item.href}>
-                        {item.icon && (
-                          <item.icon
-                            size={16}
-                            className="shrink-0 text-accent"
-                          />
-                        )}
-                        <span className="flex-1">{item.label}</span>
-                        {item.badge != null && item.badge > 0 && (
-                          <span className="ml-auto inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold tabular-nums text-destructive-foreground">
-                            {item.badge > 99 ? "99+" : item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarContent className="overflow-x-hidden px-3 py-4">
+          {navGroups.flatMap((group, i) => [
+            i > 0 ? (
+              <SidebarSeparator key={`sep-${i}`} className="my-1" />
+            ) : null,
+            <SidebarGroup key={i} className="p-0">
+              {group.label && (
+                <SidebarGroupLabel className="px-3.5 pb-1 text-[0.6rem] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/40">
+                  {group.label}
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={item.active}
+                        tooltip={item.label}
+                        className="h-9 rounded-lg px-3"
+                      >
+                        <Link href={item.href}>
+                          {item.icon && (
+                            <item.icon
+                              size={16}
+                              className="shrink-0 text-accent"
+                            />
+                          )}
+                          <span className="flex-1">{item.label}</span>
+                          {item.badge != null && item.badge > 0 && (
+                            <span className="ml-auto inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold tabular-nums text-destructive-foreground">
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>,
+          ])}
         </SidebarContent>
 
-        {sidebarFooter ? (
+        {pinnedNavItems?.length || sidebarFooter ? (
           <>
             <SidebarSeparator />
-            <SidebarFooter className="p-4">{sidebarFooter}</SidebarFooter>
+            <SidebarFooter className="gap-0 px-3 pt-3 pb-4">
+              {pinnedNavItems?.length ? (
+                <>
+                  <SidebarMenu className="mb-2">
+                    {pinnedNavItems.map((item) => (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={item.active}
+                          tooltip={item.label}
+                          className="h-9 rounded-lg px-3"
+                        >
+                          <Link href={item.href}>
+                            {item.icon && (
+                              <item.icon
+                                size={16}
+                                className="shrink-0 text-accent"
+                              />
+                            )}
+                            <span className="flex-1">{item.label}</span>
+                            {item.badge != null && item.badge > 0 && (
+                              <span className="ml-auto inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-destructive px-1 text-[0.6rem] font-bold tabular-nums text-destructive-foreground">
+                                {item.badge > 99 ? "99+" : item.badge}
+                              </span>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                  {sidebarFooter && <SidebarSeparator className="mb-3" />}
+                </>
+              ) : null}
+              {sidebarFooter}
+            </SidebarFooter>
           </>
         ) : null}
       </Sidebar>

@@ -24,7 +24,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { PageShell } from "./page-shell";
+import { PageShell, type NavGroup } from "./page-shell";
 import { BetSlipButton } from "./bet-slip-button";
 import { AccountButton } from "./account-button";
 import { BankrollWidget } from "./bankroll-widget";
@@ -76,111 +76,144 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const highlightedBadges = unlockedBadges.slice(0, 3);
 
-  const navItems = useMemo(
-    () =>
-      [
-        {
-          label: tNav("dashboard"),
-          mobileLabel: tNav("dashboard"),
-          href: "/dashboard",
-          active: pathname === "/dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          label: tNav("investissement"),
-          href: "/dashboard/investment",
-          active: pathname.startsWith("/dashboard/investment"),
-          icon: TrendingUp,
-        },
-        {
-          label: tNav("picks"),
-          mobileLabel: tNav("picks"),
-          href: "/dashboard/picks",
-          active: pathname.startsWith("/dashboard/picks"),
-          icon: Target,
-        },
-        {
-          label: tNav("coupons"),
-          href: "/dashboard/coupons",
-          active: pathname.startsWith("/dashboard/coupons"),
-          icon: Ticket,
-        },
-        {
-          label: tNav("betSlips"),
-          href: "/dashboard/bet-slips",
-          active: pathname.startsWith("/dashboard/bet-slips"),
-          icon: Receipt,
-        },
-        {
-          label: tNav("summary"),
-          href: "/dashboard/summary",
-          active: pathname.startsWith("/dashboard/summary"),
-          icon: BarChart3,
-        },
-        {
-          label: tNav("fixtures"),
-          href: "/dashboard/fixtures",
-          active: pathname.startsWith("/dashboard/fixtures"),
-          icon: CalendarDays,
-        },
-        {
-          label: tNav("wc2026"),
-          href: "/dashboard/wc2026",
-          active: pathname.startsWith("/dashboard/wc2026"),
-          icon: Globe,
-        },
-        {
-          label: tNav("formation"),
-          href: "/dashboard/formation",
-          active: pathname.startsWith("/dashboard/formation"),
-          icon: GraduationCap,
-        },
-        isAdmin
-          ? {
-              label: tNav("audit"),
-              href: "/dashboard/audit",
-              active: pathname === "/dashboard/audit",
-              icon: ClipboardCheck,
-            }
-          : null,
-        isAdmin
-          ? {
-              label: tNav("users"),
-              href: "/dashboard/users",
-              active: pathname.startsWith("/dashboard/users"),
-              icon: Users,
-            }
-          : null,
-        isAdmin
-          ? {
-              label: tNav("announcements"),
-              href: "/dashboard/announcements",
-              active: pathname.startsWith("/dashboard/announcements"),
-              icon: Megaphone,
-            }
-          : null,
-        isAdmin
-          ? {
-              label: tNav("glossary"),
-              href: "/dashboard/glossaire",
-              active: pathname === "/dashboard/glossaire",
-              icon: BookOpen,
-            }
-          : null,
-        {
-          label: tNav("notifications"),
-          href: "/dashboard/notifications",
-          active: pathname.startsWith("/dashboard/notifications"),
-          icon: Bell,
-          badge: unreadCount,
-        },
-      ].filter((item): item is NonNullable<typeof item> => item !== null),
-    [isAdmin, pathname, tNav, unreadCount],
+  const navGroups = useMemo((): NavGroup[] => {
+    const adminItems = isAdmin
+      ? [
+          {
+            label: tNav("audit"),
+            href: "/dashboard/audit",
+            active: pathname === "/dashboard/audit",
+            icon: ClipboardCheck,
+          },
+          {
+            label: tNav("users"),
+            href: "/dashboard/users",
+            active: pathname.startsWith("/dashboard/users"),
+            icon: Users,
+          },
+          {
+            label: tNav("announcements"),
+            href: "/dashboard/announcements",
+            active: pathname.startsWith("/dashboard/announcements"),
+            icon: Megaphone,
+          },
+          {
+            label: tNav("glossary"),
+            href: "/dashboard/glossaire",
+            active: pathname === "/dashboard/glossaire",
+            icon: BookOpen,
+          },
+        ]
+      : [];
+
+    return [
+      {
+        items: [
+          {
+            label: tNav("dashboard"),
+            mobileLabel: tNav("dashboard"),
+            href: "/dashboard",
+            active: pathname === "/dashboard",
+            icon: LayoutDashboard,
+          },
+        ],
+      },
+      {
+        label: tNav("navGroupToday"),
+        items: [
+          {
+            label: tNav("investissement"),
+            href: "/dashboard/investment",
+            active:
+              pathname.startsWith("/dashboard/investment") &&
+              !pathname.startsWith("/dashboard/investment-summary"),
+            icon: TrendingUp,
+          },
+          {
+            label: tNav("picks"),
+            mobileLabel: tNav("picks"),
+            href: "/dashboard/picks",
+            active: pathname.startsWith("/dashboard/picks"),
+            icon: Target,
+          },
+          {
+            label: tNav("coupons"),
+            href: "/dashboard/coupons",
+            active: pathname.startsWith("/dashboard/coupons"),
+            icon: Ticket,
+          },
+        ],
+      },
+      {
+        label: tNav("navGroupTracking"),
+        items: [
+          {
+            label: tNav("betSlips"),
+            href: "/dashboard/bet-slips",
+            active: pathname.startsWith("/dashboard/bet-slips"),
+            icon: Receipt,
+          },
+          {
+            label: tNav("summary"),
+            href: "/dashboard/summary",
+            active:
+              pathname.startsWith("/dashboard/summary") &&
+              !pathname.startsWith("/dashboard/investment-summary"),
+            icon: BarChart3,
+          },
+          {
+            label: tNav("investmentSummary"),
+            href: "/dashboard/investment-summary",
+            active: pathname.startsWith("/dashboard/investment-summary"),
+            icon: TrendingUp,
+          },
+        ],
+      },
+      {
+        label: tNav("navGroupAnalysis"),
+        items: [
+          {
+            label: tNav("fixtures"),
+            href: "/dashboard/fixtures",
+            active: pathname.startsWith("/dashboard/fixtures"),
+            icon: CalendarDays,
+          },
+          {
+            label: tNav("wc2026"),
+            href: "/dashboard/wc2026",
+            active: pathname.startsWith("/dashboard/wc2026"),
+            icon: Globe,
+          },
+          {
+            label: tNav("formation"),
+            href: "/dashboard/formation",
+            active: pathname.startsWith("/dashboard/formation"),
+            icon: GraduationCap,
+          },
+        ],
+      },
+      ...(adminItems.length > 0
+        ? [{ label: tNav("navGroupAdmin"), items: adminItems }]
+        : []),
+    ];
+  }, [isAdmin, pathname, tNav]);
+
+  const pinnedNavItems = useMemo(
+    () => [
+      {
+        label: tNav("notifications"),
+        href: "/dashboard/notifications",
+        active: pathname.startsWith("/dashboard/notifications"),
+        icon: Bell,
+        badge: unreadCount,
+      },
+    ],
+    [pathname, tNav, unreadCount],
   );
 
   const pageTitle = useMemo(
-    () => navItems.find((item) => item.active)?.label,
-    [navItems],
+    () => navGroups.flatMap((g) => g.items).find((item) => item.active)?.label,
+    [navGroups],
   );
 
   const MOBILE_NAV_ORDER = [
@@ -190,15 +223,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/dashboard/bet-slips",
   ];
 
+  const allNavItems = useMemo(
+    () => navGroups.flatMap((g) => g.items),
+    [navGroups],
+  );
+
   const mobileNavItems = MOBILE_NAV_ORDER.map((href) =>
-    navItems.find((item) => item.href === href),
+    allNavItems.find((item) => item.href === href),
   ).filter((item): item is NonNullable<typeof item> => item !== undefined);
 
   const wc2026Active = isWC2026Active();
 
   return (
     <PageShell
-      navItems={navItems}
+      navGroups={navGroups}
+      pinnedNavItems={pinnedNavItems}
       mobileNavItems={mobileNavItems}
       pageTitle={pageTitle}
       logoBadge={

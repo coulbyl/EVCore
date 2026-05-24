@@ -1,6 +1,64 @@
 import { Injectable } from '@nestjs/common';
-import { CouponProposalStatus, CouponResult, Prisma } from '@evcore/db';
+import {
+  BetSource,
+  BetStatus,
+  CouponProposalStatus,
+  CouponResult,
+  Market,
+  Prisma,
+  PredictionChannel,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+
+const FIXTURE_SELECT = {
+  id: true,
+  scheduledAt: true,
+  homeTeam: { select: { name: true, logoUrl: true } },
+  awayTeam: { select: { name: true, logoUrl: true } },
+  season: { select: { competition: { select: { name: true, code: true } } } },
+} as const;
+
+export type InvestmentSummaryBetRow = {
+  id: string;
+  market: string;
+  pick: string;
+  comboMarket: string | null;
+  comboPick: string | null;
+  oddsSnapshot: Prisma.Decimal | null;
+  qualityScore: Prisma.Decimal | null;
+  probEstimated: Prisma.Decimal;
+  status: string;
+  fixture: {
+    id: string;
+    scheduledAt: Date;
+    homeTeam: { name: string; logoUrl: string | null };
+    awayTeam: { name: string; logoUrl: string | null };
+    season: { competition: { name: string; code: string } };
+  };
+};
+
+export type InvestmentSummaryPredictionRow = {
+  id: string;
+  channel: string;
+  market: string;
+  pick: string;
+  probability: Prisma.Decimal;
+  correct: boolean | null;
+  fixture: {
+    id: string;
+    scheduledAt: Date;
+    homeTeam: { name: string; logoUrl: string | null };
+    awayTeam: { name: string; logoUrl: string | null };
+    season: { competition: { name: string; code: string } };
+    oddsSnapshots: Array<{
+      homeOdds: Prisma.Decimal | null;
+      drawOdds: Prisma.Decimal | null;
+      awayOdds: Prisma.Decimal | null;
+      pick: string | null;
+      odds: Prisma.Decimal | null;
+    }>;
+  };
+};
 
 export type UpsertProposalInput = {
   forDate: Date;
@@ -174,6 +232,66 @@ export class AiEngineRepository {
     });
   }
 
+  async findResolvedCouponsInRange(
+    from: Date,
+    to: Date,
+  ): Promise<CouponProposalWithLegs[]> {
+    return this.prisma.client.couponProposal.findMany({
+      where: {
+        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        forDate: { gte: from, lte: to },
+      },
+      include: WITH_LEGS,
+      orderBy: [{ forDate: 'asc' }, { rank: 'asc' }],
+    }) as unknown as Promise<CouponProposalWithLegs[]>;
+  }
+
+  async findSettledBetsForIndices(
+    isSafeValue: boolean,
+    from: Date,
+    to: Date,
+  ): Promise<{ probEstimated: Prisma.Decimal; status: string }[]> {
+    return this.prisma.client.bet.findMany({
+      where: {
+        isSafeValue,
+        source: BetSource.MODEL,
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: { probEstimated: true, status: true },
+    });
+  }
+
+  async findSettledPredictionsForIndices(
+    channel: PredictionChannel,
+    from: Date,
+    to: Date,
+  ): Promise<{ probability: Prisma.Decimal; correct: boolean | null }[]> {
+    return this.prisma.client.prediction.findMany({
+      where: {
+        channel,
+        correct: { not: null },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: { probability: true, correct: true },
+    });
+  }
+
+  async findResolvedCouponsForIndices(
+    from: Date,
+    to: Date,
+  ): Promise<{ jointProbability: Prisma.Decimal; result: CouponResult }[]> {
+    return this.prisma.client.couponProposal.findMany({
+      where: {
+        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        forDate: { gte: from, lte: to },
+      },
+      select: { jointProbability: true, result: true },
+    }) as unknown as Promise<
+      { jointProbability: Prisma.Decimal; result: CouponResult }[]
+    >;
+  }
+
   async updateResult(id: string, result: CouponResult): Promise<void> {
     await this.prisma.client.couponProposal.update({
       where: { id },
@@ -186,5 +304,74 @@ export class AiEngineRepository {
       where: { id: legId },
       data: { isCorrect, settledAt: new Date() },
     });
+  }
+
+  findSettledBetsForInvestmentSummary(
+    isSafeValue: boolean,
+    from: Date,
+    to: Date,
+  ): Promise<InvestmentSummaryBetRow[]> {
+    return this.prisma.client.bet.findMany({
+      where: {
+        isSafeValue,
+        source: BetSource.MODEL,
+        status: { in: [BetStatus.WON, BetStatus.LOST] },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: {
+        id: true,
+        market: true,
+        pick: true,
+        comboMarket: true,
+        comboPick: true,
+        oddsSnapshot: true,
+        qualityScore: true,
+        probEstimated: true,
+        status: true,
+        fixture: { select: FIXTURE_SELECT },
+      },
+      orderBy: { fixture: { scheduledAt: 'asc' } },
+    }) as unknown as Promise<InvestmentSummaryBetRow[]>;
+  }
+
+  // eslint-disable-next-line max-params
+  findSettledPredictionsForInvestmentSummary(
+    channel: PredictionChannel,
+    oddsMarket: Market,
+    from: Date,
+    to: Date,
+  ): Promise<InvestmentSummaryPredictionRow[]> {
+    return this.prisma.client.prediction.findMany({
+      where: {
+        channel,
+        correct: { not: null },
+        fixture: { scheduledAt: { gte: from, lte: to } },
+      },
+      select: {
+        id: true,
+        channel: true,
+        market: true,
+        pick: true,
+        probability: true,
+        correct: true,
+        fixture: {
+          select: {
+            ...FIXTURE_SELECT,
+            oddsSnapshots: {
+              where: { market: oddsMarket },
+              orderBy: { snapshotAt: 'desc' },
+              select: {
+                homeOdds: true,
+                drawOdds: true,
+                awayOdds: true,
+                pick: true,
+                odds: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { fixture: { scheduledAt: 'asc' } },
+    }) as unknown as Promise<InvestmentSummaryPredictionRow[]>;
   }
 }

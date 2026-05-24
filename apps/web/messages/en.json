@@ -15,7 +15,11 @@
   "nav": {
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
-    "picks": "Today's picks",
+    "picks": "Selections",
+    "navGroupToday": "Today",
+    "navGroupTracking": "Tracking",
+    "navGroupAnalysis": "Analysis",
+    "navGroupAdmin": "Admin",
     "wc2026": "WC2026",
     "performance": "Performance",
     "bankroll": "Bankroll",
@@ -28,9 +32,10 @@
     "notifications": "Notifications",
     "settings": "Settings",
     "help": "Help",
-    "summary": "Summary",
-    "coupons": "AI coupons",
-    "investissement": "Invest"
+    "summary": "Selections summary",
+    "investmentSummary": "Investment summary",
+    "coupons": "Combos",
+    "investissement": "Investment"
   },
   "notifications": {
     "title": "Notifications",
@@ -190,7 +195,7 @@
     "pageTitle": "Today's picks",
     "evChannel": "EV Channel",
     "safeValue": "Safe Value",
-    "confidence": "Confidence",
+    "confidence": "VICTOIRE",
     "matchNull": "DRAW",
     "btts": "BTTS",
     "bttsLabel": "BTTS — Both Teams To Score",

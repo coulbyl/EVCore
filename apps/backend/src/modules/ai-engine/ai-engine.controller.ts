@@ -12,17 +12,26 @@ import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
 import { AiEngineService } from './ai-engine.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { InvestmentService } from './investment.service';
+import { InvestmentSummaryService } from './investment-summary.service';
+import { InvestmentIndicesService } from './investment-indices.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
+import { InvestmentSummaryQueryDto } from './dto/investment-summary-query.dto';
+import { InvestmentIndicesQueryDto } from './dto/investment-indices-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { InvestmentDayDto } from './dto/investment-day.dto';
+import type { InvestmentSummaryResponse } from './dto/investment-summary.dto';
+import type { InvestmentIndicesResponse } from './dto/investment-indices.dto';
 
 @ApiTags('ai-engine')
 @Controller('ai-engine')
 export class AiEngineController {
+  // eslint-disable-next-line max-params
   constructor(
     private readonly aiEngine: AiEngineService,
     private readonly settlement: CouponSettlementService,
     private readonly investment: InvestmentService,
+    private readonly investmentSummary: InvestmentSummaryService,
+    private readonly investmentIndices: InvestmentIndicesService,
   ) {}
 
   @Get('coupons')
@@ -193,6 +202,40 @@ export class AiEngineController {
   async getInvestment(@Query('date') date?: string): Promise<InvestmentDayDto> {
     const d = date ?? formatDateUtc(new Date());
     return this.investment.getInvestmentDay(d);
+  }
+
+  @Get('investment-summary')
+  @ApiOperation({
+    summary: 'Investment summary — resolved picks or coupons over a date range',
+    description:
+      'Returns stats, progression and resolved items for the given canal and date range. Canal COUPON queries CouponProposal records; other canals query model bets/predictions.',
+  })
+  @ApiOkResponse({ description: 'Investment summary data.' })
+  async getInvestmentSummary(
+    @Query() query: InvestmentSummaryQueryDto,
+  ): Promise<InvestmentSummaryResponse> {
+    return this.investmentSummary.getInvestmentSummary({
+      canal: query.canal,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('investment-indices')
+  @ApiOperation({
+    summary: 'Investment probability indices — hit rate by probability bucket',
+    description:
+      'For a given canal and date range, returns the historical hit rate per probability bucket. Identifies which probability thresholds have been reliable.',
+  })
+  @ApiOkResponse({ description: 'Probability indices data.' })
+  async getInvestmentIndices(
+    @Query() query: InvestmentIndicesQueryDto,
+  ): Promise<InvestmentIndicesResponse> {
+    return this.investmentIndices.getIndices({
+      canal: query.canal,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   @Post('coupons/:id/settle')

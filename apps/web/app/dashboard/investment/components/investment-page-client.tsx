@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
+  BarChart2,
   Brain,
   Check,
   ChevronLeft,
@@ -12,6 +13,7 @@ import {
   Target,
   Ticket,
 } from "lucide-react";
+
 import {
   Page,
   PageHeader,
@@ -57,6 +59,8 @@ import {
   draftItemKey,
   type BetSlipDraftItem,
 } from "@/domains/bet-slip/types/bet-slip";
+import { InvestmentIndicesDrawer } from "@/components/investment-indices-drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CANAL_COLOR: Record<InvestmentCanal, string> = {
   SV: "var(--canal-sv)",
@@ -67,11 +71,11 @@ const CANAL_COLOR: Record<InvestmentCanal, string> = {
 };
 
 const CANAL_LABEL: Record<InvestmentCanal, string> = {
-  SV: "Safe Value",
-  EV: "Expected Value",
-  CONF: "Confiance",
-  BB: "BTTS",
-  NUL: "Nul",
+  SV: "SV",
+  EV: "EV",
+  CONF: "VICTOIRE",
+  BB: "BB",
+  NUL: "NUL",
 };
 
 const CANAL_DESCRIPTION: Record<InvestmentCanal, string> = {
@@ -191,7 +195,7 @@ function PickCard({
   const loc = locale === "en" ? "en" : "fr";
   const marketLabel = formatMarketForDisplay(pick.market, loc);
   const pickLabel = formatPickForDisplay(pick.pick, pick.market);
-  const confidencePct = Math.round(pick.probability * 100);
+  const confidencePct = (pick.probability * 100).toFixed(1);
   const scoreLabel = formatScore(pick.score, pick.htScore);
 
   return (
@@ -242,23 +246,27 @@ function PickCard({
         <span className="font-medium text-foreground">{pickLabel}</span>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-        <span className="uppercase tracking-widest text-[0.6rem]">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
+        <span className="whitespace-nowrap uppercase tracking-widest text-[0.6rem]">
           {pick.competition}
         </span>
         <span className="opacity-40">·</span>
-        <span>{formatTime(pick.scheduledAt)}</span>
+        <span className="whitespace-nowrap">
+          {formatTime(pick.scheduledAt)}
+        </span>
         {pick.oddsSnapshot != null && (
           <>
             <span className="opacity-40">·</span>
-            <span className="font-mono text-foreground">
+            <span className="whitespace-nowrap font-mono text-foreground">
               @{pick.oddsSnapshot.toFixed(2)}
             </span>
           </>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {scoreLabel && (
-            <span className="font-mono text-foreground">{scoreLabel}</span>
+            <span className="whitespace-nowrap font-mono text-[0.7rem] text-foreground">
+              {scoreLabel}
+            </span>
           )}
           <ResultBadge isCorrect={pick.isCorrect} />
           <SlipButton pick={pick} />
@@ -631,7 +639,9 @@ export function InvestissementPageClient() {
   const router = useRouter();
   const date = searchParams.get("date") ?? today;
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [indicesOpen, setIndicesOpen] = useState(false);
   const locale = useLocale();
+  const isMobile = useIsMobile();
   const { data, isLoading, isError } = useInvestment(date);
 
   const hasAnyPicks =
@@ -652,6 +662,15 @@ export function InvestissementPageClient() {
       <PageHeader>
         <div />
         <PageHeaderActions>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIndicesOpen(true)}
+            className="h-7 gap-1.5 text-xs"
+          >
+            <BarChart2 size={12} />
+            Indice de paris
+          </Button>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -815,6 +834,12 @@ export function InvestissementPageClient() {
           </div>
         </div>
       </PageContent>
+
+      <InvestmentIndicesDrawer
+        open={indicesOpen}
+        onClose={() => setIndicesOpen(false)}
+        isMobile={isMobile}
+      />
     </Page>
   );
 }
