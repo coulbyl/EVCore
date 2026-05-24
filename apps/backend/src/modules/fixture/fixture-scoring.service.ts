@@ -339,7 +339,7 @@ export class FixtureScoringService {
           channel,
           market: p.market,
           pick: p.pick,
-          probability: `${(toNumber(p.probability) * 100).toFixed(0)}%`,
+          probability: `${(toNumber(p.probability) * 100).toFixed(1)}%`,
           correct: p.correct,
           odds: evalSnap?.odds ?? null,
         };
