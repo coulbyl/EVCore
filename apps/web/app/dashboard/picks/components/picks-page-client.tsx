@@ -495,7 +495,7 @@ function PickListItem({
     canal === "EV"
       ? (mr?.ev ?? null)
       : canal === "SV"
-        ? (sv?.ev ?? null)
+        ? (sv?.probEstimated ?? null)
         : null;
 
   const score = formatScore(row.score, row.htScore);
