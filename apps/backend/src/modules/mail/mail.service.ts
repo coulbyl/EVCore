@@ -52,15 +52,42 @@ export class MailService implements OnModuleInit {
             pass: this.config.get<string>('SMTP_PASSWORD'),
           }
         : undefined,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
     });
 
     logger.info(
       {
         host: this.config.get('SMTP_HOST'),
         port: this.config.get('SMTP_PORT'),
+        secure: this.config.get('SMTP_SECURE'),
+        user: this.config.get('SMTP_USER'),
+        from: this.smtpFrom,
       },
-      'SMTP transporter initialized',
+      'SMTP transporter initialized — verifying connection',
     );
+
+    this.transporter.verify((error) => {
+      if (error) {
+        logger.error(
+          {
+            host: this.config.get('SMTP_HOST'),
+            port: this.config.get('SMTP_PORT'),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          'SMTP connection check FAILED — emails will not be delivered',
+        );
+      } else {
+        logger.info(
+          {
+            host: this.config.get('SMTP_HOST'),
+            port: this.config.get('SMTP_PORT'),
+          },
+          'SMTP connection check OK — ready to send',
+        );
+      }
+    });
   }
 
   async sendEmailVerification(
@@ -169,7 +196,7 @@ export class MailService implements OnModuleInit {
         html: body.html,
         text: body.text,
       });
-      logger.info({ subject, to }, 'Email sent');
+      logger.info({ subject, to }, 'Email sent successfully');
     } catch (error) {
       logger.error(
         {
@@ -177,7 +204,7 @@ export class MailService implements OnModuleInit {
           to,
           error: error instanceof Error ? error.message : String(error),
         },
-        'Failed to send email',
+        'Failed to send email — message NOT delivered',
       );
     }
   }
