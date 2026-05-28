@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { createLogger } from '@utils/logger';
 import {
   renderBrierAlert,
@@ -28,66 +27,23 @@ const logger = createLogger('mail-service');
 
 @Injectable()
 export class MailService implements OnModuleInit {
-  private transporter: Transporter | null = null;
-  private readonly smtpEnabled: boolean;
-  private readonly smtpFrom: string;
-  private readonly smtpAdminTo: string;
+  private resend: Resend | null = null;
+  private readonly from: string;
+  private readonly adminTo: string;
 
   constructor(private readonly config: ConfigService) {
-    this.smtpEnabled = config.get<string>('SMTP_ENABLED', 'false') !== 'false';
-    this.smtpFrom = config.get<string>('SMTP_FROM', 'evcore@localhost');
-    this.smtpAdminTo = config.get<string>('SMTP_TO', '');
+    this.from = config.get<string>('RESEND_FROM', 'evcore@localhost');
+    this.adminTo = config.get<string>('RESEND_ADMIN_TO', '');
   }
 
   onModuleInit(): void {
-    if (!this.smtpEnabled) return;
-
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('SMTP_HOST', 'localhost'),
-      port: this.config.get<number>('SMTP_PORT', 1025),
-      secure: this.config.get<string>('SMTP_SECURE', 'false') !== 'false',
-      auth: this.config.get<string>('SMTP_USER')
-        ? {
-            user: this.config.get<string>('SMTP_USER'),
-            pass: this.config.get<string>('SMTP_PASSWORD'),
-          }
-        : undefined,
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 15_000,
-    });
-
-    logger.info(
-      {
-        host: this.config.get('SMTP_HOST'),
-        port: this.config.get('SMTP_PORT'),
-        secure: this.config.get('SMTP_SECURE'),
-        user: this.config.get('SMTP_USER'),
-        from: this.smtpFrom,
-      },
-      'SMTP transporter initialized — verifying connection',
-    );
-
-    this.transporter.verify((error) => {
-      if (error) {
-        logger.error(
-          {
-            host: this.config.get('SMTP_HOST'),
-            port: this.config.get('SMTP_PORT'),
-            error: error instanceof Error ? error.message : String(error),
-          },
-          'SMTP connection check FAILED — emails will not be delivered',
-        );
-      } else {
-        logger.info(
-          {
-            host: this.config.get('SMTP_HOST'),
-            port: this.config.get('SMTP_PORT'),
-          },
-          'SMTP connection check OK — ready to send',
-        );
-      }
-    });
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      logger.warn('RESEND_API_KEY not set — email sending disabled');
+      return;
+    }
+    this.resend = new Resend(apiKey);
+    logger.info({ from: this.from }, 'Resend email client ready');
   }
 
   async sendEmailVerification(
@@ -165,14 +121,14 @@ export class MailService implements OnModuleInit {
     html: string,
     text: string,
   ): Promise<void> {
-    if (!this.smtpAdminTo) {
+    if (!this.adminTo) {
       logger.debug(
         { subject },
-        'SMTP_TO not configured — skipping admin email',
+        'RESEND_ADMIN_TO not configured — skipping admin email',
       );
       return;
     }
-    await this.sendTo(this.smtpAdminTo, subject, { html, text });
+    await this.sendTo(this.adminTo, subject, { html, text });
   }
 
   private async sendTo(
@@ -180,32 +136,26 @@ export class MailService implements OnModuleInit {
     subject: string,
     body: { html: string; text: string },
   ): Promise<void> {
-    if (!this.smtpEnabled || !this.transporter) {
-      logger.debug(
-        { subject, to },
-        'SMTP disabled or unconfigured — skipping email',
-      );
+    if (!this.resend) {
+      logger.debug({ subject, to }, 'Resend not configured — skipping email');
       return;
     }
 
-    try {
-      await this.transporter.sendMail({
-        from: this.smtpFrom,
-        to,
-        subject: `[EVCore] ${subject}`,
-        html: body.html,
-        text: body.text,
-      });
-      logger.info({ subject, to }, 'Email sent successfully');
-    } catch (error) {
+    const { error } = await this.resend.emails.send({
+      from: this.from,
+      to,
+      subject: `[EVCore] ${subject}`,
+      html: body.html,
+      text: body.text,
+    });
+
+    if (error) {
       logger.error(
-        {
-          subject,
-          to,
-          error: error instanceof Error ? error.message : String(error),
-        },
+        { subject, to, error: error.message },
         'Failed to send email — message NOT delivered',
       );
+    } else {
+      logger.info({ subject, to }, 'Email sent successfully');
     }
   }
 }
