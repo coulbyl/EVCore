@@ -465,7 +465,7 @@ export class AuthService {
 
     logger.info(
       { userId: user.id, username: user.username },
-      'password-reset: email sent',
+      'password-reset: token created, email dispatch attempted',
     );
   }
 
