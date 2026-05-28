@@ -137,10 +137,7 @@ export class MailService implements OnModuleInit {
     body: { html: string; text: string },
   ): Promise<void> {
     if (!this.resend) {
-      logger.debug(
-        { subject, to },
-        'Resend not configured — skipping email',
-      );
+      logger.debug({ subject, to }, 'Resend not configured — skipping email');
       return;
     }
 
