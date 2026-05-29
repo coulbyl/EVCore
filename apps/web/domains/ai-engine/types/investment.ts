@@ -5,6 +5,7 @@ export type InvestmentPickDto = {
   homeTeam: string;
   awayTeam: string;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: InvestmentCanal;
   market: string;
@@ -28,6 +29,7 @@ export type InvestmentLegDto = {
   homeTeam: string;
   awayTeam: string;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: InvestmentCanal;
   market: string;

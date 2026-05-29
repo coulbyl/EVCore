@@ -7,6 +7,7 @@ export type InvestmentPickDto = {
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: Canal;
   market: string;
@@ -30,6 +31,7 @@ export type InvestmentLegDto = {
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: Canal;
   market: string;

@@ -11,32 +11,6 @@ const valueCls =
   "mt-1 text-[0.95rem] leading-none sm:text-[1.45rem] lg:text-[1.6rem] font-semibold tabular-nums tracking-tight text-foreground";
 const subCls = "mt-1 text-[0.63rem] sm:mt-0.5 sm:text-xs text-muted-foreground";
 
-function RoiBadge({ roi, count }: { roi: string; count: number }) {
-  const t = useTranslations("dashboard.operatorCard");
-  const value = parseFloat(roi);
-  const isPositive = value > 0;
-  const isNeutral = value >= -5 && value <= 0;
-  const label = isPositive
-    ? t("winForm")
-    : isNeutral
-      ? t("neutral")
-      : t("toWatch");
-  const cls = isPositive
-    ? "bg-success/10 text-success border-success/30"
-    : isNeutral
-      ? "bg-warning/10 text-warning border-warning/30"
-      : "bg-danger/10 text-danger border-danger/30";
-  return (
-    <div
-      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${cls}`}
-    >
-      <span className="tabular-nums">{roi}</span>
-      <span className="font-normal opacity-70">
-        · {count} pari{count > 1 ? "s" : ""} · {label}
-      </span>
-    </div>
-  );
-}
 
 export function OperatorPerformanceCard({
   from,
@@ -133,22 +107,6 @@ export function OperatorPerformanceCard({
         </p>
       )}
 
-      <div className="mt-4 border-t border-border pt-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs text-muted-foreground">
-            {t("modelReturn")}
-          </span>
-          {isLoading ? (
-            <div className="h-5 w-16 animate-pulse rounded-lg bg-secondary" />
-          ) : data?.globalRoi != null ? (
-            <RoiBadge roi={data.globalRoi} count={data.globalRoiBetCount} />
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              {t("notEnoughData")}
-            </span>
-          )}
-        </div>
-      </div>
     </section>
   );
 }

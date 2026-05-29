@@ -1,0 +1,86 @@
+const COUNTRY_FR: Record<string, string> = {
+  Brazil: "Brésil",
+  China: "Chine",
+  "Czech Republic": "Rép. Tchèque",
+  England: "Angleterre",
+  Estonia: "Estonie",
+  Europe: "Europe",
+  Finland: "Finlande",
+  France: "France",
+  Germany: "Allemagne",
+  Iceland: "Islande",
+  Italy: "Italie",
+  Japan: "Japon",
+  Latvia: "Lettonie",
+  Mexico: "Mexique",
+  Netherlands: "Pays-Bas",
+  Norway: "Norvège",
+  Poland: "Pologne",
+  Portugal: "Portugal",
+  Serbia: "Serbie",
+  Slovenia: "Slovénie",
+  "South-Korea": "Corée du Sud",
+  Spain: "Espagne",
+  Sweden: "Suède",
+  Switzerland: "Suisse",
+  Turkey: "Turquie",
+  USA: "États-Unis",
+  World: "Monde",
+};
+
+const COMPETITION_FR: Record<string, string> = {
+  "Premier League": "Premier League",
+  Championship: "Championship",
+  "League One": "League One",
+  "League Two": "League Two",
+  "Ligue 1": "Ligue 1",
+  "Ligue 2": "Ligue 2",
+  Bundesliga: "Bundesliga",
+  "2. Bundesliga": "2. Bundesliga",
+  "La Liga": "La Liga",
+  "Segunda Division": "Segunda División",
+  "Serie A": "Série A",
+  "Serie B": "Série B",
+  "Primeira Liga": "Liga Portugal",
+  Eredivisie: "Eredivisie",
+  "Champions League": "Ligue des Champions",
+  "UEFA Europa League": "Ligue Europa",
+  "UEFA Europa Conference League": "Ligue Europa Conférence",
+  "UEFA Nations League": "Ligue des Nations",
+  "FIFA World Cup 2026": "Coupe du Monde 2026",
+  "World Cup Qualification - Europe": "Qualif. CM Europe",
+  "International Friendlies": "Matchs amicaux",
+  "J1 League": "J1 League",
+  "K League 1": "K League 1",
+  "Liga MX": "Liga MX",
+  "Major League Soccer": "MLS",
+  "Brasileirão Série A": "Brasileirão",
+  Ekstraklasa: "Ekstraklasa",
+  "I Liga": "I Liga",
+  Eliteserien: "Eliteserien",
+  "1. Division": "1. Division",
+  Allsvenskan: "Allsvenskan",
+  Superettan: "Superettan",
+  "Süper Lig": "Süper Lig",
+  "1. Lig": "1. Lig",
+  "Czech Liga": "Liga Tchèque",
+  "Super Liga": "Super Liga",
+  "1. SNL": "1. SNL",
+  Meistriliiga: "Meistriliiga",
+  Veikkausliiga: "Veikkausliiga",
+  Úrvalsdeild: "Úrvalsdeild",
+  Virsliga: "Virsliga",
+  // "Super League" is ambiguous (China / Switzerland) — left as-is, country prefix disambiguates
+  "Super League": "Super League",
+  "Challenge League": "Challenge League",
+};
+
+export function translateCountry(country: string, locale: string): string {
+  if (locale !== "fr") return country;
+  return COUNTRY_FR[country] ?? country;
+}
+
+export function translateCompetition(competition: string, locale: string): string {
+  if (locale !== "fr") return competition;
+  return COMPETITION_FR[competition] ?? competition;
+}
