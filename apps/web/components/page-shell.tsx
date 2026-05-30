@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@evcore/ui/cn";
 import {
   Sidebar,
@@ -18,8 +19,18 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@evcore/ui";
 import type { LucideIcon } from "lucide-react";
+
+function SidebarAutoClose() {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
+  return null;
+}
 
 export type NavItem = {
   label: string;
@@ -66,6 +77,7 @@ export function PageShell({
         } as CSSProperties
       }
     >
+      <SidebarAutoClose />
       <Sidebar
         variant="inset"
         collapsible="offcanvas"
