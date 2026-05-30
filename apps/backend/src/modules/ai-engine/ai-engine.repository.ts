@@ -91,7 +91,11 @@ export type CouponProposalWithLegs = Prisma.CouponProposalGetPayload<{
           include: {
             homeTeam: { select: { name: true; logoUrl: true } };
             awayTeam: { select: { name: true; logoUrl: true } };
-            season: { select: { competition: { select: { code: true; country: true } } } };
+            season: {
+              select: {
+                competition: { select: { code: true; country: true } };
+              };
+            };
           };
         };
       };
@@ -106,7 +110,9 @@ const WITH_LEGS = {
         include: {
           homeTeam: { select: { name: true, logoUrl: true } },
           awayTeam: { select: { name: true, logoUrl: true } },
-          season: { select: { competition: { select: { code: true, country: true } } } },
+          season: {
+            select: { competition: { select: { code: true, country: true } } },
+          },
         },
       },
     },

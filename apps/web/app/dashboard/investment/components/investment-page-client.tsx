@@ -72,7 +72,6 @@ export function InvestissementPageClient() {
         <div className="flex h-full min-h-0 flex-col gap-5">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex flex-col gap-8 pb-6">
-
               {/* ── Top picks ─────────────────────────────────────────────── */}
               <section className="flex flex-col gap-6">
                 <div>
@@ -179,7 +178,6 @@ export function InvestissementPageClient() {
                   </div>
                 )}
               </section>
-
             </div>
           </div>
         </div>

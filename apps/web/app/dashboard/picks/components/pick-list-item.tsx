@@ -2,9 +2,15 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
-import { formatMarketForDisplay, formatCombinedPickForDisplay } from "@/helpers/fixture";
+import {
+  formatMarketForDisplay,
+  formatCombinedPickForDisplay,
+} from "@/helpers/fixture";
 import { PickCard } from "@/components/pick-card";
-import { AddToSlipInline, AddPredictionToSlipInline } from "./add-to-slip-inline";
+import {
+  AddToSlipInline,
+  AddPredictionToSlipInline,
+} from "./add-to-slip-inline";
 import { CONF_PICK_LABEL } from "./pick-constants";
 
 type Canal = "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
@@ -115,7 +121,10 @@ export function PickListItem({
     ) : canal === "SV" ? (
       <AddToSlipInline row={row} canal="SV" />
     ) : (
-      <AddPredictionToSlipInline row={row} canal={canal as "CONF" | "DRAW" | "BTTS"} />
+      <AddPredictionToSlipInline
+        row={row}
+        canal={canal as "CONF" | "DRAW" | "BTTS"}
+      />
     );
 
   return (

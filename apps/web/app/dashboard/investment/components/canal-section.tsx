@@ -1,4 +1,7 @@
-import type { InvestmentCanal, InvestmentPickDto } from "@/domains/ai-engine/types/investment";
+import type {
+  InvestmentCanal,
+  InvestmentPickDto,
+} from "@/domains/ai-engine/types/investment";
 import {
   CANAL_COLOR,
   CANAL_LABEL,

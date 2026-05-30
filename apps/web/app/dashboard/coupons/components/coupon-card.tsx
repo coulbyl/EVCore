@@ -1,5 +1,8 @@
 import { translateCountry, translateCompetition } from "@/lib/competition-i18n";
-import { formatMarketForDisplay, formatPickForDisplay } from "@/helpers/fixture";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/ai-engine/types/coupon";
 import {
   CouponCard as SharedCouponCard,

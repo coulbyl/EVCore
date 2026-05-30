@@ -19,59 +19,59 @@ type Props = { filters: FixtureFilters };
 
 function buildFilterDefs(locale: string): FilterDef[] {
   return [
-  {
-    key: "date",
-    label: "Date",
-    type: "date",
-  },
-  {
-    key: "competition",
-    label: "Compétition",
-    type: "select",
-    options: [
-      { value: "ALL", label: "Toutes" },
-      ...COMPETITIONS.map((c) => ({
-        value: c.code,
-        label: `${translateCountry(c.country, locale)} · ${locale === "fr" ? c.nameFr : c.name}`,
-      })),
-    ],
-  },
-  {
-    key: "decision",
-    label: "Décision",
-    type: "select",
-    options: DECISION_OPTIONS,
-  },
-  {
-    key: "status",
-    label: "Statut",
-    type: "select",
-    options: STATUS_OPTIONS,
-  },
-  {
-    key: "timeSlot",
-    label: "Horaire",
-    type: "select",
-    options: [
-      { value: "ALL", label: "Tous horaires" },
-      ...TIME_SLOTS.map((s) => ({
-        value: s.key,
-        label: `${s.label} ${s.start}h–${s.end}h`,
-      })),
-    ],
-  },
-  {
-    key: "betStatus",
-    label: "Résultat",
-    type: "select",
-    options: BET_STATUS_OPTIONS,
-  },
-  {
-    key: "canal",
-    label: "Canal",
-    type: "select",
-    options: CANAL_OPTIONS,
-  },
+    {
+      key: "date",
+      label: "Date",
+      type: "date",
+    },
+    {
+      key: "competition",
+      label: "Compétition",
+      type: "select",
+      options: [
+        { value: "ALL", label: "Toutes" },
+        ...COMPETITIONS.map((c) => ({
+          value: c.code,
+          label: `${translateCountry(c.country, locale)} · ${locale === "fr" ? c.nameFr : c.name}`,
+        })),
+      ],
+    },
+    {
+      key: "decision",
+      label: "Décision",
+      type: "select",
+      options: DECISION_OPTIONS,
+    },
+    {
+      key: "status",
+      label: "Statut",
+      type: "select",
+      options: STATUS_OPTIONS,
+    },
+    {
+      key: "timeSlot",
+      label: "Horaire",
+      type: "select",
+      options: [
+        { value: "ALL", label: "Tous horaires" },
+        ...TIME_SLOTS.map((s) => ({
+          value: s.key,
+          label: `${s.label} ${s.start}h–${s.end}h`,
+        })),
+      ],
+    },
+    {
+      key: "betStatus",
+      label: "Résultat",
+      type: "select",
+      options: BET_STATUS_OPTIONS,
+    },
+    {
+      key: "canal",
+      label: "Canal",
+      type: "select",
+      options: CANAL_OPTIONS,
+    },
   ];
 }
 

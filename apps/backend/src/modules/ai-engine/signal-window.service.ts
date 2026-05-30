@@ -281,7 +281,9 @@ export class SignalWindowService {
         homeTeam: { select: { name: true, logoUrl: true } },
         awayTeam: { select: { name: true, logoUrl: true } },
         season: {
-          select: { competition: { select: { code: true, name: true, country: true } } },
+          select: {
+            competition: { select: { code: true, name: true, country: true } },
+          },
         },
         modelRuns: {
           select: {

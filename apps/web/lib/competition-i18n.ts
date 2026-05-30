@@ -80,7 +80,10 @@ export function translateCountry(country: string, locale: string): string {
   return COUNTRY_FR[country] ?? country;
 }
 
-export function translateCompetition(competition: string, locale: string): string {
+export function translateCompetition(
+  competition: string,
+  locale: string,
+): string {
   if (locale !== "fr") return competition;
   return COMPETITION_FR[competition] ?? competition;
 }

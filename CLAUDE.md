@@ -210,6 +210,7 @@ When a `*-page-client.tsx` file grows beyond one or two internal components, **e
 - The page client keeps **only**: data fetching hooks, routing/navigation state, and top-level layout
 
 Rules:
+
 - Add `"use client"` only to files that use hooks or browser APIs — pure JSX files don't need it
 - Each file imports only what it directly uses — no barrel re-exports
 - Shared display logic (e.g. `formatPct`, canal color maps) goes in a `*-constants.ts` sibling, not inlined in multiple components

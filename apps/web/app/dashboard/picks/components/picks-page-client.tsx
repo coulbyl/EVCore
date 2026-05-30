@@ -103,7 +103,6 @@ export function PicksPageClient() {
       </PageHeader>
       <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
-
           <div className="min-h-0 flex-1 overflow-hidden">
             {isLoading && (
               <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -127,33 +126,83 @@ export function PicksPageClient() {
               <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-5">
                 <div className="min-h-0 overflow-y-auto pr-0 lg:pr-1">
                   <div className="flex flex-col gap-6 pb-2">
-                    <CanalSection title={t("safeValue")} color="var(--canal-sv)" count={sv.length}>
+                    <CanalSection
+                      title={t("safeValue")}
+                      color="var(--canal-sv)"
+                      count={sv.length}
+                    >
                       {sv.map((row) => (
-                        <PickListItem key={`${row.fixtureId}-sv`} row={row} canal="SV" active={row.fixtureId === selectedId} onSelect={() => handleSelect(row)} />
+                        <PickListItem
+                          key={`${row.fixtureId}-sv`}
+                          row={row}
+                          canal="SV"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
                       ))}
                     </CanalSection>
 
-                    <CanalSection title={t("bttsLabel")} color="var(--canal-btts)" count={btts.length}>
+                    <CanalSection
+                      title={t("bttsLabel")}
+                      color="var(--canal-btts)"
+                      count={btts.length}
+                    >
                       {btts.map((row) => (
-                        <PickListItem key={`${row.fixtureId}-btts`} row={row} canal="BTTS" active={row.fixtureId === selectedId} onSelect={() => handleSelect(row)} />
+                        <PickListItem
+                          key={`${row.fixtureId}-btts`}
+                          row={row}
+                          canal="BTTS"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
                       ))}
                     </CanalSection>
 
-                    <CanalSection title={t("confidence")} color="var(--canal-conf)" count={conf.length}>
+                    <CanalSection
+                      title={t("confidence")}
+                      color="var(--canal-conf)"
+                      count={conf.length}
+                    >
                       {conf.map((row) => (
-                        <PickListItem key={`${row.fixtureId}-conf`} row={row} canal="CONF" active={row.fixtureId === selectedId} onSelect={() => handleSelect(row)} />
+                        <PickListItem
+                          key={`${row.fixtureId}-conf`}
+                          row={row}
+                          canal="CONF"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
                       ))}
                     </CanalSection>
 
-                    <CanalSection title={t("matchNull")} color="var(--canal-draw)" count={matchNul.length}>
+                    <CanalSection
+                      title={t("matchNull")}
+                      color="var(--canal-draw)"
+                      count={matchNul.length}
+                    >
                       {matchNul.map((row) => (
-                        <PickListItem key={`${row.fixtureId}-draw`} row={row} canal="DRAW" active={row.fixtureId === selectedId} onSelect={() => handleSelect(row)} />
+                        <PickListItem
+                          key={`${row.fixtureId}-draw`}
+                          row={row}
+                          canal="DRAW"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
                       ))}
                     </CanalSection>
 
-                    <CanalSection title={t("evChannel")} color="var(--canal-ev)" count={ev.length}>
+                    <CanalSection
+                      title={t("evChannel")}
+                      color="var(--canal-ev)"
+                      count={ev.length}
+                    >
                       {ev.map((row) => (
-                        <PickListItem key={row.fixtureId} row={row} canal="EV" active={row.fixtureId === selectedId} onSelect={() => handleSelect(row)} />
+                        <PickListItem
+                          key={row.fixtureId}
+                          row={row}
+                          canal="EV"
+                          active={row.fixtureId === selectedId}
+                          onSelect={() => handleSelect(row)}
+                        />
                       ))}
                     </CanalSection>
                   </div>
@@ -190,7 +239,6 @@ export function PicksPageClient() {
               </div>
             </DrawerContent>
           </Drawer>
-
         </div>
       </PageContent>
     </Page>

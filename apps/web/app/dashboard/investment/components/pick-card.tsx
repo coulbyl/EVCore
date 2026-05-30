@@ -1,4 +1,7 @@
-import { formatMarketForDisplay, formatPickForDisplay } from "@/helpers/fixture";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import type { InvestmentPickDto } from "@/domains/ai-engine/types/investment";
 import { PickCard as SharedPickCard } from "@/components/pick-card";
 import { CANAL_COLOR } from "./canal-constants";
@@ -13,11 +16,7 @@ export function PickCard({
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const betStatus =
-    pick.isCorrect === true
-      ? "WON"
-      : pick.isCorrect === false
-        ? "LOST"
-        : null;
+    pick.isCorrect === true ? "WON" : pick.isCorrect === false ? "LOST" : null;
 
   return (
     <SharedPickCard

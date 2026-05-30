@@ -3,7 +3,10 @@
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { draftItemKey } from "@/domains/bet-slip/types/bet-slip";
 import { translateCountry, translateCompetition } from "@/lib/competition-i18n";
-import { formatMarketForDisplay, formatPickForDisplay } from "@/helpers/fixture";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import type { InvestmentCouponDto } from "@/domains/ai-engine/types/investment";
 import {
   CouponCard as SharedCouponCard,
@@ -26,7 +29,9 @@ export function CouponCard({
 
   const isSettled = coupon.legs.some((l) => l.isCorrect !== null);
   const allInSlip = coupon.legs.every((l) =>
-    isInSlip(draftItemKey({ fixtureId: l.fixtureId, market: l.market, pick: l.pick })),
+    isInSlip(
+      draftItemKey({ fixtureId: l.fixtureId, market: l.market, pick: l.pick }),
+    ),
   );
 
   function handlePlayCombo() {

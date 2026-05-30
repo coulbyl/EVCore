@@ -11,7 +11,6 @@ const valueCls =
   "mt-1 text-[0.95rem] leading-none sm:text-[1.45rem] lg:text-[1.6rem] font-semibold tabular-nums tracking-tight text-foreground";
 const subCls = "mt-1 text-[0.63rem] sm:mt-0.5 sm:text-xs text-muted-foreground";
 
-
 export function OperatorPerformanceCard({
   from,
   to,
@@ -106,7 +105,6 @@ export function OperatorPerformanceCard({
           résultat
         </p>
       )}
-
     </section>
   );
 }

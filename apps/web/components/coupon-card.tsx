@@ -43,9 +43,7 @@ export type CouponCardProps = {
 
 function LegResultMark({ isCorrect }: { isCorrect: boolean | null }) {
   if (isCorrect === true)
-    return (
-      <span className="text-xs font-bold text-emerald-500">✓</span>
-    );
+    return <span className="text-xs font-bold text-emerald-500">✓</span>;
   if (isCorrect === false)
     return <span className="text-xs font-bold text-destructive">✗</span>;
   return null;
@@ -160,7 +158,9 @@ export function CouponCard({
                         />
                       )}
                       <span className="truncate">{leg.homeTeam}</span>
-                      <span className="font-normal text-muted-foreground">–</span>
+                      <span className="font-normal text-muted-foreground">
+                        –
+                      </span>
                       {leg.awayLogo && (
                         <Image
                           src={leg.awayLogo}

@@ -94,13 +94,14 @@ When a `*-page-client.tsx` file contains more than one or two internal function 
 
 **Split pattern:**
 
-| File | Contains |
-|---|---|
-| `*-constants.ts` | Shared constants + pure utility functions — no JSX, no `"use client"` |
-| `result-badge.tsx`, `pick-card.tsx`, … | One component per file |
-| `*-page-client.tsx` | Data fetching hooks + routing state + layout only |
+| File                                   | Contains                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `*-constants.ts`                       | Shared constants + pure utility functions — no JSX, no `"use client"` |
+| `result-badge.tsx`, `pick-card.tsx`, … | One component per file                                                |
+| `*-page-client.tsx`                    | Data fetching hooks + routing state + layout only                     |
 
 **Rules:**
+
 - Add `"use client"` only to files that use hooks or browser APIs
 - Each file imports only what it directly uses — no barrel re-exports
 - Shared display logic (color maps, format helpers) goes in a `*-constants.ts` sibling
