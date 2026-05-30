@@ -112,7 +112,7 @@ export function InvestissementPageClient() {
                       </EmptyMedia>
                       <EmptyTitle>Aucun pick éligible</EmptyTitle>
                       <EmptyDescription>
-                        Le moteur n'a pas retenu de sélection exploitable pour
+                        Le moteur n&apos;a pas retenu de sélection exploitable pour
                         cette date.
                       </EmptyDescription>
                     </EmptyHeader>
@@ -159,7 +159,7 @@ export function InvestissementPageClient() {
                       </EmptyMedia>
                       <EmptyTitle>Aucun coupon composé</EmptyTitle>
                       <EmptyDescription>
-                        Aucune combinaison n'est proposée pour cette date.
+                        Aucune combinaison n&apos;est proposée pour cette date.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
