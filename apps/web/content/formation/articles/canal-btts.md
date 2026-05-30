@@ -64,5 +64,5 @@ Le pick BB apparaît avec un badge orange `BB`. Comme les autres picks, il est p
 ## Pour aller plus loin
 
 - Découvrir les autres canaux : `les-3-canaux`
-- Comprendre le Canal Confiance : `canal-confiance`
+- Comprendre le Canal Victoire : `canal-confiance`
 - Lire un pick dans l'app : `comment-lire-un-pick`

@@ -5,7 +5,7 @@ difficulty: beginner
 order: 1
 readTime: 4
 slug: les-3-canaux
-summary: "Vue d'ensemble des 5 canaux du moteur : EV, Sécurité, Confiance, BB et NUL. Par où commencer et lequel suivre."
+summary: "Vue d'ensemble des 5 canaux du moteur : EV, Sécurité, Victoire, BB et NUL. Par où commencer et lequel suivre."
 updatedAt: "2026-05-03"
 related: ["canal-ev", "canal-sv", "canal-confiance", "canal-btts", "canal-draw"]
 ---
@@ -18,7 +18,7 @@ EVCore analyse chaque match et produit cinq types de signaux indépendants. Chaq
 
 **Canal Sécurité (SV)** — Même logique que l'EV, mais avec un filtre de probabilité plus strict. Seuls les signaux les plus robustes passent. Moins de picks, moins de variance, taux de réussite plus élevé.
 
-**Canal Confiance (CONF)** — Le moteur prédit V1 ou V2 avec une probabilité estimée. Si tu fais confiance à cette probabilité, tu peux parier sur l'issue prédite. Une approche orientée résultat, distincte de la logique prix d'EV et SV.
+**Canal Victoire (CONF)** — Le moteur prédit V1 ou V2 avec une probabilité estimée. Si tu fais confiance à cette probabilité, tu peux parier sur l'issue prédite (V1 ou V2). Une approche orientée résultat, distincte de la logique prix d'EV et SV.
 
 **Canal BB (But-But)** — Le moteur prédit les matchs où les deux équipes vont marquer. Signal indépendant du résultat final — un match peut finir 1-0 ou 1-1, les deux valident le pick. Actif sur les ligues où le signal a été validé par backtest.
 
@@ -41,7 +41,7 @@ Les canaux CONF, BB et NUL peuvent coexister sur le même match — un pick CONF
 Tous les canaux apparaissent sur la page **Picks du jour**. Chaque pick affiche son badge de canal :
 
 - `EV` / `SV` pour les canaux de valeur
-- `Conf.` pour le Canal Confiance
+- `VICTOIRE` pour le Canal Victoire
 - `BB` pour le Canal But-But
 - `NUL` pour le Canal Nul
 

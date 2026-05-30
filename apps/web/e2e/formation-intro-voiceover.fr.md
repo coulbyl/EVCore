@@ -11,7 +11,7 @@ Ici, chaque _pick_ est une proposition de pari construite à partir de règles e
 Sur un pick, tu vas surtout regarder trois choses :
 
 D’abord, le **canal**.
-EV pour chercher de la valeur, Sécurité pour réduire le risque, et Confiance pour un pick plus “lisible” au quotidien.
+EV pour chercher de la valeur, Sécurité pour réduire le risque, et Victoire pour un pick plus “lisible” au quotidien.
 
 Ensuite, la **cote** et la **probabilité**.
 Une cote, c’est le prix payé par le marché.

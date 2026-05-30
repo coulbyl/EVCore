@@ -38,13 +38,13 @@ Les picks avec `EV ≥ 8%`. Chaque carte affiche :
 
 Picks avec signal SV positif. Format identique aux picks EV, avec un badge `SV` teal.
 
-### Section Canal Confiance
+### Section Canal Victoire
 
 Prédictions de résultat (pas de recommandation de mise directe). Affiche le résultat prédit et la probabilité estimée.
 
 ### Section Canal NUL
 
-Prédictions dédiées aux matchs nuls. Elles sont séparées du canal Confiance pour rendre ce type de lecture plus visible quand il apparaît.
+Prédictions dédiées aux matchs nuls. Elles sont séparées du canal Victoire pour rendre ce type de lecture plus visible quand il apparaît.
 
 ### Section Canal BB
 
@@ -54,7 +54,7 @@ Prédictions **But-But** : les deux équipes marquent, en `OUI` ou `NON` selon l
 
 Sur les picks EV et SV, un bouton **"+ Coupon"** apparaît. Il ajoute directement le pari à ton coupon actif.
 
-Les canaux **Confiance**, **NUL** et **BB** sont d'abord des canaux de lecture et de diagnostic. Ils n'ajoutent pas directement un pari depuis cette page.
+Les canaux **Victoire**, **NUL** et **BB** sont d'abord des canaux de lecture et de diagnostic. Ils n'ajoutent pas directement un pari depuis cette page.
 
 > Seuls les paris en statut "À venir" (PENDING) peuvent être ajoutés.
 
@@ -68,7 +68,7 @@ En haut de page, 5 StatCards résument la journée :
 
 - **EV** : nombre de picks du canal valeur
 - **SV** : nombre de picks du canal Safe Value
-- **Confiance** : volume des prédictions 1X2
+- **Victoire** : volume des prédictions 1X2
 - **NUL** : volume des signaux dédiés aux matchs nuls
 - **BB** : volume des signaux But-But
 

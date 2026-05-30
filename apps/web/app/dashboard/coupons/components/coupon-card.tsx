@@ -14,6 +14,14 @@ const CANAL_COLOR: Record<string, string> = {
   NUL: "var(--canal-draw)",
 };
 
+const CANAL_LABEL: Record<string, string> = {
+  EV: "EV",
+  SV: "SV",
+  CONF: "VICTOIRE",
+  BB: "BB",
+  NUL: "NUL",
+};
+
 export function CouponCard({
   coupon,
   locale,
@@ -40,7 +48,7 @@ export function CouponCard({
     countryLabel: translateCountry(leg.country, locale),
     competitionLabel: translateCompetition(leg.competition, locale),
     canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-sv)",
-    canalLabel: leg.canal,
+    canalLabel: CANAL_LABEL[leg.canal] ?? leg.canal,
     marketLabel: formatMarketForDisplay(leg.market, loc),
     pickLabel: formatPickForDisplay(leg.pick, leg.market),
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
