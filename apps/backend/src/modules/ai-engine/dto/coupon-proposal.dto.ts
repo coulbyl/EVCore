@@ -11,6 +11,7 @@ export type CouponLegDto = {
   homeTeam: string;
   awayTeam: string;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: CouponLegCanal;
   market: Market;

@@ -6,6 +6,7 @@ export type CouponLegDto = {
   awayTeam: string;
   awayLogo: string | null;
   competition: string;
+  country: string;
   scheduledAt: string;
   canal: "EV" | "SV" | "BB" | "NUL" | "CONF";
   market: string;
