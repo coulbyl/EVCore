@@ -77,6 +77,7 @@ export type FixtureRow = {
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
+  country: string;
   competitionCode: string;
   scheduledAt: string;
   status: string;

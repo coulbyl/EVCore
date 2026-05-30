@@ -110,6 +110,7 @@ export class AiEngineService {
         awayTeam: leg.fixture.awayTeam.name,
         awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
         competition: leg.fixture.season.competition.code,
+        country: leg.fixture.season.competition.country,
         scheduledAt: leg.fixture.scheduledAt.toISOString(),
         canal: leg.canal,
         market: leg.market,

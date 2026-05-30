@@ -88,6 +88,26 @@ Do not:
 
 <!-- END:tanstack-table-agent-rules -->
 
+## React page component structure
+
+When a `*-page-client.tsx` file contains more than one or two internal function components, extract each into its own file in the collocated `components/` directory.
+
+**Split pattern:**
+
+| File                                   | Contains                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `*-constants.ts`                       | Shared constants + pure utility functions — no JSX, no `"use client"` |
+| `result-badge.tsx`, `pick-card.tsx`, … | One component per file                                                |
+| `*-page-client.tsx`                    | Data fetching hooks + routing state + layout only                     |
+
+**Rules:**
+
+- Add `"use client"` only to files that use hooks or browser APIs
+- Each file imports only what it directly uses — no barrel re-exports
+- Shared display logic (color maps, format helpers) goes in a `*-constants.ts` sibling
+- Page-scoped components → collocated `components/` folder
+- Cross-page components → `apps/web/components/`
+
 node_modules/next/dist/docs/
 ├── 01-app/
 │ ├── 01-getting-started/

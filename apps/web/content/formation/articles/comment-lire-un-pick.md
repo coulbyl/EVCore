@@ -33,7 +33,7 @@ EV : +14,7 %   Probabilité estimée : 58 %   Cote : 2,10
 
 - 🟡 `EV` — signal Expected Value (rendement long terme)
 - 🟢 `SV` — signal Safe Value (probabilité plus élevée, moins de variance)
-- 🔵 `CONF` — signal Confiance (V1 ou V2 prédits avec probabilité estimée)
+- 🔵 `VICTOIRE` — signal Victoire (V1 ou V2 prédits avec probabilité estimée)
 - 🟠 `NUL` — signal dédié aux matchs nuls
 - 🔴 `BB` — signal But-But (les deux équipes marquent)
 

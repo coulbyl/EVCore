@@ -22,6 +22,7 @@ export type ScoredPick = {
   homeTeam: string;
   awayTeam: string;
   competition: string;
+  country: string;
   scheduledAt: Date;
   canal: Canal;
   market: string;
@@ -280,7 +281,9 @@ export class SignalWindowService {
         homeTeam: { select: { name: true, logoUrl: true } },
         awayTeam: { select: { name: true, logoUrl: true } },
         season: {
-          select: { competition: { select: { code: true, name: true } } },
+          select: {
+            competition: { select: { code: true, name: true, country: true } },
+          },
         },
         modelRuns: {
           select: {
@@ -351,6 +354,7 @@ export class SignalWindowService {
       const run = f.modelRuns[0];
       const comp = f.season.competition.code;
       const competitionName = f.season.competition.name;
+      const country = f.season.competition.country;
       const feat = run?.features;
       const lambdaHome = readNumber(feat, 'lambdaHome');
       const lambdaAway = readNumber(feat, 'lambdaAway');
@@ -371,6 +375,7 @@ export class SignalWindowService {
         homeLogo: f.homeTeam.logoUrl ?? null,
         awayLogo: f.awayTeam.logoUrl ?? null,
         competition: competitionName,
+        country,
         scheduledAt: f.scheduledAt,
         homeScore: f.homeScore ?? null,
         awayScore: f.awayScore ?? null,

@@ -24,7 +24,7 @@ Le canal **EV** cherche la value : une cote jugée trop haute par rapport à la 
 
 Le canal **SV**, pour Safe Value, garde une logique proche, mais avec des signaux plus prudents.
 
-Le canal **Confiance** affiche l’issue jugée la plus probable sur le 1X2.
+Le canal **Victoire** affiche l’issue jugée la plus probable sur le 1X2.
 
 Le canal **NUL** isole les matchs où le modèle voit un scénario de nul.
 

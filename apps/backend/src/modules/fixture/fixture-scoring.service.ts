@@ -69,6 +69,7 @@ export type ScoredFixtureRow = {
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
+  country: string;
   competitionCode: string;
   scheduledAt: string;
   status: string;
@@ -216,7 +217,7 @@ export class FixtureScoringService {
         awayTeam: { select: { name: true, logoUrl: true } },
         season: {
           select: {
-            competition: { select: { code: true, name: true } },
+            competition: { select: { code: true, name: true, country: true } },
           },
         },
         predictions: {
@@ -351,6 +352,7 @@ export class FixtureScoringService {
         homeLogo: f.homeTeam.logoUrl ?? null,
         awayLogo: f.awayTeam.logoUrl ?? null,
         competition: f.season.competition.name,
+        country: f.season.competition.country,
         competitionCode: f.season.competition.code,
         scheduledAt: f.scheduledAt.toISOString(),
         status: f.status,

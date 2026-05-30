@@ -46,7 +46,7 @@ Tout est pensé pour que la lecture soit rapide, propre, utile, et immédiatemen
 
 Avec l’onglet **Résumé**, EVCore ne présente pas les paris personnels de l’utilisateur, mais un récapitulatif des performances du modèle sur une période donnée.
 
-Grâce au filtre par canal, vous pouvez analyser séparément les résultats des signaux **EV**, **SV**, **Confiance**, **BB** ou **NUL**, et voir pour chacun le volume de picks, le nombre de gagnés, de perdus, ainsi que le ROI associé.
+Grâce au filtre par canal, vous pouvez analyser séparément les résultats des signaux **EV**, **SV**, **Victoire**, **BB** ou **NUL**, et voir pour chacun le volume de picks, le nombre de gagnés, de perdus, ainsi que le ROI associé.
 
 La page permet aussi de suivre la progression des résultats dans le temps, pour mieux comprendre le comportement du modèle selon la période observée.
 

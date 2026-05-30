@@ -73,4 +73,4 @@ En attendant, le Canal NUL reste en veille sur la majorité des ligues.
 
 - Découvrir les autres canaux : `les-3-canaux`
 - Le Canal BB (But-But) : `canal-btts`
-- Le Canal Confiance pour V1/V2 : `canal-confiance`
+- Le Canal Victoire pour V1/V2 : `canal-confiance`

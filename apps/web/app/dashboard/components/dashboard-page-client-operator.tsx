@@ -10,7 +10,6 @@ import {
   type FilterState,
 } from "@evcore/ui";
 import { OperatorPerformanceCard } from "./operator-performance-card";
-import { PredictionsCard } from "./predictions-card";
 import { WeeklyBrief } from "./weekly-brief";
 import { Announcements } from "@/components/announcements";
 import { CanalCards } from "./canal-cards";
@@ -95,12 +94,9 @@ export function DashboardPageClientOperator() {
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
-            {/* Row 1 : Performance (7) + Prédictions (5) */}
-            <div className="col-span-2 sm:col-span-6 lg:col-span-7 flex flex-col">
+            {/* Row 1 : Performance pleine largeur */}
+            <div className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col">
               <OperatorPerformanceCard from={fromIso} to={toIso} />
-            </div>
-            <div className="col-span-2 sm:col-span-6 lg:col-span-5 flex flex-col">
-              <PredictionsCard />
             </div>
 
             {/* Row 2 : Canal cards pleine largeur */}

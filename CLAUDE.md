@@ -201,6 +201,21 @@ ModelRun stored + notification alert
 | Env vars            | UPPER_SNAKE_CASE            | `DATABASE_URL`              |
 | DB tables           | snake_case (Prisma default) | `model_run`                 |
 
+### React / Next.js Page Components
+
+When a `*-page-client.tsx` file grows beyond one or two internal components, **extract each function component into its own file** inside the collocated `components/` directory:
+
+- `*-constants.ts` — shared constants and pure utility functions (no JSX, no `"use client"`)
+- `result-badge.tsx`, `slip-button.tsx`, … — one file per component
+- The page client keeps **only**: data fetching hooks, routing/navigation state, and top-level layout
+
+Rules:
+
+- Add `"use client"` only to files that use hooks or browser APIs — pure JSX files don't need it
+- Each file imports only what it directly uses — no barrel re-exports
+- Shared display logic (e.g. `formatPct`, canal color maps) goes in a `*-constants.ts` sibling, not inlined in multiple components
+- Components that belong to a single page live in that page's `components/` folder; components used across pages live in `apps/web/components/`
+
 ### NestJS Patterns
 
 - **Controllers**: routing and DTO validation only — zero business logic

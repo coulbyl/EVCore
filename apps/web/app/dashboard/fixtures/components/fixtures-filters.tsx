@@ -3,8 +3,10 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { FilterBar, type FilterDef, type FilterState } from "@evcore/ui";
+import { useLocale } from "next-intl";
 import { TIME_SLOTS } from "@/constants/time-slots";
 import { COMPETITIONS } from "@/constants/competitions";
+import { translateCountry } from "@/lib/competition-i18n";
 import {
   BET_STATUS_OPTIONS,
   CANAL_OPTIONS,
@@ -15,58 +17,63 @@ import type { FixtureFilters } from "@/domains/fixture/types/fixture";
 
 type Props = { filters: FixtureFilters };
 
-const FILTER_DEFS: FilterDef[] = [
-  {
-    key: "date",
-    label: "Date",
-    type: "date",
-  },
-  {
-    key: "competition",
-    label: "Compétition",
-    type: "select",
-    options: [
-      { value: "ALL", label: "Toutes" },
-      ...COMPETITIONS.map((c) => ({ value: c.code, label: c.name })),
-    ],
-  },
-  {
-    key: "decision",
-    label: "Décision",
-    type: "select",
-    options: DECISION_OPTIONS,
-  },
-  {
-    key: "status",
-    label: "Statut",
-    type: "select",
-    options: STATUS_OPTIONS,
-  },
-  {
-    key: "timeSlot",
-    label: "Horaire",
-    type: "select",
-    options: [
-      { value: "ALL", label: "Tous horaires" },
-      ...TIME_SLOTS.map((s) => ({
-        value: s.key,
-        label: `${s.label} ${s.start}h–${s.end}h`,
-      })),
-    ],
-  },
-  {
-    key: "betStatus",
-    label: "Résultat",
-    type: "select",
-    options: BET_STATUS_OPTIONS,
-  },
-  {
-    key: "canal",
-    label: "Canal",
-    type: "select",
-    options: CANAL_OPTIONS,
-  },
-];
+function buildFilterDefs(locale: string): FilterDef[] {
+  return [
+    {
+      key: "date",
+      label: "Date",
+      type: "date",
+    },
+    {
+      key: "competition",
+      label: "Compétition",
+      type: "select",
+      options: [
+        { value: "ALL", label: "Toutes" },
+        ...COMPETITIONS.map((c) => ({
+          value: c.code,
+          label: `${translateCountry(c.country, locale)} · ${locale === "fr" ? c.nameFr : c.name}`,
+        })),
+      ],
+    },
+    {
+      key: "decision",
+      label: "Décision",
+      type: "select",
+      options: DECISION_OPTIONS,
+    },
+    {
+      key: "status",
+      label: "Statut",
+      type: "select",
+      options: STATUS_OPTIONS,
+    },
+    {
+      key: "timeSlot",
+      label: "Horaire",
+      type: "select",
+      options: [
+        { value: "ALL", label: "Tous horaires" },
+        ...TIME_SLOTS.map((s) => ({
+          value: s.key,
+          label: `${s.label} ${s.start}h–${s.end}h`,
+        })),
+      ],
+    },
+    {
+      key: "betStatus",
+      label: "Résultat",
+      type: "select",
+      options: BET_STATUS_OPTIONS,
+    },
+    {
+      key: "canal",
+      label: "Canal",
+      type: "select",
+      options: CANAL_OPTIONS,
+    },
+  ];
+}
 
 function filtersToState(f: FixtureFilters): FilterState {
   return {
@@ -81,11 +88,13 @@ function filtersToState(f: FixtureFilters): FilterState {
 }
 
 export function FixturesFilters({ filters }: Props) {
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [state, setState] = useState<FilterState>(filtersToState(filters));
+  const filterDefs = buildFilterDefs(locale);
 
   useEffect(() => {
     setState(filtersToState(filters));
@@ -126,7 +135,7 @@ export function FixturesFilters({ filters }: Props) {
       }
     >
       <FilterBar
-        filters={FILTER_DEFS}
+        filters={filterDefs}
         value={state}
         onChange={handleChange}
         onReset={handleReset}
