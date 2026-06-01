@@ -1,4 +1,13 @@
-export type InvestmentCanal = "EV" | "SV" | "BB" | "NUL" | "CONF";
+export type CoreInvestmentCanal = "EV" | "SV" | "BB" | "NUL" | "CONF";
+
+export type VirtualInvestmentCanal =
+  | "SAFE_HT_OVER05"
+  | "SAFE_UNDER45"
+  | "SAFE_OVER15"
+  | "SAFE_UNDER35"
+  | "BTTS_YES";
+
+export type InvestmentCanal = CoreInvestmentCanal | VirtualInvestmentCanal;
 
 export type InvestmentPickDto = {
   fixtureId: string;
@@ -57,6 +66,9 @@ export type InvestmentDayDto = {
   windowDays: number;
   isAiCurated: boolean;
   totalCandidates: number;
-  selections: Record<InvestmentCanal, InvestmentPickDto[]>;
+  selections: Record<CoreInvestmentCanal, InvestmentPickDto[]>;
+  virtualSelections: Record<VirtualInvestmentCanal, InvestmentPickDto[]>;
+  virtualTop5: InvestmentPickDto[];
+  virtualTop10: InvestmentPickDto[];
   coupons: InvestmentCouponDto[];
 };

@@ -9,10 +9,17 @@ import { REDIS_CLIENT } from '@common/redis/redis.module';
 import {
   INVESTMENT_PARAMS,
   MAX_INVESTMENT_SELECTIONS,
+  VIRTUAL_INVESTMENT_RULES,
+  VIRTUAL_INVESTMENT_TOP_LIMITS,
+  type VirtualInvestmentCanal,
 } from './investment.constants';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
-import type { Canal, ScoredPick } from './signal-window.service';
+import type {
+  Canal,
+  ScoredPick,
+  VirtualScoredPick,
+} from './signal-window.service';
 import type {
   InvestmentDayDto,
   InvestmentPickDto,
@@ -114,7 +121,7 @@ export class InvestmentService {
   }
 
   private cacheKey(date: string): string {
-    return `investment:v2:${date}`;
+    return `investment:v4:${date}`;
   }
 
   private cacheTtl(date: string): number | null {
@@ -171,6 +178,7 @@ export class InvestmentService {
     ]);
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
+    const virtualPicks = this.buildVirtualPicks(scoredPicks);
     const totalCandidates = scoredPicks.length;
 
     if (totalCandidates === 0) {
@@ -200,6 +208,7 @@ export class InvestmentService {
             windowDays,
             totalCandidates,
             scoredPicks,
+            virtualPicks,
             claudeOutput,
           )
         : this.buildDeterministicDay(
@@ -207,6 +216,7 @@ export class InvestmentService {
             windowDays,
             totalCandidates,
             scoredPicks,
+            virtualPicks,
           );
 
     await this.setCache(date, result);
@@ -364,6 +374,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
     windowDays: number,
     totalCandidates: number,
     picks: ScoredPick[],
+    virtualPicks: VirtualScoredPick[],
     output: ClaudeOutput,
   ): InvestmentDayDto {
     const pickIndex = new Map<string, ScoredPick>();
@@ -446,6 +457,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
       isAiCurated: true,
       totalCandidates,
       selections,
+      ...this.buildVirtualOutput(virtualPicks),
       coupons,
     };
   }
@@ -456,6 +468,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
     windowDays: number,
     totalCandidates: number,
     picks: ScoredPick[],
+    virtualPicks: VirtualScoredPick[],
   ): InvestmentDayDto {
     // Sort by calibratedHitRate × signalScore desc
     const ranked = [...picks].sort(
@@ -511,6 +524,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
       isAiCurated: false,
       totalCandidates,
       selections,
+      ...this.buildVirtualOutput(virtualPicks),
       coupons,
     };
   }
@@ -522,12 +536,164 @@ ${JSON.stringify(fixtures, null, 2)}`;
       isAiCurated: false,
       totalCandidates: 0,
       selections: { SV: [], BB: [], CONF: [], NUL: [], EV: [] },
+      ...this.buildVirtualOutput([]),
       coupons: [],
     };
   }
 
+  private buildVirtualOutput(virtualPicks: VirtualScoredPick[]): Pick<
+    InvestmentDayDto,
+    'virtualSelections' | 'virtualTop5' | 'virtualTop10'
+  > {
+    const virtualSelections = {} as Record<
+      VirtualInvestmentCanal,
+      InvestmentPickDto[]
+    >;
+    for (const rule of VIRTUAL_INVESTMENT_RULES) {
+      virtualSelections[rule.canal] = [];
+    }
+
+    const ranked = [...virtualPicks].sort(
+      (a, b) => b.signalScore - a.signalScore,
+    );
+
+    for (const pick of ranked) {
+      virtualSelections[pick.canal].push(
+        this.toPickDto(
+          pick,
+          `Canal virtuel ${pick.virtualLabel} — score ${(pick.signalScore * 100).toFixed(0)}%.`,
+        ),
+      );
+    }
+
+    return {
+      virtualSelections,
+      virtualTop5: this.selectVirtualTop(ranked, VIRTUAL_INVESTMENT_TOP_LIMITS.top5).map(
+        (pick) => this.toPickDto(pick, null),
+      ),
+      virtualTop10: this.selectVirtualTop(
+        ranked,
+        VIRTUAL_INVESTMENT_TOP_LIMITS.top10,
+      ).map((pick) => this.toPickDto(pick, null)),
+    };
+  }
+
+  private selectVirtualTop(
+    picks: VirtualScoredPick[],
+    limit: number,
+  ): VirtualScoredPick[] {
+    const selected: VirtualScoredPick[] = [];
+    const fixtureIds = new Set<string>();
+    const channelCounts = new Map<VirtualInvestmentCanal, number>();
+    const channelCap =
+      limit <= VIRTUAL_INVESTMENT_TOP_LIMITS.top5
+        ? VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop5
+        : VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop10;
+
+    for (const pick of picks) {
+      if (selected.length >= limit) break;
+      if (fixtureIds.has(pick.fixtureId)) continue;
+
+      const count = channelCounts.get(pick.canal) ?? 0;
+      if (count >= channelCap) continue;
+
+      selected.push(pick);
+      fixtureIds.add(pick.fixtureId);
+      channelCounts.set(pick.canal, count + 1);
+    }
+
+    return selected;
+  }
+
+  private buildVirtualPicks(picks: ScoredPick[]): VirtualScoredPick[] {
+    const virtualPicks: VirtualScoredPick[] = [];
+
+    for (const pick of picks) {
+      const rule =
+        VIRTUAL_INVESTMENT_RULES.find((candidate) => {
+          if (candidate.market !== pick.market || candidate.pick !== pick.pick) {
+            return false;
+          }
+          if (pick.probability < candidate.minProbability) return false;
+          if (pick.probability >= candidate.maxProbability) return false;
+          if (!candidate.allowMissingOdds && pick.oddsSnapshot === null) {
+            return false;
+          }
+          if (
+            pick.oddsSnapshot !== null &&
+            candidate.minOdds !== undefined &&
+            pick.oddsSnapshot < candidate.minOdds
+          ) {
+            return false;
+          }
+          if (
+            pick.oddsSnapshot !== null &&
+            candidate.maxOdds !== undefined &&
+            pick.oddsSnapshot >= candidate.maxOdds
+          ) {
+            return false;
+          }
+          return true;
+        }) ?? null;
+
+      if (!rule) continue;
+
+      const competitionCode =
+        typeof pick.featureSnapshot['competitionCode'] === 'string'
+          ? (pick.featureSnapshot['competitionCode'] as string)
+          : null;
+      const leagueBoost =
+        competitionCode !== null
+          ? (rule.leagueBoosts?.[competitionCode] ?? 0)
+          : 0;
+      const oddsPenalty =
+        pick.oddsSnapshot === null
+          ? 0
+          : Math.max(0, pick.oddsSnapshot - 1.4) * 0.02;
+      const signalScore =
+        rule.prior + leagueBoost + pick.probability * 0.08 - oddsPenalty;
+      const calibratedHitRate = Math.min(
+        INVESTMENT_PARAMS.capMax,
+        Math.max(INVESTMENT_PARAMS.capMin, rule.prior + leagueBoost),
+      );
+
+      virtualPicks.push({
+        ...pick,
+        canal: rule.canal,
+        virtualLabel: rule.label,
+        calibratedHitRate,
+        signalScore,
+        featureSnapshot: {
+          ...pick.featureSnapshot,
+          virtualRule: rule.canal,
+          virtualLabel: rule.label,
+        },
+      });
+    }
+
+    const selected: VirtualScoredPick[] = [];
+    const counts = new Map<VirtualInvestmentCanal, number>();
+    const seenFixturesByCanal = new Set<string>();
+
+    for (const pick of virtualPicks.sort(
+      (a, b) => b.signalScore - a.signalScore,
+    )) {
+      const count = counts.get(pick.canal) ?? 0;
+      if (count >= 5) continue;
+
+      const uniqueKey = `${pick.canal}:${pick.fixtureId}`;
+      if (seenFixturesByCanal.has(uniqueKey)) continue;
+
+      selected.push(pick);
+      counts.set(pick.canal, count + 1);
+      seenFixturesByCanal.add(uniqueKey);
+    }
+
+    return selected;
+  }
+
   private toPickDto(
-    pick: ScoredPick,
+    pick: ScoredPick | VirtualScoredPick,
     reasoning: string | null,
   ): InvestmentPickDto {
     return {

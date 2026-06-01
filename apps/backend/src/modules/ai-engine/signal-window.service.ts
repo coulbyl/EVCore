@@ -2,9 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import {
+  MAX_VIRTUAL_INVESTMENT_SELECTIONS,
   type InvestmentCanal,
+  type VirtualInvestmentCanal,
   CANAL_BASE_WEIGHT,
   INVESTMENT_PARAMS,
+  VIRTUAL_INVESTMENT_RULES,
+  VIRTUAL_INVESTMENT_TOP_LIMITS,
+  type VirtualInvestmentRule,
 } from './investment.constants';
 
 export type Canal = InvestmentCanal;
@@ -52,6 +57,11 @@ export type ScoredPick = {
   modelRunId: string | null;
 };
 
+export type VirtualScoredPick = Omit<ScoredPick, 'canal'> & {
+  canal: VirtualInvestmentCanal;
+  virtualLabel: string;
+};
+
 function readNumber(features: unknown, key: string): number | null {
   if (!features || typeof features !== 'object') return null;
   const v = (features as Record<string, unknown>)[key];
@@ -67,6 +77,92 @@ function readModelProbabilities(features: unknown): Record<string, number> {
     if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
   }
   return out;
+}
+
+function readSnapshotNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.length > 0) {
+    const parsed = Number(value.replace('%', ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function getVirtualRule(
+  market: string,
+  pick: string,
+  probability: number,
+  odds: number | null,
+): VirtualInvestmentRule | null {
+  return (
+    VIRTUAL_INVESTMENT_RULES.find((rule) => {
+      if (rule.market !== market || rule.pick !== pick) return false;
+      if (probability < rule.minProbability) return false;
+      if (probability >= rule.maxProbability) return false;
+      if (!rule.allowMissingOdds && odds === null) return false;
+      if (odds !== null && rule.minOdds !== undefined && odds < rule.minOdds) {
+        return false;
+      }
+      if (odds !== null && rule.maxOdds !== undefined && odds >= rule.maxOdds) {
+        return false;
+      }
+      return true;
+    }) ?? null
+  );
+}
+
+function scoreVirtualPick(input: {
+  rule: VirtualInvestmentRule;
+  competitionCode: string;
+  probability: number;
+  odds: number | null;
+}): number {
+  const leagueBoost = input.rule.leagueBoosts?.[input.competitionCode] ?? 0;
+  const oddsPenalty =
+    input.odds === null ? 0 : Math.max(0, input.odds - 1.4) * 0.02;
+  return input.rule.prior + leagueBoost + input.probability * 0.08 - oddsPenalty;
+}
+
+function resolveVirtualPickCorrect(input: {
+  market: string;
+  pick: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
+}): boolean | null {
+  const { market, pick, homeScore, awayScore, homeHtScore, awayHtScore } =
+    input;
+
+  if (market === 'BTTS') {
+    if (homeScore === null || awayScore === null) return null;
+    if (pick === 'YES') return homeScore > 0 && awayScore > 0;
+    if (pick === 'NO') return homeScore === 0 || awayScore === 0;
+  }
+
+  if (market === 'OVER_UNDER') {
+    if (homeScore === null || awayScore === null) return null;
+    const total = homeScore + awayScore;
+    if (pick === 'OVER_1_5') return total > 1;
+    if (pick === 'UNDER_1_5') return total <= 1;
+    if (pick === 'OVER') return total > 2;
+    if (pick === 'UNDER') return total <= 2;
+    if (pick === 'OVER_3_5') return total > 3;
+    if (pick === 'UNDER_3_5') return total <= 3;
+    if (pick === 'OVER_4_5') return total > 4;
+    if (pick === 'UNDER_4_5') return total <= 4;
+  }
+
+  if (market === 'OVER_UNDER_HT') {
+    if (homeHtScore === null || awayHtScore === null) return null;
+    const total = homeHtScore + awayHtScore;
+    if (pick === 'OVER_0_5') return total > 0;
+    if (pick === 'UNDER_0_5') return total <= 0;
+    if (pick === 'OVER_1_5') return total > 1;
+    if (pick === 'UNDER_1_5') return total <= 1;
+  }
+
+  return null;
 }
 
 type AggEntry = {
@@ -395,6 +491,7 @@ export class SignalWindowService {
           finalScore,
           modelThreshold,
           recentForm,
+          competitionCode: comp,
         } as Record<string, unknown>,
       };
 
@@ -460,5 +557,161 @@ export class SignalWindowService {
     }
 
     return picks;
+  }
+
+  async getTodayVirtualPool(date: string): Promise<VirtualScoredPick[]> {
+    const dayStart = new Date(`${date}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: { scheduledAt: { gte: dayStart, lte: dayEnd } },
+      select: {
+        id: true,
+        scheduledAt: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+        homeTeam: { select: { name: true, logoUrl: true } },
+        awayTeam: { select: { name: true, logoUrl: true } },
+        season: {
+          select: {
+            competition: { select: { code: true, name: true, country: true } },
+          },
+        },
+        modelRuns: {
+          select: {
+            id: true,
+            finalScore: true,
+            features: true,
+            analyzedAt: true,
+          },
+          orderBy: { analyzedAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    const picks: VirtualScoredPick[] = [];
+
+    for (const f of fixtures) {
+      const run = f.modelRuns[0];
+      if (!run) continue;
+
+      const comp = f.season.competition.code;
+      const competitionName = f.season.competition.name;
+      const country = f.season.competition.country;
+      const feat = run.features;
+      const lambdaHome = readNumber(feat, 'lambdaHome');
+      const lambdaAway = readNumber(feat, 'lambdaAway');
+      const xg =
+        lambdaHome !== null && lambdaAway !== null
+          ? lambdaHome + lambdaAway
+          : null;
+      const finalScore = run.finalScore ? Number(run.finalScore) : null;
+      const recentForm = readNumber(feat, 'recentForm');
+      const modelProbabilities = readModelProbabilities(feat);
+      const evaluatedPicks = extractModelRunFeatureDiagnostics(
+        run.features,
+      ).evaluatedPicks;
+
+      for (const evaluated of evaluatedPicks) {
+        if (evaluated.status !== 'viable') continue;
+        const probability = readSnapshotNumber(evaluated.probability);
+        const odds = readSnapshotNumber(evaluated.odds);
+        if (probability === null) continue;
+
+        const rule = getVirtualRule(
+          evaluated.market,
+          evaluated.pick,
+          probability,
+          odds,
+        );
+        if (!rule) continue;
+
+        const signalScore = scoreVirtualPick({
+          rule,
+          competitionCode: comp,
+          probability,
+          odds,
+        });
+        const calibratedHitRate = Math.min(
+          INVESTMENT_PARAMS.capMax,
+          Math.max(
+            INVESTMENT_PARAMS.capMin,
+            rule.prior + (rule.leagueBoosts?.[comp] ?? 0),
+          ),
+        );
+
+        picks.push({
+          fixtureId: f.id,
+          homeTeam: f.homeTeam.name,
+          awayTeam: f.awayTeam.name,
+          homeLogo: f.homeTeam.logoUrl ?? null,
+          awayLogo: f.awayTeam.logoUrl ?? null,
+          competition: competitionName,
+          country,
+          scheduledAt: f.scheduledAt,
+          homeScore: f.homeScore ?? null,
+          awayScore: f.awayScore ?? null,
+          homeHtScore: f.homeHtScore ?? null,
+          awayHtScore: f.awayHtScore ?? null,
+          lambdaHome,
+          lambdaAway,
+          xg,
+          finalScore,
+          modelThreshold: null,
+          recentForm,
+          modelProbabilities,
+          featureSnapshot: {
+            lambdaHome,
+            lambdaAway,
+            xg,
+            finalScore,
+            recentForm,
+            competitionCode: comp,
+            virtualRule: rule.canal,
+            virtualLabel: rule.label,
+          },
+          canal: rule.canal,
+          virtualLabel: rule.label,
+          market: evaluated.market,
+          pick: evaluated.pick,
+          probability,
+          calibratedHitRate,
+          oddsSnapshot: odds,
+          isCorrect: resolveVirtualPickCorrect({
+            market: evaluated.market,
+            pick: evaluated.pick,
+            homeScore: f.homeScore ?? null,
+            awayScore: f.awayScore ?? null,
+            homeHtScore: f.homeHtScore ?? null,
+            awayHtScore: f.awayHtScore ?? null,
+          }),
+          signalScore,
+          betId: null,
+          modelRunId: run.id,
+        });
+      }
+    }
+
+    const selected: VirtualScoredPick[] = [];
+    const counts = new Map<VirtualInvestmentCanal, number>();
+    const seenFixturesByCanal = new Set<string>();
+
+    for (const pick of picks.sort((a, b) => b.signalScore - a.signalScore)) {
+      const count = counts.get(pick.canal) ?? 0;
+      if (count >= MAX_VIRTUAL_INVESTMENT_SELECTIONS[pick.canal]) continue;
+
+      const uniqueKey = `${pick.canal}:${pick.fixtureId}`;
+      if (seenFixturesByCanal.has(uniqueKey)) continue;
+
+      selected.push(pick);
+      counts.set(pick.canal, count + 1);
+      seenFixturesByCanal.add(uniqueKey);
+    }
+
+    return selected.slice(0, VIRTUAL_INVESTMENT_TOP_LIMITS.top10 * 3);
   }
 }
