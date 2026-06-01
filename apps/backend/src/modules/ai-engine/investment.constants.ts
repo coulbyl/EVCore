@@ -64,7 +64,10 @@ export type VirtualInvestmentRule = {
   maxProbability: number;
   minOdds?: number;
   maxOdds?: number;
+  minEvMargin?: number;
   allowMissingOdds?: boolean;
+  excludedLeagues?: readonly string[];
+  excludedProbabilityRanges?: readonly (readonly [number, number])[];
   leagueBoosts?: Partial<Record<string, number>>;
 };
 
@@ -75,7 +78,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     market: 'OVER_UNDER_HT',
     pick: 'OVER_0_5',
     prior: 0.805,
-    minProbability: 0.65,
+    minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
   },
@@ -88,6 +91,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     minProbability: 0.75,
     maxProbability: 0.95,
     maxOdds: 1.5,
+    excludedLeagues: ['NOR2', 'TUR1'],
   },
   {
     canal: 'SAFE_OVER15',
@@ -98,6 +102,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
+    minEvMargin: 0.03,
   },
   {
     canal: 'SAFE_UNDER35',
@@ -108,6 +113,8 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     minProbability: 0.65,
     maxProbability: 0.85,
     maxOdds: 1.8,
+    excludedLeagues: ['MX1'],
+    excludedProbabilityRanges: [[0.75, 0.8]],
     leagueBoosts: { CH: 0.08 },
   },
   {
@@ -119,6 +126,8 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     minProbability: 0.55,
     maxProbability: 0.75,
     allowMissingOdds: true,
+    excludedLeagues: ['ERD'],
+    excludedProbabilityRanges: [[0.65, 0.7]],
     leagueBoosts: { SP2: 0.06, ERD: 0.02 },
   },
 ] as const;

@@ -121,7 +121,7 @@ export class InvestmentService {
   }
 
   private cacheKey(date: string): string {
-    return `investment:v4:${date}`;
+    return `investment:v5:${date}`;
   }
 
   private cacheTtl(date: string): number | null {
@@ -614,8 +614,26 @@ ${JSON.stringify(fixtures, null, 2)}`;
           if (candidate.market !== pick.market || candidate.pick !== pick.pick) {
             return false;
           }
+          const competitionCode =
+            typeof pick.featureSnapshot['competitionCode'] === 'string'
+              ? (pick.featureSnapshot['competitionCode'] as string)
+              : null;
+          if (
+            competitionCode !== null &&
+            candidate.excludedLeagues?.includes(competitionCode)
+          ) {
+            return false;
+          }
           if (pick.probability < candidate.minProbability) return false;
           if (pick.probability >= candidate.maxProbability) return false;
+          if (
+            candidate.excludedProbabilityRanges?.some(
+              ([min, max]) =>
+                pick.probability >= min && pick.probability < max,
+            )
+          ) {
+            return false;
+          }
           if (!candidate.allowMissingOdds && pick.oddsSnapshot === null) {
             return false;
           }
@@ -630,6 +648,14 @@ ${JSON.stringify(fixtures, null, 2)}`;
             pick.oddsSnapshot !== null &&
             candidate.maxOdds !== undefined &&
             pick.oddsSnapshot >= candidate.maxOdds
+          ) {
+            return false;
+          }
+          if (
+            candidate.minEvMargin !== undefined &&
+            (pick.oddsSnapshot === null ||
+              pick.probability - 1 / pick.oddsSnapshot <
+                candidate.minEvMargin)
           ) {
             return false;
           }

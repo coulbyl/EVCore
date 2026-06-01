@@ -18,7 +18,7 @@ const CHANNELS = [
     market: 'OVER_UNDER_HT',
     pick: 'OVER_0_5',
     prior: 0.805,
-    minProbability: 0.65,
+    minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
   },
@@ -31,6 +31,7 @@ const CHANNELS = [
     minProbability: 0.75,
     maxProbability: 0.95,
     maxOdds: 1.5,
+    excludedLeagues: ['NOR2', 'TUR1'],
   },
   {
     code: 'SAFE_OVER15',
@@ -41,6 +42,7 @@ const CHANNELS = [
     minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
+    minEvMargin: 0.03,
   },
   {
     code: 'SAFE_UNDER35',
@@ -51,6 +53,8 @@ const CHANNELS = [
     minProbability: 0.65,
     maxProbability: 0.85,
     maxOdds: 1.8,
+    excludedLeagues: ['MX1'],
+    excludedProbabilityRanges: [[0.75, 0.8]],
     leagueBoosts: { CH: 0.08 },
   },
   {
@@ -62,6 +66,8 @@ const CHANNELS = [
     minProbability: 0.55,
     maxProbability: 0.75,
     allowMissingOdds: true,
+    excludedLeagues: ['ERD'],
+    excludedProbabilityRanges: [[0.65, 0.7]],
     leagueBoosts: { SP2: 0.06, ERD: 0.02 },
   },
 ];
@@ -218,13 +224,28 @@ FROM db_picks;
 function matchChannel(pick) {
   return CHANNELS.find((channel) => {
     if (pick.market !== channel.market || pick.pick !== channel.pick) return false;
+    if (channel.excludedLeagues?.includes(pick.competitionCode)) return false;
     if (pick.probability < channel.minProbability) return false;
     if (pick.probability >= channel.maxProbability) return false;
+    if (
+      channel.excludedProbabilityRanges?.some(
+        ([min, max]) => pick.probability >= min && pick.probability < max,
+      )
+    ) {
+      return false;
+    }
     if (!channel.allowMissingOdds && pick.oddsSnapshot == null) return false;
     if (channel.minOdds != null && pick.oddsSnapshot < channel.minOdds) {
       return false;
     }
     if (channel.maxOdds != null && pick.oddsSnapshot >= channel.maxOdds) {
+      return false;
+    }
+    if (
+      channel.minEvMargin != null &&
+      (pick.oddsSnapshot == null ||
+        pick.probability - 1 / pick.oddsSnapshot < channel.minEvMargin)
+    ) {
       return false;
     }
     return true;
