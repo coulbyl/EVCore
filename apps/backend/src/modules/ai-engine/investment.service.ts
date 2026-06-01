@@ -121,7 +121,7 @@ export class InvestmentService {
   }
 
   private cacheKey(date: string): string {
-    return `investment:v5:${date}`;
+    return `investment:v6:${date}`;
   }
 
   private cacheTtl(date: string): number | null {
@@ -585,14 +585,23 @@ ${JSON.stringify(fixtures, null, 2)}`;
     const selected: VirtualScoredPick[] = [];
     const fixtureIds = new Set<string>();
     const channelCounts = new Map<VirtualInvestmentCanal, number>();
-    const channelCap =
-      limit <= VIRTUAL_INVESTMENT_TOP_LIMITS.top5
-        ? VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop5
-        : VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop10;
+    const isTop5 = limit <= VIRTUAL_INVESTMENT_TOP_LIMITS.top5;
+    const globalCap = isTop5
+      ? VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop5
+      : VIRTUAL_INVESTMENT_TOP_LIMITS.channelCapTop10;
+
+    const ruleIndex = new Map(
+      VIRTUAL_INVESTMENT_RULES.map((r) => [r.canal, r]),
+    );
 
     for (const pick of picks) {
       if (selected.length >= limit) break;
       if (fixtureIds.has(pick.fixtureId)) continue;
+
+      const rule = ruleIndex.get(pick.canal);
+      const channelCap = isTop5
+        ? (rule?.channelCapTop5 ?? globalCap)
+        : (rule?.channelCapTop10 ?? globalCap);
 
       const count = channelCounts.get(pick.canal) ?? 0;
       if (count >= channelCap) continue;
@@ -658,6 +667,13 @@ ${JSON.stringify(fixtures, null, 2)}`;
                 candidate.minEvMargin)
           ) {
             return false;
+          }
+          if (candidate.minLambda !== undefined) {
+            const lambda =
+              pick.lambdaHome !== null && pick.lambdaAway !== null
+                ? pick.lambdaHome + pick.lambdaAway
+                : null;
+            if (lambda === null || lambda < candidate.minLambda) return false;
           }
           return true;
         }) ?? null;

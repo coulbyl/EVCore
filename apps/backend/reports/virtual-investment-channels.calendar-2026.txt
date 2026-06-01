@@ -1,0 +1,80 @@
+Virtual investment channels backtest
+Generated at: 2026-06-01T17:48:27.529Z
+Range: 2026-01-01 -> 2026-12-31
+
+Totals
+- virtual candidates: total=276, W=214, L=62, HR=77.5%, avgOdds=1.41, avgP=67.7%
+- daily top 5: total=187, W=152, L=35, HR=81.3%, avgOdds=1.40, avgP=69.3%
+- daily top 10: total=228, W=182, L=46, HR=79.8%, avgOdds=1.40, avgP=68.7%
+
+Daily coverage
+- candidate active days: 91, avg candidates/day=3.03, avg winners/day=2.35, HR=77.5%
+- full top5 days: 8, perfect top5 days=3, avg winners/day=1.67, HR=81.3%
+- full top10 days: 0, perfect top10 days=0, avg winners/day=2.00, HR=79.8%
+
+Candidates by virtual channel
+- BTTS_YES: total=190, W=139, L=51, HR=73.2%, avgOdds=2.00, avgP=62.9%
+- SAFE_UNDER35: total=33, W=28, L=5, HR=84.8%, avgOdds=1.50, avgP=73.9%
+- SAFE_OVER15: total=19, W=17, L=2, HR=89.5%, avgOdds=1.36, avgP=79.9%
+- SAFE_UNDER45: total=17, W=15, L=2, HR=88.2%, avgOdds=1.32, avgP=84.9%
+- SAFE_HT_OVER05: total=17, W=15, L=2, HR=88.2%, avgOdds=1.37, avgP=77.9%
+
+Top 5 by virtual channel
+- BTTS_YES: total=116, W=88, L=28, HR=75.9%, avgOdds=n/a, avgP=63.4%
+- SAFE_UNDER35: total=26, W=23, L=3, HR=88.5%, avgOdds=1.49, avgP=74.6%
+- SAFE_OVER15: total=16, W=14, L=2, HR=87.5%, avgOdds=1.36, avgP=80.1%
+- SAFE_HT_OVER05: total=16, W=14, L=2, HR=87.5%, avgOdds=1.37, avgP=78.1%
+- SAFE_UNDER45: total=13, W=13, L=0, HR=100.0%, avgOdds=1.30, avgP=86.4%
+
+Top 10 by virtual channel
+- BTTS_YES: total=146, W=110, L=36, HR=75.3%, avgOdds=n/a, avgP=63.2%
+- SAFE_UNDER35: total=31, W=26, L=5, HR=83.9%, avgOdds=1.50, avgP=74.0%
+- SAFE_OVER15: total=19, W=17, L=2, HR=89.5%, avgOdds=1.36, avgP=79.9%
+- SAFE_HT_OVER05: total=17, W=15, L=2, HR=88.2%, avgOdds=1.37, avgP=77.9%
+- SAFE_UNDER45: total=15, W=14, L=1, HR=93.3%, avgOdds=1.30, avgP=86.0%
+
+Best league/channel pairs
+- BL1/BTTS_YES: total=51, W=37, L=14, HR=72.5%, avgOdds=n/a, avgP=63.0%
+- SP2/BTTS_YES: total=35, W=24, L=11, HR=68.6%, avgOdds=2.00, avgP=63.6%
+- SUI1/BTTS_YES: total=26, W=21, L=5, HR=80.8%, avgOdds=n/a, avgP=62.4%
+- UCL/BTTS_YES: total=22, W=17, L=5, HR=77.3%, avgOdds=n/a, avgP=63.1%
+- D2/BTTS_YES: total=24, W=15, L=9, HR=62.5%, avgOdds=n/a, avgP=62.3%
+- I2/SAFE_UNDER35: total=9, W=9, L=0, HR=100.0%, avgOdds=1.45, avgP=76.3%
+- NOR1/SAFE_UNDER45: total=7, W=7, L=0, HR=100.0%, avgOdds=1.28, avgP=86.9%
+- J1/SAFE_OVER15: total=7, W=7, L=0, HR=100.0%, avgOdds=1.36, avgP=79.8%
+- SWE1/BTTS_YES: total=7, W=6, L=1, HR=85.7%, avgOdds=n/a, avgP=63.5%
+- J1/BTTS_YES: total=7, W=6, L=1, HR=85.7%, avgOdds=n/a, avgP=62.4%
+- CH/SAFE_UNDER35: total=4, W=4, L=0, HR=100.0%, avgOdds=1.49, avgP=71.7%
+- POL1/BTTS_YES: total=4, W=4, L=0, HR=100.0%, avgOdds=n/a, avgP=62.6%
+- SP2/SAFE_OVER15: total=5, W=4, L=1, HR=80.0%, avgOdds=1.35, avgP=79.8%
+- SA/SAFE_UNDER35: total=5, W=4, L=1, HR=80.0%, avgOdds=1.47, avgP=77.1%
+- PL/BTTS_YES: total=7, W=4, L=3, HR=57.1%, avgOdds=n/a, avgP=61.9%
+- SP2/SAFE_HT_OVER05: total=3, W=3, L=0, HR=100.0%, avgOdds=1.35, avgP=78.7%
+- POR/SAFE_UNDER35: total=3, W=3, L=0, HR=100.0%, avgOdds=1.47, avgP=73.1%
+- PL/SAFE_UNDER35: total=3, W=3, L=0, HR=100.0%, avgOdds=1.57, avgP=70.3%
+- I2/SAFE_UNDER45: total=2, W=2, L=0, HR=100.0%, avgOdds=1.16, avgP=90.6%
+- PL/SAFE_UNDER45: total=2, W=2, L=0, HR=100.0%, avgOdds=1.44, avgP=80.5%
+
+Best top5 days
+- 2026-05-17: top5 5/5, candidates=10, candidate winners=8
+- 2026-05-02: top5 5/5, candidates=9, candidate winners=8
+- 2026-05-30: top5 5/5, candidates=9, candidate winners=7
+- 2026-05-24: top5 4/5, candidates=14, candidate winners=11
+- 2026-05-10: top5 4/5, candidates=8, candidate winners=6
+- 2026-05-03: top5 4/5, candidates=7, candidate winners=5
+- 2026-04-19: top5 4/5, candidates=6, candidate winners=5
+- 2026-04-25: top5 4/5, candidates=6, candidate winners=5
+
+Worst top5 days
+- 2026-05-24: top5 4/5, candidates=14, candidate winners=11
+- 2026-05-10: top5 4/5, candidates=8, candidate winners=6
+- 2026-05-03: top5 4/5, candidates=7, candidate winners=5
+- 2026-04-19: top5 4/5, candidates=6, candidate winners=5
+- 2026-04-25: top5 4/5, candidates=6, candidate winners=5
+- 2026-05-17: top5 5/5, candidates=10, candidate winners=8
+- 2026-05-02: top5 5/5, candidates=9, candidate winners=8
+- 2026-05-30: top5 5/5, candidates=9, candidate winners=7
+
+Files
+- JSON: apps/backend/reports/virtual-investment-channels.calendar-2026.json
+- TXT: apps/backend/reports/virtual-investment-channels.calendar-2026.txt

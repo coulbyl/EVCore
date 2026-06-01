@@ -21,6 +21,7 @@ const CHANNELS = [
     minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
+    excludedLeagues: ['EL1'],
   },
   {
     code: 'SAFE_UNDER45',
@@ -43,6 +44,7 @@ const CHANNELS = [
     maxProbability: 0.85,
     maxOdds: 1.5,
     minEvMargin: 0.03,
+    excludedLeagues: ['EL1'],
   },
   {
     code: 'SAFE_UNDER35',
@@ -63,12 +65,14 @@ const CHANNELS = [
     market: 'BTTS',
     pick: 'YES',
     prior: 0.655,
-    minProbability: 0.55,
+    minProbability: 0.60,
     maxProbability: 0.75,
     allowMissingOdds: true,
-    excludedLeagues: ['ERD'],
+    minLambda: 3.1,
+    excludedLeagues: ['ERD', 'EL1', 'EL2'],
     excludedProbabilityRanges: [[0.65, 0.7]],
-    leagueBoosts: { SP2: 0.06, ERD: 0.02 },
+    leagueBoosts: { SP2: 0.06 },
+    channelCapTop5: 1,
   },
 ];
 
@@ -78,6 +82,8 @@ function parseArgs(argv) {
     to: DEFAULT_TO,
     outJson: DEFAULT_OUT_JSON,
     outTxt: DEFAULT_OUT_TXT,
+    channelCapTop5: 2,
+    channelCapTop10: 3,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -94,6 +100,12 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg === '--out-txt') {
       args.outTxt = next;
+      i += 1;
+    } else if (arg === '--channel-cap-top5') {
+      args.channelCapTop5 = parseInt(next, 10);
+      i += 1;
+    } else if (arg === '--channel-cap-top10') {
+      args.channelCapTop10 = parseInt(next, 10);
       i += 1;
     } else if (arg === '--help' || arg === '-h') {
       printHelp();
@@ -112,7 +124,9 @@ Options:
   --from YYYY-MM-DD
   --to YYYY-MM-DD
   --out-json PATH
-  --out-txt PATH`);
+  --out-txt PATH
+  --channel-cap-top5 N   Max picks per channel in top5 (default: 2)
+  --channel-cap-top10 N  Max picks per channel in top10 (default: 3)`);
 }
 
 function sqlString(value) {
@@ -164,16 +178,18 @@ WITH db_picks AS (
       WHEN b.status = 'LOST' THEN false
       ELSE NULL
     END AS "isCorrect",
-    b.status::text AS status
+    b.status::text AS status,
+    (mr_feat.features->>'lambdaHome')::float AS "lambdaHome",
+    (mr_feat.features->>'lambdaAway')::float AS "lambdaAway"
   FROM bet b
   JOIN fixture f ON f.id = b."fixtureId"
   JOIN LATERAL (
-    SELECT mr.id
+    SELECT mr.id, mr.features
     FROM model_run mr
     WHERE mr."fixtureId" = f.id
     ORDER BY mr."analyzedAt" DESC
     LIMIT 1
-  ) latest_run ON latest_run.id = b."modelRunId"
+  ) mr_feat ON mr_feat.id = b."modelRunId"
   JOIN team ht ON ht.id = f."homeTeamId"
   JOIN team at ON at.id = f."awayTeamId"
   JOIN season s ON s.id = f."seasonId"
@@ -206,9 +222,18 @@ WITH db_picks AS (
       WHEN p.correct IS TRUE THEN 'WON'
       WHEN p.correct IS FALSE THEN 'LOST'
       ELSE 'PENDING'
-    END AS status
+    END AS status,
+    (mr_feat2.features->>'lambdaHome')::float AS "lambdaHome",
+    (mr_feat2.features->>'lambdaAway')::float AS "lambdaAway"
   FROM prediction p
   JOIN fixture f ON f.id = p."fixtureId"
+  JOIN LATERAL (
+    SELECT mr.features
+    FROM model_run mr
+    WHERE mr."fixtureId" = f.id
+    ORDER BY mr."analyzedAt" DESC
+    LIMIT 1
+  ) mr_feat2 ON true
   JOIN team ht ON ht.id = f."homeTeamId"
   JOIN team at ON at.id = f."awayTeamId"
   JOIN season s ON s.id = f."seasonId"
@@ -248,6 +273,13 @@ function matchChannel(pick) {
     ) {
       return false;
     }
+    if (channel.minLambda != null) {
+      const lambda =
+        pick.lambdaHome != null && pick.lambdaAway != null
+          ? pick.lambdaHome + pick.lambdaAway
+          : null;
+      if (lambda == null || lambda < channel.minLambda) return false;
+    }
     return true;
   });
 }
@@ -276,17 +308,25 @@ function buildCandidates(picks) {
     .sort((a, b) => b.virtualScore - a.virtualScore);
 }
 
-function selectTop(candidates, limit) {
+const CHANNEL_INDEX = new Map(CHANNELS.map((c) => [c.code, c]));
+
+function selectTop(candidates, limit, channelCapTop5 = 2, channelCapTop10 = 3) {
   const selected = [];
   const fixtureIds = new Set();
   const channelCounts = new Map();
+  const isTop5 = limit <= 5;
 
   for (const candidate of candidates) {
     if (selected.length >= limit) break;
     if (fixtureIds.has(candidate.fixtureId)) continue;
 
+    const channelDef = CHANNEL_INDEX.get(candidate.virtualChannel);
+    const globalCap = isTop5 ? channelCapTop5 : channelCapTop10;
+    const channelCap = isTop5
+      ? (channelDef?.channelCapTop5 ?? globalCap)
+      : (channelDef?.channelCapTop10 ?? globalCap);
+
     const channelCount = channelCounts.get(candidate.virtualChannel) ?? 0;
-    const channelCap = limit <= 5 ? 2 : 3;
     if (channelCount >= channelCap) continue;
 
     selected.push(candidate);
@@ -389,11 +429,13 @@ function buildReport(picks, args) {
     byDay.set(candidate.day, bucket);
   }
 
+  const { channelCapTop5 = 2, channelCapTop10 = 3 } = args;
+
   const days = [...byDay.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, dayCandidates]) => {
-      const top5Picks = selectTop(dayCandidates, 5);
-      const top10Picks = selectTop(dayCandidates, 10);
+      const top5Picks = selectTop(dayCandidates, 5, channelCapTop5, channelCapTop10);
+      const top10Picks = selectTop(dayCandidates, 10, channelCapTop5, channelCapTop10);
       return {
         date,
         candidates: summarizePicks(dayCandidates),

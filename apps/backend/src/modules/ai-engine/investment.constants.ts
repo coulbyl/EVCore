@@ -65,10 +65,13 @@ export type VirtualInvestmentRule = {
   minOdds?: number;
   maxOdds?: number;
   minEvMargin?: number;
+  minLambda?: number;
   allowMissingOdds?: boolean;
   excludedLeagues?: readonly string[];
   excludedProbabilityRanges?: readonly (readonly [number, number])[];
   leagueBoosts?: Partial<Record<string, number>>;
+  channelCapTop5?: number;
+  channelCapTop10?: number;
 };
 
 export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
@@ -81,6 +84,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     minProbability: 0.75,
     maxProbability: 0.85,
     maxOdds: 1.5,
+    excludedLeagues: ['EL1'],
   },
   {
     canal: 'SAFE_UNDER45',
@@ -103,6 +107,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     maxProbability: 0.85,
     maxOdds: 1.5,
     minEvMargin: 0.03,
+    excludedLeagues: ['EL1'],
   },
   {
     canal: 'SAFE_UNDER35',
@@ -123,12 +128,14 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     market: 'BTTS',
     pick: 'YES',
     prior: 0.655,
-    minProbability: 0.55,
+    minProbability: 0.60,
     maxProbability: 0.75,
     allowMissingOdds: true,
-    excludedLeagues: ['ERD'],
+    minLambda: 3.1,
+    excludedLeagues: ['ERD', 'EL1', 'EL2'],
     excludedProbabilityRanges: [[0.65, 0.7]],
-    leagueBoosts: { SP2: 0.06, ERD: 0.02 },
+    leagueBoosts: { SP2: 0.06 },
+    channelCapTop5: 1,
   },
 ] as const;
 
