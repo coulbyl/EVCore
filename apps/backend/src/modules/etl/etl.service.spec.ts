@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
   DEFAULT_SEASON_START_MONTH,
   getCurrentCsvSeasonCode,
+  ROLLING_HORIZON_DEFAULTS,
 } from '../../config/etl.constants';
 import { currentSeason } from '@utils/date.utils';
 import type { Queue } from 'bullmq';
@@ -18,6 +19,7 @@ import type { OddsHistoricalImportJobData } from './workers/odds-historical-impo
 import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
+import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
 type MockQueue<T> = Pick<
@@ -84,6 +86,7 @@ describe('EtlService', () => {
   const bettingEngineQueue = makeQueue<BettingEngineAnalysisJobData>();
   const oddsHistoricalImportQueue = makeQueue<OddsHistoricalImportJobData>();
   const standingsSyncQueue = makeQueue();
+  const rollingHorizonQueue = makeQueue<RollingHorizonJobData>();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -124,6 +127,7 @@ describe('EtlService', () => {
     bettingEngineQueue as Queue<BettingEngineAnalysisJobData>,
     oddsHistoricalImportQueue as Queue<OddsHistoricalImportJobData>,
     standingsSyncQueue as Queue,
+    rollingHorizonQueue as Queue<RollingHorizonJobData>,
     configMock,
     prismaMock,
     rollingStatsServiceMock,
@@ -424,5 +428,71 @@ describe('EtlService', () => {
     expect(oddsCsvQueue.add).toHaveBeenCalledTimes(TEST_COMPETITIONS.length);
     expect(oddsPrematchQueue.add).toHaveBeenCalledOnce();
     expect(bettingEngineQueue.add).toHaveBeenCalledOnce();
+  });
+
+  describe('triggerRollingHorizonAnalysis', () => {
+    const FIXED_NOW = new Date('2026-06-02T12:00:00Z');
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(FIXED_NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('enqueues one rolling-horizon job with default horizon (J+1..J+4)', async () => {
+      const result = await service.triggerRollingHorizonAnalysis();
+
+      expect(rollingHorizonQueue.add).toHaveBeenCalledOnce();
+      expect(rollingHorizonQueue.add).toHaveBeenCalledWith(
+        'rolling-horizon',
+        {
+          startOffsetDays: ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS,
+          horizonDays: ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS,
+        },
+        BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
+      expect(result.enqueuedDates).toEqual([
+        '2026-06-03',
+        '2026-06-04',
+        '2026-06-05',
+        '2026-06-06',
+      ]);
+    });
+
+    it('honors custom startOffsetDays and horizonDays', async () => {
+      const result = await service.triggerRollingHorizonAnalysis({
+        startOffsetDays: 2,
+        horizonDays: 2,
+      });
+
+      expect(rollingHorizonQueue.add).toHaveBeenCalledWith(
+        'rolling-horizon',
+        { startOffsetDays: 2, horizonDays: 2 },
+        BULLMQ_DEFAULT_JOB_OPTIONS,
+      );
+      expect(result.enqueuedDates).toEqual(['2026-06-04', '2026-06-05']);
+    });
+
+    it('returns a single date when horizonDays=1', async () => {
+      const result = await service.triggerRollingHorizonAnalysis({
+        horizonDays: 1,
+      });
+
+      expect(result.enqueuedDates).toHaveLength(1);
+      expect(result.enqueuedDates[0]).toBe('2026-06-03');
+    });
+
+    it('preserves nearest-to-farthest ordering in enqueuedDates', async () => {
+      const result = await service.triggerRollingHorizonAnalysis({
+        startOffsetDays: 1,
+        horizonDays: 4,
+      });
+
+      const sorted = [...result.enqueuedDates].sort();
+      expect(result.enqueuedDates).toEqual(sorted);
+    });
   });
 });

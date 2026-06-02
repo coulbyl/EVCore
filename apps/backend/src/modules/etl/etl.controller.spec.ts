@@ -21,6 +21,9 @@ describe('EtlController', () => {
       triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
       triggerBettingEngineAnalysis: vi.fn().mockResolvedValue(undefined),
       triggerRollingStatsSeason: vi.fn().mockResolvedValue(undefined),
+      triggerRollingHorizonAnalysis: vi.fn().mockResolvedValue({
+        enqueuedDates: ['2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'],
+      }),
       ...overrides,
     } as unknown as EtlService;
   }
@@ -195,5 +198,38 @@ describe('EtlController', () => {
         mode: 'invalid' as 'refresh',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('triggers analysis horizon with defaults and returns enqueued dates', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    const result = await controller.triggerAnalysisHorizon({});
+
+    expect(service.triggerRollingHorizonAnalysis).toHaveBeenCalledWith({});
+    expect(result).toEqual({
+      status: 'ok',
+      enqueuedDates: ['2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'],
+    });
+  });
+
+  it('passes custom horizon params through to the service', async () => {
+    const service = makeService({
+      triggerRollingHorizonAnalysis: vi.fn().mockResolvedValue({
+        enqueuedDates: ['2026-06-04', '2026-06-05'],
+      }),
+    });
+    const controller = new EtlController(service);
+
+    const result = await controller.triggerAnalysisHorizon({
+      startOffsetDays: 2,
+      horizonDays: 2,
+    });
+
+    expect(service.triggerRollingHorizonAnalysis).toHaveBeenCalledWith({
+      startOffsetDays: 2,
+      horizonDays: 2,
+    });
+    expect(result.enqueuedDates).toHaveLength(2);
   });
 });
