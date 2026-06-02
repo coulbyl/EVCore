@@ -631,7 +631,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
           }
           const competitionCode =
             typeof pick.featureSnapshot['competitionCode'] === 'string'
-              ? (pick.featureSnapshot['competitionCode'] as string)
+              ? pick.featureSnapshot['competitionCode']
               : null;
           if (
             competitionCode !== null &&
@@ -686,7 +686,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
 
       const competitionCode =
         typeof pick.featureSnapshot['competitionCode'] === 'string'
-          ? (pick.featureSnapshot['competitionCode'] as string)
+          ? pick.featureSnapshot['competitionCode']
           : null;
       const leagueBoost =
         competitionCode !== null

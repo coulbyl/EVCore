@@ -88,12 +88,13 @@ function readSnapshotNumber(value: unknown): number | null {
   return null;
 }
 
-function getVirtualRule(
-  market: string,
-  pick: string,
-  probability: number,
-  odds: number | null,
-): VirtualInvestmentRule | null {
+function getVirtualRule(input: {
+  market: string;
+  pick: string;
+  probability: number;
+  odds: number | null;
+}): VirtualInvestmentRule | null {
+  const { market, pick, probability, odds } = input;
   return (
     VIRTUAL_INVESTMENT_RULES.find((rule) => {
       if (rule.market !== market || rule.pick !== pick) return false;
@@ -624,12 +625,12 @@ export class SignalWindowService {
         const odds = readSnapshotNumber(evaluated.odds);
         if (probability === null) continue;
 
-        const rule = getVirtualRule(
-          evaluated.market,
-          evaluated.pick,
+        const rule = getVirtualRule({
+          market: evaluated.market,
+          pick: evaluated.pick,
           probability,
           odds,
-        );
+        });
         if (!rule) continue;
 
         const signalScore = scoreVirtualPick({
