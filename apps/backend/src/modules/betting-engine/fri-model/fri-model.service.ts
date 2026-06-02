@@ -120,8 +120,8 @@ export class FriModelService {
       input.awayTeamName !== null &&
       isSeniorNationalTeam(input.homeTeamName) &&
       isSeniorNationalTeam(input.awayTeamName);
-    const eloHome = isSenior ? eloEntry?.home ?? null : null;
-    const eloAway = isSenior ? eloEntry?.away ?? null : null;
+    const eloHome = isSenior ? (eloEntry?.home ?? null) : null;
+    const eloAway = isSenior ? (eloEntry?.away ?? null) : null;
 
     let predictionSource: FriModelComputation['predictionSource'] = null;
     let probabilities: FriModelComputation['probabilities'] = null;
@@ -195,8 +195,9 @@ export class FriModelService {
     scheduledAt: Date,
   ): { rating: number; snapshotAt: Date } | null {
     return (
-      ratings.find((entry) => entry.snapshotAt.getTime() <= scheduledAt.getTime()) ??
-      null
+      ratings.find(
+        (entry) => entry.snapshotAt.getTime() <= scheduledAt.getTime(),
+      ) ?? null
     );
   }
 

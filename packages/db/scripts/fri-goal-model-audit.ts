@@ -80,10 +80,7 @@ function eloProbabilities(
   };
 }
 
-function estimateGoalTotal(
-  pDraw: number,
-  params: GoalModelParams,
-): number {
+function estimateGoalTotal(pDraw: number, params: GoalModelParams): number {
   const adjusted = params.base - (pDraw - DRAW_RATE) * params.sensitivity;
   return clamp(adjusted, params.totalMin, params.totalMax);
 }
@@ -116,7 +113,12 @@ function bttsYesProbability(home: number, away: number): number {
 
 function over25Probability(home: number, away: number): number {
   const total = home + away;
-  return 1 - (poissonProbability(total, 0) + poissonProbability(total, 1) + poissonProbability(total, 2));
+  return (
+    1 -
+    (poissonProbability(total, 0) +
+      poissonProbability(total, 1) +
+      poissonProbability(total, 2))
+  );
 }
 
 function scoreFixtures(
@@ -138,7 +140,8 @@ function scoreFixtures(
     const lambdaHome = goalTotal * homeShare;
     const lambdaAway = Math.max(goalTotal - lambdaHome, 0.05);
     const actualTotal = row.fixture.homeScore + row.fixture.awayScore;
-    const actualBtts = row.fixture.homeScore > 0 && row.fixture.awayScore > 0 ? 1 : 0;
+    const actualBtts =
+      row.fixture.homeScore > 0 && row.fixture.awayScore > 0 ? 1 : 0;
     const actualOver25 = actualTotal > 2 ? 1 : 0;
 
     const pBtts = bttsYesProbability(lambdaHome, lambdaAway);
@@ -244,10 +247,7 @@ async function main() {
     latestSnapshotRows.map((row) => [row.teamName, row.rating]),
   );
 
-  const eloByTeam = new Map<
-    string,
-    { rating: number; snapshotAt: Date }[]
-  >();
+  const eloByTeam = new Map<string, { rating: number; snapshotAt: Date }[]>();
   for (const row of eloRows) {
     const bucket = eloByTeam.get(row.teamName) ?? [];
     bucket.push({ rating: row.rating, snapshotAt: row.snapshotAt });

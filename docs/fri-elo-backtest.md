@@ -25,16 +25,20 @@ Pour calibrer les canaux CONF/DRAW/BTTS sur FRI, il faut porter le chemin ELO da
 ## Ce qui existe déjà
 
 ### Table `NationalTeamEloRating`
+
 Stocke les snapshots ELO historiques :
+
 ```
 id, teamName, eloCode, rating (Int), source, snapshotAt (DateTime)
 @@unique([teamName, snapshotAt])
 @@index([snapshotAt])
 @@index([teamName, snapshotAt])
 ```
+
 → plusieurs snapshots par équipe dans le temps → backtest peut charger le rating à la date de chaque fixture.
 
 ### Fonctions disponibles (à importer dans le backtest)
+
 - `eloProbabilities(eloHome: number, eloAway: number): MatchProbabilities`  
   → dans `betting-engine.service.ts` (privé) ou à extraire dans `betting-engine.utils.ts`
 - `isSeniorNationalTeam(name: string): boolean`  
@@ -43,10 +47,11 @@ id, teamName, eloCode, rating (Int), source, snapshotAt (DateTime)
   → dans `fri-elo.utils.ts`
 
 ### Constantes FRI
+
 ```typescript
 // betting-engine.service.ts
-const FRI_HOME_ADVANTAGE_ELO = 50;   // points ELO d'avantage domicile
-const FRI_DRAW_RATE = 0.22;          // taux nul empirique pour les amicaux
+const FRI_HOME_ADVANTAGE_ELO = 50; // points ELO d'avantage domicile
+const FRI_DRAW_RATE = 0.22; // taux nul empirique pour les amicaux
 ```
 
 ---
@@ -90,14 +95,15 @@ private async loadEloSnapshotsForFixtures(
 ```
 
 **Requête Prisma (par équipe) :**
+
 ```typescript
 await prisma.nationalTeamEloRating.findFirst({
   where: {
     teamName: teamName,
     snapshotAt: { lte: fixture.scheduledAt },
   },
-  orderBy: { snapshotAt: 'desc' },
-})
+  orderBy: { snapshotAt: "desc" },
+});
 ```
 
 **Optimisation :** charger tous les snapshots en une seule requête groupée, puis filtrer en mémoire par date (évite N+1).
@@ -162,8 +168,8 @@ Conditionnel si nécessaire pour ne pas impacter les autres compétitions.
 
 ```typescript
 // backtest-analysis.latest.ndjson reasons
-'NON_SENIOR_FIXTURE'   // U17, U19, clubs — ignorés par FRI
-'MISSING_ELO'          // équipe senior sans snapshot ELO avant la date
+"NON_SENIOR_FIXTURE"; // U17, U19, clubs — ignorés par FRI
+"MISSING_ELO"; // équipe senior sans snapshot ELO avant la date
 ```
 
 ---
@@ -180,11 +186,13 @@ Conditionnel si nécessaire pour ne pas impacter les autres compétitions.
 FRI 2026-27 : 207 fixtures terminées dont 101 senior.
 
 Sur ces 101 :
+
 - Équipes couvertes par `TEAM_NAME_TO_ELO_CODE` : ~70 noms mappés
 - Équipes avec snapshot ELO dans la DB : dépend des syncs effectués
 - Estimation analysables : 60-80 fixtures
 
 **À vérifier avant d'implémenter :**
+
 ```sql
 SELECT COUNT(DISTINCT r.\"teamName\")
 FROM national_team_elo_rating r
@@ -246,8 +254,11 @@ Charger **tous** les ELO nécessaires en **une seule requête** avant la boucle 
 ```typescript
 // ✅ Une requête groupée
 const allEloRows = await this.prisma.client.nationalTeamEloRating.findMany({
-  where: { teamName: { in: allTeamNames }, snapshotAt: { lte: latestFixtureDate } },
-  orderBy: { snapshotAt: 'desc' },
+  where: {
+    teamName: { in: allTeamNames },
+    snapshotAt: { lte: latestFixtureDate },
+  },
+  orderBy: { snapshotAt: "desc" },
 });
 // Puis filtrer en mémoire par (teamName, fixture.scheduledAt)
 ```
@@ -275,14 +286,14 @@ Option propre : requête séparée `loadFriTeamNames(fixtureIds)` → `Map<strin
 
 ### Tests à écrire
 
-| Test | Fichier |
-|------|---------|
+| Test                                                                     | Fichier                        |
+| ------------------------------------------------------------------------ | ------------------------------ |
 | `eloProbabilities(1800, 1600)` → probas cohérentes (home > 0.5, sum = 1) | `betting-engine.utils.spec.ts` |
-| `eloProbabilities` symétrie inverse : swap home/away → home/away swappés | idem |
-| `processFriFixture` non-senior → retourne null | `backtest.service.spec.ts` |
-| `processFriFixture` ELO manquant → retourne null | idem |
-| `processFriFixture` ELO présent → retourne probas valides | idem |
-| Backtest FRI end-to-end : `analyzedCount > 0` si ELO en DB | intégration |
+| `eloProbabilities` symétrie inverse : swap home/away → home/away swappés | idem                           |
+| `processFriFixture` non-senior → retourne null                           | `backtest.service.spec.ts`     |
+| `processFriFixture` ELO manquant → retourne null                         | idem                           |
+| `processFriFixture` ELO présent → retourne probas valides                | idem                           |
+| Backtest FRI end-to-end : `analyzedCount > 0` si ELO en DB               | intégration                    |
 
 ### ESLint — vérification avant merge
 
@@ -296,34 +307,37 @@ pnpm --filter backend test  # tests unitaires doivent passer
 
 ## Fichiers à modifier
 
-| Fichier | Changement |
-|---------|------------|
-| `betting-engine.utils.ts` | Extraire et exporter `eloProbabilities()` (pur, testable) |
-| `betting-engine.service.ts` | Remplacer l'inline par un import de `eloProbabilities` |
-| `fri-elo.utils.ts` | Exporter `FRI_HOME_ADVANTAGE_ELO`, `FRI_DRAW_RATE` si inline dans le service |
-| `backtest.service.ts` | `loadEloSnapshotsForFixtures()` + `processFriFixture()` + branche dans `runBacktest()` |
-| `backtest.constants.ts` | Ajouter reason codes `NON_SENIOR_FIXTURE`, `MISSING_ELO` |
-| `betting-engine.utils.spec.ts` | Tests unitaires `eloProbabilities` |
-| `backtest.service.spec.ts` | Tests unitaires `processFriFixture` |
+| Fichier                        | Changement                                                                             |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| `betting-engine.utils.ts`      | Extraire et exporter `eloProbabilities()` (pur, testable)                              |
+| `betting-engine.service.ts`    | Remplacer l'inline par un import de `eloProbabilities`                                 |
+| `fri-elo.utils.ts`             | Exporter `FRI_HOME_ADVANTAGE_ELO`, `FRI_DRAW_RATE` si inline dans le service           |
+| `backtest.service.ts`          | `loadEloSnapshotsForFixtures()` + `processFriFixture()` + branche dans `runBacktest()` |
+| `backtest.constants.ts`        | Ajouter reason codes `NON_SENIOR_FIXTURE`, `MISSING_ELO`                               |
+| `betting-engine.utils.spec.ts` | Tests unitaires `eloProbabilities`                                                     |
+| `backtest.service.spec.ts`     | Tests unitaires `processFriFixture`                                                    |
 
 ---
 
 ## Test de validation
 
 Après implémentation :
+
 ```bash
 curl -X POST http://localhost:3001/backtest/FRI/2026-27
 ```
 
 Attendu :
+
 - `analyzedCount` > 0 (plus de 0/64)
 - `brierScore` dans la réponse
 - `predictionBacktests[CONF].thresholds` avec des picks
 
 Calibration :
+
 - Brier FRI attendu : inconnu (pas de baseline). Comparer à 0.65 (WC).
 - CONF : si HR ≥ 55% à un seuil → activer dans `prediction.constants.ts`
-- DRAW : taux nul FRI ~22% (FRI_DRAW_RATE) → seuil 0.22+ 
+- DRAW : taux nul FRI ~22% (FRI_DRAW_RATE) → seuil 0.22+
 - BTTS : FRI senior = matchs ouverts → signal potentiellement plus fort que WCQ
 
 ---

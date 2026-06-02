@@ -492,8 +492,8 @@ export class BacktestService {
         });
 
         if (!pick) {
-          const evaluatedPicks = this.bettingEngine.listEvaluatedPicksForBacktest(
-            {
+          const evaluatedPicks =
+            this.bettingEngine.listEvaluatedPicksForBacktest({
               probabilities: friComputation.probabilities,
               odds,
               deterministicScore: friComputation.deterministicScore,
@@ -502,8 +502,7 @@ export class BacktestService {
               lambdaFloorHit,
               competitionCode: competitionCode ?? null,
               minEv: options.gridSearchOverrides?.evFloor,
-            },
-          );
+            });
           analysisEntries.push(
             buildAnalysisEntry({
               seasonId,

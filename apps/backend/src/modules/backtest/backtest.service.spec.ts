@@ -97,9 +97,7 @@ describe('BacktestService', () => {
       qualityScore: new Decimal('0.167'),
       isCombo: false,
     } satisfies ViablePick);
-    const listEvaluatedPicksForBacktest = vi
-      .fn()
-      .mockReturnValue([]);
+    const listEvaluatedPicksForBacktest = vi.fn().mockReturnValue([]);
 
     const prismaMock = {
       client: {
