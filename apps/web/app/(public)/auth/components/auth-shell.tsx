@@ -41,7 +41,7 @@ export function AuthShell({
 
       <div className="relative w-full max-w-[900px]">
         {/* Card container — visible at md+ */}
-        <div className="md:grid md:min-h-[580px] md:grid-cols-2 md:overflow-hidden md:rounded-[1.6rem] md:border md:border-border md:bg-panel-strong md:shadow-[0_24px_72px_rgba(2,8,23,0.16)]">
+        <div className="md:grid md:min-h-[640px] md:grid-cols-2 md:overflow-hidden md:rounded-[1.6rem] md:border md:border-border md:bg-panel-strong md:shadow-[0_24px_72px_rgba(2,8,23,0.16)]">
           {/* ── Aside (left) ── tablet+ */}
           <section className="hidden flex-col justify-between bg-sidebar px-8 py-10 text-sidebar-foreground md:flex lg:px-10 lg:py-12">
             <div>
