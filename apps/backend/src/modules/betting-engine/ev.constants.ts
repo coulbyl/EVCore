@@ -570,8 +570,14 @@ const MODEL_SCORE_THRESHOLD_MAP: Record<string, Decimal> = {
   // Tier D — international competitions (conservative default — limited team
   // data, high variance, no historical backtest baseline yet).
   WCQE: new Decimal('0.60'),
+  WCQCA: new Decimal('0.60'),
+  WCQSA: new Decimal('0.60'),
+  WCQAS: new Decimal('0.60'),
+  WCQAF: new Decimal('0.60'),
+  WCQOC: new Decimal('0.60'),
   FRI: new Decimal('0.45'),
   UNL: new Decimal('0.60'),
+  WC: new Decimal('0.60'),
   CAN: new Decimal('0.60'),
   COPA: new Decimal('0.60'),
 };
@@ -598,10 +604,16 @@ export const MODEL_SCORE_THRESHOLD = MODEL_SCORE_THRESHOLD_DEFAULT;
 // before a BET decision is made. Leagues not in this map use EV_THRESHOLD (0.08).
 // Audit 2026-03-20/28: FRI (4% xG coverage) → 0/1, WCQE → 0/4, EL2/F2 → 0/8.
 const LEAGUE_EV_THRESHOLD_MAP: Record<string, Decimal> = {
-  // Tier D international — sparse xG (FRI 4%, WCQE ~9% zero-xG records)
+  // Tier D international — xG absent for non-European WCQ (API Football doesn't provide it)
   WCQE: new Decimal('0.15'),
+  WCQCA: new Decimal('0.15'),
+  WCQSA: new Decimal('0.15'),
+  WCQAS: new Decimal('0.15'),
+  WCQAF: new Decimal('0.15'),
+  WCQOC: new Decimal('0.15'),
   FRI: new Decimal('0.15'),
   UNL: new Decimal('0.12'),
+  WC: new Decimal('0.15'),
   // Lower divisions — sparser odds coverage, higher xG noise
   EL2: new Decimal('0.10'),
   F2: new Decimal('0.10'),
@@ -630,6 +642,38 @@ export function isEuropeanCompetition(
 // Domestic xg is weighted higher (30+ match sample vs 5-8 European matches).
 export const EUROPEAN_CROSS_COMP_FORM_WEIGHT = 0.6;
 export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
+
+// ─── National team competitions ──────────────────────────────────────────────
+
+// Competitions involving national teams. These have no prior in-tournament stats
+// at the start of the event, so cross-comp fallback (qualifiers, Nations League)
+// is required to produce any analysis at all.
+const NATIONAL_TEAM_COMPETITION_CODE_SET = new Set([
+  'WC',
+  'WCQE',
+  'WCQCA',
+  'WCQSA',
+  'WCQAS',
+  'WCQAF',
+  'WCQOC',
+  'UNL',
+  'CAN',
+  'COPA',
+]);
+
+export function isNationalTeamCompetition(
+  code: string | null | undefined,
+): boolean {
+  return code != null && NATIONAL_TEAM_COMPETITION_CODE_SET.has(code);
+}
+
+// Cross-competition form blending weights for national team fixture analysis.
+// xG weight is 0: non-European qualifying competitions (WCQCA/WCQSA/WCQAS/WCQAF/WCQOC)
+// do not provide reliable xG data, so blending it in adds noise.
+// Calibration scan 2026-06-02 on WC 2022 (64 fixtures): Brier monotonically improves
+// as xG weight decreases — (0.65/0.35)→0.658, (0.80/0.20)→0.657, (1.0/0.0)→0.654.
+export const NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT = 1.0;
+export const NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0;
 
 // Combo picks (multi-leg accumulators) are disabled during the single-pick
 // calibration phase. The backtest tracks combos under their primary market

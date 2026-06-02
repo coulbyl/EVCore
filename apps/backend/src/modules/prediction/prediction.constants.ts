@@ -115,6 +115,52 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },
     BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
   },
+  WC: {
+    // WC backtest 2026-06-02 (WC 2022, cross-comp fallback from WCQ qualifying seasons).
+    // Brier 0.654 / CalibError 3.1% with NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT=1.0 (xG ignored —
+    // non-European qualifying competitions don't provide reliable xG data).
+    // CONF: only 0.60 clears the 55% floor (55.6%, 9 picks, 14% coverage). Fragile on 64 fixtures.
+    CONF: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    // DRAW: observation mode. No validated signal (ROI negative at all tested thresholds).
+    // WC group stage historical draw rate ~17-23%. Threshold 0.20 = model says "above base draw rate".
+    // minSampleN=5 to collect data from WC 2026 group stage without blocking picks.
+    DRAW: { enabled: true, threshold: 0.2, minSampleN: 5 },
+    // BTTS: observation mode. WC historically ~48% BTTS rate but model caps BTTS probs at ~0.47
+    // because WCQ cross-comp stats underestimate goal-scoring in tournament context (qualifying is
+    // more defensive). Threshold 0.35 = below normal 0.50 floor, will fire on ~58% of fixtures.
+    // HR on WC 2022 at 0.35: 40.5% (37 picks) — not a validated signal, data collection only.
+    BTTS: { enabled: true, threshold: 0.35, minSampleN: 5 },
+  },
+  WCQCA: {
+    // WCQCA backtest 2026-06-02 (2026-27 season, 100 fixtures).
+    // 0.75 clears 55% floor in 2026-27: 43 picks, 60.5% HR, 44.8% coverage.
+    // 2022-23 showed stronger signal at lower thresholds but WC 2026 expanded format
+    // (48 teams) makes qualifs more competitive — use recent season as reference.
+    CONF: { enabled: true, threshold: 0.75, minSampleN: 10 },
+    // DRAW: below 20% HR in 2022-23. Single season (2026-27 at 0.28: 70% HR, 10 picks) too fragile.
+  },
+  WCQSA: {
+    // WCQSA backtest 2026-06-02 (2026-27 season, 90 fixtures).
+    // 0.60 validates in both seasons: 2022-23 78.9%/19 picks, 2026-27 57.1%/21 picks.
+    CONF: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    // DRAW: negative ROI across all thresholds. Disabled.
+  },
+  WCQAS: {
+    // WCQAS backtest 2026-06-02 (2026-27 season, 226 fixtures).
+    // 0.75 is the lowest threshold that passes in 2026-27: 26 picks, 65.4%, 11.5% coverage.
+    // 2022-23 showed extraordinary signal (84%+ HR from 0.50 upward) but 2026-27 expanded
+    // format weakened it significantly — 0.75 is the conservative cross-season choice.
+    // DRAW: 2026-27 at 0.28 ROI +13.4% (PASS) but 2022-23 doesn't validate. Monitor.
+    CONF: { enabled: true, threshold: 0.75, minSampleN: 10 },
+  },
+  WCQAF: {
+    // WCQAF backtest 2026-06-02 (2023-24 season, 92 fixtures — most recent available).
+    // 0.55 validates strongly: 26 picks, 80.8% HR, 28.3% coverage.
+    // 2022-23 showed weak signal (11 picks at 0.50). 2023-24 is more reliable reference.
+    CONF: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    // DRAW: consistently negative across both seasons. Disabled.
+  },
+  // WCQOC: only 16 fixtures total — insufficient sample to derive any signal.
   WCQE: {
     // WCQE backtest 2026-05-03: CONF strong at 0.50 (70.8%, 66 fixtures — lopsided matchups).
     CONF: { enabled: true, threshold: 0.5, minSampleN: 10 },

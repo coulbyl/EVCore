@@ -52,6 +52,9 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  isNationalTeamCompetition,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
 import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
 import { getPredictionConfig } from '@modules/prediction/prediction.constants';
@@ -281,7 +284,9 @@ const CONF_THRESHOLD_SCAN = [
 const DRAW_THRESHOLD_SCAN = [
   0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.45, 0.5,
 ];
-const BTTS_THRESHOLD_SCAN = [0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65, 0.7, 0.75];
+const BTTS_THRESHOLD_SCAN = [
+  0.3, 0.35, 0.4, 0.45, 0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65, 0.7, 0.75,
+];
 
 function createPredictionCandidateBuckets(): PredictionCandidateBuckets {
   return {
@@ -333,9 +338,17 @@ export class BacktestService {
     const uniqueTeamIds = [
       ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
     ];
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -384,8 +397,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         }
         return homeStatsRaw;
@@ -397,8 +410,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         }
         return awayStatsRaw;
@@ -1311,11 +1324,19 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, [
-          ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
-        ])
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, [
+            ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+          ])
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -1352,8 +1373,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return homeStatsRaw;
       })();
@@ -1363,8 +1384,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return awayStatsRaw;
       })();
@@ -1500,11 +1521,19 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, [
-          ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
-        ])
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, [
+            ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+          ])
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -1554,8 +1583,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return homeStatsRaw;
       })();
@@ -1565,8 +1594,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return awayStatsRaw;
       })();
