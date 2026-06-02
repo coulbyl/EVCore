@@ -130,7 +130,7 @@ export const THE_ODDS_API_SPORT_KEYS = {
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',
   // FIFA World Cup — clé active uniquement pendant le tournoi (11 juin–19 juillet 2026)
-  WC26: 'soccer_fifa_world_cup',
+  WC: 'soccer_fifa_world_cup',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).

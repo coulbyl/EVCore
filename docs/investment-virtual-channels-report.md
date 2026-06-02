@@ -74,13 +74,13 @@ Conclusion: le probleme n'etait pas seulement le volume. Le pool contenait bien 
 
 Les canaux virtuels ajoutes dans l'API `investment` sont:
 
-| Canal virtuel | Marche source | Intention |
-| --- | --- | --- |
-| `SAFE_HT_OVER05` | `OVER_UNDER_HT/OVER_0_5` | Detecter les matchs avec au moins un but en premiere mi-temps. |
-| `SAFE_UNDER45` | `OVER_UNDER/UNDER_4_5` | Canal tres prudent sur les matchs peu susceptibles de partir en score extreme. |
-| `SAFE_OVER15` | `OVER_UNDER/OVER_1_5` | Detecter les matchs avec au moins deux buts. |
-| `SAFE_UNDER35` | `OVER_UNDER/UNDER_3_5` | Detecter les matchs sous quatre buts. |
-| `BTTS_YES` | `BTTS/YES` | Detecter les matchs ou les deux equipes marquent. |
+| Canal virtuel    | Marche source            | Intention                                                                      |
+| ---------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| `SAFE_HT_OVER05` | `OVER_UNDER_HT/OVER_0_5` | Detecter les matchs avec au moins un but en premiere mi-temps.                 |
+| `SAFE_UNDER45`   | `OVER_UNDER/UNDER_4_5`   | Canal tres prudent sur les matchs peu susceptibles de partir en score extreme. |
+| `SAFE_OVER15`    | `OVER_UNDER/OVER_1_5`    | Detecter les matchs avec au moins deux buts.                                   |
+| `SAFE_UNDER35`   | `OVER_UNDER/UNDER_3_5`   | Detecter les matchs sous quatre buts.                                          |
+| `BTTS_YES`       | `BTTS/YES`               | Detecter les matchs ou les deux equipes marquent.                              |
 
 Ils sont exposes dans:
 
@@ -96,11 +96,11 @@ Ils apparaissent dans l'UI sous la section:
 
 Premier backtest virtuel:
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| candidats virtuels | `319` | `231` | `88` | `72.4%` |
-| top 5 quotidien | `134` | `106` | `28` | `79.1%` |
-| top 10 quotidien | `181` | `138` | `43` | `76.2%` |
+| Groupe             | Total |     W |    L | Hit rate |
+| ------------------ | ----: | ----: | ---: | -------: |
+| candidats virtuels | `319` | `231` | `88` |  `72.4%` |
+| top 5 quotidien    | `134` | `106` | `28` |  `79.1%` |
+| top 10 quotidien   | `181` | `138` | `43` |  `76.2%` |
 
 Ce resultat validait l'intuition: les nouveaux canaux trouvaient beaucoup de gagnants.
 
@@ -126,13 +126,13 @@ Conclusion: il fallait rendre les canaux plus selectifs, pas les supprimer.
 
 Les garde-fous actuels sont:
 
-| Canal | Regles ajoutees |
-| --- | --- |
-| `SAFE_HT_OVER05` | probabilite minimale montee a `75%` |
-| `SAFE_UNDER45` | exclusion `NOR2`, `TUR1` |
-| `SAFE_OVER15` | marge EV minimale `3pp` |
-| `SAFE_UNDER35` | exclusion `MX1`, exclusion tranche proba `75-79%` |
-| `BTTS_YES` | exclusion `ERD`, exclusion tranche proba `65-69%` |
+| Canal            | Regles ajoutees                                   |
+| ---------------- | ------------------------------------------------- |
+| `SAFE_HT_OVER05` | probabilite minimale montee a `75%`               |
+| `SAFE_UNDER45`   | exclusion `NOR2`, `TUR1`                          |
+| `SAFE_OVER15`    | marge EV minimale `3pp`                           |
+| `SAFE_UNDER35`   | exclusion `MX1`, exclusion tranche proba `75-79%` |
+| `BTTS_YES`       | exclusion `ERD`, exclusion tranche proba `65-69%` |
 
 La cle de cache `investment` a ete montee a:
 
@@ -144,18 +144,18 @@ pour forcer l'API a servir les nouvelles selections.
 
 Backtest guarded:
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| candidats virtuels | `203` | `153` | `50` | `75.4%` |
-| top 5 quotidien | `106` | `92` | `14` | `86.8%` |
-| top 10 quotidien | `133` | `112` | `21` | `84.2%` |
+| Groupe             | Total |     W |    L | Hit rate |
+| ------------------ | ----: | ----: | ---: | -------: |
+| candidats virtuels | `203` | `153` | `50` |  `75.4%` |
+| top 5 quotidien    | `106` |  `92` | `14` |  `86.8%` |
+| top 10 quotidien   | `133` | `112` | `21` |  `84.2%` |
 
 Comparaison importante:
 
-| Version | Top 5 W | Top 5 L | Hit rate |
-| --- | ---: | ---: | ---: |
-| avant garde-fous | `106` | `28` | `79.1%` |
-| apres garde-fous | `92` | `14` | `86.8%` |
+| Version          | Top 5 W | Top 5 L | Hit rate |
+| ---------------- | ------: | ------: | -------: |
+| avant garde-fous |   `106` |    `28` |  `79.1%` |
+| apres garde-fous |    `92` |    `14` |  `86.8%` |
 
 On a donc divise les pertes top 5 par deux.
 
@@ -169,13 +169,13 @@ Le compromis:
 
 Top 5 par canal:
 
-| Canal | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| `SAFE_UNDER45` | `13` | `13` | `0` | `100.0%` |
-| `SAFE_UNDER35` | `25` | `22` | `3` | `88.0%` |
-| `BTTS_YES` | `33` | `29` | `4` | `87.9%` |
-| `SAFE_HT_OVER05` | `17` | `14` | `3` | `82.4%` |
-| `SAFE_OVER15` | `18` | `14` | `4` | `77.8%` |
+| Canal            | Total |    W |   L | Hit rate |
+| ---------------- | ----: | ---: | --: | -------: |
+| `SAFE_UNDER45`   |  `13` | `13` | `0` | `100.0%` |
+| `SAFE_UNDER35`   |  `25` | `22` | `3` |  `88.0%` |
+| `BTTS_YES`       |  `33` | `29` | `4` |  `87.9%` |
+| `SAFE_HT_OVER05` |  `17` | `14` | `3` |  `82.4%` |
+| `SAFE_OVER15`    |  `18` | `14` | `4` |  `77.8%` |
 
 Lecture:
 
@@ -239,20 +239,20 @@ Le bon cap maintenant:
 
 Fenetre : `2024-01-01` → `2024-12-31` (6 484 fixtures analysées).
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| top 5 quotidien | `316` | `201` | `115` | `63.6%` |
-| top 10 quotidien | `397` | `258` | `139` | `65.0%` |
+| Groupe           | Total |     W |     L | Hit rate |
+| ---------------- | ----: | ----: | ----: | -------: |
+| top 5 quotidien  | `316` | `201` | `115` |  `63.6%` |
+| top 10 quotidien | `397` | `258` | `139` |  `65.0%` |
 
 Seul `BTTS_YES` actif (même raison qu'en 2025 : picks OVER/UNDER non granulaires).
 
 ## Synthèse multi-saisons — BTTS_YES
 
-| Saison | Top 5 W | Top 5 L | Hit rate | Full top5 days |
-| --- | ---: | ---: | ---: | ---: |
-| 2024 | `201` | `115` | `63.6%` | `0` |
-| 2025 | `196` | `110` | `64.1%` | `0` |
-| 2026 (après garde-fous iter. 2) | `152` | `35` | `75.9%` | `8` |
+| Saison                          | Top 5 W | Top 5 L | Hit rate | Full top5 days |
+| ------------------------------- | ------: | ------: | -------: | -------------: |
+| 2024                            |   `201` |   `115` |  `63.6%` |            `0` |
+| 2025                            |   `196` |   `110` |  `64.1%` |            `0` |
+| 2026 (après garde-fous iter. 2) |   `152` |    `35` |  `75.9%` |            `8` |
 
 **La base rate BTTS_YES est structurellement à ~63-64% sur 3 saisons.** Le gain de 2026 vient des garde-fous (EL1, EL2, lambda ≥ 3.1) mais ne se généralise pas nécessairement.
 
@@ -260,19 +260,20 @@ Seul `BTTS_YES` actif (même raison qu'en 2025 : picks OVER/UNDER non granulaire
 
 Les ligues problématiques changent d'une saison à l'autre :
 
-| Ligue | 2024 | 2026 | Tendance |
-| --- | ---: | ---: | --- |
+| Ligue |  2024 |  2026 | Tendance          |
+| ----- | ----: | ----: | ----------------- |
 | `SP2` | 46.2% | 29.0% | amélioration 2026 |
-| `D2` | 68.6% | 33.3% | dégradation 2026 |
-| `PL` | 75.0% | 40.0% | dégradation 2026 |
-| `BL1` | 74.2% | 27.5% | dégradation 2026 |
-| `J1` | 57.1% | 85.7% | amélioration 2026 |
+| `D2`  | 68.6% | 33.3% | dégradation 2026  |
+| `PL`  | 75.0% | 40.0% | dégradation 2026  |
+| `BL1` | 74.2% | 27.5% | dégradation 2026  |
+| `J1`  | 57.1% | 85.7% | amélioration 2026 |
 
 **Conclusion : les exclusions de ligue sur historique sont saisonnières.** Ajouter `D2`, `PL` ou `BL1` comme exclusions basées sur 2026 risque de sur-ajuster, car ces ligues étaient fiables en 2024. Seuls `EL1` et `EL2` sont structurellement défensifs et justifiés en exclusion permanente.
 
 ### La vraie variable manquante
 
 Le prochain levier n'est pas la ligue — c'est une combinaison de signaux stables entre saisons :
+
 - lambda total (déjà filtré à ≥ 3.1)
 - forme récente des deux équipes (attaque, pas seulement résultats)
 - profil de match : top-vs-top, domination unilatérale attendue, match retour
@@ -298,39 +299,39 @@ Probe API sur tous les vendredis, samedis et dimanches de 2026 (`156` dates, `55
 
 ### Totaux
 
-| Métrique | Top5 | Top10 |
-| --- | ---: | ---: |
+| Métrique                  |              Top5 |              Top10 |
+| ------------------------- | ----------------: | -----------------: |
 | Hit rate global (settled) | `87.3%` (89W/13L) | `80.2%` (138W/34L) |
-| Full days (100% settled) | `42 / 55` actifs | `27 / 55` actifs |
+| Full days (100% settled)  |  `42 / 55` actifs |   `27 / 55` actifs |
 
 ### Distribution hit rate top5 par jour actif
 
 | Hit rate | Jours | % des actifs |
-| --- | ---: | ---: |
-| **100%** | `42` | **76%** |
-| 80-99% | `4` | 7% |
-| 60-79% | `0` | 0% |
-| < 60% | `9` | 16% |
+| -------- | ----: | -----------: |
+| **100%** |  `42` |      **76%** |
+| 80-99%   |   `4` |           7% |
+| 60-79%   |   `0` |           0% |
+| < 60%    |   `9` |          16% |
 
 Le profil est **bimodal** : soit la journée est parfaite (100%), soit elle est mauvaise (<60%). Pas de journée médiocre intermédiaire. Le système gagne ou perd, sans dégradation progressive.
 
 ### Par jour de semaine
 
-| Jour | Actifs | Full days (100%) | Hit rate |
-| --- | ---: | ---: | ---: |
-| Vendredi | 13/52 | — | 89.5% |
-| Samedi | 21/52 | — | 85.7% |
-| Dimanche | 21/52 | — | 87.8% |
+| Jour     | Actifs | Full days (100%) | Hit rate |
+| -------- | -----: | ---------------: | -------: |
+| Vendredi |  13/52 |                — |    89.5% |
+| Samedi   |  21/52 |                — |    85.7% |
+| Dimanche |  21/52 |                — |    87.8% |
 
 ### Par canal (top5 weekend)
 
-| Canal | W | L | Hit rate |
-| --- | ---: | ---: | ---: |
-| `SAFE_UNDER45` | `8` | `0` | `100%` |
-| `SAFE_UNDER35` | `22` | `1` | `95.7%` |
-| `SAFE_HT_OVER05` | `13` | `1` | `92.9%` |
-| `SAFE_OVER15` | `9` | `1` | `90.0%` |
-| `BTTS_YES` | `37` | `10` | `78.7%` |
+| Canal            |    W |    L | Hit rate |
+| ---------------- | ---: | ---: | -------: |
+| `SAFE_UNDER45`   |  `8` |  `0` |   `100%` |
+| `SAFE_UNDER35`   | `22` |  `1` |  `95.7%` |
+| `SAFE_HT_OVER05` | `13` |  `1` |  `92.9%` |
+| `SAFE_OVER15`    |  `9` |  `1` |  `90.0%` |
+| `BTTS_YES`       | `37` | `10` |  `78.7%` |
 
 ### Lecture produit
 
@@ -355,47 +356,48 @@ Rapport complet : `apps/backend/reports/weekend-probe-2026.json` / `.txt`
 
 ### Garde-fous ajoutés
 
-| Canal | Règle ajoutée | Signal data |
-| --- | --- | --- |
-| `BTTS_YES` | exclusion `EL1`, `EL2` | 57% et 67% de perte sur ces ligues |
-| `BTTS_YES` | `minLambda: 3.1` | bucket `2.80-3.09` à 38.8% de perte |
-| `BTTS_YES` | `minProbability` relevé 0.55 → 0.60 | bucket `<60%` à 35.2% de perte |
-| `BTTS_YES` | suppression boost `ERD` (déjà exclu) | cohérence |
-| `SAFE_OVER15` | exclusion `EL1` | 66.7% de perte sur EL1 |
-| `SAFE_HT_OVER05` | exclusion `EL1` | 40% de perte sur EL1 |
+| Canal            | Règle ajoutée                        | Signal data                         |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| `BTTS_YES`       | exclusion `EL1`, `EL2`               | 57% et 67% de perte sur ces ligues  |
+| `BTTS_YES`       | `minLambda: 3.1`                     | bucket `2.80-3.09` à 38.8% de perte |
+| `BTTS_YES`       | `minProbability` relevé 0.55 → 0.60  | bucket `<60%` à 35.2% de perte      |
+| `BTTS_YES`       | suppression boost `ERD` (déjà exclu) | cohérence                           |
+| `SAFE_OVER15`    | exclusion `EL1`                      | 66.7% de perte sur EL1              |
+| `SAFE_HT_OVER05` | exclusion `EL1`                      | 40% de perte sur EL1                |
 
 Clé de cache montée à `investment:v6:{date}`.
 
 ### Résultats calendrier 2026 après itération 2
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| candidats virtuels | `276` | `214` | `62` | `77.5%` |
-| top 5 quotidien | `187` | `152` | `35` | `81.3%` |
-| top 10 quotidien | `228` | `182` | `46` | `79.8%` |
+| Groupe             | Total |     W |    L | Hit rate |
+| ------------------ | ----: | ----: | ---: | -------: |
+| candidats virtuels | `276` | `214` | `62` |  `77.5%` |
+| top 5 quotidien    | `187` | `152` | `35` |  `81.3%` |
+| top 10 quotidien   | `228` | `182` | `46` |  `79.8%` |
 
 Comparaison top 5 avant / après :
 
-| Version | Top 5 W | Top 5 L | Hit rate |
-| --- | ---: | ---: | ---: |
-| itération 1 (garde-fous initiaux) | `185` | `67` | `73.4%` |
-| itération 2 (nouveaux garde-fous) | `152` | `35` | `81.3%` |
+| Version                           | Top 5 W | Top 5 L | Hit rate |
+| --------------------------------- | ------: | ------: | -------: |
+| itération 1 (garde-fous initiaux) |   `185` |    `67` |  `73.4%` |
+| itération 2 (nouveaux garde-fous) |   `152` |    `35` |  `81.3%` |
 
 Top 5 par canal après itération 2 :
 
-| Canal | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| `SAFE_UNDER45` | `13` | `13` | `0` | `100.0%` |
-| `SAFE_UNDER35` | `26` | `23` | `3` | `88.5%` |
-| `SAFE_OVER15` | `16` | `14` | `2` | `87.5%` |
-| `SAFE_HT_OVER05` | `16` | `14` | `2` | `87.5%` |
-| `BTTS_YES` | `116` | `88` | `28` | `75.9%` |
+| Canal            | Total |    W |    L | Hit rate |
+| ---------------- | ----: | ---: | ---: | -------: |
+| `SAFE_UNDER45`   |  `13` | `13` |  `0` | `100.0%` |
+| `SAFE_UNDER35`   |  `26` | `23` |  `3` |  `88.5%` |
+| `SAFE_OVER15`    |  `16` | `14` |  `2` |  `87.5%` |
+| `SAFE_HT_OVER05` |  `16` | `14` |  `2` |  `87.5%` |
+| `BTTS_YES`       | `116` | `88` | `28` |  `75.9%` |
 
 Pertes top 5 divisées par deux (`67` → `35`). Les 4 canaux hors BTTS_YES combinés : **90.3%** (65W/7L).
 
 ### Pertes restantes à surveiller
 
 `BTTS_YES` reste le canal qui tire le hit rate vers le bas. Pattern des pertes persistantes :
+
 - `BL1` : 11 pertes (27.5%) — scores `4-0`, `3-0`, `2-0`, lambda élevé mais un seul buteur
 - `SP2` : 9 pertes (29.0%)
 - `D2` : 5 pertes (33.3%)
@@ -406,6 +408,7 @@ Pertes top 5 divisées par deux (`67` → `35`). Les 4 canaux hors BTTS_YES comb
 Sans `BTTS_YES`, les 4 autres canaux font 90.3% mais ne couvrent pas assez de jours pour un top5 systématique.
 
 Options à évaluer :
+
 - Réduire `channelCapTop5` pour `BTTS_YES` de 2 → 1
 - Construire un **ultra-safe top3** séparé sans `BTTS_YES`
 - Attendre la validation multi-saisons avant de décider
@@ -416,11 +419,11 @@ Fenetre : `2025-01-01` → `2025-12-31` (12 438 fixtures analysées, 448 bets se
 
 ### Résultat
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| candidats virtuels | `527` | `334` | `193` | `63.4%` |
-| top 5 quotidien | `306` | `196` | `110` | `64.1%` |
-| top 10 quotidien | `379` | `240` | `139` | `63.3%` |
+| Groupe             | Total |     W |     L | Hit rate |
+| ------------------ | ----: | ----: | ----: | -------: |
+| candidats virtuels | `527` | `334` | `193` |  `63.4%` |
+| top 5 quotidien    | `306` | `196` | `110` |  `64.1%` |
+| top 10 quotidien   | `379` | `240` | `139` |  `63.3%` |
 
 Canaux actifs : **uniquement `BTTS_YES`**. Les 4 canaux SAFE ont produit zéro candidat.
 
@@ -436,14 +439,14 @@ Les canaux SAFE recherchent les picks granulaires. Le dataset 2025 est donc **in
 
 Le hit rate BTTS_YES tombe à 64.1% en 2025 (vs 75.9% en 2026 avec les mêmes garde-fous), avec des ligues très instables :
 
-| Ligue | Total | Hit rate |
-| --- | ---: | ---: |
-| `D2` | `54` | `51.9%` |
-| `MX1` | `11` | `45.5%` |
-| `UNL` | `8` | `50.0%` |
-| `FIN1` | `34` | `55.9%` |
-| `SUI1` | `48` | `58.3%` |
-| `SWE2` | `13` | `53.8%` |
+| Ligue  | Total | Hit rate |
+| ------ | ----: | -------: |
+| `D2`   |  `54` |  `51.9%` |
+| `MX1`  |  `11` |  `45.5%` |
+| `UNL`  |   `8` |  `50.0%` |
+| `FIN1` |  `34` |  `55.9%` |
+| `SUI1` |  `48` |  `58.3%` |
+| `SWE2` |  `13` |  `53.8%` |
 
 Conclusion : le filtre lambda ≥ 3.1 est nécessaire mais pas suffisant pour BTTS_YES sur une saison complète. Les ligues instables ci-dessus sont des candidates à l'exclusion ou à un seuil de probabilité plus élevé.
 
@@ -488,21 +491,21 @@ Rapports calendrier 2026:
 
 Resultat calendrier 2026 avec les garde-fous actuels:
 
-| Groupe | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| candidats virtuels | `622` | `402` | `220` | `64.6%` |
-| top 5 quotidien | `252` | `185` | `67` | `73.4%` |
-| top 10 quotidien | `330` | `239` | `91` | `72.4%` |
+| Groupe             | Total |     W |     L | Hit rate |
+| ------------------ | ----: | ----: | ----: | -------: |
+| candidats virtuels | `622` | `402` | `220` |  `64.6%` |
+| top 5 quotidien    | `252` | `185` |  `67` |  `73.4%` |
+| top 10 quotidien   | `330` | `239` |  `91` |  `72.4%` |
 
 Performance top 5 par canal:
 
-| Canal | Total | W | L | Hit rate |
-| --- | ---: | ---: | ---: | ---: |
-| `SAFE_UNDER45` | `13` | `13` | `0` | `100.0%` |
-| `SAFE_UNDER35` | `26` | `23` | `3` | `88.5%` |
-| `SAFE_HT_OVER05` | `17` | `14` | `3` | `82.4%` |
-| `SAFE_OVER15` | `19` | `15` | `4` | `78.9%` |
-| `BTTS_YES` | `177` | `120` | `57` | `67.8%` |
+| Canal            | Total |     W |    L | Hit rate |
+| ---------------- | ----: | ----: | ---: | -------: |
+| `SAFE_UNDER45`   |  `13` |  `13` |  `0` | `100.0%` |
+| `SAFE_UNDER35`   |  `26` |  `23` |  `3` |  `88.5%` |
+| `SAFE_HT_OVER05` |  `17` |  `14` |  `3` |  `82.4%` |
+| `SAFE_OVER15`    |  `19` |  `15` |  `4` |  `78.9%` |
+| `BTTS_YES`       | `177` | `120` | `57` |  `67.8%` |
 
 Conclusion calendrier 2026:
 

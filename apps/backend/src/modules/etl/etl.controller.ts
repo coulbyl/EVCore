@@ -385,12 +385,12 @@ export class EtlController {
     description:
       'Fetches group standings from API Football for the given competition and season, ' +
       'then upserts all entries into the `standing` table. ' +
-      'Example: POST /etl/sync/standings/WC26?season=2026',
+      'Example: POST /etl/sync/standings/WC?season=2026',
   })
-  @ApiParam({ name: 'competitionCode', example: 'WC26' })
+  @ApiParam({ name: 'competitionCode', example: 'WC' })
   @ApiOkResponse({
     schema: {
-      example: { status: 'ok', competitionCode: 'WC26', season: 2026 },
+      example: { status: 'ok', competitionCode: 'WC', season: 2026 },
     },
   })
   @ApiBadRequestResponse({

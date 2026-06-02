@@ -391,13 +391,62 @@ const COMPETITIONS = [
   },
   {
     leagueId: 1,
-    code: "WC26",
-    name: "FIFA World Cup 2026",
+    code: "WC",
+    name: "FIFA World Cup",
     country: "World",
-    isActive: false, // activer manuellement à J-7 du tournoi (11 juin 2026)
-    includeInBacktest: false,
+    isActive: true, // activer manuellement à J-7 du tournoi (11 juin 2026)
+    includeInBacktest: true, // saison 2022 disponible pour calibration Brier
     csvDivisionCode: null,
     apiSeasonOverride: 2026,
+  },
+  // --- WCQ confederation qualifiers — cross-comp stats source for national team fixtures ---
+  // isActive=true so routine ETL syncs pick them up automatically.
+  // No csvDivisionCode / no The Odds API key — stats only, no EV backtest.
+  {
+    leagueId: 31,
+    code: "WCQCA",
+    name: "World Cup Qualification - CONCACAF",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+  },
+  {
+    leagueId: 34,
+    code: "WCQSA",
+    name: "World Cup Qualification - South America",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+  },
+  {
+    leagueId: 30,
+    code: "WCQAS",
+    name: "World Cup Qualification - Asia",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+  },
+  {
+    leagueId: 29,
+    code: "WCQAF",
+    name: "World Cup Qualification - Africa",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
+    apiSeasonOverride: 2023, // Africa WCQ cycle ended in 2023
+  },
+  {
+    leagueId: 33,
+    code: "WCQOC",
+    name: "World Cup Qualification - Oceania",
+    country: "World",
+    isActive: true,
+    includeInBacktest: false,
+    csvDivisionCode: null,
   },
 ];
 

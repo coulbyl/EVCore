@@ -117,8 +117,8 @@ export function InvestissementPageClient() {
                       </EmptyMedia>
                       <EmptyTitle>Aucun pick éligible</EmptyTitle>
                       <EmptyDescription>
-                        Le moteur n&apos;a pas retenu de sélection exploitable pour
-                        cette date.
+                        Le moteur n&apos;a pas retenu de sélection exploitable
+                        pour cette date.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -141,9 +141,7 @@ export function InvestissementPageClient() {
               {data && hasAnyVirtualPicks && (
                 <section className="flex flex-col gap-6">
                   <div>
-                    <h2 className="text-base font-semibold">
-                      Canaux virtuels
-                    </h2>
+                    <h2 className="text-base font-semibold">Canaux virtuels</h2>
                   </div>
 
                   <div className="flex flex-col gap-7">

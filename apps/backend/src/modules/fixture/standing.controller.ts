@@ -56,7 +56,7 @@ export class StandingController {
 
   @Get()
   @ApiOperation({ summary: 'Get group standings for a competition and season' })
-  @ApiQuery({ name: 'competition', example: 'WC26' })
+  @ApiQuery({ name: 'competition', example: 'WC' })
   @ApiQuery({ name: 'season', example: '2026' })
   @ApiOkResponse({ description: 'Groups A–L with ranked teams.' })
   async getStandings(

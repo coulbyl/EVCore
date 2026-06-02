@@ -541,7 +541,9 @@ ${JSON.stringify(fixtures, null, 2)}`;
     };
   }
 
-  private buildVirtualOutput(virtualPicks: VirtualScoredPick[]): Pick<
+  private buildVirtualOutput(
+    virtualPicks: VirtualScoredPick[],
+  ): Pick<
     InvestmentDayDto,
     'virtualSelections' | 'virtualTop5' | 'virtualTop10'
   > {
@@ -568,9 +570,10 @@ ${JSON.stringify(fixtures, null, 2)}`;
 
     return {
       virtualSelections,
-      virtualTop5: this.selectVirtualTop(ranked, VIRTUAL_INVESTMENT_TOP_LIMITS.top5).map(
-        (pick) => this.toPickDto(pick, null),
-      ),
+      virtualTop5: this.selectVirtualTop(
+        ranked,
+        VIRTUAL_INVESTMENT_TOP_LIMITS.top5,
+      ).map((pick) => this.toPickDto(pick, null)),
       virtualTop10: this.selectVirtualTop(
         ranked,
         VIRTUAL_INVESTMENT_TOP_LIMITS.top10,
@@ -620,7 +623,10 @@ ${JSON.stringify(fixtures, null, 2)}`;
     for (const pick of picks) {
       const rule =
         VIRTUAL_INVESTMENT_RULES.find((candidate) => {
-          if (candidate.market !== pick.market || candidate.pick !== pick.pick) {
+          if (
+            candidate.market !== pick.market ||
+            candidate.pick !== pick.pick
+          ) {
             return false;
           }
           const competitionCode =
@@ -637,8 +643,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
           if (pick.probability >= candidate.maxProbability) return false;
           if (
             candidate.excludedProbabilityRanges?.some(
-              ([min, max]) =>
-                pick.probability >= min && pick.probability < max,
+              ([min, max]) => pick.probability >= min && pick.probability < max,
             )
           ) {
             return false;
@@ -663,8 +668,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
           if (
             candidate.minEvMargin !== undefined &&
             (pick.oddsSnapshot === null ||
-              pick.probability - 1 / pick.oddsSnapshot <
-                candidate.minEvMargin)
+              pick.probability - 1 / pick.oddsSnapshot < candidate.minEvMargin)
           ) {
             return false;
           }

@@ -120,7 +120,9 @@ function scoreVirtualPick(input: {
   const leagueBoost = input.rule.leagueBoosts?.[input.competitionCode] ?? 0;
   const oddsPenalty =
     input.odds === null ? 0 : Math.max(0, input.odds - 1.4) * 0.02;
-  return input.rule.prior + leagueBoost + input.probability * 0.08 - oddsPenalty;
+  return (
+    input.rule.prior + leagueBoost + input.probability * 0.08 - oddsPenalty
+  );
 }
 
 function resolveVirtualPickCorrect(input: {
@@ -441,7 +443,7 @@ export class SignalWindowService {
       FRI: 0.45,
       UNL: 0.6,
       // Conservative — recalibrate after 20+ observed matches.
-      WC26: 0.52,
+      WC: 0.52,
     };
 
     const picks: ScoredPick[] = [];

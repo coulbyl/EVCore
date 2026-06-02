@@ -185,7 +185,7 @@ export const COMPETITIONS: Competition[] = [
   },
   // ── International ───────────────────────────────────────────────────────────
   {
-    code: "WC26",
+    code: "WC",
     name: "World Cup 2026",
     nameFr: "Coupe du Monde 2026",
     country: "World",

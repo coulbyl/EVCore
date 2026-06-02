@@ -66,6 +66,9 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  isNationalTeamCompetition,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
   getSvMinProbability,
   getSvMinOdds,
   SAFE_VALUE_MIN_EV,
@@ -660,6 +663,45 @@ export class BettingEngineService {
               secondary: awayCross,
               formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
               xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            })
+          : awayCross;
+      }
+    }
+
+    // For national team competitions (WC, WCQE, UNL, …) supplement or replace
+    // in-tournament stats with qualifying / Nations League form. At tournament
+    // start there are no in-tournament stats at all, so the fallback is mandatory.
+    if (isNationalTeamCompetition(competitionCode)) {
+      const [homeCross, awayCross] = await Promise.all([
+        this.findCrossCompStats(
+          fixture.homeTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+        this.findCrossCompStats(
+          fixture.awayTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+      ]);
+
+      if (homeCross) {
+        effectiveHomeStats = homeStats
+          ? blendTeamStats({
+              primary: homeStats,
+              secondary: homeCross,
+              formWeight: NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+            })
+          : homeCross;
+      }
+      if (awayCross) {
+        effectiveAwayStats = awayStats
+          ? blendTeamStats({
+              primary: awayStats,
+              secondary: awayCross,
+              formWeight: NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
             })
           : awayCross;
       }

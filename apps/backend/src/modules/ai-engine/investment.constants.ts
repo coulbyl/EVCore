@@ -128,7 +128,7 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
     market: 'BTTS',
     pick: 'YES',
     prior: 0.655,
-    minProbability: 0.60,
+    minProbability: 0.6,
     maxProbability: 0.75,
     allowMissingOdds: true,
     minLambda: 3.1,
