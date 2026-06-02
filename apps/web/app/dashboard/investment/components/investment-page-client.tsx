@@ -22,7 +22,7 @@ import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { InvestmentIndicesDrawer } from "@/components/investment-indices-drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CANAL_ORDER } from "./canal-constants";
+import { CANAL_ORDER, VIRTUAL_CANAL_ORDER } from "./canal-constants";
 import { CanalSection } from "./canal-section";
 import { CouponCard } from "./coupon-card";
 import { SkeletonSection } from "./skeleton-section";
@@ -39,6 +39,11 @@ export function InvestissementPageClient() {
 
   const hasAnyPicks =
     data && CANAL_ORDER.some((c) => (data.selections[c]?.length ?? 0) > 0);
+  const hasAnyVirtualPicks =
+    data &&
+    VIRTUAL_CANAL_ORDER.some(
+      (c) => (data.virtualSelections?.[c]?.length ?? 0) > 0,
+    );
 
   function navigateTo(iso: string) {
     const params = new URLSearchParams({ date: iso });
@@ -112,8 +117,8 @@ export function InvestissementPageClient() {
                       </EmptyMedia>
                       <EmptyTitle>Aucun pick éligible</EmptyTitle>
                       <EmptyDescription>
-                        Le moteur n&apos;a pas retenu de sélection exploitable pour
-                        cette date.
+                        Le moteur n&apos;a pas retenu de sélection exploitable
+                        pour cette date.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -132,6 +137,25 @@ export function InvestissementPageClient() {
                   </div>
                 )}
               </section>
+
+              {data && hasAnyVirtualPicks && (
+                <section className="flex flex-col gap-6">
+                  <div>
+                    <h2 className="text-base font-semibold">Canaux virtuels</h2>
+                  </div>
+
+                  <div className="flex flex-col gap-7">
+                    {VIRTUAL_CANAL_ORDER.map((canal) => (
+                      <CanalSection
+                        key={canal}
+                        canal={canal}
+                        picks={data.virtualSelections[canal] ?? []}
+                        locale={locale}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* ── Coupons du jour ───────────────────────────────────────── */}
               <section className="flex flex-col gap-4">

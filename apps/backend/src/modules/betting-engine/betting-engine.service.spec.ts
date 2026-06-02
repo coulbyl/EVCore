@@ -898,8 +898,8 @@ describe('BettingEngineService', () => {
           features: expect.objectContaining({
             predictionSource: 'ODDS_DEVIG',
             fallbackReason: null,
-            lambdaHome: null,
-            lambdaAway: null,
+            lambdaHome: expect.any(Number),
+            lambdaAway: expect.any(Number),
             offeredBookmakers: {
               home: 'Bet365',
               draw: 'Bet365',
@@ -994,7 +994,7 @@ describe('BettingEngineService', () => {
         data: expect.objectContaining({
           decision: 'BET',
           features: expect.objectContaining({
-            predictionSource: 'FRI_ELO_REAL',
+            predictionSource: 'FRI_ELO_POISSON',
             fallbackReason: null,
             eloHome: expect.any(Number),
             eloAway: expect.any(Number),

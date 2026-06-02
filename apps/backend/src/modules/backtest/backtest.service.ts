@@ -11,9 +11,11 @@ import {
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import { FriModelService } from '@modules/betting-engine/fri-model/fri-model.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
+  MatchProbabilities,
   TeamStatsInput,
   ViablePick,
 } from '@modules/betting-engine/betting-engine.types';
@@ -52,6 +54,9 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  isNationalTeamCompetition,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
 import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
 import { getPredictionConfig } from '@modules/prediction/prediction.constants';
@@ -65,6 +70,8 @@ type FixtureForBacktest = {
   scheduledAt: Date;
   homeTeamId: string;
   awayTeamId: string;
+  homeTeam: { name: string } | null;
+  awayTeam: { name: string } | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
   homeScore: number | null;
@@ -184,6 +191,8 @@ type SafeValuePickEntry = {
 
 type BacktestAnalysisReason =
   | 'MISSING_TEAM_STATS'
+  | 'NON_SENIOR_FIXTURE'
+  | 'MISSING_ELO'
   | 'MISSING_ODDS'
   | 'BELOW_MODEL_SCORE_THRESHOLD'
   | 'NO_VIABLE_PICK'
@@ -281,7 +290,9 @@ const CONF_THRESHOLD_SCAN = [
 const DRAW_THRESHOLD_SCAN = [
   0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.45, 0.5,
 ];
-const BTTS_THRESHOLD_SCAN = [0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65, 0.7, 0.75];
+const BTTS_THRESHOLD_SCAN = [
+  0.3, 0.35, 0.4, 0.45, 0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65, 0.7, 0.75,
+];
 
 function createPredictionCandidateBuckets(): PredictionCandidateBuckets {
   return {
@@ -293,10 +304,15 @@ function createPredictionCandidateBuckets(): PredictionCandidateBuckets {
 
 @Injectable()
 export class BacktestService {
+  private readonly friModelService: FriModelService;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
-  ) {}
+    friModelService?: FriModelService,
+  ) {
+    this.friModelService = friModelService ?? new FriModelService(this.prisma);
+  }
 
   async runBacktest(
     seasonId: string,
@@ -313,7 +329,7 @@ export class BacktestService {
         status: FixtureStatus.FINISHED,
         homeScore: { not: null },
         awayScore: { not: null },
-        xgUnavailable: false,
+        ...(competitionCode === 'FRI' ? {} : { xgUnavailable: false }),
       },
       select: {
         id: true,
@@ -321,6 +337,8 @@ export class BacktestService {
         scheduledAt: true,
         homeTeamId: true,
         awayTeamId: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
         homeHtScore: true,
         awayHtScore: true,
         homeScore: true,
@@ -333,11 +351,34 @@ export class BacktestService {
     const uniqueTeamIds = [
       ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
     ];
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, uniqueTeamIds)
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
+    const pinnacleOddsByFixture =
+      competitionCode === 'FRI'
+        ? await this.loadLatestPinnacleOneXTwoOddsForFixtures(fixtures)
+        : new Map<string, FullOddsSnapshot>();
+    const friEloByFixture =
+      competitionCode === 'FRI'
+        ? await this.friModelService.loadHistoricalRatingsForFixtures(
+            fixtures.map((fixture) => ({
+              fixtureId: fixture.id,
+              scheduledAt: fixture.scheduledAt,
+              homeTeamName: fixture.homeTeam?.name ?? null,
+              awayTeamName: fixture.awayTeam?.name ?? null,
+            })),
+          )
+        : new Map();
 
     const oneXTwoPredictions: OneXTwoPrediction[] = [];
     const calibrationPoints: CalibrationPoint[] = [];
@@ -353,6 +394,244 @@ export class BacktestService {
     for (const fixture of fixtures) {
       if (fixture.homeScore === null || fixture.awayScore === null) {
         skippedCount++;
+        continue;
+      }
+
+      const actual = getOneXTwoOutcome(fixture.homeScore, fixture.awayScore);
+      const odds = oddsByFixture.get(fixture.id);
+
+      if (competitionCode === 'FRI') {
+        const friComputation = this.processFriBacktestFixture({
+          fixture,
+          seasonId,
+          competitionCode,
+          odds,
+          pinnacleOdds: pinnacleOddsByFixture.get(fixture.id) ?? null,
+          eloEntry: friEloByFixture.get(fixture.id) ?? null,
+          analysisEntries,
+        });
+        if (friComputation === null) {
+          skippedCount++;
+          continue;
+        }
+
+        const home = friComputation.probabilities.home.toNumber();
+        const draw = friComputation.probabilities.draw.toNumber();
+        const away = friComputation.probabilities.away.toNumber();
+
+        oneXTwoPredictions.push({ home, draw, away, actual });
+        calibrationPoints.push(
+          { prob: home, actual: actual === 'HOME' ? 1 : 0 },
+          { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
+          { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
+        );
+        appendPredictionCandidates({
+          buckets: predictionCandidates,
+          probabilities: friComputation.probabilities,
+          drawOdds: odds?.drawOdds ?? null,
+          actual,
+          score: {
+            home: fixture.homeScore,
+            away: fixture.awayScore,
+          },
+        });
+        analyzedCount++;
+
+        if (!odds) {
+          analysisEntries.push(
+            buildAnalysisEntry({
+              seasonId,
+              competitionCode,
+              fixture,
+              actualOutcome: actual,
+              reason: 'MISSING_ODDS',
+              homeStatsAvailable: true,
+              awayStatsAvailable: true,
+              oddsAvailable: false,
+              deterministicScore: friComputation.deterministicScore,
+            }),
+          );
+          continue;
+        }
+
+        const modelScoreThreshold =
+          options.gridSearchOverrides?.modelScoreThreshold ??
+          getModelScoreThreshold(competitionCode ?? null);
+        if (friComputation.deterministicScore.lessThan(modelScoreThreshold)) {
+          analysisEntries.push(
+            buildAnalysisEntry({
+              seasonId,
+              competitionCode,
+              fixture,
+              actualOutcome: actual,
+              reason: 'BELOW_MODEL_SCORE_THRESHOLD',
+              homeStatsAvailable: true,
+              awayStatsAvailable: true,
+              oddsAvailable: true,
+              deterministicScore: friComputation.deterministicScore,
+              modelScoreThreshold,
+              bookmaker: odds.bookmaker,
+              oddsSnapshotAt: odds.snapshotAt,
+            }),
+          );
+          continue;
+        }
+
+        const lambdaFloorHit =
+          friComputation.lambda.home <= Number.EPSILON + 0.05 ||
+          friComputation.lambda.away <= Number.EPSILON + 0.05;
+        const pick = this.bettingEngine.selectBestViablePickForBacktest({
+          probabilities: friComputation.probabilities,
+          odds,
+          deterministicScore: friComputation.deterministicScore,
+          distHome: friComputation.distHome,
+          distAway: friComputation.distAway,
+          lambdaFloorHit,
+          competitionCode,
+          minEv: options.gridSearchOverrides?.evFloor,
+        });
+
+        if (!pick) {
+          const evaluatedPicks =
+            this.bettingEngine.listEvaluatedPicksForBacktest({
+              probabilities: friComputation.probabilities,
+              odds,
+              deterministicScore: friComputation.deterministicScore,
+              distHome: friComputation.distHome,
+              distAway: friComputation.distAway,
+              lambdaFloorHit,
+              competitionCode: competitionCode ?? null,
+              minEv: options.gridSearchOverrides?.evFloor,
+            });
+          analysisEntries.push(
+            buildAnalysisEntry({
+              seasonId,
+              competitionCode,
+              fixture,
+              actualOutcome: actual,
+              reason: 'NO_VIABLE_PICK',
+              homeStatsAvailable: true,
+              awayStatsAvailable: true,
+              oddsAvailable: true,
+              deterministicScore: friComputation.deterministicScore,
+              modelScoreThreshold,
+              bookmaker: odds.bookmaker,
+              oddsSnapshotAt: odds.snapshotAt,
+              rejectionSummary: buildRejectionSummary(evaluatedPicks),
+              topRejectedCandidates: buildTopRejectedCandidates(
+                fixture,
+                evaluatedPicks,
+              ),
+            }),
+          );
+          continue;
+        }
+
+        const simulation = simulatePick(fixture, pick);
+        if (!simulation.placed) {
+          analysisEntries.push(
+            buildAnalysisEntry({
+              seasonId,
+              competitionCode,
+              fixture,
+              actualOutcome: actual,
+              reason: 'SIMULATION_NOT_PLACED',
+              homeStatsAvailable: true,
+              awayStatsAvailable: true,
+              oddsAvailable: true,
+              deterministicScore: friComputation.deterministicScore,
+              modelScoreThreshold,
+              bookmaker: odds.bookmaker,
+              oddsSnapshotAt: odds.snapshotAt,
+              market: pick.market,
+              pick: pick.pick,
+              oddsValue: pick.odds,
+              ev: simulation.ev,
+              qualityScore: pick.qualityScore,
+            }),
+          );
+          continue;
+        }
+
+        analysisEntries.push(
+          buildAnalysisEntry({
+            seasonId,
+            competitionCode,
+            fixture,
+            actualOutcome: actual,
+            reason: 'BET_PLACED',
+            homeStatsAvailable: true,
+            awayStatsAvailable: true,
+            oddsAvailable: true,
+            deterministicScore: friComputation.deterministicScore,
+            modelScoreThreshold,
+            bookmaker: odds.bookmaker,
+            oddsSnapshotAt: odds.snapshotAt,
+            market: pick.market,
+            pick: pick.pick,
+            oddsValue: pick.odds,
+            ev: simulation.ev,
+            qualityScore: pick.qualityScore,
+            result: simulation.result,
+            profit: simulation.profit,
+          }),
+        );
+
+        roiProfit = roiProfit.plus(simulation.profit);
+        if (!simulation.voided) {
+          roiStake = roiStake.plus(1);
+        }
+        evTotal = evTotal.plus(simulation.ev);
+        evCount++;
+
+        const stats = getOrCreateMarketAccumulator(marketStats, pick.market);
+        stats.betsPlaced++;
+        if (!simulation.voided) {
+          stats.stake = stats.stake.plus(1);
+        }
+        stats.profit = stats.profit.plus(simulation.profit);
+        stats.oddsTotal = stats.oddsTotal.plus(pick.odds);
+        stats.evTotal = stats.evTotal.plus(simulation.ev);
+        if (simulation.result === 'WIN') stats.wins++;
+        if (simulation.result === 'LOSS') stats.losses++;
+        if (simulation.result === 'VOID') stats.voids++;
+
+        stats.equity = stats.equity.plus(simulation.profit);
+        if (stats.equity.greaterThan(stats.equityPeak)) {
+          stats.equityPeak = stats.equity;
+        }
+        const drawdown = stats.equityPeak.minus(stats.equity);
+        if (drawdown.greaterThan(stats.maxDrawdown)) {
+          stats.maxDrawdown = drawdown;
+        }
+
+        const pickStats = getOrCreatePickAccumulator(stats.picks, pick.pick);
+        pickStats.betsPlaced++;
+        if (!simulation.voided) {
+          pickStats.stake = pickStats.stake.plus(1);
+        }
+        pickStats.profit = pickStats.profit.plus(simulation.profit);
+        pickStats.oddsTotal = pickStats.oddsTotal.plus(pick.odds);
+        pickStats.evTotal = pickStats.evTotal.plus(simulation.ev);
+        if (simulation.result === 'WIN') pickStats.wins++;
+        if (simulation.result === 'LOSS') pickStats.losses++;
+        if (simulation.result === 'VOID') pickStats.voids++;
+
+        const oddsBucket = getOddsBucketLabel(pick.odds);
+        const bucketStats = getOrCreateBucketAccumulator(
+          stats.buckets,
+          oddsBucket,
+        );
+        bucketStats.betsPlaced++;
+        if (!simulation.voided) {
+          bucketStats.stake = bucketStats.stake.plus(1);
+        }
+        bucketStats.profit = bucketStats.profit.plus(simulation.profit);
+        bucketStats.oddsTotal = bucketStats.oddsTotal.plus(pick.odds);
+        bucketStats.evTotal = bucketStats.evTotal.plus(simulation.ev);
+        if (simulation.result === 'WIN') bucketStats.wins++;
+        if (simulation.result === 'LOSS') bucketStats.losses++;
+        if (simulation.result === 'VOID') bucketStats.voids++;
         continue;
       }
 
@@ -384,8 +663,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         }
         return homeStatsRaw;
@@ -397,8 +676,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         }
         return awayStatsRaw;
@@ -427,8 +706,6 @@ export class BacktestService {
         undefined,
         competitionCode,
       );
-      const actual = getOneXTwoOutcome(fixture.homeScore, fixture.awayScore);
-
       const home = computed.probabilities.home.toNumber();
       const draw = computed.probabilities.draw.toNumber();
       const away = computed.probabilities.away.toNumber();
@@ -439,7 +716,6 @@ export class BacktestService {
         { prob: draw, actual: actual === 'DRAW' ? 1 : 0 },
         { prob: away, actual: actual === 'AWAY' ? 1 : 0 },
       );
-      const odds = oddsByFixture.get(fixture.id);
       appendPredictionCandidates({
         buckets: predictionCandidates,
         probabilities: computed.probabilities,
@@ -1096,6 +1372,125 @@ export class BacktestService {
     return latest;
   }
 
+  private async loadLatestPinnacleOneXTwoOddsForFixtures(
+    fixtures: FixtureForBacktest[],
+  ): Promise<Map<string, FullOddsSnapshot>> {
+    if (fixtures.length === 0) {
+      return new Map<string, FullOddsSnapshot>();
+    }
+
+    const fixtureIds = fixtures.map((fixture) => fixture.id);
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId: { in: fixtureIds },
+        market: Market.ONE_X_TWO,
+        bookmaker: 'Pinnacle',
+      },
+      select: {
+        fixtureId: true,
+        bookmaker: true,
+        snapshotAt: true,
+        homeOdds: true,
+        drawOdds: true,
+        awayOdds: true,
+      },
+      orderBy: [{ fixtureId: 'asc' }, { snapshotAt: 'desc' }],
+    });
+
+    const latest = new Map<string, FullOddsSnapshot>();
+    for (const row of rows) {
+      if (
+        latest.has(row.fixtureId) ||
+        row.homeOdds === null ||
+        row.drawOdds === null ||
+        row.awayOdds === null
+      ) {
+        continue;
+      }
+
+      latest.set(row.fixtureId, {
+        bookmaker: row.bookmaker,
+        snapshotAt: row.snapshotAt,
+        homeOdds: row.homeOdds,
+        drawOdds: row.drawOdds,
+        awayOdds: row.awayOdds,
+        overUnderOdds: {},
+        bttsYesOdds: null,
+        bttsNoOdds: null,
+        htftOdds: {},
+        ouHtOdds: {},
+        firstHalfWinnerOdds: null,
+        doubleChanceOdds: null,
+      });
+    }
+
+    return latest;
+  }
+
+  private processFriBacktestFixture(input: {
+    fixture: FixtureForBacktest;
+    seasonId: string;
+    competitionCode: string | undefined;
+    odds: FullOddsSnapshot | undefined;
+    pinnacleOdds: FullOddsSnapshot | null;
+    eloEntry: {
+      home: number | null;
+      away: number | null;
+      snapshotAt: Date | null;
+    } | null;
+    analysisEntries: BacktestAnalysisEntry[];
+  }): {
+    probabilities: MatchProbabilities;
+    deterministicScore: Decimal;
+    lambda: { home: number; away: number };
+    distHome: number[];
+    distAway: number[];
+  } | null {
+    const { fixture, seasonId, competitionCode, odds, pinnacleOdds, eloEntry } =
+      input;
+    const computation = this.friModelService.analyzeHistoricalFixture(
+      {
+        fixtureId: fixture.id,
+        scheduledAt: fixture.scheduledAt,
+        competitionCode: competitionCode ?? null,
+        homeTeamName: fixture.homeTeam?.name ?? null,
+        awayTeamName: fixture.awayTeam?.name ?? null,
+        hasMarketOdds: odds !== undefined,
+        pinnacleOdds,
+      },
+      eloEntry,
+    );
+
+    if (computation.probabilities !== null) {
+      return {
+        probabilities: computation.probabilities,
+        deterministicScore: computation.deterministicScore,
+        lambda: computation.lambda ?? { home: 0.05, away: 0.05 },
+        distHome: computation.distHome,
+        distAway: computation.distAway,
+      };
+    }
+
+    const reason =
+      computation.metadata.fallbackReason === 'non_senior_fixture'
+        ? 'NON_SENIOR_FIXTURE'
+        : 'MISSING_ELO';
+    input.analysisEntries.push(
+      buildAnalysisEntry({
+        seasonId,
+        competitionCode,
+        fixture,
+        actualOutcome: null,
+        reason,
+        homeStatsAvailable: true,
+        awayStatsAvailable: true,
+        oddsAvailable: odds !== undefined,
+      }),
+    );
+
+    return null;
+  }
+
   private async writeBacktestAnalysisLog(
     entries: BacktestAnalysisEntry[],
     metadata: Record<string, number | string | null>,
@@ -1302,6 +1697,8 @@ export class BacktestService {
         scheduledAt: true,
         homeTeamId: true,
         awayTeamId: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
         homeHtScore: true,
         awayHtScore: true,
         homeScore: true,
@@ -1311,11 +1708,19 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, [
-          ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
-        ])
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, [
+            ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+          ])
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -1352,8 +1757,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return homeStatsRaw;
       })();
@@ -1363,8 +1768,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return awayStatsRaw;
       })();
@@ -1491,6 +1896,8 @@ export class BacktestService {
         scheduledAt: true,
         homeTeamId: true,
         awayTeamId: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
         homeHtScore: true,
         awayHtScore: true,
         homeScore: true,
@@ -1500,11 +1907,19 @@ export class BacktestService {
     });
 
     const teamStatsByTeam = await this.loadTeamStatsIndexForSeason(seasonId);
-    const crossCompStatsByTeam = isEuropeanCompetition(competitionCode)
-      ? await this.loadCrossCompStatsIndex(seasonId, [
-          ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
-        ])
-      : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompStatsByTeam =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode)
+        ? await this.loadCrossCompStatsIndex(seasonId, [
+            ...new Set(fixtures.flatMap((f) => [f.homeTeamId, f.awayTeamId])),
+          ])
+        : new Map<string, TeamStatsIndexEntry[]>();
+    const crossCompFormWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT
+      : EUROPEAN_CROSS_COMP_FORM_WEIGHT;
+    const crossCompXgWeight = isNationalTeamCompetition(competitionCode)
+      ? NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT
+      : EUROPEAN_CROSS_COMP_XG_WEIGHT;
     const oddsByFixture =
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
@@ -1554,8 +1969,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: homeStatsRaw,
             secondary: homeCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return homeStatsRaw;
       })();
@@ -1565,8 +1980,8 @@ export class BacktestService {
           return blendTeamStats({
             primary: awayStatsRaw,
             secondary: awayCross,
-            formWeight: EUROPEAN_CROSS_COMP_FORM_WEIGHT,
-            xgWeight: EUROPEAN_CROSS_COMP_XG_WEIGHT,
+            formWeight: crossCompFormWeight,
+            xgWeight: crossCompXgWeight,
           });
         return awayStatsRaw;
       })();

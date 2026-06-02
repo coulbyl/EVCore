@@ -1,0 +1,182 @@
+Virtual channel loss audit
+Generated at: 2026-06-01T17:48:37.005Z
+Range: 2026-01-01 -> 2026-12-31
+
+Totals
+- picks audited: 228
+- wins: 182
+- losses: 46
+- top5 losses: 35/187
+- top10 losses: 46/228
+
+Loss patterns by channel
+- BTTS_YES: total=146, W=110, L=36, lossRate=24.7%, avgP=63.2%, avgOdds=n/a, avgLambda=3.28
+- SAFE_UNDER35: total=31, W=26, L=5, lossRate=16.1%, avgP=74.0%, avgOdds=1.50, avgLambda=2.58
+- SAFE_HT_OVER05: total=17, W=15, L=2, lossRate=11.8%, avgP=77.9%, avgOdds=1.37, avgLambda=3.03
+- SAFE_OVER15: total=19, W=17, L=2, lossRate=10.5%, avgP=79.9%, avgOdds=1.36, avgLambda=3.00
+- SAFE_UNDER45: total=15, W=14, L=1, lossRate=6.7%, avgP=86.0%, avgOdds=1.30, avgLambda=2.70
+
+Loss patterns by channel/league
+- BTTS_YES/BL1: total=40, W=29, L=11, lossRate=27.5%, avgP=63.4%, avgOdds=n/a, avgLambda=3.29
+- BTTS_YES/SP2: total=31, W=22, L=9, lossRate=29.0%, avgP=63.7%, avgOdds=n/a, avgLambda=3.32
+- BTTS_YES/D2: total=15, W=10, L=5, lossRate=33.3%, avgP=62.5%, avgOdds=n/a, avgLambda=3.21
+- BTTS_YES/UCL: total=21, W=17, L=4, lossRate=19.0%, avgP=63.2%, avgOdds=n/a, avgLambda=3.24
+- BTTS_YES/SUI1: total=16, W=13, L=3, lossRate=18.8%, avgP=62.8%, avgOdds=n/a, avgLambda=3.32
+- BTTS_YES/PL: total=5, W=3, L=2, lossRate=40.0%, avgP=62.3%, avgOdds=n/a, avgLambda=3.16
+- BTTS_YES/CZE1: total=1, W=0, L=1, lossRate=100.0%, avgP=62.1%, avgOdds=n/a, avgLambda=3.10
+- SAFE_UNDER35/EL1: total=1, W=0, L=1, lossRate=100.0%, avgP=71.6%, avgOdds=1.41, avgLambda=2.69
+- SAFE_OVER15/UECL: total=1, W=0, L=1, lossRate=100.0%, avgP=77.7%, avgOdds=1.36, avgLambda=2.85
+- SAFE_UNDER35/D2: total=1, W=0, L=1, lossRate=100.0%, avgP=69.5%, avgOdds=1.70, avgLambda=2.78
+- SAFE_UNDER35/MLS: total=1, W=0, L=1, lossRate=100.0%, avgP=71.9%, avgOdds=1.60, avgLambda=2.68
+- SAFE_UNDER45/ERD: total=1, W=0, L=1, lossRate=100.0%, avgP=82.2%, avgOdds=1.35, avgLambda=2.96
+- SAFE_UNDER35/LL: total=2, W=1, L=1, lossRate=50.0%, avgP=68.1%, avgOdds=1.63, avgLambda=2.85
+- BTTS_YES/UEL: total=3, W=2, L=1, lossRate=33.3%, avgP=62.0%, avgOdds=n/a, avgLambda=3.18
+- SAFE_HT_OVER05/EL2: total=3, W=2, L=1, lossRate=33.3%, avgP=77.0%, avgOdds=1.36, avgLambda=2.94
+- SAFE_HT_OVER05/J1: total=3, W=2, L=1, lossRate=33.3%, avgP=78.8%, avgOdds=1.37, avgLambda=3.12
+- SAFE_OVER15/SP2: total=5, W=4, L=1, lossRate=20.0%, avgP=79.8%, avgOdds=1.35, avgLambda=2.99
+- SAFE_UNDER35/SA: total=5, W=4, L=1, lossRate=20.0%, avgP=77.1%, avgOdds=1.47, avgLambda=2.44
+
+Loss patterns by probability bucket
+- BTTS_YES/60-64%: total=141, W=105, L=36, lossRate=25.5%, avgP=62.9%, avgOdds=n/a, avgLambda=3.26
+- SAFE_UNDER35/65-69%: total=6, W=4, L=2, lossRate=33.3%, avgP=69.0%, avgOdds=1.61, avgLambda=2.81
+- SAFE_UNDER35/70-74%: total=18, W=16, L=2, lossRate=11.1%, avgP=72.8%, avgOdds=1.49, avgLambda=2.64
+- SAFE_HT_OVER05/80%+: total=3, W=2, L=1, lossRate=33.3%, avgP=80.8%, avgOdds=1.33, avgLambda=3.30
+- SAFE_UNDER35/80%+: total=7, W=6, L=1, lossRate=14.3%, avgP=81.6%, avgOdds=1.41, avgLambda=2.22
+- SAFE_OVER15/80%+: total=7, W=6, L=1, lossRate=14.3%, avgP=82.3%, avgOdds=1.31, avgLambda=3.16
+- SAFE_OVER15/75-79%: total=12, W=11, L=1, lossRate=8.3%, avgP=78.5%, avgOdds=1.39, avgLambda=2.90
+- SAFE_UNDER45/80%+: total=13, W=12, L=1, lossRate=7.7%, avgP=87.0%, avgOdds=1.28, avgLambda=2.64
+- SAFE_HT_OVER05/75-79%: total=14, W=13, L=1, lossRate=7.1%, avgP=77.3%, avgOdds=1.38, avgLambda=2.97
+- BTTS_YES/70-74%: total=5, W=5, L=0, lossRate=0.0%, avgP=71.4%, avgOdds=n/a, avgLambda=3.79
+- SAFE_UNDER45/75-79%: total=2, W=2, L=0, lossRate=0.0%, avgP=79.6%, avgOdds=1.44, avgLambda=3.11
+
+Loss patterns by odds bucket
+- BTTS_YES/unknown: total=146, W=110, L=36, lossRate=24.7%, avgP=63.2%, avgOdds=n/a, avgLambda=3.28
+- SAFE_UNDER35/1.50-1.79: total=15, W=12, L=3, lossRate=20.0%, avgP=71.2%, avgOdds=1.58, avgLambda=2.71
+- SAFE_HT_OVER05/1.30-1.39: total=11, W=9, L=2, lossRate=18.2%, avgP=79.0%, avgOdds=1.35, avgLambda=3.13
+- SAFE_OVER15/1.30-1.39: total=12, W=10, L=2, lossRate=16.7%, avgP=79.5%, avgOdds=1.35, avgLambda=2.96
+- SAFE_UNDER45/1.30-1.39: total=3, W=2, L=1, lossRate=33.3%, avgP=85.5%, avgOdds=1.33, avgLambda=2.73
+- SAFE_UNDER35/1.30-1.39: total=5, W=4, L=1, lossRate=20.0%, avgP=80.5%, avgOdds=1.34, avgLambda=2.27
+- SAFE_UNDER35/1.40-1.49: total=11, W=10, L=1, lossRate=9.1%, avgP=74.9%, avgOdds=1.46, avgLambda=2.54
+- SAFE_OVER15/1.40-1.49: total=4, W=4, L=0, lossRate=0.0%, avgP=78.1%, avgOdds=1.44, avgLambda=2.87
+- SAFE_HT_OVER05/1.40-1.49: total=6, W=6, L=0, lossRate=0.0%, avgP=76.0%, avgOdds=1.42, avgLambda=2.85
+- SAFE_OVER15/<1.30: total=3, W=3, L=0, lossRate=0.0%, avgP=83.9%, avgOdds=1.29, avgLambda=3.29
+- SAFE_UNDER45/<1.30: total=8, W=8, L=0, lossRate=0.0%, avgP=87.9%, avgOdds=1.22, avgLambda=2.58
+- SAFE_UNDER45/1.40-1.49: total=4, W=4, L=0, lossRate=0.0%, avgP=82.6%, avgOdds=1.45, avgLambda=2.92
+
+Loss patterns by lambda bucket
+- BTTS_YES/3.10-3.39: total=119, W=89, L=30, lossRate=25.2%, avgP=62.9%, avgOdds=n/a, avgLambda=3.22
+- BTTS_YES/3.40+: total=27, W=21, L=6, lossRate=22.2%, avgP=64.7%, avgOdds=n/a, avgLambda=3.56
+- SAFE_UNDER35/2.40-2.79: total=21, W=18, L=3, lossRate=14.3%, avgP=72.3%, avgOdds=1.51, avgLambda=2.66
+- SAFE_OVER15/2.80-3.09: total=14, W=12, L=2, lossRate=14.3%, avgP=79.2%, avgOdds=1.37, avgLambda=2.94
+- SAFE_UNDER35/2.80-3.09: total=3, W=2, L=1, lossRate=33.3%, avgP=68.4%, avgOdds=1.64, avgLambda=2.84
+- SAFE_UNDER45/2.80-3.09: total=5, W=4, L=1, lossRate=20.0%, avgP=83.1%, avgOdds=1.34, avgLambda=2.90
+- SAFE_HT_OVER05/3.10-3.39: total=6, W=5, L=1, lossRate=16.7%, avgP=80.2%, avgOdds=1.33, avgLambda=3.24
+- SAFE_UNDER35/2.00-2.39: total=7, W=6, L=1, lossRate=14.3%, avgP=81.6%, avgOdds=1.41, avgLambda=2.22
+- SAFE_HT_OVER05/2.80-3.09: total=10, W=9, L=1, lossRate=10.0%, avgP=76.8%, avgOdds=1.39, avgLambda=2.93
+- SAFE_HT_OVER05/2.40-2.79: total=1, W=1, L=0, lossRate=0.0%, avgP=75.1%, avgOdds=1.43, avgLambda=2.78
+- SAFE_OVER15/3.10-3.39: total=4, W=4, L=0, lossRate=0.0%, avgP=83.5%, avgOdds=1.29, avgLambda=3.25
+- SAFE_UNDER45/2.40-2.79: total=6, W=6, L=0, lossRate=0.0%, avgP=88.8%, avgOdds=1.24, avgLambda=2.52
+- SAFE_UNDER45/3.10-3.39: total=2, W=2, L=0, lossRate=0.0%, avgP=79.6%, avgOdds=1.44, avgLambda=3.11
+- SAFE_UNDER45/2.00-2.39: total=2, W=2, L=0, lossRate=0.0%, avgP=91.2%, avgOdds=1.25, avgLambda=2.34
+- SAFE_OVER15/2.40-2.79: total=1, W=1, L=0, lossRate=0.0%, avgP=75.7%, avgOdds=1.47, avgLambda=2.73
+
+Loss patterns by EV margin
+- BTTS_YES/no_odds: total=146, W=110, L=36, lossRate=24.7%, avgP=63.2%, avgOdds=n/a, avgLambda=3.28
+- SAFE_UNDER35/wide_7pp+: total=12, W=9, L=3, lossRate=25.0%, avgP=75.0%, avgOdds=1.55, avgLambda=2.53
+- SAFE_OVER15/ok_3-7pp: total=11, W=9, L=2, lossRate=18.2%, avgP=79.6%, avgOdds=1.34, avgLambda=2.97
+- SAFE_HT_OVER05/ok_3-7pp: total=16, W=14, L=2, lossRate=12.5%, avgP=78.0%, avgOdds=1.38, avgLambda=3.03
+- SAFE_UNDER35/thin_0-3pp: total=2, W=1, L=1, lossRate=50.0%, avgP=72.9%, avgOdds=1.39, avgLambda=2.63
+- SAFE_UNDER45/wide_7pp+: total=6, W=5, L=1, lossRate=16.7%, avgP=83.9%, avgOdds=1.41, avgLambda=2.83
+- SAFE_UNDER35/ok_3-7pp: total=17, W=16, L=1, lossRate=5.9%, avgP=73.5%, avgOdds=1.47, avgLambda=2.60
+- SAFE_OVER15/wide_7pp+: total=8, W=8, L=0, lossRate=0.0%, avgP=80.2%, avgOdds=1.39, avgLambda=3.02
+- SAFE_HT_OVER05/thin_0-3pp: total=1, W=1, L=0, lossRate=0.0%, avgP=77.4%, avgOdds=1.33, avgLambda=2.98
+- SAFE_UNDER45/ok_3-7pp: total=9, W=9, L=0, lossRate=0.0%, avgP=87.4%, avgOdds=1.23, avgLambda=2.61
+
+Top5 losses
+- 2026-01-14 top5 BTTS_YES Servette FC vs Lausanne (SUI1) BTTS/YES P=63.0% odds=n/a lambda=3.16 score=0 - 1
+- 2026-01-17 top5 BTTS_YES 1899 Hoffenheim vs Bayer Leverkusen (BL1) BTTS/YES P=63.2% odds=n/a lambda=3.17 score=1 - 0
+- 2026-01-24 top5 BTTS_YES 1. FC Heidenheim vs RB Leipzig (BL1) BTTS/YES P=63.9% odds=n/a lambda=3.37 score=0 - 3
+- 2026-01-25 top5 BTTS_YES Borussia Mönchengladbach vs VfB Stuttgart (BL1) BTTS/YES P=64.6% odds=n/a lambda=3.27 score=0 - 3
+- 2026-01-28 top5 BTTS_YES Club Brugge KV vs Marseille (UCL) BTTS/YES P=64.0% odds=n/a lambda=3.22 score=3 - 0
+- 2026-01-29 top5 BTTS_YES FC Midtjylland vs Dinamo Zagreb (UEL) BTTS/YES P=61.4% odds=n/a lambda=3.17 score=2 - 0
+- 2026-01-30 top5 BTTS_YES 1. FC Köln vs VfL Wolfsburg (BL1) BTTS/YES P=63.5% odds=n/a lambda=3.23 score=1 - 0
+- 2026-02-01 top5 BTTS_YES Aston Villa vs Brentford (PL) BTTS/YES P=62.9% odds=n/a lambda=3.15 score=0 - 1
+- 2026-02-07 top5 BTTS_YES SV Darmstadt 98 vs 1. FC Kaiserslautern (D2) BTTS/YES P=63.6% odds=n/a lambda=3.25 score=4 - 0
+- 2026-02-13 top5 BTTS_YES Borussia Dortmund vs FSV Mainz 05 (BL1) BTTS/YES P=62.3% odds=n/a lambda=3.49 score=4 - 0
+- 2026-02-17 top5 BTTS_YES Borussia Dortmund vs Atalanta (UCL) BTTS/YES P=63.6% odds=n/a lambda=3.22 score=2 - 0
+- 2026-02-22 top5 BTTS_YES Plzen vs Sparta Praha (CZE1) BTTS/YES P=62.1% odds=n/a lambda=3.10 score=0 - 0
+- 2026-03-05 top5 BTTS_YES FC Basel 1893 vs Grasshoppers (SUI1) BTTS/YES P=62.2% odds=n/a lambda=3.11 score=1 - 0
+- 2026-03-08 top5 BTTS_YES Las Palmas vs AD Ceuta FC (SP2) BTTS/YES P=60.7% odds=n/a lambda=3.13 score=4 - 0
+- 2026-03-14 top5 BTTS_YES Borussia Dortmund vs FC Augsburg (BL1) BTTS/YES P=64.5% odds=n/a lambda=3.45 score=2 - 0
+- 2026-03-15 top5 BTTS_YES Cordoba vs Real Sociedad II (SP2) BTTS/YES P=61.2% odds=n/a lambda=3.20 score=0 - 2
+- 2026-03-15 top5 BTTS_YES 1. FC Kaiserslautern vs Karlsruher SC (D2) BTTS/YES P=63.3% odds=n/a lambda=3.18 score=3 - 0
+- 2026-03-21 top5 BTTS_YES Cadiz vs Malaga (SP2) BTTS/YES P=60.4% odds=n/a lambda=3.17 score=0 - 3
+- 2026-03-21 top5 BTTS_YES Bayern München vs Union Berlin (BL1) BTTS/YES P=63.8% odds=n/a lambda=3.48 score=4 - 0
+- 2026-03-28 top5 BTTS_YES Malaga vs Leganes (SP2) BTTS/YES P=60.9% odds=n/a lambda=3.15 score=0 - 0
+- 2026-04-05 top5 BTTS_YES FC Schalke 04 vs Karlsruher SC (D2) BTTS/YES P=60.5% odds=n/a lambda=3.12 score=1 - 0
+- 2026-04-06 top5 BTTS_YES Sporting Gijon vs Real Sociedad II (SP2) BTTS/YES P=61.9% odds=n/a lambda=3.11 score=1 - 0
+- 2026-04-08 top5 BTTS_YES Barcelona vs Atletico Madrid (UCL) BTTS/YES P=64.9% odds=n/a lambda=3.47 score=0 - 2
+- 2026-04-08 top5 BTTS_YES Paris Saint Germain vs Liverpool (UCL) BTTS/YES P=61.8% odds=n/a lambda=3.14 score=2 - 0
+- 2026-04-10 top5 BTTS_YES AD Ceuta FC vs Real Sociedad II (SP2) BTTS/YES P=62.5% odds=n/a lambda=3.13 score=0 - 0
+- 2026-04-19 top5 SAFE_OVER15 FC Andorra vs Valladolid (SP2) OVER_UNDER/OVER_1_5 P=80.5% odds=1.36 lambda=3.03 score=1 - 0
+- 2026-04-25 top5 SAFE_HT_OVER05 Colchester vs Notts County (EL2) OVER_UNDER_HT/OVER_0_5 P=77.5% odds=1.36 lambda=2.98 score=0 - 1
+- 2026-04-29 top5 SAFE_HT_OVER05 Vissel Kobe vs Cerezo Osaka (J1) OVER_UNDER_HT/OVER_0_5 P=81.1% odds=1.34 lambda=3.33 score=0 - 0
+- 2026-04-30 top5 SAFE_OVER15 Rayo Vallecano vs Strasbourg (UECL) OVER_UNDER/OVER_1_5 P=77.7% odds=1.36 lambda=2.85 score=1 - 0
+- 2026-05-03 top5 SAFE_UNDER35 Hannover 96 vs Preußen Münster (D2) OVER_UNDER/UNDER_3_5 P=69.5% odds=1.70 lambda=2.78 score=3 - 3
+- 2026-05-10 top5 BTTS_YES Mirandes vs Eibar (SP2) BTTS/YES P=62.5% odds=n/a lambda=3.13 score=0 - 1
+- 2026-05-11 top5 SAFE_UNDER35 Napoli vs Bologna (SA) OVER_UNDER/UNDER_3_5 P=81.6% odds=1.36 lambda=2.22 score=2 - 3
+- 2026-05-14 top5 SAFE_UNDER35 FC Dallas vs Vancouver Whitecaps (MLS) OVER_UNDER/UNDER_3_5 P=71.9% odds=1.60 lambda=2.68 score=2 - 3
+- 2026-05-16 top5 BTTS_YES Werder Bremen vs Borussia Dortmund (BL1) BTTS/YES P=62.2% odds=n/a lambda=3.18 score=0 - 2
+- 2026-05-24 top5 BTTS_YES FC Andorra vs AD Ceuta FC (SP2) BTTS/YES P=64.7% odds=n/a lambda=3.65 score=0 - 2
+
+All losses
+- 2026-01-14 top5 BTTS_YES Servette FC vs Lausanne (SUI1) BTTS/YES P=63.0% odds=n/a lambda=3.16 score=0 - 1
+- 2026-01-17 top5 BTTS_YES 1899 Hoffenheim vs Bayer Leverkusen (BL1) BTTS/YES P=63.2% odds=n/a lambda=3.17 score=1 - 0
+- 2026-01-17 top10 BTTS_YES Chelsea vs Brentford (PL) BTTS/YES P=63.0% odds=n/a lambda=3.16 score=2 - 0
+- 2026-01-18 top10 BTTS_YES Holstein Kiel vs SC Paderborn 07 (D2) BTTS/YES P=60.2% odds=n/a lambda=3.12 score=2 - 0
+- 2026-01-24 top5 BTTS_YES 1. FC Heidenheim vs RB Leipzig (BL1) BTTS/YES P=63.9% odds=n/a lambda=3.37 score=0 - 3
+- 2026-01-25 top5 BTTS_YES Borussia Mönchengladbach vs VfB Stuttgart (BL1) BTTS/YES P=64.6% odds=n/a lambda=3.27 score=0 - 3
+- 2026-01-28 top5 BTTS_YES Club Brugge KV vs Marseille (UCL) BTTS/YES P=64.0% odds=n/a lambda=3.22 score=3 - 0
+- 2026-01-29 top5 BTTS_YES FC Midtjylland vs Dinamo Zagreb (UEL) BTTS/YES P=61.4% odds=n/a lambda=3.17 score=2 - 0
+- 2026-01-30 top5 BTTS_YES 1. FC Köln vs VfL Wolfsburg (BL1) BTTS/YES P=63.5% odds=n/a lambda=3.23 score=1 - 0
+- 2026-01-31 top10 BTTS_YES Eintracht Braunschweig vs Karlsruher SC (D2) BTTS/YES P=62.3% odds=n/a lambda=3.34 score=1 - 0
+- 2026-02-01 top5 BTTS_YES Aston Villa vs Brentford (PL) BTTS/YES P=62.9% odds=n/a lambda=3.15 score=0 - 1
+- 2026-02-07 top5 BTTS_YES SV Darmstadt 98 vs 1. FC Kaiserslautern (D2) BTTS/YES P=63.6% odds=n/a lambda=3.25 score=4 - 0
+- 2026-02-13 top5 BTTS_YES Borussia Dortmund vs FSV Mainz 05 (BL1) BTTS/YES P=62.3% odds=n/a lambda=3.49 score=4 - 0
+- 2026-02-14 top10 BTTS_YES 1899 Hoffenheim vs SC Freiburg (BL1) BTTS/YES P=63.6% odds=n/a lambda=3.23 score=3 - 0
+- 2026-02-17 top5 BTTS_YES Borussia Dortmund vs Atalanta (UCL) BTTS/YES P=63.6% odds=n/a lambda=3.22 score=2 - 0
+- 2026-02-22 top5 BTTS_YES Plzen vs Sparta Praha (CZE1) BTTS/YES P=62.1% odds=n/a lambda=3.10 score=0 - 0
+- 2026-03-05 top5 BTTS_YES FC Basel 1893 vs Grasshoppers (SUI1) BTTS/YES P=62.2% odds=n/a lambda=3.11 score=1 - 0
+- 2026-03-08 top5 BTTS_YES Las Palmas vs AD Ceuta FC (SP2) BTTS/YES P=60.7% odds=n/a lambda=3.13 score=4 - 0
+- 2026-03-14 top5 BTTS_YES Borussia Dortmund vs FC Augsburg (BL1) BTTS/YES P=64.5% odds=n/a lambda=3.45 score=2 - 0
+- 2026-03-15 top5 BTTS_YES Cordoba vs Real Sociedad II (SP2) BTTS/YES P=61.2% odds=n/a lambda=3.20 score=0 - 2
+- 2026-03-15 top5 BTTS_YES 1. FC Kaiserslautern vs Karlsruher SC (D2) BTTS/YES P=63.3% odds=n/a lambda=3.18 score=3 - 0
+- 2026-03-15 top10 BTTS_YES Werder Bremen vs FSV Mainz 05 (BL1) BTTS/YES P=62.5% odds=n/a lambda=3.13 score=0 - 2
+- 2026-03-21 top5 BTTS_YES Cadiz vs Malaga (SP2) BTTS/YES P=60.4% odds=n/a lambda=3.17 score=0 - 3
+- 2026-03-21 top5 BTTS_YES Bayern München vs Union Berlin (BL1) BTTS/YES P=63.8% odds=n/a lambda=3.48 score=4 - 0
+- 2026-03-22 top10 BTTS_YES FC Luzern vs Lausanne (SUI1) BTTS/YES P=63.2% odds=n/a lambda=3.47 score=4 - 0
+- 2026-03-28 top5 BTTS_YES Malaga vs Leganes (SP2) BTTS/YES P=60.9% odds=n/a lambda=3.15 score=0 - 0
+- 2026-04-05 top5 BTTS_YES FC Schalke 04 vs Karlsruher SC (D2) BTTS/YES P=60.5% odds=n/a lambda=3.12 score=1 - 0
+- 2026-04-06 top5 BTTS_YES Sporting Gijon vs Real Sociedad II (SP2) BTTS/YES P=61.9% odds=n/a lambda=3.11 score=1 - 0
+- 2026-04-08 top5 BTTS_YES Barcelona vs Atletico Madrid (UCL) BTTS/YES P=64.9% odds=n/a lambda=3.47 score=0 - 2
+- 2026-04-08 top5 BTTS_YES Paris Saint Germain vs Liverpool (UCL) BTTS/YES P=61.8% odds=n/a lambda=3.14 score=2 - 0
+- 2026-04-10 top5 BTTS_YES AD Ceuta FC vs Real Sociedad II (SP2) BTTS/YES P=62.5% odds=n/a lambda=3.13 score=0 - 0
+- 2026-04-11 top10 SAFE_UNDER35 Rotherham vs Barnsley (EL1) OVER_UNDER/UNDER_3_5 P=71.6% odds=1.41 lambda=2.69 score=1 - 3
+- 2026-04-19 top5 SAFE_OVER15 FC Andorra vs Valladolid (SP2) OVER_UNDER/OVER_1_5 P=80.5% odds=1.36 lambda=3.03 score=1 - 0
+- 2026-04-25 top5 SAFE_HT_OVER05 Colchester vs Notts County (EL2) OVER_UNDER_HT/OVER_0_5 P=77.5% odds=1.36 lambda=2.98 score=0 - 1
+- 2026-04-29 top5 SAFE_HT_OVER05 Vissel Kobe vs Cerezo Osaka (J1) OVER_UNDER_HT/OVER_0_5 P=81.1% odds=1.34 lambda=3.33 score=0 - 0
+- 2026-04-30 top5 SAFE_OVER15 Rayo Vallecano vs Strasbourg (UECL) OVER_UNDER/OVER_1_5 P=77.7% odds=1.36 lambda=2.85 score=1 - 0
+- 2026-05-02 top10 SAFE_UNDER35 Villarreal vs Levante (LL) OVER_UNDER/UNDER_3_5 P=68.0% odds=1.57 lambda=2.85 score=5 - 1
+- 2026-05-03 top5 SAFE_UNDER35 Hannover 96 vs Preußen Münster (D2) OVER_UNDER/UNDER_3_5 P=69.5% odds=1.70 lambda=2.78 score=3 - 3
+- 2026-05-03 top10 BTTS_YES Borussia Mönchengladbach vs Borussia Dortmund (BL1) BTTS/YES P=60.9% odds=n/a lambda=3.18 score=1 - 0
+- 2026-05-10 top5 BTTS_YES Mirandes vs Eibar (SP2) BTTS/YES P=62.5% odds=n/a lambda=3.13 score=0 - 1
+- 2026-05-11 top5 SAFE_UNDER35 Napoli vs Bologna (SA) OVER_UNDER/UNDER_3_5 P=81.6% odds=1.36 lambda=2.22 score=2 - 3
+- 2026-05-14 top5 SAFE_UNDER35 FC Dallas vs Vancouver Whitecaps (MLS) OVER_UNDER/UNDER_3_5 P=71.9% odds=1.60 lambda=2.68 score=2 - 3
+- 2026-05-16 top5 BTTS_YES Werder Bremen vs Borussia Dortmund (BL1) BTTS/YES P=62.2% odds=n/a lambda=3.18 score=0 - 2
+- 2026-05-17 top10 SAFE_UNDER45 AZ Alkmaar vs NAC Breda (ERD) OVER_UNDER/UNDER_4_5 P=82.2% odds=1.35 lambda=2.96 score=3 - 3
+- 2026-05-24 top5 BTTS_YES FC Andorra vs AD Ceuta FC (SP2) BTTS/YES P=64.7% odds=n/a lambda=3.65 score=0 - 2
+- 2026-05-30 top10 BTTS_YES AD Ceuta FC vs Albacete (SP2) BTTS/YES P=64.3% odds=n/a lambda=3.24 score=1 - 0
+
+Files
+- JSON: apps/backend/reports/virtual-channel-loss-audit.calendar-2026.json
+- TXT: apps/backend/reports/virtual-channel-loss-audit.calendar-2026.txt

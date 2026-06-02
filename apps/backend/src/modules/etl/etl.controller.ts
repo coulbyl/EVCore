@@ -20,6 +20,7 @@ import {
 import { EtlService } from './etl.service';
 import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
 import { OddsPrematchSyncBodyDto } from './dto/odds-prematch-sync-body.dto';
+import { AnalysisHorizonBodyDto } from './dto/analysis-horizon-body.dto';
 
 type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
@@ -172,6 +173,32 @@ export class EtlController {
   })
   getStatus() {
     return this.etlService.getQueueStatus();
+  }
+
+  // ─── Rolling horizon ──────────────────────────────────────────────────────
+
+  @Post('sync/analysis-horizon')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger rolling horizon analysis',
+    description:
+      'Enqueues odds-prematch-sync + betting-engine-analysis for a sliding window of ' +
+      'upcoming days (default J+1..J+4). Each day is processed independently; ' +
+      'J+1 is always re-run even if it was analyzed as J+2 the day before. ' +
+      'This is the manual counterpart of the ETL_ENABLE_ROLLING_HORIZON cron.',
+  })
+  @ApiBody({ type: AnalysisHorizonBodyDto, required: false })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        status: 'ok',
+        enqueuedDates: ['2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06'],
+      },
+    },
+  })
+  async triggerAnalysisHorizon(@Body() body: AnalysisHorizonBodyDto = {}) {
+    const result = await this.etlService.triggerRollingHorizonAnalysis(body);
+    return { status: 'ok' as const, ...result };
   }
 
   // ─── Full sync ────────────────────────────────────────────────────────────
@@ -385,12 +412,12 @@ export class EtlController {
     description:
       'Fetches group standings from API Football for the given competition and season, ' +
       'then upserts all entries into the `standing` table. ' +
-      'Example: POST /etl/sync/standings/WC26?season=2026',
+      'Example: POST /etl/sync/standings/WC?season=2026',
   })
-  @ApiParam({ name: 'competitionCode', example: 'WC26' })
+  @ApiParam({ name: 'competitionCode', example: 'WC' })
   @ApiOkResponse({
     schema: {
-      example: { status: 'ok', competitionCode: 'WC26', season: 2026 },
+      example: { status: 'ok', competitionCode: 'WC', season: 2026 },
     },
   })
   @ApiBadRequestResponse({

@@ -11,10 +11,13 @@ import {
   ETL_CONSTANTS,
   ETL_CRON_SCHEDULES,
   ETL_SCHEDULER_KEYS,
+  ROLLING_HORIZON_DEFAULTS,
   estimateApiFootballDailyCalls,
   getCurrentCsvSeasonCode,
   csvSeasonCodes,
 } from '../../config/etl.constants';
+import { addDays } from 'date-fns';
+import { formatDateUtc } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
@@ -23,6 +26,7 @@ import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.w
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
+import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -91,6 +95,8 @@ function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
+  private readonly rollingHorizonEnabled: boolean;
+  private readonly rollingHorizonDays: number;
   private readonly quotaAlertPct: number;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
@@ -125,12 +131,22 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
     @InjectQueue(BULLMQ_QUEUES.STANDINGS_SYNC)
     private readonly standingsSyncQueue: Queue<StandingsSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.ROLLING_HORIZON)
+    private readonly rollingHorizonQueue: Queue<RollingHorizonJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
+    this.rollingHorizonEnabled =
+      config.get<string>('ETL_ENABLE_ROLLING_HORIZON', 'false') !== 'false';
+    this.rollingHorizonDays = Number(
+      config.get<string>(
+        'ETL_ROLLING_HORIZON_DAYS',
+        String(ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS),
+      ),
+    );
     this.quotaAlertPct = Number(
       config.get<string>('API_FOOTBALL_QUOTA_ALERT_PCT', '80'),
     );
@@ -186,6 +202,10 @@ export class EtlService implements OnApplicationBootstrap {
       STANDINGS_SYNC: config.get<string>(
         'ETL_STANDINGS_SYNC_CRON',
         ETL_CRON_SCHEDULES.STANDINGS_SYNC,
+      ),
+      ROLLING_HORIZON: config.get<string>(
+        'ETL_ROLLING_HORIZON_CRON',
+        ETL_CRON_SCHEDULES.ROLLING_HORIZON,
       ),
     };
     this.leagueSeasonSyncs = {
@@ -276,6 +296,24 @@ export class EtlService implements OnApplicationBootstrap {
         data: {} satisfies BettingEngineAnalysisJobData,
       },
     );
+
+    if (this.rollingHorizonEnabled) {
+      await this.rollingHorizonQueue.upsertJobScheduler(
+        ETL_SCHEDULER_KEYS.ROLLING_HORIZON,
+        { pattern: this.cronSchedules.ROLLING_HORIZON },
+        {
+          name: 'rolling-horizon',
+          data: {
+            startOffsetDays: ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS,
+            horizonDays: this.rollingHorizonDays,
+          } satisfies RollingHorizonJobData,
+        },
+      );
+      logger.info(
+        { horizonDays: this.rollingHorizonDays },
+        'Rolling horizon scheduler registered',
+      );
+    }
 
     await this.eloSyncQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.ELO_SYNC,
@@ -642,6 +680,36 @@ export class EtlService implements OnApplicationBootstrap {
 
   async triggerInjuriesSyncForLeague(competitionCode: string): Promise<void> {
     await this.triggerLeagueSeasonSyncForLeague('injuries', competitionCode);
+  }
+
+  async triggerRollingHorizonAnalysis(options?: {
+    startOffsetDays?: number;
+    horizonDays?: number;
+  }): Promise<{ enqueuedDates: string[] }> {
+    const startOffset =
+      options?.startOffsetDays ?? ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS;
+    const horizonDays = options?.horizonDays ?? this.rollingHorizonDays;
+
+    const today = new Date();
+    const enqueuedDates = Array.from({ length: horizonDays }, (_, i) =>
+      formatDateUtc(addDays(today, startOffset + i)),
+    );
+
+    logger.info(
+      { enqueuedDates, startOffset, horizonDays },
+      'Triggering rolling horizon analysis',
+    );
+
+    await this.rollingHorizonQueue.add(
+      'rolling-horizon',
+      {
+        startOffsetDays: startOffset,
+        horizonDays,
+      } satisfies RollingHorizonJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+
+    return { enqueuedDates };
   }
 
   async triggerFullSync(): Promise<void> {

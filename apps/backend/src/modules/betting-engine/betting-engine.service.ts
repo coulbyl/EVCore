@@ -66,6 +66,9 @@ import {
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  isNationalTeamCompetition,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
   getSvMinProbability,
   getSvMinOdds,
   SAFE_VALUE_MIN_EV,
@@ -91,14 +94,12 @@ import type {
   TeamStatsInput,
   ViablePick,
 } from './betting-engine.types';
-import { isSeniorNationalTeam } from './fri-elo.utils';
+import { FriModelService } from './fri-model/fri-model.service';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
 const logger = createLogger('betting-engine-service');
 const MIN_LAMBDA = 0.05;
-const FRI_HOME_ADVANTAGE_ELO = 50;
-const FRI_DRAW_RATE = 0.22;
 
 export type BetCandidate = {
   fixtureId: string;
@@ -137,6 +138,7 @@ type AnalyzeFixtureResult =
 @Injectable()
 export class BettingEngineService {
   private readonly kellyEnabled: boolean;
+  private readonly friModelService: FriModelService;
 
   // eslint-disable-next-line max-params -- Explicit service injection keeps scoring dependencies transparent.
   constructor(
@@ -146,8 +148,10 @@ export class BettingEngineService {
     private readonly congestionService: CongestionService,
     private readonly predictionService: PredictionService,
     private readonly bankroll?: BankrollService,
+    friModelService?: FriModelService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
+    this.friModelService = friModelService ?? new FriModelService(this.prisma);
   }
 
   computeProbabilities(
@@ -211,6 +215,42 @@ export class BettingEngineService {
       new Set<Market>(),
       input.competitionCode,
       input.minEv,
+    );
+  }
+
+  selectBestOneXTwoPickForBacktest(input: {
+    probabilities: MatchProbabilities;
+    odds: FullOddsSnapshot;
+    deterministicScore: Decimal;
+    competitionCode?: string | null;
+  }): ViablePick | null {
+    const evaluated = this.listEvaluatedOneXTwoPicks(
+      input.probabilities,
+      input.odds,
+      input.deterministicScore,
+      new Set<Market>(),
+      input.competitionCode ?? null,
+    );
+
+    return (
+      evaluated.find(
+        (pick): pick is ViablePick => pick.rejectionReason === undefined,
+      ) ?? null
+    );
+  }
+
+  listEvaluatedOneXTwoPicksForBacktest(input: {
+    probabilities: MatchProbabilities;
+    odds: FullOddsSnapshot;
+    deterministicScore: Decimal;
+    competitionCode?: string | null;
+  }): EvaluatedPick[] {
+    return this.listEvaluatedOneXTwoPicks(
+      input.probabilities,
+      input.odds,
+      input.deterministicScore,
+      new Set<Market>(),
+      input.competitionCode ?? null,
     );
   }
 
@@ -665,6 +705,45 @@ export class BettingEngineService {
       }
     }
 
+    // For national team competitions (WC, WCQE, UNL, …) supplement or replace
+    // in-tournament stats with qualifying / Nations League form. At tournament
+    // start there are no in-tournament stats at all, so the fallback is mandatory.
+    if (isNationalTeamCompetition(competitionCode)) {
+      const [homeCross, awayCross] = await Promise.all([
+        this.findCrossCompStats(
+          fixture.homeTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+        this.findCrossCompStats(
+          fixture.awayTeamId,
+          fixture.scheduledAt,
+          fixture.seasonId,
+        ),
+      ]);
+
+      if (homeCross) {
+        effectiveHomeStats = homeStats
+          ? blendTeamStats({
+              primary: homeStats,
+              secondary: homeCross,
+              formWeight: NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+            })
+          : homeCross;
+      }
+      if (awayCross) {
+        effectiveAwayStats = awayStats
+          ? blendTeamStats({
+              primary: awayStats,
+              secondary: awayCross,
+              formWeight: NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+              xgWeight: NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+            })
+          : awayCross;
+      }
+    }
+
     if (!effectiveHomeStats || !effectiveAwayStats) {
       logger.info(
         {
@@ -1059,84 +1138,67 @@ export class BettingEngineService {
   }): Promise<AnalyzeFixtureResult> {
     const fixtureId = fixture.id;
     const competitionCode = getFixtureCompetitionCode(fixture);
-    const [marketOdds, pinnacleOdds, activeSuspensions, realEloSnapshot] =
-      await Promise.all([
-        this.findLatestBestOneXTwoOddsSnapshot(fixtureId, fixture.scheduledAt),
-        this.findLatestOneXTwoOddsSnapshotByBookmaker(
-          fixtureId,
-          fixture.scheduledAt,
-          'Pinnacle',
-        ),
-        this.prisma.client.marketSuspension.findMany({
-          where: { active: true },
-          select: { market: true },
-        }),
-        this.getLatestFriEloRatings(),
-      ]);
+    const [marketOdds, pinnacleOdds, activeSuspensions] = await Promise.all([
+      this.findLatestBestOneXTwoOddsSnapshot(fixtureId, fixture.scheduledAt),
+      this.findLatestOneXTwoOddsSnapshotByBookmaker(
+        fixtureId,
+        fixture.scheduledAt,
+        'Pinnacle',
+      ),
+      this.prisma.client.marketSuspension.findMany({
+        where: { active: true },
+        select: { market: true },
+      }),
+    ]);
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
     const homeTeamName = getFixtureHomeTeamName(fixture);
     const awayTeamName = getFixtureAwayTeamName(fixture);
-    const isSenior =
-      homeTeamName !== null &&
-      awayTeamName !== null &&
-      isSeniorNationalTeam(homeTeamName) &&
-      isSeniorNationalTeam(awayTeamName);
-    const eloHome =
-      isSenior && homeTeamName !== null
-        ? (realEloSnapshot.ratings.get(homeTeamName) ?? null)
-        : null;
-    const eloAway =
-      isSenior && awayTeamName !== null
-        ? (realEloSnapshot.ratings.get(awayTeamName) ?? null)
-        : null;
-
-    let predictionSource: PredictionSource | null = null;
-    let probabilities: MatchProbabilities | null = null;
-    let fallbackReason: string | null = null;
-
-    if (eloHome !== null && eloAway !== null) {
-      probabilities = eloProbabilities(eloHome, eloAway);
-      predictionSource = 'FRI_ELO_REAL';
-    } else if (pinnacleOdds !== null) {
-      probabilities = devigOneXTwoOdds(pinnacleOdds);
-      predictionSource = 'ODDS_DEVIG';
-    } else {
-      if (marketOdds === null) {
-        fallbackReason = 'missing_market_odds';
-      } else if (!isSenior) {
-        fallbackReason = 'non_senior_fixture';
-      } else if (eloHome === null || eloAway === null) {
-        fallbackReason =
-          eloHome === null && eloAway === null
-            ? 'missing_both_elo_mappings'
-            : eloHome === null
-              ? 'missing_home_elo_mapping'
-              : 'missing_away_elo_mapping';
-      } else if (pinnacleOdds === null) {
-        fallbackReason = 'missing_pinnacle_odds';
-      } else {
-        fallbackReason = 'missing_reference_probs';
-      }
-    }
-
-    const deterministicScore =
-      probabilities !== null
-        ? Decimal.max(
-            probabilities.home,
-            probabilities.draw,
-            probabilities.away,
-          )
-        : new Decimal(0);
+    const friComputation = await this.friModelService.analyzeLiveFixture({
+      fixtureId,
+      scheduledAt: fixture.scheduledAt,
+      competitionCode,
+      homeTeamName,
+      awayTeamName,
+      hasMarketOdds: marketOdds !== null,
+      pinnacleOdds,
+    });
+    const {
+      predictionSource,
+      probabilities,
+      deterministicScore,
+      lambda,
+      distHome,
+      distAway,
+      metadata: {
+        isSenior,
+        eloHome,
+        eloAway,
+        fallbackReason,
+        snapshotAt: eloSnapshotAt,
+      },
+    } = friComputation;
     const evaluatedPicks =
       marketOdds !== null && probabilities !== null
-        ? this.listEvaluatedOneXTwoPicks(
-            probabilities,
-            marketOdds.snapshot,
-            deterministicScore,
-            suspendedMarkets,
-            competitionCode,
-          )
+        ? lambda !== null
+          ? this.listEvaluatedPicks(
+              probabilities,
+              marketOdds.snapshot,
+              deterministicScore,
+              distHome,
+              distAway,
+              lambda.home <= MIN_LAMBDA + Number.EPSILON ||
+                lambda.away <= MIN_LAMBDA + Number.EPSILON,
+              suspendedMarkets,
+              competitionCode,
+            )
+          : this.listEvaluatedOneXTwoPicks(
+              probabilities,
+              marketOdds.snapshot,
+              deterministicScore,
+              suspendedMarkets,
+              competitionCode,
+            )
         : [];
     const candidatePicks = evaluatedPicks.filter(
       (pick): pick is ViablePick => pick.rejectionReason === undefined,
@@ -1163,7 +1225,7 @@ export class BettingEngineService {
           hasMarketOdds: marketOdds !== null,
           bestBookmaker: marketOdds?.offeredBy ?? null,
           hasPinnacleOdds: pinnacleOdds !== null,
-          eloSnapshotAt: realEloSnapshot.snapshotAt?.toISOString() ?? null,
+          eloSnapshotAt: eloSnapshotAt?.toISOString() ?? null,
           hasHomeElo: eloHome !== null,
           hasAwayElo: eloAway !== null,
           predictionSource,
@@ -1209,14 +1271,18 @@ export class BettingEngineService {
           eloAway,
           eloDelta:
             eloHome !== null && eloAway !== null ? eloHome - eloAway : null,
-          eloSnapshotAt: realEloSnapshot.snapshotAt?.toISOString() ?? null,
-          lambdaHome: null,
-          lambdaAway: null,
+          eloSnapshotAt: eloSnapshotAt?.toISOString() ?? null,
+          lambdaHome: lambda?.home ?? null,
+          lambdaAway: lambda?.away ?? null,
           probabilities:
             probabilities !== null
               ? mapProbabilitiesToNumber(probabilities)
               : null,
-          lambdaFloorHit: false,
+          lambdaFloorHit:
+            lambda !== null
+              ? lambda.home <= MIN_LAMBDA + Number.EPSILON ||
+                lambda.away <= MIN_LAMBDA + Number.EPSILON
+              : false,
           shadow_lineMovement: null,
           shadow_h2h: null,
           shadow_congestion: null,
@@ -1308,31 +1374,6 @@ export class BettingEngineService {
       probabilities:
         probabilities !== null ? mapProbabilitiesToNumber(probabilities) : {},
       valueBet: betCandidate,
-    };
-  }
-
-  private async getLatestFriEloRatings(): Promise<{
-    snapshotAt: Date | null;
-    ratings: Map<string, number>;
-  }> {
-    const latest = await this.prisma.client.nationalTeamEloRating.findFirst({
-      select: { snapshotAt: true },
-      orderBy: [{ snapshotAt: 'desc' }, { teamName: 'asc' }],
-    });
-
-    if (latest === null) {
-      return { snapshotAt: null, ratings: new Map<string, number>() };
-    }
-
-    const rows = await this.prisma.client.nationalTeamEloRating.findMany({
-      where: { snapshotAt: latest.snapshotAt },
-      select: { teamName: true, rating: true },
-      orderBy: { teamName: 'asc' },
-    });
-
-    return {
-      snapshotAt: latest.snapshotAt,
-      ratings: new Map(rows.map((row) => [row.teamName, row.rating])),
     };
   }
 
@@ -2635,102 +2676,6 @@ export function blendTeamStats({
     awayWinRate: secondary.awayWinRate,
     drawRate: secondary.drawRate,
     leagueVolatility: primary.leagueVolatility,
-  };
-}
-
-function devigOneXTwoOdds(odds: FullOddsSnapshot): MatchProbabilities {
-  const invHome = new Decimal(1).div(odds.homeOdds);
-  const invDraw = new Decimal(1).div(odds.drawOdds);
-  const invAway = new Decimal(1).div(odds.awayOdds);
-  const margin = invHome.plus(invDraw).plus(invAway);
-
-  const home = invHome.div(margin);
-  const draw = invDraw.div(margin);
-  const away = invAway.div(margin);
-  const zero = new Decimal(0);
-
-  return {
-    home,
-    draw,
-    away,
-    over15: zero,
-    under15: zero,
-    over25: zero,
-    under25: zero,
-    over35: zero,
-    under35: zero,
-    over45: zero,
-    under45: zero,
-    bttsYes: zero,
-    bttsNo: zero,
-    dc1X: home.plus(draw),
-    dcX2: draw.plus(away),
-    dc12: home.plus(away),
-    htft: {
-      HOME_HOME: zero,
-      HOME_DRAW: zero,
-      HOME_AWAY: zero,
-      DRAW_HOME: zero,
-      DRAW_DRAW: zero,
-      DRAW_AWAY: zero,
-      AWAY_HOME: zero,
-      AWAY_DRAW: zero,
-      AWAY_AWAY: zero,
-    },
-    ouHT: { OVER_0_5: zero, UNDER_0_5: zero, OVER_1_5: zero, UNDER_1_5: zero },
-    firstHalfWinner: { home: zero, draw: zero, away: zero },
-  };
-}
-
-function eloExpectedScore(
-  homeElo: number,
-  awayElo: number,
-  homeAdvantage = FRI_HOME_ADVANTAGE_ELO,
-): number {
-  return 1 / (10 ** (-(homeElo - awayElo + homeAdvantage) / 400) + 1);
-}
-
-function eloProbabilities(
-  homeElo: number,
-  awayElo: number,
-): MatchProbabilities {
-  const winExpectation = eloExpectedScore(homeElo, awayElo);
-  const draw = FRI_DRAW_RATE * (1 - Math.abs(2 * winExpectation - 1));
-  const home = new Decimal(winExpectation * (1 - draw));
-  const away = new Decimal((1 - winExpectation) * (1 - draw));
-  const drawProb = new Decimal(draw);
-  const zero = new Decimal(0);
-
-  return {
-    home,
-    draw: drawProb,
-    away,
-    over15: zero,
-    under15: zero,
-    over25: zero,
-    under25: zero,
-    over35: zero,
-    under35: zero,
-    over45: zero,
-    under45: zero,
-    bttsYes: zero,
-    bttsNo: zero,
-    dc1X: home.plus(drawProb),
-    dcX2: drawProb.plus(away),
-    dc12: home.plus(away),
-    htft: {
-      HOME_HOME: zero,
-      HOME_DRAW: zero,
-      HOME_AWAY: zero,
-      DRAW_HOME: zero,
-      DRAW_DRAW: zero,
-      DRAW_AWAY: zero,
-      AWAY_HOME: zero,
-      AWAY_DRAW: zero,
-      AWAY_AWAY: zero,
-    },
-    ouHT: { OVER_0_5: zero, UNDER_0_5: zero, OVER_1_5: zero, UNDER_1_5: zero },
-    firstHalfWinner: { home: zero, draw: zero, away: zero },
   };
 }
 

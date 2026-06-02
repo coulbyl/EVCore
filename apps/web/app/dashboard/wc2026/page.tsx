@@ -94,7 +94,7 @@ export default function WC2026Page() {
           {active ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
-                href="/dashboard/picks?competition=WC26"
+                href="/dashboard/picks?competition=WC"
                 className="bento-cell-interactive flex flex-col gap-2 p-4"
               >
                 <span className="inline-flex size-9 items-center justify-center rounded-xl border border-[#c9a84c]/30 bg-[#c9a84c]/10 text-lg">

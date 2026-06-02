@@ -1,7 +1,7 @@
 export const WC2026 = {
   start: new Date("2026-06-11T00:00:00Z"),
   end: new Date("2026-07-19T23:59:59Z"),
-  code: "WC26",
+  code: "WC",
 } as const;
 
 export function isWC2026Active(now = new Date()): boolean {

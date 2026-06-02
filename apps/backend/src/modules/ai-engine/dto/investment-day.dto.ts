@@ -1,4 +1,8 @@
-import type { Canal } from '../signal-window.service';
+import type {
+  InvestmentCanal,
+  InvestmentOutputCanal,
+  VirtualInvestmentCanal,
+} from '../investment.constants';
 
 export type InvestmentPickDto = {
   fixtureId: string;
@@ -9,7 +13,7 @@ export type InvestmentPickDto = {
   competition: string;
   country: string;
   scheduledAt: string;
-  canal: Canal;
+  canal: InvestmentOutputCanal;
   market: string;
   pick: string;
   probability: number;
@@ -33,7 +37,7 @@ export type InvestmentLegDto = {
   competition: string;
   country: string;
   scheduledAt: string;
-  canal: Canal;
+  canal: InvestmentOutputCanal;
   market: string;
   pick: string;
   oddsSnapshot: number | null;
@@ -57,6 +61,9 @@ export type InvestmentDayDto = {
   windowDays: number;
   isAiCurated: boolean;
   totalCandidates: number;
-  selections: Record<Canal, InvestmentPickDto[]>;
+  selections: Record<InvestmentCanal, InvestmentPickDto[]>;
+  virtualSelections: Record<VirtualInvestmentCanal, InvestmentPickDto[]>;
+  virtualTop5: InvestmentPickDto[];
+  virtualTop10: InvestmentPickDto[];
   coupons: InvestmentCouponDto[];
 };

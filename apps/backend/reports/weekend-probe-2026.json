@@ -1,0 +1,4648 @@
+[
+  {
+    "date": "2026-01-02",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-01-03",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-01-04",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Albacete",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.621,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Albacete",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.621,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-09",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-01-10",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayer Leverkusen",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6114,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "1 - 4"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayer Leverkusen",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6114,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "1 - 4"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-11",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6234,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6234,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Liga MX",
+        "homeTeam": "Santos Laguna",
+        "awayTeam": "Necaxa",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.713,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-16",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-01-17",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Preußen Münster",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6293,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Preußen Münster",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6293,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1899 Hoffenheim",
+        "awayTeam": "Bayer Leverkusen",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6321,
+        "oddsSnapshot": 1.43,
+        "isCorrect": false,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "BSC Young Boys",
+        "awayTeam": "Lausanne",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6225,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-18",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "1. FC Kaiserslautern",
+        "awayTeam": "Hannover 96",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6484,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "1. FC Kaiserslautern",
+        "awayTeam": "Hannover 96",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6484,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC Zurich",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6448,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Holstein Kiel",
+        "awayTeam": "SC Paderborn 07",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6015,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "2 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-23",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-01-24",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "1. FC Magdeburg",
+        "awayTeam": "Dynamo Dresden",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6338,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "1. FC Magdeburg",
+        "awayTeam": "Dynamo Dresden",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6338,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Sion",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6311,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SpVgg Greuther Fürth",
+        "awayTeam": "Eintracht Braunschweig",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6269,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-25",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Thun",
+        "awayTeam": "BSC Young Boys",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6317,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "4 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Thun",
+        "awayTeam": "BSC Young Boys",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6317,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "4 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Mönchengladbach",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6463,
+        "oddsSnapshot": 1.55,
+        "isCorrect": false,
+        "score": "0 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC ST. Gallen",
+        "awayTeam": "Servette FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6035,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 4"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-30",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1. FC Köln",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6353,
+        "oddsSnapshot": 1.53,
+        "isCorrect": false,
+        "score": "1 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1. FC Köln",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6353,
+        "oddsSnapshot": 1.53,
+        "isCorrect": false,
+        "score": "1 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-01-31",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Lech Poznan",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6432,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Lech Poznan",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6432,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Eintracht Braunschweig",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.623,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Eintracht Frankfurt",
+        "awayTeam": "Bayer Leverkusen",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6119,
+        "oddsSnapshot": 1.54,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-01",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6485,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "4 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6485,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "4 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Premier League",
+        "homeTeam": "Aston Villa",
+        "awayTeam": "Brentford",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6291,
+        "oddsSnapshot": 1.68,
+        "isCorrect": false,
+        "score": "0 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-06",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Preußen Münster",
+        "awayTeam": "VfL Bochum",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6297,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Preußen Münster",
+        "awayTeam": "VfL Bochum",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6297,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SpVgg Greuther Fürth",
+        "awayTeam": "1. FC Magdeburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.608,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "4 - 5"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-07",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SV Darmstadt 98",
+        "awayTeam": "1. FC Kaiserslautern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6365,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "4 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SV Darmstadt 98",
+        "awayTeam": "1. FC Kaiserslautern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6365,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SV Elversberg",
+        "awayTeam": "Hertha BSC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6238,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Sion",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6115,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-08",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC Thun",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6357,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC Thun",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6357,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1. FC Köln",
+        "awayTeam": "RB Leipzig",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6299,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Pogon Szczecin",
+        "awayTeam": "Nieciecza",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6062,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-13",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "FC Andorra",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6207,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "FC Andorra",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6207,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Dortmund",
+        "awayTeam": "FSV Mainz 05",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.623,
+        "oddsSnapshot": 1.67,
+        "isCorrect": false,
+        "score": "4 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-14",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Zurich",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6453,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 4"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Zurich",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6453,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 4"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Eintracht Braunschweig",
+        "awayTeam": "SV Darmstadt 98",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.645,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "BSC Young Boys",
+        "awayTeam": "FC Winterthur",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6316,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "6 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-15",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Motor Lublin",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6275,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Motor Lublin",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6275,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "RB Leipzig",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6449,
+        "oddsSnapshot": 1.52,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-20",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "FSV Mainz 05",
+        "awayTeam": "Hamburger SV",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6277,
+        "oddsSnapshot": 1.64,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "FSV Mainz 05",
+        "awayTeam": "Hamburger SV",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6277,
+        "oddsSnapshot": 1.64,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-21",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Tokyo Verdy",
+        "awayTeam": "Machida Zelvia",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6353,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Tokyo Verdy",
+        "awayTeam": "Machida Zelvia",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6353,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC ST. Gallen",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6329,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SV Elversberg",
+        "awayTeam": "Eintracht Braunschweig",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6284,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-22",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Czech Liga",
+        "homeTeam": "Plzen",
+        "awayTeam": "Sparta Praha",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.621,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Czech Liga",
+        "homeTeam": "Plzen",
+        "awayTeam": "Sparta Praha",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.621,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-27",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Arka Gdynia",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6267,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Ekstraklasa",
+        "homeTeam": "Arka Gdynia",
+        "awayTeam": "Lechia Gdansk",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6267,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-02-28",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Thun",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6174,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Thun",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6174,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Holstein Kiel",
+        "awayTeam": "SV Elversberg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6075,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayer Leverkusen",
+        "awayTeam": "FSV Mainz 05",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6208,
+        "oddsSnapshot": 1.68,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-01",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Kawasaki Frontale",
+        "awayTeam": "Mito Hollyhock",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6263,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Kawasaki Frontale",
+        "awayTeam": "Mito Hollyhock",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6263,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Eintracht Braunschweig",
+        "awayTeam": "Preußen Münster",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6252,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Hertha BSC",
+        "awayTeam": "1. FC Nürnberg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6245,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-06",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayern München",
+        "awayTeam": "Borussia Mönchengladbach",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6255,
+        "oddsSnapshot": 1.72,
+        "isCorrect": true,
+        "score": "4 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayern München",
+        "awayTeam": "Borussia Mönchengladbach",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6255,
+        "oddsSnapshot": 1.72,
+        "isCorrect": true,
+        "score": "4 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-07",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC Zurich",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6176,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Servette FC",
+        "awayTeam": "FC Zurich",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6176,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "FSV Mainz 05",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6437,
+        "oddsSnapshot": 1.51,
+        "isCorrect": true,
+        "score": "2 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Lugano",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6127,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-08",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Las Palmas",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.607,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "4 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Las Palmas",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.607,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Preußen Münster",
+        "awayTeam": "Hertha BSC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6379,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "BSC Young Boys",
+        "awayTeam": "FC Thun",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6168,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-13",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-03-14",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayer Leverkusen",
+        "awayTeam": "Bayern München",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6498,
+        "oddsSnapshot": 1.39,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Bayer Leverkusen",
+        "awayTeam": "Bayern München",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6498,
+        "oddsSnapshot": 1.39,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1899 Hoffenheim",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.642,
+        "oddsSnapshot": 1.64,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Dortmund",
+        "awayTeam": "FC Augsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6447,
+        "oddsSnapshot": 1.7,
+        "isCorrect": false,
+        "score": "2 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-15",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6115,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6115,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "1. FC Kaiserslautern",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6327,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Basel 1893",
+        "awayTeam": "Servette FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6194,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "3 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-20",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-03-21",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cadiz",
+        "awayTeam": "Malaga",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6036,
+        "oddsSnapshot": 1.77,
+        "isCorrect": false,
+        "score": "0 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cadiz",
+        "awayTeam": "Malaga",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6036,
+        "oddsSnapshot": 1.77,
+        "isCorrect": false,
+        "score": "0 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1. FC Heidenheim",
+        "awayTeam": "Bayer Leverkusen",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6067,
+        "oddsSnapshot": 1.63,
+        "isCorrect": true,
+        "score": "3 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Dortmund",
+        "awayTeam": "Hamburger SV",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6124,
+        "oddsSnapshot": 1.8,
+        "isCorrect": true,
+        "score": "3 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-22",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Mirandes",
+        "awayTeam": "Valladolid",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6361,
+        "oddsSnapshot": 1.85,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Mirandes",
+        "awayTeam": "Valladolid",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6361,
+        "oddsSnapshot": 1.85,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC Luzern",
+        "awayTeam": "Lausanne",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6316,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "FC Augsburg",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6404,
+        "oddsSnapshot": 1.56,
+        "isCorrect": true,
+        "score": "2 - 5"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-27",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Mirandes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6445,
+        "oddsSnapshot": 1.69,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Mirandes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6445,
+        "oddsSnapshot": 1.69,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-28",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.609,
+        "oddsSnapshot": 1.88,
+        "isCorrect": false,
+        "score": "0 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.609,
+        "oddsSnapshot": 1.88,
+        "isCorrect": false,
+        "score": "0 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Machida Zelvia",
+        "awayTeam": "Kawasaki Frontale",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6166,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-03-29",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6494,
+        "oddsSnapshot": 1.71,
+        "isCorrect": true,
+        "score": "5 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6494,
+        "oddsSnapshot": 1.71,
+        "isCorrect": true,
+        "score": "5 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-03",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-04-04",
+    "dayOfWeek": "Sat",
+    "top5Count": 1,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "SC Freiburg",
+        "awayTeam": "Bayern München",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6457,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "2 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "SC Freiburg",
+        "awayTeam": "Bayern München",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6457,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "2 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1899 Hoffenheim",
+        "awayTeam": "FSV Mainz 05",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6443,
+        "oddsSnapshot": 1.57,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Hamburger SV",
+        "awayTeam": "FC Augsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6489,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-05",
+    "dayOfWeek": "Sun",
+    "top5Count": 1,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6319,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Almeria",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6319,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "FC Schalke 04",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6053,
+        "oddsSnapshot": 1.73,
+        "isCorrect": false,
+        "score": "1 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-10",
+    "dayOfWeek": "Fri",
+    "top5Count": 2,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "AD Ceuta FC",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6247,
+        "oddsSnapshot": 1.62,
+        "isCorrect": false,
+        "score": "0 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Frosinone",
+        "awayTeam": "Palermo",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7237,
+        "oddsSnapshot": 1.51,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "AD Ceuta FC",
+        "awayTeam": "Real Sociedad II",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6247,
+        "oddsSnapshot": 1.62,
+        "isCorrect": false,
+        "score": "0 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Frosinone",
+        "awayTeam": "Palermo",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7237,
+        "oddsSnapshot": 1.51,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-11",
+    "dayOfWeek": "Sat",
+    "top5Count": 3,
+    "top10Count": 4,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Chesterfield",
+        "awayTeam": "Tranmere",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7742,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Leicester",
+        "awayTeam": "Swansea",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7427,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "0 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Ligue 1",
+        "homeTeam": "Rennes",
+        "awayTeam": "Angers",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7399,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Chesterfield",
+        "awayTeam": "Tranmere",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7742,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Leicester",
+        "awayTeam": "Swansea",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7427,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "0 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Ligue 1",
+        "homeTeam": "Rennes",
+        "awayTeam": "Angers",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7399,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "League One",
+        "homeTeam": "Rotherham",
+        "awayTeam": "Barnsley",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7159,
+        "oddsSnapshot": 1.41,
+        "isCorrect": false,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-12",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-04-17",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-04-18",
+    "dayOfWeek": "Sat",
+    "top5Count": 3,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Bundesliga",
+        "homeTeam": "Union Berlin",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7863,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Serie B",
+        "homeTeam": "Juve Stabia",
+        "awayTeam": "Catanzaro",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7506,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "J1 League",
+        "homeTeam": "Cerezo Osaka",
+        "awayTeam": "Kyoto Sanga",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8266,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "3 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Bundesliga",
+        "homeTeam": "Union Berlin",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7863,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Serie B",
+        "homeTeam": "Juve Stabia",
+        "awayTeam": "Catanzaro",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7506,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "J1 League",
+        "homeTeam": "Cerezo Osaka",
+        "awayTeam": "Kyoto Sanga",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8266,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "3 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-19",
+    "dayOfWeek": "Sun",
+    "top5Count": 5,
+    "top10Count": 6,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Sporting Gijon",
+        "awayTeam": "Cadiz",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7695,
+        "oddsSnapshot": 1.39,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "2. Bundesliga",
+        "homeTeam": "FC Schalke 04",
+        "awayTeam": "Preußen Münster",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.812,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "4 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "FC Andorra",
+        "awayTeam": "Valladolid",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8047,
+        "oddsSnapshot": 1.36,
+        "isCorrect": false,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Juventus",
+        "awayTeam": "Bologna",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7375,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "FC Porto",
+        "awayTeam": "Tondela",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7294,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "2 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Sporting Gijon",
+        "awayTeam": "Cadiz",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7695,
+        "oddsSnapshot": 1.39,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "2. Bundesliga",
+        "homeTeam": "FC Schalke 04",
+        "awayTeam": "Preußen Münster",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.812,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "4 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "FC Andorra",
+        "awayTeam": "Valladolid",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8047,
+        "oddsSnapshot": 1.36,
+        "isCorrect": false,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Eibar",
+        "awayTeam": "Huesca",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7936,
+        "oddsSnapshot": 1.4,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Juventus",
+        "awayTeam": "Bologna",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7375,
+        "oddsSnapshot": 1.49,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "FC Porto",
+        "awayTeam": "Tondela",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7294,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "2 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-24",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Avellino",
+        "awayTeam": "Bari",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8257,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "2 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Avellino",
+        "awayTeam": "Bari",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8257,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "2 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-25",
+    "dayOfWeek": "Sat",
+    "top5Count": 5,
+    "top10Count": 6,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Colchester",
+        "awayTeam": "Notts County",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7749,
+        "oddsSnapshot": 1.36,
+        "isCorrect": false,
+        "score": "0 - 1"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Cambridge United",
+        "awayTeam": "Barrow",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7617,
+        "oddsSnapshot": 1.4,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Norwich",
+        "awayTeam": "Swansea",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.725,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Venezia",
+        "awayTeam": "Empoli",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7303,
+        "oddsSnapshot": 1.55,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Grasshoppers",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6186,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Colchester",
+        "awayTeam": "Notts County",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7749,
+        "oddsSnapshot": 1.36,
+        "isCorrect": false,
+        "score": "0 - 1"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "League Two",
+        "homeTeam": "Cambridge United",
+        "awayTeam": "Barrow",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7617,
+        "oddsSnapshot": 1.4,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Norwich",
+        "awayTeam": "Swansea",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.725,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Venezia",
+        "awayTeam": "Empoli",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7303,
+        "oddsSnapshot": 1.55,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Frosinone",
+        "awayTeam": "Carrarese",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7171,
+        "oddsSnapshot": 1.58,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "Grasshoppers",
+        "awayTeam": "FC Luzern",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6186,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-04-26",
+    "dayOfWeek": "Sun",
+    "top5Count": 2,
+    "top10Count": 2,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Sporting Gijon",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.797,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "3 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Ligue 1",
+        "homeTeam": "Rennes",
+        "awayTeam": "Nantes",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7143,
+        "oddsSnapshot": 1.51,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Sporting Gijon",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.797,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "3 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Ligue 1",
+        "homeTeam": "Rennes",
+        "awayTeam": "Nantes",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7143,
+        "oddsSnapshot": 1.51,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-01",
+    "dayOfWeek": "Fri",
+    "top5Count": 3,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Deportivo La Coruna",
+        "awayTeam": "Leganes",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8248,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Modena",
+        "awayTeam": "Reggiana",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8159,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Padova",
+        "awayTeam": "Pescara",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7309,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Deportivo La Coruna",
+        "awayTeam": "Leganes",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8248,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Modena",
+        "awayTeam": "Reggiana",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8159,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Padova",
+        "awayTeam": "Pescara",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7309,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-02",
+    "dayOfWeek": "Sat",
+    "top5Count": 5,
+    "top10Count": 9,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Ligue 2",
+        "homeTeam": "Estac Troyes",
+        "awayTeam": "Laval",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.8018,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "J1 League",
+        "homeTeam": "FC Tokyo",
+        "awayTeam": "Kawasaki Frontale",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7995,
+        "oddsSnapshot": 1.35,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Bristol City",
+        "awayTeam": "Stoke City",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6976,
+        "oddsSnapshot": 1.54,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Ipswich",
+        "awayTeam": "QPR",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7009,
+        "oddsSnapshot": 1.59,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Urawa",
+        "awayTeam": "JEF United Chiba",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7977,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "2 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Ligue 2",
+        "homeTeam": "Estac Troyes",
+        "awayTeam": "Laval",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.8018,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "J1 League",
+        "homeTeam": "FC Tokyo",
+        "awayTeam": "Kawasaki Frontale",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7995,
+        "oddsSnapshot": 1.35,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "J1 League",
+        "homeTeam": "Kyoto Sanga",
+        "awayTeam": "Shimizu S-pulse",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7535,
+        "oddsSnapshot": 1.42,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Bristol City",
+        "awayTeam": "Stoke City",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6976,
+        "oddsSnapshot": 1.54,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Championship",
+        "homeTeam": "Ipswich",
+        "awayTeam": "QPR",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7009,
+        "oddsSnapshot": 1.59,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Urawa",
+        "awayTeam": "JEF United Chiba",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7977,
+        "oddsSnapshot": 1.32,
+        "isCorrect": true,
+        "score": "2 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Eibar",
+        "awayTeam": "Malaga",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7957,
+        "oddsSnapshot": 1.35,
+        "isCorrect": true,
+        "score": "2 - 4"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Yokohama F. Marinos",
+        "awayTeam": "Mito Hollyhock",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7729,
+        "oddsSnapshot": 1.38,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "La Liga",
+        "homeTeam": "Villarreal",
+        "awayTeam": "Levante",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6805,
+        "oddsSnapshot": 1.57,
+        "isCorrect": false,
+        "score": "5 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-03",
+    "dayOfWeek": "Sun",
+    "top5Count": 5,
+    "top10Count": 7,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Sporting Gijon",
+        "awayTeam": "AD Ceuta FC",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7952,
+        "oddsSnapshot": 1.34,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Las Palmas",
+        "awayTeam": "Valladolid",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7735,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Racing Santander",
+        "awayTeam": "Huesca",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6458,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "4 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "SC Braga",
+        "awayTeam": "Estoril",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7305,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Hannover 96",
+        "awayTeam": "Preußen Münster",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6955,
+        "oddsSnapshot": 1.7,
+        "isCorrect": false,
+        "score": "3 - 3"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Segunda Division",
+        "homeTeam": "Sporting Gijon",
+        "awayTeam": "AD Ceuta FC",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7952,
+        "oddsSnapshot": 1.34,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Segunda Division",
+        "homeTeam": "Las Palmas",
+        "awayTeam": "Valladolid",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7735,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Racing Santander",
+        "awayTeam": "Huesca",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6458,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "4 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "SC Braga",
+        "awayTeam": "Estoril",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7305,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "2. Bundesliga",
+        "homeTeam": "Hannover 96",
+        "awayTeam": "Preußen Münster",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6955,
+        "oddsSnapshot": 1.7,
+        "isCorrect": false,
+        "score": "3 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "SC Freiburg",
+        "awayTeam": "VfL Wolfsburg",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.616,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Mönchengladbach",
+        "awayTeam": "Borussia Dortmund",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6089,
+        "oddsSnapshot": 1.53,
+        "isCorrect": false,
+        "score": "1 - 0"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-08",
+    "dayOfWeek": "Fri",
+    "top5Count": 3,
+    "top10Count": 5,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Avellino",
+        "awayTeam": "Modena",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8222,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Virtus Entella",
+        "awayTeam": "Carrarese",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8038,
+        "oddsSnapshot": 1.45,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Dortmund",
+        "awayTeam": "Eintracht Frankfurt",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6114,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "3 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Avellino",
+        "awayTeam": "Modena",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8222,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Virtus Entella",
+        "awayTeam": "Carrarese",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8038,
+        "oddsSnapshot": 1.45,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie B",
+        "homeTeam": "Pescara",
+        "awayTeam": "Spezia",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6934,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Borussia Dortmund",
+        "awayTeam": "Eintracht Frankfurt",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6114,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "3 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "2. Bundesliga",
+        "homeTeam": "SC Paderborn 07",
+        "awayTeam": "Karlsruher SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6124,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-09",
+    "dayOfWeek": "Sat",
+    "top5Count": 2,
+    "top10Count": 4,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Albacete",
+        "awayTeam": "Cultural Leonesa",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6425,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Premier League",
+        "homeTeam": "Brighton",
+        "awayTeam": "Wolves",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6889,
+        "oddsSnapshot": 1.65,
+        "isCorrect": true,
+        "score": "3 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Albacete",
+        "awayTeam": "Cultural Leonesa",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6425,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Premier League",
+        "homeTeam": "Brighton",
+        "awayTeam": "Wolves",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.6889,
+        "oddsSnapshot": 1.65,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "VfB Stuttgart",
+        "awayTeam": "Bayer Leverkusen",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.701,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "FC Augsburg",
+        "awayTeam": "Borussia Mönchengladbach",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6297,
+        "oddsSnapshot": 1.53,
+        "isCorrect": true,
+        "score": "3 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-10",
+    "dayOfWeek": "Sun",
+    "top5Count": 4,
+    "top10Count": 6,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Bundesliga",
+        "homeTeam": "FSV Mainz 05",
+        "awayTeam": "Union Berlin",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.81,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Nagoya Grampus",
+        "awayTeam": "Kyoto Sanga",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.82,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Leganes",
+        "awayTeam": "Racing Santander",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.711,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "Alverca",
+        "awayTeam": "Estoril",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7337,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Bundesliga",
+        "homeTeam": "FSV Mainz 05",
+        "awayTeam": "Union Berlin",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.81,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Nagoya Grampus",
+        "awayTeam": "Kyoto Sanga",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.82,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Leganes",
+        "awayTeam": "Racing Santander",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.711,
+        "oddsSnapshot": 1.5,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Mirandes",
+        "awayTeam": "Eibar",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6249,
+        "oddsSnapshot": 1.8,
+        "isCorrect": false,
+        "score": "0 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Primeira Liga",
+        "homeTeam": "Alverca",
+        "awayTeam": "Estoril",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7337,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "1. FC Köln",
+        "awayTeam": "1. FC Heidenheim",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6297,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 3"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-15",
+    "dayOfWeek": "Fri",
+    "top5Count": 1,
+    "top10Count": 1,
+    "top5": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Castellón",
+        "awayTeam": "Cadiz",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6237,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Castellón",
+        "awayTeam": "Cadiz",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6237,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-16",
+    "dayOfWeek": "Sat",
+    "top5Count": 3,
+    "top10Count": 5,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Primeira Liga",
+        "homeTeam": "Sporting CP",
+        "awayTeam": "GIL Vicente",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8415,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Super Liga",
+        "homeTeam": "TSC Backa Topola",
+        "awayTeam": "Radnicki NIS",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7694,
+        "oddsSnapshot": 1.38,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "SC Freiburg",
+        "awayTeam": "RB Leipzig",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6426,
+        "oddsSnapshot": 1.4,
+        "isCorrect": true,
+        "score": "4 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Primeira Liga",
+        "homeTeam": "Sporting CP",
+        "awayTeam": "GIL Vicente",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8415,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Super Liga",
+        "homeTeam": "TSC Backa Topola",
+        "awayTeam": "Radnicki NIS",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7694,
+        "oddsSnapshot": 1.38,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "SC Freiburg",
+        "awayTeam": "RB Leipzig",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6426,
+        "oddsSnapshot": 1.4,
+        "isCorrect": true,
+        "score": "4 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Werder Bremen",
+        "awayTeam": "Borussia Dortmund",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6221,
+        "oddsSnapshot": 1.36,
+        "isCorrect": false,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Bundesliga",
+        "homeTeam": "Eintracht Frankfurt",
+        "awayTeam": "VfB Stuttgart",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6154,
+        "oddsSnapshot": 1.33,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-17",
+    "dayOfWeek": "Sun",
+    "top5Count": 4,
+    "top10Count": 7,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "La Liga",
+        "homeTeam": "Barcelona",
+        "awayTeam": "Real Betis",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8989,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Super League",
+        "homeTeam": "FC Lugano",
+        "awayTeam": "FC Basel 1893",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.835,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Deportivo La Coruna",
+        "awayTeam": "FC Andorra",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6246,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Inter",
+        "awayTeam": "Hellas Verona",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8018,
+        "oddsSnapshot": 1.61,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "La Liga",
+        "homeTeam": "Barcelona",
+        "awayTeam": "Real Betis",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8989,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Super League",
+        "homeTeam": "FC Lugano",
+        "awayTeam": "FC Basel 1893",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.835,
+        "oddsSnapshot": 1.3,
+        "isCorrect": true,
+        "score": "4 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eredivisie",
+        "homeTeam": "AZ Alkmaar",
+        "awayTeam": "NAC Breda",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8223,
+        "oddsSnapshot": 1.35,
+        "isCorrect": false,
+        "score": "3 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Deportivo La Coruna",
+        "awayTeam": "FC Andorra",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6246,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Zaragoza",
+        "awayTeam": "Sporting Gijon",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6063,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Inter",
+        "awayTeam": "Hellas Verona",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.8018,
+        "oddsSnapshot": 1.61,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Super League",
+        "homeTeam": "FC ST. Gallen",
+        "awayTeam": "FC Thun",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6359,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "1 - 1"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-22",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-05-23",
+    "dayOfWeek": "Sat",
+    "top5Count": 3,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Allsvenskan",
+        "homeTeam": "Kalmar FF",
+        "awayTeam": "Degerfors IF",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8045,
+        "oddsSnapshot": 1.37,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Lazio",
+        "awayTeam": "Pisa",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7493,
+        "oddsSnapshot": 1.41,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Major League Soccer",
+        "homeTeam": "FC Cincinnati",
+        "awayTeam": "Orlando City SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6445,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "6 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Allsvenskan",
+        "homeTeam": "Kalmar FF",
+        "awayTeam": "Degerfors IF",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8045,
+        "oddsSnapshot": 1.37,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "Lazio",
+        "awayTeam": "Pisa",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7493,
+        "oddsSnapshot": 1.41,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Major League Soccer",
+        "homeTeam": "FC Cincinnati",
+        "awayTeam": "Orlando City SC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6445,
+        "oddsSnapshot": 1.36,
+        "isCorrect": true,
+        "score": "6 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-24",
+    "dayOfWeek": "Sun",
+    "top5Count": 5,
+    "top10Count": 7,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Premier League",
+        "homeTeam": "Manchester City",
+        "awayTeam": "Aston Villa",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8135,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Bodo/Glimt",
+        "awayTeam": "Brann",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.7962,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Tokyo Verdy",
+        "awayTeam": "Yokohama F. Marinos",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7573,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "0 - 6"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "Racing Santander",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.7128,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "AC Milan",
+        "awayTeam": "Cagliari",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7488,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Premier League",
+        "homeTeam": "Manchester City",
+        "awayTeam": "Aston Villa",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8135,
+        "oddsSnapshot": 1.48,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Bodo/Glimt",
+        "awayTeam": "Brann",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.7962,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "J1 League",
+        "homeTeam": "Tokyo Verdy",
+        "awayTeam": "Yokohama F. Marinos",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7573,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "0 - 6"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Malaga",
+        "awayTeam": "Racing Santander",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.7128,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "FC Andorra",
+        "awayTeam": "AD Ceuta FC",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.647,
+        "oddsSnapshot": null,
+        "isCorrect": false,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cadiz",
+        "awayTeam": "Leganes",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6298,
+        "oddsSnapshot": 1.67,
+        "isCorrect": false,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_UNDER35",
+        "competition": "Serie A",
+        "homeTeam": "AC Milan",
+        "awayTeam": "Cagliari",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_3_5",
+        "probability": 0.7488,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-29",
+    "dayOfWeek": "Fri",
+    "top5Count": 2,
+    "top10Count": 3,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Serie B",
+        "homeTeam": "Monza",
+        "awayTeam": "Catanzaro",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.9143,
+        "oddsSnapshot": 1.15,
+        "isCorrect": true,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Aalesund",
+        "awayTeam": "Ham-Kam",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8926,
+        "oddsSnapshot": 1.2,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Serie B",
+        "homeTeam": "Monza",
+        "awayTeam": "Catanzaro",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.9143,
+        "oddsSnapshot": 1.15,
+        "isCorrect": true,
+        "score": "0 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Aalesund",
+        "awayTeam": "Ham-Kam",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8926,
+        "oddsSnapshot": 1.2,
+        "isCorrect": true,
+        "score": "2 - 2"
+      },
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Brann",
+        "awayTeam": "Sarpsborg 08 FF",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8449,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-30",
+    "dayOfWeek": "Sat",
+    "top5Count": 5,
+    "top10Count": 7,
+    "top5": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Molde",
+        "awayTeam": "Sandefjord",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8671,
+        "oddsSnapshot": 1.24,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Champions League",
+        "homeTeam": "Paris Saint Germain",
+        "awayTeam": "Arsenal",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7535,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Allsvenskan",
+        "homeTeam": "Gais",
+        "awayTeam": "Kalmar FF",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8452,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Brasileirão Série A",
+        "homeTeam": "Gremio",
+        "awayTeam": "Corinthians",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7919,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "AD Ceuta FC",
+        "awayTeam": "Albacete",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.643,
+        "oddsSnapshot": 1.57,
+        "isCorrect": false,
+        "score": "1 - 0"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_UNDER45",
+        "competition": "Eliteserien",
+        "homeTeam": "Molde",
+        "awayTeam": "Sandefjord",
+        "market": "OVER_UNDER",
+        "pick": "UNDER_4_5",
+        "probability": 0.8671,
+        "oddsSnapshot": 1.24,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Champions League",
+        "homeTeam": "Paris Saint Germain",
+        "awayTeam": "Arsenal",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7535,
+        "oddsSnapshot": 1.44,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Allsvenskan",
+        "homeTeam": "Gais",
+        "awayTeam": "Kalmar FF",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.8452,
+        "oddsSnapshot": 1.29,
+        "isCorrect": true,
+        "score": "3 - 0"
+      },
+      {
+        "canal": "SAFE_OVER15",
+        "competition": "Brasileirão Série A",
+        "homeTeam": "Gremio",
+        "awayTeam": "Corinthians",
+        "market": "OVER_UNDER",
+        "pick": "OVER_1_5",
+        "probability": 0.7919,
+        "oddsSnapshot": 1.47,
+        "isCorrect": true,
+        "score": "1 - 3"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "AD Ceuta FC",
+        "awayTeam": "Albacete",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.643,
+        "oddsSnapshot": 1.57,
+        "isCorrect": false,
+        "score": "1 - 0"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Granada CF",
+        "awayTeam": "Sporting Gijon",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6476,
+        "oddsSnapshot": 1.67,
+        "isCorrect": true,
+        "score": "1 - 2"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "J1 League",
+        "homeTeam": "Cerezo Osaka",
+        "awayTeam": "FC Tokyo",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6243,
+        "oddsSnapshot": null,
+        "isCorrect": true,
+        "score": "2 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-05-31",
+    "dayOfWeek": "Sun",
+    "top5Count": 2,
+    "top10Count": 4,
+    "top5": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Brasileirão Série A",
+        "homeTeam": "RB Bragantino",
+        "awayTeam": "Internacional",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7564,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Castellón",
+        "awayTeam": "Eibar",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6372,
+        "oddsSnapshot": 1.62,
+        "isCorrect": true,
+        "score": "2 - 1"
+      }
+    ],
+    "top10": [
+      {
+        "canal": "SAFE_HT_OVER05",
+        "competition": "Brasileirão Série A",
+        "homeTeam": "RB Bragantino",
+        "awayTeam": "Internacional",
+        "market": "OVER_UNDER_HT",
+        "pick": "OVER_0_5",
+        "probability": 0.7564,
+        "oddsSnapshot": 1.43,
+        "isCorrect": true,
+        "score": "3 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Castellón",
+        "awayTeam": "Eibar",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6372,
+        "oddsSnapshot": 1.62,
+        "isCorrect": true,
+        "score": "2 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Cordoba",
+        "awayTeam": "Huesca",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6222,
+        "oddsSnapshot": 1.73,
+        "isCorrect": true,
+        "score": "1 - 1"
+      },
+      {
+        "canal": "BTTS_YES",
+        "competition": "Segunda Division",
+        "homeTeam": "Deportivo La Coruna",
+        "awayTeam": "Las Palmas",
+        "market": "BTTS",
+        "pick": "YES",
+        "probability": 0.6082,
+        "oddsSnapshot": 1.83,
+        "isCorrect": true,
+        "score": "1 - 2"
+      }
+    ]
+  },
+  {
+    "date": "2026-06-05",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-06",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-07",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-12",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-13",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-14",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-19",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-20",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-21",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-26",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-27",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-06-28",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-03",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-04",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-05",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-10",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-11",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-12",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-17",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-18",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-19",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-24",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-25",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-26",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-07-31",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-01",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-02",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-07",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-08",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-09",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-14",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-15",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-16",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-21",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-22",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-23",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-28",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-29",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-08-30",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-04",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-05",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-06",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-11",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-12",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-13",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-18",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-19",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-20",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-25",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-26",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-09-27",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-02",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-03",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-04",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-09",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-10",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-11",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-16",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-17",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-18",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-23",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-24",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-25",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-30",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-10-31",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-01",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-06",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-07",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-08",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-13",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-14",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-15",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-20",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-21",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-22",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-27",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-28",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-11-29",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-04",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-05",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-06",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-11",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-12",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-13",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-18",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-19",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-20",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-25",
+    "dayOfWeek": "Fri",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-26",
+    "dayOfWeek": "Sat",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  },
+  {
+    "date": "2026-12-27",
+    "dayOfWeek": "Sun",
+    "top5Count": 0,
+    "top10Count": 0,
+    "top5": [],
+    "top10": []
+  }
+]

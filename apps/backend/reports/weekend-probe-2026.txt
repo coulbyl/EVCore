@@ -1,0 +1,50 @@
+Weekend virtual channels report — 2026
+Generated: 2026-06-01T20:34:07.511Z
+
+== Totaux ==
+Dates weekend analysées : 156 (Ven/Sam/Dim)
+Jours actifs top5 (≥1 pick) : 55
+Jours actifs top10 (≥1 pick) : 55
+Full top5 days (5 picks) : 6
+Picks top5 totaux : 102
+Picks top10 totaux : 172
+Hit rate top5 (settled) : 87.3% (89W / 13L)
+Hit rate top10 (settled) : 80.2% (138W / 34L)
+
+== Distribution top5 ==
+0 picks : 101 jours
+1 picks : 36 jours
+2 picks : 5 jours
+3 picks : 6 jours
+4 picks : 2 jours
+5 picks : 6 jours
+
+== Par jour de semaine ==
+Fri : 13/52 actifs, 0 full5, HR=89.5%
+Sat : 21/52 actifs, 3 full5, HR=85.7%
+Sun : 21/52 actifs, 3 full5, HR=87.8%
+
+== Par canal (top5) ==
+BTTS_YES : total=47 W=37 L=10 HR=78.7%
+SAFE_UNDER35 : total=23 W=22 L=1 HR=95.7%
+SAFE_HT_OVER05 : total=14 W=13 L=1 HR=92.9%
+SAFE_OVER15 : total=10 W=9 L=1 HR=90.0%
+SAFE_UNDER45 : total=8 W=8 L=0 HR=100.0%
+
+== Full top5 days ==
+2026-04-19 Sun : HT_OVER05(W) / OVER15(W) / OVER15(L) / UNDER35(W) / UNDER35(W)
+2026-04-25 Sat : HT_OVER05(L) / HT_OVER05(W) / UNDER35(W) / UNDER35(W) / BTTS_YES(W)
+2026-05-02 Sat : HT_OVER05(W) / HT_OVER05(W) / UNDER35(W) / UNDER35(W) / OVER15(W)
+2026-05-03 Sun : HT_OVER05(W) / OVER15(W) / BTTS_YES(W) / UNDER35(W) / UNDER35(L)
+2026-05-24 Sun : UNDER45(W) / UNDER45(W) / OVER15(W) / BTTS_YES(W) / UNDER35(W)
+2026-05-30 Sat : UNDER45(W) / HT_OVER05(W) / OVER15(W) / OVER15(W) / BTTS_YES(L)
+
+== Jours 3-4 picks ==
+2026-04-11 Sat (3) : HT_OVER05(W) / UNDER35(W) / UNDER35(W)
+2026-04-18 Sat (3) : HT_OVER05(W) / HT_OVER05(W) / UNDER35(W)
+2026-05-01 Fri (3) : OVER15(W) / UNDER35(W) / UNDER35(W)
+2026-05-08 Fri (3) : UNDER35(W) / UNDER35(W) / BTTS_YES(W)
+2026-05-10 Sun (4) : HT_OVER05(W) / OVER15(W) / BTTS_YES(W) / UNDER35(W)
+2026-05-16 Sat (3) : UNDER45(W) / HT_OVER05(W) / BTTS_YES(W)
+2026-05-17 Sun (4) : UNDER45(W) / UNDER45(W) / BTTS_YES(W) / UNDER35(W)
+2026-05-23 Sat (3) : OVER15(W) / UNDER35(W) / BTTS_YES(W)

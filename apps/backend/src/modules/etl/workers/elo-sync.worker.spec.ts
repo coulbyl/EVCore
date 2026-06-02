@@ -26,6 +26,34 @@ describe('parseWorldEloTsv', () => {
       ]),
     );
   });
+
+  it('maps newly added FRI aliases onto TSV codes', () => {
+    const rows = parseWorldEloTsv(
+      [
+        '1\t1\tHR\t1930',
+        '2\t2\tTN\t1633',
+        '3\t3\tCD\t1655',
+        '4\t4\tIE\t1694',
+        '5\t5\tCZ\t1733',
+        '6\t6\tWA\t1698',
+        '7\t7\tPH\t1167',
+      ].join('\n'),
+    );
+
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { teamName: 'Croatia', eloCode: 'HR', rating: 1930 },
+        { teamName: 'Tunisia', eloCode: 'TN', rating: 1633 },
+        { teamName: 'DR Congo', eloCode: 'CD', rating: 1655 },
+        { teamName: 'Congo DR', eloCode: 'CD', rating: 1655 },
+        { teamName: 'Ireland', eloCode: 'IE', rating: 1694 },
+        { teamName: 'Rep. Of Ireland', eloCode: 'IE', rating: 1694 },
+        { teamName: 'Czech Republic', eloCode: 'CZ', rating: 1733 },
+        { teamName: 'Wales', eloCode: 'WA', rating: 1698 },
+        { teamName: 'Philippines', eloCode: 'PH', rating: 1167 },
+      ]),
+    );
+  });
 });
 
 describe('EloSyncWorker', () => {

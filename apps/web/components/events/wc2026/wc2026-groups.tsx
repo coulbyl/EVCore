@@ -165,7 +165,7 @@ function SkeletonGroup() {
 }
 
 export function WC2026Groups() {
-  const { data, isLoading, isError } = useStandings("WC26", 2026);
+  const { data, isLoading, isError } = useStandings("WC", 2026);
 
   if (isLoading) {
     return (
