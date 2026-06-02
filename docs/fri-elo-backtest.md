@@ -199,14 +199,112 @@ WHERE r.\"teamName\" IN (
 
 ---
 
+## Refactoring requis — qualité code
+
+`backtest.service.ts` fait déjà ~2 500 lignes. L'ajout FRI ne doit pas aggraver ça. Les règles du projet s'appliquent intégralement.
+
+### Règles TypeScript (strict)
+
+- Zéro `any` — utiliser `unknown` puis narrower, ou typer proprement
+- Types de retour explicites sur toutes les méthodes publiques et privées
+- `noUncheckedIndexedAccess` actif — toujours vérifier `.get()` et accès tableaux
+- `as const` sur les objets de config
+
+### Extraction requise avant d'écrire le code FRI
+
+**`eloProbabilities` est actuellement inline dans `BettingEngineService.analyzeFriFixture`.**  
+Elle doit être extraite en fonction pure exportée dans `betting-engine.utils.ts` (ou `fri-elo.utils.ts`) AVANT d'être utilisée dans le backtest. Une fonction pure = testable, sans injection de service.
+
+```typescript
+// betting-engine.utils.ts — export pur, pas de dépendance NestJS
+export function eloProbabilities(
+  eloHome: number,
+  eloAway: number,
+  homeAdvantage?: number,
+): MatchProbabilities { ... }
+```
+
+### Découpage en méthodes courtes
+
+Ne pas inliner la logique FRI dans la boucle principale de `runBacktest()`. Extraire :
+
+```
+runBacktest()
+  └─ processFriFixture(fixture, eloEntry) → FixtureResult | null
+       └─ eloProbabilities()              ← pure, importée depuis utils
+  └─ loadEloSnapshotsForFixtures()        ← privée, une seule requête groupée
+```
+
+`processFriFixture` doit être une méthode privée courte (< 30 lignes) qui retourne
+`null` si le fixture doit être skippé (non-senior, ELO absent), ou un objet
+`{ probabilities, actual, score }` exploitable par la boucle.
+
+### Requête Prisma — pas de N+1
+
+Charger **tous** les ELO nécessaires en **une seule requête** avant la boucle :
+
+```typescript
+// ✅ Une requête groupée
+const allEloRows = await this.prisma.client.nationalTeamEloRating.findMany({
+  where: { teamName: { in: allTeamNames }, snapshotAt: { lte: latestFixtureDate } },
+  orderBy: { snapshotAt: 'desc' },
+});
+// Puis filtrer en mémoire par (teamName, fixture.scheduledAt)
+```
+
+```typescript
+// ❌ À ne pas faire — N+1 dans la boucle
+for (const fixture of fixtures) {
+  const elo = await prisma.nationalTeamEloRating.findFirst({ where: { teamName: ... } });
+}
+```
+
+### Select Prisma minimal
+
+Le select des fixtures FRI nécessite `homeTeam.name` et `awayTeam.name`. Ne les ajouter
+que dans la requête FRI (ou conditionnellement) — ne pas alourdir le type `FixtureForBacktest`
+utilisé par toutes les autres compétitions.
+
+Option propre : requête séparée `loadFriTeamNames(fixtureIds)` → `Map<string, { home: string; away: string }>`.
+
+### Isolation — zéro régression sur les autres compétitions
+
+- La branche FRI dans `runBacktest()` doit être entourée d'un `if (competitionCode === 'FRI') { ... continue; }` précoce.
+- Aucune variable introduite pour FRI ne doit modifier les chemins Poisson existants.
+- Les tests existants sur `runBacktest()` (BL1, PL, etc.) doivent passer sans modification.
+
+### Tests à écrire
+
+| Test | Fichier |
+|------|---------|
+| `eloProbabilities(1800, 1600)` → probas cohérentes (home > 0.5, sum = 1) | `betting-engine.utils.spec.ts` |
+| `eloProbabilities` symétrie inverse : swap home/away → home/away swappés | idem |
+| `processFriFixture` non-senior → retourne null | `backtest.service.spec.ts` |
+| `processFriFixture` ELO manquant → retourne null | idem |
+| `processFriFixture` ELO présent → retourne probas valides | idem |
+| Backtest FRI end-to-end : `analyzedCount > 0` si ELO en DB | intégration |
+
+### ESLint — vérification avant merge
+
+```bash
+pnpm --filter backend lint
+pnpm --filter backend typecheck
+pnpm --filter backend test  # tests unitaires doivent passer
+```
+
+---
+
 ## Fichiers à modifier
 
 | Fichier | Changement |
 |---------|------------|
-| `fri-elo.utils.ts` | Exporter `eloProbabilities()` (extraire du service) |
-| `betting-engine.utils.ts` | Ou ajouter `eloProbabilities` ici si déjà testé |
-| `backtest.service.ts` | Méthode `loadEloSnapshotsForFixtures()` + branche FRI dans `runBacktest()` |
+| `betting-engine.utils.ts` | Extraire et exporter `eloProbabilities()` (pur, testable) |
+| `betting-engine.service.ts` | Remplacer l'inline par un import de `eloProbabilities` |
+| `fri-elo.utils.ts` | Exporter `FRI_HOME_ADVANTAGE_ELO`, `FRI_DRAW_RATE` si inline dans le service |
+| `backtest.service.ts` | `loadEloSnapshotsForFixtures()` + `processFriFixture()` + branche dans `runBacktest()` |
 | `backtest.constants.ts` | Ajouter reason codes `NON_SENIOR_FIXTURE`, `MISSING_ELO` |
+| `betting-engine.utils.spec.ts` | Tests unitaires `eloProbabilities` |
+| `backtest.service.spec.ts` | Tests unitaires `processFriFixture` |
 
 ---
 
