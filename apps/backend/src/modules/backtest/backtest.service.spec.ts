@@ -87,6 +87,91 @@ function makePredictionBacktestSummary(
 }
 
 describe('BacktestService', () => {
+  it('reuses the FRI live model in backtest with historical Elo snapshots', async () => {
+    const selectBestViablePickForBacktest = vi.fn().mockReturnValue({
+      market: Market.ONE_X_TWO,
+      pick: 'HOME',
+      probability: new Decimal('0.62'),
+      odds: new Decimal('2.05'),
+      ev: new Decimal('0.271'),
+      qualityScore: new Decimal('0.167'),
+      isCombo: false,
+    } satisfies ViablePick);
+    const listEvaluatedPicksForBacktest = vi
+      .fn()
+      .mockReturnValue([]);
+
+    const prismaMock = {
+      client: {
+        fixture: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: 'fri-1',
+              seasonId: 's1',
+              scheduledAt: new Date('2023-01-01T12:00:00.000Z'),
+              homeTeamId: 'home',
+              awayTeamId: 'away',
+              homeTeam: { name: 'Germany' },
+              awayTeam: { name: 'Ghana' },
+              homeHtScore: 1,
+              awayHtScore: 0,
+              homeScore: 2,
+              awayScore: 1,
+            },
+          ]),
+        },
+        teamStats: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        oddsSnapshot: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              fixtureId: 'fri-1',
+              bookmaker: 'Pinnacle',
+              market: Market.ONE_X_TWO,
+              pick: null,
+              snapshotAt: new Date('2022-12-31T10:00:00.000Z'),
+              homeOdds: new Decimal('2.05'),
+              drawOdds: new Decimal('3.25'),
+              awayOdds: new Decimal('3.90'),
+              odds: null,
+            },
+          ]),
+        },
+        nationalTeamEloRating: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              teamName: 'Germany',
+              rating: 1900,
+              snapshotAt: new Date('2022-12-15T00:00:00.000Z'),
+            },
+            {
+              teamName: 'Ghana',
+              rating: 1700,
+              snapshotAt: new Date('2022-12-15T00:00:00.000Z'),
+            },
+          ]),
+        },
+      },
+    } as unknown as PrismaService;
+
+    const bettingMock = {
+      computeFromTeamStats: vi.fn(),
+      selectBestViablePickForBacktest,
+      listEvaluatedPicksForBacktest,
+    } as unknown as BettingEngineService;
+
+    const service = new BacktestService(prismaMock, bettingMock);
+    const report = await service.runBacktest('s1', 'FRI');
+
+    expect(report.analyzedCount).toBe(1);
+    expect(report.skippedCount).toBe(0);
+    expect(bettingMock.computeFromTeamStats).not.toHaveBeenCalled();
+    expect(selectBestViablePickForBacktest).toHaveBeenCalled();
+    expect(listEvaluatedPicksForBacktest).not.toHaveBeenCalled();
+    expect(report.marketPerformance[0]?.market).toBe(Market.ONE_X_TWO);
+  });
+
   it('runs backtest and aggregates analyzed/skipped fixtures', async () => {
     const prismaMock = {
       client: {

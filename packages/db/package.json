@@ -25,6 +25,7 @@
     "db:stats": "tsx scripts/db-stats.ts",
     "db:scheduled": "tsx scripts/scheduled-fixtures-report.ts",
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
+    "db:audit:fri-goals": "tsx scripts/fri-goal-model-audit.ts",
     "db:audit:fri-xg": "tsx scripts/fri-xg-audit.ts",
     "db:audit:fri-elo": "tsx scripts/fri-elo-audit.ts",
     "db:analyze:signals": "tsx scripts/analyze-signals.ts",

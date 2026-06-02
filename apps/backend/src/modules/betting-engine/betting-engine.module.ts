@@ -9,6 +9,7 @@ import { BettingEngineService } from './betting-engine.service';
 import { BettingEngineController } from './betting-engine.controller';
 import { H2HService } from './h2h.service';
 import { CongestionService } from './congestion.service';
+import { FriModelService } from './fri-model/fri-model.service';
 
 @Module({
   imports: [
@@ -19,7 +20,12 @@ import { CongestionService } from './congestion.service';
     BullModule.registerQueue({ name: BULLMQ_QUEUES.BETTING_ENGINE }),
   ],
   controllers: [BettingEngineController],
-  providers: [BettingEngineService, H2HService, CongestionService],
-  exports: [BettingEngineService],
+  providers: [
+    BettingEngineService,
+    H2HService,
+    CongestionService,
+    FriModelService,
+  ],
+  exports: [BettingEngineService, FriModelService],
 })
 export class BettingEngineModule {}
