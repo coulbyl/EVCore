@@ -1,129 +1,21 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
-import { FilterBar, type FilterDef, type FilterState } from "@evcore/ui";
-import { useLocale } from "next-intl";
-import { TIME_SLOTS } from "@/constants/time-slots";
-import { COMPETITIONS } from "@/constants/competitions";
-import { translateCountry } from "@/lib/competition-i18n";
-import {
-  BET_STATUS_OPTIONS,
-  CANAL_OPTIONS,
-  DECISION_OPTIONS,
-  STATUS_OPTIONS,
-} from "@/domains/fixture/constants/filters";
-import type { FixtureFilters } from "@/domains/fixture/types/fixture";
+import { useTransition } from "react";
+import { DateNav } from "@/components/date-nav";
 
-type Props = { filters: FixtureFilters };
-
-function buildFilterDefs(locale: string): FilterDef[] {
-  return [
-    {
-      key: "date",
-      label: "Date",
-      type: "date",
-    },
-    {
-      key: "competition",
-      label: "Compétition",
-      type: "select",
-      options: [
-        { value: "ALL", label: "Toutes" },
-        ...COMPETITIONS.map((c) => ({
-          value: c.code,
-          label: `${translateCountry(c.country, locale)} · ${locale === "fr" ? c.nameFr : c.name}`,
-        })),
-      ],
-    },
-    {
-      key: "decision",
-      label: "Décision",
-      type: "select",
-      options: DECISION_OPTIONS,
-    },
-    {
-      key: "status",
-      label: "Statut",
-      type: "select",
-      options: STATUS_OPTIONS,
-    },
-    {
-      key: "timeSlot",
-      label: "Horaire",
-      type: "select",
-      options: [
-        { value: "ALL", label: "Tous horaires" },
-        ...TIME_SLOTS.map((s) => ({
-          value: s.key,
-          label: `${s.label} ${s.start}h–${s.end}h`,
-        })),
-      ],
-    },
-    {
-      key: "betStatus",
-      label: "Résultat",
-      type: "select",
-      options: BET_STATUS_OPTIONS,
-    },
-    {
-      key: "canal",
-      label: "Canal",
-      type: "select",
-      options: CANAL_OPTIONS,
-    },
-  ];
-}
-
-function filtersToState(f: FixtureFilters): FilterState {
-  return {
-    date: f.date,
-    competition: f.competition,
-    decision: f.decision,
-    status: f.status,
-    timeSlot: f.timeSlot,
-    betStatus: f.betStatus,
-    canal: f.canal,
-  };
-}
-
-export function FixturesFilters({ filters }: Props) {
-  const locale = useLocale();
+export function FixturesFilters({ date }: { date: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [state, setState] = useState<FilterState>(filtersToState(filters));
-  const filterDefs = buildFilterDefs(locale);
 
-  useEffect(() => {
-    setState(filtersToState(filters));
-  }, [filters]);
-
-  function handleChange(next: FilterState) {
-    setState(next);
+  function handleDateChange(next: string) {
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
-      params.set("date", (next.date as string) ?? filters.date);
-      params.set("competition", (next.competition as string) ?? "ALL");
-      params.set("decision", (next.decision as string) ?? "ALL");
-      params.set("status", (next.status as string) ?? "ALL");
-      params.set("timeSlot", (next.timeSlot as string) ?? "ALL");
-      params.set("betStatus", (next.betStatus as string) ?? "ALL");
-      params.set("canal", (next.canal as string) ?? "ALL");
+      params.set("date", next);
       router.push(`${pathname}?${params.toString()}`);
     });
-  }
-
-  function handleReset() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("competition", "ALL");
-    params.set("decision", "ALL");
-    params.set("status", "ALL");
-    params.set("timeSlot", "ALL");
-    params.set("betStatus", "ALL");
-    params.set("canal", "ALL");
-    startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
   return (
@@ -134,12 +26,7 @@ export function FixturesFilters({ filters }: Props) {
           : "transition-opacity"
       }
     >
-      <FilterBar
-        filters={filterDefs}
-        value={state}
-        onChange={handleChange}
-        onReset={handleReset}
-      />
+      <DateNav date={date} onChange={handleDateChange} />
     </div>
   );
 }

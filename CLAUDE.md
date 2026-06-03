@@ -181,6 +181,19 @@ ModelRun stored + notification alert
 
 ## Coding Conventions
 
+### ESLint — règles critiques
+
+**Backend** (`--max-warnings 0`) — zéro tolérance, tout warning bloque le build :
+
+- `max-params` : **3 paramètres maximum** par fonction/méthode. Au-delà, regrouper en un objet options : `function foo(opts: { a, b, c, d })` — jamais 4 paramètres positionnels.
+- `no-unused-vars` : tout import ou variable non utilisé doit être supprimé avant commit.
+
+**Frontend web** (`--max-warnings 3`) — 2 warnings pré-existants dans `page-shell.tsx` (balises `<img>`). Ne pas en ajouter de nouveaux.
+
+- `no-unused-vars` : même règle — supprimer les imports inutiles immédiatement.
+
+**Avant chaque commit** : toujours lancer `pnpm lint` pour vérifier les deux apps.
+
 ### TypeScript
 
 - `strict: true` and `noUncheckedIndexedAccess: true` are enforced — never disable them

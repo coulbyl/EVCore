@@ -32,7 +32,6 @@ import type {
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
-import type { FixtureFilters } from "@/domains/fixture/types/fixture";
 
 // ---------------------------------------------------------------------------
 // Cell badge helpers
@@ -718,10 +717,10 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
 // ---------------------------------------------------------------------------
 
 export function FixturesTable({
-  filters,
+  date,
   isAdmin,
 }: {
-  filters: FixtureFilters;
+  date: string;
   isAdmin: boolean;
 }) {
   const t = useTranslations("table");
@@ -729,7 +728,7 @@ export function FixturesTable({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { allRows, isLoading, isError } = useFixtures(filters);
+  const { allRows, isLoading, isError } = useFixtures(date);
 
   const selectedRow = allRows.find((r) => r.fixtureId === selectedId) ?? null;
   const columns = makeColumns(isAdmin);

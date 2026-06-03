@@ -7,11 +7,30 @@ export type InvestmentIndicesCanal =
   | "COUPON";
 
 export type InvestmentIndicesRow = {
-  probability: number; // 1-decimal percentage, e.g. 65.3 = 65.3%
+  probability: number;
   total: number;
   won: number;
   hitRate: number;
   isGood: boolean;
+};
+
+export type InvestmentIndicesMarketRow = {
+  market: string;
+  label: string;
+  total: number;
+  won: number;
+  hitRate: number;
+  roi: number | null;
+};
+
+export type InvestmentIndicesOddsRow = {
+  label: string;
+  from: number;
+  to: number;
+  total: number;
+  won: number;
+  hitRate: number;
+  roi: number;
 };
 
 export type InvestmentIndicesResponse = {
@@ -23,5 +42,8 @@ export type InvestmentIndicesResponse = {
     total: number;
     won: number;
     hitRate: number;
+    roi: number | null;
   };
+  byMarket: InvestmentIndicesMarketRow[];
+  byOddsRange: InvestmentIndicesOddsRow[] | null;
 };

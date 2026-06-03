@@ -28,6 +28,7 @@ export type PickCardProps = (InlineTeams | SingleFixture) & {
   marketLabel: string;
   pickLabel: string;
   probabilityPct: string | null;
+  signalScore: string | null;
   odds: string | null;
   score: string | null;
   htScore: string | null;
@@ -139,6 +140,7 @@ export function PickCard(props: PickCardProps) {
     marketLabel,
     pickLabel,
     probabilityPct,
+    signalScore,
     odds,
     score,
     htScore,
@@ -182,17 +184,24 @@ export function PickCard(props: PickCardProps) {
           awayTeam={props.awayTeam}
           fixtureName={props.fixtureName}
         />
-        {probabilityPct && (
-          <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums"
-            style={{
-              color: canalColor,
-              background: `color-mix(in srgb, ${canalColor} 14%, transparent)`,
-            }}
-          >
-            {probabilityPct}
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {probabilityPct && (
+            <span
+              className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold tabular-nums"
+              style={{
+                color: canalColor,
+                background: `color-mix(in srgb, ${canalColor} 14%, transparent)`,
+              }}
+            >
+              {probabilityPct}
+            </span>
+          )}
+          {signalScore && (
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-[0.6rem] font-semibold tabular-nums text-muted-foreground">
+              ↗ {signalScore}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="text-xs text-muted-foreground">

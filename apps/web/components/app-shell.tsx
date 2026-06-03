@@ -142,6 +142,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             active: pathname.startsWith("/dashboard/coupons"),
             icon: Ticket,
           },
+          {
+            label: tNav("fixtures"),
+            href: "/dashboard/fixtures",
+            active: pathname.startsWith("/dashboard/fixtures"),
+            icon: CalendarDays,
+          },
         ],
       },
       {
@@ -172,12 +178,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {
         label: tNav("navGroupAnalysis"),
         items: [
-          {
-            label: tNav("fixtures"),
-            href: "/dashboard/fixtures",
-            active: pathname.startsWith("/dashboard/fixtures"),
-            icon: CalendarDays,
-          },
           {
             label: tNav("wc2026"),
             href: "/dashboard/wc2026",
@@ -220,7 +220,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/dashboard",
     "/dashboard/investment",
     "/dashboard/picks",
-    "/dashboard/bet-slips",
+    "/dashboard/fixtures",
   ];
 
   const allNavItems = useMemo(

@@ -28,8 +28,8 @@ const CHANNELS = [
     label: "Safe Value",
     headline: "Le canal le plus sélectif.",
     body: "Haute confiance et avantage réel sur la cote. Chaque position est justifiée par les données — pas par l'intuition.",
-    metric: "74.3%",
-    bets: 191,
+    metric: "75.7%",
+    bets: 230,
     criteria: ["Edge ≥ 8%", "Confiance modèle > 70%", "Cote confirmée"],
     colorCls: "text-emerald-600 dark:text-emerald-400",
     bgCls: "bg-emerald-500/[0.07] border-emerald-500/20",
@@ -39,12 +39,12 @@ const CHANNELS = [
     glowCls: "bg-emerald-500/10",
   },
   {
-    tag: "CONF",
+    tag: "VICTOIRE",
     label: "VICTOIRE",
     headline: "L'issue dominante, prouvée.",
     body: "Issue argmax au-dessus du seuil de la compétition. Une lecture claire de la probabilité la plus probable, sans compromis.",
-    metric: "60.7%",
-    bets: 122,
+    metric: "57.2%",
+    bets: 159,
     criteria: [
       "Issue dominante claire",
       "Seuil de ligue validé",
@@ -62,8 +62,8 @@ const CHANNELS = [
     label: "Les deux équipes marquent",
     headline: "Statistique pure. Pas de biais.",
     body: "Les deux équipes marquent. Canal stable sur les ligues à forte densité offensive, indépendant du résultat final.",
-    metric: "64.0%",
-    bets: 100,
+    metric: "65.6%",
+    bets: 163,
     criteria: [
       "Densité offensive élevée",
       "Historique BTTS > 55%",
@@ -75,6 +75,21 @@ const CHANNELS = [
       "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20",
     dotCls: "bg-amber-600 dark:bg-amber-400",
     glowCls: "bg-amber-500/10",
+  },
+  {
+    tag: "EV",
+    label: "Expected Value",
+    headline: "La valeur là où les cotes la cachent.",
+    body: "Le modèle cible les positions sous-estimées par le marché. Une fréquence de réussite moindre, compensée par des cotes significativement plus hautes.",
+    metric: "33.1%",
+    bets: 423,
+    criteria: ["EV ≥ 8%", "Cote sous-évaluée", "Marché inefficient"],
+    colorCls: "text-violet-600 dark:text-violet-400",
+    bgCls: "bg-violet-500/[0.07] border-violet-500/20",
+    tagCls:
+      "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20",
+    dotCls: "bg-violet-600 dark:bg-violet-400",
+    glowCls: "bg-violet-500/10",
   },
 ];
 
@@ -102,22 +117,22 @@ function HeroPreview() {
   const channels = [
     {
       tag: "SV",
-      metric: "74.3%",
-      bets: 191,
+      metric: "75.7%",
+      bets: 230,
       color: "text-success",
       bg: "bg-success/10 border-success/20",
     },
     {
-      tag: "CONF",
-      metric: "60.7%",
-      bets: 122,
+      tag: "VICTOIRE",
+      metric: "57.2%",
+      bets: 159,
       color: "text-canal-sv",
       bg: "bg-canal-sv/10 border-canal-sv/20",
     },
     {
       tag: "BB",
-      metric: "64.0%",
-      bets: 100,
+      metric: "65.6%",
+      bets: 163,
       color: "text-canal-ev",
       bg: "bg-canal-ev/10 border-canal-ev/20",
     },
@@ -287,8 +302,8 @@ export default function LandingPage() {
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
             {[
-              "67.8% de réussite (SV+CONF+BB)",
-              "5 578 picks · 105 saisons",
+              "67.4% de réussite (SV+VICTOIRE+BB)",
+              "975 picks · 4 canaux",
               "Accès sur invitation",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
@@ -328,7 +343,7 @@ export default function LandingPage() {
               Canaux d&apos;investissement
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Trois segments. Trois edges.
+              Quatre canaux. Quatre edges.
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
               Chaque canal opère selon ses propres critères. Vous investissez
@@ -336,7 +351,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {CHANNELS.map((c) => (
               <div
                 key={c.tag}
@@ -501,9 +516,9 @@ export default function LandingPage() {
               {/* Stats row */}
               <div className="mt-6 grid grid-cols-3 gap-3 border-t border-border pt-5">
                 {[
-                  { v: "59.2%", l: "Réussite" },
-                  { v: "+2.28%", l: "ROI simulé" },
-                  { v: "760", l: "Positions" },
+                  { v: "67.4%", l: "Réussite" },
+                  { v: "75.7%", l: "SV — meilleur canal" },
+                  { v: "975", l: "Positions" },
                 ].map((s) => (
                   <div key={s.l}>
                     <p className="text-lg font-black tabular-nums text-foreground">

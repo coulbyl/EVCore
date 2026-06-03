@@ -5,9 +5,9 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Connexion"
-      subtitle="Connectez-vous pour retrouver votre espace et vos coupons."
-      asideTitle="Retrouvez vos matchs, vos sélections et vos coupons au même endroit."
-      asideText="Un point d'entrée sobre pour revenir à l'analyse, consulter vos coupons et poursuivre votre journée sans détour."
+      subtitle="Connectez-vous pour retrouver vos sélections et votre suivi d'investissement."
+      asideTitle="Retrouvez vos sélections du jour, vos matchs et vos indices en un coup d'œil."
+      asideText="Un accès direct à la sélection du moteur, aux matchs analysés et à vos indices de performance — sans détour."
     >
       <LoginForm />
     </AuthShell>

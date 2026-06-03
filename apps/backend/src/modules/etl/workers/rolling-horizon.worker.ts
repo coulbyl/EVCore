@@ -2,9 +2,9 @@ import {
   Processor,
   WorkerHost,
   OnWorkerEvent,
-  InjectQueue,
+  InjectFlowProducer,
 } from '@nestjs/bullmq';
-import { Job, Queue } from 'bullmq';
+import { Job, FlowProducer } from 'bullmq';
 import { addDays } from 'date-fns';
 import { createLogger } from '@utils/logger';
 import { formatDateUtc } from '@utils/date.utils';
@@ -25,17 +25,12 @@ export type RollingHorizonJobData = {
 
 const logger = createLogger('rolling-horizon-worker');
 
-// Inter-step delay between successive odds/analysis enqueues (best-effort ordering).
-const STEP_DELAY_MS = 5_000;
-
 @Processor(BULLMQ_QUEUES.ROLLING_HORIZON)
 export class RollingHorizonWorker extends WorkerHost {
   constructor(
     private readonly notification: NotificationService,
-    @InjectQueue(BULLMQ_QUEUES.ODDS_PREMATCH_SYNC)
-    private readonly oddsPrematchQueue: Queue<OddsPrematchSyncJobData>,
-    @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE)
-    private readonly bettingEngineQueue: Queue<BettingEngineAnalysisJobData>,
+    @InjectFlowProducer('rolling-horizon-flow')
+    private readonly flowProducer: FlowProducer,
   ) {
     super();
   }
@@ -53,25 +48,25 @@ export class RollingHorizonWorker extends WorkerHost {
 
     logger.info({ dates, startOffset, horizonDays }, 'Rolling horizon started');
 
-    for (const [i, date] of dates.entries()) {
-      const stepBase = i * 2 * STEP_DELAY_MS;
+    for (const date of dates) {
+      // FlowProducer guarantees the analysis (parent) only runs after the
+      // odds sync (child) has completed successfully.
+      await this.flowProducer.add({
+        name: `rolling-horizon-analysis-${date}`,
+        queueName: BULLMQ_QUEUES.BETTING_ENGINE,
+        data: { date } satisfies BettingEngineAnalysisJobData,
+        opts: BULLMQ_DEFAULT_JOB_OPTIONS,
+        children: [
+          {
+            name: `rolling-horizon-odds-${date}`,
+            queueName: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC,
+            data: { date } satisfies OddsPrematchSyncJobData,
+            opts: BULLMQ_DEFAULT_JOB_OPTIONS,
+          },
+        ],
+      });
 
-      await this.oddsPrematchQueue.add(
-        `rolling-horizon-odds-${date}`,
-        { date } satisfies OddsPrematchSyncJobData,
-        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: stepBase },
-      );
-
-      await this.bettingEngineQueue.add(
-        `rolling-horizon-analysis-${date}`,
-        { date } satisfies BettingEngineAnalysisJobData,
-        { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: stepBase + STEP_DELAY_MS },
-      );
-
-      logger.info(
-        { date, oddsDelay: stepBase, analysisDelay: stepBase + STEP_DELAY_MS },
-        'Enqueued horizon step',
-      );
+      logger.info({ date }, 'Enqueued horizon flow (odds → analysis)');
     }
 
     logger.info({ dates }, 'Rolling horizon enqueue complete');

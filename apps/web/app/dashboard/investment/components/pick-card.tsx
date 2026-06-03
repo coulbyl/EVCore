@@ -32,6 +32,7 @@ export function PickCard({
       marketLabel={formatMarketForDisplay(pick.market, loc)}
       pickLabel={formatPickForDisplay(pick.pick, pick.market)}
       probabilityPct={`${(pick.probability * 100).toFixed(1)}%`}
+      signalScore={`${(pick.signalScore * 100).toFixed(0)}%`}
       odds={pick.oddsSnapshot != null ? pick.oddsSnapshot.toFixed(2) : null}
       score={pick.score}
       htScore={pick.htScore}

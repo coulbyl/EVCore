@@ -88,6 +88,44 @@ Do not:
 
 <!-- END:tanstack-table-agent-rules -->
 
+## ESLint — règles critiques
+
+### Backend (`--max-warnings 0`)
+
+Zéro tolérance. Tout warning est une erreur et bloque le build CI.
+
+- **`max-params`** — maximum **3 paramètres** par fonction ou méthode NestJS. Si 4+ sont nécessaires, regrouper en un objet options :
+
+  ```ts
+  // ✗ interdit
+  async findItems(channel: string, market: string, from: Date, to: Date)
+
+  // ✓ correct
+  async findItems(opts: { channel: string; market: string; from: Date; to: Date })
+  ```
+
+- **`no-unused-vars`** — supprimer tout import ou variable déclaré mais non utilisé avant de committer.
+
+### Frontend web (`--max-warnings 3`)
+
+2 warnings pré-existants autorisés dans `page-shell.tsx` (balises `<img>`). Ne pas en ajouter.
+
+- **`no-unused-vars`** — même règle : supprimer les imports inutilisés immédiatement, pas au commit.
+
+### Règle générale
+
+Toujours lancer `pnpm lint` avant chaque commit. Si le lint échoue, corriger avant de committer — ne jamais bypasser avec `--no-verify`.
+
+## Shared components — extraction propre
+
+Quand un bouton + drawer (ou bouton + modal) sont utilisés sur plusieurs pages :
+
+- Créer un composant auto-contenu dans `apps/web/components/` qui gère son propre état `open`
+- Les pages n'exposent qu'un `<MonBoutonDrawer />` sans props de state
+- Le composant partagé utilise `useIsMobile()` et tout autre hook nécessaire en interne
+
+Exemple : `IndicesDrawerButton` encapsule le bouton, le `useState(open)`, `useIsMobile()` et le `Drawer` — la page ne gère rien.
+
 ## React page component structure
 
 When a `*-page-client.tsx` file contains more than one or two internal function components, extract each into its own file in the collocated `components/` directory.
