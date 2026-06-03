@@ -215,12 +215,12 @@ export class InvestmentIndicesService {
         odds: b.oddsSnapshot !== null ? Number(b.oddsSnapshot) : null,
       }));
     } else if (canal === 'BB') {
-      const preds = await this.repo.findSettledPredictionsForIndices(
-        PredictionChannel.BTTS,
-        Market.BTTS,
-        range.from,
-        range.to,
-      );
+      const preds = await this.repo.findSettledPredictionsForIndices({
+        channel: PredictionChannel.BTTS,
+        oddsMarket: Market.BTTS,
+        from: range.from,
+        to: range.to,
+      });
       items = preds
         .filter((p) => p.correct !== null)
         .map((p) => ({
@@ -230,12 +230,12 @@ export class InvestmentIndicesService {
           odds: extractOdds(p),
         }));
     } else if (canal === 'NUL') {
-      const preds = await this.repo.findSettledPredictionsForIndices(
-        PredictionChannel.DRAW,
-        Market.ONE_X_TWO,
-        range.from,
-        range.to,
-      );
+      const preds = await this.repo.findSettledPredictionsForIndices({
+        channel: PredictionChannel.DRAW,
+        oddsMarket: Market.ONE_X_TWO,
+        from: range.from,
+        to: range.to,
+      });
       items = preds
         .filter((p) => p.correct !== null)
         .map((p) => ({
@@ -245,12 +245,12 @@ export class InvestmentIndicesService {
           odds: extractOdds(p),
         }));
     } else if (canal === 'CONF') {
-      const preds = await this.repo.findSettledPredictionsForIndices(
-        PredictionChannel.CONF,
-        Market.ONE_X_TWO,
-        range.from,
-        range.to,
-      );
+      const preds = await this.repo.findSettledPredictionsForIndices({
+        channel: PredictionChannel.CONF,
+        oddsMarket: Market.ONE_X_TWO,
+        from: range.from,
+        to: range.to,
+      });
       items = preds
         .filter((p) => p.correct !== null)
         .map((p) => ({

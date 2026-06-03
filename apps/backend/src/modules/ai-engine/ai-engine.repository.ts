@@ -280,12 +280,12 @@ export class AiEngineRepository {
     });
   }
 
-  async findSettledPredictionsForIndices(
-    channel: PredictionChannel,
-    oddsMarket: Market,
-    from: Date,
-    to: Date,
-  ): Promise<
+  async findSettledPredictionsForIndices(opts: {
+    channel: PredictionChannel;
+    oddsMarket: Market;
+    from: Date;
+    to: Date;
+  }): Promise<
     {
       probability: Prisma.Decimal;
       correct: boolean | null;
@@ -302,6 +302,7 @@ export class AiEngineRepository {
       };
     }[]
   > {
+    const { channel, oddsMarket, from, to } = opts;
     return this.prisma.client.prediction.findMany({
       where: {
         channel,
