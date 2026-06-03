@@ -1,4 +1,3 @@
-import type { TimeSlotKey } from "@/constants/time-slots";
 import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
 
 // ---------------------------------------------------------------------------
@@ -95,19 +94,6 @@ export type FixtureRow = {
 // Filter types
 // ---------------------------------------------------------------------------
 
-export type FixtureDecisionFilter = "ALL" | "BET" | "NO_BET";
-export type FixtureStatusFilter = "ALL" | "SCHEDULED" | "LIVE" | "FINISHED";
-export type FixtureTimeSlotFilter = "ALL" | TimeSlotKey;
-export type FixtureCompetitionFilter = "ALL" | string;
-export type FixtureBetStatusFilter = "ALL" | "WON" | "LOST" | "PENDING";
-export type FixtureCanalFilter = "ALL" | "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
-
 export type FixtureFilters = {
   date: string;
-  competition: FixtureCompetitionFilter;
-  decision: FixtureDecisionFilter;
-  status: FixtureStatusFilter;
-  timeSlot: FixtureTimeSlotFilter;
-  betStatus: FixtureBetStatusFilter;
-  canal: FixtureCanalFilter;
 };

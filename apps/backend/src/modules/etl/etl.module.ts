@@ -42,6 +42,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.STANDINGS_SYNC },
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
     ),
+    BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,
     AdjustmentModule,
     AiEngineModule,
