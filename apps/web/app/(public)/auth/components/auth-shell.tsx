@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { BarChart3, ReceiptText, Wallet } from "lucide-react";
+import { BarChart3, TrendingUp, Target } from "lucide-react";
 
 const FEATURES = [
   {
-    icon: ReceiptText,
-    title: "Coupons centralisés",
-    body: "Toutes vos sélections et leur statut au même endroit.",
-  },
-  {
-    icon: Wallet,
-    title: "Portefeuille lisible",
-    body: "Dépôts et mouvements suivis simplement.",
+    icon: TrendingUp,
+    title: "Sélection quotidienne",
+    body: "Le moteur analyse les matchs et identifie les picks à valeur positive, canal par canal.",
   },
   {
     icon: BarChart3,
-    title: "Indicateurs clairs",
-    body: "Des chiffres utiles, sans jargon superflu.",
+    title: "Indice de paris",
+    body: "Taux de réussite et ROI par marché et tranche de cote — pour arbitrer entre vos sélections.",
+  },
+  {
+    icon: Target,
+    title: "Suivi de résultats",
+    body: "Historique complet par canal avec performance réelle, consultable à tout moment.",
   },
 ];
 
