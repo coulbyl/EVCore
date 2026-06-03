@@ -19,6 +19,7 @@ import { usePickCelebration } from "@/hooks/use-pick-celebration";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { DateNav } from "@/components/date-nav";
+import { IndicesDrawerButton } from "@/components/indices-drawer-button";
 import { todayIso } from "@/lib/date";
 import { CanalSection } from "./canal-section";
 import { PickListItem } from "./pick-list-item";
@@ -98,6 +99,7 @@ export function PicksPageClient() {
       <PageHeader>
         <div />
         <PageHeaderActions>
+          <IndicesDrawerButton />
           <DateNav date={date} onChange={navigateTo} />
         </PageHeaderActions>
       </PageHeader>

@@ -140,6 +140,7 @@ export function PickListItem({
       marketLabel={marketLabel}
       pickLabel={pickLabel}
       probabilityPct={probabilityPct}
+      signalScore={null}
       odds={odds}
       score={row.score}
       htScore={row.htScore}

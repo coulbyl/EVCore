@@ -8,6 +8,25 @@ export type InvestmentIndicesRow = {
   isGood: boolean;
 };
 
+export type InvestmentIndicesMarketRow = {
+  market: string;
+  label: string;
+  total: number;
+  won: number;
+  hitRate: number;
+  roi: number | null;
+};
+
+export type InvestmentIndicesOddsRow = {
+  label: string;
+  from: number;
+  to: number;
+  total: number;
+  won: number;
+  hitRate: number;
+  roi: number;
+};
+
 export type InvestmentIndicesResponse = {
   canal: InvestmentIndicesCanal;
   from: string;
@@ -17,5 +36,8 @@ export type InvestmentIndicesResponse = {
     total: number;
     won: number;
     hitRate: number;
+    roi: number | null;
   };
+  byMarket: InvestmentIndicesMarketRow[];
+  byOddsRange: InvestmentIndicesOddsRow[] | null;
 };
