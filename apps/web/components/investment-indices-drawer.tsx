@@ -29,11 +29,7 @@ import {
 } from "@evcore/ui";
 import { daysAgoIso, toISODate, isoToDate } from "@/lib/date";
 import { useInvestmentIndices } from "@/domains/ai-engine/use-cases/use-investment-indices";
-import type {
-  InvestmentIndicesCanal,
-  InvestmentIndicesMarketRow,
-  InvestmentIndicesOddsRow,
-} from "@/domains/ai-engine/types/investment-indices";
+import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investment-indices";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ShieldCheck, Target, Ticket } from "lucide-react";
 import {
   Page,
