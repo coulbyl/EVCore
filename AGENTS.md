@@ -95,6 +95,7 @@ Do not:
 Zéro tolérance. Tout warning est une erreur et bloque le build CI.
 
 - **`max-params`** — maximum **3 paramètres** par fonction ou méthode NestJS. Si 4+ sont nécessaires, regrouper en un objet options :
+
   ```ts
   // ✗ interdit
   async findItems(channel: string, market: string, from: Date, to: Date)
@@ -102,6 +103,7 @@ Zéro tolérance. Tout warning est une erreur et bloque le build CI.
   // ✓ correct
   async findItems(opts: { channel: string; market: string; from: Date; to: Date })
   ```
+
 - **`no-unused-vars`** — supprimer tout import ou variable déclaré mais non utilisé avant de committer.
 
 ### Frontend web (`--max-warnings 3`)
@@ -117,6 +119,7 @@ Toujours lancer `pnpm lint` avant chaque commit. Si le lint échoue, corriger av
 ## Shared components — extraction propre
 
 Quand un bouton + drawer (ou bouton + modal) sont utilisés sur plusieurs pages :
+
 - Créer un composant auto-contenu dans `apps/web/components/` qui gère son propre état `open`
 - Les pages n'exposent qu'un `<MonBoutonDrawer />` sans props de state
 - Le composant partagé utilise `useIsMobile()` et tout autre hook nécessaire en interne
