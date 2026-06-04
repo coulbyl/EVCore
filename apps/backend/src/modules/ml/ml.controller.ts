@@ -1,13 +1,13 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Param,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { AdminGuard } from '@/common/guards/admin.guard';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
@@ -23,47 +23,35 @@ export class MlController {
     private readonly backfill: MlBackfillService,
   ) {}
 
-  private assertAdmin(session: AuthSession): void {
-    if (session.user.role !== 'ADMIN') {
-      throw new ForbiddenException('Admin only');
-    }
-  }
-
   @Post('train')
+  @UseGuards(AdminGuard)
   async triggerTraining(
     @Body() dto: TriggerTrainingDto,
     @CurrentSession() session: AuthSession,
   ): Promise<{ jobId: string }> {
-    this.assertAdmin(session);
     return this.ml.triggerTraining(dto.segment, session.user.id);
   }
 
   @Get('models')
-  async listModels(@CurrentSession() session: AuthSession) {
-    this.assertAdmin(session);
+  @UseGuards(AdminGuard)
+  async listModels() {
     return this.ml.listModels();
   }
 
   @Get('models/active')
-  async getActiveModel(
-    @Query('segment') segment: string,
-    @CurrentSession() _session: AuthSession,
-  ) {
+  async getActiveModel(@Query('segment') segment: string) {
     return this.ml.getActiveModel(segment ?? 'ALL');
   }
 
   @Post('backfill')
-  async triggerBackfill(@CurrentSession() session: AuthSession) {
-    this.assertAdmin(session);
+  @UseGuards(AdminGuard)
+  async triggerBackfill() {
     return this.backfill.queueAllSeasons();
   }
 
   @Post('models/:id/activate')
-  async activateModel(
-    @Param('id') id: string,
-    @CurrentSession() session: AuthSession,
-  ) {
-    this.assertAdmin(session);
+  @UseGuards(AdminGuard)
+  async activateModel(@Param('id') id: string) {
     return this.ml.activateModel(id);
   }
 }
