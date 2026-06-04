@@ -31,6 +31,7 @@ export function InvestissementPageClient() {
   const date = searchParams.get("date") ?? today;
   const locale = useLocale();
   const { data, isLoading, isError } = useInvestment(date);
+  const hasLoadedWithoutPayload = !isLoading && !isError && !data;
 
   const hasAnyPicks =
     data &&
@@ -84,6 +85,21 @@ export function InvestissementPageClient() {
                     <EmptyTitle>Chargement impossible</EmptyTitle>
                     <EmptyDescription>
                       Erreur de chargement. Réessayez plus tard.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+
+              {hasLoadedWithoutPayload && (
+                <Empty className="rounded-[1.6rem] border-border bg-background/20">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Target className="size-5" />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucune donnée disponible</EmptyTitle>
+                    <EmptyDescription>
+                      Le moteur n&apos;a retourné aucune projection pour cette
+                      date.
                     </EmptyDescription>
                   </EmptyHeader>
                 </Empty>

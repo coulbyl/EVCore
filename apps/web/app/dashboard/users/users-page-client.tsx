@@ -165,6 +165,12 @@ export function UsersPageClient() {
       {
         id: "user",
         header: "Utilisateur",
+        accessorFn: (row) => [
+          row.fullName,
+          row.username,
+          row.email,
+        ].join(" "),
+        enableSorting: true,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar
@@ -187,6 +193,8 @@ export function UsersPageClient() {
       {
         id: "role",
         header: "Rôle",
+        accessorFn: (row) => roleLabel(row.role),
+        enableSorting: true,
         cell: ({ row }) => (
           <Badge
             variant={row.original.role === "ADMIN" ? "neutral" : "secondary"}
@@ -198,6 +206,8 @@ export function UsersPageClient() {
       {
         id: "verified",
         header: "Email",
+        accessorFn: (row) => (row.emailVerified ? 1 : 0),
+        enableSorting: true,
         cell: ({ row }) => (
           <Badge variant={row.original.emailVerified ? "success" : "neutral"}>
             {row.original.emailVerified ? "Vérifié" : "À vérifier"}
@@ -207,7 +217,10 @@ export function UsersPageClient() {
       {
         id: "createdAt",
         header: "Créé le",
-        accessorFn: (row) => formatCreatedAt(row.createdAt),
+        accessorFn: (row) => row.createdAt,
+        sortingFn: "datetime",
+        enableSorting: true,
+        cell: ({ row }) => formatCreatedAt(row.original.createdAt),
       },
       {
         id: "actions",

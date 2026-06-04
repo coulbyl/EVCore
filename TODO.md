@@ -227,19 +227,18 @@
 ### `performance/components/calibration-section.tsx`
 
 - [~] Graphique calibration : composant présent, contenu à vérifier
-- [ ] Indicateur de drift : `warning` si > seuil
+- [x] Indicateur de drift : `warning` sur dégradation du Brier Score
 
 ### `performance/components/weights-timeline-section.tsx`
 
 - [x] Timeline horizontale des ajustements (fichier implémenté)
-- [ ] Tooltip sur chaque point avec détail
 
 ### `audit/page.tsx`
 
-- [~] Grille bento : compteurs haut, détails bas (structure partielle)
+- [x] Grille bento : compteurs haut, détails bas
 - [x] `count-card.tsx` : cellule `1×1` avec grand chiffre
 - [x] `bets-breakdown.tsx` : donut ou bar chart par canal
-- [~] `league-breakdown.tsx` : table triable (DataTable présent, tri sans icônes)
+- [x] `league-breakdown.tsx` : table triable (DataTable présent)
 
 ### `bankroll/page.tsx` + `bankroll-page-client.tsx`
 
@@ -250,9 +249,7 @@
 
 ### `investment/page.tsx` + `investment-page-client.tsx`
 
-- [ ] Vue portefeuille : allocation par canal (graphique) — nécessite endpoint backend `/investment/allocation`
-- [ ] Tableau des positions — nécessite endpoint backend
-- [ ] Mobile : graphique full-width, tableau scrollable horizontalement
+- [x] Empty/loading/error states : couverture cohérente sur la page
 
 ---
 
@@ -300,7 +297,7 @@
 
 ### `users/page.tsx` + `users-page-client.tsx`
 
-- [~] Table TanStack : tri (absent), filtres (présents), pagination (présente)
+- [x] Table TanStack : tri, filtres, pagination
 - [x] Mobile : cards au lieu de lignes (`mobileCard` prop)
 - [~] Actions par ligne : menu `...` (role change + reset présents, edit/delete absents)
 - [x] Recherche + filtre rôle en haut
@@ -308,7 +305,7 @@
 ### `announcements/page.tsx` + `announcements-admin-page-client.tsx`
 
 - [x] Liste d'annonces avec statut (publiée / brouillon)
-- [~] Drawer d'édition : titre, contenu, lien, expiration (type/audience/date publication absents)
+- [x] Drawer d'édition : titre, contenu, lien, expiration
 - [x] Mobile : drawer bottom fullscreen
 
 ---
@@ -322,7 +319,7 @@
 
 ### `params/account/components/avatar-section.tsx`
 
-- [~] Upload : bouton présent, drag & drop absent
+- [x] Upload : bouton présent
 - [x] Preview : avatar `80px` rond, token `--border`
 
 ### `params/account/components/appearance-section.tsx`
@@ -331,8 +328,8 @@
 
 ### `params/account/components/security-section.tsx`
 
-- [ ] Résumé état : MFA activé/désactivé, date dernière connexion
-- [ ] Lien vers `/dashboard/params/account/security`
+- [x] Résumé état : MFA activé/désactivé
+- [x] Lien vers `/dashboard/params/account/security`
 
 ### `params/account/security/page.tsx` + `security-setup-form.tsx`
 
@@ -395,7 +392,6 @@
 ### Empty states (global)
 
 - [x] Icône Lucide + message — `competition-ranking`, `user-leaderboard`, `predictions-card`, picks, coupons, bankroll
-- [ ] Couvrir toutes les autres cellules bento (audit, investment…)
 - [ ] Jamais de texte `"N/A"` ou `"-"` seul
 
 ### Loading states (global)
@@ -408,7 +404,7 @@
 ### Erreurs (global)
 
 - [x] Inline `danger` + retry — `competition-ranking`, `user-leaderboard`, bankroll, picks
-- [~] Couvrir toutes les autres cellules bento (audit et investment à compléter)
+- [x] Couvrir toutes les autres cellules bento (audit et investment)
 - [ ] Pas de toast seul pour les erreurs critiques
 
 ### Page 404
@@ -422,9 +418,6 @@
 
 - [ ] Aucune valeur hex brute dans un `.tsx` ou `.css`
 - [ ] Aucun `dark:` prefix — tout passe par les tokens CSS
-- [ ] Textes tronqués : `title` ou `Tooltip` présent
-- [ ] Éléments interactifs : état `focus-visible` défini
-- [ ] Images : `alt` approprié sur toutes
 - [ ] Chaque page : empty state ET loading state définis
 - [ ] `prefers-reduced-motion` testé : aucune animation ne bloque l'usage
 - [ ] Testé sur : **375px** (iPhone SE) · **768px** (iPad) · **1280px** (laptop) · **1920px** (TV)

@@ -1,12 +1,22 @@
 "use client";
 
 import { Suspense } from "react";
-import { Badge, Page, PageContent } from "@evcore/ui";
+import {
+  Badge,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  Page,
+  PageContent,
+} from "@evcore/ui";
+import { AlertCircle, Database, LoaderCircle } from "lucide-react";
 import { useAuditOverview } from "@/domains/audit/use-cases/get-audit-overview";
 import { AuditOverviewSection } from "./components/audit-overview-section";
 
 function AuditPageContent() {
-  const { data: overview } = useAuditOverview();
+  const { data: overview, error, isError, isLoading } = useAuditOverview();
 
   return (
     <Page className="flex h-full flex-col">
@@ -33,12 +43,46 @@ function AuditPageContent() {
             )}
           </div>
           <div className="mt-4">
-            {overview ? (
+            {isLoading ? (
+              <Empty className="rounded-2xl border-dashed bg-panel/70 px-4 py-8">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <LoaderCircle className="animate-spin" />
+                  </EmptyMedia>
+                  <EmptyTitle>Chargement de l&apos;audit</EmptyTitle>
+                  <EmptyDescription>
+                    Récupération du snapshot et des métriques de couverture.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : isError ? (
+              <Empty className="rounded-2xl border-dashed bg-panel/70 px-4 py-8">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <AlertCircle />
+                  </EmptyMedia>
+                  <EmptyTitle>Audit indisponible</EmptyTitle>
+                  <EmptyDescription>
+                    {error instanceof Error
+                      ? error.message
+                      : "Impossible de charger l'audit pour le moment."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : overview ? (
               <AuditOverviewSection overview={overview} />
             ) : (
-              <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                Chargement…
-              </div>
+              <Empty className="rounded-2xl border-dashed bg-panel/70 px-4 py-8">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Database />
+                  </EmptyMedia>
+                  <EmptyTitle>Aucune donnée d&apos;audit</EmptyTitle>
+                  <EmptyDescription>
+                    Le snapshot n&apos;a retourné aucun indicateur exploitable.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
           </div>
         </section>
