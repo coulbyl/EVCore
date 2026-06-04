@@ -6,7 +6,9 @@ export function GlossaireMobileSelect({ items }: { items: TocItem[] }) {
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const id = e.target.value;
     if (!id) return;
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (

@@ -1,6 +1,7 @@
 # Phase 3 — ML Correction Layer
 
 Référence de contexte:
+
 - rapport initial: [edge-vs-pinnacle-2026-06-04.md](../packages/db/reports/edge-vs-pinnacle-2026-06-04.md)
 - roadmap: [ROADMAP.md](../ROADMAP.md)
 
@@ -9,6 +10,7 @@ Référence de contexte:
 Le rôle du ML en Phase 3 n'est pas de "prédire l'inverse" du moteur actuel.
 
 Son rôle est de:
+
 - détecter où le modèle Poisson surestime ou sous-estime une probabilité
 - apprendre des corrections contextuelles récurrentes
 - recalibrer les probabilités avant la décision finale
@@ -26,11 +28,13 @@ Le rapport [edge-vs-pinnacle-2026-06-04.md](../packages/db/reports/edge-vs-pinna
 - `EV`, surtout sur `ONE_X_TWO`, semble souvent surconfiant
 
 Exemples marquants:
+
 - `EV / ONE_X_TWO`: edge moyen affiché positif, mais ROI Pinnacle très négatif
 - `CONF / ONE_X_TWO`: hit rate correct, mais edge faible et ROI négatif
 - `DRAW / ONE_X_TWO`: petit volume, mais comportement plus encourageant
 
 Conclusion:
+
 - il existe probablement des biais systématiques dans certaines sorties du moteur
 - ces biais sont de bons candidats pour une correction ML
 - il ne faut pas appliquer une logique "contrarian" globale
@@ -38,17 +42,20 @@ Conclusion:
 ## Ce que le ML doit faire
 
 Le ML doit apprendre:
+
 - quand une proba Poisson est trop haute
 - quand elle est trop basse
 - dans quels contextes de ligue, marché, profil d'odds et structure de fixture cela arrive
 - de combien il faut corriger cette probabilité
 
 Le ML ne doit pas apprendre:
+
 - à toujours contredire le moteur
 - à remplacer totalement le Poisson
 - à suivre mécaniquement Pinnacle
 
 La bonne logique est:
+
 1. le moteur Poisson produit une probabilité de base
 2. le ML estime une correction
 3. la proba corrigée est recalibrée
@@ -84,53 +91,65 @@ Trois formes sont plausibles.
 ### 1. Correction directe de probabilité
 
 Le modèle prédit directement:
+
 - `P(home)_corr`
 - `P(draw)_corr`
 - `P(away)_corr`
 
 Avantage:
+
 - simple à lire côté produit
 
 Risque:
+
 - plus dur à contraindre proprement
 
 ### 2. Prédiction d'un delta
 
 Le modèle prédit:
+
 - `delta_home`
 - `delta_draw`
 - `delta_away`
 
 Puis:
+
 - `P_corr = P_poisson + delta`
 
 Avantage:
+
 - colle bien à l'idée de correction
 - plus facile à comparer à la baseline
 
 Risque:
+
 - nécessite une renormalisation rigoureuse
 
 ### 3. Re-ranking / meta-model
 
 Le modèle ne remplace pas les probabilités, mais apprend un score de confiance sur:
+
 - la qualité du signal
 - la probabilité que l'edge affiché soit réel
 
 Avantage:
+
 - très utile pour filtrer les faux positifs EV
 
 Risque:
+
 - moins lisible qu'une correction probabiliste pure
 
 ## Recommandation pour EVCore
 
 La meilleure option pour démarrer est:
+
 - baseline Poisson inchangée
 - modèle ML qui prédit une correction ou un score de fiabilité
 - calibration finale par marché
 
 Autrement dit:
+
 - ne pas supprimer le moteur existant
 - ne pas réécrire la décision autour du ML seul
 - utiliser le ML comme filtre ou correcteur
@@ -160,20 +179,24 @@ Deux familles de targets sont utiles.
 ### A. Target outcome
 
 Apprendre:
+
 - `HOME_WIN`
 - `DRAW`
 - `AWAY_WIN`
 
 Usage:
+
 - correction probabiliste classique
 
 ### B. Target edge validity
 
 Apprendre si un edge affiché est:
+
 - probablement réel
 - probablement faux
 
 Usage:
+
 - filtrer les faux positifs du canal `EV`
 
 Pour EVCore, la combinaison des deux est probablement la plus forte à terme, mais la première version devrait rester simple.
@@ -193,21 +216,26 @@ Erreurs à éviter:
 Le déploiement doit être progressif.
 
 Étape 1:
+
 - produire un rapport `go / no-go` par `canal × marché`
 
 Étape 2:
+
 - cibler d'abord les segments où le biais est le plus clair
 - priorité probable: `EV / ONE_X_TWO`
 
 Étape 3:
+
 - entraîner un premier modèle de correction hors décision prod
 - comparer baseline vs corrected offline
 
 Étape 4:
+
 - activer en shadow mode
 - journaliser les écarts et la performance
 
 Étape 5:
+
 - activer en prod uniquement si:
   - Brier Score meilleur
   - Calibration Error meilleure ou stable
@@ -231,7 +259,9 @@ Formulation simple:
 - puis brancher un worker ML qui entraîne une couche de correction, pas un remplacement global
 
 En l'état, le meilleur candidat initial pour ce travail semble être:
+
 - `EV / ONE_X_TWO`
 
 Et le meilleur point de comparaison sain semble être:
+
 - `SV`

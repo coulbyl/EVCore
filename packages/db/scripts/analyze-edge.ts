@@ -72,7 +72,9 @@ type Aggregate = {
 
 const REPORT_DIR = join(process.cwd(), "reports");
 
-function toNumber(value: { toString(): string } | number | null): number | null {
+function toNumber(
+  value: { toString(): string } | number | null,
+): number | null {
   if (value === null) return null;
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   const parsed = Number(value.toString());
@@ -107,9 +109,11 @@ function average(values: number[]): number | null {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function normalizeInverseOdds(entries: Array<[string, number]>): Map<string, number> {
+function normalizeInverseOdds(
+  entries: Array<[string, number]>,
+): Map<string, number> {
   const sum = entries.reduce((acc, [, odds]) => acc + 1 / odds, 0);
-  return new Map(entries.map(([key, odds]) => [key, (1 / odds) / sum]));
+  return new Map(entries.map(([key, odds]) => [key, 1 / odds / sum]));
 }
 
 function getBinaryOppositePick(pick: string): string | null {
@@ -147,7 +151,11 @@ function getSupportedMarket(value: string): SupportedMarket | null {
   return null;
 }
 
-function computePinnacleSelection(group: OddsRow[], market: SupportedMarket, pick: string) {
+function computePinnacleSelection(
+  group: OddsRow[],
+  market: SupportedMarket,
+  pick: string,
+) {
   if (market === "ONE_X_TWO") {
     const row = group[0];
     if (
@@ -179,11 +187,16 @@ function computePinnacleSelection(group: OddsRow[], market: SupportedMarket, pic
   }
 
   if (market === "FIRST_HALF_WINNER") {
-    const marketRows = group.filter((row) => row.pick !== null && row.odds !== null);
+    const marketRows = group.filter(
+      (row) => row.pick !== null && row.odds !== null,
+    );
     if (marketRows.length < 3) return null;
 
     const entries = marketRows
-      .filter((row): row is OddsRow & { pick: string; odds: number } => row.pick !== null && row.odds !== null)
+      .filter(
+        (row): row is OddsRow & { pick: string; odds: number } =>
+          row.pick !== null && row.odds !== null,
+      )
       .map((row) => [row.pick, row.odds] as [string, number]);
     const normalized = normalizeInverseOdds(entries);
     const selectedOdds = entries.find(([entryPick]) => entryPick === pick)?.[1];
@@ -226,7 +239,8 @@ function summarize(label: string, rows: SupportedRecord[]): Aggregate {
   const actualProfit =
     actualOdds.length === total
       ? rows.reduce(
-          (sum, row) => sum + (row.correct ? (row.actualOdds as number) - 1 : -1),
+          (sum, row) =>
+            sum + (row.correct ? (row.actualOdds as number) - 1 : -1),
           0,
         )
       : null;
@@ -242,16 +256,22 @@ function summarize(label: string, rows: SupportedRecord[]): Aggregate {
     wins,
     losses,
     avgModelProb: rows.reduce((sum, row) => sum + row.modelProb, 0) / total,
-    avgPinnacleProb: rows.reduce((sum, row) => sum + row.pinnacleProb, 0) / total,
+    avgPinnacleProb:
+      rows.reduce((sum, row) => sum + row.pinnacleProb, 0) / total,
     avgEdge: rows.reduce((sum, row) => sum + row.edge, 0) / total,
     avgActualOdds: average(actualOdds),
-    avgPinnacleOdds: rows.reduce((sum, row) => sum + row.pinnacleOdds, 0) / total,
+    avgPinnacleOdds:
+      rows.reduce((sum, row) => sum + row.pinnacleOdds, 0) / total,
     actualProfit,
     pinnacleProfit,
   };
 }
 
-function renderAggregateTable(title: string, rows: Aggregate[], includeActualRoi: boolean): string[] {
+function renderAggregateTable(
+  title: string,
+  rows: Aggregate[],
+  includeActualRoi: boolean,
+): string[] {
   const lines: string[] = [];
   lines.push(`## ${title}`);
   lines.push("");
@@ -275,7 +295,8 @@ function renderAggregateTable(title: string, rows: Aggregate[], includeActualRoi
   for (const row of rows) {
     const hitRate = row.wins / row.total;
     const roiPinnacle = row.pinnacleProfit / row.total;
-    const actualRoi = row.actualProfit === null ? null : row.actualProfit / row.total;
+    const actualRoi =
+      row.actualProfit === null ? null : row.actualProfit / row.total;
     if (includeActualRoi) {
       lines.push(
         `| ${row.label} | ${fmtInt(row.total)} | ${fmtPct(hitRate)} | ${fmtPct(row.avgModelProb)} | ${fmtPct(row.avgPinnacleProb)} | ${fmtSignedPct(row.avgEdge)} | ${fmtFloat(row.avgPinnacleOdds)} | ${fmtSignedPct(roiPinnacle)} | ${actualRoi === null ? "—" : fmtSignedPct(actualRoi)} |`,
@@ -379,8 +400,12 @@ async function main() {
     })),
   ];
 
-  const fixtureIds = Array.from(new Set(subjects.map((subject) => subject.fixtureId)));
-  const markets = Array.from(new Set(subjects.map((subject) => subject.market)));
+  const fixtureIds = Array.from(
+    new Set(subjects.map((subject) => subject.fixtureId)),
+  );
+  const markets = Array.from(
+    new Set(subjects.map((subject) => subject.market)),
+  );
 
   const pinnacleRows = await prisma.oddsSnapshot.findMany({
     where: {
@@ -435,7 +460,10 @@ async function main() {
     const supportedMarket = getSupportedMarket(subject.market);
     if (supportedMarket === null) {
       const reason = `unsupported-market:${subject.market}`;
-      unsupportedByReason.set(reason, (unsupportedByReason.get(reason) ?? 0) + 1);
+      unsupportedByReason.set(
+        reason,
+        (unsupportedByReason.get(reason) ?? 0) + 1,
+      );
       continue;
     }
 
@@ -443,14 +471,24 @@ async function main() {
     const group = latestOddsGroups.get(groupKey);
     if (!group || group.length === 0) {
       const reason = `missing-pinnacle:${subject.market}`;
-      unsupportedByReason.set(reason, (unsupportedByReason.get(reason) ?? 0) + 1);
+      unsupportedByReason.set(
+        reason,
+        (unsupportedByReason.get(reason) ?? 0) + 1,
+      );
       continue;
     }
 
-    const selection = computePinnacleSelection(group, supportedMarket, subject.pick);
+    const selection = computePinnacleSelection(
+      group,
+      supportedMarket,
+      subject.pick,
+    );
     if (!selection) {
       const reason = `unmapped-pick:${subject.market}:${subject.pick}`;
-      unsupportedByReason.set(reason, (unsupportedByReason.get(reason) ?? 0) + 1);
+      unsupportedByReason.set(
+        reason,
+        (unsupportedByReason.get(reason) ?? 0) + 1,
+      );
       continue;
     }
 
@@ -466,7 +504,8 @@ async function main() {
       pinnacleProb: round(selection.impliedProb),
       edge: round(subject.modelProb - selection.impliedProb),
       pinnacleOdds: round(selection.odds),
-      actualOdds: subject.actualOdds === null ? null : round(subject.actualOdds),
+      actualOdds:
+        subject.actualOdds === null ? null : round(subject.actualOdds),
     });
   }
 
@@ -487,7 +526,9 @@ async function main() {
       return map;
     }, new Map<string, SupportedRecord[]>()),
   )
-    .map(([, rows]) => summarize(`${rows[0]?.channel} / ${rows[0]?.market}`, rows))
+    .map(([, rows]) =>
+      summarize(`${rows[0]?.channel} / ${rows[0]?.market}`, rows),
+    )
     .sort((a, b) => b.total - a.total || b.avgEdge - a.avgEdge);
 
   const byCompetitionRows = Array.from(
@@ -526,19 +567,35 @@ async function main() {
   lines.push(
     `- Inputs scanned: ${fmtInt(subjects.length)} settled selections (${fmtInt(settledBets.length)} model bets, ${fmtInt(settledPredictions.length)} predictions)`,
   );
-  lines.push(`- Supported rows with Pinnacle comparison: ${fmtInt(supported.length)}`);
+  lines.push(
+    `- Supported rows with Pinnacle comparison: ${fmtInt(supported.length)}`,
+  );
   lines.push(
     `- Unsupported or missing-Pinnacle rows: ${fmtInt(subjects.length - supported.length)}`,
   );
   lines.push("- Probability basis:");
-  lines.push("  - `ONE_X_TWO` and `FIRST_HALF_WINNER`: normalized inverse odds across 3 outcomes");
-  lines.push("  - `BTTS`, `OVER_UNDER`, `OVER_UNDER_HT`: normalized inverse odds when the opposite side exists, raw inverse odds otherwise");
-  lines.push("  - `DOUBLE_CHANCE` and `HALF_TIME_FULL_TIME` are excluded from edge math in this first report");
+  lines.push(
+    "  - `ONE_X_TWO` and `FIRST_HALF_WINNER`: normalized inverse odds across 3 outcomes",
+  );
+  lines.push(
+    "  - `BTTS`, `OVER_UNDER`, `OVER_UNDER_HT`: normalized inverse odds when the opposite side exists, raw inverse odds otherwise",
+  );
+  lines.push(
+    "  - `DOUBLE_CHANCE` and `HALF_TIME_FULL_TIME` are excluded from edge math in this first report",
+  );
   lines.push("");
 
   lines.push(...renderAggregateTable("Executive Summary", overallRows, true));
-  lines.push(...renderAggregateTable("By Channel / Market", byMarketRows, true));
-  lines.push(...renderAggregateTable("Top Channel / League / Market Segments (min 5 picks)", byCompetitionRows, true));
+  lines.push(
+    ...renderAggregateTable("By Channel / Market", byMarketRows, true),
+  );
+  lines.push(
+    ...renderAggregateTable(
+      "Top Channel / League / Market Segments (min 5 picks)",
+      byCompetitionRows,
+      true,
+    ),
+  );
 
   lines.push("## Coverage gaps");
   lines.push("");
@@ -547,7 +604,9 @@ async function main() {
   } else {
     lines.push("| Reason | Rows |");
     lines.push("| --- | ---: |");
-    for (const [reason, count] of Array.from(unsupportedByReason.entries()).sort((a, b) => b[1] - a[1])) {
+    for (const [reason, count] of Array.from(
+      unsupportedByReason.entries(),
+    ).sort((a, b) => b[1] - a[1])) {
       lines.push(`| ${reason} | ${fmtInt(count)} |`);
     }
   }
@@ -555,7 +614,9 @@ async function main() {
 
   lines.push("## Most positive edges");
   lines.push("");
-  lines.push("| Channel | League | Market | Pick | Model P | Pinnacle P | Edge | Pinnacle odds | Result |");
+  lines.push(
+    "| Channel | League | Market | Pick | Model P | Pinnacle P | Edge | Pinnacle odds | Result |",
+  );
   lines.push("| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |");
   for (const row of topPositiveEdges) {
     lines.push(
@@ -566,7 +627,9 @@ async function main() {
 
   lines.push("## Most negative edges");
   lines.push("");
-  lines.push("| Channel | League | Market | Pick | Model P | Pinnacle P | Edge | Pinnacle odds | Result |");
+  lines.push(
+    "| Channel | League | Market | Pick | Model P | Pinnacle P | Edge | Pinnacle odds | Result |",
+  );
   lines.push("| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |");
   for (const row of topNegativeEdges) {
     lines.push(

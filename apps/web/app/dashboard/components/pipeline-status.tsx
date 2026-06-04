@@ -67,7 +67,9 @@ export function PipelineStatus({ workers, isLoading, isError }: Props) {
 
       {isError && (
         <div className="flex flex-1 items-center justify-center py-6">
-          <p className="text-xs text-danger">Impossible de charger le pipeline.</p>
+          <p className="text-xs text-danger">
+            Impossible de charger le pipeline.
+          </p>
         </div>
       )}
 
