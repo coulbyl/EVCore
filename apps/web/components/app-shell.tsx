@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  BrainCircuit,
   CalendarDays,
   ClipboardCheck,
   Globe,
@@ -96,6 +97,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href: "/dashboard/announcements",
             active: pathname.startsWith("/dashboard/announcements"),
             icon: Megaphone,
+          },
+          {
+            label: tNav("ml"),
+            href: "/dashboard/ml",
+            active: pathname.startsWith("/dashboard/ml"),
+            icon: BrainCircuit,
           },
           {
             label: tNav("glossary"),
