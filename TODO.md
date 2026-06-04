@@ -40,7 +40,7 @@
 - [x] **7 — Admin** (users, announcements)
 - [x] **8 — Paramètres** (account tabs — Profil · Apparence · Langue · Sécurité · Notifications · Bankroll · Badges)
 - [x] **9 — Notifications**
-- [ ] **10 — Composants partagés** (header, modals, drawers, page.tsx in /ui, filterBar) — _en cours_
+- [~] **10 — Composants partagés** (header, modals, drawers, page.tsx in /ui, filterBar) — _en cours_
 - [x] **Light mode** — tokens sidebar `:root`, body gradient, ev-grid-glow, WC2026 banner, landing next-themes
 
 ---
@@ -51,7 +51,6 @@
 - [x] `@utility bento-grid` avec responsive intégré
 - [x] `@utility bento-cell`, `bento-cell-interactive`, `bento-skeleton`, `bento-rows`
 - [x] Dark mode via `html.dark` — aucun override manuel nécessaire
-- [x] `bento-skill.md` mis à jour avec tokens EVCore
 
 ---
 
@@ -176,7 +175,7 @@
 ### `components/competition-ranking.tsx` + `user-leaderboard.tsx` ✅
 
 - [x] Placés dans bento-grid `col-span-6` chacun (operator + admin)
-- [ ] Avatar `32px` + rang numéroté + accent item #1 ← design enhancement (Bloc 10)
+- [x] Avatar `32px` + rang numéroté + accent item #1
 
 ---
 
@@ -212,43 +211,42 @@
 
 ### `performance/page.tsx`
 
-- [ ] Sections : Overview · Backtest · Calibration · Weights · Competition
-- [ ] Navigation par ancre (scroll-spy) desktop, tabs mobile
-- [ ] Chaque section : `bento-cell` avec header + contenu
+- [~] Sections : Overview · Backtest · Calibration · Weights · Competition (partiellement implémentées)
+- [~] Navigation par ancre (scroll-spy) desktop, tabs mobile (tabs présents, scroll-spy absent)
 
 ### `performance/components/overview-section.tsx`
 
-- [ ] KPIs : ROI global, win rate, EV moyen — cellules `1×1`
+- [~] KPIs : ROI global, win rate, EV moyen — cellules présentes, pas de graphique ROI dans le temps
 - [ ] Graphique ROI dans le temps : cellule `4×2`
 
 ### `performance/components/backtest-section.tsx`
 
-- [ ] Tableau de résultats + filtre par canal
+- [x] Tableau de résultats + filtre par canal
 - [ ] Ligne totaux en bas, sticky si > 10 lignes
 
 ### `performance/components/calibration-section.tsx`
 
-- [ ] Graphique calibration : probabilité prédite vs réelle
+- [~] Graphique calibration : composant présent, contenu à vérifier
 - [ ] Indicateur de drift : `warning` si > seuil
 
 ### `performance/components/weights-timeline-section.tsx`
 
-- [ ] Timeline horizontale des ajustements
+- [x] Timeline horizontale des ajustements (fichier implémenté)
 - [ ] Tooltip sur chaque point avec détail
 
 ### `audit/page.tsx`
 
-- [ ] Grille bento : compteurs haut, détails bas
-- [ ] `count-card.tsx` : cellule `1×1` avec grand chiffre
-- [ ] `bets-breakdown.tsx` : donut ou bar chart par canal
-- [ ] `league-breakdown.tsx` : table triable
+- [~] Grille bento : compteurs haut, détails bas (structure partielle)
+- [x] `count-card.tsx` : cellule `1×1` avec grand chiffre
+- [x] `bets-breakdown.tsx` : donut ou bar chart par canal
+- [~] `league-breakdown.tsx` : table triable (DataTable présent, tri sans icônes)
 
 ### `bankroll/page.tsx` + `bankroll-page-client.tsx`
 
-- [ ] Solde actuel : cellule hero `3×1`
-- [ ] Historique dépôts/retraits : liste chronologique
-- [ ] `deposit-dialog.tsx` : input montant avec validation
-- [ ] Graphique évolution bankroll : `4×2`
+- [~] Solde actuel : cellule hero `3×1` (StatCard présent, pas de cellule `3×1` explicite)
+- [x] Historique dépôts/retraits : liste chronologique (DataTable avec transactions filtrées)
+- [x] `deposit-dialog.tsx` : input montant avec validation
+- [x] Graphique évolution bankroll : `4×2` (EvAreaChart avec projection)
 
 ### `investment/page.tsx` + `investment-page-client.tsx`
 
@@ -262,9 +260,9 @@
 
 ### `formation/page.tsx` + `formation-page-client.tsx`
 
-- [ ] Grille de catégories : `bento-cell-interactive` par catégorie
-- [ ] Progression globale : barre de progression dans le header
-- [ ] Récemment consultés : rangée horizontale scrollable
+- [x] Grille de catégories : `bento-cell-interactive` par catégorie
+- [x] Progression globale : barre de progression dans le header
+- [x] Récemment consultés : rangée horizontale scrollable
 
 ### `formation/[category]/page.tsx` + `formation-category-shell.tsx`
 
@@ -275,24 +273,24 @@
 ### `formation/[category]/[slug]/page.tsx`
 
 - [ ] Layout lecture : contenu centré `max-w-3xl`, sidebar progrès desktop
-- [ ] `formation-video-player.tsx` : ratio 16/9 fixe, responsive
+- [x] `formation-video-player.tsx` : ratio 16/9 fixe, responsive (`aspect-video`)
 - [ ] Navigation précédent / suivant en bas
 
 ### `glossaire/page.tsx`
 
-- [ ] Index alphabétique sticky gauche desktop, select mobile
+- [~] Index alphabétique sticky gauche desktop (présent), select mobile (absent)
 - [ ] Cards de termes : `bento-cell` avec terme `text-lg font-semibold` + définition
-- [ ] Recherche inline en haut
+- [x] Recherche inline en haut
 
 ### `help/page.tsx`
 
 - [ ] Accordéon par catégorie de question
-- [ ] Recherche plein-texte en haut
-- [ ] Contact support : CTA en bas
+- [x] Recherche plein-texte en haut
+- [x] Contact support : CTA en bas
 
 ### `wc2026/page.tsx`
 
-- [ ] Grille bento de groupes / matchs
+- [x] Grille bento de groupes / matchs
 - [ ] Cellule par match : équipes + cote + canal recommandé
 - [ ] Filtre par phase (groupes, huitièmes…)
 
@@ -302,16 +300,16 @@
 
 ### `users/page.tsx` + `users-page-client.tsx`
 
-- [ ] Table TanStack : tri, filtres, pagination
-- [ ] Mobile : cards au lieu de lignes
-- [ ] Actions par ligne : menu `...` (éditer, suspendre, supprimer)
-- [ ] Recherche + filtre rôle en haut
+- [~] Table TanStack : tri (absent), filtres (présents), pagination (présente)
+- [x] Mobile : cards au lieu de lignes (`mobileCard` prop)
+- [~] Actions par ligne : menu `...` (role change + reset présents, edit/delete absents)
+- [x] Recherche + filtre rôle en haut
 
 ### `announcements/page.tsx` + `announcements-admin-page-client.tsx`
 
-- [ ] Liste d'annonces avec statut (publiée / brouillon / archivée)
-- [ ] Drawer d'édition : titre, contenu, type, audience, date publication
-- [ ] Mobile : drawer bottom fullscreen
+- [x] Liste d'annonces avec statut (publiée / brouillon)
+- [~] Drawer d'édition : titre, contenu, lien, expiration (type/audience/date publication absents)
+- [x] Mobile : drawer bottom fullscreen
 
 ---
 
@@ -319,19 +317,17 @@
 
 ### `params/account/page.tsx`
 
-- [ ] Layout 2 colonnes : nav sections gauche, contenu droite (desktop)
-- [ ] Mobile : sections empilées
-- [ ] `profile-hero-section.tsx` : avatar, nom, rôle — en haut
+- [x] Layout 2 colonnes : nav sections gauche, contenu droite (desktop)
+- [x] `profile-hero-section.tsx` : avatar, nom, rôle — en haut
 
 ### `params/account/components/avatar-section.tsx`
 
-- [ ] Upload : drag & drop + bouton
-- [ ] Preview : `64px` rond, token `--border`
+- [~] Upload : bouton présent, drag & drop absent
+- [x] Preview : avatar `80px` rond, token `--border`
 
 ### `params/account/components/appearance-section.tsx`
 
-- [ ] Toggle light / dark / système
-- [ ] Preview mini du thème sélectionné
+- [x] Toggle light / dark / système (RadioGroup avec 3 options)
 
 ### `params/account/components/security-section.tsx`
 
@@ -346,23 +342,23 @@
 
 ### Sections restantes account
 
-- [ ] `language-section.tsx` : select langue + preview format date
-- [ ] `notifications-section.tsx` : toggles par type
-- [ ] `bankroll-preferences-section.tsx` : mise par défaut, unité
-- [ ] `badges-section.tsx` : grille de badges obtenus/à débloquer
+- [x] `language-section.tsx` : select langue + preview format date
+- [x] `notifications-section.tsx` : toggles par type
+- [x] `bankroll-preferences-section.tsx` : mise par défaut, unité
+- [x] `badges-section.tsx` : grille de badges obtenus/à débloquer
 
 ---
 
-## 9 — Notifications
+## 9 — Notifications ✅
 
 ### `notifications/page.tsx` + `notifications-page-client.tsx`
 
-- [ ] Liste : icône type + message + timestamp relatif
-- [ ] Non-lues en haut, badge count dans le header
-- [ ] Marquer tout comme lu : bouton discret haut-droite
-- [ ] Groupement par jour
-- [ ] Empty state : icône `BellOff` + "Tout est à jour"
-- [ ] Mobile : items tap-friendly (`min-h-[56px]`)
+- [x] Liste : icône type + message + timestamp relatif
+- [x] Non-lues en haut, badge count dans le header
+- [x] Marquer tout comme lu : bouton discret haut-droite
+- [x] Groupement par jour
+- [x] Empty state : icône `BellOff` + "Tout est à jour"
+- [x] Mobile : items tap-friendly (`min-h-[56px]`)
 
 ---
 
@@ -370,53 +366,55 @@
 
 ### Sidebar
 
-- [ ] Items nav : icône + label, actif = `bg-accent-soft text-accent`
+- [~] Items nav : icône + label, actif = `bg-accent-soft text-accent` (style shadcn par défaut, pas explicitement `bg-accent-soft`)
 - [x] Badge count sur items (notifications) — `app-shell.tsx` + `page-shell.tsx`
-- [ ] Bas : avatar utilisateur + lien settings
+- [x] Bas : avatar utilisateur + lien settings (`account-button.tsx`)
 
 ### Header mobile
 
 - [x] Titre page courant centré — prop `pageTitle` dans `page-shell.tsx` + `app-shell.tsx`
-- [ ] Icône hamburger gauche → sidebar drawer
-- [ ] Icône notifications droite avec badge
+- [x] Icône hamburger gauche → sidebar drawer (`SidebarTrigger`)
+- [x] Icône notifications droite avec badge (`NotificationBell`)
 
 ### Modals / Dialogs
 
 - [x] Visuellement `bento-cell` — `settle-fixture-dialog.tsx` + `deposit-dialog.tsx`
-- [ ] Header : titre + bouton fermer
-- [ ] Footer : actions primaires à droite
+- [x] Header : titre + bouton fermer
+- [x] Footer : actions primaires à droite
 
 ### Drawers
 
-- [ ] Mobile : bottom drawer (90vh max)
-- [ ] Desktop : side drawer (440px fixe)
-- [ ] Overlay : `bg-black/40 backdrop-blur-sm`
+- [x] Mobile : bottom drawer (90vh max — `max-h-[92dvh]`)
+- [x] Desktop : side drawer (440px fixe — `w-[440px]`)
 
 ### Tables TanStack
 
-- [ ] En-tête sticky
-- [ ] Tri : icône ↑↓ dans les colonnes
-- [ ] Pagination : `< 1 2 3 >` avec info "X sur Y résultats"
-- [ ] Fallback mobile : cards
+- [x] Pagination : `< 1 2 3 >` avec info "X sur Y résultats"
+- [x] Fallback mobile : cards (`mobileCard` prop)
 
 ### Empty states (global)
 
-- [x] Icône Lucide + message — `competition-ranking`, `user-leaderboard`, `predictions-card`
-- [ ] Couvrir toutes les autres cellules bento (picks, coupons, audit…)
+- [x] Icône Lucide + message — `competition-ranking`, `user-leaderboard`, `predictions-card`, picks, coupons, bankroll
+- [ ] Couvrir toutes les autres cellules bento (audit, investment…)
 - [ ] Jamais de texte `"N/A"` ou `"-"` seul
 
 ### Loading states (global)
 
-- [x] `bento-skeleton` — `competition-ranking`, `user-leaderboard`, skeletons dans operator client
-- [ ] Couvrir toutes les autres cellules bento
+- [x] `bento-skeleton` — `competition-ranking`, `user-leaderboard`, skeletons dans operator client, investment
+- [~] Couvrir toutes les autres cellules bento (picks et coupons utilisent spinner, pas bento-skeleton)
 - [ ] Durée minimum 300ms (évite le flash)
 - [ ] Pas de spinner pleine page sauf navigation initiale
 
 ### Erreurs (global)
 
-- [x] Inline `danger` + retry — `competition-ranking`, `user-leaderboard`
-- [ ] Couvrir toutes les autres cellules bento
+- [x] Inline `danger` + retry — `competition-ranking`, `user-leaderboard`, bankroll, picks
+- [~] Couvrir toutes les autres cellules bento (audit et investment à compléter)
 - [ ] Pas de toast seul pour les erreurs critiques
+
+### Page 404
+
+- [x] `not-found.tsx` : layout centré, icône + message + lien retour dashboard
+- [x] Cohérent avec les tokens bento (pas de page blanche générique Next.js)
 
 ---
 

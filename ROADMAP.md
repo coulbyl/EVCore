@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 6 en cours (mise à jour le 31 mars 2026)**
+**Statut actuel : Phase 2 — Bloc 7 en cours (mise à jour le 4 juin 2026)**
 
 ---
 
@@ -209,7 +209,7 @@
 
 - [x] `AdjustmentService` étendu — corrélation Spearman shadow\_\* vs outcomes sur 50+ bets
 - [x] Auto-activation si |rho| > 0.15 : poids shadow feature activé, `AdjustmentProposal` généré et appliqué
-- [ ] Rollback d'une auto-activation via `POST /adjustment/:id/rollback` (existant)
+- [x] Rollback d'une auto-activation via `POST /adjustment/:id/rollback` (existant)
 
 ---
 
@@ -264,13 +264,10 @@
   - [x] Suppression `reset-zero-xg.ts`
   - [x] Suppression `sa-away-audit.ts`
   - [x] Suppression `fri-xg-audit.ts`
-- [ ] OpenClaw integration — `STAND-BY POST-PROD` (voir `OPENCLAW.md`)
-  - Activation après 30+ jours prod stables, d'abord en shadow mode
-  - Contraintes: delta ≤ 30%, validation Zod stricte, temperature 0, fallback déterministe
-- [ ] Grafana dashboards — `STAND-BY POST-PROD` (voir `GRAFANA.md`)
-  - Activation quand le monitoring manuel (logs/SQL) n'est plus suffisant
-- [ ] TimescaleDB (odds snapshots haute fréquence, remplacement `OddsSnapshot` Postgres standard)
-- [ ] Multi-bookmakers (Betclic, Unibet via odds-api ou scraping)
+- [-] OpenClaw integration — abandonné
+- [-] Grafana dashboards — abandonné (à réévaluer si monitoring ML le requiert en Phase 3)
+- [-] TimescaleDB — abandonné, rétention `OddsSnapshot` via worker suffisante ; les snapshots existants sont conservés pour analyse en Phase 3
+- [x] Multi-bookmakers — périmètre stabilisé : Pinnacle + Bet365 (1X2), fallbacks Unibet/Marathonbet/Bwin pour marchés secondaires
 
 ---
 
@@ -306,15 +303,69 @@
 - [x] Ordre d'affichage : SV → BB → CONF → DRAW → EV
 - [x] Page Récap avec filtres canal/période, stats et courbe progression
 
+### Web UI
+
+- [x] Page 404 (`not-found.tsx`) — layout centré, animation CSS, tokens bento
+
 ---
 
-## Phase 3 (après stabilisation Phase 2)
+## Phase 3 — ML & Scalabilité (après stabilisation Phase 2)
 
-- [ ] Python worker (backtesting avancé, calibration scikit-learn)
-- [ ] Modèle ML léger (XGBoost)
-- [ ] Détection inefficience marché
-- [ ] Simulation Monte Carlo
-- [ ] Gestion dynamique drawdown
+> Objectif : transformer EVCore en système circulant — les résultats réels alimentent l'entraînement,
+> qui améliore les prédictions, qui génère de meilleurs picks.
+> Architecture : Python worker dans le Docker Compose existant, communication via BullMQ/Redis et PostgreSQL.
+> NestJS reste l'autorité — Python entraîne et calibre, NestJS décide.
+
+### Préconditions DB (à faire avant tout entraînement ML)
+
+- [ ] PgBouncer dans Docker Compose (connection pooling — prévient la saturation avec NestJS + Python concurrents)
+- [ ] Partitionnement `OddsSnapshot` par mois (PostgreSQL declarative partitioning — avant 500k lignes)
+- [ ] Index composites `(competitionCode, "scheduledAt")` sur `Fixture` et `ModelRun`
+- [ ] Table `ml_model_version` — versioning des modèles XGBoost sérialisés (id, createdAt, weights, metrics, isActive)
+- [ ] Politique explicite : `ModelRun` jamais supprimé — c'est le training data du modèle ML
+
+### Bloc A — Étude OddsSnapshot
+
+> Valider que le edge du moteur est réel avant d'investir dans l'entraînement ML.
+
+- [ ] Comparer probabilités moteur vs probabilité implicite Pinnacle sur l'historique closing odds
+- [ ] Calculer le edge moyen par canal (EV, CONF, BTTS, DRAW) sur les paris WON/LOST
+- [ ] Identifier les ligues / marchés où l'inefficience est la plus accessible (Pinnacle moins sharp)
+- [ ] Rapport d'analyse → décision go/no-go XGBoost par marché
+
+### Bloc B — Infrastructure ML
+
+- [ ] Service `ml-worker` Python dans Docker Compose (image `python:3.12-slim`, accès Redis + PostgreSQL)
+- [ ] Queue BullMQ `ml-training` — NestJS pousse le job, Python consomme
+- [ ] `MlController` NestJS : `POST /ml/train` (déclenche job), `GET /ml/model/active` (modèle courant)
+- [ ] Script Python `train.py` : lit `ModelRun` + outcomes depuis PostgreSQL, entraîne, sérialise en base
+- [ ] Upgrade VPS OVH si besoin (≥ 4 vCPU / 8 GB RAM) avant premier entraînement
+
+### Bloc C — XGBoost + Calibration
+
+> XGBoost apprend les corrections à apporter au modèle Poisson depuis les résultats historiques.
+> Il ne remplace pas Poisson — il calibre ses sorties.
+
+- [ ] Feature extraction : form, xG, H/A, volatilité + odds delta Pinnacle (depuis `OddsSnapshot`)
+- [ ] Entraînement XGBoost sur `(features → HOME_WIN | DRAW | AWAY_WIN)` — 3 saisons historiques
+- [ ] Calibration scikit-learn (isotonic regression) — corriger le biais des probabilités
+- [ ] Poids calibrés écrits en `ml_model_version` avec métriques (Brier Score, Calibration Error)
+- [ ] `BettingEngineService` charge les poids du modèle actif au démarrage
+- [ ] Basculement automatique vers nouveau modèle si Brier Score amélioré + cooldown 7 jours
+- [ ] Rollback manuel vers version précédente via `POST /ml/model/:id/activate`
+- [ ] Job BullMQ hebdomadaire `ml-retrain` — ré-entraînement automatique si ≥ 50 nouveaux bets settled
+
+### Bloc D — Gestion dynamique du drawdown
+
+- [ ] Ajustement de la fraction Kelly selon la trajectoire du drawdown en cours
+- [ ] Réduction progressive des mises si drawdown > 8% (paliers : 75% → 50% → 25% Kelly)
+- [ ] Reprise automatique au niveau normal après retour au-dessus du seuil sur 20 bets consécutifs
+
+### Bloc E — Monte Carlo (diagnostic, optionnel)
+
+- [ ] Simulation 10 000 saisons fictives depuis les probabilités calibrées
+- [ ] Calcul intervalles de confiance ROI — distinguer malchance structurelle vs dérive du modèle
+- [ ] Utilisé uniquement comme outil de diagnostic, pas dans la décision de betting
 
 ---
 
@@ -328,10 +379,11 @@
 
 ## GitHub Milestones
 
-| Milestone         | Contenu                                   | Due date     |
-| ----------------- | ----------------------------------------- | ------------ |
-| `mvp-foundations` | Setup monorepo, DB, Docker, CI            | 28 fév 2026  |
-| `mvp-month-1`     | ETL, stats rolling, modèle, backtest      | 14 mars 2026 |
-| `mvp-month-2`     | Odds, EV, simulation, tracking            | 31 mars 2026 |
-| `mvp-month-3`     | Automatisation, apprentissage, validation | 8 avr 2026   |
-| `phase-2`         | Live, OpenClaw, Grafana                   | 31 mai 2026  |
+| Milestone         | Contenu                                        | Due date     |
+| ----------------- | ---------------------------------------------- | ------------ |
+| `mvp-foundations` | Setup monorepo, DB, Docker, CI                 | 28 fév 2026  |
+| `mvp-month-1`     | ETL, stats rolling, modèle, backtest           | 14 mars 2026 |
+| `mvp-month-2`     | Odds, EV, simulation, tracking                 | 31 mars 2026 |
+| `mvp-month-3`     | Automatisation, apprentissage, validation      | 8 avr 2026   |
+| `phase-2`         | Live, canaux prédiction, déploiement prod      | 4 juin 2026  |
+| `phase-3`         | ML circulant, XGBoost, scalabilité DB          | TBD          |
