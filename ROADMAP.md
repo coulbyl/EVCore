@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 7 en cours (mise à jour le 4 juin 2026)**
+**Statut actuel : Phase 3 — Étape 2 en cours (mise à jour le 4 juin 2026)**
 
 ---
 
@@ -321,22 +321,20 @@ Docs de cadrage Phase 3:
 - [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
 - [packages/db/reports/edge-vs-pinnacle-2026-06-04.md](packages/db/reports/edge-vs-pinnacle-2026-06-04.md) — premier rapport `edge vs Pinnacle`
 
-### Préconditions DB (à faire avant tout entraînement ML)
+### Préconditions DB ✅ (4 juin 2026)
 
-- [ ] PgBouncer dans Docker Compose (connection pooling — prévient la saturation avec NestJS + Python concurrents)
-- [ ] Partitionnement `OddsSnapshot` par mois (PostgreSQL declarative partitioning — avant 500k lignes)
-- [ ] Index composites `(competitionCode, "scheduledAt")` sur `Fixture` et `ModelRun`
-- [ ] Table `ml_model_version` — versioning des modèles XGBoost sérialisés (id, createdAt, weights, metrics, isActive)
-- [ ] Politique explicite : `ModelRun` jamais supprimé — c'est le training data du modèle ML
+- [x] PgBouncer `v1.25.1-p0` dans Docker Compose dev + prod (`PGBOUNCER_URL` runtime / `DATABASE_URL` migrations)
+- [-] Partitionnement `OddsSnapshot` — différé (421k lignes, indexes suffisants ; reconsidérer à 1M+)
+- [x] Index `ModelRun.analyzedAt` — scans temporels dataset ML
+- [x] Table `ml_model_version` — migration `20260604174057_phase3_ml_model_version`
+- [x] Politique `ModelRun` jamais supprimée — documentée dans le schéma
 
-### Bloc A — Étude OddsSnapshot
+### Bloc A — Étude OddsSnapshot ✅ (4 juin 2026)
 
-> Valider que le edge du moteur est réel avant d'investir dans l'entraînement ML.
-
-- [ ] Comparer probabilités moteur vs probabilité implicite Pinnacle sur l'historique closing odds
-- [ ] Calculer le edge moyen par canal (EV, CONF, BTTS, DRAW) sur les paris WON/LOST
-- [ ] Identifier les ligues / marchés où l'inefficience est la plus accessible (Pinnacle moins sharp)
-- [ ] Rapport d'analyse → décision go/no-go XGBoost par marché
+- [x] Comparer probabilités moteur vs probabilité implicite Pinnacle — 680 picks analysés
+- [x] Edge moyen par canal : `SV` GO (+5.17% / +17.16%), `EV/ONE_X_TWO` NO-GO (-54.86%), `CONF` WATCH
+- [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/phase3-go-watch-no-go.md`
+- [x] Rapport → `packages/db/reports/edge-vs-pinnacle-2026-06-04.md`
 
 ### Bloc B — Infrastructure ML
 

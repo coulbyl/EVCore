@@ -54,9 +54,10 @@
   ml-worker:
     build: ./apps/ml-worker
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL}       # direct postgres (lectures lourdes dataset)
+      - PGBOUNCER_URL=${PGBOUNCER_URL}     # pooled (requêtes courantes)
       - REDIS_URL=redis://redis:6379
-    depends_on: [postgres, redis]
+    depends_on: [pgbouncer, redis]
   ```
 - [ ] `apps/ml-worker/` : `Dockerfile`, `requirements.txt`, `train.py` scaffold
   - Dépendances : `xgboost`, `scikit-learn`, `psycopg2-binary`, `redis`, `bullmq` (ou poll Redis direct)
@@ -109,7 +110,7 @@
 - [ ] **Calibration post-modèle** via `CalibratedClassifierCV` (scikit-learn) :
   - Méthode : isotonic si >1000 samples, Platt sinon
   - Vérifier que les probabilités corrigées sont dans [0, 1] et somment à 1 par fixture
-- [ ] Sérialiser le modèle entraîné en `ml_model_version.modelBlob` (joblib + base64 ou path fichier)
+- [ ] Sérialiser le modèle entraîné via joblib → fichier sur volume Docker partagé, chemin écrit dans `ml_model_version.modelPath`
 - [ ] Rapport offline : comparer baseline Poisson / logReg / XGBoost sur le test set
 
 ---
