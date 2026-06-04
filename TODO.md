@@ -47,51 +47,26 @@
 
 ---
 
-## Étape 3 — Infra Python Worker
+## Étape 3 — Infra Python Worker ✅
 
-- [ ] Service `ml-worker` dans `docker-compose.yml` :
-  ```yaml
-  ml-worker:
-    build: ./apps/ml-worker
-    environment:
-      - DATABASE_URL=${DATABASE_URL} # direct postgres (lectures lourdes dataset)
-      - PGBOUNCER_URL=${PGBOUNCER_URL} # pooled (requêtes courantes)
-      - REDIS_URL=redis://redis:6379
-    depends_on: [pgbouncer, redis]
-  ```
-- [ ] `apps/ml-worker/` : `Dockerfile`, `requirements.txt`, `train.py` scaffold
-  - Dépendances : `xgboost`, `scikit-learn`, `psycopg2-binary`, `redis`, `bullmq` (ou poll Redis direct)
-- [ ] Queue BullMQ `ml-training` — NestJS pousse le job avec `{ segment, triggeredBy }`
-- [ ] **`MlModule` NestJS** :
-  - `MlController` : `POST /ml/train` (déclenche job), `POST /ml/model/:id/activate` (rollback), `GET /ml/model/active`
-  - `MlService` : push BullMQ, lecture/écriture `ml_model_version`
-  - `MlRepository` : toutes les requêtes Prisma sur `ml_model_version`
-- [ ] Test de communication : NestJS → Redis → Python → PostgreSQL → retour
+- [x] Service `ml-worker` dans `docker-compose.yml` (build local, DATABASE_URL + PGBOUNCER_URL + Redis)
+- [x] `apps/ml-worker/` : Dockerfile, requirements.txt, scaffold asyncio
+- [x] Queue BullMQ `ML_TRAINING` dans `BULLMQ_QUEUES`, job `{ segment, triggeredBy }`
+- [x] `MlModule` NestJS : MlController / MlService / MlRepository
+  - `POST /ml/train`, `GET /ml/models`, `GET /ml/models/active`, `POST /ml/models/:id/activate`
+- [ ] Test de communication end-to-end : NestJS → Redis → Python → PostgreSQL → retour
 
 ---
 
-## Étape 4 — Feature Engineering + Dataset Pipeline
+## Étape 4 — Feature Engineering + Dataset Pipeline ✅
 
-> La qualité des features est plus importante que le choix du modèle.
-
-- [ ] Script Python `extract_dataset.py` qui lit depuis PostgreSQL :
-  - Jointure `ModelRun` × `OddsSnapshot` × `Bet` (outcome réel)
-  - Filtres : `Bet.status IN (WON, LOST)`, OddsSnapshot Pinnacle présent, marché ciblé
-- [ ] **Feature matrix v1** (par pick) :
-  - `p_home`, `p_draw`, `p_away` (Poisson brut)
-  - `deterministic_score`
-  - `p_pinnacle_home`, `p_pinnacle_draw`, `p_pinnacle_away` (de-vigged)
-  - `delta_p` = `p_model - p_pinnacle` (feature centrale — mesure la divergence)
-  - `implied_odds_pinnacle` (niveau de cote)
-  - `odds_segment` : low (<1.5), mid (1.5–2.5), high (>2.5)
-  - `league_tier` : top5 / secondaire / international
-  - `market` : ONE_X_TWO / OVER_UNDER / etc.
-  - `canal` : EV / SV / CONF / DRAW
-  - `form_delta`, `xg_delta` (home - away)
-  - `days_since_season_start` (proxy de maturité des stats rolling)
-- [ ] **Target v1** : `outcome_correct` (1 si WON, 0 si LOST) — binaire
-- [ ] **Split temporel** (pas aléatoire — évite le data leakage) : 80% anciens / 20% récents
-- [ ] Validation minimum : ≥50 positifs ET ≥50 négatifs dans chaque split avant entraînement
+- [x] `src/data/extract.py` — jointure `ModelRun × Bet × Fixture × OddsSnapshot(Pinnacle)`
+- [x] Feature matrix v1 : `prob_estimated`, `deterministic_score`, `ev`, `p_poisson_*`, `p_pinnacle`, `delta_p`, `recent_form`, `xg`, `performance_dom_ext`, `volatilite_ligue`, `odds_segment`, `league_tier`, `canal`, `market`, `pick`
+- [x] Target : `outcome_correct` (1=WON, 0=LOST)
+- [x] Split temporel `temporal_split()` — 80/20 par ordre chronologique (pas aléatoire)
+- [x] Filtre par segment (`canal:market`) + `ALL`
+- [x] Dataset actuel : 803 bets settled, 145 avec cotes Pinnacle (7 marchés)
+- [ ] Validation minimum : ≥50 positifs ET ≥50 négatifs dans chaque split — vérifié à l'entraînement (Étape 5)
 
 ---
 
