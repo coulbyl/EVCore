@@ -2,12 +2,18 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type { BackfillResult, MlModelVersion, TrainResult } from "../types/ml";
+import type {
+  BackfillResult,
+  MlModelVersion,
+  MlTrainingJobStatus,
+  TrainResult,
+} from "../types/ml";
 
 export function useMlModels() {
   return useQuery({
     queryKey: ["ml-models"],
     queryFn: () => clientApiRequest<MlModelVersion[]>("/ml/models"),
+    refetchInterval: 10_000,
   });
 }
 
@@ -36,9 +42,21 @@ export function useTriggerTraining(segment: string) {
     mutationFn: () =>
       clientApiRequest<TrainResult>("/ml/train", {
         method: "POST",
-        body: JSON.stringify({ segment }),
+        body: { segment },
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
+  });
+}
+
+export function useMlTrainingJobStatus(jobId: string | null) {
+  return useQuery({
+    queryKey: ["ml-training-job", jobId],
+    queryFn: () => clientApiRequest<MlTrainingJobStatus>(`/ml/train/${jobId}`),
+    enabled: Boolean(jobId),
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      return state === "completed" || state === "failed" ? false : 2_000;
+    },
   });
 }
 

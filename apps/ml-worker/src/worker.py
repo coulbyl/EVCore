@@ -24,10 +24,22 @@ async def start(config: Config) -> None:
         if handler is None:
             logger.warning("unknown job name, skipping", extra={"name": job.name})
             return None
-        return await handler(job.data, config)
+        try:
+            return await handler(job.data, config)
+        except Exception:
+            logger.exception("job failed", extra={"name": job.name})
+            raise
 
-    worker = Worker(QUEUE_NAME, process, {"connection": connection})
-    logger.info("worker listening", extra={"queue": QUEUE_NAME, "redis": connection})
+    concurrency = 1
+    worker = Worker(
+        QUEUE_NAME,
+        process,
+        {"connection": connection, "concurrency": concurrency},
+    )
+    logger.info(
+        "worker listening",
+        extra={"queue": QUEUE_NAME, "redis": connection, "concurrency": concurrency},
+    )
 
     try:
         await asyncio.Event().wait()

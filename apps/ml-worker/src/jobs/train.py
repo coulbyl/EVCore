@@ -19,7 +19,15 @@ from ..models import correction, persist
 
 logger = logging.getLogger(__name__)
 
-VALID_SEGMENTS = frozenset(["EV:ONE_X_TWO", "CONF:ONE_X_TWO", "ALL"])
+VALID_SEGMENTS = frozenset([
+    "ALL",
+    "EV:ONE_X_TWO",
+    "EV:OVER_UNDER",
+    "EV:BTTS",
+    "CONF:ONE_X_TWO",
+    "DRAW:ONE_X_TWO",
+    "BTTS:BTTS",
+])
 
 
 @dataclass(frozen=True)

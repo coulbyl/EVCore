@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import {
-  BULLMQ_DEFAULT_JOB_OPTIONS,
-  BULLMQ_QUEUES,
-} from '@/config/etl.constants';
+import { BULLMQ_QUEUES } from '@/config/etl.constants';
 import { PrismaService } from '@/prisma.service';
+import { ML_BACKFILL_JOB_OPTIONS } from './ml.constants';
 import type { MlBackfillJobData } from './ml.backfill.worker';
 
 type BackfillQueueResult = {
@@ -30,7 +28,7 @@ export class MlBackfillService {
       seasons.map(({ id }) => ({
         name: 'backfill-season',
         data: { seasonId: id },
-        opts: BULLMQ_DEFAULT_JOB_OPTIONS,
+        opts: ML_BACKFILL_JOB_OPTIONS,
       })),
     );
 

@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { MlModelVersion } from '@evcore/db';
-import {
-  BULLMQ_DEFAULT_JOB_OPTIONS,
-  BULLMQ_QUEUES,
-} from '@/config/etl.constants';
+import { BULLMQ_QUEUES } from '@/config/etl.constants';
 import { MlRepository } from './ml.repository';
-import type { MlSegment, MlTrainingJobData } from './ml.constants';
+import {
+  ML_TRAINING_JOB_OPTIONS,
+  type MlSegment,
+  type MlTrainingJobData,
+  type MlTrainingJobStatus,
+} from './ml.constants';
 
 type TriggerResult = { jobId: string };
 
@@ -26,9 +28,27 @@ export class MlService {
     const job = await this.queue.add(
       'train',
       { segment, triggeredBy },
-      BULLMQ_DEFAULT_JOB_OPTIONS,
+      ML_TRAINING_JOB_OPTIONS,
     );
     return { jobId: job.id ?? '' };
+  }
+
+  async getTrainingJobStatus(jobId: string): Promise<MlTrainingJobStatus> {
+    const job = await this.queue.getJob(jobId);
+    if (!job) {
+      throw new NotFoundException(`ML training job not found: ${jobId}`);
+    }
+
+    return {
+      id: job.id ?? jobId,
+      name: job.name,
+      state: await job.getState(),
+      failedReason: job.failedReason ?? null,
+      returnvalue: job.returnvalue ?? null,
+      attemptsMade: job.attemptsMade,
+      processedOn: job.processedOn ?? null,
+      finishedOn: job.finishedOn ?? null,
+    };
   }
 
   async getActiveModel(segment: string): Promise<MlModelVersion | null> {

@@ -32,6 +32,12 @@ export class MlController {
     return this.ml.triggerTraining(dto.segment, session.user.id);
   }
 
+  @Get('train/:jobId')
+  @UseGuards(AdminGuard)
+  async getTrainingJobStatus(@Param('jobId') jobId: string) {
+    return this.ml.getTrainingJobStatus(jobId);
+  }
+
   @Get('models')
   @UseGuards(AdminGuard)
   async listModels() {

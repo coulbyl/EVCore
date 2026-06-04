@@ -28,3 +28,14 @@ export type BackfillResult = {
 export type TrainResult = {
   jobId: string;
 };
+
+export type MlTrainingJobStatus = {
+  id: string;
+  name: string;
+  state: string;
+  failedReason: string | null;
+  returnvalue: unknown;
+  attemptsMade: number;
+  processedOn: number | null;
+  finishedOn: number | null;
+};

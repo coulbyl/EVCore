@@ -36,14 +36,12 @@
 
 ---
 
-## Étape 2 — Accumulation de données (parallèle)
+## Étape 2 — Accumulation de données ✅
 
-> Contrainte critique : `EV / ONE_X_TWO` n'a que **22 picks** avec cotes Pinnacle. C'est insuffisant pour XGBoost seul. Logistic regression d'abord, XGBoost quand on approche 200+ picks par segment.
-
-- [ ] Re-générer le rapport `edge-vs-Pinnacle` toutes les 2 semaines (`POST /etl/analyze-edge` ou cron)
-- [ ] Tracker le volume par segment dans le rapport — seuil de déclenchement ML v1 : **100 picks** sur le segment cible
-- [ ] Segment prioritaire : `EV / ONE_X_TWO` — actuellement 22 picks, objectif 100+
-- [ ] Second segment : `CONF / ONE_X_TWO` — 153 picks déjà disponibles, candidat immédiat pour calibration fine
+- [x] Backfill historique : 1 455 bets backfill + 806 prod = **2 261 bets total**
+- [x] Extraction étendue aux prédictions settlées (`CONF`, `DRAW`, `BTTS`) : **17 370 lignes ML**, **8 742 avec Pinnacle**
+- [x] Volume suffisant pour XGBoost sur `ALL` et les gros canaux `CONF`, `DRAW`, `BTTS`
+- [ ] Re-générer le rapport `edge-vs-Pinnacle` toutes les 2 semaines (cron ou endpoint dédié)
 
 ---
 
@@ -54,19 +52,24 @@
 - [x] Queue BullMQ `ML_TRAINING` dans `BULLMQ_QUEUES`, job `{ segment, triggeredBy }`
 - [x] `MlModule` NestJS : MlController / MlService / MlRepository
   - `POST /ml/train`, `GET /ml/models`, `GET /ml/models/active`, `POST /ml/models/:id/activate`
-- [ ] Test de communication end-to-end : NestJS → Redis → Python → PostgreSQL → retour
+- [x] `POST /ml/backfill` + `MlBackfillWorker` — backfill historique par saison
+- [x] Page admin `/dashboard/ml` — backfill, entraînement, gestion versions
+- [x] `AdminGuard` dédié — suppression de `assertAdmin` dupliqué dans 4 controllers
+- [x] Test de communication : backfill terminé avec succès (1 455 bets générés)
 
 ---
 
 ## Étape 4 — Feature Engineering + Dataset Pipeline ✅
 
-- [x] `src/data/extract.py` — jointure `ModelRun × Bet × Fixture × OddsSnapshot(Pinnacle)`
+- [x] `src/data/extract.py` — jointure `ModelRun × Bet/Prediction × Fixture × OddsSnapshot(Pinnacle)`
 - [x] Feature matrix v1 : `prob_estimated`, `deterministic_score`, `ev`, `p_poisson_*`, `p_pinnacle`, `delta_p`, `recent_form`, `xg`, `performance_dom_ext`, `volatilite_ligue`, `odds_segment`, `league_tier`, `canal`, `market`, `pick`
-- [x] Target : `outcome_correct` (1=WON, 0=LOST)
+- [x] Target : `outcome_correct` (`Bet.status WON/LOST` ou `Prediction.correct true/false`)
 - [x] Split temporel `temporal_split()` — 80/20 par ordre chronologique (pas aléatoire)
 - [x] Filtre par segment (`canal:market`) + `ALL`
-- [x] Dataset actuel : 803 bets settled, 145 avec cotes Pinnacle (7 marchés)
-- [ ] Validation minimum : ≥50 positifs ET ≥50 négatifs dans chaque split — vérifié à l'entraînement (Étape 5)
+- [x] Dataset actuel : 17 370 lignes settlées, 8 742 avec cotes Pinnacle exploitables
+- [x] Validation minimum : split LogReg `ALL` OK — train 3322W/2797L, test 1448W/1175L
+- [x] Segments lançables : `EV:ONE_X_TWO`, `EV:OVER_UNDER`, `EV:BTTS`, `CONF:ONE_X_TWO`, `DRAW:ONE_X_TWO`, `BTTS:BTTS`
+- [-] `SV:OVER_UNDER` retiré du training v1 — référence saine et split Pinnacle exploitable insuffisant après mapping par cote cible
 
 ---
 
@@ -77,8 +80,13 @@
 - [x] `src/models/persist.py` — joblib → `/app/models/{uuid}.pkl`, INSERT `ml_model_version`
 - [x] Volume Docker `ml_models` (dev + prod) — modèles persistés entre restarts
 - [x] `jobs/train.py` câblé end-to-end : extract → train → persist → retour métriques
-- [ ] **v2 — XGBoost** — quand segment cible atteint 200+ picks avec Pinnacle
-- [ ] Rapport comparatif offline : baseline Poisson vs logReg vs XGBoost (Étape 7)
+- [x] **Premier entraînement LogReg terminé** sur `ALL` bets-only (757 samples Pinnacle, avant extension Prediction)
+  - Version DB : `1087eb88-510f-48d8-91c6-9147bc234403`
+  - Test split : 228 samples, Brier `0.2418`, Calibration Error `0.0912`, ROI test-set `+20.42%`
+  - Baseline même test split : Brier Poisson/prob actuelle `0.2423` → gain LogReg ≈ `0.2%` seulement (insuffisant pour shadow activation)
+- [~] Relancer LogReg par segment après extension Prediction (`CONF`, `DRAW`, `BTTS`, `EV`)
+- [ ] **v2 — XGBoost** — 8 742 samples Pinnacle disponibles sur `ALL`; prioriser `CONF`, `DRAW`, `BTTS`
+- [ ] Rapport comparatif offline : baseline Poisson vs LogReg vs XGBoost par segment
 
 ---
 
@@ -125,16 +133,16 @@
 
 ## Matrice GO / WATCH / NO-GO (v1 — mise à jour au fil des rapports)
 
-| Segment                  | Statut         | Action                                                              |
-| ------------------------ | -------------- | ------------------------------------------------------------------- |
-| `SV / OVER_UNDER`        | **GO**         | Référence — ne pas corriger, servir de baseline de comparaison      |
-| `SV / OVER_UNDER_HT`     | **GO**         | Référence — même logique                                            |
-| `CONF / ONE_X_TWO`       | **WATCH → v1** | 153 picks : premier segment à corriger (Étape 5 v1)                 |
-| `EV / ONE_X_TWO`         | **WATCH → v2** | 22 picks — attendre 100+ avant XGBoost                              |
-| `EV / OVER_UNDER_HT`     | **WATCH**      | ROI +3.97% — légèrement positif, surveiller avant de corriger       |
-| `EV / OVER_UNDER`        | **WATCH**      | ROI -7.28% global mais forte variance par ligue — segmenter d'abord |
-| `DRAW / ONE_X_TWO`       | **WATCH**      | 20 picks, ROI +13.90% — trop petit, observer                        |
-| `EV / FIRST_HALF_WINNER` | **NO-GO v1**   | ROI -25.61% — hors périmètre                                        |
-| `EV / BTTS`              | **NO-GO v1**   | Couverture Pinnacle incomplète                                      |
-| `BTTS / BTTS`            | **NO-GO v1**   | Mapping marché sharp manquant                                       |
-| `HALF_TIME_FULL_TIME`    | **NO-GO v1**   | Hors périmètre v1                                                   |
+| Segment                  | Statut         | Action                                                         |
+| ------------------------ | -------------- | -------------------------------------------------------------- |
+| `SV / OVER_UNDER`        | **GO**         | Référence — ne pas corriger, servir de baseline de comparaison |
+| `SV / OVER_UNDER_HT`     | **GO**         | Référence — même logique                                       |
+| `CONF / ONE_X_TWO`       | **WATCH → v1** | 4 772 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `DRAW / ONE_X_TWO`       | **WATCH → v1** | 1 561 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `BTTS / BTTS`            | **WATCH → v1** | 1 185 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `EV / ONE_X_TWO`         | **WATCH → v1** | 585 samples Pinnacle — lancer LogReg segmenté                  |
+| `EV / OVER_UNDER_HT`     | **WATCH**      | ROI +3.97% — légèrement positif, surveiller avant de corriger  |
+| `EV / OVER_UNDER`        | **WATCH → v1** | 147 samples Pinnacle exploitables — lançable mais fragile      |
+| `EV / BTTS`              | **WATCH → v1** | 206 samples Pinnacle — lançable                                |
+| `EV / FIRST_HALF_WINNER` | **NO-GO v1**   | ROI -25.61% — hors périmètre                                   |
+| `HALF_TIME_FULL_TIME`    | **NO-GO v1**   | Hors périmètre v1                                              |

@@ -1,8 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Skeleton } from "@evcore/ui";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+} from "@evcore/ui";
+import {
+  AlertCircle,
   BrainCircuit,
   CheckCircle2,
   ChevronDown,
@@ -15,12 +29,21 @@ import {
 import {
   useActivateModel,
   useMlModels,
+  useMlTrainingJobStatus,
   useTriggerBackfill,
   useTriggerTraining,
 } from "@/domains/ml/use-cases/use-ml";
 import type { MlModelVersion } from "@/domains/ml/types/ml";
 
-const ML_SEGMENTS = ["ALL", "EV:ONE_X_TWO", "CONF:ONE_X_TWO"] as const;
+const ML_SEGMENTS = [
+  "ALL",
+  "EV:ONE_X_TWO",
+  "EV:OVER_UNDER",
+  "EV:BTTS",
+  "CONF:ONE_X_TWO",
+  "DRAW:ONE_X_TWO",
+  "BTTS:BTTS",
+] as const;
 
 function fmt(n: number | undefined, decimals = 3) {
   return n === undefined ? "—" : n.toFixed(decimals);
@@ -107,10 +130,10 @@ function BackfillSection() {
 }
 
 function TrainingSection() {
-  const [segment, setSegment] =
-    useState<(typeof ML_SEGMENTS)[number]>("ALL");
+  const [segment, setSegment] = useState<(typeof ML_SEGMENTS)[number]>("ALL");
   const trigger = useTriggerTraining(segment);
   const [jobId, setJobId] = useState<string | null>(null);
+  const { data: jobStatus } = useMlTrainingJobStatus(jobId);
 
   async function handleTrain() {
     const r = await trigger.mutateAsync();
@@ -133,22 +156,25 @@ function TrainingSection() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1">
-          {ML_SEGMENTS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSegment(s)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                segment === s
-                  ? "border-accent/30 bg-accent/10 text-accent"
-                  : "border-border bg-panel text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        <Select
+          value={segment}
+          onValueChange={(value) =>
+            setSegment(value as (typeof ML_SEGMENTS)[number])
+          }
+        >
+          <SelectTrigger className="h-10 w-full rounded-xl bg-panel sm:w-[220px]">
+            <SelectValue placeholder="Segment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {ML_SEGMENTS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
         <Button
           variant="outline"
           onClick={handleTrain}
@@ -166,9 +192,34 @@ function TrainingSection() {
       </div>
 
       {jobId && (
-        <p className="text-xs text-muted-foreground">
-          Job déclenché — id : <code className="font-mono">{jobId}</code>
-        </p>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              Job déclenché — id : <code className="font-mono">{jobId}</code>
+            </span>
+            {jobStatus?.state && (
+              <Badge
+                variant={
+                  jobStatus.state === "failed"
+                    ? "destructive"
+                    : jobStatus.state === "completed"
+                      ? "success"
+                      : "neutral"
+                }
+                className="text-[0.6rem]"
+              >
+                {jobStatus.state}
+              </Badge>
+            )}
+          </div>
+          {jobStatus?.state === "failed" && jobStatus.failedReason && (
+            <Alert variant="destructive">
+              <AlertCircle />
+              <AlertTitle>Entraînement échoué</AlertTitle>
+              <AlertDescription>{jobStatus.failedReason}</AlertDescription>
+            </Alert>
+          )}
+        </div>
       )}
     </section>
   );
