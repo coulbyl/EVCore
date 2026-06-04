@@ -11,8 +11,11 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+import uuid
+
 from ..config import Config
 from ..data.extract import extract_dataset
+from ..models import correction, persist
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +62,35 @@ async def handle(data: dict[str, Any], config: Config) -> dict[str, Any]:
         },
     )
 
-    # TODO Étape 5: model, metrics = train_correction_model(df)
-    # TODO Étape 5: persist_model(model, metrics, payload.segment, config.database_url)
+    try:
+        result = correction.train(df)
+    except ValueError as exc:
+        logger.warning("training aborted", extra={"reason": str(exc), "segment": payload.segment})
+        return {"status": "aborted", "reason": str(exc), "segment": payload.segment}
 
-    return {
-        "status": "dataset_ready",
+    model_id = str(uuid.uuid4())
+    version_id = await persist.persist({
+        "database_url": config.database_url,
+        "result": result,
         "segment": payload.segment,
-        "total_rows": len(df),
-        "with_pinnacle": with_pinnacle,
+        "model_id": model_id,
+    })
+
+    logger.info(
+        "training job done",
+        extra={
+            "version_id": version_id,
+            "segment": payload.segment,
+            "brier_score": round(result.brier_score, 4),
+            "roi_simulated": round(result.roi_simulated, 4),
+        },
+    )
+    return {
+        "status": "done",
+        "version_id": version_id,
+        "segment": payload.segment,
+        "brier_score": result.brier_score,
+        "calibration_error": result.calibration_error,
+        "roi_simulated": result.roi_simulated,
+        "sample_size": result.sample_size,
     }

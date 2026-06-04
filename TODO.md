@@ -70,23 +70,15 @@
 
 ---
 
-## Étape 5 — Modèle v1 : Correction Layer
+## Étape 5 — Modèle v1 : Correction Layer ✅
 
-> Commencer simple. Logistic regression d'abord (interprétable, robuste petit dataset). XGBoost en v2 quand le volume le justifie.
-
-- [ ] **v1 — Logistic Regression** sur `CONF / ONE_X_TWO` (153 picks, candidat immédiat) :
-  - Entraîner sur features v1
-  - Évaluer : Brier Score baseline vs. corrigé, Calibration Error, ROI simulé
-  - Objectif minimal : Brier Score ≥5% mieux que baseline Poisson
-- [ ] **v2 — XGBoost** sur tous segments disponibles, segment comme feature :
-  - Hyperparams : `max_depth=4`, `n_estimators=200`, `learning_rate=0.05` (conservative)
-  - Early stopping sur le validation set temporel
-  - Feature importance loggée dans `ml_model_version.metrics`
-- [ ] **Calibration post-modèle** via `CalibratedClassifierCV` (scikit-learn) :
-  - Méthode : isotonic si >1000 samples, Platt sinon
-  - Vérifier que les probabilités corrigées sont dans [0, 1] et somment à 1 par fixture
-- [ ] Sérialiser le modèle entraîné via joblib → fichier sur volume Docker partagé, chemin écrit dans `ml_model_version.modelPath`
-- [ ] Rapport offline : comparer baseline Poisson / logReg / XGBoost sur le test set
+- [x] `src/models/correction.py` — logistic regression, split temporel 70/30, métriques (Brier, CalErr, ROI simulé)
+- [x] Guard classe balance minimum (20 samples par classe par split)
+- [x] `src/models/persist.py` — joblib → `/app/models/{uuid}.pkl`, INSERT `ml_model_version`
+- [x] Volume Docker `ml_models` (dev + prod) — modèles persistés entre restarts
+- [x] `jobs/train.py` câblé end-to-end : extract → train → persist → retour métriques
+- [ ] **v2 — XGBoost** — quand segment cible atteint 200+ picks avec Pinnacle
+- [ ] Rapport comparatif offline : baseline Poisson vs logReg vs XGBoost (Étape 7)
 
 ---
 
