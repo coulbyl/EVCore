@@ -36,7 +36,7 @@ type MarkdownBlock =
       type: "hr";
     };
 
-type TocItem = {
+export type TocItem = {
   id: string;
   label: string;
 };

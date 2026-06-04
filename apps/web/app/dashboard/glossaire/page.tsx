@@ -3,6 +3,7 @@ import path from "node:path";
 import { Page, PageContent } from "@evcore/ui";
 import { BookOpen } from "lucide-react";
 import { GlossaryToc } from "@/components/glossary-toc";
+import { GlossaireMobileSelect } from "./glossaire-mobile-select";
 import { MarkdownArticle, getMarkdownToc } from "@/components/markdown-article";
 import { GlossaireSearch } from "./glossaire-search";
 
@@ -60,10 +61,11 @@ export default async function GlossairePage() {
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6">
           {/* Mobile ToC */}
-          <section className="rounded-[1.4rem] border border-border bg-panel-strong p-4 ev-shell-shadow lg:hidden">
+          <section className="flex flex-col gap-3 rounded-[1.4rem] border border-border bg-panel-strong p-4 ev-shell-shadow lg:hidden">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
               Navigation
             </p>
+            <GlossaireMobileSelect items={toc} />
             <GlossaryToc items={toc} />
           </section>
 

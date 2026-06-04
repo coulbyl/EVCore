@@ -217,7 +217,7 @@
 ### `performance/components/overview-section.tsx`
 
 - [~] KPIs : ROI global, win rate, EV moyen — cellules présentes, pas de graphique ROI dans le temps
-- [ ] Graphique ROI dans le temps : cellule `4×2`
+- [ ] Graphique ROI dans le temps : cellule `4×2` — nécessite endpoint backend `/performance/roi-history`
 
 ### `performance/components/backtest-section.tsx`
 
@@ -250,8 +250,8 @@
 
 ### `investment/page.tsx` + `investment-page-client.tsx`
 
-- [ ] Vue portefeuille : allocation par canal (graphique)
-- [ ] Tableau des positions
+- [ ] Vue portefeuille : allocation par canal (graphique) — nécessite endpoint backend `/investment/allocation`
+- [ ] Tableau des positions — nécessite endpoint backend
 - [ ] Mobile : graphique full-width, tableau scrollable horizontalement
 
 ---
@@ -266,19 +266,19 @@
 
 ### `formation/[category]/page.tsx` + `formation-category-shell.tsx`
 
-- [ ] Breadcrumb en haut
 - [ ] `formation-chapters.tsx` : liste ordonnée avec état de complétion
 - [ ] Complété : icône `CheckCircle` en `success`
 
 ### `formation/[category]/[slug]/page.tsx`
 
+- [x] Breadcrumb en haut (`Formation / [Catégorie] / [Titre]`)
 - [ ] Layout lecture : contenu centré `max-w-3xl`, sidebar progrès desktop
 - [x] `formation-video-player.tsx` : ratio 16/9 fixe, responsive (`aspect-video`)
-- [ ] Navigation précédent / suivant en bas
+- [x] Navigation précédent / suivant en bas (déjà implémenté)
 
 ### `glossaire/page.tsx`
 
-- [~] Index alphabétique sticky gauche desktop (présent), select mobile (absent)
+- [x] Index alphabétique sticky gauche desktop + select mobile (`GlossaireMobileSelect`)
 - [ ] Cards de termes : `bento-cell` avec terme `text-lg font-semibold` + définition
 - [x] Recherche inline en haut
 
@@ -291,8 +291,8 @@
 ### `wc2026/page.tsx`
 
 - [x] Grille bento de groupes / matchs
-- [ ] Cellule par match : équipes + cote + canal recommandé
-- [ ] Filtre par phase (groupes, huitièmes…)
+- [ ] Cellule par match : équipes + cote + canal recommandé — nécessite fixtures WC live + odds
+- [ ] Filtre par phase (groupes, huitièmes…) — activable quand les KO débutent (5 juillet 2026)
 
 ---
 
@@ -337,8 +337,8 @@
 ### `params/account/security/page.tsx` + `security-setup-form.tsx`
 
 - [ ] Étapes : état actuel → configuration → validation
-- [ ] QR code : fond blanc forcé même en dark
-- [ ] Codes backup : grille 2×5, style `font-mono`
+- [x] QR code : fond blanc forcé même en dark (`bg-white p-3` dans `totp-setup-flow.tsx`)
+- [ ] Codes backup : grille 2×5, style `font-mono` — nécessite endpoint backend
 
 ### Sections restantes account
 
