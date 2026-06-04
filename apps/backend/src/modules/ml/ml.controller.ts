@@ -12,12 +12,16 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { MlService } from './ml.service';
+import { MlBackfillService } from './ml.backfill.service';
 import { TriggerTrainingDto } from './dto/trigger-training.dto';
 
 @Controller('ml')
 @UseGuards(AuthSessionGuard)
 export class MlController {
-  constructor(private readonly ml: MlService) {}
+  constructor(
+    private readonly ml: MlService,
+    private readonly backfill: MlBackfillService,
+  ) {}
 
   private assertAdmin(session: AuthSession): void {
     if (session.user.role !== 'ADMIN') {
@@ -46,6 +50,12 @@ export class MlController {
     @CurrentSession() _session: AuthSession,
   ) {
     return this.ml.getActiveModel(segment ?? 'ALL');
+  }
+
+  @Post('backfill')
+  async triggerBackfill(@CurrentSession() session: AuthSession) {
+    this.assertAdmin(session);
+    return this.backfill.queueAllSeasons();
   }
 
   @Post('models/:id/activate')

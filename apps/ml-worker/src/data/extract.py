@@ -51,6 +51,7 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) os ON TRUE
 WHERE b.status IN ('WON', 'LOST')
+  AND (%s IS NULL OR mr."isBackfill" = %s)
 ORDER BY mr."analyzedAt"
 """
 
@@ -161,19 +162,31 @@ def _build_row(raw: dict[str, Any]) -> dict[str, Any]:
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
-async def extract_dataset(database_url: str, segment: str) -> pd.DataFrame:
+async def extract_dataset(
+    database_url: str,
+    segment: str,
+    include_backfill: bool = True,
+) -> pd.DataFrame:
     """
     Extract and engineer the training dataset from PostgreSQL.
 
+    include_backfill=True  → all records (prod + historical backfill)
+    include_backfill=False → prod picks only (isBackfill = false)
+
     Returns a DataFrame sorted by analyzed_at (temporal order preserved).
-    Rows without Pinnacle odds have None in delta_p / p_pinnacle columns
-    — callers must decide whether to drop or impute them.
+    Rows without Pinnacle odds have None in delta_p / p_pinnacle columns.
     """
-    logger.info("extracting dataset", extra={"segment": segment})
+    logger.info(
+        "extracting dataset",
+        extra={"segment": segment, "include_backfill": include_backfill},
+    )
+
+    # Pass None to skip the isBackfill filter, or a boolean to filter
+    backfill_filter: bool | None = None if include_backfill else False
 
     async with await psycopg.AsyncConnection.connect(database_url) as conn:
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            await cur.execute(_SQL)
+            await cur.execute(_SQL, (backfill_filter, backfill_filter))
             rows = await cur.fetchall()
 
     logger.info("raw rows fetched", extra={"count": len(rows)})
