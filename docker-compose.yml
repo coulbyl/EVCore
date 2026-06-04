@@ -46,6 +46,24 @@ services:
   #     redis:
   #       condition: service_healthy
 
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.1-p0
+    container_name: evcore-pgbouncer
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-evcore}"
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+      MAX_PREPARED_STATEMENTS: "100"
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+    ports:
+      - "${PGBOUNCER_PORT:-5433}:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: evcore-mailpit

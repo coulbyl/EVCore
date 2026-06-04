@@ -18,28 +18,21 @@
 
 ---
 
-## Étape 0 — Commit des travaux Codex en attente
+## Étape 0 — Commit des travaux Codex en attente ✅
 
-- [ ] Commit `packages/db/scripts/analyze-edge.ts` (script de génération du rapport edge)
-- [ ] Commit `docs/phase3-ml-correction-layer.md` + `docs/phase3-go-watch-no-go.md`
-- [ ] Commit `ROADMAP.md` (liens vers les docs Phase 3 ajoutés)
+- [x] Commit `packages/db/scripts/analyze-edge.ts`
+- [x] Commit `docs/phase3-ml-correction-layer.md` + `docs/phase3-go-watch-no-go.md`
+- [x] Commit `ROADMAP.md` (liens vers les docs Phase 3 ajoutés)
 
 ---
 
-## Étape 1 — Préconditions DB
+## Étape 1 — Préconditions DB ✅
 
-> À faire avant toute infra ML. Ces éléments évitent des migrations douloureuses en cours d'entraînement.
-
-- [ ] **PgBouncer** dans Docker Compose — connection pooling, obligatoire avant l'ajout du worker Python (connexions concurrentes NestJS + Python)
-- [ ] **Partitionnement `OddsSnapshot` par mois** — PostgreSQL declarative partitioning ; avant 500k lignes ; les requêtes d'extraction de features en seront 10× plus rapides
-- [ ] **Index composites** `(competitionCode, "scheduledAt")` sur `Fixture` et `ModelRun` — accélère l'extraction du dataset d'entraînement
-- [ ] **Table `ml_model_version`** dans le schéma Prisma :
-  ```
-  id, createdAt, segment (canal×marché), algorithm, features (JSON),
-  metrics (brierScore, calibrationError, roiShadow), modelBlob (bytea ou path S3),
-  isActive, activatedAt, rollbackOf (FK self)
-  ```
-- [ ] **Politique de rétention `ModelRun`** : ajouter une contrainte / note dans `etl.constants.ts` — jamais de purge, c'est le dataset ML
+- [x] **PgBouncer** `v1.25.1-p0` dans Docker Compose (dev + prod) — `PGBOUNCER_URL` pour le runtime, `DATABASE_URL` direct pour les migrations
+- [-] **Partitionnement `OddsSnapshot`** — différé : 421k lignes, indexes existants suffisants ; à reconsidérer à 1M+
+- [x] **Index `ModelRun.analyzedAt`** — ajouté pour les scans temporels du dataset ML
+- [x] **Table `ml_model_version`** — migration `20260604174057_phase3_ml_model_version`
+- [x] **Politique de rétention `ModelRun`** — documentée dans le schéma Prisma (commentaire)
 
 ---
 

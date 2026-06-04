@@ -311,6 +311,7 @@ model ModelRun {
 
   @@index([fixtureId])
   @@index([fixtureId, analyzedAt])
+  @@index([analyzedAt])
   @@map("model_run")
 }
 
@@ -710,4 +711,33 @@ model CouponProposalLeg {
   @@index([couponProposalId])
   @@index([fixtureId])
   @@map("coupon_proposal_leg")
+}
+
+// ─────────────────────────────────────────────
+// ML — Phase 3
+// ─────────────────────────────────────────────
+
+model MlModelVersion {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  createdAt   DateTime  @default(now())
+  // Target segment: "EV:ONE_X_TWO" | "CONF:ONE_X_TWO" | "ALL" etc.
+  segment     String
+  // "logistic_regression" | "xgboost"
+  algorithm   String
+  // Feature names used during training
+  features    Json
+  // { brierScore, calibrationError, roiShadow, sampleSize, trainSize, testSize }
+  metrics     Json
+  // Path to serialized model on shared Docker volume (ml-models/)
+  modelPath   String?
+  isActive    Boolean   @default(false)
+  activatedAt DateTime?
+  notes       String?
+  rollbackOfId String?  @db.Uuid
+  rollbackOf   MlModelVersion?  @relation("MlRollback", fields: [rollbackOfId], references: [id])
+  rollbacks    MlModelVersion[] @relation("MlRollback")
+
+  @@index([isActive, segment])
+  @@index([segment, createdAt])
+  @@map("ml_model_version")
 }
