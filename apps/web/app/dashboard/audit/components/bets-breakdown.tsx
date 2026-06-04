@@ -39,8 +39,9 @@ export function BetsBreakdown({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <TableCard title={t("betsByStatus")}>
+    <div className="bento-grid">
+      <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+        <TableCard title={t("betsByStatus")} className="h-full">
         <div className="p-4">
           <StatList
             items={betsByStatus.map((r) => ({
@@ -50,9 +51,11 @@ export function BetsBreakdown({
             }))}
           />
         </div>
-      </TableCard>
+        </TableCard>
+      </div>
 
-      <TableCard title={t("betsByMarket")}>
+      <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+        <TableCard title={t("betsByMarket")} className="h-full">
         <div className="p-4">
           <StatList
             items={betsByMarket.map((r) => ({
@@ -62,13 +65,16 @@ export function BetsBreakdown({
             }))}
           />
         </div>
-      </TableCard>
+        </TableCard>
+      </div>
 
-      <TableCard title={t("learningLoop")}>
+      <div className="col-span-2 sm:col-span-6 lg:col-span-4">
+        <TableCard title={t("learningLoop")} className="h-full">
         <div className="p-4">
           <StatList items={learningItems} />
         </div>
-      </TableCard>
+        </TableCard>
+      </div>
     </div>
   );
 }

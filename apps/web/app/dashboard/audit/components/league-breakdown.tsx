@@ -31,6 +31,8 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
     {
       id: "league",
       header: "Ligue",
+      accessorFn: (row) => `${row.code} ${row.name}`,
+      enableSorting: true,
       cell: ({ row }) => (
         <span>
           <span className="font-mono text-[0.7rem] text-muted-foreground">
@@ -62,16 +64,22 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
     {
       id: "fixtures",
       header: "Fixtures",
-      accessorFn: (row) => formatCompactValue(row.fixtures),
+      accessorFn: (row) => row.fixtures,
+      enableSorting: true,
+      cell: ({ row }) => formatCompactValue(row.original.fixtures),
     },
     {
       id: "finished",
       header: "Terminées",
-      accessorFn: (row) => formatCompactValue(row.finished),
+      accessorFn: (row) => row.finished,
+      enableSorting: true,
+      cell: ({ row }) => formatCompactValue(row.original.finished),
     },
     {
       id: "xg",
       header: "Couv. xG",
+      accessorFn: (row) => row.xgCoveragePct,
+      enableSorting: true,
       cell: ({ row }) => (
         <ProgressBar
           value={row.original.xgCoveragePct}
@@ -83,12 +91,16 @@ export function LeagueBreakdown({ rows }: { rows: AuditLeagueRow[] }) {
     {
       id: "odds",
       header: "Cotes",
-      accessorFn: (row) => formatCompactValue(row.withOdds),
+      accessorFn: (row) => row.withOdds,
+      enableSorting: true,
+      cell: ({ row }) => formatCompactValue(row.original.withOdds),
     },
     {
       id: "stats",
       header: "Stats",
-      accessorFn: (row) => formatCompactValue(row.teamStats),
+      accessorFn: (row) => row.teamStats,
+      enableSorting: true,
+      cell: ({ row }) => formatCompactValue(row.original.teamStats),
     },
   ];
 

@@ -17,6 +17,18 @@ import { useCalibrationCurve } from "@/domains/risk/use-cases/get-calibration-cu
 import { formatDateShort } from "@/lib/date";
 import { formatDecimal } from "./formatters";
 
+function getCalibrationDriftState(current: number, previous?: number) {
+  if (previous === undefined) {
+    return "neutral" as const;
+  }
+
+  if (current <= previous) {
+    return "healthy" as const;
+  }
+
+  return "warning" as const;
+}
+
 function CalibrationTrend({
   current,
   previous,
@@ -47,6 +59,12 @@ export function CalibrationSection() {
   );
   const latestApplied = applied[0];
   const previousApplied = applied[1];
+  const driftState = latestApplied
+    ? getCalibrationDriftState(
+        latestApplied.calibrationError,
+        previousApplied?.calibrationError,
+      )
+    : "neutral";
 
   const chartData = [...applied].reverse().map((proposal) => ({
     date: formatDateShort(proposal.createdAt),
@@ -126,13 +144,27 @@ export function CalibrationSection() {
         )}
 
         {latestApplied && (
-          <div className="rounded-[1.2rem] border border-border bg-panel px-4 py-3">
+          <div
+            className={[
+              "rounded-[1.2rem] border bg-panel px-4 py-3",
+              driftState === "warning"
+                ? "border-warning/40 bg-warning/5"
+                : "border-border",
+            ].join(" ")}
+          >
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t("latestBrierScore")}
               </p>
               <div className="flex items-baseline">
-                <span className="tabular-nums text-sm font-semibold text-foreground">
+                <span
+                  className={[
+                    "tabular-nums text-sm font-semibold",
+                    driftState === "warning"
+                      ? "text-warning"
+                      : "text-foreground",
+                  ].join(" ")}
+                >
                   {latestApplied.calibrationError.toFixed(3)}
                 </span>
                 <CalibrationTrend
@@ -141,6 +173,12 @@ export function CalibrationSection() {
                 />
               </div>
             </div>
+            {driftState === "warning" && (
+              <p className="mt-2 text-xs text-warning">
+                Drift détecté: la calibration se dégrade par rapport à la
+                recalibration précédente.
+              </p>
+            )}
           </div>
         )}
 

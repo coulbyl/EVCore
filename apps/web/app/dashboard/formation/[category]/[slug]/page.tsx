@@ -13,6 +13,14 @@ import {
   FORMATION_CATEGORIES,
   type FormationCategory,
 } from "@/domains/formation/types/formation";
+
+const CATEGORY_LABELS: Record<FormationCategory, string> = {
+  bases: "Les bases",
+  channels: "Les 5 canaux",
+  bankroll: "Bankroll & discipline",
+  leagues: "Guide par ligue",
+  app: "Comment utiliser l'app",
+};
 import { FormationCompletionButton } from "../../components/formation-completion-button";
 import { FormationVideoPlayer } from "../../components/formation-video-player";
 import { FormationChapters } from "../../components/formation-chapters";
@@ -97,6 +105,26 @@ export default async function FormationCategoryItemPage({
         type={item.type}
         slug={item.slug}
       />
+
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Link
+          href="/dashboard/formation"
+          className="hover:text-foreground transition-colors"
+        >
+          Formation
+        </Link>
+        <span className="opacity-40">/</span>
+        <Link
+          href={`/dashboard/formation/${category}`}
+          className="hover:text-foreground transition-colors"
+        >
+          {CATEGORY_LABELS[category as FormationCategory] ?? category}
+        </Link>
+        <span className="opacity-40">/</span>
+        <span className="truncate text-foreground">{item.title}</span>
+      </nav>
+
       <header className="flex flex-col gap-4 rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_16%,transparent)_0%,transparent_70%)] px-4 py-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">

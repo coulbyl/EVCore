@@ -13,8 +13,11 @@ import { ChannelPerformanceTable } from "./channel-performance-table";
 import { PredictionsCard } from "./predictions-card";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
+import { PipelineStatus } from "./pipeline-status";
+import { ActiveAlerts } from "./active-alerts";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
+import { useDashboardSummary } from "@/domains/dashboard/use-cases/get-dashboard-summary";
 
 const FILTER_DEFS: FilterDef[] = [
   { key: "range", label: "Période", type: "daterange" },
@@ -51,6 +54,11 @@ export function DashboardPageClientAdmin() {
     isLoading: leaderboardLoading,
     isError: leaderboardError,
   } = useLeaderboard();
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+  } = useDashboardSummary();
 
   const range = filters.range as DateRange | undefined;
   const fromIso = range?.from ? isoDate(range.from) : isoDate(thirtyDaysAgo());
@@ -84,7 +92,23 @@ export function DashboardPageClientAdmin() {
               <PredictionsCard />
             </div>
 
-            {/* Row 3 : Classement ligues + Top joueurs */}
+            {/* Row 3 : Pipeline + Alertes */}
+            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
+              <PipelineStatus
+                workers={summary?.workerStatuses ?? []}
+                isLoading={summaryLoading}
+                isError={summaryError}
+              />
+            </div>
+            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
+              <ActiveAlerts
+                alerts={summary?.activeAlerts ?? []}
+                isLoading={summaryLoading}
+                isError={summaryError}
+              />
+            </div>
+
+            {/* Row 4 : Classement ligues + Top joueurs */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
               <CompetitionRanking
                 stats={competitionStats ?? []}
