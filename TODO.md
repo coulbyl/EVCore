@@ -151,7 +151,7 @@
 - [x] `dashboard-kpi-card.tsx` : prop `compact` supprimée, toujours responsive
 - [x] `kpi-delta.tsx` : ▲/▼ avec `text-success`/`text-destructive`, `sm:` classes
 - [x] `stat-card.tsx` (ui) : `compact=false` responsive via `sm:`, `compact=true` toujours compact
-- [ ] Variante par canal : bord gauche `4px solid var(--canal-*)` ← à faire (Bloc 10)
+- [x] Variante par canal : bord gauche `4px solid var(--canal-*)` — implémenté dans `canal-cards.tsx`
 - [ ] `bento-cell-interactive` si cliquable vers la page canal ← à faire (Bloc 10)
 
 ### `components/canal-cards.tsx` ✅
@@ -169,8 +169,8 @@
 
 ### `components/pipeline-status.tsx` + `active-alerts.tsx`
 
-- [ ] pipeline-status : indicateurs `success`/`warning`/`danger` ← à faire (Bloc 10)
-- [ ] active-alerts : cellule scrollable, badge sévérité, empty state ← à faire (Bloc 10)
+- [x] pipeline-status : indicateurs `success`/`warning`/`danger`
+- [x] active-alerts : cellule scrollable, badge sévérité, empty state
 
 ### `components/competition-ranking.tsx` + `user-leaderboard.tsx` ✅
 
