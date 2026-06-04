@@ -9,8 +9,8 @@
   --sidebar-foreground: #1e293b;
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e2e8f0;
-  --sidebar-accent-foreground: #0f172a;
+  --sidebar-accent: var(--accent-soft);
+  --sidebar-accent-foreground: var(--accent);
   --sidebar-border: rgba(24, 33, 47, 0.1);
   --sidebar-ring: var(--ring);
   --border: rgba(24, 33, 47, 0.1);
@@ -72,8 +72,8 @@
   --sidebar-foreground: #cbd5e1;
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: #0d1520;
-  --sidebar-accent: #182638;
-  --sidebar-accent-foreground: var(--sidebar-foreground);
+  --sidebar-accent: var(--accent-soft);
+  --sidebar-accent-foreground: var(--accent);
   --sidebar-border: rgba(203, 213, 225, 0.1);
   --sidebar-ring: var(--ring);
   --border: rgba(226, 232, 240, 0.08);

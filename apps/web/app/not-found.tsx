@@ -24,7 +24,7 @@ export default function NotFound() {
       </div>
 
       <div style={{ animation: "fade-slide-up 0.5s ease-out 0.15s both" }}>
-        <Button asChild>
+        <Button variant="outline" asChild>
           <Link href="/dashboard">Retour au dashboard</Link>
         </Button>
       </div>

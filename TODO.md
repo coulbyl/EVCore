@@ -185,7 +185,7 @@
 
 - [x] `useIsMobile` : uniquement comportemental (drawer vs panel) — aucun switch CSS → pas de changement nécessaire
 - [ ] Filtres sticky en haut : canal, ligue, date ← design enhancement
-- [ ] `pick-card.tsx` : bord gauche canal, odds `font-mono`, badge EV ← design enhancement
+- [x] `pick-card.tsx` : bord gauche canal, odds `font-mono`, badge EV — déjà implémenté
 
 ### `coupons/page.tsx` + `coupons-page-client.tsx` ✅
 
@@ -366,7 +366,7 @@
 
 ### Sidebar
 
-- [~] Items nav : icône + label, actif = `bg-accent-soft text-accent` (style shadcn par défaut, pas explicitement `bg-accent-soft`)
+- [x] Items nav : icône + label, actif = `bg-accent-soft text-accent` (`--sidebar-accent` → `var(--accent-soft)`, `--sidebar-accent-foreground` → `var(--accent)`)
 - [x] Badge count sur items (notifications) — `app-shell.tsx` + `page-shell.tsx`
 - [x] Bas : avatar utilisateur + lien settings (`account-button.tsx`)
 
