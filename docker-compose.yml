@@ -64,6 +64,24 @@ services:
       postgres:
         condition: service_healthy
 
+  ml-worker:
+    build:
+      context: ./apps/ml-worker
+      dockerfile: Dockerfile
+    container_name: evcore-ml-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-evcore}"
+      PGBOUNCER_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@pgbouncer:5432/${POSTGRES_DB:-evcore}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      LOG_LEVEL: info
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: evcore-mailpit

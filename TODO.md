@@ -54,8 +54,8 @@
   ml-worker:
     build: ./apps/ml-worker
     environment:
-      - DATABASE_URL=${DATABASE_URL}       # direct postgres (lectures lourdes dataset)
-      - PGBOUNCER_URL=${PGBOUNCER_URL}     # pooled (requêtes courantes)
+      - DATABASE_URL=${DATABASE_URL} # direct postgres (lectures lourdes dataset)
+      - PGBOUNCER_URL=${PGBOUNCER_URL} # pooled (requêtes courantes)
       - REDIS_URL=redis://redis:6379
     depends_on: [pgbouncer, redis]
   ```
@@ -158,16 +158,16 @@
 
 ## Matrice GO / WATCH / NO-GO (v1 — mise à jour au fil des rapports)
 
-| Segment | Statut | Action |
-| --- | --- | --- |
-| `SV / OVER_UNDER` | **GO** | Référence — ne pas corriger, servir de baseline de comparaison |
-| `SV / OVER_UNDER_HT` | **GO** | Référence — même logique |
-| `CONF / ONE_X_TWO` | **WATCH → v1** | 153 picks : premier segment à corriger (Étape 5 v1) |
-| `EV / ONE_X_TWO` | **WATCH → v2** | 22 picks — attendre 100+ avant XGBoost |
-| `EV / OVER_UNDER_HT` | **WATCH** | ROI +3.97% — légèrement positif, surveiller avant de corriger |
-| `EV / OVER_UNDER` | **WATCH** | ROI -7.28% global mais forte variance par ligue — segmenter d'abord |
-| `DRAW / ONE_X_TWO` | **WATCH** | 20 picks, ROI +13.90% — trop petit, observer |
-| `EV / FIRST_HALF_WINNER` | **NO-GO v1** | ROI -25.61% — hors périmètre |
-| `EV / BTTS` | **NO-GO v1** | Couverture Pinnacle incomplète |
-| `BTTS / BTTS` | **NO-GO v1** | Mapping marché sharp manquant |
-| `HALF_TIME_FULL_TIME` | **NO-GO v1** | Hors périmètre v1 |
+| Segment                  | Statut         | Action                                                              |
+| ------------------------ | -------------- | ------------------------------------------------------------------- |
+| `SV / OVER_UNDER`        | **GO**         | Référence — ne pas corriger, servir de baseline de comparaison      |
+| `SV / OVER_UNDER_HT`     | **GO**         | Référence — même logique                                            |
+| `CONF / ONE_X_TWO`       | **WATCH → v1** | 153 picks : premier segment à corriger (Étape 5 v1)                 |
+| `EV / ONE_X_TWO`         | **WATCH → v2** | 22 picks — attendre 100+ avant XGBoost                              |
+| `EV / OVER_UNDER_HT`     | **WATCH**      | ROI +3.97% — légèrement positif, surveiller avant de corriger       |
+| `EV / OVER_UNDER`        | **WATCH**      | ROI -7.28% global mais forte variance par ligue — segmenter d'abord |
+| `DRAW / ONE_X_TWO`       | **WATCH**      | 20 picks, ROI +13.90% — trop petit, observer                        |
+| `EV / FIRST_HALF_WINNER` | **NO-GO v1**   | ROI -25.61% — hors périmètre                                        |
+| `EV / BTTS`              | **NO-GO v1**   | Couverture Pinnacle incomplète                                      |
+| `BTTS / BTTS`            | **NO-GO v1**   | Mapping marché sharp manquant                                       |
+| `HALF_TIME_FULL_TIME`    | **NO-GO v1**   | Hors périmètre v1                                                   |

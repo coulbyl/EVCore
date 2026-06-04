@@ -23,6 +23,7 @@ import { FormationProgressModule } from './modules/formation-progress/formation-
 import { SummaryModule } from './modules/summary/summary.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { AiEngineModule } from './modules/ai-engine/ai-engine.module';
+import { MlModule } from './modules/ml/ml.module';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { RedisModule } from './common/redis/redis.module';
     SummaryModule,
     AnnouncementsModule,
     AiEngineModule,
+    MlModule,
   ],
   controllers: [AppController],
   providers: [AppService],

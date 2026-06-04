@@ -317,6 +317,7 @@
 > NestJS reste l'autorité — Python entraîne et calibre, NestJS décide.
 
 Docs de cadrage Phase 3:
+
 - [docs/phase3-ml-correction-layer.md](docs/phase3-ml-correction-layer.md) — rôle du ML comme couche de correction au-dessus du Poisson
 - [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
 - [packages/db/reports/edge-vs-pinnacle-2026-06-04.md](packages/db/reports/edge-vs-pinnacle-2026-06-04.md) — premier rapport `edge vs Pinnacle`
@@ -382,11 +383,11 @@ Docs de cadrage Phase 3:
 
 ## GitHub Milestones
 
-| Milestone         | Contenu                                        | Due date     |
-| ----------------- | ---------------------------------------------- | ------------ |
-| `mvp-foundations` | Setup monorepo, DB, Docker, CI                 | 28 fév 2026  |
-| `mvp-month-1`     | ETL, stats rolling, modèle, backtest           | 14 mars 2026 |
-| `mvp-month-2`     | Odds, EV, simulation, tracking                 | 31 mars 2026 |
-| `mvp-month-3`     | Automatisation, apprentissage, validation      | 8 avr 2026   |
-| `phase-2`         | Live, canaux prédiction, déploiement prod      | 4 juin 2026  |
-| `phase-3`         | ML circulant, XGBoost, scalabilité DB          | TBD          |
+| Milestone         | Contenu                                   | Due date     |
+| ----------------- | ----------------------------------------- | ------------ |
+| `mvp-foundations` | Setup monorepo, DB, Docker, CI            | 28 fév 2026  |
+| `mvp-month-1`     | ETL, stats rolling, modèle, backtest      | 14 mars 2026 |
+| `mvp-month-2`     | Odds, EV, simulation, tracking            | 31 mars 2026 |
+| `mvp-month-3`     | Automatisation, apprentissage, validation | 8 avr 2026   |
+| `phase-2`         | Live, canaux prédiction, déploiement prod | 4 juin 2026  |
+| `phase-3`         | ML circulant, XGBoost, scalabilité DB     | TBD          |
