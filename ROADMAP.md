@@ -316,6 +316,11 @@
 > Architecture : Python worker dans le Docker Compose existant, communication via BullMQ/Redis et PostgreSQL.
 > NestJS reste l'autorité — Python entraîne et calibre, NestJS décide.
 
+Docs de cadrage Phase 3:
+- [docs/phase3-ml-correction-layer.md](docs/phase3-ml-correction-layer.md) — rôle du ML comme couche de correction au-dessus du Poisson
+- [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
+- [packages/db/reports/edge-vs-pinnacle-2026-06-04.md](packages/db/reports/edge-vs-pinnacle-2026-06-04.md) — premier rapport `edge vs Pinnacle`
+
 ### Préconditions DB (à faire avant tout entraînement ML)
 
 - [ ] PgBouncer dans Docker Compose (connection pooling — prévient la saturation avec NestJS + Python concurrents)
