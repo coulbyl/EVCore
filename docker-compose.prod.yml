@@ -68,6 +68,24 @@ services:
       postgres:
         condition: service_healthy
 
+  # ── ML Worker ───────────────────────────────────────────────────────────────
+  ml-worker:
+    container_name: evcore-ml-worker
+    image: ghcr.io/${GHCR_OWNER}/evcore-ml-worker:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-evcore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-evcore}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: info
+    volumes:
+      - ml_models:/app/models
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
   # ── Backend ─────────────────────────────────────────────────────────────────
   # entrypoint.sh runs prisma migrate deploy then starts the NestJS app
   backend:
