@@ -165,11 +165,7 @@ export function UsersPageClient() {
       {
         id: "user",
         header: "Utilisateur",
-        accessorFn: (row) => [
-          row.fullName,
-          row.username,
-          row.email,
-        ].join(" "),
+        accessorFn: (row) => [row.fullName, row.username, row.email].join(" "),
         enableSorting: true,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-3">

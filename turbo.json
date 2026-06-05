@@ -4,6 +4,7 @@
   "globalEnv": [
     "NODE_ENV",
     "DATABASE_URL",
+    "PGBOUNCER_URL",
     "SEED_ADMIN_EMAIL",
     "SEED_ADMIN_USERNAME",
     "SEED_ADMIN_FULL_NAME",

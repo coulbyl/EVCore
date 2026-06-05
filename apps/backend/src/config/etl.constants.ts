@@ -168,6 +168,8 @@ export const API_FOOTBALL_BET_IDS = {
 } as const;
 
 export const BULLMQ_QUEUES = {
+  ML_TRAINING: 'ml-training',
+  ML_BACKFILL: 'ml-backfill',
   LEAGUE_SYNC: 'league-sync',
   PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
   STALE_SCHEDULED_SYNC: 'stale-scheduled-sync',

@@ -71,7 +71,9 @@ export function ActiveAlerts({ alerts, isLoading, isError }: Props) {
 
       {isError && (
         <div className="flex flex-1 items-center justify-center py-6">
-          <p className="text-xs text-danger">Impossible de charger les alertes.</p>
+          <p className="text-xs text-danger">
+            Impossible de charger les alertes.
+          </p>
         </div>
       )}
 

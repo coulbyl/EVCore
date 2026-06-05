@@ -3,7 +3,7 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 2 — Bloc 7 en cours (mise à jour le 4 juin 2026)**
+**Statut actuel : Phase 3 — Étape 2 en cours (mise à jour le 4 juin 2026)**
 
 ---
 
@@ -316,22 +316,26 @@
 > Architecture : Python worker dans le Docker Compose existant, communication via BullMQ/Redis et PostgreSQL.
 > NestJS reste l'autorité — Python entraîne et calibre, NestJS décide.
 
-### Préconditions DB (à faire avant tout entraînement ML)
+Docs de cadrage Phase 3:
 
-- [ ] PgBouncer dans Docker Compose (connection pooling — prévient la saturation avec NestJS + Python concurrents)
-- [ ] Partitionnement `OddsSnapshot` par mois (PostgreSQL declarative partitioning — avant 500k lignes)
-- [ ] Index composites `(competitionCode, "scheduledAt")` sur `Fixture` et `ModelRun`
-- [ ] Table `ml_model_version` — versioning des modèles XGBoost sérialisés (id, createdAt, weights, metrics, isActive)
-- [ ] Politique explicite : `ModelRun` jamais supprimé — c'est le training data du modèle ML
+- [docs/phase3-ml-correction-layer.md](docs/phase3-ml-correction-layer.md) — rôle du ML comme couche de correction au-dessus du Poisson
+- [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
+- [packages/db/reports/edge-vs-pinnacle-2026-06-04.md](packages/db/reports/edge-vs-pinnacle-2026-06-04.md) — premier rapport `edge vs Pinnacle`
 
-### Bloc A — Étude OddsSnapshot
+### Préconditions DB ✅ (4 juin 2026)
 
-> Valider que le edge du moteur est réel avant d'investir dans l'entraînement ML.
+- [x] PgBouncer `v1.25.1-p0` dans Docker Compose dev + prod (`PGBOUNCER_URL` runtime / `DATABASE_URL` migrations)
+- [-] Partitionnement `OddsSnapshot` — différé (421k lignes, indexes suffisants ; reconsidérer à 1M+)
+- [x] Index `ModelRun.analyzedAt` — scans temporels dataset ML
+- [x] Table `ml_model_version` — migration `20260604174057_phase3_ml_model_version`
+- [x] Politique `ModelRun` jamais supprimée — documentée dans le schéma
 
-- [ ] Comparer probabilités moteur vs probabilité implicite Pinnacle sur l'historique closing odds
-- [ ] Calculer le edge moyen par canal (EV, CONF, BTTS, DRAW) sur les paris WON/LOST
-- [ ] Identifier les ligues / marchés où l'inefficience est la plus accessible (Pinnacle moins sharp)
-- [ ] Rapport d'analyse → décision go/no-go XGBoost par marché
+### Bloc A — Étude OddsSnapshot ✅ (4 juin 2026)
+
+- [x] Comparer probabilités moteur vs probabilité implicite Pinnacle — 680 picks analysés
+- [x] Edge moyen par canal : `SV` GO (+5.17% / +17.16%), `EV/ONE_X_TWO` NO-GO (-54.86%), `CONF` WATCH
+- [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/phase3-go-watch-no-go.md`
+- [x] Rapport → `packages/db/reports/edge-vs-pinnacle-2026-06-04.md`
 
 ### Bloc B — Infrastructure ML
 
@@ -379,11 +383,11 @@
 
 ## GitHub Milestones
 
-| Milestone         | Contenu                                        | Due date     |
-| ----------------- | ---------------------------------------------- | ------------ |
-| `mvp-foundations` | Setup monorepo, DB, Docker, CI                 | 28 fév 2026  |
-| `mvp-month-1`     | ETL, stats rolling, modèle, backtest           | 14 mars 2026 |
-| `mvp-month-2`     | Odds, EV, simulation, tracking                 | 31 mars 2026 |
-| `mvp-month-3`     | Automatisation, apprentissage, validation      | 8 avr 2026   |
-| `phase-2`         | Live, canaux prédiction, déploiement prod      | 4 juin 2026  |
-| `phase-3`         | ML circulant, XGBoost, scalabilité DB          | TBD          |
+| Milestone         | Contenu                                   | Due date     |
+| ----------------- | ----------------------------------------- | ------------ |
+| `mvp-foundations` | Setup monorepo, DB, Docker, CI            | 28 fév 2026  |
+| `mvp-month-1`     | ETL, stats rolling, modèle, backtest      | 14 mars 2026 |
+| `mvp-month-2`     | Odds, EV, simulation, tracking            | 31 mars 2026 |
+| `mvp-month-3`     | Automatisation, apprentissage, validation | 8 avr 2026   |
+| `phase-2`         | Live, canaux prédiction, déploiement prod | 4 juin 2026  |
+| `phase-3`         | ML circulant, XGBoost, scalabilité DB     | TBD          |

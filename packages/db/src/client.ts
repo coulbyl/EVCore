@@ -5,8 +5,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
+  // PGBOUNCER_URL when PgBouncer is in front (prod + dev), fallback to direct DATABASE_URL
   const adapter = new PrismaPg({
-    connectionString: process.env["DATABASE_URL"],
+    connectionString:
+      process.env["PGBOUNCER_URL"] ?? process.env["DATABASE_URL"],
   });
   return new PrismaClient({
     adapter,

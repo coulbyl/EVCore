@@ -42,37 +42,37 @@ export function BetsBreakdown({
     <div className="bento-grid">
       <div className="col-span-2 sm:col-span-3 lg:col-span-4">
         <TableCard title={t("betsByStatus")} className="h-full">
-        <div className="p-4">
-          <StatList
-            items={betsByStatus.map((r) => ({
-              label: r.status,
-              value: r.count.toLocaleString(),
-              mono: true,
-            }))}
-          />
-        </div>
+          <div className="p-4">
+            <StatList
+              items={betsByStatus.map((r) => ({
+                label: r.status,
+                value: r.count.toLocaleString(),
+                mono: true,
+              }))}
+            />
+          </div>
         </TableCard>
       </div>
 
       <div className="col-span-2 sm:col-span-3 lg:col-span-4">
         <TableCard title={t("betsByMarket")} className="h-full">
-        <div className="p-4">
-          <StatList
-            items={betsByMarket.map((r) => ({
-              label: r.market,
-              value: r.count.toLocaleString(),
-              mono: true,
-            }))}
-          />
-        </div>
+          <div className="p-4">
+            <StatList
+              items={betsByMarket.map((r) => ({
+                label: r.market,
+                value: r.count.toLocaleString(),
+                mono: true,
+              }))}
+            />
+          </div>
         </TableCard>
       </div>
 
       <div className="col-span-2 sm:col-span-6 lg:col-span-4">
         <TableCard title={t("learningLoop")} className="h-full">
-        <div className="p-4">
-          <StatList items={learningItems} />
-        </div>
+          <div className="p-4">
+            <StatList items={learningItems} />
+          </div>
         </TableCard>
       </div>
     </div>
