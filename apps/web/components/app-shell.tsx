@@ -13,6 +13,7 @@ import {
   BrainCircuit,
   CalendarDays,
   ClipboardCheck,
+  Cpu,
   Globe,
   GraduationCap,
   LayoutDashboard,
@@ -103,6 +104,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href: "/dashboard/ml",
             active: pathname.startsWith("/dashboard/ml"),
             icon: BrainCircuit,
+          },
+          {
+            label: tNav("engine"),
+            href: "/dashboard/engine",
+            active: pathname.startsWith("/dashboard/engine"),
+            icon: Cpu,
           },
           {
             label: tNav("glossary"),
