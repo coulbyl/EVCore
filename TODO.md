@@ -75,7 +75,7 @@
 
 ## Étape 5 — Modèle v1 : Correction Layer ✅
 
-- [x] `src/models/correction.py` — logistic regression, split temporel 70/30, métriques (Brier, CalErr, ROI simulé)
+- [x] `src/models/correction.py` — logistic regression + XGBoost (auto-select ≥200 samples Pinnacle), split temporel 70/30, métriques (Brier, CalErr, ROI simulé)
 - [x] Guard classe balance minimum (20 samples par classe par split)
 - [x] `src/models/persist.py` — joblib → `/app/models/{uuid}.pkl`, INSERT `ml_model_version`
 - [x] Volume Docker `ml_models` (dev + prod) — modèles persistés entre restarts
@@ -84,35 +84,35 @@
   - Version DB : `1087eb88-510f-48d8-91c6-9147bc234403`
   - Test split : 228 samples, Brier `0.2418`, Calibration Error `0.0912`, ROI test-set `+20.42%`
   - Baseline même test split : Brier Poisson/prob actuelle `0.2423` → gain LogReg ≈ `0.2%` seulement (insuffisant pour shadow activation)
-- [~] Relancer LogReg par segment après extension Prediction (`CONF`, `DRAW`, `BTTS`, `EV`)
-- [ ] **v2 — XGBoost** — 8 742 samples Pinnacle disponibles sur `ALL`; prioriser `CONF`, `DRAW`, `BTTS`
+- [ ] Lancer entraînement XGBoost (`algorithm: auto`) par segment prioritaire : `CONF:ONE_X_TWO` (4 772), `DRAW:ONE_X_TWO` (1 561), `BTTS:BTTS` (1 185), `ALL` (8 742)
 - [ ] Rapport comparatif offline : baseline Poisson vs LogReg vs XGBoost par segment
 
 ---
 
-## Étape 6 — Intégration BettingEngine (Shadow Mode)
+## Étape 6 — Intégration BettingEngine (Shadow Mode) ✅
 
 > Ne jamais activer directement en prod. Shadow d'abord — les paris ne changent pas mais les corrections sont loggées.
 
-- [ ] `BettingEngineService.analyzeFixture()` charge le `ml_model_version` actif au démarrage via `MlService`
-- [ ] Appliquer la correction aux probabilités Poisson avant le calcul EV — uniquement sur les segments activés
-- [ ] Log dans `ModelRun.features` : `shadow_ml_p_home`, `shadow_ml_p_draw`, `shadow_ml_p_away`, `shadow_ml_edge_delta`
+- [x] `MlInferenceService` + `MlInferenceModule` — HTTP client vers le serveur Python (timeout 500ms, fallback gracieux)
+- [x] Shadow mode câblé dans `BettingEngineService.analyzeFixture()` — appel inference, log `shadow_ml_corrected_p` + `shadow_ml_edge_delta` dans `ModelRun.features`
+- [x] Feature flag `FEATURE_FLAGS.SCORING.ML_CORRECTION = false` — activation manuelle uniquement
+- [x] `MlInferenceModule` importé dans `BettingEngineModule`, mock dans tous les tests
 - [ ] **Critères de validation shadow** (minimum avant activation prod) :
   - ≥50 picks résolus en shadow
   - Brier Score corrigé ≥5% mieux que baseline sur la fenêtre shadow
   - Calibration Error corrigée ≤ baseline
   - ROI simulé corrigé ≥ ROI baseline sur la même fenêtre
-- [ ] Feature flag `FEATURE_FLAGS.ML_CORRECTION` : `false` par défaut, activation manuelle
 
 ---
 
-## Étape 7 — Activation et pipeline de ré-entraînement
+## Étape 7 — Activation et pipeline de ré-entraînement ✅
 
-- [ ] `POST /ml/model/:id/activate` — bascule `isActive` + log dans `ModelRun` (audit complet)
-- [ ] Rollback : `POST /ml/model/:id/rollback` — réactive la version précédente, crée un nouveau record avec `rollbackOf`
-- [ ] Job BullMQ `ml-retrain` hebdomadaire : déclenche re-train si ≥50 nouveaux bets settled depuis le dernier entraînement
-- [ ] Auto-switch : si nouveau modèle améliore le Brier Score + cooldown 7 jours (même règle que `AdjustmentProposal`)
-- [ ] Notification email `sendMlModelActivatedAlert()` sur activation + rollback
+- [x] `POST /ml/models/:id/activate` — bascule `isActive`, notifie par email
+- [x] `POST /ml/models/:id/rollback` — réactive la version précédente (`rollbackOfId`), notifie
+- [x] `MlTrainingEventsListener` (QueueEventsHost) — auto-switch si Brier ≥5% mieux + cooldown 7 jours
+- [x] `MlSchedulerWorker` + queue `ML_SCHEDULER` — cron lundi 03:00 UTC, déclenche re-train si ≥50 bets settled
+- [x] Notification email `sendMlModelActivatedAlert()` sur activation + rollback
+- [x] `ML_MODEL_ACTIVATED` dans `NotificationType` (migration `20260610150025`)
 
 ---
 
