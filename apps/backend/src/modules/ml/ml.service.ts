@@ -151,6 +151,20 @@ export class MlService {
     });
   }
 
+  async forceRetrain(triggeredBy: string): Promise<{ queued: number }> {
+    let queued = 0;
+    for (const segment of ML_SEGMENTS) {
+      await this.queue.add(
+        'train',
+        { segment, triggeredBy },
+        ML_TRAINING_JOB_OPTIONS,
+      );
+      queued++;
+    }
+    logger.info({ queued, triggeredBy }, 'ML force retrain queued');
+    return { queued };
+  }
+
   async triggerRetrainIfNeeded(
     triggeredBy: string,
   ): Promise<{ queued: number }> {
