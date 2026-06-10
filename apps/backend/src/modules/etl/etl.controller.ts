@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -516,6 +517,49 @@ export class EtlController {
     return this.okForLeague(competitionCode, (code) =>
       this.triggerLeagueSync(type, code),
     );
+  }
+
+  // ─── Queue management ─────────────────────────────────────────────────────
+
+  @Delete('queue/:name/failed')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Clear failed jobs from a queue',
+    description:
+      'Removes all failed jobs from the given BullMQ queue. ' +
+      'Returns the number of removed jobs.',
+  })
+  @ApiParam({ name: 'name', description: 'Queue name (e.g. league-sync)' })
+  @ApiOkResponse({
+    schema: { example: { status: 'ok', removed: 3 } },
+  })
+  async clearQueueFailed(@Param('name') name: string) {
+    const removed = await this.etlService.cleanQueueFailed(name);
+    return { status: 'ok' as const, removed };
+  }
+
+  @Get('schedulers')
+  @ApiOperation({
+    summary: 'List all registered job schedulers',
+    description:
+      'Returns all BullMQ job schedulers across every ETL queue, ' +
+      'including the cron pattern and the next scheduled run timestamp (ms).',
+  })
+  @ApiOkResponse({
+    schema: {
+      example: [
+        {
+          queueName: 'betting-engine',
+          key: 'cron:betting-engine-analysis',
+          name: 'betting-engine-analysis',
+          pattern: '*/15 * * * *',
+          next: 1749600000000,
+        },
+      ],
+    },
+  })
+  getSchedulers() {
+    return this.etlService.getSchedulerStatus();
   }
 
   private resolveCode(competition: string): string {

@@ -4,10 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
   EtlBackfillResult,
+  EtlClearQueueResult,
   EtlHorizonResult,
   EtlLeagueSyncResult,
   EtlQueueStatus,
   EtlRollingStatsResult,
+  EtlSchedulerEntry,
   EtlStandingsResult,
   EtlSyncResult,
   GlobalSyncType,
@@ -139,6 +141,25 @@ export function useTriggerOddsHistoricalBackfill() {
         `/etl/sync/odds-historical/${opts.competitionCode}/backfill?seasons=${opts.seasons}`,
         { method: "POST" },
       ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
+  });
+}
+
+export function useEtlSchedulers() {
+  return useQuery({
+    queryKey: ["etl-schedulers"],
+    queryFn: () => clientApiRequest<EtlSchedulerEntry[]>("/etl/schedulers"),
+    staleTime: 60_000,
+  });
+}
+
+export function useClearQueueFailed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (queueName: string) =>
+      clientApiRequest<EtlClearQueueResult>(`/etl/queue/${queueName}/failed`, {
+        method: "DELETE",
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
   });
 }

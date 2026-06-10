@@ -60,4 +60,16 @@ export class MlController {
   async activateModel(@Param('id') id: string) {
     return this.ml.activateModel(id);
   }
+
+  @Post('models/:id/rollback')
+  @UseGuards(AdminGuard)
+  async rollbackModel(@Param('id') id: string) {
+    return this.ml.rollbackModel(id);
+  }
+
+  @Post('retrain-check')
+  @UseGuards(AdminGuard)
+  async triggerRetrainCheck(@CurrentSession() session: AuthSession) {
+    return this.ml.forceRetrain(`admin:${session.user.id}`);
+  }
 }

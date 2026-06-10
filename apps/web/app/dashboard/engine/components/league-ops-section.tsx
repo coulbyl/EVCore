@@ -19,31 +19,15 @@ import {
   useTriggerStandingsSync,
   useTriggerStatsBackfill,
 } from "@/domains/etl/use-cases/use-etl";
-import type { EtlBackfillResult, LeagueSyncType } from "@/domains/etl/types/etl";
-
-const COMPETITIONS = [
-  "PL",
-  "SA",
-  "LL",
-  "BL1",
-  "FL1",
-  "UCL",
-  "UEL",
-  "UECL",
-  "WC",
-  "FRI",
-  "J1",
-  "ERD",
-  "POR",
-] as const;
+import type {
+  EtlBackfillResult,
+  LeagueSyncType,
+} from "@/domains/etl/types/etl";
+import { COMPETITIONS } from "@/constants/competitions";
 
 type LeagueActionStatus = { ok: boolean; error?: string } | null;
 
-function LeagueSyncButtons({
-  competitionCode,
-}: {
-  competitionCode: string;
-}) {
+function LeagueSyncButtons({ competitionCode }: { competitionCode: string }) {
   const [statuses, setStatuses] = useState<
     Record<LeagueSyncType | "standings", LeagueActionStatus>
   >({
@@ -264,7 +248,10 @@ function BackfillRow({ competitionCode }: { competitionCode: string }) {
 
   async function backfill(
     key: string,
-    fn: (opts: { competitionCode: string; seasons: string }) => Promise<EtlBackfillResult>,
+    fn: (opts: {
+      competitionCode: string;
+      seasons: string;
+    }) => Promise<EtlBackfillResult>,
   ) {
     setResults((prev) => ({ ...prev, [key]: null }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
@@ -348,7 +335,11 @@ function BackfillRow({ competitionCode }: { competitionCode: string }) {
         .map(([key, r]) => (
           <div key={key} className="flex flex-wrap gap-1">
             {r?.seasons.map((s) => (
-              <Badge key={s} variant="neutral" className="font-mono text-[0.6rem]">
+              <Badge
+                key={s}
+                variant="neutral"
+                className="font-mono text-[0.6rem]"
+              >
                 {r.competitionCode} {s}
               </Badge>
             ))}
@@ -359,7 +350,9 @@ function BackfillRow({ competitionCode }: { competitionCode: string }) {
 }
 
 export function LeagueOpsSection() {
-  const [competitionCode, setCompetitionCode] = useState<string>("PL");
+  const [competitionCode, setCompetitionCode] = useState<string>(
+    COMPETITIONS[0]?.code ?? "PL",
+  );
 
   return (
     <section className="flex flex-col gap-3">
@@ -376,28 +369,23 @@ export function LeagueOpsSection() {
             <label className="text-[0.65rem] font-medium text-muted-foreground">
               Ligue
             </label>
-            <Select
-              value={competitionCode}
-              onValueChange={setCompetitionCode}
-            >
-              <SelectTrigger className="h-9 w-32 rounded-xl bg-panel text-sm">
+            <Select value={competitionCode} onValueChange={setCompetitionCode}>
+              <SelectTrigger className="h-9 w-48 rounded-xl bg-panel text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {COMPETITIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.nameFr}{" "}
+                      <span className="text-muted-foreground">({c.code})</span>
                     </SelectItem>
                   ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
           </div>
-          <Badge
-            variant="neutral"
-            className="mt-5 font-mono text-xs"
-          >
+          <Badge variant="neutral" className="mt-5 font-mono text-xs">
             {competitionCode}
           </Badge>
         </div>

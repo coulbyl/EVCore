@@ -60,3 +60,14 @@ export type PasswordResetProps = {
   expiresInMinutes: number;
   isAdminGenerated: boolean;
 };
+
+export type MlModelActivatedProps = {
+  versionId: string;
+  segment: string;
+  algorithm: string;
+  brierScore: number;
+  calibrationError: number;
+  roiSimulated: number;
+  isRollback: boolean;
+  rolledBackVersionId?: string;
+};

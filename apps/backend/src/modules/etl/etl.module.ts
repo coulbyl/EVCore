@@ -41,6 +41,8 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.AI_ENGINE },
       { name: BULLMQ_QUEUES.STANDINGS_SYNC },
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
+      { name: BULLMQ_QUEUES.ML_TRAINING },
+      { name: BULLMQ_QUEUES.ML_SCHEDULER },
     ),
     BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,

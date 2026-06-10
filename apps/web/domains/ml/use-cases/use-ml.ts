@@ -70,3 +70,25 @@ export function useActivateModel() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
   });
 }
+
+export function useRollbackModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      clientApiRequest<MlModelVersion>(`/ml/models/${id}/rollback`, {
+        method: "POST",
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
+  });
+}
+
+export function useTriggerRetrainCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      clientApiRequest<{ queued: number }>("/ml/retrain-check", {
+        method: "POST",
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
+  });
+}

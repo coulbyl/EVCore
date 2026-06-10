@@ -79,12 +79,12 @@ function BettingEngineCard() {
           disabled={trigger.isPending || !date}
         >
           {trigger.isPending ? "En cours…" : "Analyser"}
-          {status?.ok && <CheckCircle2 size={13} className="ml-1 text-success" />}
+          {status?.ok && (
+            <CheckCircle2 size={13} className="ml-1 text-success" />
+          )}
         </Button>
       </div>
-      {status?.error && (
-        <p className="text-xs text-danger">{status.error}</p>
-      )}
+      {status?.error && <p className="text-xs text-danger">{status.error}</p>}
     </div>
   );
 }
@@ -132,12 +132,12 @@ function OddsPrematchCard() {
           disabled={trigger.isPending || !date}
         >
           {trigger.isPending ? "En cours…" : "Synchroniser"}
-          {status?.ok && <CheckCircle2 size={13} className="ml-1 text-success" />}
+          {status?.ok && (
+            <CheckCircle2 size={13} className="ml-1 text-success" />
+          )}
         </Button>
       </div>
-      {status?.error && (
-        <p className="text-xs text-danger">{status.error}</p>
-      )}
+      {status?.error && <p className="text-xs text-danger">{status.error}</p>}
     </div>
   );
 }
@@ -202,7 +202,11 @@ function HorizonCard() {
       {result && (
         <div className="flex flex-wrap gap-1.5">
           {result.enqueuedDates.map((d) => (
-            <Badge key={d} variant="neutral" className="font-mono text-[0.6rem]">
+            <Badge
+              key={d}
+              variant="neutral"
+              className="font-mono text-[0.6rem]"
+            >
               {d}
             </Badge>
           ))}

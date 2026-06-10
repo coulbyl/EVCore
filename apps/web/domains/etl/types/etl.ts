@@ -39,6 +39,20 @@ export type EtlHorizonResult = {
   enqueuedDates: string[];
 };
 
+export type EtlSchedulerEntry = {
+  queueName: string;
+  key: string;
+  name: string;
+  pattern?: string;
+  every?: number;
+  next?: number;
+};
+
+export type EtlClearQueueResult = {
+  status: "ok";
+  removed: number;
+};
+
 export type GlobalSyncType =
   | "fixtures"
   | "stats"

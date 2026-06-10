@@ -1,6 +1,7 @@
 import { Skeleton } from "@evcore/ui";
-import { AlertCircle, CheckCircle2, Clock, Loader2, Zap } from "lucide-react";
-import type { EtlQueueStatus, QueueJobCounts } from "@/domains/etl/types/etl";
+import { AlertCircle, CheckCircle2, Clock, Loader2, Trash2, Zap } from "lucide-react";
+import type { EtlQueueStatus, EtlSchedulerEntry, QueueJobCounts } from "@/domains/etl/types/etl";
+import { useClearQueueFailed, useEtlSchedulers } from "@/domains/etl/use-cases/use-etl";
 
 const QUEUE_LABELS: Record<string, string> = {
   "league-sync": "League sync",
@@ -13,6 +14,8 @@ const QUEUE_LABELS: Record<string, string> = {
   "odds-historical-import": "Historical odds",
   "rolling-horizon": "Rolling horizon",
   "ml-backfill": "ML backfill",
+  "ml-training": "ML training",
+  "ml-scheduler": "ML scheduler",
 };
 
 function queueHealth(counts: QueueJobCounts): "ok" | "active" | "error" {
@@ -21,12 +24,30 @@ function queueHealth(counts: QueueJobCounts): "ok" | "active" | "error" {
   return "ok";
 }
 
+function formatNextRun(next: number): string {
+  const date = new Date(next);
+  const now = Date.now();
+  const diffMs = next - now;
+  if (diffMs <= 0) return "en cours";
+  const diffMin = Math.round(diffMs / 60_000);
+  if (diffMin < 60) return `dans ${diffMin}min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `dans ${diffH}h`;
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+}
+
 function QueueCard({
   name,
   counts,
+  nextRun,
+  onClearFailed,
+  isClearing,
 }: {
   name: string;
   counts: QueueJobCounts;
+  nextRun?: number;
+  onClearFailed?: () => void;
+  isClearing?: boolean;
 }) {
   const health = queueHealth(counts);
 
@@ -46,6 +67,17 @@ function QueueCard({
         <p className="text-xs font-semibold text-foreground">
           {QUEUE_LABELS[name] ?? name}
         </p>
+        {onClearFailed && (
+          <button
+            className="ml-auto flex items-center gap-0.5 rounded px-1 py-0.5 text-[0.58rem] text-danger hover:bg-danger/10 disabled:opacity-50"
+            onClick={onClearFailed}
+            disabled={isClearing}
+            title="Clear failed jobs"
+          >
+            <Trash2 size={10} />
+            Clear
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-5 gap-1 text-center text-[0.6rem]">
         <Stat label="Active" value={counts.active} highlight="accent" />
@@ -54,6 +86,12 @@ function QueueCard({
         <Stat label="Fail" value={counts.failed} highlight="danger" />
         <Stat label="Delayed" value={counts.delayed} />
       </div>
+      {nextRun !== undefined && (
+        <p className="flex items-center gap-1 text-[0.58rem] text-muted-foreground/60">
+          <Clock size={9} />
+          {formatNextRun(nextRun)}
+        </p>
+      )}
     </div>
   );
 }
@@ -78,10 +116,21 @@ function Stat({
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className={`tabular-nums font-semibold ${colorClass}`}>{value}</span>
+      <span className={`tabular-nums font-semibold ${colorClass}`}>
+        {value}
+      </span>
       <span className="text-muted-foreground/60">{label}</span>
     </div>
   );
+}
+
+function getNextRunForQueue(
+  schedulers: EtlSchedulerEntry[],
+  queueName: string,
+): number | undefined {
+  const entries = schedulers.filter((s) => s.queueName === queueName);
+  const nexts = entries.map((s) => s.next).filter((n): n is number => n !== undefined);
+  return nexts.length > 0 ? Math.min(...nexts) : undefined;
 }
 
 export function QueueStatusSection({
@@ -91,6 +140,9 @@ export function QueueStatusSection({
   data: EtlQueueStatus | undefined;
   isLoading: boolean;
 }) {
+  const { data: schedulers } = useEtlSchedulers();
+  const clearFailed = useClearQueueFailed();
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -115,7 +167,18 @@ export function QueueStatusSection({
       {data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {Object.entries(data).map(([name, counts]) => (
-            <QueueCard key={name} name={name} counts={counts} />
+            <QueueCard
+              key={name}
+              name={name}
+              counts={counts}
+              nextRun={schedulers ? getNextRunForQueue(schedulers, name) : undefined}
+              onClearFailed={
+                counts.failed > 0
+                  ? () => clearFailed.mutate(name)
+                  : undefined
+              }
+              isClearing={clearFailed.isPending}
+            />
           ))}
         </div>
       )}

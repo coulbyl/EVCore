@@ -1,11 +1,11 @@
 """
-Correction layer model — v1 logistic regression.
+Correction layer model — logistic regression (v1) and XGBoost (v2).
 
 Learns where the Poisson baseline over/under-estimates probabilities
 and produces a corrected probability for each pick.
 
 Training only on rows that have Pinnacle odds (delta_p is the key feature).
-v2 will switch to XGBoost when segment volumes exceed 200+ picks.
+XGBoost is used automatically when segment volumes reach _MIN_XGBOOST_SAMPLES.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from xgboost import XGBClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +44,14 @@ CATEGORICAL_FEATURES = ["market", "canal", "league_tier", "odds_segment"]
 
 ALL_FEATURES = NUMERICAL_FEATURES + CATEGORICAL_FEATURES
 
-# Minimum class balance required before training
 _MIN_CLASS_SAMPLES = 20
+_MIN_XGBOOST_SAMPLES = 200
 
 
 @dataclass
 class TrainingResult:
     pipeline: Pipeline
+    algorithm: str
     brier_score: float
     calibration_error: float
     roi_simulated: float
@@ -58,7 +60,7 @@ class TrainingResult:
     test_size: int
 
 
-def _build_pipeline() -> Pipeline:
+def _build_logreg_pipeline() -> Pipeline:
     num_pipe = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
@@ -75,6 +77,39 @@ def _build_pipeline() -> Pipeline:
         ("prep", preprocessor),
         ("clf", LogisticRegression(max_iter=1000, C=1.0, class_weight="balanced")),
     ])
+
+
+def _build_xgboost_pipeline(scale_pos_weight: float = 1.0) -> Pipeline:
+    num_pipe = Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+    ])
+    cat_pipe = Pipeline([
+        ("imputer", SimpleImputer(strategy="constant", fill_value="unknown")),
+        ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+    ])
+    preprocessor = ColumnTransformer([
+        ("num", num_pipe, NUMERICAL_FEATURES),
+        ("cat", cat_pipe, CATEGORICAL_FEATURES),
+    ])
+    return Pipeline([
+        ("prep", preprocessor),
+        ("clf", XGBClassifier(
+            n_estimators=300,
+            max_depth=4,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            scale_pos_weight=scale_pos_weight,
+            eval_metric="logloss",
+            random_state=42,
+        )),
+    ])
+
+
+def _resolve_algorithm(algorithm: str, n_samples: int) -> str:
+    if algorithm == "auto":
+        return "xgboost" if n_samples >= _MIN_XGBOOST_SAMPLES else "logistic_regression"
+    return algorithm
 
 
 def _calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
@@ -97,15 +132,20 @@ def _roi_simulated(df_test: pd.DataFrame, y_prob: np.ndarray) -> float:
     return float(profits.mean())
 
 
-def train(df: pd.DataFrame) -> TrainingResult:
+def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
     """
     Train the correction layer on rows that have Pinnacle odds (delta_p present).
 
     Uses a 70/30 temporal split — older data trains, recent data evaluates.
+    algorithm: "auto" picks XGBoost if ≥200 Pinnacle samples, else LogReg.
     Raises ValueError if class balance is insufficient.
     """
     df_pinnacle = df[df["delta_p"].notna()].copy()
-    logger.info("training on rows with Pinnacle", extra={"count": len(df_pinnacle)})
+    resolved = _resolve_algorithm(algorithm, len(df_pinnacle))
+    logger.info(
+        "training on rows with Pinnacle",
+        extra={"count": len(df_pinnacle), "algorithm": resolved},
+    )
 
     cutoff = int(len(df_pinnacle) * 0.70)
     df_train = df_pinnacle.iloc[:cutoff]
@@ -119,7 +159,13 @@ def train(df: pd.DataFrame) -> TrainingResult:
     X_test = df_test[ALL_FEATURES]
     y_test = df_test["outcome_correct"].values
 
-    pipeline = _build_pipeline()
+    if resolved == "xgboost":
+        n_neg = int((y_train == 0).sum())
+        n_pos = int((y_train == 1).sum())
+        pipeline = _build_xgboost_pipeline(scale_pos_weight=n_neg / max(n_pos, 1))
+    else:
+        pipeline = _build_logreg_pipeline()
+
     pipeline.fit(X_train, y_train)
 
     y_prob_test = pipeline.predict_proba(X_test)[:, 1]
@@ -131,6 +177,7 @@ def train(df: pd.DataFrame) -> TrainingResult:
     logger.info(
         "training complete",
         extra={
+            "algorithm": resolved,
             "brier_score": round(brier, 4),
             "calibration_error": round(cal_err, 4),
             "roi_simulated": round(roi, 4),
@@ -141,6 +188,7 @@ def train(df: pd.DataFrame) -> TrainingResult:
 
     return TrainingResult(
         pipeline=pipeline,
+        algorithm=resolved,
         brier_score=brier,
         calibration_error=cal_err,
         roi_simulated=roi,

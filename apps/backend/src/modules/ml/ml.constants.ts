@@ -41,3 +41,11 @@ export const ML_BACKFILL_JOB_OPTIONS = {
   removeOnComplete: { count: 100 },
   removeOnFail: { count: 200 },
 } as const;
+
+export const ML_CRON_SCHEDULES = {
+  RETRAIN_CHECK: '0 3 * * 1', // 03:00 UTC every Monday
+} as const;
+
+export const ML_SCHEDULER_KEYS = {
+  RETRAIN_CHECK: 'cron:ml-retrain-check',
+} as const;
