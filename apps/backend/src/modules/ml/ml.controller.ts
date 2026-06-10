@@ -60,4 +60,10 @@ export class MlController {
   async activateModel(@Param('id') id: string) {
     return this.ml.activateModel(id);
   }
+
+  @Post('models/:id/rollback')
+  @UseGuards(AdminGuard)
+  async rollbackModel(@Param('id') id: string) {
+    return this.ml.rollbackModel(id);
+  }
 }

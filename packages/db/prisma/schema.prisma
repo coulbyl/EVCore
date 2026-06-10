@@ -99,6 +99,7 @@ enum NotificationType {
   ETL_FAILURE
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
+  ML_MODEL_ACTIVATED
 }
 
 enum PredictionChannel {

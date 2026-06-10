@@ -12,10 +12,12 @@ import {
   renderWeightAdjustment,
   renderWeeklyReport,
   renderXgUnavailableReport,
+  renderMlModelActivated,
   type BrierAlertProps,
   type EmailVerificationProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
+  type MlModelActivatedProps,
   type PasswordResetProps,
   type RoiAlertProps,
   type WeightAdjustmentProps,
@@ -103,6 +105,12 @@ export class MailService implements OnModuleInit {
     const period = `${props.periodStart.slice(0, 10)} → ${props.periodEnd.slice(0, 10)}`;
     const { html, text } = await renderWeeklyReport(props);
     await this.sendToAdmin(`Weekly Report — ${period}`, html, text);
+  }
+
+  async sendMlModelActivated(props: MlModelActivatedProps): Promise<void> {
+    const action = props.isRollback ? 'Rollback' : 'Auto-Activé';
+    const { html, text } = await renderMlModelActivated(props);
+    await this.sendToAdmin(`ML Model ${action} — ${props.segment}`, html, text);
   }
 
   async sendXgUnavailableReport(
