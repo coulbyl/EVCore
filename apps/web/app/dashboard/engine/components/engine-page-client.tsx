@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@evcore/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@evcore/ui";
 import { Activity, Wrench, Zap } from "lucide-react";
 import { useEtlQueueStatus } from "@/domains/etl/use-cases/use-etl";
 import { QueueStatusSection } from "./queue-status-section";

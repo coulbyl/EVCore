@@ -151,6 +151,28 @@ export class MlService {
     });
   }
 
+  async catchUpAutoSwitch(): Promise<void> {
+    const candidates = await this.repo.findRecentlyTrainedUnactivated();
+    for (const model of candidates) {
+      const metrics = model.metrics as Record<string, number>;
+      if (metrics['brierScore'] == null) continue;
+      await this.autoSwitchIfImproved({
+        version_id: model.id,
+        segment: model.segment,
+        algorithm: model.algorithm,
+        brier_score: metrics['brierScore'],
+        calibration_error: metrics['calibrationError'] ?? 0,
+        roi_simulated: metrics['roiShadow'] ?? 0,
+        sample_size: metrics['sampleSize'] ?? 0,
+      });
+    }
+  }
+
+  async deleteModel(id: string): Promise<void> {
+    await this.repo.deleteInactive(id);
+    logger.info({ id }, 'ML model deleted');
+  }
+
   async forceRetrain(triggeredBy: string): Promise<{ queued: number }> {
     let queued = 0;
     for (const segment of ML_SEGMENTS) {

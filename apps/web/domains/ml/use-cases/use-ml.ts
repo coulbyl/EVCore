@@ -82,6 +82,15 @@ export function useRollbackModel() {
   });
 }
 
+export function useDeleteModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      clientApiRequest<void>(`/ml/models/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
+  });
+}
+
 export function useTriggerRetrainCheck() {
   const qc = useQueryClient();
   return useMutation({

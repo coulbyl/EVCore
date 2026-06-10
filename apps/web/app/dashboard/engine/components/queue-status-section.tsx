@@ -1,7 +1,21 @@
 import { Skeleton } from "@evcore/ui";
-import { AlertCircle, CheckCircle2, Clock, Loader2, Trash2, Zap } from "lucide-react";
-import type { EtlQueueStatus, EtlSchedulerEntry, QueueJobCounts } from "@/domains/etl/types/etl";
-import { useClearQueueFailed, useEtlSchedulers } from "@/domains/etl/use-cases/use-etl";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Trash2,
+  Zap,
+} from "lucide-react";
+import type {
+  EtlQueueStatus,
+  EtlSchedulerEntry,
+  QueueJobCounts,
+} from "@/domains/etl/types/etl";
+import {
+  useClearQueueFailed,
+  useEtlSchedulers,
+} from "@/domains/etl/use-cases/use-etl";
 
 const QUEUE_LABELS: Record<string, string> = {
   "league-sync": "League sync",
@@ -129,7 +143,9 @@ function getNextRunForQueue(
   queueName: string,
 ): number | undefined {
   const entries = schedulers.filter((s) => s.queueName === queueName);
-  const nexts = entries.map((s) => s.next).filter((n): n is number => n !== undefined);
+  const nexts = entries
+    .map((s) => s.next)
+    .filter((n): n is number => n !== undefined);
   return nexts.length > 0 ? Math.min(...nexts) : undefined;
 }
 
@@ -171,11 +187,11 @@ export function QueueStatusSection({
               key={name}
               name={name}
               counts={counts}
-              nextRun={schedulers ? getNextRunForQueue(schedulers, name) : undefined}
+              nextRun={
+                schedulers ? getNextRunForQueue(schedulers, name) : undefined
+              }
               onClearFailed={
-                counts.failed > 0
-                  ? () => clearFailed.mutate(name)
-                  : undefined
+                counts.failed > 0 ? () => clearFailed.mutate(name) : undefined
               }
               isClearing={clearFailed.isPending}
             />

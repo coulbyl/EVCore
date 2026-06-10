@@ -26,9 +26,11 @@ import {
   Play,
   RotateCcw,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import {
   useActivateModel,
+  useDeleteModel,
   useMlModels,
   useMlTrainingJobStatus,
   useRollbackModel,
@@ -233,12 +235,16 @@ function ModelRow({
   isActivating,
   onRollback,
   isRollingBack,
+  onDelete,
+  isDeleting,
 }: {
   model: MlModelVersion;
   onActivate: (id: string) => void;
   isActivating: boolean;
   onRollback: (id: string) => void;
   isRollingBack: boolean;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const m = model.metrics;
@@ -302,28 +308,39 @@ function ModelRow({
       </div>
 
       {/* Action */}
-      <div className="border-t border-border px-4 py-3">
-          {model.isActive ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRollback(model.id)}
-              disabled={isRollingBack}
-            >
-              <RotateCcw size={12} data-icon="inline-start" />
-              Rollback version précédente
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onActivate(model.id)}
-              disabled={isActivating}
-            >
-              <RotateCcw size={12} data-icon="inline-start" />
-              Activer
-            </Button>
-          )}
+      <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+        {model.isActive ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRollback(model.id)}
+            disabled={isRollingBack}
+          >
+            <RotateCcw size={12} data-icon="inline-start" />
+            Rollback version précédente
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onActivate(model.id)}
+            disabled={isActivating}
+          >
+            <RotateCcw size={12} data-icon="inline-start" />
+            Activer
+          </Button>
+        )}
+        {!model.isActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(model.id)}
+            disabled={isDeleting}
+            className="text-muted-foreground hover:text-danger"
+          >
+            <Trash2 size={13} />
+          </Button>
+        )}
       </div>
 
       {/* Expanded detail */}
@@ -345,6 +362,7 @@ export function MlPageClient() {
   const { data: models = [], isLoading, isError } = useMlModels();
   const activate = useActivateModel();
   const rollback = useRollbackModel();
+  const del = useDeleteModel();
 
   return (
     <div className="flex flex-col gap-6">
@@ -399,9 +417,7 @@ export function MlPageClient() {
               </p>
             </div>
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold text-foreground">
-                Samples
-              </p>
+              <p className="text-xs font-semibold text-foreground">Samples</p>
               <p className="text-xs text-muted-foreground">
                 Minimum 200 pour XGBoost. En dessous, la régression logistique
                 est utilisée.
@@ -445,6 +461,8 @@ export function MlPageClient() {
             isActivating={activate.isPending}
             onRollback={(id) => rollback.mutate(id)}
             isRollingBack={rollback.isPending}
+            onDelete={(id) => del.mutate(id)}
+            isDeleting={del.isPending}
           />
         ))}
       </section>
