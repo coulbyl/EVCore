@@ -31,6 +31,7 @@ import {
   useActivateModel,
   useMlModels,
   useMlTrainingJobStatus,
+  useRollbackModel,
   useTriggerBackfill,
   useTriggerTraining,
 } from "@/domains/ml/use-cases/use-ml";
@@ -230,10 +231,14 @@ function ModelRow({
   model,
   onActivate,
   isActivating,
+  onRollback,
+  isRollingBack,
 }: {
   model: MlModelVersion;
   onActivate: (id: string) => void;
   isActivating: boolean;
+  onRollback: (id: string) => void;
+  isRollingBack: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const m = model.metrics;
@@ -297,19 +302,29 @@ function ModelRow({
       </div>
 
       {/* Action */}
-      {!model.isActive && (
-        <div className="border-t border-border px-4 py-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onActivate(model.id)}
-            disabled={isActivating}
-          >
-            <RotateCcw size={12} data-icon="inline-start" />
-            Activer
-          </Button>
-        </div>
-      )}
+      <div className="border-t border-border px-4 py-3">
+          {model.isActive ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRollback(model.id)}
+              disabled={isRollingBack}
+            >
+              <RotateCcw size={12} data-icon="inline-start" />
+              Rollback version précédente
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onActivate(model.id)}
+              disabled={isActivating}
+            >
+              <RotateCcw size={12} data-icon="inline-start" />
+              Activer
+            </Button>
+          )}
+      </div>
 
       {/* Expanded detail */}
       {open && m && (
@@ -329,6 +344,7 @@ function ModelRow({
 export function MlPageClient() {
   const { data: models = [], isLoading, isError } = useMlModels();
   const activate = useActivateModel();
+  const rollback = useRollbackModel();
 
   return (
     <div className="flex flex-col gap-6">
@@ -427,6 +443,8 @@ export function MlPageClient() {
             model={model}
             onActivate={(id) => activate.mutate(id)}
             isActivating={activate.isPending}
+            onRollback={(id) => rollback.mutate(id)}
+            isRollingBack={rollback.isPending}
           />
         ))}
       </section>
