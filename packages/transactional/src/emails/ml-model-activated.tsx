@@ -69,7 +69,9 @@ export function MlModelActivatedEmail({
   isRollback,
   rolledBackVersionId,
 }: MlModelActivatedProps) {
-  const headingStyle = isRollback ? styles.headingRollback : styles.headingActivate;
+  const headingStyle = isRollback
+    ? styles.headingRollback
+    : styles.headingActivate;
   const badgeStyle = isRollback ? styles.badgeRollback : styles.badgeActivate;
   const title = isRollback ? "ML Model — Rollback" : "ML Model — Auto-Activé";
   const preview = isRollback
@@ -99,9 +101,15 @@ export function MlModelActivatedEmail({
 
         {!isRollback && (
           <>
-            <Text style={styles.metric}>Brier Score : {brierScore.toFixed(4)}</Text>
-            <Text style={styles.metric}>Calibration Error : {calibrationError.toFixed(4)}</Text>
-            <Text style={styles.metric}>ROI simulé : {(roiSimulated * 100).toFixed(2)}%</Text>
+            <Text style={styles.metric}>
+              Brier Score : {brierScore.toFixed(4)}
+            </Text>
+            <Text style={styles.metric}>
+              Calibration Error : {calibrationError.toFixed(4)}
+            </Text>
+            <Text style={styles.metric}>
+              ROI simulé : {(roiSimulated * 100).toFixed(2)}%
+            </Text>
           </>
         )}
       </Section>

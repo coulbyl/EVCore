@@ -21,13 +21,7 @@ function queueHealth(counts: QueueJobCounts): "ok" | "active" | "error" {
   return "ok";
 }
 
-function QueueCard({
-  name,
-  counts,
-}: {
-  name: string;
-  counts: QueueJobCounts;
-}) {
+function QueueCard({ name, counts }: { name: string; counts: QueueJobCounts }) {
   const health = queueHealth(counts);
 
   const icon =
@@ -78,7 +72,9 @@ function Stat({
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className={`tabular-nums font-semibold ${colorClass}`}>{value}</span>
+      <span className={`tabular-nums font-semibold ${colorClass}`}>
+        {value}
+      </span>
       <span className="text-muted-foreground/60">{label}</span>
     </div>
   );
