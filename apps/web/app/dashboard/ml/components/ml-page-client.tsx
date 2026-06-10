@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Database,
+  Info,
   Play,
   RotateCcw,
   Sparkles,
@@ -345,9 +346,56 @@ export function MlPageClient() {
       </div>
 
       <section className="flex flex-col gap-3">
-        <p className="text-[0.72rem] font-semibold uppercase tracking-widest text-muted-foreground">
-          Versions du modèle
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[0.72rem] font-semibold uppercase tracking-widest text-muted-foreground">
+            Versions du modèle
+          </p>
+        </div>
+
+        <div className="rounded-[1.1rem] border border-border bg-panel p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Info size={13} className="text-accent" />
+            Critères d&apos;activation
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold text-foreground">
+                Brier Score
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Plus bas = meilleur. Gain ≥ 5% vs le modèle actif déclenche
+                l&apos;auto-switch.
+              </p>
+              <p className="text-[0.65rem] text-muted-foreground/60">
+                Baseline Poisson ≈ 0.242
+              </p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold text-foreground">
+                ROI simulé
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Doit être positif et supérieur au modèle actif sur la même
+                fenêtre de test.
+              </p>
+              <p className="text-[0.65rem] text-muted-foreground/60">
+                Référence SV/OVER_UNDER : +5.17%
+              </p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold text-foreground">
+                Samples
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Minimum 200 pour XGBoost. En dessous, la régression logistique
+                est utilisée.
+              </p>
+              <p className="text-[0.65rem] text-muted-foreground/60">
+                Attendre ≥ 50 bets résolus avant de re-entraîner.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {isLoading && (
           <div className="flex flex-col gap-3">
