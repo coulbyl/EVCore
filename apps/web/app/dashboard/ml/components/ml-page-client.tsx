@@ -238,74 +238,81 @@ function ModelRow({
   const m = model.metrics;
 
   return (
-    <div className="flex flex-col gap-2 rounded-[1.1rem] border border-border bg-panel p-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-0 rounded-[1.1rem] border border-border bg-panel">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 p-4">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             {model.isActive && (
               <Badge variant="success" className="text-[0.6rem]">
                 Actif
               </Badge>
             )}
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="font-mono text-xs font-semibold text-foreground">
               {model.segment}
             </span>
-            <span className="text-[0.65rem] text-muted-foreground">
+            <span className="rounded bg-secondary px-1.5 py-0.5 text-[0.6rem] text-muted-foreground">
               {model.algorithm}
             </span>
           </div>
-          <p className="text-[0.7rem] text-muted-foreground">
+          <p className="text-[0.68rem] text-muted-foreground">
             {new Date(model.createdAt).toLocaleString("fr-FR")}
-            {model.activatedAt &&
-              ` · activé ${new Date(model.activatedAt).toLocaleString("fr-FR")}`}
+            {model.activatedAt && (
+              <span className="ml-1 opacity-60">
+                · activé {new Date(model.activatedAt).toLocaleString("fr-FR")}
+              </span>
+            )}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+      </div>
 
-        <div className="flex items-center gap-4 text-xs">
-          <div className="text-center">
-            <p className="tabular-nums font-semibold text-foreground">
-              {fmt(m?.brierScore)}
-            </p>
-            <p className="text-muted-foreground">Brier</p>
-          </div>
-          <div className="text-center">
-            <p className="tabular-nums font-semibold text-foreground">
-              {fmtPct(m?.roiShadow)}
-            </p>
-            <p className="text-muted-foreground">ROI simulé</p>
-          </div>
-          <div className="text-center">
-            <p className="tabular-nums font-semibold text-foreground">
-              {m?.sampleSize ?? "—"}
-            </p>
-            <p className="text-muted-foreground">Samples</p>
-          </div>
+      {/* Metrics strip */}
+      <div className="grid grid-cols-3 divide-x divide-border border-t border-border text-xs">
+        <div className="flex flex-col items-center gap-0.5 py-2.5">
+          <p className="tabular-nums font-semibold text-foreground">
+            {fmt(m?.brierScore)}
+          </p>
+          <p className="text-muted-foreground">Brier</p>
         </div>
-
-        <div className="flex gap-2">
-          {!model.isActive && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onActivate(model.id)}
-              disabled={isActivating}
-            >
-              <RotateCcw size={12} />
-              Activer
-            </Button>
-          )}
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-          </button>
+        <div className="flex flex-col items-center gap-0.5 py-2.5">
+          <p className="tabular-nums font-semibold text-foreground">
+            {fmtPct(m?.roiShadow)}
+          </p>
+          <p className="text-muted-foreground">ROI simulé</p>
+        </div>
+        <div className="flex flex-col items-center gap-0.5 py-2.5">
+          <p className="tabular-nums font-semibold text-foreground">
+            {m?.sampleSize ?? "—"}
+          </p>
+          <p className="text-muted-foreground">Samples</p>
         </div>
       </div>
 
+      {/* Action */}
+      {!model.isActive && (
+        <div className="border-t border-border px-4 py-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onActivate(model.id)}
+            disabled={isActivating}
+          >
+            <RotateCcw size={12} data-icon="inline-start" />
+            Activer
+          </Button>
+        </div>
+      )}
+
+      {/* Expanded detail */}
       {open && m && (
-        <div className="mt-1 grid grid-cols-3 gap-2 border-t border-border/50 pt-3 sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 border-t border-border p-4 sm:grid-cols-6">
           <MetricCard label="Brier" value={fmt(m.brierScore)} />
           <MetricCard label="Cal. Err" value={fmtPct(m.calibrationError)} />
           <MetricCard label="ROI shadow" value={fmtPct(m.roiShadow)} />
