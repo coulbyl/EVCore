@@ -23,22 +23,7 @@ import type {
   EtlBackfillResult,
   LeagueSyncType,
 } from "@/domains/etl/types/etl";
-
-const COMPETITIONS = [
-  "PL",
-  "SA",
-  "LL",
-  "BL1",
-  "FL1",
-  "UCL",
-  "UEL",
-  "UECL",
-  "WC",
-  "FRI",
-  "J1",
-  "ERD",
-  "POR",
-] as const;
+import { COMPETITIONS } from "@/constants/competitions";
 
 type LeagueActionStatus = { ok: boolean; error?: string } | null;
 
@@ -365,7 +350,9 @@ function BackfillRow({ competitionCode }: { competitionCode: string }) {
 }
 
 export function LeagueOpsSection() {
-  const [competitionCode, setCompetitionCode] = useState<string>("PL");
+  const [competitionCode, setCompetitionCode] = useState<string>(
+    COMPETITIONS[0]?.code ?? "PL",
+  );
 
   return (
     <section className="flex flex-col gap-3">
@@ -383,14 +370,15 @@ export function LeagueOpsSection() {
               Ligue
             </label>
             <Select value={competitionCode} onValueChange={setCompetitionCode}>
-              <SelectTrigger className="h-9 w-32 rounded-xl bg-panel text-sm">
+              <SelectTrigger className="h-9 w-48 rounded-xl bg-panel text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {COMPETITIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.nameFr}{" "}
+                      <span className="text-muted-foreground">({c.code})</span>
                     </SelectItem>
                   ))}
                 </SelectGroup>
