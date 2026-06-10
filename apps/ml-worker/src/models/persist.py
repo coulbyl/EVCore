@@ -74,7 +74,7 @@ async def persist(opts: dict) -> str:
                 """,
                 (
                     segment,
-                    "logistic_regression",
+                    result.algorithm,
                     json.dumps(ALL_FEATURES),
                     json.dumps(metrics),
                     str(path),

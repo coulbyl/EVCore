@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '@/prisma.module';
 import { BankrollModule } from '@modules/bankroll/bankroll.module';
 import { PredictionModule } from '@modules/prediction/prediction.module';
+import { MlInferenceModule } from '@modules/ml/ml.inference.module';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { BettingEngineService } from './betting-engine.service';
 import { BettingEngineController } from './betting-engine.controller';
@@ -17,6 +18,7 @@ import { FriModelService } from './fri-model/fri-model.service';
     ConfigModule,
     BankrollModule,
     PredictionModule,
+    MlInferenceModule,
     BullModule.registerQueue({ name: BULLMQ_QUEUES.BETTING_ENGINE }),
   ],
   controllers: [BettingEngineController],

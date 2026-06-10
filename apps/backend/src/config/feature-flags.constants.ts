@@ -8,5 +8,6 @@ export const FEATURE_FLAGS = {
     H2H: false, // shadow value computed in BettingEngineService
     CONGESTION: false, // shadow value computed in BettingEngineService
     LINEUPS: false, // post-hoc only — shadow value: null
+    ML_CORRECTION: false, // shadow ML correction — activate after ≥50 shadow picks validated
   },
 } as const;

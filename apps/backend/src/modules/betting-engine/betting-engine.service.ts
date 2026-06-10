@@ -95,6 +95,10 @@ import type {
   ViablePick,
 } from './betting-engine.types';
 import { FriModelService } from './fri-model/fri-model.service';
+import {
+  MlInferenceService,
+  type MlShadowFeatures,
+} from '@modules/ml/ml.inference.service';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
@@ -147,6 +151,7 @@ export class BettingEngineService {
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
     private readonly predictionService: PredictionService,
+    private readonly mlInference: MlInferenceService,
     private readonly bankroll?: BankrollService,
     friModelService?: FriModelService,
   ) {
@@ -848,6 +853,29 @@ export class BettingEngineService {
         fixtureDate: fixture.scheduledAt,
       });
 
+    // Shadow ML correction — logs corrected probabilities without changing the decision.
+    let shadowMlCorrectedP: number | null = null;
+    let shadowMlEdgeDelta: number | null = null;
+    if (FEATURE_FLAGS.SCORING.ML_CORRECTION && valueBet !== null) {
+      const mlFeatures = buildMlShadowFeatures({
+        valueBet,
+        deterministicScore,
+        probabilities,
+        features,
+        competitionCode,
+      });
+      const mlSegment = `EV:${valueBet.market}`;
+      const mlResult = await this.mlInference.predictShadowCorrection(
+        mlSegment,
+        mlFeatures,
+      );
+      if (mlResult !== null && mlResult.corrected_probability !== null) {
+        shadowMlCorrectedP = mlResult.corrected_probability;
+        shadowMlEdgeDelta =
+          shadowMlCorrectedP - valueBet.probability.toNumber();
+      }
+    }
+
     // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
     let shadowLineMovement: number | null = null;
     if (
@@ -948,6 +976,8 @@ export class BettingEngineService {
           shadow_congestion: shadowCongestion,
           shadow_lineups: null,
           shadow_injuries: null,
+          shadow_ml_corrected_p: shadowMlCorrectedP,
+          shadow_ml_edge_delta: shadowMlEdgeDelta,
           homeDrawRate: effectiveHomeStats
             ? Number(effectiveHomeStats.drawRate)
             : null,
@@ -3114,4 +3144,54 @@ function getFixtureAwayTeamName(fixture: {
   awayTeam?: { name?: string };
 }): string | null {
   return fixture.awayTeam?.name ?? null;
+}
+
+const TOP5_COMPETITIONS = new Set(['PL', 'PD', 'BL1', 'SA', 'FL1']);
+const INTERNATIONAL_COMPETITIONS = new Set(['WC', 'UCL', 'UEL', 'UECL', 'FRI']);
+
+function mlLeagueTier(competitionCode: string | null): string {
+  if (!competitionCode) return 'secondary';
+  if (TOP5_COMPETITIONS.has(competitionCode)) return 'top5';
+  if (INTERNATIONAL_COMPETITIONS.has(competitionCode)) return 'international';
+  return 'secondary';
+}
+
+function mlOddsSegment(odds: Decimal): string {
+  const n = odds.toNumber();
+  if (n < 1.5) return 'low';
+  if (n <= 2.5) return 'mid';
+  return 'high';
+}
+
+function buildMlShadowFeatures(input: {
+  valueBet: ViablePick;
+  deterministicScore: Decimal;
+  probabilities: MatchProbabilities;
+  features: DeterministicFeatures;
+  competitionCode: string | null;
+}): MlShadowFeatures {
+  const {
+    valueBet,
+    deterministicScore,
+    probabilities,
+    features,
+    competitionCode,
+  } = input;
+  return {
+    prob_estimated: valueBet.probability.toNumber(),
+    deterministic_score: deterministicScore.toNumber(),
+    ev: valueBet.ev.toNumber(),
+    delta_p: null,
+    p_poisson_home: probabilities.home.toNumber(),
+    p_poisson_draw: probabilities.draw.toNumber(),
+    p_poisson_away: probabilities.away.toNumber(),
+    recent_form: asNumber(features.recentForm),
+    xg: asNumber(features.xg),
+    performance_dom_ext: asNumber(features.domExtPerf),
+    volatilite_ligue: asNumber(features.leagueVolat),
+    market: valueBet.market,
+    canal: 'EV',
+    league_tier: mlLeagueTier(competitionCode),
+    odds_segment: mlOddsSegment(valueBet.odds),
+  };
 }

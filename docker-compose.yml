@@ -76,6 +76,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       LOG_LEVEL: info
+    ports:
+      - "8001:8000"
     volumes:
       - ml_models:/app/models
     depends_on:

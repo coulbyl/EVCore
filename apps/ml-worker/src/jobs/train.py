@@ -29,20 +29,27 @@ VALID_SEGMENTS = frozenset([
     "BTTS:BTTS",
 ])
 
+VALID_ALGORITHMS = frozenset(["auto", "logistic_regression", "xgboost"])
+
 
 @dataclass(frozen=True)
 class TrainJobPayload:
     segment: str
     triggered_by: str
+    algorithm: str = "auto"
 
 
 def _parse(raw: dict[str, Any]) -> TrainJobPayload:
     segment = raw.get("segment", "ALL")
     if segment not in VALID_SEGMENTS:
         raise ValueError(f"Unknown segment: {segment!r}")
+    algorithm = raw.get("algorithm", "auto")
+    if algorithm not in VALID_ALGORITHMS:
+        raise ValueError(f"Unknown algorithm: {algorithm!r}")
     return TrainJobPayload(
         segment=segment,
         triggered_by=str(raw.get("triggeredBy", "unknown")),
+        algorithm=algorithm,
     )
 
 
@@ -71,7 +78,7 @@ async def handle(data: dict[str, Any], config: Config) -> dict[str, Any]:
     )
 
     try:
-        result = correction.train(df)
+        result = correction.train(df, payload.algorithm)
     except ValueError as exc:
         logger.warning("training aborted", extra={"reason": str(exc), "segment": payload.segment})
         return {"status": "aborted", "reason": str(exc), "segment": payload.segment}
@@ -97,6 +104,7 @@ async def handle(data: dict[str, Any], config: Config) -> dict[str, Any]:
         "status": "done",
         "version_id": version_id,
         "segment": payload.segment,
+        "algorithm": result.algorithm,
         "brier_score": result.brier_score,
         "calibration_error": result.calibration_error,
         "roi_simulated": result.roi_simulated,
