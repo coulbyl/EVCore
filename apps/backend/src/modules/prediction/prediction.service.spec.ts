@@ -6,6 +6,7 @@ import {
   resolveActualPick,
   PredictionService,
 } from './prediction.service';
+import type { ChannelPredictionCandidate } from './prediction.service';
 import type {
   PredictionRepository,
   PredictionRow,
@@ -32,6 +33,13 @@ function makeProba(input: {
   };
 }
 
+function mustCandidate(
+  candidate: ChannelPredictionCandidate | null,
+): ChannelPredictionCandidate {
+  if (candidate === null) throw new Error('expected a prediction candidate');
+  return candidate;
+}
+
 function makeRow(
   channel: PredictionChannel,
   market: Market,
@@ -56,9 +64,11 @@ function makeRow(
 
 describe('buildPredictionCandidate — CONF channel', () => {
   it('picks HOME when home probability is highest', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.CONF,
-      makeProba({ home: 0.55, draw: 0.25, away: 0.2 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.CONF,
+        makeProba({ home: 0.55, draw: 0.25, away: 0.2 }),
+      ),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('HOME');
@@ -66,9 +76,11 @@ describe('buildPredictionCandidate — CONF channel', () => {
   });
 
   it('picks DRAW when draw probability is highest', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.CONF,
-      makeProba({ home: 0.3, draw: 0.45, away: 0.25 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.CONF,
+        makeProba({ home: 0.3, draw: 0.45, away: 0.25 }),
+      ),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('DRAW');
@@ -76,9 +88,11 @@ describe('buildPredictionCandidate — CONF channel', () => {
   });
 
   it('picks AWAY when away probability is highest', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.CONF,
-      makeProba({ home: 0.25, draw: 0.3, away: 0.45 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.CONF,
+        makeProba({ home: 0.25, draw: 0.3, away: 0.45 }),
+      ),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('AWAY');
@@ -86,18 +100,22 @@ describe('buildPredictionCandidate — CONF channel', () => {
   });
 
   it('picks HOME on home=draw tie (home checked first)', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.CONF,
-      makeProba({ home: 0.4, draw: 0.4, away: 0.2 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.CONF,
+        makeProba({ home: 0.4, draw: 0.4, away: 0.2 }),
+      ),
     );
     expect(result.pick).toBe('HOME');
     expect(result.probability.toNumber()).toBe(0.4);
   });
 
   it('picks DRAW on draw=away tie (draw checked before away)', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.CONF,
-      makeProba({ home: 0.2, draw: 0.4, away: 0.4 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.CONF,
+        makeProba({ home: 0.2, draw: 0.4, away: 0.4 }),
+      ),
     );
     expect(result.pick).toBe('DRAW');
     expect(result.probability.toNumber()).toBe(0.4);
@@ -105,32 +123,56 @@ describe('buildPredictionCandidate — CONF channel', () => {
 });
 
 describe('buildPredictionCandidate — DRAW channel', () => {
-  it('always returns market ONE_X_TWO, pick DRAW and draw probability', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.DRAW,
-      makeProba({ home: 0.55, draw: 0.28, away: 0.17 }),
+  it('uses the bookmaker implied probability (1/drawOdds)', () => {
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.DRAW,
+        makeProba({ home: 0.55, draw: 0.28, away: 0.17 }),
+        d('3.20'),
+      ),
     );
     expect(result.market).toBe(Market.ONE_X_TWO);
     expect(result.pick).toBe('DRAW');
-    expect(result.probability.toNumber()).toBe(0.28);
+    expect(result.probability.toNumber()).toBeCloseTo(1 / 3.2, 10);
   });
 
-  it('uses draw probability regardless of which outcome is highest', () => {
-    // draw is the smallest here — canal DRAW still tracks it
+  it('ignores the model draw probability when odds are present', () => {
+    // model says draw 10% but implied says 1/3.33 ≈ 30% — implied wins
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.DRAW,
+        makeProba({ home: 0.65, draw: 0.1, away: 0.25 }),
+        d('3.33'),
+      ),
+    );
+    expect(result.probability.toNumber()).toBeCloseTo(1 / 3.33, 10);
+  });
+
+  it('returns null without drawOdds — no model-probability fallback', () => {
     const result = buildPredictionCandidate(
       PredictionChannel.DRAW,
-      makeProba({ home: 0.65, draw: 0.1, away: 0.25 }),
+      makeProba({ home: 0.4, draw: 0.32, away: 0.28 }),
     );
-    expect(result.pick).toBe('DRAW');
-    expect(result.probability.toNumber()).toBe(0.1);
+    expect(result).toBeNull();
+  });
+
+  it('returns null on explicit null drawOdds', () => {
+    const result = buildPredictionCandidate(
+      PredictionChannel.DRAW,
+      makeProba({ home: 0.4, draw: 0.32, away: 0.28 }),
+      null,
+    );
+    expect(result).toBeNull();
   });
 });
 
 describe('buildPredictionCandidate — BTTS channel', () => {
   it('returns market BTTS, pick YES and bttsYes probability', () => {
-    const result = buildPredictionCandidate(
-      PredictionChannel.BTTS,
-      makeProba({ home: 0.4, draw: 0.3, away: 0.3, bttsYes: 0.62 }),
+    const result = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.BTTS,
+        makeProba({ home: 0.4, draw: 0.3, away: 0.3, bttsYes: 0.62 }),
+      ),
     );
     expect(result.market).toBe(Market.BTTS);
     expect(result.pick).toBe('YES');
@@ -138,9 +180,11 @@ describe('buildPredictionCandidate — BTTS channel', () => {
   });
 
   it('ignores 1X2 probabilities entirely', () => {
-    const low = buildPredictionCandidate(
-      PredictionChannel.BTTS,
-      makeProba({ home: 0.8, draw: 0.1, away: 0.1, bttsYes: 0.45 }),
+    const low = mustCandidate(
+      buildPredictionCandidate(
+        PredictionChannel.BTTS,
+        makeProba({ home: 0.8, draw: 0.1, away: 0.1, bttsYes: 0.45 }),
+      ),
     );
     expect(low.probability.toNumber()).toBe(0.45);
     expect(low.pick).toBe('YES');
