@@ -44,19 +44,27 @@ EVA est à la fois **un guichet des picks du moteur**, **un data analyst du mote
 
 ## Stack
 
-| Composant            | Choix                                    | Raison                                                                                                            |
-| -------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| LLM orchestration    | **Llama 3.3 70B versatile** via Groq API | Tool calling multi-étapes fiable (le 8B se trompe trop souvent de tool ou d'arguments)                            |
-| LLM tâches légères   | Llama 3.1 8B instant via Groq            | Titres de conversation, reformulations — pas de tool calling                                                      |
-| Pattern              | Function calling (tool use)              | Données structurées en DB, pas de RAG                                                                             |
-| Validation tool args | **Zod** (obligatoire)                    | Règle EVCore : aucune sortie LLM ne contourne Zod — les arguments de chaque tool call sont parsés avant exécution |
-| Historique           | PostgreSQL `chat_message`                | Cohérence inter-sessions par user                                                                                 |
-| Transport            | SSE via `fetch` streaming (POST)         | Streaming token par token (`EventSource` ne supporte pas POST)                                                    |
-| Rate limit           | Par user, configurable                   | Contrôle du coût Groq                                                                                             |
+| Composant            | Choix                            | Raison                                                                                                                                                |
+| -------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LLM orchestration    | **Llama 4 Scout** via Groq API   | Décision 2026-06 : tool calls **parallèles** (impossible sur Llama 3), 128K contexte, function calling natif, free tier. Voir note décision plus bas. |
+| LLM tâches légères   | Llama 3.1 8B instant via Groq    | Titres de conversation, reformulations — pas de tool calling                                                                                          |
+| Pattern              | Function calling (tool use)      | Données structurées en DB, pas de RAG                                                                                                                 |
+| Validation tool args | **Zod** (obligatoire)            | Règle EVCore : aucune sortie LLM ne contourne Zod — les arguments de chaque tool call sont parsés avant exécution                                     |
+| Historique           | PostgreSQL `chat_message`        | Cohérence inter-sessions par user                                                                                                                     |
+| Transport            | SSE via `fetch` streaming (POST) | Streaming token par token (`EventSource` ne supporte pas POST)                                                                                        |
+| Rate limit           | Par user, configurable           | Contrôle du coût Groq                                                                                                                                 |
 
 **Contrainte n°1 du free tier Groq : le débit tokens (TPM), pas le nombre de requêtes.** Vérifier les limites courantes par modèle avant l'implémentation (ordre de grandeur free tier : ~30 req/min, ~6 000–12 000 tokens/min, ~1 000 req/jour). Conséquences directes sur le design (voir « Budget tokens » plus bas).
 
-**Tarifs payants (si dépassement, à re-vérifier)** : Llama 3.3 70B ≈ $0.59/M input · $0.79/M output ; Llama 3.1 8B ≈ $0.05/M input · $0.08/M output. Même en payant, un échange complet (~3–5 k tokens) coûte une fraction de centime.
+**Tarifs payants (si dépassement, à re-vérifier)** : tarifs Groq par modèle à confirmer au moment du build (Scout ≈ tarif MoE 17B, très bas ; 8B ≈ $0.05/M in · $0.08/M out). Même en payant, un échange complet (~3–5 k tokens) coûte une fraction de centime.
+
+### Note décision LLM (2026-06-11)
+
+Recherche au moment de la décision : Groq sert désormais **Llama 4** (Scout 17B×16 MoE, Maverick) avec function calling, JSON mode, 128K contexte et **tool calls parallèles** (Llama 3 ne les supporte pas). Groq propose aussi des modèles spécialisés tool-use (`Llama-3-Groq-70B-Tool-Use`, en tête du Berkeley Function Calling Leaderboard). L'objection initiale « Llama trop faible en tool calling, prendre Claude » est donc largement levée.
+
+**Choix : Groq + Llama 4 Scout** — gratuit, rapide, tool calling solide, zéro coût récurrent pour un outil interne. Alternative repli si le golden set révèle une posture trop lâche (refus de manipulation, framing honnête des probas, domaine où Claude reste devant) : **basculer en Claude**. Pour rendre ce repli trivial, le client LLM est **derrière une interface** (`LlmClient`) — le provider est un détail d'implémentation, pas un couplage. Free-first, swap si les tests l'exigent.
+
+> Note : l'intégration Anthropic héritée de l'ai-engine (curation de coupons) a été **retirée** le 2026-06-11 (inerte + non validée) — voir `chore(ai-engine): remove inert Claude curation path`. EVA repart donc d'une interface LLM propre, sans dette.
 
 ---
 
@@ -71,7 +79,7 @@ ChatService
     ├── Charge l'historique fenêtré (N derniers messages, payloads tools résumés)
     ├── Construit le prompt system (contexte EVCore + glossaire + date)
     └── Boucle agentique (max 5 itérations) :
-            Groq API (70B) → tool_calls ?
+            Groq API (Scout) → tool_calls ?
                 ↓ oui
             Zod parse des arguments → ChatToolsService (queries SELECT-only)
                 ↓ résultat JSON compact (caps de taille)
@@ -86,7 +94,7 @@ Garde-fous de la boucle :
 - **Max 5 tool calls par message user** — au-delà, le service force une réponse avec les données déjà collectées.
 - **Arguments invalides (Zod fail)** → le tool retourne `{ error: "<message>" }` au LLM (une seule retry), jamais d'exécution de query avec des paramètres non validés.
 - **Tools en lecture seule** — `ChatToolsService` ne fait que des SELECT via les repositories existants. Aucune mutation, aucune action moteur (pas de génération de coupon, pas de placement de pick).
-- **Timeout Groq + fallback** — si le 70B est indisponible ou rate-limited, retry sur le 8B avec un prompt simplifié ; si Groq est totalement indisponible, erreur claire dans l'UI, pas de crash.
+- **Timeout Groq + fallback** — si Scout est indisponible ou rate-limited, retry sur le 8B avec un prompt simplifié ; si Groq est totalement indisponible, erreur claire dans l'UI, pas de crash.
 - **Fenêtre d'historique** — seuls les ~10 derniers messages sont renvoyés à Groq ; les contenus `role='tool'` anciens sont remplacés par un résumé une ligne (`[tool getUpcomingPicks: 4 picks retournés]`) pour ne pas exploser le TPM.
 - **Limiter global Groq** — le rate limit par user ne protège pas le quota Groq, qui est **partagé entre tous les users**. Tous les appels Groq passent par une file serveur unique (limiter TPM/RPM, retry avec backoff sur 429). Si la file est saturée : réponse immédiate "EVA est très sollicitée, réessayez dans quelques secondes" plutôt qu'un timeout silencieux.
 - **Verrou par conversation** — un seul message en cours de génération par conversation (lock Redis) ; un nouveau message pendant un stream actif est rejeté avec une erreur explicite.
@@ -367,7 +375,7 @@ toolName        TEXT            -- renseigné si role = 'tool'
 toolArgs        JSONB           -- arguments validés (audit + replay)
 inputTokens     INT   DEFAULT 0
 outputTokens    INT   DEFAULT 0
-model           TEXT            -- modèle utilisé (70B / 8B fallback)
+model           TEXT            -- modèle utilisé (Scout / 8B fallback)
 promptVersion   TEXT            -- version du prompt system (messages assistant)
 createdAt       TIMESTAMP NOT NULL DEFAULT NOW()
 -- index (conversationId, createdAt)
@@ -598,7 +606,7 @@ Un golden set de ~20 questions versionné dans `apps/backend/src/modules/chat/ch
 
 1. Migration DB (`chat_conversation`, `chat_message`, `chat_usage`)
 2. `chat.tools.schemas.ts` + `ChatToolsService` — groupe A d'abord (`searchFixtures`, `getUpcomingPicks`, `getTopPicks`, `getCouponProposals`, `composeSelection`, `simulateLadder`, `explainFixture`) : c'est la valeur parieur immédiate
-3. `ChatService` — intégration Groq SDK (70B), boucle tool calls bornée, fenêtrage historique, limiter global Groq
+3. `ChatService` — intégration Groq SDK (Scout), boucle tool calls bornée, fenêtrage historique, limiter global Groq
 4. `ChatController` — endpoints REST + stream SSE (événements typés, stop, complétion server-side)
 5. Page frontend `/dashboard/chat` — UI fonctionnelle + suggestions de questions + disclaimer
 6. Groupes B (performance/confiance), C (ML, scope par rôle), D (`getEngineHealth`) et E (`getMyStats`)
