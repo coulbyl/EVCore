@@ -43,4 +43,11 @@ def create_app(registry: ModelRegistry) -> FastAPI:
             model_found=prob is not None,
         )
 
+    @app.post("/reload")
+    async def reload() -> dict[str, Any]:
+        """Re-sync active models from DB — called by the backend after an
+        activation, auto-switch or rollback."""
+        await registry.reload()
+        return {"status": "ok", "active_segments": registry.active_segments()}
+
     return app

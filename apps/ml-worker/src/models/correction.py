@@ -123,15 +123,22 @@ def _calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10)
 
 def _roi_simulated(df_test: pd.DataFrame, y_prob: np.ndarray) -> float:
     """
-    Simulated ROI if we bet every pick in the test set (at modeled probability).
-    Uses actual bet odds from oddsSnapshot.
+    Simulated ROI of the model's betting policy on the test set: stake 1 unit
+    on each pick whose corrected probability implies positive EV
+    (y_prob × odds − 1 > 0), skip the rest. Rows without odds are not stakeable.
+
+    The previous version staked every test pick and ignored y_prob entirely —
+    "shadow ROI" was a property of the dataset, identical for every model on
+    the same segment (audit 2026-06-11).
     """
     if "odds_bet" not in df_test.columns:
         return 0.0
-    odds = pd.to_numeric(df_test["odds_bet"], errors="coerce").fillna(1.0).values
+    odds = pd.to_numeric(df_test["odds_bet"], errors="coerce").values
     outcomes = df_test["outcome_correct"].values
-    # Simulate: stake 1 unit per pick, collect odds if WON
-    profits = np.where(outcomes == 1, odds - 1.0, -1.0)
+    placed = ~np.isnan(odds) & (y_prob * np.nan_to_num(odds) - 1.0 > 0.0)
+    if not placed.any():
+        return 0.0
+    profits = np.where(outcomes[placed] == 1, odds[placed] - 1.0, -1.0)
     return float(profits.mean())
 
 

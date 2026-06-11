@@ -6,6 +6,7 @@ import { BULLMQ_QUEUES } from '@/config/etl.constants';
 import { createLogger } from '@utils/logger';
 import { NotificationService } from '@modules/notification/notification.service';
 import { MlRepository } from './ml.repository';
+import { MlInferenceService } from './ml.inference.service';
 import {
   ML_MIN_BRIER_IMPROVEMENT,
   ML_RETRAIN_MIN_NEW_BETS,
@@ -22,9 +23,11 @@ type TriggerResult = { jobId: string };
 
 @Injectable()
 export class MlService {
+  // eslint-disable-next-line max-params -- DI constructor
   constructor(
     private readonly repo: MlRepository,
     private readonly notifications: NotificationService,
+    private readonly inference: MlInferenceService,
     @InjectQueue(BULLMQ_QUEUES.ML_TRAINING)
     private readonly queue: Queue<MlTrainingJobData>,
   ) {}
@@ -69,6 +72,7 @@ export class MlService {
 
   async activateModel(id: string): Promise<MlModelVersion> {
     const model = await this.repo.activate(id);
+    await this.inference.requestReload();
     const metrics = model.metrics as Record<string, number>;
     await this.notifications.sendMlModelActivatedAlert({
       versionId: model.id,
@@ -84,6 +88,7 @@ export class MlService {
 
   async rollbackModel(id: string): Promise<MlModelVersion> {
     const previous = await this.repo.rollback(id);
+    await this.inference.requestReload();
     await this.notifications.sendMlModelActivatedAlert({
       versionId: previous.id,
       segment: previous.segment,
@@ -131,6 +136,7 @@ export class MlService {
     }
 
     const activated = await this.repo.activate(result.version_id);
+    await this.inference.requestReload();
     const metrics = activated.metrics as Record<string, number>;
     logger.info(
       {

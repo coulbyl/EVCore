@@ -117,6 +117,19 @@
 
 ---
 
+## Étape 7bis — Tests ml-worker (suite audit 2026-06-11)
+
+> L'audit du 11 juin a corrigé deux bugs (`_roi_simulated` ignorait le modèle,
+> registre d'inférence figé jusqu'au restart) — aucun test n'existait pour les attraper.
+
+- [ ] Setup pytest dans `apps/ml-worker` (requirements-dev.txt, job CI)
+- [ ] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables), split temporel 70/30, `_assert_class_balance`
+- [ ] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe → None attendu), `_build_row`, `_apply_segment_filter`
+- [ ] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, fallback segment → ALL
+- [ ] Test `server.py` : `POST /reload` resynchronise les segments actifs
+
+---
+
 ## Étape 8 — Drawdown dynamique (après ML stable en prod)
 
 > N'activer qu'une fois le ML en prod depuis ≥30 jours stables.

@@ -13,6 +13,7 @@ import { MlBackfillService } from './ml.backfill.service';
 import { MlBackfillWorker } from './ml.backfill.worker';
 import { MlSchedulerWorker } from './ml.scheduler.worker';
 import { MlTrainingEventsListener } from './ml.training-events.listener';
+import { MlInferenceModule } from './ml.inference.module';
 import {
   ML_CRON_SCHEDULES,
   ML_SCHEDULER_KEYS,
@@ -27,6 +28,7 @@ import {
     AuthModule,
     BettingEngineModule,
     NotificationModule,
+    MlInferenceModule,
   ],
   controllers: [MlController],
   providers: [
