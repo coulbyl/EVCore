@@ -142,8 +142,15 @@
 > Aucune ligne de code moteur ici tant que la décision n'est pas prise — c'est
 > une phase de mesure.
 
-- [ ] Suivre, sur une fenêtre réelle, ROI/Brier **corrigé (shadow)** vs **baseline** par segment
-- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil des rapports hebdomadaires
+> ⚠️ **BLOQUANT identifié le 2026-06-11** : les 6 modèles ont été activés le 10/06 à 22:40,
+> mais **aucun ModelRun n'a été généré depuis** → `shadow_ml_corrected_p` est `null` partout,
+> 0 bet post-activation settlé. Le Decision Board est donc vide (tout INSUFFICIENT) et le
+> restera tant que (a) le moteur ne refait pas de passes de scoring après activation et
+> (b) ces bets ne settlent pas. **Première action concrète ci-dessous.**
+
+- [ ] **(bloquant)** Confirmer que l'inférence shadow se déclenche à la prochaine passe du moteur (`shadow_ml_corrected_p` non-null sur les nouveaux ModelRun) — sinon investiguer le câblage shadow (ml-worker joignable ? modèles chargés ?)
+- [ ] Suivre ROI/Brier **corrigé (shadow)** vs **baseline** par segment via le Decision Board (`/dashboard/reports`) — l'instrument est en place
+- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil de l'accumulation (le board la calcule, report manuel ici pour l'historique)
 - [ ] Décider **par segment** : promouvoir la correction hors shadow (elle influence le pick) uniquement si Brier amélioré ET ROI ≥ baseline sur la fenêtre
 - [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
 - [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
@@ -160,8 +167,8 @@
 - [x] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (modèle actif), état vide/INSUFFICIENT géré + lien nav admin
 - [x] Sélecteur de fenêtre 7j/30j/90j/depuis activation
 - [ ] Drill-down enrichi (v1.1) : courbe calibration corrigée vs baseline, picks de la fenêtre, stabilité sur sous-fenêtres
-- [ ] Validation : confirmer que l'inférence shadow se déclenche au prochain run du moteur (`shadow_ml_corrected_p` non-null) — sinon le board reste vide malgré l'accumulation
 - [ ] (v2) Bouton « Promouvoir hors shadow » — décision loggée + cooldown + flag par segment lu par le moteur
+      _(la validation du pipeline shadow est le bloquant n°1 de l'étape 7ter ci-dessus)_
 
 ---
 
