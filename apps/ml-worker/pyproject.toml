@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+# Run from apps/ml-worker; `src` is the top-level package (relative imports).
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"

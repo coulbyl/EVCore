@@ -117,16 +117,20 @@
 
 ---
 
-## Étape 7bis — Tests ml-worker (suite audit 2026-06-11)
+## Étape 7bis — Tests ml-worker (suite audit 2026-06-11) ✅
 
 > L'audit du 11 juin a corrigé deux bugs (`_roi_simulated` ignorait le modèle,
 > registre d'inférence figé jusqu'au restart) — aucun test n'existait pour les attraper.
+> 49 tests, exécutés dans l'image ml-worker avec le working-tree monté :
+> `docker run --rm -v "$(pwd)/apps/ml-worker:/app" -w /app evcore-ml-worker:latest \`
+> `  sh -c "pip install -q -r requirements-dev.txt && python -m pytest"`
 
-- [ ] Setup pytest dans `apps/ml-worker` (requirements-dev.txt, job CI)
-- [ ] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables), split temporel 70/30, `_assert_class_balance`
-- [ ] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe → None attendu), `_build_row`, `_apply_segment_filter`
-- [ ] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, fallback segment → ALL
-- [ ] Test `server.py` : `POST /reload` resynchronise les segments actifs
+- [x] Setup pytest dans `apps/ml-worker` (`requirements-dev.txt`, `pyproject.toml`, `tests/`)
+- [x] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables, dépend du modèle), `_resolve_algorithm`, `_assert_class_balance`
+- [x] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe), `_pinnacle_prob_for_pick` (les 2 côtés), `_target_odds`, `_build_row`
+- [x] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, noop avant load, réutilise l'URL stockée, fallback segment → ALL
+- [x] Test `server.py` : `/infer` + `POST /reload` resynchronise les segments actifs
+- [ ] Job CI (GitHub Actions) — câbler `pytest` ml-worker dans le pipeline
 
 ---
 
