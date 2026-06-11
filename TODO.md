@@ -134,9 +134,25 @@
 
 ---
 
+## Étape 7ter — Observation shadow + décision de promotion (LA SUITE)
+
+> Le ML tourne en **shadow mode** (étape 6) : il calcule ses corrections et les
+> logge, sans influencer les décisions. Avant l'étape 8, valider que la
+> correction bat réellement le Poisson baseline, segment par segment.
+> Aucune ligne de code moteur ici tant que la décision n'est pas prise — c'est
+> une phase de mesure.
+
+- [ ] Suivre, sur une fenêtre réelle, ROI/Brier **corrigé (shadow)** vs **baseline** par segment
+- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil des rapports hebdomadaires
+- [ ] Décider **par segment** : promouvoir la correction hors shadow (elle influence le pick) uniquement si Brier amélioré ET ROI ≥ baseline sur la fenêtre
+- [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
+- [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
+
+---
+
 ## Étape 8 — Drawdown dynamique (après ML stable en prod)
 
-> N'activer qu'une fois le ML en prod depuis ≥30 jours stables.
+> N'activer qu'une fois le ML en prod depuis ≥30 jours stables (voir étape 7ter).
 
 - [ ] `BettingEngineService` calcule le drawdown courant (ROI glissant 30 derniers bets)
 - [ ] Fraction Kelly dynamique :
