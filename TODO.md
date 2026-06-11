@@ -157,8 +157,10 @@
 > (CONF/DRAW/BTTS) : méta-métriques `ml_model_version` uniquement (pas de shadow/pick).
 
 - [x] Backend `GET /reports/ml-promotion?window=30d` (AdminGuard) — comparaison Brier/ROI baseline vs corrigé par segment + verdict déterministe
-- [ ] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (calibration corrigée vs baseline, picks de la fenêtre, stabilité)
-- [ ] Sélecteur de fenêtre 7j/30j/90j/depuis activation
+- [x] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (modèle actif), état vide/INSUFFICIENT géré + lien nav admin
+- [x] Sélecteur de fenêtre 7j/30j/90j/depuis activation
+- [ ] Drill-down enrichi (v1.1) : courbe calibration corrigée vs baseline, picks de la fenêtre, stabilité sur sous-fenêtres
+- [ ] Validation : confirmer que l'inférence shadow se déclenche au prochain run du moteur (`shadow_ml_corrected_p` non-null) — sinon le board reste vide malgré l'accumulation
 - [ ] (v2) Bouton « Promouvoir hors shadow » — décision loggée + cooldown + flag par segment lu par le moteur
 
 ---

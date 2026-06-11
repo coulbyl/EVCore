@@ -14,6 +14,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Cpu,
+  FlaskConical,
   Globe,
   GraduationCap,
   LayoutDashboard,
@@ -104,6 +105,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href: "/dashboard/ml",
             active: pathname.startsWith("/dashboard/ml"),
             icon: BrainCircuit,
+          },
+          {
+            label: tNav("reports"),
+            href: "/dashboard/reports",
+            active: pathname.startsWith("/dashboard/reports"),
+            icon: FlaskConical,
           },
           {
             label: tNav("engine"),
