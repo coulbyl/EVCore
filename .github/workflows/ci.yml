@@ -41,3 +41,29 @@ jobs:
 
       - name: Test (backend)
         run: pnpm --filter backend test
+
+  ml-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/ml-worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          # Matches apps/ml-worker/Dockerfile (python:3.12-slim).
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            apps/ml-worker/requirements.txt
+            apps/ml-worker/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Test (ml-worker)
+        run: python -m pytest

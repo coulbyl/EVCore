@@ -337,27 +337,31 @@ Docs de cadrage Phase 3:
 - [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/phase3-go-watch-no-go.md`
 - [x] Rapport → `packages/db/reports/edge-vs-pinnacle-2026-06-04.md`
 
-### Bloc B — Infrastructure ML
+### Bloc B — Infrastructure ML ✅ (juin 2026 — détail dans `TODO.md` étapes 3–7bis)
 
-- [ ] Service `ml-worker` Python dans Docker Compose (image `python:3.12-slim`, accès Redis + PostgreSQL)
-- [ ] Queue BullMQ `ml-training` — NestJS pousse le job, Python consomme
-- [ ] `MlController` NestJS : `POST /ml/train` (déclenche job), `GET /ml/model/active` (modèle courant)
-- [ ] Script Python `train.py` : lit `ModelRun` + outcomes depuis PostgreSQL, entraîne, sérialise en base
-- [ ] Upgrade VPS OVH si besoin (≥ 4 vCPU / 8 GB RAM) avant premier entraînement
+- [x] Service `ml-worker` Python dans Docker Compose (image `python:3.12-slim`, accès Redis + PostgreSQL)
+- [x] Queue BullMQ `ml-training` — NestJS pousse le job, Python consomme
+- [x] `MlController` NestJS : `POST /ml/train`, `GET /ml/models/active`, activate/rollback/delete
+- [x] Script Python `train.py` : lit `ModelRun` + outcomes depuis PostgreSQL, entraîne, sérialise en base
+- [x] Suite de tests pytest ml-worker + job CI (étape 7bis)
+- [ ] Upgrade VPS OVH si besoin (≥ 4 vCPU / 8 GB RAM) avant premier entraînement prod
 
-### Bloc C — XGBoost + Calibration
+### Bloc C — Correction layer XGBoost + Calibration ✅ (juin 2026 — détail dans `TODO.md` étapes 4–7)
 
-> XGBoost apprend les corrections à apporter au modèle Poisson depuis les résultats historiques.
-> Il ne remplace pas Poisson — il calibre ses sorties.
+> Architecture retenue (voir `docs/phase3-ml-correction-layer.md`) : le modèle apprend
+> **où le Poisson se trompe** (cible `outcome_correct` sur les lignes avec cote Pinnacle) et
+> produit une probabilité corrigée. Il ne remplace pas Poisson — il le calibre. La correction
+> est servie en **shadow mode** via le serveur d'inférence (pas de chargement de poids au démarrage).
 
-- [ ] Feature extraction : form, xG, H/A, volatilité + odds delta Pinnacle (depuis `OddsSnapshot`)
-- [ ] Entraînement XGBoost sur `(features → HOME_WIN | DRAW | AWAY_WIN)` — 3 saisons historiques
-- [ ] Calibration scikit-learn (isotonic regression) — corriger le biais des probabilités
-- [ ] Poids calibrés écrits en `ml_model_version` avec métriques (Brier Score, Calibration Error)
-- [ ] `BettingEngineService` charge les poids du modèle actif au démarrage
-- [ ] Basculement automatique vers nouveau modèle si Brier Score amélioré + cooldown 7 jours
-- [ ] Rollback manuel vers version précédente via `POST /ml/model/:id/activate`
-- [ ] Job BullMQ hebdomadaire `ml-retrain` — ré-entraînement automatique si ≥ 50 nouveaux bets settled
+- [x] Feature extraction : form, xG, H/A, volatilité + delta_p Pinnacle (depuis `OddsSnapshot`)
+- [x] Entraînement (LogReg < 200 samples, XGBoost au-delà) — `auto` par segment
+- [x] Calibration scikit-learn (isotonic, `CalibratedClassifierCV`) — corriger le biais des probabilités
+- [x] Modèle sérialisé + métriques écrites en `ml_model_version` (Brier, Calibration Error, ROI shadow)
+- [x] `BettingEngineService` consomme la correction en **shadow mode** (étape 6 — loggée, n'agit pas encore)
+- [x] Basculement automatique si Brier amélioré ≥ 5% + cooldown 7 jours
+- [x] Rollback manuel via `POST /ml/models/:id/rollback`
+- [x] Job BullMQ hebdomadaire — ré-entraînement si ≥ 50 nouveaux bets settled
+- [ ] **Promotion hors shadow** (décision par segment, voir `TODO.md` étape 7ter) — LA SUITE
 
 ### Bloc D — Gestion dynamique du drawdown
 
@@ -375,6 +379,15 @@ Docs de cadrage Phase 3:
 
 ## Phase 4
 
+> Cadrage : [docs/phase4-ai-chat.md](docs/phase4-ai-chat.md) — **EVA** (Expected Value Analyst),
+> assistant conversationnel sur les données du moteur (function calling Groq, lecture seule).
+> Pré-requis : moteur validé comme socle de confiance (ML promu hors shadow, voir Phase 3 / étape 7ter).
+
+- [ ] EVA — AI Chat Analyst (spec `docs/phase4-ai-chat.md`)
+  - [ ] Migration DB (`chat_conversation`, `chat_message`, `chat_usage`)
+  - [ ] Tools lecture seule (groupe A picks/coupons d'abord), orchestration Groq + Zod
+  - [ ] SSE + UI `/dashboard/chat`, rate limiting Redis, caching tools
+  - [ ] Durcissement sécurité + golden set (intentions, adversarial, IDOR, injection par données)
 - [ ] SaaS / multi-tenant
 - [ ] API interne
 - [ ] Groupe premium

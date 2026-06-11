@@ -64,7 +64,11 @@ export class PredictionService {
         drawOdds,
       );
 
-      if (!config.enabled || candidate.probability.lt(config.threshold)) {
+      if (
+        !config.enabled ||
+        candidate === null ||
+        candidate.probability.lt(config.threshold)
+      ) {
         await this.repo.deleteForFixtureChannel(fixtureId, channel);
         continue;
       }
@@ -257,12 +261,20 @@ export function buildPredictionCandidate(
   channel: PredictionChannel,
   probabilities: ThreeWayProba & { bttsYes: Decimal },
   drawOdds?: Decimal | null,
-): ChannelPredictionCandidate {
+): ChannelPredictionCandidate | null {
   if (channel === PredictionChannel.DRAW) {
+    // The DRAW channel is defined on the bookmaker implied probability — all
+    // league thresholds were backtested on the 1/drawOdds selector. The old
+    // fallback to the model draw probability selected on a never-validated
+    // signal (Poisson under-estimates draws): 384 settled predictions at
+    // 28.4% hit rate (below the ~29-31% breakeven at typical draw odds) vs
+    // 35.2% for the implied-odds population (audit 2026-06-11). No odds → no
+    // DRAW prediction.
+    if (!drawOdds) return null;
     return {
       market: Market.ONE_X_TWO,
       pick: 'DRAW',
-      probability: drawOdds ? new Decimal(1).div(drawOdds) : probabilities.draw,
+      probability: new Decimal(1).div(drawOdds),
     };
   }
 

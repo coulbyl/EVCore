@@ -14,7 +14,10 @@ import {
   type VirtualInvestmentCanal,
 } from './investment.constants';
 import { SignalWindowService } from './signal-window.service';
-import { CouponComposerService } from './coupon-composer.service';
+import {
+  CouponComposerService,
+  calibratedLegProbability,
+} from './coupon-composer.service';
 import type {
   Canal,
   ScoredPick,
@@ -415,7 +418,7 @@ ${JSON.stringify(fixtures, null, 2)}`;
         1,
       );
       const jointProbability = legPicks.reduce(
-        (acc, p) => acc * p.calibratedHitRate,
+        (acc, p) => acc * calibratedLegProbability(p),
         1,
       );
       const signalScore =
@@ -470,12 +473,16 @@ ${JSON.stringify(fixtures, null, 2)}`;
     picks: ScoredPick[],
     virtualPicks: VirtualScoredPick[],
   ): InvestmentDayDto {
-    // Sort by calibratedHitRate × signalScore desc
-    const ranked = [...picks].sort(
-      (a, b) =>
-        b.calibratedHitRate * b.signalScore -
-        a.calibratedHitRate * a.signalScore,
-    );
+    // Sort by calibratedHitRate × signalScore desc. Both factors are
+    // (canal, day)-level rates — constant across same-canal picks — so the
+    // blended pick probability tie-break decides the per-canal selection
+    // instead of DB insertion order.
+    const ranked = [...picks].sort((a, b) => {
+      const keyA = a.calibratedHitRate * a.signalScore;
+      const keyB = b.calibratedHitRate * b.signalScore;
+      if (keyB !== keyA) return keyB - keyA;
+      return calibratedLegProbability(b) - calibratedLegProbability(a);
+    });
 
     const selections: Record<Canal, InvestmentPickDto[]> = {
       SV: [],

@@ -110,4 +110,25 @@ export class MlRepository {
     });
     return model?.createdAt ?? null;
   }
+
+  async findRecentlyTrainedUnactivated(
+    sinceHours = 24,
+  ): Promise<MlModelVersion[]> {
+    const since = new Date(Date.now() - sinceHours * 60 * 60 * 1000);
+    return this.prisma.client.mlModelVersion.findMany({
+      where: { isActive: false, createdAt: { gte: since } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async deleteInactive(id: string): Promise<void> {
+    const model = await this.prisma.client.mlModelVersion.findUniqueOrThrow({
+      where: { id },
+      select: { isActive: true },
+    });
+    if (model.isActive) {
+      throw new Error('Cannot delete an active model');
+    }
+    await this.prisma.client.mlModelVersion.delete({ where: { id } });
+  }
 }

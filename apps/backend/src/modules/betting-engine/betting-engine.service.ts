@@ -72,7 +72,6 @@ import {
   getSvMinProbability,
   getSvMinOdds,
   SAFE_VALUE_MIN_EV,
-  SAFE_VALUE_MIN_ODDS,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
   UNDER_HIGH_LAMBDA_THRESHOLD,
@@ -1986,7 +1985,10 @@ export class BettingEngineService {
           (p.pick === 'OVER' || p.pick === 'OVER_3_5') &&
           p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
           p.ev.lessThanOrEqualTo(EV_HARD_CAP) &&
-          p.odds.greaterThanOrEqualTo(SAFE_VALUE_MIN_ODDS) &&
+          // Per-league floor (getSvMinOdds), like the main eligibility check —
+          // the global SAFE_VALUE_MIN_ODDS here let Over counterparts slip
+          // below a league override (e.g. SP2 1.45).
+          p.odds.greaterThanOrEqualTo(svMinOdds) &&
           p.odds.lessThanOrEqualTo(SAFE_VALUE_MAX_ODDS) &&
           !suspendedMarkets.has(p.market) &&
           (excludedPickKey === null ||

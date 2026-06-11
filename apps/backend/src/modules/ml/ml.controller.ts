@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -65,6 +67,13 @@ export class MlController {
   @UseGuards(AdminGuard)
   async rollbackModel(@Param('id') id: string) {
     return this.ml.rollbackModel(id);
+  }
+
+  @Delete('models/:id')
+  @UseGuards(AdminGuard)
+  @HttpCode(204)
+  async deleteModel(@Param('id') id: string): Promise<void> {
+    return this.ml.deleteModel(id);
   }
 
   @Post('retrain-check')

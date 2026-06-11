@@ -24,6 +24,38 @@ export type ComposedCoupon = {
   reasoning: Record<string, unknown>;
 };
 
+// jointProbability was previously the product of canal-level calibrated hit
+// rates only — every coupon with the same canal mix stored the identical value
+// (audit 2026-06-11: six pending coupons all at 0.4743 = SV rate × BB rate),
+// making the viability filter and the jointProbability sort degenerate among
+// same-canal combos. Blending each pick's model probability with its canal
+// calibrated rate keeps the calibration tempering (raw model probabilities are
+// over-confident) while restoring pick-specific joint probabilities.
+export const LEG_PROBABILITY_MODEL_WEIGHT = 0.5;
+
+export function calibratedLegProbability(leg: {
+  probability: number;
+  calibratedHitRate: number;
+}): number {
+  return (
+    leg.probability * LEG_PROBABILITY_MODEL_WEIGHT +
+    leg.calibratedHitRate * (1 - LEG_PROBABILITY_MODEL_WEIGHT)
+  );
+}
+
+// signalScore is a (canal, dow, league) environment rate — within one canal on
+// one day it is constant across picks, so a sort on signalScore alone leaves
+// same-canal picks in arbitrary (insertion) order. Tie-break on the blended
+// pick probability so pool cuts and per-canal selections are deterministic and
+// favour the stronger pick.
+export function comparePicksBySignalThenProbability(
+  a: { signalScore: number; probability: number; calibratedHitRate: number },
+  b: { signalScore: number; probability: number; calibratedHitRate: number },
+): number {
+  if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
+  return calibratedLegProbability(b) - calibratedLegProbability(a);
+}
+
 @Injectable()
 export class CouponComposerService {
   scorePicks(
@@ -71,7 +103,7 @@ export class CouponComposerService {
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
 
     const pool = [...scoredPicks]
-      .sort((a, b) => b.signalScore - a.signalScore)
+      .sort(comparePicksBySignalThenProbability)
       .slice(0, MAX_POOL_SIZE);
 
     const candidates: ComposedCoupon[] = [];
@@ -157,9 +189,10 @@ export class CouponComposerService {
     legs: ScoredPick[],
     combinedOdds: number,
   ): ComposedCoupon {
-    // Use calibrated hit rate (not raw probability) for joint probability
+    // Per-leg blend of model probability and calibrated canal hit rate —
+    // see calibratedLegProbability above.
     const jointProbability = legs.reduce(
-      (acc, leg) => acc * leg.calibratedHitRate,
+      (acc, leg) => acc * calibratedLegProbability(leg),
       1,
     );
     const signalScore =

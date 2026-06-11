@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import calibration_curve
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -79,7 +79,7 @@ def _build_logreg_pipeline() -> Pipeline:
     ])
 
 
-def _build_xgboost_pipeline(scale_pos_weight: float = 1.0) -> Pipeline:
+def _build_xgboost_pipeline() -> Pipeline:
     num_pipe = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
     ])
@@ -91,18 +91,21 @@ def _build_xgboost_pipeline(scale_pos_weight: float = 1.0) -> Pipeline:
         ("num", num_pipe, NUMERICAL_FEATURES),
         ("cat", cat_pipe, CATEGORICAL_FEATURES),
     ])
+    # CalibratedClassifierCV wraps XGBoost to produce calibrated probabilities.
+    # scale_pos_weight is intentionally omitted — it distorts predict_proba outputs.
+    xgb = XGBClassifier(
+        n_estimators=150,
+        max_depth=4,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        min_child_weight=5,
+        eval_metric="logloss",
+        random_state=42,
+    )
     return Pipeline([
         ("prep", preprocessor),
-        ("clf", XGBClassifier(
-            n_estimators=300,
-            max_depth=4,
-            learning_rate=0.05,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            scale_pos_weight=scale_pos_weight,
-            eval_metric="logloss",
-            random_state=42,
-        )),
+        ("clf", CalibratedClassifierCV(xgb, method="isotonic", cv=3)),
     ])
 
 
@@ -120,15 +123,22 @@ def _calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10)
 
 def _roi_simulated(df_test: pd.DataFrame, y_prob: np.ndarray) -> float:
     """
-    Simulated ROI if we bet every pick in the test set (at modeled probability).
-    Uses actual bet odds from oddsSnapshot.
+    Simulated ROI of the model's betting policy on the test set: stake 1 unit
+    on each pick whose corrected probability implies positive EV
+    (y_prob × odds − 1 > 0), skip the rest. Rows without odds are not stakeable.
+
+    The previous version staked every test pick and ignored y_prob entirely —
+    "shadow ROI" was a property of the dataset, identical for every model on
+    the same segment (audit 2026-06-11).
     """
     if "odds_bet" not in df_test.columns:
         return 0.0
-    odds = pd.to_numeric(df_test["odds_bet"], errors="coerce").fillna(1.0).values
+    odds = pd.to_numeric(df_test["odds_bet"], errors="coerce").values
     outcomes = df_test["outcome_correct"].values
-    # Simulate: stake 1 unit per pick, collect odds if WON
-    profits = np.where(outcomes == 1, odds - 1.0, -1.0)
+    placed = ~np.isnan(odds) & (y_prob * np.nan_to_num(odds) - 1.0 > 0.0)
+    if not placed.any():
+        return 0.0
+    profits = np.where(outcomes[placed] == 1, odds[placed] - 1.0, -1.0)
     return float(profits.mean())
 
 
@@ -160,9 +170,7 @@ def train(df: pd.DataFrame, algorithm: str = "auto") -> TrainingResult:
     y_test = df_test["outcome_correct"].values
 
     if resolved == "xgboost":
-        n_neg = int((y_train == 0).sum())
-        n_pos = int((y_train == 1).sum())
-        pipeline = _build_xgboost_pipeline(scale_pos_weight=n_neg / max(n_pos, 1))
+        pipeline = _build_xgboost_pipeline()
     else:
         pipeline = _build_logreg_pipeline()
 

@@ -13,6 +13,7 @@ import { MlBackfillService } from './ml.backfill.service';
 import { MlBackfillWorker } from './ml.backfill.worker';
 import { MlSchedulerWorker } from './ml.scheduler.worker';
 import { MlTrainingEventsListener } from './ml.training-events.listener';
+import { MlInferenceModule } from './ml.inference.module';
 import {
   ML_CRON_SCHEDULES,
   ML_SCHEDULER_KEYS,
@@ -27,6 +28,7 @@ import {
     AuthModule,
     BettingEngineModule,
     NotificationModule,
+    MlInferenceModule,
   ],
   controllers: [MlController],
   providers: [
@@ -43,6 +45,7 @@ export class MlModule implements OnApplicationBootstrap {
   constructor(
     @InjectQueue(BULLMQ_QUEUES.ML_SCHEDULER)
     private readonly schedulerQueue: Queue,
+    private readonly mlService: MlService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -51,5 +54,7 @@ export class MlModule implements OnApplicationBootstrap {
       { pattern: ML_CRON_SCHEDULES.RETRAIN_CHECK },
       { name: 'ml-retrain-check', data: {}, opts: ML_TRAINING_JOB_OPTIONS },
     );
+    // Catch up on any models trained while the backend was down (QueueEvents starts at $)
+    await this.mlService.catchUpAutoSwitch();
   }
 }

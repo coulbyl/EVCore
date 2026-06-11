@@ -84,8 +84,9 @@
   - Version DB : `1087eb88-510f-48d8-91c6-9147bc234403`
   - Test split : 228 samples, Brier `0.2418`, Calibration Error `0.0912`, ROI test-set `+20.42%`
   - Baseline même test split : Brier Poisson/prob actuelle `0.2423` → gain LogReg ≈ `0.2%` seulement (insuffisant pour shadow activation)
-- [ ] Lancer entraînement XGBoost (`algorithm: auto`) par segment prioritaire : `CONF:ONE_X_TWO` (4 772), `DRAW:ONE_X_TWO` (1 561), `BTTS:BTTS` (1 185), `ALL` (8 742)
-- [ ] Rapport comparatif offline : baseline Poisson vs LogReg vs XGBoost par segment
+- [x] Lancer entraînement XGBoost (`algorithm: auto`) par segment prioritaire : `CONF:ONE_X_TWO` (4 772), `DRAW:ONE_X_TWO` (1 561), `BTTS:BTTS` (1 185), `ALL` (8 742)
+- [x] Fix structurel XGBoost : `CalibratedClassifierCV(isotonic)` + `n_estimators=150` + `min_child_weight=5` + suppression `scale_pos_weight` — Brier DRAW -9.1%, BTTS -5.8% vs LogReg
+- [x] Rapport comparatif : XGBoost calibré ≥ LogReg sur DRAW/BTTS/CONF, ex æquo sur ALL
 
 ---
 
@@ -97,8 +98,8 @@
 - [x] Shadow mode câblé dans `BettingEngineService.analyzeFixture()` — appel inference, log `shadow_ml_corrected_p` + `shadow_ml_edge_delta` dans `ModelRun.features`
 - [x] Feature flag `FEATURE_FLAGS.SCORING.ML_CORRECTION = false` — activation manuelle uniquement
 - [x] `MlInferenceModule` importé dans `BettingEngineModule`, mock dans tous les tests
-- [ ] **Critères de validation shadow** (minimum avant activation prod) :
-  - ≥50 picks résolus en shadow
+- [~] **Critères de validation shadow** (minimum avant activation prod) :
+  - ≥50 picks résolus en shadow — **en cours** (activer `ML_CORRECTION_ENABLED=true` en prod)
   - Brier Score corrigé ≥5% mieux que baseline sur la fenêtre shadow
   - Calibration Error corrigée ≤ baseline
   - ROI simulé corrigé ≥ ROI baseline sur la même fenêtre
@@ -116,9 +117,42 @@
 
 ---
 
+## Étape 7bis — Tests ml-worker (suite audit 2026-06-11) ✅
+
+> L'audit du 11 juin a corrigé deux bugs (`_roi_simulated` ignorait le modèle,
+> registre d'inférence figé jusqu'au restart) — aucun test n'existait pour les attraper.
+> 49 tests, exécutés dans l'image ml-worker avec le working-tree monté :
+> `docker run --rm -v "$(pwd)/apps/ml-worker:/app" -w /app evcore-ml-worker:latest \`
+> `  sh -c "pip install -q -r requirements-dev.txt && python -m pytest"`
+
+- [x] Setup pytest dans `apps/ml-worker` (`requirements-dev.txt`, `pyproject.toml`, `tests/`)
+- [x] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables, dépend du modèle), `_resolve_algorithm`, `_assert_class_balance`
+- [x] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe), `_pinnacle_prob_for_pick` (les 2 côtés), `_target_odds`, `_build_row`
+- [x] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, noop avant load, réutilise l'URL stockée, fallback segment → ALL
+- [x] Test `server.py` : `/infer` + `POST /reload` resynchronise les segments actifs
+- [x] Job CI (GitHub Actions) — job `ml-worker` parallèle (setup-python 3.12 + cache pip + pytest)
+
+---
+
+## Étape 7ter — Observation shadow + décision de promotion (LA SUITE)
+
+> Le ML tourne en **shadow mode** (étape 6) : il calcule ses corrections et les
+> logge, sans influencer les décisions. Avant l'étape 8, valider que la
+> correction bat réellement le Poisson baseline, segment par segment.
+> Aucune ligne de code moteur ici tant que la décision n'est pas prise — c'est
+> une phase de mesure.
+
+- [ ] Suivre, sur une fenêtre réelle, ROI/Brier **corrigé (shadow)** vs **baseline** par segment
+- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil des rapports hebdomadaires
+- [ ] Décider **par segment** : promouvoir la correction hors shadow (elle influence le pick) uniquement si Brier amélioré ET ROI ≥ baseline sur la fenêtre
+- [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
+- [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
+
+---
+
 ## Étape 8 — Drawdown dynamique (après ML stable en prod)
 
-> N'activer qu'une fois le ML en prod depuis ≥30 jours stables.
+> N'activer qu'une fois le ML en prod depuis ≥30 jours stables (voir étape 7ter).
 
 - [ ] `BettingEngineService` calcule le drawdown courant (ROI glissant 30 derniers bets)
 - [ ] Fraction Kelly dynamique :
