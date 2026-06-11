@@ -148,6 +148,19 @@
 - [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
 - [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
 
+### Decision Board — page admin `/dashboard/reports` (support de l'étape 7ter)
+
+> Lecture seule v1 : la page informe et recommande GO/WATCH/NO-GO par segment,
+> la promotion hors shadow reste une action backend délibérée (v2).
+> Données : `ModelRun.features.shadow_ml_corrected_p` (persisté par pick pour les
+> canaux EV) comparé à la baseline, sur les bets settlés. Canaux prédiction
+> (CONF/DRAW/BTTS) : méta-métriques `ml_model_version` uniquement (pas de shadow/pick).
+
+- [x] Backend `GET /reports/ml-promotion?window=30d` (AdminGuard) — comparaison Brier/ROI baseline vs corrigé par segment + verdict déterministe
+- [ ] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (calibration corrigée vs baseline, picks de la fenêtre, stabilité)
+- [ ] Sélecteur de fenêtre 7j/30j/90j/depuis activation
+- [ ] (v2) Bouton « Promouvoir hors shadow » — décision loggée + cooldown + flag par segment lu par le moteur
+
 ---
 
 ## Étape 8 — Drawdown dynamique (après ML stable en prod)

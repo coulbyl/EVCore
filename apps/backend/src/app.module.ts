@@ -19,6 +19,7 @@ import { BankrollModule } from './modules/bankroll/bankroll.module';
 import { PredictionModule } from './modules/prediction/prediction.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 import { SummaryModule } from './modules/summary/summary.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
@@ -55,6 +56,7 @@ import { RedisModule } from './common/redis/redis.module';
     AuditModule,
     GamificationModule,
     AdminUsersModule,
+    ReportsModule,
     FormationProgressModule,
     SummaryModule,
     AnnouncementsModule,
