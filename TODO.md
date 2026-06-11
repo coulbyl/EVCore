@@ -130,7 +130,7 @@
 - [x] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe), `_pinnacle_prob_for_pick` (les 2 côtés), `_target_odds`, `_build_row`
 - [x] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, noop avant load, réutilise l'URL stockée, fallback segment → ALL
 - [x] Test `server.py` : `/infer` + `POST /reload` resynchronise les segments actifs
-- [ ] Job CI (GitHub Actions) — câbler `pytest` ml-worker dans le pipeline
+- [x] Job CI (GitHub Actions) — job `ml-worker` parallèle (setup-python 3.12 + cache pip + pytest)
 
 ---
 
