@@ -7,6 +7,13 @@ const isoDate = z
 
 const limit = z.number().int().min(1).max(30).optional();
 
+const boundedIntFromNumberOrString = (min: number, max: number) =>
+  z.preprocess((value) => {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    return /^\d+$/.test(trimmed) ? Number(trimmed) : value;
+  }, z.number().int().min(min).max(max));
+
 export const SearchFixturesArgsSchema = z.object({
   query: z.string().trim().min(2).max(100),
   from: isoDate.optional(),
@@ -65,7 +72,7 @@ export const ExplainFixtureArgsSchema = z.object({
 export const PlanLadderArgsSchema = z.object({
   date: isoDate.optional(),
   stake: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Expected decimal amount'),
-  steps: z.number().int().min(1).max(5),
+  steps: boundedIntFromNumberOrString(1, 5),
   canal: CanalSchema.optional(),
 });
 
@@ -222,7 +229,14 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
         {
           date: { type: 'string', description: 'YYYY-MM-DD (default: today)' },
           stake: { type: 'string', description: 'Decimal amount as string' },
-          steps: { type: 'integer', minimum: 1, maximum: 5 },
+          steps: {
+            anyOf: [
+              { type: 'integer', minimum: 1, maximum: 5 },
+              { type: 'string', pattern: '^[1-5]$' },
+            ],
+            description:
+              'Number of ladder steps, 1 to 5. Numeric strings are accepted.',
+          },
           canal: { type: 'string', enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'] },
         },
         ['stake', 'steps'],
