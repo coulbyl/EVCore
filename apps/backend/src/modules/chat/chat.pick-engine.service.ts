@@ -7,6 +7,9 @@ import {
 } from '@modules/ai-engine/signal-window.service';
 import { CouponComposerService } from '@modules/ai-engine/coupon-composer.service';
 import { CHAT_RANK_WEIGHTS } from './chat.constants';
+import { simulateLadder } from './simulate-ladder';
+
+type PickWithOdds = ScoredPick & { oddsSnapshot: number };
 
 @Injectable()
 export class ChatPickEngineService {
@@ -65,6 +68,62 @@ export class ChatPickEngineService {
       asOf: new Date().toISOString(),
       date,
       picks: picks.map(toCompactPick),
+    };
+  }
+
+  // Whole montante in one deterministic call: the backend picks the legs and
+  // computes the ladder — the LLM only narrates the result.
+  async planLadder(input: {
+    date?: string;
+    stake: string;
+    steps: number;
+    canal?: string;
+  }) {
+    const date = input.date ?? formatDateUtc(new Date());
+    const window = await this.signalWindow.computeSignalWindow(30);
+    const candidates = this.composer
+      .scorePicks(await this.signalWindow.getTodayPool(date), window, date)
+      .filter((pick): pick is PickWithOdds => pick.oddsSnapshot !== null)
+      .filter((pick) => pick.scheduledAt.getTime() >= Date.now())
+      .filter((pick) => !input.canal || pick.canal === input.canal)
+      .sort((a, b) => pickRank(b, 'fiable') - pickRank(a, 'fiable'));
+
+    // One pick per fixture, most reliable first, then played in kickoff order.
+    const seenFixtures = new Set<string>();
+    const selected: PickWithOdds[] = [];
+    for (const pick of candidates) {
+      if (seenFixtures.has(pick.fixtureId)) continue;
+      seenFixtures.add(pick.fixtureId);
+      selected.push(pick);
+      if (selected.length === input.steps) break;
+    }
+
+    if (selected.length === 0) {
+      return {
+        asOf: new Date().toISOString(),
+        date,
+        error: 'Aucun pick moteur avec cote disponible pour cette date.',
+      };
+    }
+
+    const ordered = [...selected].sort(
+      (a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime(),
+    );
+    const simulation = simulateLadder({
+      stake: input.stake,
+      steps: ordered.map((pick) => ({
+        combinedOdds: String(pick.oddsSnapshot),
+        jointProbability: String(round(pick.probability)),
+      })),
+    });
+
+    return {
+      asOf: new Date().toISOString(),
+      date,
+      requestedSteps: input.steps,
+      availableSteps: ordered.length,
+      picks: ordered.map(toCompactPick),
+      simulation,
     };
   }
 

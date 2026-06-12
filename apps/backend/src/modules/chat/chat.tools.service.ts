@@ -85,9 +85,16 @@ export class ChatToolsService {
         return simulateLadder(
           input.args as Parameters<typeof simulateLadder>[0],
         );
+      case 'planLadder':
+        return this.planLadder(input.args);
       case 'explainFixture':
         return this.explainFixture(input.args);
     }
+  }
+
+  private async planLadder(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.planLadder.parse(args);
+    return this.pickEngine.planLadder(input);
   }
 
   private async searchFixtures(args: unknown) {
@@ -253,6 +260,10 @@ function extractStreamPicks(
     const selection = (result as { selection: { legs: CompactPick[] } | null })
       .selection;
     return selection ? toStreamPicks(selection.legs) : undefined;
+  }
+  if (name === 'planLadder') {
+    const picks = (result as { picks?: CompactPick[] }).picks;
+    return picks ? toStreamPicks(picks) : undefined;
   }
   return undefined;
 }

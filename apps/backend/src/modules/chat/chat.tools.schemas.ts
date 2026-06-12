@@ -60,6 +60,15 @@ export const ExplainFixtureArgsSchema = z.object({
   fixtureId: z.string().uuid(),
 });
 
+// Deterministic end-to-end ladder: the backend selects the picks AND runs the
+// simulation — the LLM never assembles ladder steps itself.
+export const PlanLadderArgsSchema = z.object({
+  date: isoDate.optional(),
+  stake: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Expected decimal amount'),
+  steps: z.number().int().min(1).max(5),
+  canal: CanalSchema.optional(),
+});
+
 export const CHAT_TOOL_SCHEMAS = {
   searchFixtures: SearchFixturesArgsSchema,
   getTopPicks: GetTopPicksArgsSchema,
@@ -67,6 +76,7 @@ export const CHAT_TOOL_SCHEMAS = {
   getCouponProposals: GetCouponProposalsArgsSchema,
   composeSelection: ComposeSelectionArgsSchema,
   simulateLadder: SimulateLadderArgsSchema,
+  planLadder: PlanLadderArgsSchema,
   explainFixture: ExplainFixtureArgsSchema,
 } as const;
 
@@ -197,6 +207,23 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
               ['combinedOdds', 'jointProbability'],
             ),
           },
+        },
+        ['stake', 'steps'],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'planLadder',
+      description:
+        'Build a complete ladder (montante) for a date: deterministically selects the most reliable engine picks with odds (one per fixture) and computes stakes, returns and cumulative probabilities with decimal arithmetic.',
+      parameters: objectSchema(
+        {
+          date: { type: 'string', description: 'YYYY-MM-DD (default: today)' },
+          stake: { type: 'string', description: 'Decimal amount as string' },
+          steps: { type: 'integer', minimum: 1, maximum: 5 },
+          canal: { type: 'string', enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'] },
         },
         ['stake', 'steps'],
       ),
