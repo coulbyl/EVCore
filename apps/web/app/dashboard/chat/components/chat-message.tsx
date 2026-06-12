@@ -1,8 +1,9 @@
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@evcore/ui";
+import { MarkdownArticle } from "@/components/markdown-article";
 import { CHAT_CONTENT_MAX_WIDTH } from "./chat-constants";
 import { PickCard } from "./pick-card";
-import type { ChatMessage as ChatMessageType } from "./chat-types";
+import type { ChatMessage as ChatMessageType } from "@/domains/chat/types/chat";
 
 // User message — subtle right-aligned block, capped width (Claude pattern).
 function UserMessage({ text }: { text: string }) {
@@ -31,8 +32,15 @@ function EvaMessage({ message }: { message: ChatMessageType }) {
         </div>
       ) : null}
 
-      <div className="text-sm leading-[1.65rem] text-foreground">
-        {message.text}
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          message.error ? "text-destructive" : "text-foreground",
+        )}
+      >
+        {message.text ? (
+          <MarkdownArticle content={message.text} variant="chat" />
+        ) : null}
         {message.streaming ? (
           <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-foreground" />
         ) : null}

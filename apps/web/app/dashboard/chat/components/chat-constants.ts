@@ -1,9 +1,9 @@
-// Shared constants for the EVA chat UI (static shell — no backend yet).
+// Shared constants for the EVA chat UI.
+
+import type { Canal } from "@/domains/chat/types/chat";
 
 export const CHAT_MAX_CHARS = 2000;
 export const CHAT_CONTENT_MAX_WIDTH = "max-w-[46rem]"; // ~720px reading width
-
-export type Canal = "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
 
 // Canal → badge styling, using EVCore semantic tokens (not Claude's palette).
 export const CANAL_STYLE: Record<Canal, string> = {

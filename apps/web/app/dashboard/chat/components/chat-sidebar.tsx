@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { Button, cn } from "@evcore/ui";
-import type { ChatConversation } from "./chat-types";
+import type { ChatConversation } from "@/domains/chat/types/chat";
 
 export function ChatSidebar({
   conversations,

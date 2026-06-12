@@ -1,6 +1,6 @@
 import { cn } from "@evcore/ui";
 import { CANAL_STYLE, fmtPct, fmtPctSigned } from "./chat-constants";
-import type { ChatPick } from "./chat-types";
+import type { ChatPick } from "@/domains/chat/types/chat";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

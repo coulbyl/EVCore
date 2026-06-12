@@ -1,7 +1,6 @@
 import { Page, PageContent } from "@evcore/ui";
 import { ChatPageClient } from "./components/chat-page-client";
 
-// EVA — Expected Value Analyst (phase 4). Static UI shell: no Groq backend yet.
 // Auth is enforced by the dashboard layout.
 export default function ChatPage() {
   return (

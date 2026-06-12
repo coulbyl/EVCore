@@ -261,16 +261,41 @@ export function getMarkdownToc(content: string): TocItem[] {
   });
 }
 
-export function MarkdownArticle({ content }: { content: string }) {
+export function MarkdownArticle({
+  content,
+  variant = "article",
+}: {
+  content: string;
+  variant?: "article" | "chat";
+}) {
   const blocks = parseMarkdown(content);
+  const isChat = variant === "chat";
 
   return (
-    <div className="flex flex-col gap-5 text-[14px] leading-7 text-muted-foreground sm:gap-6 sm:text-[15px]">
+    <div
+      className={
+        isChat
+          ? "flex flex-col gap-3 text-sm leading-[1.65rem] text-foreground"
+          : "flex flex-col gap-5 text-[14px] leading-7 text-muted-foreground sm:gap-6 sm:text-[15px]"
+      }
+    >
       {blocks.map((block, index) => {
         if (block.type === "heading") {
           const id = slugify(block.text);
 
           if (block.level === 1) {
+            if (isChat) {
+              return (
+                <h2
+                  key={`${block.type}-${index}`}
+                  id={id}
+                  className="text-base font-semibold text-foreground"
+                >
+                  {block.text}
+                </h2>
+              );
+            }
+
             return (
               <header
                 key={`${block.type}-${index}`}
@@ -290,6 +315,18 @@ export function MarkdownArticle({ content }: { content: string }) {
           }
 
           if (block.level === 2) {
+            if (isChat) {
+              return (
+                <h3
+                  key={`${block.type}-${index}`}
+                  id={id}
+                  className="text-sm font-semibold text-foreground"
+                >
+                  {block.text}
+                </h3>
+              );
+            }
+
             return (
               <section
                 key={`${block.type}-${index}`}
@@ -309,7 +346,11 @@ export function MarkdownArticle({ content }: { content: string }) {
             <h3
               key={`${block.type}-${index}`}
               id={id}
-              className="scroll-mt-24 text-[1rem] font-semibold tracking-tight text-foreground sm:text-lg"
+              className={
+                isChat
+                  ? "text-sm font-semibold text-foreground"
+                  : "scroll-mt-24 text-[1rem] font-semibold tracking-tight text-foreground sm:text-lg"
+              }
             >
               {block.text}
             </h3>
@@ -320,7 +361,11 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <p
               key={`${block.type}-${index}`}
-              className="text-[0.96rem] text-muted-foreground sm:text-base"
+              className={
+                isChat
+                  ? "text-sm text-foreground"
+                  : "text-[0.96rem] text-muted-foreground sm:text-base"
+              }
             >
               {renderInline(block.text)}
             </p>
@@ -331,7 +376,11 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <ul
               key={`${block.type}-${index}`}
-              className="flex flex-col gap-2 pl-5 text-[0.96rem] text-muted-foreground sm:text-base"
+              className={
+                isChat
+                  ? "flex flex-col gap-1.5 pl-5 text-sm text-foreground"
+                  : "flex flex-col gap-2 pl-5 text-[0.96rem] text-muted-foreground sm:text-base"
+              }
             >
               {block.items.map((item, itemIndex) => (
                 <li key={`${index}-${itemIndex}`} className="list-disc pl-1">
@@ -346,7 +395,11 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <ol
               key={`${block.type}-${index}`}
-              className="flex flex-col gap-2 pl-5 text-[0.96rem] text-muted-foreground sm:text-base"
+              className={
+                isChat
+                  ? "flex flex-col gap-1.5 pl-5 text-sm text-foreground"
+                  : "flex flex-col gap-2 pl-5 text-[0.96rem] text-muted-foreground sm:text-base"
+              }
             >
               {block.items.map((item, itemIndex) => (
                 <li key={`${index}-${itemIndex}`} className="list-decimal pl-1">
@@ -361,15 +414,25 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <div
               key={`${block.type}-${index}`}
-              className="overflow-x-auto rounded-2xl border border-border"
+              className={
+                isChat
+                  ? "overflow-x-auto rounded-lg border border-border"
+                  : "overflow-x-auto rounded-2xl border border-border"
+              }
             >
-              <table className="w-full text-[0.9rem]">
+              <table
+                className={isChat ? "w-full text-xs" : "w-full text-[0.9rem]"}
+              >
                 <thead>
                   <tr className="border-b border-border bg-panel">
                     {block.headers.map((header, hi) => (
                       <th
                         key={hi}
-                        className="px-4 py-2.5 text-left text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                        className={
+                          isChat
+                            ? "px-3 py-2 text-left text-[0.65rem] font-semibold uppercase text-muted-foreground"
+                            : "px-4 py-2.5 text-left text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                        }
                       >
                         {renderInline(header)}
                       </th>
@@ -385,7 +448,11 @@ export function MarkdownArticle({ content }: { content: string }) {
                       {row.map((cell, ci) => (
                         <td
                           key={ci}
-                          className="px-4 py-2.5 text-muted-foreground"
+                          className={
+                            isChat
+                              ? "px-3 py-2 text-foreground"
+                              : "px-4 py-2.5 text-muted-foreground"
+                          }
                         >
                           {renderInline(cell)}
                         </td>
@@ -402,7 +469,11 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <div
               key={`${block.type}-${index}`}
-              className="overflow-hidden rounded-2xl border border-border bg-sidebar shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
+              className={
+                isChat
+                  ? "overflow-hidden rounded-lg border border-border bg-sidebar"
+                  : "overflow-hidden rounded-2xl border border-border bg-sidebar shadow-[0_12px_30px_rgba(15,23,42,0.14)]"
+              }
             >
               <div className="border-b border-sidebar-border px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/65">
                 {block.language || "texte"}
@@ -418,7 +489,11 @@ export function MarkdownArticle({ content }: { content: string }) {
           return (
             <blockquote
               key={`${block.type}-${index}`}
-              className="rounded-2xl border border-warning/30 bg-warning/10 px-4 py-4 text-[0.96rem] text-warning sm:px-5 sm:text-base"
+              className={
+                isChat
+                  ? "rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
+                  : "rounded-2xl border border-warning/30 bg-warning/10 px-4 py-4 text-[0.96rem] text-warning sm:px-5 sm:text-base"
+              }
             >
               {renderInline(block.text)}
             </blockquote>
