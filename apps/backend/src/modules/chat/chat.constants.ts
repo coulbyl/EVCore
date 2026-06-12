@@ -1,4 +1,4 @@
-export const CHAT_PROMPT_VERSION = 'eva-v1-2026-06-11';
+export const CHAT_PROMPT_VERSION = 'eva-v2-2026-06-12';
 
 export const CHAT_MODELS = {
   scout: 'meta-llama/llama-4-scout-17b-16e-instruct',

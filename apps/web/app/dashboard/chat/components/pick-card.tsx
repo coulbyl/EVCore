@@ -1,4 +1,8 @@
 import { cn } from "@evcore/ui";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import { CANAL_LABEL, CANAL_STYLE, fmtPct } from "./chat-constants";
 import type { ChatPick } from "@/domains/chat/types/chat";
 
@@ -35,7 +39,12 @@ export function PickCard({ pick }: { pick: ChatPick }) {
         ) : null}
       </div>
 
-      <div className="mt-1 text-sm text-foreground">{pick.pick}</div>
+      <div className="mt-1 text-sm text-foreground">
+        <span className="text-muted-foreground">
+          {formatMarketForDisplay(pick.market)} ·{" "}
+        </span>
+        {formatPickForDisplay(pick.pick, pick.market)}
+      </div>
 
       <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
         <Stat
