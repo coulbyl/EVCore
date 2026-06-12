@@ -13,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 export function PwaInstallBanner() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isIOSSafari, setIsIOSSafari] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -24,9 +25,13 @@ export function PwaInstallBanner() {
     const isIOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
       !(window as Window & { MSStream?: unknown }).MSStream;
+    const isSafariBrowser = /^((?!crios|fxios|edgios|oprios).)*safari/i.test(
+      navigator.userAgent,
+    );
 
     if (isIOSDevice) {
       setIsIOS(true);
+      setIsIOSSafari(isSafariBrowser);
       setVisible(true);
       return;
     }
@@ -69,10 +74,18 @@ export function PwaInstallBanner() {
             Installer EVCore
           </p>
           {isIOS ? (
-            <p className="text-xs text-muted-foreground">
-              Tap&nbsp;⎋ puis &laquo;&nbsp;Sur l&apos;écran
-              d&apos;accueil&nbsp;&raquo;
-            </p>
+            isIOSSafari ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Touchez Partager puis &nbsp;&laquo;&nbsp;Sur l&apos;&eacute;cran
+                d&apos;accueil&nbsp;&raquo;.
+              </p>
+            ) : (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Ouvrez EVCore dans Safari, puis touchez Partager et
+                &nbsp;&laquo;&nbsp;Sur l&apos;&eacute;cran
+                d&apos;accueil&nbsp;&raquo;.
+              </p>
+            )
           ) : (
             <p className="truncate text-xs text-muted-foreground">
               Accès rapide depuis l&apos;écran d&apos;accueil
