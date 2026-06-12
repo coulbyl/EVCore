@@ -52,7 +52,7 @@ export type ChatStreamEvent =
   | { event: "token"; data: { text: string } }
   // The provider failed mid-stream; a fallback model re-streams from scratch.
   | { event: "reset"; data: { reason: string } }
-  | { event: "picks"; data: { tool: string; picks: ChatPick[] } }
+  | { event: "picks"; data: { picks: ChatPick[] } }
   | {
       event: "done";
       data: { messageId: string; inputTokens: number; outputTokens: number };

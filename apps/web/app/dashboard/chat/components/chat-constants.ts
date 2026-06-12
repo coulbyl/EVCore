@@ -14,11 +14,11 @@ export const CANAL_STYLE: Record<Canal, string> = {
   BB: "bg-primary/12 text-primary",
 };
 
-// Canal → display label (backend says BB, bettors say BTTS).
+// Canal → display label (backend says BB/CONF, bettors say BTTS/VICTOIRE).
 export const CANAL_LABEL: Record<Canal, string> = {
   EV: "EV",
   SV: "SV",
-  CONF: "CONF",
+  CONF: "VICTOIRE",
   NUL: "NUL",
   BB: "BTTS",
 };

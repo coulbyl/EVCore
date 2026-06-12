@@ -55,7 +55,8 @@ export type ChatStreamEvent =
   // Drop the partial text: the provider failed mid-stream and a fallback
   // model is about to re-stream the answer from scratch.
   | { event: 'reset'; data: { reason: string } }
-  | { event: 'picks'; data: { tool: string; picks: ChatStreamPick[] } }
+  // Sent once after the answer: the picks EVA actually cited, as cards.
+  | { event: 'picks'; data: { picks: ChatStreamPick[] } }
   | {
       event: 'done';
       data: { messageId: string; inputTokens: number; outputTokens: number };
