@@ -260,6 +260,8 @@ export class ChatService {
     let model = '';
     const onToken = (text: string) =>
       input.write({ event: 'token', data: { text } });
+    const onReset = () =>
+      input.write({ event: 'reset', data: { reason: 'fallback' } });
 
     for (let i = 0; i < CHAT_LIMITS.maxToolIterations; i++) {
       if (input.isAborted()) {
@@ -271,6 +273,7 @@ export class ChatService {
         tools: CHAT_TOOL_DEFINITIONS,
         toolChoice: 'auto',
         onToken,
+        onReset,
       });
       inputTokens += response.usage.inputTokens;
       outputTokens += response.usage.outputTokens;
@@ -315,6 +318,7 @@ export class ChatService {
       tools: CHAT_TOOL_DEFINITIONS,
       toolChoice: 'none',
       onToken,
+      onReset,
     });
 
     return {

@@ -10,6 +10,8 @@ export function applyStreamEvent(
   switch (event.event) {
     case "token":
       return { ...message, text: message.text + event.data.text };
+    case "reset":
+      return { ...message, text: "" };
     case "tool_start":
       return { ...message, toolLabel: event.data.label };
     case "tool_end":

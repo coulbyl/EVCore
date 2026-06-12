@@ -1,4 +1,8 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
 import type {
@@ -15,8 +19,17 @@ import type {
 
 type CompleteInput = Parameters<LlmClient['complete']>[0];
 
+// Groq free tier can cut a stream mid-generation; the documented reason
+// arrives in the x_groq.error field of the last chunk.
+class GroqStreamInterruptedError extends Error {
+  constructor(reason: string) {
+    super(`Stream Groq interrompu: ${reason}`);
+  }
+}
+
 @Injectable()
 export class GroqLlmClient implements LlmClient {
+  private readonly logger = new Logger(GroqLlmClient.name);
   private sdk: Groq | null = null;
 
   constructor(private readonly config: ConfigService) {}
@@ -26,8 +39,6 @@ export class GroqLlmClient implements LlmClient {
       input.model ??
       this.config.get<string>('CHAT_GROQ_MODEL', CHAT_MODELS.scout);
 
-    // Once tokens reached the client, a retry would duplicate text in the
-    // UI — only fall back while nothing has been streamed yet.
     let emitted = false;
     const onToken = input.onToken
       ? (text: string) => {
@@ -39,9 +50,13 @@ export class GroqLlmClient implements LlmClient {
     try {
       return await this.request({ ...input, onToken, model });
     } catch (err: unknown) {
-      // Spec guard: if the main model is down or rate-limited, retry once on
-      // the light model before surfacing an error to the user.
-      if (!emitted && model !== CHAT_MODELS.light && shouldFallback(err)) {
+      this.logError(model, err);
+      // Spec guard: if the main model is down, rate-limited or cut the
+      // stream, retry once on the light model before surfacing an error.
+      if (model !== CHAT_MODELS.light && shouldFallback(err)) {
+        // Tokens already reached the client: tell it to drop the partial
+        // text before the fallback re-streams from scratch.
+        if (emitted) input.onReset?.();
         try {
           return await this.request({
             ...input,
@@ -49,11 +64,24 @@ export class GroqLlmClient implements LlmClient {
             model: CHAT_MODELS.light,
           });
         } catch (fallbackErr: unknown) {
+          this.logError(CHAT_MODELS.light, fallbackErr);
           throw toServiceError(fallbackErr);
         }
       }
       throw toServiceError(err);
     }
+  }
+
+  private logError(model: string, err: unknown): void {
+    if (err instanceof Groq.APIError) {
+      this.logger.error(
+        `Groq ${model} a echoue (status=${err.status ?? 'stream'}): ${err.message}`,
+      );
+      return;
+    }
+    this.logger.error(
+      `Groq ${model} a echoue: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 
   private async request(
@@ -64,7 +92,7 @@ export class GroqLlmClient implements LlmClient {
       messages: input.messages.map(toGroqMessage),
       tools: input.tools as unknown as ChatCompletionTool[],
       tool_choice: input.toolChoice ?? 'auto',
-      max_tokens: 700,
+      max_tokens: CHAT_LIMITS.maxOutputTokens,
       temperature: 0.2,
       stream: true,
     });
@@ -94,7 +122,11 @@ export class GroqLlmClient implements LlmClient {
         if (call.function?.arguments) slot.arguments += call.function.arguments;
       }
 
-      // Groq sends usage in the final chunk only.
+      // Groq sends usage — and a possible early-stop reason — in the final
+      // chunk only.
+      if (chunk.x_groq?.error) {
+        throw new GroqStreamInterruptedError(chunk.x_groq.error);
+      }
       const usage = chunk.x_groq?.usage;
       if (usage) {
         inputTokens = usage.prompt_tokens ?? 0;
@@ -131,22 +163,29 @@ export class GroqLlmClient implements LlmClient {
 }
 
 function shouldFallback(err: unknown): boolean {
+  if (err instanceof GroqStreamInterruptedError) return true;
+  if (err instanceof Groq.APIUserAbortError) return false;
   if (err instanceof Groq.APIConnectionError) return true;
   if (err instanceof Groq.APIError) {
-    const status = typeof err.status === 'number' ? err.status : 0;
-    return status === 429 || status >= 500;
+    // status undefined = the failure happened inside the SSE stream (free
+    // tier cutting a generation) — a different model is worth a retry.
+    if (err.status === undefined) return true;
+    return err.status === 429 || err.status >= 500;
   }
   return false;
 }
 
 function toServiceError(err: unknown): Error {
   if (err instanceof ServiceUnavailableException) return err;
+  if (err instanceof GroqStreamInterruptedError) {
+    return new ServiceUnavailableException(err.message);
+  }
   if (err instanceof Groq.APIConnectionError) {
     return new ServiceUnavailableException('Groq indisponible (connexion)');
   }
   if (err instanceof Groq.APIError) {
     return new ServiceUnavailableException(
-      `Groq indisponible (${err.status ?? 'erreur'})`,
+      `Groq indisponible (${err.status ?? 'stream interrompu'})`,
     );
   }
   return new ServiceUnavailableException('Groq indisponible');

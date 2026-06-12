@@ -172,6 +172,9 @@ export function ChatPageClient() {
   }
 
   async function handleSend(text: string) {
+    // Suggestion chips and Enter are not disabled while a stream runs — this
+    // guard is what prevents a double send.
+    if (streaming) return;
     const userMessageId = `u-${Date.now()}`;
     const assistantMessageId = `eva-${Date.now()}`;
     let targetId: string | null = activeId;

@@ -52,6 +52,9 @@ export type ChatStreamEvent =
   | { event: 'tool_start'; data: { tool: string; label: string } }
   | { event: 'tool_end'; data: { tool: string; ms: number } }
   | { event: 'token'; data: { text: string } }
+  // Drop the partial text: the provider failed mid-stream and a fallback
+  // model is about to re-stream the answer from scratch.
+  | { event: 'reset'; data: { reason: string } }
   | { event: 'picks'; data: { tool: string; picks: ChatStreamPick[] } }
   | {
       event: 'done';
@@ -69,5 +72,8 @@ export type LlmClient = {
     model?: string;
     // Called for each content delta when the provider streams.
     onToken?: (text: string) => void;
+    // Called before a fallback retry that follows already-emitted tokens —
+    // the consumer must discard the partial text.
+    onReset?: () => void;
   }): Promise<ChatLlmResponse>;
 };
