@@ -777,6 +777,8 @@ model ChatMessage {
   toolName       String?
   // Validated tool-call arguments (audit + replay).
   toolArgs       Json?
+  // Structured engine picks shown as cards (role = 'assistant' only).
+  picks          Json?
   inputTokens    Int              @default(0)
   outputTokens   Int              @default(0)
   // LLM used (e.g. "llama-4-scout" / "llama-3.1-8b-instant").

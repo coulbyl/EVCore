@@ -8,6 +8,7 @@ type CreateMessageInput = {
   content: string;
   toolName?: string | null;
   toolArgs?: Prisma.InputJsonValue;
+  picks?: Prisma.InputJsonValue;
   inputTokens?: number;
   outputTokens?: number;
   model?: string | null;
@@ -87,6 +88,7 @@ export class ChatRepository {
         content: input.content,
         toolName: input.toolName ?? null,
         toolArgs: input.toolArgs ?? Prisma.JsonNull,
+        picks: input.picks ?? Prisma.JsonNull,
         inputTokens: input.inputTokens ?? 0,
         outputTokens: input.outputTokens ?? 0,
         model: input.model ?? null,

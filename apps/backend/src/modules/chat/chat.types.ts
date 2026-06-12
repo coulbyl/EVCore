@@ -37,10 +37,22 @@ export type ChatToolDefinition = {
 
 export type ChatRequestUser = Pick<AuthSessionUser, 'id' | 'role' | 'currency'>;
 
+// Compact engine pick pushed to the UI as a card alongside the answer.
+export type ChatStreamPick = {
+  canal: string;
+  match: string;
+  market: string;
+  pick: string;
+  odds: number | null;
+  proba: number;
+  reliability: number | null;
+};
+
 export type ChatStreamEvent =
   | { event: 'tool_start'; data: { tool: string; label: string } }
   | { event: 'tool_end'; data: { tool: string; ms: number } }
   | { event: 'token'; data: { text: string } }
+  | { event: 'picks'; data: { tool: string; picks: ChatStreamPick[] } }
   | {
       event: 'done';
       data: { messageId: string; inputTokens: number; outputTokens: number };
@@ -55,5 +67,7 @@ export type LlmClient = {
     tools: ChatToolDefinition[];
     toolChoice?: 'auto' | 'none';
     model?: string;
+    // Called for each content delta when the provider streams.
+    onToken?: (text: string) => void;
   }): Promise<ChatLlmResponse>;
 };

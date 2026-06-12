@@ -48,6 +48,9 @@ function toMessage(message: ChatMessageDto): ChatMessage | null {
     id: message.id,
     role: message.role === "assistant" ? "eva" : "user",
     text: message.content,
+    ...(message.picks && message.picks.length > 0
+      ? { picks: message.picks }
+      : {}),
   };
 }
 

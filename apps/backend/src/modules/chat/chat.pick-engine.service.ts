@@ -128,6 +128,8 @@ function pickRank(pick: ScoredPick, profile: string | undefined): number {
   return new Decimal(pick.probability).mul(pick.calibratedHitRate).toNumber();
 }
 
+export type CompactPick = ReturnType<typeof toCompactPick>;
+
 function toCompactPick(pick: ScoredPick) {
   return {
     fixtureId: pick.fixtureId,

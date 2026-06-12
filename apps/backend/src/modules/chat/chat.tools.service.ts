@@ -7,8 +7,11 @@ import { CHAT_LIMITS } from './chat.constants';
 import { ChatReadRepository } from './chat.read.repository';
 import { CHAT_TOOL_SCHEMAS, type ChatToolName } from './chat.tools.schemas';
 import { simulateLadder } from './simulate-ladder';
-import type { ChatRequestUser } from './chat.types';
-import { ChatPickEngineService } from './chat.pick-engine.service';
+import type { ChatRequestUser, ChatStreamPick } from './chat.types';
+import {
+  ChatPickEngineService,
+  type CompactPick,
+} from './chat.pick-engine.service';
 
 type ToolContext = {
   user: ChatRequestUser;
@@ -31,6 +34,7 @@ export class ChatToolsService {
   async execute(input: ToolExecutionInput): Promise<{
     content: string;
     parsedArgs: Record<string, unknown>;
+    streamPicks?: ChatStreamPick[];
   }> {
     if (!isToolName(input.name)) {
       return {
@@ -53,9 +57,11 @@ export class ChatToolsService {
       context: input.context,
     });
 
+    const streamPicks = extractStreamPicks(input.name, result);
     return {
       content: JSON.stringify(result),
       parsedArgs: parsed.args as Record<string, unknown>,
+      ...(streamPicks ? { streamPicks } : {}),
     };
   }
 
@@ -229,6 +235,39 @@ export class ChatToolsService {
 
 function isToolName(name: string): name is ChatToolName {
   return name in CHAT_TOOL_SCHEMAS;
+}
+
+// Picks worth rendering as cards in the UI, depending on the tool shape.
+function extractStreamPicks(
+  name: ChatToolName,
+  result: unknown,
+): ChatStreamPick[] | undefined {
+  if (name === 'getUpcomingPicks') {
+    return toStreamPicks((result as { picks: CompactPick[] }).picks);
+  }
+  if (name === 'getTopPicks') {
+    const days = (result as { days: Array<{ picks: CompactPick[] }> }).days;
+    return toStreamPicks(days.flatMap((day) => day.picks));
+  }
+  if (name === 'composeSelection') {
+    const selection = (result as { selection: { legs: CompactPick[] } | null })
+      .selection;
+    return selection ? toStreamPicks(selection.legs) : undefined;
+  }
+  return undefined;
+}
+
+function toStreamPicks(picks: CompactPick[]): ChatStreamPick[] | undefined {
+  if (picks.length === 0) return undefined;
+  return picks.slice(0, CHAT_LIMITS.maxStreamPicks).map((pick) => ({
+    canal: pick.canal,
+    match: pick.match,
+    market: pick.market,
+    pick: pick.pick,
+    odds: pick.odds,
+    proba: pick.probability,
+    reliability: pick.reliability,
+  }));
 }
 
 function parseToolArgs(name: ChatToolName, rawArgs: string) {

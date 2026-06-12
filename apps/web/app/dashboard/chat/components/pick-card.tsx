@@ -1,5 +1,5 @@
 import { cn } from "@evcore/ui";
-import { CANAL_STYLE, fmtPct, fmtPctSigned } from "./chat-constants";
+import { CANAL_LABEL, CANAL_STYLE, fmtPct } from "./chat-constants";
 import type { ChatPick } from "@/domains/chat/types/chat";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -24,7 +24,7 @@ export function PickCard({ pick }: { pick: ChatPick }) {
               CANAL_STYLE[pick.canal],
             )}
           >
-            {pick.canal}
+            {CANAL_LABEL[pick.canal]}
           </span>
           <span className="truncate text-sm font-medium">{pick.match}</span>
         </div>
@@ -38,8 +38,10 @@ export function PickCard({ pick }: { pick: ChatPick }) {
       <div className="mt-1 text-sm text-foreground">{pick.pick}</div>
 
       <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-        <Stat label="Cote" value={pick.odds.toFixed(2)} />
-        <Stat label="EV" value={fmtPctSigned(pick.ev)} />
+        <Stat
+          label="Cote"
+          value={pick.odds !== null ? pick.odds.toFixed(2) : "—"}
+        />
         <Stat label="Proba" value={fmtPct(pick.proba)} />
       </div>
     </div>

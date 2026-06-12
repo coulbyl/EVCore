@@ -14,6 +14,17 @@ export function applyStreamEvent(
       return { ...message, toolLabel: event.data.label };
     case "tool_end":
       return { ...message, toolLabel: undefined };
+    case "picks": {
+      // Several tools can push picks for one answer — merge without dupes.
+      const existing = message.picks ?? [];
+      const seen = new Set(
+        existing.map((p) => `${p.match}|${p.market}|${p.pick}`),
+      );
+      const added = event.data.picks.filter(
+        (p) => !seen.has(`${p.match}|${p.market}|${p.pick}`),
+      );
+      return { ...message, picks: [...existing, ...added] };
+    }
     case "done":
       return {
         ...message,

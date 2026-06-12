@@ -12,6 +12,8 @@ export const CHAT_LIMITS = {
   maxToolRows: 30,
   defaultDailyLimit: 50,
   groqTimeoutMs: 30_000,
+  // Max structured picks pushed to the UI per tool result.
+  maxStreamPicks: 6,
 } as const;
 
 // Ranking weights used by ChatPickEngineService to order engine picks.

@@ -19,6 +19,7 @@ import { CHAT_TOOL_DEFINITIONS } from './chat.tools.schemas';
 import type {
   ChatLlmMessage,
   ChatRequestUser,
+  ChatStreamPick,
   ChatStreamWriter,
   LlmClient,
 } from './chat.types';
@@ -81,6 +82,7 @@ export class ChatService {
       role: message.role,
       content: message.content,
       toolName: message.toolName,
+      picks: message.picks,
       inputTokens: message.inputTokens,
       outputTokens: message.outputTokens,
       model: message.model,
@@ -146,12 +148,26 @@ export class ChatService {
         content: input.content,
       });
 
+      // Picks emitted by tool calls along the loop, persisted with the answer
+      // so the cards survive a reload.
+      const collectedPicks: ChatStreamPick[] = [];
+      const seenPicks = new Set<string>();
+      const collectPicks = (picks: ChatStreamPick[]) => {
+        for (const pick of picks) {
+          const key = `${pick.match}|${pick.market}|${pick.pick}`;
+          if (seenPicks.has(key)) continue;
+          seenPicks.add(key);
+          collectedPicks.push(pick);
+        }
+      };
+
       const final = await this.runToolLoop({
         messages,
         user: input.user,
         conversationId: input.conversationId,
         write: input.write,
         isAborted: input.isAborted,
+        onPicks: collectPicks,
       });
 
       await this.repo.incrementUsage({
@@ -164,12 +180,14 @@ export class ChatService {
       // Client gone: don't persist an answer the user explicitly stopped.
       if (final.aborted) return;
 
-      streamText(final.content, input.write);
-
       const saved = await this.repo.createMessage({
         conversationId: input.conversationId,
         role: 'assistant',
         content: final.content,
+        picks:
+          collectedPicks.length > 0
+            ? (collectedPicks as unknown as Prisma.InputJsonValue)
+            : undefined,
         inputTokens: final.inputTokens,
         outputTokens: final.outputTokens,
         model: final.model,
@@ -234,11 +252,14 @@ export class ChatService {
     conversationId: string;
     write: ChatStreamWriter;
     isAborted: () => boolean;
+    onPicks: (picks: ChatStreamPick[]) => void;
   }): Promise<ToolLoopResult> {
     const messages = [...input.messages];
     let inputTokens = 0;
     let outputTokens = 0;
     let model = '';
+    const onToken = (text: string) =>
+      input.write({ event: 'token', data: { text } });
 
     for (let i = 0; i < CHAT_LIMITS.maxToolIterations; i++) {
       if (input.isAborted()) {
@@ -249,6 +270,7 @@ export class ChatService {
         messages,
         tools: CHAT_TOOL_DEFINITIONS,
         toolChoice: 'auto',
+        onToken,
       });
       inputTokens += response.usage.inputTokens;
       outputTokens += response.usage.outputTokens;
@@ -272,6 +294,7 @@ export class ChatService {
           user: input.user,
           conversationId: input.conversationId,
           write: input.write,
+          onPicks: input.onPicks,
         })),
       );
     }
@@ -291,6 +314,7 @@ export class ChatService {
       ],
       tools: CHAT_TOOL_DEFINITIONS,
       toolChoice: 'none',
+      onToken,
     });
 
     return {
@@ -307,6 +331,7 @@ export class ChatService {
     user: ChatRequestUser;
     conversationId: string;
     write: ChatStreamWriter;
+    onPicks: (picks: ChatStreamPick[]) => void;
   }): Promise<ChatLlmMessage[]> {
     return Promise.all(
       input.toolCalls.map(async (call) => {
@@ -327,6 +352,13 @@ export class ChatService {
           event: 'tool_end',
           data: { tool: call.name, ms: Date.now() - startedAt },
         });
+        if (result.streamPicks) {
+          input.write({
+            event: 'picks',
+            data: { tool: call.name, picks: result.streamPicks },
+          });
+          input.onPicks(result.streamPicks);
+        }
         await this.repo.createMessage({
           conversationId: input.conversationId,
           role: 'tool',
@@ -391,11 +423,4 @@ OUTILS — appelle toujours une fonction avant de parler de picks :
 FORMAT : listes courtes, gras pour les picks importants, tableaux Markdown seulement a partir de 3 lignes. Pas de HTML.
 
 Prompt version : ${CHAT_PROMPT_VERSION}.`;
-}
-
-function streamText(content: string, write: ChatStreamWriter): void {
-  const chunks = content.match(/\S+\s*/g) ?? [];
-  for (const chunk of chunks) {
-    write({ event: 'token', data: { text: chunk } });
-  }
 }
