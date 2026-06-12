@@ -37,6 +37,7 @@
     "date-fns": "catalog:",
     "decimal.js": "catalog:",
     "dotenv": "catalog:",
+    "groq-sdk": "^1.2.1",
     "ioredis": "catalog:",
     "otplib": "^13.4.0",
     "pino": "catalog:",

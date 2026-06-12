@@ -23,6 +23,12 @@ import { AiEngineController } from './ai-engine.controller';
     InvestmentSummaryService,
     InvestmentIndicesService,
   ],
-  exports: [AiEngineService, CouponSettlementService, InvestmentService],
+  exports: [
+    AiEngineService,
+    CouponSettlementService,
+    InvestmentService,
+    SignalWindowService,
+    CouponComposerService,
+  ],
 })
 export class AiEngineModule {}
