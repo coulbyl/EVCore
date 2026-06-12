@@ -53,13 +53,13 @@ Il ne faut donc pas appliquer le score actuel indistinctement a tous les picks.
 Chaque signal doit etre calcule uniquement avec des matchs anterieurs a la
 fixture analysee afin d'eviter toute fuite de donnees.
 
-| Signal | Calcul | Marche cible |
-| --- | --- | --- |
-| `h2h_1x2` | victoires de l'equipe selectionnee / matchs valides | 1X2 |
-| `h2h_draw` | matchs nuls / matchs valides | DRAW |
-| `h2h_btts` | matchs ou les deux equipes ont marque / matchs valides | BTTS |
-| `h2h_over_25` | matchs avec au moins 3 buts / matchs valides | OVER 2.5 |
-| `h2h_under_25` | matchs avec au plus 2 buts / matchs valides | UNDER 2.5 |
+| Signal         | Calcul                                                 | Marche cible |
+| -------------- | ------------------------------------------------------ | ------------ |
+| `h2h_1x2`      | victoires de l'equipe selectionnee / matchs valides    | 1X2          |
+| `h2h_draw`     | matchs nuls / matchs valides                           | DRAW         |
+| `h2h_btts`     | matchs ou les deux equipes ont marque / matchs valides | BTTS         |
+| `h2h_over_25`  | matchs avec au moins 3 buts / matchs valides           | OVER 2.5     |
+| `h2h_under_25` | matchs avec au plus 2 buts / matchs valides            | UNDER 2.5    |
 
 Exemple BTTS sur cinq confrontations :
 
@@ -175,12 +175,12 @@ paris regles, mais ce volume est trop faible pour une activation fiable.
 
 Seuils proposes :
 
-| Etape | Volume minimal | Usage |
-| --- | ---: | --- |
-| Exploration | 50 observations | detecter un signal potentiel |
-| Evaluation initiale | 200 observations par marche | comparer les metriques |
-| Activation limitee | 500 observations par marche | shadow correction ou faible poids |
-| Generalisation | plusieurs saisons ou competitions | activation plus large |
+| Etape               |                    Volume minimal | Usage                             |
+| ------------------- | --------------------------------: | --------------------------------- |
+| Exploration         |                   50 observations | detecter un signal potentiel      |
+| Evaluation initiale |       200 observations par marche | comparer les metriques            |
+| Activation limitee  |       500 observations par marche | shadow correction ou faible poids |
+| Generalisation      | plusieurs saisons ou competitions | activation plus large             |
 
 Si un marche n'atteint pas ces volumes, le H2H doit rester en observation.
 
