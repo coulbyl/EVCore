@@ -2,8 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { CacheService } from './cache.service';
-
-export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+import { REDIS_CLIENT } from './redis.tokens';
 
 @Global()
 @Module({

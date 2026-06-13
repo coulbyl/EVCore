@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type Redis from 'ioredis';
 import { PrismaService } from '@/prisma.service';
-import { REDIS_CLIENT } from '@common/redis/redis.module';
+import { REDIS_CLIENT } from '@common/redis/redis.tokens';
 
 @Injectable()
 export class ChatRateLimitService {

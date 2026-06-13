@@ -86,6 +86,15 @@ export async function listChatMessages(
   return messages.map(toMessage).filter((message) => message !== null);
 }
 
+export async function deleteChatConversation(
+  conversationId: string,
+): Promise<void> {
+  await clientApiRequest<void>(`/chat/conversations/${conversationId}`, {
+    method: "DELETE",
+    fallbackErrorMessage: "Impossible de supprimer la conversation EVA.",
+  });
+}
+
 export async function stopChatGeneration(
   conversationId: string,
 ): Promise<void> {

@@ -28,7 +28,7 @@ export class ChatRepository {
     max: number;
   }) {
     return this.prisma.client.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`;
       const count = await tx.chatConversation.count({
         where: { userId: input.userId },
       });

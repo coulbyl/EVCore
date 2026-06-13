@@ -11,6 +11,7 @@ import {
 } from "@evcore/ui";
 import { Menu, Plus } from "lucide-react";
 import { ApiError } from "@/lib/api/shared";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessage } from "./chat-message";
@@ -22,6 +23,7 @@ import type {
 } from "@/domains/chat/types/chat";
 import {
   createChatConversation,
+  deleteChatConversation,
   listChatConversations,
   listChatMessages,
   stopChatGeneration,
@@ -39,6 +41,10 @@ export function ChatPageClient() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingConversationId, setDeletingConversationId] = useState<
+    string | null
+  >(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -50,6 +56,12 @@ export function ChatPageClient() {
   const active = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,
     [conversations, activeId],
+  );
+  const confirmDeleteConversation = useMemo(
+    () =>
+      conversations.find((conversation) => conversation.id === confirmDeleteId) ??
+      null,
+    [conversations, confirmDeleteId],
   );
   const messages = active?.messages ?? [];
 
@@ -283,6 +295,43 @@ export function ChatPageClient() {
     setSidebarOpen(false);
   }
 
+  function requestDeleteConversation(conversationId: string) {
+    setConfirmDeleteId(conversationId);
+  }
+
+  async function handleDeleteConversation() {
+    if (!confirmDeleteId) return;
+
+    const conversationId = confirmDeleteId;
+    setDeletingConversationId(conversationId);
+    try {
+      if (activeStreamConversationRef.current === conversationId) {
+        abortRef.current?.abort();
+        await stopChatGeneration(conversationId).catch(() => undefined);
+      }
+
+      await deleteChatConversation(conversationId);
+
+      loadedConversationIdsRef.current.delete(conversationId);
+      setConversations((prev) => {
+        const next = prev.filter(
+          (conversation) => conversation.id !== conversationId,
+        );
+        setActiveId((current) =>
+          current === conversationId ? next[0]?.id ?? null : current,
+        );
+        return next;
+      });
+      setSidebarOpen(false);
+      setNotice(null);
+      setConfirmDeleteId(null);
+    } catch (err: unknown) {
+      setNotice(errorText(err, "Impossible de supprimer cette conversation."));
+    } finally {
+      setDeletingConversationId(null);
+    }
+  }
+
   const displayMessages =
     loading && messages.length === 0
       ? [
@@ -303,6 +352,7 @@ export function ChatPageClient() {
           activeId={activeId}
           onSelect={selectConversation}
           onNew={newConversation}
+          onDelete={requestDeleteConversation}
         />
       </div>
 
@@ -356,9 +406,29 @@ export function ChatPageClient() {
             activeId={activeId}
             onSelect={selectConversation}
             onNew={newConversation}
+            onDelete={requestDeleteConversation}
           />
         </DrawerContent>
       </Drawer>
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+        title="Supprimer la conversation"
+        description={
+          <>
+            La conversation{" "}
+            <span className="font-semibold text-foreground">
+              {confirmDeleteConversation?.title ?? "EVA"}
+            </span>{" "}
+            sera définitivement supprimée. Cette action est irréversible.
+          </>
+        }
+        confirmLabel="Supprimer"
+        loading={deletingConversationId !== null}
+        onConfirm={() => void handleDeleteConversation()}
+      />
     </div>
   );
 }

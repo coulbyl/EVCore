@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button, cn } from "@evcore/ui";
 import type { ChatConversation } from "@/domains/chat/types/chat";
 
@@ -9,11 +9,13 @@ export function ChatSidebar({
   activeId,
   onSelect,
   onNew,
+  onDelete,
 }: {
   conversations: ChatConversation[];
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onDelete: (id: string) => void;
 }) {
   const groups = conversations.reduce<Record<string, ChatConversation[]>>(
     (acc, conv) => {
@@ -36,22 +38,55 @@ export function ChatSidebar({
               {group}
             </span>
             {convs.map((conv) => (
-              <button
+              <div
                 key={conv.id}
-                onClick={() => onSelect(conv.id)}
                 className={cn(
-                  "truncate rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                  "group flex items-center gap-1 rounded-lg transition-colors",
                   conv.id === activeId
                     ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-secondary/60",
+                    : "hover:bg-secondary/60",
                 )}
               >
-                {conv.title}
-              </button>
+                <button
+                  onClick={() => onSelect(conv.id)}
+                  className={cn(
+                    "min-w-0 flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm",
+                    conv.id === activeId
+                      ? "text-secondary-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {conv.title}
+                </button>
+
+                {isPersistedConversation(conv.id) ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "mr-1 shrink-0",
+                      conv.id === activeId
+                        ? "text-secondary-foreground hover:text-destructive"
+                        : "text-muted-foreground hover:text-destructive",
+                    )}
+                    aria-label={`Supprimer ${conv.title}`}
+                    onClick={() => onDelete(conv.id)}
+                  >
+                    <Trash2 />
+                  </Button>
+                ) : null}
+              </div>
             ))}
           </div>
         ))}
       </nav>
     </aside>
+  );
+}
+
+function isPersistedConversation(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    id,
   );
 }
