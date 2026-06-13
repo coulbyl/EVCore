@@ -54,6 +54,7 @@ export function PageShell({
   sidebarFooter,
   logoBadge,
   topBanner,
+  headerNotice,
   children,
 }: {
   navGroups: NavGroup[];
@@ -63,6 +64,7 @@ export function PageShell({
   sidebarFooter?: ReactNode;
   logoBadge?: ReactNode;
   topBanner?: ReactNode;
+  headerNotice?: ReactNode;
   pageTitle?: string;
   children: ReactNode;
 }) {
@@ -217,6 +219,7 @@ export function PageShell({
               <div className="flex items-center gap-2">{actions}</div>
             ) : null}
           </div>
+          {headerNotice}
         </header>
 
         <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:pt-4 md:pb-4 lg:px-5 lg:pt-5 lg:pb-5">

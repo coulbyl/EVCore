@@ -46,7 +46,7 @@ export function ChatPageClient() {
     string | null
   >(null);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const activeStreamConversationRef = useRef<string | null>(null);
   // Conversations whose server history is loaded (or local-only ones that
@@ -66,8 +66,17 @@ export function ChatPageClient() {
   const messages = active?.messages ?? [];
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, streaming]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const behavior =
+      loading || activeStreamConversationRef.current === null ? "auto" : "smooth";
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior,
+    });
+  }, [activeId, loading, messages.length, streaming]);
 
   useEffect(() => {
     let cancelled = false;
@@ -373,11 +382,13 @@ export function ChatPageClient() {
         {displayMessages.length === 0 ? (
           <ChatEmptyState onPick={handleSend} />
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-2">
+          <div
+            ref={messagesContainerRef}
+            className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-2"
+          >
             {displayMessages.map((m) => (
               <ChatMessage key={m.id} message={m} />
             ))}
-            <div ref={bottomRef} />
           </div>
         )}
 

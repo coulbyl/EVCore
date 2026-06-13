@@ -1,27 +1,27 @@
 /* ── Light tokens ──────────────────────────────────────────────────────── */
 :root {
-  --background: #e5ebf2;
+  --background: #dfe7f1;
   --foreground: #162033;
-  --panel: #f3f6fa;
-  --panel-strong: #ffffff;
-  --sidebar: #f8fafc;
-  --sidebar-muted: #f1f5f9;
+  --panel: #eef3f8;
+  --panel-strong: #fbfdff;
+  --sidebar: #f5f8fc;
+  --sidebar-muted: #eaf0f7;
   --sidebar-foreground: #1e293b;
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--accent-soft);
   --sidebar-accent-foreground: var(--accent);
-  --sidebar-border: rgba(24, 33, 47, 0.1);
+  --sidebar-border: rgba(24, 33, 47, 0.12);
   --sidebar-ring: var(--ring);
-  --border: rgba(24, 33, 47, 0.1);
-  --muted: #64748b;
+  --border: rgba(24, 33, 47, 0.12);
+  --muted: #5f7088;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.12);
   --success: #15803d;
   --danger: var(--destructive);
   --warning: #a16207;
   --pending: #c08b18;
-  --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+  --shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
 
   --card: var(--panel-strong);
   --card-foreground: var(--foreground);
@@ -29,15 +29,15 @@
   --popover-foreground: var(--foreground);
   --primary: var(--accent);
   --primary-foreground: #ffffff;
-  --secondary: #dbe5ef;
+  --secondary: #d6e1ec;
   --secondary-foreground: var(--foreground);
-  --skeleton: #d7e0ea;
+  --skeleton: #d2dce7;
   --muted-foreground: var(--muted);
   --accent-foreground: #ffffff;
   --destructive: #be123c;
   --destructive-foreground: #ffffff;
-  --input: rgba(24, 33, 47, 0.14);
-  --ring: rgba(15, 118, 110, 0.34);
+  --input: rgba(24, 33, 47, 0.16);
+  --ring: rgba(15, 118, 110, 0.3);
 
   /* ── Canal identities ── */
   --canal-ev: #d97706;
@@ -200,8 +200,8 @@ html:not(.dark) {
 body {
   color: var(--foreground);
   background:
-    radial-gradient(circle at top left, #eff3f8, #e8eef6 42%, #dde6f0 100%),
-    linear-gradient(135deg, rgba(15, 118, 110, 0.03), rgba(229, 235, 242, 0.6));
+    radial-gradient(circle at top left, #f2f6fb, #e9eff7 38%, #dce4ee 100%),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.035), rgba(223, 231, 241, 0.72));
   overflow-y: auto;
 }
 
