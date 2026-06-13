@@ -220,20 +220,22 @@ function renderInline(text: string): ReactNode[] {
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (linkMatch) {
         const [, label = token, href = "#"] = linkMatch;
-        const isAnchor = href.startsWith("#");
-        nodes.push(
-          <a
-            key={`${match.index}-link`}
-            href={href}
-            className={`font-medium underline underline-offset-4 ${
-              isAnchor
-                ? "text-accent decoration-accent/40 hover:text-accent"
-                : "text-foreground decoration-border hover:text-accent"
-            }`}
-          >
-            {label}
-          </a>,
-        );
+        const isInternal =
+          href.startsWith("#") || href.startsWith("/") || href.startsWith("./");
+        if (isInternal) {
+          nodes.push(
+            <a
+              key={`${match.index}-link`}
+              href={href}
+              className="font-medium underline underline-offset-4 text-accent decoration-accent/40 hover:text-accent"
+            >
+              {label}
+            </a>,
+          );
+        } else {
+          // External URLs rendered as plain text — LLM output is untrusted
+          nodes.push(<span key={`${match.index}-link`}>{label}</span>);
+        }
       } else {
         nodes.push(token);
       }

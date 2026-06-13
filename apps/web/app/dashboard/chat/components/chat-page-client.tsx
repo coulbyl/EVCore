@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Drawer, DrawerContent, DrawerTitle } from "@evcore/ui";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from "@evcore/ui";
 import { Menu, Plus } from "lucide-react";
+import { ApiError } from "@/lib/api/shared";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessage } from "./chat-message";
@@ -30,6 +38,7 @@ export function ChatPageClient() {
   const [streaming, setStreaming] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -220,7 +229,11 @@ export function ChatPageClient() {
       });
     } catch (err: unknown) {
       if (targetId === null) {
-        // createChatConversation failed: no thread to attach the error to.
+        // 422 on conversation creation = quota reached (see ChatService).
+        if (err instanceof ApiError && err.status === 422) {
+          setNotice(err.message);
+          return;
+        }
         showLocalErrorConversation(err);
         return;
       }
@@ -318,6 +331,16 @@ export function ChatPageClient() {
           </div>
         )}
 
+        {notice && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>{notice}</span>
+              <button className="underline" onClick={() => setNotice(null)}>
+                Fermer
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
         <ChatComposer
           streaming={streaming}
           onSend={handleSend}

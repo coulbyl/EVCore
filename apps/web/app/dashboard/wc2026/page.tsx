@@ -90,40 +90,6 @@ export default function WC2026Page() {
 
       <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5 pb-6">
-          {/* Quick links during tournament */}
-          {active ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link
-                href="/dashboard/picks?competition=WC"
-                className="bento-cell-interactive flex flex-col gap-2 p-4"
-              >
-                <span className="inline-flex size-9 items-center justify-center rounded-xl border border-[#c9a84c]/30 bg-[#c9a84c]/10 text-lg">
-                  🎯
-                </span>
-                <p className="text-sm font-semibold text-foreground">
-                  Picks WC26
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Analyses du modèle pour les matchs en cours
-                </p>
-              </Link>
-              <Link
-                href="/dashboard/coupons"
-                className="bento-cell-interactive flex flex-col gap-2 p-4"
-              >
-                <span className="inline-flex size-9 items-center justify-center rounded-xl border border-[#c9a84c]/30 bg-[#c9a84c]/10 text-lg">
-                  📋
-                </span>
-                <p className="text-sm font-semibold text-foreground">
-                  Coupons générés
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Coupons IA incluant des legs WC26
-                </p>
-              </Link>
-            </div>
-          ) : null}
-
           {/* Groups grid */}
           <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 shadow-[0_16px_44px_rgba(15,23,42,0.08)] sm:p-5">
             <p className="mb-4 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">

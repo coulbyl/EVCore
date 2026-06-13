@@ -3,6 +3,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -10,10 +11,12 @@ import { Prisma } from '@evcore/db';
 import { startOfUtcDay } from '@utils/date.utils';
 import {
   CHAT_LIMITS,
+  CHAT_MODELS,
   CHAT_PROMPT_VERSION,
   CHAT_TOOL_LABELS,
 } from './chat.constants';
 import { ChatRepository } from './chat.repository';
+import { ChatRateLimitService } from './chat.rate-limit.service';
 import { ChatToolsService } from './chat.tools.service';
 import { CHAT_TOOL_DEFINITIONS } from './chat.tools.schemas';
 import type {
@@ -46,7 +49,11 @@ type ToolLoopResult = {
 export class ChatService {
   // One generation at a time per conversation (single-instance lock; move to
   // Redis if the backend ever runs multiple replicas).
+  private readonly logger = new Logger(ChatService.name);
   private readonly activeConversations = new Set<string>();
+
+  @Inject(ChatRateLimitService)
+  private readonly rateLimit!: ChatRateLimitService;
 
   constructor(
     private readonly repo: ChatRepository,
@@ -56,10 +63,18 @@ export class ChatService {
   ) {}
 
   async createConversation(input: { userId: string; content?: string }) {
-    return this.repo.createConversation({
+    const conversation = await this.repo.createConversationIfUnderLimit({
       userId: input.userId,
       title: input.content ? buildTitle(input.content) : null,
+      max: CHAT_LIMITS.maxConversationsPerUser,
     });
+    if (!conversation) {
+      throw new HttpException(
+        `Limite de conversations atteinte (${CHAT_LIMITS.maxConversationsPerUser} maximum). Supprimez une conversation pour en créer une nouvelle.`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    return conversation;
   }
 
   async listConversations(userId: string) {
@@ -109,7 +124,7 @@ export class ChatService {
   // Throws 429 before the SSE stream opens when the user burnt their daily
   // quota — the per-user limit protects the shared Groq budget.
   async assertChatQuota(userId: string): Promise<void> {
-    const requests = await this.repo.getUsageRequests({
+    const requests = await this.rateLimit.getUsageRequests({
       userId,
       day: startOfUtcDay(new Date()),
     });
@@ -136,6 +151,18 @@ export class ChatService {
       return;
     }
     this.activeConversations.add(input.conversationId);
+
+    const exchangeStart = Date.now();
+    const toolCallLog: Array<{ tool: string; ms: number }> = [];
+    let exchangeOutcome: string = 'ok';
+
+    // Intercept write to collect tool_end metrics without duplicating logic.
+    const instrumentedWrite: ChatStreamWriter = (event) => {
+      if (event.event === 'tool_end') {
+        toolCallLog.push({ tool: event.data.tool, ms: event.data.ms });
+      }
+      input.write(event);
+    };
 
     try {
       // Build the prompt from history BEFORE persisting the new user message,
@@ -165,12 +192,13 @@ export class ChatService {
         messages,
         user: input.user,
         conversationId: input.conversationId,
-        write: input.write,
+        write: instrumentedWrite,
         isAborted: input.isAborted,
         onPicks: collectPicks,
       });
+      if (final.aborted) exchangeOutcome = 'aborted';
 
-      await this.repo.incrementUsage({
+      await this.rateLimit.incrementUsage({
         userId: input.user.id,
         day: startOfUtcDay(new Date()),
         inputTokens: final.inputTokens,
@@ -217,21 +245,56 @@ export class ChatService {
           outputTokens: final.outputTokens,
         },
       });
+
+      // Generate a proper title via the light model after the first exchange.
+      // Fire-and-forget: non-critical, never blocks the response.
+      const messageCount = await this.repo.findMessages(
+        input.conversationId,
+        3,
+      );
+      if (messageCount.length === 2) {
+        this.buildTitleViaLlm(input.conversationId, input.content);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      input.write({
+      exchangeOutcome =
+        err instanceof ServiceUnavailableException
+          ? 'groq_down'
+          : err instanceof HttpException && err.getStatus() === 429
+            ? 'groq_429'
+            : 'chat_error';
+      instrumentedWrite({
         event: 'error',
-        data: {
-          code:
-            err instanceof ServiceUnavailableException
-              ? 'groq_down'
-              : 'chat_error',
-          message,
-        },
+        data: { code: exchangeOutcome, message },
       });
     } finally {
       this.activeConversations.delete(input.conversationId);
+      this.logger.log({
+        conversationId: input.conversationId,
+        userId: input.user.id,
+        toolCalls: toolCallLog,
+        totalMs: Date.now() - exchangeStart,
+        outcome: exchangeOutcome,
+      });
     }
+  }
+
+  private buildTitleViaLlm(conversationId: string, firstMessage: string): void {
+    const prompt = `Génère un titre de 4 à 6 mots en français pour une conversation qui commence par : "${firstMessage.slice(0, 200)}". Réponds uniquement avec le titre, sans guillemets, sans point final.`;
+    this.llm
+      .complete({
+        messages: [{ role: 'user', content: prompt }],
+        tools: [],
+        toolChoice: 'none',
+        model: CHAT_MODELS.light,
+      })
+      .then(({ message }) => {
+        const title = message.content.trim().slice(0, 60);
+        if (title) {
+          return this.repo.updateConversationTitle({ conversationId, title });
+        }
+      })
+      .catch(() => undefined);
   }
 
   private async buildPrompt(

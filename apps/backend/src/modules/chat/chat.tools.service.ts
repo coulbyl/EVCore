@@ -3,7 +3,9 @@ import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { formatDateUtc } from '@utils/date.utils';
 import { AiEngineService } from '@modules/ai-engine/ai-engine.service';
+import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
 import { CHAT_LIMITS } from './chat.constants';
+import { round } from './chat.math';
 import { ChatReadRepository } from './chat.read.repository';
 import { CHAT_TOOL_SCHEMAS, type ChatToolName } from './chat.tools.schemas';
 import { simulateLadder } from './simulate-ladder';
@@ -89,6 +91,24 @@ export class ChatToolsService {
         return this.planLadder(input.args);
       case 'explainFixture':
         return this.explainFixture(input.args);
+      case 'getChannelPerformance':
+        return this.getChannelPerformance(input.args);
+      case 'getLeaguePerformance':
+        return this.getLeaguePerformance(input.args);
+      case 'getLeagueChannelConfig':
+        return this.getLeagueChannelConfig(input.args);
+      case 'getPredictionOutcomes':
+        return this.getPredictionOutcomes(input.args);
+      case 'getSegmentPerformance':
+        return this.getSegmentPerformance(input.args);
+      case 'getMLMetrics':
+        return this.getMLMetrics(input.args, input.context);
+      case 'getEdgeAnalysis':
+        return this.getEdgeAnalysis(input.args);
+      case 'getEngineHealth':
+        return this.getEngineHealth();
+      case 'getMyStats':
+        return this.getMyStats(input.args, input.context);
     }
   }
 
@@ -109,21 +129,7 @@ export class ChatToolsService {
       },
     });
 
-    return {
-      asOf: new Date().toISOString(),
-      fixtures: rows.map((fixture) => ({
-        id: fixture.id,
-        date: fixture.scheduledAt.toISOString(),
-        status: fixture.status,
-        match: `${fixture.homeTeam.name} - ${fixture.awayTeam.name}`,
-        competition: fixture.season.competition.code,
-        country: fixture.season.competition.country,
-        score:
-          fixture.homeScore === null || fixture.awayScore === null
-            ? null
-            : `${fixture.homeScore}-${fixture.awayScore}`,
-      })),
-    };
+    return { asOf: new Date().toISOString(), fixtures: rows };
   }
 
   private async getTopPicks(args: unknown) {
@@ -178,66 +184,174 @@ export class ChatToolsService {
 
   private async explainFixture(args: unknown) {
     const input = CHAT_TOOL_SCHEMAS.explainFixture.parse(args);
-    const fixture = await this.readRepo.findFixtureForExplanation(
+    const explanation = await this.readRepo.getFixtureExplanation(
       input.fixtureId,
     );
-    if (!fixture) return { error: 'Fixture not found' };
-    const run = fixture.modelRuns[0] ?? null;
+    return explanation ?? { error: 'Fixture not found' };
+  }
+  // ── Groupe B ─────────────────────────────────────────────────────────────
 
+  private async getChannelPerformance(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getChannelPerformance.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const stats = await this.readRepo.getChannelPerfStats({
+      range,
+      channel: input.channel,
+    });
     return {
-      asOf: fixture.oddsSnapshots[0]?.snapshotAt.toISOString() ?? null,
-      fixture: {
-        id: fixture.id,
-        date: fixture.scheduledAt.toISOString(),
-        status: fixture.status,
-        match: `${fixture.homeTeam.name} - ${fixture.awayTeam.name}`,
-        competition: fixture.season.competition.code,
-        score:
-          fixture.homeScore === null || fixture.awayScore === null
-            ? null
-            : `${fixture.homeScore}-${fixture.awayScore}`,
-      },
-      modelRun: run
-        ? {
-            id: run.id,
-            decision: run.decision,
-            finalScore: run.finalScore ? Number(run.finalScore) : null,
-            deterministicScore: run.deterministicScore
-              ? Number(run.deterministicScore)
-              : null,
-            mlDelta: run.mlDelta ? Number(run.mlDelta) : null,
-            scoreThreshold: run.scoreThreshold
-              ? Number(run.scoreThreshold)
-              : null,
-            evThreshold: run.evThreshold ? Number(run.evThreshold) : null,
-            analyzedAt: run.analyzedAt.toISOString(),
-            isBackfill: run.isBackfill,
-          }
-        : null,
-      bets:
-        run?.bets.map((bet) => ({
-          id: bet.id,
-          canal: bet.isSafeValue ? 'SV' : 'EV',
-          market: bet.market,
-          pick: bet.pick,
-          probability: round(Number(bet.probEstimated)),
-          odds: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
-          ev: round(Number(bet.ev)),
-          qualityScore: bet.qualityScore
-            ? round(Number(bet.qualityScore))
-            : null,
-          stakePct: round(Number(bet.stakePct)),
-          status: bet.status,
-        })) ?? [],
-      predictions: fixture.predictions.map((prediction) => ({
-        channel: prediction.channel,
-        market: prediction.market,
-        pick: prediction.pick,
-        probability: round(Number(prediction.probability)),
-        correct: prediction.correct,
-      })),
+      asOf: new Date().toISOString(),
+      from: input.from,
+      to: input.to,
+      channels: stats,
     };
   }
+
+  private async getLeaguePerformance(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getLeaguePerformance.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const leagues = await this.readRepo.getLeagueStats({
+      channel: input.channel,
+      range,
+    });
+    return {
+      asOf: new Date().toISOString(),
+      channel: input.channel,
+      from: input.from,
+      to: input.to,
+      leagues,
+    };
+  }
+
+  private getLeagueChannelConfig(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getLeagueChannelConfig.parse(args);
+    const entries = input.competition
+      ? [
+          [
+            input.competition,
+            PREDICTION_CONFIG[input.competition] ?? {},
+          ] as const,
+        ]
+      : Object.entries(PREDICTION_CONFIG);
+
+    const result = entries.map(([comp, channels]) => ({
+      competition: comp,
+      channels: Object.entries(channels).map(([ch, cfg]) => ({
+        channel: ch,
+        enabled: cfg.enabled,
+        threshold: cfg.threshold,
+        minSampleN: cfg.minSampleN,
+      })),
+    }));
+
+    return Promise.resolve({ leagues: result });
+  }
+
+  private async getPredictionOutcomes(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getPredictionOutcomes.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const outcomes = await this.readRepo.getSettledOutcomes({
+      range,
+      canal: input.canal,
+      onlyMisses: input.onlyMisses ?? false,
+      limit: CHAT_LIMITS.maxToolRows,
+    });
+    return {
+      asOf: new Date().toISOString(),
+      from: input.from,
+      to: input.to,
+      outcomes,
+    };
+  }
+
+  private async getSegmentPerformance(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getSegmentPerformance.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const segments = await this.readRepo.getChannelPerfStats({ range });
+    return {
+      asOf: new Date().toISOString(),
+      from: input.from,
+      to: input.to,
+      segments,
+    };
+  }
+
+  // ── Groupe C ─────────────────────────────────────────────────────────────
+
+  private async getMLMetrics(args: unknown, ctx: ToolContext) {
+    const input = CHAT_TOOL_SCHEMAS.getMLMetrics.parse(args);
+    const isAdmin = ctx.user.role === 'ADMIN';
+    const models = await this.readRepo.getMlModelVersions({
+      segment: input.segment,
+      activeOnly: !isAdmin,
+    });
+
+    return {
+      asOf: new Date().toISOString(),
+      adminView: isAdmin,
+      models: models.map((m) => {
+        const metrics = m.metrics as Record<string, number | undefined>;
+        return {
+          id: m.id,
+          segment: m.segment,
+          algorithm: m.algorithm,
+          isActive: m.isActive,
+          brierScore: metrics['brierScore'] ?? null,
+          calibrationError: metrics['calibrationError'] ?? null,
+          roiShadow: metrics['roiShadow'] ?? null,
+          sampleSize: metrics['sampleSize'] ?? null,
+          activatedAt: m.activatedAt,
+          createdAt: m.createdAt,
+          notes: m.notes ?? null,
+          legacyMetrics:
+            m.activatedAt !== null &&
+            new Date(m.activatedAt) < new Date('2026-06-11'),
+        };
+      }),
+    };
+  }
+
+  private async getEdgeAnalysis(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getEdgeAnalysis.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const segments = await this.readRepo.getEdgeStats({ range });
+    return {
+      asOf: new Date().toISOString(),
+      from: input.from,
+      to: input.to,
+      segments,
+    };
+  }
+
+  // ── Groupe D ─────────────────────────────────────────────────────────────
+
+  private async getEngineHealth() {
+    const data = await this.readRepo.getEngineHealthData();
+    return { asOf: new Date().toISOString(), ...data };
+  }
+
+  // ── Groupe E ─────────────────────────────────────────────────────────────
+
+  private async getMyStats(args: unknown, ctx: ToolContext) {
+    const input = CHAT_TOOL_SCHEMAS.getMyStats.parse(args);
+    const range = toDateRange(input.from, input.to);
+    const stats = await this.readRepo.getUserBetStats({
+      userId: ctx.user.id,
+      range,
+    });
+    return {
+      asOf: new Date().toISOString(),
+      from: input.from,
+      to: input.to,
+      ...stats,
+    };
+  }
+}
+
+function toDateRange(from: string, to: string): { from: Date; to: Date } {
+  return {
+    from: new Date(`${from}T00:00:00.000Z`),
+    to: new Date(`${to}T23:59:59.999Z`),
+  };
 }
 
 function isToolName(name: string): name is ChatToolName {
@@ -297,8 +411,4 @@ function parseToolArgs(name: ChatToolName, rawArgs: string) {
 // Odds/probability math goes through decimal.js (EVCore hard rule).
 function product(values: number[]): Decimal {
   return values.reduce((acc, value) => acc.mul(value), new Decimal(1));
-}
-
-function round(value: number | Decimal): number {
-  return new Decimal(value).toDecimalPlaces(4).toNumber();
 }

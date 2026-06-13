@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useStandings } from "@/domains/fixture/use-cases/use-standings";
 import type { StandingGroup } from "@/domains/fixture/use-cases/use-standings";
 import { cn } from "@evcore/ui/lib/utils";
@@ -31,6 +32,11 @@ function FormBadges({ form }: { form: string | null }) {
 }
 
 function GroupCard({ group }: { group: StandingGroup }) {
+  const t = useTranslations("wc2026");
+  const displayName = /^group stage$/i.test(group.name)
+    ? t("groupStage")
+    : group.name.replace(/^Group\s+/i, `${t("groupPrefix")} `);
+
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-panel">
       <table className="w-full text-xs">
@@ -40,27 +46,27 @@ function GroupCard({ group }: { group: StandingGroup }) {
               className="w-6 py-2 pl-3 text-left text-[0.6rem] font-semibold uppercase tracking-wider text-[#c9a84c] whitespace-nowrap"
               colSpan={2}
             >
-              {group.name}
+              {displayName}
             </th>
             <th className="py-2 text-left" />
             <th className="hidden sm:table-cell py-2 text-left" />
             <th className="w-8 py-2 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              MJ
+              {t("colPlayed")}
             </th>
             <th className="w-6 py-2 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              V
+              {t("colWin")}
             </th>
             <th className="w-6 py-2 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              N
+              {t("colDraw")}
             </th>
             <th className="w-6 py-2 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              D
+              {t("colLose")}
             </th>
             <th className="w-8 py-2 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              DIFF
+              {t("colDiff")}
             </th>
             <th className="w-8 py-2 pr-3 text-center text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              Pts
+              {t("colPoints")}
             </th>
           </tr>
         </thead>
@@ -165,6 +171,7 @@ function SkeletonGroup() {
 }
 
 export function WC2026Groups() {
+  const t = useTranslations("wc2026");
   const { data, isLoading, isError } = useStandings("WC", 2026);
 
   if (isLoading) {
@@ -180,7 +187,7 @@ export function WC2026Groups() {
   if (isError || !data || data.groups.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-panel px-4 py-8 text-center text-sm text-muted-foreground">
-        Classements non disponibles.
+        {t("standingsUnavailable")}
       </div>
     );
   }
@@ -189,27 +196,27 @@ export function WC2026Groups() {
     <div>
       <div className="mb-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {data.groups.length} groupes · Saison {data.season}
+          {t("groupsCount", { count: data.groups.length, season: data.season })}
         </p>
         <div className="flex flex-col gap-1 text-[0.6rem] text-muted-foreground sm:items-end">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <span className="inline-block size-2 rounded-sm bg-[#c9a84c]/30" />
-              Qualifié (2 premières places)
+              {t("qualified")}
             </span>
             <span className="flex items-center gap-1">
               <span className="inline-block size-2 rounded-sm bg-blue-500/20" />
-              Barrage
+              {t("playoff")}
             </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground/60">
-            <span>MJ = matchs joués</span>
+            <span>{t("legendPlayed")}</span>
             <span>·</span>
-            <span>V / N / D = victoire · nul · défaite</span>
+            <span>{t("legendWDL")}</span>
             <span>·</span>
-            <span>DIFF = diff. buts</span>
+            <span>{t("legendDiff")}</span>
             <span>·</span>
-            <span>Pts = points</span>
+            <span>{t("legendPoints")}</span>
           </div>
         </div>
       </div>

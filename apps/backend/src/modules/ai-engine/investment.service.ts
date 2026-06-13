@@ -1,11 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-import type Redis from 'ioredis';
 import { z } from 'zod';
 import { createLogger } from '@utils/logger';
 import { formatDateUtc } from '@utils/date.utils';
-import { REDIS_CLIENT } from '@common/redis/redis.module';
+import { CacheService } from '@common/redis/cache.service';
 import {
   INVESTMENT_PARAMS,
   MAX_INVESTMENT_SELECTIONS,
@@ -112,7 +111,7 @@ export class InvestmentService {
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
     private readonly config: ConfigService,
-    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly cache: CacheService,
   ) {
     this.client = new Anthropic({
       apiKey: this.config.get<string>('ANTHROPIC_API_KEY', ''),
@@ -135,28 +134,13 @@ export class InvestmentService {
   }
 
   private async getFromCache(date: string): Promise<InvestmentDayDto | null> {
-    try {
-      const raw = await this.redis.get(this.cacheKey(date));
-      if (!raw) return null;
-      return JSON.parse(raw) as InvestmentDayDto;
-    } catch {
-      return null;
-    }
+    return this.cache.get<InvestmentDayDto>(this.cacheKey(date));
   }
 
   private async setCache(date: string, data: InvestmentDayDto): Promise<void> {
     const ttl = this.cacheTtl(date);
     if (ttl === null) return;
-    try {
-      await this.redis.set(
-        this.cacheKey(date),
-        JSON.stringify(data),
-        'EX',
-        ttl,
-      );
-    } catch {
-      // cache write failure is non-blocking
-    }
+    await this.cache.set(this.cacheKey(date), data, ttl);
   }
 
   async getInvestmentDay(
