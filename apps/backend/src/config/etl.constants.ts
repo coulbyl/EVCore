@@ -216,6 +216,7 @@ export const ETL_SCHEDULER_KEYS = {
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
+  STANDINGS_SYNC: 'cron:standings-sync',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {
