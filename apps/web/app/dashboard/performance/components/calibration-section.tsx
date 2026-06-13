@@ -15,7 +15,7 @@ import { CHART_COLORS } from "@/components/charts/chart-theme";
 import { useAdjustmentProposals } from "@/domains/adjustment/use-cases/get-adjustment-proposals";
 import { useCalibrationCurve } from "@/domains/risk/use-cases/get-calibration-curve";
 import { formatDateShort } from "@/lib/date";
-import { formatDecimal } from "./formatters";
+import { formatDecimal, toNumber } from "./formatters";
 
 function getCalibrationDriftState(current: number, previous?: number) {
   if (previous === undefined) {
@@ -59,17 +59,29 @@ export function CalibrationSection() {
   );
   const latestApplied = applied[0];
   const previousApplied = applied[1];
-  const driftState = latestApplied
+  const latestCalibrationError = toNumber(latestApplied?.calibrationError);
+  const previousCalibrationError = toNumber(previousApplied?.calibrationError);
+  const driftState = latestCalibrationError !== null
     ? getCalibrationDriftState(
-        latestApplied.calibrationError,
-        previousApplied?.calibrationError,
+        latestCalibrationError,
+        previousCalibrationError ?? undefined,
       )
     : "neutral";
 
-  const chartData = [...applied].reverse().map((proposal) => ({
-    date: formatDateShort(proposal.createdAt),
-    brierScore: proposal.calibrationError,
-  }));
+  const chartData = [...applied]
+    .reverse()
+    .map((proposal) => {
+      const calibrationError = toNumber(proposal.calibrationError);
+      if (calibrationError === null) return null;
+
+      return {
+        date: formatDateShort(proposal.createdAt),
+        brierScore: calibrationError,
+      };
+    })
+    .filter((proposal): proposal is { date: string; brierScore: number } =>
+      proposal !== null,
+    );
 
   const statItems: StatListItem[] = latestApplied
     ? [
@@ -143,7 +155,7 @@ export function CalibrationSection() {
           />
         )}
 
-        {latestApplied && (
+        {latestApplied && latestCalibrationError !== null && (
           <div
             className={[
               "rounded-[1.2rem] border bg-panel px-4 py-3",
@@ -165,11 +177,11 @@ export function CalibrationSection() {
                       : "text-foreground",
                   ].join(" ")}
                 >
-                  {latestApplied.calibrationError.toFixed(3)}
+                  {latestCalibrationError.toFixed(3)}
                 </span>
                 <CalibrationTrend
-                  current={latestApplied.calibrationError}
-                  previous={previousApplied?.calibrationError}
+                  current={latestCalibrationError}
+                  previous={previousCalibrationError ?? undefined}
                 />
               </div>
             </div>

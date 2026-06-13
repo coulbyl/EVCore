@@ -1,6 +1,13 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@evcore/ui";
+import {
+  PageHeader,
+  PageHeaderTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@evcore/ui";
 import { Activity, Wrench, Zap } from "lucide-react";
 import { useEtlQueueStatus } from "@/domains/etl/use-cases/use-etl";
 import { QueueStatusSection } from "./queue-status-section";
@@ -13,12 +20,16 @@ export function EnginePageClient() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Moteur & ETL</h1>
+      <PageHeader>
+        <div>
+          <PageHeaderTitle className="text-xl font-bold">
+            Moteur & ETL
+          </PageHeaderTitle>
         <p className="mt-1 text-sm text-muted-foreground">
           Gestion des jobs ETL, queues BullMQ et moteur de pari.
         </p>
-      </div>
+        </div>
+      </PageHeader>
 
       <Tabs defaultValue="monitoring">
         <TabsList>

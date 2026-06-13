@@ -75,7 +75,41 @@ body {
 }
 
 /* ── World Cup 2026 event theme ──────────────────────────────────────── */
-[data-event="wc2026"] {
+html:not(.dark)[data-event="wc2026"] {
+  --accent: #c9a84c;
+  --accent-soft: rgba(201, 168, 76, 0.12);
+  --canal-ev: #c98b1d;
+  --canal-ev-soft: rgba(201, 139, 29, 0.12);
+  --background: #f4efe2;
+  --foreground: #352d20;
+  --muted: #8f7c5d;
+  --panel: #f7f0e2;
+  --panel-strong: #fffaf0;
+  --border: rgba(201, 168, 76, 0.18);
+  --sidebar: #f3ebdb;
+  --sidebar-muted: #eadfc6;
+  --sidebar-foreground: #3f3320;
+  --sidebar-border: rgba(201, 168, 76, 0.16);
+  --secondary: #efe3c8;
+  --secondary-foreground: #433521;
+  --input: rgba(120, 93, 41, 0.18);
+  --ring: rgba(201, 168, 76, 0.3);
+}
+
+html:not(.dark)[data-event="wc2026"] body {
+  background:
+    radial-gradient(circle at top left, #fbf8ef, #f5efe1 44%, #ece2cc 100%),
+    linear-gradient(135deg, rgba(201, 168, 76, 0.06), rgba(255, 253, 247, 0.72));
+}
+
+html:not(.dark)[data-event="wc2026"] .ev-grid-glow {
+  background-image:
+    radial-gradient(circle at top right, rgba(201, 168, 76, 0.12), transparent 30%),
+    radial-gradient(circle at 18% 8%, rgba(222, 190, 110, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(250, 245, 233, 0.66), rgba(248, 242, 230, 0.3));
+}
+
+html.dark[data-event="wc2026"] {
   --accent: #c9a84c;
   --accent-soft: rgba(201, 168, 76, 0.13);
   --canal-ev: #e8b84b;

@@ -14,7 +14,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mb-4 flex flex-col gap-4 rounded-2xl border border-border bg-panel-strong p-4 sm:mb-5 lg:flex-row lg:items-center lg:justify-between",
+        "mb-4 flex flex-col gap-4 border border-border bg-panel-strong p-4 sm:mb-5 lg:flex-row lg:items-center lg:justify-between",
         className,
       )}
       {...props}
@@ -53,7 +53,7 @@ export function PageContent({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-panel-strong p-4 sm:p-5",
+        "border border-border bg-panel-strong p-4 sm:p-5",
         className,
       )}
       {...props}

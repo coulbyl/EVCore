@@ -30,7 +30,7 @@ export default async function FixturesPage({
         </PageHeaderActions>
       </PageHeader>
 
-      <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
         <FixturesTable date={date} isAdmin={isAdmin} />
       </PageContent>
     </Page>

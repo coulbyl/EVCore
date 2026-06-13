@@ -16,6 +16,9 @@ import {
   EmptyHeader,
   EmptyTitle,
   Input,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -240,15 +243,14 @@ export function UsersPageClient() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <PageHeader>
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             Administration
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+          <PageHeaderTitle className="mt-1 text-xl font-semibold tracking-tight">
             Utilisateurs
-          </h1>
+          </PageHeaderTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             {total > 0
               ? `${total} compte${total > 1 ? "s" : ""} enregistré${total > 1 ? "s" : ""}`
@@ -256,7 +258,7 @@ export function UsersPageClient() {
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <PageHeaderActions className="w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Input
             value={q}
             onChange={(e) => {
@@ -282,8 +284,8 @@ export function UsersPageClient() {
               <SelectItem value="ADMIN">{roleLabel("ADMIN")}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
+        </PageHeaderActions>
+      </PageHeader>
 
       {/* Table */}
       <div className="min-h-0 flex-1 overflow-y-auto">

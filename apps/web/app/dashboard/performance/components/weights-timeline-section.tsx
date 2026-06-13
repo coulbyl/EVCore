@@ -17,6 +17,7 @@ import {
   type AdjustmentProposal,
 } from "@/domains/adjustment/types/adjustment";
 import { formatDateShort } from "@/lib/date";
+import { formatDecimal } from "./formatters";
 
 function ProposalKindBadge({ proposal }: { proposal: AdjustmentProposal }) {
   const kind = proposalKind(proposal.notes);
@@ -136,7 +137,7 @@ export function WeightsTimelineSection() {
                     </span>
                   </div>
                   <span className="tabular-nums text-xs text-muted-foreground shrink-0">
-                    Brier {proposal.calibrationError.toFixed(3)}
+                    Brier {formatDecimal(proposal.calibrationError, 3)}
                   </span>
                 </li>
               ))}

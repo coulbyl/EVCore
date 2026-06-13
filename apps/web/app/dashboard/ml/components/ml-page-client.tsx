@@ -7,6 +7,8 @@ import {
   AlertTitle,
   Badge,
   Button,
+  PageHeader,
+  PageHeaderTitle,
   Select,
   SelectContent,
   SelectGroup,
@@ -366,13 +368,17 @@ export function MlPageClient() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Moteur ML</h1>
+      <PageHeader>
+        <div>
+          <PageHeaderTitle className="text-xl font-bold">
+            Moteur ML
+          </PageHeaderTitle>
         <p className="mt-1 text-sm text-muted-foreground">
           Backfill, entraînement et gestion des versions du modèle de
           correction.
         </p>
-      </div>
+        </div>
+      </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <BackfillSection />
