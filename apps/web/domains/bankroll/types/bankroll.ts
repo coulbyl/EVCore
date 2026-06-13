@@ -16,4 +16,6 @@ export type BankrollTransaction = {
   note: string | null;
   createdAt: string;
   canal: "EV" | "SV" | null;
+  fixture: string | null;
+  market: string | null;
 };

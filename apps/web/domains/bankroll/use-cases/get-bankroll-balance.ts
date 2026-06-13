@@ -10,10 +10,10 @@ export async function getBankrollBalance(): Promise<BankrollBalance> {
   });
 }
 
-export function useBankrollBalance(enabled = true) {
+export function useBankrollBalance(userId?: string, enabled = true) {
   return useQuery({
-    queryKey: ["bankroll-balance"],
+    queryKey: ["bankroll-balance", userId],
     queryFn: getBankrollBalance,
-    enabled,
+    enabled: enabled && Boolean(userId),
   });
 }

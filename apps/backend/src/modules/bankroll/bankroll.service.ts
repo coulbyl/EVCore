@@ -33,6 +33,10 @@ export class BankrollService {
       note: r.note,
       createdAt: r.createdAt.toISOString(),
       canal: r.bet ? (r.bet.isSafeValue ? 'SV' : 'EV') : null,
+      fixture: r.bet
+        ? `${r.bet.fixture.homeTeam.name} vs ${r.bet.fixture.awayTeam.name}`
+        : null,
+      market: r.bet?.market ?? null,
     }));
   }
 
