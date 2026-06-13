@@ -11,7 +11,7 @@ export default async function AnnouncementsAdminPage() {
 
   return (
     <Page className="flex h-full flex-col">
-      <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
         <AnnouncementsAdminPageClient />
       </PageContent>
     </Page>

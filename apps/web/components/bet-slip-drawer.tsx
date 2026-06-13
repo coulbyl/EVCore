@@ -5,6 +5,7 @@ import { X, ReceiptText, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTitle } from "@evcore/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import { createBetSlip } from "@/domains/bet-slip/use-cases/create-bet-slip";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
@@ -132,6 +133,7 @@ function DraftItemRow({
 
 export function BetSlipDrawer() {
   const isMobile = useIsMobile();
+  const currentUser = useCurrentUser();
   const {
     draft,
     isOpen,
@@ -143,7 +145,7 @@ export function BetSlipDrawer() {
     clearDraft,
   } = useBetSlip();
   const queryClient = useQueryClient();
-  const bankrollQuery = useBankrollBalance();
+  const bankrollQuery = useBankrollBalance(currentUser.id);
 
   const [unitStakeInput, setUnitStakeInput] = useState(() =>
     String(draft.unitStake),

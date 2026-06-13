@@ -5,14 +5,21 @@ const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD date');
 
-const limit = z.number().int().min(1).max(30).optional();
-
 const boundedIntFromNumberOrString = (min: number, max: number) =>
   z.preprocess((value) => {
     if (typeof value !== 'string') return value;
     const trimmed = value.trim();
     return /^\d+$/.test(trimmed) ? Number(trimmed) : value;
   }, z.number().int().min(min).max(max));
+
+const boundedFloatFromNumberOrString = (min: number, max: number) =>
+  z.preprocess((value) => {
+    if (typeof value !== 'string') return value;
+    const n = Number(value.trim());
+    return Number.isFinite(n) ? n : value;
+  }, z.number().min(min).max(max));
+
+const limit = boundedIntFromNumberOrString(1, 30).optional();
 
 export const SearchFixturesArgsSchema = z.object({
   query: z.string().trim().min(2).max(100),
@@ -29,7 +36,7 @@ export const CanalSchema = z.enum(['EV', 'SV', 'BB', 'NUL', 'CONF']);
 export const GetTopPicksArgsSchema = z.object({
   from: isoDate,
   to: isoDate,
-  perDay: z.number().int().min(1).max(10),
+  perDay: boundedIntFromNumberOrString(1, 10),
   profile: z.enum(['fiable', 'value']).optional(),
 });
 
@@ -46,8 +53,8 @@ export const GetCouponProposalsArgsSchema = z.object({
 
 export const ComposeSelectionArgsSchema = z.object({
   date: isoDate,
-  targetOddsMin: z.number().min(1.01).max(200),
-  targetOddsMax: z.number().min(1.01).max(200),
+  targetOddsMin: boundedFloatFromNumberOrString(1.01, 200),
+  targetOddsMax: boundedFloatFromNumberOrString(1.01, 200),
 });
 
 export const SimulateLadderArgsSchema = z.object({
@@ -64,7 +71,7 @@ export const SimulateLadderArgsSchema = z.object({
 });
 
 export const ExplainFixtureArgsSchema = z.object({
-  fixtureId: z.string().uuid(),
+  fixtureId: z.uuid(),
 });
 
 // Deterministic end-to-end ladder: the backend selects the picks AND runs the
@@ -76,6 +83,60 @@ export const PlanLadderArgsSchema = z.object({
   canal: CanalSchema.optional(),
 });
 
+// ── Groupe B — Performance & confiance ──────────────────────────────────────
+
+const channelEnum = z.enum(['EV', 'SV', 'CONF', 'DRAW', 'BTTS']);
+
+export const GetChannelPerformanceArgsSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  channel: channelEnum.optional(),
+});
+
+export const GetLeaguePerformanceArgsSchema = z.object({
+  channel: channelEnum,
+  from: isoDate,
+  to: isoDate,
+});
+
+export const GetLeagueChannelConfigArgsSchema = z.object({
+  competition: z.string().max(10).optional(),
+});
+
+export const GetPredictionOutcomesArgsSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  canal: CanalSchema.optional(),
+  onlyMisses: z.boolean().optional(),
+});
+
+export const GetSegmentPerformanceArgsSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+});
+
+// ── Groupe C — ML & moteur ───────────────────────────────────────────────────
+
+export const GetMLMetricsArgsSchema = z.object({
+  segment: z.string().max(50).optional(),
+});
+
+export const GetEdgeAnalysisArgsSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+});
+
+// ── Groupe D — Santé du moteur ───────────────────────────────────────────────
+
+export const GetEngineHealthArgsSchema = z.object({});
+
+// ── Groupe E — Données personnelles ─────────────────────────────────────────
+
+export const GetMyStatsArgsSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+});
+
 export const CHAT_TOOL_SCHEMAS = {
   searchFixtures: SearchFixturesArgsSchema,
   getTopPicks: GetTopPicksArgsSchema,
@@ -85,6 +146,15 @@ export const CHAT_TOOL_SCHEMAS = {
   simulateLadder: SimulateLadderArgsSchema,
   planLadder: PlanLadderArgsSchema,
   explainFixture: ExplainFixtureArgsSchema,
+  getChannelPerformance: GetChannelPerformanceArgsSchema,
+  getLeaguePerformance: GetLeaguePerformanceArgsSchema,
+  getLeagueChannelConfig: GetLeagueChannelConfigArgsSchema,
+  getPredictionOutcomes: GetPredictionOutcomesArgsSchema,
+  getSegmentPerformance: GetSegmentPerformanceArgsSchema,
+  getMLMetrics: GetMLMetricsArgsSchema,
+  getEdgeAnalysis: GetEdgeAnalysisArgsSchema,
+  getEngineHealth: GetEngineHealthArgsSchema,
+  getMyStats: GetMyStatsArgsSchema,
 } as const;
 
 const objectSchema = (
@@ -120,7 +190,14 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
               'CANCELLED',
             ],
           },
-          limit: { type: 'integer', minimum: 1, maximum: 30 },
+          limit: {
+            anyOf: [
+              { type: 'integer', minimum: 1, maximum: 30 },
+              { type: 'string', pattern: '^[1-9][0-9]?$' },
+            ],
+            description:
+              'Max number of results, 1–30. Numeric strings accepted.',
+          },
         },
         ['query'],
       ),
@@ -136,7 +213,13 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
         {
           from: { type: 'string', description: 'YYYY-MM-DD' },
           to: { type: 'string', description: 'YYYY-MM-DD' },
-          perDay: { type: 'integer', minimum: 1, maximum: 10 },
+          perDay: {
+            anyOf: [
+              { type: 'integer', minimum: 1, maximum: 10 },
+              { type: 'string', pattern: '^([1-9]|10)$' },
+            ],
+            description: 'Picks per day, 1–10. Numeric strings accepted.',
+          },
           profile: { type: 'string', enum: ['fiable', 'value'] },
         },
         ['from', 'to', 'perDay'],
@@ -153,7 +236,14 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
         {
           date: { type: 'string', description: 'YYYY-MM-DD' },
           canal: { type: 'string', enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'] },
-          limit: { type: 'integer', minimum: 1, maximum: 30 },
+          limit: {
+            anyOf: [
+              { type: 'integer', minimum: 1, maximum: 30 },
+              { type: 'string', pattern: '^[1-9][0-9]?$' },
+            ],
+            description:
+              'Max number of results, 1–30. Numeric strings accepted.',
+          },
         },
         [],
       ),
@@ -186,8 +276,14 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
       parameters: objectSchema(
         {
           date: { type: 'string', description: 'YYYY-MM-DD' },
-          targetOddsMin: { type: 'number', minimum: 1.01 },
-          targetOddsMax: { type: 'number', minimum: 1.01 },
+          targetOddsMin: {
+            anyOf: [{ type: 'number', minimum: 1.01 }, { type: 'string' }],
+            description: 'Minimum combined odds (e.g. 1.5 or "1.5").',
+          },
+          targetOddsMax: {
+            anyOf: [{ type: 'number', minimum: 1.01 }, { type: 'string' }],
+            description: 'Maximum combined odds (e.g. 3.0 or "3.0").',
+          },
         },
         ['date', 'targetOddsMin', 'targetOddsMax'],
       ),
@@ -252,6 +348,160 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
       parameters: objectSchema(
         { fixtureId: { type: 'string', format: 'uuid' } },
         ['fixtureId'],
+      ),
+    },
+  },
+  // ── Groupe B ─────────────────────────────────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'getChannelPerformance',
+      description:
+        'Return ROI, hit rate, net units and sample size for one or all channels over a date range. Excludes backfill data.',
+      parameters: objectSchema(
+        {
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+          channel: {
+            type: 'string',
+            enum: ['EV', 'SV', 'CONF', 'DRAW', 'BTTS'],
+          },
+        },
+        ['from', 'to'],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getLeaguePerformance',
+      description:
+        'Break down a channel performance by competition (league) over a date range.',
+      parameters: objectSchema(
+        {
+          channel: {
+            type: 'string',
+            enum: ['EV', 'SV', 'CONF', 'DRAW', 'BTTS'],
+          },
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+        },
+        ['channel', 'from', 'to'],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getLeagueChannelConfig',
+      description:
+        'Return the current prediction-channel configuration for each league (enabled flag, threshold, channel). Use to explain why a channel is inactive in a given league.',
+      parameters: objectSchema(
+        {
+          competition: {
+            type: 'string',
+            description: 'League code (BL1, PL, SA, …). Omit for all leagues.',
+          },
+        },
+        [],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getPredictionOutcomes',
+      description:
+        'List settled picks (bets + predictions) with their results. Use onlyMisses=true to surface the biggest engine errors.',
+      parameters: objectSchema(
+        {
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+          canal: {
+            type: 'string',
+            enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'],
+          },
+          onlyMisses: {
+            type: 'boolean',
+            description: 'Sort by biggest probability error first.',
+          },
+        },
+        ['from', 'to'],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getSegmentPerformance',
+      description:
+        'Aggregate ROI, hit rate and pick count for every channel (EV, SV, CONF, DRAW, BTTS) over a date range.',
+      parameters: objectSchema(
+        {
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+        },
+        ['from', 'to'],
+      ),
+    },
+  },
+  // ── Groupe C ─────────────────────────────────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'getMLMetrics',
+      description:
+        'Return ML model versions: algorithm, Brier score, ROI shadow, sample size, activation date. OPERATOR sees active models only; ADMIN sees full history.',
+      parameters: objectSchema(
+        {
+          segment: {
+            type: 'string',
+            description:
+              'Segment filter, e.g. "EV:ONE_X_TWO". Omit for all segments.',
+          },
+        },
+        [],
+      ),
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getEdgeAnalysis',
+      description:
+        'Compare estimated probability vs market-implied odds (edge = prob - 1/odds) for settled EV/SV bets. Surfaces structural biases by segment.',
+      parameters: objectSchema(
+        {
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+        },
+        ['from', 'to'],
+      ),
+    },
+  },
+  // ── Groupe D ─────────────────────────────────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'getEngineHealth',
+      description:
+        'Return engine readiness: last ETL sync timestamps, fixtures missing odds today, and active market suspensions.',
+      parameters: objectSchema({}, []),
+    },
+  },
+  // ── Groupe E ─────────────────────────────────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'getMyStats',
+      description:
+        "Return the authenticated user's personal betting stats: ROI, hit rate, settled picks count over a date range.",
+      parameters: objectSchema(
+        {
+          from: { type: 'string', description: 'YYYY-MM-DD' },
+          to: { type: 'string', description: 'YYYY-MM-DD' },
+        },
+        ['from', 'to'],
       ),
     },
   },

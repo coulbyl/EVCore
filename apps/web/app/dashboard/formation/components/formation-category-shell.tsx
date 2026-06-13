@@ -28,6 +28,8 @@ import {
   Input,
   Page,
   PageContent,
+  PageHeader,
+  PageHeaderTitle,
   ProgressBar,
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
@@ -248,24 +250,22 @@ export function FormationCategoryShell({
 
   return (
     <Page className="flex h-full flex-col">
-      <div className="sticky top-0 z-20 mb-3 shrink-0 backdrop-blur supports-backdrop-filter:bg-panel-strong/95 sm:mb-4">
-        <div className="flex flex-col gap-3 rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_14%,transparent)_0%,transparent_70%)] px-4 py-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:px-6 sm:py-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="rounded-xl">
-              <Link href="/dashboard/formation">
-                <Home size={16} data-icon="inline-start" />
-                {t("label")}
-              </Link>
-            </Button>
-            <ChevronRight size={16} className="text-border" />
-            <span className="text-sm font-semibold text-foreground">
-              {t(`categories.${category}`)}
-            </span>
-          </div>
+      <PageHeader className="lg:flex-col lg:items-stretch lg:justify-start">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="ghost" size="sm" className="rounded-xl">
+            <Link href="/dashboard/formation">
+              <Home size={16} data-icon="inline-start" />
+              {t("label")}
+            </Link>
+          </Button>
+          <ChevronRight size={16} className="text-border" />
+          <PageHeaderTitle className="text-sm font-semibold">
+            {t(`categories.${category}`)}
+          </PageHeaderTitle>
         </div>
-      </div>
+      </PageHeader>
 
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
           <aside className="hidden lg:block lg:sticky lg:top-5">
             {list("sidebar")}

@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': srcDir,
+      '@common': `${srcDir}/common`,
       '@config': `${srcDir}/config`,
       '@modules': `${srcDir}/modules`,
       '@utils': `${srcDir}/utils`,

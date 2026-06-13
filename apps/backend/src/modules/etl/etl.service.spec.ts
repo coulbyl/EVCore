@@ -89,6 +89,8 @@ describe('EtlService', () => {
   const rollingHorizonQueue = makeQueue<RollingHorizonJobData>();
   const mlTrainingQueue = makeQueue();
   const mlSchedulerQueue = makeQueue();
+  const mlBackfillQueue = makeQueue();
+  const aiEngineQueue = makeQueue();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -132,6 +134,8 @@ describe('EtlService', () => {
     rollingHorizonQueue as Queue<RollingHorizonJobData>,
     mlTrainingQueue as Queue,
     mlSchedulerQueue as Queue,
+    mlBackfillQueue as Queue,
+    aiEngineQueue as Queue,
     configMock,
     prismaMock,
     rollingStatsServiceMock,

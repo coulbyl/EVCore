@@ -54,7 +54,16 @@ export class BankrollRepository {
       take: limit,
       include: {
         bet: {
-          select: { isSafeValue: true },
+          select: {
+            isSafeValue: true,
+            market: true,
+            fixture: {
+              select: {
+                homeTeam: { select: { name: true } },
+                awayTeam: { select: { name: true } },
+              },
+            },
+          },
         },
       },
     });

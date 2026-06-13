@@ -11,7 +11,15 @@ import {
   Sparkles,
   Video,
 } from "lucide-react";
-import { Badge, Button, Page, PageContent, ProgressBar } from "@evcore/ui";
+import {
+  Badge,
+  Button,
+  Page,
+  PageContent,
+  PageHeader,
+  PageHeaderTitle,
+  ProgressBar,
+} from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { useFormationProgress } from "@/domains/formation/use-cases/use-formation-progress";
 import type {
@@ -105,62 +113,54 @@ export function FormationPageClient({
 
   return (
     <Page className="flex h-full flex-col">
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex flex-col gap-5">
-          <div className="sticky top-0 z-20 -mx-4 -mt-4 px-4 pt-4 backdrop-blur supports-backdrop-filter:bg-panel-strong/95 sm:-mx-5 sm:px-5 sm:pt-5">
-            <header className="flex flex-col gap-4 rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_16%,transparent)_0%,transparent_70%)] p-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-secondary text-accent shadow-xs">
-                      <GraduationCap size={18} />
-                    </span>
-                    <div className="min-w-0">
-                      <h1 className="truncate text-[1.2rem] font-semibold tracking-tight text-foreground sm:text-[1.55rem]">
-                        {t("title")}
-                      </h1>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        {t("subtitle")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="hidden w-60 shrink-0 sm:block">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                    {t("progress")}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                    {totalPercent}% · {totalCompleted} / {total}
-                  </p>
-                  <div className="mt-2">
-                    <ProgressBar
-                      value={totalCompleted}
-                      max={Math.max(1, total)}
-                    />
-                  </div>
-                </div>
+      <PageHeader className="lg:flex-col lg:items-stretch lg:justify-start">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-border bg-secondary text-accent shadow-xs">
+                <GraduationCap size={18} />
+              </span>
+              <div className="min-w-0">
+                <PageHeaderTitle className="truncate text-[1.2rem] font-semibold tracking-tight sm:text-[1.55rem]">
+                  {t("title")}
+                </PageHeaderTitle>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t("subtitle")}
+                </p>
               </div>
-
-              <div className="sm:hidden">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                    {t("progress")}
-                  </p>
-                  <p className="text-sm font-semibold tabular-nums text-foreground">
-                    {totalCompleted} / {total}
-                  </p>
-                </div>
-                <div className="mt-2">
-                  <ProgressBar
-                    value={totalCompleted}
-                    max={Math.max(1, total)}
-                  />
-                </div>
-              </div>
-            </header>
+            </div>
           </div>
 
+          <div className="hidden w-60 shrink-0 sm:block">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              {t("progress")}
+            </p>
+            <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+              {totalPercent}% · {totalCompleted} / {total}
+            </p>
+            <div className="mt-2">
+              <ProgressBar value={totalCompleted} max={Math.max(1, total)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              {t("progress")}
+            </p>
+            <p className="text-sm font-semibold tabular-nums text-foreground">
+              {totalCompleted} / {total}
+            </p>
+          </div>
+          <div className="mt-2">
+            <ProgressBar value={totalCompleted} max={Math.max(1, total)} />
+          </div>
+        </div>
+      </PageHeader>
+
+      <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
+        <div className="flex flex-col gap-5">
           {/* Categories */}
           {recentItem ? (
             <section className="rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_18%,transparent)_0%,transparent_74%)] p-4 shadow-[0_16px_44px_rgba(15,23,42,0.10)] sm:p-5">

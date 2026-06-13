@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Video } from "lucide-react";
-import { Badge } from "@evcore/ui";
+import {
+  Badge,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
+} from "@evcore/ui";
 import { MarkdownArticle } from "@/components/markdown-article";
 import {
   getFormationContentBySlug,
@@ -125,12 +130,12 @@ export default async function FormationCategoryItemPage({
         <span className="truncate text-foreground">{item.title}</span>
       </nav>
 
-      <header className="flex flex-col gap-4 rounded-[1.8rem] border border-border bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_16%,transparent)_0%,transparent_70%)] px-4 py-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:px-6 sm:py-5">
+      <PageHeader className="flex-col gap-4 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--accent)_16%,transparent)_0%,transparent_70%)] px-4 py-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:px-6 sm:py-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <h1 className="text-[1.2rem] font-semibold tracking-tight text-foreground sm:text-[1.5rem] lg:text-[2rem]">
+            <PageHeaderTitle className="text-[1.2rem] font-semibold tracking-tight sm:text-[1.5rem] lg:text-[2rem]">
               {item.title}
-            </h1>
+            </PageHeaderTitle>
             {item.summary ? (
               <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
                 {item.summary}
@@ -160,11 +165,11 @@ export default async function FormationCategoryItemPage({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
+          <PageHeaderActions className="flex items-center justify-end gap-2">
             <FormationCompletionButton type={item.type} slug={item.slug} />
-          </div>
+          </PageHeaderActions>
         </div>
-      </header>
+      </PageHeader>
 
       {item.type === "video" ? (
         <section className="flex flex-col gap-5">

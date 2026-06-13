@@ -1,8 +1,8 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-
-export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
+import { CacheService } from './cache.service';
+import { REDIS_CLIENT } from './redis.tokens';
 
 @Global()
 @Module({
@@ -17,7 +17,8 @@ export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
           lazyConnect: true,
         }),
     },
+    CacheService,
   ],
-  exports: [REDIS_CLIENT],
+  exports: [REDIS_CLIENT, CacheService],
 })
 export class RedisModule {}

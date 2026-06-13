@@ -19,12 +19,36 @@ type CreateMessageInput = {
 export class ChatRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createConversation(input: { userId: string; title?: string | null }) {
-    return this.prisma.client.chatConversation.create({
-      data: {
-        userId: input.userId,
-        title: input.title ?? null,
-      },
+  // Count + create in one transaction, serialized per user via advisory lock:
+  // two concurrent creations cannot both pass the quota check. Returns null
+  // when the user is at the limit.
+  createConversationIfUnderLimit(input: {
+    userId: string;
+    title?: string | null;
+    max: number;
+  }) {
+    return this.prisma.client.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`;
+      const count = await tx.chatConversation.count({
+        where: { userId: input.userId },
+      });
+      if (count >= input.max) return null;
+      return tx.chatConversation.create({
+        data: {
+          userId: input.userId,
+          title: input.title ?? null,
+        },
+      });
+    });
+  }
+
+  updateConversationTitle(input: {
+    conversationId: string;
+    title: string;
+  }): Promise<unknown> {
+    return this.prisma.client.chatConversation.update({
+      where: { id: input.conversationId },
+      data: { title: input.title },
     });
   }
 
@@ -102,39 +126,5 @@ export class ChatRepository {
     });
 
     return message;
-  }
-
-  async getUsageRequests(input: {
-    userId: string;
-    day: Date;
-  }): Promise<number> {
-    const usage = await this.prisma.client.chatUsage.findUnique({
-      where: { userId_day: { userId: input.userId, day: input.day } },
-      select: { requests: true },
-    });
-    return usage?.requests ?? 0;
-  }
-
-  async incrementUsage(input: {
-    userId: string;
-    day: Date;
-    inputTokens: number;
-    outputTokens: number;
-  }): Promise<void> {
-    await this.prisma.client.chatUsage.upsert({
-      where: { userId_day: { userId: input.userId, day: input.day } },
-      create: {
-        userId: input.userId,
-        day: input.day,
-        requests: 1,
-        inputTokens: input.inputTokens,
-        outputTokens: input.outputTokens,
-      },
-      update: {
-        requests: { increment: 1 },
-        inputTokens: { increment: input.inputTokens },
-        outputTokens: { increment: input.outputTokens },
-      },
-    });
   }
 }

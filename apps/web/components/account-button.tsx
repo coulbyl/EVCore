@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,6 +25,7 @@ export function AccountButton({
   currentUser: AuthSessionUser;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const tNav = useTranslations("nav");
   const tAuth = useTranslations("auth");
 
@@ -33,6 +35,7 @@ export function AccountButton({
     try {
       setIsLoggingOut(true);
       await logout();
+      queryClient.clear();
       router.push("/auth/login");
       router.refresh();
     } finally {

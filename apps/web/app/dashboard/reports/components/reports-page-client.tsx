@@ -5,6 +5,9 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
   Select,
   SelectContent,
   SelectItem,
@@ -24,13 +27,13 @@ export function ReportsPageClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <PageHeader>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <FlaskConical className="size-5 text-accent" />
-            <h1 className="text-lg font-semibold">
+            <PageHeaderTitle className="text-lg font-semibold">
               Promotion ML — shadow → prod
-            </h1>
+            </PageHeaderTitle>
           </div>
           <p className="text-sm text-muted-foreground">
             Comparaison baseline vs correction shadow par segment. Aide à
@@ -38,22 +41,24 @@ export function ReportsPageClient() {
             shadow.
           </p>
         </div>
-        <Select
-          value={window}
-          onValueChange={(v) => setWindow(v as PromotionWindow)}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {WINDOW_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </header>
+        <PageHeaderActions>
+          <Select
+            value={window}
+            onValueChange={(v) => setWindow(v as PromotionWindow)}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {WINDOW_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </PageHeaderActions>
+      </PageHeader>
 
       {data ? (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

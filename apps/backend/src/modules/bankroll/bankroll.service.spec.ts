@@ -33,7 +33,9 @@ describe('BankrollService', () => {
     it('inserts a DEPOSIT transaction and returns updated balance', async () => {
       const repo = makeRepo(new Decimal('50000'));
       const service = new BankrollService(repo);
-      const result = await service.deposit('u1', 50000, 'Bankroll initiale');
+      const result = await service.deposit('u1', 50000, {
+        note: 'Bankroll initiale',
+      });
       expect(repo.insert).toHaveBeenCalledWith({
         userId: 'u1',
         type: BankrollTransactionType.DEPOSIT,
@@ -200,6 +202,8 @@ describe('BankrollService', () => {
           amount: '50000.00',
           betId: null,
           canal: null,
+          fixture: null,
+          market: null,
           note: 'Init',
           createdAt: '2026-04-18T10:00:00.000Z',
         },

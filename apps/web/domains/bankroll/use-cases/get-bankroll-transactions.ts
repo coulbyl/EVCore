@@ -20,7 +20,15 @@ export async function getBankrollTransactions(
 
 export function useBankrollTransactions(limit = 200) {
   return useQuery({
-    queryKey: ["bankroll-transactions", limit],
+    queryKey: ["bankroll-transactions", "anonymous", limit],
     queryFn: () => getBankrollTransactions(limit),
+  });
+}
+
+export function useBankrollTransactionsForUser(userId?: string, limit = 200) {
+  return useQuery({
+    queryKey: ["bankroll-transactions", userId, limit],
+    queryFn: () => getBankrollTransactions(limit),
+    enabled: Boolean(userId),
   });
 }

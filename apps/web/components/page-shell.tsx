@@ -53,6 +53,8 @@ export function PageShell({
   actions,
   sidebarFooter,
   logoBadge,
+  topBanner,
+  headerNotice,
   children,
 }: {
   navGroups: NavGroup[];
@@ -61,6 +63,8 @@ export function PageShell({
   actions?: ReactNode;
   sidebarFooter?: ReactNode;
   logoBadge?: ReactNode;
+  topBanner?: ReactNode;
+  headerNotice?: ReactNode;
   pageTitle?: string;
   children: ReactNode;
 }) {
@@ -193,6 +197,7 @@ export function PageShell({
 
       <SidebarInset className="h-dvh overflow-hidden bg-transparent">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-panel-strong/90 pt-[env(safe-area-inset-top)] backdrop-blur supports-backdrop-filter:bg-panel-strong/75">
+          {topBanner}
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground" />
@@ -214,6 +219,7 @@ export function PageShell({
               <div className="flex items-center gap-2">{actions}</div>
             ) : null}
           </div>
+          {headerNotice}
         </header>
 
         <main className="ev-grid-glow min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:pt-4 md:pb-4 lg:px-5 lg:pt-5 lg:pb-5">

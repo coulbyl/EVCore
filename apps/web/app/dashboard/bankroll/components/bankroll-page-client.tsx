@@ -19,13 +19,13 @@ import type { FilterDef, FilterState } from "@evcore/ui";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight, LineChart, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useBankrollBalance } from "@/domains/bankroll/use-cases/get-bankroll-balance";
-import { useBankrollTransactions } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
+import { useBankrollTransactionsForUser } from "@/domains/bankroll/use-cases/get-bankroll-transactions";
 import type {
   BankrollTransaction,
   BankrollTransactionType,
 } from "@/domains/bankroll/types/bankroll";
-import { useBetSlips } from "@/domains/bet-slip/use-cases/get-bet-slips";
 import { formatDateShort, todayIso } from "@/lib/date";
 import { formatMarketForDisplay } from "@/helpers/fixture";
 import { useCurrencyFormat } from "@/providers/currency-provider";
@@ -314,6 +314,7 @@ function BankrollTrendChart({
 export function BankrollPageClient() {
   const tCommon = useTranslations("common");
   const t = useTranslations("bankrollPage");
+  const currentUser = useCurrentUser();
   const { formatAmount, formatSigned } = useCurrencyFormat();
   const [filterState, setFilterState] = useState<FilterState>({
     from: "",
@@ -326,40 +327,28 @@ export function BankrollPageClient() {
     () => buildColumns(t, formatAmount, formatSigned),
     [t, formatAmount, formatSigned],
   );
-  const balanceQuery = useBankrollBalance();
-  const transactionsQuery = useBankrollTransactions();
-  const betSlipsQuery = useBetSlips();
+  const balanceQuery = useBankrollBalance(currentUser.id);
+  const transactionsQuery = useBankrollTransactionsForUser(currentUser.id);
 
   const currentBalance = Number.parseFloat(balanceQuery.data?.balance ?? "0");
-
-  const betMetadata = useMemo(() => {
-    const mapping = new Map<string, { fixture: string; market: string }>();
-    for (const betSlip of betSlipsQuery.data ?? []) {
-      for (const item of betSlip.items) {
-        mapping.set(item.betId, { fixture: item.fixture, market: item.market });
-      }
-    }
-    return mapping;
-  }, [betSlipsQuery.data]);
 
   const enrichedTransactions = useMemo<EnrichedTransaction[]>(() => {
     let runningBalance = currentBalance;
     return (transactionsQuery.data ?? []).map((transaction) => {
       const amount = parseAmount(transaction.amount);
-      const metadata = transaction.betId
-        ? betMetadata.get(transaction.betId)
-        : undefined;
       const detailLabel =
         transaction.type === "DEPOSIT"
           ? transaction.note || t("fallback.deposit")
-          : metadata
-            ? `${metadata.fixture} (${formatMarketForDisplay(metadata.market)})`
+          : transaction.fixture && transaction.market
+            ? `${transaction.fixture} (${formatMarketForDisplay(
+                transaction.market,
+              )})`
             : transaction.note || t("fallback.bet");
       const row = { ...transaction, balanceAfter: runningBalance, detailLabel };
       runningBalance -= amount;
       return row;
     });
-  }, [betMetadata, currentBalance, t, transactionsQuery.data]);
+  }, [currentBalance, t, transactionsQuery.data]);
 
   const filteredTransactions = useMemo(() => {
     const from = (filterState.from as string) || "";
@@ -404,15 +393,12 @@ export function BankrollPageClient() {
     return (netPnL / staked) * 100;
   }, [filteredTransactions]);
 
-  const isLoading =
-    balanceQuery.isLoading ||
-    transactionsQuery.isLoading ||
-    betSlipsQuery.isLoading;
+  const isLoading = balanceQuery.isLoading || transactionsQuery.isLoading;
   const hasError = balanceQuery.error || transactionsQuery.error;
 
   return (
     <Page className="flex h-full flex-col">
-      <PageContent className="min-h-0 flex-1 overflow-y-auto rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
         <div className="flex flex-col gap-5">
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard

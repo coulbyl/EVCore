@@ -21,6 +21,9 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
   Skeleton,
 } from "@evcore/ui";
 import { Megaphone, Pencil, Plus, Send, Trash2, X } from "lucide-react";
@@ -148,14 +151,14 @@ export function AnnouncementsAdminPageClient() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <div className="flex shrink-0 items-center justify-between gap-3">
+      <PageHeader className="shrink-0 items-center gap-3">
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             Administration
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+          <PageHeaderTitle className="mt-1 text-xl font-semibold tracking-tight">
             Annonces
-          </h1>
+          </PageHeaderTitle>
           {(announcementsQuery.data?.length ?? 0) > 0 ? (
             <p className="mt-1 text-sm text-muted-foreground">
               {announcementsQuery.data?.length} annonce
@@ -169,16 +172,18 @@ export function AnnouncementsAdminPageClient() {
             </p>
           ) : null}
         </div>
-        <Button
-          type="button"
-          className="shrink-0 rounded-2xl"
-          onClick={openCreate}
-        >
-          <Plus data-icon="inline-start" />
-          <span className="hidden sm:inline">Nouvelle annonce</span>
-          <span className="sm:hidden">Nouvelle</span>
-        </Button>
-      </div>
+        <PageHeaderActions className="shrink-0">
+          <Button
+            type="button"
+            className="shrink-0 rounded-2xl"
+            onClick={openCreate}
+          >
+            <Plus data-icon="inline-start" />
+            <span className="hidden sm:inline">Nouvelle annonce</span>
+            <span className="sm:hidden">Nouvelle</span>
+          </Button>
+        </PageHeaderActions>
+      </PageHeader>
 
       <section className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex shrink-0 items-center gap-2 text-muted-foreground">

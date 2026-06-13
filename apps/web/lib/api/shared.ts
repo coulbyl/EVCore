@@ -33,10 +33,22 @@ function extractFirstErrorMessage(value: unknown): string | null {
   return null;
 }
 
+// Carries the HTTP status so callers can branch on it (quota, ownership…)
+// instead of matching on backend message wording.
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export async function parseApiError(
   response: Response,
   fallbackMessage: string,
-): Promise<Error> {
+): Promise<ApiError> {
   try {
     const payload = (await response.json()) as ErrorPayload | unknown;
     const extractedMessage = extractFirstErrorMessage(
@@ -44,19 +56,19 @@ export async function parseApiError(
     );
 
     if (extractedMessage) {
-      return new Error(extractedMessage);
+      return new ApiError(extractedMessage, response.status);
     }
   } catch {
     try {
       const text = await response.text();
 
       if (text.trim() !== "") {
-        return new Error(text);
+        return new ApiError(text, response.status);
       }
     } catch {
       // noop
     }
   }
 
-  return new Error(fallbackMessage);
+  return new ApiError(fallbackMessage, response.status);
 }

@@ -41,10 +41,9 @@ export class BankrollController {
   @Post('deposit')
   @HttpCode(HttpStatus.OK)
   deposit(@CurrentSession() session: AuthSession, @Body() body: DepositDto) {
-    return this.bankrollService.deposit(
-      session.user.id,
-      body.amount,
-      body.note,
-    );
+    return this.bankrollService.deposit(session.user.id, body.amount, {
+      note: body.note,
+      currency: session.user.currency,
+    });
   }
 }

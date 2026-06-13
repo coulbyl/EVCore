@@ -103,7 +103,7 @@ export function PicksPageClient() {
           <DateNav date={date} onChange={navigateTo} />
         </PageHeaderActions>
       </PageHeader>
-      <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
           <div className="min-h-0 flex-1 overflow-hidden">
             {isLoading && (

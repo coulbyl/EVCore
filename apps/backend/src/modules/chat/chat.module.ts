@@ -4,6 +4,7 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { AiEngineModule } from '@modules/ai-engine/ai-engine.module';
 import { ChatController } from './chat.controller';
 import { ChatRepository } from './chat.repository';
+import { ChatRateLimitService } from './chat.rate-limit.service';
 import { ChatReadRepository } from './chat.read.repository';
 import { ChatToolsService } from './chat.tools.service';
 import { ChatPickEngineService } from './chat.pick-engine.service';
@@ -16,6 +17,7 @@ import { LLM_CLIENT } from './chat.tokens';
   controllers: [ChatController],
   providers: [
     ChatRepository,
+    ChatRateLimitService,
     ChatReadRepository,
     ChatPickEngineService,
     ChatToolsService,

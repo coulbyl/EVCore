@@ -343,11 +343,11 @@ Le compteur journalier `CHAT_DAILY_LIMIT_PER_USER` se vérifie en Redis (`INCR` 
 ### Implémentation
 
 ```
-chat.cache.service.ts   wrapper ioredis : get/set JSON + tags + invalidation
-chat.constants.ts       TTLs par tool (table ci-dessus), préfixe de clés versionné
+common/redis/cache.service.ts   wrapper ioredis : get/set JSON + tags + invalidation (partagé, pas spécifique au chat)
+chat.constants.ts               TTLs par méthode de lecture (CHAT_CACHE_TTL) + tags (CHAT_CACHE_TAGS)
 ```
 
-Le wrapping se fait dans `ChatToolsService` (décorateur ou helper `cached(tool, args, fn)`) — les repositories sous-jacents restent inchangés et sans dépendance Redis.
+Le wrapping se fait dans `ChatReadRepository` (helper privé `cached(key, ttl, { fn, tags })`) : les méthodes cachées retournent des shapes JSON-safe (dates ISO, nombres), jamais de `Date`/`Decimal` Prisma — un hit Redis passe par `JSON.parse` et rendrait sinon des strings là où l'appelant attend des objets.
 
 ---
 
@@ -447,17 +447,18 @@ Composants dans `apps/web/app/dashboard/chat/components/` (convention : page cli
 
 ## Rate limiting
 
-| Tier               | Requêtes/jour    | Configurable via               |
-| ------------------ | ---------------- | ------------------------------ |
-| Default (OPERATOR) | 50 req/jour/user | `CHAT_DAILY_LIMIT_PER_USER=50` |
-| Admin              | illimité         | rôle `ADMIN` bypass            |
+| Tier                          | Requêtes/jour    | Configurable via                |
+| ----------------------------- | ---------------- | ------------------------------- |
+| Tous les rôles (ADMIN inclus) | 50 req/jour/user | `CHAT_LIMITS.defaultDailyLimit` |
+
+**Décision produit (2026-06)** : pas de bypass ADMIN — la limite protège le budget Groq partagé, qui ne dépend pas du rôle. La limite vit dans `chat.constants.ts`, pas en variable d'env.
 
 Erreur `429` si dépassement, message explicite dans l'UI. Le compteur s'incrémente par message user (pas par tool call).
 
 ### Limites d'entrée et rétention
 
 - **Message user : 2 000 caractères max** (`class-validator` sur le DTO) — empêche de coller un document entier et de brûler le TPM.
-- **Conversations : 100 max par user** — au-delà, suppression des plus anciennes requise (ou auto-archivage).
+- **Conversations : 5 max par user** (`CHAT_LIMITS.maxConversationsPerUser`) — erreur `422` au-delà, suppression manuelle requise (voir tableau d'implémentation).
 - **Rétention : purge des conversations inactives depuis 12 mois** (job cron mensuel) — l'historique chat n'est pas une donnée moteur, pas besoin de le garder indéfiniment.
 
 Rappel : le rate limit par user ne suffit pas — voir « Limiter global Groq » dans les garde-fous d'architecture.
@@ -616,3 +617,32 @@ Un golden set de ~20 questions versionné dans `apps/backend/src/modules/chat/ch
 9. Caching Redis des tools (TTL + invalidation par tags) + prewarming quotidien
 10. Observabilité (logs structurés par échange) + titre auto-généré des conversations (8B)
 11. Golden set d'évaluation (intentions + adversarial + rôles + IDOR + injection par les données)
+
+---
+
+## Progression (mis à jour 2026-06-12)
+
+### Terminé
+
+| Étape                               | Détail                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 — Migration DB**                | 3 tables en prod : `chat_conversation`, `chat_message`, `chat_usage`                                                                                                                                                                                                    |
+| **2 — Groupe A tools**              | `searchFixtures`, `getUpcomingPicks`, `getTopPicks`, `getCouponProposals`, `composeSelection`, `simulateLadder`, `planLadder`, `explainFixture` — Zod + JSON Schema                                                                                                     |
+| **2 — Fix coercion Groq**           | `limit`, `perDay`, `targetOddsMin/Max` acceptent string ou number (`anyOf` JSON Schema + `preprocess` Zod) — Llama-4-Scout envoyait des entiers comme strings                                                                                                           |
+| **3 — ChatService**                 | Boucle agentique (max 5 iter), fenêtrage historique, fallback 8B, garde-fous Zod                                                                                                                                                                                        |
+| **4 — ChatController**              | Endpoints REST, stream SSE typé, stop génération server-side                                                                                                                                                                                                            |
+| **5 — Frontend**                    | Page `/dashboard/chat`, streaming token par token, badge progression `tool_start/tool_end`, bouton stop, suggestions cliquables, disclaimer                                                                                                                             |
+| **6 — Groupes B/C/D/E**             | `getChannelPerformance`, `getLeaguePerformance`, `getLeagueChannelConfig`, `getPredictionOutcomes`, `getSegmentPerformance`, `getMLMetrics`, `getEdgeAnalysis`, `getEngineHealth`, `getMyStats` — Zod + 7 méthodes `ChatReadRepository` + 9 handlers `ChatToolsService` |
+| **7 — Rate limiting Postgres**      | Check 429 par user via `chat_usage` avant ouverture du stream                                                                                                                                                                                                           |
+| **7 — Rate limiting Redis**         | `ChatRateLimitService` dédié : compteur `INCR`/`EXPIRE`, fallback Postgres, audit `chat_usage` fire-and-forget — `ChatRepository` redevient Prisma pur                                                                                                                  |
+| **8 — Sécurité — liens externes**   | `renderInline` : URLs externes rendues en `<span>` (texte brut) — output LLM non trusted                                                                                                                                                                                |
+| **9 — Cache Redis tools**           | `CacheService` global dans `RedisModule` (`@Global`) ; TTL par méthode (2 min à 24h) ; `isCurrentPeriod` pour TTL live vs historique ; `investment.service.ts` migré                                                                                                    |
+| **9 — Invalidation par tags Redis** | `setWithTags` + `invalidateTag` dans `CacheService` ; `CHAT_CACHE_TAGS` (`settlement`, `mlModel`, `engineHealth`) ; `pending-bets-settlement.worker` invalide après settle ; `MlService.activateModel` invalide après activation                                        |
+| **10 — Observabilité structurée**   | Log structuré par échange dans `ChatService` : `conversationId`, `userId`, `toolCalls[]`, `totalMs`, `outcome`                                                                                                                                                          |
+| **10 — Titre via 8B**               | `buildTitleViaLlm()` dans `ChatService` : appel Llama 3.1 8B après le 1er échange, fire-and-forget ; `buildTitle()` (troncature) reste le fallback                                                                                                                      |
+| **10 — Limite conversations**       | Max 5 conversations par user (`CHAT_LIMITS.maxConversationsPerUser`) ; 422 si quota atteint ; notice dismissible dans l'UI                                                                                                                                              |
+| **11 — Golden set**                 | `chat.golden.spec.ts` : 23 tests unitaires CI (routage, filtrage rôle OPERATOR/ADMIN, IDOR `getMyStats`, config en mémoire `getLeagueChannelConfig`, délégation repo, structure `asOf`) — 499/499 tests verts ; 19 cas live documentés en entête du fichier             |
+
+### En attente
+
+Rien — Phase 4 AI Chat complète.

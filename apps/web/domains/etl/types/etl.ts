@@ -62,6 +62,7 @@ export type GlobalSyncType =
   | "odds-csv"
   | "elo"
   | "odds-prematch"
-  | "analysis";
+  | "analysis"
+  | "standings";
 
 export type LeagueSyncType = "fixtures" | "stats" | "injuries";

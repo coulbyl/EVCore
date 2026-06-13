@@ -54,7 +54,15 @@ const BADGE_EMOJI: Record<string, string> = {
   graduate: "🎓",
 };
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  topBanner,
+  headerNotice,
+}: {
+  children: React.ReactNode;
+  topBanner?: React.ReactNode;
+  headerNotice?: React.ReactNode;
+}) {
   const currentUser = useCurrentUser();
   const pathname = usePathname();
   const tNav = useTranslations("nav");
@@ -269,6 +277,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       pinnedNavItems={pinnedNavItems}
       mobileNavItems={mobileNavItems}
       pageTitle={pageTitle}
+      topBanner={topBanner}
+      headerNotice={headerNotice}
       logoBadge={
         wc2026Active ? (
           <span className="absolute -bottom-1 -right-1 animate-pulse text-[10px]">

@@ -90,7 +90,7 @@ function saveDraft(draft: BetSlipDraft): void {
 export function useBetSlipDraft() {
   const currentUser = useCurrentUser();
   const shouldLoadBalance = currentUser.unitMode === "PCT";
-  const bankrollQuery = useBankrollBalance(shouldLoadBalance);
+  const bankrollQuery = useBankrollBalance(currentUser.id, shouldLoadBalance);
   const currentBalance =
     bankrollQuery.data?.balance !== undefined
       ? Number.parseFloat(bankrollQuery.data.balance)

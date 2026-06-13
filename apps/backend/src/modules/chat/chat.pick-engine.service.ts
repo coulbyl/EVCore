@@ -7,6 +7,7 @@ import {
 } from '@modules/ai-engine/signal-window.service';
 import { CouponComposerService } from '@modules/ai-engine/coupon-composer.service';
 import { CHAT_RANK_WEIGHTS } from './chat.constants';
+import { round } from './chat.math';
 import { simulateLadder } from './simulate-ladder';
 
 type PickWithOdds = ScoredPick & { oddsSnapshot: number };
@@ -223,8 +224,4 @@ function summarizeCombined(picks: ScoredPick[]) {
 // Odds/probability math goes through decimal.js (EVCore hard rule).
 function product(values: number[]): Decimal {
   return values.reduce((acc, value) => acc.mul(value), new Decimal(1));
-}
-
-function round(value: number | Decimal): number {
-  return new Decimal(value).toDecimalPlaces(4).toNumber();
 }

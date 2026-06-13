@@ -36,7 +36,7 @@ export function CouponsPageClient() {
         </PageHeaderActions>
       </PageHeader>
 
-      <PageContent className="min-h-0 flex-1 overflow-hidden rounded-[1.8rem] p-4 sm:p-5 ev-shell-shadow">
+      <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
           <p className="shrink-0 text-[0.72rem] text-muted-foreground">
             {t("aiNote")}
