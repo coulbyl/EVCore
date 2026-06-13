@@ -456,6 +456,15 @@ export class BettingEngineService {
 
     if (bets.length === 0) return { settled: 0 };
 
+    const userIds = [
+      ...new Set(bets.flatMap((b) => b.betSlipItems.map((i) => i.userId))),
+    ];
+    const users = await this.prisma.client.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, currency: true },
+    });
+    const currencyByUser = new Map(users.map((u) => [u.id, u.currency]));
+
     return this.prisma.client.$transaction(async (tx) => {
       let settled = 0;
       const touchedComboSlipIds = new Set<string>();
@@ -528,6 +537,7 @@ export class BettingEngineService {
                   betId: bet.id,
                   stake,
                   odds: new Decimal(bet.oddsSnapshot.toString()),
+                  currency: currencyByUser.get(item.userId),
                 },
                 { tx },
               );
@@ -592,6 +602,7 @@ export class BettingEngineService {
                 betId: slip.items[0].betId,
                 stake: new Decimal(slip.unitStake.toString()),
                 odds: totalOdds,
+                currency: currencyByUser.get(slip.userId),
               },
               { tx },
             );

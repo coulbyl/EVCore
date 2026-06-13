@@ -59,8 +59,9 @@ export function ChatPageClient() {
   );
   const confirmDeleteConversation = useMemo(
     () =>
-      conversations.find((conversation) => conversation.id === confirmDeleteId) ??
-      null,
+      conversations.find(
+        (conversation) => conversation.id === confirmDeleteId,
+      ) ?? null,
     [conversations, confirmDeleteId],
   );
   const messages = active?.messages ?? [];
@@ -70,7 +71,9 @@ export function ChatPageClient() {
     if (!container) return;
 
     const behavior =
-      loading || activeStreamConversationRef.current === null ? "auto" : "smooth";
+      loading || activeStreamConversationRef.current === null
+        ? "auto"
+        : "smooth";
 
     container.scrollTo({
       top: container.scrollHeight,
@@ -327,7 +330,7 @@ export function ChatPageClient() {
           (conversation) => conversation.id !== conversationId,
         );
         setActiveId((current) =>
-          current === conversationId ? next[0]?.id ?? null : current,
+          current === conversationId ? (next[0]?.id ?? null) : current,
         );
         return next;
       });

@@ -373,10 +373,10 @@ export function MlPageClient() {
           <PageHeaderTitle className="text-xl font-bold">
             Moteur ML
           </PageHeaderTitle>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Backfill, entraînement et gestion des versions du modèle de
-          correction.
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Backfill, entraînement et gestion des versions du modèle de
+            correction.
+          </p>
         </div>
       </PageHeader>
 

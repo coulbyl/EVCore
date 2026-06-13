@@ -61,12 +61,13 @@ export function CalibrationSection() {
   const previousApplied = applied[1];
   const latestCalibrationError = toNumber(latestApplied?.calibrationError);
   const previousCalibrationError = toNumber(previousApplied?.calibrationError);
-  const driftState = latestCalibrationError !== null
-    ? getCalibrationDriftState(
-        latestCalibrationError,
-        previousCalibrationError ?? undefined,
-      )
-    : "neutral";
+  const driftState =
+    latestCalibrationError !== null
+      ? getCalibrationDriftState(
+          latestCalibrationError,
+          previousCalibrationError ?? undefined,
+        )
+      : "neutral";
 
   const chartData = [...applied]
     .reverse()
@@ -79,8 +80,9 @@ export function CalibrationSection() {
         brierScore: calibrationError,
       };
     })
-    .filter((proposal): proposal is { date: string; brierScore: number } =>
-      proposal !== null,
+    .filter(
+      (proposal): proposal is { date: string; brierScore: number } =>
+        proposal !== null,
     );
 
   const statItems: StatListItem[] = latestApplied

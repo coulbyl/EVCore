@@ -1,7 +1,25 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { BankrollTransactionType, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
+import { BANKROLL_LIMITS } from '@/config/bankroll.constants';
 import { BankrollRepository } from './bankroll.repository';
+
+function formatAmount(amount: Decimal, currency?: string | null): string {
+  const value = amount.toNumber();
+  if (currency) {
+    try {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      // Code devise inconnu — fallback nombre + code brut
+      return `${new Intl.NumberFormat('fr-FR').format(value)} ${currency}`;
+    }
+  }
+  return `${new Intl.NumberFormat('fr-FR').format(value)} €`;
+}
 
 type GetTransactionsInput = {
   userId: string;
@@ -43,16 +61,21 @@ export class BankrollService {
   async deposit(
     userId: string,
     amount: number,
-    note?: string,
+    opts?: { note?: string; currency?: string | null },
   ): Promise<{ balance: string }> {
     if (amount <= 0) {
       throw new BadRequestException('Le montant doit être positif');
+    }
+    if (new Decimal(amount).greaterThan(BANKROLL_LIMITS.MAX_DEPOSIT)) {
+      throw new BadRequestException(
+        `Le dépôt unitaire ne peut pas dépasser ${formatAmount(BANKROLL_LIMITS.MAX_DEPOSIT, opts?.currency)}`,
+      );
     }
     await this.bankrollRepository.insert({
       userId,
       type: BankrollTransactionType.DEPOSIT,
       amount: new Decimal(amount),
-      note,
+      note: opts?.note,
     });
     return this.getBalance(userId);
   }
@@ -113,14 +136,21 @@ export class BankrollService {
       betId: string;
       stake: Decimal;
       odds: Decimal;
+      currency?: string | null;
     },
     options?: TransactionOptions,
   ): Promise<void> {
+    const win = input.stake.mul(input.odds);
+    if (win.greaterThan(BANKROLL_LIMITS.MAX_BET_WIN)) {
+      throw new BadRequestException(
+        `Le gain d'un pari ne peut pas dépasser ${formatAmount(BANKROLL_LIMITS.MAX_BET_WIN, input.currency)}`,
+      );
+    }
     await this.bankrollRepository.insert(
       {
         userId: input.userId,
         type: BankrollTransactionType.BET_WON,
-        amount: input.stake.mul(input.odds),
+        amount: win,
         betId: input.betId,
       },
       options,

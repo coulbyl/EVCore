@@ -25,7 +25,10 @@ function readConnection() {
 function isSlowConnection(connection: NetworkInformationLike | null) {
   if (!connection) return false;
   if (connection.saveData) return true;
-  if (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g") {
+  if (
+    connection.effectiveType === "slow-2g" ||
+    connection.effectiveType === "2g"
+  ) {
     return true;
   }
   return typeof connection.rtt === "number" && connection.rtt >= 600;

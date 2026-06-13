@@ -25,9 +25,9 @@ export function EnginePageClient() {
           <PageHeaderTitle className="text-xl font-bold">
             Moteur & ETL
           </PageHeaderTitle>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Gestion des jobs ETL, queues BullMQ et moteur de pari.
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gestion des jobs ETL, queues BullMQ et moteur de pari.
+          </p>
         </div>
       </PageHeader>
 

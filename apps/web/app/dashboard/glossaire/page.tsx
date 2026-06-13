@@ -41,8 +41,8 @@ export default async function GlossairePage() {
               </div>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Référence éditoriale des termes métier, statistiques et
-              techniques utilisés dans le produit et dans le code.
+              Référence éditoriale des termes métier, statistiques et techniques
+              utilisés dans le produit et dans le code.
             </p>
           </div>
           <PageHeaderActions className="shrink-0">

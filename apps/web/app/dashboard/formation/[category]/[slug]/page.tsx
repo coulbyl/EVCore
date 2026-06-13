@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Video } from "lucide-react";
-import { Badge, PageHeader, PageHeaderActions, PageHeaderTitle } from "@evcore/ui";
+import {
+  Badge,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderTitle,
+} from "@evcore/ui";
 import { MarkdownArticle } from "@/components/markdown-article";
 import {
   getFormationContentBySlug,

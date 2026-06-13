@@ -393,8 +393,7 @@ export function BankrollPageClient() {
     return (netPnL / staked) * 100;
   }, [filteredTransactions]);
 
-  const isLoading =
-    balanceQuery.isLoading || transactionsQuery.isLoading;
+  const isLoading = balanceQuery.isLoading || transactionsQuery.isLoading;
   const hasError = balanceQuery.error || transactionsQuery.error;
 
   return (

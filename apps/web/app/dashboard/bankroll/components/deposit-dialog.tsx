@@ -13,15 +13,16 @@ import {
 } from "@evcore/ui";
 import { Loader2, Plus, Wallet, X } from "lucide-react";
 import { useDepositBankroll } from "@/domains/bankroll/use-cases/deposit-bankroll";
+import { InputAmount } from "@/components/input-amount";
 
 export function DepositDialog() {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | undefined>();
   const [note, setNote] = useState("");
   const mutation = useDepositBankroll();
 
   function resetForm() {
-    setAmount("");
+    setAmount(undefined);
     setNote("");
     mutation.reset();
   }
@@ -29,14 +30,13 @@ export function DepositDialog() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const parsedAmount = Number.parseFloat(amount);
-    if (!Number.isFinite(parsedAmount) || parsedAmount < 1) {
+    if (amount === undefined || amount < 1) {
       return;
     }
 
     try {
       await mutation.mutateAsync({
-        amount: parsedAmount,
+        amount,
         note: note.trim() || undefined,
       });
       setOpen(false);
@@ -45,10 +45,7 @@ export function DepositDialog() {
     }
   }
 
-  const amountIsInvalid =
-    amount.trim().length > 0 &&
-    (!Number.isFinite(Number.parseFloat(amount)) ||
-      Number.parseFloat(amount) < 1);
+  const amountIsInvalid = amount !== undefined && amount < 1;
 
   return (
     <Dialog
@@ -101,13 +98,10 @@ export function DepositDialog() {
               >
                 Montant
               </label>
-              <Input
+              <InputAmount
                 id="deposit-amount"
-                type="number"
-                min={1}
-                step={1}
                 value={amount}
-                onChange={(event) => setAmount(event.target.value)}
+                onChange={setAmount}
                 placeholder="50000"
                 className="h-11 rounded-xl border-border bg-background text-sm font-semibold text-foreground"
               />
@@ -160,9 +154,7 @@ export function DepositDialog() {
               type="submit"
               className="flex-1 gap-2"
               disabled={
-                mutation.isPending ||
-                amount.trim().length === 0 ||
-                amountIsInvalid
+                mutation.isPending || amount === undefined || amountIsInvalid
               }
             >
               {mutation.isPending ? (
