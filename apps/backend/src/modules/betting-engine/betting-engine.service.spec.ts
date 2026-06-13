@@ -280,6 +280,9 @@ describe('settleOpenBets', () => {
     };
     const prismaMock = {
       client: {
+        user: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         fixture: {
           findUnique: vi.fn().mockResolvedValue({
             homeScore: 2,
@@ -387,6 +390,9 @@ describe('settleOpenBets', () => {
     };
     const prismaMock = {
       client: {
+        user: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         fixture: {
           findUnique: vi.fn().mockResolvedValue({
             homeScore: 2,
@@ -478,6 +484,9 @@ describe('settleOpenBets', () => {
     };
     const prismaMock = {
       client: {
+        user: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
         fixture: {
           findUnique: vi.fn().mockResolvedValue({
             homeScore: 2,
