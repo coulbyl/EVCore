@@ -34,10 +34,15 @@ export class ChatRateLimitService {
     outputTokens: number;
   }): Promise<void> {
     const key = usageKey(input.userId, input.day);
-    const ttl = secondsUntilEndOfDay(input.day) + 86400;
+    const ttl = secondsUntilEndOfDay(input.day);
     try {
-      await this.redis.incr(key);
-      await this.redis.expire(key, ttl);
+      // Atomic INCR + EXPIRE via Lua — avoids a TTL-less key if the process dies between two calls.
+      await this.redis.eval(
+        `local n = redis.call('INCR', KEYS[1])\nredis.call('EXPIRE', KEYS[1], ARGV[1])\nreturn n`,
+        1,
+        key,
+        String(ttl),
+      );
     } catch {
       // Non-critical: Postgres audit is the source of truth
     }
