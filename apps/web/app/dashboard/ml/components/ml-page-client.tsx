@@ -26,6 +26,7 @@ import {
   Database,
   Info,
   Play,
+  RefreshCw,
   RotateCcw,
   Sparkles,
   Trash2,
@@ -37,6 +38,7 @@ import {
   useMlTrainingJobStatus,
   useRollbackModel,
   useTriggerBackfill,
+  useTriggerCatchUpSwitch,
   useTriggerTraining,
 } from "@/domains/ml/use-cases/use-ml";
 import type { MlModelVersion } from "@/domains/ml/types/ml";
@@ -360,6 +362,61 @@ function ModelRow({
   );
 }
 
+function CatchUpSection() {
+  const trigger = useTriggerCatchUpSwitch();
+  const [done, setDone] = useState(false);
+
+  async function handleCatchUp() {
+    await trigger.mutateAsync();
+    setDone(true);
+  }
+
+  return (
+    <section className="bento-cell flex flex-col gap-4 p-5 sm:col-span-2">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-secondary text-accent">
+          <RefreshCw size={16} />
+        </span>
+        <div>
+          <p className="font-semibold text-foreground">
+            Synchroniser l&apos;auto-switch
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Déclenche manuellement la vérification des modèles entraînés non
+            activés. Utile si l&apos;auto-switch ne s&apos;est pas déclenché
+            automatiquement (cron toutes les heures).
+          </p>
+        </div>
+      </div>
+
+      {done ? (
+        <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/8 px-4 py-3 text-sm text-success">
+          <CheckCircle2 size={15} />
+          <span>
+            Vérification terminée — les modèles éligibles ont été activés.
+          </span>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={handleCatchUp}
+          disabled={trigger.isPending}
+          className="self-start"
+        >
+          {trigger.isPending ? (
+            "Vérification…"
+          ) : (
+            <>
+              <RefreshCw size={14} />
+              Vérifier et activer
+            </>
+          )}
+        </Button>
+      )}
+    </section>
+  );
+}
+
 export function MlPageClient() {
   const { data: models = [], isLoading, isError } = useMlModels();
   const activate = useActivateModel();
@@ -383,6 +440,7 @@ export function MlPageClient() {
       <div className="grid gap-4 sm:grid-cols-2">
         <BackfillSection />
         <TrainingSection />
+        <CatchUpSection />
       </div>
 
       <section className="flex flex-col gap-3">

@@ -81,4 +81,11 @@ export class MlController {
   async triggerRetrainCheck(@CurrentSession() session: AuthSession) {
     return this.ml.forceRetrain(`admin:${session.user.id}`);
   }
+
+  @Post('catch-up-switch')
+  @UseGuards(AdminGuard)
+  async triggerCatchUpSwitch(): Promise<{ status: string }> {
+    await this.ml.catchUpAutoSwitch();
+    return { status: 'ok' };
+  }
 }

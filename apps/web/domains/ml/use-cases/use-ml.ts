@@ -101,3 +101,14 @@ export function useTriggerRetrainCheck() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
   });
 }
+
+export function useTriggerCatchUpSwitch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      clientApiRequest<{ status: string }>("/ml/catch-up-switch", {
+        method: "POST",
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
+  });
+}

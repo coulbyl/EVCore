@@ -359,6 +359,12 @@ const LEAGUE_MEAN_LAMBDA_MAP: Record<string, number> = {
   UEL: 1.4,
   // UECL: computed from team_stats (2,253 records). avg_lambda=1.464 ≈ config 1.45.
   UECL: 1.45,
+  // WC: WC 2022 and 2018 averaged 2.65–2.69 goals/game (λ ≈ 1.33/team). Cross-comp stats
+  // (WCQAF/FRI friendlies used for teams without in-tournament data) inflate λ because
+  // qualifying is more attacking than the tournament itself. Anchor at 1.3 pulls shrinkage
+  // toward the observed tournament goal rate and prevents OVER_3_5/OVER picks from
+  // receiving unrealistically high λ values when the primary stat source is friendlies.
+  WC: 1.3,
 };
 
 const LEAGUE_MEAN_LAMBDA_DEFAULT = 1.4;
@@ -1089,6 +1095,14 @@ const PICK_EV_FLOOR_MAP: Record<string, Decimal> = {
   'L1|OVER_UNDER|OVER': new Decimal('0.99'),
   'L1|OVER_UNDER|UNDER': new Decimal('0.99'),
   'L1|OVER_UNDER_HT|OVER_1_5': new Decimal('0.99'),
+  // WC 2026-06-14: OVER_3_5 structurally blocked for WC. The cross-comp stat path
+  // (WCQAF/FRI friendlies as primary source for teams without in-tournament data)
+  // inflates λ. Even after adding WC to LEAGUE_MEAN_LAMBDA_MAP at 1.3, the
+  // Poisson model cannot reliably distinguish a "truly high-lambda" WC fixture from
+  // a λ artefact. BRA-MAR (λ_total=3.42, actual 1-1) is the first data point;
+  // the structural bias of over-estimating tournament goal output vs qualifying
+  // matches makes OVER_3_5 unreliable here at any threshold.
+  'WC|OVER_UNDER|OVER_3_5': new Decimal('0.99'),
 };
 
 // eslint-disable-next-line max-params

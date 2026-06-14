@@ -19,6 +19,9 @@ export class MlSchedulerWorker extends WorkerHost {
         `scheduler:${job.id}`,
       );
       logger.info(result, 'ML retrain check complete');
+    } else if (job.name === 'ml-catch-up-switch') {
+      await this.ml.catchUpAutoSwitch();
+      logger.info('ML catch-up auto-switch complete');
     }
   }
 }
