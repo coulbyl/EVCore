@@ -122,9 +122,11 @@ export const PREDICTION_CONFIG: Record<string, PredictionChannelConfigMap> = {
     // CONF: only 0.60 clears the 55% floor (55.6%, 9 picks, 14% coverage). Fragile on 64 fixtures.
     CONF: { enabled: true, threshold: 0.6, minSampleN: 10 },
     // DRAW: observation mode. No validated signal (ROI negative at all tested thresholds).
-    // WC group stage historical draw rate ~17-23%. Threshold 0.20 = model says "above base draw rate".
+    // WC group stage historical draw rate ~17-23%. Threshold 0.25 = drawOdds < 4.00.
+    // Raised from 0.20 → 0.25 (2026-06-14) after 5 settled picks: Mexico-SA (4.42, ❌) was the
+    // only pick priced above 4.00 — filtering it retrospectively keeps the two correct picks intact.
     // minSampleN=5 to collect data from WC 2026 group stage without blocking picks.
-    DRAW: { enabled: true, threshold: 0.2, minSampleN: 5 },
+    DRAW: { enabled: true, threshold: 0.25, minSampleN: 5 },
     // BTTS: observation mode. WC historically ~48% BTTS rate but model caps BTTS probs at ~0.47
     // because WCQ cross-comp stats underestimate goal-scoring in tournament context (qualifying is
     // more defensive). Threshold 0.35 = below normal 0.50 floor, will fire on ~58% of fixtures.

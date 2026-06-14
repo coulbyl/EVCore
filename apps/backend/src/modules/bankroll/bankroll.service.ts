@@ -141,7 +141,7 @@ export class BankrollService {
     options?: TransactionOptions,
   ): Promise<void> {
     const win = input.stake.mul(input.odds);
-    
+
     await this.bankrollRepository.insert(
       {
         userId: input.userId,
