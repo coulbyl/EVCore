@@ -141,11 +141,7 @@ export class BankrollService {
     options?: TransactionOptions,
   ): Promise<void> {
     const win = input.stake.mul(input.odds);
-    if (win.greaterThan(BANKROLL_LIMITS.MAX_BET_WIN)) {
-      throw new BadRequestException(
-        `Le gain d'un pari ne peut pas dépasser ${formatAmount(BANKROLL_LIMITS.MAX_BET_WIN, input.currency)}`,
-      );
-    }
+    
     await this.bankrollRepository.insert(
       {
         userId: input.userId,
