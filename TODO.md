@@ -1,11 +1,16 @@
-# EVCore — Phase 3 Plan d'exécution ML
+# EVCore — Plan d'exécution : Architecture des canaux de stratégie
 
-> Référence : [ROADMAP.md](ROADMAP.md) · [docs/phase3-ml-correction-layer.md](docs/phase3-ml-correction-layer.md) · [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md)
+> Référence : [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md) · [ROADMAP.md](ROADMAP.md)
+> Plan ML archivé : [docs/phase3-ml-todo.md](docs/phase3-ml-todo.md)
 >
-> **Principe directeur** : le ML ne remplace pas le moteur Poisson — il apprend où il se trompe et corrige les probabilités avant la décision. NestJS reste l'autorité finale.
+> **Principe directeur** : un canal = une **stratégie de sélection**, pas un marché.
+> Un socle probabiliste commun, plusieurs stratégies indépendantes qui l'interprètent.
+> Le backend reste l'autorité — l'invariant `selection.market ∈ channel.allowedMarkets`
+> est vérifié à la persistance, jamais côté client.
 >
-> **Premier chantier identifié** : `EV / ONE_X_TWO` — edge affiché moyen +19.57%, ROI réel -54.86% sur 22 picks. Biais structurel confirmé.
-> **Référence saine à ne pas toucher** : `SV / OVER_UNDER` — hit rate 73.6%, ROI +5.17%.
+> **Méthode** : bascule unique et propre (pas de double écriture ni de coexistence
+> durable de vocabulaire), legacy supprimé **uniquement après gate de parité vert**.
+> Aucun nouveau canal n'est activé sans backtest séparé par ligue/marché/saison.
 
 ---
 
@@ -18,187 +23,99 @@
 
 ---
 
-## Étape 0 — Commit des travaux Codex en attente ✅
+## Étape 0 — Cadrage & gel du design
 
-- [x] Commit `packages/db/scripts/analyze-edge.ts`
-- [x] Commit `docs/phase3-ml-correction-layer.md` + `docs/phase3-go-watch-no-go.md`
-- [x] Commit `ROADMAP.md` (liens vers les docs Phase 3 ajoutés)
-
----
-
-## Étape 1 — Préconditions DB ✅
-
-- [x] **PgBouncer** `v1.25.1-p0` dans Docker Compose (dev + prod) — `PGBOUNCER_URL` pour le runtime, `DATABASE_URL` direct pour les migrations
-- [-] **Partitionnement `OddsSnapshot`** — différé : 421k lignes, indexes existants suffisants ; à reconsidérer à 1M+
-- [x] **Index `ModelRun.analyzedAt`** — ajouté pour les scans temporels du dataset ML
-- [x] **Table `ml_model_version`** — migration `20260604174057_phase3_ml_model_version`
-- [x] **Politique de rétention `ModelRun`** — documentée dans le schéma Prisma (commentaire)
+- [ ] Valider le schéma Prisma cible `ChannelDecision` / `ChannelSelection` (doc §4.3)
+- [ ] Figer l'enum `StrategyChannel` **v1 = canaux réels uniquement** : `EV`, `SV`,
+      `DOMINANT`, `BB`, `NUL` (+ `GOALS` si prêt). Ne **pas** figer les canaux
+      spéculatifs (`UNDERDOG`, `CONSENSUS`, `AVOID`…) — `ADD VALUE` plus tard, par canal
+- [ ] Acter le grain `ModelRun` = une exécution immuable, `Fixture → ModelRun` 1-à-N (doc §8.1)
+- [ ] Geler le mapping legacy → cible : `CONF → DOMINANT`, `DRAW → NUL`, `BTTS → BB`,
+      `isSafeValue=true → SV`, `ModelRun.decision → ChannelDecision(EV)`
 
 ---
 
-## Étape 2 — Accumulation de données ✅
+## Étape 1 — Contrat & registre de stratégies (backend, derrière les tables cibles)
 
-- [x] Backfill historique : 1 455 bets backfill + 806 prod = **2 261 bets total**
-- [x] Extraction étendue aux prédictions settlées (`CONF`, `DRAW`, `BTTS`) : **17 370 lignes ML**, **8 742 avec Pinnacle**
-- [x] Volume suffisant pour XGBoost sur `ALL` et les gros canaux `CONF`, `DRAW`, `BTTS`
-- [ ] Re-générer le rapport `edge-vs-Pinnacle` toutes les 2 semaines (cron ou endpoint dédié)
-
----
-
-## Étape 3 — Infra Python Worker ✅
-
-- [x] Service `ml-worker` dans `docker-compose.yml` (build local, DATABASE_URL + PGBOUNCER_URL + Redis)
-- [x] `apps/ml-worker/` : Dockerfile, requirements.txt, scaffold asyncio
-- [x] Queue BullMQ `ML_TRAINING` dans `BULLMQ_QUEUES`, job `{ segment, triggeredBy }`
-- [x] `MlModule` NestJS : MlController / MlService / MlRepository
-  - `POST /ml/train`, `GET /ml/models`, `GET /ml/models/active`, `POST /ml/models/:id/activate`
-- [x] `POST /ml/backfill` + `MlBackfillWorker` — backfill historique par saison
-- [x] Page admin `/dashboard/ml` — backfill, entraînement, gestion versions
-- [x] `AdminGuard` dédié — suppression de `assertAdmin` dupliqué dans 4 controllers
-- [x] Test de communication : backfill terminé avec succès (1 455 bets générés)
+- [ ] `StrategyContext`, `StrategyDecision`, interface `ChannelStrategy` + `allowedMarkets` (doc §5)
+- [ ] Extraire les règles actuelles dans des stratégies dédiées : `EV`, `SV`,
+      `DOMINANT` (ex-`CONF`), `BB`, `NUL` — une stratégie par fichier
+- [ ] Orchestrateur betting engine : `strategies.map(evaluate)` → `saveRunDecisions`,
+      phase 1 (primaires) puis phase 2 (méta) explicites
+- [ ] Conserver les calculs probabilistes actuels **à l'identique** (Poisson, lambdas, probas)
+- [ ] Tests unitaires par stratégie : **sélection ET rejet** + invariant `allowedMarkets`
+      (une sélection hors périmètre fait échouer le run, pas d'écriture)
 
 ---
 
-## Étape 4 — Feature Engineering + Dataset Pipeline ✅
+## Étape 2 — Schéma cible (migration Prisma)
 
-- [x] `src/data/extract.py` — jointure `ModelRun × Bet/Prediction × Fixture × OddsSnapshot(Pinnacle)`
-- [x] Feature matrix v1 : `prob_estimated`, `deterministic_score`, `ev`, `p_poisson_*`, `p_pinnacle`, `delta_p`, `recent_form`, `xg`, `performance_dom_ext`, `volatilite_ligue`, `odds_segment`, `league_tier`, `canal`, `market`, `pick`
-- [x] Target : `outcome_correct` (`Bet.status WON/LOST` ou `Prediction.correct true/false`)
-- [x] Split temporel `temporal_split()` — 80/20 par ordre chronologique (pas aléatoire)
-- [x] Filtre par segment (`canal:market`) + `ALL`
-- [x] Dataset actuel : 17 370 lignes settlées, 8 742 avec cotes Pinnacle exploitables
-- [x] Validation minimum : split LogReg `ALL` OK — train 3322W/2797L, test 1448W/1175L
-- [x] Segments lançables : `EV:ONE_X_TWO`, `EV:OVER_UNDER`, `EV:BTTS`, `CONF:ONE_X_TWO`, `DRAW:ONE_X_TWO`, `BTTS:BTTS`
-- [-] `SV:OVER_UNDER` retiré du training v1 — référence saine et split Pinnacle exploitable insuffisant après mapping par cote cible
+- [ ] Enums `StrategyChannel`, `ChannelDecisionStatus`
+- [ ] Tables `channel_decision`, `channel_selection` (`@@unique([modelRunId, channel])`,
+      `@@unique([channelDecisionId, rank])`, index)
+- [ ] `Bet.channelSelectionId` (FK nullable)
+- [ ] Valeurs `Decimal` partout (probas/cotes/EV/score) — jamais `number` natif
 
 ---
 
-## Étape 5 — Modèle v1 : Correction Layer ✅
+## Étape 3 — Backfill (script idempotent + transactionnel)
 
-- [x] `src/models/correction.py` — logistic regression + XGBoost (auto-select ≥200 samples Pinnacle), split temporel 70/30, métriques (Brier, CalErr, ROI simulé)
-- [x] Guard classe balance minimum (20 samples par classe par split)
-- [x] `src/models/persist.py` — joblib → `/app/models/{uuid}.pkl`, INSERT `ml_model_version`
-- [x] Volume Docker `ml_models` (dev + prod) — modèles persistés entre restarts
-- [x] `jobs/train.py` câblé end-to-end : extract → train → persist → retour métriques
-- [x] **Premier entraînement LogReg terminé** sur `ALL` bets-only (757 samples Pinnacle, avant extension Prediction)
-  - Version DB : `1087eb88-510f-48d8-91c6-9147bc234403`
-  - Test split : 228 samples, Brier `0.2418`, Calibration Error `0.0912`, ROI test-set `+20.42%`
-  - Baseline même test split : Brier Poisson/prob actuelle `0.2423` → gain LogReg ≈ `0.2%` seulement (insuffisant pour shadow activation)
-- [x] Lancer entraînement XGBoost (`algorithm: auto`) par segment prioritaire : `CONF:ONE_X_TWO` (4 772), `DRAW:ONE_X_TWO` (1 561), `BTTS:BTTS` (1 185), `ALL` (8 742)
-- [x] Fix structurel XGBoost : `CalibratedClassifierCV(isotonic)` + `n_estimators=150` + `min_child_weight=5` + suppression `scale_pos_weight` — Brier DRAW -9.1%, BTTS -5.8% vs LogReg
-- [x] Rapport comparatif : XGBoost calibré ≥ LogReg sur DRAW/BTTS/CONF, ex æquo sur ALL
+- [ ] `EV` : `Bet(source=MODEL, isSafeValue=false)` → `ChannelDecision(EV, SELECTED)` + sélection ;
+      sinon `NO_BET` → `ChannelDecision(EV, REJECTED, reasonCode=BACKFILL)`
+- [ ] `SV` : `Bet(isSafeValue=true)` → `ChannelDecision(SV, SELECTED)` + sélection
+- [ ] `DOMINANT` / `NUL` / `BB` depuis `Prediction` (mapping §0) → `SELECTED` + sélection
+      (`result` dérivé de `correct`)
+- [ ] Relier chaque `Bet` matérialisé à sa `ChannelSelection` (`channelSelectionId`)
+- [ ] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel`
+- [ ] Re-exécutable sans doublon (clés `@@unique`) — pas d'invention de rejets historiques
+- [ ] Tests d'idempotence + réconciliation
 
 ---
 
-## Étape 6 — Intégration BettingEngine (Shadow Mode) ✅
+## Étape 4 — Vérification (gate AVANT tout DROP)
 
-> Ne jamais activer directement en prod. Shadow d'abord — les paris ne changent pas mais les corrections sont loggées.
-
-- [x] `MlInferenceService` + `MlInferenceModule` — HTTP client vers le serveur Python (timeout 500ms, fallback gracieux)
-- [x] Shadow mode câblé dans `BettingEngineService.analyzeFixture()` — appel inference, log `shadow_ml_corrected_p` + `shadow_ml_edge_delta` dans `ModelRun.features`
-- [x] Feature flag `FEATURE_FLAGS.SCORING.ML_CORRECTION = false` — activation manuelle uniquement
-- [x] `MlInferenceModule` importé dans `BettingEngineModule`, mock dans tous les tests
-- [~] **Critères de validation shadow** (minimum avant activation prod) :
-  - ≥50 picks résolus en shadow — **en cours** (activer `ML_CORRECTION_ENABLED=true` en prod)
-  - Brier Score corrigé ≥5% mieux que baseline sur la fenêtre shadow
-  - Calibration Error corrigée ≤ baseline
-  - ROI simulé corrigé ≥ ROI baseline sur la même fenêtre
+- [ ] Réconciliation comptage : `ChannelSelection SELECTED` == `Bet MODEL` + `Prediction` migrées
+- [ ] Parité par fixture + somme des résultats settlés
+- [ ] Test de parité ancien/nouveau rapport sur la même période (gate de migration)
+- [ ] Échec ⇒ transaction non committée, aucun legacy supprimé, état précédent intact
 
 ---
 
-## Étape 7 — Activation et pipeline de ré-entraînement ✅
+## Étape 5 — Bascule des consommateurs (même release)
 
-- [x] `POST /ml/models/:id/activate` — bascule `isActive`, notifie par email
-- [x] `POST /ml/models/:id/rollback` — réactive la version précédente (`rollbackOfId`), notifie
-- [x] `MlTrainingEventsListener` (QueueEventsHost) — auto-switch si Brier ≥5% mieux + cooldown 7 jours
-- [x] `MlSchedulerWorker` + queue `ML_SCHEDULER` — cron lundi 03:00 UTC, déclenche re-train si ≥50 bets settled
-- [x] Notification email `sendMlModelActivatedAlert()` sur activation + rollback
-- [x] `ML_MODEL_ACTIVATED` dans `NotificationType` (migration `20260610150025`)
-
----
-
-## Étape 7bis — Tests ml-worker (suite audit 2026-06-11) ✅
-
-> L'audit du 11 juin a corrigé deux bugs (`_roi_simulated` ignorait le modèle,
-> registre d'inférence figé jusqu'au restart) — aucun test n'existait pour les attraper.
-> 49 tests, exécutés dans l'image ml-worker avec le working-tree monté :
-> `docker run --rm -v "$(pwd)/apps/ml-worker:/app" -w /app evcore-ml-worker:latest \`
-> `  sh -c "pip install -q -r requirements-dev.txt && python -m pytest"`
-
-- [x] Setup pytest dans `apps/ml-worker` (`requirements-dev.txt`, `pyproject.toml`, `tests/`)
-- [x] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables, dépend du modèle), `_resolve_algorithm`, `_assert_class_balance`
-- [x] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe), `_pinnacle_prob_for_pick` (les 2 côtés), `_target_odds`, `_build_row`
-- [x] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, noop avant load, réutilise l'URL stockée, fallback segment → ALL
-- [x] Test `server.py` : `/infer` + `POST /reload` resynchronise les segments actifs
-- [x] Job CI (GitHub Actions) — job `ml-worker` parallèle (setup-python 3.12 + cache pip + pytest)
+- [ ] Engine écrit **uniquement** `ChannelDecision` / `ChannelSelection` (plus de `Prediction`/`isSafeValue`)
+- [ ] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière
+      (anti-double-comptage : une sélection liée à un `Bet` réglée une seule fois côté analytique)
+- [ ] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
+      `reasonCode` ; filtres par stratégie / marché / phase
+- [ ] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
+      tokens couleur remappés ; vue run **multi-canal** (plus de `BET`/`NO_BET`) ;
+      suppression de la reconstruction `isSafeValue` / `Prediction` côté client
+- [ ] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`)
 
 ---
 
-## Étape 7ter — Observation shadow + décision de promotion (LA SUITE)
+## Étape 6 — Suppression du legacy (migration finale, après gate vert)
 
-> Le ML tourne en **shadow mode** (étape 6) : il calcule ses corrections et les
-> logge, sans influencer les décisions. Avant l'étape 8, valider que la
-> correction bat réellement le Poisson baseline, segment par segment.
-> Aucune ligne de code moteur ici tant que la décision n'est pas prise — c'est
-> une phase de mesure.
-
-> ⚠️ **BLOQUANT identifié le 2026-06-11** : les 6 modèles ont été activés le 10/06 à 22:40,
-> mais **aucun ModelRun n'a été généré depuis** → `shadow_ml_corrected_p` est `null` partout,
-> 0 bet post-activation settlé. Le Decision Board est donc vide (tout INSUFFICIENT) et le
-> restera tant que (a) le moteur ne refait pas de passes de scoring après activation et
-> (b) ces bets ne settlent pas. **Première action concrète ci-dessous.**
-
-- [ ] **(bloquant)** Confirmer que l'inférence shadow se déclenche à la prochaine passe du moteur (`shadow_ml_corrected_p` non-null sur les nouveaux ModelRun) — sinon investiguer le câblage shadow (ml-worker joignable ? modèles chargés ?)
-- [ ] Suivre ROI/Brier **corrigé (shadow)** vs **baseline** par segment via le Decision Board (`/dashboard/reports`) — l'instrument est en place
-- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil de l'accumulation (le board la calcule, report manuel ici pour l'historique)
-- [ ] Décider **par segment** : promouvoir la correction hors shadow (elle influence le pick) uniquement si Brier amélioré ET ROI ≥ baseline sur la fenêtre
-- [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
-- [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
-
-### Decision Board — page admin `/dashboard/reports` (support de l'étape 7ter)
-
-> Lecture seule v1 : la page informe et recommande GO/WATCH/NO-GO par segment,
-> la promotion hors shadow reste une action backend délibérée (v2).
-> Données : `ModelRun.features.shadow_ml_corrected_p` (persisté par pick pour les
-> canaux EV) comparé à la baseline, sur les bets settlés. Canaux prédiction
-> (CONF/DRAW/BTTS) : méta-métriques `ml_model_version` uniquement (pas de shadow/pick).
-
-- [x] Backend `GET /reports/ml-promotion?window=30d` (AdminGuard) — comparaison Brier/ROI baseline vs corrigé par segment + verdict déterministe
-- [x] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (modèle actif), état vide/INSUFFICIENT géré + lien nav admin
-- [x] Sélecteur de fenêtre 7j/30j/90j/depuis activation
-- [ ] Drill-down enrichi (v1.1) : courbe calibration corrigée vs baseline, picks de la fenêtre, stabilité sur sous-fenêtres
-- [ ] (v2) Bouton « Promouvoir hors shadow » — décision loggée + cooldown + flag par segment lu par le moteur
-      _(la validation du pipeline shadow est le bloquant n°1 de l'étape 7ter ci-dessus)_
+- [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
+- [ ] `ALTER TABLE bet DROP COLUMN isSafeValue`
+- [ ] Retirer `ModelRun.decision`
+- [ ] Rollback testé : transaction non committée + migration `down` Prisma
 
 ---
 
-## Étape 8 — Drawdown dynamique (après ML stable en prod)
+## Étape 7 — Nouveaux canaux (phasé — backtest AVANT activation)
 
-> N'activer qu'une fois le ML en prod depuis ≥30 jours stables (voir étape 7ter).
+> Checklist par canal (doc §11) : hypothèse → `allowedMarkets` → critères `SELECTED` /
+> codes de rejet → seuils par ligue → implémentation → tests → **backtest séparé** →
+> shadow/observation → activation par segment validé → settlement + métriques → API/front.
 
-- [ ] `BettingEngineService` calcule le drawdown courant (ROI glissant 30 derniers bets)
-- [ ] Fraction Kelly dynamique :
-  - Drawdown 0–8% : Kelly normal (config `KELLY_FRACTION`)
-  - Drawdown 8–12% : Kelly × 0.75
-  - Drawdown 12–15% : Kelly × 0.50
-  - Drawdown >15% : Kelly × 0.25 (suspension automatique existante inchangée)
-- [ ] Reprise automatique au palier normal : drawdown revient sous 5% sur 20 bets consécutifs
-- [ ] Log dans `ModelRun.features` : `kelly_fraction_applied`, `current_drawdown_pct`
-
----
-
-## Matrice GO / WATCH / NO-GO (v1 — mise à jour au fil des rapports)
-
-| Segment                  | Statut         | Action                                                         |
-| ------------------------ | -------------- | -------------------------------------------------------------- |
-| `SV / OVER_UNDER`        | **GO**         | Référence — ne pas corriger, servir de baseline de comparaison |
-| `SV / OVER_UNDER_HT`     | **GO**         | Référence — même logique                                       |
-| `CONF / ONE_X_TWO`       | **WATCH → v1** | 4 772 samples Pinnacle — lancer LogReg puis XGBoost            |
-| `DRAW / ONE_X_TWO`       | **WATCH → v1** | 1 561 samples Pinnacle — lancer LogReg puis XGBoost            |
-| `BTTS / BTTS`            | **WATCH → v1** | 1 185 samples Pinnacle — lancer LogReg puis XGBoost            |
-| `EV / ONE_X_TWO`         | **WATCH → v1** | 585 samples Pinnacle — lancer LogReg segmenté                  |
-| `EV / OVER_UNDER_HT`     | **WATCH**      | ROI +3.97% — légèrement positif, surveiller avant de corriger  |
-| `EV / OVER_UNDER`        | **WATCH → v1** | 147 samples Pinnacle exploitables — lançable mais fragile      |
-| `EV / BTTS`              | **WATCH → v1** | 206 samples Pinnacle — lançable                                |
-| `EV / FIRST_HALF_WINNER` | **NO-GO v1**   | ROI -25.61% — hors périmètre                                   |
-| `HALF_TIME_FULL_TIME`    | **NO-GO v1**   | Hors périmètre v1                                              |
+- [ ] `BB` côté `NO` : calibration **séparée par côté** (seuil, `minSampleN`, backtest distincts),
+      démarrage en observation, marché contraint à `BTTS` (doc §6.1 / §15.10)
+- [ ] `GOALS` (`OVER_UNDER`) — les probabilités existent déjà, à prioriser
+- [ ] `CONSENSUS` (méta) — exploite les décisions normalisées, mesurer l'indépendance des stratégies
+- [ ] `AVOID` (méta) — décision négative explicite, bloque la publication sans effacer les autres canaux
+- [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2
+- [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
+- [ ] `FIRST_HALF` — dataset mi-temps validé (calibration séparée)
+- [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
