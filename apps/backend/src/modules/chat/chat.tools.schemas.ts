@@ -130,6 +130,12 @@ export const GetEdgeAnalysisArgsSchema = z.object({
 
 export const GetEngineHealthArgsSchema = z.object({});
 
+// ── Groupe F — Contexte d'évaluation EVA ─────────────────────────────────────
+
+export const GetPicksWithEvaluationArgsSchema = z.object({
+  date: isoDate.optional(),
+});
+
 // ── Groupe E — Données personnelles ─────────────────────────────────────────
 
 export const GetMyStatsArgsSchema = z.object({
@@ -154,6 +160,7 @@ export const CHAT_TOOL_SCHEMAS = {
   getMLMetrics: GetMLMetricsArgsSchema,
   getEdgeAnalysis: GetEdgeAnalysisArgsSchema,
   getEngineHealth: GetEngineHealthArgsSchema,
+  getPicksWithEvaluation: GetPicksWithEvaluationArgsSchema,
   getMyStats: GetMyStatsArgsSchema,
 } as const;
 
@@ -487,6 +494,24 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
       description:
         'Return engine readiness: last ETL sync timestamps, fixtures missing odds today, and active market suspensions.',
       parameters: objectSchema({}, []),
+    },
+  },
+  // ── Groupe F ─────────────────────────────────────────────────────────────
+  {
+    type: 'function',
+    function: {
+      name: 'getPicksWithEvaluation',
+      description:
+        'Return the full analyst evaluation context for all fixtures on a date: accepted picks, rejected picks with rejection reasons, shadow signals, lambdas, and data quality flags. Use this tool — not getUpcomingPicks — when the user asks what to bet today, which matches to pick, or what the engine recommends. Enables EVA to prioritise, contextualise, and explain picks instead of listing them.',
+      parameters: objectSchema(
+        {
+          date: {
+            type: 'string',
+            description: 'YYYY-MM-DD (default: today)',
+          },
+        },
+        [],
+      ),
     },
   },
   // ── Groupe E ─────────────────────────────────────────────────────────────

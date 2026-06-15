@@ -107,6 +107,8 @@ export class ChatToolsService {
         return this.getEdgeAnalysis(input.args);
       case 'getEngineHealth':
         return this.getEngineHealth();
+      case 'getPicksWithEvaluation':
+        return this.getPicksWithEvaluation(input.args);
       case 'getMyStats':
         return this.getMyStats(input.args, input.context);
     }
@@ -320,6 +322,18 @@ export class ChatToolsService {
       to: input.to,
       segments,
     };
+  }
+
+  // ── Groupe F ─────────────────────────────────────────────────────────────
+
+  private async getPicksWithEvaluation(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getPicksWithEvaluation.parse(args);
+    const date = input.date ?? formatDateUtc(new Date());
+    return this.readRepo.getPicksWithEvaluation({
+      date,
+      limit: CHAT_LIMITS.maxEvaFixtures,
+      maxPicksPerFixture: CHAT_LIMITS.maxEvaPicksPerFixture,
+    });
   }
 
   // ── Groupe D ─────────────────────────────────────────────────────────────

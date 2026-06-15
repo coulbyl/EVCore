@@ -8,6 +8,7 @@ import {
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { CacheService } from '@common/redis/cache.service';
+import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
 import {
   probError,
   round,
@@ -922,6 +923,107 @@ export class ChatReadRepository {
     }));
   }
 
+  // ── Group F — EVA evaluation context ─────────────────────────────────────
+
+  async getPicksWithEvaluation(input: {
+    date: string;
+    limit: number;
+    maxPicksPerFixture: number;
+  }): Promise<PicksWithEvaluationResult> {
+    const key = rkey('picksWithEvaluation', input);
+    const ttl = CHAT_CACHE_TTL.picksWithEvaluation;
+    return this.cached(key, ttl, {
+      fn: () => this._getPicksWithEvaluation(input),
+      tags: [CHAT_CACHE_TAGS.settlement, CHAT_CACHE_TAGS.engineHealth],
+    });
+  }
+
+  private async _getPicksWithEvaluation(input: {
+    date: string;
+    limit: number;
+    maxPicksPerFixture: number;
+  }): Promise<PicksWithEvaluationResult> {
+    const start = new Date(`${input.date}T00:00:00.000Z`);
+    const end = new Date(`${input.date}T23:59:59.999Z`);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: start, lte: end },
+        status: {
+          in: [
+            FixtureStatus.SCHEDULED,
+            FixtureStatus.IN_PROGRESS,
+            FixtureStatus.FINISHED,
+          ],
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+        season: { select: { competition: { select: { code: true } } } },
+        modelRuns: {
+          where: { isBackfill: false },
+          orderBy: { analyzedAt: 'desc' },
+          take: 1,
+          select: {
+            decision: true,
+            features: true,
+            bets: {
+              where: { source: BetSource.MODEL, userId: null },
+              select: {
+                market: true,
+                pick: true,
+                isSafeValue: true,
+              },
+            },
+          },
+        },
+        predictions: {
+          select: {
+            channel: true,
+            market: true,
+            pick: true,
+            probability: true,
+          },
+        },
+      },
+    });
+
+    const withRun = fixtures.filter((f) => f.modelRuns.length > 0);
+    const noModelRunCount = fixtures.length - withRun.length;
+
+    const all = withRun.map((f) =>
+      buildFixtureEvaContext(f, input.maxPicksPerFixture),
+    );
+
+    // NO_EVALUATION fixtures carry no analytical signal for EVA — count them but
+    // exclude from the context to stay within LLM token budget.
+    const noEvaluationCount = all.filter(
+      (c) => c.analysisState === 'NO_EVALUATION',
+    ).length;
+    const analytical = all.filter((c) => c.analysisState !== 'NO_EVALUATION');
+
+    analytical.sort((a, b) => {
+      const stateOrder = (s: string) => (s === 'BET' ? 0 : 1);
+      return (
+        stateOrder(a.analysisState) - stateOrder(b.analysisState) ||
+        new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()
+      );
+    });
+
+    return {
+      date: input.date,
+      asOf: new Date().toISOString(),
+      noModelRunCount,
+      noEvaluationCount,
+      fixtures: analytical.slice(0, input.limit),
+    };
+  }
+
   async findChannelLeagueHitRate(input: {
     canal: string;
     competitionCode: string;
@@ -965,6 +1067,204 @@ export class ChatReadRepository {
       .reduce((sum, row) => sum + row._count, 0);
     return won / total;
   }
+}
+
+// ── EVA evaluation context types & builder ───────────────────────────────────
+
+type EvaPickEntry = {
+  channel: string;
+  market: string;
+  pick: string;
+  probability: number | null;
+  odds: number | null;
+  ev: number | null;
+  decision: 'BET' | 'NO_BET';
+  rejectionReason: string | null;
+};
+
+type EvaFixtureContext = {
+  fixtureId: string;
+  match: string;
+  kickoff: string;
+  competition: string;
+  status: string;
+  analysisState: 'BET' | 'NO_BET' | 'NO_EVALUATION';
+  analysisContext: {
+    predictionSource: string | null;
+    fallbackReason: string | null;
+    dataQuality?: {
+      marketOdds: boolean | null;
+      pinnacle: boolean | null;
+      eloHome: boolean | null;
+      eloAway: boolean | null;
+    };
+  };
+  lambda: { home: number; away: number; total: number } | null;
+  shadowSignals?: {
+    lineMovement: number | null;
+    h2h: number | null;
+    congestion: number | null;
+  };
+  evaluatedPicks: EvaPickEntry[];
+};
+
+export type PicksWithEvaluationResult = {
+  date: string;
+  asOf: string;
+  noModelRunCount: number;
+  noEvaluationCount: number;
+  fixtures: EvaFixtureContext[];
+};
+
+type FixtureWithRun = {
+  id: string;
+  scheduledAt: Date;
+  status: string;
+  homeTeam: { name: string };
+  awayTeam: { name: string };
+  season: { competition: { code: string } };
+  modelRuns: Array<{
+    decision: string;
+    features: unknown;
+    bets: Array<{ market: string; pick: string; isSafeValue: boolean }>;
+  }>;
+  predictions: Array<{
+    channel: string;
+    market: string;
+    pick: string;
+    probability: Prisma.Decimal;
+  }>;
+};
+
+function buildFixtureEvaContext(
+  fixture: FixtureWithRun,
+  maxPicks: number,
+): EvaFixtureContext {
+  const run = fixture.modelRuns[0];
+  const ctx = extractEvaContextFromFeatures(run.features);
+
+  const betKeys = new Set(
+    run.bets.filter((b) => !b.isSafeValue).map((b) => `${b.market}|${b.pick}`),
+  );
+  const svKeys = new Set(
+    run.bets.filter((b) => b.isSafeValue).map((b) => `${b.market}|${b.pick}`),
+  );
+
+  const picks: EvaPickEntry[] = [];
+  const seen = new Set<string>();
+
+  const addPick = (entry: EvaPickEntry) => {
+    const key = `${entry.channel}|${entry.market}|${entry.pick}|${entry.probability}|${entry.odds}|${entry.ev}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    picks.push(entry);
+  };
+
+  for (const ep of ctx.evaluatedPicks) {
+    const pairKey = `${ep.market}|${ep.pick}`;
+    const isSv = svKeys.has(pairKey);
+    const isEv = betKeys.has(pairKey);
+    const channel = isSv ? 'SV' : isEv ? 'EV' : 'EV';
+    // decision=BET only when an actual bet record exists — a 'viable' status in
+    // features means the pick passed EV screening, but it may not have been
+    // selected as the final bet (e.g. superseded by a better pick, market issue).
+    const isAccepted = isSv || isEv;
+    const decision = isAccepted ? 'BET' : 'NO_BET';
+    const rejectionReason =
+      ep.rejectionReason ??
+      (ep.status === 'viable' && !isAccepted ? 'not_selected' : null);
+    addPick({
+      channel,
+      market: ep.market,
+      pick: ep.pick,
+      probability: round(ep.probability),
+      odds: round(ep.odds),
+      ev: round(ep.ev),
+      decision,
+      rejectionReason,
+    });
+  }
+
+  for (const pred of fixture.predictions) {
+    const channel = predChannelLabel(pred.channel);
+    addPick({
+      channel,
+      market: pred.market,
+      pick: pred.pick,
+      probability: round(pred.probability),
+      odds: null,
+      ev: null,
+      decision: 'BET',
+      rejectionReason: null,
+    });
+  }
+
+  // analysisState is derived from the full picks array across ALL channels
+  // (EV/SV from features + CONF/BB/NUL from predictions), not from
+  // run.decision which only reflects the EV/SV bet decision.
+  const hasAcceptedPick = picks.some((p) => p.decision === 'BET');
+  const hasEvaluatedEvPicks = ctx.evaluatedPicks.length > 0;
+  const analysisState: EvaFixtureContext['analysisState'] = hasAcceptedPick
+    ? 'BET'
+    : hasEvaluatedEvPicks
+      ? 'NO_BET'
+      : 'NO_EVALUATION';
+
+  const lh = ctx.lambdaHome;
+  const la = ctx.lambdaAway;
+
+  // Trim picks to budget: keep all BET picks, then fill with top rejected
+  // picks sorted by EV descending (closest to threshold = most informative).
+  const betPicks = picks.filter((p) => p.decision === 'BET');
+  const rejectedPicks = picks
+    .filter((p) => p.decision === 'NO_BET')
+    .sort((a, b) => (b.ev ?? -Infinity) - (a.ev ?? -Infinity));
+  const trimmedPicks = [
+    ...betPicks,
+    ...rejectedPicks.slice(0, Math.max(0, maxPicks - betPicks.length)),
+  ];
+
+  // Omit sub-objects that are entirely null — saves tokens for POISSON_MAIN runs.
+  const dataQuality = {
+    marketOdds: ctx.hasMarketOdds,
+    pinnacle: ctx.hasPinnacleOdds,
+    eloHome: ctx.hasHomeElo,
+    eloAway: ctx.hasAwayElo,
+  };
+  const hasDataQuality = Object.values(dataQuality).some((v) => v !== null);
+
+  const shadowSignals = {
+    lineMovement: ctx.shadowLineMovement,
+    h2h: ctx.shadowH2h,
+    congestion: ctx.shadowCongestion,
+  };
+  const hasShadowSignals = Object.values(shadowSignals).some((v) => v !== null);
+
+  return {
+    fixtureId: fixture.id,
+    match: `${fixture.homeTeam.name} - ${fixture.awayTeam.name}`,
+    kickoff: fixture.scheduledAt.toISOString(),
+    competition: fixture.season.competition.code,
+    status: fixture.status,
+    analysisState,
+    analysisContext: {
+      predictionSource: ctx.predictionSource,
+      fallbackReason: ctx.fallbackReason,
+      ...(hasDataQuality ? { dataQuality } : {}),
+    },
+    lambda:
+      lh !== null && la !== null
+        ? { home: round(lh), away: round(la), total: round(lh + la) }
+        : null,
+    ...(hasShadowSignals ? { shadowSignals } : {}),
+    evaluatedPicks: trimmedPicks,
+  };
+}
+
+function predChannelLabel(channel: string): string {
+  if (channel === PredictionChannel.BTTS) return 'BB';
+  if (channel === PredictionChannel.DRAW) return 'NUL';
+  return 'CONF';
 }
 
 function hitRateFromRows(

@@ -1,6 +1,117 @@
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
 import type { PredictionSource } from '@modules/betting-engine/betting-engine.types';
 
+// ── EVA evaluation context ────────────────────────────────────────────────────
+
+export type EvaPickFromFeature = {
+  market: string;
+  pick: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  status: 'viable' | 'rejected';
+  rejectionReason: string | null;
+};
+
+export type EvaFeaturesContext = {
+  predictionSource: PredictionSource | null;
+  fallbackReason: string | null;
+  lambdaHome: number | null;
+  lambdaAway: number | null;
+  hasMarketOdds: boolean | null;
+  hasPinnacleOdds: boolean | null;
+  hasHomeElo: boolean | null;
+  hasAwayElo: boolean | null;
+  shadowLineMovement: number | null;
+  shadowH2h: number | null;
+  shadowCongestion: number | null;
+  evaluatedPicks: EvaPickFromFeature[];
+};
+
+export function extractEvaContextFromFeatures(
+  features: unknown,
+): EvaFeaturesContext {
+  if (!features || typeof features !== 'object') {
+    return emptyEvaContext();
+  }
+
+  const f = features as Record<string, unknown>;
+
+  return {
+    predictionSource: readPredictionSource(f),
+    fallbackReason: readString(f, 'fallbackReason'),
+    lambdaHome: readFiniteNumber(f, 'lambdaHome'),
+    lambdaAway: readFiniteNumber(f, 'lambdaAway'),
+    hasMarketOdds: readBooleanOrNull(f, 'hasMarketOdds'),
+    hasPinnacleOdds: readBooleanOrNull(f, 'hasPinnacleOdds'),
+    hasHomeElo: readBooleanOrNull(f, 'hasHomeElo'),
+    hasAwayElo: readBooleanOrNull(f, 'hasAwayElo'),
+    shadowLineMovement: readFiniteNumber(f, 'shadow_lineMovement'),
+    shadowH2h: readFiniteNumber(f, 'shadow_h2h'),
+    shadowCongestion: readFiniteNumber(f, 'shadow_congestion'),
+    evaluatedPicks: readEvaPicksFromFeature(f),
+  };
+}
+
+function emptyEvaContext(): EvaFeaturesContext {
+  return {
+    predictionSource: null,
+    fallbackReason: null,
+    lambdaHome: null,
+    lambdaAway: null,
+    hasMarketOdds: null,
+    hasPinnacleOdds: null,
+    hasHomeElo: null,
+    hasAwayElo: null,
+    shadowLineMovement: null,
+    shadowH2h: null,
+    shadowCongestion: null,
+    evaluatedPicks: [],
+  };
+}
+
+function readBooleanOrNull(
+  value: Record<string, unknown>,
+  key: string,
+): boolean | null {
+  const raw = value[key];
+  if (typeof raw !== 'boolean') return null;
+  return raw;
+}
+
+function readEvaPicksFromFeature(
+  features: Record<string, unknown>,
+): EvaPickFromFeature[] {
+  const raw = features['evaluatedPicks'];
+  if (!Array.isArray(raw)) return [];
+
+  return raw.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== 'object') return [];
+    const record = candidate as Record<string, unknown>;
+
+    const market = readString(record, 'market');
+    const pick = readString(record, 'pick');
+    const probability = readFiniteNumber(record, 'probability');
+    const odds = readFiniteNumber(record, 'odds');
+    const ev = readFiniteNumber(record, 'ev');
+    const status = readString(record, 'status');
+
+    if (
+      market === null ||
+      pick === null ||
+      probability === null ||
+      odds === null ||
+      ev === null ||
+      (status !== 'viable' && status !== 'rejected')
+    ) {
+      return [];
+    }
+
+    const rejectionReason = readString(record, 'rejectionReason');
+    return [{ market, pick, probability, odds, ev, status, rejectionReason }];
+  });
+}
+
 export type PickSnapshot = {
   market: string;
   pick: string;

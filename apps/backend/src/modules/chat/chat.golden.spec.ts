@@ -103,6 +103,88 @@ const USER_STATS_STUB = {
   roi: 0.08,
 };
 
+const PICKS_EVAL_STUB = {
+  date: '2026-06-12',
+  asOf: NOW.toISOString(),
+  noModelRunCount: 2,
+  fixtures: [
+    {
+      fixtureId: 'fix-1',
+      match: 'Brazil - Morocco',
+      kickoff: '2026-06-12T21:00:00.000Z',
+      competition: 'WC',
+      status: 'SCHEDULED',
+      analysisState: 'BET',
+      analysisContext: {
+        predictionSource: 'POISSON_MAIN',
+        fallbackReason: null,
+        dataQuality: {
+          marketOdds: null,
+          pinnacle: null,
+          eloHome: null,
+          eloAway: null,
+        },
+      },
+      lambda: { home: 1.755, away: 1.666, total: 3.421 },
+      shadowSignals: { lineMovement: 0.02, h2h: 0.6, congestion: null },
+      evaluatedPicks: [
+        {
+          channel: 'EV',
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: 0.71,
+          odds: 1.54,
+          ev: 0.094,
+          decision: 'BET',
+          rejectionReason: null,
+        },
+        {
+          channel: 'EV',
+          market: 'OVER_UNDER',
+          pick: 'OVER_3_5',
+          probability: 0.446,
+          odds: 3.54,
+          ev: 0.58,
+          decision: 'NO_BET',
+          rejectionReason: 'market_suspended',
+        },
+      ],
+    },
+    {
+      fixtureId: 'fix-2',
+      match: 'Mexico - Cameroun',
+      kickoff: '2026-06-12T18:00:00.000Z',
+      competition: 'WC',
+      status: 'SCHEDULED',
+      analysisState: 'NO_BET',
+      analysisContext: {
+        predictionSource: 'POISSON_MAIN',
+        fallbackReason: null,
+        dataQuality: {
+          marketOdds: null,
+          pinnacle: null,
+          eloHome: null,
+          eloAway: null,
+        },
+      },
+      lambda: { home: 0.93, away: 1.22, total: 2.15 },
+      shadowSignals: { lineMovement: null, h2h: null, congestion: null },
+      evaluatedPicks: [
+        {
+          channel: 'EV',
+          market: 'ONE_X_TWO',
+          pick: 'DRAW',
+          probability: 0.248,
+          odds: 3.6,
+          ev: -0.107,
+          decision: 'NO_BET',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    },
+  ],
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeRepo(
@@ -119,6 +201,7 @@ function makeRepo(
     searchFixtures: vi.fn().mockResolvedValue([]),
     getFixtureExplanation: vi.fn().mockResolvedValue(null),
     findChannelLeagueHitRate: vi.fn().mockResolvedValue(null),
+    getPicksWithEvaluation: vi.fn().mockResolvedValue(PICKS_EVAL_STUB),
     ...overrides,
   } as unknown as ChatReadRepository;
 }
@@ -492,6 +575,88 @@ describe('ChatToolsService — golden set', () => {
     });
   });
 
+  // ── getPicksWithEvaluation ─────────────────────────────────────────────────
+
+  describe('getPicksWithEvaluation', () => {
+    it('appelle le repo avec la date fournie', async () => {
+      const getPicksWithEvaluation = vi.fn().mockResolvedValue(PICKS_EVAL_STUB);
+      const service = makeService(makeRepo({ getPicksWithEvaluation }));
+
+      await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+
+      expect(getPicksWithEvaluation).toHaveBeenCalledWith(
+        expect.objectContaining({ date: '2026-06-12' }),
+      );
+    });
+
+    it('appelle le repo avec la date du jour par défaut quand date absente', async () => {
+      const getPicksWithEvaluation = vi.fn().mockResolvedValue(PICKS_EVAL_STUB);
+      const service = makeService(makeRepo({ getPicksWithEvaluation }));
+
+      await exec(service, 'getPicksWithEvaluation', { args: {} });
+
+      expect(getPicksWithEvaluation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        }),
+      );
+    });
+
+    it('la réponse contient date, asOf, noModelRunCount et fixtures', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+
+      expect(data.date).toBe('2026-06-12');
+      expect(data.asOf).toBeDefined();
+      expect(typeof data.noModelRunCount).toBe('number');
+      expect(Array.isArray(data.fixtures)).toBe(true);
+    });
+
+    it('chaque fixture expose analysisState, lambda et evaluatedPicks', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+      const [first] = data.fixtures;
+
+      expect(first).toBeDefined();
+      expect(['BET', 'NO_BET', 'NO_EVALUATION']).toContain(first.analysisState);
+      expect(first.lambda).toBeDefined();
+      expect(Array.isArray(first.evaluatedPicks)).toBe(true);
+    });
+
+    it('chaque evaluatedPick expose decision et channel', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+      const picks = data.fixtures.flatMap((f) => f.evaluatedPicks);
+
+      for (const pick of picks) {
+        expect(['BET', 'NO_BET']).toContain(pick.decision);
+        expect(typeof pick.channel).toBe('string');
+        expect(typeof pick.market).toBe('string');
+        expect(typeof pick.pick).toBe('string');
+      }
+    });
+
+    it('date invalide → erreur de validation', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: 'not-a-date' },
+      });
+      const data = JSON.parse(result.content) as { error?: string };
+      expect(data.error).toBeDefined();
+    });
+  });
+
   // ── Structure de la réponse ────────────────────────────────────────────────
 
   describe('structure des réponses', () => {
@@ -509,6 +674,7 @@ describe('ChatToolsService — golden set', () => {
         ['getSegmentPerformance', { from: '2026-05-01', to: '2026-06-12' }],
         ['getEdgeAnalysis', { from: '2026-05-01', to: '2026-06-12' }],
         ['getEngineHealth', {}],
+        ['getPicksWithEvaluation', { date: '2026-06-12' }],
         ['getMyStats', { from: '2026-05-01', to: '2026-06-12' }],
       ] as const;
 
