@@ -421,6 +421,22 @@ Docs de cadrage Phase 3:
 
 ---
 
+## Au-delà — Extension multi-sport (différé, non planifié)
+
+> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md)
+>
+> Le cœur probabiliste (Poisson) est spécifique au football ; « ajouter un sport »
+> = écrire un **second socle** derrière la même colonne stratégie/décision, pas une
+> config. Préconditions strictes avant tout code : (1) edge football prouvé — ML
+> promu hors shadow + biais top-picks corrigé ; (2) abstraction `sport` dans le
+> schéma (Market, ChannelSelection, socle pluggable). Tennis = 1ᵉʳ candidat. Tant
+> que les préconditions ne sont pas remplies : **recherche uniquement, pas de code.**
+
+- [-] Tennis (2ᵉ socle) — différé jusqu'aux préconditions ci-dessus
+- [-] Basketball / Esports — réévalués seulement après validation du pattern multi-sport
+
+---
+
 ## GitHub Milestones
 
 | Milestone         | Contenu                                   | Due date     |
