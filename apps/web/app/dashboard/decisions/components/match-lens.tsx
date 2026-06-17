@@ -14,9 +14,15 @@ export function groupByFixture(
     if (group === undefined) {
       group = {
         fixtureId: decision.fixtureId,
-        fixture: decision.fixture,
+        homeTeam: decision.homeTeam,
+        awayTeam: decision.awayTeam,
+        homeLogo: decision.homeLogo,
+        awayLogo: decision.awayLogo,
         competition: decision.competition,
+        country: decision.country,
         kickoff: decision.kickoff,
+        score: decision.score,
+        htScore: decision.htScore,
         byChannel: new Map<StrategyChannel, ChannelDecisionDto>(),
         selectedCount: 0,
       };

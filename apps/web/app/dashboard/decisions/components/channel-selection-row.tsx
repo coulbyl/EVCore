@@ -1,11 +1,16 @@
 import { Card } from "@evcore/ui";
-import { translateCompetition } from "@/lib/competition-i18n";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
 import type { ChannelDecisionDto } from "@/domains/channel-decision/types/channel-decision";
-import { formatEv, formatOdds, formatPct } from "./channel-constants";
+import {
+  CHANNEL_COLOR,
+  formatEv,
+  formatOdds,
+  formatPct,
+} from "./channel-constants";
+import { FixtureHeading } from "./fixture-heading";
 import { ResultBadge } from "./result-badge";
 
 // One SELECTED decision rendered fixture-first (used by the "Par canal" lens).
@@ -21,21 +26,29 @@ export function ChannelSelectionRow({
   if (selection === undefined) return null;
 
   return (
-    <Card className="flex items-center justify-between gap-3 p-3">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{decision.fixture}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {decision.competition
-            ? translateCompetition(decision.competition, locale)
-            : "—"}
-          <span className="ml-1.5 tabular-nums">{decision.kickoff}</span>
-        </p>
-      </div>
+    <Card className="relative flex-row items-center justify-between gap-3 overflow-hidden border-border/70 p-3 pl-4 transition-colors hover:border-border">
+      <div
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ backgroundColor: CHANNEL_COLOR[decision.channel] }}
+        aria-hidden
+      />
+      <FixtureHeading
+        homeTeam={decision.homeTeam}
+        awayTeam={decision.awayTeam}
+        homeLogo={decision.homeLogo}
+        awayLogo={decision.awayLogo}
+        competition={decision.competition}
+        country={decision.country}
+        locale={locale}
+        kickoff={decision.kickoff}
+        score={decision.score}
+        htScore={decision.htScore}
+      />
 
       <div className="flex shrink-0 items-center gap-3 text-xs">
         <span className="font-medium">
           {formatPickForDisplay(selection.pick, selection.market)}
-          <span className="ml-1.5 text-muted-foreground">
+          <span className="ml-1.5 font-normal text-muted-foreground">
             {formatMarketForDisplay(selection.market, loc)}
           </span>
         </span>

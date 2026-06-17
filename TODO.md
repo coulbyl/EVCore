@@ -155,16 +155,19 @@ côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
       `reasonCode` ; filtres par stratégie / marché / phase — **fait** : `GET /channel-decisions`
       (`ChannelDecisionController` + `ChannelDecisionListQueryDto`), `ChannelDecisionService.list`
       → `findByDate` (jointure `modelRun→fixture→competition`), filtres date/competition/channel/market/status,
-      REJECTED + reasonCode exposés. **Phase** (`J_MINUS|MATCH_DAY|LIVE`) reportée (ModelRun ne la porte pas encore)
+      REJECTED + reasonCode exposés. DTO enrichi présentation : `homeTeam`/`awayTeam`/`homeLogo`/`awayLogo`,
+      `country`, `score`/`htScore`. **Phase** (`J_MINUS|MATCH_DAY|LIVE`) reportée (ModelRun ne la porte pas encore)
 - [~] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
       tokens couleur remappés ; vue run **multi-canal** (plus de `BET`/`NO_BET`) ;
       suppression de la reconstruction `isSafeValue` / `Prediction` côté client
       — **fait** : nouvelle page `/dashboard/decisions` (route parallèle) consommant
       `GET /channel-decisions` via `domains/channel-decision`, deux lentilles
       *Par match* (grille multi-canal + rejets/reasonCode en tooltip) / *Par canal* (tabs),
-      remap `StrategyChannel → --canal-*`, entrée sidebar + i18n nav. **Reste** :
-      retirer `/dashboard/investment` + `/dashboard/picks` après parité (redirect),
-      i18n complet des libellés canaux/codes de rejet, extras présentation (logos/score)
+      remap `StrategyChannel → --canal-*`, cartes alignées sur `pick-card`
+      (`FixtureHeading` : logos + pays·ligue + score, bordures `border-border/70` + accent),
+      liens **Investissement/Sélections commentés** dans la nav (sidebar + mobile) — pages
+      conservées, accessibles par URL. **Reste** : retirer `/dashboard/investment` + `/dashboard/picks`
+      après parité (redirect), i18n complet des libellés canaux/codes de rejet
 - [ ] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`)
 
 ---

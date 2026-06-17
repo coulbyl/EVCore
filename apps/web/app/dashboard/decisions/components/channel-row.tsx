@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -9,6 +9,7 @@ import type {
 } from "@/domains/channel-decision/types/channel-decision";
 import {
   CHANNEL_COLOR,
+  CHANNEL_COLOR_SOFT,
   CHANNEL_LABEL,
   STATUS_LABEL,
   formatEv,
@@ -20,13 +21,14 @@ import { ResultBadge } from "./result-badge";
 
 function ChannelChip({ channel }: { channel: StrategyChannel }) {
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
-      <span
-        className="size-2 rounded-full"
-        style={{ backgroundColor: CHANNEL_COLOR[channel] }}
-        aria-hidden
-      />
-      <span className="text-xs font-semibold">{CHANNEL_LABEL[channel]}</span>
+    <span
+      className="inline-flex w-16 shrink-0 items-center justify-center rounded-md px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"
+      style={{
+        color: CHANNEL_COLOR[channel],
+        backgroundColor: CHANNEL_COLOR_SOFT[channel],
+      }}
+    >
+      {CHANNEL_LABEL[channel]}
     </span>
   );
 }
@@ -41,72 +43,68 @@ export function ChannelRow({
   locale: string;
 }) {
   const loc = locale === "en" ? "en" : "fr";
-
-  // Channel didn't run for this fixture.
-  if (decision === undefined) {
-    return (
-      <div className="flex items-center justify-between gap-3 py-1.5">
-        <ChannelChip channel={channel} />
-        <span className="text-xs text-muted-foreground">—</span>
-      </div>
-    );
-  }
-
   const selection =
-    decision.status === "SELECTED" ? decision.selections[0] : undefined;
+    decision?.status === "SELECTED" ? decision.selections[0] : undefined;
 
-  if (selection) {
-    return (
-      <div className="flex items-center justify-between gap-3 py-1.5">
-        <ChannelChip channel={channel} />
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-3 text-xs">
-          <span className="min-w-0 truncate font-medium">
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <ChannelChip channel={channel} />
+
+      {selection ? (
+        <>
+          <span className="min-w-0 flex-1 truncate text-xs font-medium">
             {formatPickForDisplay(selection.pick, selection.market)}
-            <span className="ml-1.5 text-muted-foreground">
+            <span className="ml-1.5 font-normal text-muted-foreground">
               {formatMarketForDisplay(selection.market, loc)}
             </span>
           </span>
-          <span className="tabular-nums text-muted-foreground">
-            {formatPct(selection.probability)}
-          </span>
-          {formatOdds(selection.odds) !== null && (
-            <span className="tabular-nums font-semibold">
-              {formatOdds(selection.odds)}
+          <div className="flex shrink-0 items-center gap-2.5 text-xs tabular-nums">
+            <span className="text-muted-foreground">
+              {formatPct(selection.probability)}
             </span>
-          )}
-          {formatEv(selection.ev) !== null && (
-            <span className="tabular-nums text-muted-foreground">
-              {formatEv(selection.ev)}
-            </span>
-          )}
-          <ResultBadge result={selection.result} />
-        </div>
-      </div>
-    );
+            {formatOdds(selection.odds) !== null && (
+              <span className="font-semibold">
+                {formatOdds(selection.odds)}
+              </span>
+            )}
+            {formatEv(selection.ev) !== null && (
+              <span className="text-muted-foreground">
+                {formatEv(selection.ev)}
+              </span>
+            )}
+            <ResultBadge result={selection.result} />
+          </div>
+        </>
+      ) : (
+        <RejectedLabel decision={decision} />
+      )}
+    </div>
+  );
+}
+
+function RejectedLabel({
+  decision,
+}: {
+  decision: ChannelDecisionDto | undefined;
+}) {
+  // Channel didn't run at all for this fixture.
+  if (decision === undefined) {
+    return <span className="flex-1 text-xs text-muted-foreground/60">—</span>;
   }
 
-  // Non-selected outcome (REJECTED / DISABLED / MISSING_ODDS / …).
   const reason = reasonLabel(decision.reasonCode);
-  const detail = reason ?? STATUS_LABEL[decision.status];
+  const status = STATUS_LABEL[decision.status];
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 opacity-60">
-      <ChannelChip channel={channel} />
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className={cn(
-              "min-w-0 truncate text-xs text-muted-foreground",
-              "cursor-default",
-            )}
-          >
-            {STATUS_LABEL[decision.status]}
-            {reason ? ` · ${reason}` : ""}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="left" className="text-xs">
-          {detail}
-        </TooltipContent>
-      </Tooltip>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground/70">
+          {status}
+          {reason ? ` · ${reason}` : ""}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {reason ?? status}
+      </TooltipContent>
+    </Tooltip>
   );
 }

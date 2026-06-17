@@ -31,8 +31,14 @@ export type ChannelDecisionDto = {
   fixtureId: string;
   modelRunId: string;
   competition: string | null;
-  fixture: string;
+  country: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   kickoff: string;
+  score: string | null;
+  htScore: string | null;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;

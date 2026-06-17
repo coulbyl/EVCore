@@ -1,18 +1,24 @@
 import { Card, Separator } from "@evcore/ui";
-import { translateCompetition } from "@/lib/competition-i18n";
 import type {
   ChannelDecisionDto,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import { CHANNEL_ORDER } from "./channel-constants";
 import { ChannelRow } from "./channel-row";
+import { FixtureHeading } from "./fixture-heading";
 
 // All channel decisions for one fixture, keyed by channel.
 export type MatchGroup = {
   fixtureId: string;
-  fixture: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   competition: string | null;
+  country: string | null;
   kickoff: string;
+  score: string | null;
+  htScore: string | null;
   byChannel: Map<StrategyChannel, ChannelDecisionDto>;
   selectedCount: number;
 };
@@ -25,24 +31,32 @@ export function MatchCard({
   locale: string;
 }) {
   return (
-    <Card className="flex flex-col gap-2 p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{group.fixture}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {group.competition
-              ? translateCompetition(group.competition, locale)
-              : "—"}
-          </p>
+    <Card className="gap-3 border-border/70 p-4 transition-colors hover:border-border">
+      <div className="flex items-start justify-between gap-3">
+        <FixtureHeading
+          homeTeam={group.homeTeam}
+          awayTeam={group.awayTeam}
+          homeLogo={group.homeLogo}
+          awayLogo={group.awayLogo}
+          competition={group.competition}
+          country={group.country}
+          locale={locale}
+          score={group.score}
+          htScore={group.htScore}
+        />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {group.kickoff}
+          </span>
+          <span className="text-[0.65rem] font-medium tabular-nums text-muted-foreground">
+            {group.selectedCount}/{CHANNEL_ORDER.length}
+          </span>
         </div>
-        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-          {group.kickoff}
-        </span>
       </div>
 
       <Separator />
 
-      <div className="flex flex-col divide-y divide-border/60">
+      <div className="flex flex-col divide-y divide-border/50">
         {CHANNEL_ORDER.map((channel) => (
           <ChannelRow
             key={channel}
