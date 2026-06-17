@@ -71,7 +71,8 @@ export type ContextSignals = {
 
 export type StrategyContext = {
   fixture: FixtureSnapshot;
-  competitionCode: string;
+  // null when the fixture has no competition code — getters fall back to defaults.
+  competitionCode: string | null;
   sport: SportType;
   deterministicScore: Decimal;
   probabilities: MatchProbabilities;

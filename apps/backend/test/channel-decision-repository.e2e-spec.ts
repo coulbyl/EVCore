@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import Decimal from 'decimal.js';
 import {
+  BetStatus,
   ChannelDecisionStatus,
   Decision,
   FixtureStatus,
@@ -38,7 +39,20 @@ describe('ChannelDecisionRepository (e2e)', () => {
 
   it('persists decisions and selections for a run', async () => {
     const runId = await createModelRun();
-    await repo.saveRunDecisions(runId, sampleDecisions());
+    const persisted = await repo.saveRunDecisions(runId, sampleDecisions());
+
+    // The returned selection ids must match the rows actually written.
+    const evPersisted = persisted.find((d) => d.channel === StrategyChannel.EV);
+    const evSelectionId = evPersisted?.selections[0]?.id;
+    expect(evSelectionId).toBeDefined();
+    const evSelectionRow = await prisma.channelSelection.findUnique({
+      where: { id: evSelectionId },
+    });
+    expect(evSelectionRow?.pick).toBe('HOME');
+    // A rejected channel carries no selection ids.
+    expect(
+      persisted.find((d) => d.channel === StrategyChannel.SAFE)?.selections,
+    ).toHaveLength(0);
 
     const decisions = await prisma.channelDecision.findMany({
       where: { modelRunId: runId },
@@ -76,6 +90,74 @@ describe('ChannelDecisionRepository (e2e)', () => {
     expect(
       await prisma.channelDecision.count({ where: { modelRunId: runId } }),
     ).toBe(0);
+  });
+
+  it('finds a fixture selections and applies analytical results', async () => {
+    const runId = await createModelRun();
+    await repo.saveRunDecisions(runId, sampleDecisions());
+    const run = await prisma.modelRun.findUnique({
+      where: { id: runId },
+      select: { fixtureId: true },
+    });
+    const fixtureId = run!.fixtureId;
+
+    // Only the two SELECTED channels (EV, DRAW) carry selections.
+    const unsettled = await repo.findSelectionsForFixture(fixtureId, {
+      onlyUnsettled: true,
+    });
+    expect(unsettled).toHaveLength(2);
+
+    const ev = unsettled.find((s) => s.pick === 'HOME');
+    await repo.applySelectionResults([{ id: ev!.id, result: BetStatus.WON }]);
+
+    const settledRow = await prisma.channelSelection.findUnique({
+      where: { id: ev!.id },
+    });
+    expect(settledRow?.result).toBe(BetStatus.WON);
+    expect(settledRow?.settledAt).not.toBeNull();
+
+    // The settled row is excluded from the next onlyUnsettled pass.
+    const stillUnsettled = await repo.findSelectionsForFixture(fixtureId, {
+      onlyUnsettled: true,
+    });
+    expect(stillUnsettled).toHaveLength(1);
+  });
+
+  it('lists decisions by date with channel and market filters', async () => {
+    const runId = await createModelRun();
+    await repo.saveRunDecisions(runId, sampleDecisions());
+    // Fixtures created by the helper are scheduled on 2026-01-18.
+    const range = {
+      gte: new Date('2026-01-18T00:00:00.000Z'),
+      lte: new Date('2026-01-18T23:59:59.999Z'),
+    };
+
+    const all = await repo.findByDate({ range });
+    expect(all.length).toBeGreaterThanOrEqual(3);
+    const ev = all.find((d) => d.channel === StrategyChannel.EV);
+    expect(ev?.fixtureId).toBeDefined();
+    expect(ev?.homeTeam).toContain('Home');
+    expect(ev?.selections[0]?.pick).toBe('HOME');
+
+    // Channel filter narrows to a single decision.
+    const onlyEv = await repo.findByDate({
+      range,
+      channel: StrategyChannel.EV,
+    });
+    expect(onlyEv.every((d) => d.channel === StrategyChannel.EV)).toBe(true);
+
+    // Market filter keeps only decisions that selected on that market.
+    const onlyBtts = await repo.findByDate({ range, market: Market.BTTS });
+    expect(onlyBtts).toHaveLength(0);
+
+    // A date outside the range returns nothing.
+    const empty = await repo.findByDate({
+      range: {
+        gte: new Date('2026-02-01T00:00:00.000Z'),
+        lte: new Date('2026-02-01T23:59:59.999Z'),
+      },
+    });
+    expect(empty).toHaveLength(0);
   });
 
   function sampleDecisions(): StrategyDecision[] {

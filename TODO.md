@@ -25,31 +25,45 @@
 
 ## ▶ Reprise (prochaine session)
 
-Étapes 1-4 terminées et commitées ; Étape 5 **préparée** (registre + persistance
-`ChannelDecisionRepository.saveRunDecisions` + tests, derrière les tables cibles,
-non branchée sur le flux live).
+Étapes 0-4 terminées et commitées ; Étape 5 **en cours** : l'engine est **branché**
+sur le flux live — `analyzeFixture` et `analyzeFriFixture` construisent un
+`StrategyContext` (`strategy-context.builder.ts`) et persistent les décisions
+multi-canal via `ChannelDecisionService.recordRunDecisions` → `saveRunDecisions`.
+Écriture **additive** : les writes legacy (`Prediction` / `isSafeValue`) restent
+en place pour ne rien casser (décision « engine d'abord, vérifiable »).
 
-**Prochain pas** : brancher l'engine — construire `StrategyContext` depuis le calcul
-existant de `betting-engine.service.ts` et router l'écriture vers `saveRunDecisions`
-(item `[~]` de l'Étape 5). Gros fichier, à faire en release coordonnée avec le retrait
-du legacy (`Prediction` / `isSafeValue`) + DTO API + frontend.
+Les `Bet` matérialisés (EV, SAFE en flux principal ; EV en FRI) sont **reliés** à
+leur `ChannelSelection` (`Bet.channelSelectionId`) via `findChannelSelectionId`
+(match par `pickKey`, `null` si divergence live/backtest connue). `saveRunDecisions`
+retourne désormais les sélections persistées avec leurs IDs.
 
-État : unit 546/546 ✅ · e2e 16/16 (série) ✅ · lint ✅ · typecheck ✅.
+Settlement analytique **fait** : `ChannelSelection.result` écrit au règlement
+(early + final) en mirroir des bets, `Bet.status` reste l'autorité financière.
+
+API read **faite** : `GET /channel-decisions` expose les décisions normalisées
+(channel/status/selections, REJECTED + reasonCode, filtres date/competition/channel/market/status).
+
+**Prochain pas** : frontend — un seul type aligné sur `StrategyChannel`, mapping
+canal → clé i18n + tokens couleur, vue run **multi-canal** consommant
+`GET /channel-decisions`, suppression de la reconstruction `isSafeValue`/`Prediction`
+côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
+
+État : unit 570/570 ✅ · e2e 18/18 (série) ✅ · lint ✅ · typecheck ✅.
 
 ---
 
 ## Étape 0 — Cadrage & gel du design
 
-- [ ] Valider le schéma Prisma cible `ChannelDecision` / `ChannelSelection` (doc §4.3)
-- [ ] Figer l'enum `StrategyChannel` **v1 = canaux réels uniquement** : `EV`, `SAFE`,
+- [x] Valider le schéma Prisma cible `ChannelDecision` / `ChannelSelection` (doc §4.3)
+- [x] Figer l'enum `StrategyChannel` **v1 = canaux réels uniquement** : `EV`, `SAFE`,
       `DOMINANT`, `BTTS`, `DRAW` (+ `GOALS` si prêt). Ne **pas** figer les canaux
       spéculatifs (`UNDERDOG`, `CONSENSUS`, `AVOID`…) — `ADD VALUE` plus tard, par canal
-- [ ] Acter le grain `ModelRun` = une exécution immuable, `Fixture → ModelRun` 1-à-N (doc §8.1)
-- [ ] Geler le mapping legacy → cible : `PredictionChannel.CONF → DOMINANT`,
+- [x] Acter le grain `ModelRun` = une exécution immuable, `Fixture → ModelRun` 1-à-N (doc §8.1)
+- [x] Geler le mapping legacy → cible : `PredictionChannel.CONF → DOMINANT`,
       `PredictionChannel.DRAW → DRAW`, `PredictionChannel.BTTS → BTTS`,
       `CouponLegCanal.NUL → DRAW`, `CouponLegCanal.BB → BTTS`, `CouponLegCanal.SV → SAFE`,
       `isSafeValue=true → SAFE`, `ModelRun.decision → ChannelDecision(EV)`
-- [ ] **[multi-sport]** Figer `enum SportType { FOOTBALL }` (extensible : `TENNIS`,
+- [x] **[multi-sport]** Figer `enum SportType { FOOTBALL }` (extensible : `TENNIS`,
       `BASKETBALL` — ajoutés quand le second socle existe). Décision : `sport` vit sur
       `Competition`, pas sur `Fixture` ni `ChannelSelection` (dérivable via la relation)
 
@@ -129,12 +143,22 @@ du legacy (`Prediction` / `isSafeValue`) + DTO API + frontend.
 
 - [ ] **[différé d'Étape 1]** Ajouter `phase: J_MINUS | MATCH_DAY | LIVE` dans `StrategyContext` + sur `ModelRun` (doc §5/§8.1) — fonde `NOT_APPLICABLE` et les canaux `LIVE_VALUE`/`FIRST_HALF`.
       Reporté ici car les 5 canaux v1 ne l'exploitent pas encore
-- [~] Engine écrit **uniquement** `ChannelDecision` / `ChannelSelection` (plus de `Prediction`/`isSafeValue`)
-      — persistance + registre prêts ; reste à construire `StrategyContext` depuis l'analyse et router l'écriture
-- [ ] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière
-      (anti-double-comptage : une sélection liée à un `Bet` réglée une seule fois côté analytique)
-- [ ] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
-      `reasonCode` ; filtres par stratégie / marché / phase
+- [~] Engine écrit `ChannelDecision` / `ChannelSelection` — **branché** : `StrategyContext`
+      construit depuis l'analyse (`strategy-context.builder.ts`) + routé via `ChannelDecisionService`
+      (`betting-engine.module` enregistre repo + service, injection `@Optional()`).
+      `Bet.channelSelectionId` relié (EV/SAFE flux principal, EV en FRI) via `findChannelSelectionId`.
+      Écriture **additive** pour l'instant ; reste à retirer les writes legacy
+      (`Prediction`/`isSafeValue`) une fois les consommateurs basculés
+- [x] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière —
+      résolveurs purs `channel-selection-settlement.ts` (mirroir exact des bets : `resolve*BetStatus`),
+      `ChannelDecisionService.settleFixtureSelections({ mode: early|final })`, câblé dans
+      `settleEarlyBets` (early, irrévocable) et `settleOpenBets` (final, re-règle tout — VAR).
+      Idempotent → pas de double-comptage financier
+- [~] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
+      `reasonCode` ; filtres par stratégie / marché / phase — **fait** : `GET /channel-decisions`
+      (`ChannelDecisionController` + `ChannelDecisionListQueryDto`), `ChannelDecisionService.list`
+      → `findByDate` (jointure `modelRun→fixture→competition`), filtres date/competition/channel/market/status,
+      REJECTED + reasonCode exposés. **Phase** (`J_MINUS|MATCH_DAY|LIVE`) reportée (ModelRun ne la porte pas encore)
 - [ ] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
       tokens couleur remappés ; vue run **multi-canal** (plus de `BET`/`NO_BET`) ;
       suppression de la reconstruction `isSafeValue` / `Prediction` côté client

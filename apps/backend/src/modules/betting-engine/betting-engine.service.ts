@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AdjustmentStatus,
@@ -98,6 +98,14 @@ import {
   MlInferenceService,
   type MlShadowFeatures,
 } from '@modules/ml/ml.inference.service';
+import { ChannelDecisionService } from './channel-decision.service';
+import type { PersistedChannelDecision } from './channel-decision.repository';
+import { buildStrategyContext } from './strategies/strategy-context.builder';
+import {
+  STRATEGY_CHANNEL,
+  type ContextSignals,
+  type StrategyChannel,
+} from './channel-strategy.types';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
@@ -153,6 +161,10 @@ export class BettingEngineService {
     private readonly mlInference: MlInferenceService,
     private readonly bankroll?: BankrollService,
     friModelService?: FriModelService,
+    // Injected by Nest in production (BettingEngineModule provides it); omitted
+    // in unit/e2e test modules that don't, where channel persistence is a no-op.
+    @Optional()
+    private readonly channelDecisionService?: ChannelDecisionService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
@@ -398,6 +410,18 @@ export class BettingEngineService {
       fixture.awayScore,
     );
 
+    // Analytical mirror — early-settle channel selections (no bankroll effect).
+    await this.channelDecisionService?.settleFixtureSelections({
+      fixtureId,
+      scores: {
+        homeScore: fixture.homeScore,
+        awayScore: fixture.awayScore,
+        homeHtScore: fixture.homeHtScore,
+        awayHtScore: fixture.awayHtScore,
+      },
+      mode: 'early',
+    });
+
     return { settled };
   }
 
@@ -453,6 +477,21 @@ export class BettingEngineService {
       fixture.homeScore,
       fixture.awayScore,
     );
+
+    // Analytical mirror — final-settle every channel selection (even when no Bet
+    // was materialised, e.g. DOMINANT/DRAW/BTTS). Runs before the no-bets return.
+    if (fixture.homeScore !== null && fixture.awayScore !== null) {
+      await this.channelDecisionService?.settleFixtureSelections({
+        fixtureId,
+        scores: {
+          homeScore: fixture.homeScore,
+          awayScore: fixture.awayScore,
+          homeHtScore: fixture.homeHtScore,
+          awayHtScore: fixture.awayHtScore,
+        },
+        mode: 'final',
+      });
+    }
 
     if (bets.length === 0) return { settled: 0 };
 
@@ -814,6 +853,9 @@ export class BettingEngineService {
       lambda.home,
       lambda.away,
     );
+    const lambdaTotal =
+      distHome.reduce((sum, p, k) => sum + k * p, 0) +
+      distAway.reduce((sum, p, k) => sum + k * p, 0);
 
     const [latestOdds, activeSuspensions] = await Promise.all([
       this.findLatestOddsSnapshot(fixtureId, fixture.scheduledAt),
@@ -1003,6 +1045,35 @@ export class BettingEngineService {
       select: { id: true },
     });
 
+    // Per-channel decisions (doc §5) — analytical record alongside the legacy
+    // Bet/Prediction writes. Runs every strategy over the same computed context.
+    const channelSignals: ContextSignals = {
+      suspendedMarkets,
+      lambdaFloorHit,
+      lambdaTotal,
+      lineMovement: shadowLineMovement,
+      h2h: shadowH2h,
+      congestion: shadowCongestion,
+    };
+    const persistedChannelDecisions =
+      (await this.channelDecisionService?.recordRunDecisions(
+        modelRun.id,
+        buildStrategyContext({
+          fixture: {
+            id: fixture.id,
+            homeTeamId: fixture.homeTeamId,
+            awayTeamId: fixture.awayTeamId,
+            scheduledAt: fixture.scheduledAt,
+          },
+          competitionCode,
+          deterministicScore,
+          probabilities,
+          evaluatedPicks,
+          odds: latestOdds,
+          signals: channelSignals,
+        }),
+      )) ?? [];
+
     let betCandidate: BetCandidate | null = null;
     let evPickKey: string | null = null;
 
@@ -1021,6 +1092,17 @@ export class BettingEngineService {
         comboPick: valueBet.comboPick ?? null,
       });
       evPickKey = pickKey;
+
+      const channelSelectionId = findChannelSelectionId(
+        persistedChannelDecisions,
+        STRATEGY_CHANNEL.EV,
+        {
+          market: valueBet.market,
+          pick: valueBet.pick,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+        },
+      );
 
       betCandidate = {
         fixtureId,
@@ -1046,6 +1128,7 @@ export class BettingEngineService {
           where: { id: existingBet.id },
           data: {
             modelRunId: modelRun.id,
+            channelSelectionId,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1059,6 +1142,7 @@ export class BettingEngineService {
           data: {
             modelRunId: modelRun.id,
             fixtureId,
+            channelSelectionId,
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
@@ -1077,14 +1161,11 @@ export class BettingEngineService {
     // Safe value pass — only when the model score threshold is met (same guard as EV).
     // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
     if (deterministicDecision === Decision.BET && latestOdds !== null) {
-      const svLambdaTotal =
-        distHome.reduce((sum, p, k) => sum + k * p, 0) +
-        distAway.reduce((sum, p, k) => sum + k * p, 0);
       const svPick = this.selectSafeValuePick(
         evaluatedPicks,
         suspendedMarkets,
         evPickKey,
-        svLambdaTotal,
+        lambdaTotal,
         competitionCode,
       );
 
@@ -1096,6 +1177,17 @@ export class BettingEngineService {
           comboPick: null,
         })}`;
 
+        const channelSelectionId = findChannelSelectionId(
+          persistedChannelDecisions,
+          STRATEGY_CHANNEL.SAFE,
+          {
+            market: svPick.market,
+            pick: svPick.pick,
+            comboMarket: null,
+            comboPick: null,
+          },
+        );
+
         const existingSvBet = await this.prisma.client.bet.findFirst({
           where: { fixtureId, pickKey: svPickKey, userId: null },
           select: { id: true },
@@ -1105,6 +1197,7 @@ export class BettingEngineService {
             where: { id: existingSvBet.id },
             data: {
               modelRunId: modelRun.id,
+              channelSelectionId,
               probEstimated: toPrismaDecimal(svPick.probability, 4),
               oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
               ev: toPrismaDecimal(svPick.ev, 4),
@@ -1119,6 +1212,7 @@ export class BettingEngineService {
             data: {
               modelRunId: modelRun.id,
               fixtureId,
+              channelSelectionId,
               market: svPick.market,
               pick: svPick.pick,
               pickKey: svPickKey,
@@ -1172,6 +1266,8 @@ export class BettingEngineService {
   private async analyzeFriFixture(fixture: {
     id: string;
     scheduledAt: Date;
+    homeTeamId: string;
+    awayTeamId: string;
     season?: { competition?: { code?: string } };
     homeTeam?: { name?: string };
     awayTeam?: { name?: string };
@@ -1337,6 +1433,45 @@ export class BettingEngineService {
       select: { id: true },
     });
 
+    // Per-channel decisions (doc §5). Skipped when no probabilities were
+    // derived (no Elo and no odds) — the strategy context requires them.
+    let persistedChannelDecisions: PersistedChannelDecision[] = [];
+    if (probabilities !== null) {
+      const friLambdaTotal =
+        distHome.reduce((sum, p, k) => sum + k * p, 0) +
+        distAway.reduce((sum, p, k) => sum + k * p, 0);
+      const channelSignals: ContextSignals = {
+        suspendedMarkets,
+        lambdaFloorHit:
+          lambda !== null
+            ? lambda.home <= MIN_LAMBDA + Number.EPSILON ||
+              lambda.away <= MIN_LAMBDA + Number.EPSILON
+            : false,
+        lambdaTotal: friLambdaTotal,
+        lineMovement: null,
+        h2h: null,
+        congestion: null,
+      };
+      persistedChannelDecisions =
+        (await this.channelDecisionService?.recordRunDecisions(
+          modelRun.id,
+          buildStrategyContext({
+            fixture: {
+              id: fixture.id,
+              homeTeamId: fixture.homeTeamId,
+              awayTeamId: fixture.awayTeamId,
+              scheduledAt: fixture.scheduledAt,
+            },
+            competitionCode,
+            deterministicScore,
+            probabilities,
+            evaluatedPicks,
+            odds: marketOdds?.snapshot ?? null,
+            signals: channelSignals,
+          }),
+        )) ?? [];
+    }
+
     let betCandidate: BetCandidate | null = null;
     if (decision === Decision.BET && valueBet !== null) {
       const stakePct = this.kellyEnabled
@@ -1352,6 +1487,17 @@ export class BettingEngineService {
         comboMarket: valueBet.comboMarket ?? null,
         comboPick: valueBet.comboPick ?? null,
       });
+
+      const channelSelectionId = findChannelSelectionId(
+        persistedChannelDecisions,
+        STRATEGY_CHANNEL.EV,
+        {
+          market: valueBet.market,
+          pick: valueBet.pick,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+        },
+      );
 
       betCandidate = {
         fixtureId,
@@ -1377,6 +1523,7 @@ export class BettingEngineService {
           where: { id: existingBet2.id },
           data: {
             modelRunId: modelRun.id,
+            channelSelectionId,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1390,6 +1537,7 @@ export class BettingEngineService {
           data: {
             modelRunId: modelRun.id,
             fixtureId,
+            channelSelectionId,
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
@@ -3119,6 +3267,36 @@ function buildBetPickKey(input: {
     input.comboMarket ?? '-',
     input.comboPick ?? '-',
   ].join('|');
+}
+
+// Resolves the persisted ChannelSelection id whose pick matches a materialised
+// Bet, so Bet.channelSelectionId can point at the exact analytical selection.
+// Returns null when the channel did not select, or the live engine pick diverges
+// from the strategy pick (a known live/backtest edge case — see TODO Étape 5).
+// Exported for unit testing.
+export function findChannelSelectionId(
+  decisions: readonly PersistedChannelDecision[],
+  channel: StrategyChannel,
+  pick: {
+    market: Market;
+    pick: string;
+    comboMarket: Market | null;
+    comboPick: string | null;
+  },
+): string | null {
+  const decision = decisions.find((d) => d.channel === channel);
+  if (!decision) return null;
+  const key = buildBetPickKey(pick);
+  const match = decision.selections.find(
+    (sel) =>
+      buildBetPickKey({
+        market: sel.market,
+        pick: sel.pick,
+        comboMarket: sel.comboMarket ?? null,
+        comboPick: sel.comboPick ?? null,
+      }) === key,
+  );
+  return match?.id ?? null;
 }
 
 function summarizeTeamStats(stats: TeamStatsInput): {
