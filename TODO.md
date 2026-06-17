@@ -25,29 +25,31 @@
 
 ## ▶ Reprise (prochaine session)
 
-Étapes 0-4 terminées et commitées ; Étape 5 **en cours** : l'engine est **branché**
-sur le flux live — `analyzeFixture` et `analyzeFriFixture` construisent un
-`StrategyContext` (`strategy-context.builder.ts`) et persistent les décisions
-multi-canal via `ChannelDecisionService.recordRunDecisions` → `saveRunDecisions`.
-Écriture **additive** : les writes legacy (`Prediction` / `isSafeValue`) restent
-en place pour ne rien casser (décision « engine d'abord, vérifiable »).
+Étapes 0-5 terminées et commitées. La vue `/dashboard/decisions` est la surface
+principale ; `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
+L'engine écrit les `ChannelDecision` / `ChannelSelection`, mais garde encore les
+writes legacy jusqu'à la migration finale.
 
-Les `Bet` matérialisés (EV, SAFE en flux principal ; EV en FRI) sont **reliés** à
-leur `ChannelSelection` (`Bet.channelSelectionId`) via `findChannelSelectionId`
-(match par `pickKey`, `null` si divergence live/backtest connue). `saveRunDecisions`
-retourne désormais les sélections persistées avec leurs IDs.
+**Priorité 1 — couper le legacy (Étape 6)** :
 
-Settlement analytique **fait** : `ChannelSelection.result` écrit au règlement
-(early + final) en mirroir des bets, `Bet.status` reste l'autorité financière.
+- retirer les writes `Prediction` / `Bet.isSafeValue` du flux engine ;
+- convertir `CouponProposalLeg.canal` vers `StrategyChannel` ;
+- supprimer `prediction`, `PredictionChannel`, `CouponLegCanal`,
+  `Bet.isSafeValue`, puis `ModelRun.decision`.
 
-API read **faite** : `GET /channel-decisions` expose les décisions normalisées
-(channel/status/selections, REJECTED + reasonCode, filtres date/competition/channel/market/status).
+**Priorité 2 — rebuild/backfill après cleanup** :
 
-**Prochain pas** : gate de parité legacy↔canaux (Étape 4), puis retrait legacy
-(Étape 6). La vue `/dashboard/decisions` est la surface principale ; les routes
-legacy `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
+- décider explicitement si l'environnement cible est purgé/rebuildé ou si on garde
+  les anciens `ModelRun` ;
+- adapter `ml-backfill` pour recréer les `ModelRun isBackfill=true` + décisions
+  canaux sur l'historique utile ;
+- recâbler une vérification minimale post-rebuild : compte de sélections, résultats
+  settlés, absence de références legacy.
 
-État : unit 570/570 ✅ · e2e 18/18 (série) ✅ · lint ✅ · typecheck ✅.
+**Priorité 3 — nouveaux canaux** : seulement après cleanup + rebuild stables.
+
+État dernier passage : unit ciblés 573/573 ✅ · lint ✅ · typecheck ✅ · e2e
+repository non relancé ici si Docker/Testcontainers indisponible.
 
 ---
 
@@ -101,31 +103,39 @@ legacy `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
 
 ---
 
-## Étape 3 — Backfill (via ETL, pas de script standalone)
+## Étape 3 — Backfill / rebuild historique (après cleanup legacy)
 
 > **Décision** : le backfill historique passe par l'**ETL** (worker `betting-engine-analysis`
 > qui ré-exécute l'engine branché sur une fenêtre de dates → écrit `ChannelDecision` /
 > `ChannelSelection` nativement, + lien `Bet.channelSelectionId`). Les scripts standalone
 > `backfill-channel-decisions.{ts,lib}` et leur e2e ont été **supprimés** (commit de l'Étape 5).
+>
+> **Priorité actuelle** : commencer par le legacy cleanup. Ensuite, utiliser/adaptater
+> `ml-backfill` pour reconstruire les runs utiles plutôt que maintenir deux chemins
+> historiques en parallèle.
 
 - [x] Production native des décisions par l'engine (EV/SAFE + DOMINANT/DRAW/BTTS), lien `Bet`
 - [x] Idempotence garantie par `@@unique([modelRunId, channel])` (un re-run = un nouveau `ModelRun`)
 - [-] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel` — **déplacé en Étape 6** :
   conversion de colonne `CouponProposalLeg.canal`, à faire dans la migration qui drop `CouponLegCanal`
   (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là)
-- [ ] **[ETL]** Brancher / exposer le déclenchement du backfill par fenêtre (ré-analyse historique)
-      côté ETL si besoin d'un rattrapage de masse
+- [ ] **[ETL]** Adapter `ml-backfill` pour le rebuild historique post-cleanup :
+      fixtures terminées utiles → nouveau `ModelRun isBackfill=true` →
+      `ChannelDecision` / `ChannelSelection` → settlement analytique
+- [ ] **[optionnel]** Exposer un backfill par fenêtre seulement si le rebuild par saisons
+      via `ml-backfill` ne suffit pas
 
 ---
 
-## Étape 4 — Vérification (parité avant DROP)
+## Étape 4 — Vérification post-cleanup / post-rebuild
 
 > Les scripts standalone `verify-channel-backfill.{ts,lib}` et leur e2e ont été **supprimés**
 > (le backfill ne passe plus par un script). La parité legacy↔canaux avant le DROP (Étape 6)
 > reste à câbler — via une requête/job ETL plutôt qu'un CLI dédié.
 
-- [ ] **[à recâbler]** Réconciliation comptage + parité des résultats settlés par canal
-      (legacy `Bet`/`Prediction` vs `ChannelSelection`) avant tout DROP — gate read-only via ETL/analytics
+- [ ] **[à recâbler]** Vérification post-rebuild : comptage `ModelRun` /
+      `ChannelDecision` / `ChannelSelection`, résultats settlés par canal,
+      absence de dépendance runtime à `Prediction` / `isSafeValue`
 
 ---
 
