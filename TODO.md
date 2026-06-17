@@ -23,6 +23,21 @@
 
 ---
 
+## ▶ Reprise (prochaine session)
+
+Étapes 1-4 terminées et commitées ; Étape 5 **préparée** (registre + persistance
+`ChannelDecisionRepository.saveRunDecisions` + tests, derrière les tables cibles,
+non branchée sur le flux live).
+
+**Prochain pas** : brancher l'engine — construire `StrategyContext` depuis le calcul
+existant de `betting-engine.service.ts` et router l'écriture vers `saveRunDecisions`
+(item `[~]` de l'Étape 5). Gros fichier, à faire en release coordonnée avec le retrait
+du legacy (`Prediction` / `isSafeValue`) + DTO API + frontend.
+
+État : unit 546/546 ✅ · e2e 16/16 (série) ✅ · lint ✅ · typecheck ✅.
+
+---
+
 ## Étape 0 — Cadrage & gel du design
 
 - [ ] Valider le schéma Prisma cible `ChannelDecision` / `ChannelSelection` (doc §4.3)
