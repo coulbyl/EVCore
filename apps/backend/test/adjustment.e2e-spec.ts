@@ -10,9 +10,18 @@ import {
 } from '@evcore/db';
 import { PrismaModule } from '@/prisma.module';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
+import { H2HService } from '@modules/betting-engine/h2h.service';
+import { CongestionService } from '@modules/betting-engine/congestion.service';
+import { FriModelService } from '@modules/betting-engine/fri-model/fri-model.service';
+import { PredictionService } from '@modules/prediction/prediction.service';
+import { PredictionRepository } from '@modules/prediction/prediction.repository';
+import { MlInferenceService } from '@modules/ml/ml.inference.service';
+import { BankrollService } from '@modules/bankroll/bankroll.service';
+import { BankrollRepository } from '@modules/bankroll/bankroll.repository';
 import { AdjustmentService } from '@modules/adjustment/adjustment.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { NotificationService } from '@modules/notification/notification.service';
+import { MailService } from '@modules/mail/mail.service';
 import { FEATURE_WEIGHTS } from '@modules/betting-engine/ev.constants';
 import { truncateAllTables } from './setup/prisma-test';
 
@@ -27,7 +36,17 @@ describe('Adjustment flow (e2e)', () => {
       imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule],
       providers: [
         BettingEngineService,
+        // BettingEngineService dependencies (all resolve from PrismaModule/ConfigModule)
+        H2HService,
+        CongestionService,
+        FriModelService,
+        PredictionRepository,
+        PredictionService,
+        MlInferenceService,
+        BankrollRepository,
+        BankrollService,
         CalibrationService,
+        MailService,
         NotificationService,
         AdjustmentService,
       ],
@@ -184,7 +203,9 @@ describe('Adjustment flow (e2e)', () => {
 
     const result = await adjustment.settleAndCheck(fixture.id);
 
-    expect(result.settled).toBe(1);
+    // settleOpenBets re-settles ALL bets on the fixture (PENDING + already
+    // settled) against the definitive score — 1 PENDING HOME + 50 LOST DRAW = 51.
+    expect(result.settled).toBe(51);
     expect(result.calibration).not.toBeNull();
     expect(result.proposalId).not.toBeNull();
 
