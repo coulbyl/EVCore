@@ -15,11 +15,11 @@ sélection.
 Les cinq canaux actuels sont :
 
 - `EV` : recherche de valeur attendue positive ;
-- `SV` : recherche d'une sélection plus probable et moins volatile ;
+- `SAFE` : recherche d'une sélection plus probable et moins volatile ;
 - `CONF` : issue directionnelle dominante sur le marché 1X2 (renommé
   `DOMINANT` dans l'enum cible, voir sections 6 et 15) ;
-- `BB` : stratégie spécialisée sur les deux équipes qui marquent ;
-- `NUL` : stratégie spécialisée sur le match nul.
+- `BTTS` : stratégie spécialisée sur les deux équipes qui marquent ;
+- `DRAW` : stratégie spécialisée sur le match nul.
 
 Le moteur calcule notamment :
 
@@ -31,7 +31,7 @@ Le moteur calcule notamment :
 - les signaux contextuels ou shadow.
 
 Chaque canal applique ensuite sa propre politique. Par conséquent, un match
-peut avoir `EV = NO_SELECTION` tout en ayant une sélection `BB`, `NUL` ou
+peut avoir `EV = NO_SELECTION` tout en ayant une sélection `BTTS`, `DRAW` ou
 `CONF` valide.
 
 ## 2. Problème de l'architecture actuelle
@@ -50,8 +50,8 @@ Exemple possible aujourd'hui :
 ```text
 ModelRun.decision = NO_BET
 CONF              = HOME
-BB                = YES
-NUL               = aucune sélection
+BTTS              = YES
+DRAW              = aucune sélection
 ```
 
 Le nom `decision` masque donc la portée réelle de l'information.
@@ -119,10 +119,10 @@ Analyse commune du match
 Probabilités + cotes + contexte
           |
           +--> stratégie EV ----------> sélection éventuelle
-          +--> stratégie SV ----------> sélection éventuelle
+          +--> stratégie SAFE --------> sélection éventuelle
           +--> stratégie DOMINANT --> sélection éventuelle
-          +--> stratégie BB ----------> sélection éventuelle
-          +--> stratégie NUL ---------> sélection éventuelle
+          +--> stratégie BTTS --------> sélection éventuelle
+          +--> stratégie DRAW --------> sélection éventuelle
           +--> stratégie future ------> sélection éventuelle
 ```
 
@@ -134,10 +134,10 @@ distingue deux familles, et chaque canal déclare explicitement à laquelle il
 appartient via ses **marchés autorisés** (`allowedMarkets`).
 
 **Canaux spécialisés marché (market-bound)** — contraints à un marché unique.
-La stratégie *est* le marché : elle ne peut émettre qu'un pick de ce marché.
+La stratégie _est_ le marché : elle ne peut émettre qu'un pick de ce marché.
 
-- `BB` ne produit que des picks `BTTS` ;
-- `NUL` ne produit que `ONE_X_TWO / DRAW` ;
+- `BTTS` ne produit que des picks du marché `BTTS` ;
+- `DRAW` ne produit que `ONE_X_TWO / DRAW` ;
 - `DOMINANT` (ex-`CONF`) ne produit que `ONE_X_TWO` (`HOME`, `DRAW`, `AWAY`) ;
 - `GOALS` ne produit que `OVER_UNDER` ;
 - `FIRST_HALF` ne produit que des marchés de mi-temps ;
@@ -147,14 +147,14 @@ La stratégie *est* le marché : elle ne peut émettre qu'un pick de ce marché.
 est un objectif (valeur, sécurité, désaccord, protection…) qui peut s'exprimer
 sur **n'importe quel marché autorisé** ; le pick dépend du match, pas du canal.
 
-- `EV`, `SV`, `UNDERDOG`, `FAVORITE`, `MARKET_MOVE`, `LIVE_VALUE`, `CONSENSUS`,
+- `EV`, `SAFE`, `UNDERDOG`, `FAVORITE`, `MARKET_MOVE`, `LIVE_VALUE`, `CONSENSUS`,
   `CONTRARIAN`, `AVOID`.
 
 Invariant à faire respecter en persistance et dans le contrat : pour toute
 `ChannelSelection`, `selection.market ∈ channel.allowedMarkets`. Un canal
 spécialisé a un `allowedMarkets` singleton (ou restreint) ; un canal transverse
 a l'ensemble complet des marchés évaluables. C'est cet invariant qui garantit
-qu'un canal `BB` ne pourra jamais émettre autre chose qu'un pick BTTS, alors
+qu'un canal `BTTS` ne pourra jamais émettre autre chose qu'un pick BTTS, alors
 qu'un canal `EV` peut, lui, retenir le meilleur marché du match.
 
 ## 4. Architecture cible
@@ -217,10 +217,10 @@ l'historique par run et autorise plusieurs sélections dans un même canal.
 ```prisma
 enum StrategyChannel {
   EV
-  SV
+  SAFE
   DOMINANT // ex-CONF
-  BB
-  NUL
+  BTTS
+  DRAW
   GOALS
   FIRST_HALF
   DOUBLE_CHANCE
@@ -353,7 +353,7 @@ Les stratégies dépendantes d'autres canaux, comme `CONSENSUS`, doivent être
 exécutées dans une seconde phase explicite.
 
 ```text
-Phase 1 : EV, SV, DOMINANT, BB, NUL, GOALS, UNDERDOG, etc.
+Phase 1 : EV, SAFE, DOMINANT, BTTS, DRAW, GOALS, UNDERDOG, etc.
 Phase 2 : CONSENSUS, CONTRARIAN, AVOID ou autres méta-stratégies.
 ```
 
@@ -362,23 +362,23 @@ Phase 2 : CONSENSUS, CONTRARIAN, AVOID ou autres méta-stratégies.
 Chaque fiche précise désormais la **famille** du canal (spécialisé marché ou
 transverse, voir section 3.1) et ses **marchés autorisés**. Vue d'ensemble :
 
-| Canal           | Famille            | Marchés autorisés                          |
-| --------------- | ------------------ | ------------------------------------------ |
-| `EV`            | transverse         | tous les marchés évalués                   |
-| `SV`            | transverse         | tous les marchés évalués                   |
-| `DOMINANT`      | spécialisé         | `ONE_X_TWO`                                |
-| `BB`            | spécialisé         | `BTTS` (`YES` ou `NO`)                      |
-| `NUL`           | spécialisé         | `ONE_X_TWO` (`DRAW` uniquement)            |
-| `GOALS`         | spécialisé         | `OVER_UNDER`                               |
-| `FIRST_HALF`    | spécialisé         | marchés de mi-temps                        |
-| `DOUBLE_CHANCE` | spécialisé         | `DOUBLE_CHANCE`                            |
-| `UNDERDOG`      | transverse         | tous les marchés évalués                   |
-| `FAVORITE`      | transverse         | tous les marchés évalués                   |
-| `MARKET_MOVE`   | transverse         | tous les marchés évalués                   |
-| `LIVE_VALUE`    | transverse         | tous les marchés évalués (live)            |
-| `CONSENSUS`     | transverse (méta)  | tous les marchés évalués                   |
-| `CONTRARIAN`    | transverse (méta)  | tous les marchés évalués                   |
-| `AVOID`         | transverse (méta)  | aucun pick — décision négative seulement   |
+| Canal           | Famille           | Marchés autorisés                        |
+| --------------- | ----------------- | ---------------------------------------- |
+| `EV`            | transverse        | tous les marchés évalués                 |
+| `SAFE`          | transverse        | tous les marchés évalués                 |
+| `DOMINANT`      | spécialisé        | `ONE_X_TWO`                              |
+| `BTTS`          | spécialisé        | `BTTS` (`YES` ou `NO`)                   |
+| `DRAW`          | spécialisé        | `ONE_X_TWO` (`DRAW` uniquement)          |
+| `GOALS`         | spécialisé        | `OVER_UNDER`                             |
+| `FIRST_HALF`    | spécialisé        | marchés de mi-temps                      |
+| `DOUBLE_CHANCE` | spécialisé        | `DOUBLE_CHANCE`                          |
+| `UNDERDOG`      | transverse        | tous les marchés évalués                 |
+| `FAVORITE`      | transverse        | tous les marchés évalués                 |
+| `MARKET_MOVE`   | transverse        | tous les marchés évalués                 |
+| `LIVE_VALUE`    | transverse        | tous les marchés évalués (live)          |
+| `CONSENSUS`     | transverse (méta) | tous les marchés évalués                 |
+| `CONTRARIAN`    | transverse (méta) | tous les marchés évalués                 |
+| `AVOID`         | transverse (méta) | aucun pick — décision négative seulement |
 
 ### 6.1 Canaux actuels
 
@@ -405,7 +405,7 @@ Décision EV : SELECTED
 Une sélection EV n'est pas nécessairement le résultat le plus probable. Elle
 représente d'abord un écart favorable entre probabilité et cote.
 
-#### SV — forte probabilité, faible risque
+#### SAFE — forte probabilité, faible risque
 
 Famille : transverse — libre de sélectionner n'importe quel marché évalué.
 
@@ -421,7 +421,7 @@ Pick : UNDER_4_5
 Probabilité : 84 %
 Cote : 1.27
 EV : +6,7 %
-Décision SV : SELECTED
+Décision SAFE : SELECTED
 ```
 
 #### DOMINANT (ex-`CONF`) — issue directionnelle dominante
@@ -452,7 +452,7 @@ Marge sur la seconde issue : 47 points
 Décision DOMINANT : HOME
 ```
 
-#### BB — stratégie BTTS
+#### BTTS — stratégie BTTS
 
 Famille : spécialisé marché (`allowedMarkets = [BTTS]`), mais **pas pick-bound** :
 le canal peut émettre `YES` **ou** `NO`. La contrainte porte sur le marché (BTTS),
@@ -481,8 +481,8 @@ Exemples :
 lambdaHome : 1.53
 lambdaAway : 2.07
 P(BTTS YES) : 68,5 %
-Seuil BB YES ligue : 60 %
-Décision BB : YES
+Seuil BTTS YES ligue : 60 %
+Décision BTTS : YES
 ```
 
 ```text
@@ -490,11 +490,11 @@ lambdaHome : 0.74
 lambdaAway : 0.66
 P(BTTS YES) : 31,0 %
 P(BTTS NO) : 69,0 %
-Seuil BB NO ligue : 62 %   (calibré séparément)
-Décision BB : NO
+Seuil BTTS NO ligue : 62 %   (calibré séparément)
+Décision BTTS : NO
 ```
 
-#### NUL — spécialiste des matchs nuls
+#### DRAW — spécialiste des matchs nuls
 
 Famille : spécialisé — marché autorisé `ONE_X_TWO`, pick `DRAW` uniquement.
 
@@ -507,8 +507,8 @@ Exemple :
 ```text
 Cote du nul : 3.20
 Probabilité implicite : 31,25 %
-Seuil NUL ligue : 30 %
-Décision NUL : DRAW
+Seuil DRAW ligue : 30 %
+Décision DRAW : DRAW
 ```
 
 ### 6.2 Canaux candidats
@@ -606,7 +606,7 @@ CONSENSUS  : HOME, niveau 3/3
 
 ```text
 GOALS : OVER_2_5
-BB    : YES
+BTTS  : YES
 CONSENSUS : scénario de match ouvert
 ```
 
@@ -667,7 +667,7 @@ Une analyse ne doit plus être résumée par un unique `BET/NO_BET`.
       "selections": []
     },
     {
-      "channel": "SV",
+      "channel": "SAFE",
       "status": "SELECTED",
       "selections": [
         {
@@ -686,7 +686,7 @@ Une analyse ne doit plus être résumée par un unique `BET/NO_BET`.
       "selections": []
     },
     {
-      "channel": "BB",
+      "channel": "BTTS",
       "status": "SELECTED",
       "selections": [
         {
@@ -697,7 +697,7 @@ Une analyse ne doit plus être résumée par un unique `BET/NO_BET`.
       ]
     },
     {
-      "channel": "NUL",
+      "channel": "DRAW",
       "status": "SELECTED",
       "selections": [
         {
@@ -719,7 +719,7 @@ Une analyse ne doit plus être résumée par un unique `BET/NO_BET`.
 ```
 
 Cette sortie exprime correctement que le canal EV n'a rien retenu, tandis que
-SV, BB et NUL ont chacun trouvé un signal selon leur propre stratégie.
+SAFE, BTTS et DRAW ont chacun trouvé un signal selon leur propre stratégie.
 
 ## 8. Gestion des runs J-, JT et live
 
@@ -729,7 +729,7 @@ dimension explicite du modèle.
 ### 8.1 Grain d'un `ModelRun`
 
 Un `ModelRun` représente **une exécution du moteur sur une fixture à un instant
-donné, immuable**. La phase (`J_MINUS` / `MATCH_DAY` / `LIVE`) est une *étiquette*
+donné, immuable**. La phase (`J_MINUS` / `MATCH_DAY` / `LIVE`) est une _étiquette_
 portée par le run, pas le grain : on peut réexécuter plusieurs fois dans une même
 phase (par exemple si les cotes bougent à J-1). Conséquences directes :
 
@@ -878,7 +878,7 @@ coexistence durable.
 - puis **supprimer** les structures legacy dans la même release :
   - table `Prediction` et enum `PredictionChannel` ;
   - enum `CouponLegCanal` (remplacé par `StrategyChannel`, `CONF → DOMINANT`) ;
-  - colonne `Bet.isSafeValue` (l'info SV est désormais portée par le canal de
+  - colonne `Bet.isSafeValue` (l'info SAFE est désormais portée par le canal de
     la `ChannelSelection` liée) ;
   - colonne `ModelRun.decision` (remplacée par la `ChannelDecision` du canal EV).
 
@@ -928,7 +928,10 @@ concurrents : `canal-badge` (`EV|SV|CONF|DRAW|BTTS`), `investment`/`coupon`
 (`EV|SV|BB|NUL|CONF`) et les canaux virtuels / `COUPON` des vues investment.
 Les remplacer par un **type unique aligné sur `StrategyChannel`**, défini une
 fois et ré-exporté, jamais redéclaré par domaine. Mapping appliqué à la bascule :
-`CONF → DOMINANT`, `DRAW → NUL`, `BTTS → BB`.
+`CONF → DOMINANT`, le `SV` → `SAFE`, le `NUL` du `coupon` → `DRAW`, le `BB` du
+`coupon` → `BTTS`. Les noms déjà anglais et alignés sur la cible (`EV`, et `DRAW`
+
+- `BTTS` côté `canal-badge`) gardent leur valeur (identité avec la cible).
 
 **Découpler le nom d'enum du libellé affiché.** La valeur technique
 (`DOMINANT`) ne doit jamais apparaître en dur dans le JSX. Aujourd'hui
@@ -937,7 +940,7 @@ fois et ré-exporté, jamais redéclaré par domaine. Mapping appliqué à la ba
 brute pour `EV`/`SV`. Cible : un seul mapping canal → clé i18n. Le libellé
 utilisateur (par ex. « VICTOIRE » via `picks.confidence`) peut rester inchangé ;
 seules la clé et le token couleur sont remappés (`--canal-conf → --canal-dominant`,
-`--canal-draw → --canal-nul`, `--canal-btts → --canal-bb`).
+`--canal-sv → --canal-safe`, `--canal-nul → --canal-draw`, `--canal-bb → --canal-btts`).
 
 **Représenter un run comme multi-canal, pas comme `BET`/`NO_BET`.** L'UI ne doit
 plus résumer un match par une décision binaire. La vue fixture affiche la liste
@@ -998,13 +1001,13 @@ qu'**après** validation de la parité.
 Reconstruire l'historique matérialisé vers les nouvelles tables, par `ModelRun` :
 
 - canal `EV` : `Bet` (`source=MODEL`, `isSafeValue=false`) → `ChannelDecision(EV,
-  SELECTED)` + `ChannelSelection` (marché, pick, proba, cote, EV, qualityScore,
+SELECTED)` + `ChannelSelection` (marché, pick, proba, cote, EV, qualityScore,
   `result = Bet.status`) ; sinon `decision = NO_BET` → `ChannelDecision(EV,
-  REJECTED, reasonCode=BACKFILL)` ;
-- canal `SV` : `Bet` (`isSafeValue=true`) → `ChannelDecision(SV, SELECTED)` +
+REJECTED, reasonCode=BACKFILL)` ;
+- canal `SAFE` : `Bet` (`isSafeValue=true`) → `ChannelDecision(SAFE, SELECTED)` +
   sélection ;
-- canaux `DOMINANT`, `NUL`, `BB` : depuis `Prediction`
-  (`CONF→DOMINANT`, `DRAW→NUL`, `BTTS→BB`) → `ChannelDecision(SELECTED)` +
+- canaux `DOMINANT`, `DRAW`, `BTTS` : depuis `Prediction`
+  (`CONF→DOMINANT`, `DRAW→DRAW`, `BTTS→BTTS`) → `ChannelDecision(SELECTED)` +
   `ChannelSelection` (marché, pick, `probability`, `result` dérivé de
   `correct`) ;
 - relier chaque `Bet` matérialisé à sa `ChannelSelection` via
@@ -1075,7 +1078,7 @@ dans `CONSENSUS`.
 
 ### Sélection hors du périmètre d'un canal
 
-Risque : un canal spécialisé (par exemple `BB`) émet un pick d'un autre marché,
+Risque : un canal spécialisé (par exemple `BTTS`) émet un pick d'un autre marché,
 ou un canal transverse sélectionne un marché qu'il ne devrait pas évaluer.
 
 Garde-fou : chaque canal déclare ses `allowedMarkets` (section 3.1 et 5) ;
@@ -1125,7 +1128,7 @@ stratégie et toujours afficher hit rate, ROI, calibration et volume ensemble.
    l'introduction de `StrategyChannel` (mapping appliqué une fois). Ne pas faire
    ce rename en isolé : à chaud il coûte une migration Postgres et ~300
    références pour zéro gain fonctionnel.
-10. Ouvrir le côté `NO` du canal `BB` (aujourd'hui limité à `YES`) avec une
+10. Ouvrir le côté `NO` du canal `BTTS` (aujourd'hui limité à `YES`) avec une
     calibration séparée par côté — seuil, `minSampleN` et backtest distincts —
     et un démarrage en mode observation, le marché restant contraint à `BTTS`.
 

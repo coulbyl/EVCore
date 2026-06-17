@@ -686,3 +686,17 @@ function outcomeFromScores(
 function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
   return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
 }
+
+export function buildBetPickKey(input: {
+  market: Market;
+  pick: string;
+  comboMarket: Market | null;
+  comboPick: string | null;
+}): string {
+  return [
+    input.market,
+    input.pick,
+    input.comboMarket ?? '-',
+    input.comboPick ?? '-',
+  ].join('|');
+}
