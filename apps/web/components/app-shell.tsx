@@ -17,6 +17,7 @@ import {
   FlaskConical,
   Globe,
   GraduationCap,
+  Layers,
   LayoutDashboard,
   Megaphone,
   Receipt,
@@ -158,6 +159,12 @@ export function AppShell({
       {
         label: tNav("navGroupToday"),
         items: [
+          {
+            label: tNav("decisions"),
+            href: "/dashboard/decisions",
+            active: pathname.startsWith("/dashboard/decisions"),
+            icon: Layers,
+          },
           {
             label: tNav("investissement"),
             href: "/dashboard/investment",
