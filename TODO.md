@@ -106,9 +106,16 @@
 
 ## Étape 5 — Bascule des consommateurs (même release)
 
+> **Préparation faite** (derrière les tables cibles, non branchée sur le flux live) :
+> registre `strategies/registry.ts` (`V1_STRATEGIES` + `createChannelStrategyOrchestrator`),
+> persistance `ChannelDecisionRepository.saveRunDecisions` (doc §5), test d'orchestration
+> multi-canal (`channel-strategy.orchestrator.spec.ts`) + e2e repo (`channel-decision-repository.e2e-spec.ts`).
+> Reste la **bascule** ci-dessous : brancher l'engine + construire `StrategyContext` depuis le calcul existant, puis retirer le legacy.
+
 - [ ] **[différé d'Étape 1]** Ajouter `phase: J_MINUS | MATCH_DAY | LIVE` dans `StrategyContext` + sur `ModelRun` (doc §5/§8.1) — fonde `NOT_APPLICABLE` et les canaux `LIVE_VALUE`/`FIRST_HALF`.
       Reporté ici car les 5 canaux v1 ne l'exploitent pas encore
-- [ ] Engine écrit **uniquement** `ChannelDecision` / `ChannelSelection` (plus de `Prediction`/`isSafeValue`)
+- [~] Engine écrit **uniquement** `ChannelDecision` / `ChannelSelection` (plus de `Prediction`/`isSafeValue`)
+      — persistance + registre prêts ; reste à construire `StrategyContext` depuis l'analyse et router l'écriture
 - [ ] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière
       (anti-double-comptage : une sélection liée à un `Bet` réglée une seule fois côté analytique)
 - [ ] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
