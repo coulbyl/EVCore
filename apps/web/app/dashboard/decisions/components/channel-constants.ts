@@ -20,21 +20,20 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   DRAW: "var(--canal-draw-soft)",
 };
 
-// Short labels — i18n namespace lands in a follow-up slice (TODO Étape 5).
-export const CHANNEL_LABEL: Record<StrategyChannel, string> = {
-  EV: "EV",
-  SAFE: "Sécurité",
-  DOMINANT: "Victoire",
-  BTTS: "BB",
-  DRAW: "Nul",
+const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
+  EV: "channels.EV.label",
+  SAFE: "channels.SAFE.label",
+  DOMINANT: "channels.DOMINANT.label",
+  BTTS: "channels.BTTS.label",
+  DRAW: "channels.DRAW.label",
 };
 
-export const CHANNEL_DESCRIPTION: Record<StrategyChannel, string> = {
-  EV: "Cotes à valeur attendue positive.",
-  SAFE: "Sélections prudentes à rendement régulier.",
-  DOMINANT: "Angle le plus affirmé du modèle (1N2).",
-  BTTS: "Deux équipes marquent.",
-  DRAW: "Match nul via la probabilité implicite du marché.",
+const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
+  EV: "channels.EV.description",
+  SAFE: "channels.SAFE.description",
+  DOMINANT: "channels.DOMINANT.description",
+  BTTS: "channels.BTTS.description",
+  DRAW: "channels.DRAW.description",
 };
 
 // Display order across both lenses.
@@ -46,31 +45,53 @@ export const CHANNEL_ORDER: StrategyChannel[] = [
   "DRAW",
 ];
 
-// Human-readable rejection reasons emitted by the strategies (doc §5).
-const REASON_LABEL: Record<string, string> = {
-  score_below_threshold: "Score modèle sous le seuil",
-  no_viable_pick: "Aucun pick viable",
-  line_movement: "Mouvement de cote défavorable",
-  no_safe_candidate: "Aucun candidat sûr",
-  below_threshold: "Probabilité sous le seuil",
-  insufficient_margin: "Marge insuffisante",
-  BACKFILL: "Rétro-rempli",
+const REASON_LABEL_KEY: Record<string, string> = {
+  score_below_threshold: "reasons.score_below_threshold",
+  no_viable_pick: "reasons.no_viable_pick",
+  line_movement: "reasons.line_movement",
+  no_safe_candidate: "reasons.no_safe_candidate",
+  below_threshold: "reasons.below_threshold",
+  insufficient_margin: "reasons.insufficient_margin",
+  BACKFILL: "reasons.BACKFILL",
 };
 
-export function reasonLabel(reasonCode: string | null): string | null {
-  if (reasonCode === null) return null;
-  return REASON_LABEL[reasonCode] ?? reasonCode;
+type Translator = (key: string) => string;
+
+export function channelLabel(channel: StrategyChannel, t: Translator): string {
+  return t(CHANNEL_LABEL_KEY[channel]);
 }
 
-// Status → label + tone for the non-selected outcomes.
-export const STATUS_LABEL: Record<ChannelDecisionStatus, string> = {
-  SELECTED: "Sélectionné",
-  REJECTED: "Écarté",
-  DISABLED: "Désactivé",
-  INSUFFICIENT_DATA: "Données insuffisantes",
-  MISSING_ODDS: "Cotes manquantes",
-  NOT_APPLICABLE: "Non applicable",
+export function channelDescription(
+  channel: StrategyChannel,
+  t: Translator,
+): string {
+  return t(CHANNEL_DESCRIPTION_KEY[channel]);
+}
+
+export function reasonLabel(
+  reasonCode: string | null,
+  t: Translator,
+): string | null {
+  if (reasonCode === null) return null;
+  const key = REASON_LABEL_KEY[reasonCode];
+  return key ? t(key) : reasonCode;
+}
+
+const STATUS_LABEL_KEY: Record<ChannelDecisionStatus, string> = {
+  SELECTED: "statuses.SELECTED",
+  REJECTED: "statuses.REJECTED",
+  DISABLED: "statuses.DISABLED",
+  INSUFFICIENT_DATA: "statuses.INSUFFICIENT_DATA",
+  MISSING_ODDS: "statuses.MISSING_ODDS",
+  NOT_APPLICABLE: "statuses.NOT_APPLICABLE",
 };
+
+export function statusLabel(
+  status: ChannelDecisionStatus,
+  t: Translator,
+): string {
+  return t(STATUS_LABEL_KEY[status]);
+}
 
 export function formatPct(n: number): string {
   return `${(n * 100).toFixed(0)}%`;

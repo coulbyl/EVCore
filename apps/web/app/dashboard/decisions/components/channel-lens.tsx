@@ -1,6 +1,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent, Empty } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import type { ChannelDecisionDto } from "@/domains/channel-decision/types/channel-decision";
-import { CHANNEL_ORDER, CHANNEL_LABEL } from "./channel-constants";
+import { CHANNEL_ORDER, channelLabel } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
 
 export function ChannelLens({
@@ -10,6 +11,7 @@ export function ChannelLens({
   decisions: ChannelDecisionDto[];
   locale: string;
 }) {
+  const t = useTranslations("decisions");
   // Selected decisions grouped by channel, in canonical order.
   const selectedByChannel = CHANNEL_ORDER.map((channel) => ({
     channel,
@@ -37,7 +39,7 @@ export function ChannelLens({
         <TabsList variant="line">
           {selectedByChannel.map(({ channel, rows }) => (
             <TabsTrigger key={channel} value={channel}>
-              {CHANNEL_LABEL[channel]}
+              {channelLabel(channel, t)}
               <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
                 {rows.length}
               </span>

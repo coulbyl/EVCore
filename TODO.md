@@ -43,10 +43,9 @@ Settlement analytique **fait** : `ChannelSelection.result` écrit au règlement
 API read **faite** : `GET /channel-decisions` expose les décisions normalisées
 (channel/status/selections, REJECTED + reasonCode, filtres date/competition/channel/market/status).
 
-**Prochain pas** : frontend — un seul type aligné sur `StrategyChannel`, mapping
-canal → clé i18n + tokens couleur, vue run **multi-canal** consommant
-`GET /channel-decisions`, suppression de la reconstruction `isSafeValue`/`Prediction`
-côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
+**Prochain pas** : gate de parité legacy↔canaux (Étape 4), puis retrait legacy
+(Étape 6). La vue `/dashboard/decisions` est la surface principale ; les routes
+legacy `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
 
 État : unit 570/570 ✅ · e2e 18/18 (série) ✅ · lint ✅ · typecheck ✅.
 
@@ -112,8 +111,8 @@ côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
 - [x] Production native des décisions par l'engine (EV/SAFE + DOMINANT/DRAW/BTTS), lien `Bet`
 - [x] Idempotence garantie par `@@unique([modelRunId, channel])` (un re-run = un nouveau `ModelRun`)
 - [-] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel` — **déplacé en Étape 6** :
-      conversion de colonne `CouponProposalLeg.canal`, à faire dans la migration qui drop `CouponLegCanal`
-      (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là)
+  conversion de colonne `CouponProposalLeg.canal`, à faire dans la migration qui drop `CouponLegCanal`
+  (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là)
 - [ ] **[ETL]** Brancher / exposer le déclenchement du backfill par fenêtre (ré-analyse historique)
       côté ETL si besoin d'un rattrapage de masse
 
@@ -138,42 +137,47 @@ côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
 > multi-canal (`channel-strategy.orchestrator.spec.ts`) + e2e repo (`channel-decision-repository.e2e-spec.ts`).
 > Reste la **bascule** ci-dessous : brancher l'engine + construire `StrategyContext` depuis le calcul existant, puis retirer le legacy.
 
-- [ ] **[différé d'Étape 1]** Ajouter `phase: J_MINUS | MATCH_DAY | LIVE` dans `StrategyContext` + sur `ModelRun` (doc §5/§8.1) — fonde `NOT_APPLICABLE` et les canaux `LIVE_VALUE`/`FIRST_HALF`.
-      Reporté ici car les 5 canaux v1 ne l'exploitent pas encore
-- [~] Engine écrit `ChannelDecision` / `ChannelSelection` — **branché** : `StrategyContext`
+- [x] **[différé d'Étape 1]** Ajouter `phase: ADVANCE | PRE_KICKOFF | LIVE`
+      dans `StrategyContext` + sur `ModelRun` (doc §5/§8.1) — fonde
+      `NOT_APPLICABLE` et les canaux `LIVE_VALUE`/`FIRST_HALF`.
+      Le flux actuel dérive `ADVANCE` avant le jour du match, `PRE_KICKOFF`
+      le jour du match avant coup d'envoi, et `LIVE` pour l'in-play.
+- [x] Engine écrit `ChannelDecision` / `ChannelSelection` — **branché** : `StrategyContext`
       construit depuis l'analyse (`strategy-context.builder.ts`) + routé via `ChannelDecisionService`
       (`betting-engine.module` enregistre repo + service, injection `@Optional()`).
       `Bet.channelSelectionId` relié (EV/SAFE flux principal, EV en FRI) via `findChannelSelectionId`.
-      Écriture **additive** pour l'instant ; reste à retirer les writes legacy
-      (`Prediction`/`isSafeValue`) une fois les consommateurs basculés
+      Écriture additive legacy conservée jusqu'au retrait Étape 6.
 - [x] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière —
       résolveurs purs `channel-selection-settlement.ts` (mirroir exact des bets : `resolve*BetStatus`),
       `ChannelDecisionService.settleFixtureSelections({ mode: early|final })`, câblé dans
       `settleEarlyBets` (early, irrévocable) et `settleOpenBets` (final, re-règle tout — VAR).
       Idempotent → pas de double-comptage financier
-- [~] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
+- [x] API : DTO normalisés `channel` / `status` / `selections` ; exposer `REJECTED` +
       `reasonCode` ; filtres par stratégie / marché / phase — **fait** : `GET /channel-decisions`
       (`ChannelDecisionController` + `ChannelDecisionListQueryDto`), `ChannelDecisionService.list`
       → `findByDate` (jointure `modelRun→fixture→competition`), filtres date/competition/channel/market/status,
       REJECTED + reasonCode exposés. DTO enrichi présentation : `homeTeam`/`awayTeam`/`homeLogo`/`awayLogo`,
-      `country`, `score`/`htScore`. **Phase** (`J_MINUS|MATCH_DAY|LIVE`) reportée (ModelRun ne la porte pas encore)
-- [~] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
+      `country`, `score`/`htScore`, `phase`.
+- [x] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
       tokens couleur remappés ; vue run **multi-canal** (plus de `BET`/`NO_BET`) ;
       suppression de la reconstruction `isSafeValue` / `Prediction` côté client
       — **fait** : nouvelle page `/dashboard/decisions` (route parallèle) consommant
       `GET /channel-decisions` via `domains/channel-decision`, deux lentilles
-      *Par match* (grille multi-canal + rejets/reasonCode en tooltip) / *Par canal* (tabs),
+      _Par match_ (grille multi-canal + rejets/reasonCode en tooltip) / _Par canal_ (tabs),
       remap `StrategyChannel → --canal-*`, cartes alignées sur `pick-card`
       (`FixtureHeading` : logos + pays·ligue + score, bordures `border-border/70` + accent),
       liens **Investissement/Sélections commentés** dans la nav (sidebar + mobile) — pages
-      conservées, accessibles par URL. **Reste** : retirer `/dashboard/investment` + `/dashboard/picks`
-      après parité (redirect), i18n complet des libellés canaux/codes de rejet
-- [ ] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`)
+      legacy `/dashboard/investment` + `/dashboard/picks` redirigées vers `/dashboard/decisions`,
+      i18n complet des libellés canaux/codes de rejet.
+- [x] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`) :
+      `reports/ml-promotion` agrège les `ChannelSelection` settlées du canal `EV`
+      au lieu des `Bet` legacy `isSafeValue=false`.
 
 ---
 
 ## Étape 6 — Suppression du legacy (migration finale, après gate vert)
 
+- [ ] Retirer les writes legacy `Prediction` / `Bet.isSafeValue` du flux engine
 - [ ] Convertir `CouponProposalLeg.canal` : `CouponLegCanal → StrategyChannel`
       (`EV→EV`, `SV→SAFE`, `BB→BTTS`, `NUL→DRAW`, `CONF→DOMINANT`) avant de droper l'enum
 - [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`

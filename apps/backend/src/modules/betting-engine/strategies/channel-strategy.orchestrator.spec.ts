@@ -57,6 +57,7 @@ function makeContext(
     },
     competitionCode: 'BL1',
     sport: 'FOOTBALL',
+    phase: 'PRE_KICKOFF',
     deterministicScore: new Decimal('0.80'),
     probabilities: {
       home: new Decimal('0.60'),

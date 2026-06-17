@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { BetStatus, Market } from '@evcore/db';
+import type { BetStatus, Market, ModelRunPhase } from '@evcore/db';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import {
   ChannelDecisionRepository,
@@ -49,6 +49,7 @@ export type ChannelDecisionItem = {
   kickoff: string;
   score: string | null;
   htScore: string | null;
+  phase: ModelRunPhase;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -61,6 +62,7 @@ export type ChannelDecisionListQuery = {
   channel?: StrategyChannel;
   market?: Market;
   status?: ChannelDecisionStatus;
+  phase?: ModelRunPhase;
 };
 
 /**
@@ -127,6 +129,7 @@ export class ChannelDecisionService {
       channel: query.channel,
       status: query.status,
       market: query.market,
+      phase: query.phase,
     });
     return rows.map((row) => this.toItem(row));
   }
@@ -145,6 +148,7 @@ export class ChannelDecisionService {
       kickoff: formatTimeUtc(row.scheduledAt),
       score: formatScoreLine(row.homeScore, row.awayScore),
       htScore: formatScoreLine(row.homeHtScore, row.awayHtScore),
+      phase: row.phase,
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,

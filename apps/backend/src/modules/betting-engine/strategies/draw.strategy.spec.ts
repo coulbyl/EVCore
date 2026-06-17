@@ -47,6 +47,7 @@ function makeContext(
     },
     competitionCode,
     sport: 'FOOTBALL',
+    phase: 'PRE_KICKOFF',
     deterministicScore: new Decimal('0.65'),
     probabilities: BASE_PROBS,
     evaluatedMarkets: [],

@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { InvestissementPageClient } from "./components/investment-page-client";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Investment — EVCore",
-};
-
-export default function InvestissementPage() {
-  return <InvestissementPageClient />;
+export default function InvestmentPage() {
+  redirect("/dashboard/decisions");
 }

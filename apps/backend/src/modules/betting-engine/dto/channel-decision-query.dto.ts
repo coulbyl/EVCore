@@ -1,5 +1,10 @@
 import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
-import { ChannelDecisionStatus, Market, StrategyChannel } from '@evcore/db';
+import {
+  ChannelDecisionStatus,
+  Market,
+  ModelRunPhase,
+  StrategyChannel,
+} from '@evcore/db';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,4 +29,8 @@ export class ChannelDecisionListQueryDto {
   @IsOptional()
   @IsEnum(ChannelDecisionStatus)
   status?: ChannelDecisionStatus;
+
+  @IsOptional()
+  @IsEnum(ModelRunPhase)
+  phase?: ModelRunPhase;
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, Market, Prisma } from '@evcore/db';
+import { BetStatus, Market, ModelRunPhase, Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import type {
   ChannelDecisionStatus,
@@ -23,13 +23,14 @@ export type PersistedChannelDecision = {
 };
 
 // Filters for the read API (doc §5). `market` matches decisions that selected
-// on that market; `phase` is deferred until ModelRun carries it (TODO Étape 5).
+// on that market.
 export type ChannelDecisionFilters = {
   range: { gte: Date; lte: Date };
   competition?: string;
   channel?: StrategyChannel;
   status?: ChannelDecisionStatus;
   market?: Market;
+  phase?: ModelRunPhase;
 };
 
 export type ChannelSelectionReadRow = {
@@ -49,6 +50,7 @@ export type ChannelSelectionReadRow = {
 export type ChannelDecisionReadRow = {
   id: string;
   modelRunId: string;
+  phase: ModelRunPhase;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -174,10 +176,11 @@ export class ChannelDecisionRepository {
   async findByDate(
     filters: ChannelDecisionFilters,
   ): Promise<ChannelDecisionReadRow[]> {
-    const { range, competition, channel, status, market } = filters;
+    const { range, competition, channel, status, market, phase } = filters;
     const rows = await this.prisma.client.channelDecision.findMany({
       where: {
         modelRun: {
+          ...(phase ? { phase } : {}),
           fixture: {
             scheduledAt: range,
             ...(competition
@@ -197,6 +200,7 @@ export class ChannelDecisionRepository {
         reasonCode: true,
         modelRun: {
           select: {
+            phase: true,
             fixture: {
               select: {
                 id: true,
@@ -242,6 +246,7 @@ export class ChannelDecisionRepository {
     return rows.map((row) => ({
       id: row.id,
       modelRunId: row.modelRunId,
+      phase: row.modelRun.phase,
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,

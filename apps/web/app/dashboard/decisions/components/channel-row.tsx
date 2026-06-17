@@ -3,6 +3,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
+import { useTranslations } from "next-intl";
 import type {
   ChannelDecisionDto,
   StrategyChannel,
@@ -10,16 +11,17 @@ import type {
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
-  CHANNEL_LABEL,
-  STATUS_LABEL,
+  channelLabel,
   formatEv,
   formatOdds,
   formatPct,
   reasonLabel,
+  statusLabel,
 } from "./channel-constants";
 import { ResultBadge } from "./result-badge";
 
 function ChannelChip({ channel }: { channel: StrategyChannel }) {
+  const t = useTranslations("decisions");
   return (
     <span
       className="inline-flex w-16 shrink-0 items-center justify-center rounded-md px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"
@@ -28,7 +30,7 @@ function ChannelChip({ channel }: { channel: StrategyChannel }) {
         backgroundColor: CHANNEL_COLOR_SOFT[channel],
       }}
     >
-      {CHANNEL_LABEL[channel]}
+      {channelLabel(channel, t)}
     </span>
   );
 }
@@ -87,13 +89,14 @@ function RejectedLabel({
 }: {
   decision: ChannelDecisionDto | undefined;
 }) {
+  const t = useTranslations("decisions");
   // Channel didn't run at all for this fixture.
   if (decision === undefined) {
     return <span className="flex-1 text-xs text-muted-foreground/60">—</span>;
   }
 
-  const reason = reasonLabel(decision.reasonCode);
-  const status = STATUS_LABEL[decision.status];
+  const reason = reasonLabel(decision.reasonCode, t);
+  const status = statusLabel(decision.status, t);
   return (
     <Tooltip>
       <TooltipTrigger asChild>

@@ -9,9 +9,11 @@ import type {
   ContextSignals,
   EvaluatedMarket,
   FixtureSnapshot,
+  ModelRunPhase,
   SportType,
   StrategyContext,
 } from '../channel-strategy.types';
+import { MODEL_RUN_PHASE } from '../channel-strategy.types';
 
 export type BuildStrategyContextInput = {
   fixture: FixtureSnapshot;
@@ -21,6 +23,7 @@ export type BuildStrategyContextInput = {
   evaluatedPicks: readonly EvaluatedPick[];
   odds: FullOddsSnapshot | null;
   signals: ContextSignals;
+  phase?: ModelRunPhase;
   // [multi-sport] FOOTBALL until a second sport's scoring base exists (doc §1).
   sport?: SportType;
 };
@@ -37,6 +40,7 @@ export function buildStrategyContext(
     fixture: input.fixture,
     competitionCode: input.competitionCode,
     sport: input.sport ?? 'FOOTBALL',
+    phase: input.phase ?? MODEL_RUN_PHASE.PRE_KICKOFF,
     deterministicScore: input.deterministicScore,
     probabilities: input.probabilities,
     evaluatedMarkets: groupPicksByMarket(input.evaluatedPicks),

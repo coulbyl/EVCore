@@ -6,6 +6,7 @@ import {
   Decision,
   FixtureStatus,
   Market,
+  ModelRunPhase,
   Prisma,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
@@ -106,6 +107,7 @@ import {
   type ContextSignals,
   type StrategyChannel,
 } from './channel-strategy.types';
+import { formatDateUtc } from '@utils/date.utils';
 
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
@@ -694,6 +696,10 @@ export class BettingEngineService {
     }
 
     const competitionCode = getFixtureCompetitionCode(fixture);
+    const modelRunPhase = deriveModelRunPhase({
+      fixtureStatus: fixture.status,
+      scheduledAt: fixture.scheduledAt,
+    });
 
     const [homeStats, awayStats] = await Promise.all([
       this.prisma.client.teamStats.findFirst({
@@ -1010,6 +1016,7 @@ export class BettingEngineService {
       data: {
         fixtureId,
         decision,
+        phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
@@ -1071,6 +1078,7 @@ export class BettingEngineService {
           evaluatedPicks,
           odds: latestOdds,
           signals: channelSignals,
+          phase: modelRunPhase,
         }),
       )) ?? [];
 
@@ -1268,12 +1276,17 @@ export class BettingEngineService {
     scheduledAt: Date;
     homeTeamId: string;
     awayTeamId: string;
+    status: FixtureStatus;
     season?: { competition?: { code?: string } };
     homeTeam?: { name?: string };
     awayTeam?: { name?: string };
   }): Promise<AnalyzeFixtureResult> {
     const fixtureId = fixture.id;
     const competitionCode = getFixtureCompetitionCode(fixture);
+    const modelRunPhase = deriveModelRunPhase({
+      fixtureStatus: fixture.status,
+      scheduledAt: fixture.scheduledAt,
+    });
     const [marketOdds, pinnacleOdds, activeSuspensions] = await Promise.all([
       this.findLatestBestOneXTwoOddsSnapshot(fixtureId, fixture.scheduledAt),
       this.findLatestOneXTwoOddsSnapshotByBookmaker(
@@ -1390,6 +1403,7 @@ export class BettingEngineService {
       data: {
         fixtureId,
         decision,
+        phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
@@ -1468,6 +1482,7 @@ export class BettingEngineService {
             evaluatedPicks,
             odds: marketOdds?.snapshot ?? null,
             signals: channelSignals,
+            phase: modelRunPhase,
           }),
         )) ?? [];
     }
@@ -3297,6 +3312,21 @@ export function findChannelSelectionId(
       }) === key,
   );
   return match?.id ?? null;
+}
+
+export function deriveModelRunPhase(opts: {
+  fixtureStatus: FixtureStatus;
+  scheduledAt: Date;
+  now?: Date;
+}): ModelRunPhase {
+  if (opts.fixtureStatus === FixtureStatus.IN_PROGRESS) {
+    return ModelRunPhase.LIVE;
+  }
+
+  const now = opts.now ?? new Date();
+  return formatDateUtc(opts.scheduledAt) === formatDateUtc(now)
+    ? ModelRunPhase.PRE_KICKOFF
+    : ModelRunPhase.ADVANCE;
 }
 
 function summarizeTeamStats(stats: TeamStatsInput): {

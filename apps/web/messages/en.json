@@ -42,6 +42,47 @@
     "investissement": "Investment",
     "decisions": "Decisions"
   },
+  "decisions": {
+    "channels": {
+      "EV": {
+        "label": "EV",
+        "description": "Positive expected value odds."
+      },
+      "SAFE": {
+        "label": "Safety",
+        "description": "Prudent selections built for steadier returns."
+      },
+      "DOMINANT": {
+        "label": "Winner",
+        "description": "The model's strongest 1X2 angle."
+      },
+      "BTTS": {
+        "label": "BTTS",
+        "description": "Both teams to score."
+      },
+      "DRAW": {
+        "label": "Draw",
+        "description": "Draw angle from market-implied probability."
+      }
+    },
+    "reasons": {
+      "score_below_threshold": "Model score below threshold",
+      "no_viable_pick": "No viable pick",
+      "line_movement": "Unfavorable odds movement",
+      "no_safe_candidate": "No safety candidate",
+      "below_threshold": "Probability below threshold",
+      "insufficient_margin": "Insufficient margin",
+      "BACKFILL": "Backfilled"
+    },
+    "statuses": {
+      "SELECTED": "Selected",
+      "REJECTED": "Rejected",
+      "DISABLED": "Disabled",
+      "INSUFFICIENT_DATA": "Insufficient data",
+      "MISSING_ODDS": "Missing odds",
+      "NOT_APPLICABLE": "Not applicable"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications",

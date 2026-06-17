@@ -40,6 +40,7 @@ function makeContext(opts: {
     },
     competitionCode,
     sport: 'FOOTBALL',
+    phase: 'PRE_KICKOFF',
     deterministicScore: new Decimal('0.65'),
     probabilities: {
       home: new Decimal(home),

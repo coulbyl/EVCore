@@ -41,6 +41,14 @@ export const CHANNEL_DECISION_STATUS = {
 export type ChannelDecisionStatus =
   (typeof CHANNEL_DECISION_STATUS)[keyof typeof CHANNEL_DECISION_STATUS];
 
+export const MODEL_RUN_PHASE = {
+  ADVANCE: 'ADVANCE',
+  PRE_KICKOFF: 'PRE_KICKOFF',
+  LIVE: 'LIVE',
+} as const;
+export type ModelRunPhase =
+  (typeof MODEL_RUN_PHASE)[keyof typeof MODEL_RUN_PHASE];
+
 // Meta-strategies run in Phase 2 (after all primary decisions are available).
 export const META_STRATEGY_CHANNELS = new Set<StrategyChannel>([
   STRATEGY_CHANNEL.CONSENSUS,
@@ -74,6 +82,7 @@ export type StrategyContext = {
   // null when the fixture has no competition code — getters fall back to defaults.
   competitionCode: string | null;
   sport: SportType;
+  phase: ModelRunPhase;
   deterministicScore: Decimal;
   probabilities: MatchProbabilities;
   evaluatedMarkets: EvaluatedMarket[];

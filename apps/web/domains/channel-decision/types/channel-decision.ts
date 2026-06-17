@@ -10,6 +10,8 @@ export type ChannelDecisionStatus =
   | "MISSING_ODDS"
   | "NOT_APPLICABLE";
 
+export type ModelRunPhase = "ADVANCE" | "PRE_KICKOFF" | "LIVE";
+
 export type SelectionResult = "PENDING" | "WON" | "LOST" | "VOID";
 
 export type ChannelSelectionDto = {
@@ -39,6 +41,7 @@ export type ChannelDecisionDto = {
   kickoff: string;
   score: string | null;
   htScore: string | null;
+  phase: ModelRunPhase;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -50,4 +53,5 @@ export type ChannelDecisionFilters = {
   channel?: StrategyChannel;
   market?: string;
   status?: ChannelDecisionStatus;
+  phase?: ModelRunPhase;
 };

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { BetStatus, Market } from '@evcore/db';
+import { BetStatus, FixtureStatus, Market, ModelRunPhase } from '@evcore/db';
 import {
   poissonProba,
   calculateDeterministicScore,
@@ -15,6 +15,7 @@ import {
 import {
   BettingEngineService,
   blendTeamStats,
+  deriveModelRunPhase,
   estimateComboOdds,
 } from './betting-engine.service';
 import type { PrismaService } from '@/prisma.service';
@@ -239,6 +240,38 @@ describe('calculateKellyStakePct', () => {
 
   it('caps stake at maxStake', () => {
     expect(calculateKellyStakePct(0.9, 3.0, cfg).toNumber()).toBe(0.05);
+  });
+});
+
+describe('deriveModelRunPhase', () => {
+  it('marks fixtures before their UTC match day as advance analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.SCHEDULED,
+        scheduledAt: new Date('2026-06-18T20:00:00.000Z'),
+        now: new Date('2026-06-17T09:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.ADVANCE);
+  });
+
+  it('marks same-day scheduled fixtures as pre-kickoff analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.SCHEDULED,
+        scheduledAt: new Date('2026-06-17T20:00:00.000Z'),
+        now: new Date('2026-06-17T09:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.PRE_KICKOFF);
+  });
+
+  it('marks in-progress fixtures as live analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.IN_PROGRESS,
+        scheduledAt: new Date('2026-06-17T20:00:00.000Z'),
+        now: new Date('2026-06-17T21:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.LIVE);
   });
 });
 

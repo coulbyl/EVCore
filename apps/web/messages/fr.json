@@ -42,6 +42,47 @@
     "investissement": "Investissement",
     "decisions": "Décisions"
   },
+  "decisions": {
+    "channels": {
+      "EV": {
+        "label": "EV",
+        "description": "Cotes à valeur attendue positive."
+      },
+      "SAFE": {
+        "label": "Sécurité",
+        "description": "Sélections prudentes à rendement régulier."
+      },
+      "DOMINANT": {
+        "label": "Victoire",
+        "description": "Angle le plus affirmé du modèle sur le 1N2."
+      },
+      "BTTS": {
+        "label": "BB",
+        "description": "Deux équipes marquent."
+      },
+      "DRAW": {
+        "label": "Nul",
+        "description": "Match nul via la probabilité implicite du marché."
+      }
+    },
+    "reasons": {
+      "score_below_threshold": "Score modèle sous le seuil",
+      "no_viable_pick": "Aucun pick viable",
+      "line_movement": "Mouvement de cote défavorable",
+      "no_safe_candidate": "Aucun candidat sûr",
+      "below_threshold": "Probabilité sous le seuil",
+      "insufficient_margin": "Marge insuffisante",
+      "BACKFILL": "Rétro-rempli"
+    },
+    "statuses": {
+      "SELECTED": "Sélectionné",
+      "REJECTED": "Écarté",
+      "DISABLED": "Désactivé",
+      "INSUFFICIENT_DATA": "Données insuffisantes",
+      "MISSING_ODDS": "Cotes manquantes",
+      "NOT_APPLICABLE": "Non applicable"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "empty": "Aucune notification",

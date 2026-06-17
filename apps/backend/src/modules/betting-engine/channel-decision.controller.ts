@@ -22,6 +22,7 @@ export class ChannelDecisionController {
       channel: query.channel,
       market: query.market,
       status: query.status,
+      phase: query.phase,
     });
   }
 }

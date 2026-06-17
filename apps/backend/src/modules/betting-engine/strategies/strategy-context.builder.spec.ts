@@ -92,9 +92,10 @@ describe('buildStrategyContext', () => {
     );
   });
 
-  it('defaults sport to FOOTBALL and starts with no previous decisions', () => {
+  it('defaults sport and phase, and starts with no previous decisions', () => {
     const context = buildStrategyContext(baseInput());
     expect(context.sport).toBe('FOOTBALL');
+    expect(context.phase).toBe('PRE_KICKOFF');
     expect(context.previousDecisions.size).toBe(0);
   });
 

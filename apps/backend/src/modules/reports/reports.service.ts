@@ -4,7 +4,7 @@ import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import {
   ReportsRepository,
   type ActiveModelRow,
-  type SettledEvBetRow,
+  type SettledEvSelectionRow,
 } from './reports.repository';
 import {
   META_ONLY_SEGMENTS,
@@ -49,21 +49,23 @@ export class ReportsService {
     const days = window === 'SINCE_ACTIVATION' ? 90 : WINDOW_DAYS[window];
     const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
 
-    const [bets, activeModels] = await Promise.all([
-      this.repo.findSettledEvBets(from),
+    const [selections, activeModels] = await Promise.all([
+      this.repo.findSettledEvSelections(from),
       this.repo.findActiveModels(),
     ]);
 
     const activeBySegment = new Map(activeModels.map((m) => [m.segment, m]));
     const asOf =
-      bets.length > 0 ? bets[bets.length - 1].createdAt.toISOString() : null;
+      selections.length > 0
+        ? selections[selections.length - 1].createdAt.toISOString()
+        : null;
 
     const shadowRows: SegmentReportRow[] = SHADOW_CAPTURED_SEGMENTS.map(
       (segment) => {
         const active = activeBySegment.get(segment) ?? null;
         const segmentFrom = this.segmentWindowStart(window, from, active);
         const market = segment.split(':')[1];
-        const comparison = this.compareSegment(bets, market, segmentFrom);
+        const comparison = this.compareSegment(selections, market, segmentFrom);
         const { verdict, brierImprovement } =
           comparison !== null
             ? computeVerdict(comparison)
@@ -110,7 +112,7 @@ export class ReportsService {
   // Baseline vs corrected Brier + policy ROI over the comparable settled bets
   // of one segment. Returns null when no bet carries a shadow correction.
   private compareSegment(
-    bets: SettledEvBetRow[],
+    selections: SettledEvSelectionRow[],
     market: string,
     from: Date,
   ): SegmentComparison | null {
@@ -121,19 +123,21 @@ export class ReportsService {
     let correctedProfit = new Decimal(0);
     let correctedPlaced = 0;
 
-    for (const bet of bets) {
-      if (bet.market !== market) continue;
-      if (bet.createdAt < from) continue;
-      if (bet.oddsSnapshot === null) continue;
+    for (const selection of selections) {
+      if (selection.market !== market) continue;
+      if (selection.createdAt < from) continue;
+      if (selection.odds === null) continue;
       const correctedP = readNumber(
-        bet.modelRun.features,
+        selection.channelDecision.modelRun.features,
         'shadow_ml_corrected_p',
       );
       if (correctedP === null) continue;
 
-      const outcome = bet.status === 'WON' ? 1 : 0;
-      const baselineP = new Decimal(bet.probEstimated.toString()).toNumber();
-      const odds = new Decimal(bet.oddsSnapshot.toString());
+      const outcome = selection.result === 'WON' ? 1 : 0;
+      const baselineP = new Decimal(
+        selection.probability.toString(),
+      ).toNumber();
+      const odds = new Decimal(selection.odds.toString());
 
       n += 1;
       baselineBrierSum = baselineBrierSum.plus((baselineP - outcome) ** 2);
