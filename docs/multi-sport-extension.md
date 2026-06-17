@@ -40,16 +40,16 @@ socle probabiliste à écrire de zéro.**
 En revanche, toute la **colonne vertébrale** est réutilisable et a justement
 vocation à le devenir :
 
-| Couche                                   | Réutilisable | Remarque                                  |
-| ---------------------------------------- | ------------ | ----------------------------------------- |
-| Socle probabiliste (Poisson, lambdas…)   | ❌            | Spécifique au sport — un socle par sport  |
-| Marchés (`Market`, picks)                | ⚠️            | À abstraire — aujourd'hui football-shaped |
-| ETL / ingestion / Zod                    | ✅            | Pattern réutilisable, sources distinctes  |
-| `ModelRun` + grain d'exécution           | ✅            | Voir architecture des canaux              |
-| Canaux / décision / sélection            | ✅            | Voir `channel-strategy-architecture.md`   |
-| Settlement (analytique + financier)      | ✅            | Logique par marché à étendre              |
-| Calibration + couche de correction ML    | ✅            | Réentraînée par sport                     |
-| Discipline de risque (seuils, suspension)| ✅            | Identique, alimentée par le volume        |
+| Couche                                    | Réutilisable | Remarque                                  |
+| ----------------------------------------- | ------------ | ----------------------------------------- |
+| Socle probabiliste (Poisson, lambdas…)    | ❌           | Spécifique au sport — un socle par sport  |
+| Marchés (`Market`, picks)                 | ⚠️           | À abstraire — aujourd'hui football-shaped |
+| ETL / ingestion / Zod                     | ✅           | Pattern réutilisable, sources distinctes  |
+| `ModelRun` + grain d'exécution            | ✅           | Voir architecture des canaux              |
+| Canaux / décision / sélection             | ✅           | Voir `channel-strategy-architecture.md`   |
+| Settlement (analytique + financier)       | ✅           | Logique par marché à étendre              |
+| Calibration + couche de correction ML     | ✅           | Réentraînée par sport                     |
+| Discipline de risque (seuils, suspension) | ✅           | Identique, alimentée par le volume        |
 
 L'architecture des canaux de stratégie
 ([channel-strategy-architecture.md](channel-strategy-architecture.md)) est, de
@@ -64,8 +64,8 @@ Cela suppose d'abstraire la notion de `sport` dans le schéma (le `Market` enum 
 L'extension multi-sport ne doit pas démarrer tant que ces deux conditions ne sont
 pas remplies :
 
-1. **L'edge football est prouvé.** Aujourd'hui le ML est toujours en *shadow
-   mode* (jamais promu, voir Phase 3 / étape 7ter) et le canal `EV / ONE_X_TWO`
+1. **L'edge football est prouvé.** Aujourd'hui le ML est toujours en _shadow
+   mode_ (jamais promu, voir Phase 3 / étape 7ter) et le canal `EV / ONE_X_TWO`
    présente un biais structurel de surestimation des top picks (edge affiché
    ≈ +19,6 %, ROI réel ≈ −54,9 % sur l'échantillon de référence ; seul
    `SV / OVER_UNDER` est sain à +5,2 %). Construire un second sport sur une base
