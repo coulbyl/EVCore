@@ -102,34 +102,31 @@ côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
 
 ---
 
-## Étape 3 — Backfill (script idempotent + transactionnel)
+## Étape 3 — Backfill (via ETL, pas de script standalone)
 
-> Script : `apps/backend/src/scripts/backfill-channel-decisions.ts` (`--dry-run`, `--limit`, `--from/--to`, `--batch-size`)
+> **Décision** : le backfill historique passe par l'**ETL** (worker `betting-engine-analysis`
+> qui ré-exécute l'engine branché sur une fenêtre de dates → écrit `ChannelDecision` /
+> `ChannelSelection` nativement, + lien `Bet.channelSelectionId`). Les scripts standalone
+> `backfill-channel-decisions.{ts,lib}` et leur e2e ont été **supprimés** (commit de l'Étape 5).
 
-- [x] `EV` : `Bet(source=MODEL, isSafeValue=false)` → `ChannelDecision(EV, SELECTED)` + sélection ;
-      sinon `NO_BET` → `ChannelDecision(EV, REJECTED, reasonCode=BACKFILL)`
-- [x] `SAFE` : `Bet(isSafeValue=true)` → `ChannelDecision(SAFE, SELECTED)` + sélection
-- [x] `DOMINANT` / `DRAW` / `BTTS` depuis `Prediction` (mapping §0) → `SELECTED` + sélection
-      (`result` dérivé de `correct`)
-- [x] Relier chaque `Bet` matérialisé à sa `ChannelSelection` (`channelSelectionId`)
+- [x] Production native des décisions par l'engine (EV/SAFE + DOMINANT/DRAW/BTTS), lien `Bet`
+- [x] Idempotence garantie par `@@unique([modelRunId, channel])` (un re-run = un nouveau `ModelRun`)
 - [-] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel` — **déplacé en Étape 6** :
       conversion de colonne `CouponProposalLeg.canal`, à faire dans la migration qui drop `CouponLegCanal`
-      (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là). Pas un backfill de `ChannelDecision`
-- [x] Re-exécutable sans doublon (clés `@@unique`) — skip si `(modelRunId, channel)` existe, pas de rejet inventé
-- [x] Tests d'idempotence + réconciliation (`test/backfill-channel-decisions.e2e-spec.ts`, 4 tests verts)
+      (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là)
+- [ ] **[ETL]** Brancher / exposer le déclenchement du backfill par fenêtre (ré-analyse historique)
+      côté ETL si besoin d'un rattrapage de masse
 
 ---
 
-## Étape 4 — Vérification (gate AVANT tout DROP)
+## Étape 4 — Vérification (parité avant DROP)
 
-> Gate read-only : `apps/backend/src/scripts/verify-channel-backfill{,.lib}.ts`
-> (CLI sort en code ≠ 0 si rouge → bloque le DROP en CI). Tests : `test/verify-channel-backfill.e2e-spec.ts` (4 verts).
+> Les scripts standalone `verify-channel-backfill.{ts,lib}` et leur e2e ont été **supprimés**
+> (le backfill ne passe plus par un script). La parité legacy↔canaux avant le DROP (Étape 6)
+> reste à câbler — via une requête/job ETL plutôt qu'un CLI dédié.
 
-- [x] Réconciliation comptage : `count(ChannelSelection)` == `count(Bet MODEL)` + `count(Prediction)` (`count_parity`)
-- [x] Parité des résultats settlés par canal (`settled_parity_{EV,SAFE,DOMINANT,DRAW,BTTS}`,
-      WON/LOST legacy vs nouveau) + complétude des liens (`all_model_bets_linked`)
-- [x] Test de parité ancien/nouveau « rapport » (résultats settlés) — couvert par `settled_parity_*`
-- [x] Gate read-only : aucun DROP exécuté ; un gate rouge n'altère rien (le DROP reste Étape 6, conditionné au vert)
+- [ ] **[à recâbler]** Réconciliation comptage + parité des résultats settlés par canal
+      (legacy `Bet`/`Prediction` vs `ChannelSelection`) avant tout DROP — gate read-only via ETL/analytics
 
 ---
 
@@ -159,9 +156,15 @@ côté client. Puis rapports/exports ML. **Enfin** retrait legacy (Étape 6).
       (`ChannelDecisionController` + `ChannelDecisionListQueryDto`), `ChannelDecisionService.list`
       → `findByDate` (jointure `modelRun→fixture→competition`), filtres date/competition/channel/market/status,
       REJECTED + reasonCode exposés. **Phase** (`J_MINUS|MATCH_DAY|LIVE`) reportée (ModelRun ne la porte pas encore)
-- [ ] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
+- [~] Frontend : **un seul** type aligné sur `StrategyChannel`, mapping canal → clé i18n,
       tokens couleur remappés ; vue run **multi-canal** (plus de `BET`/`NO_BET`) ;
       suppression de la reconstruction `isSafeValue` / `Prediction` côté client
+      — **fait** : nouvelle page `/dashboard/decisions` (route parallèle) consommant
+      `GET /channel-decisions` via `domains/channel-decision`, deux lentilles
+      *Par match* (grille multi-canal + rejets/reasonCode en tooltip) / *Par canal* (tabs),
+      remap `StrategyChannel → --canal-*`, entrée sidebar + i18n nav. **Reste** :
+      retirer `/dashboard/investment` + `/dashboard/picks` après parité (redirect),
+      i18n complet des libellés canaux/codes de rejet, extras présentation (logos/score)
 - [ ] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`)
 
 ---
