@@ -56,7 +56,14 @@ export type ChannelDecisionReadRow = {
   scheduledAt: Date;
   homeTeam: string;
   awayTeam: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   competitionCode: string | null;
+  country: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeHtScore: number | null;
+  awayHtScore: number | null;
   selections: ChannelSelectionReadRow[];
 };
 
@@ -194,9 +201,17 @@ export class ChannelDecisionRepository {
               select: {
                 id: true,
                 scheduledAt: true,
-                homeTeam: { select: { name: true } },
-                awayTeam: { select: { name: true } },
-                season: { select: { competition: { select: { code: true } } } },
+                homeScore: true,
+                awayScore: true,
+                homeHtScore: true,
+                awayHtScore: true,
+                homeTeam: { select: { name: true, logoUrl: true } },
+                awayTeam: { select: { name: true, logoUrl: true } },
+                season: {
+                  select: {
+                    competition: { select: { code: true, country: true } },
+                  },
+                },
               },
             },
           },
@@ -234,7 +249,14 @@ export class ChannelDecisionRepository {
       scheduledAt: row.modelRun.fixture.scheduledAt,
       homeTeam: row.modelRun.fixture.homeTeam.name,
       awayTeam: row.modelRun.fixture.awayTeam.name,
+      homeLogo: row.modelRun.fixture.homeTeam.logoUrl,
+      awayLogo: row.modelRun.fixture.awayTeam.logoUrl,
       competitionCode: row.modelRun.fixture.season.competition.code,
+      country: row.modelRun.fixture.season.competition.country,
+      homeScore: row.modelRun.fixture.homeScore,
+      awayScore: row.modelRun.fixture.awayScore,
+      homeHtScore: row.modelRun.fixture.homeHtScore,
+      awayHtScore: row.modelRun.fixture.awayHtScore,
       selections: row.selections,
     }));
   }

@@ -213,7 +213,14 @@ describe('ChannelDecisionService', () => {
           scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
           homeTeam: 'Home',
           awayTeam: 'Away',
+          homeLogo: 'https://logo/home.png',
+          awayLogo: null,
           competitionCode: 'BL1',
+          country: 'Germany',
+          homeScore: 2,
+          awayScore: 1,
+          homeHtScore: 1,
+          awayHtScore: 0,
           selections: [
             {
               market: Market.ONE_X_TWO,
@@ -240,7 +247,14 @@ describe('ChannelDecisionService', () => {
           scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
           homeTeam: 'Home',
           awayTeam: 'Away',
+          homeLogo: null,
+          awayLogo: null,
           competitionCode: 'BL1',
+          country: 'Germany',
+          homeScore: null,
+          awayScore: null,
+          homeHtScore: null,
+          awayHtScore: null,
           selections: [],
         },
       ]);
@@ -261,7 +275,12 @@ describe('ChannelDecisionService', () => {
 
       expect(items).toHaveLength(2);
       const ev = items[0];
-      expect(ev?.fixture).toBe('Home vs Away');
+      expect(ev?.homeTeam).toBe('Home');
+      expect(ev?.awayTeam).toBe('Away');
+      expect(ev?.homeLogo).toBe('https://logo/home.png');
+      expect(ev?.country).toBe('Germany');
+      expect(ev?.score).toBe('2-1');
+      expect(ev?.htScore).toBe('1-0');
       expect(ev?.selections[0]?.probability).toBe(0.6);
       expect(ev?.selections[0]?.ev).toBe(0.14);
       expect(ev?.selections[0]?.impliedProbability).toBeNull();

@@ -41,8 +41,14 @@ export type ChannelDecisionItem = {
   fixtureId: string;
   modelRunId: string;
   competition: string | null;
-  fixture: string;
+  country: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
   kickoff: string;
+  score: string | null;
+  htScore: string | null;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -131,14 +137,28 @@ export class ChannelDecisionService {
       fixtureId: row.fixtureId,
       modelRunId: row.modelRunId,
       competition: row.competitionCode,
-      fixture: `${row.homeTeam} vs ${row.awayTeam}`,
+      country: row.country,
+      homeTeam: row.homeTeam,
+      awayTeam: row.awayTeam,
+      homeLogo: row.homeLogo,
+      awayLogo: row.awayLogo,
       kickoff: formatTimeUtc(row.scheduledAt),
+      score: formatScoreLine(row.homeScore, row.awayScore),
+      htScore: formatScoreLine(row.homeHtScore, row.awayHtScore),
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,
       selections: row.selections.map(toSelectionItem),
     };
   }
+}
+
+// "2-1" once both sides are known, else null (matches the picks API shape).
+function formatScoreLine(
+  home: number | null,
+  away: number | null,
+): string | null {
+  return home === null || away === null ? null : `${home}-${away}`;
 }
 
 function toSelectionItem(
