@@ -93,10 +93,14 @@
 
 ## Étape 4 — Vérification (gate AVANT tout DROP)
 
-- [ ] Réconciliation comptage : `ChannelSelection SELECTED` == `Bet MODEL` + `Prediction` migrées
-- [ ] Parité par fixture + somme des résultats settlés
-- [ ] Test de parité ancien/nouveau rapport sur la même période (gate de migration)
-- [ ] Échec ⇒ transaction non committée, aucun legacy supprimé, état précédent intact
+> Gate read-only : `apps/backend/src/scripts/verify-channel-backfill{,.lib}.ts`
+> (CLI sort en code ≠ 0 si rouge → bloque le DROP en CI). Tests : `test/verify-channel-backfill.e2e-spec.ts` (4 verts).
+
+- [x] Réconciliation comptage : `count(ChannelSelection)` == `count(Bet MODEL)` + `count(Prediction)` (`count_parity`)
+- [x] Parité des résultats settlés par canal (`settled_parity_{EV,SAFE,DOMINANT,DRAW,BTTS}`,
+      WON/LOST legacy vs nouveau) + complétude des liens (`all_model_bets_linked`)
+- [x] Test de parité ancien/nouveau « rapport » (résultats settlés) — couvert par `settled_parity_*`
+- [x] Gate read-only : aucun DROP exécuté ; un gate rouge n'altère rien (le DROP reste Étape 6, conditionné au vert)
 
 ---
 
