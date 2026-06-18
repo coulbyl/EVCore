@@ -2,7 +2,6 @@
 
 import { TrendingUp, Shield, Target, Minus, Activity } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { usePredictionStats } from "@/domains/dashboard/use-cases/get-predictions";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
 import { usePnlByCanal } from "@/domains/dashboard/use-cases/get-pnl-by-canal";
 import type {
@@ -51,6 +50,16 @@ type Canal = keyof typeof CANAL_STYLES;
 const SKELETON = <div className="h-4 w-12 animate-pulse rounded bg-border" />;
 
 type StatRow = { label: string; value: React.ReactNode; sub?: string };
+
+function formatPercent(value: number | null | undefined) {
+  return value == null ? null : `${(value * 100).toFixed(1)}%`;
+}
+
+function formatSignedPercent(value: number | null | undefined) {
+  if (value == null) return null;
+  const formatted = `${(value * 100).toFixed(1)}%`;
+  return value > 0 ? `+${formatted}` : formatted;
+}
 
 function Stat({ label, value, sub }: StatRow) {
   return (
@@ -125,15 +134,15 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   const tPicks = useTranslations("picks");
   const { data: healthItems = [] } = useChannelHealth();
   const { data: pnlByCanal } = usePnlByCanal(from, to);
-  const { data: confStats } = usePredictionStats(from, to, "CONF");
-  const { data: drawStats } = usePredictionStats(from, to, "DRAW");
-  const { data: bttsStats } = usePredictionStats(from, to, "BTTS");
 
-  const findStatus = (ch: ChannelHealthItem["channel"]) =>
-    healthItems.find((h) => h.channel === ch)?.status;
+  const findHealth = (ch: ChannelHealthItem["channel"]) =>
+    healthItems.find((h) => h.channel === ch);
 
   const ev = pnlByCanal?.ev ?? null;
   const sv = pnlByCanal?.sv ?? null;
+  const btts = findHealth("BTTS");
+  const conf = findHealth("CONF");
+  const draw = findHealth("DRAW");
 
   return (
     <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -141,7 +150,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="sv"
         icon={<Shield size={14} />}
         label={tPicks("safeValue")}
-        status={findStatus("SV")}
+        status={findHealth("SV")?.status}
         rows={[
           { label: t("roi"), value: sv ? sv.roi : SKELETON },
           { label: t("settledBets"), value: sv ? sv.settledBets : SKELETON },
@@ -152,18 +161,16 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="btts"
         icon={<Activity size={14} />}
         label={tPicks("btts")}
-        status={findStatus("BTTS")}
+        status={btts?.status}
         rows={[
-          { label: t("roi"), value: bttsStats ? bttsStats.roi : SKELETON },
+          { label: t("roi"), value: formatSignedPercent(btts?.roi) ?? SKELETON },
           {
             label: t("settledBets"),
-            value: bttsStats
-              ? `${bttsStats.correct}/${bttsStats.total}`
-              : SKELETON,
+            value: btts ? btts.sampleSize : SKELETON,
           },
           {
             label: t("winRate"),
-            value: bttsStats ? bttsStats.hitRate : SKELETON,
+            value: formatPercent(btts?.hitRate) ?? SKELETON,
           },
         ]}
       />
@@ -171,18 +178,16 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="conf"
         icon={<Target size={14} />}
         label={tPicks("confidence")}
-        status={findStatus("CONF")}
+        status={conf?.status}
         rows={[
-          { label: t("roi"), value: confStats ? confStats.roi : SKELETON },
+          { label: t("roi"), value: formatSignedPercent(conf?.roi) ?? SKELETON },
           {
             label: t("settledBets"),
-            value: confStats
-              ? `${confStats.correct}/${confStats.total}`
-              : SKELETON,
+            value: conf ? conf.sampleSize : SKELETON,
           },
           {
             label: t("winRate"),
-            value: confStats ? confStats.hitRate : SKELETON,
+            value: formatPercent(conf?.hitRate) ?? SKELETON,
           },
         ]}
       />
@@ -190,18 +195,16 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="draw"
         icon={<Minus size={14} />}
         label={tPicks("matchNull")}
-        status={findStatus("DRAW")}
+        status={draw?.status}
         rows={[
-          { label: t("roi"), value: drawStats ? drawStats.roi : SKELETON },
+          { label: t("roi"), value: formatSignedPercent(draw?.roi) ?? SKELETON },
           {
             label: t("settledBets"),
-            value: drawStats
-              ? `${drawStats.correct}/${drawStats.total}`
-              : SKELETON,
+            value: draw ? draw.sampleSize : SKELETON,
           },
           {
             label: t("winRate"),
-            value: drawStats ? drawStats.hitRate : SKELETON,
+            value: formatPercent(draw?.hitRate) ?? SKELETON,
           },
         ]}
       />
@@ -209,7 +212,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="ev"
         icon={<TrendingUp size={14} />}
         label={tPicks("evChannel")}
-        status={findStatus("EV")}
+        status={findHealth("EV")?.status}
         rows={[
           { label: t("roi"), value: ev ? ev.roi : SKELETON },
           { label: t("settledBets"), value: ev ? ev.settledBets : SKELETON },

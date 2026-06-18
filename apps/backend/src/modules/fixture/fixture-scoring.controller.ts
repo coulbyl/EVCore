@@ -1,7 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
-import { CurrentSession } from '@modules/auth/current-session.decorator';
-import type { AuthSession } from '@modules/auth/auth.types';
 import { parseIsoDate, startOfUtcDay } from '@utils/date.utils';
 import { FixtureScoringService } from './fixture-scoring.service';
 import { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
@@ -12,10 +10,7 @@ export class FixtureScoringController {
   constructor(private readonly service: FixtureScoringService) {}
 
   @Get()
-  getFixtures(
-    @CurrentSession() session: AuthSession,
-    @Query() query: FixtureScoringQueryDto,
-  ) {
+  getFixtures(@Query() query: FixtureScoringQueryDto) {
     const date = query.date
       ? parseIsoDate(query.date)
       : startOfUtcDay(new Date());
@@ -29,7 +24,6 @@ export class FixtureScoringController {
         betStatus: query.betStatus,
       },
       {
-        userId: session.user.id,
         cursor: query.cursor,
         limit: query.limit,
       },

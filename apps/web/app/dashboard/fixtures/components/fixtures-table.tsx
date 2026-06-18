@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShoppingCart, Check, ChevronRight } from "lucide-react";
 import {
-  Badge,
   DataTable,
   Drawer,
   DrawerContent,
@@ -21,14 +20,9 @@ import {
 import {
   fixtureStatusBadgeClass,
   fixtureStatusLabel,
-  formatCombinedPickForDisplay,
 } from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
-import type {
-  FixtureRow,
-  FixtureSvBet,
-  FixturePrediction,
-} from "@/domains/fixture/types/fixture";
+import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
@@ -40,187 +34,6 @@ import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
 function hasEvPick(row: FixtureRow): boolean {
   const mr = row.modelRun;
   return Boolean(mr?.betId && mr.market && mr.pick);
-}
-
-function EvPickBadge({ show }: { show: boolean }) {
-  if (!show) return <span className="text-xs text-muted-foreground">—</span>;
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
-      style={{
-        color: "var(--canal-ev)",
-        background: "var(--canal-ev-soft)",
-        border:
-          "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
-      }}
-    >
-      EV
-    </span>
-  );
-}
-
-const PICK_LABEL: Record<string, string> = {
-  HOME: "DOM",
-  AWAY: "EXT",
-  DRAW: "NUL",
-};
-
-function PredictionBadge({ pred }: { pred: FixturePrediction }) {
-  const t = useTranslations("picks");
-  const bttsLabel =
-    pred.pick === "YES"
-      ? t("bttsYes")
-      : pred.pick === "NO"
-        ? t("bttsNo")
-        : null;
-  const label =
-    pred.channel === "BTTS" && bttsLabel != null
-      ? bttsLabel
-      : (PICK_LABEL[pred.pick] ?? pred.pick);
-  const canalColor =
-    pred.channel === "DRAW"
-      ? "var(--canal-draw)"
-      : pred.channel === "BTTS"
-        ? "var(--canal-btts)"
-        : "var(--canal-conf)";
-  const canalSoft =
-    pred.channel === "DRAW"
-      ? "var(--canal-draw-soft)"
-      : pred.channel === "BTTS"
-        ? "var(--canal-btts-soft)"
-        : "var(--canal-conf-soft)";
-  // settled: success/danger; pending: canal-conf color
-  if (pred.correct === true) {
-    return (
-      <Badge
-        variant="success"
-        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
-      >
-        → {label} {pred.probability}
-      </Badge>
-    );
-  }
-  if (pred.correct === false) {
-    return (
-      <Badge
-        variant="destructive"
-        className="gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
-      >
-        → {label} {pred.probability}
-      </Badge>
-    );
-  }
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold tabular-nums"
-      style={{
-        color: canalColor,
-        background: canalSoft,
-        border: `1px solid color-mix(in srgb, ${canalColor} 22%, transparent)`,
-      }}
-    >
-      → {label} {pred.probability}
-    </span>
-  );
-}
-
-function SVBadge() {
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-widest"
-      style={{
-        color: "var(--canal-sv)",
-        background: "var(--canal-sv-soft)",
-        border:
-          "1px solid color-mix(in srgb, var(--canal-sv) 22%, transparent)",
-      }}
-    >
-      SV
-    </span>
-  );
-}
-
-function SVRow({ sv, row }: { sv: FixtureSvBet; row: FixtureRow }) {
-  const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
-  const pickLabel = formatCombinedPickForDisplay({
-    market: sv.market,
-    pick: sv.pick,
-    comboMarket: sv.comboMarket ?? undefined,
-    comboPick: sv.comboPick ?? undefined,
-  });
-  const inSlip = isInSlip(sv.betId);
-  const canAdd = sv.betStatus === "PENDING" && isFixtureBettable(row);
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (inSlip) {
-      removeItem(sv.betId);
-      return;
-    }
-    const item: BetSlipDraftItem = {
-      betId: sv.betId,
-      fixtureId: row.fixtureId,
-      fixture: row.fixture,
-      homeLogo: row.homeLogo,
-      awayLogo: row.awayLogo,
-      competition: row.competition,
-      scheduledAt: row.scheduledAt,
-      market: sv.market,
-      pick: sv.pick,
-      comboMarket: sv.comboMarket ?? undefined,
-      comboPick: sv.comboPick ?? undefined,
-      odds: null,
-      ev: sv.ev,
-      stakeOverride: null,
-    };
-    addItem(item);
-    if (draft.items.length === 0) open();
-  }
-
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <SVBadge />
-      <span className="text-muted-foreground">{pickLabel}</span>
-      {sv.odds && <span className="text-muted-foreground">{sv.odds}</span>}
-      <span className="font-semibold" style={{ color: "var(--canal-sv)" }}>
-        {sv.ev}
-      </span>
-      {sv.betStatus && sv.betStatus !== "PENDING" && (
-        <BetResultBadge status={sv.betStatus} />
-      )}
-      {canAdd && (
-        <button
-          type="button"
-          onClick={handleClick}
-          className={`flex size-6 items-center justify-center rounded-md border transition-colors ${
-            inSlip
-              ? "border-success/20 bg-success/12 text-success"
-              : "border-border bg-panel text-muted-foreground hover:border-accent hover:text-accent"
-          }`}
-        >
-          {inSlip ? <Check size={11} /> : <ShoppingCart size={11} />}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function BetResultBadge({
-  status,
-}: {
-  status: "WON" | "LOST" | "PENDING" | null;
-}) {
-  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
-  if (status === "PENDING")
-    return <span className="text-xs text-muted-foreground">En attente</span>;
-  return (
-    <Badge
-      variant={status === "WON" ? "success" : "destructive"}
-      className="rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
-    >
-      {status === "WON" ? "Gagné" : "Perdu"}
-    </Badge>
-  );
 }
 
 function FixtureTeamLogos({
@@ -372,27 +185,7 @@ function FixtureMobileCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const mr = row.modelRun;
   const score = formatScore(row.score, row.htScore);
-  const pickLabel =
-    mr?.market && mr?.pick
-      ? formatCombinedPickForDisplay({
-          market: mr.market,
-          pick: mr.pick,
-          comboMarket: mr.comboMarket ?? undefined,
-          comboPick: mr.comboPick ?? undefined,
-        })
-      : null;
-  const evOdds =
-    mr?.market && mr?.pick
-      ? (mr.evaluatedPicks.find(
-          (p) =>
-            p.market === mr.market &&
-            p.pick === mr.pick &&
-            (p.comboMarket ?? null) === (mr.comboMarket ?? null) &&
-            (p.comboPick ?? null) === (mr.comboPick ?? null),
-        )?.odds ?? null)
-      : null;
 
   return (
     <div
@@ -428,22 +221,6 @@ function FixtureMobileCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm">
-            {pickLabel ? (
-              <span className="font-medium text-foreground">{pickLabel}</span>
-            ) : (
-              <span className="text-muted-foreground">Sans sélection</span>
-            )}
-            {score && (
-              <>
-                <span className="text-border">·</span>
-                <span className="font-semibold tabular-nums text-muted-foreground">
-                  {score}
-                </span>
-              </>
-            )}
-          </div>
-
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               <span className="font-medium text-foreground">
@@ -451,45 +228,20 @@ function FixtureMobileCard({
               </span>
               <span className="mx-1.5">·</span>
               {formatKickoff(row.scheduledAt)}
+              {score && (
+                <>
+                  <span className="mx-1.5">·</span>
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {score}
+                  </span>
+                </>
+              )}
             </p>
             <ChevronRight
               size={14}
               className="shrink-0 text-muted-foreground"
             />
           </div>
-
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {hasEvPick(row) && mr?.ev && (
-              <span className="flex items-baseline gap-1 tabular-nums">
-                {evOdds && (
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {evOdds}
-                  </span>
-                )}
-                <span
-                  className="text-sm font-bold"
-                  style={{ color: "var(--canal-ev)" }}
-                >
-                  {mr.ev}
-                </span>
-              </span>
-            )}
-            {row.prediction && <PredictionBadge pred={row.prediction} />}
-            {row.drawPrediction && (
-              <PredictionBadge pred={row.drawPrediction} />
-            )}
-            {row.bttsPrediction && (
-              <PredictionBadge pred={row.bttsPrediction} />
-            )}
-            <EvPickBadge show={hasEvPick(row)} />
-          </div>
-
-          {hasEvPick(row) && mr?.betStatus && mr.betStatus !== "PENDING" && (
-            <div className="flex items-center gap-2">
-              <BetResultBadge status={mr.betStatus} />
-            </div>
-          )}
-          {row.safeValueBet && <SVRow sv={row.safeValueBet} row={row} />}
         </div>
       </div>
 
@@ -555,143 +307,6 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
           {formatKickoff(row.original.scheduledAt)}
         </span>
       ),
-    },
-    {
-      id: "evPick",
-      header: "EV",
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-1">
-          <EvPickBadge show={hasEvPick(row.original)} />
-          <div className="flex flex-wrap gap-1">
-            {row.original.prediction && (
-              <PredictionBadge pred={row.original.prediction} />
-            )}
-            {row.original.drawPrediction && (
-              <PredictionBadge pred={row.original.drawPrediction} />
-            )}
-            {row.original.bttsPrediction && (
-              <PredictionBadge pred={row.original.bttsPrediction} />
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "pick",
-      header: "Pick",
-      cell: ({ row }) => {
-        const mr = row.original.modelRun;
-        const sv = row.original.safeValueBet;
-        return (
-          <div className="flex flex-col gap-1 text-sm text-foreground">
-            {mr?.market && mr?.pick ? (
-              <div>
-                {formatCombinedPickForDisplay({
-                  market: mr.market,
-                  pick: mr.pick,
-                  comboMarket: mr.comboMarket ?? undefined,
-                  comboPick: mr.comboPick ?? undefined,
-                })}
-              </div>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-            {sv && (
-              <div
-                className="ml-1 flex items-center gap-1.5 border-l-2 pl-2"
-                style={{
-                  borderColor:
-                    "color-mix(in srgb, var(--canal-sv) 35%, transparent)",
-                }}
-              >
-                <SVBadge />
-                <span className="text-xs text-muted-foreground">
-                  {formatCombinedPickForDisplay({
-                    market: sv.market,
-                    pick: sv.pick,
-                    comboMarket: sv.comboMarket ?? undefined,
-                    comboPick: sv.comboPick ?? undefined,
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "odds",
-      header: "Cote",
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const mr = row.original.modelRun;
-        const odds =
-          mr?.market && mr?.pick
-            ? (mr.evaluatedPicks.find(
-                (p) => p.market === mr.market && p.pick === mr.pick,
-              )?.odds ?? null)
-            : null;
-        return (
-          <div className="flex flex-col gap-0.5 tabular-nums text-sm font-medium">
-            <span className="text-foreground">
-              {odds ?? <span className="text-muted-foreground">—</span>}
-            </span>
-            {row.original.safeValueBet && (
-              <span className="text-xs text-muted-foreground">
-                {row.original.safeValueBet.odds ?? "—"}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "ev",
-      header: "EV",
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const mr = row.original.modelRun;
-        const sv = row.original.safeValueBet;
-        return (
-          <div className="tabular-nums text-sm font-semibold">
-            {mr?.ev ? (
-              <span>
-                <span style={{ color: "var(--canal-ev)" }}>{mr.ev}</span>
-                {sv && (
-                  <>
-                    <span className="mx-1 text-border">·</span>
-                    <span
-                      className="text-[0.7rem]"
-                      style={{ color: "var(--canal-sv)" }}
-                    >
-                      sv {sv.ev}
-                    </span>
-                  </>
-                )}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      id: "result",
-      header: "Résultat",
-      meta: { align: "right" },
-      cell: ({ row }) => {
-        const mr = row.original.modelRun;
-        return (
-          <div className="flex flex-col gap-1">
-            <BetResultBadge status={mr?.betStatus ?? null} />
-            {row.original.safeValueBet?.betStatus &&
-              row.original.safeValueBet.betStatus !== "PENDING" && (
-                <BetResultBadge status={row.original.safeValueBet.betStatus} />
-              )}
-          </div>
-        );
-      },
     },
     {
       id: "actions",

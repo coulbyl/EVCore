@@ -1,5 +1,3 @@
-import type { PredictionSource } from "@/domains/dashboard/types/dashboard";
-
 // ---------------------------------------------------------------------------
 // Fixture domain types — indépendants du concept "audit"
 // ---------------------------------------------------------------------------
@@ -13,8 +11,6 @@ export type FixtureModelFactors = {
 
 export type FixtureModelRun = {
   modelRunId: string;
-  deterministicScore: string;
-  finalScore: string;
   betId: string | null;
   market: string | null;
   pick: string | null;
@@ -23,11 +19,9 @@ export type FixtureModelRun = {
   betStatus: "WON" | "LOST" | "PENDING" | null;
   probEstimated: string | null;
   ev: string | null;
-  predictionSource: PredictionSource | null;
   lambdaHome: string | null;
   lambdaAway: string | null;
   expectedTotalGoals: string | null;
-  candidatePicks: FixturePickSnapshot[];
   evaluatedPicks: FixtureEvaluatedPickSnapshot[];
   factors: FixtureModelFactors | null;
 };
@@ -63,10 +57,6 @@ export type FixtureSvBet = {
   pick: string;
   comboMarket: string | null;
   comboPick: string | null;
-  ev: string;
-  odds: string | null;
-  betStatus: "WON" | "LOST" | "PENDING" | null;
-  probEstimated: string | null;
 };
 
 export type FixtureRow = {
@@ -75,18 +65,12 @@ export type FixtureRow = {
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
-  country: string;
-  competitionCode: string;
   scheduledAt: string;
   status: string;
   score: string | null;
   htScore: string | null;
-  alreadyInUserTicket: boolean;
   modelRun: FixtureModelRun | null;
   safeValueBet: FixtureSvBet | null;
-  prediction: FixturePrediction | null;
-  drawPrediction: FixturePrediction | null;
-  bttsPrediction: FixturePrediction | null;
 };
 
 // ---------------------------------------------------------------------------
