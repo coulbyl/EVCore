@@ -54,11 +54,6 @@ export class MlBackfillWorker extends WorkerHost {
         continue;
       }
 
-      await this.prisma.client.modelRun.update({
-        where: { id: result.modelRunId },
-        data: { isBackfill: true },
-      });
-
       const { settled: n } = await this.bettingEngine.settleOpenBets(fixtureId);
       settled += n;
       analyzed++;

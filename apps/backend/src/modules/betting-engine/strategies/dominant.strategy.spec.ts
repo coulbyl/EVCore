@@ -105,7 +105,7 @@ describe('DominantStrategy', () => {
   });
 
   it('returns REJECTED insufficient_margin when argmax barely leads', () => {
-    // BL1 threshold = 0.50, CONF_MIN_MARGIN = 0.05
+    // BL1 threshold = 0.50, DOMINANT_MIN_MARGIN = 0.05
     // 0.52 HOME vs 0.48 DRAW → margin = 0.04 < 0.05
     const ctx = makeContext({
       home: 0.52,

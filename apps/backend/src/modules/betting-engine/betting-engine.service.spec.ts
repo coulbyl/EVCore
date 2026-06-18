@@ -23,7 +23,6 @@ import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
 import type { BankrollService } from '@modules/bankroll/bankroll.service';
-import type { PredictionService } from '@modules/prediction/prediction.service';
 import type { MlInferenceService } from '@modules/ml/ml.inference.service';
 
 function makeHtftProbabilities(defaultValue = '0.111111') {
@@ -56,13 +55,6 @@ function makeCongestionServiceMock(score = 0): CongestionService {
   return {
     computeCongestionScore: vi.fn().mockResolvedValue(score),
   } as unknown as CongestionService;
-}
-
-function makePredictionServiceMock(): PredictionService {
-  return {
-    createPredictions: vi.fn().mockResolvedValue(undefined),
-    settlePredictions: vi.fn().mockResolvedValue({ settled: 0 }),
-  } as unknown as PredictionService;
 }
 
 function makeMlInferenceServiceMock(): MlInferenceService {
@@ -359,7 +351,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -468,7 +459,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -562,7 +552,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -773,7 +762,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const ev = service.calculateEV(new Decimal('0.54'), new Decimal('2.0'));
@@ -786,7 +774,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const p = service.computeProbabilities(1.4, 1.1);
@@ -802,7 +789,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
@@ -854,7 +840,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
@@ -932,7 +917,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1032,7 +1016,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1107,7 +1090,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1204,7 +1186,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       h2hService,
       congestionService,
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1348,7 +1329,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1468,7 +1448,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1582,7 +1561,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1636,7 +1614,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1698,7 +1675,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1760,7 +1736,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1884,7 +1859,6 @@ describe('BettingEngineService', () => {
       makeConfig(true),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -2019,7 +1993,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -2212,7 +2185,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
@@ -2230,7 +2202,6 @@ describe('BettingEngineService', () => {
         [
           {
             data: {
-              isSafeValue: boolean;
               market: Market;
               pick: string;
               pickKey: string;
@@ -2240,7 +2211,7 @@ describe('BettingEngineService', () => {
       ]
     )[1][0];
 
-    expect(svArgs.data.isSafeValue).toBe(true);
+    expect(svArgs.data).not.toHaveProperty('isSafeValue');
     expect(svArgs.data.market).toBe(Market.ONE_X_TWO);
     expect(svArgs.data.pick).toBe('HOME');
     expect(svArgs.data.pickKey).toMatch(/^sv:/);
@@ -2256,7 +2227,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
@@ -2283,7 +2253,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(

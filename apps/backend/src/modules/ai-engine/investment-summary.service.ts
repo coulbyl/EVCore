@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Market, PredictionChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { AiEngineRepository } from './ai-engine.repository';
-import type { InvestmentSummaryPredictionRow } from './ai-engine.repository';
 import type { InvestmentSummaryCanal } from './dto/investment-summary-query.dto';
 import type {
   InvestmentSummaryPickRow,
@@ -15,21 +13,6 @@ import {
   type InvestmentCanal,
   MAX_INVESTMENT_SELECTIONS,
 } from './investment.constants';
-
-const CANAL_TO_PREDICTION_CHANNEL: Record<
-  'CONF' | 'BB' | 'NUL',
-  PredictionChannel
-> = {
-  CONF: PredictionChannel.CONF,
-  BB: PredictionChannel.BTTS,
-  NUL: PredictionChannel.DRAW,
-};
-
-const CANAL_TO_ODDS_MARKET: Record<'CONF' | 'BB' | 'NUL', Market> = {
-  CONF: Market.ONE_X_TWO,
-  BB: Market.BTTS,
-  NUL: Market.ONE_X_TWO,
-};
 
 function buildProgression(
   items: { date: string; result: 'WON' | 'LOST' }[],
@@ -106,26 +89,6 @@ function capByDay<T>(
   return result;
 }
 
-function extractPredictionOdds(
-  pred: InvestmentSummaryPredictionRow,
-  canal: 'CONF' | 'BB' | 'NUL',
-): string | null {
-  const snapshots = pred.fixture.oddsSnapshots;
-  if (!snapshots.length) return null;
-
-  if (canal === 'CONF' || canal === 'NUL') {
-    const snap = snapshots[0];
-    if (pred.pick === 'HOME') return snap.homeOdds?.toString() ?? null;
-    if (pred.pick === 'DRAW') return snap.drawOdds?.toString() ?? null;
-    if (pred.pick === 'AWAY') return snap.awayOdds?.toString() ?? null;
-    return null;
-  }
-
-  // BB (BTTS): find snapshot matching the pick (YES / NO)
-  const snap = snapshots.find((s) => s.pick === pred.pick);
-  return snap?.odds?.toString() ?? null;
-}
-
 @Injectable()
 export class InvestmentSummaryService {
   constructor(private readonly repo: AiEngineRepository) {}
@@ -187,37 +150,7 @@ export class InvestmentSummaryService {
         }),
       );
     } else {
-      const predCanal = canal;
-      const predictions =
-        await this.repo.findSettledPredictionsForInvestmentSummary(
-          CANAL_TO_PREDICTION_CHANNEL[predCanal],
-          CANAL_TO_ODDS_MARKET[predCanal],
-          range.from,
-          range.to,
-        );
-
-      const capped = capByDay(
-        predictions,
-        (p) => p.fixture.scheduledAt.toISOString().slice(0, 10),
-        (p) => Number(p.probability),
-        maxPerDay,
-      );
-
-      picks = capped.map(
-        (p): InvestmentSummaryPickRow => ({
-          fixtureId: p.fixture.id,
-          fixture: `${p.fixture.homeTeam.name} vs ${p.fixture.awayTeam.name}`,
-          homeLogo: p.fixture.homeTeam.logoUrl ?? null,
-          awayLogo: p.fixture.awayTeam.logoUrl ?? null,
-          competition: p.fixture.season.competition.name,
-          scheduledAt: p.fixture.scheduledAt.toISOString(),
-          canal,
-          market: p.market,
-          pick: p.pick,
-          odds: extractPredictionOdds(p, predCanal),
-          result: p.correct ? 'WON' : 'LOST',
-        }),
-      );
+      picks = [];
     }
 
     const won = picks.filter((p) => p.result === 'WON');

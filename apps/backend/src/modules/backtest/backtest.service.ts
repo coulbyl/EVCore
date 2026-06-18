@@ -3,12 +3,7 @@ import path from 'node:path';
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
-import {
-  BetStatus,
-  FixtureStatus,
-  Market,
-  type PredictionChannel,
-} from '@evcore/db';
+import { BetStatus, FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
 import { FriModelService } from '@modules/betting-engine/fri-model/fri-model.service';
@@ -41,6 +36,7 @@ import {
   type MetricResult,
   type OneXTwoPrediction,
   type PredictionCalibrationRecommendation,
+  type PredictionChannel,
   type PredictionThresholdBacktest,
   type ValidationMarketSummary,
   type ValidationVerdict,
@@ -59,7 +55,7 @@ import {
   NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
 import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
-import { getPredictionConfig } from '@modules/prediction/prediction.constants';
+import { getChannelStrategyConfig } from '@modules/betting-engine/strategies/channel-strategy.config';
 
 const logger = createLogger('backtest-service');
 const BACKTEST_ANALYSIS_LOG_FILE = 'backtest-analysis.latest.ndjson';
@@ -281,7 +277,7 @@ const PREDICTION_LOWERING_HIT_RATE = 0.7;
 // DRAW channel uses ROI as primary metric — hit rate for draws cannot reach 55%.
 const DRAW_VALIDATION_ROI = 0.05; // +5% minimum ROI
 const DRAW_VALIDATION_HIT_RATE = 0.32; // secondary floor (structural draw rate SA ~28%)
-const PREDICTION_CHANNEL_CONF = 'CONF' as PredictionChannel;
+const PREDICTION_CHANNEL_DOMINANT = 'DOMINANT' as PredictionChannel;
 const PREDICTION_CHANNEL_DRAW = 'DRAW' as PredictionChannel;
 const PREDICTION_CHANNEL_BTTS = 'BTTS' as PredictionChannel;
 const CONF_THRESHOLD_SCAN = [
@@ -296,7 +292,7 @@ const BTTS_THRESHOLD_SCAN = [
 
 function createPredictionCandidateBuckets(): PredictionCandidateBuckets {
   return {
-    CONF: [],
+    DOMINANT: [],
     DRAW: [],
     BTTS: [],
   };
@@ -940,9 +936,9 @@ export class BacktestService {
       (stats) => buildMarketPerformance(stats),
     ).sort((a, b) => a.market.localeCompare(b.market));
     const predictionBacktest = buildPredictionBacktestSummary(
-      PREDICTION_CHANNEL_CONF,
+      PREDICTION_CHANNEL_DOMINANT,
       competitionCode ?? null,
-      predictionCandidates[PREDICTION_CHANNEL_CONF],
+      predictionCandidates[PREDICTION_CHANNEL_DOMINANT],
     );
     const predictionBacktests = buildPredictionBacktestSummaries(
       competitionCode ?? null,
@@ -1924,15 +1920,15 @@ export class BacktestService {
       await this.loadLatestOddsSnapshotsForFixtures(fixtures);
 
     const modelScoreThreshold = getModelScoreThreshold(competitionCode);
-    const confConfig = getPredictionConfig(
-      PREDICTION_CHANNEL_CONF,
+    const confConfig = getChannelStrategyConfig(
+      PREDICTION_CHANNEL_DOMINANT,
       competitionCode,
     );
-    const bttsConfig = getPredictionConfig(
+    const bttsConfig = getChannelStrategyConfig(
       PREDICTION_CHANNEL_BTTS,
       competitionCode,
     );
-    const drawConfig = getPredictionConfig(
+    const drawConfig = getChannelStrategyConfig(
       PREDICTION_CHANNEL_DRAW,
       competitionCode,
     );
@@ -2362,7 +2358,7 @@ function appendPredictionCandidates(input: {
         : 'AWAY';
   const probability = Math.max(pHome, pDraw, pAway);
 
-  buckets[PREDICTION_CHANNEL_CONF].push({
+  buckets[PREDICTION_CHANNEL_DOMINANT].push({
     probability,
     correct: pick === actual,
   });
@@ -2381,7 +2377,7 @@ function buildPredictionBacktestSummary(
   competitionCode: string | null,
   candidates: PredictionCandidate[],
 ): ChannelPredictionBacktestSummary {
-  const config = getPredictionConfig(channel, competitionCode);
+  const config = getChannelStrategyConfig(channel, competitionCode);
   const thresholds = buildPredictionThresholdGrid(
     channel,
     config.threshold,
@@ -2424,9 +2420,9 @@ function buildPredictionBacktestSummaries(
 ): ChannelPredictionBacktestSummary[] {
   return [
     buildPredictionBacktestSummary(
-      PREDICTION_CHANNEL_CONF,
+      PREDICTION_CHANNEL_DOMINANT,
       competitionCode,
-      candidates[PREDICTION_CHANNEL_CONF],
+      candidates[PREDICTION_CHANNEL_DOMINANT],
     ),
     buildPredictionBacktestSummary(
       PREDICTION_CHANNEL_DRAW,
@@ -2452,10 +2448,10 @@ function buildCompetitionPredictionBacktest(
     );
     if (channelSummary) return channelSummary;
 
-    if (channel === PREDICTION_CHANNEL_CONF) {
+    if (channel === PREDICTION_CHANNEL_DOMINANT) {
       return {
         ...report.predictionBacktest,
-        channel: PREDICTION_CHANNEL_CONF,
+        channel: PREDICTION_CHANNEL_DOMINANT,
       };
     }
 
@@ -2466,7 +2462,7 @@ function buildCompetitionPredictionBacktest(
   );
   if (availableSummaries.length === 0) return null;
 
-  const currentConfig = getPredictionConfig(channel, competitionCode);
+  const currentConfig = getChannelStrategyConfig(channel, competitionCode);
   const thresholdGrid = buildPredictionThresholdGrid(
     channel,
     currentConfig.threshold,
@@ -2804,7 +2800,7 @@ function buildCompetitionReport(input: {
   const byMarket = buildMarketSummaries(reports);
   const predictionBacktests = [
     buildCompetitionPredictionBacktest(
-      PREDICTION_CHANNEL_CONF,
+      PREDICTION_CHANNEL_DOMINANT,
       competition.code,
       reports,
     ),
@@ -2823,7 +2819,7 @@ function buildCompetitionReport(input: {
   );
   const predictionBacktest =
     predictionBacktests.find(
-      (report) => report.channel === PREDICTION_CHANNEL_CONF,
+      (report) => report.channel === PREDICTION_CHANNEL_DOMINANT,
     ) ?? null;
 
   const insufficient =

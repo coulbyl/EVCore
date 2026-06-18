@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FormationContentType, PredictionChannel } from '@evcore/db';
+import { FormationContentType } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { createLogger } from '@utils/logger';
 
@@ -67,18 +67,9 @@ export class GamificationService {
   }
 
   async checkAndAwardBadges(userId: string): Promise<void> {
-    const [settledBets, predictions, formationProgress] = await Promise.all([
+    const [settledBets, formationProgress] = await Promise.all([
       this.prisma.client.betSlipItem.count({
         where: { userId, bet: { status: { in: ['WON', 'LOST'] } } },
-      }),
-      this.prisma.client.prediction.findMany({
-        orderBy: { createdAt: 'desc' },
-        where: {
-          channel: PredictionChannel.CONF,
-          correct: { not: null },
-        },
-        select: { correct: true },
-        take: 200,
       }),
       this.prisma.client.userContentProgress.findMany({
         where: {
@@ -106,7 +97,6 @@ export class GamificationService {
       ['vol_50', settledBets >= 50],
       ['vol_150', settledBets >= 150],
       ['vol_300', settledBets >= 300],
-      ['streak_5', this.hasConsecutiveCorrect(predictions, 5)],
       ['graduate', completedFormation.size >= FORMATION_GRADUATE_TOTAL],
     ];
 
@@ -148,21 +138,5 @@ export class GamificationService {
         'Failed to award badge',
       );
     }
-  }
-
-  private hasConsecutiveCorrect(
-    predictions: { correct: boolean | null }[],
-    n: number,
-  ): boolean {
-    let streak = 0;
-    for (const p of predictions) {
-      if (p.correct === true) {
-        streak++;
-        if (streak >= n) return true;
-      } else {
-        streak = 0;
-      }
-    }
-    return false;
   }
 }

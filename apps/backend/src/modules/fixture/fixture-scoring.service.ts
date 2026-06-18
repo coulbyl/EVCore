@@ -220,16 +220,6 @@ export class FixtureScoringService {
             competition: { select: { code: true, name: true, country: true } },
           },
         },
-        predictions: {
-          select: {
-            channel: true,
-            market: true,
-            pick: true,
-            probability: true,
-            correct: true,
-          },
-          orderBy: { channel: 'asc' },
-        },
         modelRuns: {
           select: {
             id: true,
@@ -320,32 +310,6 @@ export class FixtureScoringService {
         ? extractModelRunFeatureDiagnostics(run.features)
         : null;
 
-      const predictionsByChannel = new Map<
-        'CONF' | 'DRAW' | 'BTTS',
-        (typeof f.predictions)[number]
-      >(f.predictions.map((p) => [p.channel, p]));
-
-      const mapPrediction = (
-        channel: 'CONF' | 'DRAW' | 'BTTS',
-      ): ScoredFixturePrediction | null => {
-        const p = predictionsByChannel.get(channel);
-        if (!p) return null;
-
-        const targetMarket = channel === 'BTTS' ? 'BTTS' : 'ONE_X_TWO';
-        const evalSnap = featureDiag?.evaluatedPicks.find(
-          (ep) => ep.market === targetMarket && ep.pick === p.pick,
-        );
-
-        return {
-          channel,
-          market: p.market,
-          pick: p.pick,
-          probability: `${(toNumber(p.probability) * 100).toFixed(1)}%`,
-          correct: p.correct,
-          odds: evalSnap?.odds ?? null,
-        };
-      };
-
       return {
         fixtureId: f.id,
         fixture: `${f.homeTeam.name} vs ${f.awayTeam.name}`,
@@ -408,9 +372,9 @@ export class FixtureScoringService {
                 : null,
             }
           : null,
-        prediction: mapPrediction('CONF'),
-        drawPrediction: mapPrediction('DRAW'),
-        bttsPrediction: mapPrediction('BTTS'),
+        prediction: null,
+        drawPrediction: null,
+        bttsPrediction: null,
       };
     });
 

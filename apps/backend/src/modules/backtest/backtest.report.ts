@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
-import { Market, PredictionChannel } from '@evcore/db';
+import { Market } from '@evcore/db';
+
+export type PredictionChannel = 'DOMINANT' | 'DRAW' | 'BTTS';
 
 export type ValidationVerdict = 'PASS' | 'FAIL' | 'INSUFFICIENT_DATA';
 

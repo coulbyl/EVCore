@@ -37,7 +37,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserRole } from '@evcore/db';
-import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
+import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { ChatToolsService } from './chat.tools.service';
 import type { ChatReadRepository } from './chat.read.repository';
 import type { ChatRequestUser } from './chat.types';
@@ -419,7 +419,9 @@ describe('ChatToolsService — golden set', () => {
       const result = await exec(service, 'getLeagueChannelConfig');
       const data = JSON.parse(result.content) as { leagues: unknown[] };
 
-      expect(data.leagues.length).toBe(Object.keys(PREDICTION_CONFIG).length);
+      expect(data.leagues.length).toBe(
+        Object.keys(CHANNEL_STRATEGY_CONFIG).length,
+      );
     });
 
     it('filtre sur la compétition PL', async () => {
@@ -443,7 +445,7 @@ describe('ChatToolsService — golden set', () => {
       });
       const data = JSON.parse(result.content) as { leagues: unknown[] };
 
-      // PREDICTION_CONFIG['UNKNOWN'] est undefined → channels vide
+      // CHANNEL_STRATEGY_CONFIG['UNKNOWN'] est undefined -> channels vide
       expect(data.leagues).toHaveLength(1);
     });
 

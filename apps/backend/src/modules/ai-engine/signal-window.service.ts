@@ -231,51 +231,24 @@ export class SignalWindowService {
       league: string;
       cnt: bigint;
     };
-    type PredAggRow = {
-      day: Date;
-      channel: string;
-      correct: boolean;
-      dow: number;
-      league: string;
-      cnt: bigint;
-    };
-
-    const [betRows, predRows] = await Promise.all([
-      this.prisma.client.$queryRaw<BetAggRow[]>`
-        SELECT
-          DATE(f."scheduledAt")                                   AS day,
-          b."isSafeValue"                                         AS is_safe,
-          (b.status = 'WON')                                      AS is_won,
-          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
-          c.code                                                  AS league,
-          COUNT(*)                                                AS cnt
-        FROM bet b
-        JOIN fixture     f ON f.id = b."fixtureId"
-        JOIN season      s ON s.id = f."seasonId"
-        JOIN competition c ON c.id = s."competitionId"
-        WHERE b.status IN ('WON', 'LOST')
-          AND b."createdAt" >= ${since}
-          AND b.source = 'MODEL'
-        GROUP BY DATE(f."scheduledAt"), b."isSafeValue", b.status,
-                 EXTRACT(ISODOW FROM f."scheduledAt"), c.code
-      `,
-      this.prisma.client.$queryRaw<PredAggRow[]>`
-        SELECT
-          DATE(f."scheduledAt")                                   AS day,
-          p.channel                                               AS channel,
-          p.correct                                               AS correct,
-          (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
-          p.competition                                           AS league,
-          COUNT(*)                                               AS cnt
-        FROM prediction p
-        JOIN fixture f ON f.id = p."fixtureId"
-        WHERE p.correct IS NOT NULL
-          AND p."createdAt" >= ${since}
-          AND p.channel IN ('BTTS', 'DRAW', 'CONF')
-        GROUP BY DATE(f."scheduledAt"), p.channel, p.correct,
-                 EXTRACT(ISODOW FROM f."scheduledAt"), p.competition
-      `,
-    ]);
+    const betRows = await this.prisma.client.$queryRaw<BetAggRow[]>`
+      SELECT
+        DATE(f."scheduledAt")                                   AS day,
+        b."isSafeValue"                                         AS is_safe,
+        (b.status = 'WON')                                      AS is_won,
+        (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
+        c.code                                                  AS league,
+        COUNT(*)                                                AS cnt
+      FROM bet b
+      JOIN fixture     f ON f.id = b."fixtureId"
+      JOIN season      s ON s.id = f."seasonId"
+      JOIN competition c ON c.id = s."competitionId"
+      WHERE b.status IN ('WON', 'LOST')
+        AND b."createdAt" >= ${since}
+        AND b.source = 'MODEL'
+      GROUP BY DATE(f."scheduledAt"), b."isSafeValue", b.status,
+               EXTRACT(ISODOW FROM f."scheduledAt"), c.code
+    `;
 
     const entries: AggEntry[] = [];
 
@@ -283,19 +256,6 @@ export class SignalWindowService {
       entries.push({
         canal: r.is_safe ? 'SV' : 'EV',
         correct: r.is_won,
-        dow: Number(r.dow),
-        league: r.league,
-        count: Number(r.cnt),
-        day: r.day,
-      });
-    }
-
-    for (const r of predRows) {
-      const canal: Canal =
-        r.channel === 'BTTS' ? 'BB' : r.channel === 'DRAW' ? 'NUL' : 'CONF';
-      entries.push({
-        canal,
-        correct: r.correct,
         dow: Number(r.dow),
         league: r.league,
         count: Number(r.cnt),
@@ -408,15 +368,6 @@ export class SignalWindowService {
           orderBy: { analyzedAt: 'desc' },
           take: 1,
         },
-        predictions: {
-          select: {
-            channel: true,
-            market: true,
-            pick: true,
-            probability: true,
-            correct: true,
-          },
-        },
       },
       orderBy: { scheduledAt: 'asc' },
     });
@@ -498,10 +449,6 @@ export class SignalWindowService {
         } as Record<string, unknown>,
       };
 
-      const evaluatedPicks = run
-        ? extractModelRunFeatureDiagnostics(run.features).evaluatedPicks
-        : [];
-
       if (run) {
         for (const bet of run.bets) {
           const canal: Canal = bet.isSafeValue ? 'SV' : 'EV';
@@ -521,41 +468,6 @@ export class SignalWindowService {
             modelRunId: null,
           });
         }
-      }
-
-      for (const pred of f.predictions) {
-        if (
-          pred.channel !== 'BTTS' &&
-          pred.channel !== 'DRAW' &&
-          pred.channel !== 'CONF'
-        )
-          continue;
-        const canal: Canal =
-          pred.channel === 'BTTS'
-            ? 'BB'
-            : pred.channel === 'DRAW'
-              ? 'NUL'
-              : 'CONF';
-
-        const targetMarket = pred.channel === 'BTTS' ? 'BTTS' : 'ONE_X_TWO';
-        const evalSnap = evaluatedPicks.find(
-          (ep) => ep.market === targetMarket && ep.pick === pred.pick,
-        );
-        const oddsSnapshot = evalSnap?.odds ? Number(evalSnap.odds) : null;
-
-        picks.push({
-          ...base,
-          canal,
-          market: pred.market,
-          pick: pred.pick,
-          probability: Number(pred.probability),
-          calibratedHitRate: 0,
-          oddsSnapshot,
-          isCorrect: pred.correct ?? null,
-          signalScore: 0,
-          betId: null,
-          modelRunId: run?.id ?? null,
-        });
       }
     }
 

@@ -5,9 +5,7 @@ import type {
 import { MatchCard, type MatchGroup } from "./match-card";
 
 // Group decisions by fixture, preserving the backend ordering (scheduledAt asc).
-export function groupByFixture(
-  decisions: ChannelDecisionDto[],
-): MatchGroup[] {
+export function groupByFixture(decisions: ChannelDecisionDto[]): MatchGroup[] {
   const groups = new Map<string, MatchGroup>();
   for (const decision of decisions) {
     let group = groups.get(decision.fixtureId);

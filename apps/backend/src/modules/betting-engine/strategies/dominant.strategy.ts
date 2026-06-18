@@ -1,8 +1,8 @@
 import { Market } from '@evcore/db';
 import {
-  CONF_MIN_MARGIN,
-  getPredictionConfig,
-} from '../../prediction/prediction.constants';
+  DOMINANT_MIN_MARGIN,
+  getChannelStrategyConfig,
+} from './channel-strategy.config';
 import {
   CHANNEL_DECISION_STATUS,
   STRATEGY_CHANNEL,
@@ -17,8 +17,10 @@ export class DominantStrategy implements ChannelStrategy {
 
   evaluate(context: StrategyContext): StrategyDecision {
     const ch = this.channel;
-    // DOMINANT maps to the legacy CONF channel config
-    const config = getPredictionConfig('CONF', context.competitionCode);
+    const config = getChannelStrategyConfig(
+      'DOMINANT',
+      context.competitionCode,
+    );
     if (!config?.enabled) {
       return {
         channel: ch,
@@ -49,14 +51,16 @@ export class DominantStrategy implements ChannelStrategy {
       };
     }
 
-    if (first.probability.minus(second.probability).lessThan(CONF_MIN_MARGIN)) {
+    if (
+      first.probability.minus(second.probability).lessThan(DOMINANT_MIN_MARGIN)
+    ) {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
         reasonCode: 'insufficient_margin',
         reasonDetails: {
           margin: first.probability.minus(second.probability).toNumber(),
-          minMargin: CONF_MIN_MARGIN.toNumber(),
+          minMargin: DOMINANT_MIN_MARGIN.toNumber(),
         },
         selections: [],
       };

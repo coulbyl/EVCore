@@ -1,9 +1,8 @@
-"""
-Dataset extraction for the ML correction layer.
+"""Dataset extraction for the ML correction layer.
 
-Joins ModelRun × Bet/Prediction × Fixture × Competition × OddsSnapshot(Pinnacle)
-and returns a feature-engineered DataFrame ready for model training.
-Each row is one settled bet (WON/LOST) or settled prediction (correct true/false).
+Joins ModelRun × Bet × Fixture × Competition × OddsSnapshot(Pinnacle) and
+returns a feature-engineered DataFrame ready for model training.
+Each row is one settled bet (WON/LOST).
 """
 
 from __future__ import annotations
@@ -77,38 +76,6 @@ JOIN season s      ON s.id            = f."seasonId"
 JOIN competition c ON c.id            = s."competitionId"
 {_ODDS_LATERAL_SQL.format(market_ref="b.market")}
 WHERE b.status IN ('WON', 'LOST')
-  AND (%s::boolean IS NULL OR mr."isBackfill" = %s::boolean)
-ORDER BY mr."analyzedAt"
-"""
-
-_PREDICTION_SQL = f"""
-SELECT
-    mr."analyzedAt"                 AS analyzed_at,
-    mr."deterministicScore"         AS deterministic_score,
-    mr.features                     AS features,
-    p.market::text                  AS market,
-    p.pick,
-    p.channel::text                 AS canal,
-    p.probability                   AS prob_estimated,
-    NULL::numeric                   AS odds_bet,
-    NULL::numeric                   AS ev,
-    p.correct                       AS outcome_correct,
-    c.code                          AS competition_code,
-    COALESCE(os."homeOdds", os."pickHomeOdds") AS pinnacle_home,
-    COALESCE(os."drawOdds", os."pickDrawOdds") AS pinnacle_draw,
-    COALESCE(os."awayOdds", os."pickAwayOdds") AS pinnacle_away,
-    os."yesOdds"                    AS pinnacle_yes,
-    os."noOdds"                     AS pinnacle_no,
-    os."overOdds"                   AS pinnacle_over,
-    os."underOdds"                  AS pinnacle_under
-FROM model_run mr
-JOIN prediction p  ON p."modelRunId"  = mr.id
-JOIN fixture f     ON f.id            = mr."fixtureId"
-JOIN season s      ON s.id            = f."seasonId"
-JOIN competition c ON c.id            = s."competitionId"
-{_ODDS_LATERAL_SQL.format(market_ref="p.market")}
-WHERE p.correct IS NOT NULL
-  AND (%s::boolean IS NULL OR mr."isBackfill" = %s::boolean)
 ORDER BY mr."analyzedAt"
 """
 
@@ -262,38 +229,29 @@ def _build_row(raw: dict[str, Any]) -> dict[str, Any]:
 async def extract_dataset(
     database_url: str,
     segment: str,
-    include_backfill: bool = True,
 ) -> pd.DataFrame:
     """
     Extract and engineer the training dataset from PostgreSQL.
-
-    include_backfill=True  → all records (prod + historical backfill)
-    include_backfill=False → prod picks only (isBackfill = false)
 
     Returns a DataFrame sorted by analyzed_at (temporal order preserved).
     Rows without Pinnacle odds have None in delta_p / p_pinnacle columns.
     """
     logger.info(
         "extracting dataset",
-        extra={"segment": segment, "include_backfill": include_backfill},
+        extra={"segment": segment},
     )
-
-    # Pass None to skip the isBackfill filter, or a boolean to filter
-    backfill_filter: bool | None = None if include_backfill else False
 
     async with await psycopg.AsyncConnection.connect(
         database_url, connect_timeout=10
     ) as conn:
         async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            await cur.execute(_BET_SQL, (backfill_filter, backfill_filter))
+            await cur.execute(_BET_SQL)
             bet_rows = await cur.fetchall()
-            await cur.execute(_PREDICTION_SQL, (backfill_filter, backfill_filter))
-            prediction_rows = await cur.fetchall()
 
-    rows = [*bet_rows, *prediction_rows]
+    rows = [*bet_rows]
     logger.info(
         "raw rows fetched",
-        extra={"bets": len(bet_rows), "predictions": len(prediction_rows), "total": len(rows)},
+        extra={"bets": len(bet_rows), "total": len(rows)},
     )
 
     records = [_build_row(dict(row)) for row in rows]

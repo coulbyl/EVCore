@@ -39,9 +39,7 @@ export function FixtureHeading({
   score?: string | null;
   htScore?: string | null;
 }) {
-  const league = competition
-    ? translateCompetition(competition, locale)
-    : "—";
+  const league = competition ? translateCompetition(competition, locale) : "—";
   const meta = [country ? translateCountry(country, locale) : null, league]
     .filter(Boolean)
     .join(" · ");
@@ -63,7 +61,9 @@ export function FixtureHeading({
       </p>
       <p className="truncate text-xs text-muted-foreground">
         {meta}
-        {kickoff ? <span className="ml-1.5 tabular-nums">{kickoff}</span> : null}
+        {kickoff ? (
+          <span className="ml-1.5 tabular-nums">{kickoff}</span>
+        ) : null}
       </p>
     </div>
   );

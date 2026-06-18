@@ -4,11 +4,10 @@ import {
   BetStatus,
   CouponProposalStatus,
   CouponResult,
-  Market,
   Prisma,
-  PredictionChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { mapCouponSourceChannel } from './coupon-channel.mapper';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -34,29 +33,6 @@ export type InvestmentSummaryBetRow = {
     homeTeam: { name: string; logoUrl: string | null };
     awayTeam: { name: string; logoUrl: string | null };
     season: { competition: { name: string; code: string } };
-  };
-};
-
-export type InvestmentSummaryPredictionRow = {
-  id: string;
-  channel: string;
-  market: string;
-  pick: string;
-  probability: Prisma.Decimal;
-  correct: boolean | null;
-  fixture: {
-    id: string;
-    scheduledAt: Date;
-    homeTeam: { name: string; logoUrl: string | null };
-    awayTeam: { name: string; logoUrl: string | null };
-    season: { competition: { name: string; code: string } };
-    oddsSnapshots: Array<{
-      homeOdds: Prisma.Decimal | null;
-      drawOdds: Prisma.Decimal | null;
-      awayOdds: Prisma.Decimal | null;
-      pick: string | null;
-      odds: Prisma.Decimal | null;
-    }>;
   };
 };
 
@@ -148,7 +124,7 @@ export class AiEngineRepository {
 
     const legData = data.legs.map((leg) => ({
       fixtureId: leg.fixtureId,
-      canal: leg.canal as Prisma.CouponProposalLegCreateInput['canal'],
+      canal: mapCouponSourceChannel(leg.canal),
       market: leg.market as Prisma.CouponProposalLegCreateInput['market'],
       pick: leg.pick,
       probability: leg.probability,
@@ -280,60 +256,6 @@ export class AiEngineRepository {
     });
   }
 
-  async findSettledPredictionsForIndices(opts: {
-    channel: PredictionChannel;
-    oddsMarket: Market;
-    from: Date;
-    to: Date;
-  }): Promise<
-    {
-      probability: Prisma.Decimal;
-      correct: boolean | null;
-      market: string;
-      pick: string;
-      fixture: {
-        oddsSnapshots: {
-          homeOdds: Prisma.Decimal | null;
-          drawOdds: Prisma.Decimal | null;
-          awayOdds: Prisma.Decimal | null;
-          pick: string | null;
-          odds: Prisma.Decimal | null;
-        }[];
-      };
-    }[]
-  > {
-    const { channel, oddsMarket, from, to } = opts;
-    return this.prisma.client.prediction.findMany({
-      where: {
-        channel,
-        correct: { not: null },
-        fixture: { scheduledAt: { gte: from, lte: to } },
-      },
-      select: {
-        probability: true,
-        correct: true,
-        market: true,
-        pick: true,
-        fixture: {
-          select: {
-            oddsSnapshots: {
-              where: { market: oddsMarket },
-              orderBy: { snapshotAt: 'desc' },
-              take: 1,
-              select: {
-                homeOdds: true,
-                drawOdds: true,
-                awayOdds: true,
-                pick: true,
-                odds: true,
-              },
-            },
-          },
-        },
-      },
-    }) as unknown as Promise<any>;
-  }
-
   async findResolvedCouponsForIndices(
     from: Date,
     to: Date,
@@ -399,46 +321,5 @@ export class AiEngineRepository {
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
     }) as unknown as Promise<InvestmentSummaryBetRow[]>;
-  }
-
-  // eslint-disable-next-line max-params
-  findSettledPredictionsForInvestmentSummary(
-    channel: PredictionChannel,
-    oddsMarket: Market,
-    from: Date,
-    to: Date,
-  ): Promise<InvestmentSummaryPredictionRow[]> {
-    return this.prisma.client.prediction.findMany({
-      where: {
-        channel,
-        correct: { not: null },
-        fixture: { scheduledAt: { gte: from, lte: to } },
-      },
-      select: {
-        id: true,
-        channel: true,
-        market: true,
-        pick: true,
-        probability: true,
-        correct: true,
-        fixture: {
-          select: {
-            ...FIXTURE_SELECT,
-            oddsSnapshots: {
-              where: { market: oddsMarket },
-              orderBy: { snapshotAt: 'desc' },
-              select: {
-                homeOdds: true,
-                drawOdds: true,
-                awayOdds: true,
-                pick: true,
-                odds: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as Promise<InvestmentSummaryPredictionRow[]>;
   }
 }

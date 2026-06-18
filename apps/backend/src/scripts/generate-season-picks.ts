@@ -2,8 +2,8 @@
  * Generate local betting-engine picks for historical seasons.
  *
  * This script intentionally uses the real BettingEngineService so it writes the
- * same model_run, bet and prediction rows as production analysis. For finished
- * fixtures, it settles bets and predictions immediately from the stored score.
+ * same model_run, bet and channel-selection rows as production analysis. For
+ * finished fixtures, it settles bets immediately from the stored score.
  *
  * Run after build:
  *   cd apps/backend
@@ -20,8 +20,6 @@ import { FixtureStatus } from '@evcore/db';
 import { PrismaModule } from '@/prisma.module';
 import { BettingEngineModule } from '@modules/betting-engine/betting-engine.module';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
-import { PredictionModule } from '@modules/prediction/prediction.module';
-import { PredictionService } from '@modules/prediction/prediction.service';
 import { PrismaService } from '@/prisma.service';
 
 type ScriptArgs = {
@@ -55,7 +53,6 @@ type SeasonScope = {
     }),
     PrismaModule,
     BettingEngineModule,
-    PredictionModule,
   ],
 })
 class GenerateSeasonPicksModule {}
@@ -199,7 +196,6 @@ async function main(): Promise<void> {
 
   const prisma = app.get(PrismaService);
   const bettingEngine = app.get(BettingEngineService);
-  const predictionService = app.get(PredictionService);
 
   const seasons = await loadSeasons(prisma, args);
   if (seasons.length === 0) {
@@ -262,7 +258,6 @@ async function main(): Promise<void> {
   let analyzed = 0;
   let skipped = 0;
   let settledBets = 0;
-  let settledPredictions = 0;
 
   for (let i = 0; i < fixtures.length; i += 1) {
     const fixture = fixtures[i];
@@ -273,16 +268,9 @@ async function main(): Promise<void> {
     const betSettlement = await bettingEngine.settleOpenBets(fixture.id);
     settledBets += betSettlement.settled;
 
-    const predictionSettlement = await predictionService.settlePredictions(
-      fixture.id,
-      fixture.homeScore,
-      fixture.awayScore,
-    );
-    settledPredictions += predictionSettlement.settled;
-
     if ((i + 1) % 100 === 0 || i + 1 === fixtures.length) {
       console.log(
-        `Progress ${i + 1}/${fixtures.length}: analyzed=${analyzed}, skipped=${skipped}, settledBets=${settledBets}, settledPredictions=${settledPredictions}`,
+        `Progress ${i + 1}/${fixtures.length}: analyzed=${analyzed}, skipped=${skipped}, settledBets=${settledBets}`,
       );
     }
   }
@@ -291,7 +279,6 @@ async function main(): Promise<void> {
   console.log(`Analyzed fixtures     : ${analyzed}`);
   console.log(`Skipped fixtures      : ${skipped}`);
   console.log(`Settled bet rows      : ${settledBets}`);
-  console.log(`Settled prediction rows: ${settledPredictions}`);
 
   await app.close();
 }

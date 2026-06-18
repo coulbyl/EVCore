@@ -84,7 +84,6 @@ import {
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
-import { PredictionService } from '@modules/prediction/prediction.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
@@ -159,7 +158,6 @@ export class BettingEngineService {
     config: ConfigService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
-    private readonly predictionService: PredictionService,
     private readonly mlInference: MlInferenceService,
     private readonly bankroll?: BankrollService,
     friModelService?: FriModelService,
@@ -405,13 +403,6 @@ export class BettingEngineService {
       settled++;
     }
 
-    // Early-settle BTTS predictions in the same pass — same irrevocability logic
-    await this.predictionService.settleEarlyPredictions(
-      fixtureId,
-      fixture.homeScore,
-      fixture.awayScore,
-    );
-
     // Analytical mirror — early-settle channel selections (no bankroll effect).
     await this.channelDecisionService?.settleFixtureSelections({
       fixtureId,
@@ -472,13 +463,6 @@ export class BettingEngineService {
         },
       },
     });
-
-    // Settle predictions (canal Confiance) en parallèle des bets EV/SV.
-    await this.predictionService.settlePredictions(
-      fixtureId,
-      fixture.homeScore,
-      fixture.awayScore,
-    );
 
     // Analytical mirror — final-settle every channel selection (even when no Bet
     // was materialised, e.g. DOMINANT/DRAW/BTTS). Runs before the no-bets return.
@@ -1052,8 +1036,8 @@ export class BettingEngineService {
       select: { id: true },
     });
 
-    // Per-channel decisions (doc §5) — analytical record alongside the legacy
-    // Bet/Prediction writes. Runs every strategy over the same computed context.
+    // Per-channel decisions (doc §5). Runs every strategy over the same
+    // computed context before materialising financial Bets where needed.
     const channelSignals: ContextSignals = {
       suspendedMarkets,
       lambdaFloorHit,
@@ -1212,7 +1196,6 @@ export class BettingEngineService {
               qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
               stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
               status: BetStatus.PENDING,
-              isSafeValue: true,
             },
           });
         } else {
@@ -1231,7 +1214,6 @@ export class BettingEngineService {
               ev: toPrismaDecimal(svPick.ev, 4),
               qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
               stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-              isSafeValue: true,
             },
           });
         }
@@ -1250,15 +1232,6 @@ export class BettingEngineService {
         );
       }
     }
-
-    // Canal Confiance — après les canaux EV et Safe Value, sur les mêmes probabilities.
-    await this.predictionService.createPredictions({
-      fixtureId,
-      modelRunId: modelRun.id,
-      competition: competitionCode ?? '',
-      probabilities,
-      drawOdds: latestOdds?.drawOdds ?? null,
-    });
 
     return {
       status: 'analyzed',

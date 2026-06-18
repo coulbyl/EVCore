@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetSource, BetStatus, Market, PredictionChannel } from '@evcore/db';
+import { BetSource, BetStatus } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 const FIXTURE_INCLUDE = {
@@ -33,33 +33,6 @@ export type BetWithFixture = {
   };
 };
 
-type OddsSnapshotRow = {
-  homeOdds: { toString(): string } | null;
-  drawOdds: { toString(): string } | null;
-  awayOdds: { toString(): string } | null;
-  pick: string | null;
-  odds: { toString(): string } | null;
-};
-
-export type PredictionWithFixture = {
-  id: string;
-  channel: string;
-  market: string;
-  pick: string;
-  probability: { toString(): string };
-  correct: boolean;
-  fixture: {
-    id: string;
-    scheduledAt: Date;
-    homeTeam: { name: string; logoUrl: string | null };
-    awayTeam: { name: string; logoUrl: string | null };
-    season: {
-      competition: { name: string; code: string };
-    };
-    oddsSnapshots: OddsSnapshotRow[];
-  };
-};
-
 @Injectable()
 export class SummaryRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -85,35 +58,5 @@ export class SummaryRepository {
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
     }) as unknown as Promise<BetWithFixture[]>;
-  }
-
-  // eslint-disable-next-line max-params
-  findSettledPredictions(
-    channel: PredictionChannel,
-    oddsMarket: Market,
-    from: Date,
-    to: Date,
-  ): Promise<PredictionWithFixture[]> {
-    return this.prisma.client.prediction.findMany({
-      where: {
-        channel,
-        correct: { not: null },
-        fixture: {
-          scheduledAt: { gte: from, lte: to },
-        },
-      },
-      include: {
-        fixture: {
-          include: {
-            ...FIXTURE_INCLUDE,
-            oddsSnapshots: {
-              where: { market: oddsMarket },
-              orderBy: { snapshotAt: 'desc' },
-            },
-          },
-        },
-      },
-      orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as Promise<PredictionWithFixture[]>;
   }
 }

@@ -1,5 +1,5 @@
 import { Market } from '@evcore/db';
-import { getPredictionConfig } from '../../prediction/prediction.constants';
+import { getChannelStrategyConfig } from './channel-strategy.config';
 import {
   CHANNEL_DECISION_STATUS,
   STRATEGY_CHANNEL,
@@ -14,8 +14,7 @@ export class BttsStrategy implements ChannelStrategy {
 
   evaluate(context: StrategyContext): StrategyDecision {
     const ch = this.channel;
-    // BTTS maps to the legacy BTTS channel config
-    const config = getPredictionConfig('BTTS', context.competitionCode);
+    const config = getChannelStrategyConfig('BTTS', context.competitionCode);
     if (!config?.enabled) {
       return {
         channel: ch,

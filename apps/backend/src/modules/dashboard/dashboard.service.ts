@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Decision, PredictionChannel } from '@evcore/db';
+import { Decision } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import {
@@ -8,7 +8,6 @@ import {
   formatTimeUtc,
   parseIsoDate,
 } from '@utils/date.utils';
-import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
 import {
   signedDelta,
   formatSigned,
@@ -349,29 +348,13 @@ export class DashboardService {
   }
 
   async getChannelHealth(): Promise<ChannelHealthItem[]> {
-    const [evBets, svBets, confPreds, bttsePreds, drawPreds] =
-      await Promise.all([
-        this.repo.findRecentModelBets(false, 200),
-        this.repo.findRecentModelBets(true, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.CONF, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.BTTS, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.DRAW, 200),
-      ]);
+    const [evBets, svBets] = await Promise.all([
+      this.repo.findRecentModelBets(false, 200),
+      this.repo.findRecentModelBets(true, 200),
+    ]);
 
     const evRoi = flatBetRoi(evBets);
     const svRoi = flatBetRoi(svBets);
-
-    const confItems = confPreds.map(predToFlatItem);
-    const confHr = hitRate(confItems);
-    const confThreshold = avgThresholdForChannel(PredictionChannel.CONF);
-
-    const bttsItems = bttsePreds.map(predToFlatItem);
-    const bttsHr = hitRate(bttsItems);
-    const bttsThreshold = avgThresholdForChannel(PredictionChannel.BTTS);
-
-    const drawItems = drawPreds.map(predToFlatItem);
-    const drawHr = hitRate(drawItems);
-    const drawRoi = flatPredRoi(drawItems);
 
     return [
       {
@@ -396,79 +379,46 @@ export class DashboardService {
       },
       {
         channel: 'CONF',
-        status: hrStatus(confHr, confThreshold, {
-          sampleSize: confItems.length,
-          minSample: 30,
-        }),
-        primaryMetric: confHr ?? 0,
+        status: 'INACTIVE',
+        primaryMetric: 0,
         primaryMetricType: 'HIT_RATE',
-        roi: flatPredRoi(confItems),
-        hitRate: confHr,
-        vsThreshold:
-          confHr !== null && confThreshold !== null
-            ? confHr - confThreshold
-            : null,
-        sampleSize: confItems.length,
+        roi: null,
+        hitRate: null,
+        vsThreshold: null,
+        sampleSize: 0,
       },
       {
         channel: 'BTTS',
-        status: hrStatus(bttsHr, bttsThreshold, {
-          sampleSize: bttsItems.length,
-          minSample: 30,
-        }),
-        primaryMetric: bttsHr ?? 0,
+        status: 'INACTIVE',
+        primaryMetric: 0,
         primaryMetricType: 'HIT_RATE',
-        roi: flatPredRoi(bttsItems),
-        hitRate: bttsHr,
-        vsThreshold:
-          bttsHr !== null && bttsThreshold !== null
-            ? bttsHr - bttsThreshold
-            : null,
-        sampleSize: bttsItems.length,
+        roi: null,
+        hitRate: null,
+        vsThreshold: null,
+        sampleSize: 0,
       },
       {
         channel: 'DRAW',
-        status: drawStatus(drawRoi, drawHr, {
-          sampleSize: drawItems.length,
-          minSample: 20,
-        }),
-        primaryMetric: drawRoi ?? 0,
+        status: 'INACTIVE',
+        primaryMetric: 0,
         primaryMetricType: 'ROI',
-        roi: drawRoi,
-        hitRate: drawHr,
+        roi: null,
+        hitRate: null,
         vsThreshold: null,
-        sampleSize: drawItems.length,
+        sampleSize: 0,
       },
     ];
   }
 
   async getChannelStats(): Promise<ChannelStatsItem[]> {
-    const [evBets, svBets, confPreds, bttsPreds, drawPreds] = await Promise.all(
-      [
-        this.repo.findRecentModelBets(false, 200),
-        this.repo.findRecentModelBets(true, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.CONF, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.BTTS, 200),
-        this.repo.findRecentSettledPredictions(PredictionChannel.DRAW, 200),
-      ],
-    );
-
-    const confItems = confPreds.map(predToFlatItem);
-    const bttsItems = bttsPreds.map(predToFlatItem);
-    const drawItems = drawPreds.map(predToFlatItem);
-
-    const confHr = hitRate(confItems);
-    const bttsHr = hitRate(bttsItems);
-    const drawHr = hitRate(drawItems);
-    const confThreshold = avgThresholdForChannel(PredictionChannel.CONF);
-    const bttsThreshold = avgThresholdForChannel(PredictionChannel.BTTS);
+    const [evBets, svBets] = await Promise.all([
+      this.repo.findRecentModelBets(false, 200),
+      this.repo.findRecentModelBets(true, 200),
+    ]);
 
     // Reverse desc→asc for chronological drawdown computation
     const evChron = [...evBets].reverse();
     const svChron = [...svBets].reverse();
-    const confChron = [...confItems].reverse();
-    const bttsChron = [...bttsItems].reverse();
-    const drawChron = [...drawItems].reverse();
 
     return [
       {
@@ -497,43 +447,37 @@ export class DashboardService {
       },
       {
         channel: 'CONF',
-        hitRate: confHr,
-        avgThreshold: confThreshold,
-        vsThreshold:
-          confHr !== null && confThreshold !== null
-            ? confHr - confThreshold
-            : null,
-        roi: flatPredRoi(confItems),
-        netUnits: netUnitsFromItems(confItems),
-        maxDrawdown: maxDrawdownFromItems(confChron),
-        sampleSize: confItems.length,
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: null,
+        netUnits: null,
+        maxDrawdown: null,
+        sampleSize: 0,
         oddsAvailabilityRate: 1,
         trend: 'FLAT' as const,
       },
       {
         channel: 'BTTS',
-        hitRate: bttsHr,
-        avgThreshold: bttsThreshold,
-        vsThreshold:
-          bttsHr !== null && bttsThreshold !== null
-            ? bttsHr - bttsThreshold
-            : null,
-        roi: flatPredRoi(bttsItems),
-        netUnits: netUnitsFromItems(bttsItems),
-        maxDrawdown: maxDrawdownFromItems(bttsChron),
-        sampleSize: bttsItems.length,
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: null,
+        netUnits: null,
+        maxDrawdown: null,
+        sampleSize: 0,
         oddsAvailabilityRate: 1,
         trend: 'FLAT' as const,
       },
       {
         channel: 'DRAW',
-        hitRate: drawHr,
+        hitRate: null,
         avgThreshold: null,
         vsThreshold: null,
-        roi: flatPredRoi(drawItems),
-        netUnits: netUnitsFromItems(drawItems),
-        maxDrawdown: maxDrawdownFromItems(drawChron),
-        sampleSize: drawItems.length,
+        roi: null,
+        netUnits: null,
+        maxDrawdown: null,
+        sampleSize: 0,
         oddsAvailabilityRate: 1,
         trend: 'FLAT' as const,
       },
@@ -604,47 +548,6 @@ type LeaderboardSlip = Awaited<
 // Channel-health pure helpers
 // ---------------------------------------------------------------------------
 
-type FlatItem = { correct: boolean; odds: number | null };
-
-type OddsSnap = {
-  odds?: { toString(): string } | null;
-  homeOdds?: { toString(): string } | null;
-  drawOdds?: { toString(): string } | null;
-  awayOdds?: { toString(): string } | null;
-  pick?: string | null;
-};
-
-function predToFlatItem(pred: {
-  correct: boolean | null;
-  pick: string;
-  fixture: { oddsSnapshots: OddsSnap[] };
-}): FlatItem {
-  const snap = pred.fixture.oddsSnapshots[0];
-  let odds: number | null = null;
-  if (snap) {
-    if ('odds' in snap && snap.odds != null) {
-      odds = parseFloat(snap.odds.toString());
-    } else if (pred.pick === 'HOME' && snap.homeOdds != null) {
-      odds = parseFloat(snap.homeOdds.toString());
-    } else if (pred.pick === 'DRAW' && snap.drawOdds != null) {
-      odds = parseFloat(snap.drawOdds.toString());
-    } else if (pred.pick === 'AWAY' && snap.awayOdds != null) {
-      odds = parseFloat(snap.awayOdds.toString());
-    }
-  }
-  return { correct: pred.correct ?? false, odds };
-}
-
-function flatPredRoi(items: FlatItem[]): number | null {
-  const withOdds = items.filter((i) => i.odds !== null);
-  if (!withOdds.length) return null;
-  const returned = withOdds.reduce(
-    (acc, i) => acc + (i.correct && i.odds !== null ? i.odds : 0),
-    0,
-  );
-  return ((returned - withOdds.length) / withOdds.length) * 100;
-}
-
 function flatBetRoi(
   bets: { status: string; oddsSnapshot: { toString(): string } | null }[],
 ): number | null {
@@ -660,11 +563,6 @@ function flatBetRoi(
   return ((returned - bets.length) / bets.length) * 100;
 }
 
-function hitRate(items: FlatItem[]): number | null {
-  if (!items.length) return null;
-  return (items.filter((i) => i.correct).length / items.length) * 100;
-}
-
 type FlatBet = { status: string; oddsSnapshot: { toString(): string } | null };
 
 function netUnitsFromBets(bets: FlatBet[]): number | null {
@@ -674,15 +572,6 @@ function netUnitsFromBets(bets: FlatBet[]): number | null {
     if (odds === null) return acc;
     return acc + (b.status === 'WON' ? odds - 1 : -1);
   }, 0);
-}
-
-function netUnitsFromItems(items: FlatItem[]): number | null {
-  const withOdds = items.filter((i) => i.odds !== null);
-  if (!withOdds.length) return null;
-  return withOdds.reduce(
-    (acc, i) => acc + (i.correct ? (i.odds ?? 0) - 1 : -1),
-    0,
-  );
 }
 
 // bets must be in chronological order (oldest first)
@@ -702,33 +591,6 @@ function maxDrawdownFromBets(bets: FlatBet[]): number | null {
   return maxDD;
 }
 
-// items must be in chronological order (oldest first)
-function maxDrawdownFromItems(items: FlatItem[]): number | null {
-  const withOdds = items.filter((i) => i.odds !== null);
-  if (!withOdds.length) return null;
-  let peak = 0;
-  let running = 0;
-  let maxDD = 0;
-  for (const item of withOdds) {
-    running += item.correct ? (item.odds ?? 0) - 1 : -1;
-    if (running > peak) peak = running;
-    const dd = peak - running;
-    if (dd > maxDD) maxDD = dd;
-  }
-  return maxDD;
-}
-
-function avgThresholdForChannel(channel: PredictionChannel): number | null {
-  const entries = Object.values(PREDICTION_CONFIG);
-  const thresholds: number[] = [];
-  for (const leagueConfig of entries) {
-    const cfg = leagueConfig[channel];
-    if (cfg?.enabled) thresholds.push(cfg.threshold);
-  }
-  if (!thresholds.length) return null;
-  return (thresholds.reduce((a, b) => a + b, 0) / thresholds.length) * 100;
-}
-
 function evRoiStatus(
   roi: number | null,
   sampleSize: number,
@@ -738,32 +600,6 @@ function evRoiStatus(
   if (roi === null) return 'INACTIVE';
   if (roi >= 0) return 'GREEN';
   if (roi >= -5) return 'ORANGE';
-  return 'RED';
-}
-
-type SampleOpts = { sampleSize: number; minSample: number };
-
-function hrStatus(
-  hr: number | null,
-  threshold: number | null,
-  opts: SampleOpts,
-): ChannelStatus {
-  if (opts.sampleSize < opts.minSample) return 'INSUFFICIENT_DATA';
-  if (hr === null || threshold === null) return 'INACTIVE';
-  if (hr >= threshold) return 'GREEN';
-  if (hr >= threshold - 5) return 'ORANGE';
-  return 'RED';
-}
-
-function drawStatus(
-  roi: number | null,
-  hr: number | null,
-  opts: SampleOpts,
-): ChannelStatus {
-  if (opts.sampleSize < opts.minSample) return 'INSUFFICIENT_DATA';
-  if (roi === null) return 'INACTIVE';
-  if (roi >= 5 && hr !== null && hr >= 32) return 'GREEN';
-  if (roi >= 0) return 'ORANGE';
   return 'RED';
 }
 

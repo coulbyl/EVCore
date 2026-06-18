@@ -1,12 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Market, PredictionChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { toNumber } from '@utils/prisma.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
-import {
-  SummaryRepository,
-  type PredictionWithFixture,
-} from './summary.repository';
+import { SummaryRepository } from './summary.repository';
 import type {
   SummaryChannel,
   SummaryPeriod,
@@ -15,26 +11,6 @@ import type {
   SummaryResponse,
   SummaryStats,
 } from './summary.types';
-
-function extractPredictionOdds(
-  pred: PredictionWithFixture,
-  channel: 'CONF' | 'DRAW' | 'BTTS',
-): string | null {
-  const snapshots = pred.fixture.oddsSnapshots;
-  if (!snapshots.length) return null;
-
-  if (channel === 'CONF' || channel === 'DRAW') {
-    const snap = snapshots[0];
-    if (pred.pick === 'HOME') return snap.homeOdds?.toString() ?? null;
-    if (pred.pick === 'DRAW') return snap.drawOdds?.toString() ?? null;
-    if (pred.pick === 'AWAY') return snap.awayOdds?.toString() ?? null;
-    return null;
-  }
-
-  // BTTS: find the snapshot matching the pick (YES / NO)
-  const snap = snapshots.find((s) => s.pick === pred.pick);
-  return snap?.odds?.toString() ?? null;
-}
 
 function periodDateRange(
   period: SummaryPeriod | undefined,
@@ -166,38 +142,6 @@ export class SummaryService {
       }));
     }
 
-    const channelMap: Record<'CONF' | 'DRAW' | 'BTTS', PredictionChannel> = {
-      CONF: PredictionChannel.CONF,
-      DRAW: PredictionChannel.DRAW,
-      BTTS: PredictionChannel.BTTS,
-    };
-    const oddsMarketMap: Record<'CONF' | 'DRAW' | 'BTTS', Market> = {
-      CONF: Market.ONE_X_TWO,
-      DRAW: Market.ONE_X_TWO,
-      BTTS: Market.BTTS,
-    };
-    const predictions = await this.repo.findSettledPredictions(
-      channelMap[channel],
-      oddsMarketMap[channel],
-      range.from,
-      range.to,
-    );
-    return predictions.map((pred) => ({
-      fixtureId: pred.fixture.id,
-      fixture: `${pred.fixture.homeTeam.name} vs ${pred.fixture.awayTeam.name}`,
-      homeLogo: pred.fixture.homeTeam.logoUrl,
-      awayLogo: pred.fixture.awayTeam.logoUrl,
-      competition: pred.fixture.season.competition.name,
-      competitionCode: pred.fixture.season.competition.code,
-      scheduledAt: pred.fixture.scheduledAt.toISOString(),
-      market: pred.market,
-      pick: pred.pick,
-      comboMarket: null,
-      comboPick: null,
-      odds: extractPredictionOdds(pred, channel),
-      ev: null,
-      result: pred.correct ? 'WON' : 'LOST',
-      channel,
-    }));
+    return [];
   }
 }

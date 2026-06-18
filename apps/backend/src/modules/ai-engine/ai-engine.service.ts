@@ -6,6 +6,7 @@ import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
 import { INVESTMENT_PARAMS } from './investment.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
+import { mapCouponSourceChannel } from './coupon-channel.mapper';
 
 const logger = createLogger('ai-engine');
 
@@ -112,7 +113,7 @@ export class AiEngineService {
         competition: leg.fixture.season.competition.code,
         country: leg.fixture.season.competition.country,
         scheduledAt: leg.fixture.scheduledAt.toISOString(),
-        canal: leg.canal,
+        canal: mapCouponSourceChannel(leg.canal),
         market: leg.market,
         pick: leg.pick,
         probability: Number(leg.probability),

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Market, PredictionChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { AiEngineRepository } from './ai-engine.repository';
 import type { InvestmentIndicesCanal } from './dto/investment-indices-query.dto';
@@ -129,42 +128,6 @@ function buildByOddsRange(
   return rows.length > 0 ? rows : null;
 }
 
-function extractOdds(p: {
-  pick: string;
-  fixture: {
-    oddsSnapshots: {
-      homeOdds: unknown;
-      drawOdds: unknown;
-      awayOdds: unknown;
-      pick: string | null;
-      odds: unknown;
-    }[];
-  };
-}): number | null {
-  const snap = p.fixture.oddsSnapshots[0];
-  if (!snap) return null;
-  if (snap.odds !== null && snap.odds !== undefined) return Number(snap.odds);
-  if (
-    p.pick === 'HOME' &&
-    snap.homeOdds !== null &&
-    snap.homeOdds !== undefined
-  )
-    return Number(snap.homeOdds);
-  if (
-    p.pick === 'DRAW' &&
-    snap.drawOdds !== null &&
-    snap.drawOdds !== undefined
-  )
-    return Number(snap.drawOdds);
-  if (
-    p.pick === 'AWAY' &&
-    snap.awayOdds !== null &&
-    snap.awayOdds !== undefined
-  )
-    return Number(snap.awayOdds);
-  return null;
-}
-
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
 function dateRange(
@@ -214,51 +177,8 @@ export class InvestmentIndicesService {
         market: b.market,
         odds: b.oddsSnapshot !== null ? Number(b.oddsSnapshot) : null,
       }));
-    } else if (canal === 'BB') {
-      const preds = await this.repo.findSettledPredictionsForIndices({
-        channel: PredictionChannel.BTTS,
-        oddsMarket: Market.BTTS,
-        from: range.from,
-        to: range.to,
-      });
-      items = preds
-        .filter((p) => p.correct !== null)
-        .map((p) => ({
-          prob: Number(p.probability),
-          won: p.correct!,
-          market: p.market,
-          odds: extractOdds(p),
-        }));
-    } else if (canal === 'NUL') {
-      const preds = await this.repo.findSettledPredictionsForIndices({
-        channel: PredictionChannel.DRAW,
-        oddsMarket: Market.ONE_X_TWO,
-        from: range.from,
-        to: range.to,
-      });
-      items = preds
-        .filter((p) => p.correct !== null)
-        .map((p) => ({
-          prob: Number(p.probability),
-          won: p.correct!,
-          market: p.market,
-          odds: extractOdds(p),
-        }));
-    } else if (canal === 'CONF') {
-      const preds = await this.repo.findSettledPredictionsForIndices({
-        channel: PredictionChannel.CONF,
-        oddsMarket: Market.ONE_X_TWO,
-        from: range.from,
-        to: range.to,
-      });
-      items = preds
-        .filter((p) => p.correct !== null)
-        .map((p) => ({
-          prob: Number(p.probability),
-          won: p.correct!,
-          market: p.market,
-          odds: extractOdds(p),
-        }));
+    } else if (canal === 'BB' || canal === 'NUL' || canal === 'CONF') {
+      items = [];
     } else {
       // COUPON: uses joint probability + combined odds
       const coupons = await this.repo.findResolvedCouponsForIndices(

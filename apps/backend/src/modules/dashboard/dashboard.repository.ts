@@ -3,9 +3,7 @@ import {
   BetSource,
   BetStatus,
   FixtureStatus,
-  Market,
   NotificationType,
-  PredictionChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
@@ -240,29 +238,6 @@ export class DashboardRepository {
       },
       select: { status: true, oddsSnapshot: true, stakePct: true },
       orderBy: { createdAt: 'desc' },
-      take,
-    });
-  }
-
-  findRecentSettledPredictions(channel: PredictionChannel, take: number) {
-    const market =
-      channel === PredictionChannel.BTTS ? Market.BTTS : Market.ONE_X_TWO;
-    return this.prisma.client.prediction.findMany({
-      where: { channel, correct: { not: null } },
-      select: {
-        correct: true,
-        pick: true,
-        fixture: {
-          select: {
-            oddsSnapshots: {
-              where: { market },
-              orderBy: { snapshotAt: 'desc' },
-              take: 1,
-            },
-          },
-        },
-      },
-      orderBy: { settledAt: 'desc' },
       take,
     });
   }

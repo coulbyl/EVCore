@@ -3,7 +3,7 @@ import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { formatDateUtc } from '@utils/date.utils';
 import { AiEngineService } from '@modules/ai-engine/ai-engine.service';
-import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
+import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { CHAT_LIMITS } from './chat.constants';
 import { round } from './chat.math';
 import { ChatReadRepository } from './chat.read.repository';
@@ -230,10 +230,10 @@ export class ChatToolsService {
       ? [
           [
             input.competition,
-            PREDICTION_CONFIG[input.competition] ?? {},
+            CHANNEL_STRATEGY_CONFIG[input.competition] ?? {},
           ] as const,
         ]
-      : Object.entries(PREDICTION_CONFIG);
+      : Object.entries(CHANNEL_STRATEGY_CONFIG);
 
     const result = entries.map(([comp, channels]) => ({
       competition: comp,

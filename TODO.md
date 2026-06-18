@@ -27,29 +27,40 @@
 
 Étapes 0-5 terminées et commitées. La vue `/dashboard/decisions` est la surface
 principale ; `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
-L'engine écrit les `ChannelDecision` / `ChannelSelection`, mais garde encore les
-writes legacy jusqu'à la migration finale.
+L'engine écrit les `ChannelDecision` / `ChannelSelection` et ne recrée plus les
+`Prediction` ni le flag legacy `Bet.isSafeValue`. La config historique
+`prediction.constants` a été renommée/déplacée en config de stratégies
+(`betting-engine/strategies/channel-strategy.config.ts`) avec le vocabulaire
+`DOMINANT` / `DRAW` / `BTTS`.
 
 **Priorité 1 — couper le legacy (Étape 6)** :
 
-- retirer les writes `Prediction` / `Bet.isSafeValue` du flux engine ;
-- convertir `CouponProposalLeg.canal` vers `StrategyChannel` ;
-- supprimer `prediction`, `PredictionChannel`, `CouponLegCanal`,
-  `Bet.isSafeValue`, puis `ModelRun.decision`.
+- retirer les consommateurs/schémas legacy restants ;
+- supprimer `Bet.isSafeValue`, puis `ModelRun.decision` ;
+- recâbler ou supprimer les scripts diagnostics DB qui lisent encore les
+  anciennes tables (`prediction`, puis `isSafeValue`) avant de relancer un
+  typecheck complet `@evcore/db`.
 
-**Priorité 2 — rebuild/backfill après cleanup** :
+**Priorité 2 — purge destructive + rebuild/backfill après cleanup** :
 
-- décider explicitement si l'environnement cible est purgé/rebuildé ou si on garde
-  les anciens `ModelRun` ;
-- adapter `ml-backfill` pour recréer les `ModelRun isBackfill=true` + décisions
-  canaux sur l'historique utile ;
+- décision actée : garder la table `model_run`, mais vider les données d'analyse
+  historiques (`ModelRun`, `ChannelDecision`, `ChannelSelection`, `Prediction`,
+  `Bet`, `BetSlip`, `CouponProposal`, `CouponProposalLeg`, transactions liées si
+  nécessaire) avant rebuild ;
+- adapter `ml-backfill` pour recréer les `ModelRun` + décisions canaux sur
+  l'historique utile, sans marquer artificiellement les runs en backfill ;
 - recâbler une vérification minimale post-rebuild : compte de sélections, résultats
   settlés, absence de références legacy.
+- coupon : reconstruire un vrai service coupon basé sur `ChannelDecision` /
+  `ChannelSelection`, car les pipelines legacy `/investment` et `/picks`
+  disparaissent aussi.
 
 **Priorité 3 — nouveaux canaux** : seulement après cleanup + rebuild stables.
 
-État dernier passage : unit ciblés 573/573 ✅ · lint ✅ · typecheck ✅ · e2e
-repository non relancé ici si Docker/Testcontainers indisponible.
+État dernier passage : backend lint ✅ · backend typecheck ✅ · Vitest backend
+58 fichiers / 537 tests ✅ · e2e repository non relancé ici si
+Docker/Testcontainers indisponible. `@evcore/db` typecheck différé tant que les
+scripts diagnostics legacy ne sont pas encore recâblés.
 
 ---
 
@@ -116,11 +127,26 @@ repository non relancé ici si Docker/Testcontainers indisponible.
 
 - [x] Production native des décisions par l'engine (EV/SAFE + DOMINANT/DRAW/BTTS), lien `Bet`
 - [x] Idempotence garantie par `@@unique([modelRunId, channel])` (un re-run = un nouveau `ModelRun`)
-- [-] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel` — **déplacé en Étape 6** :
-  conversion de colonne `CouponProposalLeg.canal`, à faire dans la migration qui drop `CouponLegCanal`
-  (l'API mappe `CouponLegCanal → StrategyChannel` au niveau DTO d'ici là)
+- [x] Migrer les jambes de coupon `CouponLegCanal → StrategyChannel` :
+      schema cible prêt (`CouponProposalLeg.canal StrategyChannel`) + mapping du
+      pipeline investissement actuel vers le modèle cible (`EV→EV`, `SV→SAFE`,
+      `BB→BTTS`, `NUL→DRAW`, `CONF→DOMINANT`). Les coupons existants seront purgés,
+      donc la migration n'a pas besoin de préserver les lignes historiques.
+      La migration SQL reste à générer/appliquer par toi.
+- [ ] Remplacer le pipeline coupon legacy par un vrai service coupon branché sur
+      `ChannelDecision` / `ChannelSelection` : source des legs, scoring, odds
+      combinées, settlement et DTO doivent utiliser `StrategyChannel` nativement
+      (plus de dépendance aux anciens pipelines `/investment` / `/picks`).
+- [x] **[destructif]** Ajouter une commande explicite de purge des données d'analyse
+      historiques avant rebuild : `BetSlipItem` / `BetSlip` /
+      `BankrollTransaction` liées, `CouponProposalLeg` / `CouponProposal`, `Bet`,
+      `Prediction`, `ChannelSelection`, `ChannelDecision`, puis `ModelRun`.
+      Commande : `pnpm --filter @evcore/db db:purge:analysis -- --confirm=PURGE_ANALYSIS_DATA`.
+      Exécutée en local : 42 242 `ModelRun`, 15 185 `Prediction`, 2 338 `Bet`,
+      125 `ChannelDecision`, 21 `ChannelSelection`, 98 coupons, 153 slips et
+      403 transactions liées supprimés. Ne jamais lancer implicitement dans un seed.
 - [ ] **[ETL]** Adapter `ml-backfill` pour le rebuild historique post-cleanup :
-      fixtures terminées utiles → nouveau `ModelRun isBackfill=true` →
+      fixtures terminées utiles → nouveau `ModelRun` →
       `ChannelDecision` / `ChannelSelection` → settlement analytique
 - [ ] **[optionnel]** Exposer un backfill par fenêtre seulement si le rebuild par saisons
       via `ml-backfill` ne suffit pas
@@ -156,7 +182,7 @@ repository non relancé ici si Docker/Testcontainers indisponible.
       construit depuis l'analyse (`strategy-context.builder.ts`) + routé via `ChannelDecisionService`
       (`betting-engine.module` enregistre repo + service, injection `@Optional()`).
       `Bet.channelSelectionId` relié (EV/SAFE flux principal, EV en FRI) via `findChannelSelectionId`.
-      Écriture additive legacy conservée jusqu'au retrait Étape 6.
+      Écriture additive legacy `Prediction` / `Bet.isSafeValue` retirée en Étape 6.
 - [x] Settlement analytique sur `ChannelSelection.result` ; `Bet.status` reste l'autorité financière —
       résolveurs purs `channel-selection-settlement.ts` (mirroir exact des bets : `resolve*BetStatus`),
       `ChannelDecisionService.settleFixtureSelections({ mode: early|final })`, câblé dans
@@ -187,9 +213,19 @@ repository non relancé ici si Docker/Testcontainers indisponible.
 
 ## Étape 6 — Suppression du legacy (migration finale, après gate vert)
 
-- [ ] Retirer les writes legacy `Prediction` / `Bet.isSafeValue` du flux engine
-- [ ] Convertir `CouponProposalLeg.canal` : `CouponLegCanal → StrategyChannel`
+- [x] Retirer les writes legacy `Prediction` / `Bet.isSafeValue` du flux engine
+- [x] Convertir `CouponProposalLeg.canal` : `CouponLegCanal → StrategyChannel`
       (`EV→EV`, `SV→SAFE`, `BB→BTTS`, `NUL→DRAW`, `CONF→DOMINANT`) avant de droper l'enum
+- [x] Retirer `ModelRun.isBackfill` du schéma et des consommateurs (`chat`, extract ML,
+      `ml-backfill`) : une analyse reconstruite par le même engine est un `ModelRun`
+      normal, pas une catégorie fonctionnelle séparée
+- [x] Retirer le module runtime `Prediction` et le modèle Prisma `Prediction` /
+      `PredictionChannel` du schéma cible. Les seuils conservés vivent désormais
+      dans `channel-strategy.config.ts` (`DOMINANT`, `DRAW`, `BTTS`) et les
+      consommateurs runtime ne dépendent plus de `modules/prediction`.
+      Migration SQL à générer/appliquer par toi.
+- [ ] Mettre à jour ou supprimer les scripts diagnostics DB legacy qui lisent
+      encore `prediction` avant le prochain `@evcore/db typecheck`
 - [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
 - [ ] `ALTER TABLE bet DROP COLUMN isSafeValue`
 - [ ] Retirer `ModelRun.decision`

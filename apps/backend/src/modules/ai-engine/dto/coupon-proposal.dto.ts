@@ -1,8 +1,8 @@
 import type {
-  CouponLegCanal,
   CouponProposalStatus,
   CouponResult,
   Market,
+  StrategyChannel,
 } from '@evcore/db';
 
 export type CouponLegDto = {
@@ -13,7 +13,7 @@ export type CouponLegDto = {
   competition: string;
   country: string;
   scheduledAt: string;
-  canal: CouponLegCanal;
+  canal: StrategyChannel;
   market: Market;
   pick: string;
   probability: number;
