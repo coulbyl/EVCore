@@ -94,6 +94,14 @@ function predResultLabel(correct: boolean | null): string {
   return "En cours";
 }
 
+function channelLabel(channel: string): string {
+  if (channel === "SAFE") return "SV";
+  if (channel === "BTTS") return "BB";
+  if (channel === "DRAW") return "NUL";
+  if (channel === "DOMINANT") return "CONF";
+  return channel;
+}
+
 function fmtSigned(n: number, decimals = 4): string {
   const s = n.toFixed(decimals);
   return n >= 0 ? `+${s}` : s;
@@ -261,27 +269,33 @@ function renderModelContext(
   return out;
 }
 
-function renderBetPickLine(bet: {
+function renderSelectionPickLine(selection: {
+  channel: string;
   market: string;
   pick: string;
   comboMarket: string | null;
   comboPick: string | null;
   ev: unknown;
   qualityScore: unknown;
-  probEstimated: unknown;
-  oddsSnapshot: unknown;
-  isSafeValue: boolean;
-  status: string;
+  probability: unknown;
+  odds: unknown;
+  result: string | null;
 }): string {
-  const label = pickLabel(bet.market, bet.pick, bet.comboMarket, bet.comboPick);
-  const ev = Number(bet.ev);
-  const prob = Number(bet.probEstimated);
+  const label = pickLabel(
+    selection.market,
+    selection.pick,
+    selection.comboMarket,
+    selection.comboPick,
+  );
+  const ev = selection.ev != null ? Number(selection.ev) : 0;
+  const prob = Number(selection.probability);
   const qs =
-    bet.qualityScore != null ? Number(bet.qualityScore).toFixed(4) : "—";
-  const odds =
-    bet.oddsSnapshot != null ? Number(bet.oddsSnapshot).toFixed(2) : "—";
-  const canal = bet.isSafeValue ? "[SV]" : "[EV]";
-  return `  Pick ${canal}  ${label.padEnd(28)}  Prob: ${fmtPct(prob)}  Cote: ${odds}  EV: ${fmtSigned(ev, 3)}  Qualité: ${qs}  ${betStatusLabel(bet.status)}`;
+    selection.qualityScore != null
+      ? Number(selection.qualityScore).toFixed(4)
+      : "—";
+  const odds = selection.odds != null ? Number(selection.odds).toFixed(2) : "—";
+  const canal = `[${channelLabel(selection.channel)}]`;
+  return `  Pick ${canal}  ${label.padEnd(28)}  Prob: ${fmtPct(prob)}  Cote: ${odds}  EV: ${fmtSigned(ev, 3)}  Qualité: ${qs}  ${betStatusLabel(selection.result ?? "PENDING")}`;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -310,40 +324,35 @@ async function main(): Promise<void> {
       season: {
         select: { competition: { select: { code: true, name: true } } },
       },
-      predictions: {
-        select: {
-          channel: true,
-          market: true,
-          pick: true,
-          probability: true,
-          correct: true,
-        },
-      },
       modelRuns: {
         select: {
-          decision: true,
           deterministicScore: true,
           finalScore: true,
           features: true,
           analyzedAt: true,
-          bets: {
+          channelDecisions: {
             select: {
-              id: true,
-              market: true,
-              pick: true,
-              comboMarket: true,
-              comboPick: true,
-              ev: true,
-              qualityScore: true,
-              probEstimated: true,
-              oddsSnapshot: true,
-              isSafeValue: true,
+              channel: true,
               status: true,
+              selections: {
+                select: {
+                  id: true,
+                  market: true,
+                  pick: true,
+                  comboMarket: true,
+                  comboPick: true,
+                  ev: true,
+                  qualityScore: true,
+                  probability: true,
+                  odds: true,
+                  result: true,
+                },
+                orderBy: [
+                  { qualityScore: { sort: "desc", nulls: "last" } },
+                  { ev: { sort: "desc", nulls: "last" } },
+                ],
+              },
             },
-            orderBy: [
-              { qualityScore: { sort: "desc", nulls: "last" } },
-              { ev: "desc" },
-            ],
           },
         },
         orderBy: { analyzedAt: "desc" },
@@ -364,71 +373,74 @@ async function main(): Promise<void> {
 
   // ── Catégoriser ──────────────────────────────────────────────────────────────
 
-  const evFixtures = fixtures.filter((f) =>
-    f.modelRuns[0]?.bets.some((b) => !b.isSafeValue),
+  const selectedByChannel = (
+    fixture: (typeof fixtures)[number],
+    channel: string,
+  ) =>
+    fixture.modelRuns[0]?.channelDecisions
+      .filter((decision) => decision.channel === channel)
+      .flatMap((decision) =>
+        decision.selections.map((selection) => ({
+          ...selection,
+          channel: decision.channel,
+        })),
+      ) ?? [];
+
+  const evFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "EV").length > 0,
   );
-  const svFixtures = fixtures.filter((f) =>
-    f.modelRuns[0]?.bets.some((b) => b.isSafeValue),
+  const svFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "SAFE").length > 0,
   );
-  const bttsFixtures = fixtures.filter((f) =>
-    f.predictions.some((p) => p.channel === "BTTS"),
+  const bttsFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "BTTS").length > 0,
   );
-  const drawFixtures = fixtures.filter((f) =>
-    f.predictions.some((p) => p.channel === "DRAW"),
+  const drawFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "DRAW").length > 0,
   );
-  const confFixtures = fixtures.filter((f) =>
-    f.predictions.some((p) => p.channel === "CONF"),
+  const confFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "DOMINANT").length > 0,
   );
   const noBetFixtures = fixtures.filter(
-    (f) => f.modelRuns.length > 0 && f.modelRuns[0]?.decision === "NO_BET",
+    (f) => f.modelRuns.length > 0 && selectedByChannel(f, "EV").length === 0,
   );
   const noRunFixtures = fixtures.filter((f) => f.modelRuns.length === 0);
 
-  const betFixtureCount = fixtures.filter(
-    (f) => f.modelRuns[0]?.decision === "BET",
-  ).length;
+  const betFixtureCount = evFixtures.length;
 
   // ── Résumé canaux ─────────────────────────────────────────────────────────
 
-  const evBets = evFixtures.flatMap(
-    (f) => f.modelRuns[0]?.bets.filter((b) => !b.isSafeValue) ?? [],
+  const evSelections = evFixtures.flatMap((f) => selectedByChannel(f, "EV"));
+  const svSelections = svFixtures.flatMap((f) => selectedByChannel(f, "SAFE"));
+  const bttsSelections = bttsFixtures.flatMap((f) =>
+    selectedByChannel(f, "BTTS"),
   );
-  const svBets = svFixtures.flatMap(
-    (f) => f.modelRuns[0]?.bets.filter((b) => b.isSafeValue) ?? [],
+  const drawSelections = drawFixtures.flatMap((f) =>
+    selectedByChannel(f, "DRAW"),
   );
-  const bttsPreds = bttsFixtures.flatMap((f) =>
-    f.predictions.filter((p) => p.channel === "BTTS"),
-  );
-  const drawPreds = drawFixtures.flatMap((f) =>
-    f.predictions.filter((p) => p.channel === "DRAW"),
-  );
-  const confPreds = confFixtures.flatMap((f) =>
-    f.predictions.filter((p) => p.channel === "CONF"),
+  const confSelections = confFixtures.flatMap((f) =>
+    selectedByChannel(f, "DOMINANT"),
   );
 
-  function countBetRes(bets: Array<{ status: string }>) {
+  function countSelectionRes(selections: Array<{ result: string | null }>) {
     return {
-      won: bets.filter((b) => b.status === "WON").length,
-      lost: bets.filter((b) => b.status === "LOST").length,
-      pending: bets.filter(
-        (b) => b.status !== "WON" && b.status !== "LOST" && b.status !== "VOID",
+      won: selections.filter((selection) => selection.result === "WON").length,
+      lost: selections.filter((selection) => selection.result === "LOST")
+        .length,
+      pending: selections.filter(
+        (selection) =>
+          selection.result !== "WON" &&
+          selection.result !== "LOST" &&
+          selection.result !== "VOID",
       ).length,
     };
   }
 
-  function countPredRes(preds: Array<{ correct: boolean | null }>) {
-    return {
-      won: preds.filter((p) => p.correct === true).length,
-      lost: preds.filter((p) => p.correct === false).length,
-      pending: preds.filter((p) => p.correct === null).length,
-    };
-  }
-
-  const evStats = countBetRes(evBets);
-  const svStats = countBetRes(svBets);
-  const bttsStats = countPredRes(bttsPreds);
-  const drawStats = countPredRes(drawPreds);
-  const confStats = countPredRes(confPreds);
+  const evStats = countSelectionRes(evSelections);
+  const svStats = countSelectionRes(svSelections);
+  const bttsStats = countSelectionRes(bttsSelections);
+  const drawStats = countSelectionRes(drawSelections);
+  const confStats = countSelectionRes(confSelections);
 
   // ── En-tête ───────────────────────────────────────────────────────────────
 
@@ -436,7 +448,7 @@ async function main(): Promise<void> {
   w(`  EVCore — Picks par canal — ${dateLabel}`);
   w(`  Généré : ${generatedAt}`);
   w(
-    `  Fixtures : ${fixtures.length}  |  BET: ${betFixtureCount}  NO_BET: ${noBetFixtures.length}  Sans run: ${noRunFixtures.length}`,
+    `  Fixtures : ${fixtures.length}  |  EV: ${betFixtureCount}  Sans EV: ${noBetFixtures.length}  Sans run: ${noRunFixtures.length}`,
   );
   w("═══════════════════════════════════════════════════════");
   w();
@@ -464,25 +476,25 @@ async function main(): Promise<void> {
       `  ${p(label, 8)}${pL(String(count), 7)}${pL(String(won), 9)}${pL(String(lost), 11)}${pL(String(pending), 10)}`,
     );
 
-  cRow("EV", evBets.length, evStats.won, evStats.lost, evStats.pending);
-  cRow("SV", svBets.length, svStats.won, svStats.lost, svStats.pending);
+  cRow("EV", evSelections.length, evStats.won, evStats.lost, evStats.pending);
+  cRow("SV", svSelections.length, svStats.won, svStats.lost, svStats.pending);
   cRow(
     "BB",
-    bttsPreds.length,
+    bttsSelections.length,
     bttsStats.won,
     bttsStats.lost,
     bttsStats.pending,
   );
   cRow(
     "NUL",
-    drawPreds.length,
+    drawSelections.length,
     drawStats.won,
     drawStats.lost,
     drawStats.pending,
   );
   cRow(
     "CONF",
-    confPreds.length,
+    confSelections.length,
     confStats.won,
     confStats.lost,
     confStats.pending,
@@ -494,7 +506,7 @@ async function main(): Promise<void> {
 
   w();
   w(
-    `━━━ EV — Expected Value (${evBets.length} picks, ${evFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `━━━ EV — Expected Value (${evSelections.length} picks, ${evFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
   );
 
   if (evFixtures.length === 0) {
@@ -517,8 +529,8 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
 
-    for (const bet of run.bets.filter((b) => !b.isSafeValue)) {
-      w(renderBetPickLine(bet));
+    for (const selection of selectedByChannel(f, "EV")) {
+      w(renderSelectionPickLine(selection));
     }
     for (const line of renderModelContext(feat, comp, detScore, finalScore)) {
       w(line);
@@ -551,7 +563,7 @@ async function main(): Promise<void> {
 
   w();
   w(
-    `━━━ SV — Safe Value (${svBets.length} picks, ${svFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `━━━ SV — Safe Value (${svSelections.length} picks, ${svFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
   );
 
   if (svFixtures.length === 0) {
@@ -574,8 +586,8 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
 
-    for (const bet of run.bets.filter((b) => b.isSafeValue)) {
-      w(renderBetPickLine(bet));
+    for (const selection of selectedByChannel(f, "SAFE")) {
+      w(renderSelectionPickLine(selection));
     }
     for (const line of renderModelContext(feat, comp, detScore, finalScore)) {
       w(line);
@@ -588,7 +600,7 @@ async function main(): Promise<void> {
 
   w();
   w(
-    `━━━ BB — Les deux équipes marquent (${bttsPreds.length} picks, ${bttsFixtures.length} matchs) ━━━━━━━━━━━━`,
+    `━━━ BB — Les deux équipes marquent (${bttsSelections.length} picks, ${bttsFixtures.length} matchs) ━━━━━━━━━━━━`,
   );
 
   if (bttsFixtures.length === 0) {
@@ -598,33 +610,34 @@ async function main(): Promise<void> {
   idx = 0;
   for (const f of bttsFixtures) {
     idx++;
-    const pred = f.predictions.find((p) => p.channel === "BTTS")!;
+    const selection = selectedByChannel(f, "BTTS")[0]!;
     const run = f.modelRuns[0];
     const feat = run?.features;
     const comp = f.season.competition.code;
-    const prob = Number(pred.probability);
+    const prob = Number(selection.probability);
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
     const floorHit = readBool(feat, "lambdaFloorHit");
     const source = readString(feat, "predictionSource");
 
     const pickLbl =
-      pred.pick === "YES"
+      selection.pick === "YES"
         ? "BB OUI"
-        : pred.pick === "NO"
+        : selection.pick === "NO"
           ? "BB NON"
-          : pred.pick;
+          : selection.pick;
 
     // Validate result from actual score
     let resultHint = "";
     if (f.homeScore !== null && f.awayScore !== null) {
       const bothScored = f.homeScore > 0 && f.awayScore > 0;
-      if (pred.pick === "YES" && bothScored)
+      if (selection.pick === "YES" && bothScored)
         resultHint = "  ← Les deux ont marqué ✓";
-      else if (pred.pick === "YES" && !bothScored)
+      else if (selection.pick === "YES" && !bothScored)
         resultHint = "  ← Pas les deux ✗";
-      else if (pred.pick === "NO" && !bothScored) resultHint = "  ← Correct ✓";
-      else if (pred.pick === "NO" && bothScored)
+      else if (selection.pick === "NO" && !bothScored)
+        resultHint = "  ← Correct ✓";
+      else if (selection.pick === "NO" && bothScored)
         resultHint = "  ← Les deux ont marqué ✗";
     }
 
@@ -633,7 +646,7 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
     w(
-      `  Pick     : ${pickLbl.padEnd(12)}  P=${fmtPct(prob)}  ${predResultLabel(pred.correct)}${resultHint}`,
+      `  Pick     : ${pickLbl.padEnd(12)}  P=${fmtPct(prob)}  ${predResultLabel(selection.result === "WON" ? true : selection.result === "LOST" ? false : null)}${resultHint}`,
     );
 
     if (lambdaHome !== null && lambdaAway !== null) {
@@ -662,7 +675,7 @@ async function main(): Promise<void> {
 
   w();
   w(
-    `━━━ NUL — Match nul (${drawPreds.length} picks, ${drawFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `━━━ NUL — Match nul (${drawSelections.length} picks, ${drawFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━━`,
   );
 
   if (drawFixtures.length === 0) {
@@ -672,11 +685,11 @@ async function main(): Promise<void> {
   idx = 0;
   for (const f of drawFixtures) {
     idx++;
-    const pred = f.predictions.find((p) => p.channel === "DRAW")!;
+    const selection = selectedByChannel(f, "DRAW")[0]!;
     const run = f.modelRuns[0];
     const feat = run?.features;
     const comp = f.season.competition.code;
-    const prob = Number(pred.probability);
+    const prob = Number(selection.probability);
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
     const source = readString(feat, "predictionSource");
@@ -694,7 +707,7 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
     w(
-      `  Pick     : NUL  P=${fmtPct(prob)}  ${predResultLabel(pred.correct)}${resultHint}`,
+      `  Pick     : NUL  P=${fmtPct(prob)}  ${predResultLabel(selection.result === "WON" ? true : selection.result === "LOST" ? false : null)}${resultHint}`,
     );
 
     if (lambdaHome !== null && lambdaAway !== null) {
@@ -722,7 +735,7 @@ async function main(): Promise<void> {
 
   w();
   w(
-    `━━━ CONF — Confiance (${confPreds.length} picks, ${confFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `━━━ CONF — Confiance (${confSelections.length} picks, ${confFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━`,
   );
 
   if (confFixtures.length === 0) {
@@ -732,11 +745,11 @@ async function main(): Promise<void> {
   idx = 0;
   for (const f of confFixtures) {
     idx++;
-    const pred = f.predictions.find((p) => p.channel === "CONF")!;
+    const selection = selectedByChannel(f, "DOMINANT")[0]!;
     const run = f.modelRuns[0];
     const feat = run?.features;
     const comp = f.season.competition.code;
-    const prob = Number(pred.probability);
+    const prob = Number(selection.probability);
     const modelThreshold = getModelScoreThreshold(comp);
     const lambdaHome = readNumber(feat, "lambdaHome");
     const lambdaAway = readNumber(feat, "lambdaAway");
@@ -747,7 +760,7 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
     w(
-      `  Pick     : ${singlePickLabel(pred.market, pred.pick).padEnd(10)}  P=${fmtPct(prob)}  seuil ligue=${modelThreshold.toFixed(2)}  ${predResultLabel(pred.correct)}`,
+      `  Pick     : ${singlePickLabel(selection.market, selection.pick).padEnd(10)}  P=${fmtPct(prob)}  seuil ligue=${modelThreshold.toFixed(2)}  ${predResultLabel(selection.result === "WON" ? true : selection.result === "LOST" ? false : null)}`,
     );
 
     if (lambdaHome !== null && lambdaAway !== null) {
@@ -776,12 +789,12 @@ async function main(): Promise<void> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // NO_BET — picks évalués pour comprendre le rejet
+  // Sans sélection EV — picks évalués pour comprendre le rejet
   // ─────────────────────────────────────────────────────────────────────────────
 
   w();
   w(
-    `── NO_BET (${noBetFixtures.length}) — raisons de rejet ───────────────────────────────────────────────`,
+    `── Sans sélection EV (${noBetFixtures.length}) — raisons de rejet ────────────────────────────────────`,
   );
 
   if (noBetFixtures.length === 0) {

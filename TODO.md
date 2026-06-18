@@ -40,8 +40,8 @@ pick EV à partir de la présence d'un `Bet.channelSelection` matérialisé.
 
 - retirer les consommateurs/schémas legacy restants ;
 - recâbler ou supprimer les scripts diagnostics DB qui lisent encore les
-  anciennes tables (`prediction`, puis `isSafeValue`) avant de relancer un
-  audit complet des scripts.
+  anciennes tables (`prediction`, puis `isSafeValue`) — fait pour les scripts
+  diagnostics/backtests ad hoc.
 
 **Priorité 2 — purge destructive + rebuild/backfill après cleanup** :
 
@@ -232,10 +232,16 @@ non relancé ici si Docker/Testcontainers indisponible.
       investment legacy et extract ML lisent désormais le canal via
       `Bet.channelSelection → ChannelDecision.channel`. Migration SQL à
       régénérer/appliquer par toi.
-- [ ] Mettre à jour ou supprimer les scripts diagnostics ad hoc qui lisent encore
+- [x] Mettre à jour ou supprimer les scripts diagnostics ad hoc qui lisent encore
       `prediction` / `isSafeValue` (`packages/db/scripts/*`, `scripts/*.mjs`,
-      `apps/backend/scripts/backtest-data-audit.ts`)
-- [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
+      `apps/backend/scripts/backtest-data-audit.ts`) : les rapports lisent
+      désormais `ChannelDecision` / `ChannelSelection` et mappent
+      `SAFE→SV`, `DOMINANT→CONF`, `BTTS→BB`, `DRAW→NUL` pour conserver les
+      libellés historiques de sortie.
+- [x] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
+      — migration `20260618005222_remove_legacy` contient le drop de la table
+      `prediction`, du type `PredictionChannel` et du type SQL
+      `coupon_leg_canal`.
 - [x] Retirer `ModelRun.decision` du schéma cible et des consommateurs runtime :
       engine, dashboard, fixture scoring, audit, chat, bet slips, tests et UI web.
       Les scripts diagnostics ad hoc restent à recâbler dans l'item dédié.

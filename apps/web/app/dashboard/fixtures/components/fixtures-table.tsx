@@ -484,13 +484,11 @@ function FixtureMobileCard({
             <EvPickBadge show={hasEvPick(row)} />
           </div>
 
-          {hasEvPick(row) &&
-            mr?.betStatus &&
-            mr.betStatus !== "PENDING" && (
-              <div className="flex items-center gap-2">
-                <BetResultBadge status={mr.betStatus} />
-              </div>
-            )}
+          {hasEvPick(row) && mr?.betStatus && mr.betStatus !== "PENDING" && (
+            <div className="flex items-center gap-2">
+              <BetResultBadge status={mr.betStatus} />
+            </div>
+          )}
           {row.safeValueBet && <SVRow sv={row.safeValueBet} row={row} />}
         </div>
       </div>

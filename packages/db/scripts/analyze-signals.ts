@@ -108,6 +108,14 @@ function getModelScoreThreshold(code: string): number {
   return map[code] ?? 0.6;
 }
 
+function toReportCanal(channel: string): Canal {
+  if (channel === "SAFE") return "SV";
+  if (channel === "DOMINANT") return "CONF";
+  if (channel === "BTTS") return "BB";
+  if (channel === "DRAW") return "NUL";
+  return channel as Canal;
+}
+
 // ── Section renderers ─────────────────────────────────────────────────────────
 
 function renderHitRateTable(picks: PickRecord[]): string[] {
@@ -866,36 +874,31 @@ async function main(): Promise<void> {
       season: {
         select: { competition: { select: { code: true } } },
       },
-      predictions: {
-        select: {
-          channel: true,
-          market: true,
-          pick: true,
-          probability: true,
-          correct: true,
-        },
-      },
       modelRuns: {
         select: {
           deterministicScore: true,
           finalScore: true,
           features: true,
           analyzedAt: true,
-          bets: {
+          channelDecisions: {
             select: {
-              market: true,
-              pick: true,
-              ev: true,
-              qualityScore: true,
-              probEstimated: true,
-              oddsSnapshot: true,
-              isSafeValue: true,
-              status: true,
+              channel: true,
+              selections: {
+                select: {
+                  market: true,
+                  pick: true,
+                  ev: true,
+                  qualityScore: true,
+                  probability: true,
+                  odds: true,
+                  result: true,
+                },
+                orderBy: [
+                  { qualityScore: { sort: "desc", nulls: "last" } },
+                  { ev: { sort: "desc", nulls: "last" } },
+                ],
+              },
             },
-            orderBy: [
-              { qualityScore: { sort: "desc", nulls: "last" } },
-              { ev: "desc" },
-            ],
           },
         },
         orderBy: { analyzedAt: "desc" },
@@ -938,68 +941,39 @@ async function main(): Promise<void> {
       : null;
 
     if (run) {
-      for (const bet of run.bets) {
-        const canal: Canal = bet.isSafeValue ? "SV" : "EV";
-        const isCorrect =
-          bet.status === "WON" ? true : bet.status === "LOST" ? false : null;
-        picks.push({
-          fixtureId: f.id,
-          date,
-          comp,
-          canal,
-          pick: bet.pick,
-          probability: Number(bet.probEstimated),
-          qualityScore: bet.qualityScore ? Number(bet.qualityScore) : null,
-          ev: Number(bet.ev),
-          oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
-          lambdaHome,
-          lambdaAway,
-          xg,
-          lambdaMin,
-          deltaLambda,
-          finalScore,
-          deterministicScore,
-          modelThreshold,
-          isCorrect,
-        });
+      for (const decision of run.channelDecisions) {
+        const canal = toReportCanal(decision.channel);
+        for (const selection of decision.selections) {
+          const isCorrect =
+            selection.result === "WON"
+              ? true
+              : selection.result === "LOST"
+                ? false
+                : null;
+          picks.push({
+            fixtureId: f.id,
+            date,
+            comp,
+            canal,
+            pick: selection.pick,
+            probability: Number(selection.probability),
+            qualityScore: selection.qualityScore
+              ? Number(selection.qualityScore)
+              : null,
+            ev: selection.ev ? Number(selection.ev) : null,
+            oddsSnapshot: selection.odds ? Number(selection.odds) : null,
+            lambdaHome,
+            lambdaAway,
+            xg,
+            lambdaMin,
+            deltaLambda,
+            finalScore,
+            deterministicScore,
+            modelThreshold,
+            isCorrect,
+          });
+        }
       }
-    }
-
-    for (const pred of f.predictions) {
-      if (
-        pred.channel !== "BTTS" &&
-        pred.channel !== "DRAW" &&
-        pred.channel !== "CONF"
-      ) {
-        continue;
-      }
-      const canal: Canal =
-        pred.channel === "BTTS"
-          ? "BB"
-          : pred.channel === "DRAW"
-            ? "NUL"
-            : "CONF";
-
-      picks.push({
-        fixtureId: f.id,
-        date,
-        comp,
-        canal,
-        pick: pred.pick,
-        probability: Number(pred.probability),
-        qualityScore: null,
-        ev: null,
-        oddsSnapshot: null,
-        lambdaHome,
-        lambdaAway,
-        xg,
-        lambdaMin,
-        deltaLambda,
-        finalScore,
-        deterministicScore,
-        modelThreshold,
-        isCorrect: pred.correct,
-      });
     }
   }
 

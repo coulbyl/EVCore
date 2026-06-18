@@ -168,77 +168,35 @@ WITH db_picks AS (
     c.name AS competition,
     c.country AS country,
     f."scheduledAt" AS "scheduledAt",
-    CASE WHEN b."isSafeValue" THEN 'SV' ELSE 'EV' END AS canal,
-    b.market::text AS market,
-    b.pick AS pick,
-    b."probEstimated"::float AS probability,
-    b."oddsSnapshot"::float AS "oddsSnapshot",
+    CASE cd.channel
+      WHEN 'SAFE' THEN 'SV'
+      WHEN 'DOMINANT' THEN 'CONF'
+      WHEN 'BTTS' THEN 'BB'
+      WHEN 'DRAW' THEN 'NUL'
+      ELSE cd.channel::text
+    END AS canal,
+    cs.market::text AS market,
+    cs.pick AS pick,
+    cs.probability::float AS probability,
+    COALESCE(b."oddsSnapshot", cs.odds)::float AS "oddsSnapshot",
     CASE
-      WHEN b.status = 'WON' THEN true
-      WHEN b.status = 'LOST' THEN false
+      WHEN COALESCE(b.status, cs.result) = 'WON' THEN true
+      WHEN COALESCE(b.status, cs.result) = 'LOST' THEN false
       ELSE NULL
     END AS "isCorrect",
-    b.status::text AS status,
-    (mr_feat.features->>'lambdaHome')::float AS "lambdaHome",
-    (mr_feat.features->>'lambdaAway')::float AS "lambdaAway"
-  FROM bet b
-  JOIN fixture f ON f.id = b."fixtureId"
-  JOIN LATERAL (
-    SELECT mr.id, mr.features
-    FROM model_run mr
-    WHERE mr."fixtureId" = f.id
-    ORDER BY mr."analyzedAt" DESC
-    LIMIT 1
-  ) mr_feat ON mr_feat.id = b."modelRunId"
+    COALESCE(b.status::text, cs.result::text, 'PENDING') AS status,
+    (mr.features->>'lambdaHome')::float AS "lambdaHome",
+    (mr.features->>'lambdaAway')::float AS "lambdaAway"
+  FROM channel_selection cs
+  JOIN channel_decision cd ON cd.id = cs."channelDecisionId"
+  JOIN model_run mr ON mr.id = cd."modelRunId"
+  JOIN fixture f ON f.id = mr."fixtureId"
+  LEFT JOIN bet b ON b."channelSelectionId" = cs.id AND b.source = 'MODEL'
   JOIN team ht ON ht.id = f."homeTeamId"
   JOIN team at ON at.id = f."awayTeamId"
   JOIN season s ON s.id = f."seasonId"
   JOIN competition c ON c.id = s."competitionId"
-  WHERE b.source = 'MODEL'
-    AND DATE(f."scheduledAt") BETWEEN DATE ${sqlString(from)} AND DATE ${sqlString(to)}
-
-  UNION ALL
-
-  SELECT
-    DATE(f."scheduledAt")::text AS day,
-    f.id::text AS "fixtureId",
-    ht.name AS "homeTeam",
-    at.name AS "awayTeam",
-    c.code AS "competitionCode",
-    c.name AS competition,
-    c.country AS country,
-    f."scheduledAt" AS "scheduledAt",
-    CASE
-      WHEN p.channel = 'BTTS' THEN 'BB'
-      WHEN p.channel = 'DRAW' THEN 'NUL'
-      ELSE 'CONF'
-    END AS canal,
-    p.market::text AS market,
-    p.pick AS pick,
-    p.probability::float AS probability,
-    NULL::float AS "oddsSnapshot",
-    p.correct AS "isCorrect",
-    CASE
-      WHEN p.correct IS TRUE THEN 'WON'
-      WHEN p.correct IS FALSE THEN 'LOST'
-      ELSE 'PENDING'
-    END AS status,
-    (mr_feat2.features->>'lambdaHome')::float AS "lambdaHome",
-    (mr_feat2.features->>'lambdaAway')::float AS "lambdaAway"
-  FROM prediction p
-  JOIN fixture f ON f.id = p."fixtureId"
-  JOIN LATERAL (
-    SELECT mr.features
-    FROM model_run mr
-    WHERE mr."fixtureId" = f.id
-    ORDER BY mr."analyzedAt" DESC
-    LIMIT 1
-  ) mr_feat2 ON true
-  JOIN team ht ON ht.id = f."homeTeamId"
-  JOIN team at ON at.id = f."awayTeamId"
-  JOIN season s ON s.id = f."seasonId"
-  JOIN competition c ON c.id = s."competitionId"
-  WHERE p.channel IN ('BTTS', 'DRAW', 'CONF')
+  WHERE cd.status = 'SELECTED'
     AND DATE(f."scheduledAt") BETWEEN DATE ${sqlString(from)} AND DATE ${sqlString(to)}
 )
 SELECT COALESCE(json_agg(db_picks ORDER BY day, "scheduledAt", "fixtureId", canal), '[]'::json)

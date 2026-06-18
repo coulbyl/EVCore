@@ -19,7 +19,7 @@ type SupportedMarket =
 
 type SubjectRow = {
   id: string;
-  sourceType: "BET" | "PREDICTION";
+  sourceType: "SELECTION";
   channel: Channel;
   competition: string;
   fixtureId: string;
@@ -42,7 +42,7 @@ type OddsRow = {
 };
 
 type SupportedRecord = {
-  sourceType: "BET" | "PREDICTION";
+  sourceType: "SELECTION";
   channel: Channel;
   competition: string;
   fixtureId: string;
@@ -71,6 +71,12 @@ type Aggregate = {
 };
 
 const REPORT_DIR = join(process.cwd(), "reports");
+
+function toReportChannel(channel: string): Channel {
+  if (channel === "SAFE") return "SV";
+  if (channel === "DOMINANT") return "CONF";
+  return channel as Channel;
+}
 
 function toNumber(
   value: { toString(): string } | number | null,
@@ -317,88 +323,63 @@ async function main() {
   const reportDate = now.toISOString().slice(0, 10);
   const reportPath = join(REPORT_DIR, `edge-vs-pinnacle-${reportDate}.md`);
 
-  const [settledBets, settledPredictions] = await Promise.all([
-    prisma.bet.findMany({
-      where: {
-        source: "MODEL",
-        status: { in: ["WON", "LOST"] },
-        comboMarket: null,
+  const settledSelections = await prisma.channelSelection.findMany({
+    where: {
+      result: { in: ["WON", "LOST"] },
+      comboMarket: null,
+    },
+    select: {
+      id: true,
+      market: true,
+      pick: true,
+      probability: true,
+      odds: true,
+      result: true,
+      bets: {
+        where: { source: "MODEL" },
+        select: { oddsSnapshot: true, status: true },
+        take: 1,
       },
-      select: {
-        id: true,
-        fixtureId: true,
-        market: true,
-        pick: true,
-        probEstimated: true,
-        oddsSnapshot: true,
-        status: true,
-        isSafeValue: true,
-        fixture: {
-          select: {
-            season: {
-              select: {
-                competition: {
-                  select: { code: true },
+      channelDecision: {
+        select: {
+          channel: true,
+          modelRun: {
+            select: {
+              fixtureId: true,
+              fixture: {
+                select: {
+                  season: {
+                    select: {
+                      competition: {
+                        select: { code: true },
+                      },
+                    },
+                  },
                 },
               },
             },
           },
         },
       },
-    }),
-    prisma.prediction.findMany({
-      where: {
-        correct: { not: null },
-      },
-      select: {
-        id: true,
-        fixtureId: true,
-        market: true,
-        pick: true,
-        probability: true,
-        correct: true,
-        channel: true,
-        fixture: {
-          select: {
-            season: {
-              select: {
-                competition: {
-                  select: { code: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-  ]);
+    },
+  });
 
-  const subjects: SubjectRow[] = [
-    ...settledBets.map((bet) => ({
-      id: bet.id,
-      sourceType: "BET" as const,
-      channel: bet.isSafeValue ? "SV" : "EV",
-      competition: bet.fixture.season.competition.code,
-      fixtureId: bet.fixtureId,
-      market: bet.market,
-      pick: bet.pick,
-      modelProb: toNumber(bet.probEstimated) ?? 0,
-      correct: bet.status === "WON",
-      actualOdds: toNumber(bet.oddsSnapshot),
-    })),
-    ...settledPredictions.map((prediction) => ({
-      id: prediction.id,
-      sourceType: "PREDICTION" as const,
-      channel: prediction.channel,
-      competition: prediction.fixture.season.competition.code,
-      fixtureId: prediction.fixtureId,
-      market: prediction.market,
-      pick: prediction.pick,
-      modelProb: toNumber(prediction.probability) ?? 0,
-      correct: Boolean(prediction.correct),
-      actualOdds: null,
-    })),
-  ];
+  const subjects: SubjectRow[] = settledSelections.map((selection) => {
+    const bet = selection.bets[0] ?? null;
+    return {
+      id: selection.id,
+      sourceType: "SELECTION" as const,
+      channel: toReportChannel(selection.channelDecision.channel),
+      competition:
+        selection.channelDecision.modelRun.fixture.season.competition.code,
+      fixtureId: selection.channelDecision.modelRun.fixtureId,
+      market: selection.market,
+      pick: selection.pick,
+      modelProb: toNumber(selection.probability) ?? 0,
+      correct: (bet?.status ?? selection.result) === "WON",
+      actualOdds: toNumber(bet?.oddsSnapshot ?? selection.odds),
+    };
+  });
 
   const fixtureIds = Array.from(
     new Set(subjects.map((subject) => subject.fixtureId)),
@@ -565,7 +546,7 @@ async function main() {
   lines.push("## Scope");
   lines.push("");
   lines.push(
-    `- Inputs scanned: ${fmtInt(subjects.length)} settled selections (${fmtInt(settledBets.length)} model bets, ${fmtInt(settledPredictions.length)} predictions)`,
+    `- Inputs scanned: ${fmtInt(subjects.length)} settled channel selections`,
   );
   lines.push(
     `- Supported rows with Pinnacle comparison: ${fmtInt(supported.length)}`,
