@@ -26,7 +26,8 @@
 ## ▶ Reprise (prochaine session)
 
 Étapes 0-5 terminées et commitées. La vue `/dashboard/decisions` est la surface
-principale ; `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
+principale ; les surfaces legacy `/dashboard/investment` et `/dashboard/picks`
+ont été supprimées.
 L'engine écrit les `ChannelDecision` / `ChannelSelection` et ne recrée plus les
 `Prediction` ni le flag legacy `Bet.isSafeValue`. Les lectures runtime EV/SAFE
 passent par `Bet.channelSelection → ChannelDecision.channel`. La config
@@ -49,8 +50,10 @@ pick EV à partir de la présence d'un `Bet.channelSelection` matérialisé.
   historiques (`ModelRun`, `ChannelDecision`, `ChannelSelection`, `Prediction`,
   `Bet`, `BetSlip`, `CouponProposal`, `CouponProposalLeg`, transactions liées si
   nécessaire) avant rebuild ;
-- adapter `ml-backfill` pour recréer les `ModelRun` + décisions canaux sur
-  l'historique utile, sans marquer artificiellement les runs en backfill ;
+- utiliser le worker existant `ml-backfill` comme **rebuild analytique post-purge**
+  (malgré son nom historique) : il ré-exécute le même betting engine et recrée
+  des `ModelRun` normaux + `ChannelDecision` / `ChannelSelection`, sans flag
+  artificiel de backfill ;
 - recâbler une vérification minimale post-rebuild : compte de sélections, résultats
   settlés, absence de références legacy.
 - coupon : reconstruire un vrai service coupon basé sur `ChannelDecision` /
@@ -123,9 +126,11 @@ non relancé ici si Docker/Testcontainers indisponible.
 > `ChannelSelection` nativement, + lien `Bet.channelSelectionId`). Les scripts standalone
 > `backfill-channel-decisions.{ts,lib}` et leur e2e ont été **supprimés** (commit de l'Étape 5).
 >
-> **Priorité actuelle** : commencer par le legacy cleanup. Ensuite, utiliser/adaptater
-> `ml-backfill` pour reconstruire les runs utiles plutôt que maintenir deux chemins
-> historiques en parallèle.
+> **Rôle clarifié** : `ml-backfill` est conservé comme worker de rebuild analytique
+> post-purge. Son nom vient de l'historique ML, mais son rôle actuel est de
+> ré-exécuter le betting engine sur les fixtures terminées sans `ModelRun`, afin
+> de recréer des runs normaux et leurs décisions de canaux. Pas de chemin
+> parallèle ni de flag `isBackfill`.
 
 - [x] Production native des décisions par l'engine (EV/SAFE + DOMINANT/DRAW/BTTS), lien `Bet`
 - [x] Idempotence garantie par `@@unique([modelRunId, channel])` (un re-run = un nouveau `ModelRun`)
@@ -147,9 +152,10 @@ non relancé ici si Docker/Testcontainers indisponible.
       Exécutée en local : 42 242 `ModelRun`, 15 185 `Prediction`, 2 338 `Bet`,
       125 `ChannelDecision`, 21 `ChannelSelection`, 98 coupons, 153 slips et
       403 transactions liées supprimés. Ne jamais lancer implicitement dans un seed.
-- [ ] **[ETL]** Adapter `ml-backfill` pour le rebuild historique post-cleanup :
-      fixtures terminées utiles → nouveau `ModelRun` →
-      `ChannelDecision` / `ChannelSelection` → settlement analytique
+- [ ] **[ETL]** Utiliser `ml-backfill` comme rebuild historique post-cleanup :
+      fixtures terminées sans `ModelRun` → `analyzeFixture` →
+      nouveau `ModelRun` normal → `ChannelDecision` / `ChannelSelection` →
+      settlement analytique via le chemin existant
 - [ ] **[optionnel]** Exposer un backfill par fenêtre seulement si le rebuild par saisons
       via `ml-backfill` ne suffit pas
 
@@ -205,8 +211,8 @@ non relancé ici si Docker/Testcontainers indisponible.
       _Par match_ (grille multi-canal + rejets/reasonCode en tooltip) / _Par canal_ (tabs),
       remap `StrategyChannel → --canal-*`, cartes alignées sur `pick-card`
       (`FixtureHeading` : logos + pays·ligue + score, bordures `border-border/70` + accent),
-      liens **Investissement/Sélections commentés** dans la nav (sidebar + mobile) — pages
-      legacy `/dashboard/investment` + `/dashboard/picks` redirigées vers `/dashboard/decisions`,
+      liens **Investissement/Sélections** retirés de la nav (sidebar + mobile) — pages
+      legacy `/dashboard/investment` + `/dashboard/picks` supprimées,
       i18n complet des libellés canaux/codes de rejet.
 - [x] Rapports / exports ML lisent la nouvelle représentation (un objet par `run × channel × selection`) :
       `reports/ml-promotion` agrège les `ChannelSelection` settlées du canal `EV`
@@ -245,7 +251,9 @@ non relancé ici si Docker/Testcontainers indisponible.
 - [x] Retirer `ModelRun.decision` du schéma cible et des consommateurs runtime :
       engine, dashboard, fixture scoring, audit, chat, bet slips, tests et UI web.
       Les scripts diagnostics ad hoc restent à recâbler dans l'item dédié.
-- [ ] Rollback testé : transaction non committée + migration `down` Prisma
+> Rollback : pas de migration `down` attendue pour cette bascule destructive.
+> En cas de problème, la stratégie réaliste est restore backup avant migration,
+> pas reconstruction des données legacy droppées.
 
 ---
 

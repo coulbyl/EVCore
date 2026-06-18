@@ -14,7 +14,7 @@ const PAGES = [
   { name: "formation", path: "/dashboard/formation" },
   { name: "bankroll", path: "/dashboard/bankroll" },
   { name: "bet-slips", path: "/dashboard/bet-slips" },
-  { name: "picks", path: "/dashboard/picks" },
+  { name: "decisions", path: "/dashboard/decisions" },
   { name: "account", path: "/dashboard/params/account" },
   { name: "audit", path: "/dashboard/audit" },
 ] as const;

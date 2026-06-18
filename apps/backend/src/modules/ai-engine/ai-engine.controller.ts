@@ -11,14 +11,12 @@ import {
 import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
 import { AiEngineService } from './ai-engine.service';
 import { CouponSettlementService } from './coupon-settlement.service';
-import { InvestmentService } from './investment.service';
 import { InvestmentSummaryService } from './investment-summary.service';
 import { InvestmentIndicesService } from './investment-indices.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
 import { InvestmentSummaryQueryDto } from './dto/investment-summary-query.dto';
 import { InvestmentIndicesQueryDto } from './dto/investment-indices-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
-import type { InvestmentDayDto } from './dto/investment-day.dto';
 import type { InvestmentSummaryResponse } from './dto/investment-summary.dto';
 import type { InvestmentIndicesResponse } from './dto/investment-indices.dto';
 
@@ -29,7 +27,6 @@ export class AiEngineController {
   constructor(
     private readonly aiEngine: AiEngineService,
     private readonly settlement: CouponSettlementService,
-    private readonly investment: InvestmentService,
     private readonly investmentSummary: InvestmentSummaryService,
     private readonly investmentIndices: InvestmentIndicesService,
   ) {}
@@ -183,25 +180,6 @@ export class AiEngineController {
   async settle(): Promise<{ settled: boolean }> {
     await this.settlement.settleReadyProposals();
     return { settled: true };
-  }
-
-  @Get('investment')
-  @ApiOperation({
-    summary: 'Get investment day — top picks + coupons',
-    description:
-      'Returns the investment analysis for a given date: top picks per canal (AI-curated or deterministic fallback) and up to 3 composed coupons. Defaults to today (UTC) when no date is provided.',
-  })
-  @ApiQuery({
-    name: 'date',
-    required: false,
-    type: String,
-    example: '2026-05-20',
-    description: 'YYYY-MM-DD (UTC). Defaults to today.',
-  })
-  @ApiOkResponse({ description: 'Investment day data.' })
-  async getInvestment(@Query('date') date?: string): Promise<InvestmentDayDto> {
-    const d = date ?? formatDateUtc(new Date());
-    return this.investment.getInvestmentDay(d);
   }
 
   @Get('investment-summary')

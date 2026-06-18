@@ -164,23 +164,6 @@ export function AppShell({
             active: pathname.startsWith("/dashboard/decisions"),
             icon: Layers,
           },
-          // Masqués au profit de la page "Décisions" (pages conservées,
-          // liens retirés du menu le temps de la bascule — TODO Étape 5).
-          // {
-          //   label: tNav("investissement"),
-          //   href: "/dashboard/investment",
-          //   active:
-          //     pathname.startsWith("/dashboard/investment") &&
-          //     !pathname.startsWith("/dashboard/investment-summary"),
-          //   icon: TrendingUp,
-          // },
-          // {
-          //   label: tNav("picks"),
-          //   mobileLabel: tNav("picks"),
-          //   href: "/dashboard/picks",
-          //   active: pathname.startsWith("/dashboard/picks"),
-          //   icon: Target,
-          // },
           {
             label: tNav("coupons"),
             href: "/dashboard/coupons",

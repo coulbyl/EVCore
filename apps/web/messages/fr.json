@@ -16,7 +16,6 @@
     "eva": "EVA",
     "dashboard": "Accueil",
     "fixtures": "Matchs",
-    "picks": "Sélections",
     "navGroupToday": "Aujourd'hui",
     "navGroupTracking": "Suivi",
     "navGroupAnalysis": "Analyse",
@@ -39,7 +38,6 @@
     "summary": "Résumé sélections",
     "investmentSummary": "Résumé investissement",
     "coupons": "Combinés",
-    "investissement": "Investissement",
     "decisions": "Décisions"
   },
   "decisions": {

@@ -661,13 +661,20 @@ export class BettingEngineService {
       return { status: 'skipped', fixtureId, reason: 'fixture_not_found' };
     }
 
+    const scheduledAt = fixture.scheduledAt.toISOString();
+
     if (
       fixture.status === FixtureStatus.POSTPONED ||
       fixture.status === FixtureStatus.CANCELLED ||
       fixture.status === FixtureStatus.IN_PROGRESS
     ) {
       logger.info(
-        { fixtureId, status: fixture.status, reason: 'fixture_not_playable' },
+        {
+          fixtureId,
+          scheduledAt,
+          status: fixture.status,
+          reason: 'fixture_not_playable',
+        },
         'Fixture skipped',
       );
       return { status: 'skipped', fixtureId, reason: 'fixture_not_playable' };
@@ -790,6 +797,7 @@ export class BettingEngineService {
       logger.info(
         {
           fixtureId,
+          scheduledAt,
           competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -819,6 +827,7 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
+          scheduledAt,
           competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -954,6 +963,7 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
+          scheduledAt,
           competitionCode: getFixtureCompetitionCode(fixture),
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -971,6 +981,7 @@ export class BettingEngineService {
     logger.info(
       {
         fixtureId,
+        scheduledAt,
         competitionCode: getFixtureCompetitionCode(fixture),
         homeTeam: getFixtureHomeTeamName(fixture),
         awayTeam: getFixtureAwayTeamName(fixture),
@@ -1215,6 +1226,7 @@ export class BettingEngineService {
         logger.info(
           {
             fixtureId,
+            scheduledAt,
             competitionCode,
             market: svPick.market,
             pick: svPick.pick,
