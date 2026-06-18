@@ -358,8 +358,6 @@ model Bet {
   // combo-match fields: null for single-market picks
   comboMarket          Market?
   comboPick            String? // secondary pick (e.g. "YES", "OVER")
-  // safe-value flag: true for picks selected via the SAFE_VALUE flux (P ≥ 68%, EV ≥ 0)
-  isSafeValue          Boolean               @default(false)
   // source: MODEL for engine bets, USER for user-placed picks from evaluated picks
   source               BetSource             @default(MODEL)
   userId               String?               @db.Uuid

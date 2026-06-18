@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { StrategyChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { AiEngineRepository } from './ai-engine.repository';
 import type { InvestmentSummaryCanal } from './dto/investment-summary-query.dto';
@@ -118,11 +119,11 @@ export class InvestmentSummaryService {
     let picks: InvestmentSummaryPickRow[];
 
     if (canal === 'EV' || canal === 'SV') {
-      const bets = await this.repo.findSettledBetsForInvestmentSummary(
-        canal === 'SV',
-        range.from,
-        range.to,
-      );
+      const bets = await this.repo.findSettledBetsForInvestmentSummary({
+        channel: canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV,
+        from: range.from,
+        to: range.to,
+      });
 
       const capped = capByDay(
         bets,

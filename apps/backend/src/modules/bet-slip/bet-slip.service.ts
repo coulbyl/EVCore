@@ -3,7 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BetSlipType, BetSource, Market, Prisma } from '@evcore/db';
+import {
+  BetSlipType,
+  BetSource,
+  Market,
+  Prisma,
+  StrategyChannel,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
@@ -385,7 +391,11 @@ function toBetSlipView(
         homeScore: item.fixture.homeScore,
         awayScore: item.fixture.awayScore,
         pnl: computePnl(status, stake, odds),
-        canal: item.bet.isSafeValue ? 'SV' : 'EV',
+        canal:
+          item.bet.channelSelection?.channelDecision.channel ===
+          StrategyChannel.SAFE
+            ? 'SV'
+            : 'EV',
       };
     }),
   };

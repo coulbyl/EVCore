@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { StrategyChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { toNumber } from '@utils/prisma.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
@@ -119,7 +120,7 @@ export class SummaryService {
   ): Promise<SummaryPickRow[]> {
     if (channel === 'EV' || channel === 'SV') {
       const bets = await this.repo.findSettledBets(
-        channel === 'SV',
+        channel === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV,
         range.from,
         range.to,
       );

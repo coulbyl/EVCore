@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { StrategyChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import { AiEngineRepository } from './ai-engine.repository';
 import type { InvestmentIndicesCanal } from './dto/investment-indices-query.dto';
@@ -166,11 +167,11 @@ export class InvestmentIndicesService {
     let items: IndicesItem[] = [];
 
     if (canal === 'EV' || canal === 'SV') {
-      const bets = await this.repo.findSettledBetsForIndices(
-        canal === 'SV',
-        range.from,
-        range.to,
-      );
+      const bets = await this.repo.findSettledBetsForIndices({
+        channel: canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV,
+        from: range.from,
+        to: range.to,
+      });
       items = bets.map((b) => ({
         prob: Number(b.probEstimated),
         won: b.status === 'WON',

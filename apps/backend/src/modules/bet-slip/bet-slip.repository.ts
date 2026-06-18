@@ -40,7 +40,9 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
             fixture: {
@@ -132,7 +134,9 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
             fixture: {

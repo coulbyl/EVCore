@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { BankrollTransactionType, Prisma } from '@evcore/db';
+import { BankrollTransactionType, Prisma, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { BANKROLL_LIMITS } from '@/config/bankroll.constants';
 import { BankrollRepository } from './bankroll.repository';
@@ -50,7 +50,12 @@ export class BankrollService {
       betId: r.betId,
       note: r.note,
       createdAt: r.createdAt.toISOString(),
-      canal: r.bet ? (r.bet.isSafeValue ? 'SV' : 'EV') : null,
+      canal: r.bet
+        ? r.bet.channelSelection?.channelDecision.channel ===
+          StrategyChannel.SAFE
+          ? 'SV'
+          : 'EV'
+        : null,
       fixture: r.bet
         ? `${r.bet.fixture.homeTeam.name} vs ${r.bet.fixture.awayTeam.name}`
         : null,

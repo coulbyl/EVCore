@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import {
@@ -225,7 +226,7 @@ export class SignalWindowService {
 
     type BetAggRow = {
       day: Date;
-      is_safe: boolean;
+      channel: StrategyChannel;
       is_won: boolean;
       dow: number;
       league: string;
@@ -234,19 +235,21 @@ export class SignalWindowService {
     const betRows = await this.prisma.client.$queryRaw<BetAggRow[]>`
       SELECT
         DATE(f."scheduledAt")                                   AS day,
-        b."isSafeValue"                                         AS is_safe,
+        cs.channel                                              AS channel,
         (b.status = 'WON')                                      AS is_won,
         (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
         c.code                                                  AS league,
         COUNT(*)                                                AS cnt
       FROM bet b
+      JOIN channel_selection cs ON cs.id = b."channelSelectionId"
       JOIN fixture     f ON f.id = b."fixtureId"
       JOIN season      s ON s.id = f."seasonId"
       JOIN competition c ON c.id = s."competitionId"
       WHERE b.status IN ('WON', 'LOST')
         AND b."createdAt" >= ${since}
         AND b.source = 'MODEL'
-      GROUP BY DATE(f."scheduledAt"), b."isSafeValue", b.status,
+        AND cs.channel IN ('EV', 'SAFE')
+      GROUP BY DATE(f."scheduledAt"), cs.channel, b.status,
                EXTRACT(ISODOW FROM f."scheduledAt"), c.code
     `;
 
@@ -254,7 +257,7 @@ export class SignalWindowService {
 
     for (const r of betRows) {
       entries.push({
-        canal: r.is_safe ? 'SV' : 'EV',
+        canal: r.channel === StrategyChannel.SAFE ? 'SV' : 'EV',
         correct: r.is_won,
         dow: Number(r.dow),
         league: r.league,
@@ -360,8 +363,10 @@ export class SignalWindowService {
                 qualityScore: true,
                 probEstimated: true,
                 oddsSnapshot: true,
-                isSafeValue: true,
                 status: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
           },
@@ -451,7 +456,11 @@ export class SignalWindowService {
 
       if (run) {
         for (const bet of run.bets) {
-          const canal: Canal = bet.isSafeValue ? 'SV' : 'EV';
+          const canal: Canal =
+            bet.channelSelection?.channelDecision.channel ===
+            StrategyChannel.SAFE
+              ? 'SV'
+              : 'EV';
           const isCorrect =
             bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
           picks.push({

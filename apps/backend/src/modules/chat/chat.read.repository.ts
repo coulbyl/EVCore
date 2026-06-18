@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { BetSource, FixtureStatus, Prisma } from '@evcore/db';
+import { BetSource, FixtureStatus, Prisma, StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { CacheService } from '@common/redis/cache.service';
 import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
@@ -239,7 +239,9 @@ export class ChatReadRepository {
                 qualityScore: true,
                 stakePct: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
           },
@@ -286,7 +288,11 @@ export class ChatReadRepository {
       bets:
         run?.bets.map((bet) => ({
           id: bet.id,
-          canal: bet.isSafeValue ? 'SV' : 'EV',
+          canal: bet.channelSelection
+            ? strategyChannelToCanal(
+                bet.channelSelection.channelDecision.channel,
+              )
+            : 'EV',
           market: bet.market,
           pick: bet.pick,
           probability: round(bet.probEstimated),
@@ -339,7 +345,9 @@ export class ChatReadRepository {
           const bets = await this.prisma.client.bet.findMany({
             where: {
               source: BetSource.MODEL,
-              isSafeValue: meta.isSafeValue,
+              channelSelection: {
+                is: { channelDecision: { is: { channel: meta.channel } } },
+              },
               status: { in: ['WON', 'LOST'] },
               fixture: {
                 scheduledAt: { gte: input.range.from, lte: input.range.to },
@@ -411,7 +419,9 @@ export class ChatReadRepository {
       const bets = await this.prisma.client.bet.findMany({
         where: {
           source: BetSource.MODEL,
-          isSafeValue: meta.isSafeValue,
+          channelSelection: {
+            is: { channelDecision: { is: { channel: meta.channel } } },
+          },
           status: { in: ['WON', 'LOST'] },
           fixture: {
             scheduledAt: { gte: input.range.from, lte: input.range.to },
@@ -487,7 +497,6 @@ export class ChatReadRepository {
     onlyMisses: boolean;
     limit: number;
   }) {
-    const isSv = input.canal === 'SV';
     const isBetCanal =
       !input.canal || input.canal === 'EV' || input.canal === 'SV';
     const rows: Array<{
@@ -506,7 +515,17 @@ export class ChatReadRepository {
       const bets = await this.prisma.client.bet.findMany({
         where: {
           source: BetSource.MODEL,
-          ...(input.canal ? { isSafeValue: isSv } : {}),
+          channelSelection: {
+            is: {
+              channelDecision: {
+                is: {
+                  channel: input.canal
+                    ? canalToStrategyChannel(input.canal)
+                    : { in: [StrategyChannel.EV, StrategyChannel.SAFE] },
+                },
+              },
+            },
+          },
           status: { in: ['WON', 'LOST'] },
           fixture: {
             scheduledAt: { gte: input.range.from, lte: input.range.to },
@@ -517,7 +536,9 @@ export class ChatReadRepository {
           pick: true,
           probEstimated: true,
           oddsSnapshot: true,
-          isSafeValue: true,
+          channelSelection: {
+            select: { channelDecision: { select: { channel: true } } },
+          },
           fixture: {
             select: {
               scheduledAt: true,
@@ -536,7 +557,9 @@ export class ChatReadRepository {
           fixture: `${b.fixture.homeTeam.name} - ${b.fixture.awayTeam.name}`,
           competition: b.fixture.season.competition.code,
           date: b.fixture.scheduledAt.toISOString().slice(0, 10),
-          canal: b.isSafeValue ? 'SV' : 'EV',
+          canal: b.channelSelection
+            ? strategyChannelToCanal(b.channelSelection.channelDecision.channel)
+            : 'EV',
           pick: b.pick,
           probability: round(b.probEstimated),
           odds: b.oddsSnapshot ? round(b.oddsSnapshot) : null,
@@ -583,9 +606,11 @@ export class ChatReadRepository {
       },
       select: {
         status: true,
-        isSafeValue: true,
         probEstimated: true,
         oddsSnapshot: true,
+        channelSelection: {
+          select: { channelDecision: { select: { channel: true } } },
+        },
       },
     });
 
@@ -602,7 +627,9 @@ export class ChatReadRepository {
       if (!b.oddsSnapshot) continue;
       const odds = toDecimal(b.oddsSnapshot);
       if (odds.lte(0)) continue;
-      const seg = b.isSafeValue ? 'SV' : 'EV';
+      const seg = b.channelSelection
+        ? strategyChannelToCanal(b.channelSelection.channelDecision.channel)
+        : 'EV';
       const existing = bySegment.get(seg) ?? {
         edgeSum: new Decimal(0),
         edgeCount: 0,
@@ -844,7 +871,9 @@ export class ChatReadRepository {
               select: {
                 market: true,
                 pick: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
           },
@@ -893,7 +922,13 @@ export class ChatReadRepository {
         by: ['status'],
         where: {
           source: 'MODEL',
-          isSafeValue: input.canal === 'SV',
+          channelSelection: {
+            is: {
+              channelDecision: {
+                is: { channel: canalToStrategyChannel(input.canal) },
+              },
+            },
+          },
           status: { in: ['WON', 'LOST'] },
           fixture: {
             scheduledAt: { gte: input.since },
@@ -966,7 +1001,13 @@ type FixtureWithRun = {
   modelRuns: Array<{
     decision: string;
     features: unknown;
-    bets: Array<{ market: string; pick: string; isSafeValue: boolean }>;
+    bets: Array<{
+      market: string;
+      pick: string;
+      channelSelection: {
+        channelDecision: { channel: StrategyChannel };
+      } | null;
+    }>;
   }>;
 };
 
@@ -978,10 +1019,20 @@ function buildFixtureEvaContext(
   const ctx = extractEvaContextFromFeatures(run.features);
 
   const betKeys = new Set(
-    run.bets.filter((b) => !b.isSafeValue).map((b) => `${b.market}|${b.pick}`),
+    run.bets
+      .filter(
+        (b) =>
+          b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+      )
+      .map((b) => `${b.market}|${b.pick}`),
   );
   const svKeys = new Set(
-    run.bets.filter((b) => b.isSafeValue).map((b) => `${b.market}|${b.pick}`),
+    run.bets
+      .filter(
+        (b) =>
+          b.channelSelection?.channelDecision.channel === StrategyChannel.SAFE,
+      )
+      .map((b) => `${b.market}|${b.pick}`),
   );
 
   const picks: EvaPickEntry[] = [];
@@ -1100,9 +1151,17 @@ function hitRateFromRows(
 
 function channelToPrisma(channel: string): {
   isBet: boolean;
-  isSafeValue?: boolean;
+  channel?: StrategyChannel;
 } {
-  if (channel === 'EV') return { isBet: true, isSafeValue: false };
-  if (channel === 'SV') return { isBet: true, isSafeValue: true };
+  if (channel === 'EV') return { isBet: true, channel: StrategyChannel.EV };
+  if (channel === 'SV') return { isBet: true, channel: StrategyChannel.SAFE };
   return { isBet: false };
+}
+
+function canalToStrategyChannel(canal: string): StrategyChannel {
+  return canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV;
+}
+
+function strategyChannelToCanal(channel: StrategyChannel): 'EV' | 'SV' {
+  return channel === StrategyChannel.SAFE ? 'SV' : 'EV';
 }

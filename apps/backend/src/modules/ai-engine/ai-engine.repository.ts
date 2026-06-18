@@ -5,6 +5,7 @@ import {
   CouponProposalStatus,
   CouponResult,
   Prisma,
+  StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { mapCouponSourceChannel } from './coupon-channel.mapper';
@@ -228,11 +229,11 @@ export class AiEngineRepository {
     }) as unknown as Promise<CouponProposalWithLegs[]>;
   }
 
-  async findSettledBetsForIndices(
-    isSafeValue: boolean,
-    from: Date,
-    to: Date,
-  ): Promise<
+  async findSettledBetsForIndices(opts: {
+    channel: StrategyChannel;
+    from: Date;
+    to: Date;
+  }): Promise<
     {
       probEstimated: Prisma.Decimal;
       status: string;
@@ -240,9 +241,12 @@ export class AiEngineRepository {
       oddsSnapshot: Prisma.Decimal | null;
     }[]
   > {
+    const { channel, from, to } = opts;
     return this.prisma.client.bet.findMany({
       where: {
-        isSafeValue,
+        channelSelection: {
+          is: { channelDecision: { is: { channel } } },
+        },
         source: BetSource.MODEL,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
         fixture: { scheduledAt: { gte: from, lte: to } },
@@ -295,14 +299,17 @@ export class AiEngineRepository {
     });
   }
 
-  findSettledBetsForInvestmentSummary(
-    isSafeValue: boolean,
-    from: Date,
-    to: Date,
-  ): Promise<InvestmentSummaryBetRow[]> {
+  findSettledBetsForInvestmentSummary(opts: {
+    channel: StrategyChannel;
+    from: Date;
+    to: Date;
+  }): Promise<InvestmentSummaryBetRow[]> {
+    const { channel, from, to } = opts;
     return this.prisma.client.bet.findMany({
       where: {
-        isSafeValue,
+        channelSelection: {
+          is: { channelDecision: { is: { channel } } },
+        },
         source: BetSource.MODEL,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
         fixture: { scheduledAt: { gte: from, lte: to } },

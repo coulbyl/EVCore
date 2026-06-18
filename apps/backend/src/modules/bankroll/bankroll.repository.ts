@@ -55,7 +55,9 @@ export class BankrollRepository {
       include: {
         bet: {
           select: {
-            isSafeValue: true,
+            channelSelection: {
+              select: { channelDecision: { select: { channel: true } } },
+            },
             market: true,
             fixture: {
               select: {

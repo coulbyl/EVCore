@@ -56,7 +56,7 @@ SELECT
     mr.features                     AS features,
     b.market::text                  AS market,
     b.pick,
-    CASE WHEN b."isSafeValue" THEN 'SV' ELSE 'EV' END AS canal,
+    CASE WHEN cs.channel = 'SAFE' THEN 'SV' ELSE 'EV' END AS canal,
     b."probEstimated"               AS prob_estimated,
     b."oddsSnapshot"                AS odds_bet,
     b.ev,
@@ -71,11 +71,13 @@ SELECT
     os."underOdds"                  AS pinnacle_under
 FROM model_run mr
 JOIN bet b         ON b."modelRunId"  = mr.id
+JOIN channel_selection cs ON cs.id    = b."channelSelectionId"
 JOIN fixture f     ON f.id            = mr."fixtureId"
 JOIN season s      ON s.id            = f."seasonId"
 JOIN competition c ON c.id            = s."competitionId"
 {_ODDS_LATERAL_SQL.format(market_ref="b.market")}
 WHERE b.status IN ('WON', 'LOST')
+  AND cs.channel IN ('EV', 'SAFE')
 ORDER BY mr."analyzedAt"
 """
 

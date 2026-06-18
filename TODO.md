@@ -28,15 +28,16 @@
 Étapes 0-5 terminées et commitées. La vue `/dashboard/decisions` est la surface
 principale ; `/dashboard/investment` et `/dashboard/picks` redirigent vers elle.
 L'engine écrit les `ChannelDecision` / `ChannelSelection` et ne recrée plus les
-`Prediction` ni le flag legacy `Bet.isSafeValue`. La config historique
-`prediction.constants` a été renommée/déplacée en config de stratégies
-(`betting-engine/strategies/channel-strategy.config.ts`) avec le vocabulaire
-`DOMINANT` / `DRAW` / `BTTS`.
+`Prediction` ni le flag legacy `Bet.isSafeValue`. Les lectures runtime EV/SAFE
+passent par `Bet.channelSelection → ChannelDecision.channel`. La config
+historique `prediction.constants` a été renommée/déplacée en config de
+stratégies (`betting-engine/strategies/channel-strategy.config.ts`) avec le
+vocabulaire `DOMINANT` / `DRAW` / `BTTS`.
 
 **Priorité 1 — couper le legacy (Étape 6)** :
 
 - retirer les consommateurs/schémas legacy restants ;
-- supprimer `Bet.isSafeValue`, puis `ModelRun.decision` ;
+- supprimer `ModelRun.decision` ;
 - recâbler ou supprimer les scripts diagnostics DB qui lisent encore les
   anciennes tables (`prediction`, puis `isSafeValue`) avant de relancer un
   typecheck complet `@evcore/db`.
@@ -161,7 +162,8 @@ scripts diagnostics legacy ne sont pas encore recâblés.
 
 - [ ] **[à recâbler]** Vérification post-rebuild : comptage `ModelRun` /
       `ChannelDecision` / `ChannelSelection`, résultats settlés par canal,
-      absence de dépendance runtime à `Prediction` / `isSafeValue`
+      absence de dépendance runtime à `Prediction` / `isSafeValue` /
+      `ModelRun.decision`
 
 ---
 
@@ -224,10 +226,15 @@ scripts diagnostics legacy ne sont pas encore recâblés.
       dans `channel-strategy.config.ts` (`DOMINANT`, `DRAW`, `BTTS`) et les
       consommateurs runtime ne dépendent plus de `modules/prediction`.
       Migration SQL à générer/appliquer par toi.
-- [ ] Mettre à jour ou supprimer les scripts diagnostics DB legacy qui lisent
-      encore `prediction` avant le prochain `@evcore/db typecheck`
+- [x] Retirer `Bet.isSafeValue` du schéma cible et des consommateurs runtime :
+      dashboard, fixture scoring, chat/EVA, summary, bankroll, bet slips,
+      investment legacy et extract ML lisent désormais le canal via
+      `Bet.channelSelection → ChannelDecision.channel`. Migration SQL à
+      régénérer/appliquer par toi.
+- [ ] Mettre à jour ou supprimer les scripts diagnostics ad hoc qui lisent encore
+      `prediction` / `isSafeValue` (`packages/db/scripts/*`, `scripts/*.mjs`,
+      `apps/backend/scripts/backtest-data-audit.ts`)
 - [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
-- [ ] `ALTER TABLE bet DROP COLUMN isSafeValue`
 - [ ] Retirer `ModelRun.decision`
 - [ ] Rollback testé : transaction non committée + migration `down` Prisma
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Decision } from '@evcore/db';
+import { Decision, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import {
@@ -197,8 +197,13 @@ export class DashboardService {
     const until = endOfUtcDay(parseIsoDate(to));
     const bets = await this.repo.getSettledBetsForPnl({ since, until });
 
-    const evBets = bets.filter((b) => !b.isSafeValue);
-    const svBets = bets.filter((b) => b.isSafeValue);
+    const evBets = bets.filter(
+      (b) => b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+    );
+    const svBets = bets.filter(
+      (b) =>
+        b.channelSelection?.channelDecision.channel === StrategyChannel.SAFE,
+    );
 
     return {
       from,
@@ -349,8 +354,8 @@ export class DashboardService {
 
   async getChannelHealth(): Promise<ChannelHealthItem[]> {
     const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(false, 200),
-      this.repo.findRecentModelBets(true, 200),
+      this.repo.findRecentModelBets(StrategyChannel.EV, 200),
+      this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
     ]);
 
     const evRoi = flatBetRoi(evBets);
@@ -412,8 +417,8 @@ export class DashboardService {
 
   async getChannelStats(): Promise<ChannelStatsItem[]> {
     const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(false, 200),
-      this.repo.findRecentModelBets(true, 200),
+      this.repo.findRecentModelBets(StrategyChannel.EV, 200),
+      this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
     ]);
 
     // Reverse desc→asc for chronological drawdown computation

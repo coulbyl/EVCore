@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetSource, BetStatus } from '@evcore/db';
+import { BetSource, BetStatus, StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 const FIXTURE_INCLUDE = {
@@ -21,7 +21,6 @@ export type BetWithFixture = {
   oddsSnapshot: { toString(): string } | null;
   ev: { toString(): string };
   status: string;
-  isSafeValue: boolean;
   fixture: {
     id: string;
     scheduledAt: Date;
@@ -37,14 +36,12 @@ export type BetWithFixture = {
 export class SummaryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findSettledBets(
-    isSafeValue: boolean,
-    from: Date,
-    to: Date,
-  ): Promise<BetWithFixture[]> {
+  findSettledBets(channel: StrategyChannel, from: Date, to: Date) {
     return this.prisma.client.bet.findMany({
       where: {
-        isSafeValue,
+        channelSelection: {
+          is: { channelDecision: { is: { channel } } },
+        },
         source: BetSource.MODEL,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
         fixture: {

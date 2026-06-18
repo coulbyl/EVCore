@@ -2211,7 +2211,6 @@ describe('BettingEngineService', () => {
       ]
     )[1][0];
 
-    expect(svArgs.data).not.toHaveProperty('isSafeValue');
     expect(svArgs.data.market).toBe(Market.ONE_X_TWO);
     expect(svArgs.data.pick).toBe('HOME');
     expect(svArgs.data.pickKey).toMatch(/^sv:/);
@@ -2237,10 +2236,6 @@ describe('BettingEngineService', () => {
 
     // Only the EV bet create, no safe value create
     expect(betCreate).toHaveBeenCalledTimes(1);
-    const evArgs = (
-      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
-    )[0][0];
-    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 
   it('does not save a safe value bet when the only qualifying pick is the EV pick itself', async () => {
@@ -2262,10 +2257,6 @@ describe('BettingEngineService', () => {
     await service.analyzeFixture('fixture-id');
 
     expect(betCreate).toHaveBeenCalledTimes(1);
-    const evArgs = (
-      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
-    )[0][0];
-    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 });
 

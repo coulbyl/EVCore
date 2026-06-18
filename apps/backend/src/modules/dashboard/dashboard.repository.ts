@@ -4,6 +4,7 @@ import {
   BetStatus,
   FixtureStatus,
   NotificationType,
+  StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
@@ -164,7 +165,9 @@ export class DashboardRepository {
         status: true,
         stakePct: true,
         oddsSnapshot: true,
-        isSafeValue: true,
+        channelSelection: {
+          select: { channelDecision: { select: { channel: true } } },
+        },
       },
     });
   }
@@ -179,9 +182,19 @@ export class DashboardRepository {
     } as const;
     const canalFilter =
       canal === 'EV'
-        ? { isSafeValue: false }
+        ? {
+            channelSelection: {
+              is: { channelDecision: { is: { channel: StrategyChannel.EV } } },
+            },
+          }
         : canal === 'SV'
-          ? { isSafeValue: true }
+          ? {
+              channelSelection: {
+                is: {
+                  channelDecision: { is: { channel: StrategyChannel.SAFE } },
+                },
+              },
+            }
           : {};
 
     return Promise.all([
@@ -228,12 +241,14 @@ export class DashboardRepository {
     ]);
   }
 
-  findRecentModelBets(isSafeValue: boolean, take: number) {
+  findRecentModelBets(channel: StrategyChannel, take: number) {
     return this.prisma.client.bet.findMany({
       where: {
         status: { in: [BetStatus.WON, BetStatus.LOST] },
         source: BetSource.MODEL,
-        isSafeValue,
+        channelSelection: {
+          is: { channelDecision: { is: { channel } } },
+        },
         oddsSnapshot: { not: null },
       },
       select: { status: true, oddsSnapshot: true, stakePct: true },
