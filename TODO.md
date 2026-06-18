@@ -32,15 +32,16 @@ L'engine écrit les `ChannelDecision` / `ChannelSelection` et ne recrée plus le
 passent par `Bet.channelSelection → ChannelDecision.channel`. La config
 historique `prediction.constants` a été renommée/déplacée en config de
 stratégies (`betting-engine/strategies/channel-strategy.config.ts`) avec le
-vocabulaire `DOMINANT` / `DRAW` / `BTTS`.
+vocabulaire `DOMINANT` / `DRAW` / `BTTS`. `ModelRun.decision` a aussi été retiré
+du schéma cible et des consommateurs runtime ; les surfaces legacy affichent un
+pick EV à partir de la présence d'un `Bet.channelSelection` matérialisé.
 
 **Priorité 1 — couper le legacy (Étape 6)** :
 
 - retirer les consommateurs/schémas legacy restants ;
-- supprimer `ModelRun.decision` ;
 - recâbler ou supprimer les scripts diagnostics DB qui lisent encore les
   anciennes tables (`prediction`, puis `isSafeValue`) avant de relancer un
-  typecheck complet `@evcore/db`.
+  audit complet des scripts.
 
 **Priorité 2 — purge destructive + rebuild/backfill après cleanup** :
 
@@ -58,10 +59,10 @@ vocabulaire `DOMINANT` / `DRAW` / `BTTS`.
 
 **Priorité 3 — nouveaux canaux** : seulement après cleanup + rebuild stables.
 
-État dernier passage : backend lint ✅ · backend typecheck ✅ · Vitest backend
-58 fichiers / 537 tests ✅ · e2e repository non relancé ici si
-Docker/Testcontainers indisponible. `@evcore/db` typecheck différé tant que les
-scripts diagnostics legacy ne sont pas encore recâblés.
+État dernier passage : Prisma validate ✅ · `@evcore/db build` ✅ · backend
+typecheck/lint ✅ · web typecheck/lint ✅ (2 warnings `<img>` préexistants).
+Vitest backend 58 fichiers / 537 tests ✅ au passage précédent ; e2e repository
+non relancé ici si Docker/Testcontainers indisponible.
 
 ---
 
@@ -235,7 +236,9 @@ scripts diagnostics legacy ne sont pas encore recâblés.
       `prediction` / `isSafeValue` (`packages/db/scripts/*`, `scripts/*.mjs`,
       `apps/backend/scripts/backtest-data-audit.ts`)
 - [ ] `DROP TABLE prediction` ; `DROP TYPE PredictionChannel`, `CouponLegCanal`
-- [ ] Retirer `ModelRun.decision`
+- [x] Retirer `ModelRun.decision` du schéma cible et des consommateurs runtime :
+      engine, dashboard, fixture scoring, audit, chat, bet slips, tests et UI web.
+      Les scripts diagnostics ad hoc restent à recâbler dans l'item dédié.
 - [ ] Rollback testé : transaction non committée + migration `down` Prisma
 
 ---

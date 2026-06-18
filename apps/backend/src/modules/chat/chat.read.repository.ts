@@ -34,7 +34,6 @@ type FixtureExplanation = {
   };
   modelRun: {
     id: string;
-    decision: string;
     finalScore: number | null;
     deterministicScore: number | null;
     mlDelta: number | null;
@@ -220,7 +219,6 @@ export class ChatReadRepository {
           take: 1,
           select: {
             id: true,
-            decision: true,
             finalScore: true,
             deterministicScore: true,
             mlDelta: true,
@@ -272,7 +270,6 @@ export class ChatReadRepository {
       modelRun: run
         ? {
             id: run.id,
-            decision: run.decision,
             finalScore: run.finalScore ? round(run.finalScore) : null,
             deterministicScore: run.deterministicScore
               ? round(run.deterministicScore)
@@ -864,7 +861,6 @@ export class ChatReadRepository {
           orderBy: { analyzedAt: 'desc' },
           take: 1,
           select: {
-            decision: true,
             features: true,
             bets: {
               where: { source: BetSource.MODEL, userId: null },
@@ -999,7 +995,6 @@ type FixtureWithRun = {
   awayTeam: { name: string };
   season: { competition: { code: string } };
   modelRuns: Array<{
-    decision: string;
     features: unknown;
     bets: Array<{
       market: string;
@@ -1071,8 +1066,7 @@ function buildFixtureEvaContext(
   }
 
   // analysisState is derived from the full picks array across ALL channels
-  // currently represented in features/bets, not from run.decision which only
-  // reflects the EV/SV bet decision.
+  // currently represented in features/bets.
   const hasAcceptedPick = picks.some((p) => p.decision === 'BET');
   const hasEvaluatedEvPicks = ctx.evaluatedPicks.length > 0;
   const analysisState: EvaFixtureContext['analysisState'] = hasAcceptedPick

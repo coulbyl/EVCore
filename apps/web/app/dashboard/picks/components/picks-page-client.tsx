@@ -32,7 +32,9 @@ function groupByCanal(rows: FixtureRow[]) {
   const btts: FixtureRow[] = [];
 
   for (const row of rows) {
-    if (row.modelRun?.decision === "BET") ev.push(row);
+    if (row.modelRun?.betId && row.modelRun.market && row.modelRun.pick) {
+      ev.push(row);
+    }
     if (row.safeValueBet !== null) sv.push(row);
     if (row.prediction !== null) conf.push(row);
     if (row.drawPrediction !== null) matchNul.push(row);

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import {
   BetStatus,
-  Decision,
   FixtureStatus,
   Market,
   AdjustmentStatus,
@@ -280,7 +279,6 @@ describe('Adjustment flow (e2e)', () => {
     const row = await prisma.modelRun.create({
       data: {
         fixtureId,
-        decision: Decision.BET,
         deterministicScore: 0.75,
         llmDelta: null,
         finalScore: 0.75,

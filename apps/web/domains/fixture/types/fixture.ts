@@ -13,7 +13,6 @@ export type FixtureModelFactors = {
 
 export type FixtureModelRun = {
   modelRunId: string;
-  decision: "BET" | "NO_BET";
   deterministicScore: string;
   finalScore: string;
   betId: string | null;

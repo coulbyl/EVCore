@@ -36,7 +36,6 @@ export type AuditFixtureRow = {
   htScore: string | null;
   hasOdds: boolean;
   modelRun: {
-    decision: 'BET' | 'NO_BET';
     deterministicScore: string;
     finalScore: string;
     market: string | null;

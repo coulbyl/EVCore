@@ -32,7 +32,6 @@ export function AddToSlipInline({
     const mr = row.modelRun;
     if (
       !mr ||
-      mr.decision !== "BET" ||
       !mr.betId ||
       !mr.market ||
       !mr.pick ||

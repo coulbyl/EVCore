@@ -925,7 +925,6 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.modelRunId).toBe('run-id');
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.ONE_X_TWO,
         pick: 'HOME',
@@ -935,7 +934,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             predictionSource: 'ODDS_DEVIG',
             fallbackReason: null,
@@ -1023,7 +1021,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.ONE_X_TWO,
         pick: 'HOME',
@@ -1033,7 +1030,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             predictionSource: 'FRI_ELO_POISSON',
             fallbackReason: null,
@@ -1098,7 +1094,6 @@ describe('BettingEngineService', () => {
     expect(result).toMatchObject({
       status: 'analyzed',
       fixtureId: 'fixture-id',
-      decision: 'NO_BET',
       modelRunId: 'run-id',
       valueBet: null,
     });
@@ -1106,7 +1101,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'NO_BET',
           features: expect.objectContaining({
             predictionSource: null,
             fallbackReason: 'missing_market_odds',
@@ -1228,7 +1222,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         modelRunId: 'run-id',
         market: Market.ONE_X_TWO,
@@ -1239,7 +1232,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             shadow_h2h: 0.6,
             shadow_congestion: 0.2,
@@ -1371,15 +1363,8 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
-
-    expect(createModelRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ decision: 'NO_BET' }),
-      }),
-    );
   });
 
   it('rejects 1X2 AWAY picks above MAX_SELECTION_ODDS cap', async () => {
@@ -1490,7 +1475,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
   });
@@ -1603,7 +1587,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
   });
@@ -2038,7 +2021,6 @@ describe('BettingEngineService', () => {
     const result = await service.analyzeFixture('fixture-id');
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.HALF_TIME_FULL_TIME,
         pick: 'HOME_HOME',

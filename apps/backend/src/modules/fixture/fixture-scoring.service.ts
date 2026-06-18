@@ -17,7 +17,6 @@ import type { FixtureScoringQueryDto } from './dto/fixture-scoring-query.dto';
 
 export type ScoredFixtureModelRun = {
   modelRunId: string;
-  decision: 'BET' | 'NO_BET';
   deterministicScore: string;
   finalScore: string;
   betId: string | null;
@@ -150,7 +149,7 @@ export class FixtureScoringService {
     date: Date,
     filters: Pick<
       FixtureScoringQueryDto,
-      'decision' | 'status' | 'competition' | 'timeSlot' | 'betStatus'
+      'status' | 'competition' | 'timeSlot' | 'betStatus'
     > = {},
     options: {
       userId?: string;
@@ -223,7 +222,6 @@ export class FixtureScoringService {
         modelRuns: {
           select: {
             id: true,
-            decision: true,
             deterministicScore: true,
             finalScore: true,
             features: true,
@@ -340,7 +338,6 @@ export class FixtureScoringService {
         modelRun: run
           ? {
               modelRunId: run.id,
-              decision: run.decision as 'BET' | 'NO_BET',
               deterministicScore: toNumber(run.deterministicScore).toFixed(2),
               finalScore: toNumber(run.finalScore).toFixed(3),
               betId: bet?.id ?? null,
@@ -385,10 +382,6 @@ export class FixtureScoringService {
         bttsPrediction: null,
       };
     });
-
-    if (filters.decision) {
-      rows = rows.filter((r) => r.modelRun?.decision === filters.decision);
-    }
 
     if (filters.betStatus) {
       rows = rows.filter((r) => r.modelRun?.betStatus === filters.betStatus);

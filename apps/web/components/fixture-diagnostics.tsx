@@ -63,6 +63,11 @@ function rejectionLabel(reason: string | undefined, t: Translator): string {
   return translated;
 }
 
+function hasEvPick(row: FixtureRow): boolean {
+  const mr = row.modelRun;
+  return Boolean(mr?.betId && mr.market && mr.pick);
+}
+
 // ── factor bars ───────────────────────────────────────────────────────────────
 
 // shared via `@/components/fixture-factor-bar`
@@ -309,7 +314,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       </div>
 
       {/* Pick retenu */}
-      {mr.decision === "BET" && mr.market && mr.pick && (
+      {hasEvPick(row) && mr.market && mr.pick && (
         <div className="mt-4 flex items-center gap-3 rounded-[1rem] border border-border bg-panel p-3">
           <CanalBadge canal="EV" />
           <span className="flex-1 text-sm font-semibold text-foreground">
@@ -336,10 +341,9 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         </div>
       )}
 
-      {mr.decision === "NO_BET" && (
+      {!hasEvPick(row) && (
         <div className="mt-4 rounded-[1rem] border border-dashed border-border bg-panel/60 px-3 py-2.5 text-sm text-muted-foreground">
-          {t("noBet.message")} {t("noBet.decision")}{" "}
-          <span className="font-semibold text-foreground">NO_BET</span>
+          {t("noBet.message")}
         </div>
       )}
 

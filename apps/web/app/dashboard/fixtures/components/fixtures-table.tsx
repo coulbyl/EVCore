@@ -37,25 +37,26 @@ import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
 // Cell badge helpers
 // ---------------------------------------------------------------------------
 
-function DecisionBadge({ decision }: { decision: "BET" | "NO_BET" | null }) {
-  if (!decision)
-    return <span className="text-xs text-muted-foreground">—</span>;
-  if (decision === "BET") {
-    return (
-      <span
-        className="inline-flex items-center rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
-        style={{
-          color: "var(--canal-ev)",
-          background: "var(--canal-ev-soft)",
-          border:
-            "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
-        }}
-      >
-        Jouer
-      </span>
-    );
-  }
-  return null;
+function hasEvPick(row: FixtureRow): boolean {
+  const mr = row.modelRun;
+  return Boolean(mr?.betId && mr.market && mr.pick);
+}
+
+function EvPickBadge({ show }: { show: boolean }) {
+  if (!show) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest"
+      style={{
+        color: "var(--canal-ev)",
+        background: "var(--canal-ev-soft)",
+        border:
+          "1px solid color-mix(in srgb, var(--canal-ev) 22%, transparent)",
+      }}
+    >
+      EV
+    </span>
+  );
 }
 
 const PICK_LABEL: Record<string, string> = {
@@ -263,7 +264,7 @@ function AddToSlipButton({
 
   if (
     !mr ||
-    mr.decision !== "BET" ||
+    !hasEvPick(row) ||
     !mr.betId ||
     !mr.market ||
     !mr.pick ||
@@ -343,7 +344,7 @@ function AddToSlipButton({
 }
 
 function ResultAction({ row, isAdmin }: { row: FixtureRow; isAdmin: boolean }) {
-  const isBet = row.modelRun?.decision === "BET";
+  const isBet = hasEvPick(row);
   const settled =
     row.modelRun?.betStatus === "WON" || row.modelRun?.betStatus === "LOST";
   if (!isAdmin || !isBet || settled) return null;
@@ -458,7 +459,7 @@ function FixtureMobileCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {mr?.decision === "BET" && mr.ev && (
+            {hasEvPick(row) && mr?.ev && (
               <span className="flex items-baseline gap-1 tabular-nums">
                 {evOdds && (
                   <span className="text-xs font-medium text-muted-foreground">
@@ -480,11 +481,11 @@ function FixtureMobileCard({
             {row.bttsPrediction && (
               <PredictionBadge pred={row.bttsPrediction} />
             )}
-            <DecisionBadge decision={mr?.decision ?? null} />
+            <EvPickBadge show={hasEvPick(row)} />
           </div>
 
-          {mr?.decision === "BET" &&
-            mr.betStatus &&
+          {hasEvPick(row) &&
+            mr?.betStatus &&
             mr.betStatus !== "PENDING" && (
               <div className="flex items-center gap-2">
                 <BetResultBadge status={mr.betStatus} />
@@ -494,7 +495,7 @@ function FixtureMobileCard({
         </div>
       </div>
 
-      {mr?.decision === "BET" && (
+      {hasEvPick(row) && (
         <div className="mt-3 flex gap-2 border-t border-border pt-3">
           <ResultAction row={row} isAdmin={isAdmin} />
           <AddToSlipButton row={row} variant="full" />
@@ -558,11 +559,11 @@ function makeColumns(isAdmin: boolean): ColumnDef<FixtureRow>[] {
       ),
     },
     {
-      id: "decision",
-      header: "Décision",
+      id: "evPick",
+      header: "EV",
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
-          <DecisionBadge decision={row.original.modelRun?.decision ?? null} />
+          <EvPickBadge show={hasEvPick(row.original)} />
           <div className="flex flex-wrap gap-1">
             {row.original.prediction && (
               <PredictionBadge pred={row.original.prediction} />

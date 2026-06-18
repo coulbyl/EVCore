@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   BetSource,
   BetStatus,
+  ChannelDecisionStatus,
   FixtureStatus,
   NotificationType,
   StrategyChannel,
@@ -26,7 +27,7 @@ export class DashboardRepository {
       scheduledYesterday,
       fixturesWithOddsToday,
       modelRunsToday,
-      betDecisionsToday,
+      selectedDecisionsToday,
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
@@ -58,10 +59,11 @@ export class DashboardRepository {
       this.prisma.client.modelRun.count({
         where: { analyzedAt: { gte: todayStart, lte: todayEnd } },
       }),
-      this.prisma.client.modelRun.groupBy({
-        by: ['decision'],
-        where: { analyzedAt: { gte: todayStart, lte: todayEnd } },
-        _count: { _all: true },
+      this.prisma.client.channelDecision.count({
+        where: {
+          status: ChannelDecisionStatus.SELECTED,
+          modelRun: { analyzedAt: { gte: todayStart, lte: todayEnd } },
+        },
       }),
       this.prisma.client.notification.count({
         where: { read: false },
@@ -137,7 +139,7 @@ export class DashboardRepository {
       scheduledYesterday,
       fixturesWithOddsToday,
       modelRunsToday,
-      betDecisionsToday,
+      selectedDecisionsToday,
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,

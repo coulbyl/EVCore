@@ -25,11 +25,6 @@ enum FixtureStatus {
   CANCELLED
 }
 
-enum Decision {
-  BET
-  NO_BET
-}
-
 enum ModelRunPhase {
   ADVANCE
   PRE_KICKOFF
@@ -316,7 +311,6 @@ model ModelRun {
   fixtureId  String        @db.Uuid
   fixture    Fixture       @relation(fields: [fixtureId], references: [id])
   analyzedAt DateTime      @default(now())
-  decision   Decision
   phase      ModelRunPhase @default(PRE_KICKOFF)
 
   deterministicScore Decimal  @db.Decimal(5, 4)

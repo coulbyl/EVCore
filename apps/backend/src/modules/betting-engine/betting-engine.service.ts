@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import {
   AdjustmentStatus,
   BetStatus,
-  Decision,
   FixtureStatus,
   Market,
   ModelRunPhase,
@@ -133,7 +132,6 @@ type AnalyzeFixtureResult =
       status: 'analyzed';
       fixtureId: string;
       modelRunId: string;
-      decision: 'BET' | 'NO_BET';
       deterministicScore: number;
       probabilities: Record<string, number | Record<string, number>>;
       valueBet: BetCandidate | null;
@@ -836,8 +834,8 @@ export class BettingEngineService {
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       getModelScoreThreshold(getFixtureCompetitionCode(fixture)),
     )
-      ? Decision.BET
-      : Decision.NO_BET;
+      ? 'BET'
+      : 'NO_BET';
 
     const { distHome, distAway } = buildPoissonDistributions(
       lambda.home,
@@ -968,10 +966,7 @@ export class BettingEngineService {
       );
     }
 
-    const decision =
-      deterministicDecision === Decision.BET && valueBet !== null
-        ? Decision.BET
-        : Decision.NO_BET;
+    const hasEvBet = deterministicDecision === 'BET' && valueBet !== null;
 
     logger.info(
       {
@@ -991,7 +986,7 @@ export class BettingEngineService {
         lineMovement: shadowLineMovement,
         h2hScore: shadowH2h,
         congestionScore: shadowCongestion,
-        decision,
+        hasEvBet,
       },
       'Fixture analysis complete',
     );
@@ -999,7 +994,6 @@ export class BettingEngineService {
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
         fixtureId,
-        decision,
         phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
@@ -1069,7 +1063,7 @@ export class BettingEngineService {
     let betCandidate: BetCandidate | null = null;
     let evPickKey: string | null = null;
 
-    if (decision === Decision.BET && valueBet !== null) {
+    if (hasEvBet && valueBet !== null) {
       const stakePct = this.kellyEnabled
         ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
             fraction: KELLY_FRACTION,
@@ -1152,7 +1146,7 @@ export class BettingEngineService {
 
     // Safe value pass — only when the model score threshold is met (same guard as EV).
     // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
-    if (deterministicDecision === Decision.BET && latestOdds !== null) {
+    if (deterministicDecision === 'BET' && latestOdds !== null) {
       const svPick = this.selectSafeValuePick(
         evaluatedPicks,
         suspendedMarkets,
@@ -1237,7 +1231,6 @@ export class BettingEngineService {
       status: 'analyzed',
       fixtureId,
       modelRunId: modelRun.id,
-      decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
       valueBet: betCandidate,
@@ -1326,14 +1319,12 @@ export class BettingEngineService {
       (pick): pick is ViablePick => pick.rejectionReason === undefined,
     );
     const valueBet = candidatePicks[0] ?? null;
-    const decision =
+    const hasEvBet =
       marketOdds !== null &&
       deterministicScore.greaterThanOrEqualTo(
         getModelScoreThreshold(competitionCode),
       ) &&
-      valueBet !== null
-        ? Decision.BET
-        : Decision.NO_BET;
+      valueBet !== null;
 
     if (deterministicScore.isZero()) {
       logger.warn(
@@ -1367,7 +1358,7 @@ export class BettingEngineService {
         deterministicScore: deterministicScore.toNumber(),
         hasOdds: marketOdds !== null,
         finalCandidate: valueBet ? summarizePick(valueBet) : null,
-        decision,
+        hasEvBet,
       },
       'FRI fixture analysis complete',
     );
@@ -1375,7 +1366,6 @@ export class BettingEngineService {
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
         fixtureId,
-        decision,
         phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
@@ -1461,7 +1451,7 @@ export class BettingEngineService {
     }
 
     let betCandidate: BetCandidate | null = null;
-    if (decision === Decision.BET && valueBet !== null) {
+    if (hasEvBet && valueBet !== null) {
       const stakePct = this.kellyEnabled
         ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
             fraction: KELLY_FRACTION,
@@ -1545,7 +1535,6 @@ export class BettingEngineService {
       status: 'analyzed',
       fixtureId,
       modelRunId: modelRun.id,
-      decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities:
         probabilities !== null ? mapProbabilitiesToNumber(probabilities) : {},

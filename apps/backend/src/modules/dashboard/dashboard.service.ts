@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Decision, StrategyChannel } from '@evcore/db';
+import { StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import {
@@ -64,11 +64,6 @@ export class DashboardService {
   // ---------------------------------------------------------------------------
 
   private buildKpis(data: SummaryData): DashboardSummary['dashboardKpis'] {
-    const decisionMap = new Map<Decision, number>();
-    for (const row of data.betDecisionsToday) {
-      decisionMap.set(row.decision, row._count._all);
-    }
-    const betCount = decisionMap.get(Decision.BET) ?? 0;
     const coveragePct =
       data.scheduledToday > 0
         ? (data.fixturesWithOddsToday / data.scheduledToday) * 100
@@ -89,7 +84,7 @@ export class DashboardService {
       },
       {
         label: 'Scorings du jour',
-        value: String(betCount),
+        value: String(data.selectedDecisionsToday),
         delta: `${data.modelRunsToday} analysés`,
         tone: 'warning',
       },

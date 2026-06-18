@@ -4,7 +4,6 @@ import Decimal from 'decimal.js';
 import {
   BetStatus,
   ChannelDecisionStatus,
-  Decision,
   FixtureStatus,
   Market,
   StrategyChannel,
@@ -256,7 +255,6 @@ describe('ChannelDecisionRepository (e2e)', () => {
     const run = await prisma.modelRun.create({
       data: {
         fixtureId: fixture.id,
-        decision: Decision.BET,
         deterministicScore: 0.75,
         finalScore: 0.75,
         features: {},

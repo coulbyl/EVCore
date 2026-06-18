@@ -23,7 +23,6 @@ export class FixtureScoringController {
     return this.service.getFixtures(
       date,
       {
-        decision: query.decision,
         status: query.status,
         competition: query.competition,
         timeSlot: query.timeSlot,
