@@ -1,27 +1,14 @@
 import { Card, Separator } from "@evcore/ui";
 import type {
-  ChannelDecisionDto,
+  ChannelDecisionMatchDto,
+  ChannelDecisionMatchDecisionDto,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import { CHANNEL_ORDER } from "./channel-constants";
 import { ChannelRow } from "./channel-row";
 import { FixtureHeading } from "./fixture-heading";
 
-// All channel decisions for one fixture, keyed by channel.
-export type MatchGroup = {
-  fixtureId: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeLogo: string | null;
-  awayLogo: string | null;
-  competition: string | null;
-  country: string | null;
-  kickoff: string;
-  score: string | null;
-  htScore: string | null;
-  byChannel: Map<StrategyChannel, ChannelDecisionDto>;
-  selectedCount: number;
-};
+export type MatchGroup = ChannelDecisionMatchDto;
 
 export function MatchCard({
   group,
@@ -30,6 +17,12 @@ export function MatchCard({
   group: MatchGroup;
   locale: string;
 }) {
+  function decisionForChannel(
+    channel: StrategyChannel,
+  ): ChannelDecisionMatchDecisionDto | undefined {
+    return group.decisions.find((decision) => decision.channel === channel);
+  }
+
   return (
     <Card className="gap-3 border-border/70 p-4 transition-colors hover:border-border">
       <div className="flex items-start justify-between gap-3">
@@ -61,7 +54,7 @@ export function MatchCard({
           <ChannelRow
             key={channel}
             channel={channel}
-            decision={group.byChannel.get(channel)}
+            decision={decisionForChannel(channel)}
             locale={locale}
           />
         ))}

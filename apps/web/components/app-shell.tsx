@@ -7,7 +7,6 @@ import { isWC2026Active } from "@/lib/events/world-cup-2026";
 import { useTranslations } from "next-intl";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
 import {
-  BarChart3,
   Bell,
   BookOpen,
   BrainCircuit,
@@ -19,12 +18,12 @@ import {
   GraduationCap,
   Layers,
   LayoutDashboard,
+  ListFilter,
   Megaphone,
   Receipt,
   Settings,
   Sparkles,
   Ticket,
-  TrendingUp,
   Trophy,
   Users,
 } from "lucide-react";
@@ -159,10 +158,18 @@ export function AppShell({
         label: tNav("navGroupToday"),
         items: [
           {
-            label: tNav("decisions"),
-            href: "/dashboard/decisions",
-            active: pathname.startsWith("/dashboard/decisions"),
+            label: tNav("decisionsByMatch"),
+            mobileLabel: tNav("decisionsByMatchShort"),
+            href: "/dashboard/decisions/matches",
+            active: pathname.startsWith("/dashboard/decisions/matches"),
             icon: Layers,
+          },
+          {
+            label: tNav("decisionsByChannel"),
+            mobileLabel: tNav("decisionsByChannelShort"),
+            href: "/dashboard/decisions/channels",
+            active: pathname.startsWith("/dashboard/decisions/channels"),
+            icon: ListFilter,
           },
           {
             label: tNav("coupons"),
@@ -186,20 +193,6 @@ export function AppShell({
             href: "/dashboard/bet-slips",
             active: pathname.startsWith("/dashboard/bet-slips"),
             icon: Receipt,
-          },
-          {
-            label: tNav("summary"),
-            href: "/dashboard/summary",
-            active:
-              pathname.startsWith("/dashboard/summary") &&
-              !pathname.startsWith("/dashboard/investment-summary"),
-            icon: BarChart3,
-          },
-          {
-            label: tNav("investmentSummary"),
-            href: "/dashboard/investment-summary",
-            active: pathname.startsWith("/dashboard/investment-summary"),
-            icon: TrendingUp,
           },
         ],
       },
@@ -246,7 +239,8 @@ export function AppShell({
 
   const MOBILE_NAV_ORDER = [
     "/dashboard",
-    "/dashboard/decisions",
+    "/dashboard/decisions/matches",
+    "/dashboard/decisions/channels",
     "/dashboard/coupons",
     "/dashboard/fixtures",
   ];

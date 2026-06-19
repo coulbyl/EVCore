@@ -5,7 +5,7 @@ import {
 } from "@/helpers/fixture";
 import { useTranslations } from "next-intl";
 import type {
-  ChannelDecisionDto,
+  ChannelDecisionMatchDecisionDto,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import {
@@ -41,7 +41,7 @@ export function ChannelRow({
   locale,
 }: {
   channel: StrategyChannel;
-  decision: ChannelDecisionDto | undefined;
+  decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
 }) {
   const loc = locale === "en" ? "en" : "fr";
@@ -87,7 +87,7 @@ export function ChannelRow({
 function RejectedLabel({
   decision,
 }: {
-  decision: ChannelDecisionDto | undefined;
+  decision: ChannelDecisionMatchDecisionDto | undefined;
 }) {
   const t = useTranslations("decisions");
   // Channel didn't run at all for this fixture.

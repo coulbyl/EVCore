@@ -48,6 +48,39 @@ export type ChannelDecisionDto = {
   selections: ChannelSelectionDto[];
 };
 
+export type ChannelDecisionMatchDecisionDto = Pick<
+  ChannelDecisionDto,
+  | "id"
+  | "modelRunId"
+  | "phase"
+  | "channel"
+  | "status"
+  | "reasonCode"
+  | "selections"
+>;
+
+export type ChannelDecisionMatchDto = Pick<
+  ChannelDecisionDto,
+  | "fixtureId"
+  | "competition"
+  | "country"
+  | "homeTeam"
+  | "awayTeam"
+  | "homeLogo"
+  | "awayLogo"
+  | "kickoff"
+  | "score"
+  | "htScore"
+> & {
+  selectedCount: number;
+  decisions: ChannelDecisionMatchDecisionDto[];
+};
+
+export type ChannelDecisionChannelGroupDto = {
+  channel: StrategyChannel;
+  decisions: ChannelDecisionDto[];
+};
+
 export type ChannelDecisionFilters = {
   competition?: string;
   channel?: StrategyChannel;

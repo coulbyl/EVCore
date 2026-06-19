@@ -15,6 +15,10 @@ import type {
   StrategyContext,
 } from './channel-strategy.types';
 import {
+  CHANNEL_DECISION_STATUS,
+  STRATEGY_CHANNEL,
+} from './channel-strategy.types';
+import {
   resolveSelectionEarlyResult,
   resolveSelectionFinalResult,
   type FixtureScores,
@@ -54,6 +58,39 @@ export type ChannelDecisionItem = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   selections: ChannelSelectionItem[];
+};
+
+export type ChannelDecisionMatchDecision = Pick<
+  ChannelDecisionItem,
+  | 'id'
+  | 'modelRunId'
+  | 'phase'
+  | 'channel'
+  | 'status'
+  | 'reasonCode'
+  | 'selections'
+>;
+
+export type ChannelDecisionMatchItem = Pick<
+  ChannelDecisionItem,
+  | 'fixtureId'
+  | 'competition'
+  | 'country'
+  | 'homeTeam'
+  | 'awayTeam'
+  | 'homeLogo'
+  | 'awayLogo'
+  | 'kickoff'
+  | 'score'
+  | 'htScore'
+> & {
+  selectedCount: number;
+  decisions: ChannelDecisionMatchDecision[];
+};
+
+export type ChannelDecisionChannelGroup = {
+  channel: StrategyChannel;
+  decisions: ChannelDecisionItem[];
 };
 
 export type ChannelDecisionListQuery = {
@@ -122,8 +159,73 @@ export class ChannelDecisionService {
   // Read API (doc §5): normalised per-channel decisions for a day, with optional
   // strategy / market / status filters. Exposes REJECTED decisions + reasonCode.
   async list(query: ChannelDecisionListQuery): Promise<ChannelDecisionItem[]> {
+    const rows = await this.findRows(query);
+    return rows.map((row) => this.toItem(row));
+  }
+
+  async listByMatch(
+    query: ChannelDecisionListQuery,
+  ): Promise<ChannelDecisionMatchItem[]> {
+    const rows = await this.findRows(query);
+    const groups = new Map<string, ChannelDecisionMatchItem>();
+
+    for (const row of rows) {
+      const item = this.toItem(row);
+      let group = groups.get(item.fixtureId);
+      if (group === undefined) {
+        group = {
+          fixtureId: item.fixtureId,
+          competition: item.competition,
+          country: item.country,
+          homeTeam: item.homeTeam,
+          awayTeam: item.awayTeam,
+          homeLogo: item.homeLogo,
+          awayLogo: item.awayLogo,
+          kickoff: item.kickoff,
+          score: item.score,
+          htScore: item.htScore,
+          selectedCount: 0,
+          decisions: [],
+        };
+        groups.set(item.fixtureId, group);
+      }
+
+      if (item.status === CHANNEL_DECISION_STATUS.SELECTED) {
+        group.selectedCount += 1;
+      }
+      group.decisions.push(toMatchDecision(item));
+    }
+
+    return [...groups.values()];
+  }
+
+  async listByChannel(
+    query: ChannelDecisionListQuery,
+  ): Promise<ChannelDecisionChannelGroup[]> {
+    const rows = await this.findRows({
+      ...query,
+      status: query.status ?? CHANNEL_DECISION_STATUS.SELECTED,
+    });
+    const groups = new Map<StrategyChannel, ChannelDecisionItem[]>();
+
+    for (const row of rows) {
+      const item = this.toItem(row);
+      const group = groups.get(item.channel) ?? [];
+      group.push(item);
+      groups.set(item.channel, group);
+    }
+
+    return READ_CHANNEL_ORDER.flatMap((channel) => {
+      const decisions = groups.get(channel);
+      return decisions === undefined ? [] : [{ channel, decisions }];
+    });
+  }
+
+  private findRows(
+    query: ChannelDecisionListQuery,
+  ): Promise<ChannelDecisionReadRow[]> {
     const day = new Date(query.date);
-    const rows = await this.repository.findByDate({
+    return this.repository.findByDate({
       range: { gte: startOfUtcDay(day), lte: endOfUtcDay(day) },
       competition: query.competition,
       channel: query.channel,
@@ -131,7 +233,6 @@ export class ChannelDecisionService {
       market: query.market,
       phase: query.phase,
     });
-    return rows.map((row) => this.toItem(row));
   }
 
   private toItem(row: ChannelDecisionReadRow): ChannelDecisionItem {
@@ -155,6 +256,28 @@ export class ChannelDecisionService {
       selections: row.selections.map(toSelectionItem),
     };
   }
+}
+
+const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
+  STRATEGY_CHANNEL.EV,
+  STRATEGY_CHANNEL.SAFE,
+  STRATEGY_CHANNEL.DOMINANT,
+  STRATEGY_CHANNEL.BTTS,
+  STRATEGY_CHANNEL.DRAW,
+];
+
+function toMatchDecision(
+  item: ChannelDecisionItem,
+): ChannelDecisionMatchDecision {
+  return {
+    id: item.id,
+    modelRunId: item.modelRunId,
+    phase: item.phase,
+    channel: item.channel,
+    status: item.status,
+    reasonCode: item.reasonCode,
+    selections: item.selections,
+  };
 }
 
 // "2-1" once both sides are known, else null (matches the picks API shape).

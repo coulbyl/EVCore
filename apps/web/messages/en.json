@@ -38,7 +38,11 @@
     "summary": "Selections summary",
     "investmentSummary": "Investment summary",
     "coupons": "Combos",
-    "decisions": "Decisions"
+    "decisions": "Decisions",
+    "decisionsByMatch": "Decisions by match",
+    "decisionsByMatchShort": "Matches",
+    "decisionsByChannel": "Decisions by channel",
+    "decisionsByChannelShort": "Channels"
   },
   "decisions": {
     "channels": {
