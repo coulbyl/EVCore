@@ -211,7 +211,7 @@ export class DashboardService {
 
   async getCompetitionStats(
     userId: string,
-    canal?: 'EV' | 'SV',
+    canal?: 'EV' | 'SAFE',
   ): Promise<CompetitionStat[]> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [analyzedRuns, modelBets, userBets] =
@@ -368,7 +368,7 @@ export class DashboardService {
         sampleSize: evBets.length,
       },
       {
-        channel: 'SV',
+        channel: 'SAFE',
         status: evRoiStatus(svRoi, svBets.length, 30),
         primaryMetric: svRoi ?? 0,
         primaryMetricType: 'ROI',
@@ -378,7 +378,7 @@ export class DashboardService {
         sampleSize: svBets.length,
       },
       {
-        channel: 'CONF',
+        channel: 'DOMINANT',
         status: 'INACTIVE',
         primaryMetric: 0,
         primaryMetricType: 'HIT_RATE',
@@ -434,7 +434,7 @@ export class DashboardService {
         trend: 'FLAT' as const,
       },
       {
-        channel: 'SV',
+        channel: 'SAFE',
         hitRate: null,
         avgThreshold: null,
         vsThreshold: null,
@@ -446,7 +446,7 @@ export class DashboardService {
         trend: 'FLAT' as const,
       },
       {
-        channel: 'CONF',
+        channel: 'DOMINANT',
         hitRate: null,
         avgThreshold: null,
         vsThreshold: null,

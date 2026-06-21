@@ -394,7 +394,7 @@ function toBetSlipView(
         canal:
           item.bet.channelSelection?.channelDecision.channel ===
           StrategyChannel.SAFE
-            ? 'SV'
+            ? 'SAFE'
             : 'EV',
       };
     }),

@@ -53,7 +53,7 @@ export class BankrollService {
       canal: r.bet
         ? r.bet.channelSelection?.channelDecision.channel ===
           StrategyChannel.SAFE
-          ? 'SV'
+          ? 'SAFE'
           : 'EV'
         : null,
       fixture: r.bet
