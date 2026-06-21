@@ -1,6 +1,6 @@
 // Mirror of the backend ChannelDecisionItem DTO (GET /channel-decisions).
 // v1 strategy channels — kept in sync with the backend StrategyChannel enum.
-export type StrategyChannel = "EV" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
+export type StrategyChannel = "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
 
 export type ChannelDecisionStatus =
   | "SELECTED"

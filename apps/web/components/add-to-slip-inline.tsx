@@ -9,7 +9,7 @@
 // import type { FixtureRow } from "@/domains/fixture/types/fixture";
 // import { isFixtureBettable } from "@/domains/fixture/helpers/fixture";
 
-// type Canal = "EV" | "SV" | "CONF" | "DRAW" | "BTTS";
+// type Canal = "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS";
 
 // const CANAL_COLOR: Record<Canal, string> = {
 //   EV: "var(--canal-ev)",
@@ -28,7 +28,7 @@
 // }) {
 //   const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
 
-//   if (canal === "EV") {
+//   if (canal === "VALUE") {
 //     const mr = row.modelRun;
 //     if (
 //       !mr ||
@@ -83,7 +83,7 @@
 //       if (draft.items.length === 0) open();
 //     }
 
-//     return <SlipButton inSlip={inSlip} onClick={handleClick} canal="EV" />;
+//     return <SlipButton inSlip={inSlip} onClick={handleClick} canal="VALUE" />;
 //   }
 
 //   // SV canal
@@ -120,7 +120,7 @@
 //     if (draft.items.length === 0) open();
 //   }
 
-//   return <SlipButton inSlip={inSlip} onClick={handleSvClick} canal="SV" />;
+//   return <SlipButton inSlip={inSlip} onClick={handleSvClick} canal="SAFE" />;
 // }
 
 // // ── CONF / DRAW / BTTS ────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@
 //   canal,
 // }: {
 //   row: FixtureRow;
-//   canal: "CONF" | "DRAW" | "BTTS";
+//   canal: "DOMINANT" | "DRAW" | "BTTS";
 // }) {
 //   const { draft, addItem, removeItem, isInSlip, open } = useBetSlip();
 //   const modelRunId = row.modelRun?.modelRunId;

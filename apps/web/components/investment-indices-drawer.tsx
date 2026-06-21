@@ -34,20 +34,20 @@ import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investmen
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CANAL_OPTIONS: { value: InvestmentIndicesCanal; label: string }[] = [
-  { value: "SV", label: "SV" },
-  { value: "EV", label: "EV" },
-  { value: "CONF", label: "VICTOIRE" },
-  { value: "BB", label: "BB" },
-  { value: "NUL", label: "NUL" },
+  { value: "SAFE", label: "SAFE" },
+  { value: "VALUE", label: "VALUE" },
+  { value: "DOMINANT", label: "VICTOIRE" },
+  { value: "BTTS", label: "BTTS" },
+  { value: "DRAW", label: "DRAW" },
   { value: "COUPON", label: "COUPON" },
 ];
 
 const CANAL_COLOR: Record<InvestmentIndicesCanal, string> = {
-  EV: "var(--canal-ev)",
-  SV: "var(--canal-sv)",
-  CONF: "var(--canal-conf)",
-  BB: "var(--canal-btts)",
-  NUL: "var(--canal-draw)",
+  VALUE: "var(--canal-ev)",
+  SAFE: "var(--canal-sv)",
+  DOMINANT: "var(--canal-conf)",
+  BTTS: "var(--canal-btts)",
+  DRAW: "var(--canal-draw)",
   COUPON: "var(--canal-sv)",
 };
 
@@ -205,7 +205,7 @@ export function InvestmentIndicesDrawer({
   const yesterday = daysAgoIso(1);
 
   const [canal, setCanal] = useState<InvestmentIndicesCanal>(
-    initialCanal ?? "SV",
+    initialCanal ?? "SAFE",
   );
   const [from, setFrom] = useState<string>(daysAgoIso(89));
   const [to, setTo] = useState<string>(yesterday);

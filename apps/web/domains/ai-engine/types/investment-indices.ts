@@ -1,9 +1,9 @@
 export type InvestmentIndicesCanal =
-  | "EV"
-  | "SV"
-  | "BB"
-  | "NUL"
-  | "CONF"
+  | "VALUE"
+  | "SAFE"
+  | "BTTS"
+  | "DRAW"
+  | "DOMINANT"
   | "COUPON";
 
 export type InvestmentIndicesRow = {

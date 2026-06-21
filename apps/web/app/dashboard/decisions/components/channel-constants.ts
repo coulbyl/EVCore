@@ -5,7 +5,7 @@ import type {
 
 // StrategyChannel → design tokens (1:1 with the legacy --canal-* palette).
 export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
-  EV: "var(--canal-ev)",
+  VALUE: "var(--canal-ev)",
   SAFE: "var(--canal-sv)",
   DOMINANT: "var(--canal-conf)",
   BTTS: "var(--canal-btts)",
@@ -13,7 +13,7 @@ export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
-  EV: "var(--canal-ev-soft)",
+  VALUE: "var(--canal-ev-soft)",
   SAFE: "var(--canal-sv-soft)",
   DOMINANT: "var(--canal-conf-soft)",
   BTTS: "var(--canal-btts-soft)",
@@ -21,7 +21,7 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
 };
 
 const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
-  EV: "channels.EV.label",
+  VALUE: "channels.VALUE.label",
   SAFE: "channels.SAFE.label",
   DOMINANT: "channels.DOMINANT.label",
   BTTS: "channels.BTTS.label",
@@ -29,7 +29,7 @@ const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
-  EV: "channels.EV.description",
+  VALUE: "channels.VALUE.description",
   SAFE: "channels.SAFE.description",
   DOMINANT: "channels.DOMINANT.description",
   BTTS: "channels.BTTS.description",
@@ -38,7 +38,7 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
 
 // Display order across both lenses.
 export const CHANNEL_ORDER: StrategyChannel[] = [
-  "EV",
+  "VALUE",
   "SAFE",
   "DOMINANT",
   "BTTS",

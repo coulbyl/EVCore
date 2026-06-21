@@ -46,8 +46,8 @@
   },
   "decisions": {
     "channels": {
-      "EV": {
-        "label": "EV",
+      "VALUE": {
+        "label": "Valeur",
         "description": "Cotes à valeur attendue positive."
       },
       "SAFE": {
@@ -443,8 +443,8 @@
     "seasonBreakdown": "Détail par saison",
     "season": "Saison",
     "canalGlobal": "Global",
-    "canalEv": "EV",
-    "canalSv": "Sécurité",
+    "canalEv": "Valeur",
+    "canalSv": "Sûr",
     "period7d": "7 jours",
     "period30d": "30 jours",
     "periodAll": "Tout"

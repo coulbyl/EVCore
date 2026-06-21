@@ -239,15 +239,15 @@ function SimulationDrawer({
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CANAL_COLOR: Record<InvestmentSummaryCanal, string> = {
-  EV: "var(--canal-ev)",
-  SV: "var(--canal-sv)",
-  CONF: "var(--canal-conf)",
-  NUL: "var(--canal-draw)",
-  BB: "var(--canal-btts)",
+  VALUE: "var(--canal-ev)",
+  SAFE: "var(--canal-sv)",
+  DOMINANT: "var(--canal-conf)",
+  DRAW: "var(--canal-draw)",
+  BTTS: "var(--canal-btts)",
   COUPON: "var(--canal-sv)",
 };
 
-const DEFAULT_CANAL: InvestmentSummaryCanal = "SV";
+const DEFAULT_CANAL: InvestmentSummaryCanal = "SAFE";
 
 const FILTER_DEFS: FilterDef[] = [
   {
@@ -255,11 +255,11 @@ const FILTER_DEFS: FilterDef[] = [
     label: "Canal",
     type: "select",
     options: [
-      { value: "EV", label: "EV" },
-      { value: "SV", label: "SV" },
-      { value: "CONF", label: "VICTOIRE" },
-      { value: "NUL", label: "NUL" },
-      { value: "BB", label: "BB" },
+      { value: "VALUE", label: "VALUE" },
+      { value: "SAFE", label: "SAFE" },
+      { value: "DOMINANT", label: "VICTOIRE" },
+      { value: "DRAW", label: "DRAW" },
+      { value: "BTTS", label: "BTTS" },
       { value: "COUPON", label: "COUPON" },
     ],
   },
@@ -342,7 +342,7 @@ function CouponItem({ row }: { row: InvestmentSummaryCouponRow }) {
       <div className="flex flex-col gap-1">
         {row.legs.map((leg, i) => {
           const color =
-            CANAL_COLOR[(leg.canal as InvestmentSummaryCanal) ?? "SV"];
+            CANAL_COLOR[(leg.canal as InvestmentSummaryCanal) ?? "SAFE"];
           return (
             <div
               key={i}

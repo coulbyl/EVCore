@@ -4,25 +4,25 @@ import { useChannelStats } from "@/domains/dashboard/use-cases/get-channel-healt
 import type { ChannelStatsItem } from "@/domains/dashboard/types/dashboard";
 
 const CANAL_LABEL: Record<ChannelStatsItem["channel"], string> = {
-  EV: "EV",
-  SV: "SV",
-  CONF: "VICTOIRE",
-  BTTS: "BB",
-  DRAW: "NUL",
+  VALUE: "VALUE",
+  SAFE: "SAFE",
+  DOMINANT: "VICTOIRE",
+  BTTS: "BTTS",
+  DRAW: "DRAW",
 };
 
 const CANAL_COLOR: Record<ChannelStatsItem["channel"], string> = {
-  EV: "var(--canal-ev)",
-  SV: "var(--canal-sv)",
-  CONF: "var(--canal-conf)",
+  VALUE: "var(--canal-ev)",
+  SAFE: "var(--canal-sv)",
+  DOMINANT: "var(--canal-conf)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
 };
 
 const HR_TARGET: Partial<Record<ChannelStatsItem["channel"], number>> = {
-  SV: 60,
+  SAFE: 60,
   BTTS: 65,
-  CONF: 50,
+  DOMINANT: 50,
 };
 
 const MAX_DRAWDOWN_TARGET = 10;

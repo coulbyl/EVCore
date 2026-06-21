@@ -10,19 +10,19 @@ import {
 } from "@/components/coupon-card";
 
 const CANAL_COLOR: Record<string, string> = {
-  EV: "var(--canal-ev)",
-  SV: "var(--canal-sv)",
-  CONF: "var(--canal-conf)",
-  BB: "var(--canal-btts)",
-  NUL: "var(--canal-draw)",
+  VALUE: "var(--canal-ev)",
+  SAFE: "var(--canal-sv)",
+  DOMINANT: "var(--canal-conf)",
+  BTTS: "var(--canal-btts)",
+  DRAW: "var(--canal-draw)",
 };
 
 const CANAL_LABEL: Record<string, string> = {
-  EV: "EV",
-  SV: "SV",
-  CONF: "VICTOIRE",
-  BB: "BB",
-  NUL: "NUL",
+  VALUE: "VALUE",
+  SAFE: "SAFE",
+  DOMINANT: "VICTOIRE",
+  BTTS: "BTTS",
+  DRAW: "DRAW",
 };
 
 export function CouponCard({

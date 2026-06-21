@@ -46,8 +46,8 @@
   },
   "decisions": {
     "channels": {
-      "EV": {
-        "label": "EV",
+      "VALUE": {
+        "label": "Value",
         "description": "Positive expected value odds."
       },
       "SAFE": {
@@ -443,8 +443,8 @@
     "seasonBreakdown": "Season breakdown",
     "season": "Season",
     "canalGlobal": "Global",
-    "canalEv": "EV",
-    "canalSv": "Safety",
+    "canalEv": "Value",
+    "canalSv": "Safe",
     "period7d": "7 days",
     "period30d": "30 days",
     "periodAll": "All"

@@ -150,8 +150,8 @@ export function CompetitionStatsSection() {
         >
           <TabsList>
             <TabsTrigger value="ALL">{t("canalGlobal")}</TabsTrigger>
-            <TabsTrigger value="EV">{t("canalEv")}</TabsTrigger>
-            <TabsTrigger value="SV">{t("canalSv")}</TabsTrigger>
+            <TabsTrigger value="VALUE">{t("canalEv")}</TabsTrigger>
+            <TabsTrigger value="SAFE">{t("canalSv")}</TabsTrigger>
           </TabsList>
         </Tabs>
       }

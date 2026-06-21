@@ -43,7 +43,7 @@ export type FixtureEvaluatedPickSnapshot = FixturePickSnapshot & {
 };
 
 export type FixturePrediction = {
-  channel: "CONF" | "DRAW" | "BTTS";
+  channel: "DOMINANT" | "DRAW" | "BTTS";
   market: string;
   pick: string;
   probability: string;

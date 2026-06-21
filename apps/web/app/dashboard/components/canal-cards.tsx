@@ -141,7 +141,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   const ev = pnlByCanal?.ev ?? null;
   const sv = pnlByCanal?.sv ?? null;
   const btts = findHealth("BTTS");
-  const conf = findHealth("CONF");
+  const conf = findHealth("DOMINANT");
   const draw = findHealth("DRAW");
 
   return (
@@ -150,7 +150,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="sv"
         icon={<Shield size={14} />}
         label={tPicks("safeValue")}
-        status={findHealth("SV")?.status}
+        status={findHealth("SAFE")?.status}
         rows={[
           { label: t("roi"), value: sv ? sv.roi : SKELETON },
           { label: t("settledBets"), value: sv ? sv.settledBets : SKELETON },
@@ -221,7 +221,7 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         canal="ev"
         icon={<TrendingUp size={14} />}
         label={tPicks("evChannel")}
-        status={findHealth("EV")?.status}
+        status={findHealth("VALUE")?.status}
         rows={[
           { label: t("roi"), value: ev ? ev.roi : SKELETON },
           { label: t("settledBets"), value: ev ? ev.settledBets : SKELETON },

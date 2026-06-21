@@ -316,7 +316,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       {/* Pick retenu */}
       {hasEvPick(row) && mr.market && mr.pick && (
         <div className="mt-4 flex items-center gap-3 rounded-[1rem] border border-border bg-panel p-3">
-          <CanalBadge canal="EV" />
+          <CanalBadge canal="VALUE" />
           <span className="flex-1 text-sm font-semibold text-foreground">
             {formatCombinedPickForDisplay({
               market: mr.market,

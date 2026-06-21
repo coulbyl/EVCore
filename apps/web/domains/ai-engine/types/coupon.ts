@@ -8,7 +8,7 @@ export type CouponLegDto = {
   competition: string;
   country: string;
   scheduledAt: string;
-  canal: "EV" | "SV" | "BB" | "NUL" | "CONF";
+  canal: "VALUE" | "SAFE" | "BTTS" | "DRAW" | "DOMINANT";
   market: string;
   pick: string;
   probability: number;
