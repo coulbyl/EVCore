@@ -35,6 +35,8 @@ function makePick(overrides: {
     canal: overrides.canal,
     market: overrides.market,
     pick: 'YES',
+    comboMarket: null,
+    comboPick: null,
     probability: overrides.probability,
     calibratedHitRate: overrides.calibratedHitRate,
     calibratedProbability: overrides.calibratedProbability ?? null,

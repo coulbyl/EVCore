@@ -20,6 +20,7 @@ const logger = createLogger('coupon');
 @Injectable()
 export class CouponService {
   private readonly kellyEnabled: boolean;
+  private readonly combosEnabled: boolean;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
@@ -29,6 +30,9 @@ export class CouponService {
     config: ConfigService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
+    // Same-match combos (Étape 6) — off by default until backtested per league.
+    this.combosEnabled =
+      config.get<string>('COUPON_COMBOS_ENABLED', 'false') === 'true';
   }
 
   async generateCoupons(
@@ -49,7 +53,9 @@ export class CouponService {
 
     const [window, rawPicks] = await Promise.all([
       this.signalWindow.computeSignalWindow(windowDays, asOf),
-      this.signalWindow.getTodayPool(date),
+      this.signalWindow.getTodayPool(date, {
+        includeCombos: this.combosEnabled,
+      }),
     ]);
 
     const distinctFixtures = new Set(rawPicks.map((p) => p.fixtureId)).size;
@@ -101,6 +107,8 @@ export class CouponService {
           canal: leg.canal,
           market: leg.market,
           pick: leg.pick,
+          comboMarket: leg.comboMarket,
+          comboPick: leg.comboPick,
           probability: leg.probability,
           oddsSnapshot: leg.oddsSnapshot,
           signalScore: leg.signalScore,
@@ -147,6 +155,8 @@ export class CouponService {
         canal: leg.canal,
         market: leg.market,
         pick: leg.pick,
+        comboMarket: leg.comboMarket ?? null,
+        comboPick: leg.comboPick ?? null,
         probability: Number(leg.probability),
         oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
         signalScore: Number(leg.signalScore),

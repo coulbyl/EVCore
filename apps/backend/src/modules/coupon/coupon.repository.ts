@@ -52,6 +52,8 @@ export type UpsertProposalInput = {
     canal: StrategyChannel;
     market: string;
     pick: string;
+    comboMarket: string | null;
+    comboPick: string | null;
     probability: number;
     oddsSnapshot: number | null;
     signalScore: number;
@@ -127,6 +129,9 @@ export class CouponRepository {
       canal: leg.canal,
       market: leg.market as Prisma.CouponProposalLegCreateInput['market'],
       pick: leg.pick,
+      comboMarket:
+        leg.comboMarket as Prisma.CouponProposalLegCreateInput['comboMarket'],
+      comboPick: leg.comboPick,
       probability: leg.probability,
       oddsSnapshot: leg.oddsSnapshot,
       signalScore: leg.signalScore,

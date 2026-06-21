@@ -129,12 +129,14 @@ Détail complet : [apps/backend/src/modules/coupon/DESIGN.md](apps/backend/src/m
       DOMINANT −2.1% (EV anti-prédictive). Décision : DOMINANT/BTTS restent
       **prédiction** (suivi via `channel_selection`), pas de mise. DRAW = candidat staking.
 
-### Ce qu'il reste, couche coupon (après Étapes 1–2–4–5)
+### Ce qu'il reste, couche coupon (après Étapes 1–2–4–5–6)
 
-Étapes 1 (EV au cœur), 2 (overround/proba fair), 4 (profils de risque, non activés
-sans backtest) et 5 (staking Kelly derrière `KELLY_ENABLED`, flat sinon) **faites**
-(2026-06-21). Reste DESIGN.md : Étape 6 (combos même-match), B7 (unification pool
-réel/virtuel). Vue ROI roulante par canal × EV-bin (outil de promotion).
+Étapes 1 (EV au cœur), 2 (overround/proba fair), 4 (profils de risque), 5 (staking
+Kelly) et 6 (combos même-match, derrière `COUPON_COMBOS_ENABLED`) **faites**
+(2026-06-21). ⚠️ **Étape 6 : migration `20260621230000_coupon_leg_combo` à
+appliquer + client Prisma à régénérer** (7 erreurs typecheck `comboMarket/comboPick`
+attendues jusque-là). Reste DESIGN.md : B7 (unification pool réel/virtuel). Vue ROI
+roulante par canal × EV-bin (outil de promotion).
 
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,

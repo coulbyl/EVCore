@@ -744,6 +744,11 @@ model CouponProposalLeg {
   canal            StrategyChannel
   market           Market
   pick             String
+  // Same-match combo (DESIGN.md Étape 6) — a single leg covering two correlated
+  // markets of one fixture. Null for a normal single-market leg. When set, the leg
+  // wins only if BOTH (market, pick) and (comboMarket, comboPick) hit.
+  comboMarket      Market?
+  comboPick        String?
   probability      Decimal        @db.Decimal(5, 4)
   oddsSnapshot     Decimal?       @db.Decimal(6, 3)
   signalScore      Decimal        @db.Decimal(5, 4)

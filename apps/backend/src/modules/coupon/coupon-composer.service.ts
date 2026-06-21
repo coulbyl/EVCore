@@ -143,16 +143,22 @@ export class CouponComposerService {
       // 50% canal calibrated rate, 30% dow factor, 20% league calibrated rate
       const signalScore = windowRate * 0.5 + dowRate * 0.3 + leagueRate * 0.2;
 
-      const calibratedProbability = calibrateLegProbability(
-        {
-          probability: pick.probability,
-          calibratedHitRate: windowRate,
-          market: pick.market,
-        },
-        window.marketCalibration,
-      );
-      const marketMeanError =
-        window.marketCalibration[pick.market]?.meanError ?? null;
+      // Same-match combos carry a bivariate-Poisson joint probability — a
+      // single-market bias shift doesn't apply, so keep the joint as-is.
+      const isCombo = pick.comboMarket !== null;
+      const calibratedProbability = isCombo
+        ? pick.probability
+        : calibrateLegProbability(
+            {
+              probability: pick.probability,
+              calibratedHitRate: windowRate,
+              market: pick.market,
+            },
+            window.marketCalibration,
+          );
+      const marketMeanError = isCombo
+        ? null
+        : (window.marketCalibration[pick.market]?.meanError ?? null);
 
       // EV de jambe sur la cote RÉELLE uniquement (jamais de cote inventée) —
       // une jambe sans cote ne porte pas d'EV et sera exclue des coupons.
@@ -316,7 +322,10 @@ export class CouponComposerService {
       legs: legs.map((l) => ({
         fixture: `${l.homeTeam} vs ${l.awayTeam}`,
         canal: l.canal,
-        pick: `${l.market}/${l.pick}`,
+        pick:
+          l.comboMarket !== null
+            ? `${l.market}/${l.pick} + ${l.comboMarket}/${l.comboPick}`
+            : `${l.market}/${l.pick}`,
         signalScore: l.signalScore,
         legEV: l.legEV,
         edge: l.edge,

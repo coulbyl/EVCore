@@ -16,6 +16,9 @@ export type CouponLegDto = {
   canal: StrategyChannel;
   market: Market;
   pick: string;
+  /** Same-match combo secondary market/pick (Étape 6). `null` for a single leg. */
+  comboMarket: Market | null;
+  comboPick: string | null;
   probability: number;
   oddsSnapshot: number | null;
   signalScore: number;

@@ -246,13 +246,11 @@ B-ROI ci-dessous. L'unification pool réel/virtuel reste à faire (Étape coupon
 > Implémenté en Étape 5 : `recommendedCouponStakePct` derrière `KELLY_ENABLED`
 > (flat `DEFAULT_STAKE_PCT` sinon), tracé dans le `reasoning`. Voir § Étape 5.
 
-### ⚪ B11 — Combos même-match à value non exploités
+### ✅ B11 — Combos même-match à value → CORRIGÉ (2026-06-21)
 
-L'anti-corrélation « max 1 jambe par fixture » interdit tout combo même-match.
-Pourtant EVCORE.md (§ Combos-match) **autorise** 2 marchés sur la même fixture si
-la proba jointe vient de Poisson et `EV joint ≥ 8%` — et `computeJointProbability`
-
-- `COMBO_WHITELIST` existent déjà pour ça. C'est de la value laissée sur la table.
+> Implémenté en Étape 6 (derrière `COUPON_COMBOS_ENABLED`) : `buildComboCandidates`
+> via `COMBO_WHITELIST` + `computeJointProbability` (proba jointe Poisson) + gate EV
+> par ligue. Un combo = une jambe (2 marchés corrélés). Voir § Étape 6.
 
 ---
 
@@ -400,11 +398,24 @@ findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
   coupon (pas de colonne dédiée → pas de migration). Tests : flat, Kelly capé,
   quarter-Kelly sous le cap, 0 si Kelly ≤ 0. backend typecheck/lint/574 tests.
 
-### Étape 6 — Combos même-match à value (corrige B11) — optionnel
+### ✅ Étape 6 — Combos même-match à value (corrige B11) — FAIT (2026-06-21)
 
-- Autoriser ≤ 2 marchés même fixture **uniquement** via `COMBO_WHITELIST` +
-  `computeJointProbability`, condition `EV joint ≥ seuil ligue`. Conforme
+- ✅ Générateur pur `buildComboCandidates` ([combo-candidates.ts](combo-candidates.ts)) :
+  pour chaque `COMBO_WHITELIST`, proba jointe **bivariée Poisson**
+  (`computeJointProbability`, jamais `p1×p2`), cote combinée corrélée
+  (`estimateComboOdds`), EV via `calculateEV`, gate `EV joint ≥ getLeagueEvThreshold`.
+  Marchés non cotés des deux côtés → skip (pas de cote inventée). Conforme
   EVCORE.md § Combos-match.
+- ✅ Un combo = **une jambe** (un slot fixture) portant 2 marchés corrélés, canal
+  `VALUE` (sélection sur EV jointe pure). `ScoredPick.comboMarket/comboPick` ;
+  `scorePicks` garde la proba jointe (pas de calibration mono-marché).
+- ✅ Persistance : colonnes `CouponProposalLeg.comboMarket/comboPick` (migration
+  `20260621230000_coupon_leg_combo`). Settlement : la jambe gagne **ssi les DEUX**
+  `(market,pick)` et `(comboMarket,comboPick)` passent. DTO enrichi.
+- ✅ Gate `COUPON_COMBOS_ENABLED` (défaut `false`) → off tant que non backtesté ;
+  comportement live inchangé. Cœur testé (`combo-candidates.spec.ts`).
+  ⚠️ **typecheck rouge tant que la migration n'est pas appliquée + client Prisma
+  régénéré** (7 erreurs `comboMarket/comboPick` attendues).
 
 ### Étape 7 — Backtest avant activation
 
