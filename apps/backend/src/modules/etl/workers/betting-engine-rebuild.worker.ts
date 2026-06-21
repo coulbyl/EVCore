@@ -21,10 +21,20 @@ type RebuildResult = {
   seasonId: string;
   analyzed: number;
   skipped: number;
+  failed: number;
   settled: number;
 };
 
 const logger = createLogger('betting-engine-rebuild-worker');
+
+// Fixtures rebuilt in parallel per batch. The work is I/O-bound (DB round-trips),
+// so a small batch overlaps latency without blowing the Prisma pool, deadlocking
+// settlement transactions, or starving CPU/memory (per-fixture state is GC'd
+// between batches; only `id`s are held in memory).
+const REBUILD_CONCURRENCY = 8;
+// Log progress + push BullMQ progress every N fixtures, instead of once per
+// fixture — avoids thousands of Redis round-trips on a full-season rebuild.
+const PROGRESS_EVERY = 100;
 
 // Builds an inclusive Prisma date filter from ISO date bounds (YYYY-MM-DD).
 // `to` covers the whole day (23:59:59.999Z). Returns undefined when unbounded.
@@ -70,31 +80,77 @@ export class BettingEngineRebuildWorker extends WorkerHost {
       orderBy: { scheduledAt: 'asc' },
     });
 
-    logger.info({ seasonId, count: fixtures.length }, 'Fixtures to rebuild');
+    const total = fixtures.length;
+    logger.info({ seasonId, total }, 'Fixtures to rebuild');
 
     let analyzed = 0;
     let skipped = 0;
+    let failed = 0;
     let settled = 0;
+    let processed = 0;
+    let lastLogged = 0;
 
-    for (const { id: fixtureId } of fixtures) {
-      const result = await this.bettingEngine.analyzeFixture(fixtureId);
+    for (let i = 0; i < total; i += REBUILD_CONCURRENCY) {
+      const batch = fixtures.slice(i, i + REBUILD_CONCURRENCY);
+      const outcomes = await Promise.allSettled(
+        batch.map(({ id }) => this.rebuildFixture(id)),
+      );
 
-      if (result.status !== 'analyzed') {
-        skipped++;
-        continue;
+      for (let j = 0; j < outcomes.length; j += 1) {
+        const outcome = outcomes[j];
+        if (outcome.status === 'rejected') {
+          // Isolate failures: one bad fixture (deadlock, bad data, …) must not
+          // abort the whole rebuild — log it, count it, keep going. Idempotency
+          // (`modelRuns: none`) means a later re-run retries only the failures.
+          failed += 1;
+          logger.warn(
+            {
+              seasonId,
+              fixtureId: batch[j].id,
+              err:
+                outcome.reason instanceof Error
+                  ? outcome.reason.message
+                  : String(outcome.reason),
+            },
+            'Fixture rebuild failed — skipped',
+          );
+        } else if (outcome.value.analyzed) {
+          analyzed += 1;
+          settled += outcome.value.settled;
+        } else {
+          skipped += 1;
+        }
       }
 
-      const { settled: n } = await this.bettingEngine.settleOpenBets(fixtureId);
-      settled += n;
-      analyzed++;
-
-      await job.updateProgress(
-        Math.round(((analyzed + skipped) / fixtures.length) * 100),
-      );
+      processed += batch.length;
+      if (processed - lastLogged >= PROGRESS_EVERY || processed === total) {
+        lastLogged = processed;
+        logger.info(
+          { seasonId, processed, total, analyzed, skipped, failed, settled },
+          'Rebuild progress',
+        );
+        await job.updateProgress(
+          total === 0 ? 100 : Math.round((processed / total) * 100),
+        );
+      }
     }
 
-    logger.info({ seasonId, analyzed, skipped, settled }, 'Rebuild job done');
-    return { seasonId, analyzed, skipped, settled };
+    logger.info(
+      { seasonId, analyzed, skipped, failed, settled },
+      'Rebuild job done',
+    );
+    return { seasonId, analyzed, skipped, failed, settled };
+  }
+
+  private async rebuildFixture(
+    fixtureId: string,
+  ): Promise<{ analyzed: boolean; settled: number }> {
+    const result = await this.bettingEngine.analyzeFixture(fixtureId);
+    if (result.status !== 'analyzed') {
+      return { analyzed: false, settled: 0 };
+    }
+    const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
+    return { analyzed: true, settled };
   }
 
   @OnWorkerEvent('failed')
