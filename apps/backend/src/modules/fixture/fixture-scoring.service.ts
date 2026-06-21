@@ -205,7 +205,7 @@ export class FixtureScoringService {
                     channelDecision: {
                       is: {
                         channel: {
-                          in: [StrategyChannel.EV, StrategyChannel.SAFE],
+                          in: [StrategyChannel.VALUE, StrategyChannel.SAFE],
                         },
                       },
                     },
@@ -255,7 +255,8 @@ export class FixtureScoringService {
       const bet =
         run?.bets.find(
           (b) =>
-            b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+            b.channelSelection?.channelDecision.channel ===
+            StrategyChannel.VALUE,
         ) ?? null;
       const svBet =
         run?.bets.find(

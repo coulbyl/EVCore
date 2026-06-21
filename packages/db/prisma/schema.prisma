@@ -113,7 +113,7 @@ enum SportType {
 }
 
 enum StrategyChannel {
-  EV
+  VALUE
   SAFE
   DOMINANT
   BTTS

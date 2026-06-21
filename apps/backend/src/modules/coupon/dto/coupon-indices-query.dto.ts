@@ -1,7 +1,7 @@
 import { IsDateString, IsIn, IsOptional } from 'class-validator';
 
 export type CouponIndicesCanal =
-  | 'EV'
+  | 'VALUE'
   | 'SAFE'
   | 'BTTS'
   | 'DRAW'
@@ -9,7 +9,7 @@ export type CouponIndicesCanal =
   | 'COUPON';
 
 export class CouponIndicesQueryDto {
-  @IsIn(['EV', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT', 'COUPON'])
+  @IsIn(['VALUE', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT', 'COUPON'])
   canal: CouponIndicesCanal = 'SAFE';
 
   @IsOptional()

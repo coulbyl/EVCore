@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
 import { Market } from '@evcore/db';
-import { EvStrategy } from './ev.strategy';
+import { ValueStrategy } from './value.strategy';
 import { CHANNEL_DECISION_STATUS } from '../channel-strategy.types';
 import type { StrategyContext } from '../channel-strategy.types';
 import type {
@@ -76,8 +76,8 @@ function makeContext(
   };
 }
 
-describe('EvStrategy', () => {
-  const strategy = new EvStrategy();
+describe('ValueStrategy', () => {
+  const strategy = new ValueStrategy();
 
   it('returns MISSING_ODDS when odds is null', () => {
     const ctx = makeContext({ odds: null });

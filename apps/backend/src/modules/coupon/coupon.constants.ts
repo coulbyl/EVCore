@@ -12,7 +12,7 @@ import type { StrategyChannel } from '@evcore/db';
 
 export type CouponChannel = Extract<
   StrategyChannel,
-  'EV' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT'
+  'VALUE' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT'
 >;
 
 export type VirtualCouponChannel =
@@ -29,14 +29,14 @@ export const MAX_COUPON_SELECTIONS: Record<CouponChannel, number> = {
   BTTS: 5,
   DOMINANT: 5,
   DRAW: 2,
-  EV: 2,
+  VALUE: 2,
 } as const;
 
 export const CANAL_BASE_WEIGHT: Record<CouponChannel, number> = {
   SAFE: 0.74,
   DOMINANT: 0.66,
   BTTS: 0.62,
-  EV: 0.36,
+  VALUE: 0.36,
   DRAW: 0.2,
 } as const;
 
@@ -56,7 +56,7 @@ export const COUPON_PARAMS = {
   couponMinSample: {
     SAFE: 10,
     BTTS: 10,
-    EV: 5,
+    VALUE: 5,
     DOMINANT: 20,
     DRAW: 20,
   } as Record<CouponChannel, number>,

@@ -23,8 +23,8 @@ const ALL_MARKETS: readonly Market[] = [
   Market.FIRST_HALF_WINNER,
 ];
 
-export class EvStrategy implements ChannelStrategy {
-  readonly channel = STRATEGY_CHANNEL.EV;
+export class ValueStrategy implements ChannelStrategy {
+  readonly channel = STRATEGY_CHANNEL.VALUE;
   readonly allowedMarkets = ALL_MARKETS;
 
   evaluate(context: StrategyContext): StrategyDecision {

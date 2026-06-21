@@ -302,7 +302,7 @@ export class SignalWindowService {
       });
     }
 
-    const canals: Canal[] = ['EV', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT'];
+    const canals: Canal[] = ['VALUE', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT'];
 
     const calibratedCanalHitRates = Object.fromEntries(
       canals.map((c) => {
@@ -502,7 +502,8 @@ export class SignalWindowService {
       if (run) {
         for (const bet of run.bets) {
           const channel =
-            bet.channelSelection?.channelDecision.channel ?? StrategyChannel.EV;
+            bet.channelSelection?.channelDecision.channel ??
+            StrategyChannel.VALUE;
           const canal: Canal = channel as Canal;
           const isCorrect =
             bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;

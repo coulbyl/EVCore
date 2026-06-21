@@ -17,7 +17,7 @@ const FALLBACK_ODDS: Record<Canal, number> = {
   SAFE: 1.65,
   DOMINANT: 2.2,
   BTTS: 1.75,
-  EV: 1.85,
+  VALUE: 1.85,
   DRAW: 3.2,
 };
 

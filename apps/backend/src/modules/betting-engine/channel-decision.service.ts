@@ -259,7 +259,7 @@ export class ChannelDecisionService {
 }
 
 const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
-  STRATEGY_CHANNEL.EV,
+  STRATEGY_CHANNEL.VALUE,
   STRATEGY_CHANNEL.SAFE,
   STRATEGY_CHANNEL.DOMINANT,
   STRATEGY_CHANNEL.BTTS,

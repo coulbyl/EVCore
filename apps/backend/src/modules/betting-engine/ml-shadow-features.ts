@@ -48,7 +48,7 @@ export function buildMlShadowFeatures(input: {
     performance_dom_ext: asNumber(features.domExtPerf),
     volatilite_ligue: asNumber(features.leagueVolat),
     market: valueBet.market,
-    canal: 'EV',
+    canal: 'VALUE',
     league_tier: mlLeagueTier(competitionCode),
     odds_segment: mlOddsSegment(valueBet.odds),
   };

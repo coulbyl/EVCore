@@ -101,7 +101,7 @@ export class BetSlipRepository {
         source: BetSource.MODEL,
         channelSelection: {
           is: {
-            channelDecision: { is: { channel: StrategyChannel.EV } },
+            channelDecision: { is: { channel: StrategyChannel.VALUE } },
           },
         },
         status: { in: ['WON', 'LOST'] },

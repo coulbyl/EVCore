@@ -85,7 +85,7 @@ describe('ChannelDecisionService', () => {
     // Orchestrator ran every primary strategy; EV selected the only viable pick.
     expect(evaluated).toHaveLength(5);
     const ev = evaluated.find(
-      (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.EV,
+      (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.VALUE,
     );
     expect(ev?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(ev?.selections[0]?.pick).toBe('HOME');
@@ -206,7 +206,7 @@ describe('ChannelDecisionService', () => {
         {
           id: 'cd-ev',
           modelRunId: 'run-1',
-          channel: STRATEGY_CHANNEL.EV,
+          channel: STRATEGY_CHANNEL.VALUE,
           status: CHANNEL_DECISION_STATUS.SELECTED,
           reasonCode: null,
           fixtureId: 'f1',
@@ -264,13 +264,13 @@ describe('ChannelDecisionService', () => {
       const items = await service.list({
         date: '2026-01-18',
         competition: 'BL1',
-        channel: STRATEGY_CHANNEL.EV,
+        channel: STRATEGY_CHANNEL.VALUE,
       });
 
       // Day range + filters forwarded.
       const [filters] = findByDate.mock.calls[0];
       expect(filters.competition).toBe('BL1');
-      expect(filters.channel).toBe(STRATEGY_CHANNEL.EV);
+      expect(filters.channel).toBe(STRATEGY_CHANNEL.VALUE);
       expect(filters.range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
 
       expect(items).toHaveLength(2);

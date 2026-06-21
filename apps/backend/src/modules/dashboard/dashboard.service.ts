@@ -193,7 +193,8 @@ export class DashboardService {
     const bets = await this.repo.getSettledBetsForPnl({ since, until });
 
     const evBets = bets.filter(
-      (b) => b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+      (b) =>
+        b.channelSelection?.channelDecision.channel === StrategyChannel.VALUE,
     );
     const svBets = bets.filter(
       (b) =>
@@ -211,7 +212,7 @@ export class DashboardService {
 
   async getCompetitionStats(
     userId: string,
-    canal?: 'EV' | 'SAFE',
+    canal?: 'VALUE' | 'SAFE',
   ): Promise<CompetitionStat[]> {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [analyzedRuns, modelBets, userBets] =
@@ -349,7 +350,7 @@ export class DashboardService {
 
   async getChannelHealth(): Promise<ChannelHealthItem[]> {
     const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(StrategyChannel.EV, 200),
+      this.repo.findRecentModelBets(StrategyChannel.VALUE, 200),
       this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
     ]);
 
@@ -358,7 +359,7 @@ export class DashboardService {
 
     return [
       {
-        channel: 'EV',
+        channel: 'VALUE',
         status: evRoiStatus(evRoi, evBets.length, 30),
         primaryMetric: evRoi ?? 0,
         primaryMetricType: 'ROI',
@@ -412,7 +413,7 @@ export class DashboardService {
 
   async getChannelStats(): Promise<ChannelStatsItem[]> {
     const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(StrategyChannel.EV, 200),
+      this.repo.findRecentModelBets(StrategyChannel.VALUE, 200),
       this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
     ]);
 
@@ -422,7 +423,7 @@ export class DashboardService {
 
     return [
       {
-        channel: 'EV',
+        channel: 'VALUE',
         hitRate: null,
         avgThreshold: null,
         vsThreshold: null,

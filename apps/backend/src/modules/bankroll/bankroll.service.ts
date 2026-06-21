@@ -54,7 +54,7 @@ export class BankrollService {
         ? r.bet.channelSelection?.channelDecision.channel ===
           StrategyChannel.SAFE
           ? 'SAFE'
-          : 'EV'
+          : 'VALUE'
         : null,
       fixture: r.bet
         ? `${r.bet.fixture.homeTeam.name} vs ${r.bet.fixture.awayTeam.name}`

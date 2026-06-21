@@ -54,7 +54,7 @@ export class SafeStrategy implements ChannelStrategy {
       };
     }
 
-    const evDecision = context.previousDecisions.get(STRATEGY_CHANNEL.EV);
+    const evDecision = context.previousDecisions.get(STRATEGY_CHANNEL.VALUE);
     const evSel = evDecision?.selections[0];
     const evPickKey = evSel
       ? buildBetPickKey({

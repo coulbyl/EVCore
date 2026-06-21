@@ -41,7 +41,9 @@ describe('ChannelDecisionRepository (e2e)', () => {
     const persisted = await repo.saveRunDecisions(runId, sampleDecisions());
 
     // The returned selection ids must match the rows actually written.
-    const evPersisted = persisted.find((d) => d.channel === StrategyChannel.EV);
+    const evPersisted = persisted.find(
+      (d) => d.channel === StrategyChannel.VALUE,
+    );
     const evSelectionId = evPersisted?.selections[0]?.id;
     expect(evSelectionId).toBeDefined();
     const evSelectionRow = await prisma.channelSelection.findUnique({
@@ -60,7 +62,7 @@ describe('ChannelDecisionRepository (e2e)', () => {
     });
     expect(decisions).toHaveLength(3);
 
-    const ev = decisions.find((d) => d.channel === StrategyChannel.EV);
+    const ev = decisions.find((d) => d.channel === StrategyChannel.VALUE);
     expect(ev?.status).toBe(ChannelDecisionStatus.SELECTED);
     expect(ev?.selections).toHaveLength(1);
     expect(ev?.selections[0]?.pick).toBe('HOME');
@@ -133,7 +135,7 @@ describe('ChannelDecisionRepository (e2e)', () => {
 
     const all = await repo.findByDate({ range });
     expect(all.length).toBeGreaterThanOrEqual(3);
-    const ev = all.find((d) => d.channel === StrategyChannel.EV);
+    const ev = all.find((d) => d.channel === StrategyChannel.VALUE);
     expect(ev?.fixtureId).toBeDefined();
     expect(ev?.homeTeam).toContain('Home');
     expect(ev?.selections[0]?.pick).toBe('HOME');
@@ -141,9 +143,9 @@ describe('ChannelDecisionRepository (e2e)', () => {
     // Channel filter narrows to a single decision.
     const onlyEv = await repo.findByDate({
       range,
-      channel: StrategyChannel.EV,
+      channel: StrategyChannel.VALUE,
     });
-    expect(onlyEv.every((d) => d.channel === StrategyChannel.EV)).toBe(true);
+    expect(onlyEv.every((d) => d.channel === StrategyChannel.VALUE)).toBe(true);
 
     // Market filter keeps only decisions that selected on that market.
     const onlyBtts = await repo.findByDate({ range, market: Market.BTTS });
@@ -162,7 +164,7 @@ describe('ChannelDecisionRepository (e2e)', () => {
   function sampleDecisions(): StrategyDecision[] {
     return [
       {
-        channel: StrategyChannel.EV,
+        channel: StrategyChannel.VALUE,
         status: ChannelDecisionStatus.SELECTED,
         selections: [
           {

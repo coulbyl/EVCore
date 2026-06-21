@@ -787,7 +787,7 @@ export class BettingEngineService {
 
       const channelSelectionId = findChannelSelectionId(
         persistedChannelDecisions,
-        STRATEGY_CHANNEL.EV,
+        STRATEGY_CHANNEL.VALUE,
         {
           market: valueBet.market,
           pick: valueBet.pick,
@@ -1178,7 +1178,7 @@ export class BettingEngineService {
 
       const channelSelectionId = findChannelSelectionId(
         persistedChannelDecisions,
-        STRATEGY_CHANNEL.EV,
+        STRATEGY_CHANNEL.VALUE,
         {
           market: valueBet.market,
           pick: valueBet.pick,

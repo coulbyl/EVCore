@@ -127,7 +127,7 @@ describe('SafeStrategy', () => {
   it('excludes the EV pick from SAFE candidates', () => {
     const evPickKey = 'ONE_X_TWO|HOME|-|-';
     const evDecision: StrategyDecision = {
-      channel: STRATEGY_CHANNEL.EV,
+      channel: STRATEGY_CHANNEL.VALUE,
       status: CHANNEL_DECISION_STATUS.SELECTED,
       selections: [
         {
@@ -154,7 +154,7 @@ describe('SafeStrategy', () => {
       evaluatedMarkets: [
         { market: Market.ONE_X_TWO, picks: [evPick, safeAlt] },
       ],
-      previousDecisions: new Map([[STRATEGY_CHANNEL.EV, evDecision]]),
+      previousDecisions: new Map([[STRATEGY_CHANNEL.VALUE, evDecision]]),
     });
     const decision = strategy.evaluate(ctx);
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);

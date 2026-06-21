@@ -174,7 +174,7 @@ export class DashboardRepository {
     });
   }
 
-  getCompetitionData(userId: string, since: Date, canal?: 'EV' | 'SAFE') {
+  getCompetitionData(userId: string, since: Date, canal?: 'VALUE' | 'SAFE') {
     const fixtureFilter = { scheduledAt: { gte: since } };
     const competitionSelect = {
       select: { id: true, name: true, code: true },
@@ -183,10 +183,12 @@ export class DashboardRepository {
       select: { competition: competitionSelect },
     } as const;
     const canalFilter =
-      canal === 'EV'
+      canal === 'VALUE'
         ? {
             channelSelection: {
-              is: { channelDecision: { is: { channel: StrategyChannel.EV } } },
+              is: {
+                channelDecision: { is: { channel: StrategyChannel.VALUE } },
+              },
             },
           }
         : canal === 'SAFE'

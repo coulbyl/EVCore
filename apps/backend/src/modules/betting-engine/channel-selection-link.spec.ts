@@ -12,7 +12,7 @@ function persisted(): PersistedChannelDecision[] {
   return [
     {
       id: 'cd-ev',
-      channel: STRATEGY_CHANNEL.EV,
+      channel: STRATEGY_CHANNEL.VALUE,
       status: CHANNEL_DECISION_STATUS.SELECTED,
       selections: [
         {
@@ -36,7 +36,7 @@ function persisted(): PersistedChannelDecision[] {
 describe('findChannelSelectionId', () => {
   it('returns the selection id when the bet pick matches the channel selection', () => {
     expect(
-      findChannelSelectionId(persisted(), STRATEGY_CHANNEL.EV, {
+      findChannelSelectionId(persisted(), STRATEGY_CHANNEL.VALUE, {
         market: Market.ONE_X_TWO,
         pick: 'HOME',
         comboMarket: null,
@@ -69,7 +69,7 @@ describe('findChannelSelectionId', () => {
 
   it('returns null when the live pick diverges from the strategy selection', () => {
     expect(
-      findChannelSelectionId(persisted(), STRATEGY_CHANNEL.EV, {
+      findChannelSelectionId(persisted(), STRATEGY_CHANNEL.VALUE, {
         market: Market.ONE_X_TWO,
         pick: 'AWAY',
         comboMarket: null,
@@ -82,7 +82,7 @@ describe('findChannelSelectionId', () => {
     const decisions: PersistedChannelDecision[] = [
       {
         id: 'cd-ev',
-        channel: STRATEGY_CHANNEL.EV,
+        channel: STRATEGY_CHANNEL.VALUE,
         status: CHANNEL_DECISION_STATUS.SELECTED,
         selections: [
           {
@@ -98,7 +98,7 @@ describe('findChannelSelectionId', () => {
       },
     ];
     expect(
-      findChannelSelectionId(decisions, STRATEGY_CHANNEL.EV, {
+      findChannelSelectionId(decisions, STRATEGY_CHANNEL.VALUE, {
         market: Market.ONE_X_TWO,
         pick: 'HOME',
         comboMarket: Market.OVER_UNDER,
@@ -107,7 +107,7 @@ describe('findChannelSelectionId', () => {
     ).toBe('sel-combo');
     // Same primary pick but no combo → different key → no match.
     expect(
-      findChannelSelectionId(decisions, STRATEGY_CHANNEL.EV, {
+      findChannelSelectionId(decisions, STRATEGY_CHANNEL.VALUE, {
         market: Market.ONE_X_TWO,
         pick: 'HOME',
         comboMarket: null,

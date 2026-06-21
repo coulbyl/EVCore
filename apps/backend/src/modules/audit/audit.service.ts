@@ -119,7 +119,8 @@ export class AuditService {
         run?.bets.find(
           (b) =>
             b.source === BetSource.MODEL &&
-            b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+            b.channelSelection?.channelDecision.channel ===
+              StrategyChannel.VALUE,
         ) ?? null;
       const betStatus: AuditFixtureRow['modelRun'] extends infer T
         ? T extends { betStatus: infer S }

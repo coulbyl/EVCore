@@ -518,7 +518,7 @@ export class ChatReadRepository {
                 is: {
                   channel: input.canal
                     ? canalToStrategyChannel(input.canal)
-                    : { in: [StrategyChannel.EV, StrategyChannel.SAFE] },
+                    : { in: [StrategyChannel.VALUE, StrategyChannel.SAFE] },
                 },
               },
             },
@@ -1017,7 +1017,7 @@ function buildFixtureEvaContext(
     run.bets
       .filter(
         (b) =>
-          b.channelSelection?.channelDecision.channel === StrategyChannel.EV,
+          b.channelSelection?.channelDecision.channel === StrategyChannel.VALUE,
       )
       .map((b) => `${b.market}|${b.pick}`),
   );
@@ -1147,13 +1147,13 @@ function channelToPrisma(channel: string): {
   isBet: boolean;
   channel?: StrategyChannel;
 } {
-  if (channel === 'EV') return { isBet: true, channel: StrategyChannel.EV };
+  if (channel === 'EV') return { isBet: true, channel: StrategyChannel.VALUE };
   if (channel === 'SV') return { isBet: true, channel: StrategyChannel.SAFE };
   return { isBet: false };
 }
 
 function canalToStrategyChannel(canal: string): StrategyChannel {
-  return canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV;
+  return canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.VALUE;
 }
 
 function strategyChannelToCanal(channel: StrategyChannel): 'EV' | 'SV' {

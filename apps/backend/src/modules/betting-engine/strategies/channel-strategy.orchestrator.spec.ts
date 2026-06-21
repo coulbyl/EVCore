@@ -112,7 +112,7 @@ describe('ChannelStrategyOrchestrator (multi-channel)', () => {
 
     expect(decisions).toHaveLength(V1_STRATEGIES.length);
     for (const channel of [
-      STRATEGY_CHANNEL.EV,
+      STRATEGY_CHANNEL.VALUE,
       STRATEGY_CHANNEL.SAFE,
       STRATEGY_CHANNEL.DOMINANT,
       STRATEGY_CHANNEL.BTTS,
@@ -127,10 +127,10 @@ describe('ChannelStrategyOrchestrator (multi-channel)', () => {
       createChannelStrategyOrchestrator().evaluate(makeContext()),
     );
 
-    expect(map.get(STRATEGY_CHANNEL.EV)?.selections[0]?.market).toBe(
+    expect(map.get(STRATEGY_CHANNEL.VALUE)?.selections[0]?.market).toBe(
       Market.ONE_X_TWO,
     );
-    expect(map.get(STRATEGY_CHANNEL.EV)?.selections[0]?.pick).toBe('HOME');
+    expect(map.get(STRATEGY_CHANNEL.VALUE)?.selections[0]?.pick).toBe('HOME');
     expect(map.get(STRATEGY_CHANNEL.SAFE)?.selections[0]?.market).toBe(
       Market.OVER_UNDER,
     );
@@ -166,7 +166,7 @@ describe('ChannelStrategyOrchestrator (multi-channel)', () => {
 
   it('skips strategies not applicable to the context sport', () => {
     const tennisOnly: ChannelStrategy = {
-      channel: STRATEGY_CHANNEL.EV,
+      channel: STRATEGY_CHANNEL.VALUE,
       allowedMarkets: [Market.ONE_X_TWO],
       // Empty allowedSports → never includes FOOTBALL → always skipped.
       allowedSports: [],

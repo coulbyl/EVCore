@@ -92,7 +92,7 @@ describe('ChatPickEngineService.planLadder', () => {
 
   it('filters on the requested canal', async () => {
     const service = buildService([
-      buildPick({ fixtureId: 'fixture-1', canal: 'EV' }),
+      buildPick({ fixtureId: 'fixture-1', canal: 'VALUE' }),
       buildPick({ fixtureId: 'fixture-2', canal: 'SAFE' }),
     ]);
 

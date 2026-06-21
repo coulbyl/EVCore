@@ -115,9 +115,10 @@ export class CouponSummaryService {
 
     let picks: CouponSummaryPickRow[];
 
-    if (canal === 'EV' || canal === 'SAFE') {
+    if (canal === 'VALUE' || canal === 'SAFE') {
       const bets = await this.repo.findSettledBetsForSummary({
-        channel: canal === 'SAFE' ? StrategyChannel.SAFE : StrategyChannel.EV,
+        channel:
+          canal === 'SAFE' ? StrategyChannel.SAFE : StrategyChannel.VALUE,
         from: range.from,
         to: range.to,
       });

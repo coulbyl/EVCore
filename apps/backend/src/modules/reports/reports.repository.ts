@@ -33,7 +33,7 @@ export class ReportsRepository {
         result: { in: ['WON', 'LOST'] },
         odds: { not: null },
         createdAt: { gte: from },
-        channelDecision: { channel: StrategyChannel.EV },
+        channelDecision: { channel: StrategyChannel.VALUE },
       },
       select: {
         market: true,

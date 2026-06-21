@@ -11,7 +11,7 @@ import type {
 export type SportType = 'FOOTBALL';
 
 export const STRATEGY_CHANNEL = {
-  EV: 'EV',
+  VALUE: 'VALUE',
   SAFE: 'SAFE',
   DOMINANT: 'DOMINANT',
   BTTS: 'BTTS',
