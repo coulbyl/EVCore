@@ -111,16 +111,17 @@ Contexte d'origine (conservé) : `calibratedLegProbability` = `0.5 × pModel +
 Ce n'était pas un doublon du ML (shadow) ni de `CalibrationService` (mesure
 seule) : c'était la **seule** correction de proba au niveau pick, d'où la priorité.
 
-### 🟠 B4 — Aucune proba « fair » marché (overround non retiré)
+### ✅ B4 — Proba « fair » marché (overround retiré) → CORRIGÉ (2026-06-21)
 
-Le coupon ne convertit jamais les cotes en probabilités fair (retrait de la marge
-bookmaker). Donc il n'a aucune mesure de **edge vs marché** — pourtant le cœur de
-la value betting. Les trois recherches insistent : comparer `pModel` à
-`pMarketFair = (1/cote) / overround`, pas à `1/cote` brut.
+> **Implémenté (Étape 2).** `removeOverround` + `bookmakerMargin` dans
+> `betting-engine.utils.ts` ; le pool charge les cotes complètes du marché et pose
+> `pMarketFair` / `bookmakerMargin` / `edge = pModel − pMarketFair` par jambe
+> (`featureSnapshot` + `reasoning`). Voir § Étape 2.
 
-→ **Ajouter** un utilitaire `removeOverround` (decimal.js) dans
-`betting-engine.utils.ts` et stocker par jambe : `pMarketFair`,
-`edge = pModel − pMarketFair`, `bookmakerMargin`.
+Contexte d'origine (conservé) : le coupon ne convertissait jamais les cotes en
+probabilités fair, donc aucune mesure de **edge vs marché** — pourtant le cœur de
+la value betting. Comparer `pModel` à `pMarketFair = (1/cote) / overround`, pas à
+`1/cote` brut.
 
 ### 🟠 B5 — Tri par probabilité, pas par rentabilité
 
@@ -228,22 +229,22 @@ ROI réel mesuré post-backfill est −2.1% / +1.0% et l'EV de DOMINANT est
 anti-prédictive. Seul DRAW (+9.9%, cotes présentes) est un candidat staking. Voir
 B-ROI ci-dessous. L'unification pool réel/virtuel reste à faire (Étape coupon).
 
-### 🟡 B8 — Constantes incohérentes
+### ✅ B8 — Constantes incohérentes → CORRIGÉ (2026-06-21)
 
-`COUPON_PARAMS.maxLegs = 3` (global) contredit `MAX_COUPON_SELECTIONS` qui autorise
-jusqu'à 5 jambes par canal. → Une seule source de vérité.
+> Levé en Étape 4 : `MAX_COUPON_SELECTIONS` documenté comme **plafond de pool par
+> canal** (combien de candidats d'un canal entrent dans le pool), distinct des
+> **jambes d'un coupon** (`CouponProfileBounds.maxLegs`). Plus d'ambiguïté.
 
-### 🟡 B9 — Pas de profils de risque
+### ✅ B9 — Profils de risque → CORRIGÉ (2026-06-21)
 
-Params figés globaux (`maxLegs=3`, `maxCombinedOdds=6`, `minJointProb=0.25`).
-La recherche **et** l'UX veulent Safe / Balanced / Aggressive avec bornes
-distinctes (legs, cote totale, proba mini, EV mini).
+> Implémenté en Étape 4 : `COUPON_PROFILES` (SAFE / BALANCED / AGGRESSIVE) +
+> `compose(scoredPicks, profile)`. Voir § Étape 4. Bornes indicatives non activées
+> en génération (gate backtest Étape 7).
 
-### 🟡 B10 — Pas de staking
+### ✅ B10 — Staking → CORRIGÉ (2026-06-21)
 
-`calculateKellyStakePct` existe et le ladder est branché côté chat, mais le coupon
-ne propose aucune mise. → Brancher la mise recommandée derrière `KELLY_ENABLED`
-(flat sinon).
+> Implémenté en Étape 5 : `recommendedCouponStakePct` derrière `KELLY_ENABLED`
+> (flat `DEFAULT_STAKE_PCT` sinon), tracé dans le `reasoning`. Voir § Étape 5.
 
 ### ⚪ B11 — Combos même-match à value non exploités
 
@@ -321,22 +322,36 @@ séparé par ligue/marché** (règle TODO.md).
 > Étape 1 (EV au cœur), Étape 2 (overround), Étape 4 (profils), Étape 5 (staking),
 > Étape 6 (combos même-match), B7 (unification pool). Aucun ne bloque le re-run.
 
-### Étape 1 — EV au cœur du coupon (corrige B1, B2, B5)
+### ✅ Étape 1 — EV au cœur du coupon (corrige B1, B2, B5) — FAIT (2026-06-21)
 
-- Ajouter à `ScoredPick` (déjà partiellement présent : `oddsSnapshot`) le champ
-  `legEV` via `calculateEV(pLeg, oddsLeg)`.
-- Exclure les jambes sans `oddsSnapshot` réel (supprimer `FALLBACK_ODDS`).
-- Dans `compose()` : calculer `couponEV`, filtrer `couponEV ≥ seuil profil`, trier
-  par `couponEV` (puis `jointProbability` en tie-break).
-- Tests déterministes (entrées/sorties connues) sur `couponEV`.
+- ✅ Champ `legEV` sur `ScoredPick`, posé par `scorePicks` via
+  `calculateEV(calibratedProbability, oddsSnapshot)` (cote réelle uniquement →
+  `null` sinon), tracé dans `featureSnapshot`.
+- ✅ `FALLBACK_ODDS` supprimé : `compose()` filtre `oddsSnapshot !== null` avant
+  toute combinaison ; `computeCombinedOdds` ne lit plus que des cotes réelles
+  (invariant gardé par un throw).
+- ✅ `couponEV = calculateEV(jointProbability, combinedOdds)` calculé dans
+  `buildCoupon`, filtré `≥ COUPON_PARAMS.minCouponEV` (0.05, à promouvoir par
+  backtest Étape 7), tri value-driven `compareCouponsByEV` (EV ↓, proba jointe ↓,
+  legs ↑). `couponEV` tracé dans `reasoning`.
+- ✅ Tests déterministes : couponEV, ordre par EV ≠ ordre par proba, exclusion
+  cote nulle, rejet sous `minCouponEV`. backend typecheck/lint/556 tests verts.
 
-### Étape 2 — Proba fair marché (corrige B4)
+### ✅ Étape 2 — Proba fair marché (corrige B4) — FAIT (2026-06-21)
 
-- Nouvelle util `removeOverround(odds: Decimal[]): Decimal[]` dans
-  `betting-engine.utils.ts` (decimal.js, testée valide/invalide/edge).
-- Stocker par jambe `pMarketFair`, `edge`, `bookmakerMargin` dans `featureSnapshot`.
-- Exposer `edge` dans `reasoning` (explication utilisateur : « choisi car cote >
-  proba estimée », pas « car sûr »).
+- ✅ Utils `removeOverround(odds: Decimal[]): Decimal[]` + `bookmakerMargin(odds)`
+  dans `betting-engine.utils.ts` (decimal.js, lève sur cote ≤ 1, testés
+  valide/invalide/edge — `betting-engine.utils.spec.ts`).
+- ✅ `getTodayPool` charge les cotes complètes du marché (`OddsSnapshotLoader.
+findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
+  reconstitue les issues mutuellement exclusives par marché (1X2, BTTS,
+  OVER_UNDER(\_HT), FIRST_HALF_WINNER ; DOUBLE_CHANCE/HTFT skippés) et pose
+  `pMarketFair` + `bookmakerMargin` par jambe. `null` si cotes sœurs indispo.
+- ✅ `scorePicks` calcule `edge = calibratedProbability − pMarketFair`, le tout
+  tracé dans `featureSnapshot` ; `edge`/`pMarketFair` exposés dans `reasoning`
+  (value vs marché, pas « car sûr »). backend typecheck/lint/566 tests verts.
+- _Limite_ : le loader s'ancre sur les cotes 1X2 — une fixture sans 1X2 n'a pas
+  de `pMarketFair` même si BTTS coté. Acceptable (edge `null`, jamais faux).
 
 ### ✅ Étape 3 — Calibration de jambe principiée (corrige B3) — FAIT (juin 2026)
 
@@ -350,9 +365,10 @@ séparé par ligue/marché** (règle TODO.md).
 - _(Plus tard)_ ML promu hors shadow → brancher la proba corrigée en priorité dans
   `calibrateLegProbability` (point d'extension déjà prévu).
 
-### Étape 4 — Profils de risque (corrige B8, B9)
+### ✅ Étape 4 — Profils de risque (corrige B8, B9) — FAIT (2026-06-21)
 
-- Une seule constante de bornes par profil dans `coupon.constants.ts` :
+- ✅ Type `CouponProfileBounds` + table `COUPON_PROFILES` (source unique des bornes
+  par profil) dans `coupon.constants.ts` :
 
   | Profil       | Legs | Cote totale | P_coupon min | EV coupon min |
   | ------------ | ---- | ----------- | ------------ | ------------- |
@@ -360,14 +376,29 @@ séparé par ligue/marché** (règle TODO.md).
   | `BALANCED`   | 2–4  | 2.20–5.00   | ≥ 0.25       | ≥ 0.08        |
   | `AGGRESSIVE` | 3–5  | 4.00–12.0   | ≥ 0.10       | ≥ 0.15        |
 
-  _(valeurs indicatives — à confirmer par backtest, ne pas activer en dur sans gate verte.)_
+  _(valeurs indicatives — **non activées en génération** ; à promouvoir par backtest
+  Étape 7.)_
 
-- Supprimer la double source `maxLegs` vs `MAX_COUPON_SELECTIONS`.
+- ✅ `compose(scoredPicks, profile)` paramétré par les bornes du profil (minLegs,
+  maxLegs, min/maxCombinedOdds, minJointProbability, minCouponEV). `generateCoupons`
+  expose `profile?: CouponProfileName`.
+- ✅ **Pas de régression** : `DEFAULT_COUPON_PROFILE` dérive des paramètres
+  **backtestés** (`COUPON_PARAMS`) ; la génération live l'utilise tant que la gate
+  multi-profil n'est pas verte.
+- ✅ B8 levé : `MAX_COUPON_SELECTIONS` documenté comme **plafond de pool par canal**,
+  distinct des **jambes de coupon** (`CouponProfileBounds.maxLegs`). Tests profils
+  (SAFE court / AGGRESSIVE ≥3 legs + cote haute). backend typecheck/lint/570 tests.
 
-### Étape 5 — Staking (corrige B10)
+### ✅ Étape 5 — Staking (corrige B10) — FAIT (2026-06-21)
 
-- Réutiliser `calculateKellyStakePct(P_coupon, Odd_coupon, {fraction: KELLY_FRACTION, maxStake: KELLY_MAX_STAKE_PCT})`
-  derrière `KELLY_ENABLED` ; flat stake sinon. **Jamais** de Kelly inline.
+- ✅ Helper pur `recommendedCouponStakePct(coupon, kellyEnabled)` : derrière
+  `KELLY_ENABLED`, Kelly fractionnaire sur `(P_coupon, Odd_coupon)` via
+  `calculateKellyStakePct` (`KELLY_FRACTION` 0.25, cap `KELLY_MAX_STAKE_PCT` 0.05) —
+  **jamais de Kelly inline** ; mise plate `DEFAULT_STAKE_PCT` (1 %) sinon.
+- ✅ `CouponService` lit `KELLY_ENABLED` via `ConfigService` et trace
+  `recommendedStakePct` + `stakingMode` (`KELLY`/`FLAT`) dans le `reasoning` du
+  coupon (pas de colonne dédiée → pas de migration). Tests : flat, Kelly capé,
+  quarter-Kelly sous le cap, 0 si Kelly ≤ 0. backend typecheck/lint/574 tests.
 
 ### Étape 6 — Combos même-match à value (corrige B11) — optionnel
 

@@ -56,11 +56,14 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
 
 ### ▶ À faire demain (dans l'ordre)
 
-- [ ] **Étape 1 — EV au cœur du coupon** (la tâche d'origine, enfin débloquée par
-      données saines) : `legEV` sur `ScoredPick`, supprimer `FALLBACK_ODDS`
-      (exclure jambes sans cote réelle), calculer/filtrer/trier par `couponEV`
-      (`calculateEV(jointProbability, combinedOdds)`), `minCouponEV` proposé `0.05`.
-      Détail : [coupon/DESIGN.md](apps/backend/src/modules/coupon/DESIGN.md) § Étape 1.
+- [x] **Étape 1 — EV au cœur du coupon** (2026-06-21) : `legEV` sur `ScoredPick`
+      (`calculateEV(calibratedProbability, oddsSnapshot)`), `FALLBACK_ODDS` supprimé
+      (jambes sans cote réelle exclues de `compose`), `couponEV =
+    calculateEV(jointProbability, combinedOdds)` calculé/filtré (`minCouponEV`
+      0.05) et tri value-driven (`compareCouponsByEV` : EV ↓, proba jointe, legs ↑).
+      `couponEV`/`legEV` tracés dans `reasoning`/`featureSnapshot`. backend
+      typecheck/lint/556 tests ✅. Détail :
+      [coupon/DESIGN.md](apps/backend/src/modules/coupon/DESIGN.md) § Étape 1.
 - [ ] **`chat` — à repenser** : garde encore le vocab legacy `EV/SV/CONF/BB/NUL`
       (schemas LLM + `chat.read.repository` conversions + `chat.golden.spec`).
       Seuls ses refs `StrategyChannel.EV→.VALUE` ont été touchés pour compiler.
@@ -126,12 +129,12 @@ Détail complet : [apps/backend/src/modules/coupon/DESIGN.md](apps/backend/src/m
       DOMINANT −2.1% (EV anti-prédictive). Décision : DOMINANT/BTTS restent
       **prédiction** (suivi via `channel_selection`), pas de mise. DRAW = candidat staking.
 
-### Ce qu'il reste, couche coupon (après l'Étape 1)
+### Ce qu'il reste, couche coupon (après Étapes 1–2–4–5)
 
-Étapes DESIGN.md : Étape 2 (overround/proba fair), Étape 4 (profils
-Safe/Balanced/Aggressive), Étape 5 (staking Kelly derrière flag), Étape 6
-(combos même-match), B7 (unification pool réel/virtuel). Vue ROI roulante par
-canal × EV-bin (outil de promotion).
+Étapes 1 (EV au cœur), 2 (overround/proba fair), 4 (profils de risque, non activés
+sans backtest) et 5 (staking Kelly derrière `KELLY_ENABLED`, flat sinon) **faites**
+(2026-06-21). Reste DESIGN.md : Étape 6 (combos même-match), B7 (unification pool
+réel/virtuel). Vue ROI roulante par canal × EV-bin (outil de promotion).
 
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,

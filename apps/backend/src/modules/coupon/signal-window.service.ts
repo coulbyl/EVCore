@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { StrategyChannel } from '@evcore/db';
+import { Market, StrategyChannel } from '@evcore/db';
+import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
+import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
+import {
+  bookmakerMargin as computeBookmakerMargin,
+  removeOverround,
+} from '@modules/betting-engine/betting-engine.utils';
+import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
+import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
@@ -54,6 +62,26 @@ export type ScoredPick = {
    */
   calibratedProbability: number | null;
   oddsSnapshot: number | null;
+  /**
+   * EV de la jambe `calculateEV(calibratedProbability, oddsSnapshot)`, posé par
+   * `CouponComposerService.scorePicks()`. `null` tant que le scoring n'a pas tourné
+   * ou si la jambe n'a pas de cote réelle (jamais d'EV sur cote inventée).
+   */
+  legEV: number | null;
+  /**
+   * Proba « fair » marché de l'issue sélectionnée — overround retiré
+   * (`removeOverround` sur les cotes d'issues du marché). `null` si les cotes
+   * sœurs du marché sont indisponibles. Posée par `getTodayPool` (dépend des
+   * cotes uniquement).
+   */
+  pMarketFair: number | null;
+  /** Marge bookmaker du marché de la jambe (`Σ 1/cote − 1`). `null` si indispo. */
+  bookmakerMargin: number | null;
+  /**
+   * Edge marché = `calibratedProbability − pMarketFair`, posé par `scorePicks()`.
+   * `null` tant que le scoring n'a pas tourné ou si `pMarketFair` est indispo.
+   */
+  edge: number | null;
   lambdaHome: number | null;
   lambdaAway: number | null;
   xg: number | null;
@@ -233,11 +261,82 @@ function calibrate(
   return Math.min(capMax, Math.max(capMin, raw));
 }
 
+// Opposite pick of an OVER_UNDER(_HT) line — pairs OVER_x with UNDER_x to recover
+// the two mutually-exclusive outcomes needed to remove the overround. The 2.5
+// line uses the bare 'OVER' / 'UNDER' keys (cf. FullOddsSnapshot.overUnderOdds).
+function overUnderOpposite(pick: string): string | null {
+  if (pick === 'OVER') return 'UNDER';
+  if (pick === 'UNDER') return 'OVER';
+  if (pick.startsWith('OVER_')) return `UNDER_${pick.slice('OVER_'.length)}`;
+  if (pick.startsWith('UNDER_')) return `OVER_${pick.slice('UNDER_'.length)}`;
+  return null;
+}
+
+// Sibling outcome odds for a market+pick — the OTHER mutually-exclusive outcomes,
+// needed alongside the selected odds to remove the bookmaker margin. Returns
+// `null` (skip fair-prob) when the market has no clean exhaustive partition here
+// (DOUBLE_CHANCE overlaps; HALF_TIME_FULL_TIME coverage is too partial).
+function siblingOutcomeOdds(
+  market: Market,
+  pick: string,
+  snapshot: FullOddsSnapshot,
+): Decimal[] | null {
+  const pickOdds = (p: string): Decimal | null =>
+    getPickOddsFromSnapshot(market, p, snapshot);
+
+  if (market === Market.ONE_X_TWO || market === Market.FIRST_HALF_WINNER) {
+    const others = ['HOME', 'DRAW', 'AWAY'].filter((p) => p !== pick);
+    if (others.length !== 2) return null;
+    const odds = others.map(pickOdds);
+    return odds.every((o): o is Decimal => o !== null) ? odds : null;
+  }
+  if (market === Market.BTTS) {
+    const other = pick === 'YES' ? 'NO' : pick === 'NO' ? 'YES' : null;
+    const o = other ? pickOdds(other) : null;
+    return o ? [o] : null;
+  }
+  if (market === Market.OVER_UNDER || market === Market.OVER_UNDER_HT) {
+    const opposite = overUnderOpposite(pick);
+    const o = opposite ? pickOdds(opposite) : null;
+    return o ? [o] : null;
+  }
+  return null;
+}
+
+// Fair (overround-removed) probability of the selected outcome + the market's
+// bookmaker margin. Depends on odds only — computed at pool-build time. Returns
+// `null` when the full outcome set is unavailable or the odds are invalid.
+export function computeMarketFair(
+  market: Market,
+  pick: string,
+  snapshot: FullOddsSnapshot,
+): { pMarketFair: number; bookmakerMargin: number } | null {
+  const selected = getPickOddsFromSnapshot(market, pick, snapshot);
+  if (selected === null) return null;
+  const siblings = siblingOutcomeOdds(market, pick, snapshot);
+  if (siblings === null || siblings.length === 0) return null;
+
+  const outcomeOdds = [selected, ...siblings];
+  try {
+    const fair = removeOverround(outcomeOdds);
+    const selectedFair = fair[0];
+    if (selectedFair === undefined) return null;
+    return {
+      pMarketFair: selectedFair.toNumber(),
+      bookmakerMargin: computeBookmakerMargin(outcomeOdds).toNumber(),
+    };
+  } catch {
+    // Invalid decimal odds (≤ 1) — skip fair-prob rather than fail the pool.
+    return null;
+  }
+}
+
 @Injectable()
 export class SignalWindowService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly calibration: CalibrationService,
+    private readonly oddsLoader: OddsSnapshotLoader,
   ) {}
 
   /**
@@ -481,6 +580,8 @@ export class SignalWindowService {
         awayScore: f.awayScore ?? null,
         homeHtScore: f.homeHtScore ?? null,
         awayHtScore: f.awayHtScore ?? null,
+        legEV: null, // set in CouponComposerService.scorePicks()
+        edge: null, // set in CouponComposerService.scorePicks()
         lambdaHome,
         lambdaAway,
         xg,
@@ -500,6 +601,13 @@ export class SignalWindowService {
       };
 
       if (run) {
+        // Full market odds (as-of kickoff) — needed to remove the overround and
+        // compute each leg's fair market probability + bookmaker margin.
+        const snapshot = await this.oddsLoader.findLatestOddsSnapshot(
+          f.id,
+          f.scheduledAt,
+        );
+
         for (const bet of run.bets) {
           const channel =
             bet.channelSelection?.channelDecision.channel ??
@@ -507,6 +615,9 @@ export class SignalWindowService {
           const canal: Canal = channel as Canal;
           const isCorrect =
             bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
+          const fair = snapshot
+            ? computeMarketFair(bet.market, bet.pick, snapshot)
+            : null;
           picks.push({
             ...base,
             canal,
@@ -516,6 +627,8 @@ export class SignalWindowService {
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             calibratedProbability: null, // set in CouponComposerService.scorePicks()
             oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
+            pMarketFair: fair?.pMarketFair ?? null,
+            bookmakerMargin: fair?.bookmakerMargin ?? null,
             isCorrect,
             signalScore: 0,
             betId: bet.id,
@@ -626,6 +739,10 @@ export class SignalWindowService {
           awayScore: f.awayScore ?? null,
           homeHtScore: f.homeHtScore ?? null,
           awayHtScore: f.awayHtScore ?? null,
+          legEV: null, // set in CouponComposerService.scorePicks()
+          pMarketFair: null,
+          bookmakerMargin: null,
+          edge: null, // set in CouponComposerService.scorePicks()
           lambdaHome,
           lambdaAway,
           xg,

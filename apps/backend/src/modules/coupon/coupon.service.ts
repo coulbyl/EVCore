@@ -1,28 +1,48 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CouponProposalStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
 import { CouponRepository } from './coupon.repository';
 import { SignalWindowService } from './signal-window.service';
-import { CouponComposerService } from './coupon-composer.service';
-import { COUPON_PARAMS } from './coupon.constants';
+import {
+  CouponComposerService,
+  recommendedCouponStakePct,
+} from './coupon-composer.service';
+import {
+  COUPON_PARAMS,
+  resolveCouponProfile,
+  type CouponProfileName,
+} from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 
 const logger = createLogger('coupon');
 
 @Injectable()
 export class CouponService {
+  private readonly kellyEnabled: boolean;
+
+  // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
     private readonly repo: CouponRepository,
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
+  }
 
   async generateCoupons(
     date: string,
-    opts: { windowDays?: number } = {},
+    opts: { windowDays?: number; profile?: CouponProfileName } = {},
   ): Promise<void> {
-    const { windowDays = COUPON_PARAMS.windowDays } = opts;
-    logger.info({ date, windowDays }, 'Generating coupons');
+    const { windowDays = COUPON_PARAMS.windowDays, profile } = opts;
+    // Profil indicatif optionnel ; défaut = bornes backtestées (pas de régression,
+    // multi-profil non activé tant que la gate de backtest n'est pas verte).
+    const profileBounds = resolveCouponProfile(profile);
+    logger.info(
+      { date, windowDays, profile: profile ?? 'DEFAULT' },
+      'Generating coupons',
+    );
 
     const asOf = new Date(`${date}T00:00:00.000Z`);
     await this.repo.deletePendingForDate(asOf);
@@ -39,7 +59,7 @@ export class CouponService {
     );
 
     const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
-    const coupons = this.composer.compose(scoredPicks);
+    const coupons = this.composer.compose(scoredPicks, profileBounds);
 
     if (coupons.length === 0) {
       logger.info(
@@ -54,6 +74,13 @@ export class CouponService {
         .map((leg) => leg.scheduledAt)
         .reduce((a, b) => (a > b ? a : b));
 
+      // Mise recommandée (% bankroll) — Kelly fractionnaire derrière KELLY_ENABLED,
+      // mise plate sinon. Tracée dans le reasoning (pas de colonne dédiée).
+      const recommendedStakePct = recommendedCouponStakePct(
+        coupon,
+        this.kellyEnabled,
+      );
+
       await this.repo.upsertProposal({
         forDate: new Date(`${date}T00:00:00.000Z`),
         rank: coupon.rank,
@@ -64,7 +91,11 @@ export class CouponService {
         jointProbability: coupon.jointProbability,
         signalScore: coupon.signalScore,
         lastFixtureScheduledAt: lastScheduledAt,
-        reasoning: coupon.reasoning,
+        reasoning: {
+          ...coupon.reasoning,
+          recommendedStakePct,
+          stakingMode: this.kellyEnabled ? 'KELLY' : 'FLAT',
+        },
         legs: coupon.legs.map((leg) => ({
           fixtureId: leg.fixtureId,
           canal: leg.canal,

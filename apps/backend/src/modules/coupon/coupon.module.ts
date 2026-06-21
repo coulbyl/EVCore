@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma.module';
 import { CalibrationService } from '@modules/adjustment/calibration.service';
+import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import { CouponRepository } from './coupon.repository';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
@@ -15,6 +16,7 @@ import { CouponController } from './coupon.controller';
   controllers: [CouponController],
   providers: [
     CalibrationService,
+    OddsSnapshotLoader,
     CouponRepository,
     SignalWindowService,
     CouponComposerService,

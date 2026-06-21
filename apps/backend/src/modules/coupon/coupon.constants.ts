@@ -24,6 +24,10 @@ export type VirtualCouponChannel =
 
 export type CouponOutputChannel = CouponChannel | VirtualCouponChannel;
 
+// Plafond du nombre de sélections RETENUES par canal dans le POOL (par jour),
+// PAS le nombre de jambes d'un coupon — concept distinct des bornes de profil
+// (`CouponProfileBounds.maxLegs`). Levée d'ambiguïté B8 : un coupon est borné par
+// son profil ; ceci borne combien de candidats d'un canal entrent dans le pool.
 export const MAX_COUPON_SELECTIONS: Record<CouponChannel, number> = {
   SAFE: 5,
   BTTS: 5,
@@ -45,6 +49,11 @@ export const COUPON_PARAMS = {
   capMin: 0.05,
   capMax: 0.8,
   minCalibratedJointProbability: 0.25,
+  // Seuil d'EV de coupon (Étape 1 — EV au cœur du coupon). Un coupon n'est viable
+  // que si `couponEV = P_coupon × Odd_coupon − 1 ≥ minCouponEV`. Valeur proposée
+  // 0.05 en attendant le backtest dédié (Étape 7 / profils de risque Étape 4) —
+  // à promouvoir comme sortie de backtest, pas réglage manuel durable.
+  minCouponEV: 0.05,
   maxLegs: 3,
   maxCoupons: 3,
   maxCombinedOdds: 6.0,
@@ -61,6 +70,80 @@ export const COUPON_PARAMS = {
     DRAW: 20,
   } as Record<CouponChannel, number>,
 } as const;
+
+// ─────────────────────────────────────────────
+// Profils de risque (Étape 4 — corrige B8/B9)
+// ─────────────────────────────────────────────
+
+export type CouponProfileName = 'SAFE' | 'BALANCED' | 'AGGRESSIVE';
+
+/**
+ * Bornes d'un profil de risque — source unique des contraintes appliquées par
+ * `CouponComposerService.compose`. Un coupon n'est viable que s'il respecte TOUTES
+ * ces bornes : nombre de jambes, cote combinée, proba jointe et EV de coupon.
+ */
+export type CouponProfileBounds = {
+  minLegs: number;
+  maxLegs: number;
+  minCombinedOdds: number;
+  maxCombinedOdds: number;
+  minJointProbability: number;
+  minCouponEV: number;
+};
+
+/**
+ * Profils indicatifs (DESIGN.md Étape 4) — **valeurs à confirmer par backtest,
+ * pas encore activées en génération** (cf. gate Étape 7). La génération live passe
+ * par `DEFAULT_COUPON_PROFILE` (bornes backtestées). Ces presets sont disponibles
+ * pour expérimentation / backtest avant promotion.
+ */
+export const COUPON_PROFILES: Record<CouponProfileName, CouponProfileBounds> = {
+  SAFE: {
+    minLegs: 2,
+    maxLegs: 3,
+    minCombinedOdds: 1.6,
+    maxCombinedOdds: 2.5,
+    minJointProbability: 0.45,
+    minCouponEV: 0.03,
+  },
+  BALANCED: {
+    minLegs: 2,
+    maxLegs: 4,
+    minCombinedOdds: 2.2,
+    maxCombinedOdds: 5.0,
+    minJointProbability: 0.25,
+    minCouponEV: 0.08,
+  },
+  AGGRESSIVE: {
+    minLegs: 3,
+    maxLegs: 5,
+    minCombinedOdds: 4.0,
+    maxCombinedOdds: 12.0,
+    minJointProbability: 0.1,
+    minCouponEV: 0.15,
+  },
+} as const;
+
+/**
+ * Profil appliqué en génération live — dérivé des paramètres **backtestés**
+ * (`COUPON_PARAMS`, backtest 2026-05-19), donc aucune régression vs l'existant.
+ * Correspond grosso modo à un BALANCED élargi ; les profils nommés ci-dessus ne le
+ * remplacent qu'après gate de backtest vert (Étape 7).
+ */
+export const DEFAULT_COUPON_PROFILE: CouponProfileBounds = {
+  minLegs: 2,
+  maxLegs: COUPON_PARAMS.maxLegs,
+  minCombinedOdds: 1.0,
+  maxCombinedOdds: COUPON_PARAMS.maxCombinedOdds,
+  minJointProbability: COUPON_PARAMS.minCalibratedJointProbability,
+  minCouponEV: COUPON_PARAMS.minCouponEV,
+};
+
+export function resolveCouponProfile(
+  name?: CouponProfileName,
+): CouponProfileBounds {
+  return name ? COUPON_PROFILES[name] : DEFAULT_COUPON_PROFILE;
+}
 
 export type VirtualCouponRule = {
   canal: VirtualCouponChannel;

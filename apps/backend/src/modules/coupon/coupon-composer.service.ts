@@ -1,8 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
-import { CANAL_BASE_WEIGHT, COUPON_PARAMS } from './coupon.constants';
+import {
+  calculateEV,
+  calculateKellyStakePct,
+} from '@modules/betting-engine/betting-engine.utils';
+import {
+  DEFAULT_STAKE_PCT,
+  KELLY_FRACTION,
+  KELLY_MAX_STAKE_PCT,
+} from '@modules/betting-engine/ev.constants';
+import {
+  COUPON_PARAMS,
+  CANAL_BASE_WEIGHT,
+  DEFAULT_COUPON_PROFILE,
+  type CouponProfileBounds,
+} from './coupon.constants';
 import type {
-  Canal,
   MarketCalibration,
   ScoredPick,
   SignalWindow,
@@ -13,19 +26,13 @@ const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 const MIN_DISTINCT_FIXTURES = 2;
 const MAX_POOL_SIZE = 25;
 
-const FALLBACK_ODDS: Record<Canal, number> = {
-  SAFE: 1.65,
-  DOMINANT: 2.2,
-  BTTS: 1.75,
-  VALUE: 1.85,
-  DRAW: 3.2,
-};
-
 export type ComposedCoupon = {
   rank: number;
   legs: ScoredPick[];
   combinedOdds: number;
   jointProbability: number;
+  /** EV du coupon : `P_coupon × Odd_coupon − 1` (cf. DESIGN.md Étape 1). */
+  couponEV: number;
   signalScore: number;
   reasoning: Record<string, unknown>;
 };
@@ -147,6 +154,20 @@ export class CouponComposerService {
       const marketMeanError =
         window.marketCalibration[pick.market]?.meanError ?? null;
 
+      // EV de jambe sur la cote RÉELLE uniquement (jamais de cote inventée) —
+      // une jambe sans cote ne porte pas d'EV et sera exclue des coupons.
+      const legEV =
+        pick.oddsSnapshot !== null
+          ? calculateEV(calibratedProbability, pick.oddsSnapshot).toNumber()
+          : null;
+
+      // Edge marché = proba calibrée − proba « fair » (overround retiré).
+      // Mesure la value vs le marché (pas « car sûr »). `null` si pas de fair.
+      const edge =
+        pick.pMarketFair !== null
+          ? calibratedProbability - pick.pMarketFair
+          : null;
+
       const featureSnapshot = {
         ...pick.featureSnapshot,
         canal: pick.canal,
@@ -158,28 +179,41 @@ export class CouponComposerService {
         signalScore,
         calibratedProbability,
         marketMeanError,
+        legEV,
+        pMarketFair: pick.pMarketFair,
+        bookmakerMargin: pick.bookmakerMargin,
+        edge,
       };
 
       return {
         ...pick,
         calibratedHitRate: windowRate,
         calibratedProbability,
+        legEV,
+        edge,
         signalScore,
         featureSnapshot,
       };
     });
   }
 
-  compose(scoredPicks: ScoredPick[]): ComposedCoupon[] {
-    const distinctFixtures = new Set(scoredPicks.map((p) => p.fixtureId));
+  compose(
+    scoredPicks: ScoredPick[],
+    profile: CouponProfileBounds = DEFAULT_COUPON_PROFILE,
+  ): ComposedCoupon[] {
+    // EVCore est value-driven : un coupon ne se construit que sur des jambes à
+    // cote RÉELLE (B2 — plus de FALLBACK_ODDS). Une jambe sans cote n'a pas d'EV.
+    const pricedPicks = scoredPicks.filter((p) => p.oddsSnapshot !== null);
+
+    const distinctFixtures = new Set(pricedPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
 
-    const pool = [...scoredPicks]
+    const pool = [...pricedPicks]
       .sort(comparePicksBySignalThenProbability)
       .slice(0, MAX_POOL_SIZE);
 
     const candidates: ComposedCoupon[] = [];
-    this.buildCombinations(pool, [], candidates);
+    this.buildCombinations(pool, [], { out: candidates, profile });
 
     const seen = new Set<string>();
     const unique = candidates.filter((c) => {
@@ -192,12 +226,18 @@ export class CouponComposerService {
       return true;
     });
 
+    // Filtre value (bornes du profil) : nombre de jambes, cote combinée, proba
+    // jointe ET EV de coupon. Tri par EV décroissante (ADN value), proba jointe en
+    // tie-break, puis le coupon le plus court à EV égale (cf. DESIGN.md §5).
     const viable = unique
       .filter(
         (c) =>
-          c.jointProbability >= COUPON_PARAMS.minCalibratedJointProbability,
+          c.legs.length >= profile.minLegs &&
+          c.combinedOdds >= profile.minCombinedOdds &&
+          c.jointProbability >= profile.minJointProbability &&
+          c.couponEV >= profile.minCouponEV,
       )
-      .sort((a, b) => b.jointProbability - a.jointProbability);
+      .sort(compareCouponsByEV);
 
     return viable
       .slice(0, COUPON_PARAMS.maxCoupons)
@@ -207,12 +247,13 @@ export class CouponComposerService {
   private buildCombinations(
     remaining: ScoredPick[],
     current: ScoredPick[],
-    out: ComposedCoupon[],
+    ctx: { out: ComposedCoupon[]; profile: CouponProfileBounds },
   ): void {
-    if (current.length > COUPON_PARAMS.maxLegs) return;
+    const { out, profile } = ctx;
+    if (current.length > profile.maxLegs) return;
 
     const combinedOdds = this.computeCombinedOdds(current);
-    if (combinedOdds > COUPON_PARAMS.maxCombinedOdds) return;
+    if (combinedOdds > profile.maxCombinedOdds) return;
 
     if (current.length >= 2) {
       const distinctFixtures = new Set(current.map((p) => p.fixtureId));
@@ -221,7 +262,7 @@ export class CouponComposerService {
       }
     }
 
-    if (current.length === COUPON_PARAMS.maxLegs) return;
+    if (current.length === profile.maxLegs) return;
 
     const canalMarketCounts = new Map<string, number>();
     const compCounts = new Map<string, number>();
@@ -244,15 +285,17 @@ export class CouponComposerService {
       // Anti-correlation: max 2 legs per competition
       if ((compCounts.get(next.competition) ?? 0) >= 2) continue;
 
-      this.buildCombinations(remaining.slice(i + 1), [...current, next], out);
+      this.buildCombinations(remaining.slice(i + 1), [...current, next], ctx);
     }
   }
 
   private computeCombinedOdds(legs: ScoredPick[]): number {
-    if (legs.length === 0) return 1;
     return legs.reduce((acc, leg) => {
-      const odds = leg.oddsSnapshot ?? FALLBACK_ODDS[leg.canal];
-      return acc * odds;
+      // Invariant compose() : seules des jambes à cote réelle arrivent ici.
+      if (leg.oddsSnapshot === null) {
+        throw new Error('compose: leg without real odds reached combinedOdds');
+      }
+      return acc * leg.oddsSnapshot;
     }, 1);
   }
 
@@ -264,6 +307,8 @@ export class CouponComposerService {
       (acc, leg) => acc * legProbability(leg),
       1,
     );
+    // couponEV = P_coupon × Odd_coupon − 1 (source unique calculateEV).
+    const couponEV = calculateEV(jointProbability, combinedOdds).toNumber();
     const signalScore =
       legs.reduce((acc, leg) => acc + leg.signalScore, 0) / legs.length;
 
@@ -273,12 +318,16 @@ export class CouponComposerService {
         canal: l.canal,
         pick: `${l.market}/${l.pick}`,
         signalScore: l.signalScore,
+        legEV: l.legEV,
+        edge: l.edge,
+        pMarketFair: l.pMarketFair,
         calibratedCanalHitRate:
           (l.featureSnapshot['calibratedCanalHitRate'] as number | undefined) ??
           null,
       })),
       combinedOdds,
       jointProbability,
+      couponEV,
       signalScore,
     };
 
@@ -287,8 +336,37 @@ export class CouponComposerService {
       legs,
       combinedOdds,
       jointProbability,
+      couponEV,
       signalScore,
       reasoning,
     };
   }
+}
+
+// Classement value-driven (DESIGN.md §5) : EV de coupon d'abord, proba jointe en
+// tie-break, puis le coupon le plus court à EV/proba égales.
+export function compareCouponsByEV(
+  a: ComposedCoupon,
+  b: ComposedCoupon,
+): number {
+  if (b.couponEV !== a.couponEV) return b.couponEV - a.couponEV;
+  if (b.jointProbability !== a.jointProbability) {
+    return b.jointProbability - a.jointProbability;
+  }
+  return a.legs.length - b.legs.length;
+}
+
+// Mise recommandée pour un coupon (% bankroll), Étape 5 / B10. Derrière
+// `KELLY_ENABLED` : Kelly fractionnaire sur (P_coupon, Odd_coupon) via la formule
+// canonique `calculateKellyStakePct` (jamais de Kelly inline) ; sinon mise plate
+// `DEFAULT_STAKE_PCT`. Renvoie 0 si Kelly ≤ 0 (coupon sans value — déjà filtré).
+export function recommendedCouponStakePct(
+  coupon: { jointProbability: number; combinedOdds: number },
+  kellyEnabled: boolean,
+): number {
+  if (!kellyEnabled) return DEFAULT_STAKE_PCT.toNumber();
+  return calculateKellyStakePct(coupon.jointProbability, coupon.combinedOdds, {
+    fraction: KELLY_FRACTION,
+    maxStake: KELLY_MAX_STAKE_PCT,
+  }).toNumber();
 }
