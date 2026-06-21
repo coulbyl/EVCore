@@ -67,9 +67,12 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
 - [ ] **`chat` — à repenser** : garde encore le vocab legacy `EV/SV/CONF/BB/NUL`
       (schemas LLM + `chat.read.repository` conversions + `chat.golden.spec`).
       Seuls ses refs `StrategyChannel.EV→.VALUE` ont été touchés pour compiler.
-- [ ] **Dette front séparée** : renommer `domains/ai-engine` → `domains/coupon`
-      (vivant, mal nommé) ; vérifier/supprimer la page `investment-summary`
-      (probablement morte, comme l'était `summary`).
+- [x] **Dette front séparée** (2026-06-21) : `domains/ai-engine` → `domains/coupon`
+      + imports ; chemins API périmés corrigés (`/ai-engine/coupons` → `/coupons`,
+      `/ai-engine/investment-indices` → `/coupons/indices`) ; page+domaine
+      `investment-summary` morts supprimés (route orpheline, aucun lien nav).
+      web typecheck/lint ✅. Reste cosmétique : fichiers internes encore nommés
+      `investment-indices*` dans `domains/coupon` (→ `coupon-indices*`).
 - [ ] **[optionnel]** unifier `pnl-by-canal` (clés lowercase `global/ev/sv`,
       contrat séparé cohérent) et renommer les tokens CSS `--canal-ev/-sv/-conf`.
 

@@ -3,7 +3,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
-import type { CouponProposalDto } from "@/domains/ai-engine/types/coupon";
+import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import {
   CouponCard as SharedCouponCard,
   type NormalizedCouponLeg,

@@ -28,8 +28,8 @@ import {
   cn,
 } from "@evcore/ui";
 import { daysAgoIso, toISODate, isoToDate } from "@/lib/date";
-import { useInvestmentIndices } from "@/domains/ai-engine/use-cases/use-investment-indices";
-import type { InvestmentIndicesCanal } from "@/domains/ai-engine/types/investment-indices";
+import { useInvestmentIndices } from "@/domains/coupon/use-cases/use-investment-indices";
+import type { InvestmentIndicesCanal } from "@/domains/coupon/types/investment-indices";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

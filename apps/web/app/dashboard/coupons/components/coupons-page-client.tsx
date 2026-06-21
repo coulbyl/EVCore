@@ -4,7 +4,7 @@ import { Loader2, Trophy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
-import { useCoupons } from "@/domains/ai-engine/use-cases/use-coupons";
+import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";

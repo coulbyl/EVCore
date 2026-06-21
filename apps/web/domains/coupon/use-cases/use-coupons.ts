@@ -10,7 +10,7 @@ export function useCoupons(date: string) {
     queryFn: () => {
       const params = new URLSearchParams({ date });
       return clientApiRequest<CouponProposalDto[]>(
-        `/ai-engine/coupons?${params.toString()}`,
+        `/coupons?${params.toString()}`,
         { fallbackErrorMessage: "Impossible de charger les coupons." },
       );
     },

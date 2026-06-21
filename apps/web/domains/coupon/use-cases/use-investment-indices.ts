@@ -28,7 +28,7 @@ export function useInvestmentIndices({
     queryKey: ["investment-indices", canal, from, to],
     queryFn: () =>
       clientApiRequest<InvestmentIndicesResponse>(
-        `/ai-engine/investment-indices?${params.toString()}`,
+        `/coupons/indices?${params.toString()}`,
         { fallbackErrorMessage: "Impossible de charger les indices." },
       ),
     staleTime: 300_000,
