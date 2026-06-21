@@ -129,13 +129,13 @@ Détail complet : [apps/backend/src/modules/coupon/DESIGN.md](apps/backend/src/m
       DOMINANT −2.1% (EV anti-prédictive). Décision : DOMINANT/BTTS restent
       **prédiction** (suivi via `channel_selection`), pas de mise. DRAW = candidat staking.
 
-### Couche coupon — Étapes 1–6 + B7 FAITES (2026-06-21)
+### Couche coupon — Étapes 1–6 + B7 FAITES & VÉRIFIÉES (2026-06-21)
 
 Étapes 1 (EV au cœur), 2 (overround/proba fair), 4 (profils de risque), 5 (staking
 Kelly), 6 (combos même-match, derrière `COUPON_COMBOS_ENABLED`) et B7 (deux pools
 documentés — réel staking-eligible EV/SAFE vs virtuel prédiction) **faites**.
-⚠️ **Étape 6 : migration `20260621230000_coupon_leg_combo` à appliquer + client
-Prisma à régénérer** (7 erreurs typecheck `comboMarket/comboPick` jusque-là).
+Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régénéré :
+backend typecheck/lint/578 tests ✅.
 
 Reste, hors périmètre coupon « bobos » : Vue ROI roulante par canal × EV-bin (outil
 de promotion) ; unification active staker DRAW (choix produit, non pris).
