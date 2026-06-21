@@ -81,15 +81,44 @@ function MetricCard({
   );
 }
 
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[0.65rem] font-medium text-muted-foreground">
+        {label}
+      </label>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 rounded-xl border border-border bg-panel px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+      />
+    </div>
+  );
+}
+
 function BackfillSection() {
   const trigger = useTriggerBackfill();
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [result, setResult] = useState<{
     queued: number;
     seasonIds: string[];
   } | null>(null);
 
   async function handleBackfill() {
-    const r = await trigger.mutateAsync();
+    const r = await trigger.mutateAsync({
+      from: from || undefined,
+      to: to || undefined,
+    });
     setResult(r);
   }
 
@@ -102,10 +131,17 @@ function BackfillSection() {
         <div>
           <p className="font-semibold text-foreground">Backfill historique</p>
           <p className="text-xs text-muted-foreground">
-            Génère des ModelRun pour toutes les fixtures FINISHED sans analyse
-            existante. À lancer une seule fois avant le premier entraînement ML.
+            Génère des ModelRun pour les fixtures FINISHED sans analyse
+            existante (idempotent). Laisse les dates vides pour tout
+            reconstruire, ou borne la fenêtre pour ne ré-analyser qu&apos;une
+            période.
           </p>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <DateField label="Du (optionnel)" value={from} onChange={setFrom} />
+        <DateField label="Au (optionnel)" value={to} onChange={setTo} />
       </div>
 
       {result ? (

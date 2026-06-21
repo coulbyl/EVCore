@@ -31,10 +31,12 @@ export function useTriggerBackfill() {
   const qc = useQueryClient();
   return useMutation({
     // Historical rebuild moved out of the ML module to the ETL engine rebuild
-    // worker (queues one idempotent job per season).
-    mutationFn: () =>
+    // worker (queues one idempotent job per season). Optional from/to restrict
+    // the scheduledAt window (ISO YYYY-MM-DD); omit both to rebuild everything.
+    mutationFn: (window: { from?: string; to?: string } = {}) =>
       clientApiRequest<BackfillResult>("/etl/rebuild/betting-engine", {
         method: "POST",
+        body: window,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
   });
