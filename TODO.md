@@ -23,48 +23,52 @@
 
 ---
 
-## ▶ Reprise (prochaine session) — 2026-06-21
+## ▶ Reprise (prochaine session) — 2026-06-22
 
-### 🚨 PRIORITÉ : re-run à refaire proprement avant tout
+### ✅ Re-wipe + rebuild — FAIT & VÉRIFIÉ (2026-06-21)
 
-Le re-run du 2026-06-20 a produit un dataset **inexploitable** (diagnostic complet
-dans [coupon/DESIGN.md](apps/backend/src/modules/coupon/DESIGN.md) § « Re-run 2026-06-20 »).
+Dataset reconstruit **sain** via `POST /etl/rebuild/betting-engine` (worker
+idempotent `modelRuns: { none: {} }`). Vérifs base :
 
-Deux problèmes :
+- **1.00 run/fixture** (11 218 `model_run` / 11 218 fixtures) → plus de duplication.
+- Cotes natives bien attachées : `VALUE` 323/323, `SAFE` 208/208, `DOMINANT`
+  1938 (1323 cotées), `BTTS` 2095 (979 cotées), `DRAW` 610 (0 EV = conforme).
+  Les deux problèmes du diagnostic 2026-06-20 sont résolus.
 
-1. **Duplication ~15×** : 47 286 `model_run` pour **3 027 fixtures** distinctes
-   (toutes phase `ADVANCE`, 1 à 21+ runs/fixture). `analyzeFixture` crée un nouveau
-   `model_run` à chaque appel → `generate-season-picks` a tourné plusieurs fois.
-   Les `channel_selection` sont dupliquées (14 576 DOMINANT pour 3 027 fixtures) →
-   **calibration & ROI faussés** (même match compté 15×). Les `bet` EV/SAFE sont OK
-   (dédupliqués par `@@unique([fixtureId, pickKey, userId])`).
-2. **Couverture cotes quasi nulle** : des 3 027 fixtures analysées, **1 087 ont des
-   cotes 1X2 et 3 des cotes BTTS**. La base a pourtant 27 431 (1X2) / 11 405 (BTTS)
-   fixtures avec cotes → le re-run a analysé un **autre** ensemble (FINISHED sans
-   cotes). D'où le natif 2 BTTS / 1479 DOMINANT vs backfill 1931 / 4910.
-   **Ce n'est pas un bug du code B-ODDS** — c'est le périmètre + la duplication.
+Worker durci au passage : isolation d'erreur par fixture (`Promise.allSettled`),
+batching (`ETL_REBUILD_CONCURRENCY`, défaut 4), log de progression. Pool pg
+configurable (`DATABASE_POOL_MAX`) pour ne pas asphyxier l'API pendant un rebuild.
 
-**Décision (2026-06-20)** : le script standalone `generate-season-picks` est
-**supprimé**. Le rebuild historique passe désormais **uniquement** par le worker
-ETL `betting-engine-rebuild` (ex `ml-backfill`, renommé + déplacé dans
-`modules/etl/workers/`). Ce worker ne traite que les fixtures FINISHED **sans
-`ModelRun`** (`modelRuns: { none: {} }`) → idempotent par construction : la
-duplication ~15× du re-run précédent est **structurellement impossible**, plus
-besoin du garde-fou `--skip-existing` ni d'élucider les relances.
-Trigger : `POST /etl/rebuild/betting-engine` (une job par saison).
+> Reste optionnel : trancher le **scope cotes** (le rebuild traite toutes les
+> fixtures FINISHED sans `ModelRun`, pas seulement celles avec `OddsSnapshot`).
 
-**À faire (dans l'ordre)** :
+### ✅ Unification du vocabulaire des canaux — FAIT (2026-06-21)
 
-- [ ] Re-wipe : `pnpm --filter @evcore/db db:purge:analysis -- --confirm=PURGE_ANALYSIS_DATA`
-      (purge `bet → channel_selection → channel_decision → model_run`, FK RESTRICT).
-- [ ] Lancer le rebuild : `POST /etl/rebuild/betting-engine`. Re-lançable sans
-      risque de doublon. Reste à trancher le **scope cotes** : le worker rebuild
-      toutes les fixtures FINISHED sans `ModelRun`, pas seulement celles qui ont
-      des cotes → décider si on filtre en amont (saisons/compétitions avec
-      OddsSnapshot) pour éviter un dataset odds-poor.
-- [ ] Re-vérifier la couverture native (cf. requêtes du diagnostic) avant de coder.
-- [ ] Puis seulement : **Étape 1 — EV au cœur du coupon** (code data-agnostique prêt
-      à écrire, mais non validable sans données saines).
+Un seul vocab partout : **`VALUE · SAFE · DOMINANT · BTTS · DRAW`** (le canal `EV`
+était ambigu : `ev` est une métrique sur toutes les sélections). Migration enum
+Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
+
+- [x] Supprimé : chain legacy `investment-backtest`, module orphelin `summary`.
+- [x] `SV→SAFE`, `CONF→DOMINANT` (bet-slip, bankroll, dashboard).
+- [x] `EV→VALUE` backend (enum + refs + `ValueStrategy` + coupon + ml-shadow).
+- [x] Frontend aligné + libellés i18n (« Value / Valeur »).
+- [x] backend typecheck/lint/553 tests ✅ ; web typecheck/lint ✅.
+
+### ▶ À faire demain (dans l'ordre)
+
+- [ ] **Étape 1 — EV au cœur du coupon** (la tâche d'origine, enfin débloquée par
+      données saines) : `legEV` sur `ScoredPick`, supprimer `FALLBACK_ODDS`
+      (exclure jambes sans cote réelle), calculer/filtrer/trier par `couponEV`
+      (`calculateEV(jointProbability, combinedOdds)`), `minCouponEV` proposé `0.05`.
+      Détail : [coupon/DESIGN.md](apps/backend/src/modules/coupon/DESIGN.md) § Étape 1.
+- [ ] **`chat` — à repenser** : garde encore le vocab legacy `EV/SV/CONF/BB/NUL`
+      (schemas LLM + `chat.read.repository` conversions + `chat.golden.spec`).
+      Seuls ses refs `StrategyChannel.EV→.VALUE` ont été touchés pour compiler.
+- [ ] **Dette front séparée** : renommer `domains/ai-engine` → `domains/coupon`
+      (vivant, mal nommé) ; vérifier/supprimer la page `investment-summary`
+      (probablement morte, comme l'était `summary`).
+- [ ] **[optionnel]** unifier `pnl-by-canal` (clés lowercase `global/ev/sv`,
+      contrat séparé cohérent) et renommer les tokens CSS `--canal-ev/-sv/-conf`.
 
 ---
 
@@ -122,28 +126,20 @@ Détail complet : [apps/backend/src/modules/coupon/DESIGN.md](apps/backend/src/m
       DOMINANT −2.1% (EV anti-prédictive). Décision : DOMINANT/BTTS restent
       **prédiction** (suivi via `channel_selection`), pas de mise. DRAW = candidat staking.
 
-### Prochaine action : wipe + re-run moteur
+### Ce qu'il reste, couche coupon (après l'Étape 1)
 
-Vider dans l'ordre (FK `RESTRICT`) : `bet` → `channel_selection` →
-`channel_decision` → `model_run` (via `db:purge:analysis`), puis déclencher le
-rebuild ETL `POST /etl/rebuild/betting-engine`. Régénère les `channel_selection`
-avec cotes BTTS/DOMINANT **natives** → backfill caduc.
+Étapes DESIGN.md : Étape 2 (overround/proba fair), Étape 4 (profils
+Safe/Balanced/Aggressive), Étape 5 (staking Kelly derrière flag), Étape 6
+(combos même-match), B7 (unification pool réel/virtuel). Vue ROI roulante par
+canal × EV-bin (outil de promotion).
 
-**Ce qu'il reste (par ordre de priorité)** :
-
-1. **Couche coupon (après le re-run)** — Étapes DESIGN.md non bloquantes pour le
-   re-run : Étape 1 (EV au cœur du coupon, retrait `FALLBACK_ODDS`), Étape 2
-   (overround/proba fair), Étape 4 (profils Safe/Balanced/Aggressive), Étape 5
-   (staking Kelly derrière flag), Étape 6 (combos même-match), B7 (unification
-   pool réel/virtuel). Vue ROI roulante par canal × EV-bin (outil de promotion).
-2. **Étape 3 [optionnel]** — le worker `betting-engine-rebuild` accepte déjà un
-   `from`/`to` (fenêtre `scheduledAt`) en plus du scope par saison.
-3. **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
-   Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,
-   `UNDERDOG/FAVORITE`, `MARKET_MOVE`, `FIRST_HALF`, `LIVE_VALUE`.
+**Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
+Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,
+`UNDERDOG/FAVORITE`, `MARKET_MOVE`, `FIRST_HALF`, `LIVE_VALUE`.
 
 État courant : Prisma validate ✅ · `@evcore/db build` ✅ · backend
-typecheck/lint ✅ · web typecheck/lint ✅ (2 warnings `<img>` préexistants).
+typecheck/lint/553 tests ✅ · web typecheck/lint ✅ (2 warnings `<img>` préexistants).
+Dataset reconstruit sain (cf. § Reprise).
 
 ---
 
