@@ -1,23 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { StrategyChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
-import { AiEngineRepository } from './ai-engine.repository';
-import type { InvestmentSummaryCanal } from './dto/investment-summary-query.dto';
+import { CouponRepository } from './coupon.repository';
+import type { CouponSummaryCanal } from './dto/coupon-summary-query.dto';
 import type {
-  InvestmentSummaryPickRow,
-  InvestmentSummaryCouponRow,
-  InvestmentSummaryProgressionPoint,
-  InvestmentSummaryResponse,
-  InvestmentSummaryStats,
-} from './dto/investment-summary.dto';
-import {
-  type InvestmentCanal,
-  MAX_INVESTMENT_SELECTIONS,
-} from './investment.constants';
+  CouponSummaryPickRow,
+  CouponSummaryRow,
+  CouponSummaryProgressionPoint,
+  CouponSummaryResponse,
+  CouponSummaryStats,
+} from './dto/coupon-summary.dto';
+import { type CouponChannel, MAX_COUPON_SELECTIONS } from './coupon.constants';
 
 function buildProgression(
   items: { date: string; result: 'WON' | 'LOST' }[],
-): InvestmentSummaryProgressionPoint[] {
+): CouponSummaryProgressionPoint[] {
   const sorted = [...items].sort((a, b) => a.date.localeCompare(b.date));
   const byDate = new Map<string, { won: number; lost: number }>();
   for (const item of sorted) {
@@ -28,7 +25,7 @@ function buildProgression(
   }
   let cumWon = 0;
   let cumLost = 0;
-  const points: InvestmentSummaryProgressionPoint[] = [];
+  const points: CouponSummaryProgressionPoint[] = [];
   for (const [date, { won, lost }] of byDate) {
     cumWon += won;
     cumLost += lost;
@@ -91,14 +88,14 @@ function capByDay<T>(
 }
 
 @Injectable()
-export class InvestmentSummaryService {
-  constructor(private readonly repo: AiEngineRepository) {}
+export class CouponSummaryService {
+  constructor(private readonly repo: CouponRepository) {}
 
-  async getInvestmentSummary(query: {
-    canal: InvestmentSummaryCanal;
+  async getCouponSummary(query: {
+    canal: CouponSummaryCanal;
     from?: string;
     to?: string;
-  }): Promise<InvestmentSummaryResponse> {
+  }): Promise<CouponSummaryResponse> {
     const { canal } = query;
 
     if (canal === 'COUPON') {
@@ -109,18 +106,18 @@ export class InvestmentSummaryService {
   }
 
   private async buildPickSummary(
-    canal: Exclude<InvestmentSummaryCanal, 'COUPON'>,
+    canal: Exclude<CouponSummaryCanal, 'COUPON'>,
     from: string | undefined,
     to: string | undefined,
-  ): Promise<InvestmentSummaryResponse> {
+  ): Promise<CouponSummaryResponse> {
     const range = dateRange(from, to);
-    const maxPerDay = MAX_INVESTMENT_SELECTIONS[canal as InvestmentCanal];
+    const maxPerDay = MAX_COUPON_SELECTIONS[canal as CouponChannel];
 
-    let picks: InvestmentSummaryPickRow[];
+    let picks: CouponSummaryPickRow[];
 
-    if (canal === 'EV' || canal === 'SV') {
-      const bets = await this.repo.findSettledBetsForInvestmentSummary({
-        channel: canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV,
+    if (canal === 'EV' || canal === 'SAFE') {
+      const bets = await this.repo.findSettledBetsForSummary({
+        channel: canal === 'SAFE' ? StrategyChannel.SAFE : StrategyChannel.EV,
         from: range.from,
         to: range.to,
       });
@@ -136,7 +133,7 @@ export class InvestmentSummaryService {
       );
 
       picks = capped.map(
-        (b): InvestmentSummaryPickRow => ({
+        (b): CouponSummaryPickRow => ({
           fixtureId: b.fixture.id,
           fixture: `${b.fixture.homeTeam.name} vs ${b.fixture.awayTeam.name}`,
           homeLogo: b.fixture.homeTeam.logoUrl ?? null,
@@ -164,7 +161,7 @@ export class InvestmentSummaryService {
       })),
     );
 
-    const stats: InvestmentSummaryStats = {
+    const stats: CouponSummaryStats = {
       total: picks.length,
       won: won.length,
       lost: lost.length,
@@ -194,14 +191,14 @@ export class InvestmentSummaryService {
   private async buildCouponSummary(
     from: string | undefined,
     to: string | undefined,
-  ): Promise<InvestmentSummaryResponse> {
+  ): Promise<CouponSummaryResponse> {
     const range = dateRange(from, to);
     const proposals = await this.repo.findResolvedCouponsInRange(
       range.from,
       range.to,
     );
 
-    const coupons: InvestmentSummaryCouponRow[] = proposals
+    const coupons: CouponSummaryRow[] = proposals
       .filter((p) => p.result === 'WON' || p.result === 'LOST')
       .map((p) => ({
         id: p.id,
@@ -235,7 +232,7 @@ export class InvestmentSummaryService {
       })),
     );
 
-    const stats: InvestmentSummaryStats = {
+    const stats: CouponSummaryStats = {
       total: coupons.length,
       won: won.length,
       lost: lost.length,

@@ -1,16 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { StrategyChannel } from '@evcore/db';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
-import { AiEngineRepository } from './ai-engine.repository';
-import type { InvestmentIndicesCanal } from './dto/investment-indices-query.dto';
+import { CouponRepository } from './coupon.repository';
+import type { CouponIndicesCanal } from './dto/coupon-indices-query.dto';
 import type {
-  InvestmentIndicesRow,
-  InvestmentIndicesMarketRow,
-  InvestmentIndicesOddsRow,
-  InvestmentIndicesResponse,
-} from './dto/investment-indices.dto';
-
-// ─── Internal types ───────────────────────────────────────────────────────────
+  CouponIndicesRow,
+  CouponIndicesMarketRow,
+  CouponIndicesOddsRow,
+  CouponIndicesResponse,
+} from './dto/coupon-indices.dto';
 
 type IndicesItem = {
   prob: number;
@@ -18,8 +16,6 @@ type IndicesItem = {
   market: string;
   odds: number | null;
 };
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ODDS_RANGES: { label: string; from: number; to: number }[] = [
   { label: '1.10 – 1.30', from: 1.1, to: 1.3 },
@@ -38,8 +34,6 @@ const MARKET_LABEL: Record<string, string> = {
   FIRST_HALF_WINNER: '1re mi-temps',
 };
 
-// ─── Builders ─────────────────────────────────────────────────────────────────
-
 function computeRoi(
   items: { won: boolean; odds: number | null }[],
 ): number | null {
@@ -53,7 +47,7 @@ function computeRoi(
   );
 }
 
-function buildCalibrationRows(items: IndicesItem[]): InvestmentIndicesRow[] {
+function buildCalibrationRows(items: IndicesItem[]): CouponIndicesRow[] {
   const map = new Map<number, { total: number; won: number }>();
   for (const item of items) {
     const pct = Math.round(item.prob * 1000) / 10;
@@ -76,7 +70,7 @@ function buildCalibrationRows(items: IndicesItem[]): InvestmentIndicesRow[] {
     });
 }
 
-function buildByMarket(items: IndicesItem[]): InvestmentIndicesMarketRow[] {
+function buildByMarket(items: IndicesItem[]): CouponIndicesMarketRow[] {
   const groups = new Map<string, IndicesItem[]>();
   for (const item of items) {
     const list = groups.get(item.market) ?? [];
@@ -98,15 +92,13 @@ function buildByMarket(items: IndicesItem[]): InvestmentIndicesMarketRow[] {
     });
 }
 
-function buildByOddsRange(
-  items: IndicesItem[],
-): InvestmentIndicesOddsRow[] | null {
+function buildByOddsRange(items: IndicesItem[]): CouponIndicesOddsRow[] | null {
   const withOdds = items.filter(
     (i): i is IndicesItem & { odds: number } => i.odds !== null,
   );
   if (withOdds.length === 0) return null;
 
-  const rows: InvestmentIndicesOddsRow[] = [];
+  const rows: CouponIndicesOddsRow[] = [];
   for (const range of ODDS_RANGES) {
     const group = withOdds.filter(
       (i) => i.odds >= range.from && i.odds < range.to,
@@ -129,8 +121,6 @@ function buildByOddsRange(
   return rows.length > 0 ? rows : null;
 }
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
-
 function dateRange(
   from: string | undefined,
   to: string | undefined,
@@ -150,25 +140,23 @@ function dateRange(
   };
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
-
 @Injectable()
-export class InvestmentIndicesService {
-  constructor(private readonly repo: AiEngineRepository) {}
+export class CouponIndicesService {
+  constructor(private readonly repo: CouponRepository) {}
 
   async getIndices(query: {
-    canal: InvestmentIndicesCanal;
+    canal: CouponIndicesCanal;
     from?: string;
     to?: string;
-  }): Promise<InvestmentIndicesResponse> {
+  }): Promise<CouponIndicesResponse> {
     const { canal } = query;
     const range = dateRange(query.from, query.to);
 
     let items: IndicesItem[] = [];
 
-    if (canal === 'EV' || canal === 'SV') {
+    if (canal === 'EV' || canal === 'SAFE') {
       const bets = await this.repo.findSettledBetsForIndices({
-        channel: canal === 'SV' ? StrategyChannel.SAFE : StrategyChannel.EV,
+        channel: canal === 'SAFE' ? StrategyChannel.SAFE : StrategyChannel.EV,
         from: range.from,
         to: range.to,
       });
@@ -178,7 +166,7 @@ export class InvestmentIndicesService {
         market: b.market,
         odds: b.oddsSnapshot !== null ? Number(b.oddsSnapshot) : null,
       }));
-    } else if (canal === 'BB' || canal === 'NUL' || canal === 'CONF') {
+    } else if (canal === 'BTTS' || canal === 'DRAW' || canal === 'DOMINANT') {
       items = [];
     } else {
       // COUPON: uses joint probability + combined odds

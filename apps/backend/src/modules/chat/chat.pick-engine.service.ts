@@ -4,8 +4,8 @@ import { formatDateUtc } from '@utils/date.utils';
 import {
   SignalWindowService,
   type ScoredPick,
-} from '@modules/ai-engine/signal-window.service';
-import { CouponComposerService } from '@modules/ai-engine/coupon-composer.service';
+} from '@modules/coupon/signal-window.service';
+import { CouponComposerService } from '@modules/coupon/coupon-composer.service';
 import { CHAT_RANK_WEIGHTS } from './chat.constants';
 import { round } from './chat.math';
 import { simulateLadder } from './simulate-ladder';
@@ -26,7 +26,6 @@ export class ChatPickEngineService {
     profile?: 'fiable' | 'value';
   }) {
     const days = datesBetween(input.from, input.to).slice(0, 14);
-    const window = await this.signalWindow.computeSignalWindow(30);
     const byDay: Array<{
       date: string;
       picks: ReturnType<typeof toCompactPick>[];
@@ -34,6 +33,12 @@ export class ChatPickEngineService {
     const allSelected: ScoredPick[] = [];
 
     for (const date of days) {
+      // Per-day point-in-time window: each day's signal uses only data known
+      // before that day, so historical picks are reproducible and leak-free.
+      const window = await this.signalWindow.computeSignalWindow(
+        30,
+        new Date(`${date}T00:00:00.000Z`),
+      );
       const raw = await this.signalWindow.getTodayPool(date);
       const scored = this.composer
         .scorePicks(raw, window, date)
@@ -57,7 +62,10 @@ export class ChatPickEngineService {
     limit: number;
   }) {
     const date = input.date ?? formatDateUtc(new Date());
-    const window = await this.signalWindow.computeSignalWindow(30);
+    const window = await this.signalWindow.computeSignalWindow(
+      30,
+      new Date(`${date}T00:00:00.000Z`),
+    );
     const picks = this.composer
       .scorePicks(await this.signalWindow.getTodayPool(date), window, date)
       .filter((pick) => pick.scheduledAt.getTime() >= Date.now())
@@ -81,7 +89,10 @@ export class ChatPickEngineService {
     canal?: string;
   }) {
     const date = input.date ?? formatDateUtc(new Date());
-    const window = await this.signalWindow.computeSignalWindow(30);
+    const window = await this.signalWindow.computeSignalWindow(
+      30,
+      new Date(`${date}T00:00:00.000Z`),
+    );
     const candidates = this.composer
       .scorePicks(await this.signalWindow.getTodayPool(date), window, date)
       .filter((pick): pick is PickWithOdds => pick.oddsSnapshot !== null)
@@ -133,7 +144,10 @@ export class ChatPickEngineService {
     targetOddsMin: number;
     targetOddsMax: number;
   }) {
-    const window = await this.signalWindow.computeSignalWindow(30);
+    const window = await this.signalWindow.computeSignalWindow(
+      30,
+      new Date(`${input.date}T00:00:00.000Z`),
+    );
     const scored = this.composer.scorePicks(
       await this.signalWindow.getTodayPool(input.date),
       window,

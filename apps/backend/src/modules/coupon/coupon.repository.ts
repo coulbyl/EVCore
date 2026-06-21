@@ -8,7 +8,6 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import { mapCouponSourceChannel } from './coupon-channel.mapper';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -18,7 +17,7 @@ const FIXTURE_SELECT = {
   season: { select: { competition: { select: { name: true, code: true } } } },
 } as const;
 
-export type InvestmentSummaryBetRow = {
+export type SummaryBetRow = {
   id: string;
   market: string;
   pick: string;
@@ -50,7 +49,7 @@ export type UpsertProposalInput = {
   reasoning: Record<string, unknown>;
   legs: Array<{
     fixtureId: string;
-    canal: string;
+    canal: StrategyChannel;
     market: string;
     pick: string;
     probability: number;
@@ -97,7 +96,7 @@ const WITH_LEGS = {
 } as const;
 
 @Injectable()
-export class AiEngineRepository {
+export class CouponRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async upsertProposal(data: UpsertProposalInput): Promise<void> {
@@ -125,7 +124,7 @@ export class AiEngineRepository {
 
     const legData = data.legs.map((leg) => ({
       fixtureId: leg.fixtureId,
-      canal: mapCouponSourceChannel(leg.canal),
+      canal: leg.canal,
       market: leg.market as Prisma.CouponProposalLegCreateInput['market'],
       pick: leg.pick,
       probability: leg.probability,
@@ -299,11 +298,11 @@ export class AiEngineRepository {
     });
   }
 
-  findSettledBetsForInvestmentSummary(opts: {
+  findSettledBetsForSummary(opts: {
     channel: StrategyChannel;
     from: Date;
     to: Date;
-  }): Promise<InvestmentSummaryBetRow[]> {
+  }): Promise<SummaryBetRow[]> {
     const { channel, from, to } = opts;
     return this.prisma.client.bet.findMany({
       where: {
@@ -327,6 +326,6 @@ export class AiEngineRepository {
         fixture: { select: FIXTURE_SELECT },
       },
       orderBy: { fixture: { scheduledAt: 'asc' } },
-    }) as unknown as Promise<InvestmentSummaryBetRow[]>;
+    }) as unknown as Promise<SummaryBetRow[]>;
   }
 }

@@ -13,7 +13,7 @@ import {
 } from '../schemas/fixture.schema';
 import { FixtureService } from '../../fixture/fixture.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
-import { CouponSettlementService } from '../../ai-engine/coupon-settlement.service';
+import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { CacheService } from '@common/redis/cache.service';

@@ -1,26 +1,39 @@
 import { Injectable } from '@nestjs/common';
 import { StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import {
-  MAX_VIRTUAL_INVESTMENT_SELECTIONS,
-  type InvestmentCanal,
-  type VirtualInvestmentCanal,
+  MAX_VIRTUAL_COUPON_SELECTIONS,
+  type CouponChannel,
+  type VirtualCouponChannel,
   CANAL_BASE_WEIGHT,
-  INVESTMENT_PARAMS,
-  VIRTUAL_INVESTMENT_RULES,
-  VIRTUAL_INVESTMENT_TOP_LIMITS,
-  type VirtualInvestmentRule,
-} from './investment.constants';
+  COUPON_PARAMS,
+  VIRTUAL_COUPON_RULES,
+  VIRTUAL_COUPON_TOP_LIMITS,
+  type VirtualCouponRule,
+} from './coupon.constants';
 
-export type Canal = InvestmentCanal;
+export type Canal = CouponChannel;
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
+
+/**
+ * Per-market mean signed calibration error, keyed by `Market` enum value.
+ * `meanError = mean(probEstimated - outcome)` — positive = model overconfidence.
+ * Only markets with ≥ MIN_BET_COUNT settled bets are present (others fall back to
+ * the legacy blend at scoring time).
+ */
+export type MarketCalibration = Record<
+  string,
+  { meanError: number; betCount: number }
+>;
 
 export type SignalWindow = {
   calibratedCanalHitRates: Record<Canal, number>;
   calibratedCanalLeagueHitRates: Record<Canal, Record<string, number>>;
   canalDowFactors: Record<Canal, Record<string, number | null>>;
+  marketCalibration: MarketCalibration;
 };
 
 export type ScoredPick = {
@@ -35,6 +48,11 @@ export type ScoredPick = {
   pick: string;
   probability: number;
   calibratedHitRate: number;
+  /**
+   * Market-calibrated leg probability set by `CouponComposerService.scorePicks()`.
+   * `null` until scoring runs (or for picks that bypass the composer).
+   */
+  calibratedProbability: number | null;
   oddsSnapshot: number | null;
   lambdaHome: number | null;
   lambdaAway: number | null;
@@ -52,14 +70,14 @@ export type ScoredPick = {
   awayScore: number | null;
   homeHtScore: number | null;
   awayHtScore: number | null;
-  /** ID du bet MODEL existant (SV/EV uniquement). */
+  /** ID du bet MODEL existant (SAFE/EV uniquement). */
   betId: string | null;
-  /** ID du ModelRun source (BB/NUL/CONF — pour création d'un bet USER). */
+  /** ID du ModelRun source (BTTS/DRAW/DOMINANT — pour création d'un bet USER). */
   modelRunId: string | null;
 };
 
 export type VirtualScoredPick = Omit<ScoredPick, 'canal'> & {
-  canal: VirtualInvestmentCanal;
+  canal: VirtualCouponChannel;
   virtualLabel: string;
 };
 
@@ -94,10 +112,10 @@ function getVirtualRule(input: {
   pick: string;
   probability: number;
   odds: number | null;
-}): VirtualInvestmentRule | null {
+}): VirtualCouponRule | null {
   const { market, pick, probability, odds } = input;
   return (
-    VIRTUAL_INVESTMENT_RULES.find((rule) => {
+    VIRTUAL_COUPON_RULES.find((rule) => {
       if (rule.market !== market || rule.pick !== pick) return false;
       if (probability < rule.minProbability) return false;
       if (probability >= rule.maxProbability) return false;
@@ -114,7 +132,7 @@ function getVirtualRule(input: {
 }
 
 function scoreVirtualPick(input: {
-  rule: VirtualInvestmentRule;
+  rule: VirtualCouponRule;
   competitionCode: string;
   probability: number;
   odds: number | null;
@@ -210,19 +228,31 @@ function calibrate(
   weightedTotal: number,
   prior: number,
 ): number {
-  const { k, capMin, capMax } = INVESTMENT_PARAMS;
+  const { k, capMin, capMax } = COUPON_PARAMS;
   const raw = (weightedCorrect + k * prior) / (weightedTotal + k);
   return Math.min(capMax, Math.max(capMin, raw));
 }
 
 @Injectable()
 export class SignalWindowService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calibration: CalibrationService,
+  ) {}
 
-  async computeSignalWindow(windowDays: number): Promise<SignalWindow> {
-    const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
-    const nowMs = Date.now();
-    const halfLifeDays = INVESTMENT_PARAMS.decayHalfLifeDays;
+  /**
+   * @param asOf point-in-time cutoff — only fixtures played strictly before this
+   *   instant feed the calibration. Defaults to "now" (live generation). Pass the
+   *   target day's start to make the signal reproducible and leak-free when
+   *   (re)generating for a past or specific date.
+   */
+  async computeSignalWindow(
+    windowDays: number,
+    asOf: Date = new Date(),
+  ): Promise<SignalWindow> {
+    const nowMs = asOf.getTime();
+    const since = new Date(nowMs - windowDays * 24 * 60 * 60 * 1000);
+    const halfLifeDays = COUPON_PARAMS.decayHalfLifeDays;
 
     type BetAggRow = {
       day: Date;
@@ -232,24 +262,30 @@ export class SignalWindowService {
       league: string;
       cnt: bigint;
     };
+    // Window + leak guard are on f."scheduledAt" (when the result became known),
+    // consistent with the recency decay which keys on the fixture day. The
+    // channel filter is intentionally absent: every canal is calibrated from its
+    // own settled MODEL bets, and canals with no sample fall back to their
+    // CANAL_BASE_WEIGHT prior via calibrate() (B6).
     const betRows = await this.prisma.client.$queryRaw<BetAggRow[]>`
       SELECT
         DATE(f."scheduledAt")                                   AS day,
-        cs.channel                                              AS channel,
+        cd.channel                                              AS channel,
         (b.status = 'WON')                                      AS is_won,
         (EXTRACT(ISODOW FROM f."scheduledAt")::int - 1)         AS dow,
         c.code                                                  AS league,
         COUNT(*)                                                AS cnt
       FROM bet b
       JOIN channel_selection cs ON cs.id = b."channelSelectionId"
+      JOIN channel_decision  cd ON cd.id = cs."channelDecisionId"
       JOIN fixture     f ON f.id = b."fixtureId"
       JOIN season      s ON s.id = f."seasonId"
       JOIN competition c ON c.id = s."competitionId"
       WHERE b.status IN ('WON', 'LOST')
-        AND b."createdAt" >= ${since}
+        AND f."scheduledAt" >= ${since}
+        AND f."scheduledAt" < ${asOf}
         AND b.source = 'MODEL'
-        AND cs.channel IN ('EV', 'SAFE')
-      GROUP BY DATE(f."scheduledAt"), cs.channel, b.status,
+      GROUP BY DATE(f."scheduledAt"), cd.channel, b.status,
                EXTRACT(ISODOW FROM f."scheduledAt"), c.code
     `;
 
@@ -257,7 +293,7 @@ export class SignalWindowService {
 
     for (const r of betRows) {
       entries.push({
-        canal: r.channel === StrategyChannel.SAFE ? 'SV' : 'EV',
+        canal: r.channel as Canal,
         correct: r.is_won,
         dow: Number(r.dow),
         league: r.league,
@@ -266,9 +302,8 @@ export class SignalWindowService {
       });
     }
 
-    const canals: Canal[] = ['EV', 'SV', 'BB', 'NUL', 'CONF'];
+    const canals: Canal[] = ['EV', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT'];
 
-    // Canal-level calibrated rates (bayesian smoothing + exponential decay)
     const calibratedCanalHitRates = Object.fromEntries(
       canals.map((c) => {
         const prior = CANAL_BASE_WEIGHT[c];
@@ -282,7 +317,6 @@ export class SignalWindowService {
       }),
     ) as Record<Canal, number>;
 
-    // DOW factors (raw rates, fallback to null — caller applies canal-level fallback)
     const canalDowFactors = Object.fromEntries(
       canals.map((c) => {
         const dowMap = Object.fromEntries(
@@ -300,7 +334,6 @@ export class SignalWindowService {
       }),
     ) as Record<Canal, Record<string, number | null>>;
 
-    // League-level calibrated rates (prior = canal-level calibrated rate)
     const allLeagues = [...new Set(entries.map((e) => e.league))];
     const calibratedCanalLeagueHitRates = Object.fromEntries(
       canals.map((c) => {
@@ -320,10 +353,22 @@ export class SignalWindowService {
       }),
     ) as Record<Canal, Record<string, number>>;
 
+    const marketResults = await this.calibration.computeAllMarkets({ asOf });
+    const marketCalibration: MarketCalibration = {};
+    for (const [market, result] of Object.entries(marketResults)) {
+      if (result) {
+        marketCalibration[market] = {
+          meanError: result.meanError.toNumber(),
+          betCount: result.betCount,
+        };
+      }
+    }
+
     return {
       calibratedCanalHitRates,
       calibratedCanalLeagueHitRates,
       canalDowFactors,
+      marketCalibration,
     };
   }
 
@@ -456,11 +501,9 @@ export class SignalWindowService {
 
       if (run) {
         for (const bet of run.bets) {
-          const canal: Canal =
-            bet.channelSelection?.channelDecision.channel ===
-            StrategyChannel.SAFE
-              ? 'SV'
-              : 'EV';
+          const channel =
+            bet.channelSelection?.channelDecision.channel ?? StrategyChannel.EV;
+          const canal: Canal = channel as Canal;
           const isCorrect =
             bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
           picks.push({
@@ -470,6 +513,7 @@ export class SignalWindowService {
             pick: bet.pick,
             probability: Number(bet.probEstimated),
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
+            calibratedProbability: null, // set in CouponComposerService.scorePicks()
             oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
             isCorrect,
             signalScore: 0,
@@ -561,9 +605,9 @@ export class SignalWindowService {
           odds,
         });
         const calibratedHitRate = Math.min(
-          INVESTMENT_PARAMS.capMax,
+          COUPON_PARAMS.capMax,
           Math.max(
-            INVESTMENT_PARAMS.capMin,
+            COUPON_PARAMS.capMin,
             rule.prior + (rule.leagueBoosts?.[comp] ?? 0),
           ),
         );
@@ -604,6 +648,7 @@ export class SignalWindowService {
           pick: evaluated.pick,
           probability,
           calibratedHitRate,
+          calibratedProbability: null,
           oddsSnapshot: odds,
           isCorrect: resolveVirtualPickCorrect({
             market: evaluated.market,
@@ -621,12 +666,12 @@ export class SignalWindowService {
     }
 
     const selected: VirtualScoredPick[] = [];
-    const counts = new Map<VirtualInvestmentCanal, number>();
+    const counts = new Map<VirtualCouponChannel, number>();
     const seenFixturesByCanal = new Set<string>();
 
     for (const pick of picks.sort((a, b) => b.signalScore - a.signalScore)) {
       const count = counts.get(pick.canal) ?? 0;
-      if (count >= MAX_VIRTUAL_INVESTMENT_SELECTIONS[pick.canal]) continue;
+      if (count >= MAX_VIRTUAL_COUPON_SELECTIONS[pick.canal]) continue;
 
       const uniqueKey = `${pick.canal}:${pick.fixtureId}`;
       if (seenFixturesByCanal.has(uniqueKey)) continue;
@@ -636,6 +681,6 @@ export class SignalWindowService {
       seenFixturesByCanal.add(uniqueKey);
     }
 
-    return selected.slice(0, VIRTUAL_INVESTMENT_TOP_LIMITS.top10 * 3);
+    return selected.slice(0, VIRTUAL_COUPON_TOP_LIMITS.top10 * 3);
   }
 }

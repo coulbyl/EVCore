@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { formatDateUtc } from '@utils/date.utils';
-import { AiEngineService } from '@modules/ai-engine/ai-engine.service';
+import { CouponService } from '@modules/coupon/coupon.service';
 import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { CHAT_LIMITS } from './chat.constants';
 import { round } from './chat.math';
@@ -29,7 +29,7 @@ type ToolExecutionInput = {
 export class ChatToolsService {
   constructor(
     private readonly readRepo: ChatReadRepository,
-    private readonly aiEngine: AiEngineService,
+    private readonly coupon: CouponService,
     private readonly pickEngine: ChatPickEngineService,
   ) {}
 
@@ -152,7 +152,7 @@ export class ChatToolsService {
     const input = CHAT_TOOL_SCHEMAS.getCouponProposals.parse(args);
     const date = input.date ?? formatDateUtc(new Date());
     const status = input.status as CouponProposalStatus | undefined;
-    const coupons = await this.aiEngine.getCoupons(date, status);
+    const coupons = await this.coupon.getCoupons(date, status);
 
     return {
       asOf: new Date().toISOString(),

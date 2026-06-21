@@ -1,5 +1,5 @@
 /**
- * Hyperparamètres de l'investissement — outputs du backtest (2026-05-19).
+ * Hyperparamètres du coupon — outputs du backtest (2026-05-19).
  *
  * Source : apps/backend/reports/backtest-selected-params.json
  * Train ROI : +100.3% | Test ROI : +61.8% | Test hit rate : 51.5% | verdict : PASS
@@ -8,34 +8,39 @@
  * backtest-selected-params.json.
  */
 
-export type InvestmentCanal = 'EV' | 'SV' | 'BB' | 'NUL' | 'CONF';
+import type { StrategyChannel } from '@evcore/db';
 
-export type VirtualInvestmentCanal =
+export type CouponChannel = Extract<
+  StrategyChannel,
+  'EV' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT'
+>;
+
+export type VirtualCouponChannel =
   | 'SAFE_HT_OVER05'
   | 'SAFE_UNDER45'
   | 'SAFE_OVER15'
   | 'SAFE_UNDER35'
   | 'BTTS_YES';
 
-export type InvestmentOutputCanal = InvestmentCanal | VirtualInvestmentCanal;
+export type CouponOutputChannel = CouponChannel | VirtualCouponChannel;
 
-export const MAX_INVESTMENT_SELECTIONS: Record<InvestmentCanal, number> = {
-  SV: 5,
-  BB: 5,
-  CONF: 5,
-  NUL: 2,
+export const MAX_COUPON_SELECTIONS: Record<CouponChannel, number> = {
+  SAFE: 5,
+  BTTS: 5,
+  DOMINANT: 5,
+  DRAW: 2,
   EV: 2,
 } as const;
 
-export const CANAL_BASE_WEIGHT: Record<InvestmentCanal, number> = {
-  SV: 0.74,
-  CONF: 0.66,
-  BB: 0.62,
+export const CANAL_BASE_WEIGHT: Record<CouponChannel, number> = {
+  SAFE: 0.74,
+  DOMINANT: 0.66,
+  BTTS: 0.62,
   EV: 0.36,
-  NUL: 0.2,
+  DRAW: 0.2,
 } as const;
 
-export const INVESTMENT_PARAMS = {
+export const COUPON_PARAMS = {
   k: 20,
   capMin: 0.05,
   capMax: 0.8,
@@ -48,14 +53,17 @@ export const INVESTMENT_PARAMS = {
   nLeagueMin: 15,
   windowDays: 38,
   includeConfInCoupons: true,
-  couponMinSample: { SV: 10, BB: 10, EV: 5, CONF: 20, NUL: 20 } as Record<
-    InvestmentCanal,
-    number
-  >,
+  couponMinSample: {
+    SAFE: 10,
+    BTTS: 10,
+    EV: 5,
+    DOMINANT: 20,
+    DRAW: 20,
+  } as Record<CouponChannel, number>,
 } as const;
 
-export type VirtualInvestmentRule = {
-  canal: VirtualInvestmentCanal;
+export type VirtualCouponRule = {
+  canal: VirtualCouponChannel;
   label: string;
   market: string;
   pick: string;
@@ -74,7 +82,7 @@ export type VirtualInvestmentRule = {
   channelCapTop10?: number;
 };
 
-export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
+export const VIRTUAL_COUPON_RULES: readonly VirtualCouponRule[] = [
   {
     canal: 'SAFE_HT_OVER05',
     label: 'Over 0.5 HT',
@@ -139,8 +147,8 @@ export const VIRTUAL_INVESTMENT_RULES: readonly VirtualInvestmentRule[] = [
   },
 ] as const;
 
-export const MAX_VIRTUAL_INVESTMENT_SELECTIONS: Record<
-  VirtualInvestmentCanal,
+export const MAX_VIRTUAL_COUPON_SELECTIONS: Record<
+  VirtualCouponChannel,
   number
 > = {
   SAFE_HT_OVER05: 5,
@@ -150,7 +158,7 @@ export const MAX_VIRTUAL_INVESTMENT_SELECTIONS: Record<
   BTTS_YES: 5,
 } as const;
 
-export const VIRTUAL_INVESTMENT_TOP_LIMITS = {
+export const VIRTUAL_COUPON_TOP_LIMITS = {
   top5: 5,
   top10: 10,
   channelCapTop5: 2,

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma.module';
 import { AuthModule } from '@modules/auth/auth.module';
-import { AiEngineModule } from '@modules/ai-engine/ai-engine.module';
+import { CouponModule } from '@modules/coupon/coupon.module';
 import { ChatController } from './chat.controller';
 import { ChatRepository } from './chat.repository';
 import { ChatRateLimitService } from './chat.rate-limit.service';
@@ -13,7 +13,7 @@ import { GroqLlmClient } from './groq-llm.client';
 import { LLM_CLIENT } from './chat.tokens';
 
 @Module({
-  imports: [PrismaModule, AuthModule, AiEngineModule],
+  imports: [PrismaModule, AuthModule, CouponModule],
   controllers: [ChatController],
   providers: [
     ChatRepository,

@@ -41,7 +41,7 @@ import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/chan
 import { ChatToolsService } from './chat.tools.service';
 import type { ChatReadRepository } from './chat.read.repository';
 import type { ChatRequestUser } from './chat.types';
-import type { AiEngineService } from '@modules/ai-engine/ai-engine.service';
+import type { CouponService } from '@modules/coupon/coupon.service';
 import type { ChatPickEngineService } from './chat.pick-engine.service';
 
 type TestContext = { user: ChatRequestUser };
@@ -209,7 +209,7 @@ function makeRepo(
 function makeService(repo = makeRepo()) {
   return new ChatToolsService(
     repo,
-    {} as unknown as AiEngineService,
+    {} as unknown as CouponService,
     {} as unknown as ChatPickEngineService,
   );
 }

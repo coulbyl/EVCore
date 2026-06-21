@@ -22,7 +22,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { FormationProgressModule } from './modules/formation-progress/formation-progress.module';
 import { SummaryModule } from './modules/summary/summary.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
-import { AiEngineModule } from './modules/ai-engine/ai-engine.module';
+import { CouponModule } from './modules/coupon/coupon.module';
 import { MlModule } from './modules/ml/ml.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { RedisModule } from './common/redis/redis.module';
@@ -59,7 +59,7 @@ import { RedisModule } from './common/redis/redis.module';
     FormationProgressModule,
     SummaryModule,
     AnnouncementsModule,
-    AiEngineModule,
+    CouponModule,
     ChatModule,
     MlModule,
   ],

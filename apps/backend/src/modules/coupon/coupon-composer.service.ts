@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CANAL_BASE_WEIGHT, INVESTMENT_PARAMS } from './investment.constants';
-import type { Canal, ScoredPick, SignalWindow } from './signal-window.service';
+import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
+import { CANAL_BASE_WEIGHT, COUPON_PARAMS } from './coupon.constants';
+import type {
+  Canal,
+  MarketCalibration,
+  ScoredPick,
+  SignalWindow,
+} from './signal-window.service';
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
@@ -8,11 +14,11 @@ const MIN_DISTINCT_FIXTURES = 2;
 const MAX_POOL_SIZE = 25;
 
 const FALLBACK_ODDS: Record<Canal, number> = {
-  SV: 1.65,
-  CONF: 2.2,
-  BB: 1.75,
+  SAFE: 1.65,
+  DOMINANT: 2.2,
+  BTTS: 1.75,
   EV: 1.85,
-  NUL: 3.2,
+  DRAW: 3.2,
 };
 
 export type ComposedCoupon = {
@@ -26,7 +32,7 @@ export type ComposedCoupon = {
 
 // jointProbability was previously the product of canal-level calibrated hit
 // rates only — every coupon with the same canal mix stored the identical value
-// (audit 2026-06-11: six pending coupons all at 0.4743 = SV rate × BB rate),
+// (audit 2026-06-11: six pending coupons all at 0.4743 = SAFE rate × BTTS rate),
 // making the viability filter and the jointProbability sort degenerate among
 // same-canal combos. Blending each pick's model probability with its canal
 // calibrated rate keeps the calibration tempering (raw model probabilities are
@@ -43,17 +49,69 @@ export function calibratedLegProbability(leg: {
   );
 }
 
+// Markets with a production calibration sample — these are exactly the markets
+// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS). Other leg markets
+// (OVER_UNDER_HT, DOUBLE_CHANCE, …) have no measured bias and fall back to the
+// legacy blend.
+const CALIBRATED_MARKETS = new Set(['ONE_X_TWO', 'OVER_UNDER', 'BTTS']);
+
+// Principled per-market calibration: shift the raw model probability by the
+// measured mean signed error (meanError = mean(p − outcome); positive = the
+// model is over-confident, so we subtract it). This replaces the arbitrary
+// 50/50 model-vs-canal blend with an empirical, data-backed correction.
+// Falls back to `calibratedLegProbability` when the leg's market has no
+// production calibration sample (untracked market, or < MIN_BET_COUNT bets).
+export function calibrateLegProbability(
+  leg: { probability: number; calibratedHitRate: number; market: string },
+  marketCalibration: MarketCalibration,
+): number {
+  const cal = marketCalibration[leg.market];
+  if (
+    cal &&
+    CALIBRATED_MARKETS.has(leg.market) &&
+    cal.betCount >= MIN_BET_COUNT
+  ) {
+    const corrected = leg.probability - cal.meanError;
+    return Math.min(
+      COUPON_PARAMS.capMax,
+      Math.max(COUPON_PARAMS.capMin, corrected),
+    );
+  }
+  return calibratedLegProbability(leg);
+}
+
+// Single source of truth for a leg's probability inside a coupon: the calibrated
+// value when scoring has run, otherwise the legacy blend (keeps `compose()`
+// correct even when called without a prior `scorePicks`, e.g. in unit tests).
+export function legProbability(leg: {
+  calibratedProbability?: number | null;
+  probability: number;
+  calibratedHitRate: number;
+}): number {
+  return leg.calibratedProbability ?? calibratedLegProbability(leg);
+}
+
 // signalScore is a (canal, dow, league) environment rate — within one canal on
 // one day it is constant across picks, so a sort on signalScore alone leaves
 // same-canal picks in arbitrary (insertion) order. Tie-break on the blended
 // pick probability so pool cuts and per-canal selections are deterministic and
 // favour the stronger pick.
 export function comparePicksBySignalThenProbability(
-  a: { signalScore: number; probability: number; calibratedHitRate: number },
-  b: { signalScore: number; probability: number; calibratedHitRate: number },
+  a: {
+    signalScore: number;
+    probability: number;
+    calibratedHitRate: number;
+    calibratedProbability?: number | null;
+  },
+  b: {
+    signalScore: number;
+    probability: number;
+    calibratedHitRate: number;
+    calibratedProbability?: number | null;
+  },
 ): number {
   if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
-  return calibratedLegProbability(b) - calibratedLegProbability(a);
+  return legProbability(b) - legProbability(a);
 }
 
 @Injectable()
@@ -78,6 +136,17 @@ export class CouponComposerService {
       // 50% canal calibrated rate, 30% dow factor, 20% league calibrated rate
       const signalScore = windowRate * 0.5 + dowRate * 0.3 + leagueRate * 0.2;
 
+      const calibratedProbability = calibrateLegProbability(
+        {
+          probability: pick.probability,
+          calibratedHitRate: windowRate,
+          market: pick.market,
+        },
+        window.marketCalibration,
+      );
+      const marketMeanError =
+        window.marketCalibration[pick.market]?.meanError ?? null;
+
       const featureSnapshot = {
         ...pick.featureSnapshot,
         canal: pick.canal,
@@ -87,11 +156,14 @@ export class CouponComposerService {
         dowHitRate: dowRate,
         calibratedLeagueHitRate: leagueRate,
         signalScore,
+        calibratedProbability,
+        marketMeanError,
       };
 
       return {
         ...pick,
         calibratedHitRate: windowRate,
+        calibratedProbability,
         signalScore,
         featureSnapshot,
       };
@@ -123,12 +195,12 @@ export class CouponComposerService {
     const viable = unique
       .filter(
         (c) =>
-          c.jointProbability >= INVESTMENT_PARAMS.minCalibratedJointProbability,
+          c.jointProbability >= COUPON_PARAMS.minCalibratedJointProbability,
       )
       .sort((a, b) => b.jointProbability - a.jointProbability);
 
     return viable
-      .slice(0, INVESTMENT_PARAMS.maxCoupons)
+      .slice(0, COUPON_PARAMS.maxCoupons)
       .map((c, i) => ({ ...c, rank: i + 1 }));
   }
 
@@ -137,10 +209,10 @@ export class CouponComposerService {
     current: ScoredPick[],
     out: ComposedCoupon[],
   ): void {
-    if (current.length > INVESTMENT_PARAMS.maxLegs) return;
+    if (current.length > COUPON_PARAMS.maxLegs) return;
 
     const combinedOdds = this.computeCombinedOdds(current);
-    if (combinedOdds > INVESTMENT_PARAMS.maxCombinedOdds) return;
+    if (combinedOdds > COUPON_PARAMS.maxCombinedOdds) return;
 
     if (current.length >= 2) {
       const distinctFixtures = new Set(current.map((p) => p.fixtureId));
@@ -149,9 +221,8 @@ export class CouponComposerService {
       }
     }
 
-    if (current.length === INVESTMENT_PARAMS.maxLegs) return;
+    if (current.length === COUPON_PARAMS.maxLegs) return;
 
-    // Pre-compute counts for anti-correlation checks
     const canalMarketCounts = new Map<string, number>();
     const compCounts = new Map<string, number>();
     for (const p of current) {
@@ -189,10 +260,8 @@ export class CouponComposerService {
     legs: ScoredPick[],
     combinedOdds: number,
   ): ComposedCoupon {
-    // Per-leg blend of model probability and calibrated canal hit rate —
-    // see calibratedLegProbability above.
     const jointProbability = legs.reduce(
-      (acc, leg) => acc * calibratedLegProbability(leg),
+      (acc, leg) => acc * legProbability(leg),
       1,
     );
     const signalScore =

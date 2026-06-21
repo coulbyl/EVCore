@@ -1,6 +1,6 @@
-import type { InvestmentIndicesCanal } from './investment-indices-query.dto';
+import type { CouponIndicesCanal } from './coupon-indices-query.dto';
 
-export type InvestmentIndicesRow = {
+export type CouponIndicesRow = {
   probability: number; // 1-decimal percentage, e.g. 65.3 means 65.3%
   total: number;
   won: number;
@@ -8,7 +8,7 @@ export type InvestmentIndicesRow = {
   isGood: boolean;
 };
 
-export type InvestmentIndicesMarketRow = {
+export type CouponIndicesMarketRow = {
   market: string;
   label: string;
   total: number;
@@ -17,7 +17,7 @@ export type InvestmentIndicesMarketRow = {
   roi: number | null;
 };
 
-export type InvestmentIndicesOddsRow = {
+export type CouponIndicesOddsRow = {
   label: string;
   from: number;
   to: number;
@@ -27,17 +27,17 @@ export type InvestmentIndicesOddsRow = {
   roi: number;
 };
 
-export type InvestmentIndicesResponse = {
-  canal: InvestmentIndicesCanal;
+export type CouponIndicesResponse = {
+  canal: CouponIndicesCanal;
   from: string;
   to: string;
-  rows: InvestmentIndicesRow[];
+  rows: CouponIndicesRow[];
   summary: {
     total: number;
     won: number;
     hitRate: number;
     roi: number | null;
   };
-  byMarket: InvestmentIndicesMarketRow[];
-  byOddsRange: InvestmentIndicesOddsRow[] | null;
+  byMarket: CouponIndicesMarketRow[];
+  byOddsRange: CouponIndicesOddsRow[] | null;
 };

@@ -1,6 +1,6 @@
-import type { InvestmentSummaryCanal } from './investment-summary-query.dto';
+import type { CouponSummaryCanal } from './coupon-summary-query.dto';
 
-export type InvestmentSummaryStats = {
+export type CouponSummaryStats = {
   total: number;
   won: number;
   lost: number;
@@ -8,27 +8,27 @@ export type InvestmentSummaryStats = {
   roiPickCount: number;
 };
 
-export type InvestmentSummaryProgressionPoint = {
+export type CouponSummaryProgressionPoint = {
   date: string;
   won: number;
   lost: number;
 };
 
-export type InvestmentSummaryPickRow = {
+export type CouponSummaryPickRow = {
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
   scheduledAt: string;
-  canal: Exclude<InvestmentSummaryCanal, 'COUPON'>;
+  canal: Exclude<CouponSummaryCanal, 'COUPON'>;
   market: string;
   pick: string;
   odds: string | null;
   result: 'WON' | 'LOST';
 };
 
-export type InvestmentSummaryCouponLeg = {
+export type CouponSummaryLeg = {
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;
@@ -42,20 +42,20 @@ export type InvestmentSummaryCouponLeg = {
   isCorrect: boolean | null;
 };
 
-export type InvestmentSummaryCouponRow = {
+export type CouponSummaryRow = {
   id: string;
   forDate: string;
   rank: number;
   combinedOdds: number;
   jointProbability: number;
   result: 'WON' | 'LOST';
-  legs: InvestmentSummaryCouponLeg[];
+  legs: CouponSummaryLeg[];
 };
 
-export type InvestmentSummaryResponse = {
-  canal: InvestmentSummaryCanal;
-  stats: InvestmentSummaryStats;
-  progression: InvestmentSummaryProgressionPoint[];
-  picks: InvestmentSummaryPickRow[];
-  coupons: InvestmentSummaryCouponRow[];
+export type CouponSummaryResponse = {
+  canal: CouponSummaryCanal;
+  stats: CouponSummaryStats;
+  progression: CouponSummaryProgressionPoint[];
+  picks: CouponSummaryPickRow[];
+  coupons: CouponSummaryRow[];
 };

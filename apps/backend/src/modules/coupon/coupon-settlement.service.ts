@@ -6,7 +6,7 @@ import {
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
 } from '../betting-engine/betting-engine.utils';
-import { AiEngineRepository } from './ai-engine.repository';
+import { CouponRepository } from './coupon.repository';
 import { createLogger } from '@utils/logger';
 
 const logger = createLogger('coupon-settlement');
@@ -52,7 +52,7 @@ function resolveIsCorrect(
 export class CouponSettlementService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly repo: AiEngineRepository,
+    private readonly repo: CouponRepository,
   ) {}
 
   async settleReadyProposals(): Promise<void> {
@@ -68,7 +68,6 @@ export class CouponSettlementService {
     const proposal = await this.repo.findByIdWithLegs(proposalId);
     if (!proposal) return;
 
-    // Collect all fixtureIds needed
     const fixtureIds = [...new Set(proposal.legs.map((l) => l.fixtureId))];
 
     const fixtures = await this.prisma.client.fixture.findMany({

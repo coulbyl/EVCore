@@ -2,10 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   CouponComposerService,
   calibratedLegProbability,
+  calibrateLegProbability,
   comparePicksBySignalThenProbability,
   LEG_PROBABILITY_MODEL_WEIGHT,
 } from './coupon-composer.service';
-import type { Canal, ScoredPick } from './signal-window.service';
+import type {
+  Canal,
+  MarketCalibration,
+  ScoredPick,
+} from './signal-window.service';
 
 function makePick(overrides: {
   fixtureId: string;
@@ -15,6 +20,7 @@ function makePick(overrides: {
   calibratedHitRate: number;
   oddsSnapshot: number;
   signalScore: number;
+  calibratedProbability?: number | null;
 }): ScoredPick {
   return {
     fixtureId: overrides.fixtureId,
@@ -28,6 +34,7 @@ function makePick(overrides: {
     pick: 'YES',
     probability: overrides.probability,
     calibratedHitRate: overrides.calibratedHitRate,
+    calibratedProbability: overrides.calibratedProbability ?? null,
     oddsSnapshot: overrides.oddsSnapshot,
     lambdaHome: null,
     lambdaAway: null,
@@ -64,6 +71,48 @@ describe('calibratedLegProbability', () => {
   });
 });
 
+describe('calibrateLegProbability', () => {
+  const calibration: MarketCalibration = {
+    OVER_UNDER: { meanError: 0.1285, betCount: 595 },
+    BTTS: { meanError: 0.039, betCount: 341 },
+    ONE_X_TWO: { meanError: 0.2, betCount: 10 }, // tracked but below MIN_BET_COUNT
+  };
+
+  it('subtracts the measured mean error for a tracked, well-sampled market', () => {
+    const value = calibrateLegProbability(
+      { probability: 0.66, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
+      calibration,
+    );
+    expect(value).toBeCloseTo(0.66 - 0.1285, 10);
+  });
+
+  it('clamps the corrected probability into [capMin, capMax]', () => {
+    const value = calibrateLegProbability(
+      { probability: 0.05, calibratedHitRate: 0.6, market: 'OVER_UNDER' },
+      { OVER_UNDER: { meanError: 0.5, betCount: 200 } },
+    );
+    expect(value).toBeGreaterThanOrEqual(0.05); // capMin
+  });
+
+  it('falls back to the blend for an untracked market (e.g. OVER_UNDER_HT)', () => {
+    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
+    const value = calibrateLegProbability(
+      { ...leg, market: 'OVER_UNDER_HT' },
+      calibration,
+    );
+    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+  });
+
+  it('falls back to the blend when the market sample is below MIN_BET_COUNT', () => {
+    const leg = { probability: 0.8, calibratedHitRate: 0.6 };
+    const value = calibrateLegProbability(
+      { ...leg, market: 'ONE_X_TWO' },
+      calibration,
+    );
+    expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+  });
+});
+
 describe('comparePicksBySignalThenProbability', () => {
   it('orders by signalScore first', () => {
     const high = { signalScore: 0.7, probability: 0.5, calibratedHitRate: 0.5 };
@@ -72,7 +121,6 @@ describe('comparePicksBySignalThenProbability', () => {
   });
 
   it('tie-breaks same-canal picks on blended probability, not insertion order', () => {
-    // Same canal on the same day → identical signalScore and calibratedHitRate.
     const weak = {
       signalScore: 0.7,
       probability: 0.55,
@@ -92,27 +140,27 @@ describe('comparePicksBySignalThenProbability', () => {
 describe('CouponComposerService.compose', () => {
   const service = new CouponComposerService();
 
-  const svPick = makePick({
+  const safePick = makePick({
     fixtureId: 'f1',
-    canal: 'SV',
+    canal: 'SAFE',
     market: 'OVER_UNDER',
     probability: 0.86,
     calibratedHitRate: 0.69,
     oddsSnapshot: 1.35,
     signalScore: 0.7,
   });
-  const bbStrong = makePick({
+  const bttsStrong = makePick({
     fixtureId: 'f2',
-    canal: 'BB',
+    canal: 'BTTS',
     market: 'BTTS',
     probability: 0.65,
     calibratedHitRate: 0.6875,
     oddsSnapshot: 2.0,
     signalScore: 0.65,
   });
-  const bbWeak = makePick({
+  const bttsWeak = makePick({
     fixtureId: 'f3',
-    canal: 'BB',
+    canal: 'BTTS',
     market: 'BTTS',
     probability: 0.44,
     calibratedHitRate: 0.6875,
@@ -121,24 +169,22 @@ describe('CouponComposerService.compose', () => {
   });
 
   it('computes pick-specific joint probabilities for the same canal mix', () => {
-    const coupons = service.compose([svPick, bbStrong, bbWeak]);
+    const coupons = service.compose([safePick, bttsStrong, bttsWeak]);
 
-    // Both viable coupons are SV+BB — before the fix they shared the
-    // identical jointProbability (product of canal rates only).
     expect(coupons).toHaveLength(2);
     const [first, second] = coupons;
     expect(first.jointProbability).not.toBeCloseTo(second.jointProbability, 10);
 
     const expectedStrong =
-      calibratedLegProbability(svPick) * calibratedLegProbability(bbStrong);
+      calibratedLegProbability(safePick) * calibratedLegProbability(bttsStrong);
     const expectedWeak =
-      calibratedLegProbability(svPick) * calibratedLegProbability(bbWeak);
+      calibratedLegProbability(safePick) * calibratedLegProbability(bttsWeak);
     expect(first.jointProbability).toBeCloseTo(expectedStrong, 10);
     expect(second.jointProbability).toBeCloseTo(expectedWeak, 10);
   });
 
   it('ranks coupons by descending joint probability', () => {
-    const coupons = service.compose([svPick, bbStrong, bbWeak]);
+    const coupons = service.compose([safePick, bttsStrong, bttsWeak]);
     expect(coupons[0].rank).toBe(1);
     expect(coupons[0].jointProbability).toBeGreaterThan(
       coupons[1].jointProbability,
@@ -148,14 +194,14 @@ describe('CouponComposerService.compose', () => {
   it('never combines two legs from the same fixture', () => {
     const sameFixture = makePick({
       fixtureId: 'f1',
-      canal: 'BB',
+      canal: 'BTTS',
       market: 'BTTS',
       probability: 0.7,
       calibratedHitRate: 0.6875,
       oddsSnapshot: 1.8,
       signalScore: 0.66,
     });
-    const coupons = service.compose([svPick, sameFixture, bbStrong]);
+    const coupons = service.compose([safePick, sameFixture, bttsStrong]);
 
     for (const coupon of coupons) {
       const fixtures = coupon.legs.map((l) => l.fixtureId);

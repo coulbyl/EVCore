@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { CouponProposalStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
-import { AiEngineRepository } from './ai-engine.repository';
+import { CouponRepository } from './coupon.repository';
 import { SignalWindowService } from './signal-window.service';
 import { CouponComposerService } from './coupon-composer.service';
-import { INVESTMENT_PARAMS } from './investment.constants';
+import { COUPON_PARAMS } from './coupon.constants';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
-import { mapCouponSourceChannel } from './coupon-channel.mapper';
 
-const logger = createLogger('ai-engine');
+const logger = createLogger('coupon');
 
 @Injectable()
-export class AiEngineService {
+export class CouponService {
   constructor(
-    private readonly repo: AiEngineRepository,
+    private readonly repo: CouponRepository,
     private readonly signalWindow: SignalWindowService,
     private readonly composer: CouponComposerService,
   ) {}
@@ -22,13 +21,14 @@ export class AiEngineService {
     date: string,
     opts: { windowDays?: number } = {},
   ): Promise<void> {
-    const { windowDays = INVESTMENT_PARAMS.windowDays } = opts;
+    const { windowDays = COUPON_PARAMS.windowDays } = opts;
     logger.info({ date, windowDays }, 'Generating coupons');
 
-    await this.repo.deletePendingForDate(new Date(`${date}T00:00:00.000Z`));
+    const asOf = new Date(`${date}T00:00:00.000Z`);
+    await this.repo.deletePendingForDate(asOf);
 
     const [window, rawPicks] = await Promise.all([
-      this.signalWindow.computeSignalWindow(windowDays),
+      this.signalWindow.computeSignalWindow(windowDays, asOf),
       this.signalWindow.getTodayPool(date),
     ]);
 
@@ -59,7 +59,7 @@ export class AiEngineService {
         rank: coupon.rank,
         signalWindowDays: windowDays,
         targetOddsMin: 1.0,
-        targetOddsMax: INVESTMENT_PARAMS.maxCombinedOdds,
+        targetOddsMax: COUPON_PARAMS.maxCombinedOdds,
         combinedOdds: coupon.combinedOdds,
         jointProbability: coupon.jointProbability,
         signalScore: coupon.signalScore,
@@ -113,7 +113,7 @@ export class AiEngineService {
         competition: leg.fixture.season.competition.code,
         country: leg.fixture.season.competition.country,
         scheduledAt: leg.fixture.scheduledAt.toISOString(),
-        canal: mapCouponSourceChannel(leg.canal),
+        canal: leg.canal,
         market: leg.market,
         pick: leg.pick,
         probability: Number(leg.probability),
