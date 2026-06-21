@@ -14,10 +14,10 @@ import {
 } from './betting-engine.utils';
 import {
   BettingEngineService,
-  blendTeamStats,
   deriveModelRunPhase,
-  estimateComboOdds,
 } from './betting-engine.service';
+import { blendTeamStats } from './math/probability';
+import { estimateComboOdds } from './pricing/odds-mapping';
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';

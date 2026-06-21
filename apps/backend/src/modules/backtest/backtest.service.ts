@@ -54,7 +54,7 @@ import {
   NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
   NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
 } from '@modules/betting-engine/ev.constants';
-import { blendTeamStats } from '@modules/betting-engine/betting-engine.service';
+import { blendTeamStats } from '@modules/betting-engine/math/probability';
 import { getChannelStrategyConfig } from '@modules/betting-engine/strategies/channel-strategy.config';
 
 const logger = createLogger('backtest-service');

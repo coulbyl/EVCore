@@ -14,6 +14,8 @@ import { CongestionService } from './congestion.service';
 import { FriModelService } from './fri-model/fri-model.service';
 import { ChannelDecisionRepository } from './channel-decision.repository';
 import { ChannelDecisionService } from './channel-decision.service';
+import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
+import { BetSettlementService } from './settlement/bet-settlement.service';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { ChannelDecisionService } from './channel-decision.service';
     FriModelService,
     ChannelDecisionRepository,
     ChannelDecisionService,
+    OddsSnapshotLoader,
+    BetSettlementService,
   ],
   exports: [BettingEngineService, FriModelService],
 })

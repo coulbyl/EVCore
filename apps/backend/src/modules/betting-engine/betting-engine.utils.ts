@@ -2,6 +2,15 @@ import Decimal from 'decimal.js';
 import { BetStatus, Market } from '@evcore/db';
 import { FEATURE_WEIGHTS } from './ev.constants';
 
+// Coerce a possibly-Decimal/Prisma numeric into a JS number.
+export function asNumber(value: unknown): number {
+  return Number(value);
+}
+
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 export type ThreeWayProba = {
   home: Decimal;
   draw: Decimal;
@@ -683,7 +692,9 @@ function outcomeFromScores(
   return 'DRAW';
 }
 
-function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
+export function isHalfTimeFullTimePick(
+  value: string,
+): value is HalfTimeFullTimePick {
   return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
 }
 
