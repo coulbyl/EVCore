@@ -17,10 +17,7 @@ import {
   formatKickoff,
   isFixtureBettable,
 } from "@/domains/fixture/helpers/fixture";
-import {
-  fixtureStatusBadgeClass,
-  fixtureStatusLabel,
-} from "@/helpers/fixture";
+import { fixtureStatusBadgeClass, fixtureStatusLabel } from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";

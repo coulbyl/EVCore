@@ -163,7 +163,10 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         label={tPicks("btts")}
         status={btts?.status}
         rows={[
-          { label: t("roi"), value: formatSignedPercent(btts?.roi) ?? SKELETON },
+          {
+            label: t("roi"),
+            value: formatSignedPercent(btts?.roi) ?? SKELETON,
+          },
           {
             label: t("settledBets"),
             value: btts ? btts.sampleSize : SKELETON,
@@ -180,7 +183,10 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         label={tPicks("confidence")}
         status={conf?.status}
         rows={[
-          { label: t("roi"), value: formatSignedPercent(conf?.roi) ?? SKELETON },
+          {
+            label: t("roi"),
+            value: formatSignedPercent(conf?.roi) ?? SKELETON,
+          },
           {
             label: t("settledBets"),
             value: conf ? conf.sampleSize : SKELETON,
@@ -197,7 +203,10 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
         label={tPicks("matchNull")}
         status={draw?.status}
         rows={[
-          { label: t("roi"), value: formatSignedPercent(draw?.roi) ?? SKELETON },
+          {
+            label: t("roi"),
+            value: formatSignedPercent(draw?.roi) ?? SKELETON,
+          },
           {
             label: t("settledBets"),
             value: draw ? draw.sampleSize : SKELETON,
