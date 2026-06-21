@@ -1,18 +1,52 @@
-import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { BacktestService } from './backtest.service';
 import { GridSearchService } from './grid-search.service';
+import { ChannelBacktestService } from './channel-backtest.service';
+import { ModelCalibrationService } from './model-calibration.service';
 
 @Controller('backtest')
 export class BacktestController {
+  // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
     private readonly backtestService: BacktestService,
     private readonly gridSearchService: GridSearchService,
+    private readonly channelBacktest: ChannelBacktestService,
+    private readonly modelCalibration: ModelCalibrationService,
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
   runAll() {
     return this.backtestService.runAllCompetitions();
+  }
+
+  // Per-channel × competition backtest (redesigned, reads channel_selection).
+  @Post('channels')
+  @HttpCode(HttpStatus.OK)
+  runChannels(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('competitionCode') competitionCode?: string,
+  ) {
+    return this.channelBacktest.run({ from, to, competitionCode });
+  }
+
+  // Model-quality (Brier/ECE) backtest — channel-agnostic, reads model_run.
+  @Post('calibration')
+  @HttpCode(HttpStatus.OK)
+  runCalibration(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('competitionCode') competitionCode?: string,
+  ) {
+    return this.modelCalibration.run({ from, to, competitionCode });
   }
 
   // Declared before `:competitionCode` so NestJS matches the static path first.

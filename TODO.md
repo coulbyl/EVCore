@@ -149,6 +149,28 @@ Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régéné
 
 backend typecheck/lint/581 tests ✅.
 
+### ▶ Redesign backtest par canal (remplacement direct, en cours)
+
+Le `backtest.service.ts` legacy (3109 l) est un fourre-tout : 5 canaux → 3 chemins
+(marketPerformance EV, `predictionBacktests` DOMINANT/DRAW/BTTS, `safe-value` SAFE),
+moteur ré-implémenté inline, `PredictionChannel` divorcé de `StrategyChannel`.
+Cible : **1 harnais paramétrique par canal**, **lecture DB** (pas de moteur inline),
+calibration modèle **séparée**.
+
+- [x] **Étage 1** (2026-06-21) : nouveau harnais — `BacktestRepository` (lit
+      `channel_selection` + `model_run.features`), `ChannelBacktestService`
+      (`POST /backtest/channels` : ROI/ROI×EV-bin/hit/drawdown/calibration/verdict
+      par canal×ligue), `ModelCalibrationService` (`POST /backtest/calibration` :
+      Brier/ECE par ligue, channel-agnostic), métriques pures. Legacy intact.
+      backend typecheck/lint/584 tests ✅.
+- [ ] **Étage 2** : brique **tuning** (sweep de seuils offline depuis
+      `model_run.features`) → recommande `CHANNEL_STRATEGY_CONFIG` ; migrer
+      `grid-search` et le **front** (`domains/backtest` + page `performance`) vers
+      les nouvelles shapes.
+- [ ] **Étage 3** : supprimer le legacy (`backtest.service.ts` god class,
+      `runAllSeasonsSafeValueBacktest`, `predictionBacktests`, `PredictionChannel`,
+      anciennes routes) une fois le front basculé.
+
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,
 `UNDERDOG/FAVORITE`, `MARKET_MOVE`, `FIRST_HALF`, `LIVE_VALUE`.

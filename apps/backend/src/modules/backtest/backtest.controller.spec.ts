@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BacktestService } from './backtest.service';
 import type { GridSearchService } from './grid-search.service';
+import type { ChannelBacktestService } from './channel-backtest.service';
+import type { ModelCalibrationService } from './model-calibration.service';
 import { BacktestController } from './backtest.controller';
 
 describe('BacktestController', () => {
@@ -28,9 +30,30 @@ describe('BacktestController', () => {
     } as unknown as GridSearchService;
   }
 
+  function makeChannelBacktest(): ChannelBacktestService {
+    return {
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ChannelBacktestService;
+  }
+
+  function makeModelCalibration(): ModelCalibrationService {
+    return {
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ModelCalibrationService;
+  }
+
+  function makeController(service: BacktestService): BacktestController {
+    return new BacktestController(
+      service,
+      makeGridSearchService(),
+      makeChannelBacktest(),
+      makeModelCalibration(),
+    );
+  }
+
   it('runs backtest for all competitions and returns reports', async () => {
     const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+    const controller = makeController(service);
 
     await expect(controller.runAll()).resolves.toEqual([
       { competitionCode: 'PL', overallVerdict: 'PASS' },
@@ -40,7 +63,7 @@ describe('BacktestController', () => {
 
   it('runs backtest for one competition (all seasons) and returns the report', async () => {
     const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+    const controller = makeController(service);
 
     await expect(controller.runCompetition('PL')).resolves.toEqual({
       competitionCode: 'PL',
@@ -51,7 +74,7 @@ describe('BacktestController', () => {
 
   it('runs backtest for one competition + one season and returns the report', async () => {
     const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+    const controller = makeController(service);
 
     await controller.runCompetitionSeason('PL', '2023-24');
 
@@ -63,7 +86,7 @@ describe('BacktestController', () => {
 
   it('delegates safe-value backtest to the service', async () => {
     const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+    const controller = makeController(service);
 
     await controller.runSafeValueBacktest();
 
