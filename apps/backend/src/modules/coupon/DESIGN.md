@@ -214,20 +214,21 @@ ADN), avec Expected Log Growth derrière un flag optionnel.
 > canaux à +ROI prouvé ; DRAW est le prochain candidat. Reste à construire une
 > **vue ROI roulante par canal × EV-bin** pour décider des promotions.
 
-### 🟡 B7 — Le pool « réel » est de fait EV + SAFE seulement
+### ✅ B7 — Deux pools clarifiés (documenté, pas unifié) → FAIT (2026-06-21)
 
-`getTodayPool` ne lit que les `Bet` source `MODEL` (matérialisés pour EV/SAFE via
-`channelSelection`). BTTS/DRAW/DOMINANT n'ont en pratique pas de `Bet` MODEL → ils
-n'entrent dans les coupons réels que via le pool **virtuel** séparé
-(`getTodayVirtualPool`). Malgré `CANAL_BASE_WEIGHT` à 5 canaux, le coupon réel ≈
-EV+SAFE. → Clarifier l'intention et unifier (ou documenter) les deux pools.
-**Note** : B6 calibre maintenant les 5 canaux, mais tant que B7 n'est pas traité,
-seuls EV/SAFE ont effectivement un échantillon — les autres restent au prior.
-**Décision produit (juin 2026)** : DOMINANT/BTTS restent des canaux de
-**prédiction** (suivis analytiquement via `channel_selection`), pas de mise — leur
-ROI réel mesuré post-backfill est −2.1% / +1.0% et l'EV de DOMINANT est
-anti-prédictive. Seul DRAW (+9.9%, cotes présentes) est un candidat staking. Voir
-B-ROI ci-dessous. L'unification pool réel/virtuel reste à faire (Étape coupon).
+> **Décision : documenter, pas unifier.** L'intention des deux pools est désormais
+> gravée en doc sur `getTodayPool` (pool RÉEL, staking-eligible, EV/SAFE par
+> construction) et `getTodayVirtualPool` (pool VIRTUEL, prédiction/observation,
+> jamais staké). Conforme à la décision produit en vigueur ; pas de changement de
+> staking. L'unification active (staker DRAW via `channel_selection`) reste un
+> **choix produit** non pris, à rouvrir avec un backtest par canal.
+
+Contexte (conservé) : `getTodayPool` ne lit que les `Bet` source `MODEL`
+(matérialisés pour EV/SAFE). BTTS/DRAW/DOMINANT n'ont pas de `Bet` MODEL → coupon
+réel ≈ EV+SAFE. **Décision produit (juin 2026)** : DOMINANT/BTTS = canaux de
+**prédiction** (suivis via `channel_selection`), pas de mise (ROI −2.1% / +1.0%,
+EV DOMINANT anti-prédictive). Seul DRAW (+9.9%) est un candidat staking — non
+promu dans le pool réel pour l'instant. Voir B-ROI.
 
 ### ✅ B8 — Constantes incohérentes → CORRIGÉ (2026-06-21)
 

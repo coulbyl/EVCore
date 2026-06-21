@@ -481,6 +481,23 @@ export class SignalWindowService {
     };
   }
 
+  /**
+   * REAL coupon pool (B7) — the staking-eligible source. It reads only `Bet`
+   * rows of source `MODEL`, which the engine materialises **for EV/SAFE** (the two
+   * channels measured +ROI, cf. DESIGN.md B-ROI). DOMINANT/BTTS/DRAW are NOT
+   * materialised as MODEL bets, so in practice this pool ≈ EV + SAFE — by design,
+   * not by accident:
+   *
+   * - DOMINANT/BTTS are **prediction-only** channels (ROI −2.1% / +1.0%, DOMINANT
+   *   EV anti-predictive) → tracked via `channel_selection`, never staked.
+   * - DRAW (+9.9%) is the one staking *candidate*, but is not promoted into the
+   *   real pool yet (would require a product decision + reading from
+   *   `channel_selection` instead of `Bet`).
+   *
+   * Same-match combos (Étape 6) are added here as VALUE legs when `includeCombos`.
+   * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
+   * (virtual SAFE/BTTS rules), kept distinct on purpose — it never stakes.
+   */
   async getTodayPool(
     date: string,
     opts: { includeCombos?: boolean } = {},
@@ -696,6 +713,14 @@ export class SignalWindowService {
     return picks;
   }
 
+  /**
+   * VIRTUAL coupon pool (B7) — **prediction/observation only, never staked**.
+   * Built from the `VIRTUAL_COUPON_RULES` (heuristic SAFE/BTTS-style markets) over
+   * the day's fixtures, independent of any materialised `Bet`. Kept deliberately
+   * separate from the real {@link getTodayPool}: it exists to observe candidate
+   * strategies (e.g. BTTS, HT overs) before they ever justify real stakes. Promote
+   * a virtual channel to the real pool only after a green per-channel backtest.
+   */
   async getTodayVirtualPool(date: string): Promise<VirtualScoredPick[]> {
     const dayStart = new Date(`${date}T00:00:00.000Z`);
     const dayEnd = new Date(`${date}T23:59:59.999Z`);
