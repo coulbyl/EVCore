@@ -13,12 +13,15 @@ import { CouponService } from './coupon.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponSummaryService } from './coupon-summary.service';
 import { CouponIndicesService } from './coupon-indices.service';
+import { CouponRoiService } from './coupon-roi.service';
 import { CouponQueryDto } from './dto/coupon-query.dto';
 import { CouponSummaryQueryDto } from './dto/coupon-summary-query.dto';
 import { CouponIndicesQueryDto } from './dto/coupon-indices-query.dto';
+import { CouponRoiQueryDto } from './dto/coupon-roi-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponSummaryResponse } from './dto/coupon-summary.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
+import type { CouponRoiResponse } from './dto/coupon-roi.dto';
 
 @ApiTags('coupons')
 @Controller('coupons')
@@ -29,6 +32,7 @@ export class CouponController {
     private readonly settlement: CouponSettlementService,
     private readonly summary: CouponSummaryService,
     private readonly indices: CouponIndicesService,
+    private readonly roi: CouponRoiService,
   ) {}
 
   @Get()
@@ -123,6 +127,19 @@ export class CouponController {
       from: query.from,
       to: query.to,
     });
+  }
+
+  @Get('roi')
+  @ApiOperation({
+    summary: 'Rolling ROI by channel × EV-bin (channel promotion tool)',
+    description:
+      'Flat-stake ROI over a date window, grouped by strategy channel and EV bin, read from settled channel_selection. A `promote` flag highlights +ROI bins with a large-enough sample. Defaults to the last 90 days.',
+  })
+  @ApiQuery({ name: 'from', required: false, example: '2026-03-01' })
+  @ApiQuery({ name: 'to', required: false, example: '2026-06-01' })
+  @ApiOkResponse({ description: 'ROI breakdown by channel and EV bin.' })
+  async getRoi(@Query() query: CouponRoiQueryDto): Promise<CouponRoiResponse> {
+    return this.roi.getRoiByChannel({ from: query.from, to: query.to });
   }
 
   @Post(':id/settle')

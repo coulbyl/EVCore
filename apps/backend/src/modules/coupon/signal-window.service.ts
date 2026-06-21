@@ -490,9 +490,8 @@ export class SignalWindowService {
    *
    * - DOMINANT/BTTS are **prediction-only** channels (ROI −2.1% / +1.0%, DOMINANT
    *   EV anti-predictive) → tracked via `channel_selection`, never staked.
-   * - DRAW (+9.9%) is the one staking *candidate*, but is not promoted into the
-   *   real pool yet (would require a product decision + reading from
-   *   `channel_selection` instead of `Bet`).
+   * - DRAW (+9.9%) is **promoted** to the real pool (B7): its selections are read
+   *   straight from `channel_selection` (not `Bet`) when `includeDraw` is set.
    *
    * Same-match combos (Étape 6) are added here as VALUE legs when `includeCombos`.
    * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
@@ -500,7 +499,7 @@ export class SignalWindowService {
    */
   async getTodayPool(
     date: string,
-    opts: { includeCombos?: boolean } = {},
+    opts: { includeCombos?: boolean; includeDraw?: boolean } = {},
   ): Promise<ScoredPick[]> {
     const dayStart = new Date(`${date}T00:00:00.000Z`);
     const dayEnd = new Date(`${date}T23:59:59.999Z`);
@@ -540,6 +539,24 @@ export class SignalWindowService {
                 status: true,
                 channelSelection: {
                   select: { channelDecision: { select: { channel: true } } },
+                },
+              },
+            },
+            // DRAW is a staking channel (B-ROI +9.9%) but isn't materialised as a
+            // MODEL Bet — read its selection straight from channel_selection so it
+            // can enter the real pool (B7 promotion). Gated by opts.includeDraw.
+            channelDecisions: {
+              where: { channel: StrategyChannel.DRAW },
+              select: {
+                selections: {
+                  where: { rank: 1, odds: { not: null } },
+                  select: {
+                    market: true,
+                    pick: true,
+                    probability: true,
+                    odds: true,
+                  },
+                  take: 1,
                 },
               },
             },
@@ -700,6 +717,34 @@ export class SignalWindowService {
               oddsSnapshot: cand.combinedOdds,
               pMarketFair: null,
               bookmakerMargin: null,
+              isCorrect: null,
+              signalScore: 0,
+              betId: null,
+              modelRunId: run.id,
+            });
+          }
+        }
+
+        // DRAW staking (B7 promotion) — DRAW selections live in channel_selection,
+        // not in MODEL bets, so read them here to make DRAW a real, staking-eligible
+        // pool leg. Backtested +9.9% ROI (B-ROI); gated by opts.includeDraw.
+        if (opts.includeDraw) {
+          const drawSel = run.channelDecisions[0]?.selections[0];
+          if (drawSel && drawSel.odds !== null) {
+            const drawFair = snapshot
+              ? computeMarketFair(drawSel.market, drawSel.pick, snapshot)
+              : null;
+            picks.push({
+              ...base,
+              canal: StrategyChannel.DRAW as Canal,
+              market: drawSel.market,
+              pick: drawSel.pick,
+              probability: Number(drawSel.probability),
+              calibratedHitRate: 0,
+              calibratedProbability: null,
+              oddsSnapshot: Number(drawSel.odds),
+              pMarketFair: drawFair?.pMarketFair ?? null,
+              bookmakerMargin: drawFair?.bookmakerMargin ?? null,
               isCorrect: null,
               signalScore: 0,
               betId: null,

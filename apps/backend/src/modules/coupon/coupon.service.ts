@@ -21,6 +21,7 @@ const logger = createLogger('coupon');
 export class CouponService {
   private readonly kellyEnabled: boolean;
   private readonly combosEnabled: boolean;
+  private readonly stakeDraw: boolean;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
@@ -33,6 +34,10 @@ export class CouponService {
     // Same-match combos (Étape 6) — off by default until backtested per league.
     this.combosEnabled =
       config.get<string>('COUPON_COMBOS_ENABLED', 'false') === 'true';
+    // DRAW staking (B7) — on by default: backtested +9.9% ROI, product-approved.
+    // Kept env-toggleable (COUPON_STAKE_DRAW=false) as a kill-switch.
+    this.stakeDraw =
+      config.get<string>('COUPON_STAKE_DRAW', 'true') !== 'false';
   }
 
   async generateCoupons(
@@ -55,6 +60,7 @@ export class CouponService {
       this.signalWindow.computeSignalWindow(windowDays, asOf),
       this.signalWindow.getTodayPool(date, {
         includeCombos: this.combosEnabled,
+        includeDraw: this.stakeDraw,
       }),
     ]);
 

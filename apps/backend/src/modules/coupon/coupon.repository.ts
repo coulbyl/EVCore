@@ -289,6 +289,47 @@ export class CouponRepository {
     >;
   }
 
+  /**
+   * Settled channel selections in a date window — the source for the rolling
+   * ROI-by-channel × EV-bin promotion view. Reads every channel (incl.
+   * DRAW/BTTS/DOMINANT) straight from `channel_selection`; no `Bet` needed.
+   */
+  async findSettledChannelSelections(opts: { from: Date; to: Date }): Promise<
+    {
+      channel: StrategyChannel;
+      ev: Prisma.Decimal | null;
+      odds: Prisma.Decimal | null;
+      result: BetStatus;
+    }[]
+  > {
+    const { from, to } = opts;
+    const rows = await this.prisma.client.channelSelection.findMany({
+      where: {
+        result: { in: [BetStatus.WON, BetStatus.LOST] },
+        odds: { not: null },
+        channelDecision: {
+          is: {
+            modelRun: {
+              is: { fixture: { is: { scheduledAt: { gte: from, lte: to } } } },
+            },
+          },
+        },
+      },
+      select: {
+        ev: true,
+        odds: true,
+        result: true,
+        channelDecision: { select: { channel: true } },
+      },
+    });
+    return rows.map((r) => ({
+      channel: r.channelDecision.channel,
+      ev: r.ev,
+      odds: r.odds,
+      result: r.result as BetStatus,
+    }));
+  }
+
   async updateResult(id: string, result: CouponResult): Promise<void> {
     await this.prisma.client.couponProposal.update({
       where: { id },

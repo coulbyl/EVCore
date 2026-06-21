@@ -134,11 +134,17 @@ Détail complet : [apps/backend/src/modules/coupon/DESIGN.md](apps/backend/src/m
 Étapes 1 (EV au cœur), 2 (overround/proba fair), 4 (profils de risque), 5 (staking
 Kelly), 6 (combos même-match, derrière `COUPON_COMBOS_ENABLED`) et B7 (deux pools
 documentés — réel staking-eligible EV/SAFE vs virtuel prédiction) **faites**.
-Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régénéré :
-backend typecheck/lint/578 tests ✅.
+Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régénéré.
 
-Reste, hors périmètre coupon « bobos » : Vue ROI roulante par canal × EV-bin (outil
-de promotion) ; unification active staker DRAW (choix produit, non pris).
+- [x] **Vue ROI roulante par canal × EV-bin** (outil de promotion) : `GET
+      /coupons/roi` (`CouponRoiService`) — ROI mise plate par canal × bin d'EV
+      depuis `channel_selection` settlé (tous canaux), flag `promote` (ROI>0 &
+      échantillon ≥ `MIN_BET_COUNT`).
+- [x] **Unification active — staker DRAW** : DRAW entre dans le pool réel via
+      `channel_selection` (`getTodayPool({ includeDraw })`), flag
+      `COUPON_STAKE_DRAW` (défaut **on** — backtesté +9.9%, kill-switch env).
+
+backend typecheck/lint/581 tests ✅.
 
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,

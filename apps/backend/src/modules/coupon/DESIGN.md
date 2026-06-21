@@ -211,24 +211,29 @@ ADN), avec Expected Log Growth derrière un flag optionnel.
 > `channel_selection` — pas besoin de matérialiser un `Bet` pour suivre.
 > (2) DOMINANT n'est pas qu'un problème de niveau de calibration : son signal EV
 > classe à l'envers (recalibrer le niveau ne suffira pas). (3) Ne staker que les
-> canaux à +ROI prouvé ; DRAW est le prochain candidat. Reste à construire une
-> **vue ROI roulante par canal × EV-bin** pour décider des promotions.
+> canaux à +ROI prouvé ; DRAW est le prochain candidat.
+>
+> **Suites (2026-06-21)** :
+> - ✅ **Vue ROI roulante par canal × EV-bin** construite : `GET /coupons/roi`
+>   (`CouponRoiService`) — ROI mise plate par canal × bin d'EV depuis
+>   `channel_selection` settlé, flag `promote` (ROI>0 & échantillon ≥ `MIN_BET_COUNT`).
+> - ✅ **DRAW promu et staké** : entre dans le pool réel via `channel_selection`
+>   (`getTodayPool({ includeDraw })`), flag `COUPON_STAKE_DRAW` (défaut on). DOMINANT/
+>   BTTS restent prédiction-only.
 
-### ✅ B7 — Deux pools clarifiés (documenté, pas unifié) → FAIT (2026-06-21)
+### ✅ B7 — Deux pools clarifiés + DRAW promu → FAIT (2026-06-21)
 
-> **Décision : documenter, pas unifier.** L'intention des deux pools est désormais
-> gravée en doc sur `getTodayPool` (pool RÉEL, staking-eligible, EV/SAFE par
-> construction) et `getTodayVirtualPool` (pool VIRTUEL, prédiction/observation,
-> jamais staké). Conforme à la décision produit en vigueur ; pas de changement de
-> staking. L'unification active (staker DRAW via `channel_selection`) reste un
-> **choix produit** non pris, à rouvrir avec un backtest par canal.
+> **Documenté ET unification partielle (DRAW staké).** Intention des deux pools
+> gravée en doc sur `getTodayPool` (pool RÉEL, staking-eligible) et
+> `getTodayVirtualPool` (pool VIRTUEL, prédiction/observation, jamais staké).
+> **DRAW est désormais promu** dans le pool réel (lecture `channel_selection`,
+> `includeDraw`, flag `COUPON_STAKE_DRAW` défaut on). DOMINANT/BTTS restent
+> prédiction-only (ROI −2.1% / +1.0%, EV DOMINANT anti-prédictive).
 
-Contexte (conservé) : `getTodayPool` ne lit que les `Bet` source `MODEL`
-(matérialisés pour EV/SAFE). BTTS/DRAW/DOMINANT n'ont pas de `Bet` MODEL → coupon
-réel ≈ EV+SAFE. **Décision produit (juin 2026)** : DOMINANT/BTTS = canaux de
-**prédiction** (suivis via `channel_selection`), pas de mise (ROI −2.1% / +1.0%,
-EV DOMINANT anti-prédictive). Seul DRAW (+9.9%) est un candidat staking — non
-promu dans le pool réel pour l'instant. Voir B-ROI.
+Contexte (conservé) : `getTodayPool` lisait seulement les `Bet` source `MODEL`
+(EV/SAFE). BTTS/DRAW/DOMINANT n'ont pas de `Bet` MODEL → suivi via
+`channel_selection`. DRAW (+9.9%) y est lu pour entrer dans le pool réel ; les
+deux autres restent prédiction. Voir B-ROI.
 
 ### ✅ B8 — Constantes incohérentes → CORRIGÉ (2026-06-21)
 
