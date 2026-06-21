@@ -32,6 +32,7 @@ import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.w
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
+import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type {
   LeagueSyncJobData,
@@ -153,8 +154,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly mlTrainingQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.ML_SCHEDULER)
     private readonly mlSchedulerQueue: Queue,
-    @InjectQueue(BULLMQ_QUEUES.ML_BACKFILL)
-    private readonly mlBackfillQueue: Queue,
+    @InjectQueue(BULLMQ_QUEUES.BETTING_ENGINE_REBUILD)
+    private readonly bettingEngineRebuildQueue: Queue<BettingEngineRebuildJobData>,
     @InjectQueue(BULLMQ_QUEUES.AI_ENGINE)
     private readonly aiEngineQueue: Queue,
     config: ConfigService,
@@ -627,6 +628,28 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  // Historical rebuild: queues one idempotent rebuild job per season. Each job
+  // re-runs the engine only on FINISHED fixtures without a ModelRun, so the
+  // whole set can be safely re-queued after a partial run.
+  async triggerBettingEngineRebuild(
+    window: { from?: string; to?: string } = {},
+  ): Promise<{ queued: number; seasonIds: string[] }> {
+    const { from, to } = window;
+    const seasons = await this.prisma.client.season.findMany({
+      select: { id: true },
+    });
+
+    const jobs = await this.bettingEngineRebuildQueue.addBulk(
+      seasons.map(({ id }) => ({
+        name: 'betting-engine-rebuild',
+        data: { seasonId: id, from, to } satisfies BettingEngineRebuildJobData,
+        opts: BULLMQ_DEFAULT_JOB_OPTIONS,
+      })),
+    );
+
+    return { queued: jobs.length, seasonIds: seasons.map((s) => s.id) };
+  }
+
   async triggerEloSync(): Promise<void> {
     await this.eloSyncQueue.add(
       'elo-sync',
@@ -767,7 +790,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.AI_ENGINE]: this.aiEngineQueue,
       [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,
       [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
-      [BULLMQ_QUEUES.ML_BACKFILL]: this.mlBackfillQueue,
+      [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
     };
   }
 

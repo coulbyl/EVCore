@@ -169,7 +169,6 @@ export const API_FOOTBALL_BET_IDS = {
 
 export const BULLMQ_QUEUES = {
   ML_TRAINING: 'ml-training',
-  ML_BACKFILL: 'ml-backfill',
   ML_SCHEDULER: 'ml-scheduler',
   LEAGUE_SYNC: 'league-sync',
   PENDING_BETS_SETTLEMENT: 'pending-bets-settlement-sync',
@@ -178,6 +177,10 @@ export const BULLMQ_QUEUES = {
   ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
   ELO_SYNC: 'elo-sync',
   BETTING_ENGINE: 'betting-engine',
+  // Historical rebuild: re-runs the betting engine on FINISHED fixtures that
+  // have no ModelRun yet (idempotent), per season. Renamed from ml-backfill —
+  // its role is an analytical rebuild post-purge, not an ML concern.
+  BETTING_ENGINE_REBUILD: 'betting-engine-rebuild',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
   STANDINGS_SYNC: 'standings-sync',

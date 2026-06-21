@@ -8,8 +8,9 @@
  * Execute:
  *   pnpm --filter @evcore/db db:purge:analysis -- --confirm=PURGE_ANALYSIS_DATA
  *
- * This intentionally deletes generated analysis artifacts so ml-backfill can
- * rebuild ModelRun / ChannelDecision data from the new strategy model.
+ * This intentionally deletes generated analysis artifacts so the
+ * betting-engine-rebuild ETL worker can rebuild ModelRun / ChannelDecision data
+ * from the new strategy model (POST /etl/rebuild/betting-engine).
  */
 import "dotenv/config";
 import { prisma } from "../src/client";
