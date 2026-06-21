@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
-  BackfillResult,
   MlModelVersion,
   MlTrainingJobStatus,
   TrainResult,
@@ -24,21 +23,6 @@ export function useActiveMlModel(segment = "ALL") {
       clientApiRequest<MlModelVersion | null>(
         `/ml/models/active?segment=${segment}`,
       ),
-  });
-}
-
-export function useTriggerBackfill() {
-  const qc = useQueryClient();
-  return useMutation({
-    // Historical rebuild moved out of the ML module to the ETL engine rebuild
-    // worker (queues one idempotent job per season). Optional from/to restrict
-    // the scheduledAt window (ISO YYYY-MM-DD); omit both to rebuild everything.
-    mutationFn: (window: { from?: string; to?: string } = {}) =>
-      clientApiRequest<BackfillResult>("/etl/rebuild/betting-engine", {
-        method: "POST",
-        body: window,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
   });
 }
 

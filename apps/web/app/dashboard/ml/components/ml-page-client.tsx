@@ -37,10 +37,10 @@ import {
   useMlModels,
   useMlTrainingJobStatus,
   useRollbackModel,
-  useTriggerBackfill,
   useTriggerCatchUpSwitch,
   useTriggerTraining,
 } from "@/domains/ml/use-cases/use-ml";
+import { useTriggerBettingEngineRebuild } from "@/domains/etl/use-cases/use-etl";
 import type { MlModelVersion } from "@/domains/ml/types/ml";
 
 const ML_SEGMENTS = [
@@ -106,7 +106,7 @@ function DateField({
 }
 
 function BackfillSection() {
-  const trigger = useTriggerBackfill();
+  const trigger = useTriggerBettingEngineRebuild();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [result, setResult] = useState<{
