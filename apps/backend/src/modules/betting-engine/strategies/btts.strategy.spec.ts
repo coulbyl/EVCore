@@ -86,6 +86,24 @@ describe('BttsStrategy', () => {
     expect(decision.selections[0].rank).toBe(1);
   });
 
+  it('attaches odds, implied probability and EV when the book has a price', () => {
+    const ctx = makeContext(0.65, 'BL1');
+    const decision = strategy.evaluate({
+      ...ctx,
+      odds: { ...BASE_ODDS, bttsYesOdds: new Decimal('1.70') },
+    });
+    const sel = decision.selections[0];
+    expect(sel.odds?.toNumber()).toBe(1.7);
+    expect(sel.impliedProbability?.toNumber()).toBeCloseTo(1 / 1.7, 10);
+    expect(sel.ev?.toNumber()).toBeCloseTo(0.65 * 1.7 - 1, 10);
+  });
+
+  it('records a price-less selection when no BTTS odds exist', () => {
+    const decision = strategy.evaluate(makeContext(0.65, 'BL1')); // BASE_ODDS.bttsYesOdds = null
+    expect(decision.selections[0].odds).toBeUndefined();
+    expect(decision.selections[0].ev).toBeUndefined();
+  });
+
   it('returns SELECTED at exactly the threshold (boundary)', () => {
     // BL1 threshold = 0.60 — exactly at threshold should pass (lessThan, not lte)
     const decision = strategy.evaluate(makeContext(0.6, 'BL1'));

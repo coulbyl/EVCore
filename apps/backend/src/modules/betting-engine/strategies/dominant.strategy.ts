@@ -3,6 +3,7 @@ import {
   DOMINANT_MIN_MARGIN,
   getChannelStrategyConfig,
 } from './channel-strategy.config';
+import { priceForSelection } from './selection-odds';
 import {
   CHANNEL_DECISION_STATUS,
   STRATEGY_CHANNEL,
@@ -74,6 +75,12 @@ export class DominantStrategy implements ChannelStrategy {
           market: Market.ONE_X_TWO,
           pick: first.pick,
           probability: first.probability,
+          ...priceForSelection({
+            odds: context.odds,
+            market: Market.ONE_X_TWO,
+            pick: first.pick,
+            probability: first.probability,
+          }),
           rank: 1,
         },
       ],

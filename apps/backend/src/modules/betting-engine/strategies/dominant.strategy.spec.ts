@@ -150,14 +150,30 @@ describe('DominantStrategy', () => {
     expect(strategy.allowedMarkets).toEqual([Market.ONE_X_TWO]);
   });
 
-  it('selection has no odds field (DOMINANT does not require odds snapshot)', () => {
+  it('attaches the winning pick odds, implied probability and EV', () => {
     const ctx = makeContext({
       home: 0.6,
       draw: 0.25,
       away: 0.15,
       competitionCode: 'BL1',
     });
-    const decision = strategy.evaluate(ctx);
-    expect(decision.selections[0].odds).toBeUndefined();
+    const sel = strategy.evaluate(ctx).selections[0];
+    expect(sel.pick).toBe('HOME');
+    expect(sel.odds?.toNumber()).toBe(1.5); // BASE_ODDS.homeOdds
+    expect(sel.impliedProbability?.toNumber()).toBeCloseTo(1 / 1.5, 10);
+    expect(sel.ev?.toNumber()).toBeCloseTo(0.6 * 1.5 - 1, 10);
+  });
+
+  it('records a price-less selection when no odds snapshot exists', () => {
+    const ctx = makeContext({
+      home: 0.6,
+      draw: 0.25,
+      away: 0.15,
+      competitionCode: 'BL1',
+    });
+    const sel = strategy.evaluate({ ...ctx, odds: null }).selections[0];
+    expect(sel.pick).toBe('HOME');
+    expect(sel.odds).toBeUndefined();
+    expect(sel.ev).toBeUndefined();
   });
 });

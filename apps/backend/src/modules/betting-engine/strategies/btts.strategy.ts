@@ -1,5 +1,6 @@
 import { Market } from '@evcore/db';
 import { getChannelStrategyConfig } from './channel-strategy.config';
+import { priceForSelection } from './selection-odds';
 import {
   CHANNEL_DECISION_STATUS,
   STRATEGY_CHANNEL,
@@ -45,6 +46,12 @@ export class BttsStrategy implements ChannelStrategy {
           market: Market.BTTS,
           pick: 'YES',
           probability: bttsProb,
+          ...priceForSelection({
+            odds: context.odds,
+            market: Market.BTTS,
+            pick: 'YES',
+            probability: bttsProb,
+          }),
           rank: 1,
         },
       ],

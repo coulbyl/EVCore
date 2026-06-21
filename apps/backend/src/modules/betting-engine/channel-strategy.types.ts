@@ -91,6 +91,14 @@ export type StrategyContext = {
   previousDecisions: ReadonlyMap<StrategyChannel, StrategyDecision>;
 };
 
+// PRINCIPE (tout canal doit le respecter) : une sélection attache toujours son
+// prix marché quand le book en a un — `odds`, `impliedProbability`, `ev` — pour
+// que chaque canal soit auditable sur EV/ROI de la même façon, pas seulement
+// EV/SAFE. Utiliser `priceForSelection` (strategies/selection-odds.ts), jamais
+// recalculer l'EV inline. Les champs restent absents si aucune cote n'existe,
+// pour que les canaux de prédiction enregistrent quand même une sélection
+// (settlement analytique). Exception assumée : DRAW, dont le signal EST la proba
+// implicite (1/drawOdds) → EV structurellement nul, donc non reporté.
 export type StrategySelection = {
   market: Market;
   pick: string;
