@@ -86,10 +86,19 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
       + imports ; chemins API périmés corrigés (`/ai-engine/coupons` → `/coupons`,
       `/ai-engine/investment-indices` → `/coupons/indices`) ; page+domaine
       `investment-summary` morts supprimés (route orpheline, aucun lien nav).
-      web typecheck/lint ✅. Reste cosmétique : fichiers internes encore nommés
-      `investment-indices*` dans `domains/coupon` (→ `coupon-indices*`).
-- [ ] **[optionnel]** unifier `pnl-by-canal` (clés lowercase `global/ev/sv`,
-      contrat séparé cohérent) et renommer les tokens CSS `--canal-ev/-sv/-conf`.
+      web typecheck/lint ✅.
+- [x] **Cosmétique vocab — FAIT (2026-06-22)** :
+      - `pnl-by-canal` : clés du contrat `ev/sv` → `value/safe` (backend
+        `PnlByCanalResponse` + service, front use-case + `canal-cards` +
+        `overview-section`, i18n `canalEv/canalSv` → `canalValue/canalSafe`).
+      - Tokens CSS `--canal-ev/-sv/-conf(-soft)` (+ mappings `--color-canal-*`
+        et classes Tailwind `*-canal-ev/sv/conf`) → `--canal-value/-safe/-dominant`.
+        Les **badge codes** gamification `'canal-ev'/'canal-sv'/'canal-confiance'`
+        (identifiants persistés) sont volontairement préservés.
+      - `investment-indices*` → `coupon-indices*` dans `domains/coupon` + types
+        `InvestmentIndices*` → `CouponIndices*`, hook `useCouponIndices`, et le
+        composant `coupon-indices-drawer` (`CouponIndicesDrawer`).
+      - backend typecheck/lint/571 tests ✅ · web typecheck/lint ✅.
 
 ---
 

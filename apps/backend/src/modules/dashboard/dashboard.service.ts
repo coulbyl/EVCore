@@ -192,11 +192,11 @@ export class DashboardService {
     const until = endOfUtcDay(parseIsoDate(to));
     const bets = await this.repo.getSettledBetsForPnl({ since, until });
 
-    const evBets = bets.filter(
+    const valueBets = bets.filter(
       (b) =>
         b.channelSelection?.channelDecision.channel === StrategyChannel.VALUE,
     );
-    const svBets = bets.filter(
+    const safeBets = bets.filter(
       (b) =>
         b.channelSelection?.channelDecision.channel === StrategyChannel.SAFE,
     );
@@ -205,8 +205,8 @@ export class DashboardService {
       from,
       to,
       global: this.buildPnlSummary(bets),
-      ev: this.buildPnlSummary(evBets),
-      sv: this.buildPnlSummary(svBets),
+      value: this.buildPnlSummary(valueBets),
+      safe: this.buildPnlSummary(safeBets),
     };
   }
 

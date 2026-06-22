@@ -328,7 +328,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
           {mr.ev && (
             <span
               className="tabular-nums text-sm font-bold"
-              style={{ color: "var(--canal-ev)" }}
+              style={{ color: "var(--canal-value)" }}
             >
               {mr.ev}
             </span>

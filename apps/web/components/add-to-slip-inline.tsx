@@ -12,9 +12,9 @@
 // type Canal = "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS";
 
 // const CANAL_COLOR: Record<Canal, string> = {
-//   EV: "var(--canal-ev)",
-//   SV: "var(--canal-sv)",
-//   CONF: "var(--canal-conf)",
+//   EV: "var(--canal-value)",
+//   SV: "var(--canal-safe)",
+//   CONF: "var(--canal-dominant)",
 //   DRAW: "var(--canal-draw)",
 //   BTTS: "var(--canal-btts)",
 // };

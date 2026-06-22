@@ -10,9 +10,9 @@ import {
 } from "@/components/coupon-card";
 
 const CANAL_COLOR: Record<string, string> = {
-  VALUE: "var(--canal-ev)",
-  SAFE: "var(--canal-sv)",
-  DOMINANT: "var(--canal-conf)",
+  VALUE: "var(--canal-value)",
+  SAFE: "var(--canal-safe)",
+  DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
 };
@@ -50,7 +50,7 @@ export function CouponCard({
     awayLogo: leg.awayLogo,
     countryLabel: translateCountry(leg.country, locale),
     competitionLabel: translateCompetition(leg.competition, locale),
-    canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-sv)",
+    canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-safe)",
     canalLabel: CANAL_LABEL[leg.canal] ?? leg.canal,
     marketLabel: formatMarketForDisplay(leg.market, loc),
     pickLabel: formatPickForDisplay(leg.pick, leg.market),

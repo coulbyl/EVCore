@@ -3,9 +3,9 @@ import { useTranslations } from "next-intl";
 type Canal = "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS";
 
 const STYLES: Record<Canal, { color: string; soft: string }> = {
-  VALUE: { color: "var(--canal-ev)", soft: "var(--canal-ev-soft)" },
-  SAFE: { color: "var(--canal-sv)", soft: "var(--canal-sv-soft)" },
-  DOMINANT: { color: "var(--canal-conf)", soft: "var(--canal-conf-soft)" },
+  VALUE: { color: "var(--canal-value)", soft: "var(--canal-value-soft)" },
+  SAFE: { color: "var(--canal-safe)", soft: "var(--canal-safe-soft)" },
+  DOMINANT: { color: "var(--canal-dominant)", soft: "var(--canal-dominant-soft)" },
   DRAW: {
     color: "var(--canal-draw)",
     soft: "var(--canal-draw-soft)",

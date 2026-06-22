@@ -5,17 +5,17 @@ import type {
 
 // StrategyChannel → design tokens (1:1 with the legacy --canal-* palette).
 export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
-  VALUE: "var(--canal-ev)",
-  SAFE: "var(--canal-sv)",
-  DOMINANT: "var(--canal-conf)",
+  VALUE: "var(--canal-value)",
+  SAFE: "var(--canal-safe)",
+  DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
-  VALUE: "var(--canal-ev-soft)",
-  SAFE: "var(--canal-sv-soft)",
-  DOMINANT: "var(--canal-conf-soft)",
+  VALUE: "var(--canal-value-soft)",
+  SAFE: "var(--canal-safe-soft)",
+  DOMINANT: "var(--canal-dominant-soft)",
   BTTS: "var(--canal-btts-soft)",
   DRAW: "var(--canal-draw-soft)",
 };

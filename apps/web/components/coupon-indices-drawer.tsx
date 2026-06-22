@@ -28,12 +28,12 @@ import {
   cn,
 } from "@evcore/ui";
 import { daysAgoIso, toISODate, isoToDate } from "@/lib/date";
-import { useInvestmentIndices } from "@/domains/coupon/use-cases/use-investment-indices";
-import type { InvestmentIndicesCanal } from "@/domains/coupon/types/investment-indices";
+import { useCouponIndices } from "@/domains/coupon/use-cases/use-coupon-indices";
+import type { CouponIndicesCanal } from "@/domains/coupon/types/coupon-indices";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CANAL_OPTIONS: { value: InvestmentIndicesCanal; label: string }[] = [
+const CANAL_OPTIONS: { value: CouponIndicesCanal; label: string }[] = [
   { value: "SAFE", label: "SAFE" },
   { value: "VALUE", label: "VALUE" },
   { value: "DOMINANT", label: "VICTOIRE" },
@@ -42,13 +42,13 @@ const CANAL_OPTIONS: { value: InvestmentIndicesCanal; label: string }[] = [
   { value: "COUPON", label: "COUPON" },
 ];
 
-const CANAL_COLOR: Record<InvestmentIndicesCanal, string> = {
-  VALUE: "var(--canal-ev)",
-  SAFE: "var(--canal-sv)",
-  DOMINANT: "var(--canal-conf)",
+const CANAL_COLOR: Record<CouponIndicesCanal, string> = {
+  VALUE: "var(--canal-value)",
+  SAFE: "var(--canal-safe)",
+  DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
-  COUPON: "var(--canal-sv)",
+  COUPON: "var(--canal-safe)",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ function DateButton({
 
 // ── Main drawer ───────────────────────────────────────────────────────────────
 
-export function InvestmentIndicesDrawer({
+export function CouponIndicesDrawer({
   open,
   onClose,
   isMobile,
@@ -200,23 +200,23 @@ export function InvestmentIndicesDrawer({
   open: boolean;
   onClose: () => void;
   isMobile: boolean;
-  initialCanal?: InvestmentIndicesCanal;
+  initialCanal?: CouponIndicesCanal;
 }) {
   const yesterday = daysAgoIso(1);
 
-  const [canal, setCanal] = useState<InvestmentIndicesCanal>(
+  const [canal, setCanal] = useState<CouponIndicesCanal>(
     initialCanal ?? "SAFE",
   );
   const [from, setFrom] = useState<string>(daysAgoIso(89));
   const [to, setTo] = useState<string>(yesterday);
   const [applied, setApplied] = useState<{
-    canal: InvestmentIndicesCanal;
+    canal: CouponIndicesCanal;
     from: string;
     to: string;
   } | null>(null);
   const [calibrationOpen, setCalibrationOpen] = useState(false);
 
-  const { data, isLoading, isFetching, isError } = useInvestmentIndices({
+  const { data, isLoading, isFetching, isError } = useCouponIndices({
     canal: applied?.canal ?? canal,
     from: applied?.from,
     to: applied?.to,
@@ -276,7 +276,7 @@ export function InvestmentIndicesDrawer({
               <label className="text-xs text-muted-foreground">Canal</label>
               <Select
                 value={canal}
-                onValueChange={(v) => setCanal(v as InvestmentIndicesCanal)}
+                onValueChange={(v) => setCanal(v as CouponIndicesCanal)}
               >
                 <SelectTrigger className="h-9 w-full text-xs">
                   <SelectValue />

@@ -1,4 +1,4 @@
-export type InvestmentIndicesCanal =
+export type CouponIndicesCanal =
   | "VALUE"
   | "SAFE"
   | "BTTS"
@@ -6,7 +6,7 @@ export type InvestmentIndicesCanal =
   | "DOMINANT"
   | "COUPON";
 
-export type InvestmentIndicesRow = {
+export type CouponIndicesRow = {
   probability: number;
   total: number;
   won: number;
@@ -14,7 +14,7 @@ export type InvestmentIndicesRow = {
   isGood: boolean;
 };
 
-export type InvestmentIndicesMarketRow = {
+export type CouponIndicesMarketRow = {
   market: string;
   label: string;
   total: number;
@@ -23,7 +23,7 @@ export type InvestmentIndicesMarketRow = {
   roi: number | null;
 };
 
-export type InvestmentIndicesOddsRow = {
+export type CouponIndicesOddsRow = {
   label: string;
   from: number;
   to: number;
@@ -33,17 +33,17 @@ export type InvestmentIndicesOddsRow = {
   roi: number;
 };
 
-export type InvestmentIndicesResponse = {
-  canal: InvestmentIndicesCanal;
+export type CouponIndicesResponse = {
+  canal: CouponIndicesCanal;
   from: string;
   to: string;
-  rows: InvestmentIndicesRow[];
+  rows: CouponIndicesRow[];
   summary: {
     total: number;
     won: number;
     hitRate: number;
     roi: number | null;
   };
-  byMarket: InvestmentIndicesMarketRow[];
-  byOddsRange: InvestmentIndicesOddsRow[] | null;
+  byMarket: CouponIndicesMarketRow[];
+  byOddsRange: CouponIndicesOddsRow[] | null;
 };

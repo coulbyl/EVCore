@@ -19,19 +19,19 @@ const STATUS_DOT: Record<ChannelStatus, string> = {
 
 const CANAL_STYLES = {
   ev: {
-    color: "var(--canal-ev)",
-    soft: "var(--canal-ev-soft)",
-    border: "color-mix(in srgb, var(--canal-ev) 20%, transparent)",
+    color: "var(--canal-value)",
+    soft: "var(--canal-value-soft)",
+    border: "color-mix(in srgb, var(--canal-value) 20%, transparent)",
   },
   sv: {
-    color: "var(--canal-sv)",
-    soft: "var(--canal-sv-soft)",
-    border: "color-mix(in srgb, var(--canal-sv) 20%, transparent)",
+    color: "var(--canal-safe)",
+    soft: "var(--canal-safe-soft)",
+    border: "color-mix(in srgb, var(--canal-safe) 20%, transparent)",
   },
   conf: {
-    color: "var(--canal-conf)",
-    soft: "var(--canal-conf-soft)",
-    border: "color-mix(in srgb, var(--canal-conf) 20%, transparent)",
+    color: "var(--canal-dominant)",
+    soft: "var(--canal-dominant-soft)",
+    border: "color-mix(in srgb, var(--canal-dominant) 20%, transparent)",
   },
   draw: {
     color: "var(--canal-draw)",
@@ -138,8 +138,8 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   const findHealth = (ch: ChannelHealthItem["channel"]) =>
     healthItems.find((h) => h.channel === ch);
 
-  const ev = pnlByCanal?.ev ?? null;
-  const sv = pnlByCanal?.sv ?? null;
+  const ev = pnlByCanal?.value ?? null;
+  const sv = pnlByCanal?.safe ?? null;
   const btts = findHealth("BTTS");
   const conf = findHealth("DOMINANT");
   const draw = findHealth("DRAW");

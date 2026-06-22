@@ -14,7 +14,7 @@ const PERIODS: { value: PnlPeriod; labelKey: string }[] = [
   { value: "all", labelKey: "periodAll" },
 ];
 
-type Canal = "global" | "ev" | "sv";
+type Canal = "global" | "value" | "safe";
 
 export function OverviewSection() {
   const t = useTranslations("performancePage");
@@ -39,8 +39,8 @@ export function OverviewSection() {
         <Tabs value={canal} onValueChange={(v) => setCanal(v as Canal)}>
           <TabsList>
             <TabsTrigger value="global">{t("canalGlobal")}</TabsTrigger>
-            <TabsTrigger value="ev">{t("canalEv")}</TabsTrigger>
-            <TabsTrigger value="sv">{t("canalSv")}</TabsTrigger>
+            <TabsTrigger value="value">{t("canalValue")}</TabsTrigger>
+            <TabsTrigger value="safe">{t("canalSafe")}</TabsTrigger>
           </TabsList>
         </Tabs>
 

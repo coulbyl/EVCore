@@ -126,15 +126,15 @@ function HeroPreview() {
       tag: "VICTOIRE",
       metric: "57.2%",
       bets: 159,
-      color: "text-canal-sv",
-      bg: "bg-canal-sv/10 border-canal-sv/20",
+      color: "text-canal-safe",
+      bg: "bg-canal-safe/10 border-canal-safe/20",
     },
     {
       tag: "BTTS",
       metric: "65.6%",
       bets: 163,
-      color: "text-canal-ev",
-      bg: "bg-canal-ev/10 border-canal-ev/20",
+      color: "text-canal-value",
+      bg: "bg-canal-value/10 border-canal-value/20",
     },
   ];
 

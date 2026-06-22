@@ -12,9 +12,9 @@ const CANAL_LABEL: Record<ChannelStatsItem["channel"], string> = {
 };
 
 const CANAL_COLOR: Record<ChannelStatsItem["channel"], string> = {
-  VALUE: "var(--canal-ev)",
-  SAFE: "var(--canal-sv)",
-  DOMINANT: "var(--canal-conf)",
+  VALUE: "var(--canal-value)",
+  SAFE: "var(--canal-safe)",
+  DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
 };

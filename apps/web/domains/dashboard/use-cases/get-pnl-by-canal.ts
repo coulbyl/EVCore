@@ -10,8 +10,8 @@ export type PnlByCanalResponse = {
   from: string;
   to: string;
   global: PnlSummary;
-  ev: PnlSummary;
-  sv: PnlSummary;
+  value: PnlSummary;
+  safe: PnlSummary;
 };
 
 export function usePnlByCanal(from: string, to: string) {
