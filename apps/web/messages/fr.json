@@ -447,7 +447,36 @@
     "canalSv": "Sûr",
     "period7d": "7 jours",
     "period30d": "30 jours",
-    "periodAll": "Tout"
+    "periodAll": "Tout",
+    "analysis": "Analyse par canal",
+    "analysisHint": "Backtest, calibration et tuning des seuils — lecture directe des sorties du moteur.",
+    "tabChannels": "Backtest canaux",
+    "tabTuning": "Tuning seuils",
+    "tabCalibration": "Calibration modèle",
+    "channelsHint": "ROI mise plate par canal × ligue sur les sélections réglées.",
+    "calibrationModelHint": "Qualité du modèle 1X2 (Brier / ECE) par ligue — indépendant des canaux.",
+    "tuningHint": "Sweep de seuils hors-ligne → seuil recommandé par ligue. Consultatif : à reporter manuellement dans la config.",
+    "runAnalysis": "Lancer l'analyse",
+    "analysisWindow": "Fenêtre {from} → {to}",
+    "analysisIdle": "Lancez l'analyse pour afficher les résultats.",
+    "analysisEmpty": "Aucune donnée sur la fenêtre.",
+    "colChannel": "Canal",
+    "colCompetition": "Ligue",
+    "colSettled": "Réglés",
+    "colHitRate": "Réussite",
+    "colRoi": "ROI",
+    "colVerdict": "Verdict",
+    "colAnalyzed": "Analysés",
+    "colEce": "ECE",
+    "colCurrent": "Actuel",
+    "colRecommended": "Recommandé",
+    "colRecRoi": "ROI reco",
+    "colRecSample": "Échantillon",
+    "verdict": {
+      "PASS": "Validé",
+      "FAIL": "Échec",
+      "INSUFFICIENT_DATA": "Insuffisant"
+    }
   },
   "fixtureDiagnostics": {
     "rejection": {

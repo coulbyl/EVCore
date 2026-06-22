@@ -3,6 +3,7 @@ import type { BacktestService } from './backtest.service';
 import type { GridSearchService } from './grid-search.service';
 import type { ChannelBacktestService } from './channel-backtest.service';
 import type { ModelCalibrationService } from './model-calibration.service';
+import type { ChannelTuningService } from './channel-tuning.service';
 import { BacktestController } from './backtest.controller';
 
 describe('BacktestController', () => {
@@ -42,12 +43,19 @@ describe('BacktestController', () => {
     } as unknown as ModelCalibrationService;
   }
 
+  function makeChannelTuning(): ChannelTuningService {
+    return {
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ChannelTuningService;
+  }
+
   function makeController(service: BacktestService): BacktestController {
     return new BacktestController(
       service,
       makeGridSearchService(),
       makeChannelBacktest(),
       makeModelCalibration(),
+      makeChannelTuning(),
     );
   }
 

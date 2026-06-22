@@ -7,6 +7,7 @@ import { GridSearchService } from './grid-search.service';
 import { BacktestRepository } from './backtest.repository';
 import { ChannelBacktestService } from './channel-backtest.service';
 import { ModelCalibrationService } from './model-calibration.service';
+import { ChannelTuningService } from './channel-tuning.service';
 
 @Module({
   imports: [PrismaModule, BettingEngineModule],
@@ -17,6 +18,7 @@ import { ModelCalibrationService } from './model-calibration.service';
     BacktestRepository,
     ChannelBacktestService,
     ModelCalibrationService,
+    ChannelTuningService,
   ],
   exports: [BacktestService],
 })

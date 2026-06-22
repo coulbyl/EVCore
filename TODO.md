@@ -163,13 +163,29 @@ calibration modèle **séparée**.
       par canal×ligue), `ModelCalibrationService` (`POST /backtest/calibration` :
       Brier/ECE par ligue, channel-agnostic), métriques pures. Legacy intact.
       backend typecheck/lint/584 tests ✅.
-- [ ] **Étage 2** : brique **tuning** (sweep de seuils offline depuis
-      `model_run.features`) → recommande `CHANNEL_STRATEGY_CONFIG` ; migrer
-      `grid-search` et le **front** (`domains/backtest` + page `performance`) vers
-      les nouvelles shapes.
+- [x] **Étage 2** (2026-06-22) : brique **tuning** + bascule du front.
+      - Backend : `POST /backtest/tuning` (`ChannelTuningService`) sweepe les
+        seuils `DOMINANT/DRAW/BTTS` **hors-ligne** depuis `model_run.features` +
+        cotes (`findChannelTuningRows`, lit la DB, ne ré-exécute pas le moteur) ;
+        recommande un seuil par ligue×canal (ROI/hit/coverage + verdict PASS).
+        **Consultatif** : aucune auto-application (`CHANNEL_STRATEGY_CONFIG`
+        édité à la main). `tuning.metrics.ts` pur + spec, `tuning.constants.ts`
+        (grilles + règles de promotion). backend typecheck/lint/589 tests ✅.
+      - Front : page `performance` **allégée** — `OverviewSection` (P&L par
+        canal) conservée + nouvelle `ChannelAnalysisSection` à 3 onglets
+        (Backtest canaux `/backtest/channels`, Tuning seuils `/backtest/tuning`,
+        Calibration modèle `/backtest/calibration`). Supprimés : onglets legacy
+        EV/SV + sections `weights-timeline`/`competition-stats`/`calibration`
+        live, use-cases `run-backtest`/`run-safe-value-backtest`. web
+        typecheck/lint ✅ (2 warnings `<img>` préexistants).
+      - Reste : `grid-search` legacy (sweep EV `evFloor`/`modelScore` qui
+        ré-exécute le moteur) **non migré** — il vit avec le reste du legacy et
+        tombe en Étage 3.
 - [ ] **Étage 3** : supprimer le legacy (`backtest.service.ts` god class,
       `runAllSeasonsSafeValueBacktest`, `predictionBacktests`, `PredictionChannel`,
-      anciennes routes) une fois le front basculé.
+      `grid-search.service.ts`, anciennes routes `POST /backtest{,/:competitionCode,
+      /safe-value,/grid-search/:code}`) — le front est basculé (Étage 2),
+      ces routes n'ont plus de consommateur.
 
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,

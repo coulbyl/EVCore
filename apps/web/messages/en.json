@@ -447,7 +447,36 @@
     "canalSv": "Safe",
     "period7d": "7 days",
     "period30d": "30 days",
-    "periodAll": "All"
+    "periodAll": "All",
+    "analysis": "Channel analysis",
+    "analysisHint": "Backtest, calibration and threshold tuning — read straight from the engine outputs.",
+    "tabChannels": "Channel backtest",
+    "tabTuning": "Threshold tuning",
+    "tabCalibration": "Model calibration",
+    "channelsHint": "Flat-stake ROI per channel × league over settled selections.",
+    "calibrationModelHint": "1X2 model quality (Brier / ECE) per league — channel-agnostic.",
+    "tuningHint": "Offline threshold sweep → recommended threshold per league. Advisory: copy into the config manually.",
+    "runAnalysis": "Run analysis",
+    "analysisWindow": "Window {from} → {to}",
+    "analysisIdle": "Run the analysis to see results.",
+    "analysisEmpty": "No data in the window.",
+    "colChannel": "Channel",
+    "colCompetition": "League",
+    "colSettled": "Settled",
+    "colHitRate": "Hit rate",
+    "colRoi": "ROI",
+    "colVerdict": "Verdict",
+    "colAnalyzed": "Analyzed",
+    "colEce": "ECE",
+    "colCurrent": "Current",
+    "colRecommended": "Recommended",
+    "colRecRoi": "Rec. ROI",
+    "colRecSample": "Sample",
+    "verdict": {
+      "PASS": "Pass",
+      "FAIL": "Fail",
+      "INSUFFICIENT_DATA": "Insufficient"
+    }
   },
   "fixtureDiagnostics": {
     "rejection": {
