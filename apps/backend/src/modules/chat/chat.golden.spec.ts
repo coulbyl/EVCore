@@ -78,14 +78,14 @@ const ML_INACTIVE = {
 };
 
 const PERF_STUB = [
-  { channel: 'EV', roi: 0.09, hitRate: 0.61, netUnits: 4.2, sampleSize: 47 },
+  { channel: 'VALUE', roi: 0.09, hitRate: 0.61, netUnits: 4.2, sampleSize: 47 },
 ];
 
 const LEAGUE_STUB = [
   { competition: 'PL', hitRate: 0.64, roi: 0.11, picks: 22 },
 ];
 
-const EDGE_STUB = [{ segment: 'EV', picks: 47, avgEdge: 0.04, roi: 0.09 }];
+const EDGE_STUB = [{ segment: 'VALUE', picks: 47, avgEdge: 0.04, roi: 0.09 }];
 
 const HEALTH_STUB = {
   lastFixtureSyncAt: NOW.toISOString(),
@@ -129,7 +129,7 @@ const PICKS_EVAL_STUB = {
       shadowSignals: { lineMovement: 0.02, h2h: 0.6, congestion: null },
       evaluatedPicks: [
         {
-          channel: 'EV',
+          channel: 'VALUE',
           market: 'ONE_X_TWO',
           pick: 'HOME',
           probability: 0.71,
@@ -139,7 +139,7 @@ const PICKS_EVAL_STUB = {
           rejectionReason: null,
         },
         {
-          channel: 'EV',
+          channel: 'VALUE',
           market: 'OVER_UNDER',
           pick: 'OVER_3_5',
           probability: 0.446,
@@ -171,7 +171,7 @@ const PICKS_EVAL_STUB = {
       shadowSignals: { lineMovement: null, h2h: null, congestion: null },
       evaluatedPicks: [
         {
-          channel: 'EV',
+          channel: 'VALUE',
           market: 'ONE_X_TWO',
           pick: 'DRAW',
           probability: 0.248,
@@ -495,12 +495,12 @@ describe('ChatToolsService — golden set', () => {
       const service = makeService(makeRepo({ getChannelPerfStats }));
 
       await exec(service, 'getChannelPerformance', {
-        args: { channel: 'EV', from: '2026-05-01', to: '2026-06-12' },
+        args: { channel: 'VALUE', from: '2026-05-01', to: '2026-06-12' },
       });
 
       expect(getChannelPerfStats).toHaveBeenCalledWith(
         expect.objectContaining({
-          channel: 'EV',
+          channel: 'VALUE',
           range: expect.objectContaining({
             from: new Date('2026-05-01T00:00:00.000Z'),
             to: new Date('2026-06-12T23:59:59.999Z'),
@@ -527,11 +527,11 @@ describe('ChatToolsService — golden set', () => {
       const service = makeService(makeRepo({ getLeagueStats }));
 
       await exec(service, 'getLeaguePerformance', {
-        args: { channel: 'SV', from: '2026-05-01', to: '2026-06-12' },
+        args: { channel: 'SAFE', from: '2026-05-01', to: '2026-06-12' },
       });
 
       expect(getLeagueStats).toHaveBeenCalledWith(
-        expect.objectContaining({ channel: 'SV' }),
+        expect.objectContaining({ channel: 'SAFE' }),
       );
     });
 
@@ -667,11 +667,11 @@ describe('ChatToolsService — golden set', () => {
       const tools = [
         [
           'getChannelPerformance',
-          { channel: 'EV', from: '2026-05-01', to: '2026-06-12' },
+          { channel: 'VALUE', from: '2026-05-01', to: '2026-06-12' },
         ],
         [
           'getLeaguePerformance',
-          { channel: 'SV', from: '2026-05-01', to: '2026-06-12' },
+          { channel: 'SAFE', from: '2026-05-01', to: '2026-06-12' },
         ],
         ['getSegmentPerformance', { from: '2026-05-01', to: '2026-06-12' }],
         ['getEdgeAnalysis', { from: '2026-05-01', to: '2026-06-12' }],

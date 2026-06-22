@@ -3,7 +3,7 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
-import { CANAL_LABEL, CANAL_STYLE, fmtPct } from "./chat-constants";
+import { CHANNEL_LABEL, CHANNEL_STYLE, fmtPct } from "./chat-constants";
 import type { ChatPick } from "@/domains/chat/types/chat";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -25,10 +25,10 @@ export function PickCard({ pick }: { pick: ChatPick }) {
           <span
             className={cn(
               "shrink-0 rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
-              CANAL_STYLE[pick.canal],
+              CHANNEL_STYLE[pick.channel],
             )}
           >
-            {CANAL_LABEL[pick.canal]}
+            {CHANNEL_LABEL[pick.channel]}
           </span>
           <span className="truncate text-sm font-medium">{pick.match}</span>
         </div>

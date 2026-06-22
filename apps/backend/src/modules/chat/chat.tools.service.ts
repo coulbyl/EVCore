@@ -143,7 +143,7 @@ export class ChatToolsService {
     const input = CHAT_TOOL_SCHEMAS.getUpcomingPicks.parse(args);
     return this.pickEngine.getUpcomingPicks({
       date: input.date,
-      canal: input.canal,
+      channel: input.channel,
       limit: input.limit ?? CHAT_LIMITS.maxToolRows,
     });
   }
@@ -169,7 +169,7 @@ export class ChatToolsService {
           fixtureId: leg.fixtureId,
           match: `${leg.homeTeam} - ${leg.awayTeam}`,
           competition: leg.competition,
-          canal: leg.canal,
+          channel: leg.canal,
           market: leg.market,
           pick: leg.pick,
           probability: round(leg.probability),
@@ -253,7 +253,7 @@ export class ChatToolsService {
     const range = toDateRange(input.from, input.to);
     const outcomes = await this.readRepo.getSettledOutcomes({
       range,
-      canal: input.canal,
+      channel: input.channel,
       onlyMisses: input.onlyMisses ?? false,
       limit: CHAT_LIMITS.maxToolRows,
     });
@@ -399,7 +399,7 @@ function extractStreamPicks(
 function toStreamPicks(picks: CompactPick[]): ChatStreamPick[] | undefined {
   if (picks.length === 0) return undefined;
   return picks.slice(0, CHAT_LIMITS.maxStreamPicks).map((pick) => ({
-    canal: pick.canal,
+    channel: pick.channel,
     match: pick.match,
     market: pick.market,
     pick: pick.pick,

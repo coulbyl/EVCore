@@ -58,7 +58,7 @@ export class ChatPickEngineService {
 
   async getUpcomingPicks(input: {
     date?: string;
-    canal?: string;
+    channel?: string;
     limit: number;
   }) {
     const date = input.date ?? formatDateUtc(new Date());
@@ -69,7 +69,7 @@ export class ChatPickEngineService {
     const picks = this.composer
       .scorePicks(await this.signalWindow.getTodayPool(date), window, date)
       .filter((pick) => pick.scheduledAt.getTime() >= Date.now())
-      .filter((pick) => !input.canal || pick.canal === input.canal)
+      .filter((pick) => !input.channel || pick.canal === input.channel)
       .sort((a, b) => pickRank(b, 'fiable') - pickRank(a, 'fiable'))
       .slice(0, input.limit);
 
@@ -86,7 +86,7 @@ export class ChatPickEngineService {
     date?: string;
     stake: string;
     steps: number;
-    canal?: string;
+    channel?: string;
   }) {
     const date = input.date ?? formatDateUtc(new Date());
     const window = await this.signalWindow.computeSignalWindow(
@@ -97,7 +97,7 @@ export class ChatPickEngineService {
       .scorePicks(await this.signalWindow.getTodayPool(date), window, date)
       .filter((pick): pick is PickWithOdds => pick.oddsSnapshot !== null)
       .filter((pick) => pick.scheduledAt.getTime() >= Date.now())
-      .filter((pick) => !input.canal || pick.canal === input.canal)
+      .filter((pick) => !input.channel || pick.canal === input.channel)
       .sort((a, b) => pickRank(b, 'fiable') - pickRank(a, 'fiable'));
 
     // One pick per fixture, most reliable first, then played in kickoff order.
@@ -211,7 +211,7 @@ function toCompactPick(pick: ScoredPick) {
     match: `${pick.homeTeam} - ${pick.awayTeam}`,
     competition: pick.competition,
     country: pick.country,
-    canal: pick.canal,
+    channel: pick.canal,
     market: pick.market,
     pick: pick.pick,
     probability: round(pick.probability),

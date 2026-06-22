@@ -64,9 +64,24 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
       `couponEV`/`legEV` tracés dans `reasoning`/`featureSnapshot`. backend
       typecheck/lint/556 tests ✅. Détail :
       [coupon/DESIGN.md](apps/backend/src/modules/coupon/DESIGN.md) § Étape 1.
-- [ ] **`chat` — à repenser** : garde encore le vocab legacy `EV/SV/CONF/BB/NUL`
-      (schemas LLM + `chat.read.repository` conversions + `chat.golden.spec`).
-      Seuls ses refs `StrategyChannel.EV→.VALUE` ont été touchés pour compiler.
+- [x] **`chat` — repensé** (2026-06-22) : vocab unifié + tools de perf rebranchés.
+      - **Vocab** : un seul enum canonique `VALUE/SAFE/DOMINANT/BTTS/DRAW` dans
+        les schémas LLM (param `channel` unique, fini les deux enums
+        `[EV,SV,BB,NUL,CONF]` / `[EV,SV,CONF,DRAW,BTTS]`), le prompt système
+        (`CANAUX …`, `CHAT_PROMPT_VERSION` → `eva-v7`), la sortie EVA et le
+        front (`domains/chat` type `Channel`, `CHANNEL_STYLE/LABEL`). La clé de
+        sortie des picks renommée `canal` → `channel` (backend `ChatStreamPick`
+        + front `ChatPick` + picks persistés ; anciens messages non migrés,
+        perte assumée des badges). Helpers legacy
+        `channelToPrisma/canalToStrategyChannel/strategyChannelToCanal` supprimés.
+      - **Bug corrigé** : les filtres `canal` du pick-engine comparaient `'EV'`
+        à `pick.canal === 'VALUE'` (jamais un match) — désormais alignés.
+      - **Rebranchement** : `getChannelPerformance/getLeaguePerformance/
+        getSegmentPerformance/getPredictionOutcomes/getEdgeAnalysis/
+        findChannelLeagueHitRate` lisent `channel_selection` (helper
+        `settledChannelRows`) pour **les 5 canaux** au lieu de `Bet` (EV/SV
+        seulement) — DOMINANT/DRAW/BTTS renvoyaient toujours vide.
+      - backend typecheck/lint/571 tests ✅ · web typecheck/lint ✅.
 - [x] **Dette front séparée** (2026-06-21) : `domains/ai-engine` → `domains/coupon`
       + imports ; chemins API périmés corrigés (`/ai-engine/coupons` → `/coupons`,
       `/ai-engine/investment-indices` → `/coupons/indices`) ; page+domaine

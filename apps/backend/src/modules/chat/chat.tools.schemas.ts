@@ -31,7 +31,15 @@ export const SearchFixturesArgsSchema = z.object({
   limit,
 });
 
-export const CanalSchema = z.enum(['EV', 'SV', 'BB', 'NUL', 'CONF']);
+// Unified v1 strategy channel vocabulary (matches the backend StrategyChannel
+// enum). One enum for every tool — no more legacy EV/SV/CONF/BB/NUL codes.
+export const ChannelSchema = z.enum([
+  'VALUE',
+  'SAFE',
+  'DOMINANT',
+  'BTTS',
+  'DRAW',
+]);
 
 export const GetTopPicksArgsSchema = z.object({
   from: isoDate,
@@ -42,7 +50,7 @@ export const GetTopPicksArgsSchema = z.object({
 
 export const GetUpcomingPicksArgsSchema = z.object({
   date: isoDate.optional(),
-  canal: CanalSchema.optional(),
+  channel: ChannelSchema.optional(),
   limit,
 });
 
@@ -80,21 +88,19 @@ export const PlanLadderArgsSchema = z.object({
   date: isoDate.optional(),
   stake: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Expected decimal amount'),
   steps: boundedIntFromNumberOrString(1, 5),
-  canal: CanalSchema.optional(),
+  channel: ChannelSchema.optional(),
 });
 
 // ── Groupe B — Performance & confiance ──────────────────────────────────────
 
-const channelEnum = z.enum(['EV', 'SV', 'CONF', 'DRAW', 'BTTS']);
-
 export const GetChannelPerformanceArgsSchema = z.object({
   from: isoDate,
   to: isoDate,
-  channel: channelEnum.optional(),
+  channel: ChannelSchema.optional(),
 });
 
 export const GetLeaguePerformanceArgsSchema = z.object({
-  channel: channelEnum,
+  channel: ChannelSchema,
   from: isoDate,
   to: isoDate,
 });
@@ -106,7 +112,7 @@ export const GetLeagueChannelConfigArgsSchema = z.object({
 export const GetPredictionOutcomesArgsSchema = z.object({
   from: isoDate,
   to: isoDate,
-  canal: CanalSchema.optional(),
+  channel: ChannelSchema.optional(),
   onlyMisses: z.boolean().optional(),
 });
 
@@ -242,7 +248,10 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
       parameters: objectSchema(
         {
           date: { type: 'string', description: 'YYYY-MM-DD' },
-          canal: { type: 'string', enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'] },
+          channel: {
+            type: 'string',
+            enum: ['VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW'],
+          },
           limit: {
             anyOf: [
               { type: 'integer', minimum: 1, maximum: 30 },
@@ -340,7 +349,10 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
             description:
               'Number of ladder steps, 1 to 5. Numeric strings are accepted.',
           },
-          canal: { type: 'string', enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'] },
+          channel: {
+            type: 'string',
+            enum: ['VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW'],
+          },
         },
         ['stake', 'steps'],
       ),
@@ -364,14 +376,14 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: 'getChannelPerformance',
       description:
-        'Return ROI, hit rate, net units and sample size for one or all channels over a date range. Excludes backfill data.',
+        'Return ROI, hit rate, net units and sample size for one or all channels (VALUE, SAFE, DOMINANT, BTTS, DRAW) over a date range, read from settled channel selections.',
       parameters: objectSchema(
         {
           from: { type: 'string', description: 'YYYY-MM-DD' },
           to: { type: 'string', description: 'YYYY-MM-DD' },
           channel: {
             type: 'string',
-            enum: ['EV', 'SV', 'CONF', 'DRAW', 'BTTS'],
+            enum: ['VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW'],
           },
         },
         ['from', 'to'],
@@ -388,7 +400,7 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
         {
           channel: {
             type: 'string',
-            enum: ['EV', 'SV', 'CONF', 'DRAW', 'BTTS'],
+            enum: ['VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW'],
           },
           from: { type: 'string', description: 'YYYY-MM-DD' },
           to: { type: 'string', description: 'YYYY-MM-DD' },
@@ -424,9 +436,9 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
         {
           from: { type: 'string', description: 'YYYY-MM-DD' },
           to: { type: 'string', description: 'YYYY-MM-DD' },
-          canal: {
+          channel: {
             type: 'string',
-            enum: ['EV', 'SV', 'BB', 'NUL', 'CONF'],
+            enum: ['VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW'],
           },
           onlyMisses: {
             type: 'boolean',
@@ -442,7 +454,7 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: 'getSegmentPerformance',
       description:
-        'Aggregate ROI, hit rate and pick count for every channel (EV, SV, CONF, DRAW, BTTS) over a date range.',
+        'Aggregate ROI, hit rate and pick count for every channel (VALUE, SAFE, DOMINANT, BTTS, DRAW) over a date range.',
       parameters: objectSchema(
         {
           from: { type: 'string', description: 'YYYY-MM-DD' },
@@ -464,7 +476,7 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
           segment: {
             type: 'string',
             description:
-              'Segment filter, e.g. "EV:ONE_X_TWO". Omit for all segments.',
+              'Segment filter, e.g. "VALUE:ONE_X_TWO". Omit for all segments.',
           },
         },
         [],
@@ -476,7 +488,7 @@ export const CHAT_TOOL_DEFINITIONS: ChatToolDefinition[] = [
     function: {
       name: 'getEdgeAnalysis',
       description:
-        'Compare estimated probability vs market-implied odds (edge = prob - 1/odds) for settled EV/SV bets. Surfaces structural biases by segment.',
+        'Compare estimated probability vs market-implied odds (edge = prob - 1/odds) for settled selections across all channels. Surfaces structural biases by channel segment.',
       parameters: objectSchema(
         {
           from: { type: 'string', description: 'YYYY-MM-DD' },

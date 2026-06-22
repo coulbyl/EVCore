@@ -90,7 +90,7 @@ describe('ChatPickEngineService.planLadder', () => {
     expect('error' in result).toBe(true);
   });
 
-  it('filters on the requested canal', async () => {
+  it('filters on the requested channel', async () => {
     const service = buildService([
       buildPick({ fixtureId: 'fixture-1', canal: 'VALUE' }),
       buildPick({ fixtureId: 'fixture-2', canal: 'SAFE' }),
@@ -99,7 +99,7 @@ describe('ChatPickEngineService.planLadder', () => {
     const result = await service.planLadder({
       stake: '500',
       steps: 3,
-      canal: 'SAFE',
+      channel: 'SAFE',
     });
 
     expect('error' in result).toBe(false);

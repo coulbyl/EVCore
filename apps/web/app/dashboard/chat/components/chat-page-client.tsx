@@ -317,7 +317,7 @@ export function ChatPageClient() {
             ? `\n${message.picks
                 .map(
                   (pick) =>
-                    `- ${pick.canal} | ${pick.match} | ${pick.market} | ${pick.pick} | cote ${pick.odds ?? "n/a"} | proba ${(pick.proba * 100).toFixed(1)}%`,
+                    `- ${pick.channel} | ${pick.match} | ${pick.market} | ${pick.pick} | cote ${pick.odds ?? "n/a"} | proba ${(pick.proba * 100).toFixed(1)}%`,
                 )
                 .join("\n")}`
             : "";
