@@ -149,7 +149,7 @@ Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régéné
 
 backend typecheck/lint/581 tests ✅.
 
-### ▶ Redesign backtest par canal (remplacement direct, en cours)
+### ✅ Redesign backtest par canal (remplacement direct, TERMINÉ 2026-06-22)
 
 Le `backtest.service.ts` legacy (3109 l) est un fourre-tout : 5 canaux → 3 chemins
 (marketPerformance EV, `predictionBacktests` DOMINANT/DRAW/BTTS, `safe-value` SAFE),
@@ -181,11 +181,18 @@ calibration modèle **séparée**.
       - Reste : `grid-search` legacy (sweep EV `evFloor`/`modelScore` qui
         ré-exécute le moteur) **non migré** — il vit avec le reste du legacy et
         tombe en Étage 3.
-- [ ] **Étage 3** : supprimer le legacy (`backtest.service.ts` god class,
-      `runAllSeasonsSafeValueBacktest`, `predictionBacktests`, `PredictionChannel`,
-      `grid-search.service.ts`, anciennes routes `POST /backtest{,/:competitionCode,
-      /safe-value,/grid-search/:code}`) — le front est basculé (Étage 2),
-      ces routes n'ont plus de consommateur.
+- [x] **Étage 3** (2026-06-22) : legacy supprimé. `backtest.service.ts`
+      (god class 3109 l) + `backtest.service.spec.ts` + `grid-search.service.ts`
+      droppés ; routes legacy retirées du contrôleur (`POST /backtest`,
+      `/:competitionCode`, `/:competitionCode/:seasonName`, `/safe-value`,
+      `/grid-search/:code`) — restent **uniquement** `/backtest/channels`,
+      `/backtest/tuning`, `/backtest/calibration`. `backtest.report.ts` réduit
+      aux helpers purs survivants (`getOneXTwoOutcome`, `brierScoreOneXTwo`,
+      `calibrationError` + types 1X2/calibration) ; types legacy
+      (`PredictionChannel`, `*BacktestReport`, `*PredictionBacktest*`,
+      `BacktestMarketPerformance`…) supprimés. `backtest.module` ne fournit plus
+      que les 4 collaborateurs canaux (plus de `BettingEngineModule` ni d'export
+      `BacktestService`). backend typecheck/lint/571 tests ✅.
 
 **Étape 7 — nouveaux canaux** : chacun nécessite backtest séparé avant activation.
 Candidats : `GOALS` (probabilités déjà là), `BTTS_NO`, `CONSENSUS`, `AVOID`,
