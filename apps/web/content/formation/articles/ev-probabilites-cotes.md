@@ -7,7 +7,7 @@ readTime: 5
 slug: ev-probabilites-cotes
 summary: "Ce que mesure l'EV, comment la calculer, et pourquoi une EV positive ne garantit pas de gagner ce soir."
 updatedAt: "2026-05-02"
-related: ["cotes-probabilites-implicites", "canal-ev", "erreurs-frequentes"]
+related: ["cotes-probabilites-implicites", "value-channel", "erreurs-frequentes"]
 ---
 
 ## Pourquoi l'EV et pas "la cote la plus haute" ?
@@ -60,4 +60,4 @@ EVCore ne retient un signal que si l'EV est supérieure ou égale à **8 %** (`E
 
 ## Prochaine étape
 
-Maintenant que tu comprends l'EV, tu peux lire comment EVCore l'applique dans chaque canal : `canal-ev`.
+Maintenant que tu comprends l'EV, tu peux lire comment EVCore l'applique dans chaque canal : `value-channel`.

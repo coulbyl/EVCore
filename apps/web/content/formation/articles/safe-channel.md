@@ -4,10 +4,10 @@ category: bases
 difficulty: beginner
 order: 5
 readTime: 4
-slug: canal-sv
+slug: safe-channel
 summary: "Le Canal SV applique un double filtre — EV positive et probabilité élevée — pour réduire la variance sans abandonner la valeur."
 updatedAt: "2026-05-02"
-related: ["canal-ev", "canal-confiance", "bankroll-unites-discipline"]
+related: ["value-channel", "dominant-channel", "bankroll-unites-discipline"]
 ---
 
 ## Même logique, filtre plus strict
@@ -49,4 +49,4 @@ Choisis le Canal SV si :
 
 ## Prochaine étape
 
-Le troisième canal, orienté prédiction pure : `canal-confiance`.
+Le troisième canal, orienté prédiction pure : `dominant-channel`.

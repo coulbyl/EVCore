@@ -7,7 +7,7 @@ readTime: 5
 slug: guide-fixtures
 summary: "Comment filtrer les matchs, lire les colonnes EV/SV et accéder au diagnostic complet d'un pick."
 updatedAt: "2026-05-02"
-related: ["guide-picks-du-jour", "comment-lire-un-pick", "canal-ev"]
+related: ["guide-picks-du-jour", "comment-lire-un-pick", "value-channel"]
 ---
 
 ## Vue d'ensemble de la page Matchs

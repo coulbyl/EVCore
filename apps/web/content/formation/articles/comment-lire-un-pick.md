@@ -9,7 +9,7 @@ summary: "Décrypter les informations d'une carte pick : badge canal, EV, probab
 updatedAt: "2026-05-03"
 related:
   [
-    "les-3-canaux",
+    "the-3-channels",
     "ev-probabilites-cotes",
     "cotes-probabilites-implicites",
     "guide-picks-du-jour",

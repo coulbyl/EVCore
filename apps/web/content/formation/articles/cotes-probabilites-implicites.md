@@ -7,7 +7,7 @@ readTime: 5
 slug: cotes-probabilites-implicites
 summary: "Ce qu'une cote exprime vraiment, comment calculer la probabilité cachée derrière, et pourquoi la marge bookmaker biaise tout."
 updatedAt: "2026-05-02"
-related: ["ev-probabilites-cotes", "canal-ev", "erreurs-frequentes"]
+related: ["ev-probabilites-cotes", "value-channel", "erreurs-frequentes"]
 ---
 
 ## Une cote n'est pas une vérité

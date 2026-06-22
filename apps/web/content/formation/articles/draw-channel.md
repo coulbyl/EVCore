@@ -4,10 +4,10 @@ category: bases
 difficulty: intermediate
 order: 8
 readTime: 4
-slug: canal-draw
+slug: draw-channel
 summary: "Le Canal NUL cible les matchs nuls. Il est actuellement peu actif en raison d'une limite du modèle Poisson — voici pourquoi et ce que ça change pour toi."
 updatedAt: "2026-05-03"
-related: ["canal-btts", "canal-confiance", "les-3-canaux"]
+related: ["btts-channel", "dominant-channel", "the-3-channels"]
 ---
 
 ## Ce que le Canal NUL prédit
@@ -71,6 +71,6 @@ En attendant, le Canal NUL reste en veille sur la majorité des ligues.
 
 ## Pour aller plus loin
 
-- Découvrir les autres canaux : `les-3-canaux`
-- Le Canal BB (But-But) : `canal-btts`
-- Le Canal Victoire pour V1/V2 : `canal-confiance`
+- Découvrir les autres canaux : `the-3-channels`
+- Le Canal BB (But-But) : `btts-channel`
+- Le Canal Victoire pour V1/V2 : `dominant-channel`

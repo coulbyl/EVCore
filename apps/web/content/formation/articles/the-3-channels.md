@@ -4,10 +4,10 @@ category: bases
 difficulty: beginner
 order: 1
 readTime: 4
-slug: les-3-canaux
+slug: the-3-channels
 summary: "Vue d'ensemble des 5 canaux du moteur : EV, Sécurité, Victoire, BB et NUL. Par où commencer et lequel suivre."
 updatedAt: "2026-05-03"
-related: ["canal-ev", "canal-sv", "canal-confiance", "canal-btts", "canal-draw"]
+related: ["value-channel", "safe-channel", "dominant-channel", "btts-channel", "draw-channel"]
 ---
 
 ## Cinq angles, un seul moteur
@@ -54,4 +54,4 @@ Avant de lire les articles détaillés, comprends d'abord comment fonctionne une
 - Décoder une cote : `cotes-probabilites-implicites`
 - Comprendre l'EV : `ev-probabilites-cotes`
 
-Ensuite, chaque canal a son propre article : `canal-ev`, `canal-sv`, `canal-confiance`, `canal-btts`, `canal-draw`.
+Ensuite, chaque canal a son propre article : `value-channel`, `safe-channel`, `dominant-channel`, `btts-channel`, `draw-channel`.

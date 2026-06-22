@@ -7,7 +7,7 @@ readTime: 4
 slug: guide-picks-du-jour
 summary: "Comment lire, filtrer et ajouter au coupon les picks générés chaque matin par les 5 canaux."
 updatedAt: "2026-05-03"
-related: ["guide-fixtures", "comment-lire-un-pick", "canal-ev", "canal-sv"]
+related: ["guide-fixtures", "comment-lire-un-pick", "value-channel", "safe-channel"]
 ---
 
 ## La page du matin

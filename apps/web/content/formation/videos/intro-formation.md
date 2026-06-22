@@ -17,7 +17,7 @@ chapters:
     { "label": "Lire l'EV", "start": 135 },
     { "label": "Conclusion", "start": 220 },
   ]
-related: ["comment-lire-un-pick", "les-3-canaux", "ev-probabilites-cotes"]
+related: ["comment-lire-un-pick", "the-3-channels", "ev-probabilites-cotes"]
 ---
 
 ## À propos de cette vidéo

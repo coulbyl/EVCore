@@ -15,14 +15,14 @@ type BadgeCode =
   | 'graduate';
 
 const FORMATION_GRADUATE_ARTICLES = [
-  'les-3-canaux',
-  'canal-draw',
+  'the-3-channels',
+  'draw-channel',
   'erreurs-frequentes',
-  'canal-confiance',
+  'dominant-channel',
   'cotes-probabilites-implicites',
-  'canal-btts',
-  'canal-sv',
-  'canal-ev',
+  'btts-channel',
+  'safe-channel',
+  'value-channel',
   'comment-lire-un-pick',
   'ev-probabilites-cotes',
 ] as const;

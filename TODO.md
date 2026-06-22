@@ -93,12 +93,24 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
         `overview-section`, i18n `canalEv/canalSv` → `canalValue/canalSafe`).
       - Tokens CSS `--canal-ev/-sv/-conf(-soft)` (+ mappings `--color-canal-*`
         et classes Tailwind `*-canal-ev/sv/conf`) → `--canal-value/-safe/-dominant`.
-        Les **badge codes** gamification `'canal-ev'/'canal-sv'/'canal-confiance'`
-        (identifiants persistés) sont volontairement préservés.
       - `investment-indices*` → `coupon-indices*` dans `domains/coupon` + types
         `InvestmentIndices*` → `CouponIndices*`, hook `useCouponIndices`, et le
         composant `coupon-indices-drawer` (`CouponIndicesDrawer`).
       - backend typecheck/lint/571 tests ✅ · web typecheck/lint ✅.
+- [x] **Slugs de formation en anglais (2026-06-22)** : les slugs d'articles
+      « canal » (persistés en base dans `user_content_progress`, pas des badge
+      codes comme noté à tort) passés au format `<name>-channel` :
+      `canal-ev→value-channel`, `canal-sv→safe-channel`,
+      `canal-confiance→dominant-channel`, `canal-draw→draw-channel`,
+      `canal-btts→btts-channel`, `les-3-canaux→the-3-channels`. Fichiers +
+      frontmatter + tous les `related[]`/refs inline + `FORMATION_GRADUATE_ARTICLES`.
+      Migration de données `20260622120000_rename_formation_canal_slugs` (UPDATE
+      `user_content_progress.slug`) **à appliquer par toi** (CLI) — préserve la
+      progression utilisateur.
+      > Reste ouvert : les **tokens CSS** `--canal-value/-safe/-dominant/-draw/-btts`
+      > gardent le préfixe FR `canal`. À basculer en `--channel-*` si on veut
+      > éliminer « canal » des identifiants de code aussi (surface large : ~12
+      > fichiers + `canal-badge`/`CANAL_*`).
 
 ---
 

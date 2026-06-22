@@ -4,11 +4,11 @@ category: bases
 difficulty: beginner
 order: 7
 readTime: 4
-slug: canal-btts
+slug: btts-channel
 summary: "Le Canal BB prédit les matchs où les deux équipes vont marquer. Un signal indépendant du résultat final, calibré ligue par ligue."
 updatedAt: "2026-05-03"
 related:
-  ["canal-confiance", "canal-draw", "les-3-canaux", "comment-lire-un-pick"]
+  ["dominant-channel", "draw-channel", "the-3-channels", "comment-lire-un-pick"]
 ---
 
 ## Ce que le Canal BB prédit
@@ -63,6 +63,6 @@ Le pick BB apparaît avec un badge orange `BB`. Comme les autres picks, il est p
 
 ## Pour aller plus loin
 
-- Découvrir les autres canaux : `les-3-canaux`
-- Comprendre le Canal Victoire : `canal-confiance`
+- Découvrir les autres canaux : `the-3-channels`
+- Comprendre le Canal Victoire : `dominant-channel`
 - Lire un pick dans l'app : `comment-lire-un-pick`

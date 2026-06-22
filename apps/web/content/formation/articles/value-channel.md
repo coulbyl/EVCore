@@ -4,11 +4,11 @@ category: bases
 difficulty: beginner
 order: 4
 readTime: 5
-slug: canal-ev
+slug: value-channel
 summary: "Comment le Canal EV sélectionne les paris, quel profil de variance attendre, et pour qui il est adapté."
 updatedAt: "2026-05-02"
 related:
-  ["canal-sv", "canal-confiance", "ev-probabilites-cotes", "erreurs-frequentes"]
+  ["safe-channel", "dominant-channel", "ev-probabilites-cotes", "erreurs-frequentes"]
 ---
 
 ## Principe
@@ -54,4 +54,4 @@ Le Canal EV est adapté si :
 - tu acceptes les variations court terme sans changer de stratégie
 - ton objectif est le rendement cumulé, pas le taux de réussite affiché
 
-Si tu préfères un signal avec moins de variance et un taux de réussite plus lisible, lis : `canal-sv`.
+Si tu préfères un signal avec moins de variance et un taux de réussite plus lisible, lis : `safe-channel`.
