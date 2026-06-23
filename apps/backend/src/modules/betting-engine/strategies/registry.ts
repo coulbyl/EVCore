@@ -6,10 +6,12 @@ import { DominantStrategy } from './dominant.strategy';
 import { BttsStrategy } from './btts.strategy';
 import { DrawStrategy } from './draw.strategy';
 import { GoalsStrategy } from './goals.strategy';
+import { ConsensusStrategy } from './consensus.strategy';
 
 // v1 registry — order matters: EV runs before SAFE (SAFE excludes the EV pick).
-// Primary strategies only; meta-strategies (CONSENSUS, CONTRARIAN, AVOID) are
-// added in a later phase and run in the orchestrator's phase 2.
+// Primaries come first; meta-strategies (CONSENSUS, …) are flagged via
+// META_STRATEGY_CHANNELS and run in the orchestrator's phase 2 (they read the
+// primary decisions), regardless of their position in this list.
 export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new ValueStrategy(),
   new SafeStrategy(),
@@ -17,6 +19,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new BttsStrategy(),
   new DrawStrategy(),
   new GoalsStrategy(),
+  new ConsensusStrategy(),
 ];
 
 export function createChannelStrategyOrchestrator(): ChannelStrategyOrchestrator {

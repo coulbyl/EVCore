@@ -558,7 +558,21 @@ Dataset reconstruit sain (cf. § Reprise).
       > Correction **Dixon-Coles** (paramètre ρ) améliore surtout correct-score +
       > over/under. À traiter APRÈS le Pas 0 si les lignes basses sont mal calibrées
       > (bénéficie aussi à BTTS/1X2). Ne pas mélanger avec le travail canal.
-- [ ] `CONSENSUS` (méta) — exploite les décisions normalisées, mesurer l'indépendance des stratégies
+- [x] `CONSENSUS` (méta) — **FAIT & ACTIVÉ (2026-06-23)**. Méta-stratégie (phase 2
+      de l'orchestrateur) : lit les décisions primaires (`previousDecisions`) et émet
+      une sélection 1X2 quand ≥ `minLevel` **classes d'indépendance distinctes**
+      s'accordent sur le même pick (classes : directional=DOMINANT, value=VALUE/SAFE,
+      market_draw=DRAW, goals=BTTS/GOALS — 2 stratégies de même classe = 1 vote).
+      **Calibré globalement** (mécanisme agnostique à la ligue, volume par ligue trop
+      faible). **Validé read-only sur `channel_selection` (3 saisons)** : 1X2 niveau-2
+      vs baseline niveau-1 → 2023-24 +7.6%(n80) / 2024-25 +18.7%(n129) / 2025-26
+      +9.3%(n63), **positif les 3 saisons** alors que la baseline niveau-1 est
+      **perdante** partout (−5.5/−10.7/−9.8). v1 = `ONE_X_TWO` (BTTS/OU niveau-2 trop
+      rares). `consensus.strategy.ts` (`decideConsensus` pur + classe), enregistré
+      registry (phase 2), `CONSENSUS_CONFIG` (enabled, minLevel 2). 10 tests +
+      service spec. backend typecheck/lint/594 tests ✅.
+      > Suite : dédup coupon (CONSENSUS HOME == le même pari que DOMINANT/VALUE HOME)
+      > à gérer côté couche coupon si on stake CONSENSUS. Front : afficher le canal.
 - [ ] `AVOID` (méta) — décision négative explicite, bloque la publication sans effacer les autres canaux
 - [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense

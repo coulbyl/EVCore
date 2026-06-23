@@ -82,8 +82,8 @@ describe('ChannelDecisionService', () => {
     const [runId, evaluated] = saveRunDecisions.mock.calls[0];
     expect(runId).toBe('run-1');
 
-    // Orchestrator ran every primary strategy; EV selected the only viable pick.
-    expect(evaluated).toHaveLength(6);
+    // Orchestrator ran every primary strategy + the CONSENSUS meta-strategy.
+    expect(evaluated).toHaveLength(7);
     const ev = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.VALUE,
     );
@@ -95,6 +95,14 @@ describe('ChannelDecisionService', () => {
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.GOALS,
     );
     expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.DISABLED);
+
+    // CONSENSUS (phase 2) fires: DOMINANT (directional) + VALUE (value) both
+    // selected HOME → two independent classes agree → SELECTED HOME.
+    const consensus = evaluated.find(
+      (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.CONSENSUS,
+    );
+    expect(consensus?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(consensus?.selections[0]?.pick).toBe('HOME');
 
     // The persisted result (with selection ids) is forwarded to the caller.
     expect(returned).toBe(persistedResult);
