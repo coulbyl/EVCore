@@ -82,8 +82,8 @@ describe('ChannelDecisionService', () => {
     const [runId, evaluated] = saveRunDecisions.mock.calls[0];
     expect(runId).toBe('run-1');
 
-    // Orchestrator ran every primary strategy + the CONSENSUS meta-strategy.
-    expect(evaluated).toHaveLength(7);
+    // Orchestrator ran every primary strategy + the CONSENSUS & AVOID meta-strategies.
+    expect(evaluated).toHaveLength(8);
     const ev = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.VALUE,
     );
@@ -103,6 +103,13 @@ describe('ChannelDecisionService', () => {
     );
     expect(consensus?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(consensus?.selections[0]?.pick).toBe('HOME');
+
+    // AVOID (phase 2): the HOME pick edge (0.60 − 1/1.90 ≈ 0.07) is nowhere near
+    // the 0.30 divergence floor → nothing to avoid.
+    const avoid = evaluated.find(
+      (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.AVOID,
+    );
+    expect(avoid?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
 
     // The persisted result (with selection ids) is forwarded to the caller.
     expect(returned).toBe(persistedResult);

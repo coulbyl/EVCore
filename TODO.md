@@ -573,7 +573,23 @@ Dataset reconstruit sain (cf. § Reprise).
       service spec. backend typecheck/lint/594 tests ✅.
       > Suite : dédup coupon (CONSENSUS HOME == le même pari que DOMINANT/VALUE HOME)
       > à gérer côté couche coupon si on stake CONSENSUS. Front : afficher le canal.
-- [ ] `AVOID` (méta) — décision négative explicite, bloque la publication sans effacer les autres canaux
+- [x] `AVOID` (méta) — **FAIT & ACTIVÉ (2026-06-23)**. Décision négative (aucun
+      pick) : flague un match à ne pas publier. Des triggers de la doc, **un seul
+      existe dans nos données** : la **divergence extrême modèle↔marché**. Les autres
+      sont des non-events (aucune fixture n'a HOME&AWAY contradictoires ; `lambdaFloorHit`
+      false partout) ou déjà gérés (cotes absentes → NO_BET).
+      **Validé read-only (3 saisons)** : quand le modèle revendique un edge ≥ 0.30 sur
+      le marché (proba − 1/cote), c'est le **marché** qui a raison — ROI par bucket
+      d'edge : [20,30%) +10.9% mais **≥30% −20.4%** (hit 28%). Par saison ≥30% est
+      négatif/plat ET pire que le reste à chaque fois (−34.2/−22.5/−0.7 vs +6.8/+3.1/+1.2).
+      `avoid.strategy.ts` (`decideAvoid` pur + classe, `allowedMarkets: []`), émet
+      SELECTED+offenders (ou REJECTED `no_avoid_signal`). `AVOID_CONFIG` (enabled,
+      maxEdge 0.30), global. Enregistré registry (phase 2). 8 tests + service spec
+      (8 décisions). Persistance OK (le repo gère les décisions sans sélection).
+      backend typecheck/lint/602 tests ✅.
+      > Suite : un **consommateur** doit honorer le blocage AVOID (couche
+      > publication/coupon supprime les picks du match flaggé) — AVOID ne fait
+      > qu'enregistrer la décision pour l'instant.
 - [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
 - [ ] `FIRST_HALF` — dataset mi-temps validé (calibration séparée)

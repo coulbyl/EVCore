@@ -7,6 +7,7 @@ import { BttsStrategy } from './btts.strategy';
 import { DrawStrategy } from './draw.strategy';
 import { GoalsStrategy } from './goals.strategy';
 import { ConsensusStrategy } from './consensus.strategy';
+import { AvoidStrategy } from './avoid.strategy';
 
 // v1 registry — order matters: EV runs before SAFE (SAFE excludes the EV pick).
 // Primaries come first; meta-strategies (CONSENSUS, …) are flagged via
@@ -20,6 +21,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new DrawStrategy(),
   new GoalsStrategy(),
   new ConsensusStrategy(),
+  new AvoidStrategy(),
 ];
 
 export function createChannelStrategyOrchestrator(): ChannelStrategyOrchestrator {
