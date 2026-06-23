@@ -156,13 +156,8 @@ export class ChannelDecisionService {
     return { settled: updates.length };
   }
 
-  // Read API (doc §5): normalised per-channel decisions for a day, with optional
-  // strategy / market / status filters. Exposes REJECTED decisions + reasonCode.
-  async list(query: ChannelDecisionListQuery): Promise<ChannelDecisionItem[]> {
-    const rows = await this.findRows(query);
-    return rows.map((row) => this.toItem(row));
-  }
-
+  // Read API (doc §5): normalised per-channel decisions for a day, grouped by
+  // match or by channel. REJECTED decisions + reasonCode are exposed.
   async listByMatch(
     query: ChannelDecisionListQuery,
   ): Promise<ChannelDecisionMatchItem[]> {

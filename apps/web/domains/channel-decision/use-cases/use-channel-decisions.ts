@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
   ChannelDecisionChannelGroupDto,
-  ChannelDecisionDto,
   ChannelDecisionFilters,
   ChannelDecisionMatchDto,
 } from "../types/channel-decision";
@@ -39,29 +38,10 @@ function decisionQueryKey(
   ];
 }
 
-export function useChannelDecisions(
-  date: string,
-  filters: ChannelDecisionFilters = {},
-) {
-  return useQuery({
-    queryKey: decisionQueryKey("channel-decisions", date, filters),
-    queryFn: () => {
-      const params = buildDecisionSearchParams(date, filters);
-      return clientApiRequest<ChannelDecisionDto[]>(
-        `/channel-decisions?${params.toString()}`,
-        {
-          fallbackErrorMessage:
-            "Impossible de charger les décisions des canaux.",
-        },
-      );
-    },
-    staleTime: 120_000,
-  });
-}
-
 export function useChannelDecisionMatches(
   date: string,
   filters: ChannelDecisionFilters = {},
+  options: { enabled?: boolean } = {},
 ) {
   return useQuery({
     queryKey: decisionQueryKey("channel-decisions-by-match", date, filters),
@@ -75,6 +55,7 @@ export function useChannelDecisionMatches(
         },
       );
     },
+    enabled: options.enabled ?? true,
     staleTime: 120_000,
   });
 }
@@ -82,6 +63,7 @@ export function useChannelDecisionMatches(
 export function useChannelDecisionChannels(
   date: string,
   filters: ChannelDecisionFilters = {},
+  options: { enabled?: boolean } = {},
 ) {
   return useQuery({
     queryKey: decisionQueryKey("channel-decisions-by-channel", date, filters),
@@ -95,6 +77,7 @@ export function useChannelDecisionChannels(
         },
       );
     },
+    enabled: options.enabled ?? true,
     staleTime: 120_000,
   });
 }

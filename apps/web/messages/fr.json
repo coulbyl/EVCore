@@ -39,10 +39,7 @@
     "investmentSummary": "Résumé investissement",
     "coupons": "Combinés",
     "decisions": "Décisions",
-    "decisionsByMatch": "Décisions par match",
-    "decisionsByMatchShort": "Matchs",
-    "decisionsByChannel": "Décisions par canal",
-    "decisionsByChannelShort": "Canaux"
+    "decisionsShort": "Décisions"
   },
   "decisions": {
     "channels": {

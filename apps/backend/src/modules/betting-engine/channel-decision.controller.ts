@@ -3,7 +3,6 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import {
   ChannelDecisionService,
   type ChannelDecisionChannelGroup,
-  type ChannelDecisionItem,
   type ChannelDecisionMatchItem,
 } from './channel-decision.service';
 import { ChannelDecisionListQueryDto } from './dto/channel-decision-query.dto';
@@ -12,13 +11,6 @@ import { ChannelDecisionListQueryDto } from './dto/channel-decision-query.dto';
 @UseGuards(AuthSessionGuard)
 export class ChannelDecisionController {
   constructor(private readonly channelDecisions: ChannelDecisionService) {}
-
-  @Get()
-  list(
-    @Query() query: ChannelDecisionListQueryDto,
-  ): Promise<ChannelDecisionItem[]> {
-    return this.channelDecisions.list(this.toQuery(query));
-  }
 
   @Get('by-match')
   listByMatch(

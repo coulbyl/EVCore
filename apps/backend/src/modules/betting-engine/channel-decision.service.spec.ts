@@ -224,7 +224,7 @@ describe('ChannelDecisionService', () => {
     });
   });
 
-  describe('list', () => {
+  describe('listByMatch', () => {
     it('maps read rows to normalised DTOs and forwards filters', async () => {
       const findByDate = vi.fn().mockResolvedValue([
         {
@@ -285,7 +285,7 @@ describe('ChannelDecisionService', () => {
       const repo = { findByDate } as unknown as ChannelDecisionRepository;
       const service = new ChannelDecisionService(repo);
 
-      const items = await service.list({
+      const groups = await service.listByMatch({
         date: '2026-01-18',
         competition: 'BL1',
         channel: STRATEGY_CHANNEL.VALUE,
@@ -297,21 +297,25 @@ describe('ChannelDecisionService', () => {
       expect(filters.channel).toBe(STRATEGY_CHANNEL.VALUE);
       expect(filters.range.gte.toISOString()).toBe('2026-01-18T00:00:00.000Z');
 
-      expect(items).toHaveLength(2);
-      const ev = items[0];
-      expect(ev?.homeTeam).toBe('Home');
-      expect(ev?.awayTeam).toBe('Away');
-      expect(ev?.homeLogo).toBe('https://logo/home.png');
-      expect(ev?.country).toBe('Germany');
-      expect(ev?.score).toBe('2-1');
-      expect(ev?.htScore).toBe('1-0');
+      // Both decisions belong to the same fixture → one match group.
+      expect(groups).toHaveLength(1);
+      const match = groups[0];
+      expect(match?.homeTeam).toBe('Home');
+      expect(match?.awayTeam).toBe('Away');
+      expect(match?.homeLogo).toBe('https://logo/home.png');
+      expect(match?.country).toBe('Germany');
+      expect(match?.score).toBe('2-1');
+      expect(match?.htScore).toBe('1-0');
+      expect(match?.decisions).toHaveLength(2);
+
+      const ev = match?.decisions[0];
       expect(ev?.selections[0]?.probability).toBe(0.6);
       expect(ev?.selections[0]?.ev).toBe(0.14);
       expect(ev?.selections[0]?.impliedProbability).toBeNull();
       expect(ev?.selections[0]?.result).toBe(BetStatus.WON);
 
       // REJECTED decision is exposed with its reasonCode and no selections.
-      const safe = items[1];
+      const safe = match?.decisions[1];
       expect(safe?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
       expect(safe?.reasonCode).toBe('no_safe_candidate');
       expect(safe?.selections).toHaveLength(0);

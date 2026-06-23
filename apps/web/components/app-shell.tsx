@@ -18,7 +18,6 @@ import {
   GraduationCap,
   Layers,
   LayoutDashboard,
-  ListFilter,
   Megaphone,
   Receipt,
   Settings,
@@ -158,18 +157,11 @@ export function AppShell({
         label: tNav("navGroupToday"),
         items: [
           {
-            label: tNav("decisionsByMatch"),
-            mobileLabel: tNav("decisionsByMatchShort"),
-            href: "/dashboard/decisions/matches",
-            active: pathname.startsWith("/dashboard/decisions/matches"),
+            label: tNav("decisions"),
+            mobileLabel: tNav("decisionsShort"),
+            href: "/dashboard/decisions",
+            active: pathname.startsWith("/dashboard/decisions"),
             icon: Layers,
-          },
-          {
-            label: tNav("decisionsByChannel"),
-            mobileLabel: tNav("decisionsByChannelShort"),
-            href: "/dashboard/decisions/channels",
-            active: pathname.startsWith("/dashboard/decisions/channels"),
-            icon: ListFilter,
           },
           {
             label: tNav("coupons"),
@@ -239,8 +231,7 @@ export function AppShell({
 
   const MOBILE_NAV_ORDER = [
     "/dashboard",
-    "/dashboard/decisions/matches",
-    "/dashboard/decisions/channels",
+    "/dashboard/decisions",
     "/dashboard/coupons",
     "/dashboard/fixtures",
   ];

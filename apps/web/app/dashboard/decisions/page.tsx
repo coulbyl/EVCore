@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { DecisionsPageClient } from "./components/decisions-page-client";
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+export const metadata: Metadata = {
+  title: "Décisions — EVCore",
+};
 
-export default async function DecisionsPage({
-  searchParams,
-}: PageProps<"/dashboard/decisions">) {
-  const params = await searchParams;
-  const date = typeof params.date === "string" ? params.date : null;
-  const suffix = date && ISO_DATE.test(date) ? `?date=${date}` : "";
-  redirect(`/dashboard/decisions/matches${suffix}`);
+export default function DecisionsPage() {
+  return <DecisionsPageClient />;
 }

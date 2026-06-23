@@ -14,7 +14,7 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
-import { LensToggle } from "./lens-toggle";
+import { LensToggle, type DecisionsView } from "./lens-toggle";
 
 export function DecisionsPageFrame({
   children,
@@ -26,6 +26,8 @@ export function DecisionsPageFrame({
   isError,
   isLoading,
   onDateChange,
+  view,
+  onViewChange,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -36,13 +38,15 @@ export function DecisionsPageFrame({
   isError: boolean;
   isLoading: boolean;
   onDateChange: (iso: string) => void;
+  view: DecisionsView;
+  onViewChange: (view: DecisionsView) => void;
 }) {
   const pageOwnsScroll = contentScroll === "page";
 
   return (
     <Page className="flex h-full flex-col">
       <PageHeader>
-        <LensToggle date={date} />
+        <LensToggle view={view} onChange={onViewChange} />
         <PageHeaderActions>
           <DateNav date={date} onChange={onDateChange} />
         </PageHeaderActions>
