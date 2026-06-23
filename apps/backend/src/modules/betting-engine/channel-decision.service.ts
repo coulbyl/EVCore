@@ -264,6 +264,10 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.DOMINANT,
   STRATEGY_CHANNEL.BTTS,
   STRATEGY_CHANNEL.DRAW,
+  STRATEGY_CHANNEL.GOALS,
+  // Meta-channels (phase 2) last.
+  STRATEGY_CHANNEL.CONSENSUS,
+  STRATEGY_CHANNEL.AVOID,
 ];
 
 function toMatchDecision(

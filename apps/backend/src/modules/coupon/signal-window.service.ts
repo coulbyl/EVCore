@@ -10,6 +10,7 @@ import {
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
 import { getLeagueEvThreshold } from '@modules/betting-engine/ev.constants';
+import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import { buildComboCandidates } from './combo-candidates';
@@ -25,6 +26,18 @@ import {
 } from './coupon.constants';
 
 export type Canal = CouponChannel;
+
+// AVOID enforcement at staking time: a pick whose model probability exceeds its
+// implied probability (1/odds) by ≥ AVOID_CONFIG.maxEdge is an implausible
+// model↔market divergence — validated -20% ROI on those picks over 3 seasons
+// (see AVOID strategy). Drop it from the real, staking-eligible pool.
+export function isExtremeDivergence(
+  probability: number,
+  odds: number | null,
+): boolean {
+  if (odds === null || odds <= 1) return false;
+  return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
+}
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
 
@@ -499,7 +512,11 @@ export class SignalWindowService {
    */
   async getTodayPool(
     date: string,
-    opts: { includeCombos?: boolean; includeDraw?: boolean } = {},
+    opts: {
+      includeCombos?: boolean;
+      includeDraw?: boolean;
+      enforceAvoid?: boolean;
+    } = {},
   ): Promise<ScoredPick[]> {
     const dayStart = new Date(`${date}T00:00:00.000Z`);
     const dayEnd = new Date(`${date}T23:59:59.999Z`);
@@ -658,6 +675,15 @@ export class SignalWindowService {
         );
 
         for (const bet of run.bets) {
+          const betOdds = bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null;
+          // AVOID enforcement: drop legs whose model↔market divergence is
+          // implausible (≥ AVOID_CONFIG.maxEdge) — validated -20% ROI on those.
+          if (
+            opts.enforceAvoid &&
+            isExtremeDivergence(Number(bet.probEstimated), betOdds)
+          ) {
+            continue;
+          }
           const channel =
             bet.channelSelection?.channelDecision.channel ??
             StrategyChannel.VALUE;
@@ -675,7 +701,7 @@ export class SignalWindowService {
             probability: Number(bet.probEstimated),
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             calibratedProbability: null, // set in CouponComposerService.scorePicks()
-            oddsSnapshot: bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null,
+            oddsSnapshot: betOdds,
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,
             isCorrect,

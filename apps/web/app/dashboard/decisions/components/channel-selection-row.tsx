@@ -1,4 +1,5 @@
 import { Card } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -9,6 +10,7 @@ import {
   formatEv,
   formatOdds,
   formatPct,
+  reasonLabel,
 } from "./channel-constants";
 import { FixtureHeading } from "./fixture-heading";
 import { ResultBadge } from "./result-badge";
@@ -22,8 +24,8 @@ export function ChannelSelectionRow({
   locale: string;
 }) {
   const loc = locale === "en" ? "en" : "fr";
+  const t = useTranslations("decisions");
   const selection = decision.selections[0];
-  if (selection === undefined) return null;
 
   return (
     <Card className="relative flex-row items-center justify-between gap-3 overflow-hidden border-border/70 p-3 pl-4 transition-colors hover:border-border">
@@ -45,28 +47,36 @@ export function ChannelSelectionRow({
         htScore={decision.htScore}
       />
 
-      <div className="flex shrink-0 items-center gap-3 text-xs">
-        <span className="font-medium">
-          {formatPickForDisplay(selection.pick, selection.market)}
-          <span className="ml-1.5 font-normal text-muted-foreground">
-            {formatMarketForDisplay(selection.market, loc)}
-          </span>
+      {selection === undefined ? (
+        // Negative decision (e.g. AVOID): no pick — show why the fixture is flagged.
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {reasonLabel(decision.reasonCode, t) ?? "—"}
         </span>
-        <span className="tabular-nums text-muted-foreground">
-          {formatPct(selection.probability)}
-        </span>
-        {formatOdds(selection.odds) !== null && (
-          <span className="tabular-nums font-semibold">
-            {formatOdds(selection.odds)}
+      ) : (
+
+        <div className="flex shrink-0 items-center gap-3 text-xs">
+          <span className="font-medium">
+            {formatPickForDisplay(selection.pick, selection.market)}
+            <span className="ml-1.5 font-normal text-muted-foreground">
+              {formatMarketForDisplay(selection.market, loc)}
+            </span>
           </span>
-        )}
-        {formatEv(selection.ev) !== null && (
           <span className="tabular-nums text-muted-foreground">
-            {formatEv(selection.ev)}
+            {formatPct(selection.probability)}
           </span>
-        )}
-        <ResultBadge result={selection.result} />
-      </div>
+          {formatOdds(selection.odds) !== null && (
+            <span className="tabular-nums font-semibold">
+              {formatOdds(selection.odds)}
+            </span>
+          )}
+          {formatEv(selection.ev) !== null && (
+            <span className="tabular-nums text-muted-foreground">
+              {formatEv(selection.ev)}
+            </span>
+          )}
+          <ResultBadge result={selection.result} />
+        </div>
+      )}
     </Card>
   );
 }

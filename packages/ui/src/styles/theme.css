@@ -50,6 +50,12 @@
   --canal-draw-soft: rgba(124, 58, 237, 0.11);
   --canal-btts: #be185d;
   --canal-btts-soft: rgba(190, 24, 93, 0.11);
+  --canal-goals: #059669;
+  --canal-goals-soft: rgba(5, 150, 105, 0.11);
+  --canal-consensus: #0d9488;
+  --canal-consensus-soft: rgba(13, 148, 136, 0.11);
+  --canal-avoid: #dc2626;
+  --canal-avoid-soft: rgba(220, 38, 38, 0.11);
 
   /* ── Bento layout ── */
   --gap-bento: 12px;
@@ -113,6 +119,12 @@
   --canal-draw-soft: rgba(167, 139, 250, 0.13);
   --canal-btts: #f472b6;
   --canal-btts-soft: rgba(244, 114, 182, 0.13);
+  --canal-goals: #34d399;
+  --canal-goals-soft: rgba(52, 211, 153, 0.13);
+  --canal-consensus: #2dd4bf;
+  --canal-consensus-soft: rgba(45, 212, 191, 0.13);
+  --canal-avoid: #f87171;
+  --canal-avoid-soft: rgba(248, 113, 113, 0.13);
 
   /* ── Bento layout ── */
   --shadow-bento-rest: 0 1px 3px rgba(0, 0, 0, 0.16);
@@ -167,6 +179,12 @@
   --color-canal-draw-soft: var(--canal-draw-soft);
   --color-canal-btts: var(--canal-btts);
   --color-canal-btts-soft: var(--canal-btts-soft);
+  --color-canal-goals: var(--canal-goals);
+  --color-canal-goals-soft: var(--canal-goals-soft);
+  --color-canal-consensus: var(--canal-consensus);
+  --color-canal-consensus-soft: var(--canal-consensus-soft);
+  --color-canal-avoid: var(--canal-avoid);
+  --color-canal-avoid-soft: var(--canal-avoid-soft);
 
   /* ── Bento layout ── */
   --spacing-bento: var(--gap-bento);

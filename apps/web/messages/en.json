@@ -65,6 +65,18 @@
       "DRAW": {
         "label": "Draw",
         "description": "Draw angle from market-implied probability."
+      },
+      "GOALS": {
+        "label": "Goals",
+        "description": "Total goals over/under line."
+      },
+      "CONSENSUS": {
+        "label": "Consensus",
+        "description": "Several independent strategies converge on the same pick."
+      },
+      "AVOID": {
+        "label": "Avoid",
+        "description": "Fixture flagged: implausible model/market divergence."
       }
     },
     "reasons": {
@@ -74,6 +86,10 @@
       "no_safe_candidate": "No safety candidate",
       "below_threshold": "Probability below threshold",
       "insufficient_margin": "Insufficient margin",
+      "no_consensus": "No cross-channel consensus",
+      "consensus": "Independent channels converged",
+      "no_avoid_signal": "No avoidance signal",
+      "extreme_divergence": "Extreme model/market divergence",
       "BACKFILL": "Backfilled"
     },
     "statuses": {

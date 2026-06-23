@@ -10,6 +10,9 @@ export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
   DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
+  GOALS: "var(--canal-goals)",
+  CONSENSUS: "var(--canal-consensus)",
+  AVOID: "var(--canal-avoid)",
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
@@ -18,6 +21,9 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   DOMINANT: "var(--canal-dominant-soft)",
   BTTS: "var(--canal-btts-soft)",
   DRAW: "var(--canal-draw-soft)",
+  GOALS: "var(--canal-goals-soft)",
+  CONSENSUS: "var(--canal-consensus-soft)",
+  AVOID: "var(--canal-avoid-soft)",
 };
 
 const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
@@ -26,6 +32,9 @@ const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
   DOMINANT: "channels.DOMINANT.label",
   BTTS: "channels.BTTS.label",
   DRAW: "channels.DRAW.label",
+  GOALS: "channels.GOALS.label",
+  CONSENSUS: "channels.CONSENSUS.label",
+  AVOID: "channels.AVOID.label",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -34,15 +43,21 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
   DOMINANT: "channels.DOMINANT.description",
   BTTS: "channels.BTTS.description",
   DRAW: "channels.DRAW.description",
+  GOALS: "channels.GOALS.description",
+  CONSENSUS: "channels.CONSENSUS.description",
+  AVOID: "channels.AVOID.description",
 };
 
-// Display order across both lenses.
+// Display order across both lenses (primaries, then phase-2 meta-channels).
 export const CHANNEL_ORDER: StrategyChannel[] = [
   "VALUE",
   "SAFE",
   "DOMINANT",
   "BTTS",
   "DRAW",
+  "GOALS",
+  "CONSENSUS",
+  "AVOID",
 ];
 
 const REASON_LABEL_KEY: Record<string, string> = {
@@ -52,6 +67,10 @@ const REASON_LABEL_KEY: Record<string, string> = {
   no_safe_candidate: "reasons.no_safe_candidate",
   below_threshold: "reasons.below_threshold",
   insufficient_margin: "reasons.insufficient_margin",
+  no_consensus: "reasons.no_consensus",
+  consensus: "reasons.consensus",
+  no_avoid_signal: "reasons.no_avoid_signal",
+  extreme_divergence: "reasons.extreme_divergence",
   BACKFILL: "reasons.BACKFILL",
 };
 

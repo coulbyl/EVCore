@@ -1,6 +1,15 @@
 // Mirror of the backend ChannelDecisionItem DTO (GET /channel-decisions).
-// v1 strategy channels — kept in sync with the backend StrategyChannel enum.
-export type StrategyChannel = "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
+// Kept in sync with the backend StrategyChannel enum. GOALS is a primary
+// (Over/Under) channel; CONSENSUS and AVOID are phase-2 meta-channels.
+export type StrategyChannel =
+  | "VALUE"
+  | "SAFE"
+  | "DOMINANT"
+  | "BTTS"
+  | "DRAW"
+  | "GOALS"
+  | "CONSENSUS"
+  | "AVOID";
 
 export type ChannelDecisionStatus =
   | "SELECTED"

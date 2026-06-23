@@ -22,6 +22,7 @@ export class CouponService {
   private readonly kellyEnabled: boolean;
   private readonly combosEnabled: boolean;
   private readonly stakeDraw: boolean;
+  private readonly enforceAvoid: boolean;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
@@ -38,6 +39,11 @@ export class CouponService {
     // Kept env-toggleable (COUPON_STAKE_DRAW=false) as a kill-switch.
     this.stakeDraw =
       config.get<string>('COUPON_STAKE_DRAW', 'true') !== 'false';
+    // AVOID enforcement — on by default: drops staking picks whose model↔market
+    // divergence is implausible (≥ AVOID_CONFIG.maxEdge); validated -20% ROI on
+    // those picks over 3 seasons. Kill-switch: COUPON_ENFORCE_AVOID=false.
+    this.enforceAvoid =
+      config.get<string>('COUPON_ENFORCE_AVOID', 'true') !== 'false';
   }
 
   async generateCoupons(
@@ -61,6 +67,7 @@ export class CouponService {
       this.signalWindow.getTodayPool(date, {
         includeCombos: this.combosEnabled,
         includeDraw: this.stakeDraw,
+        enforceAvoid: this.enforceAvoid,
       }),
     ]);
 

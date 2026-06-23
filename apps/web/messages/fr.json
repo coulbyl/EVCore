@@ -65,6 +65,18 @@
       "DRAW": {
         "label": "Nul",
         "description": "Match nul via la probabilité implicite du marché."
+      },
+      "GOALS": {
+        "label": "Buts",
+        "description": "Plus/moins de buts (Over/Under)."
+      },
+      "CONSENSUS": {
+        "label": "Consensus",
+        "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
+      },
+      "AVOID": {
+        "label": "À éviter",
+        "description": "Match écarté : divergence modèle/marché implausible."
       }
     },
     "reasons": {
@@ -74,6 +86,10 @@
       "no_safe_candidate": "Aucun candidat sûr",
       "below_threshold": "Probabilité sous le seuil",
       "insufficient_margin": "Marge insuffisante",
+      "no_consensus": "Pas de consensus entre canaux",
+      "consensus": "Convergence de canaux indépendants",
+      "no_avoid_signal": "Aucun signal d'évitement",
+      "extreme_divergence": "Divergence modèle/marché extrême",
       "BACKFILL": "Rétro-rempli"
     },
     "statuses": {
