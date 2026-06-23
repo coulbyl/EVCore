@@ -99,6 +99,28 @@
       "INSUFFICIENT_DATA": "Données insuffisantes",
       "MISSING_ODDS": "Cotes manquantes",
       "NOT_APPLICABLE": "Non applicable"
+    },
+    "lens": {
+      "matches": "Par match",
+      "channels": "Par canal"
+    },
+    "avoid": {
+      "banner": "À éviter"
+    },
+    "noPick": "Aucun pick retenu sur ce match.",
+    "noPickShort": "aucun pick",
+    "pickCount": "{count, plural, one {# pick} other {# picks}}",
+    "evaluatedCount": "{count, plural, one {# canal évalué} other {# canaux évalués}}",
+    "summary": {
+      "matches": "matchs",
+      "picks": "picks",
+      "withPicks": "avec pick",
+      "avoided": "à éviter"
+    },
+    "filters": {
+      "all": "Tous",
+      "onlyPicks": "Avec pick seulement",
+      "noMatch": "Aucun match ne correspond aux filtres."
     }
   },
   "notifications": {

@@ -14,6 +14,7 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
+import { LensToggle } from "./lens-toggle";
 
 export function DecisionsPageFrame({
   children,
@@ -41,7 +42,7 @@ export function DecisionsPageFrame({
   return (
     <Page className="flex h-full flex-col">
       <PageHeader>
-        <div />
+        <LensToggle date={date} />
         <PageHeaderActions>
           <DateNav date={date} onChange={onDateChange} />
         </PageHeaderActions>
