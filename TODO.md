@@ -23,7 +23,44 @@
 
 ---
 
-## ▶ Reprise (prochaine session) — 2026-06-22
+## ▶ Reprise (prochaine session) — 2026-06-24 : **UX MOBILE**
+
+**Prochain sujet : UX mobile des pages décisions.** L'utilisateur enverra des
+captures de ce qui s'affiche sur mobile. Auditer/adapter la page
+`/dashboard/decisions` (refondue ce jour) : grille de cartes (1 col mobile),
+bandeau résumé du jour (wrap), chips de filtre canal, header (toggle
+Par match/Par canal + DateNav), carte pick-first, bandeau AVOID, repli
+« N canaux évalués ». Rien n'a été testé en viewport mobile.
+
+### Session 2026-06-23 — récap
+
+**Canaux (Étape 7 close avec données/modèle actuels) :**
+- **Activés** : CONSENSUS (accord 1X2, validé 3/3 saisons) · AVOID (divergence
+  extrême, **enforced** dans le pool de mise) · GOALS (**observation**, décision
+  produit — PAS un edge validé) · BTTS NO (observation).
+- **Écartés (preuves read-only)** : CONTRARIAN · UNDERDOG · FAVORITE · FIRST_HALF.
+  → **Insight structurel prouvé** : le modèle n'a aucun edge directionnel sur les
+  marchés résultat — Brier modèle 0.633 > marché 0.595. Ne plus tenter de canal
+  « battre le marché sur le résultat » sans amélioration majeure du modèle.
+- **Data-bloqués** : MARKET_MOVE (historique cotes), LIVE_VALUE (pipeline live).
+
+**Front décisions — FAIT :** refonte UX (carte pick-first, bandeau AVOID, badge
+CONSENSUS, résumé jour, tri conviction, filtres canal) + consolidation en **1
+route** `/dashboard/decisions` (toggle en-page, view dans l'URL) + suppression de
+la route backend morte `GET /channel-decisions`. web + backend
+typecheck/lint/610 tests ✅. **Mobile non audité.**
+
+**Données — à régénérer pour tout voir :**
+- Décisions en base = ancien rebuild → **CONSENSUS/AVOID absents**, GOALS =
+  SA UNDER seulement (dates SA, ex. 2025-05-18). Purge + rebuild pour peupler les
+  nouveaux canaux ; consulter une date ≤ 2026-06-15 (rien après).
+- **Coupons = 0** : générés par le pipeline **live** (`betting-engine-analysis`
+  enchaîne `generate-coupons`), PAS par le rebuild historique (volontaire). Pour
+  en voir : `POST /coupons/generate?date=` sur une date avec bets (ex. 2026-05-30).
+
+---
+
+## Historique reprise — 2026-06-22
 
 ### ✅ Re-wipe + rebuild — FAIT & VÉRIFIÉ (2026-06-21)
 
