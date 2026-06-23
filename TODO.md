@@ -624,7 +624,12 @@ Dataset reconstruit sain (cf. § Reprise).
       > **INSIGHT SYSTÈME consolidé (2026-06-23)** : le modèle **n'a aucun edge
       > directionnel sur les marchés résultat** — ni 1X2 fin de match (UNDERDOG/
       > FAVORITE/CONTRARIAN tous perdants ou artefact) ni vainqueur mi-temps
-      > (FIRST_HALF). Le marché est efficient sur le résultat à tout horizon. La
+      > (FIRST_HALF). **STRUCTUREL, prouvé** : Brier 1X2 modèle 0.633 vs marché
+      > (cotes dévigées) 0.595 sur 26 083 matchs → le marché est un *meilleur
+      > prédicteur* que notre modèle. Parier nos probas contre la ligne = parier
+      > une estimation moins bonne contre une meilleure : imbattable par construction
+      > (notre modèle xG-Poisson n'utilise qu'un sous-ensemble de l'info que la cote
+      > agrège). Le marché est efficient sur le résultat à tout horizon. La
       > valeur validée du système vient de : filtrage par accord (CONSENSUS), value
       > sur le nul (DRAW staké), police de la sur-confiance (AVOID), et prédiction
       > buts en observation (BTTS/DOMINANT/GOALS). Ne plus tester de canal
