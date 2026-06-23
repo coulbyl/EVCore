@@ -395,57 +395,42 @@ export type GoalsLeagueConfig = {
   lines: readonly GoalsLineConfig[];
 };
 
-// GOALS calibration — NO segment enabled (multi-season validation, 2026-06-23).
+// GOALS — enabled in OBSERVATION (2026-06-23, explicit product decision).
 //
-// History: candidates came from an in-sample ROI sweep on the 2.5 line, looked
-// strong, and a within-season holdout on the single available season (2025-26)
-// even seemed to validate SA UNDER (+21% out-of-sample). It was briefly enabled.
-// After the historical rebuild gave us 2023-24 + 2024-25 + 2025-26, per-season
-// ROI at each candidate's threshold was decisive — and negative:
-//   league  side  thr   2023-24      2024-25      2025-26
-//   POR     OVER  0.50  +19.6%       +1.7%        +21.1%   (3/3 + but thr-unstable*)
-//   SA      UNDER 0.50  -5.6%        -6.4%        +23.2%
-//   BL1     OVER  0.50  -12.5%       -11.4%       +14.4%
-//   L1/MLS/SP2/EL1/CH OVER, TUR1 UNDER: same shape — only 2025-26 positive.
-// 2025-26 is favourable across nearly EVERY league, yet the actual Over 2.5 rate
-// is flat across seasons (.524/.531/.541) — so the edge is not a real goal-rate
-// shift, it is a 2025-26-specific artifact. *POR looked 3/3 positive at 0.50 but
-// flips to -3.7%/+12.9%/+4.2% at 0.45: no stable threshold → noise, not signal.
-// SA UNDER's earlier "validation" was inside the anomalous season only.
+// IMPORTANT: this is NOT a validated staking edge. Multi-season validation was
+// negative — per-season ROI is positive only in the anomalous 2025-26 season
+// (e.g. SA UNDER -5.6%/-6.4%/+23.2%, BL1 OVER -12.5%/-11.4%/+14.4%); goal rates
+// and 1X2 calibration are flat across seasons, so the 2025-26 lift is odds-
+// specific variance, not a durable signal (full analysis in git history).
 //
-// → Every segment stays DISABLED. The channel + tuning tooling are in place;
-// re-run /backtest/tuning per season if the model improves or more data lands.
-//
-// "Old data degraded?" — RULED OUT (2026-06-23). Model 1X2 calibration is flat
-// across the three seasons (Brier .631/.631/.625, ECE .040/.040/.036; SA itself
-// .612/.598/.616). Reconstructed seasons are NOT noisier, so the 2025-26 edge is
-// not understated old data — calibration is flat, goal rates are flat, yet ROI
-// is positive only in 2025-26 ⇒ the edge is odds-specific variance that season,
-// not a durable signal. GOALS 2.5 has no cross-season edge, full stop.
+// It is enabled anyway as an OBSERVATION channel: GOALS is never staked (only
+// EV/SAFE/DRAW feed the coupon pool), so an enabled segment only emits a
+// selection that is recorded + settled analytically — visible in the dashboard
+// and accumulating forward data, with zero financial exposure. Thresholds are
+// the in-sample candidate values. Promote to staking ONLY if a real cross-season
+// edge later emerges. To stake GOALS one day, it must also be added to the
+// coupon pool (signal-window.getTodayPool) — today it is not, by design.
 export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
-  // SA UNDER 2.5 — failed multi-season validation (-5.6%/-6.4%/+23.2%): the
-  // single-season holdout that briefly enabled it sat inside the anomalous
-  // 2025-26 season. Disabled.
+  // SA UNDER 2.5 — observation (in-sample +28% but multi-season -5.6/-6.4/+23.2).
   SA: {
     lines: [
       {
         line: 2.5,
         side: 'UNDER',
-        enabled: false,
+        enabled: true,
         threshold: 0.5,
         minSampleN: 20,
       },
     ],
   },
-  // Disabled candidates — only positive in 2025-26, negative/mixed across the
-  // rebuilt prior seasons (see header). OVER side: model slightly under-predicts
-  // Overs but no league carries a cross-season edge.
+  // OVER observation segments — in-sample candidates (only 2025-26 positive
+  // across seasons; see header). Tracked, not staked.
   BL1: {
     lines: [
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.5,
         minSampleN: 20,
       },
@@ -456,7 +441,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.5,
         minSampleN: 20,
       },
@@ -467,7 +452,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.55,
         minSampleN: 20,
       },
@@ -478,7 +463,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.55,
         minSampleN: 20,
       },
@@ -489,7 +474,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.6,
         minSampleN: 20,
       },
@@ -500,7 +485,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.6,
         minSampleN: 20,
       },
@@ -511,7 +496,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'OVER',
-        enabled: false,
+        enabled: true,
         threshold: 0.5,
         minSampleN: 20,
       },
@@ -522,7 +507,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       {
         line: 2.5,
         side: 'UNDER',
-        enabled: false,
+        enabled: true,
         threshold: 0.55,
         minSampleN: 20,
       },

@@ -55,6 +55,8 @@ function richContext(): StrategyContext {
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'),
       bttsNo: new Decimal('0.35'),
+      over25: new Decimal('0.40'),
+      under25: new Decimal('0.60'),
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -90,11 +92,12 @@ describe('ChannelDecisionService', () => {
     expect(ev?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(ev?.selections[0]?.pick).toBe('HOME');
 
-    // GOALS is configured for BL1 but disabled pending per-season validation.
+    // GOALS BL1 OVER is enabled (observation) @ 0.50; over25 here is 0.40 < 0.50
+    // → it evaluates but clears no side → REJECTED (not DISABLED).
     const goals = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.GOALS,
     );
-    expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.DISABLED);
+    expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
 
     // CONSENSUS (phase 2) fires: DOMINANT (directional) + VALUE (value) both
     // selected HOME → two independent classes agree → SELECTED HOME.

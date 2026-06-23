@@ -163,18 +163,21 @@ describe('decideGoals (pure)', () => {
 describe('GoalsStrategy (class, prod config)', () => {
   const strategy = new GoalsStrategy();
 
-  it('returns DISABLED for leagues without an enabled GOALS config', () => {
-    // All prod GOALS segments start disabled pending per-season validation.
-    expect(
-      strategy.evaluate(
-        makeContext({ over25: 0.7 }, { competitionCode: 'BL1' }),
-      ).status,
-    ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
+  it('returns DISABLED for leagues with no GOALS config', () => {
     expect(
       strategy.evaluate(
         makeContext({ over25: 0.7 }, { competitionCode: 'UNKNOWN' }),
       ).status,
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
+  });
+
+  it('evaluates enabled observation segments (BL1 OVER @ 0.50)', () => {
+    // GOALS is enabled in observation; over25 0.7 ≥ 0.50 → SELECTED OVER.
+    const decision = strategy.evaluate(
+      makeContext({ over25: 0.7 }, { competitionCode: 'BL1' }),
+    );
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0].pick).toBe('OVER');
   });
 
   it('allowedMarkets contains only OVER_UNDER', () => {

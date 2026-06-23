@@ -65,6 +65,8 @@ function makeContext(
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'), // ≥ BL1 BTTS threshold 0.60
       bttsNo: new Decimal('0.35'),
+      over25: new Decimal('0.40'),
+      under25: new Decimal('0.60'),
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.

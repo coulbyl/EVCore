@@ -557,6 +557,18 @@ Dataset reconstruit sain (cf. § Reprise).
             > cette saison, pas un signal durable. **GOALS 2.5 = pas d'edge cross-saison.**
             > Outillage (canal + tuning) en place : ré-évaluer si le modèle s'améliore
             > ou si d'autres lignes (1.5/3.5) gagnent des cotes.
+      - [~] **GOALS ACTIVÉ EN OBSERVATION (2026-06-23, décision produit)** : malgré
+            le verdict ci-dessus (pas d'edge cross-saison), les segments candidats
+            (BL1/POR/L1/MLS/SP2/EL1/CH OVER + SA/TUR1 UNDER) sont passés
+            `enabled: true`. **Pas un edge validé** : GOALS n'est PAS dans le pool de
+            mise (seuls EV/SAFE/DRAW stakent) → un segment activé émet une sélection
+            **enregistrée + settlée analytiquement, jamais misée** = observation +
+            visibilité dashboard, zéro exposition. Promotion staking uniquement si un
+            vrai edge cross-saison émerge (+ ajout au pool `getTodayPool`).
+            backend typecheck/lint/610 tests ✅.
+            > ⚠️ Les décisions GOALS en base datent du rebuild d'hier (SA UNDER alors
+            > activé) ; pour refléter cette nouvelle config, **régénérer** (purge +
+            > rebuild) puis consulter une date ≤ 2026-06-15.
       - [ ] **Front** : exposer GOALS dans la page performance (onglet tuning consomme
             `goalsReports`) + l'affichage canal GOALS dans `/dashboard/decisions`.
             > Note : aucun segment activé pour l'instant → GOALS ne produit aucune
