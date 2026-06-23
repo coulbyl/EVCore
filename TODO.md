@@ -590,6 +590,15 @@ Dataset reconstruit sain (cf. § Reprise).
       > Suite : un **consommateur** doit honorer le blocage AVOID (couche
       > publication/coupon supprime les picks du match flaggé) — AVOID ne fait
       > qu'enregistrer la décision pour l'instant.
+- [-] `CONTRARIAN` (méta) — **ÉCARTÉ (2026-06-23), pas d'edge**. Étude read-only
+      3 saisons : parier le favori du modèle quand il diffère du favori marché =
+      **−10.1% ROI** (hit 27%, n=6512) ; les favoris que le modèle juge « survalués
+      ≥10pp » gagnent quand même **63.2% vs 64.2% implicite** (≈ aucune info). Le
+      marché est efficient sur les favoris. **Insight système** : le modèle ajoute
+      de la valeur en *accord* (CONSENSUS ✅) ou en flaggant sa propre démesure
+      (AVOID ✅), **pas en s'opposant au marché**. Non implémenté (reste dans
+      `META_STRATEGY_CHANNELS` pour mémoire). Ré-évaluer seulement si le modèle gagne
+      une vraie capacité à battre le marché (calibration nettement améliorée).
 - [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
 - [ ] `FIRST_HALF` — dataset mi-temps validé (calibration séparée)

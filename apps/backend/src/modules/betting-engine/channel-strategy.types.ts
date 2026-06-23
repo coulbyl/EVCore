@@ -50,6 +50,13 @@ export type ModelRunPhase =
   (typeof MODEL_RUN_PHASE)[keyof typeof MODEL_RUN_PHASE];
 
 // Meta-strategies run in Phase 2 (after all primary decisions are available).
+// CONSENSUS and AVOID are implemented + enabled. CONTRARIAN is intentionally
+// NOT implemented: a 2026-06-23 read-only study (3 seasons) found the model has
+// no edge disagreeing with the market — backing the model's favorite when it
+// differs from the market's loses -10.1% ROI (hit 27%), and favorites the model
+// flags as "overvalued" still win 63.2% vs 64.2% implied (≈ no information). The
+// model adds value by agreeing (CONSENSUS) or flagging its own overreach
+// (AVOID), not by fading the market. Kept in the set for completeness.
 export const META_STRATEGY_CHANNELS = new Set<StrategyChannel>([
   STRATEGY_CHANNEL.CONSENSUS,
   STRATEGY_CHANNEL.CONTRARIAN,
