@@ -608,7 +608,27 @@ Dataset reconstruit sain (cf. § Reprise).
       (AVOID ✅), **pas en s'opposant au marché**. Non implémenté (reste dans
       `META_STRATEGY_CHANNELS` pour mémoire). Ré-évaluer seulement si le modèle gagne
       une vraie capacité à battre le marché (calibration nettement améliorée).
-- [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2
+- [-] `UNDERDOG` — **ÉCARTÉ (2026-06-23), perdant net**. Feasibility 3 saisons :
+      outsiders (cote ≥ 3, edge modèle > 0) → **−13.1% / −9.8% / −13.6%** sur ~7000
+      picks/saison. Le modèle est systématiquement sur-confiant sur les longshots
+      (même travers que la divergence extrême d'AVOID). Pas d'observation : c'est mort.
+- [-] `FAVORITE` — **ÉCARTÉ (2026-06-23), pas d'edge robuste**. Favoris (cote ≤ 1.6,
+      edge > 0) → −4.3% / −5.9% / **+10.2%** : positif seulement en 2025-26 (artefact,
+      comme GOALS). Redondant avec VALUE/DOMINANT par ailleurs (doc §risque). Non
+      implémenté.
+- [-] `FIRST_HALF` — **ÉCARTÉ pour l'instant (2026-06-23), non robuste**. Vainqueur
+      mi-temps (argmax `firstHalfWinner`, marché `FIRST_HALF_WINNER` bien coté) :
+      seuil ≥0.50 → +14.4% / **−6.4%** / +4.5% (positif 2/3 mais 2024-25 nettement
+      négatif) ; ≥0.45 négatif partout. OU-HT trop peu coté (2129 fx). Pas
+      staking-grade. Ré-évaluer si calibration mi-temps dédiée améliorée.
+      > **INSIGHT SYSTÈME consolidé (2026-06-23)** : le modèle **n'a aucun edge
+      > directionnel sur les marchés résultat** — ni 1X2 fin de match (UNDERDOG/
+      > FAVORITE/CONTRARIAN tous perdants ou artefact) ni vainqueur mi-temps
+      > (FIRST_HALF). Le marché est efficient sur le résultat à tout horizon. La
+      > valeur validée du système vient de : filtrage par accord (CONSENSUS), value
+      > sur le nul (DRAW staké), police de la sur-confiance (AVOID), et prédiction
+      > buts en observation (BTTS/DOMINANT/GOALS). Ne plus tester de canal
+      > « battre le marché sur le résultat » sans une amélioration majeure du modèle.
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
-- [ ] `FIRST_HALF` — dataset mi-temps validé (calibration séparée)
+- [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
 - [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
