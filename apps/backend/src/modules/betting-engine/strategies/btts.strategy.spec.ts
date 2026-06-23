@@ -63,9 +63,27 @@ function makeContext(
 describe('BttsStrategy', () => {
   const strategy = new BttsStrategy();
 
-  it('returns DISABLED for leagues without BTTS config', () => {
+  it('still evaluates the global NO side when a league has no YES config', () => {
+    // Unknown league → YES disabled, but NO is global (observation). bttsNo here
+    // is 0.35 (< 0.65) so neither side clears → REJECTED, not DISABLED.
     expect(strategy.evaluate(makeContext(0.65, 'UNKNOWN_LEAGUE')).status).toBe(
-      CHANNEL_DECISION_STATUS.DISABLED,
+      CHANNEL_DECISION_STATUS.REJECTED,
+    );
+  });
+
+  it('selects the NO side when bttsNo clears the global threshold (0.65)', () => {
+    // bttsYes 0.20 → bttsNo 0.80 ≥ 0.65. Fires even in a league without YES config.
+    const decision = strategy.evaluate(makeContext(0.2, 'UNKNOWN_LEAGUE'));
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(decision.selections[0].pick).toBe('NO');
+    expect(decision.selections[0].probability.toNumber()).toBeCloseTo(0.8);
+  });
+
+  it('prefers the more confident side when both clear (YES vs NO)', () => {
+    // BL1 YES threshold 0.60. bttsYes 0.66 ≥ 0.60 (YES clears); bttsNo 0.34 < 0.65.
+    // Only YES clears → YES.
+    expect(strategy.evaluate(makeContext(0.66, 'BL1')).selections[0].pick).toBe(
+      'YES',
     );
   });
 

@@ -35,6 +35,18 @@ const BTTS_DEFAULT: ChannelStrategyLeagueConfig = {
   minSampleN: 20,
 };
 
+// BTTS NO side — calibrated SEPARATELY from YES (TODO Étape 7 / doc §6.1).
+// Global threshold (per-league volume too thin), and OBSERVATION ONLY: the
+// 2026-06-23 feasibility (3 seasons) found P(NO) ≥ 0.65 borderline — +13.8%
+// aggregate but driven by 2024-25 (2023-24 negative on n=10, sample count
+// unstable across seasons). Not staking-grade. BTTS is a prediction channel
+// (never staked), so a NO selection is recorded + settled analytically only —
+// it accumulates forward cross-season data before any staking promotion.
+export const BTTS_NO_CONFIG = {
+  enabled: true,
+  threshold: 0.65,
+} as const;
+
 export const CHANNEL_STRATEGY_CONFIG_CHANNELS: ChannelStrategyConfigChannel[] =
   ['DOMINANT', 'DRAW', 'BTTS'];
 

@@ -438,8 +438,17 @@ Dataset reconstruit sain (cf. § Reprise).
 > codes de rejet → seuils par ligue → implémentation → tests → **backtest séparé** →
 > shadow/observation → activation par segment validé → settlement + métriques → API/front.
 
-- [ ] `BTTS` côté `NO` : calibration **séparée par côté** (seuil, `minSampleN`, backtest distincts),
-      démarrage en observation, marché contraint à `BTTS` (doc §6.1 / §15.10)
+- [~] `BTTS` côté `NO` — **OBSERVATION (2026-06-23)**. Calibration séparée du côté
+      YES : seuil **global** `BTTS_NO_CONFIG` (volume par ligue trop fin), distinct du
+      YES par-ligue. `BttsStrategy` évalue désormais les deux côtés et émet le plus
+      confiant ; marché contraint à `BTTS`. **Feasibility 3 saisons (read-only)** :
+      P(NO) ≥ 0.65 = **borderline** — +13.8% agrégé mais porté par 2024-25
+      (−5%/n10 en 2023-24, +19.4%/n132 en 2024-25, +5.9%/n68 en 2025-26 ; comptage
+      instable). **PAS staking-grade** (la barre CONSENSUS = positif 3/3 saisons).
+      → activé en **observation seulement** (BTTS n'est jamais staké ; sélection NO
+      enregistrée + settlée analytiquement) pour accumuler des données forward.
+      10 tests (YES rétrocompat + NO). backend typecheck/lint/609 tests ✅.
+      > Promotion staking seulement si le signal NO se confirme sur saisons futures.
 - [~] `GOALS` (`OVER_UNDER`) — **canal prioritaire** (probabilités déjà émises).
       Plan figé 2026-06-22 (archi). **Spécificité** : pas un mono-signal comme
       BTTS/DRAW — c'est une **échelle de 8 picks** (Over/Under × {1.5, 2.5, 3.5, 4.5}),
