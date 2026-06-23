@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { getChannelStrategyConfig } from '@modules/betting-engine/strategies/channel-strategy.config';
+import {
+  getChannelStrategyConfig,
+  GOALS_CONFIG,
+} from '@modules/betting-engine/strategies/channel-strategy.config';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import {
   BacktestRepository,
   type ChannelTuningRow,
 } from './backtest.repository';
-import { buildChannelThresholdSweep } from './tuning.metrics';
-import { TUNING_CHANNELS } from './tuning.constants';
+import {
+  buildChannelThresholdSweep,
+  buildGoalsLineSweep,
+} from './tuning.metrics';
+import { GOALS_TUNING_SIDES, TUNING_CHANNELS } from './tuning.constants';
 import type {
   ChannelTuningReport,
   ChannelTuningResponse,
+  GoalsTuningReport,
 } from './dto/backtest-tuning.dto';
 
 function dateRange(from?: string, to?: string) {
@@ -60,6 +67,7 @@ export class ChannelTuningService {
     }
 
     const reports: ChannelTuningReport[] = [];
+    const goalsReports: GoalsTuningReport[] = [];
     for (const [code, group] of byComp) {
       const competitionName = group[0]?.competitionName ?? code;
       for (const channel of TUNING_CHANNELS) {
@@ -80,6 +88,29 @@ export class ChannelTuningService {
           recommended: sweep.recommended,
         });
       }
+      for (const side of GOALS_TUNING_SIDES) {
+        const sweep = buildGoalsLineSweep(side, group);
+        if (sweep.candidates === 0) continue;
+        const current = GOALS_CONFIG[code]?.lines.find(
+          (l) => l.line === sweep.line && l.side === side,
+        );
+        goalsReports.push({
+          competitionCode: code,
+          competitionName,
+          line: sweep.line,
+          side,
+          candidates: sweep.candidates,
+          current: current
+            ? {
+                enabled: current.enabled,
+                threshold: current.threshold,
+                minSampleN: current.minSampleN,
+              }
+            : null,
+          points: sweep.points,
+          recommended: sweep.recommended,
+        });
+      }
     }
 
     reports.sort(
@@ -87,11 +118,17 @@ export class ChannelTuningService {
         a.channel.localeCompare(b.channel) ||
         a.competitionCode.localeCompare(b.competitionCode),
     );
+    goalsReports.sort(
+      (a, b) =>
+        a.competitionCode.localeCompare(b.competitionCode) ||
+        a.side.localeCompare(b.side),
+    );
 
     return {
       from: range.fromIso,
       to: range.toIso,
       reports,
+      goalsReports,
       generatedAt: new Date().toISOString(),
     };
   }

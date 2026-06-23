@@ -45,10 +45,15 @@ export type ChannelTuningRow = {
   probDraw: number;
   probAway: number;
   probBttsYes: number | null;
+  // GOALS (Over/Under 2.5) — the only line with usable odds coverage in history.
+  probOver25: number | null;
+  probUnder25: number | null;
   oddsHome: number | null;
   oddsDraw: number | null;
   oddsAway: number | null;
   oddsBttsYes: number | null;
+  oddsOver25: number | null;
+  oddsUnder25: number | null;
 };
 
 /**
@@ -226,6 +231,16 @@ export class BacktestRepository {
 
     const oneXTwoByFixture = await this.latestOneXTwoOdds(to, fixtureWhere);
     const bttsYesByFixture = await this.latestBttsYesOdds(to, fixtureWhere);
+    const overByFixture = await this.latestOverUnderOdds(
+      to,
+      fixtureWhere,
+      'OVER',
+    );
+    const underByFixture = await this.latestOverUnderOdds(
+      to,
+      fixtureWhere,
+      'UNDER',
+    );
 
     const rows: ChannelTuningRow[] = [];
     for (const f of fixtures) {
@@ -243,13 +258,42 @@ export class BacktestRepository {
         probDraw: probs.draw,
         probAway: probs.away,
         probBttsYes: probs.bttsYes,
+        probOver25: probs.over25,
+        probUnder25: probs.under25,
         oddsHome: oneXTwo?.home ?? null,
         oddsDraw: oneXTwo?.draw ?? null,
         oddsAway: oneXTwo?.away ?? null,
         oddsBttsYes: bttsYesByFixture.get(f.id) ?? null,
+        oddsOver25: overByFixture.get(f.id) ?? null,
+        oddsUnder25: underByFixture.get(f.id) ?? null,
       });
     }
     return rows;
+  }
+
+  /** Latest Over/Under 2.5 odds (one side) per fixture in the window. */
+  private async latestOverUnderOdds(
+    to: Date,
+    fixtureWhere: Prisma.FixtureWhereInput,
+    pick: 'OVER' | 'UNDER',
+  ): Promise<Map<string, number>> {
+    const snapshots = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        market: Market.OVER_UNDER,
+        pick,
+        odds: { not: null },
+        snapshotAt: { lte: to },
+        fixture: { is: fixtureWhere },
+      },
+      select: { fixtureId: true, odds: true },
+      orderBy: [{ fixtureId: 'asc' }, { snapshotAt: 'desc' }],
+    });
+    const byFixture = new Map<string, number>();
+    for (const s of snapshots) {
+      if (byFixture.has(s.fixtureId) || s.odds === null) continue;
+      byFixture.set(s.fixtureId, Number(s.odds));
+    }
+    return byFixture;
   }
 
   /** Latest full 1X2 snapshot per fixture in the window (most recent first). */
@@ -317,10 +361,15 @@ export class BacktestRepository {
   }
 }
 
-/** Reads the 1X2 + BTTS YES probabilities out of a stored feature snapshot. */
-function readSignalProbabilities(
-  features: Prisma.JsonValue,
-): { home: number; draw: number; away: number; bttsYes: number | null } | null {
+/** Reads the 1X2 + BTTS + Over/Under 2.5 probabilities from a feature snapshot. */
+function readSignalProbabilities(features: Prisma.JsonValue): {
+  home: number;
+  draw: number;
+  away: number;
+  bttsYes: number | null;
+  over25: number | null;
+  under25: number | null;
+} | null {
   if (!features || typeof features !== 'object' || Array.isArray(features)) {
     return null;
   }
@@ -331,6 +380,8 @@ function readSignalProbabilities(
   const draw = p['draw'];
   const away = p['away'];
   const bttsYes = p['bttsYes'];
+  const over25 = p['over25'];
+  const under25 = p['under25'];
   if (
     typeof home !== 'number' ||
     typeof draw !== 'number' ||
@@ -343,5 +394,7 @@ function readSignalProbabilities(
     draw,
     away,
     bttsYes: typeof bttsYes === 'number' ? bttsYes : null,
+    over25: typeof over25 === 'number' ? over25 : null,
+    under25: typeof under25 === 'number' ? under25 : null,
   };
 }

@@ -355,6 +355,179 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
     },
   };
 
+// ─────────────────────────────────────────────
+// GOALS channel (Over/Under) — separate shape: the line dimension makes the
+// calibration unit (league × line × side), not the league alone. Each
+// (line, side) lives on its own probability scale (P(Over 1.5) ≈ 0.85 vs
+// P(Over 4.5) ≈ 0.10), so a single per-league threshold is meaningless.
+// Promotion is ROI-driven (see tuning.constants.ts), not hit-rate driven.
+// v1: only the 2.5 line is calibratable/activable — it is the only line with
+// ~100% odds coverage in history (1.5/3.5 ≈ 15%, 4.5 ≈ 6%). The schema stays
+// line-generic so the other lines activate without a refactor once the ETL
+// densifies their odds.
+// ─────────────────────────────────────────────
+
+export type GoalsLine = 1.5 | 2.5 | 3.5 | 4.5;
+export type GoalsSide = 'OVER' | 'UNDER';
+
+export type GoalsLineConfig = {
+  line: GoalsLine;
+  side: GoalsSide;
+  enabled: boolean;
+  // Minimum model probability for the side to qualify on this line.
+  threshold: number;
+  minSampleN: number;
+};
+
+export type GoalsLeagueConfig = {
+  lines: readonly GoalsLineConfig[];
+};
+
+// GOALS calibration — NO segment enabled (multi-season validation, 2026-06-23).
+//
+// History: candidates came from an in-sample ROI sweep on the 2.5 line, looked
+// strong, and a within-season holdout on the single available season (2025-26)
+// even seemed to validate SA UNDER (+21% out-of-sample). It was briefly enabled.
+// After the historical rebuild gave us 2023-24 + 2024-25 + 2025-26, per-season
+// ROI at each candidate's threshold was decisive — and negative:
+//   league  side  thr   2023-24      2024-25      2025-26
+//   POR     OVER  0.50  +19.6%       +1.7%        +21.1%   (3/3 + but thr-unstable*)
+//   SA      UNDER 0.50  -5.6%        -6.4%        +23.2%
+//   BL1     OVER  0.50  -12.5%       -11.4%       +14.4%
+//   L1/MLS/SP2/EL1/CH OVER, TUR1 UNDER: same shape — only 2025-26 positive.
+// 2025-26 is favourable across nearly EVERY league, yet the actual Over 2.5 rate
+// is flat across seasons (.524/.531/.541) — so the edge is not a real goal-rate
+// shift, it is a 2025-26-specific artifact. *POR looked 3/3 positive at 0.50 but
+// flips to -3.7%/+12.9%/+4.2% at 0.45: no stable threshold → noise, not signal.
+// SA UNDER's earlier "validation" was inside the anomalous season only.
+//
+// → Every segment stays DISABLED. The channel + tuning tooling are in place;
+// re-run /backtest/tuning per season if the model improves or more data lands.
+//
+// "Old data degraded?" — RULED OUT (2026-06-23). Model 1X2 calibration is flat
+// across the three seasons (Brier .631/.631/.625, ECE .040/.040/.036; SA itself
+// .612/.598/.616). Reconstructed seasons are NOT noisier, so the 2025-26 edge is
+// not understated old data — calibration is flat, goal rates are flat, yet ROI
+// is positive only in 2025-26 ⇒ the edge is odds-specific variance that season,
+// not a durable signal. GOALS 2.5 has no cross-season edge, full stop.
+export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
+  // SA UNDER 2.5 — failed multi-season validation (-5.6%/-6.4%/+23.2%): the
+  // single-season holdout that briefly enabled it sat inside the anomalous
+  // 2025-26 season. Disabled.
+  SA: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: false,
+        threshold: 0.5,
+        minSampleN: 20,
+      },
+    ],
+  },
+  // Disabled candidates — only positive in 2025-26, negative/mixed across the
+  // rebuilt prior seasons (see header). OVER side: model slightly under-predicts
+  // Overs but no league carries a cross-season edge.
+  BL1: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.5,
+        minSampleN: 20,
+      },
+    ],
+  },
+  POR: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.5,
+        minSampleN: 20,
+      },
+    ],
+  },
+  L1: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.55,
+        minSampleN: 20,
+      },
+    ],
+  },
+  MLS: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.55,
+        minSampleN: 20,
+      },
+    ],
+  },
+  SP2: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.6,
+        minSampleN: 20,
+      },
+    ],
+  },
+  EL1: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.6,
+        minSampleN: 20,
+      },
+    ],
+  },
+  CH: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: false,
+        threshold: 0.5,
+        minSampleN: 20,
+      },
+    ],
+  },
+  TUR1: {
+    lines: [
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: false,
+        threshold: 0.55,
+        minSampleN: 20,
+      },
+    ],
+  },
+};
+
+// Resolve the enabled GOALS line configs for a league (empty when none).
+export function getGoalsLineConfigs(
+  competitionCode: string | null | undefined,
+): readonly GoalsLineConfig[] {
+  if (competitionCode == null) return [];
+  const leagueConfig = GOALS_CONFIG[competitionCode];
+  if (!leagueConfig) return [];
+  return leagueConfig.lines.filter((l) => l.enabled);
+}
+
 export function getChannelStrategyConfig(
   channel: ChannelStrategyConfigChannel,
   competitionCode: string | null | undefined,

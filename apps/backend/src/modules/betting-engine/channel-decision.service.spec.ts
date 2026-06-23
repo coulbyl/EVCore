@@ -83,12 +83,18 @@ describe('ChannelDecisionService', () => {
     expect(runId).toBe('run-1');
 
     // Orchestrator ran every primary strategy; EV selected the only viable pick.
-    expect(evaluated).toHaveLength(5);
+    expect(evaluated).toHaveLength(6);
     const ev = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.VALUE,
     );
     expect(ev?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(ev?.selections[0]?.pick).toBe('HOME');
+
+    // GOALS is configured for BL1 but disabled pending per-season validation.
+    const goals = evaluated.find(
+      (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.GOALS,
+    );
+    expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.DISABLED);
 
     // The persisted result (with selection ids) is forwarded to the caller.
     expect(returned).toBe(persistedResult);

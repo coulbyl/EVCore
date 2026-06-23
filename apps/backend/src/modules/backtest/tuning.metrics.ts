@@ -9,7 +9,11 @@ import { flatRoi } from './backtest.metrics';
 import type { ChannelTuningRow } from './backtest.repository';
 import {
   CHANNEL_PROMOTION_RULE,
+  GOALS_PROMOTION_RULE,
+  GOALS_TUNING_THRESHOLD_GRID,
   TUNING_THRESHOLD_GRID,
+  type ChannelPromotionRule,
+  type GoalsTuningSide,
 } from './tuning.constants';
 
 const DOMINANT_MARGIN = DOMINANT_MIN_MARGIN.toNumber();
@@ -102,12 +106,14 @@ function bttsSelectables(rows: ChannelTuningRow[]): Selectable[] {
   return out;
 }
 
-function sweep(
-  channel: ChannelStrategyConfigChannel,
+// Generic threshold sweep over an explicit grid — shared by the config-driven
+// channels and the GOALS line sweep.
+function sweepGrid(
+  grid: readonly number[],
   selectables: Selectable[],
 ): ThresholdPoint[] {
   const denom = selectables.length;
-  return (TUNING_THRESHOLD_GRID[channel] ?? []).map((threshold) => {
+  return grid.map((threshold) => {
     const sel = selectables.filter((s) => s.signal >= threshold);
     const won = sel.filter((s) => s.won).length;
     return {
@@ -121,11 +127,18 @@ function sweep(
   });
 }
 
-function recommend(
+function sweep(
   channel: ChannelStrategyConfigChannel,
+  selectables: Selectable[],
+): ThresholdPoint[] {
+  return sweepGrid(TUNING_THRESHOLD_GRID[channel] ?? [], selectables);
+}
+
+// Best PASS threshold per a promotion rule, or null. Shared selector.
+function recommendFrom(
+  rule: ChannelPromotionRule,
   points: ThresholdPoint[],
 ): ThresholdRecommendation | null {
-  const rule = CHANNEL_PROMOTION_RULE[channel];
   const passing = points.filter(
     (p) =>
       p.total >= rule.minSample &&
@@ -140,6 +153,13 @@ function recommend(
   return { ...best, verdict: 'PASS' };
 }
 
+function recommend(
+  channel: ChannelStrategyConfigChannel,
+  points: ThresholdPoint[],
+): ThresholdRecommendation | null {
+  return recommendFrom(CHANNEL_PROMOTION_RULE[channel], points);
+}
+
 /** Full threshold sweep + recommendation for one channel over a fixture set. */
 export function buildChannelThresholdSweep(
   channel: ChannelStrategyConfigChannel,
@@ -152,5 +172,54 @@ export function buildChannelThresholdSweep(
     candidates: selectables.length,
     points,
     recommended: recommend(channel, points),
+  };
+}
+
+// ─────────────────────────────────────────────
+// GOALS (Over/Under 2.5) sweep — separate from the uniform channel brick: the
+// signal is the model side probability, the outcome compares total goals to the
+// line, and promotion is ROI-driven (GOALS_PROMOTION_RULE).
+// ─────────────────────────────────────────────
+
+export type GoalsLineSweep = {
+  side: GoalsTuningSide;
+  line: number;
+  candidates: number;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
+function goalsSelectables(
+  rows: ChannelTuningRow[],
+  side: GoalsTuningSide,
+): Selectable[] {
+  const out: Selectable[] = [];
+  for (const r of rows) {
+    const signal = side === 'OVER' ? r.probOver25 : r.probUnder25;
+    const odds = side === 'OVER' ? r.oddsOver25 : r.oddsUnder25;
+    if (signal === null || odds === null || odds <= 0) continue;
+    const totalGoals = r.homeScore + r.awayScore;
+    out.push({
+      signal,
+      won: side === 'OVER' ? totalGoals > 2 : totalGoals < 3,
+      odds,
+    });
+  }
+  return out;
+}
+
+/** Threshold sweep + ROI-driven recommendation for one GOALS (line × side). */
+export function buildGoalsLineSweep(
+  side: GoalsTuningSide,
+  rows: ChannelTuningRow[],
+): GoalsLineSweep {
+  const selectables = goalsSelectables(rows, side);
+  const points = sweepGrid(GOALS_TUNING_THRESHOLD_GRID, selectables);
+  return {
+    side,
+    line: 2.5,
+    candidates: selectables.length,
+    points,
+    recommended: recommendFrom(GOALS_PROMOTION_RULE, points),
   };
 }

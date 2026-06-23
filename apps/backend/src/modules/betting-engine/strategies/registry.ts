@@ -5,6 +5,7 @@ import { SafeStrategy } from './safe.strategy';
 import { DominantStrategy } from './dominant.strategy';
 import { BttsStrategy } from './btts.strategy';
 import { DrawStrategy } from './draw.strategy';
+import { GoalsStrategy } from './goals.strategy';
 
 // v1 registry — order matters: EV runs before SAFE (SAFE excludes the EV pick).
 // Primary strategies only; meta-strategies (CONSENSUS, CONTRARIAN, AVOID) are
@@ -15,6 +16,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new DominantStrategy(),
   new BttsStrategy(),
   new DrawStrategy(),
+  new GoalsStrategy(),
 ];
 
 export function createChannelStrategyOrchestrator(): ChannelStrategyOrchestrator {

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildChannelThresholdSweep } from './tuning.metrics';
+import {
+  buildChannelThresholdSweep,
+  buildGoalsLineSweep,
+} from './tuning.metrics';
 import type { ChannelTuningRow } from './backtest.repository';
 
 function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
@@ -12,10 +15,14 @@ function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
     probDraw: 0.3,
     probAway: 0.3,
     probBttsYes: 0.5,
+    probOver25: 0.5,
+    probUnder25: 0.5,
     oddsHome: 2.0,
     oddsDraw: 3.3,
     oddsAway: 3.5,
     oddsBttsYes: 1.9,
+    oddsOver25: 1.9,
+    oddsUnder25: 2.0,
     ...partial,
   };
 }
@@ -99,5 +106,46 @@ describe('recommendation', () => {
     const rows = [row({ probHome: 0.46, probDraw: 0.27, probAway: 0.27 })];
     const sweep = buildChannelThresholdSweep('DOMINANT', rows);
     expect(sweep.recommended).toBeNull(); // far below minSample
+  });
+});
+
+describe('buildGoalsLineSweep — OVER 2.5', () => {
+  it('wins when total goals > 2 and skips fixtures missing OVER odds', () => {
+    const rows: ChannelTuningRow[] = [
+      row({ probOver25: 0.62, oddsOver25: 1.9, homeScore: 2, awayScore: 1 }), // 3 goals → won
+      row({ probOver25: 0.6, oddsOver25: 1.95, homeScore: 1, awayScore: 1 }), // 2 goals → lost
+      row({ probOver25: 0.7, oddsOver25: null, homeScore: 3, awayScore: 0 }), // no odds → dropped
+    ];
+    const sweep = buildGoalsLineSweep('OVER', rows);
+    expect(sweep.side).toBe('OVER');
+    expect(sweep.line).toBe(2.5);
+    expect(sweep.candidates).toBe(2); // third dropped (no odds)
+    const at60 = sweep.points.find((p) => p.threshold === 0.6)!;
+    expect(at60.total).toBe(2);
+    expect(at60.won).toBe(1);
+  });
+});
+
+describe('buildGoalsLineSweep — UNDER 2.5', () => {
+  it('wins when total goals < 3 using the UNDER odds and probability', () => {
+    const rows: ChannelTuningRow[] = [
+      row({ probUnder25: 0.6, oddsUnder25: 2.0, homeScore: 1, awayScore: 1 }), // 2 goals → won
+      row({ probUnder25: 0.58, oddsUnder25: 2.1, homeScore: 2, awayScore: 2 }), // 4 goals → lost
+    ];
+    const sweep = buildGoalsLineSweep('UNDER', rows);
+    expect(sweep.candidates).toBe(2);
+    const at55 = sweep.points.find((p) => p.threshold === 0.55)!;
+    expect(at55.total).toBe(2);
+    expect(at55.won).toBe(1);
+  });
+
+  it('recommends an ROI-positive threshold (no hit-rate floor)', () => {
+    // 25 fixtures, all UNDER wins at odds 2.0 → ROI +100%, sample clears min.
+    const rows: ChannelTuningRow[] = Array.from({ length: 25 }, () =>
+      row({ probUnder25: 0.6, oddsUnder25: 2.0, homeScore: 0, awayScore: 1 }),
+    );
+    const sweep = buildGoalsLineSweep('UNDER', rows);
+    expect(sweep.recommended?.verdict).toBe('PASS');
+    expect(sweep.recommended!.roi).toBeGreaterThan(0);
   });
 });

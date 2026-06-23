@@ -440,7 +440,124 @@ Dataset reconstruit sain (cf. § Reprise).
 
 - [ ] `BTTS` côté `NO` : calibration **séparée par côté** (seuil, `minSampleN`, backtest distincts),
       démarrage en observation, marché contraint à `BTTS` (doc §6.1 / §15.10)
-- [ ] `GOALS` (`OVER_UNDER`) — les probabilités existent déjà, à prioriser
+- [~] `GOALS` (`OVER_UNDER`) — **canal prioritaire** (probabilités déjà émises).
+      Plan figé 2026-06-22 (archi). **Spécificité** : pas un mono-signal comme
+      BTTS/DRAW — c'est une **échelle de 8 picks** (Over/Under × {1.5, 2.5, 3.5, 4.5}),
+      chaque (ligne × côté) sur une **échelle de proba différente** (P(Over1.5)≈0.85
+      vs P(Over4.5)≈0.10). Décisions d'archi :
+      1. **Unité de calibration = (ligue × ligne × côté)**, pas la ligue seule. Un
+         seuil unique par ligue n'a aucun sens (trivial sur 1.5, impossible sur 4.5).
+      2. **Promotion jugée sur le ROI** (+ coverage + sample), pas le hit-rate (comme
+         DRAW) — Over 1.5 a un hit-rate trivial mais ROI souvent négatif après marge.
+      3. **Une seule sélection par fixture** (lignes emboîtées = double-comptage
+         sinon) : évaluer toutes les (ligne×côté) activées, émettre la **meilleure
+         par EV** (`prob × cote − 1`) en rank 1. Value-driven.
+      Déjà en place (à ne PAS reconstruire) : échelle `over15…under45` sur
+      `MatchProbabilities` (Poisson xG, persistée `model_run.features.probabilities`),
+      `Market.OVER_UNDER` + 8 picks mappés odds↔proba (`odds-mapping.ts`) et settlés,
+      pattern stratégie + config par ligue, harnais tuning offline consultatif.
+      Étapes :
+      - [x] **Pas 0 (read-only, 2026-06-22)** : calibration de l'échelle over/under
+            mesurée sur 11 059 fixtures settlées. **Modèle déjà bien calibré** :
+            global pred↔réel ≤1.6pp partout (O1.5 .760/.770, O2.5 .525/.541,
+            O3.5 .309/.313, O4.5 .157/.152). Écarts par ligue petits et surtout
+            **négatifs** (modèle sous-prédit légèrement les Overs → biais favorable
+            aux picks Over). Sous-prédicteurs nets = candidats Over : NOR2 −8.8pp,
+            SUI2 −8.6pp, MLS −7.9pp, TUR1 −7.7pp, SUI1 −6.7pp. **Décision :
+            Dixon-Coles NON requis** (la crainte Poisson-indépendant ne se
+            matérialise pas). Le tri des segments gagnants se fera sur le **ROI
+            avec cotes**, pas sur le Brier → dépend de l'étape repo ci-dessous.
+      - [x] Enum `StrategyChannel.GOALS` — **déjà présent** schéma + DB + client
+            généré (aucune migration nécessaire).
+      - [x] **Pas 0bis — densité des cotes (read-only, 2026-06-22)** : seule la
+            ligne **2.5 est cotée à ~100%** (OVER/UNDER : 18 377 fixtures). 1.5 et 3.5
+            ≈ 1 681 fixtures (~15%), 4.5 ≈ 697 (~6%) — toutes ligues confondues.
+            **Le ROI n'est tunable que sur la 2.5 aujourd'hui.** → **Scope révisé :
+            livrer GOALS sur la 2.5 d'abord** (calibration + couverture prêtes), garder
+            le schéma config générique sur la ligne pour activer 1.5/3.5/4.5 sans
+            refonte une fois les cotes collectées.
+      - [ ] **[ETL] Densifier les cotes `OVER_UNDER` 1.5/3.5/4.5** — prérequis dur à
+            l'activation de ces lignes. Tant que non fait, elles restent désactivées
+            par design (pas par oubli). Démarrer GOALS sans bloquer là-dessus.
+      - [x] **Pas 0ter — sweep ROI 2.5 par ligue (read-only, 2026-06-22)** : signal
+            réel et substantiel. Candidats PASS (ROI ≥ +5%, mise plate, meilleur seuil
+            in-sample) — **OVER** : BL1 (.50, +14%), POR (.50, +21%), L1 (.55, +18%),
+            MLS (.50, +15%), SP2 (.60, +12.5%), EL1 (.60, +12%), CH (.50, +12%) ;
+            **UNDER** : SA (.55, +28%), TUR1 (.55, +10%). SA UNDER cohérent (ligue
+            basse). ⚠️ **Seuils choisis in-sample = risque overfit** → liste =
+            CANDIDATS, pas config finale. Validation **par saison** obligatoire dans
+            le `ChannelTuningService` étendu avant activation (cf. méthodo des
+            commentaires datés de la config existante).
+      - [x] Config GOALS (2026-06-22) : sous-forme `GoalsLeagueConfig { lines:
+            [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
+            `getGoalsLineConfigs`. Candidats du sweep seedés **tous `enabled: false`**
+            (en attente validation par saison).
+      - [x] `goals.strategy.ts` (2026-06-22) : fonction pure `decideGoals(context,
+            lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
+            par ligne → ranking value-first (EV ↓, puis proba pour sélections sans
+            cote) → 1 sélection rank 1. Enregistrée `registry.ts` (6e primaire).
+            10 tests + orchestrateur à jour. backend typecheck/lint/581 tests ✅.
+      - [x] **Tuning étendu (2026-06-22)** : `BacktestRepository` lit `over25/under25`
+            (`readSignalProbabilities`) + charge les cotes `OVER_UNDER` OVER/UNDER
+            (`latestOverUnderOdds`) → `ChannelTuningRow` enrichi (probOver25/Under25 +
+            oddsOver25/Under25). `tuning.metrics` : `buildGoalsLineSweep(side, rows)`
+            (signal = proba côté, won = total vs ligne, ROI mise plate) + helpers
+            partagés `sweepGrid`/`recommendFrom`. `tuning.constants` : grille GOALS +
+            `GOALS_PROMOTION_RULE` ROI-driven (minSample 20, roiFloor +5%, pas de
+            hit-rate floor). `ChannelTuningService` émet `goalsReports[]` (DTO
+            `GoalsTuningReport`). **v1 = ligne 2.5 OVER/UNDER** (les autres lignes
+            attendent la densité de cotes ETL). 4 tests metrics. typecheck/lint/584 ✅.
+      - [x] **Settlement vérifié (2026-06-22)** : `channel-selection-settlement`
+            délègue OVER_UNDER à `resolvePickBetStatus` — les 8 picks (OVER_1_5→
+            UNDER_4_5) sont couverts (même résolveur que le pipeline EV/SAFE). Aucun
+            code settlement à ajouter.
+      - [x] **Calibration + activation (2026-06-22)** : ⚠️ **les `model_run`
+            n'existent QUE pour 2025-26** (10 166 runs ; 107/160/785 pour les autres
+            saisons) → validation multi-saisons **impossible** avec les données
+            actuelles. Validation faite via **holdout intra-saison** (`/backtest/tuning`
+            sur H1 → ROI mesuré sur H2 non-vu). Verdict décisif :
+            - **POR OVER** (+53%→−15%), **CH OVER** (+28%→−5%), **TUR1 UNDER**
+              (+36%→−24%) : forts in-sample, **s'effondrent** hors-échantillon → overfit.
+            - **BL1/L1/MLS/SP2/EL1 OVER** : aucun seuil PASS sur la demi-saison →
+              non concluant.
+            - **SA UNDER** : +29% train → **+21% holdout** (n=91, hit 64.8%), ROI
+              positif sur toute la courbe de seuils. **Seul segment robuste**
+              (Serie A structurellement basse). → **SA UNDER 2.5 @ 0.50 activé**
+              (full +23.3%/n125, holdout +21%/n91). Tous les autres restent
+              désactivés. backend typecheck/lint/584 tests ✅.
+      - [x] **[ETL] Rebuild des saisons historiques FAIT (2026-06-23)** : 3 saisons
+            pleines (2023-24: 11 873, 2024-25: 12 768, 2025-26: 12 312). Validation
+            multi-saisons désormais possible.
+      - [x] **Validation multi-saisons → AUCUNE activation (2026-06-23)** : ROI par
+            saison au seuil de chaque candidat. **Verdict : aucun segment ne tient.**
+            - 2025-26 est favorable sur **quasi toutes** les ligues, alors que le
+              taux Over 2.5 **réel** est plat (.524/.531/.541) → l'edge n'est pas un
+              vrai décalage de buts, c'est un **artefact spécifique à 2025-26**.
+            - **SA UNDER @0.50** : −5.6% / −6.4% / +23.2% → **échoue** (le holdout
+              intra-saison qui l'avait activé était DANS la saison anormale). Désactivé.
+            - **POR OVER** : 3/3 positif à 0.50 (+19.6/+1.7/+21.1) mais **instable**
+              (à 0.45 : −3.7/+12.9/+4.2) → pas de seuil stable = bruit.
+            - BL1/L1/MLS/SP2/EL1/CH OVER, TUR1 UNDER : positifs **uniquement** en
+              2025-26. Tous désactivés. backend typecheck/lint/584 tests ✅.
+            > Caveat « vieilles données dégradées » → **ÉCARTÉ (2026-06-23)** via
+            > `/backtest/calibration` : la calibration 1X2 du modèle est plate sur les
+            > 3 saisons (Brier .631/.631/.625, ECE .040/.040/.036 ; SA .612/.598/.616).
+            > Les saisons reconstruites ne sont PAS plus bruitées → l'edge 2025-26
+            > n'est pas du « ROI ancien sous-estimé ». Calibration plate + taux de buts
+            > plat + ROI positif seulement en 2025-26 ⇒ variance liée aux cotes de
+            > cette saison, pas un signal durable. **GOALS 2.5 = pas d'edge cross-saison.**
+            > Outillage (canal + tuning) en place : ré-évaluer si le modèle s'améliore
+            > ou si d'autres lignes (1.5/3.5) gagnent des cotes.
+      - [ ] **Front** : exposer GOALS dans la page performance (onglet tuning consomme
+            `goalsReports`) + l'affichage canal GOALS dans `/dashboard/decisions`.
+            > Note : aucun segment activé pour l'instant → GOALS ne produit aucune
+            > sélection en prod. Le front peut quand même afficher les `goalsReports`
+            > du tuning (outil de décision).
+      > **Amélioration modèle séparée (channel-agnostic)** : Poisson actuel =
+      > indépendant → sous-estime les scores faibles (0-0, 1-1) → biaise Under 1.5/2.5.
+      > Correction **Dixon-Coles** (paramètre ρ) améliore surtout correct-score +
+      > over/under. À traiter APRÈS le Pas 0 si les lignes basses sont mal calibrées
+      > (bénéficie aussi à BTTS/1X2). Ne pas mélanger avec le travail canal.
 - [ ] `CONSENSUS` (méta) — exploite les décisions normalisées, mesurer l'indépendance des stratégies
 - [ ] `AVOID` (méta) — décision négative explicite, bloque la publication sans effacer les autres canaux
 - [ ] `UNDERDOG` / `FAVORITE` — après calibration des segments 1X2

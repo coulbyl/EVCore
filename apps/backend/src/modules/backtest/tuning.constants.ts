@@ -48,3 +48,25 @@ export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
   'DRAW',
   'BTTS',
 ];
+
+/**
+ * GOALS (Over/Under) tuning. The calibration unit is (line × side), not the
+ * league alone — each lives on its own probability scale — so the sweep runs
+ * per side. v1 covers only the 2.5 line (the only one with odds coverage).
+ * Promotion is ROI-driven (like DRAW): high-probability low lines clear any
+ * hit-rate floor trivially but bleed ROI after the vig, so hit rate is not a
+ * meaningful gate here. The recommendation must still be confirmed per-season
+ * before flipping a segment to enabled in `GOALS_CONFIG`.
+ */
+export const GOALS_TUNING_SIDES = ['OVER', 'UNDER'] as const;
+export type GoalsTuningSide = (typeof GOALS_TUNING_SIDES)[number];
+
+export const GOALS_TUNING_THRESHOLD_GRID: number[] = [
+  0.45, 0.5, 0.55, 0.6, 0.65,
+];
+
+export const GOALS_PROMOTION_RULE: ChannelPromotionRule = {
+  minSample: 20,
+  hitRateFloor: null,
+  roiFloor: 0.05,
+};
