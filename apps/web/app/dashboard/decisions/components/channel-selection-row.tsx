@@ -28,7 +28,7 @@ export function ChannelSelectionRow({
   const selection = decision.selections[0];
 
   return (
-    <Card className="relative flex-row items-center justify-between gap-3 overflow-hidden border-border/70 p-3 pl-4 transition-colors hover:border-border">
+    <Card className="relative flex-col items-stretch gap-2 overflow-hidden border-border/70 p-3 pl-4 transition-colors hover:border-border sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div
         className="absolute inset-y-0 left-0 w-[3px]"
         style={{ backgroundColor: CHANNEL_COLOR[decision.channel] }}
@@ -49,13 +49,12 @@ export function ChannelSelectionRow({
 
       {selection === undefined ? (
         // Negative decision (e.g. AVOID): no pick — show why the fixture is flagged.
-        <span className="shrink-0 text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground sm:shrink-0">
           {reasonLabel(decision.reasonCode, t) ?? "—"}
         </span>
       ) : (
-
-        <div className="flex shrink-0 items-center gap-3 text-xs">
-          <span className="font-medium">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:shrink-0 sm:justify-end">
+          <span className="min-w-0 font-medium">
             {formatPickForDisplay(selection.pick, selection.market)}
             <span className="ml-1.5 font-normal text-muted-foreground">
               {formatMarketForDisplay(selection.market, loc)}

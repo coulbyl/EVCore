@@ -31,8 +31,12 @@ export function CouponsPageClient() {
     <Page className="flex h-full flex-col">
       <PageHeader>
         <div />
-        <PageHeaderActions>
-          <DateNav date={date} onChange={navigateTo} />
+        <PageHeaderActions className="w-full lg:w-auto">
+          <DateNav
+            date={date}
+            onChange={navigateTo}
+            className="w-full lg:w-auto"
+          />
         </PageHeaderActions>
       </PageHeader>
 

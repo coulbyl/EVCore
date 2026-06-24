@@ -72,7 +72,7 @@ export function DateNav({ date, onChange, className }: DateNavProps) {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="h-7 min-w-28 px-2 text-sm font-medium"
+            className="h-7 min-w-28 flex-1 px-2 text-sm font-medium"
           >
             {formatDateLabel(date)}
           </Button>

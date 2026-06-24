@@ -107,7 +107,7 @@
     "noPick": "No pick retained on this fixture.",
     "noPickShort": "no pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
-    "evaluatedCount": "{count, plural, one {# channel evaluated} other {# channels evaluated}}",
+    "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
     "summary": {
       "matches": "matches",
       "picks": "picks",

@@ -107,7 +107,7 @@
     "noPick": "Aucun pick retenu sur ce match.",
     "noPickShort": "aucun pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
-    "evaluatedCount": "{count, plural, one {# canal évalué} other {# canaux évalués}}",
+    "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
     "summary": {
       "matches": "matchs",
       "picks": "picks",

@@ -1,35 +1,46 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent, Empty } from "@evcore/ui";
+"use client";
+
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, Empty } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/types/channel-decision";
 import { channelLabel } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
 
-export function ChannelLens({
+// Active-channel state for the "Par canal" lens, lifted into a hook so the tab
+// strip (pinned in the page sub-header) and the scrolling selection list (in the
+// page content) stay in sync from different DOM regions. Falls back to the first
+// channel, and re-anchors there if the selected channel disappears on a date change.
+export function useChannelLens(channelGroups: ChannelDecisionChannelGroupDto[]) {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const activeChannel =
+    selected && channelGroups.some((g) => g.channel === selected)
+      ? selected
+      : (channelGroups[0]?.channel ?? null);
+
+  const activeGroup =
+    channelGroups.find((g) => g.channel === activeChannel) ?? null;
+
+  return { channelGroups, activeChannel, setSelected, activeGroup };
+}
+
+export type ChannelLensState = ReturnType<typeof useChannelLens>;
+
+// The channel tab strip. Lives in the pinned sub-header so it stays visible
+// while the selections scroll underneath.
+export function ChannelTabs({
   channelGroups,
-  locale,
-}: {
-  channelGroups: ChannelDecisionChannelGroupDto[];
-  locale: string;
-}) {
+  activeChannel,
+  setSelected,
+}: ChannelLensState) {
   const t = useTranslations("decisions");
 
-  if (channelGroups.length === 0) {
-    return (
-      <Empty className="rounded-[1.6rem] border-border bg-background/20">
-        Aucune sélection retenue pour cette date.
-      </Empty>
-    );
-  }
-
-  const defaultTab = channelGroups[0]!.channel;
+  if (channelGroups.length === 0 || activeChannel === null) return null;
 
   return (
-    <Tabs
-      key={channelGroups.map((e) => e.channel).join(",")}
-      defaultValue={defaultTab}
-      className="h-full min-h-0"
-    >
-      <div className="shrink-0 overflow-x-auto pb-1">
+    <div className="overflow-x-auto">
+      <Tabs value={activeChannel} onValueChange={setSelected}>
         <TabsList variant="line">
           {channelGroups.map(({ channel, decisions }) => (
             <TabsTrigger key={channel} value={channel}>
@@ -40,25 +51,36 @@ export function ChannelLens({
             </TabsTrigger>
           ))}
         </TabsList>
-      </div>
+      </Tabs>
+    </div>
+  );
+}
 
-      {channelGroups.map(({ channel, decisions }) => (
-        <TabsContent
-          key={channel}
-          value={channel}
-          className="mt-3 min-h-0 overflow-hidden"
-        >
-          <div className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto pb-4 pr-1">
-            {decisions.map((decision) => (
-              <ChannelSelectionRow
-                key={decision.id}
-                decision={decision}
-                locale={locale}
-              />
-            ))}
-          </div>
-        </TabsContent>
+// The scrolling selection list for the active channel.
+export function ChannelList({
+  activeGroup,
+  locale,
+}: {
+  activeGroup: ChannelLensState["activeGroup"];
+  locale: string;
+}) {
+  if (activeGroup === null) {
+    return (
+      <Empty className="rounded-[1.6rem] border-border bg-background/20">
+        Aucune sélection retenue pour cette date.
+      </Empty>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {activeGroup.decisions.map((decision) => (
+        <ChannelSelectionRow
+          key={decision.id}
+          decision={decision}
+          locale={locale}
+        />
       ))}
-    </Tabs>
+    </div>
   );
 }

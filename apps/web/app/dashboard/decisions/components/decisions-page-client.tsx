@@ -9,8 +9,8 @@ import {
 import { todayIso } from "@/lib/date";
 import { DecisionsPageFrame } from "./decisions-page-frame";
 import type { DecisionsView } from "./lens-toggle";
-import { MatchLens } from "./match-lens";
-import { ChannelLens } from "./channel-lens";
+import { MatchFilters, MatchGrid, useMatchLens } from "./match-lens";
+import { ChannelTabs, ChannelList, useChannelLens } from "./channel-lens";
 
 // Single decisions surface: one route, two lenses (by match / by channel)
 // toggled in-page. Date and view both live in the URL so the view survives a
@@ -28,6 +28,11 @@ export function DecisionsPageClient() {
   const matches = useChannelDecisionMatches(date, {}, { enabled: view === "matches" });
   const channels = useChannelDecisionChannels(date, {}, { enabled: view === "channels" });
   const active = view === "matches" ? matches : channels;
+
+  // Hooks stay unconditional (rules of hooks); the inactive lens just runs over
+  // an empty list. Each lens pins its own bar (filters / tabs) in the sub-header.
+  const matchLens = useMatchLens(matches.data ?? []);
+  const channelLens = useChannelLens(channels.data ?? []);
 
   function navigate(next: { date?: string; view?: DecisionsView }) {
     const params = new URLSearchParams({
@@ -50,11 +55,18 @@ export function DecisionsPageClient() {
       hasData={hasData}
       isError={active.isError}
       isLoading={active.isLoading}
+      subHeader={
+        !hasData ? null : view === "matches" ? (
+          <MatchFilters {...matchLens} />
+        ) : (
+          <ChannelTabs {...channelLens} />
+        )
+      }
     >
       {view === "matches" ? (
-        <MatchLens matches={matches.data ?? []} locale={locale} />
+        <MatchGrid visible={matchLens.visible} locale={locale} />
       ) : (
-        <ChannelLens channelGroups={channels.data ?? []} locale={locale} />
+        <ChannelList activeGroup={channelLens.activeGroup} locale={locale} />
       )}
     </DecisionsPageFrame>
   );

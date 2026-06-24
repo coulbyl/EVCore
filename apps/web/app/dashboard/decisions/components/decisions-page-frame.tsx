@@ -28,6 +28,7 @@ export function DecisionsPageFrame({
   onDateChange,
   view,
   onViewChange,
+  subHeader,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -40,6 +41,7 @@ export function DecisionsPageFrame({
   onDateChange: (iso: string) => void;
   view: DecisionsView;
   onViewChange: (view: DecisionsView) => void;
+  subHeader?: React.ReactNode;
 }) {
   const pageOwnsScroll = contentScroll === "page";
 
@@ -47,10 +49,20 @@ export function DecisionsPageFrame({
     <Page className="flex h-full flex-col">
       <PageHeader>
         <LensToggle view={view} onChange={onViewChange} />
-        <PageHeaderActions>
-          <DateNav date={date} onChange={onDateChange} />
+        <PageHeaderActions className="w-full lg:w-auto">
+          <DateNav
+            date={date}
+            onChange={onDateChange}
+            className="w-full lg:w-auto"
+          />
         </PageHeaderActions>
       </PageHeader>
+
+      {subHeader ? (
+        <div className="mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5">
+          {subHeader}
+        </div>
+      ) : null}
 
       <PageContent
         className={`min-h-0 flex-1 p-4 sm:p-5 ev-shell-shadow ${
