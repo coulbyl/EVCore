@@ -55,8 +55,14 @@ function richContext(): StrategyContext {
       away: new Decimal('0.15'),
       bttsYes: new Decimal('0.65'),
       bttsNo: new Decimal('0.35'),
+      over15: new Decimal('0.74'),
+      under15: new Decimal('0.26'),
       over25: new Decimal('0.40'),
       under25: new Decimal('0.60'),
+      over35: new Decimal('0.18'),
+      under35: new Decimal('0.82'),
+      over45: new Decimal('0.07'),
+      under45: new Decimal('0.93'),
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -92,12 +98,14 @@ describe('ChannelDecisionService', () => {
     expect(ev?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(ev?.selections[0]?.pick).toBe('HOME');
 
-    // GOALS BL1 OVER is enabled (observation) @ 0.50; over25 here is 0.40 < 0.50
-    // → it evaluates but clears no side → REJECTED (not DISABLED).
+    // GOALS BL1 is enabled (observation) across lines: Over 1.5 (0.74 < 0.78)
+    // and Over 2.5 (0.40 < 0.57) fail their gates, but Under 3.5 (0.82 ≥ 0.53)
+    // clears → SELECTED on the UNDER_3_5 line.
     const goals = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.GOALS,
     );
-    expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(goals?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(goals?.selections[0]?.pick).toBe('UNDER_3_5');
 
     // CONSENSUS (phase 2) fires: DOMINANT (directional) + VALUE (value) both
     // selected HOME → two independent classes agree → SELECTED HOME.

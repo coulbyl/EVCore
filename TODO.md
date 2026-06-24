@@ -62,6 +62,27 @@ redondant en vue Par match, `DataNav` full-width < lg (décisions + combinés),
 **7 ENABLE · 12 RETUNE · 4 DISABLE**, 50 écartés (n < 50 / overfit). backend
 typecheck/lint ✅. Effet au prochain run moteur.
 
+**GOALS — élargi lignes 1.5/3.5/4.5 en OBSERVATION (FAIT)** : décision = on
+**abandonne le backfill historique** (le worker `odds-historical-import` n'importe
+que la ligne 2.5 ; densifier 1.5/3.5/4.5 demanderait `alternate_totals` par-event
+the-odds-api + crédits, et reste clairsemé sur les ligues mineures). On s'appuie
+sur les **cotes PREMATCH** (API-Football, qui collecte déjà les 4 lignes) et on
+**observe au fil de l'eau**. `GOALS_CONFIG` ré-écrit **contextuel ligue par ligue**
+(38 ligues cotées prematch) : côté par **profil de buts réel** de la ligue (OVER si
+taux Over de la ligne ≥ 0.55, UNDER si ≤ 0.45, les deux en bande 0.45–0.55), seuil
+= **taux de base − 0.05** (gate de conviction aligné ligue ; l'**EV prematch**
+tranche entre lignes), uniquement lignes avec couverture cotes ≥ 80. Toujours
+**observation seule** (jamais staké — pas dans `getTodayPool`). Généré depuis la DB
+(taux de buts × couverture). backend typecheck/lint ✅ ; specs GOALS/orchestrateur/
+channel-decision mises à jour (fixtures complétées sur l'échelle OU + assertion
+GOALS BL1 → SELECTED Under 3.5).
+> ⚠️ Pour voir l'effet : purge + rebuild (les décisions GOALS en base datent de
+> l'ancienne config) puis date ≤ 2026-06-15. Promotion staking seulement si le ROI
+> forward confirme un edge cross-saison (+ ajout au pool de mise).
+> ⚠️ **Dette pré-existante non liée** : 9 tests backend rouges depuis le commit de
+> tuning 2026-06-24 (3bbb99f) — assertions périmées dans `channel-strategy.config.spec`
+> (DOMINANT/DRAW/BTTS) + boundary btts/dominant/draw. À recâbler séparément.
+
 ### Session 2026-06-23 — récap
 
 **Canaux (Étape 7 close avec données/modèle actuels) :**

@@ -26,10 +26,14 @@ const BASE_ODDS: FullOddsSnapshot = {
 };
 
 type ProbInput = {
+  over15?: number;
+  under15?: number;
   over25?: number;
   under25?: number;
   over35?: number;
   under35?: number;
+  over45?: number;
+  under45?: number;
 };
 
 function makeContext(
@@ -48,10 +52,14 @@ function makeContext(
     phase: 'PRE_KICKOFF',
     deterministicScore: new Decimal('0.65'),
     probabilities: {
+      over15: new Decimal(probs.over15 ?? 0),
+      under15: new Decimal(probs.under15 ?? 0),
       over25: new Decimal(probs.over25 ?? 0),
       under25: new Decimal(probs.under25 ?? 0),
       over35: new Decimal(probs.over35 ?? 0),
       under35: new Decimal(probs.under35 ?? 0),
+      over45: new Decimal(probs.over45 ?? 0),
+      under45: new Decimal(probs.under45 ?? 0),
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [],
     odds: options.odds ?? BASE_ODDS,
@@ -171,8 +179,9 @@ describe('GoalsStrategy (class, prod config)', () => {
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
   });
 
-  it('evaluates enabled observation segments (BL1 OVER @ 0.50)', () => {
-    // GOALS is enabled in observation; over25 0.7 ≥ 0.50 → SELECTED OVER.
+  it('evaluates enabled observation segments (BL1 OVER 2.5 @ 0.57)', () => {
+    // GOALS is enabled in observation; over25 0.7 ≥ BL1 Over 2.5 gate 0.57, and
+    // the other lines stay at 0 (below their gates) → SELECTED OVER.
     const decision = strategy.evaluate(
       makeContext({ over25: 0.7 }, { competitionCode: 'BL1' }),
     );

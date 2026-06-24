@@ -405,10 +405,12 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
 // (line, side) lives on its own probability scale (P(Over 1.5) ≈ 0.85 vs
 // P(Over 4.5) ≈ 0.10), so a single per-league threshold is meaningless.
 // Promotion is ROI-driven (see tuning.constants.ts), not hit-rate driven.
-// v1: only the 2.5 line is calibratable/activable — it is the only line with
-// ~100% odds coverage in history (1.5/3.5 ≈ 15%, 4.5 ≈ 6%). The schema stays
-// line-generic so the other lines activate without a refactor once the ETL
-// densifies their odds.
+//
+// Historical odds only cover the 2.5 line (the-odds-api backfill imports the
+// main line only); the 1.5/3.5/4.5 lines exist solely from the API-Football
+// PREMATCH sync, which accumulates forward. Decision 2026-06-24: stop waiting
+// on a historical densify and instead OBSERVE forward on the lines we already
+// price prematch — see the GOALS_CONFIG header below.
 // ─────────────────────────────────────────────
 
 export type GoalsLine = 1.5 | 2.5 | 3.5 | 4.5;
@@ -427,121 +429,1350 @@ export type GoalsLeagueConfig = {
   lines: readonly GoalsLineConfig[];
 };
 
-// GOALS — enabled in OBSERVATION (2026-06-23, explicit product decision).
+// GOALS — enabled in OBSERVATION (2026-06-24, contextual per-league broadening).
 //
-// IMPORTANT: this is NOT a validated staking edge. Multi-season validation was
-// negative — per-season ROI is positive only in the anomalous 2025-26 season
-// (e.g. SA UNDER -5.6%/-6.4%/+23.2%, BL1 OVER -12.5%/-11.4%/+14.4%); goal rates
-// and 1X2 calibration are flat across seasons, so the 2025-26 lift is odds-
-// specific variance, not a durable signal (full analysis in git history).
+// IMPORTANT: this is NOT a validated staking edge. Multi-season validation on the
+// 2.5 line was negative — per-season ROI positive only in the anomalous 2025-26
+// season; goal rates and 1X2 calibration are flat across seasons (full analysis in
+// git history). GOALS is never staked (only EV/SAFE/DRAW feed the coupon pool), so
+// an enabled segment only emits a selection that is recorded + settled analytically
+// — visible in the dashboard, accumulating forward data, with zero exposure.
 //
-// It is enabled anyway as an OBSERVATION channel: GOALS is never staked (only
-// EV/SAFE/DRAW feed the coupon pool), so an enabled segment only emits a
-// selection that is recorded + settled analytically — visible in the dashboard
-// and accumulating forward data, with zero financial exposure. Thresholds are
-// the in-sample candidate values. Promote to staking ONLY if a real cross-season
-// edge later emerges. To stake GOALS one day, it must also be added to the
-// coupon pool (signal-window.getTodayPool) — today it is not, by design.
+// Curation method (per league, contextual): we cannot backtest 1.5/3.5/4.5 (no
+// historical odds — they only exist forward via the PREMATCH sync), so segments are
+// derived from each league's own goal profile rather than a sweep:
+//   • side by profile: OVER when the line's empirical over-rate ≥ 0.55, UNDER when
+//     ≤ 0.45, BOTH in the 0.45–0.55 band (the EV ranking then picks the best-priced).
+//   • threshold = (empirical base rate of the chosen side) − 0.05 — a conviction
+//     gate aligned to each league, loose enough to accumulate volume. The gate only
+//     bounds the observed population; EV (prematch odds) does the actual selection.
+//   • only lines with real prematch odds coverage (≥ 80 snapshots) are enabled.
+// Per-entry comment shows the league's over-rate profile (o15/o25/o35/o45, n).
+// Promote a segment to staking ONLY if forward ROI confirms a real edge (and add it
+// to the coupon pool — signal-window.getTodayPool — which today excludes GOALS).
+// Generated from DB goal-rate × prematch-coverage; re-derive if leagues change.
 export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
-  // SA UNDER 2.5 — observation (in-sample +28% but multi-season -5.6/-6.4/+23.2).
-  SA: {
-    lines: [
-      {
-        line: 2.5,
-        side: 'UNDER',
-        enabled: true,
-        threshold: 0.5,
-        minSampleN: 20,
-      },
-    ],
-  },
-  // OVER observation segments — in-sample candidates (only 2025-26 positive
-  // across seasons; see header). Tracked, not staked.
+  // o15 0.83 · o25 0.62 · o35 0.42 · o45 0.21 (n=924)
   BL1: {
     lines: [
       {
-        line: 2.5,
+        line: 1.5,
         side: 'OVER',
         enabled: true,
-        threshold: 0.5,
-        minSampleN: 20,
+        threshold: 0.78,
+        minSampleN: 15,
       },
-    ],
-  },
-  POR: {
-    lines: [
       {
         line: 2.5,
         side: 'OVER',
         enabled: true,
-        threshold: 0.5,
-        minSampleN: 20,
+        threshold: 0.57,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 15,
       },
     ],
   },
-  L1: {
+  // o15 0.72 · o25 0.46 · o35 0.22 · o45 0.10 (n=1159)
+  BRA1: {
     lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 15,
+      },
       {
         line: 2.5,
         side: 'OVER',
         enabled: true,
-        threshold: 0.55,
-        minSampleN: 20,
+        threshold: 0.41,
+        minSampleN: 15,
       },
-    ],
-  },
-  MLS: {
-    lines: [
-      {
-        line: 2.5,
-        side: 'OVER',
-        enabled: true,
-        threshold: 0.55,
-        minSampleN: 20,
-      },
-    ],
-  },
-  SP2: {
-    lines: [
-      {
-        line: 2.5,
-        side: 'OVER',
-        enabled: true,
-        threshold: 0.6,
-        minSampleN: 20,
-      },
-    ],
-  },
-  EL1: {
-    lines: [
-      {
-        line: 2.5,
-        side: 'OVER',
-        enabled: true,
-        threshold: 0.6,
-        minSampleN: 20,
-      },
-    ],
-  },
-  CH: {
-    lines: [
-      {
-        line: 2.5,
-        side: 'OVER',
-        enabled: true,
-        threshold: 0.5,
-        minSampleN: 20,
-      },
-    ],
-  },
-  TUR1: {
-    lines: [
       {
         line: 2.5,
         side: 'UNDER',
         enabled: true,
+        threshold: 0.49,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.74 · o25 0.49 · o35 0.25 · o45 0.10 (n=1671)
+  CH: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.79 · o25 0.57 · o35 0.38 · o45 0.20 (n=736)
+  CSL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.75 · o25 0.51 · o35 0.29 · o45 0.14 (n=819)
+  CZE1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.81 · o25 0.59 · o35 0.35 · o45 0.18 (n=924)
+  D2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.73 · o25 0.50 · o35 0.26 · o45 0.12 (n=1671)
+  EL1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.74 · o25 0.50 · o35 0.28 · o45 0.13 (n=1671)
+  EL2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.84 · o25 0.60 · o35 0.39 · o45 0.20 (n=955)
+  ERD: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
         threshold: 0.55,
-        minSampleN: 20,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.80 · o25 0.57 · o35 0.32 · o45 0.15 (n=566)
+  EST1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.69 · o25 0.47 · o35 0.26 · o45 0.12 (n=999)
+  F2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.80 · o25 0.59 · o35 0.33 · o45 0.18 (n=547)
+  FIN1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.76 · o25 0.53 · o35 0.32 · o45 0.14 (n=343)
+  FRI: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.73 · o25 0.48 · o35 0.25 · o45 0.09 (n=1170)
+  I2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.86 · o25 0.64 · o35 0.47 · o45 0.29 (n=511)
+  ISL1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.71 · o25 0.47 · o35 0.24 · o45 0.12 (n=1266)
+  J1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.77 · o25 0.54 · o35 0.32 · o45 0.16 (n=925)
+  L1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.54 · o35 0.35 · o45 0.21 (n=570)
+  LAT1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.74 · o25 0.48 · o35 0.26 · o45 0.14 (n=1140)
+  LL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.81 · o25 0.60 · o35 0.37 · o45 0.21 (n=1132)
+  MLS: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.55 · o35 0.31 · o45 0.17 (n=1016)
+  MX1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.79 · o25 0.59 · o35 0.38 · o45 0.19 (n=766)
+  NOR1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.82 · o25 0.61 · o35 0.37 · o45 0.21 (n=781)
+  NOR2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.82 · o25 0.59 · o35 0.35 · o45 0.17 (n=1140)
+  PL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.76 · o25 0.50 · o35 0.30 · o45 0.14 (n=918)
+  POL1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.55 · o35 0.31 · o45 0.15 (n=925)
+  POL2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.75 · o25 0.53 · o35 0.30 · o45 0.13 (n=924)
+  POR: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.73 · o25 0.48 · o35 0.25 · o45 0.11 (n=1139)
+  SA: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.69 · o25 0.45 · o35 0.25 · o45 0.11 (n=1403)
+  SP2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.74 · o25 0.53 · o35 0.32 · o45 0.16 (n=892)
+  SRB1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.81 · o25 0.59 · o35 0.36 · o45 0.19 (n=690)
+  SUI1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.80 · o25 0.55 · o35 0.32 · o45 0.16 (n=522)
+  SVN1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.54 · o35 0.30 · o45 0.15 (n=767)
+  SWE1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.76 · o25 0.55 · o35 0.32 · o45 0.14 (n=780)
+  SWE2: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.77 · o25 0.53 · o35 0.31 · o45 0.16 (n=1028)
+  TUR1: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.59 · o35 0.38 · o45 0.23 (n=774)
+  UCL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.77 · o25 0.55 · o35 0.31 · o45 0.17 (n=1235)
+  UECL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.77 · o25 0.56 · o35 0.32 · o45 0.16 (n=715)
+  UEL: {
+    lines: [
+      {
+        line: 1.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: 'OVER',
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: 'UNDER',
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
       },
     ],
   },
