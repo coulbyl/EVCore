@@ -23,14 +23,44 @@
 
 ---
 
-## ▶ Reprise (prochaine session) — 2026-06-24 : **UX MOBILE**
+## ▶ Reprise (prochaine session) — 2026-06-25 : **CALIBRATION MODÈLE PAR LIGUE (profondeur)**
 
-**Prochain sujet : UX mobile des pages décisions.** L'utilisateur enverra des
-captures de ce qui s'affiche sur mobile. Auditer/adapter la page
-`/dashboard/decisions` (refondue ce jour) : grille de cartes (1 col mobile),
-bandeau résumé du jour (wrap), chips de filtre canal, header (toggle
-Par match/Par canal + DateNav), carte pick-first, bandeau AVOID, repli
-« N canaux évalués ». Rien n'a été testé en viewport mobile.
+**Prochain sujet : recalibrer le modèle probabiliste ligue par ligue, en
+profondeur.** Base de départ : [model-calibration.json](model-calibration.json)
+(fenêtre 1 an 2025-06-24 → 2026-06-23, seuils Brier ≤ 0.65 / calibError ≤ 0.05 /
+minSample 100). Sur 48 ligues : **28 PASS · 12 FAIL · 8 INSUFFICIENT_DATA**.
+
+**Cibles prioritaires (FAIL — modèle mal calibré, n suffisant) :**
+`POL1` (Brier 0.697) · `UECL` (0.664, n=388) · `F2` (0.661) · `POL2` (0.658) ·
+`MLS` (0.653, calibErr OK mais Brier > seuil) · `KOR1` · `SRB1` · `UEL` ·
+`WCQE` · `FIN1` · `WCQAF` · `FRI`.
+
+**INSUFFICIENT_DATA (pas un pb de calibration — manque de volume)** : `WCQCA`,
+`WCQAS`, `WC`, `ISL1`, `WCQSA`, `LAT1`, `EST1`, `UNL` → accumuler des données,
+ne pas recalibrer à vide.
+
+**Pourquoi ça compte** : l'insight structurel prouvé (session 2026-06-23) est que
+le modèle n'a **aucun edge directionnel sur les marchés résultat** (Brier modèle
+0.633 > marché 0.595). Tant que la calibration par ligue ne s'améliore pas, les
+canaux orientés résultat (DOMINANT) restent fragiles et plusieurs ligues
+resteront non-activables. C'est le **prérequis modèle** avant de rouvrir ces
+canaux. Surveiller aussi les PASS limites (Brier ~0.65 : `J1`, `I2`, `CH`,
+`SWE2`, `D2`, `SP2`) qui peuvent basculer FAIL d'une saison à l'autre.
+
+### Session 2026-06-24 — récap
+
+**UX mobile `/dashboard/decisions` — FAIT** : header fixture dédié mobile (équipes
+empilées, plus de troncature `G…`), ligne « Par canal » qui stack sur mobile
+(noms + badge plus écrasés), wording « N **autres** canaux évalués », barre
+résumé + toggle déplacés dans un **2ᵉ header épinglé** (hors scroll) sur les deux
+lentilles (filtres match / onglets canal contrôlés), suppression du filtre canal
+redondant en vue Par match, `DataNav` full-width < lg (décisions + combinés),
+`DaySummary` full-width mobile, bannière WC2026 retirée. web typecheck/lint ✅.
+
+**Tuning seuils canaux — FAIT** : `tuning.json` (1 an) appliqué à
+`channel-strategy.config.ts` avec garde-fou **50 bets** (validation manuelle) :
+**7 ENABLE · 12 RETUNE · 4 DISABLE**, 50 écartés (n < 50 / overfit). backend
+typecheck/lint ✅. Effet au prochain run moteur.
 
 ### Session 2026-06-23 — récap
 
