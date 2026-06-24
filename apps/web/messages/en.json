@@ -507,6 +507,8 @@
     "colRecommended": "Recommended",
     "colRecRoi": "Rec. ROI",
     "colRecSample": "Sample",
+    "colSegment": "Line",
+    "goalsSection": "GOALS — over/under sweep (line × side)",
     "verdict": {
       "PASS": "Pass",
       "FAIL": "Fail",

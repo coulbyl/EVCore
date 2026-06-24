@@ -85,9 +85,29 @@ export type ChannelTuningReport = {
   recommended: ThresholdRecommendation | null;
 };
 
+/** Over/Under side that the GOALS tuning sweep evaluates. */
+export type GoalsTuningSide = "OVER" | "UNDER";
+
+/**
+ * Offline tuning report for one GOALS (competition × line × side). `current` is
+ * null when the league has no config entry for that line/side. Advisory only —
+ * a segment must be confirmed per-season before flipping `enabled`.
+ */
+export type GoalsTuningReport = {
+  competitionCode: string;
+  competitionName: string;
+  line: number;
+  side: GoalsTuningSide;
+  candidates: number;
+  current: CurrentChannelConfig | null;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
 export type ChannelTuningResponse = {
   from: string;
   to: string;
   reports: ChannelTuningReport[];
+  goalsReports: GoalsTuningReport[];
   generatedAt: string;
 };

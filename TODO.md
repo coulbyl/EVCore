@@ -657,11 +657,15 @@ Dataset reconstruit sain (cf. § Reprise).
             > ⚠️ Les décisions GOALS en base datent du rebuild d'hier (SA UNDER alors
             > activé) ; pour refléter cette nouvelle config, **régénérer** (purge +
             > rebuild) puis consulter une date ≤ 2026-06-15.
-      - [ ] **Front** : exposer GOALS dans la page performance (onglet tuning consomme
-            `goalsReports`) + l'affichage canal GOALS dans `/dashboard/decisions`.
-            > Note : aucun segment activé pour l'instant → GOALS ne produit aucune
-            > sélection en prod. Le front peut quand même afficher les `goalsReports`
-            > du tuning (outil de décision).
+      - [~] **Front** : onglet **Tuning** consomme `goalsReports` — **FAIT
+            (2026-06-24)**. `ChannelTuningResponse` front complété (`goalsReports`
+            + types `GoalsTuningReport`/`GoalsTuningSide` qui manquaient), 2ᵉ table
+            GOALS dans `tuning-tab.tsx` (ligue · ligne±côté · seuil actuel/reco · ROI
+            reco · échantillon), `current` nullable géré, i18n `colSegment`/`goalsSection`
+            (fr+en). web typecheck/lint ✅. Reste : l'affichage du canal GOALS dans
+            `/dashboard/decisions` (déjà couvert par le remap `StrategyChannel`, à vérifier).
+            > Note : `goalsReports` = ligne 2.5 OVER/UNDER tant que les cotes alt-lines
+            > prematch ne se sont pas accumulées (forward) ; la table se peuplera seule.
       > **Amélioration modèle séparée (channel-agnostic)** : Poisson actuel =
       > indépendant → sous-estime les scores faibles (0-0, 1-1) → biaise Under 1.5/2.5.
       > Correction **Dixon-Coles** (paramètre ρ) améliore surtout correct-score +
