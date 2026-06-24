@@ -55,14 +55,16 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
     BL1: {
       // BL1 backtest 2026-04-19: 0.50 keeps validation while materially
       // improving coverage versus 0.60 (40.7% vs 14.1%).
-      DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.50 → 0.55 (ROI +4.3%, n=76, cov 31%).
+      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
       // BL1 backtest 2026-05-05: strongest DRAW signal after I2. All 3 seasons
       // PASS: 2023-24 +17.8%, 2024-25 +14.1%, 2025-26 +33.4%. Aggregate
       // (186 picks, ~62/s): HR 35.5%, ROI +21.4%. threshold 0.28 = 1/3.57.
       DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
       // BL1 backtest 2026-05-03: 0.56 covered 83% of fixtures — too broad.
       // 0.60 keeps 65% hit rate with 45% coverage, a meaningful selector.
-      BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.60 → 0.62 (ROI +2.1%, n=93, cov 31%).
+      BTTS: { enabled: true, threshold: 0.62, minSampleN: 10 },
     },
     D2: {
       // D2 backtest 2026-04-19: no tested threshold clears the prediction
@@ -77,10 +79,12 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
       // PL backtest 2026-05-02: DRAW produced no qualified predictions and
       // should stay disabled until the selection pipeline improves.
-      DRAW: { enabled: false, threshold: 0.34, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): enable at 0.30 (ROI +5.9%, n=52, cov 14%).
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
       // PL backtest 2026-05-03: 0.58 improves hit rate to 64.1% (vs 60.6% at
       // 0.55) while keeping 36% coverage — cleaner signal on a high-volume ligue.
-      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.58 → 0.52 (ROI +0.8%, n=276, cov 75%).
+      BTTS: { enabled: true, threshold: 0.52, minSampleN: 10 },
     },
     SP2: {
       // SP2 backtest 2026-05-02: 0.55 remains the best DOMINANT balance.
@@ -93,11 +97,13 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       BTTS: { enabled: true, threshold: 0.58, minSampleN: 20 },
     },
     POR: {
-      DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.50 → 0.55 (ROI +1.5%, n=97, cov 36%).
+      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
       // POR backtest 2026-05-05: 1/drawOdds signal validates where Poisson failed.
       // 2/3 seasons PASS: 2023-24 +37.0%, 2024-25 +0.9% (borderline), 2025-26 +8.9%.
       // Aggregate (257 picks, ~86/s): HR 35.8%, ROI +12.7%. threshold 0.30 = 1/3.33.
-      DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.30 → 0.26 (ROI +13.9%, n=179, cov 60%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
     },
     LL: {
       // LL backtest 2026-04-19: 0.50 keeps validation while materially
@@ -105,13 +111,18 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 20 },
       // LL backtest 2026-05-03: 0.57 produced only 58 picks (6.2% coverage, FAIL).
       // 0.55 keeps the same 62.1% hit rate with 158 picks and 17% coverage (PASS).
-      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.55 → 0.50 (ROI +7.2%, n=246, cov 67%).
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 10 },
     },
     F2: {
       // F2 backtest 2026-05-03: 0.55 validates at 58% hit rate on 112 picks
       // (13.4% coverage). Narrow window — 0.50 and 0.60 both fail. minSampleN
       // raised to 15 for robustness given the single-threshold pass.
       DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 15 },
+      // Tuning 2026-06-24 (1y): enable DRAW at 0.32 (ROI +15.0%, n=84, cov 28%).
+      DRAW: { enabled: true, threshold: 0.32, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): enable BTTS at 0.50 (ROI +1.4%, n=54, cov 93%).
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 10 },
     },
     I2: {
       // I2 backtest 2026-04-19: no tested threshold clears the hit-rate floor.
@@ -120,10 +131,13 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       // Aggregate 3 seasons (672 picks): HR 36.3%, ROI +11.1% at 0.30.
       // Consistent: 2023-24 +16.4%, 2024-25 +12.3%, 2025-26 +6.5%.
       // threshold 0.30 = 1/3.33 → selects drawOdds < 3.33.
-      DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.30 → 0.26 (ROI +9.6%, n=335, cov 88%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
     },
     ERD: {
-      DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): no viable threshold (ROI -10.1%, n=143 at 0.50)
+      // → suspend pending recalibration.
+      DOMINANT: { enabled: false, threshold: 0.5, minSampleN: 10 },
       BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
     },
     WC: {
@@ -186,7 +200,8 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 20 },
       // EL1 backtest 2026-05-03: 0.58 is the only valid BTTS threshold (55.6%,
       // 196 picks). Fragile single-window — monitor each season.
-      BTTS: { enabled: true, threshold: 0.58, minSampleN: 15 },
+      // Tuning 2026-06-24 (1y): 0.58 → 0.60 (ROI +2.3%, n=64, cov 12%).
+      BTTS: { enabled: true, threshold: 0.6, minSampleN: 15 },
     },
     EL2: {
       // EL2 backtest 2026-04-19: no tested threshold clears the hit-rate floor.
@@ -206,9 +221,13 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       // L1 backtest 2026-05-03: never configured — fell to defaults. Strong
       // progressive scan: 0.60 gives 66% hit rate (16% coverage, 122 picks).
       DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
-      // L1 backtest 2026-05-03: low-BTTS league, 0.58 is the lowest valid
+      // L1 backtest 2026-05-03: low-BTTS league, 0.58 was the lowest valid
       // threshold (55.4%, 157 picks). Fragile — minSampleN raised to 15.
-      BTTS: { enabled: true, threshold: 0.58, minSampleN: 15 },
+      // Tuning 2026-06-24 (1y): no viable threshold (ROI -12.2%, n=73 at 0.58)
+      // → suspend pending recalibration.
+      BTTS: { enabled: false, threshold: 0.58, minSampleN: 15 },
+      // Tuning 2026-06-24 (1y): enable DRAW at 0.28 (ROI +12.9%, n=107, cov 36%).
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
     },
     MX1: {
       // MX1 backtest 2026-05-03: DOMINANT validates at 0.55 (61.5%, 23.3% coverage).
@@ -222,11 +241,14 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
     FRI: {
       // FRI backtest 2026-05-03: only 44 fixtures total — no signal derivable.
       DOMINANT: { enabled: false, threshold: 0.99, minSampleN: 50 },
+      // Tuning 2026-06-24 (1y): enable DRAW at 0.26 (ROI +38.9%, n=79, cov 51%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
     },
     SA: {
-      // SA backtest 2026-05-03: DOMINANT signal never used (default 0.99). Scan
-      // shows 65.4% hit rate at 0.50 on 335 picks — strong, activating now.
-      DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 10 },
+      // SA backtest 2026-05-03: DOMINANT activated at 0.50 (65.4% hit rate, 335 picks).
+      // Tuning 2026-06-24 (1y): no viable threshold (ROI -8.1%, n=122 at 0.50)
+      // → suspend pending recalibration.
+      DOMINANT: { enabled: false, threshold: 0.5, minSampleN: 10 },
       // SA analysis 2026-05-05: 1/drawOdds signal. Bracket [3.20–3.33) is the
       // sweet spot: [3.20–3.40) shows +13.6% ROI on 213 fixtures (SQL analysis).
       // threshold 0.30 = 1/3.33 → selects drawOdds < 3.33, centred on the best bracket.
@@ -244,9 +266,9 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
     },
     UEL: {
-      // UEL backtest 2026-05-03: DOMINANT validates only at 0.65 (57.6%, 10% coverage, 66 picks).
-      // Fragile single-window — monitor each season.
-      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 20 },
+      // UEL backtest 2026-05-03: DOMINANT validated only at 0.65 (57.6%, 10% coverage, 66 picks).
+      // Tuning 2026-06-24 (1y): 0.65 → 0.45 (ROI +11.6%, n=79, cov 64%) — broader, stronger window.
+      DOMINANT: { enabled: true, threshold: 0.45, minSampleN: 20 },
       // UEL backtest 2026-05-03: DRAW was configured enabled but 14.3% hr at 0.34 — structural fail.
       DRAW: { enabled: false, threshold: 0.34, minSampleN: 5 },
       // UEL backtest 2026-05-03: BTTS validates at 0.60 (62.8% hr, 86 picks, 13.1% coverage).
@@ -260,20 +282,26 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       BTTS: { enabled: false, threshold: 0.99, minSampleN: 50 },
     },
     UCL: {
-      // UCL backtest 2026-05-03: DOMINANT validates cleanly at 0.55 (59.7%, 28.1% coverage, 159 picks).
-      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // UCL backtest 2026-05-03: DOMINANT validated cleanly at 0.55 (59.7%, 28.1% coverage, 159 picks).
+      // Tuning 2026-06-24 (1y): 0.55 → 0.45 (ROI +18.7%, n=53, cov 68%).
+      DOMINANT: { enabled: true, threshold: 0.45, minSampleN: 10 },
       // UCL backtest 2026-05-03: BTTS validates at 0.60 (58.7%, 22.3% coverage, 126 picks).
       BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
     },
     J1: {
-      // J1 backtest 2026-05-03: DOMINANT never clears 50% hit rate floor. BTTS validates
-      // at 0.58 (56%, 26.9% coverage, 268 picks) — best balance for the league.
+      // J1 backtest 2026-05-03: DOMINANT never cleared 50% hit rate floor.
+      // Tuning 2026-06-24 (1y): DOMINANT validates at 0.45 (ROI +10.3%, n=124, cov 59%).
+      DOMINANT: { enabled: true, threshold: 0.45, minSampleN: 10 },
+      // J1 backtest 2026-05-03: BTTS validates at 0.58 (56%, 26.9% coverage,
+      // 268 picks) — best balance for the league.
       BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
     },
     POL1: {
       // POL1 backtest 2026-05-03: DOMINANT no PASS. BTTS validates progressively;
       // 0.58 gives 62.6% hr with 16.8% coverage (123 picks) — better precision than 0.50.
       BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): enable DRAW at 0.30 (ROI +9.4%, n=61, cov 24%).
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
     },
     SUI1: {
       // SUI1 backtest 2026-05-03: DOMINANT validates only at 0.60 (55.4%, 14.8%, 83 picks).
@@ -285,7 +313,8 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
     TUR1: {
       // TUR1 backtest 2026-05-03: DOMINANT strong progressive signal — 0.55 gives 67.5% hr
       // with 29.6% coverage (252 picks). Clear favourite league.
-      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.55 → 0.60 (ROI +6.5%, n=54, cov 30%) — tighter, cleaner.
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
     },
     TUR2: {
       // TUR2 backtest 2026-05-03: DOMINANT extraordinarily strong — 0.60 gives 73.9% hr with
@@ -326,7 +355,8 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
     FIN1: {
       // FIN1 backtest 2026-05-24: DOMINANT validates at 0.55 (65% HR, 52 preds). Prefer 0.55
       // over 0.50 for precision (65% vs 60%).
-      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // Tuning 2026-06-24 (1y): 0.55 → 0.45 (ROI +16.4%, n=73, cov 76%) — more volume, stronger ROI.
+      DOMINANT: { enabled: true, threshold: 0.45, minSampleN: 10 },
       // FIN1 backtest 2026-05-24: DRAW ROI +6.9% on 21 preds at 0.30. Marginal — monitor.
       DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
       // FIN1 backtest 2026-05-24: BTTS validates at 0.55 (62% HR, 68 preds).
@@ -347,8 +377,10 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       BTTS: { enabled: true, threshold: 0.62, minSampleN: 10 },
     },
     NOR1: {
-      // NOR1 backtest 2026-05-03: DOMINANT validates cleanly at 0.55 (61%, 34.7%, 205 picks).
-      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // NOR1 backtest 2026-05-03: DOMINANT validated at 0.55 (61%, 34.7%, 205 picks).
+      // Tuning 2026-06-24 (1y): no viable threshold (ROI -17.7%, n=61 at 0.55)
+      // → suspend pending recalibration.
+      DOMINANT: { enabled: false, threshold: 0.55, minSampleN: 10 },
       // NOR1 backtest 2026-05-03: BTTS 0.62 gives 67.1% hr with 11.8% coverage (70 picks).
       BTTS: { enabled: true, threshold: 0.62, minSampleN: 10 },
     },
