@@ -7,7 +7,8 @@ readTime: 5
 slug: ev-probabilites-cotes
 summary: "Ce que mesure l'EV, comment la calculer, et pourquoi une EV positive ne garantit pas de gagner ce soir."
 updatedAt: "2026-05-02"
-related: ["cotes-probabilites-implicites", "value-channel", "erreurs-frequentes"]
+related:
+  ["cotes-probabilites-implicites", "value-channel", "erreurs-frequentes"]
 ---
 
 ## Pourquoi l'EV et pas "la cote la plus haute" ?

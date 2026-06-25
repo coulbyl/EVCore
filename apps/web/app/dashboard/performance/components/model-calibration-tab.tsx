@@ -79,7 +79,9 @@ export function ModelCalibrationTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{t("calibrationModelHint")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("calibrationModelHint")}
+      </p>
       <AnalysisRunBar
         isPending={mutation.isPending}
         onRun={() => mutation.mutate()}

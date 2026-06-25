@@ -7,7 +7,14 @@ readTime: 4
 slug: the-3-channels
 summary: "Vue d'ensemble des 5 canaux du moteur : EV, Sécurité, Victoire, BB et NUL. Par où commencer et lequel suivre."
 updatedAt: "2026-05-03"
-related: ["value-channel", "safe-channel", "dominant-channel", "btts-channel", "draw-channel"]
+related:
+  [
+    "value-channel",
+    "safe-channel",
+    "dominant-channel",
+    "btts-channel",
+    "draw-channel",
+  ]
 ---
 
 ## Cinq angles, un seul moteur

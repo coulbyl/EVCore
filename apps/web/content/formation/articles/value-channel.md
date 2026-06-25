@@ -8,7 +8,12 @@ slug: value-channel
 summary: "Comment le Canal EV sélectionne les paris, quel profil de variance attendre, et pour qui il est adapté."
 updatedAt: "2026-05-02"
 related:
-  ["safe-channel", "dominant-channel", "ev-probabilites-cotes", "erreurs-frequentes"]
+  [
+    "safe-channel",
+    "dominant-channel",
+    "ev-probabilites-cotes",
+    "erreurs-frequentes",
+  ]
 ---
 
 ## Principe

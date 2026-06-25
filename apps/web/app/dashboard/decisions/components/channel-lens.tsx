@@ -11,7 +11,9 @@ import { ChannelSelectionRow } from "./channel-selection-row";
 // strip (pinned in the page sub-header) and the scrolling selection list (in the
 // page content) stay in sync from different DOM regions. Falls back to the first
 // channel, and re-anchors there if the selected channel disappears on a date change.
-export function useChannelLens(channelGroups: ChannelDecisionChannelGroupDto[]) {
+export function useChannelLens(
+  channelGroups: ChannelDecisionChannelGroupDto[],
+) {
   const [selected, setSelected] = useState<string | null>(null);
 
   const activeChannel =

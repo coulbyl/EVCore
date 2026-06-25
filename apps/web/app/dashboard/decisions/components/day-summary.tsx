@@ -1,5 +1,9 @@
 import { useTranslations } from "next-intl";
-import { CHANNEL_COLOR, CHANNEL_COLOR_SOFT, channelLabel } from "./channel-constants";
+import {
+  CHANNEL_COLOR,
+  CHANNEL_COLOR_SOFT,
+  channelLabel,
+} from "./channel-constants";
 import type { DaySummary as DaySummaryData } from "./decision-helpers";
 
 // One-glance orientation strip above the cards: how many matches, how many

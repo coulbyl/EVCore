@@ -37,5 +37,8 @@ export function useStoredResult<T>(
     setStored(data);
   }, [data, storageKey]);
 
-  return { result: data ?? stored, isStored: data === undefined && stored !== null };
+  return {
+    result: data ?? stored,
+    isStored: data === undefined && stored !== null,
+  };
 }

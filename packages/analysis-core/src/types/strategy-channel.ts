@@ -3,21 +3,21 @@
 // SOURCE OF TRUTH for the `StrategyChannel` domain enum. Mirrored by the Prisma
 // `StrategyChannel` enum and guarded by the conformance test (see market.ts).
 export const STRATEGY_CHANNEL = {
-  VALUE: 'VALUE',
-  SAFE: 'SAFE',
-  DOMINANT: 'DOMINANT',
-  BTTS: 'BTTS',
-  DRAW: 'DRAW',
-  GOALS: 'GOALS',
-  FIRST_HALF: 'FIRST_HALF',
-  DOUBLE_CHANCE: 'DOUBLE_CHANCE',
-  UNDERDOG: 'UNDERDOG',
-  FAVORITE: 'FAVORITE',
-  LIVE_VALUE: 'LIVE_VALUE',
-  MARKET_MOVE: 'MARKET_MOVE',
-  CONSENSUS: 'CONSENSUS',
-  CONTRARIAN: 'CONTRARIAN',
-  AVOID: 'AVOID',
+  VALUE: "VALUE",
+  SAFE: "SAFE",
+  DOMINANT: "DOMINANT",
+  BTTS: "BTTS",
+  DRAW: "DRAW",
+  GOALS: "GOALS",
+  FIRST_HALF: "FIRST_HALF",
+  DOUBLE_CHANCE: "DOUBLE_CHANCE",
+  UNDERDOG: "UNDERDOG",
+  FAVORITE: "FAVORITE",
+  LIVE_VALUE: "LIVE_VALUE",
+  MARKET_MOVE: "MARKET_MOVE",
+  CONSENSUS: "CONSENSUS",
+  CONTRARIAN: "CONTRARIAN",
+  AVOID: "AVOID",
 } as const;
 
 export type StrategyChannel =

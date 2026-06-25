@@ -14,12 +14,7 @@ type Params = {
   enabled?: boolean;
 };
 
-export function useCouponIndices({
-  canal,
-  from,
-  to,
-  enabled = true,
-}: Params) {
+export function useCouponIndices({ canal, from, to, enabled = true }: Params) {
   const params = new URLSearchParams({ canal });
   if (from) params.set("from", from);
   if (to) params.set("to", to);

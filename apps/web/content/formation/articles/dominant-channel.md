@@ -7,7 +7,8 @@ readTime: 4
 slug: dominant-channel
 summary: "Le Canal Victoire prédit V1 ou V2 avec une probabilité estimée. Si tu fais confiance à cette probabilité, tu peux parier en connaissance de cause."
 updatedAt: "2026-05-02"
-related: ["value-channel", "safe-channel", "the-3-channels", "comment-lire-un-pick"]
+related:
+  ["value-channel", "safe-channel", "the-3-channels", "comment-lire-un-pick"]
 ---
 
 ## Ce que le Canal Victoire prédit

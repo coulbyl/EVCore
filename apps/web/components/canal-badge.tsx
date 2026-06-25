@@ -5,7 +5,10 @@ type Canal = "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS";
 const STYLES: Record<Canal, { color: string; soft: string }> = {
   VALUE: { color: "var(--canal-value)", soft: "var(--canal-value-soft)" },
   SAFE: { color: "var(--canal-safe)", soft: "var(--canal-safe-soft)" },
-  DOMINANT: { color: "var(--canal-dominant)", soft: "var(--canal-dominant-soft)" },
+  DOMINANT: {
+    color: "var(--canal-dominant)",
+    soft: "var(--canal-dominant-soft)",
+  },
   DRAW: {
     color: "var(--canal-draw)",
     soft: "var(--canal-draw-soft)",

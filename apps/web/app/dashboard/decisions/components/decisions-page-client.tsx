@@ -25,8 +25,16 @@ export function DecisionsPageClient() {
   const view: DecisionsView =
     searchParams.get("view") === "channels" ? "channels" : "matches";
 
-  const matches = useChannelDecisionMatches(date, {}, { enabled: view === "matches" });
-  const channels = useChannelDecisionChannels(date, {}, { enabled: view === "channels" });
+  const matches = useChannelDecisionMatches(
+    date,
+    {},
+    { enabled: view === "matches" },
+  );
+  const channels = useChannelDecisionChannels(
+    date,
+    {},
+    { enabled: view === "channels" },
+  );
   const active = view === "matches" ? matches : channels;
 
   // Hooks stay unconditional (rules of hooks); the inactive lens just runs over

@@ -27,9 +27,7 @@ export default async function DashboardLayout({
     <CurrencyProvider initialCurrency={initialCurrency}>
       <CurrentUserProvider initialUser={session.user}>
         <BetSlipProvider>
-          <AppShell headerNotice={<NetworkStatusBanner />}>
-            {children}
-          </AppShell>
+          <AppShell headerNotice={<NetworkStatusBanner />}>{children}</AppShell>
           <BetSlipDrawer />
           <PwaInstallBanner />
         </BetSlipProvider>

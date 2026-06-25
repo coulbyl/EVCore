@@ -214,6 +214,7 @@ ADN), avec Expected Log Growth derrière un flag optionnel.
 > canaux à +ROI prouvé ; DRAW est le prochain candidat.
 >
 > **Suites (2026-06-21)** :
+>
 > - ✅ **Vue ROI roulante par canal × EV-bin** construite : `GET /coupons/roi`
 >   (`CouponRoiService`) — ROI mise plate par canal × bin d'EV depuis
 >   `channel_selection` settlé, flag `promote` (ROI>0 & échantillon ≥ `MIN_BET_COUNT`).

@@ -5,7 +5,7 @@
 // SOURCE OF TRUTH for the `SportType` domain enum. Mirrored by the Prisma enum
 // and guarded by the conformance test (see market.ts).
 export const SPORT_TYPE = {
-  FOOTBALL: 'FOOTBALL',
+  FOOTBALL: "FOOTBALL",
 } as const;
 
 export type SportType = (typeof SPORT_TYPE)[keyof typeof SPORT_TYPE];

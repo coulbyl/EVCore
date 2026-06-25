@@ -20,14 +20,14 @@ pas ce besoin et introduit des risques de cohérence. On les écarte, avec justi
 
 ## 2. Ce qui existe déjà (à ne pas réinventer)
 
-| Brique proposée dans le brainstorm | État réel dans le repo |
-| --- | --- |
+| Brique proposée dans le brainstorm         | État réel dans le repo                                                                                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Noyau pur (EV, proba, ranking, settlement) | Déjà isolé sous `betting-engine/{math,selection,strategies,settlement}` — **0 dépendance NestJS/Prisma** vérifiée ; seul couplage : enum `Market` + `decimal.js` |
-| Service de calibration | `adjustment/calibration.service.ts` (Brier/meanError + auto-apply `AdjustmentProposal`) |
-| Backtests | Module `backtest/` complet (controller, repository, metrics, `channel-backtest`, `model-calibration`) |
-| Versions de modèles | Table `ml_model_version` (Phase 3) |
-| Calcul lourd séparé | `apps/ml-worker` (Python/scikit-learn) + queue BullMQ `ml-training` |
-| Source de vérité prédictions vs résultats | `ModelRun` (jamais supprimée — politique documentée) + `Fixture`/`OddsSnapshot` |
+| Service de calibration                     | `adjustment/calibration.service.ts` (Brier/meanError + auto-apply `AdjustmentProposal`)                                                                          |
+| Backtests                                  | Module `backtest/` complet (controller, repository, metrics, `channel-backtest`, `model-calibration`)                                                            |
+| Versions de modèles                        | Table `ml_model_version` (Phase 3)                                                                                                                               |
+| Calcul lourd séparé                        | `apps/ml-worker` (Python/scikit-learn) + queue BullMQ `ml-training`                                                                                              |
+| Source de vérité prédictions vs résultats  | `ModelRun` (jamais supprimée — politique documentée) + `Fixture`/`OddsSnapshot`                                                                                  |
 
 Conclusion : **on consolide l'existant**, on ne crée pas une nouvelle pile parallèle.
 
@@ -85,15 +85,17 @@ brainstorm — on l'inscrit comme règle dure).
 > déplace du code à iso-logique, prouvé par les tests existants (golden specs inclus).
 
 ### Étape 0 — Geler la frontière ✅ (25 juin 2026)
+
 - [x] Lister précisément les modules « purs » candidats et leurs dépendances réelles
       (cartographié : couplage unique des fichiers purs = enum `Market`).
 - [x] **Ownership des enums/types de domaine — décidé : le noyau possède les types**
       (inversion de dépendance). `analysis-core/types` est la **source de vérité** ; Prisma
-      garde ses enums (valeurs string identiques) mais ne les *définit* pas. Le noyau ne
+      garde ses enums (valeurs string identiques) mais ne les _définit_ pas. Le noyau ne
       doit jamais dépendre de Prisma, sinon il ne builde plus sans `prisma generate`
       (violation de la garantie « zéro infra »). Voir §2-bis pour le mécanisme.
 
 ### Étape 1 — Créer `packages/analysis-core` ✅ (25 juin 2026)
+
 - [x] Package TS strict (hérite `base.json` : `strict`, `noUncheckedIndexedAccess`,
       `isolatedModules`), build `tsc` (`tsconfig.build.json` exclut les specs), lint
       `--max-warnings 0`, Vitest. **Zéro** dépendance runtime (enums purs ; `decimal.js`
@@ -103,6 +105,7 @@ brainstorm — on l'inscrit comme règle dure).
       sources et casse le build à la moindre fuite d'infra (garde-fou automatisé).
 
 ### Étape 2 — Migrer les enums de domaine ✅ (25 juin 2026)
+
 - [x] `Market`, `StrategyChannel`, `ChannelDecisionStatus`, `ModelRunPhase`, `SportType`
       déplacés dans `analysis-core/types` **en `const` object + union type** (Prisma 7 génère
       déjà ce pattern → mirroir exact). Périmètre limité aux **enums** ; les types-feuilles
@@ -121,18 +124,26 @@ brainstorm — on l'inscrit comme règle dure).
 ```ts
 // packages/analysis-core/src/types/market.ts — SOURCE DE VÉRITÉ
 export const Market = {
-  ONE_X_TWO: 'ONE_X_TWO', OVER_UNDER: 'OVER_UNDER', BTTS: 'BTTS',
-  DOUBLE_CHANCE: 'DOUBLE_CHANCE', HALF_TIME_FULL_TIME: 'HALF_TIME_FULL_TIME',
-  OVER_UNDER_HT: 'OVER_UNDER_HT', FIRST_HALF_WINNER: 'FIRST_HALF_WINNER',
+  ONE_X_TWO: "ONE_X_TWO",
+  OVER_UNDER: "OVER_UNDER",
+  BTTS: "BTTS",
+  DOUBLE_CHANCE: "DOUBLE_CHANCE",
+  HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME",
+  OVER_UNDER_HT: "OVER_UNDER_HT",
+  FIRST_HALF_WINNER: "FIRST_HALF_WINNER",
 } as const;
 export type Market = (typeof Market)[keyof typeof Market];
 ```
 
 ```ts
 // apps/backend/.../market-enum.conformance.spec-d.ts — garde-fou unique
-import type { Market as PrismaMarket } from '@evcore/db';
-import type { Market as DomainMarket } from '@evcore/analysis-core';
-type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
+import type { Market as PrismaMarket } from "@evcore/db";
+import type { Market as DomainMarket } from "@evcore/analysis-core";
+type AssertEqual<A, B> = [A] extends [B]
+  ? [B] extends [A]
+    ? true
+    : never
+  : never;
 const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si divergence
 ```
 
@@ -141,28 +152,31 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 > l'option inverse — un noyau qui ne compile pas sans la DB.
 
 ### Étape 3 — Migrer la logique pure (par tranches, tests à l'appui)
+
 - [ ] `ev/` ← `ev.constants.ts` + math EV (seuil `≥ 0.08` reste en config app, formule
       en noyau).
 - [ ] `probability/` ← `math/probability.ts` + dérivations Poisson.
 - [ ] `ranking/` + `selection/` ← `selection/pick-evaluation.ts`, `pick-validation.ts`,
       `selection-odds.ts`.
 - [ ] `strategies/` ← toutes les stratégies + orchestrator + registry + config (la config
-      *de stratégie* est pure ; les *valeurs* spécifiques ligue/marché peuvent rester
+      _de stratégie_ est pure ; les _valeurs_ spécifiques ligue/marché peuvent rester
       injectées par l'app si elles dépendent d'env).
 - [ ] `settlement/` ← extraire la **fonction pure** `settlePick` ; le
       `bet-settlement.service.ts` (Prisma) reste dans l'app et l'appelle.
 - [ ] `metrics/` ← logique Brier / calibration error de `calibration.service.ts` et
-      `backtest.metrics.ts` (la *persistance* et les *déclencheurs* restent en app).
+      `backtest.metrics.ts` (la _persistance_ et les _déclencheurs_ restent en app).
 - [ ] Après chaque tranche : tests unitaires + **golden specs** (`betting-engine.golden.spec.ts`)
       verts, snapshots inchangés → preuve d'iso-comportement.
 
 ### Étape 4 — Backend & ml-worker consomment le noyau
+
 - [ ] `betting-engine` (prod) et `backtest` importent `analysis-core` ; suppression des
       copies locales. Un seul chemin de code pour analyser une fixture.
 - [ ] Vérifier que `ml-worker` (Python) reste la seule brique de calcul lourd ; documenter
       le contrat d'échange (features/cibles) côté noyau pour éviter la dérive.
 
 ### Étape 5 — Domaine calibration sur schéma dédié (DB unique)
+
 - [ ] Migration Prisma : schéma `calibration` (Postgres `schema`) regroupant les tables
       de calibration/backtest lourdes (rapports, runs, courbes de fiabilité), `ModelRun`
       et `Fixture` restant dans le schéma `public` (jointures **intra-base**).
@@ -173,6 +187,7 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
       acté en Phase 3).
 
 ### Étape 6 — Gate de validation avant suppression du legacy
+
 - [ ] Réconciliation : sur un échantillon de fixtures historiques, picks/EV/decisions
       produits par l'**ancien** chemin == ceux du **nouveau** (noyau). Parité bit-à-bit
       sur les golden cases.
@@ -182,12 +197,12 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 
 ## 5. Décisions explicitement écartées (et pourquoi)
 
-| Proposé | Décision | Raison |
-| --- | --- | --- |
-| Base de données séparée pour la calibration | **Rejeté** → schéma `calibration` dans la DB unique | La calibration joint `Fixture`/`OddsSnapshot`/`ModelRun` ; une 2ᵉ base force duplication + ETL inter-bases et casse la source unique de vérité (principe CLAUDE.md). Volumétrie déjà traitée par rétention + partitionnement différé. |
-| Nouveau service `calibration-api` (HTTP) | **Rejeté** → module NestJS + `ml-worker` existant | Le lourd a déjà son service (`ml-worker`). Un 3ᵉ service ajoute réseau, modes de panne et risque d'incohérence sans bénéfice tant que NestJS est l'autorité. |
-| `packages/analysis-types` séparé | **Différé** → `analysis-core/types` d'abord | Éviter la prolifération de packages ; extraire un package de types seulement s'il est consommé hors du noyau. |
-| Extraire workers / endpoints / modèles Prisma dans le noyau | **Interdit** (règle dure) | Le noyau doit rester pur ; sinon il devient un mini-backend difficile à maintenir. |
+| Proposé                                                     | Décision                                            | Raison                                                                                                                                                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base de données séparée pour la calibration                 | **Rejeté** → schéma `calibration` dans la DB unique | La calibration joint `Fixture`/`OddsSnapshot`/`ModelRun` ; une 2ᵉ base force duplication + ETL inter-bases et casse la source unique de vérité (principe CLAUDE.md). Volumétrie déjà traitée par rétention + partitionnement différé. |
+| Nouveau service `calibration-api` (HTTP)                    | **Rejeté** → module NestJS + `ml-worker` existant   | Le lourd a déjà son service (`ml-worker`). Un 3ᵉ service ajoute réseau, modes de panne et risque d'incohérence sans bénéfice tant que NestJS est l'autorité.                                                                          |
+| `packages/analysis-types` séparé                            | **Différé** → `analysis-core/types` d'abord         | Éviter la prolifération de packages ; extraire un package de types seulement s'il est consommé hors du noyau.                                                                                                                         |
+| Extraire workers / endpoints / modèles Prisma dans le noyau | **Interdit** (règle dure)                           | Le noyau doit rester pur ; sinon il devient un mini-backend difficile à maintenir.                                                                                                                                                    |
 
 ## 6. Risques & garde-fous
 

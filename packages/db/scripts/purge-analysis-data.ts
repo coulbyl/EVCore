@@ -55,7 +55,7 @@ async function countTargets(): Promise<TargetCounts> {
     couponProposals,
     bets,
     //channelSelections,
-   // channelDecisions,
+    // channelDecisions,
     legacyPredictions,
     modelRuns,
   ] = await Promise.all([
@@ -139,8 +139,8 @@ function printCounts(title: string, counts: TargetCounts): void {
     { table: "coupon_proposal_leg", rows: counts.couponProposalLegs },
     { table: "coupon_proposal", rows: counts.couponProposals },
     { table: "bet", rows: counts.bets },
-   // { table: "channel_selection", rows: counts.channelSelections },
-   // { table: "channel_decision", rows: counts.channelDecisions },
+    // { table: "channel_selection", rows: counts.channelSelections },
+    // { table: "channel_decision", rows: counts.channelDecisions },
     { table: "prediction (legacy)", rows: counts.legacyPredictions },
     { table: "model_run", rows: counts.modelRuns },
   ]);

@@ -64,7 +64,9 @@ export function evaluatedRest(
   group: ChannelDecisionMatchDto,
 ): ChannelDecisionMatchDecisionDto[] {
   const picked = new Set(selectedPicks(group).map((d) => d.id));
-  return group.decisions.filter((d) => !picked.has(d.id) && d.channel !== "AVOID");
+  return group.decisions.filter(
+    (d) => !picked.has(d.id) && d.channel !== "AVOID",
+  );
 }
 
 export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
