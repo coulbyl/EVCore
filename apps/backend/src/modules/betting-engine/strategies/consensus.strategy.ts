@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import { CONSENSUS_CONFIG } from './channel-strategy.config';
 import { priceForSelection } from './selection-odds';
 import {

@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js';
-import { BetStatus, Market } from '@evcore/db';
+import { BetStatus } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import { FEATURE_WEIGHTS } from './ev.constants';
 
 // Coerce a possibly-Decimal/Prisma numeric into a JS number.

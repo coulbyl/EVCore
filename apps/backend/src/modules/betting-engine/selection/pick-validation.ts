@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,

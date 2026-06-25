@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import {
   BTTS_NO_CONFIG,
   getChannelStrategyConfig,

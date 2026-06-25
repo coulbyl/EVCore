@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import { AvoidStrategy, decideAvoid } from './avoid.strategy';
 import {
   CHANNEL_DECISION_STATUS,

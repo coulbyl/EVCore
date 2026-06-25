@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Market } from '@evcore/db';
+import type { Market } from '@evcore/analysis-core';
 import { AVOID_CONFIG } from './channel-strategy.config';
 import {
   CHANNEL_DECISION_STATUS,

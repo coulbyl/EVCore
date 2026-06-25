@@ -1,5 +1,5 @@
 import type Decimal from 'decimal.js';
-import type { Market } from '@evcore/db';
+import type { Market } from '@evcore/analysis-core';
 import type {
   DeterministicFeatures,
   HalfTimeFullTimePick,

@@ -1,4 +1,4 @@
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import {
   DOMINANT_MIN_MARGIN,
   getChannelStrategyConfig,

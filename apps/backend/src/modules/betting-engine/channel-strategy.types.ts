@@ -1,67 +1,35 @@
 import type Decimal from 'decimal.js';
-import type { Market } from '@evcore/db';
+import type {
+  ChannelDecisionStatus,
+  Market,
+  ModelRunPhase,
+  SportType,
+  StrategyChannel,
+} from '@evcore/analysis-core';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
 } from './betting-engine.types';
 
-// Defined here until Étape 2 creates the Prisma enum SportType.
-// String-literal union intentionally matches the future enum values for a clean swap.
-export type SportType = 'FOOTBALL';
-
-export const STRATEGY_CHANNEL = {
-  VALUE: 'VALUE',
-  SAFE: 'SAFE',
-  DOMINANT: 'DOMINANT',
-  BTTS: 'BTTS',
-  DRAW: 'DRAW',
-  GOALS: 'GOALS',
-  FIRST_HALF: 'FIRST_HALF',
-  DOUBLE_CHANCE: 'DOUBLE_CHANCE',
-  UNDERDOG: 'UNDERDOG',
-  FAVORITE: 'FAVORITE',
-  LIVE_VALUE: 'LIVE_VALUE',
-  MARKET_MOVE: 'MARKET_MOVE',
-  CONSENSUS: 'CONSENSUS',
-  CONTRARIAN: 'CONTRARIAN',
-  AVOID: 'AVOID',
-} as const;
-export type StrategyChannel =
-  (typeof STRATEGY_CHANNEL)[keyof typeof STRATEGY_CHANNEL];
-
-export const CHANNEL_DECISION_STATUS = {
-  SELECTED: 'SELECTED',
-  REJECTED: 'REJECTED',
-  DISABLED: 'DISABLED',
-  INSUFFICIENT_DATA: 'INSUFFICIENT_DATA',
-  MISSING_ODDS: 'MISSING_ODDS',
-  NOT_APPLICABLE: 'NOT_APPLICABLE',
-} as const;
-export type ChannelDecisionStatus =
-  (typeof CHANNEL_DECISION_STATUS)[keyof typeof CHANNEL_DECISION_STATUS];
-
-export const MODEL_RUN_PHASE = {
-  ADVANCE: 'ADVANCE',
-  PRE_KICKOFF: 'PRE_KICKOFF',
-  LIVE: 'LIVE',
-} as const;
-export type ModelRunPhase =
-  (typeof MODEL_RUN_PHASE)[keyof typeof MODEL_RUN_PHASE];
-
-// Meta-strategies run in Phase 2 (after all primary decisions are available).
-// CONSENSUS and AVOID are implemented + enabled. CONTRARIAN is intentionally
-// NOT implemented: a 2026-06-23 read-only study (3 seasons) found the model has
-// no edge disagreeing with the market — backing the model's favorite when it
-// differs from the market's loses -10.1% ROI (hit 27%), and favorites the model
-// flags as "overvalued" still win 63.2% vs 64.2% implied (≈ no information). The
-// model adds value by agreeing (CONSENSUS) or flagging its own overreach
-// (AVOID), not by fading the market. Kept in the set for completeness.
-export const META_STRATEGY_CHANNELS = new Set<StrategyChannel>([
-  STRATEGY_CHANNEL.CONSENSUS,
-  STRATEGY_CHANNEL.CONTRARIAN,
-  STRATEGY_CHANNEL.AVOID,
-]);
+// Domain enums (Market, StrategyChannel, ChannelDecisionStatus, ModelRunPhase,
+// SportType) now live in @evcore/analysis-core — single source of truth shared
+// by prod and backtest, guarded against the Prisma schema by
+// `domain-enums.conformance.spec.ts`. Re-exported here so the many existing
+// `./channel-strategy.types` imports across the module keep resolving unchanged.
+export {
+  STRATEGY_CHANNEL,
+  META_STRATEGY_CHANNELS,
+  CHANNEL_DECISION_STATUS,
+  MODEL_RUN_PHASE,
+  SPORT_TYPE,
+} from '@evcore/analysis-core';
+export type {
+  StrategyChannel,
+  ChannelDecisionStatus,
+  ModelRunPhase,
+  SportType,
+} from '@evcore/analysis-core';
 
 export type FixtureSnapshot = {
   id: string;

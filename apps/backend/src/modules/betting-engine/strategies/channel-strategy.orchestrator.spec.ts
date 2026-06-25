@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import { ChannelStrategyOrchestrator } from './channel-strategy.orchestrator';
 import { createChannelStrategyOrchestrator, V1_STRATEGIES } from './registry';
 import {

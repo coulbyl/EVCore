@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import { GoalsStrategy, decideGoals } from './goals.strategy';
 import type { GoalsLineConfig } from './channel-strategy.config';
 import { CHANNEL_DECISION_STATUS } from '../channel-strategy.types';

@@ -1,4 +1,4 @@
-import { Market } from '@evcore/db';
+import { Market } from '@evcore/analysis-core';
 import type { EvaluatedPick, ViablePick } from '../betting-engine.types';
 import {
   FALLBACK_MIN_QUALITY_SCORE,
