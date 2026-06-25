@@ -746,4 +746,3 @@ Dataset reconstruit sain (cf. § Reprise).
       > « battre le marché sur le résultat » sans une amélioration majeure du modèle.
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
 - [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
-- [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT

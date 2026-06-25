@@ -34,7 +34,11 @@ export type MatchLensState = ReturnType<typeof useMatchLens>;
 
 // The orientation strip + "only picks" toggle. Lives in the pinned sub-header
 // so it stays visible while the cards scroll underneath.
-export function MatchFilters({ summary, onlyPicks, setOnlyPicks }: MatchLensState) {
+export function MatchFilters({
+  summary,
+  onlyPicks,
+  setOnlyPicks,
+}: MatchLensState) {
   const t = useTranslations("decisions");
 
   return (
@@ -68,7 +72,7 @@ export function MatchGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
       {visible.map((group) => (
         <MatchCard key={group.fixtureId} group={group} locale={locale} />
       ))}

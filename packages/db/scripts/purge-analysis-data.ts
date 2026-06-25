@@ -24,10 +24,27 @@ type TargetCounts = {
   couponProposalLegs: number;
   couponProposals: number;
   bets: number;
-  channelSelections: number;
-  channelDecisions: number;
+  //channelSelections: number;
+  //channelDecisions: number;
+  // Legacy table removed from the Prisma schema ("Remove legacy prediction
+  // runtime") but still present in pulled prod DBs. Its RESTRICT FK on
+  // model_run blocks the model_run delete, so it must be purged first.
+  legacyPredictions: number;
   modelRuns: number;
 };
+
+async function countLegacyPredictions(): Promise<number> {
+  // Raw query: the table is no longer in the Prisma schema. Returns 0 when the
+  // table does not exist (fresh local DBs without the legacy table).
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT count(*)::bigint AS count FROM "prediction"`,
+    );
+    return Number(rows[0]?.count ?? 0n);
+  } catch {
+    return 0;
+  }
+}
 
 async function countTargets(): Promise<TargetCounts> {
   const [
@@ -37,8 +54,9 @@ async function countTargets(): Promise<TargetCounts> {
     couponProposalLegs,
     couponProposals,
     bets,
-    channelSelections,
-    channelDecisions,
+    //channelSelections,
+   // channelDecisions,
+    legacyPredictions,
     modelRuns,
   ] = await Promise.all([
     prisma.bankrollTransaction.count({ where: { betId: { not: null } } }),
@@ -47,8 +65,9 @@ async function countTargets(): Promise<TargetCounts> {
     prisma.couponProposalLeg.count(),
     prisma.couponProposal.count(),
     prisma.bet.count(),
-    prisma.channelSelection.count(),
-    prisma.channelDecision.count(),
+    //prisma.channelSelection.count(),
+    //prisma.channelDecision.count(),
+    countLegacyPredictions(),
     prisma.modelRun.count(),
   ]);
 
@@ -59,8 +78,9 @@ async function countTargets(): Promise<TargetCounts> {
     couponProposalLegs,
     couponProposals,
     bets,
-    channelSelections,
-    channelDecisions,
+    //channelSelections,
+    //channelDecisions,
+    legacyPredictions,
     modelRuns,
   };
 }
@@ -76,8 +96,18 @@ async function purgeAnalysisData(): Promise<TargetCounts> {
       const couponProposalLegs = await tx.couponProposalLeg.deleteMany({});
       const couponProposals = await tx.couponProposal.deleteMany({});
       const bets = await tx.bet.deleteMany({});
-      const channelSelections = await tx.channelSelection.deleteMany({});
-      const channelDecisions = await tx.channelDecision.deleteMany({});
+      //const channelSelections = await tx.channelSelection.deleteMany({});
+      //const channelDecisions = await tx.channelDecision.deleteMany({});
+      // Legacy table: must be deleted before model_run (RESTRICT FK). Raw query
+      // since it is not part of the Prisma schema; tolerate absence.
+      let legacyPredictions = 0;
+      try {
+        legacyPredictions = await tx.$executeRawUnsafe(
+          `DELETE FROM "prediction"`,
+        );
+      } catch {
+        legacyPredictions = 0;
+      }
       const modelRuns = await tx.modelRun.deleteMany({});
 
       return {
@@ -87,8 +117,9 @@ async function purgeAnalysisData(): Promise<TargetCounts> {
         couponProposalLegs: couponProposalLegs.count,
         couponProposals: couponProposals.count,
         bets: bets.count,
-        channelSelections: channelSelections.count,
-        channelDecisions: channelDecisions.count,
+        //channelSelections: channelSelections.count,
+        //channelDecisions: channelDecisions.count,
+        legacyPredictions,
         modelRuns: modelRuns.count,
       };
     },
@@ -108,8 +139,9 @@ function printCounts(title: string, counts: TargetCounts): void {
     { table: "coupon_proposal_leg", rows: counts.couponProposalLegs },
     { table: "coupon_proposal", rows: counts.couponProposals },
     { table: "bet", rows: counts.bets },
-    { table: "channel_selection", rows: counts.channelSelections },
-    { table: "channel_decision", rows: counts.channelDecisions },
+   // { table: "channel_selection", rows: counts.channelSelections },
+   // { table: "channel_decision", rows: counts.channelDecisions },
+    { table: "prediction (legacy)", rows: counts.legacyPredictions },
     { table: "model_run", rows: counts.modelRuns },
   ]);
 }

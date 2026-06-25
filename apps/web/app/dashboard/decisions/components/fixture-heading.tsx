@@ -36,14 +36,7 @@ type FixtureHeadingProps = {
 // a single letter by the inline "home – away" layout.
 export function FixtureHeading(props: FixtureHeadingProps) {
   const isMobile = useIsMobile();
-  const {
-    competition,
-    country,
-    locale,
-    kickoff,
-    score,
-    htScore,
-  } = props;
+  const { competition, country, locale, kickoff, score, htScore } = props;
 
   const league = competition ? translateCompetition(competition, locale) : "—";
   const meta = [country ? translateCountry(country, locale) : null, league]
@@ -58,7 +51,7 @@ export function FixtureHeading(props: FixtureHeadingProps) {
       ) : (
         <DesktopTeams {...props} scoreLabel={scoreLabel} />
       )}
-      <p className="truncate text-xs text-muted-foreground">
+      <p className="line-clamp-2 text-xs text-muted-foreground sm:truncate">
         {meta}
         {kickoff ? (
           <span className="ml-1.5 tabular-nums">{kickoff}</span>
@@ -103,11 +96,11 @@ function MobileTeams({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm font-semibold leading-tight">
         <span className="flex min-w-0 items-center gap-1.5">
           {homeLogo && <Logo src={homeLogo} />}
-          <span className="truncate">{homeTeam}</span>
+          <span className="line-clamp-2">{homeTeam}</span>
         </span>
         <span className="flex min-w-0 items-center gap-1.5">
           {awayLogo && <Logo src={awayLogo} />}
-          <span className="truncate">{awayTeam}</span>
+          <span className="line-clamp-2">{awayTeam}</span>
         </span>
       </div>
       {scoreLabel && (

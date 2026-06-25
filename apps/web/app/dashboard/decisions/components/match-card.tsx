@@ -1,5 +1,5 @@
 import { Ban, Sparkles } from "lucide-react";
-import { Card, Separator, cn } from "@evcore/ui";
+import { Card, CardContent, CardHeader, Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
 import { reasonLabel } from "./channel-constants";
@@ -26,6 +26,7 @@ export function MatchCard({
   const picks = selectedPicks(group);
   const rest = evaluatedRest(group);
   const consensus = hasConsensus(group);
+  const avoidReason = avoid ? reasonLabel(avoid.reasonCode, t) : null;
 
   return (
     <Card
@@ -36,71 +37,55 @@ export function MatchCard({
     >
       {avoid && (
         <div
-          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
+          className="mx-3 mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
           style={{
             color: "var(--canal-avoid)",
             backgroundColor: "var(--canal-avoid-soft)",
+            borderColor:
+              "color-mix(in srgb, var(--canal-avoid) 35%, transparent)",
           }}
         >
-          <Ban className="size-3.5 shrink-0" />
-          <span className="truncate">
-            {t("avoid.banner")}
-            {reasonLabel(avoid.reasonCode, t)
-              ? ` · ${reasonLabel(avoid.reasonCode, t)}`
-              : ""}
+          <Ban className="mt-0.5 size-3.5 shrink-0" />
+          <span className="min-w-0">
+            <span className="block font-semibold">{t("avoid.banner")}</span>
+            {avoidReason ? (
+              <span className="block leading-snug opacity-90">
+                {avoidReason}
+              </span>
+            ) : null}
           </span>
         </div>
       )}
 
-      <div className={cn("flex flex-col gap-3 p-4", avoid && "opacity-60")}>
-        <div className="flex items-start justify-between gap-3">
-          <FixtureHeading
-            homeTeam={group.homeTeam}
-            awayTeam={group.awayTeam}
-            homeLogo={group.homeLogo}
-            awayLogo={group.awayLogo}
-            competition={group.competition}
-            country={group.country}
-            locale={locale}
-            score={group.score}
-            htScore={group.htScore}
-          />
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {group.kickoff}
-            </span>
-            <ConvictionBadge pickCount={picks.length} consensus={consensus} />
+      <div className={cn(avoid && "opacity-60")}>
+        <CardHeader className="gap-3 px-4 pb-3 pt-4">
+          <div className="flex items-start justify-between gap-3">
+            <FixtureHeading
+              homeTeam={group.homeTeam}
+              awayTeam={group.awayTeam}
+              homeLogo={group.homeLogo}
+              awayLogo={group.awayLogo}
+              competition={group.competition}
+              country={group.country}
+              locale={locale}
+              score={group.score}
+              htScore={group.htScore}
+            />
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {group.kickoff}
+              </span>
+              <ConvictionBadge pickCount={picks.length} consensus={consensus} />
+            </div>
           </div>
-        </div>
+        </CardHeader>
 
-        <Separator />
+        <CardContent className="flex flex-col gap-2 px-4 pb-4">
+          <Separator />
 
-        {/* Pick-first: the retained selections lead, prominently. */}
-        {picks.length > 0 ? (
-          <div className="flex flex-col divide-y divide-border/50">
-            {picks.map((decision) => (
-              <ChannelRow
-                key={decision.id}
-                channel={decision.channel}
-                decision={decision}
-                locale={locale}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="py-1 text-xs text-muted-foreground/70">
-            {t("noPick")}
-          </p>
-        )}
-
-        {/* Evaluated-but-not-selected channels, collapsed (the noise). */}
-        {rest.length > 0 && (
-          <details className="group">
-            <summary className="cursor-pointer list-none text-[0.7rem] text-muted-foreground/60 transition-colors hover:text-muted-foreground">
-              {t("evaluatedCount", { count: rest.length })}
-            </summary>
-            <div className="mt-1 flex flex-col divide-y divide-border/40 opacity-80">
-              {rest.map((decision) => (
+          {picks.length > 0 ? (
+            <div className="flex flex-col divide-y divide-border/50">
+              {picks.map((decision) => (
                 <ChannelRow
                   key={decision.id}
                   channel={decision.channel}
@@ -109,8 +94,33 @@ export function MatchCard({
                 />
               ))}
             </div>
-          </details>
-        )}
+          ) : (
+            <p className="py-1 text-xs text-muted-foreground/70">
+              {t("noPick")}
+            </p>
+          )}
+
+          {rest.length > 0 && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md py-1 text-[0.72rem] text-muted-foreground/70 transition-colors hover:text-muted-foreground">
+                <span>{t("evaluatedCount", { count: rest.length })}</span>
+                <span className="text-sm leading-none text-muted-foreground/50 transition-transform group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <div className="mt-1 flex flex-col divide-y divide-border/40 opacity-80">
+                {rest.map((decision) => (
+                  <ChannelRow
+                    key={decision.id}
+                    channel={decision.channel}
+                    decision={decision}
+                    locale={locale}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
+        </CardContent>
       </div>
     </Card>
   );
