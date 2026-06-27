@@ -1,6 +1,5 @@
 import Decimal from 'decimal.js';
-import { BetStatus } from '@evcore/db';
-import { Market, outcomeFromScores } from '@evcore/analysis-core';
+import { BetStatus, Market, outcomeFromScores } from '@evcore/analysis-core';
 // Pure probability, math, scoring & odds primitives now live in
 // @evcore/analysis-core (shared prod ↔ backtest). Re-exported here so existing
 // `./betting-engine.utils` imports across the module keep resolving unchanged.

@@ -4,6 +4,7 @@ import {
   ChannelDecisionStatus as DbChannelDecisionStatus,
   ModelRunPhase as DbModelRunPhase,
   SportType as DbSportType,
+  BetStatus as DbBetStatus,
 } from '@evcore/db';
 import {
   Market as CoreMarket,
@@ -11,6 +12,7 @@ import {
   CHANNEL_DECISION_STATUS as CoreChannelDecisionStatus,
   MODEL_RUN_PHASE as CoreModelRunPhase,
   SPORT_TYPE as CoreSportType,
+  BetStatus as CoreBetStatus,
 } from '@evcore/analysis-core';
 import type {
   Market as CoreMarketT,
@@ -18,6 +20,7 @@ import type {
   ChannelDecisionStatus as CoreChannelDecisionStatusT,
   ModelRunPhase as CoreModelRunPhaseT,
   SportType as CoreSportTypeT,
+  BetStatus as CoreBetStatusT,
 } from '@evcore/analysis-core';
 import { describe, expect, it } from 'vitest';
 
@@ -46,12 +49,14 @@ const _channelDecisionStatus: AssertEqual<
 > = true;
 const _modelRunPhase: AssertEqual<DbModelRunPhase, CoreModelRunPhaseT> = true;
 const _sportType: AssertEqual<DbSportType, CoreSportTypeT> = true;
+const _betStatus: AssertEqual<DbBetStatus, CoreBetStatusT> = true;
 
 void _market;
 void _strategyChannel;
 void _channelDecisionStatus;
 void _modelRunPhase;
 void _sportType;
+void _betStatus;
 
 describe('domain enum conformance (Prisma ↔ analysis-core)', () => {
   it.each([
@@ -64,6 +69,7 @@ describe('domain enum conformance (Prisma ↔ analysis-core)', () => {
     ],
     ['ModelRunPhase', DbModelRunPhase, CoreModelRunPhase],
     ['SportType', DbSportType, CoreSportType],
+    ['BetStatus', DbBetStatus, CoreBetStatus],
   ] as const)(
     '%s has identical members in both packages',
     (_name, db, core) => {

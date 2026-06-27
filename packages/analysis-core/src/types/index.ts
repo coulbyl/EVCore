@@ -1,4 +1,5 @@
 export { Market } from "./market";
+export { BetStatus } from "./bet-status";
 export {
   STRATEGY_CHANNEL,
   META_STRATEGY_CHANNELS,
