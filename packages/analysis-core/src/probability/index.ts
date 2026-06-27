@@ -12,3 +12,4 @@ export {
   deriveMarketsFromPoisson,
   buildPoissonDistributions,
 } from './poisson';
+export { type ComboPick, computeJointProbability } from './combo';
