@@ -78,8 +78,8 @@ describe('DominantStrategy', () => {
     );
   });
 
-  it('returns DISABLED for leagues where CONF is explicitly disabled (PL DRAW is disabled — use D2 CONF)', () => {
-    // D2: CONF disabled, threshold 0.55
+  it('returns DISABLED for leagues where DOMINANT is explicitly disabled (D2)', () => {
+    // D2: DOMINANT disabled, threshold 0.55
     const ctx = makeContext({
       home: 0.6,
       draw: 0.25,
@@ -92,7 +92,7 @@ describe('DominantStrategy', () => {
   });
 
   it('returns REJECTED below_threshold when argmax probability < league threshold', () => {
-    // BL1 threshold = 0.50
+    // BL1 threshold = 0.55
     const ctx = makeContext({
       home: 0.45,
       draw: 0.35,
@@ -105,13 +105,15 @@ describe('DominantStrategy', () => {
   });
 
   it('returns REJECTED insufficient_margin when argmax barely leads', () => {
-    // BL1 threshold = 0.50, DOMINANT_MIN_MARGIN = 0.05
-    // 0.52 HOME vs 0.48 DRAW → margin = 0.04 < 0.05
+    // LL threshold = 0.50, DOMINANT_MIN_MARGIN = 0.05. Uses LL (not BL1) because
+    // the margin gate is only reachable below ~0.525: any argmax clearing BL1's
+    // 0.55 necessarily leads the 2nd by > 0.05 once probabilities sum to ≤ 1.
+    // 0.52 HOME vs 0.48 DRAW → argmax 0.52 ≥ 0.50, margin = 0.04 < 0.05.
     const ctx = makeContext({
       home: 0.52,
       draw: 0.48,
       away: 0.0,
-      competitionCode: 'BL1',
+      competitionCode: 'LL',
     });
     const decision = strategy.evaluate(ctx);
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
@@ -119,7 +121,7 @@ describe('DominantStrategy', () => {
   });
 
   it('returns SELECTED with HOME when home is dominant', () => {
-    // BL1: threshold = 0.50, HOME = 0.60, margin = 0.35 > 0.05
+    // BL1: threshold = 0.55, HOME = 0.60, margin = 0.35 > 0.05
     const ctx = makeContext({
       home: 0.6,
       draw: 0.25,

@@ -73,8 +73,10 @@ describe('DrawStrategy', () => {
     );
   });
 
-  it('returns DISABLED for PL (DRAW explicitly disabled)', () => {
-    expect(strategy.evaluate(makeContext(3.2, 'PL')).status).toBe(
+  it('returns DISABLED for SP2 (DRAW explicitly disabled after backtest)', () => {
+    // SP2 DRAW is configured but disabled (structurally weak signal). PL is no
+    // longer a disabled example — tuning 2026-06-24 promoted PL DRAW at 0.30.
+    expect(strategy.evaluate(makeContext(3.2, 'SP2')).status).toBe(
       CHANNEL_DECISION_STATUS.DISABLED,
     );
   });

@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { getChannelStrategyConfig } from './channel-strategy.config';
 
 describe('getChannelStrategyConfig — DOMINANT channel', () => {
-  it('returns the BL1 DOMINANT config (enabled, threshold 0.5)', () => {
+  it('returns the BL1 DOMINANT config (enabled, threshold 0.55)', () => {
     const cfg = getChannelStrategyConfig('DOMINANT', 'BL1');
     expect(cfg.enabled).toBe(true);
-    expect(cfg.threshold).toBe(0.5);
+    expect(cfg.threshold).toBe(0.55);
     expect(cfg.minSampleN).toBe(10);
   });
 
@@ -40,10 +40,10 @@ describe('getChannelStrategyConfig — DOMINANT channel', () => {
 });
 
 describe('getChannelStrategyConfig — DRAW channel', () => {
-  it('returns the POR DRAW config (enabled, threshold 0.30)', () => {
+  it('returns the POR DRAW config (enabled, threshold 0.26)', () => {
     const cfg = getChannelStrategyConfig('DRAW', 'POR');
     expect(cfg.enabled).toBe(true);
-    expect(cfg.threshold).toBe(0.3);
+    expect(cfg.threshold).toBe(0.26);
   });
 
   it('returns the MX1 DRAW config (disabled, threshold 0.36)', () => {
@@ -52,10 +52,10 @@ describe('getChannelStrategyConfig — DRAW channel', () => {
     expect(cfg.threshold).toBe(0.36);
   });
 
-  it('returns disabled for PL DRAW (explicitly disabled after backtest)', () => {
+  it('returns enabled for PL DRAW (tuning 2026-06-24 (1y): enabled at 0.30)', () => {
     const cfg = getChannelStrategyConfig('DRAW', 'PL');
-    expect(cfg.enabled).toBe(false);
-    expect(cfg.threshold).toBe(0.34);
+    expect(cfg.enabled).toBe(true);
+    expect(cfg.threshold).toBe(0.3);
   });
 
   it('returns the BL1 DRAW config (enabled, threshold 0.28)', () => {
@@ -78,10 +78,10 @@ describe('getChannelStrategyConfig — DRAW channel', () => {
 });
 
 describe('getChannelStrategyConfig — BTTS channel', () => {
-  it('returns the PL BTTS config (enabled, threshold 0.58)', () => {
+  it('returns the PL BTTS config (enabled, threshold 0.52)', () => {
     const cfg = getChannelStrategyConfig('BTTS', 'PL');
     expect(cfg.enabled).toBe(true);
-    expect(cfg.threshold).toBe(0.58);
+    expect(cfg.threshold).toBe(0.52);
   });
 
   it('returns the SA BTTS config (enabled, threshold 0.52)', () => {
@@ -126,8 +126,10 @@ describe('getChannelStrategyConfig — channel isolation', () => {
     const dominant = getChannelStrategyConfig('DOMINANT', 'PL');
     const draw = getChannelStrategyConfig('DRAW', 'PL');
     const btts = getChannelStrategyConfig('BTTS', 'PL');
+    // All three enabled after the 2026-06-24 tuning (DRAW promoted at 0.30),
+    // each on its own threshold (DOMINANT 0.55 / DRAW 0.30 / BTTS 0.52).
     expect(dominant.enabled).toBe(true);
-    expect(draw.enabled).toBe(false);
+    expect(draw.enabled).toBe(true);
     expect(btts.enabled).toBe(true);
     expect(dominant.threshold).not.toBe(draw.threshold);
     expect(draw.threshold).not.toBe(btts.threshold);
@@ -139,8 +141,9 @@ describe('getChannelStrategyConfig — channel isolation', () => {
     expect(getChannelStrategyConfig('BTTS', 'MX1').enabled).toBe(true);
   });
 
-  it('SA: DOMINANT, DRAW and BTTS all enabled independently', () => {
-    expect(getChannelStrategyConfig('DOMINANT', 'SA').enabled).toBe(true);
+  it('SA: DRAW and BTTS enabled, DOMINANT suspended — canaux indépendants', () => {
+    // Tuning 2026-06-24 (1y): SA DOMINANT suspended (ROI -8.1%); DRAW + BTTS stay on.
+    expect(getChannelStrategyConfig('DOMINANT', 'SA').enabled).toBe(false);
     expect(getChannelStrategyConfig('BTTS', 'SA').enabled).toBe(true);
     expect(getChannelStrategyConfig('DRAW', 'SA').enabled).toBe(true);
   });

@@ -80,7 +80,7 @@ describe('BttsStrategy', () => {
   });
 
   it('prefers the more confident side when both clear (YES vs NO)', () => {
-    // BL1 YES threshold 0.60. bttsYes 0.66 ≥ 0.60 (YES clears); bttsNo 0.34 < 0.65.
+    // BL1 YES threshold 0.62. bttsYes 0.66 ≥ 0.62 (YES clears); bttsNo 0.34 < 0.65.
     // Only YES clears → YES.
     expect(strategy.evaluate(makeContext(0.66, 'BL1')).selections[0].pick).toBe(
       'YES',
@@ -88,14 +88,14 @@ describe('BttsStrategy', () => {
   });
 
   it('returns REJECTED below_threshold when bttsYes < league threshold', () => {
-    // BL1 threshold = 0.60
+    // BL1 threshold = 0.62
     const decision = strategy.evaluate(makeContext(0.55, 'BL1'));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
     expect(decision.reasonCode).toBe('below_threshold');
   });
 
   it('returns SELECTED when bttsYes ≥ league threshold', () => {
-    // BL1 threshold = 0.60
+    // BL1 threshold = 0.62
     const decision = strategy.evaluate(makeContext(0.65, 'BL1'));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].market).toBe(Market.BTTS);
@@ -123,8 +123,8 @@ describe('BttsStrategy', () => {
   });
 
   it('returns SELECTED at exactly the threshold (boundary)', () => {
-    // BL1 threshold = 0.60 — exactly at threshold should pass (lessThan, not lte)
-    const decision = strategy.evaluate(makeContext(0.6, 'BL1'));
+    // BL1 threshold = 0.62 — exactly at threshold should pass (lessThan, not lte)
+    const decision = strategy.evaluate(makeContext(0.62, 'BL1'));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
   });
 
@@ -132,8 +132,8 @@ describe('BttsStrategy', () => {
     expect(strategy.allowedMarkets).toEqual([Market.BTTS]);
   });
 
-  it('uses PL threshold (0.58) independently from BL1 (0.60)', () => {
-    // 0.59 should pass PL (0.58) but fail BL1 (0.60)
+  it('uses PL threshold (0.52) independently from BL1 (0.62)', () => {
+    // 0.59 should pass PL (0.52) but fail BL1 (0.62)
     expect(strategy.evaluate(makeContext(0.59, 'PL')).status).toBe(
       CHANNEL_DECISION_STATUS.SELECTED,
     );
