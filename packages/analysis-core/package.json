@@ -16,6 +16,9 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run"
   },
+  "dependencies": {
+    "decimal.js": "catalog:"
+  },
   "devDependencies": {
     "@evcore/eslint-config": "workspace:*",
     "@evcore/typescript-config": "workspace:*",

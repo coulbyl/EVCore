@@ -498,6 +498,10 @@ importers:
         version: 6.0.2
 
   packages/analysis-core:
+    dependencies:
+      decimal.js:
+        specifier: 'catalog:'
+        version: 10.6.0
     devDependencies:
       '@evcore/eslint-config':
         specifier: workspace:*

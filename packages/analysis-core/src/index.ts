@@ -5,3 +5,4 @@
 // objects, outputs are plain objects, same input → same output. The boundary is
 // enforced automatically by `architecture.guard.spec.ts`.
 export * from "./types";
+export * from "./ev";
