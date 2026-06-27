@@ -1,11 +1,9 @@
 import Decimal from 'decimal.js';
 
-export const FEATURE_WEIGHTS = {
-  recentForm: new Decimal('0.30'),
-  xg: new Decimal('0.30'),
-  domExtPerf: new Decimal('0.25'),
-  leagueVolat: new Decimal('0.15'),
-} as const;
+// FEATURE_WEIGHTS (deterministic-score weights) + calculateDeterministicScore
+// now live in @evcore/analysis-core (pure core shared prod ↔ backtest).
+// Re-exported here so existing `./ev.constants` imports keep resolving.
+export { FEATURE_WEIGHTS } from '@evcore/analysis-core';
 
 export const EV_THRESHOLD = new Decimal('0.08');
 

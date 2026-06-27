@@ -8,3 +8,4 @@ export * from "./types";
 export * from "./math";
 export * from "./ev";
 export * from "./probability";
+export * from "./score";

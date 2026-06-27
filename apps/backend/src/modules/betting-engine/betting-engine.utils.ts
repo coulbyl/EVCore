@@ -1,11 +1,9 @@
 import Decimal from 'decimal.js';
 import { BetStatus } from '@evcore/db';
 import { Market, outcomeFromScores } from '@evcore/analysis-core';
-import { FEATURE_WEIGHTS } from './ev.constants';
-
-// Pure probability & math primitives now live in @evcore/analysis-core (shared
-// prod ↔ backtest). Re-exported here so existing `./betting-engine.utils`
-// imports across the module keep resolving unchanged.
+// Pure probability, math, scoring & odds primitives now live in
+// @evcore/analysis-core (shared prod ↔ backtest). Re-exported here so existing
+// `./betting-engine.utils` imports across the module keep resolving unchanged.
 export {
   asNumber,
   clamp,
@@ -15,47 +13,19 @@ export {
   buildPoissonDistributions,
   isHalfTimeFullTimePick,
   HALF_TIME_FULL_TIME_PICKS,
-} from '@evcore/analysis-core';
-export type {
-  ThreeWayProba,
-  DerivedMarketsProba,
-  HalfTimeFullTimePick,
-} from '@evcore/analysis-core';
-
-export type DeterministicFeatures = {
-  recentForm: Decimal.Value;
-  xg: Decimal.Value;
-  domExtPerf: Decimal.Value;
-  leagueVolat: Decimal.Value;
-};
-
-export type FeatureWeights = {
-  recentForm: Decimal.Value;
-  xg: Decimal.Value;
-  domExtPerf: Decimal.Value;
-  leagueVolat: Decimal.Value;
-};
-
-// Canonical EV & odds math now lives in @evcore/analysis-core (pure core shared
-// by prod and backtest). Re-exported here so existing `./betting-engine.utils`
-// imports across the module keep resolving unchanged.
-export {
+  calculateDeterministicScore,
   calculateEV,
   bookmakerMargin,
   removeOverround,
   calculateKellyStakePct,
 } from '@evcore/analysis-core';
-
-export function calculateDeterministicScore(
-  features: DeterministicFeatures,
-  weights: FeatureWeights = FEATURE_WEIGHTS,
-): Decimal {
-  return new Decimal(features.recentForm)
-    .times(weights.recentForm)
-    .plus(new Decimal(features.xg).times(weights.xg))
-    .plus(new Decimal(features.domExtPerf).times(weights.domExtPerf))
-    .plus(new Decimal(features.leagueVolat).times(weights.leagueVolat));
-}
+export type {
+  ThreeWayProba,
+  DerivedMarketsProba,
+  HalfTimeFullTimePick,
+  DeterministicFeatures,
+  FeatureWeights,
+} from '@evcore/analysis-core';
 
 // Conditions mapping pick names → score predicates.
 // Used by computeJointProbability and resolvePickBetStatus.
