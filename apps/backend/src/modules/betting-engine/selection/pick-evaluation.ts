@@ -11,7 +11,6 @@ import {
   COMBOS_ENABLED,
   EV_HARD_CAP,
   FALLBACK_MIN_QUALITY_SCORE,
-  getLeagueEvThreshold,
   getSvMinOdds,
   getSvMinProbability,
   MAX_SELECTION_ODDS,
@@ -20,6 +19,7 @@ import {
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
 } from '../ev.constants';
 import { buildQualityScore, getPickRejectionReason } from './pick-validation';
+import { buildSelectionConfig } from './selection-config';
 import {
   estimateComboOdds,
   getPickOddsFromSnapshot,
@@ -198,7 +198,8 @@ export function listEvaluatedOneXTwoPicks(
   suspendedMarkets: Set<Market>,
   competitionCode: string | null = null,
 ): EvaluatedPick[] {
-  const minEv = getLeagueEvThreshold(competitionCode);
+  const config = buildSelectionConfig(competitionCode);
+  const minEv = config.leagueEvThreshold;
   const candidates: ViablePick[] = [
     {
       market: Market.ONE_X_TWO,
@@ -253,8 +254,8 @@ export function listEvaluatedOneXTwoPicks(
         candidate,
         suspendedMarkets,
         probabilities,
+        config,
         minEv,
-        competitionCode,
         // lambdaTotal not needed — this helper only evaluates 1X2 picks, never UNDER.
         0,
       );
@@ -275,7 +276,8 @@ export function listEvaluatedPicks(
   competitionCode: string | null = null,
   overrideMinEv?: Decimal,
 ): EvaluatedPick[] {
-  const minEv = overrideMinEv ?? getLeagueEvThreshold(competitionCode);
+  const config = buildSelectionConfig(competitionCode);
+  const minEv = overrideMinEv ?? config.leagueEvThreshold;
   const lambdaTotal =
     distHome.reduce((sum, p, k) => sum + k * p, 0) +
     distAway.reduce((sum, p, k) => sum + k * p, 0);
@@ -615,8 +617,8 @@ export function listEvaluatedPicks(
       candidate,
       suspendedMarkets,
       probabilities,
+      config,
       minEv,
-      competitionCode,
       lambdaTotal,
     );
     return rejectionReason ? { ...candidate, rejectionReason } : candidate;

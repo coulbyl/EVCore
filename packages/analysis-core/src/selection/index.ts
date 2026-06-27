@@ -9,6 +9,8 @@ export {
   priceSelection,
   priceForSelection,
 } from "./odds";
+export type { SelectionConfig } from "./config";
+export { getPickRejectionReason, buildQualityScore } from "./pick-validation";
 export {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,
