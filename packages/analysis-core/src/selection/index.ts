@@ -12,6 +12,12 @@ export {
 export type { SelectionConfig } from "./config";
 export { getPickRejectionReason, buildQualityScore } from "./pick-validation";
 export {
+  selectSafeValuePick,
+  selectBestViablePick,
+  listEvaluatedOneXTwoPicks,
+  listEvaluatedPicks,
+} from "./pick-evaluation";
+export {
   COMBO_WHITELIST,
   buildBetPickKey,
   getPickOddsFromSnapshot,

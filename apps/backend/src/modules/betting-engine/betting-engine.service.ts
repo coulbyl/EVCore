@@ -76,6 +76,7 @@ import {
   selectBestViablePick,
   selectSafeValuePick,
 } from './selection/pick-evaluation';
+import { buildSelectionConfig } from './selection/selection-config';
 import type { PersistedChannelDecision } from './channel-decision.repository';
 import { buildStrategyContext } from './strategies/strategy-context.builder';
 import {
@@ -219,7 +220,7 @@ export class BettingEngineService {
       input.distAway,
       input.lambdaFloorHit,
       new Set<Market>(),
-      input.competitionCode,
+      buildSelectionConfig(input.competitionCode ?? null),
       input.minEv,
     );
   }
@@ -235,7 +236,7 @@ export class BettingEngineService {
       input.odds,
       input.deterministicScore,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
 
     return (
@@ -256,7 +257,7 @@ export class BettingEngineService {
       input.odds,
       input.deterministicScore,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
   }
 
@@ -278,7 +279,7 @@ export class BettingEngineService {
       input.distAway,
       input.lambdaFloorHit,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
       input.minEv,
     );
   }
@@ -294,7 +295,7 @@ export class BettingEngineService {
       new Set<Market>(),
       input.evPickKey,
       input.lambdaTotal ?? 0,
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
   }
 
@@ -559,6 +560,7 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
+    const selectionConfig = buildSelectionConfig(competitionCode);
     const evaluatedPicks: EvaluatedPick[] = latestOdds
       ? listEvaluatedPicks(
           probabilities,
@@ -568,7 +570,7 @@ export class BettingEngineService {
           distAway,
           lambdaFloorHit,
           suspendedMarkets,
-          competitionCode,
+          selectionConfig,
         )
       : [];
     const candidatePicks = evaluatedPicks.filter(
@@ -858,7 +860,7 @@ export class BettingEngineService {
         suspendedMarkets,
         evPickKey,
         lambdaTotal,
-        competitionCode,
+        selectionConfig,
       );
 
       if (svPick !== null) {
@@ -1003,6 +1005,7 @@ export class BettingEngineService {
         snapshotAt: eloSnapshotAt,
       },
     } = friComputation;
+    const friSelectionConfig = buildSelectionConfig(competitionCode);
     const evaluatedPicks =
       marketOdds !== null && probabilities !== null
         ? lambda !== null
@@ -1015,14 +1018,14 @@ export class BettingEngineService {
               lambda.home <= MIN_LAMBDA + Number.EPSILON ||
                 lambda.away <= MIN_LAMBDA + Number.EPSILON,
               suspendedMarkets,
-              competitionCode,
+              friSelectionConfig,
             )
           : listEvaluatedOneXTwoPicks(
               probabilities,
               marketOdds.snapshot,
               deterministicScore,
               suspendedMarkets,
-              competitionCode,
+              friSelectionConfig,
             )
         : [];
     const candidatePicks = evaluatedPicks.filter(
