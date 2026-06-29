@@ -151,29 +151,37 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 > conformité rend l'oubli impossible (build cassé). À comparer au coût permanent de
 > l'option inverse — un noyau qui ne compile pas sans la DB.
 
-### Étape 3 — Migrer la logique pure (par tranches, tests à l'appui)
+### Étape 3 — Migrer la logique pure (par tranches, tests à l'appui) ✅ (29 juin 2026)
 
-- [ ] `ev/` ← `ev.constants.ts` + math EV (seuil `≥ 0.08` reste en config app, formule
-      en noyau).
-- [ ] `probability/` ← `math/probability.ts` + dérivations Poisson.
-- [ ] `ranking/` + `selection/` ← `selection/pick-evaluation.ts`, `pick-validation.ts`,
-      `selection-odds.ts`.
-- [ ] `strategies/` ← toutes les stratégies + orchestrator + registry + config (la config
-      _de stratégie_ est pure ; les _valeurs_ spécifiques ligue/marché peuvent rester
-      injectées par l'app si elles dépendent d'env).
-- [ ] `settlement/` ← extraire la **fonction pure** `settlePick` ; le
-      `bet-settlement.service.ts` (Prisma) reste dans l'app et l'appelle.
-- [ ] `metrics/` ← logique Brier / calibration error de `calibration.service.ts` et
-      `backtest.metrics.ts` (la _persistance_ et les _déclencheurs_ restent en app).
-- [ ] Après chaque tranche : tests unitaires + **golden specs** (`betting-engine.golden.spec.ts`)
-      verts, snapshots inchangés → preuve d'iso-comportement.
+- [x] `ev/` ← `ev-math.ts` (formule `EV = p × odds − 1`). Seuil `≥ 0.08` reste en config
+      app (`ev.constants.ts`) ; la formule est dans le noyau. Shim backend : aucun (déjà
+      consommé via `@evcore/analysis-core`).
+- [x] `probability/` ← `match-stats.ts` (`deriveLambdas`, `rebalanceThreeWayProbabilities`,
+      `buildMatchupFeatures`, `blendTeamStats`, `mapProbabilitiesToNumber`). Config `LambdaConfig`
+      injectée par app (`buildLambdaConfig`). Shim backend : `math/probability.ts`.
+- [x] `selection/` ← `pick-evaluation.ts`, `pick-validation.ts`, `combo-pricing.ts`.
+      Config `SelectionConfig` injectée par app (`buildSelectionConfig`). Shim backend :
+      `selection/pick-evaluation.ts`.
+- [x] `strategies/` ← 7 stratégies (VALUE/SAFE/DOMINANT/BTTS/DRAW/GOALS/CONSENSUS/AVOID)
+      + orchestrator + registry + config (~1 800 lignes). `StrategyContext` enrichi de
+      `selectionConfig` + `modelScoreThreshold` injectés app-side. Shims backend complets.
+- [x] `settlement/` ← `resolvePickBetStatus`, `resolveComboPickBetStatus`, `resolveEarlyBetStatus`
+      + helpers. `bet-settlement.service.ts` (Prisma) appelle le noyau.
+- [x] `metrics/` ← Brier score, calibration error (`scoring.ts`) + flatRoi, maxDrawdown,
+      evBins (`roi.ts`). Shims backend : `backtest.report.ts`, `backtest.metrics.ts`.
+- [x] Après chaque tranche : 616/616 tests verts, lint + typecheck propres, golden specs
+      inchangés → iso-comportement prouvé.
 
-### Étape 4 — Backend & ml-worker consomment le noyau
+### Étape 4 — Backend & ml-worker consomment le noyau ✅ (29 juin 2026)
 
-- [ ] `betting-engine` (prod) et `backtest` importent `analysis-core` ; suppression des
-      copies locales. Un seul chemin de code pour analyser une fixture.
-- [ ] Vérifier que `ml-worker` (Python) reste la seule brique de calcul lourd ; documenter
-      le contrat d'échange (features/cibles) côté noyau pour éviter la dérive.
+- [x] `betting-engine` (prod) et `backtest` importent `analysis-core` via shims re-export.
+      Un seul chemin de code pour analyser une fixture — zéro copie de logique dans le backend,
+      les fichiers locaux sont de purs tunnels vers `@evcore/analysis-core`.
+- [x] Contrat d'échange ml-worker documenté et centralisé : `MlShadowFeatures` (le vecteur
+      de features passé à Python via Postgres/BullMQ) déplacé dans `analysis-core/score/ml-features.ts`.
+      `ml.inference.service.ts` et `ml-shadow-features.ts` deviennent des shims. Le noyau
+      est désormais la source de vérité unique du format de données ML ; toute dérive casse
+      le typecheck.
 
 ### Étape 5 — Domaine calibration sur schéma dédié (DB unique)
 

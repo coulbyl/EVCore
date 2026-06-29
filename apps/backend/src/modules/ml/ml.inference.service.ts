@@ -2,23 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 
-export type MlShadowFeatures = {
-  prob_estimated: number;
-  deterministic_score: number;
-  ev: number;
-  delta_p: number | null;
-  p_poisson_home: number;
-  p_poisson_draw: number;
-  p_poisson_away: number;
-  recent_form: number;
-  xg: number;
-  performance_dom_ext: number;
-  volatilite_ligue: number;
-  market: string;
-  canal: string;
-  league_tier: string;
-  odds_segment: string;
-};
+// MlShadowFeatures is the exchange contract between NestJS and the Python
+// ml-worker. Source of truth lives in analysis-core to prevent drift.
+import type { MlShadowFeatures } from '@evcore/analysis-core';
+export type { MlShadowFeatures };
 
 export type MlShadowResult = {
   corrected_probability: number | null;
