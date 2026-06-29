@@ -12,6 +12,14 @@ export {
 export type { SelectionConfig } from "./config";
 export { getPickRejectionReason, buildQualityScore } from "./pick-validation";
 export {
+  COMBO_WHITELIST,
+  buildBetPickKey,
+  getPickOddsFromSnapshot,
+  getPickOdds,
+  getModelProbabilityForPick,
+  estimateComboOdds,
+} from "./combo-pricing";
+export {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,
   MIN_DRAW_DIRECTION_PROBABILITY,
@@ -28,4 +36,7 @@ export {
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MIN_FACTOR,
+  COMBO_CORRELATION_MAX_FACTOR,
 } from "./constants";

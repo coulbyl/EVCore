@@ -27,6 +27,9 @@ import {
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MIN_FACTOR,
+  COMBO_CORRELATION_MAX_FACTOR,
 } from '@evcore/analysis-core';
 export {
   EV_HARD_CAP,
@@ -45,6 +48,9 @@ export {
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MIN_FACTOR,
+  COMBO_CORRELATION_MAX_FACTOR,
 };
 
 export const EV_THRESHOLD = new Decimal('0.08');
@@ -1272,9 +1278,3 @@ export const DEFAULT_STAKE_PCT = new Decimal('0.01');
 // Hard cap at 5% per bet regardless of computed Kelly size.
 export const KELLY_FRACTION = new Decimal('0.25');
 export const KELLY_MAX_STAKE_PCT = new Decimal('0.05');
-
-// Combo odds pricing uses the raw product as a base, then applies a damped
-// correlation correction from model joint probability.
-export const COMBO_CORRELATION_ALPHA = new Decimal('0.75');
-export const COMBO_CORRELATION_MIN_FACTOR = new Decimal('0.50');
-export const COMBO_CORRELATION_MAX_FACTOR = new Decimal('1.25');

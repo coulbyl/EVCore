@@ -73,3 +73,9 @@ export const SAFE_VALUE_MAX_ODDS = new Decimal("2.20");
 // the engine also evaluates Over 2.5 and Over 3.5 and selects the better
 // qualityScore — fixing the structural Under bias at high expected goals.
 export const SV_UNDER_LAMBDA_COMPARISON_THRESHOLD = 3.0;
+
+// Combo odds pricing uses the raw product as a base, then applies a damped
+// correlation correction from model joint probability.
+export const COMBO_CORRELATION_ALPHA = new Decimal("0.75");
+export const COMBO_CORRELATION_MIN_FACTOR = new Decimal("0.50");
+export const COMBO_CORRELATION_MAX_FACTOR = new Decimal("1.25");
