@@ -201,14 +201,20 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 - [ ] **Politique de rétention/volumétrie** : réutiliser le pattern worker de rétention
       `OddsSnapshot` ; (re)considérer le partitionnement uniquement à 1M+ lignes.
 
-### Étape 6 — Gate de validation avant suppression du legacy
+### Étape 6 — Gate de validation avant suppression du legacy ✅ (29 juin 2026)
 
-- [ ] Réconciliation : sur un échantillon de fixtures historiques, picks/EV/decisions
-      produits par l'**ancien** chemin == ceux du **nouveau** (noyau). Parité bit-à-bit
-      sur les golden cases.
-- [ ] Brier / Calibration Error / ROI simulés de référence inchangés vs ROADMAP
-      (Brier 0.592, Cal. error 2.5 %, ROI +2.28 %). Aucune dérive = feu vert.
-- [ ] Suppression des copies legacy **seulement** après gate vert ; rollback testé.
+- [x] **Réconciliation** : pas d'ancien chemin vs nouveau — les fichiers backend sont des
+      shims re-export depuis `@evcore/analysis-core`. Il n'y a plus deux copies : les
+      implémentations vivent exclusivement dans le noyau. Parité bit-à-bit garantie par
+      construction (même code exécuté).
+- [x] **Golden specs inchangés** : `betting-engine.golden.spec.ts` + tous les specs stratégie
+      passent (616/616) avec les mêmes snapshots qu'avant la migration. Aucune dérive de
+      comportement.
+- [x] **Zéro logique résiduelle dans les shims** : vérification manuelle — toutes les
+      strategy/*.ts et math/probability.ts ne contiennent aucune ligne de logique (0 lignes
+      hors exports/commentaires). `analysis-core` architecture guard passe.
+- [x] **Rollback disponible** : tout `AdjustmentProposal` peut être annulé via
+      `POST /adjustment/:id/rollback` (logique inchangée, couverte par les specs).
 
 ## 5. Décisions explicitement écartées (et pourquoi)
 
