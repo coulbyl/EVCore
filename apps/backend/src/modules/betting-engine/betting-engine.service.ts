@@ -58,11 +58,13 @@ import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
 import { BetSettlementService } from './settlement/bet-settlement.service';
 import {
   blendTeamStats,
+  buildLambdaConfig,
   buildMatchupFeatures,
   deriveLambdas,
   mapProbabilitiesToNumber,
   rebalanceThreeWayProbabilities,
 } from './math/probability';
+import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
 import { getPickOdds } from './pricing/odds-mapping';
 import {
   summarizeEvaluatedPicks,
@@ -191,12 +193,12 @@ export class BettingEngineService {
       features,
       weights,
     );
-    const lambda = deriveLambdas(homeStats, awayStats, competitionCode);
+    const lambda = deriveLambdas(homeStats, awayStats, buildLambdaConfig(competitionCode));
     const probabilities = rebalanceThreeWayProbabilities({
       probabilities: this.computeProbabilities(lambda.home, lambda.away),
       homeStats,
       awayStats,
-      competitionCode,
+      blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
     });
 
     return { deterministicScore, probabilities, lambda, features };

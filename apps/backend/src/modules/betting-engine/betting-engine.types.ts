@@ -3,13 +3,22 @@ import type {
   EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
+  MatchupFeatures,
+  TeamStatsInput,
   ViablePick,
 } from '@evcore/analysis-core';
 import type { DeterministicFeatures } from './betting-engine.utils';
 
-// Re-exported from the pure core (@evcore/analysis-core/selection) so existing
-// imports keep resolving against './betting-engine.types'.
-export type { EvaluatedPick, FullOddsSnapshot, MatchProbabilities, ViablePick };
+// Re-exported from the pure core so existing imports against
+// './betting-engine.types' keep resolving unchanged.
+export type {
+  EvaluatedPick,
+  FullOddsSnapshot,
+  MatchProbabilities,
+  MatchupFeatures,
+  TeamStatsInput,
+  ViablePick,
+};
 
 export type PredictionSource =
   | 'POISSON_MAIN'
@@ -17,23 +26,6 @@ export type PredictionSource =
   | 'FRI_ELO_POISSON'
   | 'FRI_ELO_INTERNAL'
   | 'ODDS_DEVIG';
-
-export type TeamStatsInput = {
-  recentForm: unknown;
-  xgFor: unknown;
-  xgAgainst: unknown;
-  homeWinRate: unknown;
-  awayWinRate: unknown;
-  drawRate: unknown;
-  leagueVolatility: unknown;
-};
-
-export type MatchupFeatures = {
-  recentForm: Decimal;
-  xg: Decimal;
-  domExtPerf: Decimal;
-  leagueVolat: Decimal;
-};
 
 export type MatchComputation = {
   deterministicScore: Decimal;
