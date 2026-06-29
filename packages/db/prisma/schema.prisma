@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "calibration"]
 }
 
 // ─────────────────────────────────────────────
@@ -23,12 +24,14 @@ enum FixtureStatus {
   FINISHED
   POSTPONED
   CANCELLED
+  @@schema("public")
 }
 
 enum ModelRunPhase {
   ADVANCE
   PRE_KICKOFF
   LIVE
+  @@schema("public")
 }
 
 enum Market {
@@ -39,6 +42,7 @@ enum Market {
   HALF_TIME_FULL_TIME
   OVER_UNDER_HT
   FIRST_HALF_WINNER
+  @@schema("public")
 }
 
 enum BetStatus {
@@ -46,16 +50,19 @@ enum BetStatus {
   WON
   LOST
   VOID
+  @@schema("public")
 }
 
 enum BetSource {
   MODEL
   USER
+  @@schema("public")
 }
 
 enum BetSlipType {
   SIMPLE
   COMBO
+  @@schema("public")
 }
 
 enum BankrollTransactionType {
@@ -63,21 +70,25 @@ enum BankrollTransactionType {
   BET_PLACED
   BET_WON
   BET_VOID
+  @@schema("public")
 }
 
 enum UserRole {
   ADMIN
   OPERATOR
+  @@schema("public")
 }
 
 enum UnitMode {
   FIXED
   PCT
+  @@schema("public")
 }
 
 enum FormationContentType {
   ARTICLE
   VIDEO
+  @@schema("public")
 }
 
 enum AdjustmentStatus {
@@ -85,11 +96,13 @@ enum AdjustmentStatus {
   APPLIED
   REJECTED
   FROZEN
+  @@schema("public")
 }
 
 enum OddsSnapshotSource {
   PREMATCH
   HISTORICAL
+  @@schema("public")
 }
 
 enum NotificationType {
@@ -101,15 +114,18 @@ enum NotificationType {
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
   ML_MODEL_ACTIVATED
+  @@schema("public")
 }
 
 enum MfaMethod {
   EMAIL
   TOTP
+  @@schema("public")
 }
 
 enum SportType {
   FOOTBALL
+  @@schema("public")
 }
 
 enum StrategyChannel {
@@ -128,6 +144,7 @@ enum StrategyChannel {
   CONSENSUS
   CONTRARIAN
   AVOID
+  @@schema("public")
 }
 
 enum ChannelDecisionStatus {
@@ -137,6 +154,7 @@ enum ChannelDecisionStatus {
   INSUFFICIENT_DATA
   MISSING_ODDS
   NOT_APPLICABLE
+  @@schema("public")
 }
 
 enum CouponProposalStatus {
@@ -146,6 +164,7 @@ enum CouponProposalStatus {
   EXPIRED
 
   @@map("coupon_proposal_status")
+  @@schema("public")
 }
 
 enum CouponResult {
@@ -155,6 +174,7 @@ enum CouponResult {
   VOID
 
   @@map("coupon_result")
+  @@schema("public")
 }
 
 // ─────────────────────────────────────────────
@@ -179,6 +199,7 @@ model Competition {
   createdAt         DateTime   @default(now())
 
   @@map("competition")
+  @@schema("public")
 }
 
 model Season {
@@ -194,6 +215,7 @@ model Season {
 
   @@unique([competitionId, name])
   @@map("season")
+  @@schema("public")
 }
 
 model Standing {
@@ -221,6 +243,7 @@ model Standing {
 
   @@unique([competitionId, seasonId, teamApiId])
   @@map("standing")
+  @@schema("public")
 }
 
 model Team {
@@ -237,6 +260,7 @@ model Team {
   createdAt     DateTime    @default(now())
 
   @@map("team")
+  @@schema("public")
 }
 
 model Fixture {
@@ -279,6 +303,7 @@ model Fixture {
   @@index([homeTeamId, status, scheduledAt])
   @@index([awayTeamId, status, scheduledAt])
   @@map("fixture")
+  @@schema("public")
 }
 
 // Rolling stats computed for a team after a given fixture was played.
@@ -303,6 +328,7 @@ model TeamStats {
 
   @@unique([teamId, afterFixtureId])
   @@map("team_stats")
+  @@schema("public")
 }
 
 // Output of one betting engine analysis for a fixture.
@@ -331,6 +357,7 @@ model ModelRun {
   @@index([analyzedAt])
   @@index([phase, analyzedAt])
   @@map("model_run")
+  @@schema("public")
 }
 
 // One bet per market per ModelRun.
@@ -371,6 +398,7 @@ model Bet {
   @@index([status, updatedAt])
   @@index([userId])
   @@map("bet")
+  @@schema("public")
 }
 
 model User {
@@ -409,6 +437,7 @@ model User {
   updatedAt            DateTime                @updatedAt
 
   @@map("users")
+  @@schema("public")
 }
 
 model EmailVerificationCode {
@@ -423,6 +452,7 @@ model EmailVerificationCode {
 
   @@index([userId, expiresAt])
   @@map("email_verification_code")
+  @@schema("public")
 }
 
 model PasswordResetToken {
@@ -437,6 +467,7 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_token")
+  @@schema("public")
 }
 
 model Announcement {
@@ -455,6 +486,7 @@ model Announcement {
   @@index([published, publishedAt])
   @@index([createdAt])
   @@map("announcement")
+  @@schema("public")
 }
 
 model UserContentProgress {
@@ -471,6 +503,7 @@ model UserContentProgress {
   @@index([userId])
   @@index([completedAt])
   @@map("user_content_progress")
+  @@schema("public")
 }
 
 model Session {
@@ -486,6 +519,7 @@ model Session {
 
   @@index([userId, expiresAt])
   @@map("user_session")
+  @@schema("public")
 }
 
 model BetSlip {
@@ -499,6 +533,7 @@ model BetSlip {
 
   @@index([userId, createdAt])
   @@map("bet_slip")
+  @@schema("public")
 }
 
 model BetSlipItem {
@@ -518,6 +553,7 @@ model BetSlipItem {
   @@index([betId])
   @@index([fixtureId])
   @@map("bet_slip_item")
+  @@schema("public")
 }
 
 model BankrollTransaction {
@@ -533,6 +569,7 @@ model BankrollTransaction {
 
   @@index([userId, createdAt])
   @@map("bankroll_transaction")
+  @@schema("public")
 }
 
 // Proposed weight adjustments from the learning loop.
@@ -553,6 +590,7 @@ model AdjustmentProposal {
   @@index([status, appliedAt])
   @@index([createdAt])
   @@map("adjustment_proposal")
+  @@schema("calibration")
 }
 
 // Active suspension of a market triggered automatically by risk rules.
@@ -569,6 +607,7 @@ model MarketSuspension {
 
   @@index([market, active])
   @@map("market_suspension")
+  @@schema("calibration")
 }
 
 // In-app notifications — persisted for dashboard and future mobile app.
@@ -585,6 +624,7 @@ model Notification {
 
   @@index([read, createdAt])
   @@map("notification")
+  @@schema("public")
 }
 
 // Per-user read tracking for system-wide notifications.
@@ -597,6 +637,7 @@ model UserNotificationRead {
 
   @@id([userId, notificationId])
   @@map("user_notification_read")
+  @@schema("public")
 }
 
 model NationalTeamEloRating {
@@ -612,6 +653,7 @@ model NationalTeamEloRating {
   @@index([snapshotAt])
   @@index([teamName, snapshotAt])
   @@map("national_team_elo_rating")
+  @@schema("public")
 }
 
 // Odds snapshots — scaffolded for Phase 2 (prematch odds integration).
@@ -635,6 +677,7 @@ model OddsSnapshot {
   @@index([fixtureId, bookmaker, market, pick, snapshotAt])
   @@index([snapshotAt])
   @@map("odds_snapshot")
+  @@schema("public")
 }
 
 // One decision per channel per ModelRun — immutable after creation.
@@ -655,6 +698,7 @@ model ChannelDecision {
   @@index([modelRunId])
   @@index([channel, status, createdAt])
   @@map("channel_decision")
+  @@schema("public")
 }
 
 // One row per selected pick within a ChannelDecision (usually rank=1 only for v1).
@@ -681,6 +725,7 @@ model ChannelSelection {
   @@unique([channelDecisionId, rank])
   @@index([market, result, createdAt])
   @@map("channel_selection")
+  @@schema("public")
 }
 
 model Badge {
@@ -693,6 +738,7 @@ model Badge {
   users       UserBadge[]
 
   @@map("badge")
+  @@schema("public")
 }
 
 model UserBadge {
@@ -705,6 +751,7 @@ model UserBadge {
 
   @@unique([userId, badgeCode])
   @@map("user_badge")
+  @@schema("public")
 }
 
 // ─────────────────────────────────────────────
@@ -733,6 +780,7 @@ model CouponProposal {
   @@index([forDate, status])
   @@index([status, lastFixtureScheduledAt])
   @@map("coupon_proposal")
+  @@schema("public")
 }
 
 model CouponProposalLeg {
@@ -760,6 +808,7 @@ model CouponProposalLeg {
   @@index([couponProposalId])
   @@index([fixtureId])
   @@map("coupon_proposal_leg")
+  @@schema("public")
 }
 
 // ─────────────────────────────────────────────
@@ -789,6 +838,7 @@ model MlModelVersion {
   @@index([isActive, segment])
   @@index([segment, createdAt])
   @@map("ml_model_version")
+  @@schema("public")
 }
 
 // ─────────────────────────────────────────────
@@ -807,6 +857,7 @@ model ChatConversation {
 
   @@index([userId, updatedAt])
   @@map("chat_conversation")
+  @@schema("public")
 }
 
 model ChatMessage {
@@ -832,6 +883,7 @@ model ChatMessage {
 
   @@index([conversationId, createdAt])
   @@map("chat_message")
+  @@schema("public")
 }
 
 // Per-user daily usage — rate limiting + cost tracking.
@@ -845,4 +897,54 @@ model ChatUsage {
 
   @@id([userId, day])
   @@map("chat_usage")
+  @@schema("public")
+}
+
+// ─────────────────────────────────────────────
+// CALIBRATION SCHEMA — analytics & learning loop
+// ─────────────────────────────────────────────
+
+// Snapshot of per-channel calibration metrics at a point in time.
+// Written by the auto-calibration loop after each AdjustmentProposal is evaluated.
+// Used by the backtest controller and Grafana dashboards (Phase 2).
+model CalibrationReport {
+  id             String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  channel        StrategyChannel
+  competitionCode String?        // null = all leagues combined
+  startDate      DateTime        @db.Date
+  endDate        DateTime        @db.Date
+  betCount       Int
+  brierScore     Decimal         @db.Decimal(8, 6)
+  calibrationError Decimal       @db.Decimal(8, 6)
+  roi            Decimal         @db.Decimal(8, 5)
+  // Serialized EV-bin distribution (analysis-core EvBin[])
+  evBins         Json            @default("[]")
+  triggeredBy    String          @default("auto") // "auto" | "manual"
+  createdAt      DateTime        @default(now())
+
+  @@index([channel, endDate])
+  @@index([createdAt])
+  @@map("calibration_report")
+  @@schema("calibration")
+}
+
+// Per-channel tuning result produced by the channel-tuning backtest.
+// Replaces the current in-memory-only output of ChannelTuningService.
+model ChannelTuningResult {
+  id              String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  channel         StrategyChannel
+  competitionCode String?
+  configSnapshot  Json                    // serialized ChannelStrategyConfigChannel config
+  betCount        Int
+  roi             Decimal                 @db.Decimal(8, 5)
+  hitRate         Decimal                 @db.Decimal(5, 4)
+  maxDrawdown     Decimal                 @db.Decimal(8, 5)
+  // Whether this result beat the current prod config (for auto-apply gating)
+  improved        Boolean                 @default(false)
+  appliedAt       DateTime?
+  createdAt       DateTime                @default(now())
+
+  @@index([channel, createdAt])
+  @@map("channel_tuning_result")
+  @@schema("calibration")
 }

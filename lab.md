@@ -183,16 +183,23 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
       est désormais la source de vérité unique du format de données ML ; toute dérive casse
       le typecheck.
 
-### Étape 5 — Domaine calibration sur schéma dédié (DB unique)
+### Étape 5 — Domaine calibration sur schéma dédié (DB unique) ✅ code (29 juin 2026)
 
-- [ ] Migration Prisma : schéma `calibration` (Postgres `schema`) regroupant les tables
-      de calibration/backtest lourdes (rapports, runs, courbes de fiabilité), `ModelRun`
-      et `Fixture` restant dans le schéma `public` (jointures **intra-base**).
-- [ ] Module NestJS `calibration` : compose metrics (noyau) + persistance (repository) +
-      déclencheurs existants (auto-apply `AdjustmentProposal`, ré-entraînement ML).
-- [ ] Politique de rétention/volumétrie : réutiliser le pattern worker de rétention
-      `OddsSnapshot` ; (re)considérer le partitionnement uniquement à 1M+ lignes (déjà
-      acté en Phase 3).
+- [x] **schema.prisma** : `multiSchema` activé (`schemas = ["public", "calibration"]`).
+      `AdjustmentProposal` + `MarketSuspension` passent en `@@schema("calibration")`.
+      Deux nouveaux modèles ajoutés dans `calibration` schema :
+        - `CalibrationReport` — snapshot de métriques par canal (Brier, calibrationError, roi, evBins)
+        - `ChannelTuningResult` — résultat du backtest de tuning par canal/config
+      Tous les modèles/enums existants ont reçu `@@schema("public")` explicite.
+      **⚠️ Migration en attente** : exécuter `prisma migrate dev --name add-calibration-schema`
+      puis `prisma generate` via le CLI utilisateur pour générer les types Prisma.
+- [x] **Module NestJS `calibration`** : `CalibrationModule` + `CalibrationRepository` créés
+      dans `apps/backend/src/modules/calibration/`. Le repository expose `saveReport`,
+      `listReports`, `saveTuningResult`, `listTuningResults` — prêt pour l'injection dans
+      `AdjustmentService` et `ChannelTuningService` après la migration.
+      Bridge de types (`calibration-prisma.types.ts`) garantit le typecheck avant génération.
+- [ ] **Politique de rétention/volumétrie** : réutiliser le pattern worker de rétention
+      `OddsSnapshot` ; (re)considérer le partitionnement uniquement à 1M+ lignes.
 
 ### Étape 6 — Gate de validation avant suppression du legacy
 
