@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 import {
   type DerivedMarketsProba,
   type FirstHalfMarkets,
@@ -7,7 +7,7 @@ import {
   isHalfTimeFullTimePick,
   outcomeFromScores,
   type ThreeWayProba,
-} from './markets';
+} from "./markets";
 
 export function poissonProba(
   lambdaHome: number,

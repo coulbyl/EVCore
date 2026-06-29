@@ -1,9 +1,9 @@
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 // DOMINANT picks are rejected when the argmax outcome leads the 2nd-best by less
 // than this margin — prevents "barely-DOMINANT" picks where all three outcomes
 // cluster near 33% (model has no real conviction).
-export const DOMINANT_MIN_MARGIN = new Decimal('0.05');
+export const DOMINANT_MIN_MARGIN = new Decimal("0.05");
 
 export type ChannelStrategyLeagueConfig = {
   enabled: boolean;
@@ -11,7 +11,7 @@ export type ChannelStrategyLeagueConfig = {
   minSampleN: number;
 };
 
-export type ChannelStrategyConfigChannel = 'DOMINANT' | 'DRAW' | 'BTTS';
+export type ChannelStrategyConfigChannel = "DOMINANT" | "DRAW" | "BTTS";
 
 type ChannelStrategyConfigMap = Partial<
   Record<ChannelStrategyConfigChannel, ChannelStrategyLeagueConfig>
@@ -48,7 +48,7 @@ export const BTTS_NO_CONFIG = {
 } as const;
 
 export const CHANNEL_STRATEGY_CONFIG_CHANNELS: ChannelStrategyConfigChannel[] =
-  ['DOMINANT', 'DRAW', 'BTTS'];
+  ["DOMINANT", "DRAW", "BTTS"];
 
 export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
   {
@@ -414,7 +414,7 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
 // ─────────────────────────────────────────────
 
 export type GoalsLine = 1.5 | 2.5 | 3.5 | 4.5;
-export type GoalsSide = 'OVER' | 'UNDER';
+export type GoalsSide = "OVER" | "UNDER";
 
 export type GoalsLineConfig = {
   line: GoalsLine;
@@ -457,21 +457,21 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.78,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.57,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.53,
         minSampleN: 15,
@@ -483,35 +483,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.67,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.49,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.85,
         minSampleN: 15,
@@ -523,28 +523,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.44,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.46,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
@@ -556,28 +556,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.74,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.52,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.57,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.75,
         minSampleN: 15,
@@ -589,35 +589,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.46,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.44,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.66,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
@@ -629,28 +629,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.76,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.6,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.77,
         minSampleN: 15,
@@ -662,28 +662,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.68,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
@@ -695,28 +695,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.67,
         minSampleN: 15,
@@ -728,28 +728,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.79,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.55,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.56,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.75,
         minSampleN: 15,
@@ -761,28 +761,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.75,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.52,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.8,
         minSampleN: 15,
@@ -794,28 +794,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
@@ -827,28 +827,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.75,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.62,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.77,
         minSampleN: 15,
@@ -860,35 +860,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.71,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
@@ -900,28 +900,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.68,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.43,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.47,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
@@ -933,35 +933,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.59,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.66,
         minSampleN: 15,
@@ -973,35 +973,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.66,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.71,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.84,
         minSampleN: 15,
@@ -1013,35 +1013,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.72,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.49,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.79,
         minSampleN: 15,
@@ -1053,35 +1053,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.49,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.6,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.74,
         minSampleN: 15,
@@ -1093,35 +1093,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.43,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.47,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
@@ -1133,28 +1133,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.76,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.55,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.58,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.74,
         minSampleN: 15,
@@ -1166,28 +1166,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.4,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
@@ -1199,28 +1199,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.74,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.57,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.76,
         minSampleN: 15,
@@ -1232,28 +1232,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.77,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.56,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.58,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.74,
         minSampleN: 15,
@@ -1265,28 +1265,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.77,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.6,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.78,
         minSampleN: 15,
@@ -1298,35 +1298,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.71,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.45,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.65,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
@@ -1338,35 +1338,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.8,
         minSampleN: 15,
@@ -1378,28 +1378,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.65,
         minSampleN: 15,
@@ -1411,35 +1411,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.68,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.43,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.47,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.84,
         minSampleN: 15,
@@ -1451,35 +1451,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.4,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.7,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.84,
         minSampleN: 15,
@@ -1491,35 +1491,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.69,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.79,
         minSampleN: 15,
@@ -1531,21 +1531,21 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.76,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.59,
         minSampleN: 15,
@@ -1557,21 +1557,21 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.75,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
@@ -1583,35 +1583,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.49,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.65,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.8,
         minSampleN: 15,
@@ -1623,35 +1623,35 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.71,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
       },
       {
         line: 4.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.81,
         minSampleN: 15,
@@ -1663,28 +1663,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.72,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.48,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.42,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
@@ -1696,21 +1696,21 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.73,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.54,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.57,
         minSampleN: 15,
@@ -1722,28 +1722,28 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.72,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.41,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.64,
         minSampleN: 15,
@@ -1755,21 +1755,21 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     lines: [
       {
         line: 1.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.72,
         minSampleN: 15,
       },
       {
         line: 2.5,
-        side: 'OVER',
+        side: "OVER",
         enabled: true,
         threshold: 0.51,
         minSampleN: 15,
       },
       {
         line: 3.5,
-        side: 'UNDER',
+        side: "UNDER",
         enabled: true,
         threshold: 0.63,
         minSampleN: 15,
@@ -1840,7 +1840,7 @@ export function getChannelStrategyConfig(
 
   if (channelConfig) return channelConfig;
 
-  if (channel === 'DRAW') return DRAW_DEFAULT;
-  if (channel === 'BTTS') return BTTS_DEFAULT;
+  if (channel === "DRAW") return DRAW_DEFAULT;
+  if (channel === "BTTS") return BTTS_DEFAULT;
   return DOMINANT_DEFAULT;
 }

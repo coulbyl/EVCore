@@ -1,24 +1,29 @@
-import type Decimal from 'decimal.js';
-import { Market } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { priceForSelection } from '../selection';
+import type Decimal from "decimal.js";
+import { Market } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { priceForSelection } from "../selection";
 import {
   getGoalsLineConfigs,
   type GoalsLine,
   type GoalsLineConfig,
   type GoalsSide,
-} from './config';
-import type { ChannelStrategy, StrategyContext, StrategyDecision, StrategySelection } from './types';
-import type { MatchProbabilities } from '../selection/types';
+} from "./config";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+  StrategySelection,
+} from "./types";
+import type { MatchProbabilities } from "../selection/types";
 
 // Maps a (line, side) to the OVER_UNDER pick string used across odds-mapping,
 // settlement and the odds snapshot. The 2.5 line keeps the bare OVER/UNDER
 // labels for historical reasons; the others carry the line in the name.
 const GOALS_PICK: Record<GoalsLine, Record<GoalsSide, string>> = {
-  1.5: { OVER: 'OVER_1_5', UNDER: 'UNDER_1_5' },
-  2.5: { OVER: 'OVER', UNDER: 'UNDER' },
-  3.5: { OVER: 'OVER_3_5', UNDER: 'UNDER_3_5' },
-  4.5: { OVER: 'OVER_4_5', UNDER: 'UNDER_4_5' },
+  1.5: { OVER: "OVER_1_5", UNDER: "UNDER_1_5" },
+  2.5: { OVER: "OVER", UNDER: "UNDER" },
+  3.5: { OVER: "OVER_3_5", UNDER: "UNDER_3_5" },
+  4.5: { OVER: "OVER_4_5", UNDER: "UNDER_4_5" },
 };
 
 function goalsProbability(
@@ -27,12 +32,12 @@ function goalsProbability(
   side: GoalsSide,
 ): Decimal {
   if (line === 1.5)
-    return side === 'OVER' ? probabilities.over15 : probabilities.under15;
+    return side === "OVER" ? probabilities.over15 : probabilities.under15;
   if (line === 2.5)
-    return side === 'OVER' ? probabilities.over25 : probabilities.under25;
+    return side === "OVER" ? probabilities.over25 : probabilities.under25;
   if (line === 3.5)
-    return side === 'OVER' ? probabilities.over35 : probabilities.under35;
-  return side === 'OVER' ? probabilities.over45 : probabilities.under45;
+    return side === "OVER" ? probabilities.over35 : probabilities.under35;
+  return side === "OVER" ? probabilities.over45 : probabilities.under45;
 }
 
 type GoalsCandidate = {
@@ -106,7 +111,7 @@ export function decideGoals(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: 'below_threshold',
+      reasonCode: "below_threshold",
       reasonDetails: bestBelow ?? {},
       selections: [],
     };
@@ -114,7 +119,13 @@ export function decideGoals(
 
   candidates.sort(compareGoalsCandidates);
   const best = candidates[0];
-  if (!best) return { channel, status: CHANNEL_DECISION_STATUS.REJECTED, reasonCode: 'no_candidates', selections: [] };
+  if (!best)
+    return {
+      channel,
+      status: CHANNEL_DECISION_STATUS.REJECTED,
+      reasonCode: "no_candidates",
+      selections: [],
+    };
   const selection: StrategySelection = {
     market: Market.OVER_UNDER,
     pick: best.pick,

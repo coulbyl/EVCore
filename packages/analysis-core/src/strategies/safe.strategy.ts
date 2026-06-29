@@ -1,7 +1,11 @@
-import { Market } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { buildBetPickKey, selectSafeValuePick } from '../selection';
-import type { ChannelStrategy, StrategyContext, StrategyDecision } from './types';
+import { Market } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { buildBetPickKey, selectSafeValuePick } from "../selection";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+} from "./types";
 
 const SAFE_MARKETS: readonly Market[] = [
   Market.ONE_X_TWO,
@@ -29,7 +33,7 @@ export class SafeStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'score_below_threshold',
+        reasonCode: "score_below_threshold",
         reasonDetails: {
           score: context.deterministicScore.toNumber(),
           threshold: context.modelScoreThreshold.toNumber(),
@@ -62,7 +66,7 @@ export class SafeStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'no_safe_candidate',
+        reasonCode: "no_safe_candidate",
         selections: [],
       };
     }

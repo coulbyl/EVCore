@@ -1,6 +1,6 @@
 // Pure scoring/calibration helpers — no I/O, no infra dependencies.
 
-export type OneXTwoOutcome = 'HOME' | 'DRAW' | 'AWAY';
+export type OneXTwoOutcome = "HOME" | "DRAW" | "AWAY";
 
 export type OneXTwoPrediction = {
   home: number;
@@ -18,18 +18,18 @@ export function getOneXTwoOutcome(
   homeScore: number,
   awayScore: number,
 ): OneXTwoOutcome {
-  if (homeScore > awayScore) return 'HOME';
-  if (homeScore < awayScore) return 'AWAY';
-  return 'DRAW';
+  if (homeScore > awayScore) return "HOME";
+  if (homeScore < awayScore) return "AWAY";
+  return "DRAW";
 }
 
 export function brierScoreOneXTwo(predictions: OneXTwoPrediction[]): number {
   if (predictions.length === 0) return 0;
 
   const sum = predictions.reduce((acc, p) => {
-    const oHome = p.actual === 'HOME' ? 1 : 0;
-    const oDraw = p.actual === 'DRAW' ? 1 : 0;
-    const oAway = p.actual === 'AWAY' ? 1 : 0;
+    const oHome = p.actual === "HOME" ? 1 : 0;
+    const oDraw = p.actual === "DRAW" ? 1 : 0;
+    const oAway = p.actual === "AWAY" ? 1 : 0;
     return (
       acc +
       (p.home - oHome) ** 2 +

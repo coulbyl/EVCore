@@ -80,7 +80,8 @@ function ctx(
       svMinOdds: new Decimal('1.15'),
       htftCalibrated: false,
       pickDirectionProbabilityThreshold: () => new Decimal('0'),
-      pickEvFloor: (_m: unknown, _p: unknown, leagueFloor: Decimal) => leagueFloor,
+      pickEvFloor: (_m: unknown, _p: unknown, leagueFloor: Decimal) =>
+        leagueFloor,
       pickEvSoftCap: () => new Decimal('0.90'),
       pickMinSelectionOdds: () => new Decimal('1.15'),
       pickMaxSelectionOdds: () => null,

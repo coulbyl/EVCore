@@ -1,8 +1,12 @@
-import Decimal from 'decimal.js';
-import type { Market, StrategyChannel } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { AVOID_CONFIG } from './config';
-import type { ChannelStrategy, StrategyContext, StrategyDecision } from './types';
+import Decimal from "decimal.js";
+import type { Market, StrategyChannel } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { AVOID_CONFIG } from "./config";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+} from "./types";
 
 type AvoidOffender = {
   channel: StrategyChannel;
@@ -53,7 +57,7 @@ export function decideAvoid(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: 'no_avoid_signal',
+      reasonCode: "no_avoid_signal",
       selections: [],
     };
   }
@@ -61,7 +65,7 @@ export function decideAvoid(
   return {
     channel,
     status: CHANNEL_DECISION_STATUS.SELECTED,
-    reasonCode: 'extreme_divergence',
+    reasonCode: "extreme_divergence",
     reasonDetails: { maxEdge: config.maxEdge, offenders },
     selections: [],
   };

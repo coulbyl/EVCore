@@ -1,6 +1,6 @@
-import Decimal from 'decimal.js';
-import { asNumber, clamp } from '../math';
-import type { MatchProbabilities } from '../selection/types';
+import Decimal from "decimal.js";
+import { asNumber, clamp } from "../math";
+import type { MatchProbabilities } from "../selection/types";
 
 export type TeamStatsInput = {
   recentForm: unknown;

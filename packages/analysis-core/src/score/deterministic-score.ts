@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 export type DeterministicFeatures = {
   recentForm: Decimal.Value;
@@ -18,10 +18,10 @@ export type FeatureWeights = {
 // Home-Away 25% / League volatility 15%. The learning loop may override these
 // per market via an applied AdjustmentProposal; this const is the default.
 export const FEATURE_WEIGHTS = {
-  recentForm: new Decimal('0.30'),
-  xg: new Decimal('0.30'),
-  domExtPerf: new Decimal('0.25'),
-  leagueVolat: new Decimal('0.15'),
+  recentForm: new Decimal("0.30"),
+  xg: new Decimal("0.30"),
+  domExtPerf: new Decimal("0.25"),
+  leagueVolat: new Decimal("0.15"),
 } as const;
 
 export function calculateDeterministicScore(

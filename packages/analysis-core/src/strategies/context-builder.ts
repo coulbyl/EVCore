@@ -1,14 +1,18 @@
-import type Decimal from 'decimal.js';
-import type { Market, ModelRunPhase, SportType } from '../types';
-import { MODEL_RUN_PHASE } from '../types';
-import type { EvaluatedPick, FullOddsSnapshot, MatchProbabilities } from '../selection/types';
-import type { SelectionConfig } from '../selection/config';
+import type Decimal from "decimal.js";
+import type { Market, ModelRunPhase, SportType } from "../types";
+import { MODEL_RUN_PHASE } from "../types";
+import type {
+  EvaluatedPick,
+  FullOddsSnapshot,
+  MatchProbabilities,
+} from "../selection/types";
+import type { SelectionConfig } from "../selection/config";
 import type {
   ContextSignals,
   EvaluatedMarket,
   FixtureSnapshot,
   StrategyContext,
-} from './types';
+} from "./types";
 
 export type BuildStrategyContextInput = {
   fixture: FixtureSnapshot;
@@ -35,7 +39,7 @@ export function buildStrategyContext(
   return {
     fixture: input.fixture,
     competitionCode: input.competitionCode,
-    sport: input.sport ?? 'FOOTBALL',
+    sport: input.sport ?? "FOOTBALL",
     phase: input.phase ?? MODEL_RUN_PHASE.PRE_KICKOFF,
     deterministicScore: input.deterministicScore,
     probabilities: input.probabilities,

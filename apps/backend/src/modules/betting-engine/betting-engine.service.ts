@@ -193,7 +193,11 @@ export class BettingEngineService {
       features,
       weights,
     );
-    const lambda = deriveLambdas(homeStats, awayStats, buildLambdaConfig(competitionCode));
+    const lambda = deriveLambdas(
+      homeStats,
+      awayStats,
+      buildLambdaConfig(competitionCode),
+    );
     const probabilities = rebalanceThreeWayProbabilities({
       probabilities: this.computeProbabilities(lambda.home, lambda.away),
       homeStats,

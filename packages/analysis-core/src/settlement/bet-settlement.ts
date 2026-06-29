@@ -1,6 +1,6 @@
-import { BetStatus, Market } from '../types';
-import { outcomeFromScores } from '../probability/markets';
-import { PICK_CONDITIONS, type ComboPick } from '../probability/combo';
+import { BetStatus, Market } from "../types";
+import { outcomeFromScores } from "../probability/markets";
+import { PICK_CONDITIONS, type ComboPick } from "../probability/combo";
 
 type ResolveHalfTimeFullTimeInput = {
   pick: string;
@@ -44,7 +44,7 @@ export function resolveHalfTimeFullTimeBetStatus(
     return BetStatus.VOID;
   }
 
-  const [expectedHalf, expectedFull] = input.pick.split('_');
+  const [expectedHalf, expectedFull] = input.pick.split("_");
   if (!expectedHalf || !expectedFull) return BetStatus.VOID;
 
   const halfOutcome = outcomeFromScores(input.homeHtScore, input.awayHtScore);
@@ -96,8 +96,8 @@ export function resolveEarlyBetStatus({
 
   if (market === Market.BTTS) {
     const bothScored = homeScore >= 1 && awayScore >= 1;
-    if (pick === 'YES') return bothScored ? BetStatus.WON : null;
-    if (pick === 'NO') return bothScored ? BetStatus.LOST : null;
+    if (pick === "YES") return bothScored ? BetStatus.WON : null;
+    if (pick === "NO") return bothScored ? BetStatus.LOST : null;
     return null;
   }
 

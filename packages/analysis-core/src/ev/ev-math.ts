@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 // Formule EV canonique — source unique pour le service et le backtest
 // EV = (probabilité estimée × cote décimale) − 1
@@ -15,7 +15,7 @@ export function calculateEV(
 // invalide) — jamais nourrir ce calcul d'une cote inventée.
 export function bookmakerMargin(odds: readonly Decimal.Value[]): Decimal {
   if (odds.length === 0) {
-    throw new RangeError('bookmakerMargin: empty odds array');
+    throw new RangeError("bookmakerMargin: empty odds array");
   }
   const total = odds.reduce<Decimal>((acc, o) => {
     const dec = new Decimal(o);
@@ -36,7 +36,7 @@ export function bookmakerMargin(odds: readonly Decimal.Value[]): Decimal {
 // Lève sur cote ≤ 1 (cf. `bookmakerMargin`).
 export function removeOverround(odds: readonly Decimal.Value[]): Decimal[] {
   if (odds.length === 0) {
-    throw new RangeError('removeOverround: empty odds array');
+    throw new RangeError("removeOverround: empty odds array");
   }
   const implied = odds.map((o) => {
     const dec = new Decimal(o);

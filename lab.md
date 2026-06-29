@@ -162,11 +162,9 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 - [x] `selection/` ← `pick-evaluation.ts`, `pick-validation.ts`, `combo-pricing.ts`.
       Config `SelectionConfig` injectée par app (`buildSelectionConfig`). Shim backend :
       `selection/pick-evaluation.ts`.
-- [x] `strategies/` ← 7 stratégies (VALUE/SAFE/DOMINANT/BTTS/DRAW/GOALS/CONSENSUS/AVOID)
-      + orchestrator + registry + config (~1 800 lignes). `StrategyContext` enrichi de
+- [x] `strategies/` ← 7 stratégies (VALUE/SAFE/DOMINANT/BTTS/DRAW/GOALS/CONSENSUS/AVOID) + orchestrator + registry + config (~1 800 lignes). `StrategyContext` enrichi de
       `selectionConfig` + `modelScoreThreshold` injectés app-side. Shims backend complets.
-- [x] `settlement/` ← `resolvePickBetStatus`, `resolveComboPickBetStatus`, `resolveEarlyBetStatus`
-      + helpers. `bet-settlement.service.ts` (Prisma) appelle le noyau.
+- [x] `settlement/` ← `resolvePickBetStatus`, `resolveComboPickBetStatus`, `resolveEarlyBetStatus` + helpers. `bet-settlement.service.ts` (Prisma) appelle le noyau.
 - [x] `metrics/` ← Brier score, calibration error (`scoring.ts`) + flatRoi, maxDrawdown,
       evBins (`roi.ts`). Shims backend : `backtest.report.ts`, `backtest.metrics.ts`.
 - [x] Après chaque tranche : 616/616 tests verts, lint + typecheck propres, golden specs
@@ -187,9 +185,7 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
 
 - [x] **schema.prisma** : `multiSchema` activé (`schemas = ["public", "calibration"]`).
       `AdjustmentProposal` + `MarketSuspension` passent en `@@schema("calibration")`.
-      Deux nouveaux modèles ajoutés dans `calibration` schema :
-        - `CalibrationReport` — snapshot de métriques par canal (Brier, calibrationError, roi, evBins)
-        - `ChannelTuningResult` — résultat du backtest de tuning par canal/config
+      Deux nouveaux modèles ajoutés dans `calibration` schema : - `CalibrationReport` — snapshot de métriques par canal (Brier, calibrationError, roi, evBins) - `ChannelTuningResult` — résultat du backtest de tuning par canal/config
       Tous les modèles/enums existants ont reçu `@@schema("public")` explicite.
       **⚠️ Migration en attente** : exécuter `prisma migrate dev --name add-calibration-schema`
       puis `prisma generate` via le CLI utilisateur pour générer les types Prisma.
@@ -211,7 +207,7 @@ const _check: AssertEqual<PrismaMarket, DomainMarket> = true; // build rouge si 
       passent (616/616) avec les mêmes snapshots qu'avant la migration. Aucune dérive de
       comportement.
 - [x] **Zéro logique résiduelle dans les shims** : vérification manuelle — toutes les
-      strategy/*.ts et math/probability.ts ne contiennent aucune ligne de logique (0 lignes
+      strategy/\*.ts et math/probability.ts ne contiennent aucune ligne de logique (0 lignes
       hors exports/commentaires). `analysis-core` architecture guard passe.
 - [x] **Rollback disponible** : tout `AdjustmentProposal` peut être annulé via
       `POST /adjustment/:id/rollback` (logique inchangée, couverte par les specs).

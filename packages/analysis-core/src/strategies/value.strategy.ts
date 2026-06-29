@@ -1,8 +1,15 @@
-import { Market } from '../types';
-import type { EvaluatedPick, ViablePick } from '../selection/types';
-import { FALLBACK_MIN_QUALITY_SCORE, LINE_MOVEMENT_THRESHOLD } from '../selection/constants';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import type { ChannelStrategy, StrategyContext, StrategyDecision } from './types';
+import { Market } from "../types";
+import type { EvaluatedPick, ViablePick } from "../selection/types";
+import {
+  FALLBACK_MIN_QUALITY_SCORE,
+  LINE_MOVEMENT_THRESHOLD,
+} from "../selection/constants";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+} from "./types";
 
 const ALL_MARKETS: readonly Market[] = [
   Market.ONE_X_TWO,
@@ -33,7 +40,7 @@ export class ValueStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'score_below_threshold',
+        reasonCode: "score_below_threshold",
         reasonDetails: {
           score: context.deterministicScore.toNumber(),
           threshold: context.modelScoreThreshold.toNumber(),
@@ -49,7 +56,7 @@ export class ValueStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'no_viable_pick',
+        reasonCode: "no_viable_pick",
         selections: [],
       };
     }
@@ -61,7 +68,7 @@ export class ValueStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'line_movement',
+        reasonCode: "line_movement",
         reasonDetails: { movement: context.signals.lineMovement },
         selections: [],
       };

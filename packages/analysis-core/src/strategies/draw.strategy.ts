@@ -1,8 +1,12 @@
-import Decimal from 'decimal.js';
-import { Market } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { getChannelStrategyConfig } from './config';
-import type { ChannelStrategy, StrategyContext, StrategyDecision } from './types';
+import Decimal from "decimal.js";
+import { Market } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { getChannelStrategyConfig } from "./config";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+} from "./types";
 
 export class DrawStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.DRAW;
@@ -10,7 +14,7 @@ export class DrawStrategy implements ChannelStrategy {
 
   evaluate(context: StrategyContext): StrategyDecision {
     const ch = this.channel;
-    const config = getChannelStrategyConfig('DRAW', context.competitionCode);
+    const config = getChannelStrategyConfig("DRAW", context.competitionCode);
     if (!config?.enabled) {
       return {
         channel: ch,
@@ -35,7 +39,7 @@ export class DrawStrategy implements ChannelStrategy {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'below_threshold',
+        reasonCode: "below_threshold",
         reasonDetails: {
           impliedProbability: impliedProb.toNumber(),
           threshold: config.threshold,
@@ -50,7 +54,7 @@ export class DrawStrategy implements ChannelStrategy {
       selections: [
         {
           market: Market.ONE_X_TWO,
-          pick: 'DRAW',
+          pick: "DRAW",
           probability: impliedProb,
           odds: drawOdds,
           impliedProbability: impliedProb,

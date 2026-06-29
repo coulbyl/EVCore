@@ -3,4 +3,4 @@ export {
   bookmakerMargin,
   removeOverround,
   calculateKellyStakePct,
-} from './ev-math';
+} from "./ev-math";

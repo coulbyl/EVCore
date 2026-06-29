@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from "decimal.js";
 
 export type ThreeWayProba = {
   home: Decimal;
@@ -23,7 +23,7 @@ export type DerivedMarketsProba = {
   htft: Record<HalfTimeFullTimePick, Decimal>;
   // First-half derived markets
   ouHT: Partial<
-    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
+    Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
 };
@@ -31,31 +31,31 @@ export type DerivedMarketsProba = {
 export type FirstHalfMarkets = {
   htft: Record<HalfTimeFullTimePick, Decimal>;
   ouHT: Partial<
-    Record<'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5', Decimal>
+    Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
 };
 
 export const HALF_TIME_FULL_TIME_PICKS = [
-  'HOME_HOME',
-  'HOME_DRAW',
-  'HOME_AWAY',
-  'DRAW_HOME',
-  'DRAW_DRAW',
-  'DRAW_AWAY',
-  'AWAY_HOME',
-  'AWAY_DRAW',
-  'AWAY_AWAY',
+  "HOME_HOME",
+  "HOME_DRAW",
+  "HOME_AWAY",
+  "DRAW_HOME",
+  "DRAW_DRAW",
+  "DRAW_AWAY",
+  "AWAY_HOME",
+  "AWAY_DRAW",
+  "AWAY_AWAY",
 ] as const;
 export type HalfTimeFullTimePick = (typeof HALF_TIME_FULL_TIME_PICKS)[number];
 
 export function outcomeFromScores(
   homeScore: number,
   awayScore: number,
-): 'HOME' | 'DRAW' | 'AWAY' {
-  if (homeScore > awayScore) return 'HOME';
-  if (homeScore < awayScore) return 'AWAY';
-  return 'DRAW';
+): "HOME" | "DRAW" | "AWAY" {
+  if (homeScore > awayScore) return "HOME";
+  if (homeScore < awayScore) return "AWAY";
+  return "DRAW";
 }
 
 export function isHalfTimeFullTimePick(

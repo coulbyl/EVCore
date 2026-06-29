@@ -1,13 +1,17 @@
-import type Decimal from 'decimal.js';
+import type Decimal from "decimal.js";
 import type {
   ChannelDecisionStatus,
   Market,
   ModelRunPhase,
   SportType,
   StrategyChannel,
-} from '../types';
-import type { EvaluatedPick, FullOddsSnapshot, MatchProbabilities } from '../selection/types';
-import type { SelectionConfig } from '../selection/config';
+} from "../types";
+import type {
+  EvaluatedPick,
+  FullOddsSnapshot,
+  MatchProbabilities,
+} from "../selection/types";
+import type { SelectionConfig } from "../selection/config";
 
 export type FixtureSnapshot = {
   id: string;

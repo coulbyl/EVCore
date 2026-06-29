@@ -2,12 +2,12 @@ import {
   META_STRATEGY_CHANNELS,
   STRATEGY_CHANNEL,
   type StrategyChannel,
-} from '../types';
+} from "../types";
 import type {
   ChannelStrategy,
   StrategyContext,
   StrategyDecision,
-} from './types';
+} from "./types";
 
 export { STRATEGY_CHANNEL };
 
@@ -69,7 +69,7 @@ export class ChannelStrategyOrchestrator {
       if (!strategy.allowedMarkets.includes(sel.market)) {
         throw new Error(
           `Strategy ${strategy.channel} returned selection on disallowed market ${sel.market}. ` +
-            `Allowed: ${strategy.allowedMarkets.join(', ')}`,
+            `Allowed: ${strategy.allowedMarkets.join(", ")}`,
         );
       }
     }

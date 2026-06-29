@@ -1,11 +1,15 @@
-import Decimal from 'decimal.js';
-import { Market } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { priceForSelection } from '../selection';
-import { BTTS_NO_CONFIG, getChannelStrategyConfig } from './config';
-import type { ChannelStrategy, StrategyContext, StrategyDecision } from './types';
+import Decimal from "decimal.js";
+import { Market } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { priceForSelection } from "../selection";
+import { BTTS_NO_CONFIG, getChannelStrategyConfig } from "./config";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+} from "./types";
 
-type BttsCandidate = { pick: 'YES' | 'NO'; probability: Decimal };
+type BttsCandidate = { pick: "YES" | "NO"; probability: Decimal };
 
 export class BttsStrategy implements ChannelStrategy {
   readonly channel = STRATEGY_CHANNEL.BTTS;
@@ -15,7 +19,7 @@ export class BttsStrategy implements ChannelStrategy {
     const ch = this.channel;
     // YES is calibrated per league; NO is calibrated separately and globally
     // (observation only — see BTTS_NO_CONFIG). Both live on the BTTS market.
-    const yesConfig = getChannelStrategyConfig('BTTS', context.competitionCode);
+    const yesConfig = getChannelStrategyConfig("BTTS", context.competitionCode);
     const noConfig = BTTS_NO_CONFIG;
 
     if (!yesConfig.enabled && !noConfig.enabled) {
@@ -29,17 +33,17 @@ export class BttsStrategy implements ChannelStrategy {
     const { bttsYes, bttsNo } = context.probabilities;
     const candidates: BttsCandidate[] = [];
     if (yesConfig.enabled && !bttsYes.lessThan(yesConfig.threshold)) {
-      candidates.push({ pick: 'YES', probability: bttsYes });
+      candidates.push({ pick: "YES", probability: bttsYes });
     }
     if (noConfig.enabled && !bttsNo.lessThan(noConfig.threshold)) {
-      candidates.push({ pick: 'NO', probability: bttsNo });
+      candidates.push({ pick: "NO", probability: bttsNo });
     }
 
     if (candidates.length === 0) {
       return {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
-        reasonCode: 'below_threshold',
+        reasonCode: "below_threshold",
         reasonDetails: {
           bttsYes: bttsYes.toNumber(),
           yesThreshold: yesConfig.enabled ? yesConfig.threshold : null,

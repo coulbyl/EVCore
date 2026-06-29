@@ -6,18 +6,21 @@ export type {
   StrategySelection,
   StrategyDecision,
   ChannelStrategy,
-} from './types';
-export { buildStrategyContext, type BuildStrategyContextInput } from './context-builder';
-export { ChannelStrategyOrchestrator } from './orchestrator';
-export { V1_STRATEGIES, createChannelStrategyOrchestrator } from './registry';
-export { ValueStrategy } from './value.strategy';
-export { SafeStrategy } from './safe.strategy';
-export { DominantStrategy } from './dominant.strategy';
-export { BttsStrategy } from './btts.strategy';
-export { DrawStrategy } from './draw.strategy';
-export { GoalsStrategy, decideGoals } from './goals.strategy';
-export { ConsensusStrategy, decideConsensus } from './consensus.strategy';
-export { AvoidStrategy, decideAvoid } from './avoid.strategy';
+} from "./types";
+export {
+  buildStrategyContext,
+  type BuildStrategyContextInput,
+} from "./context-builder";
+export { ChannelStrategyOrchestrator } from "./orchestrator";
+export { V1_STRATEGIES, createChannelStrategyOrchestrator } from "./registry";
+export { ValueStrategy } from "./value.strategy";
+export { SafeStrategy } from "./safe.strategy";
+export { DominantStrategy } from "./dominant.strategy";
+export { BttsStrategy } from "./btts.strategy";
+export { DrawStrategy } from "./draw.strategy";
+export { GoalsStrategy, decideGoals } from "./goals.strategy";
+export { ConsensusStrategy, decideConsensus } from "./consensus.strategy";
+export { AvoidStrategy, decideAvoid } from "./avoid.strategy";
 export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
@@ -34,4 +37,4 @@ export {
   type GoalsSide,
   type GoalsLineConfig,
   type GoalsLeagueConfig,
-} from './config';
+} from "./config";

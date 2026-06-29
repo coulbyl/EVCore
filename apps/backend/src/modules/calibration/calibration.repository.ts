@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
-import type { CalibrationReport, ChannelTuningResult, StrategyChannel } from '@evcore/db';
+import type {
+  CalibrationReport,
+  ChannelTuningResult,
+  StrategyChannel,
+} from '@evcore/db';
 import type Decimal from 'decimal.js';
 import type { EvBin } from '@evcore/analysis-core';
 

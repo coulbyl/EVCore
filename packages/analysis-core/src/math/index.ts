@@ -1,1 +1,1 @@
-export { asNumber, clamp } from './number';
+export { asNumber, clamp } from "./number";

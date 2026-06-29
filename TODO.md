@@ -150,7 +150,7 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
 - [x] **Étape 1 — EV au cœur du coupon** (2026-06-21) : `legEV` sur `ScoredPick`
       (`calculateEV(calibratedProbability, oddsSnapshot)`), `FALLBACK_ODDS` supprimé
       (jambes sans cote réelle exclues de `compose`), `couponEV =
-  calculateEV(jointProbability, combinedOdds)` calculé/filtré (`minCouponEV`
+calculateEV(jointProbability, combinedOdds)` calculé/filtré (`minCouponEV`
       0.05) et tri value-driven (`compareCouponsByEV` : EV ↓, proba jointe, legs ↑).
       `couponEV`/`legEV` tracés dans `reasoning`/`featureSnapshot`. backend
       typecheck/lint/556 tests ✅. Détail :
@@ -164,8 +164,8 @@ Prisma `ALTER TYPE "StrategyChannel" RENAME VALUE 'EV' TO 'VALUE'`.
       perte assumée des badges). Helpers legacy
       `channelToPrisma/canalToStrategyChannel/strategyChannelToCanal` supprimés. - **Bug corrigé** : les filtres `canal` du pick-engine comparaient `'EV'`
       à `pick.canal === 'VALUE'` (jamais un match) — désormais alignés. - **Rebranchement** : `getChannelPerformance/getLeaguePerformance/
-      getSegmentPerformance/getPredictionOutcomes/getEdgeAnalysis/
-      findChannelLeagueHitRate` lisent `channel_selection` (helper
+    getSegmentPerformance/getPredictionOutcomes/getEdgeAnalysis/
+    findChannelLeagueHitRate` lisent `channel_selection` (helper
       `settledChannelRows`) pour **les 5 canaux** au lieu de `Bet` (EV/SV
       seulement) — DOMINANT/DRAW/BTTS renvoyaient toujours vide. - backend typecheck/lint/571 tests ✅ · web typecheck/lint ✅.
 - [x] **Dette front séparée** (2026-06-21) : `domains/ai-engine` → `domains/coupon` + imports ; chemins API périmés corrigés (`/ai-engine/coupons` → `/coupons`,
@@ -253,7 +253,7 @@ documentés — réel staking-eligible EV/SAFE vs virtuel prédiction) **faites*
 Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régénéré.
 
 - [x] **Vue ROI roulante par canal × EV-bin** (outil de promotion) : `GET
-    /coupons/roi` (`CouponRoiService`) — ROI mise plate par canal × bin d'EV
+  /coupons/roi` (`CouponRoiService`) — ROI mise plate par canal × bin d'EV
       depuis `channel_selection` settlé (tous canaux), flag `promote` (ROI>0 &
       échantillon ≥ `MIN_BET_COUNT`).
 - [x] **Unification active — staker DRAW** : DRAW entre dans le pool réel via
@@ -562,10 +562,10 @@ Dataset reconstruit sain (cf. § Reprise).
   CANDIDATS, pas config finale. Validation **par saison** obligatoire dans
   le `ChannelTuningService` étendu avant activation (cf. méthodo des
   commentaires datés de la config existante). - [x] Config GOALS (2026-06-22) : sous-forme `GoalsLeagueConfig { lines:
-          [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
+        [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
   `getGoalsLineConfigs`. Candidats du sweep seedés **tous `enabled: false`**
   (en attente validation par saison). - [x] `goals.strategy.ts` (2026-06-22) : fonction pure `decideGoals(context,
-          lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
+        lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
   par ligne → ranking value-first (EV ↓, puis proba pour sélections sans
   cote) → 1 sélection rank 1. Enregistrée `registry.ts` (6e primaire).
   10 tests + orchestrateur à jour. backend typecheck/lint/581 tests ✅. - [x] **Tuning étendu (2026-06-22)** : `BacktestRepository` lit `over25/under25`
@@ -663,6 +663,6 @@ Dataset reconstruit sain (cf. § Reprise).
   mi-temps (argmax `firstHalfWinner`, marché `FIRST_HALF_WINNER` bien coté) :
   seuil ≥0.50 → +14.4% / **−6.4%** / +4.5% (positif 2/3 mais 2024-25 nettement
   négatif) ; ≥0.45 négatif partout. OU-HT trop peu coté (2129 fx). Pas
-  staking-grade. Ré-évaluer si calibration mi-temps dédiée améliorée. > **INSIGHT SYSTÈME consolidé (2026-06-23)** : le modèle **n'a aucun edge > directionnel sur les marchés résultat** — ni 1X2 fin de match (UNDERDOG/ > FAVORITE/CONTRARIAN tous perdants ou artefact) ni vainqueur mi-temps > (FIRST_HALF). **STRUCTUREL, prouvé** : Brier 1X2 modèle 0.633 vs marché > (cotes dévigées) 0.595 sur 26 083 matchs → le marché est un _meilleur > prédicteur_ que notre modèle. Parier nos probas contre la ligne = parier > une estimation moins bonne contre une meilleure : imbattable par construction > (notre modèle xG-Poisson n'utilise qu'un sous-ensemble de l'info que la cote > agrège). Le marché est efficient sur le résultat à tout horizon. La > valeur validée du système vient de : filtrage par accord (CONSENSUS), value > sur le nul (DRAW staké), police de la sur-confiance (AVOID), et prédiction > buts en observation (BTTS/DOMINANT/GOALS). Ne plus tester de canal > « battre le marché sur le résultat » sans une amélioration majeure du modèle.
+  staking-grade. Ré-évaluer si calibration mi-temps dédiée améliorée. > **INSIGHT SYSTÈME consolidé (2026-06-23)** : le modèle **n'a aucun edge > directionnel sur les marchés résultat** — ni 1X2 fin de match (UNDERDOG/ > FAVORITE/CONTRARIAN tous perdants ou artefact) ni vainqueur mi-temps > (FIRST*HALF). **STRUCTUREL, prouvé** : Brier 1X2 modèle 0.633 vs marché > (cotes dévigées) 0.595 sur 26 083 matchs → le marché est un \_meilleur > prédicteur* que notre modèle. Parier nos probas contre la ligne = parier > une estimation moins bonne contre une meilleure : imbattable par construction > (notre modèle xG-Poisson n'utilise qu'un sous-ensemble de l'info que la cote > agrège). Le marché est efficient sur le résultat à tout horizon. La > valeur validée du système vient de : filtrage par accord (CONSENSUS), value > sur le nul (DRAW staké), police de la sur-confiance (AVOID), et prédiction > buts en observation (BTTS/DOMINANT/GOALS). Ne plus tester de canal > « battre le marché sur le résultat » sans une amélioration majeure du modèle.
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
 - [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT

@@ -1,5 +1,5 @@
-import Decimal from 'decimal.js';
-import { Market } from '../types';
+import Decimal from "decimal.js";
+import { Market } from "../types";
 
 export type ComboPick = {
   market1: Market;
@@ -29,9 +29,9 @@ export const PICK_CONDITIONS: Record<
   UNDER_4_5: (h, a) => h + a <= 4,
   YES: (h, a) => h >= 1 && a >= 1, // BTTS YES
   NO: (h, a) => h === 0 || a === 0, // BTTS NO
-  '1X': (h, a) => h >= a,
+  "1X": (h, a) => h >= a,
   X2: (h, a) => a >= h,
-  '12': (h, a) => h !== a,
+  "12": (h, a) => h !== a,
 };
 
 // Joint probability over all goal-score combinations (h, a) satisfying both pick conditions.

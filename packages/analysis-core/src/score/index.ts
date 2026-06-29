@@ -3,8 +3,5 @@ export {
   type FeatureWeights,
   FEATURE_WEIGHTS,
   calculateDeterministicScore,
-} from './deterministic-score';
-export {
-  type MlShadowFeatures,
-  buildMlShadowFeatures,
-} from './ml-features';
+} from "./deterministic-score";
+export { type MlShadowFeatures, buildMlShadowFeatures } from "./ml-features";

@@ -7,11 +7,7 @@ import {
   COMBO_CORRELATION_MAX_FACTOR,
   COMBO_CORRELATION_MIN_FACTOR,
 } from "./constants";
-import type {
-  FullOddsSnapshot,
-  MatchProbabilities,
-  ViablePick,
-} from "./types";
+import type { FullOddsSnapshot, MatchProbabilities, ViablePick } from "./types";
 
 // Validated combo pairs — only combinations that are logically consistent and
 // have positive expected correlation. Impossible combos (HOME+DRAW, etc.) are absent.
@@ -133,7 +129,10 @@ export function getPickOddsFromSnapshot(
   if (market === Market.OVER_UNDER_HT) {
     return odds.ouHtOdds[pick as keyof typeof odds.ouHtOdds] ?? null;
   }
-  if (market === Market.FIRST_HALF_WINNER && odds.firstHalfWinnerOdds !== null) {
+  if (
+    market === Market.FIRST_HALF_WINNER &&
+    odds.firstHalfWinnerOdds !== null
+  ) {
     if (pick === "HOME") return odds.firstHalfWinnerOdds.home;
     if (pick === "DRAW") return odds.firstHalfWinnerOdds.draw;
     if (pick === "AWAY") return odds.firstHalfWinnerOdds.away;

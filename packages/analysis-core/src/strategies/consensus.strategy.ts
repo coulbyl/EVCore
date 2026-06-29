@@ -1,21 +1,26 @@
-import Decimal from 'decimal.js';
-import { Market, type StrategyChannel } from '../types';
-import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from '../types';
-import { priceForSelection } from '../selection';
-import { CONSENSUS_CONFIG } from './config';
-import type { ChannelStrategy, StrategyContext, StrategyDecision, StrategySelection } from './types';
+import Decimal from "decimal.js";
+import { Market, type StrategyChannel } from "../types";
+import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
+import { priceForSelection } from "../selection";
+import { CONSENSUS_CONFIG } from "./config";
+import type {
+  ChannelStrategy,
+  StrategyContext,
+  StrategyDecision,
+  StrategySelection,
+} from "./types";
 
 // Independence classes for the primary channels. Two strategies in the same
 // class lean on the same underlying signal, so they count as ONE vote — the
 // consensus level is the number of distinct classes that agree, not the raw
 // channel count (channel-strategy-architecture doc §CONSENSUS).
 const INDEPENDENCE_CLASS: Partial<Record<StrategyChannel, string>> = {
-  DOMINANT: 'directional', // model argmax(1X2)
-  VALUE: 'value', // model prob × odds
-  SAFE: 'value', // high-confidence value (mutually exclusive with VALUE)
-  DRAW: 'market_draw', // bookmaker implied draw probability
-  BTTS: 'goals',
-  GOALS: 'goals',
+  DOMINANT: "directional", // model argmax(1X2)
+  VALUE: "value", // model prob × odds
+  SAFE: "value", // high-confidence value (mutually exclusive with VALUE)
+  DRAW: "market_draw", // bookmaker implied draw probability
+  BTTS: "goals",
+  GOALS: "goals",
 };
 
 type PickAgreement = {
@@ -69,7 +74,7 @@ export function decideConsensus(
     return {
       channel,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: 'no_consensus',
+      reasonCode: "no_consensus",
       reasonDetails: { bestLevel, minLevel: config.minLevel },
       selections: [],
     };
@@ -103,7 +108,7 @@ export function decideConsensus(
   return {
     channel,
     status: CHANNEL_DECISION_STATUS.SELECTED,
-    reasonCode: 'consensus',
+    reasonCode: "consensus",
     reasonDetails: {
       level: best.classes.size,
       classes: [...best.classes],

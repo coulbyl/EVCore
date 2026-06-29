@@ -5,14 +5,14 @@ export {
   type HalfTimeFullTimePick,
   outcomeFromScores,
   isHalfTimeFullTimePick,
-} from './markets';
+} from "./markets";
 export {
   poissonProba,
   computePoissonMarkets,
   deriveMarketsFromPoisson,
   buildPoissonDistributions,
-} from './poisson';
-export { type ComboPick, computeJointProbability } from './combo';
+} from "./poisson";
+export { type ComboPick, computeJointProbability } from "./combo";
 export {
   type TeamStatsInput,
   type MatchupFeatures,
@@ -23,4 +23,4 @@ export {
   rebalanceThreeWayProbabilities,
   buildMatchupFeatures,
   blendTeamStats,
-} from './match-stats';
+} from "./match-stats";

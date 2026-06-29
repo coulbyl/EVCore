@@ -1,13 +1,16 @@
-import Decimal from 'decimal.js';
-import { Market } from '../types';
-import { HALF_TIME_FULL_TIME_PICKS, computeJointProbability } from '../probability';
-import { calculateEV as calcEV } from '../ev/ev-math';
+import Decimal from "decimal.js";
+import { Market } from "../types";
+import {
+  HALF_TIME_FULL_TIME_PICKS,
+  computeJointProbability,
+} from "../probability";
+import { calculateEV as calcEV } from "../ev/ev-math";
 import {
   buildBetPickKey,
   getPickOddsFromSnapshot,
   estimateComboOdds,
   COMBO_WHITELIST,
-} from './combo-pricing';
+} from "./combo-pricing";
 import {
   COMBOS_ENABLED,
   EV_HARD_CAP,
@@ -16,10 +19,15 @@ import {
   SAFE_VALUE_MAX_ODDS,
   SAFE_VALUE_MIN_EV,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
-} from './constants';
-import { buildQualityScore, getPickRejectionReason } from './pick-validation';
-import type { SelectionConfig } from './config';
-import type { EvaluatedPick, FullOddsSnapshot, MatchProbabilities, ViablePick } from './types';
+} from "./constants";
+import { buildQualityScore, getPickRejectionReason } from "./pick-validation";
+import type { SelectionConfig } from "./config";
+import type {
+  EvaluatedPick,
+  FullOddsSnapshot,
+  MatchProbabilities,
+  ViablePick,
+} from "./types";
 
 // Select the best safe-value pick from a pre-computed list of evaluated picks.
 //
@@ -89,7 +97,7 @@ export function selectSafeValuePick(
   // viable probability. Probability floor is intentionally relaxed here.
   if (
     bestPick.market === Market.OVER_UNDER &&
-    (bestPick.pick === 'UNDER_3_5' || bestPick.pick === 'UNDER_4_5') &&
+    (bestPick.pick === "UNDER_3_5" || bestPick.pick === "UNDER_4_5") &&
     lambdaTotal >= SV_UNDER_LAMBDA_COMPARISON_THRESHOLD
   ) {
     const overCounterparts = evaluatedPicks.filter(
@@ -97,7 +105,7 @@ export function selectSafeValuePick(
         p.rejectionReason === undefined &&
         !p.isCombo &&
         p.market === Market.OVER_UNDER &&
-        (p.pick === 'OVER' || p.pick === 'OVER_3_5') &&
+        (p.pick === "OVER" || p.pick === "OVER_3_5") &&
         p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
         p.ev.lessThanOrEqualTo(EV_HARD_CAP) &&
         // Per-league floor (svMinOdds), like the main eligibility check —
@@ -189,7 +197,7 @@ export function listEvaluatedOneXTwoPicks(
   const candidates: ViablePick[] = [
     {
       market: Market.ONE_X_TWO,
-      pick: 'HOME',
+      pick: "HOME",
       probability: probabilities.home,
       odds: odds.homeOdds,
       ev: calcEV(probabilities.home, odds.homeOdds),
@@ -197,14 +205,14 @@ export function listEvaluatedOneXTwoPicks(
         calcEV(probabilities.home, odds.homeOdds),
         deterministicScore,
         Market.ONE_X_TWO,
-        'HOME',
+        "HOME",
         odds.homeOdds,
       ),
       isCombo: false,
     },
     {
       market: Market.ONE_X_TWO,
-      pick: 'DRAW',
+      pick: "DRAW",
       probability: probabilities.draw,
       odds: odds.drawOdds,
       ev: calcEV(probabilities.draw, odds.drawOdds),
@@ -212,14 +220,14 @@ export function listEvaluatedOneXTwoPicks(
         calcEV(probabilities.draw, odds.drawOdds),
         deterministicScore,
         Market.ONE_X_TWO,
-        'DRAW',
+        "DRAW",
         odds.drawOdds,
       ),
       isCombo: false,
     },
     {
       market: Market.ONE_X_TWO,
-      pick: 'AWAY',
+      pick: "AWAY",
       probability: probabilities.away,
       odds: odds.awayOdds,
       ev: calcEV(probabilities.away, odds.awayOdds),
@@ -227,7 +235,7 @@ export function listEvaluatedOneXTwoPicks(
         calcEV(probabilities.away, odds.awayOdds),
         deterministicScore,
         Market.ONE_X_TWO,
-        'AWAY',
+        "AWAY",
         odds.awayOdds,
       ),
       isCombo: false,
@@ -270,17 +278,17 @@ export function listEvaluatedPicks(
   // Singles 1X2
   const oneXTwoPicks = [
     {
-      pick: 'HOME',
+      pick: "HOME",
       probability: probabilities.home,
       pickOdds: odds.homeOdds,
     },
     {
-      pick: 'DRAW',
+      pick: "DRAW",
       probability: probabilities.draw,
       pickOdds: odds.drawOdds,
     },
     {
-      pick: 'AWAY',
+      pick: "AWAY",
       probability: probabilities.away,
       pickOdds: odds.awayOdds,
     },
@@ -311,44 +319,44 @@ export function listEvaluatedPicks(
     odds: Decimal | null | undefined;
   }> = [
     {
-      pick: 'OVER_1_5',
+      pick: "OVER_1_5",
       probability: probabilities.over15,
-      odds: odds.overUnderOdds['OVER_1_5'],
+      odds: odds.overUnderOdds["OVER_1_5"],
     },
     {
-      pick: 'UNDER_1_5',
+      pick: "UNDER_1_5",
       probability: probabilities.under15,
-      odds: odds.overUnderOdds['UNDER_1_5'],
+      odds: odds.overUnderOdds["UNDER_1_5"],
     },
     {
-      pick: 'OVER',
+      pick: "OVER",
       probability: probabilities.over25,
-      odds: odds.overUnderOdds['OVER'],
+      odds: odds.overUnderOdds["OVER"],
     },
     {
-      pick: 'UNDER',
+      pick: "UNDER",
       probability: probabilities.under25,
-      odds: odds.overUnderOdds['UNDER'],
+      odds: odds.overUnderOdds["UNDER"],
     },
     {
-      pick: 'OVER_3_5',
+      pick: "OVER_3_5",
       probability: probabilities.over35,
-      odds: odds.overUnderOdds['OVER_3_5'],
+      odds: odds.overUnderOdds["OVER_3_5"],
     },
     {
-      pick: 'UNDER_3_5',
+      pick: "UNDER_3_5",
       probability: probabilities.under35,
-      odds: odds.overUnderOdds['UNDER_3_5'],
+      odds: odds.overUnderOdds["UNDER_3_5"],
     },
     {
-      pick: 'OVER_4_5',
+      pick: "OVER_4_5",
       probability: probabilities.over45,
-      odds: odds.overUnderOdds['OVER_4_5'],
+      odds: odds.overUnderOdds["OVER_4_5"],
     },
     {
-      pick: 'UNDER_4_5',
+      pick: "UNDER_4_5",
       probability: probabilities.under45,
-      odds: odds.overUnderOdds['UNDER_4_5'],
+      odds: odds.overUnderOdds["UNDER_4_5"],
     },
   ];
 
@@ -377,7 +385,7 @@ export function listEvaluatedPicks(
     const ev = calcEV(probabilities.bttsYes, odds.bttsYesOdds);
     candidates.push({
       market: Market.BTTS,
-      pick: 'YES',
+      pick: "YES",
       probability: probabilities.bttsYes,
       odds: odds.bttsYesOdds,
       ev,
@@ -385,7 +393,7 @@ export function listEvaluatedPicks(
         ev,
         deterministicScore,
         Market.BTTS,
-        'YES',
+        "YES",
         odds.bttsYesOdds,
       ),
       isCombo: false,
@@ -395,7 +403,7 @@ export function listEvaluatedPicks(
     const ev = calcEV(probabilities.bttsNo, odds.bttsNoOdds);
     candidates.push({
       market: Market.BTTS,
-      pick: 'NO',
+      pick: "NO",
       probability: probabilities.bttsNo,
       odds: odds.bttsNoOdds,
       ev,
@@ -403,7 +411,7 @@ export function listEvaluatedPicks(
         ev,
         deterministicScore,
         Market.BTTS,
-        'NO',
+        "NO",
         odds.bttsNoOdds,
       ),
       isCombo: false,
@@ -413,9 +421,9 @@ export function listEvaluatedPicks(
   // Singles DOUBLE_CHANCE
   if (odds.doubleChanceOdds !== null) {
     for (const [pick, dcProba] of [
-      ['1X', probabilities.dc1X],
-      ['X2', probabilities.dcX2],
-      ['12', probabilities.dc12],
+      ["1X", probabilities.dc1X],
+      ["X2", probabilities.dcX2],
+      ["12", probabilities.dc12],
     ] as const) {
       const dcOdds = odds.doubleChanceOdds[pick];
       if (dcOdds === null) continue;
@@ -464,24 +472,24 @@ export function listEvaluatedPicks(
 
   // Singles OVER_UNDER_HT
   const ouHtCandidates: Array<{
-    pick: 'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5';
+    pick: "OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5";
     probability: Decimal;
   }> = [
     {
-      pick: 'OVER_0_5',
-      probability: probabilities.ouHT['OVER_0_5'] ?? new Decimal(0),
+      pick: "OVER_0_5",
+      probability: probabilities.ouHT["OVER_0_5"] ?? new Decimal(0),
     },
     {
-      pick: 'UNDER_0_5',
-      probability: probabilities.ouHT['UNDER_0_5'] ?? new Decimal(0),
+      pick: "UNDER_0_5",
+      probability: probabilities.ouHT["UNDER_0_5"] ?? new Decimal(0),
     },
     {
-      pick: 'OVER_1_5',
-      probability: probabilities.ouHT['OVER_1_5'] ?? new Decimal(0),
+      pick: "OVER_1_5",
+      probability: probabilities.ouHT["OVER_1_5"] ?? new Decimal(0),
     },
     {
-      pick: 'UNDER_1_5',
-      probability: probabilities.ouHT['UNDER_1_5'] ?? new Decimal(0),
+      pick: "UNDER_1_5",
+      probability: probabilities.ouHT["UNDER_1_5"] ?? new Decimal(0),
     },
   ];
   for (const candidate of ouHtCandidates) {
@@ -513,17 +521,17 @@ export function listEvaluatedPicks(
       pickOdds: Decimal;
     }> = [
       {
-        pick: 'HOME',
+        pick: "HOME",
         probability: probabilities.firstHalfWinner.home,
         pickOdds: odds.firstHalfWinnerOdds.home,
       },
       {
-        pick: 'DRAW',
+        pick: "DRAW",
         probability: probabilities.firstHalfWinner.draw,
         pickOdds: odds.firstHalfWinnerOdds.draw,
       },
       {
-        pick: 'AWAY',
+        pick: "AWAY",
         probability: probabilities.firstHalfWinner.away,
         pickOdds: odds.firstHalfWinnerOdds.away,
       },

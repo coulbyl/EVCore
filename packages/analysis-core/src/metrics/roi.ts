@@ -12,11 +12,11 @@ export type EvBin = {
 
 // EV-bin edges (shared with the /coupons/roi promotion view).
 const EV_BIN_EDGES: { label: string; from: number; to: number }[] = [
-  { label: '< 0%', from: -Infinity, to: 0 },
-  { label: '0–4%', from: 0, to: 0.04 },
-  { label: '4–8%', from: 0.04, to: 0.08 },
-  { label: '8–15%', from: 0.08, to: 0.15 },
-  { label: '≥ 15%', from: 0.15, to: Infinity },
+  { label: "< 0%", from: -Infinity, to: 0 },
+  { label: "0–4%", from: 0, to: 0.04 },
+  { label: "4–8%", from: 0.04, to: 0.08 },
+  { label: "8–15%", from: 0.08, to: 0.15 },
+  { label: "≥ 15%", from: 0.15, to: Infinity },
 ];
 
 export type Settled = { won: boolean; odds: number; ev: number | null };
@@ -67,7 +67,7 @@ export function evBins(items: Settled[]): EvBin[] {
   if (noEv.length > 0) {
     const won = noEv.filter((i) => i.won).length;
     bins.push({
-      label: 'n/a',
+      label: "n/a",
       from: null,
       to: null,
       total: noEv.length,
