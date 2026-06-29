@@ -36,10 +36,9 @@ import type { EvaluatedPick, FullOddsSnapshot, MatchProbabilities, ViablePick } 
 // When the winner is Under 3.5 or Under 4.5 at high lambda, also evaluates the
 // symmetric Over counterparts (Over 2.5, Over 3.5) and upgrades to the better
 // qualityScore — fixing the structural Under bias at high expected goals (section 7).
-// eslint-disable-next-line max-params -- grouped below
 export function selectSafeValuePick(
   evaluatedPicks: EvaluatedPick[],
-  suspendedMarkets: Set<Market>,
+  suspendedMarkets: ReadonlySet<Market>,
   excludedPickKey: string | null,
   lambdaTotal = 0,
   config: SelectionConfig,
@@ -131,7 +130,6 @@ export function selectSafeValuePick(
   return bestPick;
 }
 
-// eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
 export function selectBestViablePick(
   probabilities: MatchProbabilities,
   odds: FullOddsSnapshot,
@@ -139,7 +137,7 @@ export function selectBestViablePick(
   distHome: number[],
   distAway: number[],
   lambdaFloorHit: boolean,
-  suspendedMarkets: Set<Market>,
+  suspendedMarkets: ReadonlySet<Market>,
   config: SelectionConfig,
   overrideMinEv?: Decimal,
 ): ViablePick | null {
@@ -180,12 +178,11 @@ export function selectBestViablePick(
   return viable[0] ?? null;
 }
 
-// eslint-disable-next-line max-params
 export function listEvaluatedOneXTwoPicks(
   probabilities: MatchProbabilities,
   odds: FullOddsSnapshot,
   deterministicScore: Decimal,
-  suspendedMarkets: Set<Market>,
+  suspendedMarkets: ReadonlySet<Market>,
   config: SelectionConfig,
 ): EvaluatedPick[] {
   const minEv = config.leagueEvThreshold;
@@ -253,7 +250,6 @@ export function listEvaluatedOneXTwoPicks(
     .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
 }
 
-// eslint-disable-next-line max-params -- Nine domain parameters; grouping into an object would obscure intent.
 export function listEvaluatedPicks(
   probabilities: MatchProbabilities,
   odds: FullOddsSnapshot,
@@ -261,7 +257,7 @@ export function listEvaluatedPicks(
   distHome: number[],
   distAway: number[],
   lambdaFloorHit: boolean,
-  suspendedMarkets: Set<Market>,
+  suspendedMarkets: ReadonlySet<Market>,
   config: SelectionConfig,
   overrideMinEv?: Decimal,
 ): EvaluatedPick[] {

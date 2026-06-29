@@ -71,6 +71,18 @@ function makeContext(
       h2h: null,
       congestion: null,
     },
+        selectionConfig: {
+      leagueEvThreshold: new Decimal('0.08'),
+      svMinProbability: new Decimal('0.68'),
+      svMinOdds: new Decimal('1.15'),
+      htftCalibrated: false,
+      pickDirectionProbabilityThreshold: () => new Decimal('0'),
+      pickEvFloor: (_m: unknown, _p: unknown, leagueFloor: Decimal) => leagueFloor,
+      pickEvSoftCap: () => new Decimal('0.90'),
+      pickMinSelectionOdds: () => new Decimal('1.15'),
+      pickMaxSelectionOdds: () => null,
+    },
+    modelScoreThreshold: new Decimal('0.60'),
     previousDecisions: new Map(),
     ...overrides,
   };

@@ -79,3 +79,7 @@ export const SV_UNDER_LAMBDA_COMPARISON_THRESHOLD = 3.0;
 export const COMBO_CORRELATION_ALPHA = new Decimal("0.75");
 export const COMBO_CORRELATION_MIN_FACTOR = new Decimal("0.50");
 export const COMBO_CORRELATION_MAX_FACTOR = new Decimal("1.25");
+
+// A line movement above this fraction triggers the VALUE channel to skip the
+// fixture — price signal is unreliable when the market has already corrected.
+export const LINE_MOVEMENT_THRESHOLD = new Decimal("0.10");

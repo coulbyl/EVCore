@@ -11,3 +11,4 @@ export * from "./probability";
 export * from "./score";
 export * from "./settlement";
 export * from "./selection";
+export * from "./strategies";

@@ -16,10 +16,9 @@ import {
 import type { SelectionConfig } from "./config";
 import type { EvaluatedPick, MatchProbabilities, ViablePick } from "./types";
 
-// eslint-disable-next-line max-params -- Six domain parameters; kept explicit for testability.
 export function getPickRejectionReason(
   pick: ViablePick,
-  suspendedMarkets: Set<Market>,
+  suspendedMarkets: ReadonlySet<Market>,
   probabilities: MatchProbabilities,
   config: SelectionConfig,
   minEv: Decimal,
@@ -129,7 +128,6 @@ export function getPickRejectionReason(
   return undefined;
 }
 
-// eslint-disable-next-line max-params -- Five domain parameters; no meaningful grouping possible without obscuring intent.
 export function buildQualityScore(
   ev: Decimal,
   deterministicScore: Decimal,

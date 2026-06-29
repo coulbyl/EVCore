@@ -1,71 +1,34 @@
-import type Decimal from 'decimal.js';
-import type { Market } from '@evcore/analysis-core';
-import type {
-  EvaluatedPick,
-  FullOddsSnapshot,
-  MatchProbabilities,
-} from '../betting-engine.types';
-import type {
+// buildStrategyContext is now a pure core function (analysis-core/strategies).
+// This wrapper enriches the input with app-side league config before delegating.
+import {
+  buildStrategyContext as coreBuilder,
+  type BuildStrategyContextInput,
+  type StrategyContext,
+} from '@evcore/analysis-core';
+import { buildSelectionConfig } from '../selection/selection-config';
+import { getModelScoreThreshold } from '../ev.constants';
+
+export type { BuildStrategyContextInput, StrategyContext };
+
+// Re-export core types that callers import from this module.
+export type {
   ContextSignals,
   EvaluatedMarket,
   FixtureSnapshot,
   ModelRunPhase,
   SportType,
-  StrategyContext,
-} from '../channel-strategy.types';
-import { MODEL_RUN_PHASE } from '../channel-strategy.types';
+} from '@evcore/analysis-core';
+export { MODEL_RUN_PHASE } from '@evcore/analysis-core';
 
-export type BuildStrategyContextInput = {
-  fixture: FixtureSnapshot;
-  competitionCode: string | null;
-  deterministicScore: Decimal;
-  probabilities: MatchProbabilities;
-  evaluatedPicks: readonly EvaluatedPick[];
-  odds: FullOddsSnapshot | null;
-  signals: ContextSignals;
-  phase?: ModelRunPhase;
-  // [multi-sport] FOOTBALL until a second sport's scoring base exists (doc §1).
-  sport?: SportType;
-};
+type AppBuildInput = Omit<
+  BuildStrategyContextInput,
+  'selectionConfig' | 'modelScoreThreshold'
+>;
 
-/**
- * Assembles the immutable {@link StrategyContext} consumed by every channel
- * strategy (doc §5) from the artifacts the betting engine has already computed
- * for one ModelRun. Pure — no I/O, no decision logic.
- */
-export function buildStrategyContext(
-  input: BuildStrategyContextInput,
-): StrategyContext {
-  return {
-    fixture: input.fixture,
-    competitionCode: input.competitionCode,
-    sport: input.sport ?? 'FOOTBALL',
-    phase: input.phase ?? MODEL_RUN_PHASE.PRE_KICKOFF,
-    deterministicScore: input.deterministicScore,
-    probabilities: input.probabilities,
-    evaluatedMarkets: groupPicksByMarket(input.evaluatedPicks),
-    odds: input.odds,
-    signals: input.signals,
-    // Phase-1 strategies start from an empty map; the orchestrator threads in
-    // the running phase-1 decisions before each phase-2 strategy (doc §5).
-    previousDecisions: new Map(),
-  };
-}
-
-function groupPicksByMarket(
-  picks: readonly EvaluatedPick[],
-): EvaluatedMarket[] {
-  const byMarket = new Map<Market, EvaluatedPick[]>();
-  for (const pick of picks) {
-    const bucket = byMarket.get(pick.market);
-    if (bucket) {
-      bucket.push(pick);
-    } else {
-      byMarket.set(pick.market, [pick]);
-    }
-  }
-  return [...byMarket.entries()].map(([market, marketPicks]) => ({
-    market,
-    picks: marketPicks,
-  }));
+export function buildStrategyContext(input: AppBuildInput): StrategyContext {
+  return coreBuilder({
+    ...input,
+    selectionConfig: buildSelectionConfig(input.competitionCode),
+    modelScoreThreshold: getModelScoreThreshold(input.competitionCode),
+  });
 }
