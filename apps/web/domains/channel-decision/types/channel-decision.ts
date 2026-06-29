@@ -1,6 +1,7 @@
 // Mirror of the backend ChannelDecisionItem DTO (GET /channel-decisions).
 // Kept in sync with the backend StrategyChannel enum. GOALS is a primary
 // (Over/Under) channel; CONSENSUS and AVOID are phase-2 meta-channels.
+
 export type StrategyChannel =
   | "VALUE"
   | "SAFE"
@@ -22,6 +23,25 @@ export type ChannelDecisionStatus =
 export type ModelRunPhase = "ADVANCE" | "PRE_KICKOFF" | "LIVE";
 
 export type SelectionResult = "PENDING" | "WON" | "LOST" | "VOID";
+
+export type AvoidOffender = {
+  channel: StrategyChannel;
+  market: string;
+  pick: string;
+  edge: number;
+  result?: SelectionResult | null;
+};
+
+export type AvoidReasonDetails = {
+  maxEdge: number;
+  offenders: AvoidOffender[];
+};
+
+export type ConsensusReasonDetails = {
+  level: number;
+  classes: string[];
+  channels: StrategyChannel[];
+};
 
 export type ChannelSelectionDto = {
   market: string;
@@ -54,6 +74,7 @@ export type ChannelDecisionDto = {
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
+  reasonDetails: unknown;
   selections: ChannelSelectionDto[];
 };
 
@@ -65,6 +86,7 @@ export type ChannelDecisionMatchDecisionDto = Pick<
   | "channel"
   | "status"
   | "reasonCode"
+  | "reasonDetails"
   | "selections"
 >;
 

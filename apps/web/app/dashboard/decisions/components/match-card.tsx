@@ -1,13 +1,18 @@
 import { Ban, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
-import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
-import { reasonLabel } from "./channel-constants";
+import { InfoTooltip } from "@/components/info-tooltip";
+import type {
+  ChannelDecisionMatchDto,
+  StrategyChannel,
+} from "@/domains/channel-decision/types/channel-decision";
+import { channelLabel, reasonLabel } from "./channel-constants";
 import {
   avoidFlag,
   evaluatedRest,
   hasConsensus,
   selectedPicks,
+  type AvoidFlag,
 } from "./decision-helpers";
 import { ChannelRow } from "./channel-row";
 import { FixtureHeading } from "./fixture-heading";
@@ -26,7 +31,10 @@ export function MatchCard({
   const picks = selectedPicks(group);
   const rest = evaluatedRest(group);
   const consensus = hasConsensus(group);
-  const avoidReason = avoid ? reasonLabel(avoid.reasonCode, t) : null;
+
+  const avoidEdgeByChannel = new Map<StrategyChannel, number>(
+    avoid?.offenders.map((o) => [o.channel, o.edge]) ?? [],
+  );
 
   return (
     <Card
@@ -46,18 +54,19 @@ export function MatchCard({
           }}
         >
           <Ban className="mt-0.5 size-3.5 shrink-0" />
-          <span className="min-w-0">
+          <span className="min-w-0 flex-1">
             <span className="block font-semibold">{t("avoid.banner")}</span>
-            {avoidReason ? (
-              <span className="block leading-snug opacity-90">
-                {avoidReason}
-              </span>
-            ) : null}
+            <AvoidOffenderLine avoid={avoid} />
           </span>
+          <InfoTooltip
+            label={t("avoid.tooltipLabel")}
+            description={t("avoid.tooltipDetail")}
+            side="left"
+          />
         </div>
       )}
 
-      <div className={cn(avoid && "opacity-60")}>
+      <div>
         <CardHeader className="gap-3 px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-3">
             <FixtureHeading
@@ -91,6 +100,7 @@ export function MatchCard({
                   channel={decision.channel}
                   decision={decision}
                   locale={locale}
+                  avoidEdge={avoidEdgeByChannel.get(decision.channel)}
                 />
               ))}
             </div>
@@ -126,6 +136,23 @@ export function MatchCard({
   );
 }
 
+function AvoidOffenderLine({ avoid }: { avoid: AvoidFlag }) {
+  const t = useTranslations("decisions");
+  const first = avoid.offenders[0];
+  if (first) {
+    const edgePct = `+${Math.round(first.edge * 100)}%`;
+    return (
+      <span className="block leading-snug opacity-90">
+        {channelLabel(first.channel, t)} · {t("avoid.edge")} {edgePct}
+      </span>
+    );
+  }
+  const fallback = reasonLabel(avoid.reasonCode, t);
+  return fallback ? (
+    <span className="block leading-snug opacity-90">{fallback}</span>
+  ) : null;
+}
+
 function ConvictionBadge({
   pickCount,
   consensus,
@@ -144,15 +171,22 @@ function ConvictionBadge({
   return (
     <span className="flex items-center gap-1.5">
       {consensus && (
-        <span
-          className="inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide"
-          style={{
-            color: "var(--canal-consensus)",
-            backgroundColor: "var(--canal-consensus-soft)",
-          }}
-        >
-          <Sparkles className="size-2.5" />
-          {t("channels.CONSENSUS.label")}
+        <span className="flex items-center gap-1">
+          <span
+            className="inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide"
+            style={{
+              color: "var(--canal-consensus)",
+              backgroundColor: "var(--canal-consensus-soft)",
+            }}
+          >
+            <Sparkles className="size-2.5" />
+            {t("channels.CONSENSUS.label")}
+          </span>
+          <InfoTooltip
+            label={t("consensus.tooltipLabel")}
+            description={t("consensus.tooltipDetail")}
+            side="left"
+          />
         </span>
       )}
       <span className="text-[0.65rem] font-semibold tabular-nums text-foreground">

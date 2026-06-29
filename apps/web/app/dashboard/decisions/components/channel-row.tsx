@@ -1,4 +1,7 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
+"use client";
+
+import { TriangleAlert } from "lucide-react";
+import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
@@ -6,6 +9,7 @@ import {
 import { useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
+  ConsensusReasonDetails,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import {
@@ -23,26 +27,34 @@ import { ResultBadge } from "./result-badge";
 function ChannelChip({ channel }: { channel: StrategyChannel }) {
   const t = useTranslations("decisions");
   return (
-    <span
-      className="inline-flex w-fit min-w-16 shrink-0 items-center justify-center rounded-md px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"
+    <Badge
       style={{
         color: CHANNEL_COLOR[channel],
         backgroundColor: CHANNEL_COLOR_SOFT[channel],
       }}
     >
       {channelLabel(channel, t)}
-    </span>
+    </Badge>
   );
+}
+
+function parseConsensusChannels(raw: unknown): StrategyChannel[] {
+  if (!raw || typeof raw !== "object") return [];
+  const d = raw as Partial<ConsensusReasonDetails>;
+  if (!Array.isArray(d.channels)) return [];
+  return d.channels.filter((c): c is StrategyChannel => typeof c === "string");
 }
 
 export function ChannelRow({
   channel,
   decision,
   locale,
+  avoidEdge,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
+  avoidEdge?: number;
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const selection =
@@ -50,8 +62,18 @@ export function ChannelRow({
   const odds = selection ? formatOdds(selection.odds) : null;
   const ev = selection ? formatEv(selection.ev) : null;
 
+  const consensusChannels =
+    channel === "CONSENSUS" && decision?.status === "SELECTED"
+      ? parseConsensusChannels(decision.reasonDetails)
+      : [];
+
   return (
-    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-2.5 py-2.5 sm:grid-cols-[4.75rem_minmax(0,1fr)] sm:gap-x-3">
+    <div
+      className={cn(
+        "grid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-2.5 py-2.5 sm:grid-cols-[4.75rem_minmax(0,1fr)] sm:gap-x-3",
+        avoidEdge !== undefined && "opacity-60",
+      )}
+    >
       <ChannelChip channel={channel} />
 
       {selection ? (
@@ -60,7 +82,10 @@ export function ChannelRow({
             <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug">
               {formatPickForDisplay(selection.pick, selection.market)}
             </p>
-            <ResultBadge result={selection.result} />
+            <div className="flex shrink-0 items-center gap-1.5">
+              {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
+              <ResultBadge result={selection.result} />
+            </div>
           </div>
           <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
             <span className="max-w-full truncate">
@@ -76,10 +101,57 @@ export function ChannelRow({
             )}
             {ev !== null && <span className="tabular-nums">{ev}</span>}
           </p>
+          {consensusChannels.length > 0 && (
+            <ConsensusSourcePills channels={consensusChannels} />
+          )}
         </div>
       ) : (
         <RejectedLabel decision={decision} />
       )}
+    </div>
+  );
+}
+
+function AvoidEdgeBadge({ edge }: { edge: number }) {
+  const t = useTranslations("decisions");
+  const edgePct = `+${Math.round(edge * 100)}%`;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[0.6rem] font-semibold tabular-nums"
+          style={{
+            color: "var(--canal-avoid)",
+            backgroundColor: "var(--canal-avoid-soft)",
+          }}
+        >
+          <TriangleAlert className="size-2.5" />
+          {edgePct}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {t("avoid.edgeTooltip", { pct: edgePct })}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function ConsensusSourcePills({ channels }: { channels: StrategyChannel[] }) {
+  const t = useTranslations("decisions");
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {channels.map((ch) => (
+        <Badge
+          key={ch}
+          className="border-transparent px-0 py-0 text-[0.58rem] font-semibold uppercase tracking-wide"
+          style={{
+            color: CHANNEL_COLOR[ch],
+            backgroundColor: CHANNEL_COLOR_SOFT[ch],
+          }}
+        >
+          {channelLabel(ch, t)}
+        </Badge>
+      ))}
     </div>
   );
 }
@@ -90,7 +162,6 @@ function RejectedLabel({
   decision: ChannelDecisionMatchDecisionDto | undefined;
 }) {
   const t = useTranslations("decisions");
-  // Channel didn't run at all for this fixture.
   if (decision === undefined) {
     return <span className="text-xs text-muted-foreground/60">—</span>;
   }

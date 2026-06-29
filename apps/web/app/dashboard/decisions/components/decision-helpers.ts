@@ -2,6 +2,8 @@ import type {
   ChannelDecisionMatchDto,
   ChannelDecisionMatchDecisionDto,
   StrategyChannel,
+  AvoidOffender,
+  AvoidReasonDetails,
 } from "@/domains/channel-decision/types/channel-decision";
 
 // Channels that express agreement/meta signals rather than a fresh market read.
@@ -12,14 +14,33 @@ export function isMetaChannel(channel: StrategyChannel): boolean {
   return META_CHANNELS.includes(channel);
 }
 
-export type AvoidFlag = { reasonCode: string | null };
+export type AvoidFlag = {
+  reasonCode: string | null;
+  offenders: AvoidOffender[];
+};
+
+function parseAvoidDetails(raw: unknown): AvoidOffender[] {
+  if (!raw || typeof raw !== "object") return [];
+  const d = raw as Partial<AvoidReasonDetails>;
+  if (!Array.isArray(d.offenders)) return [];
+  return d.offenders.filter(
+    (o): o is AvoidOffender =>
+      typeof o === "object" &&
+      o !== null &&
+      typeof o.channel === "string" &&
+      typeof o.edge === "number",
+  );
+}
 
 // The AVOID decision when it fired for this fixture (status SELECTED, no pick).
 // A flagged fixture should be visually treated as "skip", overriding its picks.
 export function avoidFlag(group: ChannelDecisionMatchDto): AvoidFlag | null {
   const avoid = group.decisions.find((d) => d.channel === "AVOID");
   if (avoid && avoid.status === "SELECTED") {
-    return { reasonCode: avoid.reasonCode };
+    return {
+      reasonCode: avoid.reasonCode,
+      offenders: parseAvoidDetails(avoid.reasonDetails),
+    };
   }
   return null;
 }

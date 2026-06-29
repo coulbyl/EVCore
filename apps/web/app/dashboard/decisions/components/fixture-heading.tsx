@@ -45,7 +45,7 @@ export function FixtureHeading(props: FixtureHeadingProps) {
   const scoreLabel = formatScore(score ?? null, htScore ?? null);
 
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 flex-1">
       {isMobile ? (
         <MobileTeams {...props} scoreLabel={scoreLabel} />
       ) : (

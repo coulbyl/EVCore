@@ -54,6 +54,7 @@ export type ChannelDecisionReadRow = {
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
+  reasonDetails: Prisma.JsonValue | null;
   fixtureId: string;
   scheduledAt: Date;
   homeTeam: string;
@@ -198,6 +199,7 @@ export class ChannelDecisionRepository {
         channel: true,
         status: true,
         reasonCode: true,
+        reasonDetails: true,
         modelRun: {
           select: {
             phase: true,
@@ -250,6 +252,7 @@ export class ChannelDecisionRepository {
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,
+      reasonDetails: row.reasonDetails,
       fixtureId: row.modelRun.fixture.id,
       scheduledAt: row.modelRun.fixture.scheduledAt,
       homeTeam: row.modelRun.fixture.homeTeam.name,

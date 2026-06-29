@@ -48,7 +48,8 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
   AVOID: "channels.AVOID.description",
 };
 
-// Display order across both lenses (primaries, then phase-2 meta-channels).
+// Display order across both lenses (primaries, then AVOID gate, then the
+// CONSENSUS aggregation as the final meta-channel).
 export const CHANNEL_ORDER: StrategyChannel[] = [
   "VALUE",
   "SAFE",
@@ -56,8 +57,8 @@ export const CHANNEL_ORDER: StrategyChannel[] = [
   "BTTS",
   "DRAW",
   "GOALS",
-  "CONSENSUS",
   "AVOID",
+  "CONSENSUS",
 ];
 
 const REASON_LABEL_KEY: Record<string, string> = {

@@ -72,7 +72,7 @@
         "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
       },
       "AVOID": {
-        "label": "À éviter",
+        "label": "Attention",
         "description": "Match écarté : divergence modèle/marché implausible."
       }
     },
@@ -102,7 +102,15 @@
       "channels": "Par canal"
     },
     "avoid": {
-      "banner": "À éviter"
+      "banner": "Attention",
+      "tooltipLabel": "Signal d'attention",
+      "tooltipDetail": "Un des picks ci-dessous a un écart trop important entre la probabilité du modèle et celle implicite du marché (≥ 30 points). Historiquement, le marché a raison dans ce cas — repérez le pick marqué ⚠ et évitez-le, les autres restent valides.",
+      "edge": "écart",
+      "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
+    },
+    "consensus": {
+      "tooltipLabel": "Signal consensus",
+      "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est un signal de conviction renforcée — à prioriser dans votre allocation bankroll."
     },
     "noPick": "Aucun pick retenu sur ce match.",
     "noPickShort": "aucun pick",

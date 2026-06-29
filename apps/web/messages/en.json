@@ -72,7 +72,7 @@
         "description": "Several independent strategies converge on the same pick."
       },
       "AVOID": {
-        "label": "Avoid",
+        "label": "Caution",
         "description": "Fixture flagged: implausible model/market divergence."
       }
     },
@@ -102,7 +102,15 @@
       "channels": "By channel"
     },
     "avoid": {
-      "banner": "Avoid"
+      "banner": "Caution",
+      "tooltipLabel": "Caution signal",
+      "tooltipDetail": "One of the picks below has too large a gap between the model's probability and the market's implied probability (≥ 30 points). Historically the market is right in this case — spot the pick flagged ⚠ and skip it, the others remain valid.",
+      "edge": "gap",
+      "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
+    },
+    "consensus": {
+      "tooltipLabel": "Consensus signal",
+      "tooltipDetail": "Multiple independent channels selected the same outcome without coordination. This is a reinforced conviction signal — prioritise it in your bankroll allocation."
     },
     "noPick": "No pick retained on this fixture.",
     "noPickShort": "no pick",

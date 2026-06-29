@@ -57,6 +57,7 @@ export type ChannelDecisionItem = {
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
+  reasonDetails: unknown;
   selections: ChannelSelectionItem[];
 };
 
@@ -68,6 +69,7 @@ export type ChannelDecisionMatchDecision = Pick<
   | 'channel'
   | 'status'
   | 'reasonCode'
+  | 'reasonDetails'
   | 'selections'
 >;
 
@@ -162,10 +164,11 @@ export class ChannelDecisionService {
     query: ChannelDecisionListQuery,
   ): Promise<ChannelDecisionMatchItem[]> {
     const rows = await this.findRows(query);
+    const resultMap = buildResultMap(rows);
     const groups = new Map<string, ChannelDecisionMatchItem>();
 
     for (const row of rows) {
-      const item = this.toItem(row);
+      const item = enrichAvoidItem(this.toItem(row), resultMap);
       let group = groups.get(item.fixtureId);
       if (group === undefined) {
         group = {
@@ -201,10 +204,11 @@ export class ChannelDecisionService {
       ...query,
       status: query.status ?? CHANNEL_DECISION_STATUS.SELECTED,
     });
+    const resultMap = buildResultMap(rows);
     const groups = new Map<StrategyChannel, ChannelDecisionItem[]>();
 
     for (const row of rows) {
-      const item = this.toItem(row);
+      const item = enrichAvoidItem(this.toItem(row), resultMap);
       const group = groups.get(item.channel) ?? [];
       group.push(item);
       groups.set(item.channel, group);
@@ -248,6 +252,7 @@ export class ChannelDecisionService {
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,
+      reasonDetails: row.reasonDetails,
       selections: row.selections.map(toSelectionItem),
     };
   }
@@ -260,9 +265,9 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.BTTS,
   STRATEGY_CHANNEL.DRAW,
   STRATEGY_CHANNEL.GOALS,
-  // Meta-channels (phase 2) last.
-  STRATEGY_CHANNEL.CONSENSUS,
+  // AVOID gates the primaries above; CONSENSUS aggregates them last.
   STRATEGY_CHANNEL.AVOID,
+  STRATEGY_CHANNEL.CONSENSUS,
 ];
 
 function toMatchDecision(
@@ -275,6 +280,7 @@ function toMatchDecision(
     channel: item.channel,
     status: item.status,
     reasonCode: item.reasonCode,
+    reasonDetails: item.reasonDetails,
     selections: item.selections,
   };
 }
@@ -304,5 +310,45 @@ function toSelectionItem(
     qualityScore: toNumber(selection.qualityScore),
     rank: selection.rank,
     result: selection.result,
+  };
+}
+
+// Keyed by "modelRunId:channel:market:pick" — used to enrich AVOID offenders.
+function buildResultMap(
+  rows: ChannelDecisionReadRow[],
+): Map<string, BetStatus | null> {
+  const map = new Map<string, BetStatus | null>();
+  for (const row of rows) {
+    for (const sel of row.selections) {
+      map.set(
+        `${row.modelRunId}:${row.channel}:${sel.market}:${sel.pick}`,
+        sel.result,
+      );
+    }
+  }
+  return map;
+}
+
+function enrichAvoidItem(
+  item: ChannelDecisionItem,
+  resultMap: Map<string, BetStatus | null>,
+): ChannelDecisionItem {
+  if (item.channel !== STRATEGY_CHANNEL.AVOID) return item;
+  const d = item.reasonDetails;
+  if (!d || typeof d !== 'object') return item;
+  const details = d as { offenders?: Array<Record<string, unknown>> };
+  if (!Array.isArray(details.offenders)) return item;
+  return {
+    ...item,
+    reasonDetails: {
+      ...details,
+      offenders: details.offenders.map((o) => ({
+        ...o,
+        result:
+          resultMap.get(
+            `${item.modelRunId}:${String(o.channel)}:${String(o.market)}:${String(o.pick)}`,
+          ) ?? null,
+      })),
+    },
   };
 }
