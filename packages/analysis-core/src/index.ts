@@ -12,3 +12,4 @@ export * from "./score";
 export * from "./settlement";
 export * from "./selection";
 export * from "./strategies";
+export * from "./metrics";
