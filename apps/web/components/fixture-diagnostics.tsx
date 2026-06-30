@@ -241,13 +241,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
     if (!mr) return;
     const shouldOpen = draft.items.length === 0;
 
-    const sv = row.safeValueBet;
-    const matchesSv =
-      sv?.market === snap.market &&
-      sv?.pick === snap.pick &&
-      (sv?.comboMarket ?? null) === (snap.comboMarket ?? null) &&
-      (sv?.comboPick ?? null) === (snap.comboPick ?? null);
-
     const base = {
       fixtureId: row.fixtureId,
       fixture: row.fixture,
@@ -264,10 +257,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       stakeOverride: null,
     };
 
-    const item: BetSlipDraftItem =
-      matchesSv && sv
-        ? { ...base, betId: sv.betId }
-        : { ...base, modelRunId: mr.modelRunId };
+    const item: BetSlipDraftItem = { ...base, modelRunId: mr.modelRunId };
 
     addItem(item);
     if (shouldOpen) open();

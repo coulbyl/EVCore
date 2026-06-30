@@ -1,10 +1,10 @@
 "use client";
 
-import { X } from "lucide-react";
-import { Badge } from "@evcore/ui";
+import { X, Plus, Layers } from "lucide-react";
+import { Badge, cn } from "@evcore/ui";
 import {
   formatMarketForDisplay,
-  formatCombinedPickForDisplay,
+  formatPickForDisplay,
 } from "@/helpers/fixture";
 import { formatDateLong } from "@/lib/date";
 import { useCurrencyFormat } from "@/providers/currency-provider";
@@ -32,11 +32,11 @@ function totalOdds(data: BetSlipView) {
 
 type ItemStatus = "WON" | "LOST" | "PENDING" | "VOID";
 
-const STATUS_BAR: Record<ItemStatus, string> = {
-  WON: "bg-success",
-  LOST: "bg-destructive",
-  PENDING: "bg-warning",
-  VOID: "bg-border",
+const STATUS_PILL: Record<ItemStatus, string> = {
+  WON: "bg-success/12 text-success",
+  LOST: "bg-destructive/10 text-destructive",
+  PENDING: "bg-warning/12 text-warning",
+  VOID: "bg-secondary text-muted-foreground",
 };
 
 const STATUS_LABEL: Record<ItemStatus, string> = {
@@ -45,6 +45,19 @@ const STATUS_LABEL: Record<ItemStatus, string> = {
   PENDING: "En attente",
   VOID: "Annulé",
 };
+
+function ResultPill({ status }: { status: ItemStatus }) {
+  return (
+    <span
+      className={cn(
+        "rounded-md px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wide",
+        STATUS_PILL[status],
+      )}
+    >
+      {STATUS_LABEL[status]}
+    </span>
+  );
+}
 
 function PnlDisplay({
   item,
@@ -60,7 +73,10 @@ function PnlDisplay({
     const isPos = raw >= 0;
     return (
       <p
-        className={`text-base font-bold tabular-nums ${isPos ? "text-success" : "text-danger"}`}
+        className={cn(
+          "text-sm font-bold tabular-nums",
+          isPos ? "text-success" : "text-danger",
+        )}
       >
         {formatSigned(raw)}
       </p>
@@ -70,103 +86,210 @@ function PnlDisplay({
   if (item.odds !== null) {
     const potential = Number(item.stake) * (Number(item.odds) - 1);
     return (
-      <p className="text-sm tabular-nums text-muted-foreground">
+      <p className="text-xs tabular-nums text-muted-foreground">
         +{formatAmount(potential)} pot.
       </p>
     );
   }
-  return <p className="text-xs text-muted-foreground">—</p>;
+  return null;
 }
 
-function BetItem({
+// ─── Grouping : un match = une carte, ses picks = des branches ───────────────
+
+type SlipMatchGroup = {
+  fixtureId: string;
+  fixture: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  items: BetSlipItemView[];
+};
+
+function groupItemsByFixture(items: BetSlipItemView[]): SlipMatchGroup[] {
+  const map = new Map<string, SlipMatchGroup>();
+  const order: string[] = [];
+  for (const item of items) {
+    let group = map.get(item.fixtureId);
+    if (!group) {
+      group = {
+        fixtureId: item.fixtureId,
+        fixture: item.fixture,
+        homeScore: item.homeScore,
+        awayScore: item.awayScore,
+        items: [],
+      };
+      map.set(item.fixtureId, group);
+      order.push(item.fixtureId);
+    }
+    group.items.push(item);
+  }
+  return order.map((id) => map.get(id)!);
+}
+
+function ComboLeg({ pick, market }: { pick: string; market: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <Plus
+          size={12}
+          strokeWidth={3}
+          className="-ml-[1px] shrink-0 rounded-full bg-accent/12 text-accent"
+        />
+        <span className="text-[0.8rem] font-bold text-foreground">{pick}</span>
+      </div>
+      <p className="ml-[1.3rem] text-[0.62rem] text-muted-foreground">
+        {market}
+      </p>
+    </div>
+  );
+}
+
+function PickContent({ item }: { item: BetSlipItemView }) {
+  const hasCombo = Boolean(item.comboMarket && item.comboPick);
+
+  if (hasCombo) {
+    return (
+      <div>
+        <span className="flex items-center gap-1 text-[0.7rem] font-extrabold italic uppercase tracking-tight text-accent">
+          <Layers size={12} strokeWidth={2.5} />
+          Mycombi
+        </span>
+        <div className="relative mt-1 space-y-1 pl-1">
+          <span className="absolute bottom-2.5 left-[5px] top-2.5 w-px bg-border" />
+          <ComboLeg
+            pick={formatPickForDisplay(item.pick, item.market)}
+            market={formatMarketForDisplay(item.market)}
+          />
+          <ComboLeg
+            pick={formatPickForDisplay(item.comboPick!, item.comboMarket!)}
+            market={formatMarketForDisplay(item.comboMarket!)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-sm font-bold text-foreground">
+          {formatPickForDisplay(item.pick, item.market)}
+        </span>
+        <CanalBadge canal={item.canal} />
+      </div>
+      <p className="mt-0.5 text-[0.66rem] text-muted-foreground">
+        {formatMarketForDisplay(item.market)}
+      </p>
+    </div>
+  );
+}
+
+function LegConnector({ isLast }: { isLast: boolean }) {
+  return (
+    <div className="relative w-4 shrink-0" aria-hidden>
+      <span className="absolute left-1 top-0 h-[1.05rem] w-2.5 rounded-bl-[0.5rem] border-b border-l border-border/60" />
+      {!isLast && (
+        <span className="absolute bottom-0 left-1 top-[1.05rem] w-px bg-border/60" />
+      )}
+    </div>
+  );
+}
+
+function SlipLeg({
   item,
   slipType,
+  connector,
+  isLast,
 }: {
   item: BetSlipItemView;
   slipType: BetSlipView["type"];
+  connector: boolean;
+  isLast: boolean;
 }) {
   const { formatAmount } = useCurrencyFormat();
   const status = item.betStatus as ItemStatus;
-  const bar = STATUS_BAR[status] ?? "bg-border";
-
-  const pickLabel = formatCombinedPickForDisplay({
-    market: item.market,
-    pick: item.pick,
-    comboMarket: item.comboMarket ?? undefined,
-    comboPick: item.comboPick ?? undefined,
-  });
-  const marketLabel = formatMarketForDisplay(item.market);
 
   return (
-    <div className="flex gap-0 overflow-hidden">
-      {/* Left status bar */}
-      <div className={`w-1 shrink-0 rounded-l-sm ${bar}`} />
+    <div className="flex">
+      {connector && <LegConnector isLast={isLast} />}
+      <div className="min-w-0 flex-1 py-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <PickContent item={item} />
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {item.odds && (
+              <span className="text-sm font-bold italic tabular-nums text-foreground">
+                {item.odds}
+              </span>
+            )}
+            <PnlDisplay item={item} slipType={slipType} />
+            <ResultPill status={status} />
+          </div>
+        </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 px-4 py-3.5">
-        {/* Row 1: fixture + score */}
-        <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-sm font-semibold text-foreground">
-            {item.fixture}
-          </p>
-          {item.homeScore !== null && item.awayScore !== null ? (
-            <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums text-secondary-foreground">
-              {item.homeScore} – {item.awayScore}
+        {/* Méta : EV + mise */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[0.62rem] text-muted-foreground">
+          <span>
+            EV{" "}
+            <span className="font-semibold text-success">
+              {item.ev.startsWith("+") ? item.ev : `+${item.ev}`}
             </span>
+          </span>
+          {slipType === "COMBO" ? (
+            <span>Leg combiné</span>
+          ) : (
+            <span>
+              Mise{" "}
+              <span className="font-semibold text-foreground">
+                {formatAmount(item.stake)}
+              </span>
+            </span>
+          )}
+          {slipType === "SIMPLE" && item.stakeOverride ? (
+            <Badge variant="warning" className="py-0 text-[0.6rem]">
+              Perso {formatAmount(item.stakeOverride)}
+            </Badge>
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Row 2: pick + market + canal */}
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{pickLabel}</span>
-            <span className="mx-1 text-border">·</span>
-            {marketLabel}
-          </p>
-          <CanalBadge canal={item.canal} />
-        </div>
+function SlipMatchCard({
+  group,
+  slipType,
+}: {
+  group: SlipMatchGroup;
+  slipType: BetSlipView["type"];
+}) {
+  const multi = group.items.length > 1;
 
-        {/* Row 3: metrics + P&L */}
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            {item.odds ? (
-              <span>
-                Cote{" "}
-                <span className="font-semibold text-foreground">
-                  {item.odds}
-                </span>
-              </span>
-            ) : null}
-            <span>
-              EV{" "}
-              <span className="font-semibold text-success">
-                {item.ev.startsWith("+") ? item.ev : `+${item.ev}`}
-              </span>
-            </span>
-            <span>
-              {slipType === "COMBO" ? (
-                "Leg combiné"
-              ) : (
-                <>
-                  Mise{" "}
-                  <span className="font-semibold text-foreground">
-                    {formatAmount(item.stake)}
-                  </span>
-                </>
-              )}
-            </span>
-            {slipType === "SIMPLE" && item.stakeOverride ? (
-              <Badge variant="warning" className="py-0 text-[0.65rem]">
-                Perso {formatAmount(item.stakeOverride)}
-              </Badge>
-            ) : null}
-          </div>
-          <div className="shrink-0 text-right">
-            <PnlDisplay item={item} slipType={slipType} />
-            <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-              {STATUS_LABEL[status]}
-            </p>
-          </div>
-        </div>
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      {/* Match header */}
+      <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-secondary/25 px-3.5 py-2">
+        <p className="min-w-0 truncate text-[0.72rem] font-semibold text-foreground">
+          {group.fixture}
+        </p>
+        {group.homeScore !== null && group.awayScore !== null ? (
+          <span className="shrink-0 rounded-md bg-secondary px-2 py-0.5 text-[0.7rem] font-bold tabular-nums text-secondary-foreground">
+            {group.homeScore} – {group.awayScore}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Picks du match */}
+      <div className="px-3.5 py-1.5">
+        {group.items.map((item, idx) => (
+          <SlipLeg
+            key={item.betId}
+            item={item}
+            slipType={slipType}
+            connector={multi}
+            isLast={idx === group.items.length - 1}
+          />
+        ))}
       </div>
     </div>
   );
@@ -311,10 +434,14 @@ export function BetSlipDetailPanel({
           )}
         </div>
 
-        {/* Items */}
-        <div className="max-h-96 lg:max-h-128 overflow-y-auto divide-y divide-border">
-          {data.items.map((item) => (
-            <BetItem key={item.betId} item={item} slipType={data.type} />
+        {/* Items groupés par match */}
+        <div className="flex flex-col gap-2.5 p-4">
+          {groupItemsByFixture(data.items).map((group) => (
+            <SlipMatchCard
+              key={group.fixtureId}
+              group={group}
+              slipType={data.type}
+            />
           ))}
         </div>
       </div>

@@ -1,18 +1,25 @@
 // ---------------------------------------------------------------------------
+// Plafonds — miroir de SLIP_LIMITS dans bankroll.constants.ts (backend)
+// ---------------------------------------------------------------------------
+
+export const SLIP_LIMITS = {
+  MAX_UNIT_STAKE: 500_000,
+  MAX_ITEMS: 10,
+  MAX_POTENTIAL_RETURN: 5_000_000,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Draft — vit uniquement en localStorage, jamais persisté backend
 // ---------------------------------------------------------------------------
 
 export type BetSlipDraftItem = {
-  /** Pour les bets MODEL : ID du bet existant en base. Non défini pour les picks utilisateur. */
-  betId?: string;
-  /** Pour les picks USER : ID du ModelRun source. Non défini pour les bets MODEL. */
   modelRunId?: string;
   fixtureId: string;
   fixture: string;
   homeLogo: string | null;
   awayLogo: string | null;
   competition: string;
-  scheduledAt: string;
+  scheduledAt?: string;
   market: string;
   pick: string;
   odds: string | null;
@@ -21,6 +28,7 @@ export type BetSlipDraftItem = {
   /** Pick secondaire pour les picks combo (ex. "OVER"). */
   comboPick?: string;
   ev: string | null;
+  canal?: string;
   stakeOverride: number | null;
 };
 
@@ -39,14 +47,12 @@ export type BetSlipDraft = {
  * pour pouvoir être appelée depuis les composants sans construire l'item entier.
  */
 export function draftItemKey(item: {
-  betId?: string | null;
   fixtureId: string;
   market: string;
   pick: string;
   comboMarket?: string | null;
   comboPick?: string | null;
 }): string {
-  if (item.betId) return item.betId;
   return `${item.fixtureId}|${item.market}|${item.pick}|${item.comboMarket ?? "-"}|${item.comboPick ?? "-"}`;
 }
 

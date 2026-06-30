@@ -103,7 +103,7 @@ function GroupCard({ group }: { group: StandingGroup }) {
                     />
                   </div>
                 </td>
-                <td className="max-w-0 py-2 pl-1.5">
+                <td className="max-w-6 py-2 pl-1.5">
                   <span className="block truncate font-medium text-foreground">
                     {team.teamName}
                   </span>

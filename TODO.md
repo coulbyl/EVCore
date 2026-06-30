@@ -164,8 +164,8 @@ calculateEV(jointProbability, combinedOdds)` calculé/filtré (`minCouponEV`
       perte assumée des badges). Helpers legacy
       `channelToPrisma/canalToStrategyChannel/strategyChannelToCanal` supprimés. - **Bug corrigé** : les filtres `canal` du pick-engine comparaient `'EV'`
       à `pick.canal === 'VALUE'` (jamais un match) — désormais alignés. - **Rebranchement** : `getChannelPerformance/getLeaguePerformance/
-    getSegmentPerformance/getPredictionOutcomes/getEdgeAnalysis/
-    findChannelLeagueHitRate` lisent `channel_selection` (helper
+getSegmentPerformance/getPredictionOutcomes/getEdgeAnalysis/
+findChannelLeagueHitRate` lisent `channel_selection` (helper
       `settledChannelRows`) pour **les 5 canaux** au lieu de `Bet` (EV/SV
       seulement) — DOMINANT/DRAW/BTTS renvoyaient toujours vide. - backend typecheck/lint/571 tests ✅ · web typecheck/lint ✅.
 - [x] **Dette front séparée** (2026-06-21) : `domains/ai-engine` → `domains/coupon` + imports ; chemins API périmés corrigés (`/ai-engine/coupons` → `/coupons`,
@@ -253,7 +253,7 @@ documentés — réel staking-eligible EV/SAFE vs virtuel prédiction) **faites*
 Migration `20260621230000_coupon_leg_combo` appliquée + client Prisma régénéré.
 
 - [x] **Vue ROI roulante par canal × EV-bin** (outil de promotion) : `GET
-  /coupons/roi` (`CouponRoiService`) — ROI mise plate par canal × bin d'EV
+/coupons/roi` (`CouponRoiService`) — ROI mise plate par canal × bin d'EV
       depuis `channel_selection` settlé (tous canaux), flag `promote` (ROI>0 &
       échantillon ≥ `MIN_BET_COUNT`).
 - [x] **Unification active — staker DRAW** : DRAW entre dans le pool réel via
@@ -562,10 +562,10 @@ Dataset reconstruit sain (cf. § Reprise).
   CANDIDATS, pas config finale. Validation **par saison** obligatoire dans
   le `ChannelTuningService` étendu avant activation (cf. méthodo des
   commentaires datés de la config existante). - [x] Config GOALS (2026-06-22) : sous-forme `GoalsLeagueConfig { lines:
-        [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
+    [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
   `getGoalsLineConfigs`. Candidats du sweep seedés **tous `enabled: false`**
   (en attente validation par saison). - [x] `goals.strategy.ts` (2026-06-22) : fonction pure `decideGoals(context,
-        lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
+    lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
   par ligne → ranking value-first (EV ↓, puis proba pour sélections sans
   cote) → 1 sélection rank 1. Enregistrée `registry.ts` (6e primaire).
   10 tests + orchestrateur à jour. backend typecheck/lint/581 tests ✅. - [x] **Tuning étendu (2026-06-22)** : `BacktestRepository` lit `over25/under25`

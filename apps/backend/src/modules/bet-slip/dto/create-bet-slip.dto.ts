@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsEnum,
@@ -6,11 +7,13 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BetSlipType } from '@evcore/db';
+import { SLIP_LIMITS } from '@/config/bankroll.constants';
 
 class CreateBetSlipItemDto {
   /** Référence un bet MODEL déjà créé par le moteur. */
@@ -42,7 +45,8 @@ class CreateBetSlipItemDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(1)
+  @Max(SLIP_LIMITS.MAX_UNIT_STAKE)
   stakeOverride?: number;
 }
 
@@ -53,11 +57,13 @@ export class CreateBetSlipDto {
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(1)
+  @Max(SLIP_LIMITS.MAX_UNIT_STAKE)
   unitStake!: number;
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(SLIP_LIMITS.MAX_ITEMS)
   @ValidateNested({ each: true })
   @Type(() => CreateBetSlipItemDto)
   items!: CreateBetSlipItemDto[];

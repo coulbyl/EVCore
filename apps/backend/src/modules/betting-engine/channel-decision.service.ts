@@ -51,6 +51,7 @@ export type ChannelDecisionItem = {
   homeLogo: string | null;
   awayLogo: string | null;
   kickoff: string;
+  scheduledAt: string;
   score: string | null;
   htScore: string | null;
   phase: ModelRunPhase;
@@ -83,6 +84,7 @@ export type ChannelDecisionMatchItem = Pick<
   | 'homeLogo'
   | 'awayLogo'
   | 'kickoff'
+  | 'scheduledAt'
   | 'score'
   | 'htScore'
 > & {
@@ -180,6 +182,7 @@ export class ChannelDecisionService {
           homeLogo: item.homeLogo,
           awayLogo: item.awayLogo,
           kickoff: item.kickoff,
+          scheduledAt: item.scheduledAt,
           score: item.score,
           htScore: item.htScore,
           selectedCount: 0,
@@ -246,6 +249,7 @@ export class ChannelDecisionService {
       homeLogo: row.homeLogo,
       awayLogo: row.awayLogo,
       kickoff: formatTimeUtc(row.scheduledAt),
+      scheduledAt: row.scheduledAt.toISOString(),
       score: formatScoreLine(row.homeScore, row.awayScore),
       htScore: formatScoreLine(row.homeHtScore, row.awayHtScore),
       phase: row.phase,

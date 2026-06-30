@@ -20,7 +20,10 @@ import {
 import { fixtureStatusBadgeClass, fixtureStatusLabel } from "@/helpers/fixture";
 import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
 import type { FixtureRow } from "@/domains/fixture/types/fixture";
-import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
 
@@ -75,7 +78,7 @@ function AddToSlipButton({
   if (
     !mr ||
     !hasEvPick(row) ||
-    !mr.betId ||
+    !mr.modelRunId ||
     !mr.market ||
     !mr.pick ||
     !isFixtureBettable(row)
@@ -83,14 +86,28 @@ function AddToSlipButton({
     return null;
   }
 
-  const betId = mr.betId;
-  const { market, pick, ev, evaluatedPicks, comboMarket, comboPick } = mr;
-  const inSlip = isInSlip(betId);
+  const {
+    modelRunId,
+    market,
+    pick,
+    ev,
+    evaluatedPicks,
+    comboMarket,
+    comboPick,
+  } = mr;
+  const itemKey = draftItemKey({
+    fixtureId: row.fixtureId,
+    market,
+    pick,
+    comboMarket,
+    comboPick,
+  });
+  const inSlip = isInSlip(itemKey);
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (inSlip) {
-      removeItem(betId);
+      removeItem(itemKey);
     } else {
       const shouldOpenCoupon = draft.items.length === 0;
       const odds =
@@ -102,7 +119,7 @@ function AddToSlipButton({
             (p.comboPick ?? null) === (comboPick ?? null),
         )?.odds ?? null;
       const item: BetSlipDraftItem = {
-        betId,
+        modelRunId,
         fixtureId: row.fixtureId,
         fixture: row.fixture,
         homeLogo: row.homeLogo,
@@ -111,6 +128,8 @@ function AddToSlipButton({
         scheduledAt: row.scheduledAt,
         market,
         pick,
+        comboMarket: comboMarket ?? undefined,
+        comboPick: comboPick ?? undefined,
         odds,
         ev,
         stakeOverride: null,

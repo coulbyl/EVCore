@@ -68,6 +68,7 @@ export type ChannelDecisionDto = {
   homeLogo: string | null;
   awayLogo: string | null;
   kickoff: string;
+  scheduledAt: string;
   score: string | null;
   htScore: string | null;
   phase: ModelRunPhase;
@@ -100,6 +101,7 @@ export type ChannelDecisionMatchDto = Pick<
   | "homeLogo"
   | "awayLogo"
   | "kickoff"
+  | "scheduledAt"
   | "score"
   | "htScore"
 > & {

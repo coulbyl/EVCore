@@ -549,7 +549,7 @@ model BetSlipItem {
   createdAt     DateTime @default(now())
 
   @@id([betSlipId, betId])
-  @@unique([betSlipId, fixtureId])
+  @@index([betSlipId])
   @@index([betId])
   @@index([fixtureId])
   @@map("bet_slip_item")

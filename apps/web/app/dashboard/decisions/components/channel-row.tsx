@@ -1,6 +1,6 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, Plus, Check } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import {
   formatMarketForDisplay,
@@ -9,9 +9,15 @@ import {
 import { useTranslations } from "next-intl";
 import type {
   ChannelDecisionMatchDecisionDto,
+  ChannelSelectionDto,
   ConsensusReasonDetails,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
+import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
+import {
+  draftItemKey,
+  type BetSlipDraftItem,
+} from "@/domains/bet-slip/types/bet-slip";
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -23,6 +29,25 @@ import {
   statusLabel,
 } from "./channel-constants";
 import { ResultBadge } from "./result-badge";
+
+/** Channels that produce a real pick that can be added to a slip. */
+const SLIPPABLE: ReadonlySet<StrategyChannel> = new Set([
+  "VALUE",
+  "SAFE",
+  "DOMINANT",
+  "BTTS",
+  "DRAW",
+  "GOALS",
+]);
+
+export type SlipContext = {
+  fixtureId: string;
+  fixture: string;
+  homeLogo: string | null;
+  awayLogo: string | null;
+  competition: string | null;
+  scheduledAt: string;
+};
 
 function ChannelChip({ channel }: { channel: StrategyChannel }) {
   const t = useTranslations("decisions");
@@ -50,11 +75,13 @@ export function ChannelRow({
   decision,
   locale,
   avoidEdge,
+  slipContext,
 }: {
   channel: StrategyChannel;
   decision: ChannelDecisionMatchDecisionDto | undefined;
   locale: string;
   avoidEdge?: number;
+  slipContext?: SlipContext;
 }) {
   const loc = locale === "en" ? "en" : "fr";
   const selection =
@@ -85,6 +112,14 @@ export function ChannelRow({
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
               <ResultBadge result={selection.result} />
+              {slipContext && SLIPPABLE.has(channel) && decision && (
+                <SlipButton
+                  channel={channel}
+                  decision={decision}
+                  selection={selection}
+                  slipContext={slipContext}
+                />
+              )}
             </div>
           </div>
           <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
@@ -180,5 +215,70 @@ function RejectedLabel({
         {reason ?? status}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+function SlipButton({
+  channel,
+  decision,
+  selection,
+  slipContext,
+}: {
+  channel: StrategyChannel;
+  decision: ChannelDecisionMatchDecisionDto;
+  selection: ChannelSelectionDto;
+  slipContext: SlipContext;
+}) {
+  const { addItem, removeItem, isInSlip, open, draft } = useBetSlip();
+
+  const item: BetSlipDraftItem = {
+    modelRunId: decision.modelRunId,
+    fixtureId: slipContext.fixtureId,
+    fixture: slipContext.fixture,
+    homeLogo: slipContext.homeLogo,
+    awayLogo: slipContext.awayLogo,
+    competition: slipContext.competition ?? "",
+    scheduledAt: slipContext.scheduledAt,
+    market: selection.market,
+    pick: selection.pick,
+    comboMarket: selection.comboMarket ?? undefined,
+    comboPick: selection.comboPick ?? undefined,
+    odds: selection.odds !== null ? String(selection.odds) : null,
+    ev:
+      selection.ev !== null
+        ? `${selection.ev >= 0 ? "+" : ""}${(selection.ev * 100).toFixed(0)}%`
+        : null,
+    canal: channel,
+    stakeOverride: null,
+  };
+
+  const key = draftItemKey(item);
+  const inSlip = isInSlip(key);
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(key);
+    } else {
+      const shouldOpen = draft.items.length === 0;
+      addItem(item);
+      if (shouldOpen) open();
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={inSlip ? "Retirer du coupon" : "Ajouter au coupon"}
+      className={cn(
+        "flex size-5 items-center justify-center rounded-full border transition-all",
+        inSlip
+          ? "border-accent bg-accent text-accent-foreground"
+          : "border-border bg-background text-muted-foreground hover:border-accent hover:text-accent",
+      )}
+    >
+      {inSlip ? <Check size={10} strokeWidth={3} /> : <Plus size={11} />}
+    </button>
   );
 }
