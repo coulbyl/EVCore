@@ -89,8 +89,31 @@ J1 0.40…). **Pas de blend marché, pas de nouveau chemin.** Poids de départ p
 > **NEXT (boucle à faire tourner par toi)** : `rebuild` ces ligues (CLI) →
 > re-`POST /backtest/calibration?competitionCode=X` → si Brier/ECE encore FAIL,
 > ajuster le poids (overshoot possible) et recommencer. F2/FIN1 = accepter ;
-> suspendre les canaux résultat dessus si besoin. Dixon-Coles = piste séparée
-> (buts, pas 1X2).
+> suspendre les canaux résultat dessus si besoin.
+
+**Dixon-Coles — ÉCARTÉ DÉFINITIVEMENT (2026-06-30, re-prouvé)** : testé sur 35 131
+matchs avec les λ réels stockés (`features.lambdaHome/Away`), grille ρ ∈ [−0.25, 0].
+**Aucun gain sur aucun marché buts, et DÉGRADE le score exact + le nul** : O/U 2.5
+plat, O/U 1.5 +0.0002, BTTS ≤0.0005, et surtout score exact (logloss/Brier) **minimal
+à ρ=0** → tout ρ<0 empire. Raison : nos λ sont déjà fortement shrinkés (xG×0.7 +
+moyenne ligue) → la sur-dispersion bas-score que DC corrige n'existe quasi pas ; et
+pour O/U/BTTS la masse redistribuée reste du même côté de la frontière. Re-confirme
+GOALS Pas-0. **Ne plus re-tester DC** sans changement majeur d'estimation des λ.
+
+**Pistes buts retenues à la place (2026-06-30) :**
+
+- [ ] **A — Score exact comme produit** (indépendant de DC) : marché inexistant
+  (pas dans `enum Market`, pas de cotes, pas de settlement). Chantier **infra** :
+  ajouter `CORRECT_SCORE` au schéma + collecte cotes correct-score (dispo ?) +
+  résolveur settlement + mapping odds↔proba. La **matrice Poisson indépendante**
+  qu'on a déjà suffit (DC ne l'améliore pas) → pas de travail modèle, juste exposer
+  la distribution de scores existante. À cadrer comme nouveau canal Étape 7.
+- [ ] **B — Meilleure estimation des λ** (vrai levier buts ET 1X2) : les λ viennent
+  du xG sur-shrinké (`LAMBDA_SHRINKAGE_FACTOR=0.7` + blend moyenne ligue). Réduire
+  le shrinkage là où le xG est fiable / passer à une régression Poisson attaque-
+  défense (force d'attaque × force de défense × avantage terrain) améliorerait la
+  calibration de TOUS les marchés (buts + résultat) bien plus que DC. Mesurable via
+  `/backtest/calibration`. C'est le prérequis modèle commun (cf. reprise en tête).
 
 ### Session 2026-06-24 — récap
 
@@ -674,7 +697,7 @@ Dataset reconstruit sain (cf. § Reprise).
   câblé (couleur/label/ordre `channel-constants`, tokens CSS `--canal-goals`,
   i18n `channels.GOALS` fr+en, `formatPickForDisplay` gère les 8 lignes OU,
   GOALS = canal primaire affiché dans les 2 lentilles). Aucun changement
-  nécessaire. web typecheck/lint ✅. > Note : `goalsReports`/décisions GOALS = ligne 2.5 OVER/UNDER tant que > les cotes alt-lines prematch ne se sont pas accumulées (forward) ; rien > en base tant qu'un run n'a pas tourné avec la config actuelle (purge + > rebuild pour l'historique). > **Amélioration modèle séparée (channel-agnostic)** : Poisson actuel = > indépendant → sous-estime les scores faibles (0-0, 1-1) → biaise Under 1.5/2.5. > Correction **Dixon-Coles** (paramètre ρ) améliore surtout correct-score + > over/under. À traiter APRÈS le Pas 0 si les lignes basses sont mal calibrées > (bénéficie aussi à BTTS/1X2). Ne pas mélanger avec le travail canal.
+  nécessaire. web typecheck/lint ✅. > Note : `goalsReports`/décisions GOALS = ligne 2.5 OVER/UNDER tant que > les cotes alt-lines prematch ne se sont pas accumulées (forward) ; rien > en base tant qu'un run n'a pas tourné avec la config actuelle (purge + > rebuild pour l'historique). > **Amélioration modèle séparée (channel-agnostic)** : ~~Dixon-Coles~~ **ÉCARTÉ > (2026-06-30, re-prouvé sur 35 131 matchs : aucun gain buts, dégrade le score > exact — cf. récap session 2026-06-30).** Le vrai levier buts = **meilleure > estimation des λ** (xG sur-shrinké), pas la dépendance bas-score. Voir pistes > A (score exact = produit infra) et B (λ) du récap 2026-06-30.
 - [x] `CONSENSUS` (méta) — **FAIT & ACTIVÉ (2026-06-23)**. Méta-stratégie (phase 2
       de l'orchestrateur) : lit les décisions primaires (`previousDecisions`) et émet
       une sélection 1X2 quand ≥ `minLevel` **classes d'indépendance distinctes**
@@ -726,3 +749,12 @@ Dataset reconstruit sain (cf. § Reprise).
   staking-grade. Ré-évaluer si calibration mi-temps dédiée améliorée. > **INSIGHT SYSTÈME consolidé (2026-06-23)** : le modèle **n'a aucun edge > directionnel sur les marchés résultat** — ni 1X2 fin de match (UNDERDOG/ > FAVORITE/CONTRARIAN tous perdants ou artefact) ni vainqueur mi-temps > (FIRST*HALF). **STRUCTUREL, prouvé** : Brier 1X2 modèle 0.633 vs marché > (cotes dévigées) 0.595 sur 26 083 matchs → le marché est un \_meilleur > prédicteur* que notre modèle. Parier nos probas contre la ligne = parier > une estimation moins bonne contre une meilleure : imbattable par construction > (notre modèle xG-Poisson n'utilise qu'un sous-ensemble de l'info que la cote > agrège). Le marché est efficient sur le résultat à tout horizon. La > valeur validée du système vient de : filtrage par accord (CONSENSUS), value > sur le nul (DRAW staké), police de la sur-confiance (AVOID), et prédiction > buts en observation (BTTS/DOMINANT/GOALS). Ne plus tester de canal > « battre le marché sur le résultat » sans une amélioration majeure du modèle.
 - [ ] `MARKET_MOVE` — quand l'historique de cotes est assez dense
 - [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
+- [ ] **A — `CORRECT_SCORE` (score exact)** — nouveau marché/canal. Chantier
+      **infra, pas modèle** (la matrice Poisson indépendante existante suffit, DC
+      écarté 2026-06-30) : `CORRECT_SCORE` dans `enum Market` (+ migration), collecte
+      cotes correct-score (vérifier dispo API), résolveur settlement, mapping
+      odds↔proba (cellules de la matrice de score). Backtest séparé avant activation.
+- [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
+      (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
+      là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts
+      ET 1X2. Mesurer via `/backtest/calibration` avant/après. Ne pas mélanger DC.
