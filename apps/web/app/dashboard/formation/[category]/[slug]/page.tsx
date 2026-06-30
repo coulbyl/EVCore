@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, ArrowRight, BookOpen, Clock, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Video } from "lucide-react";
 import {
   Badge,
   PageHeader,
@@ -42,9 +42,7 @@ export async function generateMetadata({
     return { title: t("label") };
   }
 
-  const article = await getFormationContentBySlug("article", slug);
-  const video = article ? null : await getFormationContentBySlug("video", slug);
-  const item = article ?? video;
+  const item = await getFormationContentBySlug(slug);
   if (!item) return {};
 
   return { title: `${t("label")} · ${item.title}` };
@@ -60,9 +58,7 @@ export default async function FormationCategoryItemPage({
   const { category, slug } = await params;
   if (!FORMATION_CATEGORIES.includes(category as FormationCategory)) notFound();
 
-  const article = await getFormationContentBySlug("article", slug);
-  const video = article ? null : await getFormationContentBySlug("video", slug);
-  const item = article ?? video;
+  const item = await getFormationContentBySlug(slug);
   if (!item) notFound();
   if (item.category !== (category as FormationCategory)) notFound();
 
@@ -144,23 +140,15 @@ export default async function FormationCategoryItemPage({
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1">
-                {item.type === "article" ? (
-                  <BookOpen size={12} />
-                ) : (
-                  <Video size={12} />
-                )}
-                {item.type === "article"
-                  ? tFormation("article")
-                  : tFormation("video")}
+                <Video size={12} />
+                {tFormation("video")}
               </Badge>
               <Badge variant="secondary">
                 {tFormation(`difficulty.${item.difficulty}`)}
               </Badge>
               <Badge variant="outline" className="gap-1 tabular-nums">
                 <Clock size={12} />
-                {item.type === "video"
-                  ? (item.videoDuration ?? `${item.readTime} min`)
-                  : `${item.readTime} min`}
+                {item.videoDuration ?? `${item.readTime} min`}
               </Badge>
             </div>
           </div>
@@ -171,43 +159,28 @@ export default async function FormationCategoryItemPage({
         </div>
       </PageHeader>
 
-      {item.type === "video" ? (
-        <section className="flex flex-col gap-5">
-          <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
-            <div className="p-3 sm:p-4">
-              <FormationVideoPlayer
-                meta={item}
-                startAtSeconds={startAtSeconds}
-              />
-            </div>
-          </section>
-
-          {item.chapters && item.chapters.length > 0 ? (
-            <FormationChapters
-              chapters={item.chapters}
-              currentStart={
-                Number.isFinite(startAtSeconds) ? startAtSeconds : 0
-              }
-            />
-          ) : null}
-
-          <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
-            <div className="px-4 py-5 sm:px-6 sm:py-6">
-              <div className="mx-auto w-full max-w-3xl">
-                <MarkdownArticle content={item.content} />
-              </div>
-            </div>
-          </section>
-        </section>
-      ) : (
+      <section className="flex flex-col gap-5">
         <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
-          <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+          <div className="p-3 sm:p-4">
+            <FormationVideoPlayer meta={item} startAtSeconds={startAtSeconds} />
+          </div>
+        </section>
+
+        {item.chapters && item.chapters.length > 0 ? (
+          <FormationChapters
+            chapters={item.chapters}
+            currentStart={Number.isFinite(startAtSeconds) ? startAtSeconds : 0}
+          />
+        ) : null}
+
+        <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
+          <div className="px-4 py-5 sm:px-6 sm:py-6">
             <div className="mx-auto w-full max-w-3xl">
               <MarkdownArticle content={item.content} />
             </div>
           </div>
         </section>
-      )}
+      </section>
 
       {prevItem || nextItem || relatedItems.length > 0 ? (
         <section className="rounded-[1.6rem] border border-border bg-panel-strong p-4 shadow-[0_16px_44px_rgba(15,23,42,0.08)] sm:p-5">
@@ -302,29 +275,17 @@ export default async function FormationCategoryItemPage({
                       ) : null}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="gap-1">
-                          {entry.type === "article" ? (
-                            <BookOpen size={12} />
-                          ) : (
-                            <Video size={12} />
-                          )}
-                          {entry.type === "article"
-                            ? tFormation("article")
-                            : tFormation("video")}
+                          <Video size={12} />
+                          {tFormation("video")}
                         </Badge>
                         <Badge variant="outline" className="gap-1 tabular-nums">
                           <Clock size={12} />
-                          {entry.type === "video"
-                            ? (entry.videoDuration ?? `${entry.readTime} min`)
-                            : `${entry.readTime} min`}
+                          {entry.videoDuration ?? `${entry.readTime} min`}
                         </Badge>
                       </div>
                     </div>
                     <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
-                      {entry.type === "article" ? (
-                        <BookOpen size={16} />
-                      ) : (
-                        <Video size={16} />
-                      )}
+                      <Video size={16} />
                     </span>
                   </Link>
                 ))}

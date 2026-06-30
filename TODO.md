@@ -801,5 +801,4 @@ lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
       3-4 saisons (≠ ROI). Magnitudes conservatrices (capées ±0.10), gain Brier
       pondéré **+0.0058**. 11 ligues : MLS/TUR1/NOR1/NOR2/SUI2/CSL/ISL1 @1.10,
       SWE2 @1.05 (sous-prédisent) ; SP2/MX1/J1 @0.95 (sur-prédisent). λScale optionnel
-      (golden préservé hors-liste). 2 tests. analysis-core 42 ✅ · backend 623 ✅. > Effet au prochain rebuild (O/U + BTTS + correct-score + 1X2 magnitude).
-      > Re-mesurer `/backtest/calibration` post-rebuild, étendre si d'autres biais stables.
+      (golden préservé hors-liste). 2 tests. analysis-core 42 ✅ · backend 623 ✅. > Effet au prochain rebuild (O/U + BTTS + correct-score + 1X2 magnitude). > Re-mesurer `/backtest/calibration` post-rebuild, étendre si d'autres biais stables.

@@ -8,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const item = await getFormationContentBySlug("video", slug);
+  const item = await getFormationContentBySlug(slug);
   if (!item) return {};
   return { title: item.title };
 }
@@ -23,7 +23,7 @@ export default async function FormationVideoPage({
   const { slug } = await params;
   const { t } = await searchParams;
 
-  const item = await getFormationContentBySlug("video", slug);
+  const item = await getFormationContentBySlug(slug);
   if (!item) notFound();
 
   // Legacy route kept for backwards compatibility: redirect to the new
