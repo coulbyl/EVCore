@@ -56,6 +56,8 @@
   --canal-consensus-soft: rgba(13, 148, 136, 0.11);
   --canal-avoid: #dc2626;
   --canal-avoid-soft: rgba(220, 38, 38, 0.11);
+  --canal-correct-score: #7c3aed;
+  --canal-correct-score-soft: rgba(124, 58, 237, 0.11);
 
   /* ── Bento layout ── */
   --gap-bento: 12px;
@@ -125,6 +127,8 @@
   --canal-consensus-soft: rgba(45, 212, 191, 0.13);
   --canal-avoid: #f87171;
   --canal-avoid-soft: rgba(248, 113, 113, 0.13);
+  --canal-correct-score: #a78bfa;
+  --canal-correct-score-soft: rgba(167, 139, 250, 0.13);
 
   /* ── Bento layout ── */
   --shadow-bento-rest: 0 1px 3px rgba(0, 0, 0, 0.16);
@@ -185,6 +189,8 @@
   --color-canal-consensus-soft: var(--canal-consensus-soft);
   --color-canal-avoid: var(--canal-avoid);
   --color-canal-avoid-soft: var(--canal-avoid-soft);
+  --color-canal-correct-score: var(--canal-correct-score);
+  --color-canal-correct-score-soft: var(--canal-correct-score-soft);
 
   /* ── Bento layout ── */
   --spacing-bento: var(--gap-bento);

@@ -783,10 +783,15 @@ Dataset reconstruit sain (cf. § Reprise).
       le builder, 2 call-sites engine). `FullOddsSnapshot.correctScoreOdds` +
       `resolveSelectionOdds` case + loader charge les cotes. Settlement :
       `resolvePickBetStatus` gère "H:A" (fallback auto). Tests strat+settlement+
-      service. analysis-core 40 ✅ · backend 623 ✅ · typecheck/lint ✅. > ⚠️ Migration DB `ALTER TYPE "StrategyChannel" ADD VALUE 'CORRECT_SCORE'` à
-      appliquer côté toi avant qu'un run persiste un canal CORRECT_SCORE. - **Incrément suivant (à faire)** : 4) front — afficher CORRECT_SCORE dans
-      `/dashboard/decisions` (couleur/label `channel-constants`, token CSS, i18n,
-      `formatPickForDisplay` du pick "H:A").
+      service. analysis-core 40 ✅ · backend 623 ✅ · typecheck/lint ✅. Migration DB
+      `StrategyChannel`/`Market` CORRECT_SCORE **déjà appliquée** (vérifiée en base). - **Incrément 4 — FRONT (FAIT 2026-06-30)** : CORRECT_SCORE affiché dans
+      `/dashboard/decisions` — type front `StrategyChannel`, `channel-constants`
+      (couleur/soft/label/description/ordre, après GOALS), tokens CSS
+      `--canal-correct-score(-soft)` + `--color-*` (theme.css light/dark/@theme),
+      i18n `channels.CORRECT_SCORE` + reason codes (`no_model`/`no_odds`/
+      `no_modelable_scoreline`/`below_ev`) fr+en. `formatPickForDisplay` rend "H:A"
+      tel quel (fallback). web typecheck ✅ · lint ✅ (2 warns `<img>` préexistants). > **CHANTIER A COMPLET.** Reste data : purge + rebuild (après que la collecte
+      forward des cotes ait tourné) pour voir des décisions CORRECT_SCORE peuplées.
 - [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
       (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
       là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts

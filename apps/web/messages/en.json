@@ -74,6 +74,10 @@
       "AVOID": {
         "label": "Caution",
         "description": "Fixture flagged: implausible model/market divergence."
+      },
+      "CORRECT_SCORE": {
+        "label": "Exact score",
+        "description": "Best-value exact scoreline (observation only, never staked)."
       }
     },
     "reasons": {
@@ -87,6 +91,10 @@
       "consensus": "Independent channels converged",
       "no_avoid_signal": "No avoidance signal",
       "extreme_divergence": "Extreme model/market divergence",
+      "no_model": "No model probabilities",
+      "no_odds": "No priced scoreline",
+      "no_modelable_scoreline": "No modelable scoreline priced",
+      "below_ev": "Best scoreline below EV floor",
       "BACKFILL": "Backfilled"
     },
     "statuses": {

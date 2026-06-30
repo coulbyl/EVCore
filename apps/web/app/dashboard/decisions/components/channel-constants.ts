@@ -13,6 +13,7 @@ export const CHANNEL_COLOR: Record<StrategyChannel, string> = {
   GOALS: "var(--canal-goals)",
   CONSENSUS: "var(--canal-consensus)",
   AVOID: "var(--canal-avoid)",
+  CORRECT_SCORE: "var(--canal-correct-score)",
 };
 
 export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
@@ -24,6 +25,7 @@ export const CHANNEL_COLOR_SOFT: Record<StrategyChannel, string> = {
   GOALS: "var(--canal-goals-soft)",
   CONSENSUS: "var(--canal-consensus-soft)",
   AVOID: "var(--canal-avoid-soft)",
+  CORRECT_SCORE: "var(--canal-correct-score-soft)",
 };
 
 const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
@@ -35,6 +37,7 @@ const CHANNEL_LABEL_KEY: Record<StrategyChannel, string> = {
   GOALS: "channels.GOALS.label",
   CONSENSUS: "channels.CONSENSUS.label",
   AVOID: "channels.AVOID.label",
+  CORRECT_SCORE: "channels.CORRECT_SCORE.label",
 };
 
 const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
@@ -46,6 +49,7 @@ const CHANNEL_DESCRIPTION_KEY: Record<StrategyChannel, string> = {
   GOALS: "channels.GOALS.description",
   CONSENSUS: "channels.CONSENSUS.description",
   AVOID: "channels.AVOID.description",
+  CORRECT_SCORE: "channels.CORRECT_SCORE.description",
 };
 
 // Display order across both lenses (primaries, then AVOID gate, then the
@@ -57,6 +61,7 @@ export const CHANNEL_ORDER: StrategyChannel[] = [
   "BTTS",
   "DRAW",
   "GOALS",
+  "CORRECT_SCORE",
   "AVOID",
   "CONSENSUS",
 ];
@@ -72,6 +77,10 @@ const REASON_LABEL_KEY: Record<string, string> = {
   consensus: "reasons.consensus",
   no_avoid_signal: "reasons.no_avoid_signal",
   extreme_divergence: "reasons.extreme_divergence",
+  no_model: "reasons.no_model",
+  no_odds: "reasons.no_odds",
+  no_modelable_scoreline: "reasons.no_modelable_scoreline",
+  below_ev: "reasons.below_ev",
   BACKFILL: "reasons.BACKFILL",
 };
 

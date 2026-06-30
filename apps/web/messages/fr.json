@@ -74,6 +74,10 @@
       "AVOID": {
         "label": "Attention",
         "description": "Match écarté : divergence modèle/marché implausible."
+      },
+      "CORRECT_SCORE": {
+        "label": "Score exact",
+        "description": "Score exact à meilleure valeur (observation seule, jamais misé)."
       }
     },
     "reasons": {
@@ -87,6 +91,10 @@
       "consensus": "Convergence de canaux indépendants",
       "no_avoid_signal": "Aucun signal d'évitement",
       "extreme_divergence": "Divergence modèle/marché extrême",
+      "no_model": "Pas de probabilités modèle",
+      "no_odds": "Aucun score coté",
+      "no_modelable_scoreline": "Aucun score cotable modélisable",
+      "below_ev": "Meilleur score sous le seuil d'EV",
       "BACKFILL": "Rétro-rempli"
     },
     "statuses": {
