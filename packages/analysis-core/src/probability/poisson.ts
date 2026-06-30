@@ -296,6 +296,33 @@ function buildFactorialCache(maxN: number): number[] {
   return cache;
 }
 
+// Full-time exact-score distribution: P(home=h, away=a) for every scoreline on a
+// 0..maxGoals grid, as a map keyed "H:A". Built from the SAME normalized Poisson
+// distributions as 1X2/Over-Under/BTTS (independent product — Dixon-Coles was
+// empirically rejected 2026-06-30: no gain on goal markets, worse on exact score),
+// so it is coherent with them: summing cells by outcome reproduces the 1X2 vector.
+// The grid captures essentially all realistically-priced scorelines; tail cells
+// beyond it carry negligible probability. Powers the CORRECT_SCORE channel
+// (observation-only) — a priced scoreline maps to its cell probability + EV.
+export function computeCorrectScoreMatrix(
+  lambdaHome: number,
+  lambdaAway: number,
+  maxGoals = 6,
+): Record<string, Decimal> {
+  const { homeDist, awayDist } = normalizedPoissonDistributions(
+    lambdaHome,
+    lambdaAway,
+    maxGoals,
+  );
+  const matrix: Record<string, Decimal> = {};
+  for (let h = 0; h < homeDist.length; h++) {
+    for (let a = 0; a < awayDist.length; a++) {
+      matrix[`${h}:${a}`] = new Decimal((homeDist[h] ?? 0) * (awayDist[a] ?? 0));
+    }
+  }
+  return matrix;
+}
+
 // Public wrapper exposing the internal normalized distributions for combo scoring.
 export function buildPoissonDistributions(
   lambdaHome: number,

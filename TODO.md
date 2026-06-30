@@ -768,10 +768,14 @@ Dataset reconstruit sain (cf. § Reprise).
         17 tests ✅. **⚠️ typecheck rouge sur 2 lignes tant que le client Prisma
         n'est pas régénéré (enum) → `prisma migrate dev` + `generate` côté TOI.**
         Une fois régénéré : typecheck vert + la collecte forward démarre au prochain
-        run du sync prematch. - **Incréments suivants (à faire)** : 2) exposer la matrice de score
-        (proba correct-score) depuis le Poisson indépendant (analysis-core) ;
-        3) canal `CorrectScore` (observation) + mapping odds↔cellule + résolveur
-        settlement `"H:A"` vs score réel ; 4) front.
+        run du sync prematch. - **Incrément 2 — MATRICE DE SCORE (FAIT 2026-06-30)** :
+        `computeCorrectScoreMatrix(λh, λa, maxGoals=6)` (analysis-core/poisson.ts) →
+        `Record<"H:A", Decimal>` normalisé (49 cellules), produit indépendant (DC
+        écarté), **cohérent** 1X2/O/U/BTTS. Fonction pure exportée + 3 tests. Pas
+        encore câblée dans `MatchProbabilities`/features (évite bloat + golden) —
+        câblage à l'incrément 3 avec la stratégie. - **Incréments suivants (à faire)** : 3) canal `CorrectScore` (observation) +
+        mapping odds↔cellule + settlement `"H:A"` vs score réel (+ exposer λh/λa ou
+        la matrice au `StrategyContext`) ; 4) front.
 - [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
       (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
       là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts
