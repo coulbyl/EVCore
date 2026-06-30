@@ -49,9 +49,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Expose GitHub Actions cache API v2
-        uses: crazy-max/ghaction-github-runtime@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         with:
@@ -66,8 +63,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-backend:latest
             ghcr.io/${{ github.repository_owner }}/evcore-backend:${{ steps.version.outputs.tag }}
-          cache-from: type=gha,scope=evcore-backend
-          cache-to: type=gha,mode=min,scope=evcore-backend
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-backend:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-backend:buildcache,mode=max
 
   docker-web:
     name: Build & push web image to GHCR
@@ -103,9 +100,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Expose GitHub Actions cache API v2
-        uses: crazy-max/ghaction-github-runtime@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         with:
@@ -122,8 +116,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-web:latest
             ghcr.io/${{ github.repository_owner }}/evcore-web:${{ steps.version.outputs.tag }}
-          cache-from: type=gha,scope=evcore-web
-          cache-to: type=gha,mode=min,scope=evcore-web
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-web:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-web:buildcache,mode=max
 
   docker-ml-worker:
     name: Build & push ML worker image to GHCR
@@ -158,9 +152,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Expose GitHub Actions cache API v2
-        uses: crazy-max/ghaction-github-runtime@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         with:
@@ -175,8 +166,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:latest
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:${{ steps.version.outputs.tag }}
-          cache-from: type=gha,scope=evcore-ml-worker
-          cache-to: type=gha,mode=min,scope=evcore-ml-worker
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:buildcache,mode=max
 
   deploy:
     name: Deploy to Hetzner
