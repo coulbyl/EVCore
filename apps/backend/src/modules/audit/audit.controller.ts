@@ -24,7 +24,6 @@ export class AuditController {
       : startOfUtcDay(new Date());
 
     return this.service.getFixtures(date, {
-      decision: query.decision,
       status: query.status,
       competition: query.competition,
       timeSlot: query.timeSlot,

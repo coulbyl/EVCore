@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
-  BackfillResult,
   MlModelVersion,
   MlTrainingJobStatus,
   TrainResult,
@@ -24,15 +23,6 @@ export function useActiveMlModel(segment = "ALL") {
       clientApiRequest<MlModelVersion | null>(
         `/ml/models/active?segment=${segment}`,
       ),
-  });
-}
-
-export function useTriggerBackfill() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () =>
-      clientApiRequest<BackfillResult>("/ml/backfill", { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ml-models"] }),
   });
 }
 

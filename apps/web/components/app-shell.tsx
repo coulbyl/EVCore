@@ -7,7 +7,6 @@ import { isWC2026Active } from "@/lib/events/world-cup-2026";
 import { useTranslations } from "next-intl";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
 import {
-  BarChart3,
   Bell,
   BookOpen,
   BrainCircuit,
@@ -17,14 +16,13 @@ import {
   FlaskConical,
   Globe,
   GraduationCap,
+  Layers,
   LayoutDashboard,
   Megaphone,
   Receipt,
   Settings,
   Sparkles,
-  Target,
   Ticket,
-  TrendingUp,
   Trophy,
   Users,
 } from "lucide-react";
@@ -159,19 +157,11 @@ export function AppShell({
         label: tNav("navGroupToday"),
         items: [
           {
-            label: tNav("investissement"),
-            href: "/dashboard/investment",
-            active:
-              pathname.startsWith("/dashboard/investment") &&
-              !pathname.startsWith("/dashboard/investment-summary"),
-            icon: TrendingUp,
-          },
-          {
-            label: tNav("picks"),
-            mobileLabel: tNav("picks"),
-            href: "/dashboard/picks",
-            active: pathname.startsWith("/dashboard/picks"),
-            icon: Target,
+            label: tNav("decisions"),
+            mobileLabel: tNav("decisionsShort"),
+            href: "/dashboard/decisions",
+            active: pathname.startsWith("/dashboard/decisions"),
+            icon: Layers,
           },
           {
             label: tNav("coupons"),
@@ -195,20 +185,6 @@ export function AppShell({
             href: "/dashboard/bet-slips",
             active: pathname.startsWith("/dashboard/bet-slips"),
             icon: Receipt,
-          },
-          {
-            label: tNav("summary"),
-            href: "/dashboard/summary",
-            active:
-              pathname.startsWith("/dashboard/summary") &&
-              !pathname.startsWith("/dashboard/investment-summary"),
-            icon: BarChart3,
-          },
-          {
-            label: tNav("investmentSummary"),
-            href: "/dashboard/investment-summary",
-            active: pathname.startsWith("/dashboard/investment-summary"),
-            icon: TrendingUp,
           },
         ],
       },
@@ -255,8 +231,8 @@ export function AppShell({
 
   const MOBILE_NAV_ORDER = [
     "/dashboard",
-    "/dashboard/investment",
-    "/dashboard/picks",
+    "/dashboard/decisions",
+    "/dashboard/coupons",
     "/dashboard/fixtures",
   ];
 

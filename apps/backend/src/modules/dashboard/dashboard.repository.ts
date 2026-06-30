@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   BetSource,
   BetStatus,
+  ChannelDecisionStatus,
   FixtureStatus,
-  Market,
   NotificationType,
-  PredictionChannel,
+  StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
@@ -27,7 +27,7 @@ export class DashboardRepository {
       scheduledYesterday,
       fixturesWithOddsToday,
       modelRunsToday,
-      betDecisionsToday,
+      selectedDecisionsToday,
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
@@ -59,10 +59,11 @@ export class DashboardRepository {
       this.prisma.client.modelRun.count({
         where: { analyzedAt: { gte: todayStart, lte: todayEnd } },
       }),
-      this.prisma.client.modelRun.groupBy({
-        by: ['decision'],
-        where: { analyzedAt: { gte: todayStart, lte: todayEnd } },
-        _count: { _all: true },
+      this.prisma.client.channelDecision.count({
+        where: {
+          status: ChannelDecisionStatus.SELECTED,
+          modelRun: { analyzedAt: { gte: todayStart, lte: todayEnd } },
+        },
       }),
       this.prisma.client.notification.count({
         where: { read: false },
@@ -138,7 +139,7 @@ export class DashboardRepository {
       scheduledYesterday,
       fixturesWithOddsToday,
       modelRunsToday,
-      betDecisionsToday,
+      selectedDecisionsToday,
       unreadNotificationsTotal,
       unreadHighAlertsTotal,
       unreadNotifications,
@@ -166,12 +167,14 @@ export class DashboardRepository {
         status: true,
         stakePct: true,
         oddsSnapshot: true,
-        isSafeValue: true,
+        channelSelection: {
+          select: { channelDecision: { select: { channel: true } } },
+        },
       },
     });
   }
 
-  getCompetitionData(userId: string, since: Date, canal?: 'EV' | 'SV') {
+  getCompetitionData(userId: string, since: Date, canal?: 'VALUE' | 'SAFE') {
     const fixtureFilter = { scheduledAt: { gte: since } };
     const competitionSelect = {
       select: { id: true, name: true, code: true },
@@ -180,10 +183,22 @@ export class DashboardRepository {
       select: { competition: competitionSelect },
     } as const;
     const canalFilter =
-      canal === 'EV'
-        ? { isSafeValue: false }
-        : canal === 'SV'
-          ? { isSafeValue: true }
+      canal === 'VALUE'
+        ? {
+            channelSelection: {
+              is: {
+                channelDecision: { is: { channel: StrategyChannel.VALUE } },
+              },
+            },
+          }
+        : canal === 'SAFE'
+          ? {
+              channelSelection: {
+                is: {
+                  channelDecision: { is: { channel: StrategyChannel.SAFE } },
+                },
+              },
+            }
           : {};
 
     return Promise.all([
@@ -230,39 +245,18 @@ export class DashboardRepository {
     ]);
   }
 
-  findRecentModelBets(isSafeValue: boolean, take: number) {
+  findRecentModelBets(channel: StrategyChannel, take: number) {
     return this.prisma.client.bet.findMany({
       where: {
         status: { in: [BetStatus.WON, BetStatus.LOST] },
         source: BetSource.MODEL,
-        isSafeValue,
+        channelSelection: {
+          is: { channelDecision: { is: { channel } } },
+        },
         oddsSnapshot: { not: null },
       },
       select: { status: true, oddsSnapshot: true, stakePct: true },
       orderBy: { createdAt: 'desc' },
-      take,
-    });
-  }
-
-  findRecentSettledPredictions(channel: PredictionChannel, take: number) {
-    const market =
-      channel === PredictionChannel.BTTS ? Market.BTTS : Market.ONE_X_TWO;
-    return this.prisma.client.prediction.findMany({
-      where: { channel, correct: { not: null } },
-      select: {
-        correct: true,
-        pick: true,
-        fixture: {
-          select: {
-            oddsSnapshots: {
-              where: { market },
-              orderBy: { snapshotAt: 'desc' },
-              take: 1,
-            },
-          },
-        },
-      },
-      orderBy: { settledAt: 'desc' },
       take,
     });
   }

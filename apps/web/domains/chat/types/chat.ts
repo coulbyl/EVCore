@@ -1,10 +1,11 @@
-// Canonical canal values from the backend pick engine.
-export type Canal = "EV" | "SV" | "BB" | "NUL" | "CONF";
+// Canonical strategy-channel values from the backend pick engine
+// (matches StrategyChannel: VALUE/SAFE/DOMINANT/BTTS/DRAW).
+export type Channel = "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
 
 // Mirrors the backend ChatStreamPick payload ('picks' SSE event + persisted
 // picks on assistant messages).
 export type ChatPick = {
-  canal: Canal;
+  channel: Channel;
   match: string;
   market: string;
   pick: string;

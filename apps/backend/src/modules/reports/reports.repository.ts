@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@evcore/db';
+import { StrategyChannel, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
-export type SettledEvBetRow = {
+export type SettledEvSelectionRow = {
   market: string;
-  status: 'WON' | 'LOST';
-  probEstimated: Prisma.Decimal;
-  oddsSnapshot: Prisma.Decimal | null;
+  result: 'WON' | 'LOST';
+  probability: Prisma.Decimal;
+  odds: Prisma.Decimal | null;
   createdAt: Date;
-  modelRun: { features: Prisma.JsonValue };
+  channelDecision: { modelRun: { features: Prisma.JsonValue } };
 };
 
 export type ActiveModelRow = {
@@ -24,28 +24,29 @@ export type ActiveModelRow = {
 export class ReportsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Settled single EV-channel model bets with odds, in the window, joined to
+  // Settled single EV-channel selections with odds, in the window, joined to
   // the ModelRun features (which carry shadow_ml_corrected_p).
-  async findSettledEvBets(from: Date): Promise<SettledEvBetRow[]> {
-    return this.prisma.client.bet.findMany({
+  async findSettledEvSelections(from: Date): Promise<SettledEvSelectionRow[]> {
+    return this.prisma.client.channelSelection.findMany({
       where: {
-        source: 'MODEL',
-        isSafeValue: false,
         comboMarket: null,
-        status: { in: ['WON', 'LOST'] },
-        oddsSnapshot: { not: null },
+        result: { in: ['WON', 'LOST'] },
+        odds: { not: null },
         createdAt: { gte: from },
+        channelDecision: { channel: StrategyChannel.VALUE },
       },
       select: {
         market: true,
-        status: true,
-        probEstimated: true,
-        oddsSnapshot: true,
+        result: true,
+        probability: true,
+        odds: true,
         createdAt: true,
-        modelRun: { select: { features: true } },
+        channelDecision: {
+          select: { modelRun: { select: { features: true } } },
+        },
       },
       orderBy: { createdAt: 'asc' },
-    }) as Promise<SettledEvBetRow[]>;
+    }) as Promise<SettledEvSelectionRow[]>;
   }
 
   async findActiveModels(): Promise<ActiveModelRow[]> {

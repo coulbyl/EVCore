@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Decimal from 'decimal.js';
-import { BetStatus, Market } from '@evcore/db';
+import { BetStatus, FixtureStatus, Market, ModelRunPhase } from '@evcore/db';
 import {
   poissonProba,
   calculateDeterministicScore,
@@ -14,15 +14,15 @@ import {
 } from './betting-engine.utils';
 import {
   BettingEngineService,
-  blendTeamStats,
-  estimateComboOdds,
+  deriveModelRunPhase,
 } from './betting-engine.service';
+import { blendTeamStats } from './math/probability';
+import { estimateComboOdds } from './pricing/odds-mapping';
 import type { PrismaService } from '@/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { H2HService } from './h2h.service';
 import type { CongestionService } from './congestion.service';
 import type { BankrollService } from '@modules/bankroll/bankroll.service';
-import type { PredictionService } from '@modules/prediction/prediction.service';
 import type { MlInferenceService } from '@modules/ml/ml.inference.service';
 
 function makeHtftProbabilities(defaultValue = '0.111111') {
@@ -55,13 +55,6 @@ function makeCongestionServiceMock(score = 0): CongestionService {
   return {
     computeCongestionScore: vi.fn().mockResolvedValue(score),
   } as unknown as CongestionService;
-}
-
-function makePredictionServiceMock(): PredictionService {
-  return {
-    createPredictions: vi.fn().mockResolvedValue(undefined),
-    settlePredictions: vi.fn().mockResolvedValue({ settled: 0 }),
-  } as unknown as PredictionService;
 }
 
 function makeMlInferenceServiceMock(): MlInferenceService {
@@ -242,6 +235,38 @@ describe('calculateKellyStakePct', () => {
   });
 });
 
+describe('deriveModelRunPhase', () => {
+  it('marks fixtures before their UTC match day as advance analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.SCHEDULED,
+        scheduledAt: new Date('2026-06-18T20:00:00.000Z'),
+        now: new Date('2026-06-17T09:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.ADVANCE);
+  });
+
+  it('marks same-day scheduled fixtures as pre-kickoff analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.SCHEDULED,
+        scheduledAt: new Date('2026-06-17T20:00:00.000Z'),
+        now: new Date('2026-06-17T09:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.PRE_KICKOFF);
+  });
+
+  it('marks in-progress fixtures as live analysis', () => {
+    expect(
+      deriveModelRunPhase({
+        fixtureStatus: FixtureStatus.IN_PROGRESS,
+        scheduledAt: new Date('2026-06-17T20:00:00.000Z'),
+        now: new Date('2026-06-17T21:00:00.000Z'),
+      }),
+    ).toBe(ModelRunPhase.LIVE);
+  });
+});
+
 describe('computeJointProbability', () => {
   it('HOME_WIN + BTTS_YES is lower than HOME_WIN alone and greater than 0', () => {
     const { distHome, distAway } = buildPoissonDistributions(1.5, 1.2);
@@ -326,7 +351,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -435,7 +459,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -529,7 +552,6 @@ describe('settleOpenBets', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
       bankroll as BankrollService,
     );
@@ -740,7 +762,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const ev = service.calculateEV(new Decimal('0.54'), new Decimal('2.0'));
@@ -753,7 +774,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const p = service.computeProbabilities(1.4, 1.1);
@@ -769,7 +789,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
@@ -821,7 +840,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     const result = await service.analyzeFixture('fixture-id');
@@ -899,7 +917,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -908,7 +925,6 @@ describe('BettingEngineService', () => {
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
       expect(result.modelRunId).toBe('run-id');
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.ONE_X_TWO,
         pick: 'HOME',
@@ -918,7 +934,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             predictionSource: 'ODDS_DEVIG',
             fallbackReason: null,
@@ -999,7 +1014,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1007,7 +1021,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.ONE_X_TWO,
         pick: 'HOME',
@@ -1017,7 +1030,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             predictionSource: 'FRI_ELO_POISSON',
             fallbackReason: null,
@@ -1074,7 +1086,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1083,7 +1094,6 @@ describe('BettingEngineService', () => {
     expect(result).toMatchObject({
       status: 'analyzed',
       fixtureId: 'fixture-id',
-      decision: 'NO_BET',
       modelRunId: 'run-id',
       valueBet: null,
     });
@@ -1091,7 +1101,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'NO_BET',
           features: expect.objectContaining({
             predictionSource: null,
             fallbackReason: 'missing_market_odds',
@@ -1171,7 +1180,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       h2hService,
       congestionService,
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1214,7 +1222,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         modelRunId: 'run-id',
         market: Market.ONE_X_TWO,
@@ -1225,7 +1232,6 @@ describe('BettingEngineService', () => {
     expect(createModelRun).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          decision: 'BET',
           features: expect.objectContaining({
             shadow_h2h: 0.6,
             shadow_congestion: 0.2,
@@ -1315,7 +1321,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1358,15 +1363,8 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
-
-    expect(createModelRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ decision: 'NO_BET' }),
-      }),
-    );
   });
 
   it('rejects 1X2 AWAY picks above MAX_SELECTION_ODDS cap', async () => {
@@ -1435,7 +1433,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1478,7 +1475,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
   });
@@ -1549,7 +1545,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1592,7 +1587,6 @@ describe('BettingEngineService', () => {
 
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('NO_BET');
       expect(result.valueBet).toBeNull();
     }
   });
@@ -1603,7 +1597,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1665,7 +1658,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1727,7 +1719,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -1851,7 +1842,6 @@ describe('BettingEngineService', () => {
       makeConfig(true),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
@@ -1986,7 +1976,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
 
@@ -2032,7 +2021,6 @@ describe('BettingEngineService', () => {
     const result = await service.analyzeFixture('fixture-id');
     expect(result.status).toBe('analyzed');
     if (result.status === 'analyzed') {
-      expect(result.decision).toBe('BET');
       expect(result.valueBet).toMatchObject({
         market: Market.HALF_TIME_FULL_TIME,
         pick: 'HOME_HOME',
@@ -2179,7 +2167,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
@@ -2197,7 +2184,6 @@ describe('BettingEngineService', () => {
         [
           {
             data: {
-              isSafeValue: boolean;
               market: Market;
               pick: string;
               pickKey: string;
@@ -2207,7 +2193,6 @@ describe('BettingEngineService', () => {
       ]
     )[1][0];
 
-    expect(svArgs.data.isSafeValue).toBe(true);
     expect(svArgs.data.market).toBe(Market.ONE_X_TWO);
     expect(svArgs.data.pick).toBe('HOME');
     expect(svArgs.data.pickKey).toMatch(/^sv:/);
@@ -2223,7 +2208,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
@@ -2234,10 +2218,6 @@ describe('BettingEngineService', () => {
 
     // Only the EV bet create, no safe value create
     expect(betCreate).toHaveBeenCalledTimes(1);
-    const evArgs = (
-      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
-    )[0][0];
-    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 
   it('does not save a safe value bet when the only qualifying pick is the EV pick itself', async () => {
@@ -2250,7 +2230,6 @@ describe('BettingEngineService', () => {
       makeConfig(),
       makeH2hServiceMock(),
       makeCongestionServiceMock(),
-      makePredictionServiceMock(),
       makeMlInferenceServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue(
@@ -2260,10 +2239,6 @@ describe('BettingEngineService', () => {
     await service.analyzeFixture('fixture-id');
 
     expect(betCreate).toHaveBeenCalledTimes(1);
-    const evArgs = (
-      betCreate.mock.calls as [{ data: { isSafeValue?: boolean } }[]]
-    )[0][0];
-    expect(evArgs.data.isSafeValue).toBeFalsy();
   });
 });
 

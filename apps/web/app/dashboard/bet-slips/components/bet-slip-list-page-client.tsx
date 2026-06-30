@@ -217,11 +217,13 @@ function BetSlipCard({
 
       <div className="mt-3 border-t border-border pt-2.5">
         <p className="text-xs text-muted-foreground">
-          {betSlip.items
-            .slice(0, 2)
-            .map((item) => item.fixture)
-            .join(" • ")}
-          {betSlip.items.length > 2 ? ` • +${betSlip.items.length - 2}` : ""}
+          {(() => {
+            const fixtures = [...new Set(betSlip.items.map((i) => i.fixture))];
+            return (
+              fixtures.slice(0, 2).join(" • ") +
+              (fixtures.length > 2 ? ` • +${fixtures.length - 2}` : "")
+            );
+          })()}
         </p>
       </div>
     </button>
@@ -336,12 +338,12 @@ export function BetSlipListPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5 ev-shell-shadow">
-        <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:gap-5">
+        <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
           <div className="flex min-h-0 flex-col gap-4">
             {filter}
             <div className="min-h-0 flex-1 overflow-y-auto">{items}</div>
           </div>
-          <div className="h-full">
+          <div className="h-full min-h-0">
             {selectedSlip ? (
               <BetSlipDetailPanel data={selectedSlip} onClose={handleClose} />
             ) : (

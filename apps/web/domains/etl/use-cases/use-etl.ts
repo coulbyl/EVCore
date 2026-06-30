@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
   EtlBackfillResult,
+  EtlRebuildResult,
   EtlClearQueueResult,
   EtlHorizonResult,
   EtlLeagueSyncResult,
@@ -105,6 +106,21 @@ export function useTriggerFixturesBackfill() {
         `/etl/sync/fixtures/${opts.competitionCode}/backfill?seasons=${opts.seasons}`,
         { method: "POST" },
       ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
+  });
+}
+
+// Historical rebuild: re-runs the betting engine on FINISHED fixtures without a
+// ModelRun (idempotent), one job per season. Optional from/to (ISO YYYY-MM-DD)
+// restrict the scheduledAt window; omit both to rebuild everything.
+export function useTriggerBettingEngineRebuild() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (window: { from?: string; to?: string } = {}) =>
+      clientApiRequest<EtlRebuildResult>("/etl/rebuild/betting-engine", {
+        method: "POST",
+        body: window,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
   });
 }

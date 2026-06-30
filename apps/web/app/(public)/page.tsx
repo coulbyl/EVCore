@@ -24,7 +24,7 @@ import {
 
 const CHANNELS = [
   {
-    tag: "SV",
+    tag: "SAFE",
     label: "Safe Value",
     headline: "Le canal le plus sélectif.",
     body: "Haute confiance et avantage réel sur la cote. Chaque position est justifiée par les données — pas par l'intuition.",
@@ -58,7 +58,7 @@ const CHANNELS = [
     glowCls: "bg-blue-500/10",
   },
   {
-    tag: "BB",
+    tag: "BTTS",
     label: "Les deux équipes marquent",
     headline: "Statistique pure. Pas de biais.",
     body: "Les deux équipes marquent. Canal stable sur les ligues à forte densité offensive, indépendant du résultat final.",
@@ -77,7 +77,7 @@ const CHANNELS = [
     glowCls: "bg-amber-500/10",
   },
   {
-    tag: "EV",
+    tag: "VALUE",
     label: "Expected Value",
     headline: "La valeur là où les cotes la cachent.",
     body: "Le modèle cible les positions sous-estimées par le marché. Une fréquence de réussite moindre, compensée par des cotes significativement plus hautes.",
@@ -116,7 +116,7 @@ const STEPS = [
 function HeroPreview() {
   const channels = [
     {
-      tag: "SV",
+      tag: "SAFE",
       metric: "75.7%",
       bets: 230,
       color: "text-success",
@@ -126,15 +126,15 @@ function HeroPreview() {
       tag: "VICTOIRE",
       metric: "57.2%",
       bets: 159,
-      color: "text-canal-sv",
-      bg: "bg-canal-sv/10 border-canal-sv/20",
+      color: "text-canal-safe",
+      bg: "bg-canal-safe/10 border-canal-safe/20",
     },
     {
-      tag: "BB",
+      tag: "BTTS",
       metric: "65.6%",
       bets: 163,
-      color: "text-canal-ev",
-      bg: "bg-canal-ev/10 border-canal-ev/20",
+      color: "text-canal-value",
+      bg: "bg-canal-value/10 border-canal-value/20",
     },
   ];
 

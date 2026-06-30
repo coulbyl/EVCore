@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { CompetitionStat } from "../types/dashboard";
 import { clientApiRequest } from "@/lib/api/client-api";
 
-export type CompetitionStatCanal = "ALL" | "EV" | "SV";
+export type CompetitionStatCanal = "ALL" | "VALUE" | "SAFE";
 
 export function useCompetitionStats(canal: CompetitionStatCanal = "ALL") {
   return useQuery({

@@ -78,8 +78,8 @@ body {
 html:not(.dark)[data-event="wc2026"] {
   --accent: #c9a84c;
   --accent-soft: rgba(201, 168, 76, 0.12);
-  --canal-ev: #c98b1d;
-  --canal-ev-soft: rgba(201, 139, 29, 0.12);
+  --canal-value: #c98b1d;
+  --canal-value-soft: rgba(201, 139, 29, 0.12);
   --background: #efe7d8;
   --foreground: #352d20;
   --muted: #846f4f;
@@ -112,8 +112,8 @@ html:not(.dark)[data-event="wc2026"] .ev-grid-glow {
 html.dark[data-event="wc2026"] {
   --accent: #c9a84c;
   --accent-soft: rgba(201, 168, 76, 0.13);
-  --canal-ev: #e8b84b;
-  --canal-ev-soft: rgba(232, 184, 75, 0.11);
+  --canal-value: #e8b84b;
+  --canal-value-soft: rgba(232, 184, 75, 0.11);
   --background: #0a0f1e;
   --panel: #111827;
   --panel-strong: #1a2236;

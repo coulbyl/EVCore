@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { CouponProposalStatus } from '@evcore/db';
 import { formatDateUtc } from '@utils/date.utils';
-import { AiEngineService } from '@modules/ai-engine/ai-engine.service';
-import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
+import { CouponService } from '@modules/coupon/coupon.service';
+import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { CHAT_LIMITS } from './chat.constants';
 import { round } from './chat.math';
 import { ChatReadRepository } from './chat.read.repository';
@@ -29,7 +29,7 @@ type ToolExecutionInput = {
 export class ChatToolsService {
   constructor(
     private readonly readRepo: ChatReadRepository,
-    private readonly aiEngine: AiEngineService,
+    private readonly coupon: CouponService,
     private readonly pickEngine: ChatPickEngineService,
   ) {}
 
@@ -107,6 +107,8 @@ export class ChatToolsService {
         return this.getEdgeAnalysis(input.args);
       case 'getEngineHealth':
         return this.getEngineHealth();
+      case 'getPicksWithEvaluation':
+        return this.getPicksWithEvaluation(input.args);
       case 'getMyStats':
         return this.getMyStats(input.args, input.context);
     }
@@ -141,7 +143,7 @@ export class ChatToolsService {
     const input = CHAT_TOOL_SCHEMAS.getUpcomingPicks.parse(args);
     return this.pickEngine.getUpcomingPicks({
       date: input.date,
-      canal: input.canal,
+      channel: input.channel,
       limit: input.limit ?? CHAT_LIMITS.maxToolRows,
     });
   }
@@ -150,7 +152,7 @@ export class ChatToolsService {
     const input = CHAT_TOOL_SCHEMAS.getCouponProposals.parse(args);
     const date = input.date ?? formatDateUtc(new Date());
     const status = input.status as CouponProposalStatus | undefined;
-    const coupons = await this.aiEngine.getCoupons(date, status);
+    const coupons = await this.coupon.getCoupons(date, status);
 
     return {
       asOf: new Date().toISOString(),
@@ -167,7 +169,7 @@ export class ChatToolsService {
           fixtureId: leg.fixtureId,
           match: `${leg.homeTeam} - ${leg.awayTeam}`,
           competition: leg.competition,
-          canal: leg.canal,
+          channel: leg.canal,
           market: leg.market,
           pick: leg.pick,
           probability: round(leg.probability),
@@ -228,10 +230,10 @@ export class ChatToolsService {
       ? [
           [
             input.competition,
-            PREDICTION_CONFIG[input.competition] ?? {},
+            CHANNEL_STRATEGY_CONFIG[input.competition] ?? {},
           ] as const,
         ]
-      : Object.entries(PREDICTION_CONFIG);
+      : Object.entries(CHANNEL_STRATEGY_CONFIG);
 
     const result = entries.map(([comp, channels]) => ({
       competition: comp,
@@ -251,7 +253,7 @@ export class ChatToolsService {
     const range = toDateRange(input.from, input.to);
     const outcomes = await this.readRepo.getSettledOutcomes({
       range,
-      canal: input.canal,
+      channel: input.channel,
       onlyMisses: input.onlyMisses ?? false,
       limit: CHAT_LIMITS.maxToolRows,
     });
@@ -322,6 +324,18 @@ export class ChatToolsService {
     };
   }
 
+  // ── Groupe F ─────────────────────────────────────────────────────────────
+
+  private async getPicksWithEvaluation(args: unknown) {
+    const input = CHAT_TOOL_SCHEMAS.getPicksWithEvaluation.parse(args);
+    const date = input.date ?? formatDateUtc(new Date());
+    return this.readRepo.getPicksWithEvaluation({
+      date,
+      limit: CHAT_LIMITS.maxEvaFixtures,
+      maxPicksPerFixture: CHAT_LIMITS.maxEvaPicksPerFixture,
+    });
+  }
+
   // ── Groupe D ─────────────────────────────────────────────────────────────
 
   private async getEngineHealth() {
@@ -385,7 +399,7 @@ function extractStreamPicks(
 function toStreamPicks(picks: CompactPick[]): ChatStreamPick[] | undefined {
   if (picks.length === 0) return undefined;
   return picks.slice(0, CHAT_LIMITS.maxStreamPicks).map((pick) => ({
-    canal: pick.canal,
+    channel: pick.channel,
     match: pick.match,
     market: pick.market,
     pick: pick.pick,

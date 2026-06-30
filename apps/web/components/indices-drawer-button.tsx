@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BarChart2 } from "lucide-react";
 import { Button } from "@evcore/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { InvestmentIndicesDrawer } from "./investment-indices-drawer";
+import { CouponIndicesDrawer } from "./coupon-indices-drawer";
 
 export function IndicesDrawerButton() {
   const [open, setOpen] = useState(false);
@@ -21,7 +21,7 @@ export function IndicesDrawerButton() {
         <BarChart2 size={12} />
         Indice de paris
       </Button>
-      <InvestmentIndicesDrawer
+      <CouponIndicesDrawer
         open={open}
         onClose={() => setOpen(false)}
         isMobile={isMobile}

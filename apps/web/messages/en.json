@@ -16,7 +16,6 @@
     "eva": "EVA",
     "dashboard": "Dashboard",
     "fixtures": "Fixtures",
-    "picks": "Selections",
     "navGroupToday": "Today",
     "navGroupTracking": "Tracking",
     "navGroupAnalysis": "Analysis",
@@ -39,7 +38,103 @@
     "summary": "Selections summary",
     "investmentSummary": "Investment summary",
     "coupons": "Combos",
-    "investissement": "Investment"
+    "decisions": "Decisions",
+    "decisionsShort": "Decisions"
+  },
+  "decisions": {
+    "channels": {
+      "VALUE": {
+        "label": "Value",
+        "description": "Positive expected value odds."
+      },
+      "SAFE": {
+        "label": "Safety",
+        "description": "Prudent selections built for steadier returns."
+      },
+      "DOMINANT": {
+        "label": "Winner",
+        "description": "The model's strongest 1X2 angle."
+      },
+      "BTTS": {
+        "label": "BTTS",
+        "description": "Both teams to score."
+      },
+      "DRAW": {
+        "label": "Draw",
+        "description": "Draw angle from market-implied probability."
+      },
+      "GOALS": {
+        "label": "Goals",
+        "description": "Total goals over/under line."
+      },
+      "CONSENSUS": {
+        "label": "Consensus",
+        "description": "Several independent strategies converge on the same pick."
+      },
+      "AVOID": {
+        "label": "Caution",
+        "description": "Fixture flagged: implausible model/market divergence."
+      },
+      "CORRECT_SCORE": {
+        "label": "Exact score",
+        "description": "Best-value exact scoreline (observation only, never staked)."
+      }
+    },
+    "reasons": {
+      "score_below_threshold": "Model score below threshold",
+      "no_viable_pick": "No viable pick",
+      "line_movement": "Unfavorable odds movement",
+      "no_safe_candidate": "No safety candidate",
+      "below_threshold": "Probability below threshold",
+      "insufficient_margin": "Insufficient margin",
+      "no_consensus": "No cross-channel consensus",
+      "consensus": "Independent channels converged",
+      "no_avoid_signal": "No avoidance signal",
+      "extreme_divergence": "Extreme model/market divergence",
+      "no_model": "No model probabilities",
+      "no_odds": "No priced scoreline",
+      "no_modelable_scoreline": "No modelable scoreline priced",
+      "below_ev": "Best scoreline below EV floor",
+      "BACKFILL": "Backfilled"
+    },
+    "statuses": {
+      "SELECTED": "Selected",
+      "REJECTED": "Rejected",
+      "DISABLED": "Disabled",
+      "INSUFFICIENT_DATA": "Insufficient data",
+      "MISSING_ODDS": "Missing odds",
+      "NOT_APPLICABLE": "Not applicable"
+    },
+    "lens": {
+      "matches": "By match",
+      "channels": "By channel"
+    },
+    "avoid": {
+      "banner": "Caution",
+      "tooltipLabel": "Caution signal",
+      "tooltipDetail": "One of the picks below has too large a gap between the model's probability and the market's implied probability (≥ 30 points). Historically the market is right in this case — spot the pick flagged ⚠ and skip it, the others remain valid.",
+      "edge": "gap",
+      "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
+    },
+    "consensus": {
+      "tooltipLabel": "Consensus signal",
+      "tooltipDetail": "Multiple independent channels selected the same outcome without coordination. This is a reinforced conviction signal — prioritise it in your bankroll allocation."
+    },
+    "noPick": "No pick retained on this fixture.",
+    "noPickShort": "no pick",
+    "pickCount": "{count, plural, one {# pick} other {# picks}}",
+    "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
+    "summary": {
+      "matches": "matches",
+      "picks": "picks",
+      "withPicks": "with pick",
+      "avoided": "to avoid"
+    },
+    "filters": {
+      "all": "All",
+      "onlyPicks": "With pick only",
+      "noMatch": "No fixture matches the filters."
+    }
   },
   "notifications": {
     "title": "Notifications",
@@ -70,10 +165,23 @@
     "label": "Training",
     "title": "Training center",
     "subtitle": "Articles and videos to understand each pick and improve step by step.",
+    "videoHub": {
+      "title": "Video training",
+      "subtitle": "Short videos to understand coupons, probabilities, and discipline without reading articles.",
+      "videoOnly": "videos only",
+      "watchNow": "Watch",
+      "featuredCopy": "Start with this video, then follow the short tracks based on your current goal.",
+      "emptyTitle": "No video available",
+      "emptySubtitle": "New videos are on the way.",
+      "metrics": {
+        "available": "Available",
+        "completed": "Watched",
+        "next": "Next"
+      }
+    },
     "progress": "Progress",
     "open": "Open",
     "browse": "Browse",
-    "contents": "Contents",
     "otherItems": "Other items",
     "upNext": "Up next",
     "lastRead": "Last read",
@@ -83,15 +191,12 @@
     "related": "Related",
     "recommended": "Recommended",
     "library": "Library",
-    "searchPlaceholder": "Search an article or a video…",
     "allCategories": "All categories",
     "allDifficulties": "All levels",
     "noResults": "No results for these filters.",
     "itemsCount": "{count} items",
     "toc": "Navigation",
-    "articles": "Articles",
     "videos": "Videos",
-    "article": "Article",
     "video": "Video",
     "markCompleted": "Mark as completed",
     "completed": "Completed",
@@ -399,11 +504,43 @@
     "seasonBreakdown": "Season breakdown",
     "season": "Season",
     "canalGlobal": "Global",
-    "canalEv": "EV",
-    "canalSv": "Safety",
+    "canalValue": "Value",
+    "canalSafe": "Safe",
     "period7d": "7 days",
     "period30d": "30 days",
-    "periodAll": "All"
+    "periodAll": "All",
+    "analysis": "Channel analysis",
+    "analysisHint": "Backtest, calibration and threshold tuning — read straight from the engine outputs.",
+    "tabChannels": "Channel backtest",
+    "tabTuning": "Threshold tuning",
+    "tabCalibration": "Model calibration",
+    "channelsHint": "Flat-stake ROI per channel × league over settled selections.",
+    "calibrationModelHint": "1X2 model quality (Brier / ECE) per league — channel-agnostic.",
+    "tuningHint": "Offline threshold sweep → recommended threshold per league. Advisory: copy into the config manually.",
+    "runAnalysis": "Run analysis",
+    "analysisWindow": "Window {from} → {to}",
+    "analysisIdle": "Run the analysis to see results.",
+    "analysisEmpty": "No data in the window.",
+    "colChannel": "Channel",
+    "colCompetition": "League",
+    "colSettled": "Settled",
+    "colHitRate": "Hit rate",
+    "colRoi": "ROI",
+    "colVerdict": "Verdict",
+    "colAnalyzed": "Analyzed",
+    "colEce": "ECE",
+    "colCurrent": "Current",
+    "colRecommended": "Recommended",
+    "colRecRoi": "Rec. ROI",
+    "colRecSample": "Sample",
+    "colSegment": "Line",
+    "goalsSection": "GOALS — over/under sweep (line × side)",
+    "bttsNoSection": "BTTS NO — per-league sweep (observation)",
+    "verdict": {
+      "PASS": "Pass",
+      "FAIL": "Fail",
+      "INSUFFICIENT_DATA": "Insufficient"
+    }
   },
   "fixtureDiagnostics": {
     "rejection": {

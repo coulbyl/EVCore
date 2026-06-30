@@ -1,30 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AdjustmentStatus,
   BetStatus,
-  Decision,
   FixtureStatus,
   Market,
+  ModelRunPhase,
   Prisma,
 } from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
+  asNumber,
+  buildBetPickKey,
   buildPoissonDistributions,
   computePoissonMarkets,
   calculateDeterministicScore,
   calculateEV as calcEV,
   calculateKellyStakePct,
-  COMBO_WHITELIST,
-  HALF_TIME_FULL_TIME_PICKS,
-  computeJointProbability,
-  resolveComboPickBetStatus,
-  resolveEarlyBetStatus,
-  resolveFirstHalfBetStatus,
-  resolveHalfTimeFullTimeBetStatus,
-  resolvePickBetStatus,
-  type ComboPick,
-  type HalfTimeFullTimePick,
   type DeterministicFeatures,
   type FeatureWeights,
 } from './betting-engine.utils';
@@ -34,72 +26,67 @@ import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { createLogger } from '@utils/logger';
 import {
-  COMBO_CORRELATION_ALPHA,
-  COMBO_CORRELATION_MAX_FACTOR,
-  COMBO_CORRELATION_MIN_FACTOR,
   DEFAULT_STAKE_PCT,
-  EV_HARD_CAP,
   EV_MAX_SOFT_ALERT,
-  EV_THRESHOLD,
   FEATURE_WEIGHTS,
-  getLeagueThreeWayEmpiricalBlendWeight,
   getModelScoreThreshold,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
-  getLeagueHomeAwayFactors,
-  MAX_SELECTION_ODDS,
-  MIN_DRAW_DIRECTION_PROBABILITY,
-  MIN_QUALITY_SCORE,
-  getLeagueEvThreshold,
-  ONE_X_TWO_AWAY_MAX_ODDS,
-  ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
-  ONE_X_TWO_DRAW_MAX_ODDS,
-  ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
-  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
-  LAMBDA_SHRINKAGE_FACTOR,
-  getLeagueMeanLambda,
-  getPickDirectionProbabilityThreshold,
-  getPickEvFloor,
-  getPickEvSoftCap,
-  getPickMaxSelectionOdds,
-  getPickMinSelectionOdds,
   isEuropeanCompetition,
   EUROPEAN_CROSS_COMP_FORM_WEIGHT,
   EUROPEAN_CROSS_COMP_XG_WEIGHT,
   isNationalTeamCompetition,
   NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
   NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
-  getSvMinProbability,
-  getSvMinOdds,
-  SAFE_VALUE_MIN_EV,
-  SAFE_VALUE_MAX_ODDS,
-  SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
-  UNDER_HIGH_LAMBDA_THRESHOLD,
-  EV_MIN_PROBABILITY_THRESHOLD,
-  COMBOS_ENABLED,
-  isHtftCalibrated,
-  FALLBACK_MIN_QUALITY_SCORE,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
-import { PredictionService } from '@modules/prediction/prediction.service';
 import type {
   EvaluatedPick,
   FullOddsSnapshot,
   MatchComputation,
-  MatchupFeatures,
+  MatchProbabilities,
   PredictionSource,
   TeamStatsInput,
   ViablePick,
 } from './betting-engine.types';
 import { FriModelService } from './fri-model/fri-model.service';
+import { MlInferenceService } from '@modules/ml/ml.inference.service';
+import { ChannelDecisionService } from './channel-decision.service';
+import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
+import { BetSettlementService } from './settlement/bet-settlement.service';
 import {
-  MlInferenceService,
-  type MlShadowFeatures,
-} from '@modules/ml/ml.inference.service';
-
-export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
+  blendTeamStats,
+  buildLambdaConfig,
+  buildMatchupFeatures,
+  deriveLambdas,
+  mapProbabilitiesToNumber,
+  rebalanceThreeWayProbabilities,
+} from './math/probability';
+import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
+import { getPickOdds } from './pricing/odds-mapping';
+import {
+  summarizeEvaluatedPicks,
+  summarizePick,
+  summarizePicks,
+} from './selection/pick-validation';
+import { buildMlShadowFeatures } from './ml-shadow-features';
+import {
+  listEvaluatedOneXTwoPicks,
+  listEvaluatedPicks,
+  selectBestViablePick,
+  selectSafeValuePick,
+} from './selection/pick-evaluation';
+import { buildSelectionConfig } from './selection/selection-config';
+import type { PersistedChannelDecision } from './channel-decision.repository';
+import { buildStrategyContext } from './strategies/strategy-context.builder';
+import {
+  STRATEGY_CHANNEL,
+  type ContextSignals,
+  type StrategyChannel,
+} from './channel-strategy.types';
+import { formatDateUtc } from '@utils/date.utils';
 
 const logger = createLogger('betting-engine-service');
 const MIN_LAMBDA = 0.05;
@@ -124,7 +111,6 @@ type AnalyzeFixtureResult =
       status: 'analyzed';
       fixtureId: string;
       modelRunId: string;
-      decision: 'BET' | 'NO_BET';
       deterministicScore: number;
       probabilities: Record<string, number | Record<string, number>>;
       valueBet: BetCandidate | null;
@@ -142,6 +128,8 @@ type AnalyzeFixtureResult =
 export class BettingEngineService {
   private readonly kellyEnabled: boolean;
   private readonly friModelService: FriModelService;
+  private readonly oddsLoader: OddsSnapshotLoader;
+  private readonly betSettlement: BetSettlementService;
 
   // eslint-disable-next-line max-params -- Explicit service injection keeps scoring dependencies transparent.
   constructor(
@@ -149,13 +137,30 @@ export class BettingEngineService {
     config: ConfigService,
     private readonly h2hService: H2HService,
     private readonly congestionService: CongestionService,
-    private readonly predictionService: PredictionService,
     private readonly mlInference: MlInferenceService,
     private readonly bankroll?: BankrollService,
     friModelService?: FriModelService,
+    // Injected by Nest in production (BettingEngineModule provides it); omitted
+    // in unit/e2e test modules that don't, where channel persistence is a no-op.
+    @Optional()
+    private readonly channelDecisionService?: ChannelDecisionService,
+    // Injected in production; unit tests omit it and fall back to a loader built
+    // on the same (mocked) Prisma client. Kept last to preserve positional args.
+    @Optional()
+    oddsLoader?: OddsSnapshotLoader,
+    @Optional()
+    betSettlement?: BetSettlementService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
+    this.oddsLoader = oddsLoader ?? new OddsSnapshotLoader(this.prisma);
+    this.betSettlement =
+      betSettlement ??
+      new BetSettlementService(
+        this.prisma,
+        this.channelDecisionService,
+        this.bankroll,
+      );
   }
 
   computeProbabilities(
@@ -188,12 +193,16 @@ export class BettingEngineService {
       features,
       weights,
     );
-    const lambda = deriveLambdas(homeStats, awayStats, competitionCode);
+    const lambda = deriveLambdas(
+      homeStats,
+      awayStats,
+      buildLambdaConfig(competitionCode),
+    );
     const probabilities = rebalanceThreeWayProbabilities({
       probabilities: this.computeProbabilities(lambda.home, lambda.away),
       homeStats,
       awayStats,
-      competitionCode,
+      blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
     });
 
     return { deterministicScore, probabilities, lambda, features };
@@ -209,7 +218,7 @@ export class BettingEngineService {
     competitionCode?: string | null;
     minEv?: Decimal;
   }): ViablePick | null {
-    return this.selectBestViablePick(
+    return selectBestViablePick(
       input.probabilities,
       input.odds,
       input.deterministicScore,
@@ -217,7 +226,7 @@ export class BettingEngineService {
       input.distAway,
       input.lambdaFloorHit,
       new Set<Market>(),
-      input.competitionCode,
+      buildSelectionConfig(input.competitionCode ?? null),
       input.minEv,
     );
   }
@@ -228,12 +237,12 @@ export class BettingEngineService {
     deterministicScore: Decimal;
     competitionCode?: string | null;
   }): ViablePick | null {
-    const evaluated = this.listEvaluatedOneXTwoPicks(
+    const evaluated = listEvaluatedOneXTwoPicks(
       input.probabilities,
       input.odds,
       input.deterministicScore,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
 
     return (
@@ -249,12 +258,12 @@ export class BettingEngineService {
     deterministicScore: Decimal;
     competitionCode?: string | null;
   }): EvaluatedPick[] {
-    return this.listEvaluatedOneXTwoPicks(
+    return listEvaluatedOneXTwoPicks(
       input.probabilities,
       input.odds,
       input.deterministicScore,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
   }
 
@@ -268,7 +277,7 @@ export class BettingEngineService {
     competitionCode?: string | null;
     minEv?: Decimal;
   }): EvaluatedPick[] {
-    return this.listEvaluatedPicks(
+    return listEvaluatedPicks(
       input.probabilities,
       input.odds,
       input.deterministicScore,
@@ -276,7 +285,7 @@ export class BettingEngineService {
       input.distAway,
       input.lambdaFloorHit,
       new Set<Market>(),
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
       input.minEv,
     );
   }
@@ -287,12 +296,12 @@ export class BettingEngineService {
     lambdaTotal?: number;
     competitionCode?: string | null;
   }): ViablePick | null {
-    return this.selectSafeValuePick(
+    return selectSafeValuePick(
       input.evaluatedPicks,
       new Set<Market>(),
       input.evPickKey,
       input.lambdaTotal ?? 0,
-      input.competitionCode ?? null,
+      buildSelectionConfig(input.competitionCode ?? null),
     );
   }
 
@@ -322,296 +331,12 @@ export class BettingEngineService {
 
   // Settle bets whose outcome is irrevocably known from in-progress scores
   // (BTTS YES/NO, OVER/UNDER thresholds, HT markets). 1X2 and HTFT wait for FINISHED.
-  async settleEarlyBets(fixtureId: string): Promise<{ settled: number }> {
-    const fixture = await this.prisma.client.fixture.findUnique({
-      where: { id: fixtureId },
-      select: {
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-      },
-    });
-
-    if (!fixture || fixture.homeScore === null || fixture.awayScore === null) {
-      return { settled: 0 };
-    }
-
-    const bets = await this.prisma.client.bet.findMany({
-      where: { fixtureId, status: BetStatus.PENDING },
-      select: {
-        id: true,
-        market: true,
-        pick: true,
-        comboMarket: true,
-        comboPick: true,
-      },
-    });
-
-    let settled = 0;
-    for (const bet of bets) {
-      let status: BetStatus | null = null;
-
-      const scores = {
-        homeScore: fixture.homeScore,
-        awayScore: fixture.awayScore,
-        homeHtScore: fixture.homeHtScore,
-        awayHtScore: fixture.awayHtScore,
-      };
-
-      if (bet.comboMarket !== null && bet.comboPick !== null) {
-        // Combo: early-LOST if any leg is irrevocably LOST (e.g. UNDER exceeded)
-        const s1 = resolveEarlyBetStatus({
-          market: bet.market,
-          pick: bet.pick,
-          ...scores,
-        });
-        const s2 = resolveEarlyBetStatus({
-          market: bet.comboMarket,
-          pick: bet.comboPick,
-          ...scores,
-        });
-        if (s1 === BetStatus.LOST || s2 === BetStatus.LOST) {
-          status = BetStatus.LOST;
-        }
-        // Combo WON requires all legs confirmed — defer to settleOpenBets on FINISHED
-      } else {
-        status = resolveEarlyBetStatus({
-          market: bet.market,
-          pick: bet.pick,
-          ...scores,
-        });
-      }
-
-      if (status === null) continue;
-      await this.prisma.client.bet.update({
-        where: { id: bet.id },
-        data: { status },
-      });
-      settled++;
-    }
-
-    // Early-settle BTTS predictions in the same pass — same irrevocability logic
-    await this.predictionService.settleEarlyPredictions(
-      fixtureId,
-      fixture.homeScore,
-      fixture.awayScore,
-    );
-
-    return { settled };
+  settleEarlyBets(fixtureId: string): Promise<{ settled: number }> {
+    return this.betSettlement.settleEarlyBets(fixtureId);
   }
 
-  async settleOpenBets(fixtureId: string): Promise<{ settled: number }> {
-    const fixture = await this.prisma.client.fixture.findUnique({
-      where: { id: fixtureId },
-      select: {
-        homeScore: true,
-        awayScore: true,
-        homeHtScore: true,
-        awayHtScore: true,
-        status: true,
-      },
-    });
-
-    if (!fixture || fixture.status !== FixtureStatus.FINISHED) {
-      return { settled: 0 };
-    }
-
-    // Re-settle all bets (PENDING + already early-settled) using the definitive
-    // final score — this corrects any VAR-reversed early settlements automatically.
-    const bets = await this.prisma.client.bet.findMany({
-      where: {
-        fixtureId,
-        status: { in: [BetStatus.PENDING, BetStatus.WON, BetStatus.LOST] },
-      },
-      select: {
-        id: true,
-        market: true,
-        pick: true,
-        comboMarket: true,
-        comboPick: true,
-        oddsSnapshot: true,
-        betSlipItems: {
-          select: {
-            userId: true,
-            stakeOverride: true,
-            betSlip: {
-              select: {
-                id: true,
-                type: true,
-                unitStake: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    // Settle predictions (canal Confiance) en parallèle des bets EV/SV.
-    await this.predictionService.settlePredictions(
-      fixtureId,
-      fixture.homeScore,
-      fixture.awayScore,
-    );
-
-    if (bets.length === 0) return { settled: 0 };
-
-    const userIds = [
-      ...new Set(bets.flatMap((b) => b.betSlipItems.map((i) => i.userId))),
-    ];
-    const users = await this.prisma.client.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, currency: true },
-    });
-    const currencyByUser = new Map(users.map((u) => [u.id, u.currency]));
-
-    return this.prisma.client.$transaction(async (tx) => {
-      let settled = 0;
-      const touchedComboSlipIds = new Set<string>();
-      for (const bet of bets) {
-        let status: BetStatus;
-
-        if (bet.comboMarket !== null && bet.comboPick !== null) {
-          const combo: ComboPick = {
-            market1: bet.market,
-            pick1: bet.pick,
-            market2: bet.comboMarket,
-            pick2: bet.comboPick,
-          };
-          status = resolveComboPickBetStatus(
-            combo,
-            fixture.homeScore,
-            fixture.awayScore,
-          );
-        } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
-          status = resolveHalfTimeFullTimeBetStatus({
-            pick: bet.pick,
-            homeHtScore: fixture.homeHtScore,
-            awayHtScore: fixture.awayHtScore,
-            homeScore: fixture.homeScore,
-            awayScore: fixture.awayScore,
-          });
-        } else if (
-          bet.market === Market.OVER_UNDER_HT ||
-          bet.market === Market.FIRST_HALF_WINNER
-        ) {
-          status = resolveFirstHalfBetStatus(
-            bet.pick,
-            fixture.homeHtScore,
-            fixture.awayHtScore,
-          );
-        } else {
-          status = resolvePickBetStatus(
-            bet.pick,
-            fixture.homeScore,
-            fixture.awayScore,
-          );
-        }
-
-        await tx.bet.update({
-          where: { id: bet.id },
-          data: { status },
-        });
-
-        if (status === BetStatus.WON || status === BetStatus.VOID) {
-          for (const item of bet.betSlipItems) {
-            if (item.betSlip.type === 'COMBO') {
-              touchedComboSlipIds.add(item.betSlip.id);
-              continue;
-            }
-
-            const stake = new Decimal(
-              (item.stakeOverride ?? item.betSlip.unitStake).toString(),
-            );
-
-            if (status === BetStatus.WON) {
-              if (bet.oddsSnapshot === null) {
-                throw new Error(
-                  `Impossible de créditer le bet ${bet.id} sans oddsSnapshot`,
-                );
-              }
-
-              await this.bankroll?.recordBetWon(
-                {
-                  userId: item.userId,
-                  betId: bet.id,
-                  stake,
-                  odds: new Decimal(bet.oddsSnapshot.toString()),
-                  currency: currencyByUser.get(item.userId),
-                },
-                { tx },
-              );
-              continue;
-            }
-
-            await this.bankroll?.recordBetVoid(
-              {
-                userId: item.userId,
-                betId: bet.id,
-                stake,
-              },
-              { tx },
-            );
-          }
-        }
-
-        settled++;
-      }
-
-      if (touchedComboSlipIds.size > 0) {
-        const comboSlips = await tx.betSlip.findMany({
-          where: { id: { in: [...touchedComboSlipIds] }, type: 'COMBO' },
-          select: {
-            id: true,
-            userId: true,
-            unitStake: true,
-            items: {
-              select: {
-                betId: true,
-                bet: {
-                  select: {
-                    status: true,
-                    oddsSnapshot: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        for (const slip of comboSlips) {
-          if (
-            slip.items.some((item) => item.bet.status === BetStatus.PENDING)
-          ) {
-            continue;
-          }
-
-          if (slip.items.every((item) => item.bet.status === BetStatus.WON)) {
-            const totalOdds = slip.items.reduce((product, item) => {
-              if (item.bet.oddsSnapshot === null) {
-                throw new Error(
-                  `Impossible de créditer le coupon combiné ${slip.id} sans oddsSnapshot`,
-                );
-              }
-              return product.times(item.bet.oddsSnapshot.toString());
-            }, new Decimal(1));
-
-            await this.bankroll?.recordBetWon(
-              {
-                userId: slip.userId,
-                betId: slip.items[0].betId,
-                stake: new Decimal(slip.unitStake.toString()),
-                odds: totalOdds,
-                currency: currencyByUser.get(slip.userId),
-              },
-              { tx },
-            );
-          }
-        }
-      }
-
-      return { settled };
-    });
+  settleOpenBets(fixtureId: string): Promise<{ settled: number }> {
+    return this.betSettlement.settleOpenBets(fixtureId);
   }
 
   async analyzeFixture(fixtureId: string): Promise<AnalyzeFixtureResult> {
@@ -638,13 +363,20 @@ export class BettingEngineService {
       return { status: 'skipped', fixtureId, reason: 'fixture_not_found' };
     }
 
+    const scheduledAt = fixture.scheduledAt.toISOString();
+
     if (
       fixture.status === FixtureStatus.POSTPONED ||
       fixture.status === FixtureStatus.CANCELLED ||
       fixture.status === FixtureStatus.IN_PROGRESS
     ) {
       logger.info(
-        { fixtureId, status: fixture.status, reason: 'fixture_not_playable' },
+        {
+          fixtureId,
+          scheduledAt,
+          status: fixture.status,
+          reason: 'fixture_not_playable',
+        },
         'Fixture skipped',
       );
       return { status: 'skipped', fixtureId, reason: 'fixture_not_playable' };
@@ -655,6 +387,10 @@ export class BettingEngineService {
     }
 
     const competitionCode = getFixtureCompetitionCode(fixture);
+    const modelRunPhase = deriveModelRunPhase({
+      fixtureStatus: fixture.status,
+      scheduledAt: fixture.scheduledAt,
+    });
 
     const [homeStats, awayStats] = await Promise.all([
       this.prisma.client.teamStats.findFirst({
@@ -763,6 +499,7 @@ export class BettingEngineService {
       logger.info(
         {
           fixtureId,
+          scheduledAt,
           competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -792,6 +529,7 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
+          scheduledAt,
           competitionCode,
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -807,16 +545,19 @@ export class BettingEngineService {
     const deterministicDecision = deterministicScore.greaterThanOrEqualTo(
       getModelScoreThreshold(getFixtureCompetitionCode(fixture)),
     )
-      ? Decision.BET
-      : Decision.NO_BET;
+      ? 'BET'
+      : 'NO_BET';
 
     const { distHome, distAway } = buildPoissonDistributions(
       lambda.home,
       lambda.away,
     );
+    const lambdaTotal =
+      distHome.reduce((sum, p, k) => sum + k * p, 0) +
+      distAway.reduce((sum, p, k) => sum + k * p, 0);
 
     const [latestOdds, activeSuspensions] = await Promise.all([
-      this.findLatestOddsSnapshot(fixtureId, fixture.scheduledAt),
+      this.oddsLoader.findLatestOddsSnapshot(fixtureId, fixture.scheduledAt),
       this.prisma.client.marketSuspension.findMany({
         where: { active: true },
         select: { market: true },
@@ -825,8 +566,9 @@ export class BettingEngineService {
 
     const suspendedMarkets = new Set(activeSuspensions.map((s) => s.market));
 
+    const selectionConfig = buildSelectionConfig(competitionCode);
     const evaluatedPicks: EvaluatedPick[] = latestOdds
-      ? this.listEvaluatedPicks(
+      ? listEvaluatedPicks(
           probabilities,
           latestOdds,
           deterministicScore,
@@ -834,7 +576,7 @@ export class BettingEngineService {
           distAway,
           lambdaFloorHit,
           suspendedMarkets,
-          competitionCode,
+          selectionConfig,
         )
       : [];
     const candidatePicks = evaluatedPicks.filter(
@@ -896,7 +638,7 @@ export class BettingEngineService {
       const cutoff7d = new Date(
         fixture.scheduledAt.getTime() - 7 * 24 * 60 * 60 * 1000,
       );
-      const earliestOdds = await this.findLatestOddsSnapshot(
+      const earliestOdds = await this.oddsLoader.findLatestOddsSnapshot(
         fixtureId,
         cutoff7d,
       );
@@ -924,6 +666,7 @@ export class BettingEngineService {
       logger.warn(
         {
           fixtureId,
+          scheduledAt,
           competitionCode: getFixtureCompetitionCode(fixture),
           homeTeam: getFixtureHomeTeamName(fixture),
           awayTeam: getFixtureAwayTeamName(fixture),
@@ -936,14 +679,12 @@ export class BettingEngineService {
       );
     }
 
-    const decision =
-      deterministicDecision === Decision.BET && valueBet !== null
-        ? Decision.BET
-        : Decision.NO_BET;
+    const hasEvBet = deterministicDecision === 'BET' && valueBet !== null;
 
     logger.info(
       {
         fixtureId,
+        scheduledAt,
         competitionCode: getFixtureCompetitionCode(fixture),
         homeTeam: getFixtureHomeTeamName(fixture),
         awayTeam: getFixtureAwayTeamName(fixture),
@@ -959,7 +700,7 @@ export class BettingEngineService {
         lineMovement: shadowLineMovement,
         h2hScore: shadowH2h,
         congestionScore: shadowCongestion,
-        decision,
+        hasEvBet,
       },
       'Fixture analysis complete',
     );
@@ -967,7 +708,7 @@ export class BettingEngineService {
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
         fixtureId,
-        decision,
+        phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
@@ -1003,10 +744,42 @@ export class BettingEngineService {
       select: { id: true },
     });
 
+    // Per-channel decisions (doc §5). Runs every strategy over the same
+    // computed context before materialising financial Bets where needed.
+    const channelSignals: ContextSignals = {
+      suspendedMarkets,
+      lambdaFloorHit,
+      lambdaTotal,
+      lineMovement: shadowLineMovement,
+      h2h: shadowH2h,
+      congestion: shadowCongestion,
+    };
+    const persistedChannelDecisions =
+      (await this.channelDecisionService?.recordRunDecisions(
+        modelRun.id,
+        buildStrategyContext({
+          fixture: {
+            id: fixture.id,
+            homeTeamId: fixture.homeTeamId,
+            awayTeamId: fixture.awayTeamId,
+            scheduledAt: fixture.scheduledAt,
+          },
+          competitionCode,
+          deterministicScore,
+          probabilities,
+          lambdaHome: lambda.home,
+          lambdaAway: lambda.away,
+          evaluatedPicks,
+          odds: latestOdds,
+          signals: channelSignals,
+          phase: modelRunPhase,
+        }),
+      )) ?? [];
+
     let betCandidate: BetCandidate | null = null;
     let evPickKey: string | null = null;
 
-    if (decision === Decision.BET && valueBet !== null) {
+    if (hasEvBet && valueBet !== null) {
       const stakePct = this.kellyEnabled
         ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
             fraction: KELLY_FRACTION,
@@ -1021,6 +794,17 @@ export class BettingEngineService {
         comboPick: valueBet.comboPick ?? null,
       });
       evPickKey = pickKey;
+
+      const channelSelectionId = findChannelSelectionId(
+        persistedChannelDecisions,
+        STRATEGY_CHANNEL.VALUE,
+        {
+          market: valueBet.market,
+          pick: valueBet.pick,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+        },
+      );
 
       betCandidate = {
         fixtureId,
@@ -1046,6 +830,7 @@ export class BettingEngineService {
           where: { id: existingBet.id },
           data: {
             modelRunId: modelRun.id,
+            channelSelectionId,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1059,6 +844,7 @@ export class BettingEngineService {
           data: {
             modelRunId: modelRun.id,
             fixtureId,
+            channelSelectionId,
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
@@ -1076,16 +862,13 @@ export class BettingEngineService {
 
     // Safe value pass — only when the model score threshold is met (same guard as EV).
     // Reuses the already-computed evaluatedPicks but applies SAFE_VALUE criteria.
-    if (deterministicDecision === Decision.BET && latestOdds !== null) {
-      const svLambdaTotal =
-        distHome.reduce((sum, p, k) => sum + k * p, 0) +
-        distAway.reduce((sum, p, k) => sum + k * p, 0);
-      const svPick = this.selectSafeValuePick(
+    if (deterministicDecision === 'BET' && latestOdds !== null) {
+      const svPick = selectSafeValuePick(
         evaluatedPicks,
         suspendedMarkets,
         evPickKey,
-        svLambdaTotal,
-        competitionCode,
+        lambdaTotal,
+        selectionConfig,
       );
 
       if (svPick !== null) {
@@ -1096,6 +879,17 @@ export class BettingEngineService {
           comboPick: null,
         })}`;
 
+        const channelSelectionId = findChannelSelectionId(
+          persistedChannelDecisions,
+          STRATEGY_CHANNEL.SAFE,
+          {
+            market: svPick.market,
+            pick: svPick.pick,
+            comboMarket: null,
+            comboPick: null,
+          },
+        );
+
         const existingSvBet = await this.prisma.client.bet.findFirst({
           where: { fixtureId, pickKey: svPickKey, userId: null },
           select: { id: true },
@@ -1105,13 +899,13 @@ export class BettingEngineService {
             where: { id: existingSvBet.id },
             data: {
               modelRunId: modelRun.id,
+              channelSelectionId,
               probEstimated: toPrismaDecimal(svPick.probability, 4),
               oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
               ev: toPrismaDecimal(svPick.ev, 4),
               qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
               stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
               status: BetStatus.PENDING,
-              isSafeValue: true,
             },
           });
         } else {
@@ -1119,6 +913,7 @@ export class BettingEngineService {
             data: {
               modelRunId: modelRun.id,
               fixtureId,
+              channelSelectionId,
               market: svPick.market,
               pick: svPick.pick,
               pickKey: svPickKey,
@@ -1129,7 +924,6 @@ export class BettingEngineService {
               ev: toPrismaDecimal(svPick.ev, 4),
               qualityScore: toPrismaDecimal(svPick.qualityScore, 4),
               stakePct: toPrismaDecimal(DEFAULT_STAKE_PCT, 4),
-              isSafeValue: true,
             },
           });
         }
@@ -1137,6 +931,7 @@ export class BettingEngineService {
         logger.info(
           {
             fixtureId,
+            scheduledAt,
             competitionCode,
             market: svPick.market,
             pick: svPick.pick,
@@ -1149,20 +944,10 @@ export class BettingEngineService {
       }
     }
 
-    // Canal Confiance — après les canaux EV et Safe Value, sur les mêmes probabilities.
-    await this.predictionService.createPredictions({
-      fixtureId,
-      modelRunId: modelRun.id,
-      competition: competitionCode ?? '',
-      probabilities,
-      drawOdds: latestOdds?.drawOdds ?? null,
-    });
-
     return {
       status: 'analyzed',
       fixtureId,
       modelRunId: modelRun.id,
-      decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities: mapProbabilitiesToNumber(probabilities),
       valueBet: betCandidate,
@@ -1172,15 +957,25 @@ export class BettingEngineService {
   private async analyzeFriFixture(fixture: {
     id: string;
     scheduledAt: Date;
+    homeTeamId: string;
+    awayTeamId: string;
+    status: FixtureStatus;
     season?: { competition?: { code?: string } };
     homeTeam?: { name?: string };
     awayTeam?: { name?: string };
   }): Promise<AnalyzeFixtureResult> {
     const fixtureId = fixture.id;
     const competitionCode = getFixtureCompetitionCode(fixture);
+    const modelRunPhase = deriveModelRunPhase({
+      fixtureStatus: fixture.status,
+      scheduledAt: fixture.scheduledAt,
+    });
     const [marketOdds, pinnacleOdds, activeSuspensions] = await Promise.all([
-      this.findLatestBestOneXTwoOddsSnapshot(fixtureId, fixture.scheduledAt),
-      this.findLatestOneXTwoOddsSnapshotByBookmaker(
+      this.oddsLoader.findLatestBestOneXTwoOddsSnapshot(
+        fixtureId,
+        fixture.scheduledAt,
+      ),
+      this.oddsLoader.findLatestOneXTwoOddsSnapshotByBookmaker(
         fixtureId,
         fixture.scheduledAt,
         'Pinnacle',
@@ -1218,10 +1013,11 @@ export class BettingEngineService {
         snapshotAt: eloSnapshotAt,
       },
     } = friComputation;
+    const friSelectionConfig = buildSelectionConfig(competitionCode);
     const evaluatedPicks =
       marketOdds !== null && probabilities !== null
         ? lambda !== null
-          ? this.listEvaluatedPicks(
+          ? listEvaluatedPicks(
               probabilities,
               marketOdds.snapshot,
               deterministicScore,
@@ -1230,28 +1026,26 @@ export class BettingEngineService {
               lambda.home <= MIN_LAMBDA + Number.EPSILON ||
                 lambda.away <= MIN_LAMBDA + Number.EPSILON,
               suspendedMarkets,
-              competitionCode,
+              friSelectionConfig,
             )
-          : this.listEvaluatedOneXTwoPicks(
+          : listEvaluatedOneXTwoPicks(
               probabilities,
               marketOdds.snapshot,
               deterministicScore,
               suspendedMarkets,
-              competitionCode,
+              friSelectionConfig,
             )
         : [];
     const candidatePicks = evaluatedPicks.filter(
       (pick): pick is ViablePick => pick.rejectionReason === undefined,
     );
     const valueBet = candidatePicks[0] ?? null;
-    const decision =
+    const hasEvBet =
       marketOdds !== null &&
       deterministicScore.greaterThanOrEqualTo(
         getModelScoreThreshold(competitionCode),
       ) &&
-      valueBet !== null
-        ? Decision.BET
-        : Decision.NO_BET;
+      valueBet !== null;
 
     if (deterministicScore.isZero()) {
       logger.warn(
@@ -1285,7 +1079,7 @@ export class BettingEngineService {
         deterministicScore: deterministicScore.toNumber(),
         hasOdds: marketOdds !== null,
         finalCandidate: valueBet ? summarizePick(valueBet) : null,
-        decision,
+        hasEvBet,
       },
       'FRI fixture analysis complete',
     );
@@ -1293,7 +1087,7 @@ export class BettingEngineService {
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
         fixtureId,
-        decision,
+        phase: modelRunPhase,
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
@@ -1337,8 +1131,50 @@ export class BettingEngineService {
       select: { id: true },
     });
 
+    // Per-channel decisions (doc §5). Skipped when no probabilities were
+    // derived (no Elo and no odds) — the strategy context requires them.
+    let persistedChannelDecisions: PersistedChannelDecision[] = [];
+    if (probabilities !== null) {
+      const friLambdaTotal =
+        distHome.reduce((sum, p, k) => sum + k * p, 0) +
+        distAway.reduce((sum, p, k) => sum + k * p, 0);
+      const channelSignals: ContextSignals = {
+        suspendedMarkets,
+        lambdaFloorHit:
+          lambda !== null
+            ? lambda.home <= MIN_LAMBDA + Number.EPSILON ||
+              lambda.away <= MIN_LAMBDA + Number.EPSILON
+            : false,
+        lambdaTotal: friLambdaTotal,
+        lineMovement: null,
+        h2h: null,
+        congestion: null,
+      };
+      persistedChannelDecisions =
+        (await this.channelDecisionService?.recordRunDecisions(
+          modelRun.id,
+          buildStrategyContext({
+            fixture: {
+              id: fixture.id,
+              homeTeamId: fixture.homeTeamId,
+              awayTeamId: fixture.awayTeamId,
+              scheduledAt: fixture.scheduledAt,
+            },
+            competitionCode,
+            deterministicScore,
+            probabilities,
+            lambdaHome: lambda?.home,
+            lambdaAway: lambda?.away,
+            evaluatedPicks,
+            odds: marketOdds?.snapshot ?? null,
+            signals: channelSignals,
+            phase: modelRunPhase,
+          }),
+        )) ?? [];
+    }
+
     let betCandidate: BetCandidate | null = null;
-    if (decision === Decision.BET && valueBet !== null) {
+    if (hasEvBet && valueBet !== null) {
       const stakePct = this.kellyEnabled
         ? calculateKellyStakePct(valueBet.probability, valueBet.odds, {
             fraction: KELLY_FRACTION,
@@ -1352,6 +1188,17 @@ export class BettingEngineService {
         comboMarket: valueBet.comboMarket ?? null,
         comboPick: valueBet.comboPick ?? null,
       });
+
+      const channelSelectionId = findChannelSelectionId(
+        persistedChannelDecisions,
+        STRATEGY_CHANNEL.VALUE,
+        {
+          market: valueBet.market,
+          pick: valueBet.pick,
+          comboMarket: valueBet.comboMarket ?? null,
+          comboPick: valueBet.comboPick ?? null,
+        },
+      );
 
       betCandidate = {
         fixtureId,
@@ -1377,6 +1224,7 @@ export class BettingEngineService {
           where: { id: existingBet2.id },
           data: {
             modelRunId: modelRun.id,
+            channelSelectionId,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1390,6 +1238,7 @@ export class BettingEngineService {
           data: {
             modelRunId: modelRun.id,
             fixtureId,
+            channelSelectionId,
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
@@ -1409,7 +1258,6 @@ export class BettingEngineService {
       status: 'analyzed',
       fixtureId,
       modelRunId: modelRun.id,
-      decision,
       deterministicScore: deterministicScore.toNumber(),
       probabilities:
         probabilities !== null ? mapProbabilitiesToNumber(probabilities) : {},
@@ -1470,36 +1318,14 @@ export class BettingEngineService {
   }
 
   // Kept as alias for backward compatibility with existing tests.
-  private findLatestOneXTwoOddsSnapshot(fixture: {
-    id: string;
-    scheduledAt: Date;
-  }): Promise<FullOddsSnapshot | null> {
-    return this.findLatestOddsSnapshot(fixture.id, fixture.scheduledAt);
-  }
-
-  private async findBestBookmakerForMarket(
+  // Public read accessor for the consolidated odds view of a fixture as of a
+  // cutoff (e.g. dev backfill scripts reuse the engine's exact bookmaker/market
+  // resolution instead of duplicating it). Delegates to OddsSnapshotLoader.
+  loadFullOddsSnapshot(
     fixtureId: string,
-    market: Market,
-    _cutoff: Date,
-  ): Promise<string | null> {
-    const rows = await this.prisma.client.oddsSnapshot.findMany({
-      where: {
-        fixtureId,
-        market,
-        odds: { not: null },
-      },
-      select: { bookmaker: true, snapshotAt: true },
-      orderBy: { snapshotAt: 'desc' },
-    });
-    if (rows.length === 0) return null;
-    const latestTs = rows[0].snapshotAt.getTime();
-    const seen = new Set<string>();
-    const atLatest = rows
-      .filter((r) => r.snapshotAt.getTime() === latestTs)
-      .filter((r) => (seen.has(r.bookmaker) ? false : seen.add(r.bookmaker)));
-    return atLatest.reduce((a, b) =>
-      bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
-    ).bookmaker;
+    cutoff: Date,
+  ): Promise<FullOddsSnapshot | null> {
+    return this.oddsLoader.findLatestOddsSnapshot(fixtureId, cutoff);
   }
 
   /**
@@ -1523,1602 +1349,53 @@ export class BettingEngineService {
       orderBy: { afterFixture: { scheduledAt: 'desc' } },
     });
   }
-
-  private async findLatestOddsSnapshot(
-    fixtureId: string,
-    cutoff: Date,
-  ): Promise<FullOddsSnapshot | null> {
-    const rows = await this.prisma.client.oddsSnapshot.findMany({
-      where: {
-        fixtureId,
-        market: Market.ONE_X_TWO,
-        snapshotAt: { lte: cutoff },
-        homeOdds: { not: null },
-        drawOdds: { not: null },
-        awayOdds: { not: null },
-      },
-      select: {
-        bookmaker: true,
-        snapshotAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
-      orderBy: { snapshotAt: 'desc' },
-    });
-
-    if (rows.length === 0) return null;
-
-    const latestSnapshotAt = rows[0].snapshotAt.getTime();
-    const sameSnapshotRows = rows.filter(
-      (row) => row.snapshotAt.getTime() === latestSnapshotAt,
-    );
-    const best = sameSnapshotRows.reduce((a, b) =>
-      bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
-    );
-
-    if (
-      best.homeOdds === null ||
-      best.drawOdds === null ||
-      best.awayOdds === null
-    ) {
-      return null;
-    }
-
-    // Resolve the best available bookmaker for each secondary market
-    // independently — their coverage differs from 1X2 (e.g. Pinnacle covers
-    // OVER_UNDER while Bet365 may not).
-    const [
-      ouBookmaker,
-      bttsBookmaker,
-      htftBookmaker,
-      ouHtBookmaker,
-      fhwBookmaker,
-      dcBookmaker,
-    ] = await Promise.all([
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
-      this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
-      this.findBestBookmakerForMarket(
-        fixtureId,
-        Market.HALF_TIME_FULL_TIME,
-        cutoff,
-      ),
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER_HT, cutoff),
-      this.findBestBookmakerForMarket(
-        fixtureId,
-        Market.FIRST_HALF_WINNER,
-        cutoff,
-      ),
-      this.findBestBookmakerForMarket(fixtureId, Market.DOUBLE_CHANCE, cutoff),
-    ]);
-
-    const [ouRows, bttsYesRow, bttsNoRow, htftRows, ouHtRows, fhwRows, dcRows] =
-      await Promise.all([
-        ouBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: ouBookmaker,
-                market: Market.OVER_UNDER,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        bttsBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
-              where: {
-                fixtureId,
-                bookmaker: bttsBookmaker,
-                market: Market.BTTS,
-                pick: 'YES',
-              },
-              select: { odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        bttsBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
-              where: {
-                fixtureId,
-                bookmaker: bttsBookmaker,
-                market: Market.BTTS,
-                pick: 'NO',
-              },
-              select: { odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        htftBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: htftBookmaker,
-                market: Market.HALF_TIME_FULL_TIME,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : [],
-        ouHtBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: ouHtBookmaker,
-                market: Market.OVER_UNDER_HT,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        fhwBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: fhwBookmaker,
-                market: Market.FIRST_HALF_WINNER,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        dcBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: dcBookmaker,
-                market: Market.DOUBLE_CHANCE,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-      ]);
-
-    const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
-    const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
-    const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
-    let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
-    let doubleChanceOdds: FullOddsSnapshot['doubleChanceOdds'] = null;
-
-    for (const row of ouRows ?? []) {
-      if (!row.pick || !row.odds) continue;
-      if (
-        !(row.pick in overUnderOdds) &&
-        (row.pick === 'OVER_1_5' ||
-          row.pick === 'UNDER_1_5' ||
-          row.pick === 'OVER' ||
-          row.pick === 'UNDER' ||
-          row.pick === 'OVER_3_5' ||
-          row.pick === 'UNDER_3_5' ||
-          row.pick === 'OVER_4_5' ||
-          row.pick === 'UNDER_4_5')
-      ) {
-        overUnderOdds[row.pick] = new Decimal(row.odds.toString());
-      }
-    }
-    for (const row of htftRows) {
-      if (!row.pick || !row.odds) continue;
-      if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {
-        htftOdds[row.pick] = new Decimal(row.odds.toString());
-      }
-    }
-    for (const row of ouHtRows ?? []) {
-      if (!row.pick || !row.odds) continue;
-      if (
-        !(row.pick in ouHtOdds) &&
-        (row.pick === 'OVER_0_5' ||
-          row.pick === 'UNDER_0_5' ||
-          row.pick === 'OVER_1_5' ||
-          row.pick === 'UNDER_1_5')
-      ) {
-        ouHtOdds[row.pick] = new Decimal(row.odds.toString());
-      }
-    }
-    if (fhwRows !== null) {
-      const homeRow = fhwRows.find((r) => r.pick === 'HOME');
-      const drawRow = fhwRows.find((r) => r.pick === 'DRAW');
-      const awayRow = fhwRows.find((r) => r.pick === 'AWAY');
-      if (homeRow?.odds && drawRow?.odds && awayRow?.odds) {
-        firstHalfWinnerOdds = {
-          home: new Decimal(homeRow.odds.toString()),
-          draw: new Decimal(drawRow.odds.toString()),
-          away: new Decimal(awayRow.odds.toString()),
-        };
-      }
-    }
-    if (dcRows !== null) {
-      const row1X = dcRows.find((r) => r.pick === '1X');
-      const rowX2 = dcRows.find((r) => r.pick === 'X2');
-      const row12 = dcRows.find((r) => r.pick === '12');
-      if (row1X?.odds && rowX2?.odds) {
-        doubleChanceOdds = {
-          '1X': new Decimal(row1X.odds.toString()),
-          X2: new Decimal(rowX2.odds.toString()),
-          '12': row12?.odds ? new Decimal(row12.odds.toString()) : null,
-        };
-      }
-    }
-
-    return {
-      bookmaker: best.bookmaker,
-      snapshotAt: best.snapshotAt,
-      homeOdds: new Decimal(best.homeOdds.toString()),
-      drawOdds: new Decimal(best.drawOdds.toString()),
-      awayOdds: new Decimal(best.awayOdds.toString()),
-      overUnderOdds,
-      bttsYesOdds: bttsYesRow?.odds
-        ? new Decimal(bttsYesRow.odds.toString())
-        : null,
-      bttsNoOdds: bttsNoRow?.odds
-        ? new Decimal(bttsNoRow.odds.toString())
-        : null,
-      htftOdds,
-      ouHtOdds,
-      firstHalfWinnerOdds,
-      doubleChanceOdds,
-    };
-  }
-
-  private async findLatestOneXTwoOddsSnapshotByBookmaker(
-    fixtureId: string,
-    _cutoff: Date,
-    bookmaker: string,
-  ): Promise<FullOddsSnapshot | null> {
-    const row = await this.prisma.client.oddsSnapshot.findFirst({
-      where: {
-        fixtureId,
-        market: Market.ONE_X_TWO,
-        bookmaker,
-        homeOdds: { not: null },
-        drawOdds: { not: null },
-        awayOdds: { not: null },
-      },
-      select: {
-        bookmaker: true,
-        snapshotAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
-      orderBy: { snapshotAt: 'desc' },
-    });
-
-    if (
-      row === null ||
-      row.homeOdds === null ||
-      row.drawOdds === null ||
-      row.awayOdds === null
-    ) {
-      return null;
-    }
-
-    return {
-      bookmaker: row.bookmaker,
-      snapshotAt: row.snapshotAt,
-      homeOdds: new Decimal(row.homeOdds.toString()),
-      drawOdds: new Decimal(row.drawOdds.toString()),
-      awayOdds: new Decimal(row.awayOdds.toString()),
-      overUnderOdds: {},
-      bttsYesOdds: null,
-      bttsNoOdds: null,
-      htftOdds: {},
-      ouHtOdds: {},
-      firstHalfWinnerOdds: null,
-      doubleChanceOdds: null,
-    };
-  }
-
-  private async findLatestBestOneXTwoOddsSnapshot(
-    fixtureId: string,
-    _cutoff: Date,
-  ): Promise<{
-    snapshot: FullOddsSnapshot;
-    offeredBy: { home: string; draw: string; away: string };
-  } | null> {
-    const rows = await this.prisma.client.oddsSnapshot.findMany({
-      where: {
-        fixtureId,
-        market: Market.ONE_X_TWO,
-        homeOdds: { not: null },
-        drawOdds: { not: null },
-        awayOdds: { not: null },
-      },
-      select: {
-        bookmaker: true,
-        snapshotAt: true,
-        homeOdds: true,
-        drawOdds: true,
-        awayOdds: true,
-      },
-      orderBy: [{ snapshotAt: 'desc' }, { bookmaker: 'asc' }],
-    });
-
-    if (rows.length === 0) return null;
-
-    const latestByBookmaker = new Map<
-      string,
-      {
-        bookmaker: string;
-        snapshotAt: Date;
-        homeOdds: Prisma.Decimal | null;
-        drawOdds: Prisma.Decimal | null;
-        awayOdds: Prisma.Decimal | null;
-      }
-    >();
-    for (const row of rows) {
-      if (!latestByBookmaker.has(row.bookmaker)) {
-        latestByBookmaker.set(row.bookmaker, row);
-      }
-    }
-
-    const latestRows = Array.from(latestByBookmaker.values()).filter(
-      (row) =>
-        row.homeOdds !== null && row.drawOdds !== null && row.awayOdds !== null,
-    );
-    if (latestRows.length === 0) return null;
-
-    const bestHome = latestRows.reduce(
-      (best, row) =>
-        best === null ||
-        new Decimal(row.homeOdds!.toString()).greaterThan(
-          new Decimal(best.homeOdds!.toString()),
-        )
-          ? row
-          : best,
-      null as (typeof latestRows)[number] | null,
-    );
-    const bestDraw = latestRows.reduce(
-      (best, row) =>
-        best === null ||
-        new Decimal(row.drawOdds!.toString()).greaterThan(
-          new Decimal(best.drawOdds!.toString()),
-        )
-          ? row
-          : best,
-      null as (typeof latestRows)[number] | null,
-    );
-    const bestAway = latestRows.reduce(
-      (best, row) =>
-        best === null ||
-        new Decimal(row.awayOdds!.toString()).greaterThan(
-          new Decimal(best.awayOdds!.toString()),
-        )
-          ? row
-          : best,
-      null as (typeof latestRows)[number] | null,
-    );
-
-    if (bestHome === null || bestDraw === null || bestAway === null) {
-      return null;
-    }
-
-    return {
-      snapshot: {
-        bookmaker: 'MarketBest',
-        snapshotAt: latestRows[0].snapshotAt,
-        homeOdds: new Decimal(bestHome.homeOdds!.toString()),
-        drawOdds: new Decimal(bestDraw.drawOdds!.toString()),
-        awayOdds: new Decimal(bestAway.awayOdds!.toString()),
-        overUnderOdds: {},
-        bttsYesOdds: null,
-        bttsNoOdds: null,
-        htftOdds: {},
-        ouHtOdds: {},
-        firstHalfWinnerOdds: null,
-        doubleChanceOdds: null,
-      },
-      offeredBy: {
-        home: bestHome.bookmaker,
-        draw: bestDraw.bookmaker,
-        away: bestAway.bookmaker,
-      },
-    };
-  }
-
-  // Select the best safe-value pick from a pre-computed list of evaluated picks.
-  //
-  // Safe value criteria (distinct from EV criteria):
-  //   - Single-market pick only (no combos)
-  //   - Allowed markets: ONE_X_TWO, OVER_UNDER, BTTS, OVER_UNDER_HT
-  //   - Probability ≥ SAFE_VALUE_MIN_PROBABILITY (0.68)
-  //   - EV in [SAFE_VALUE_MIN_EV (0.00), EV_HARD_CAP]
-  //   - Odds in [SAFE_VALUE_MIN_ODDS (1.15), SAFE_VALUE_MAX_ODDS (2.20)]
-  //   - Market not suspended
-  //   - Not already the EV pick (excludedPickKey)
-  //
-  // Returns the candidate with the highest probability (then highest EV as tiebreak).
-  // When the winner is Under 3.5 or Under 4.5 at high lambda, also evaluates the
-  // symmetric Over counterparts (Over 2.5, Over 3.5) and upgrades to the better
-  // qualityScore — fixing the structural Under bias at high expected goals (section 7).
-  // eslint-disable-next-line max-params -- grouped below
-  private selectSafeValuePick(
-    evaluatedPicks: EvaluatedPick[],
-    suspendedMarkets: Set<Market>,
-    excludedPickKey: string | null,
-    lambdaTotal = 0,
-    competitionCode: string | null = null,
-  ): ViablePick | null {
-    const safeValueMarkets = new Set<Market>([
-      Market.ONE_X_TWO,
-      Market.OVER_UNDER,
-      Market.BTTS,
-      Market.OVER_UNDER_HT,
-    ]);
-
-    const svMinProbability = getSvMinProbability(competitionCode);
-    const svMinOdds = getSvMinOdds(competitionCode);
-
-    const isEligibleSvPick = (pick: EvaluatedPick): boolean => {
-      if (pick.isCombo) return false;
-      if (!safeValueMarkets.has(pick.market)) return false;
-      if (pick.probability.lessThan(svMinProbability)) return false;
-      if (pick.ev.lessThan(SAFE_VALUE_MIN_EV)) return false;
-      if (pick.ev.greaterThan(EV_HARD_CAP)) return false;
-      if (pick.odds.lessThan(svMinOdds)) return false;
-      if (pick.odds.greaterThan(SAFE_VALUE_MAX_ODDS)) return false;
-      if (suspendedMarkets.has(pick.market)) return false;
-      const pickKey = buildBetPickKey({
-        market: pick.market,
-        pick: pick.pick,
-        comboMarket: pick.comboMarket ?? null,
-        comboPick: pick.comboPick ?? null,
-      });
-      if (excludedPickKey !== null && pickKey === excludedPickKey) return false;
-      return true;
-    };
-
-    const candidates = evaluatedPicks.filter(isEligibleSvPick);
-    if (candidates.length === 0) return null;
-
-    // Best by probability DESC, then EV DESC
-    const bestPick = candidates.reduce((best, c) => {
-      const cmpProb = c.probability.comparedTo(best.probability);
-      if (cmpProb > 0) return c;
-      if (cmpProb < 0) return best;
-      return c.ev.comparedTo(best.ev) > 0 ? c : best;
-    });
-
-    // Symmetric Over/Under comparison at high lambda: when the SV winner is
-    // Under 3.5 or Under 4.5, the model is predicting a high-scoring game —
-    // Over 2.5 or Over 3.5 may offer better qualityScore at lower but still
-    // viable probability. Probability floor is intentionally relaxed here.
-    if (
-      bestPick.market === Market.OVER_UNDER &&
-      (bestPick.pick === 'UNDER_3_5' || bestPick.pick === 'UNDER_4_5') &&
-      lambdaTotal >= SV_UNDER_LAMBDA_COMPARISON_THRESHOLD
-    ) {
-      const overCounterparts = evaluatedPicks.filter(
-        (p): p is ViablePick =>
-          p.rejectionReason === undefined &&
-          !p.isCombo &&
-          p.market === Market.OVER_UNDER &&
-          (p.pick === 'OVER' || p.pick === 'OVER_3_5') &&
-          p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
-          p.ev.lessThanOrEqualTo(EV_HARD_CAP) &&
-          // Per-league floor (getSvMinOdds), like the main eligibility check —
-          // the global SAFE_VALUE_MIN_ODDS here let Over counterparts slip
-          // below a league override (e.g. SP2 1.45).
-          p.odds.greaterThanOrEqualTo(svMinOdds) &&
-          p.odds.lessThanOrEqualTo(SAFE_VALUE_MAX_ODDS) &&
-          !suspendedMarkets.has(p.market) &&
-          (excludedPickKey === null ||
-            buildBetPickKey({
-              market: p.market,
-              pick: p.pick,
-              comboMarket: null,
-              comboPick: null,
-            }) !== excludedPickKey),
-      );
-
-      const bestOver =
-        overCounterparts.length > 0
-          ? overCounterparts.reduce((a, b) =>
-              b.qualityScore.comparedTo(a.qualityScore) > 0 ? b : a,
-            )
-          : null;
-
-      if (
-        bestOver &&
-        bestOver.qualityScore.greaterThan(bestPick.qualityScore)
-      ) {
-        return bestOver;
-      }
-    }
-
-    return bestPick;
-  }
-
-  // eslint-disable-next-line max-params -- Eight domain parameters; grouping into an object would obscure intent.
-  private selectBestViablePick(
-    probabilities: MatchProbabilities,
-    odds: FullOddsSnapshot,
-    deterministicScore: Decimal,
-    distHome: number[],
-    distAway: number[],
-    lambdaFloorHit: boolean,
-    suspendedMarkets: Set<Market>,
-    competitionCode: string | null = null,
-    overrideMinEv?: Decimal,
-  ): ViablePick | null {
-    const evaluated = this.listEvaluatedPicks(
-      probabilities,
-      odds,
-      deterministicScore,
-      distHome,
-      distAway,
-      lambdaFloorHit,
-      suspendedMarkets,
-      competitionCode,
-      overrideMinEv,
-    );
-
-    // Detect if the ideal pick (highest qualityScore overall) was rejected.
-    // If so, apply a stricter floor to prevent selecting a poor substitute
-    // just because it is "best remaining" after the dominant candidate was blocked.
-    const topByQuality = evaluated.reduce<(typeof evaluated)[number] | null>(
-      (best, p) =>
-        best === null || p.qualityScore.greaterThan(best.qualityScore)
-          ? p
-          : best,
-      null,
-    );
-    const primaryWasRejected = topByQuality?.rejectionReason !== undefined;
-
-    const viable = evaluated
-      .filter((p): p is ViablePick => p.rejectionReason === undefined)
-      .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
-
-    if (primaryWasRejected) {
-      return (
-        viable.find((p) =>
-          p.qualityScore.greaterThanOrEqualTo(FALLBACK_MIN_QUALITY_SCORE),
-        ) ?? null
-      );
-    }
-
-    return viable[0] ?? null;
-  }
-
-  // eslint-disable-next-line max-params
-  private listEvaluatedOneXTwoPicks(
-    probabilities: MatchProbabilities,
-    odds: FullOddsSnapshot,
-    deterministicScore: Decimal,
-    suspendedMarkets: Set<Market>,
-    competitionCode: string | null = null,
-  ): EvaluatedPick[] {
-    const minEv = getLeagueEvThreshold(competitionCode);
-    const candidates: ViablePick[] = [
-      {
-        market: Market.ONE_X_TWO,
-        pick: 'HOME',
-        probability: probabilities.home,
-        odds: odds.homeOdds,
-        ev: calcEV(probabilities.home, odds.homeOdds),
-        qualityScore: buildQualityScore(
-          calcEV(probabilities.home, odds.homeOdds),
-          deterministicScore,
-          Market.ONE_X_TWO,
-          'HOME',
-          odds.homeOdds,
-        ),
-        isCombo: false,
-      },
-      {
-        market: Market.ONE_X_TWO,
-        pick: 'DRAW',
-        probability: probabilities.draw,
-        odds: odds.drawOdds,
-        ev: calcEV(probabilities.draw, odds.drawOdds),
-        qualityScore: buildQualityScore(
-          calcEV(probabilities.draw, odds.drawOdds),
-          deterministicScore,
-          Market.ONE_X_TWO,
-          'DRAW',
-          odds.drawOdds,
-        ),
-        isCombo: false,
-      },
-      {
-        market: Market.ONE_X_TWO,
-        pick: 'AWAY',
-        probability: probabilities.away,
-        odds: odds.awayOdds,
-        ev: calcEV(probabilities.away, odds.awayOdds),
-        qualityScore: buildQualityScore(
-          calcEV(probabilities.away, odds.awayOdds),
-          deterministicScore,
-          Market.ONE_X_TWO,
-          'AWAY',
-          odds.awayOdds,
-        ),
-        isCombo: false,
-      },
-    ];
-
-    return candidates
-      .map((candidate) => {
-        const rejectionReason = getPickRejectionReason(
-          candidate,
-          suspendedMarkets,
-          probabilities,
-          minEv,
-          competitionCode,
-          // lambdaTotal not needed — this helper only evaluates 1X2 picks, never UNDER.
-          0,
-        );
-        return rejectionReason ? { ...candidate, rejectionReason } : candidate;
-      })
-      .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
-  }
-
-  // eslint-disable-next-line max-params -- Nine domain parameters; grouping into an object would obscure intent.
-  private listEvaluatedPicks(
-    probabilities: MatchProbabilities,
-    odds: FullOddsSnapshot,
-    deterministicScore: Decimal,
-    distHome: number[],
-    distAway: number[],
-    lambdaFloorHit: boolean,
-    suspendedMarkets: Set<Market>,
-    competitionCode: string | null = null,
-    overrideMinEv?: Decimal,
-  ): EvaluatedPick[] {
-    const minEv = overrideMinEv ?? getLeagueEvThreshold(competitionCode);
-    const lambdaTotal =
-      distHome.reduce((sum, p, k) => sum + k * p, 0) +
-      distAway.reduce((sum, p, k) => sum + k * p, 0);
-    const candidates: ViablePick[] = [];
-
-    // Singles 1X2
-    const oneXTwoPicks = [
-      {
-        pick: 'HOME',
-        probability: probabilities.home,
-        pickOdds: odds.homeOdds,
-      },
-      {
-        pick: 'DRAW',
-        probability: probabilities.draw,
-        pickOdds: odds.drawOdds,
-      },
-      {
-        pick: 'AWAY',
-        probability: probabilities.away,
-        pickOdds: odds.awayOdds,
-      },
-    ];
-    for (const c of oneXTwoPicks) {
-      const ev = calcEV(c.probability, c.pickOdds);
-      candidates.push({
-        market: Market.ONE_X_TWO,
-        pick: c.pick,
-        probability: c.probability,
-        odds: c.pickOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.ONE_X_TWO,
-          c.pick,
-          c.pickOdds,
-        ),
-        isCombo: false,
-      });
-    }
-
-    // Singles Over/Under
-    const overUnderCandidates: Array<{
-      pick: string;
-      probability: Decimal;
-      odds: Decimal | null | undefined;
-    }> = [
-      {
-        pick: 'OVER_1_5',
-        probability: probabilities.over15,
-        odds: odds.overUnderOdds['OVER_1_5'],
-      },
-      {
-        pick: 'UNDER_1_5',
-        probability: probabilities.under15,
-        odds: odds.overUnderOdds['UNDER_1_5'],
-      },
-      {
-        pick: 'OVER',
-        probability: probabilities.over25,
-        odds: odds.overUnderOdds['OVER'],
-      },
-      {
-        pick: 'UNDER',
-        probability: probabilities.under25,
-        odds: odds.overUnderOdds['UNDER'],
-      },
-      {
-        pick: 'OVER_3_5',
-        probability: probabilities.over35,
-        odds: odds.overUnderOdds['OVER_3_5'],
-      },
-      {
-        pick: 'UNDER_3_5',
-        probability: probabilities.under35,
-        odds: odds.overUnderOdds['UNDER_3_5'],
-      },
-      {
-        pick: 'OVER_4_5',
-        probability: probabilities.over45,
-        odds: odds.overUnderOdds['OVER_4_5'],
-      },
-      {
-        pick: 'UNDER_4_5',
-        probability: probabilities.under45,
-        odds: odds.overUnderOdds['UNDER_4_5'],
-      },
-    ];
-
-    for (const candidate of overUnderCandidates) {
-      if (candidate.odds === null || candidate.odds === undefined) continue;
-      const ev = calcEV(candidate.probability, candidate.odds);
-      candidates.push({
-        market: Market.OVER_UNDER,
-        pick: candidate.pick,
-        probability: candidate.probability,
-        odds: candidate.odds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.OVER_UNDER,
-          candidate.pick,
-          candidate.odds,
-        ),
-        isCombo: false,
-      });
-    }
-
-    // Singles BTTS
-    if (odds.bttsYesOdds !== null) {
-      const ev = calcEV(probabilities.bttsYes, odds.bttsYesOdds);
-      candidates.push({
-        market: Market.BTTS,
-        pick: 'YES',
-        probability: probabilities.bttsYes,
-        odds: odds.bttsYesOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.BTTS,
-          'YES',
-          odds.bttsYesOdds,
-        ),
-        isCombo: false,
-      });
-    }
-    if (odds.bttsNoOdds !== null) {
-      const ev = calcEV(probabilities.bttsNo, odds.bttsNoOdds);
-      candidates.push({
-        market: Market.BTTS,
-        pick: 'NO',
-        probability: probabilities.bttsNo,
-        odds: odds.bttsNoOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.BTTS,
-          'NO',
-          odds.bttsNoOdds,
-        ),
-        isCombo: false,
-      });
-    }
-
-    // Singles DOUBLE_CHANCE
-    if (odds.doubleChanceOdds !== null) {
-      for (const [pick, dcProba] of [
-        ['1X', probabilities.dc1X],
-        ['X2', probabilities.dcX2],
-        ['12', probabilities.dc12],
-      ] as const) {
-        const dcOdds = odds.doubleChanceOdds[pick];
-        if (dcOdds === null) continue;
-        const ev = calcEV(dcProba, dcOdds);
-        candidates.push({
-          market: Market.DOUBLE_CHANCE,
-          pick,
-          probability: dcProba,
-          odds: dcOdds,
-          ev,
-          qualityScore: buildQualityScore(
-            ev,
-            deterministicScore,
-            Market.DOUBLE_CHANCE,
-            pick,
-            dcOdds,
-          ),
-          isCombo: false,
-        });
-      }
-    }
-
-    // Singles HALF_TIME_FULL_TIME
-    for (const pick of HALF_TIME_FULL_TIME_PICKS) {
-      const pickOdds = odds.htftOdds[pick] ?? null;
-      if (pickOdds === null) continue;
-
-      const probability = probabilities.htft[pick];
-      const ev = calcEV(probability, pickOdds);
-      candidates.push({
-        market: Market.HALF_TIME_FULL_TIME,
-        pick,
-        probability,
-        odds: pickOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.HALF_TIME_FULL_TIME,
-          pick,
-          pickOdds,
-        ),
-        isCombo: false,
-      });
-    }
-
-    // Singles OVER_UNDER_HT
-    const ouHtCandidates: Array<{
-      pick: 'OVER_0_5' | 'UNDER_0_5' | 'OVER_1_5' | 'UNDER_1_5';
-      probability: Decimal;
-    }> = [
-      {
-        pick: 'OVER_0_5',
-        probability: probabilities.ouHT['OVER_0_5'] ?? new Decimal(0),
-      },
-      {
-        pick: 'UNDER_0_5',
-        probability: probabilities.ouHT['UNDER_0_5'] ?? new Decimal(0),
-      },
-      {
-        pick: 'OVER_1_5',
-        probability: probabilities.ouHT['OVER_1_5'] ?? new Decimal(0),
-      },
-      {
-        pick: 'UNDER_1_5',
-        probability: probabilities.ouHT['UNDER_1_5'] ?? new Decimal(0),
-      },
-    ];
-    for (const candidate of ouHtCandidates) {
-      const pickOdds = odds.ouHtOdds[candidate.pick];
-      if (!pickOdds) continue;
-      const ev = calcEV(candidate.probability, pickOdds);
-      candidates.push({
-        market: Market.OVER_UNDER_HT,
-        pick: candidate.pick,
-        probability: candidate.probability,
-        odds: pickOdds,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          Market.OVER_UNDER_HT,
-          candidate.pick,
-          pickOdds,
-        ),
-        isCombo: false,
-      });
-    }
-
-    // Singles FIRST_HALF_WINNER
-    if (odds.firstHalfWinnerOdds !== null) {
-      const fhwCandidates: Array<{
-        pick: string;
-        probability: Decimal;
-        pickOdds: Decimal;
-      }> = [
-        {
-          pick: 'HOME',
-          probability: probabilities.firstHalfWinner.home,
-          pickOdds: odds.firstHalfWinnerOdds.home,
-        },
-        {
-          pick: 'DRAW',
-          probability: probabilities.firstHalfWinner.draw,
-          pickOdds: odds.firstHalfWinnerOdds.draw,
-        },
-        {
-          pick: 'AWAY',
-          probability: probabilities.firstHalfWinner.away,
-          pickOdds: odds.firstHalfWinnerOdds.away,
-        },
-      ];
-      for (const candidate of fhwCandidates) {
-        const ev = calcEV(candidate.probability, candidate.pickOdds);
-        candidates.push({
-          market: Market.FIRST_HALF_WINNER,
-          pick: candidate.pick,
-          probability: candidate.probability,
-          odds: candidate.pickOdds,
-          ev,
-          qualityScore: buildQualityScore(
-            ev,
-            deterministicScore,
-            Market.FIRST_HALF_WINNER,
-            candidate.pick,
-            candidate.pickOdds,
-          ),
-          isCombo: false,
-        });
-      }
-    }
-
-    // Combos from COMBO_WHITELIST. Disabled globally during single-pick calibration
-    // phase (COMBOS_ENABLED = false). Also disabled per-fixture when lambdas collapse
-    // to the floor (Poisson scoreline mass becomes unreliable).
-    if (COMBOS_ENABLED && !lambdaFloorHit) {
-      for (const combo of COMBO_WHITELIST) {
-        const p1Odds = getPickOddsFromSnapshot(
-          combo.market1,
-          combo.pick1,
-          odds,
-        );
-        const p2Odds = getPickOddsFromSnapshot(
-          combo.market2,
-          combo.pick2,
-          odds,
-        );
-        if (p1Odds === null || p2Odds === null) continue;
-        if (
-          p1Odds.greaterThan(MAX_SELECTION_ODDS) ||
-          p2Odds.greaterThan(MAX_SELECTION_ODDS)
-        )
-          continue;
-
-        const jointProbability = computeJointProbability(
-          combo,
-          distHome,
-          distAway,
-        );
-        const oddsCombo = estimateComboOdds({
-          combo,
-          probabilities,
-          jointProbability,
-          odds1: p1Odds,
-          odds2: p2Odds,
-        });
-        const ev = calcEV(jointProbability, oddsCombo);
-        candidates.push({
-          market: combo.market1,
-          pick: combo.pick1,
-          comboMarket: combo.market2,
-          comboPick: combo.pick2,
-          probability: jointProbability,
-          odds: oddsCombo,
-          ev,
-          qualityScore: buildQualityScore(
-            ev,
-            deterministicScore,
-            combo.market1,
-            combo.pick1,
-            oddsCombo,
-          ),
-          isCombo: true,
-        });
-      }
-    }
-
-    // Filter: EV >= league threshold and no suspended market
-    const evaluated = candidates.map((candidate) => {
-      const rejectionReason = getPickRejectionReason(
-        candidate,
-        suspendedMarkets,
-        probabilities,
-        minEv,
-        competitionCode,
-        lambdaTotal,
-      );
-      return rejectionReason ? { ...candidate, rejectionReason } : candidate;
-    });
-
-    return evaluated.sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
-  }
 }
 
 // ─── Module-level helpers ──────────────────────────────────────────────────────
 
-function mapProbabilitiesToNumber(
-  probabilities: MatchProbabilities,
-): Record<string, number | Record<string, number>> {
-  return {
-    home: probabilities.home.toNumber(),
-    draw: probabilities.draw.toNumber(),
-    away: probabilities.away.toNumber(),
-    over15: probabilities.over15.toNumber(),
-    under15: probabilities.under15.toNumber(),
-    over25: probabilities.over25.toNumber(),
-    under25: probabilities.under25.toNumber(),
-    over35: probabilities.over35.toNumber(),
-    under35: probabilities.under35.toNumber(),
-    over45: probabilities.over45.toNumber(),
-    under45: probabilities.under45.toNumber(),
-    bttsYes: probabilities.bttsYes.toNumber(),
-    bttsNo: probabilities.bttsNo.toNumber(),
-    dc1X: probabilities.dc1X.toNumber(),
-    dcX2: probabilities.dcX2.toNumber(),
-    dc12: probabilities.dc12.toNumber(),
-    htft: Object.fromEntries(
-      Object.entries(probabilities.htft).map(([pick, value]) => [
-        pick,
-        value.toNumber(),
-      ]),
-    ),
-    ouHT: Object.fromEntries(
-      Object.entries(probabilities.ouHT).map(([pick, value]) => [
-        pick,
-        value?.toNumber() ?? 0,
-      ]),
-    ),
-    firstHalfWinner: {
-      home: probabilities.firstHalfWinner.home.toNumber(),
-      draw: probabilities.firstHalfWinner.draw.toNumber(),
-      away: probabilities.firstHalfWinner.away.toNumber(),
-    },
-  };
-}
-
-function asNumber(value: unknown): number {
-  return Number(value);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function deriveLambdas(
-  homeStats: TeamStatsInput,
-  awayStats: TeamStatsInput,
-  competitionCode?: string | null,
-) {
-  const homeXgFor = asNumber(homeStats.xgFor);
-  const awayXgFor = asNumber(awayStats.xgFor);
-  const homeXgAgainst = asNumber(homeStats.xgAgainst);
-  const awayXgAgainst = asNumber(awayStats.xgAgainst);
-
-  const leagueAvg = Math.max(
-    0.5,
-    (homeXgFor + awayXgFor + homeXgAgainst + awayXgAgainst) / 4,
+// Resolves the persisted ChannelSelection id whose pick matches a materialised
+// Bet, so Bet.channelSelectionId can point at the exact analytical selection.
+// Returns null when the channel did not select, or the live engine pick diverges
+// from the strategy pick (a known live/backtest edge case — see TODO Étape 5).
+// Exported for unit testing.
+export function findChannelSelectionId(
+  decisions: readonly PersistedChannelDecision[],
+  channel: StrategyChannel,
+  pick: {
+    market: Market;
+    pick: string;
+    comboMarket: Market | null;
+    comboPick: string | null;
+  },
+): string | null {
+  const decision = decisions.find((d) => d.channel === channel);
+  if (!decision) return null;
+  const key = buildBetPickKey(pick);
+  const match = decision.selections.find(
+    (sel) =>
+      buildBetPickKey({
+        market: sel.market,
+        pick: sel.pick,
+        comboMarket: sel.comboMarket ?? null,
+        comboPick: sel.comboPick ?? null,
+      }) === key,
   );
-
-  const anchor = getLeagueMeanLambda(competitionCode);
-  const rawHome =
-    LAMBDA_SHRINKAGE_FACTOR * ((homeXgFor * awayXgAgainst) / leagueAvg) +
-    (1 - LAMBDA_SHRINKAGE_FACTOR) * anchor;
-  const rawAway =
-    LAMBDA_SHRINKAGE_FACTOR * ((awayXgFor * homeXgAgainst) / leagueAvg) +
-    (1 - LAMBDA_SHRINKAGE_FACTOR) * anchor;
-
-  const [homeAdvFactor, awayDisadvFactor] =
-    getLeagueHomeAwayFactors(competitionCode);
-  return {
-    home: clamp(rawHome * homeAdvFactor, 0.05, 5),
-    away: clamp(rawAway * awayDisadvFactor, 0.05, 5),
-  };
+  return match?.id ?? null;
 }
 
-function rebalanceThreeWayProbabilities(input: {
-  probabilities: MatchProbabilities;
-  homeStats: TeamStatsInput;
-  awayStats: TeamStatsInput;
-  competitionCode?: string | null;
-}): MatchProbabilities {
-  const { probabilities, homeStats, awayStats, competitionCode } = input;
-  const blendWeight = getLeagueThreeWayEmpiricalBlendWeight(competitionCode);
-  if (blendWeight.lte(0)) return probabilities;
-
-  const targetDraw = clamp(
-    (clamp(asNumber(homeStats.drawRate), 0.05, 0.6) +
-      clamp(asNumber(awayStats.drawRate), 0.05, 0.6)) /
-      2,
-    0.05,
-    0.6,
-  );
-  const homeWinRate = clamp(asNumber(homeStats.homeWinRate), 0.01, 0.95);
-  const awayWinRate = clamp(asNumber(awayStats.awayWinRate), 0.01, 0.95);
-  const directionalTargetBase = homeWinRate + awayWinRate;
-  if (directionalTargetBase <= 0) return probabilities;
-
-  const targetHomeShare = homeWinRate / directionalTargetBase;
-  const targetHome = (1 - targetDraw) * targetHomeShare;
-  const targetAway = 1 - targetDraw - targetHome;
-  const weight = blendWeight.toNumber();
-
-  const home = new Decimal(
-    probabilities.home.toNumber() * (1 - weight) + targetHome * weight,
-  );
-  const draw = new Decimal(
-    probabilities.draw.toNumber() * (1 - weight) + targetDraw * weight,
-  );
-  const away = new Decimal(
-    probabilities.away.toNumber() * (1 - weight) + targetAway * weight,
-  );
-
-  return {
-    ...probabilities,
-    home,
-    draw,
-    away,
-    dc1X: home.plus(draw),
-    dcX2: draw.plus(away),
-    dc12: home.plus(away),
-  };
-}
-
-function buildMatchupFeatures(
-  homeStats: TeamStatsInput,
-  awayStats: TeamStatsInput,
-): MatchupFeatures {
-  const recentForm = clamp01(
-    (asNumber(homeStats.recentForm) + (1 - asNumber(awayStats.recentForm))) / 2,
-  );
-  const xg = clamp01(
-    asNumber(homeStats.xgFor) /
-      Math.max(0.1, asNumber(homeStats.xgFor) + asNumber(awayStats.xgFor)),
-  );
-  const domExtPerf = clamp01(
-    (asNumber(homeStats.homeWinRate) + (1 - asNumber(awayStats.awayWinRate))) /
-      2,
-  );
-  const leagueVolat = clamp01(
-    Math.max(
-      asNumber(homeStats.leagueVolatility),
-      asNumber(awayStats.leagueVolatility),
-    ) / 3,
-  );
-
-  return {
-    recentForm: new Decimal(recentForm),
-    xg: new Decimal(xg),
-    domExtPerf: new Decimal(domExtPerf),
-    leagueVolat: new Decimal(leagueVolat),
-  };
-}
-
-function clamp01(value: number): number {
-  return clamp(value, 0, 1);
-}
-
-type BlendTeamStatsInput = {
-  primary: TeamStatsInput;
-  secondary: TeamStatsInput;
-  formWeight: number;
-  xgWeight: number;
-};
-
-/**
- * Blend European stats (primary) with domestic/cross-competition stats (secondary).
- * European recentForm weighted at `formWeight`; domestic xg at `1 - xgWeight`.
- * Win/draw rates taken from domestic (larger sample); leagueVolatility from European.
- */
-export function blendTeamStats({
-  primary,
-  secondary,
-  formWeight,
-  xgWeight,
-}: BlendTeamStatsInput): TeamStatsInput {
-  const fw1 = 1 - formWeight;
-  const xw1 = 1 - xgWeight;
-  return {
-    recentForm:
-      asNumber(primary.recentForm) * formWeight +
-      asNumber(secondary.recentForm) * fw1,
-    xgFor: asNumber(primary.xgFor) * xgWeight + asNumber(secondary.xgFor) * xw1,
-    xgAgainst:
-      asNumber(primary.xgAgainst) * xgWeight +
-      asNumber(secondary.xgAgainst) * xw1,
-    homeWinRate: secondary.homeWinRate,
-    awayWinRate: secondary.awayWinRate,
-    drawRate: secondary.drawRate,
-    leagueVolatility: primary.leagueVolatility,
-  };
-}
-
-function bookmakerRank(bookmaker: string): number {
-  if (bookmaker === 'Pinnacle') return 0;
-  if (bookmaker === 'Bet365') return 1;
-  if (bookmaker === 'Unibet') return 2;
-  if (bookmaker === 'Marathonbet') return 3;
-  if (bookmaker === 'Bwin') return 4;
-  if (bookmaker === 'MarketAvg') return 5;
-  return 6;
-}
-
-// Returns odds for a pick within a FullOddsSnapshot (single-market, no combo).
-function getPickOddsFromSnapshot(
-  market: Market,
-  pick: string,
-  odds: FullOddsSnapshot,
-): Decimal | null {
-  if (market === Market.ONE_X_TWO) {
-    if (pick === 'HOME') return odds.homeOdds;
-    if (pick === 'DRAW') return odds.drawOdds;
-    if (pick === 'AWAY') return odds.awayOdds;
-  }
-  if (market === Market.OVER_UNDER) {
-    return odds.overUnderOdds[pick as keyof typeof odds.overUnderOdds] ?? null;
-  }
-  if (market === Market.BTTS) {
-    if (pick === 'YES') return odds.bttsYesOdds;
-    if (pick === 'NO') return odds.bttsNoOdds;
-  }
-  if (market === Market.HALF_TIME_FULL_TIME) {
-    if (isHalfTimeFullTimePick(pick)) {
-      return odds.htftOdds[pick] ?? null;
-    }
-  }
-  if (market === Market.OVER_UNDER_HT) {
-    return odds.ouHtOdds[pick as keyof typeof odds.ouHtOdds] ?? null;
-  }
-  if (
-    market === Market.FIRST_HALF_WINNER &&
-    odds.firstHalfWinnerOdds !== null
-  ) {
-    if (pick === 'HOME') return odds.firstHalfWinnerOdds.home;
-    if (pick === 'DRAW') return odds.firstHalfWinnerOdds.draw;
-    if (pick === 'AWAY') return odds.firstHalfWinnerOdds.away;
-  }
-  if (market === Market.DOUBLE_CHANCE && odds.doubleChanceOdds !== null) {
-    return odds.doubleChanceOdds[pick as '1X' | 'X2' | '12'] ?? null;
-  }
-  return null;
-}
-
-// Returns the odds of the primary market pick for a ViablePick.
-// Used for line movement comparison.
-function getPickOdds(pick: ViablePick, odds: FullOddsSnapshot): Decimal | null {
-  return getPickOddsFromSnapshot(pick.market, pick.pick, odds);
-}
-
-function isHalfTimeFullTimePick(value: string): value is HalfTimeFullTimePick {
-  return (HALF_TIME_FULL_TIME_PICKS as readonly string[]).includes(value);
-}
-
-function getModelProbabilityForPick(
-  market: Market,
-  pick: string,
-  probabilities: MatchProbabilities,
-): Decimal | null {
-  if (market === Market.ONE_X_TWO) {
-    if (pick === 'HOME') return probabilities.home;
-    if (pick === 'DRAW') return probabilities.draw;
-    if (pick === 'AWAY') return probabilities.away;
-  }
-  if (market === Market.DOUBLE_CHANCE) {
-    if (pick === '1X') return probabilities.dc1X;
-    if (pick === 'X2') return probabilities.dcX2;
-    if (pick === '12') return probabilities.dc12;
-  }
-  if (market === Market.OVER_UNDER) {
-    if (pick === 'OVER_1_5') return probabilities.over15;
-    if (pick === 'UNDER_1_5') return probabilities.under15;
-    if (pick === 'OVER') return probabilities.over25;
-    if (pick === 'UNDER') return probabilities.under25;
-    if (pick === 'OVER_3_5') return probabilities.over35;
-    if (pick === 'UNDER_3_5') return probabilities.under35;
-    if (pick === 'OVER_4_5') return probabilities.over45;
-    if (pick === 'UNDER_4_5') return probabilities.under45;
-  }
-  if (market === Market.BTTS) {
-    if (pick === 'YES') return probabilities.bttsYes;
-    if (pick === 'NO') return probabilities.bttsNo;
-  }
-  if (market === Market.HALF_TIME_FULL_TIME && isHalfTimeFullTimePick(pick)) {
-    return probabilities.htft[pick];
-  }
-  if (market === Market.OVER_UNDER_HT) {
-    return probabilities.ouHT[pick as keyof typeof probabilities.ouHT] ?? null;
-  }
-  if (market === Market.FIRST_HALF_WINNER) {
-    if (pick === 'HOME') return probabilities.firstHalfWinner.home;
-    if (pick === 'DRAW') return probabilities.firstHalfWinner.draw;
-    if (pick === 'AWAY') return probabilities.firstHalfWinner.away;
-  }
-  return null;
-}
-
-export function estimateComboOdds(input: {
-  combo: ComboPick;
-  probabilities: MatchProbabilities;
-  jointProbability: Decimal;
-  odds1: Decimal;
-  odds2: Decimal;
-}): Decimal {
-  const { combo, probabilities, jointProbability, odds1, odds2 } = input;
-  const probability1 = getModelProbabilityForPick(
-    combo.market1,
-    combo.pick1,
-    probabilities,
-  );
-  const probability2 = getModelProbabilityForPick(
-    combo.market2,
-    combo.pick2,
-    probabilities,
-  );
-
-  const rawProduct = odds1.mul(odds2);
-  if (
-    probability1 === null ||
-    probability2 === null ||
-    jointProbability.lte(0) ||
-    probability1.lte(0) ||
-    probability2.lte(0)
-  ) {
-    return rawProduct;
+export function deriveModelRunPhase(opts: {
+  fixtureStatus: FixtureStatus;
+  scheduledAt: Date;
+  now?: Date;
+}): ModelRunPhase {
+  if (opts.fixtureStatus === FixtureStatus.IN_PROGRESS) {
+    return ModelRunPhase.LIVE;
   }
 
-  const independentProbability = probability1.mul(probability2);
-  if (independentProbability.lte(0)) {
-    return rawProduct;
-  }
-
-  const correlationFactor = independentProbability
-    .div(jointProbability)
-    .pow(COMBO_CORRELATION_ALPHA);
-  const clampedFactor = Decimal.min(
-    COMBO_CORRELATION_MAX_FACTOR,
-    Decimal.max(COMBO_CORRELATION_MIN_FACTOR, correlationFactor),
-  );
-
-  return rawProduct.mul(clampedFactor);
-}
-
-function summarizePick(pick: ViablePick): {
-  market: string;
-  pick: string;
-  comboMarket?: string;
-  comboPick?: string;
-  probability: number;
-  odds: number;
-  ev: number;
-  qualityScore: number;
-} {
-  return {
-    market: pick.market,
-    pick: pick.pick,
-    comboMarket: pick.comboMarket,
-    comboPick: pick.comboPick,
-    probability: pick.probability.toNumber(),
-    odds: pick.odds.toNumber(),
-    ev: pick.ev.toNumber(),
-    qualityScore: pick.qualityScore.toNumber(),
-  };
-}
-
-function summarizePicks(picks: ViablePick[]): {
-  market: string;
-  pick: string;
-  comboMarket?: string;
-  comboPick?: string;
-  probability: number;
-  odds: number;
-  ev: number;
-  qualityScore: number;
-}[] {
-  return picks.map((pick) => summarizePick(pick));
-}
-
-function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
-  market: string;
-  pick: string;
-  comboMarket?: string;
-  comboPick?: string;
-  probability: number;
-  odds: number;
-  ev: number;
-  qualityScore: number;
-  status: 'viable' | 'rejected';
-  rejectionReason?: string;
-}[] {
-  return picks.map((pick) => ({
-    ...summarizePick(pick),
-    status: pick.rejectionReason ? 'rejected' : 'viable',
-    ...(pick.rejectionReason ? { rejectionReason: pick.rejectionReason } : {}),
-  }));
-}
-
-// eslint-disable-next-line max-params -- Six domain parameters; kept explicit for testability.
-function getPickRejectionReason(
-  pick: ViablePick,
-  suspendedMarkets: Set<Market>,
-  probabilities: MatchProbabilities,
-  minEv: Decimal = EV_THRESHOLD,
-  competitionCode: string | null = null,
-  lambdaTotal = 0,
-): EvaluatedPick['rejectionReason'] {
-  const minDirectionProbability = getPickDirectionProbabilityThreshold(
-    competitionCode,
-    pick.market,
-    pick.pick,
-  );
-
-  if (pick.ev.greaterThan(EV_HARD_CAP)) {
-    return 'ev_above_hard_cap';
-  }
-
-  // HT/FT markets require calibrated leagues — secondary leagues lack the
-  // half-time decomposition history to avoid bivariate Poisson overestimation.
-  if (
-    (pick.market === Market.HALF_TIME_FULL_TIME ||
-      pick.market === Market.FIRST_HALF_WINNER) &&
-    !isHtftCalibrated(competitionCode)
-  ) {
-    return 'market_suspended';
-  }
-
-  // Under-2.5 bets at high expected-goal totals: the independent Poisson model
-  // overestimates P(Under) due to real-match overdispersion. Reject outright when
-  // λ ≥ 2.3 — lowered from 2.5 after May 2026 live diagnostic (losses at λ 2.30–2.80).
-  if (
-    pick.market === Market.OVER_UNDER &&
-    pick.pick === 'UNDER' &&
-    lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD
-  ) {
-    return 'under_high_lambda';
-  }
-
-  // Minimum probability floor for all markets — picks below 40% are empirically
-  // losing even with positive EV (model overestimates edge on low-P candidates).
-  if (pick.probability.lessThan(EV_MIN_PROBABILITY_THRESHOLD)) {
-    return 'probability_too_low';
-  }
-
-  if (pick.market === Market.ONE_X_TWO) {
-    if (
-      pick.pick === 'HOME' &&
-      probabilities.home.lessThan(minDirectionProbability)
-    ) {
-      return 'probability_too_low';
-    }
-    if (
-      pick.pick === 'AWAY' &&
-      probabilities.away.lessThan(minDirectionProbability)
-    ) {
-      return 'probability_too_low';
-    }
-    // Combo picks with DRAW as primary leg (e.g. NUL + MOINS 2.5) passed the EV
-    // floor via high combo odds while P(draw) was 19-27% — audit 2026-03-28: 0/3.
-    // Require a minimum draw probability before accepting DRAW-based combos.
-    if (
-      pick.pick === 'DRAW' &&
-      pick.isCombo &&
-      probabilities.draw.lessThan(MIN_DRAW_DIRECTION_PROBABILITY)
-    ) {
-      return 'probability_too_low';
-    }
-  }
-
-  if (
-    pick.ev.lessThan(
-      getPickEvFloor(competitionCode, pick.market, pick.pick, minEv),
-    )
-  ) {
-    return 'ev_below_threshold';
-  }
-
-  const evSoftCap = getPickEvSoftCap(competitionCode, pick.market, pick.pick);
-  if (pick.ev.greaterThan(evSoftCap)) {
-    return 'ev_above_soft_cap';
-  }
-
-  if (pick.qualityScore.lessThan(MIN_QUALITY_SCORE)) {
-    return 'quality_score_below_threshold';
-  }
-
-  const minSelectionOdds = getPickMinSelectionOdds(
-    competitionCode,
-    pick.market,
-    pick.pick,
-  );
-
-  if (pick.odds.lessThan(minSelectionOdds)) {
-    return 'odds_below_floor';
-  }
-
-  // Per-pick odds ceiling — when defined, it REPLACES the global MAX_SELECTION_ODDS
-  // cap. This allows both tighter windows (e.g. SP2 HOME < 1.95) and wider ones
-  // (e.g. PL DRAW up to 5.50) without touching the global default.
-  const maxSelectionOdds = getPickMaxSelectionOdds(
-    competitionCode,
-    pick.market,
-    pick.pick,
-  );
-  if (maxSelectionOdds !== null) {
-    if (pick.odds.greaterThan(maxSelectionOdds)) {
-      return 'odds_above_cap';
-    }
-  } else if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
-    // For combos, individual leg odds are already filtered upstream — only apply
-    // the cap to single picks where the pick odds IS the leg odds.
-    return 'odds_above_cap';
-  }
-
-  if (
-    suspendedMarkets.has(pick.market) ||
-    (pick.comboMarket !== undefined && suspendedMarkets.has(pick.comboMarket))
-  ) {
-    return 'market_suspended';
-  }
-
-  return undefined;
-}
-
-// eslint-disable-next-line max-params -- Five domain parameters; no meaningful grouping possible without obscuring intent.
-function buildQualityScore(
-  ev: Decimal,
-  deterministicScore: Decimal,
-  market: Market,
-  pick: string,
-  odds?: Decimal,
-): Decimal {
-  return ev
-    .mul(deterministicScore)
-    .mul(getOneXTwoLongshotPenalty(market, pick, odds ?? new Decimal(0)));
-}
-
-function getOneXTwoLongshotPenalty(
-  market: Market,
-  pick: string,
-  odds: Decimal,
-): Decimal {
-  if (market !== Market.ONE_X_TWO) {
-    return new Decimal(1);
-  }
-
-  if (pick === 'AWAY' && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
-    return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_AWAY_MAX_ODDS,
-      odds,
-      floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
-    });
-  }
-
-  if (pick === 'DRAW' && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
-    return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_DRAW_MAX_ODDS,
-      odds,
-      floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
-    });
-  }
-
-  return new Decimal(1);
-}
-
-function progressiveLongshotPenalty(input: {
-  threshold: Decimal;
-  odds: Decimal;
-  floor: Decimal;
-}): Decimal {
-  const { threshold, odds, floor } = input;
-  if (odds.lte(0)) {
-    return floor;
-  }
-
-  const ratio = threshold.div(odds);
-  const progressive = ratio.pow(ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT);
-  return Decimal.max(floor, Decimal.min(new Decimal(1), progressive));
-}
-
-function buildBetPickKey(input: {
-  market: Market;
-  pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
-}): string {
-  return [
-    input.market,
-    input.pick,
-    input.comboMarket ?? '-',
-    input.comboPick ?? '-',
-  ].join('|');
+  const now = opts.now ?? new Date();
+  return formatDateUtc(opts.scheduledAt) === formatDateUtc(now)
+    ? ModelRunPhase.PRE_KICKOFF
+    : ModelRunPhase.ADVANCE;
 }
 
 function summarizeTeamStats(stats: TeamStatsInput): {
@@ -3157,54 +1434,4 @@ function getFixtureAwayTeamName(fixture: {
   awayTeam?: { name?: string };
 }): string | null {
   return fixture.awayTeam?.name ?? null;
-}
-
-const TOP5_COMPETITIONS = new Set(['PL', 'PD', 'BL1', 'SA', 'FL1']);
-const INTERNATIONAL_COMPETITIONS = new Set(['WC', 'UCL', 'UEL', 'UECL', 'FRI']);
-
-function mlLeagueTier(competitionCode: string | null): string {
-  if (!competitionCode) return 'secondary';
-  if (TOP5_COMPETITIONS.has(competitionCode)) return 'top5';
-  if (INTERNATIONAL_COMPETITIONS.has(competitionCode)) return 'international';
-  return 'secondary';
-}
-
-function mlOddsSegment(odds: Decimal): string {
-  const n = odds.toNumber();
-  if (n < 1.5) return 'low';
-  if (n <= 2.5) return 'mid';
-  return 'high';
-}
-
-function buildMlShadowFeatures(input: {
-  valueBet: ViablePick;
-  deterministicScore: Decimal;
-  probabilities: MatchProbabilities;
-  features: DeterministicFeatures;
-  competitionCode: string | null;
-}): MlShadowFeatures {
-  const {
-    valueBet,
-    deterministicScore,
-    probabilities,
-    features,
-    competitionCode,
-  } = input;
-  return {
-    prob_estimated: valueBet.probability.toNumber(),
-    deterministic_score: deterministicScore.toNumber(),
-    ev: valueBet.ev.toNumber(),
-    delta_p: null,
-    p_poisson_home: probabilities.home.toNumber(),
-    p_poisson_draw: probabilities.draw.toNumber(),
-    p_poisson_away: probabilities.away.toNumber(),
-    recent_form: asNumber(features.recentForm),
-    xg: asNumber(features.xg),
-    performance_dom_ext: asNumber(features.domExtPerf),
-    volatilite_ligue: asNumber(features.leagueVolat),
-    market: valueBet.market,
-    canal: 'EV',
-    league_tier: mlLeagueTier(competitionCode),
-    odds_segment: mlOddsSegment(valueBet.odds),
-  };
 }

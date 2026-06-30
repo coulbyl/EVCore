@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   ScoredPick,
   SignalWindowService,
-} from '@modules/ai-engine/signal-window.service';
-import type { CouponComposerService } from '@modules/ai-engine/coupon-composer.service';
+} from '@modules/coupon/signal-window.service';
+import type { CouponComposerService } from '@modules/coupon/coupon-composer.service';
 import { ChatPickEngineService } from './chat.pick-engine.service';
 
 const inOneHour = () => new Date(Date.now() + 3_600_000);
@@ -17,7 +17,7 @@ function buildPick(overrides: Partial<ScoredPick>): ScoredPick {
     competition: 'PL',
     country: 'England',
     scheduledAt: inOneHour(),
-    canal: 'SV',
+    canal: 'SAFE',
     market: 'OVER_UNDER',
     pick: 'UNDER',
     probability: 0.7,
@@ -90,16 +90,16 @@ describe('ChatPickEngineService.planLadder', () => {
     expect('error' in result).toBe(true);
   });
 
-  it('filters on the requested canal', async () => {
+  it('filters on the requested channel', async () => {
     const service = buildService([
-      buildPick({ fixtureId: 'fixture-1', canal: 'EV' }),
-      buildPick({ fixtureId: 'fixture-2', canal: 'SV' }),
+      buildPick({ fixtureId: 'fixture-1', canal: 'VALUE' }),
+      buildPick({ fixtureId: 'fixture-2', canal: 'SAFE' }),
     ]);
 
     const result = await service.planLadder({
       stake: '500',
       steps: 3,
-      canal: 'SV',
+      channel: 'SAFE',
     });
 
     expect('error' in result).toBe(false);

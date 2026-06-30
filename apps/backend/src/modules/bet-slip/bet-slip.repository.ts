@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus } from '@evcore/db';
+import { BetSource, BetStatus, StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 
 @Injectable()
@@ -40,7 +40,9 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
             fixture: {
@@ -96,7 +98,12 @@ export class BetSlipRepository {
         : undefined;
     return this.prisma.client.bet.findMany({
       where: {
-        modelRun: { decision: 'BET' },
+        source: BetSource.MODEL,
+        channelSelection: {
+          is: {
+            channelDecision: { is: { channel: StrategyChannel.VALUE } },
+          },
+        },
         status: { in: ['WON', 'LOST'] },
         oddsSnapshot: { not: null },
         ...(fixtureFilter ? { fixture: fixtureFilter } : {}),
@@ -132,7 +139,9 @@ export class BetSlipRepository {
                 ev: true,
                 oddsSnapshot: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
             fixture: {

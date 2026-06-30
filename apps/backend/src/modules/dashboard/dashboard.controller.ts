@@ -49,7 +49,8 @@ export class DashboardController {
     @CurrentSession() session: AuthSession,
     @Query('canal') canal?: string,
   ) {
-    const canalFilter = canal === 'EV' || canal === 'SV' ? canal : undefined;
+    const canalFilter =
+      canal === 'VALUE' || canal === 'SAFE' ? canal : undefined;
     return this.dashboardService.getCompetitionStats(
       session.user.id,
       canalFilter,

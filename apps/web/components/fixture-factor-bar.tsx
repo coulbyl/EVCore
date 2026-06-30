@@ -37,7 +37,7 @@ export function FixtureFactorBar({
       pct <= 33
         ? "var(--color-success)"
         : pct <= 66
-          ? "var(--canal-ev)"
+          ? "var(--canal-value)"
           : "var(--color-destructive)";
 
     return (
@@ -69,7 +69,7 @@ export function FixtureFactorBar({
     delta >= 0
       ? intensity >= 30
         ? "var(--color-success)"
-        : "var(--canal-ev)"
+        : "var(--canal-value)"
       : "var(--color-destructive)";
 
   return (

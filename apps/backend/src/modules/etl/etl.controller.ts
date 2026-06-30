@@ -22,6 +22,7 @@ import { EtlService } from './etl.service';
 import { EtlErrorResponseDto } from './dto/etl-error-response.dto';
 import { OddsPrematchSyncBodyDto } from './dto/odds-prematch-sync-body.dto';
 import { AnalysisHorizonBodyDto } from './dto/analysis-horizon-body.dto';
+import { BettingEngineRebuildBodyDto } from './dto/betting-engine-rebuild-body.dto';
 
 type LeagueSyncType = 'fixtures' | 'stats' | 'injuries';
 type GlobalSyncType =
@@ -202,6 +203,33 @@ export class EtlController {
   })
   async triggerAnalysisHorizon(@Body() body: AnalysisHorizonBodyDto = {}) {
     const result = await this.etlService.triggerRollingHorizonAnalysis(body);
+    return { status: 'ok' as const, ...result };
+  }
+
+  // ─── Historical rebuild ───────────────────────────────────────────────────
+
+  @Post('rebuild/betting-engine')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Rebuild betting-engine analysis for all seasons',
+    description:
+      'Queues one idempotent rebuild job per season. Each job re-runs the betting ' +
+      'engine on FINISHED fixtures that have no ModelRun yet, recreating ChannelDecision / ' +
+      'ChannelSelection rows natively and settling bets. Safe to re-run: fixtures already ' +
+      'analyzed are skipped (no duplicate runs). Use after a purge of analysis data. ' +
+      'Pass an optional from/to (ISO YYYY-MM-DD) to restrict the scheduledAt window — ' +
+      'useful to re-analyze a single matchweek without re-running whole seasons.',
+  })
+  @ApiBody({ type: BettingEngineRebuildBodyDto, required: false })
+  @ApiOkResponse({
+    schema: {
+      example: { status: 'ok', queued: 42, seasonIds: ['season-id-1'] },
+    },
+  })
+  async triggerBettingEngineRebuild(
+    @Body() body: BettingEngineRebuildBodyDto = {},
+  ) {
+    const result = await this.etlService.triggerBettingEngineRebuild(body);
     return { status: 'ok' as const, ...result };
   }
 

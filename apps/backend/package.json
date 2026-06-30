@@ -20,6 +20,7 @@
     "test:e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "dependencies": {
+    "@evcore/analysis-core": "workspace:*",
     "@evcore/db": "workspace:*",
     "@evcore/transactional": "workspace:*",
     "@nestjs/bullmq": "catalog:",

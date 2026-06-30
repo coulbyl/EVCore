@@ -15,7 +15,7 @@ export type BankrollTransaction = {
   betId: string | null;
   note: string | null;
   createdAt: string;
-  canal: "EV" | "SV" | null;
+  canal: "VALUE" | "SAFE" | null;
   fixture: string | null;
   market: string | null;
 };

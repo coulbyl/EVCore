@@ -55,3 +55,7 @@ logs/
 # Playwright
 test-results/
 playwright-report/
+tuning.json
+model-calibration.json
+
+backups

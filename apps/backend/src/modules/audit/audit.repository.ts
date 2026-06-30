@@ -59,7 +59,6 @@ export class AuditRepository {
         oddsSnapshots: { select: { id: true }, take: 1 },
         modelRuns: {
           select: {
-            decision: true,
             deterministicScore: true,
             finalScore: true,
             features: true,
@@ -71,9 +70,13 @@ export class AuditRepository {
                 ev: true,
                 probEstimated: true,
                 status: true,
+                source: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
               orderBy: { ev: 'desc' },
-              take: 1,
+              take: 5,
             },
           },
           orderBy: { analyzedAt: 'desc' },

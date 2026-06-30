@@ -63,6 +63,11 @@ function rejectionLabel(reason: string | undefined, t: Translator): string {
   return translated;
 }
 
+function hasEvPick(row: FixtureRow): boolean {
+  const mr = row.modelRun;
+  return Boolean(mr?.betId && mr.market && mr.pick);
+}
+
 // ── factor bars ───────────────────────────────────────────────────────────────
 
 // shared via `@/components/fixture-factor-bar`
@@ -236,13 +241,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
     if (!mr) return;
     const shouldOpen = draft.items.length === 0;
 
-    const sv = row.safeValueBet;
-    const matchesSv =
-      sv?.market === snap.market &&
-      sv?.pick === snap.pick &&
-      (sv?.comboMarket ?? null) === (snap.comboMarket ?? null) &&
-      (sv?.comboPick ?? null) === (snap.comboPick ?? null);
-
     const base = {
       fixtureId: row.fixtureId,
       fixture: row.fixture,
@@ -259,10 +257,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       stakeOverride: null,
     };
 
-    const item: BetSlipDraftItem =
-      matchesSv && sv
-        ? { ...base, betId: sv.betId }
-        : { ...base, modelRunId: mr.modelRunId };
+    const item: BetSlipDraftItem = { ...base, modelRunId: mr.modelRunId };
 
     addItem(item);
     if (shouldOpen) open();
@@ -309,9 +304,9 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       </div>
 
       {/* Pick retenu */}
-      {mr.decision === "BET" && mr.market && mr.pick && (
+      {hasEvPick(row) && mr.market && mr.pick && (
         <div className="mt-4 flex items-center gap-3 rounded-[1rem] border border-border bg-panel p-3">
-          <CanalBadge canal="EV" />
+          <CanalBadge canal="VALUE" />
           <span className="flex-1 text-sm font-semibold text-foreground">
             {formatCombinedPickForDisplay({
               market: mr.market,
@@ -323,7 +318,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
           {mr.ev && (
             <span
               className="tabular-nums text-sm font-bold"
-              style={{ color: "var(--canal-ev)" }}
+              style={{ color: "var(--canal-value)" }}
             >
               {mr.ev}
             </span>
@@ -336,10 +331,9 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
         </div>
       )}
 
-      {mr.decision === "NO_BET" && (
+      {!hasEvPick(row) && (
         <div className="mt-4 rounded-[1rem] border border-dashed border-border bg-panel/60 px-3 py-2.5 text-sm text-muted-foreground">
-          {t("noBet.message")} {t("noBet.decision")}{" "}
-          <span className="font-semibold text-foreground">NO_BET</span>
+          {t("noBet.message")}
         </div>
       )}
 

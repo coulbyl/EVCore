@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { CouponProposalDto } from "@/domains/ai-engine/types/coupon";
+import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 
 function hasWinningMajority(coupons: CouponProposalDto[]): boolean {
   if (coupons.length === 0) return false;

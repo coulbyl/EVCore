@@ -10,7 +10,6 @@ import {
 } from "@evcore/ui";
 import { CanalCards } from "./canal-cards";
 import { ChannelPerformanceTable } from "./channel-performance-table";
-import { PredictionsCard } from "./predictions-card";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
 import { PipelineStatus } from "./pipeline-status";
@@ -84,12 +83,9 @@ export function DashboardPageClientAdmin() {
               <CanalCards from={fromIso} to={toIso} />
             </div>
 
-            {/* Row 2 : Table perf (7) + Prédictions (5) */}
-            <div className="col-span-2 sm:col-span-6 lg:col-span-7">
+            {/* Row 2 : Table perf pleine largeur */}
+            <div className="col-span-2 sm:col-span-6 lg:col-span-12">
               <ChannelPerformanceTable />
-            </div>
-            <div className="col-span-2 sm:col-span-6 lg:col-span-5 flex flex-col">
-              <PredictionsCard />
             </div>
 
             {/* Row 3 : Pipeline + Alertes */}

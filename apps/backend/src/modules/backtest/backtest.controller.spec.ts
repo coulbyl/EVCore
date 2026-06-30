@@ -1,72 +1,76 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { BacktestService } from './backtest.service';
-import type { GridSearchService } from './grid-search.service';
+import type { ChannelBacktestService } from './channel-backtest.service';
+import type { ModelCalibrationService } from './model-calibration.service';
+import type { ChannelTuningService } from './channel-tuning.service';
 import { BacktestController } from './backtest.controller';
 
 describe('BacktestController', () => {
-  function makeService(
-    overrides: Partial<BacktestService> = {},
-  ): BacktestService {
+  function makeChannelBacktest(): ChannelBacktestService {
     return {
-      runAllCompetitions: vi
-        .fn()
-        .mockResolvedValue([{ competitionCode: 'PL', overallVerdict: 'PASS' }]),
-      runCompetitionBacktest: vi.fn().mockResolvedValue({
-        competitionCode: 'PL',
-        overallVerdict: 'PASS',
-      }),
-      runAllSeasonsSafeValueBacktest: vi
-        .fn()
-        .mockResolvedValue({ aggregate: { picksPlaced: 0 } }),
-      ...overrides,
-    } as unknown as BacktestService;
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ChannelBacktestService;
   }
 
-  function makeGridSearchService(): GridSearchService {
+  function makeModelCalibration(): ModelCalibrationService {
     return {
-      runGridSearch: vi.fn().mockResolvedValue({ results: [] }),
-    } as unknown as GridSearchService;
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ModelCalibrationService;
   }
 
-  it('runs backtest for all competitions and returns reports', async () => {
-    const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+  function makeChannelTuning(): ChannelTuningService {
+    return {
+      run: vi.fn().mockResolvedValue({ reports: [] }),
+    } as unknown as ChannelTuningService;
+  }
 
-    await expect(controller.runAll()).resolves.toEqual([
-      { competitionCode: 'PL', overallVerdict: 'PASS' },
-    ]);
-    expect(service.runAllCompetitions).toHaveBeenCalledTimes(1);
-  });
-
-  it('runs backtest for one competition (all seasons) and returns the report', async () => {
-    const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
-
-    await expect(controller.runCompetition('PL')).resolves.toEqual({
-      competitionCode: 'PL',
-      overallVerdict: 'PASS',
-    });
-    expect(service.runCompetitionBacktest).toHaveBeenCalledWith('PL');
-  });
-
-  it('runs backtest for one competition + one season and returns the report', async () => {
-    const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
-
-    await controller.runCompetitionSeason('PL', '2023-24');
-
-    expect(service.runCompetitionBacktest).toHaveBeenCalledWith(
-      'PL',
-      '2023-24',
+  function makeController(overrides?: {
+    channelBacktest?: ChannelBacktestService;
+    modelCalibration?: ModelCalibrationService;
+    channelTuning?: ChannelTuningService;
+  }): BacktestController {
+    return new BacktestController(
+      overrides?.channelBacktest ?? makeChannelBacktest(),
+      overrides?.modelCalibration ?? makeModelCalibration(),
+      overrides?.channelTuning ?? makeChannelTuning(),
     );
+  }
+
+  it('delegates the per-channel backtest with its query window', async () => {
+    const channelBacktest = makeChannelBacktest();
+    const controller = makeController({ channelBacktest });
+
+    await controller.runChannels('2025-01-01', '2025-06-01', 'PL');
+
+    expect(channelBacktest.run).toHaveBeenCalledWith({
+      from: '2025-01-01',
+      to: '2025-06-01',
+      competitionCode: 'PL',
+    });
   });
 
-  it('delegates safe-value backtest to the service', async () => {
-    const service = makeService();
-    const controller = new BacktestController(service, makeGridSearchService());
+  it('delegates threshold tuning with its query window', async () => {
+    const channelTuning = makeChannelTuning();
+    const controller = makeController({ channelTuning });
 
-    await controller.runSafeValueBacktest();
+    await controller.runTuning('2025-01-01', '2025-06-01', 'BL1');
 
-    expect(service.runAllSeasonsSafeValueBacktest).toHaveBeenCalledTimes(1);
+    expect(channelTuning.run).toHaveBeenCalledWith({
+      from: '2025-01-01',
+      to: '2025-06-01',
+      competitionCode: 'BL1',
+    });
+  });
+
+  it('delegates model calibration with its query window', async () => {
+    const modelCalibration = makeModelCalibration();
+    const controller = makeController({ modelCalibration });
+
+    await controller.runCalibration(undefined, undefined, undefined);
+
+    expect(modelCalibration.run).toHaveBeenCalledWith({
+      from: undefined,
+      to: undefined,
+      competitionCode: undefined,
+    });
   });
 });

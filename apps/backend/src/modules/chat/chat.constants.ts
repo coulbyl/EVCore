@@ -1,4 +1,4 @@
-export const CHAT_PROMPT_VERSION = 'eva-v5-2026-06-14';
+export const CHAT_PROMPT_VERSION = 'eva-v7-2026-06-22';
 
 export const CHAT_MODELS = {
   scout: 'meta-llama/llama-4-scout-17b-16e-instruct',
@@ -10,6 +10,8 @@ export const CHAT_LIMITS = {
   maxToolIterations: 5,
   maxMessageLength: 2000,
   maxToolRows: 30,
+  maxEvaFixtures: 15,
+  maxEvaPicksPerFixture: 4,
   defaultDailyLimit: 50,
   maxConversationsPerUser: 5,
   groqTimeoutMs: 30_000,
@@ -39,6 +41,7 @@ export const CHAT_CACHE_TTL = {
   userBetStats: 60,
   searchFixtures: 10 * 60,
   explainFixture: 5 * 60,
+  picksWithEvaluation: 3 * 60,
 } as const;
 
 // Ranking weights used by ChatPickEngineService to order engine picks.
@@ -63,5 +66,6 @@ export const CHAT_TOOL_LABELS: Record<string, string> = {
   getMLMetrics: 'Lecture des metriques ML...',
   getEdgeAnalysis: "Analyse de l'edge vs marche...",
   getEngineHealth: 'Diagnostic du moteur...',
+  getPicksWithEvaluation: 'Analyse des picks du jour...',
   getMyStats: 'Chargement de vos statistiques...',
 };

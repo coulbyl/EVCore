@@ -86,6 +86,15 @@ function pinnacleWithAdditionalMarkets() {
           { value: 'Away/Away', odd: 6.1 },
         ],
       },
+      {
+        id: 10,
+        name: 'Exact Score',
+        values: [
+          { value: '1:0', odd: 4.75 },
+          { value: '0:0', odd: 6.25 },
+          { value: 'Other', odd: 1.5 },
+        ],
+      },
     ],
   };
 }
@@ -431,5 +440,13 @@ describe('extractAdditionalMarketOdds', () => {
       DRAW_HOME: 5.6,
       AWAY_AWAY: 6.1,
     });
+  });
+
+  it('extracts exact-score odds and skips non "H:A" buckets', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    // "Other"/catch-all values are dropped; only "H:A" scorelines are kept.
+    expect(additional.correctScoreOdds).toEqual({ '1:0': 4.75, '0:0': 6.25 });
   });
 });

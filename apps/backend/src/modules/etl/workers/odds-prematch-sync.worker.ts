@@ -186,6 +186,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         ouHtOdds: additionalOdds.ouHtOdds,
         firstHalfWinnerOdds: additionalOdds.firstHalfWinnerOdds,
         doubleChanceOdds: additionalOdds.doubleChanceOdds,
+        correctScoreOdds: additionalOdds.correctScoreOdds,
       });
 
       // Store secondary market odds from all other priority bookmakers.
@@ -211,7 +212,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           Object.keys(secondary.htftOdds).length > 0 ||
           Object.keys(secondary.ouHtOdds).length > 0 ||
           secondary.firstHalfWinnerOdds !== null ||
-          secondary.doubleChanceOdds !== null;
+          secondary.doubleChanceOdds !== null ||
+          Object.keys(secondary.correctScoreOdds).length > 0;
         if (!hasData) continue;
         await this.fixtureService.upsertSecondaryMarketOdds({
           fixtureId,
@@ -224,6 +226,7 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           ouHtOdds: secondary.ouHtOdds,
           firstHalfWinnerOdds: secondary.firstHalfWinnerOdds,
           doubleChanceOdds: secondary.doubleChanceOdds,
+          correctScoreOdds: secondary.correctScoreOdds,
         });
       }
 
@@ -280,6 +283,8 @@ type AdditionalMarketOdds = {
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
+  // Full-time exact score: scoreline "H:A" → odds. Observation-only market.
+  correctScoreOdds: Record<string, number>;
 };
 
 type CurlJsonResponse = {
@@ -386,6 +391,7 @@ export function extractAdditionalMarketOdds(
       ouHtOdds: {},
       firstHalfWinnerOdds: null,
       doubleChanceOdds: null,
+      correctScoreOdds: {},
     };
   }
 
@@ -411,6 +417,8 @@ export function extractAdditionalMarketOdds(
   const ouHtOdds = extractOverUnderHtOdds(ouHtBet);
   const firstHalfWinnerOdds = extractFirstHalfWinnerOdds(fhwBet);
   const doubleChanceOdds = extractDoubleChanceOdds(dcBet);
+  const csBet = bk.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.EXACT_SCORE);
+  const correctScoreOdds = extractCorrectScoreOdds(csBet);
 
   return {
     overUnderOdds,
@@ -420,7 +428,23 @@ export function extractAdditionalMarketOdds(
     ouHtOdds,
     firstHalfWinnerOdds,
     doubleChanceOdds,
+    correctScoreOdds,
   };
+}
+
+// Extracts full-time exact-score odds: each value is a scoreline "H:A" with its
+// odd. Kept as a generic map (scoreline → odds) since books price a variable,
+// sparse subset of scorelines. Observation-only market — no model consumption yet.
+function extractCorrectScoreOdds(
+  csBet: OddsBookmaker['bets'][number] | undefined,
+): Record<string, number> {
+  if (!csBet) return {};
+  const odds: Record<string, number> = {};
+  for (const value of csBet.values) {
+    // Keep only well-formed "H:A" scorelines (skip "Other"/catch-all buckets).
+    if (/^\d+:\d+$/.test(value.value)) odds[value.value] = value.odd;
+  }
+  return odds;
 }
 
 function extractOverUnderOdds(

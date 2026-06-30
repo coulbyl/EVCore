@@ -39,7 +39,7 @@ export type ChatRequestUser = Pick<AuthSessionUser, 'id' | 'role' | 'currency'>;
 
 // Compact engine pick pushed to the UI as a card alongside the answer.
 export type ChatStreamPick = {
-  canal: string;
+  channel: string;
   match: string;
   market: string;
   pick: string;

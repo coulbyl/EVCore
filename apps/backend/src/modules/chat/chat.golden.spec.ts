@@ -37,11 +37,11 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserRole } from '@evcore/db';
-import { PREDICTION_CONFIG } from '@modules/prediction/prediction.constants';
+import { CHANNEL_STRATEGY_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { ChatToolsService } from './chat.tools.service';
 import type { ChatReadRepository } from './chat.read.repository';
 import type { ChatRequestUser } from './chat.types';
-import type { AiEngineService } from '@modules/ai-engine/ai-engine.service';
+import type { CouponService } from '@modules/coupon/coupon.service';
 import type { ChatPickEngineService } from './chat.pick-engine.service';
 
 type TestContext = { user: ChatRequestUser };
@@ -78,14 +78,14 @@ const ML_INACTIVE = {
 };
 
 const PERF_STUB = [
-  { channel: 'EV', roi: 0.09, hitRate: 0.61, netUnits: 4.2, sampleSize: 47 },
+  { channel: 'VALUE', roi: 0.09, hitRate: 0.61, netUnits: 4.2, sampleSize: 47 },
 ];
 
 const LEAGUE_STUB = [
   { competition: 'PL', hitRate: 0.64, roi: 0.11, picks: 22 },
 ];
 
-const EDGE_STUB = [{ segment: 'EV', picks: 47, avgEdge: 0.04, roi: 0.09 }];
+const EDGE_STUB = [{ segment: 'VALUE', picks: 47, avgEdge: 0.04, roi: 0.09 }];
 
 const HEALTH_STUB = {
   lastFixtureSyncAt: NOW.toISOString(),
@@ -101,6 +101,88 @@ const USER_STATS_STUB = {
   pending: 1,
   hitRate: 0.636,
   roi: 0.08,
+};
+
+const PICKS_EVAL_STUB = {
+  date: '2026-06-12',
+  asOf: NOW.toISOString(),
+  noModelRunCount: 2,
+  fixtures: [
+    {
+      fixtureId: 'fix-1',
+      match: 'Brazil - Morocco',
+      kickoff: '2026-06-12T21:00:00.000Z',
+      competition: 'WC',
+      status: 'SCHEDULED',
+      analysisState: 'BET',
+      analysisContext: {
+        predictionSource: 'POISSON_MAIN',
+        fallbackReason: null,
+        dataQuality: {
+          marketOdds: null,
+          pinnacle: null,
+          eloHome: null,
+          eloAway: null,
+        },
+      },
+      lambda: { home: 1.755, away: 1.666, total: 3.421 },
+      shadowSignals: { lineMovement: 0.02, h2h: 0.6, congestion: null },
+      evaluatedPicks: [
+        {
+          channel: 'VALUE',
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          probability: 0.71,
+          odds: 1.54,
+          ev: 0.094,
+          decision: 'BET',
+          rejectionReason: null,
+        },
+        {
+          channel: 'VALUE',
+          market: 'OVER_UNDER',
+          pick: 'OVER_3_5',
+          probability: 0.446,
+          odds: 3.54,
+          ev: 0.58,
+          decision: 'NO_BET',
+          rejectionReason: 'market_suspended',
+        },
+      ],
+    },
+    {
+      fixtureId: 'fix-2',
+      match: 'Mexico - Cameroun',
+      kickoff: '2026-06-12T18:00:00.000Z',
+      competition: 'WC',
+      status: 'SCHEDULED',
+      analysisState: 'NO_BET',
+      analysisContext: {
+        predictionSource: 'POISSON_MAIN',
+        fallbackReason: null,
+        dataQuality: {
+          marketOdds: null,
+          pinnacle: null,
+          eloHome: null,
+          eloAway: null,
+        },
+      },
+      lambda: { home: 0.93, away: 1.22, total: 2.15 },
+      shadowSignals: { lineMovement: null, h2h: null, congestion: null },
+      evaluatedPicks: [
+        {
+          channel: 'VALUE',
+          market: 'ONE_X_TWO',
+          pick: 'DRAW',
+          probability: 0.248,
+          odds: 3.6,
+          ev: -0.107,
+          decision: 'NO_BET',
+          rejectionReason: 'ev_below_threshold',
+        },
+      ],
+    },
+  ],
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -119,6 +201,7 @@ function makeRepo(
     searchFixtures: vi.fn().mockResolvedValue([]),
     getFixtureExplanation: vi.fn().mockResolvedValue(null),
     findChannelLeagueHitRate: vi.fn().mockResolvedValue(null),
+    getPicksWithEvaluation: vi.fn().mockResolvedValue(PICKS_EVAL_STUB),
     ...overrides,
   } as unknown as ChatReadRepository;
 }
@@ -126,7 +209,7 @@ function makeRepo(
 function makeService(repo = makeRepo()) {
   return new ChatToolsService(
     repo,
-    {} as unknown as AiEngineService,
+    {} as unknown as CouponService,
     {} as unknown as ChatPickEngineService,
   );
 }
@@ -336,7 +419,9 @@ describe('ChatToolsService — golden set', () => {
       const result = await exec(service, 'getLeagueChannelConfig');
       const data = JSON.parse(result.content) as { leagues: unknown[] };
 
-      expect(data.leagues.length).toBe(Object.keys(PREDICTION_CONFIG).length);
+      expect(data.leagues.length).toBe(
+        Object.keys(CHANNEL_STRATEGY_CONFIG).length,
+      );
     });
 
     it('filtre sur la compétition PL', async () => {
@@ -360,7 +445,7 @@ describe('ChatToolsService — golden set', () => {
       });
       const data = JSON.parse(result.content) as { leagues: unknown[] };
 
-      // PREDICTION_CONFIG['UNKNOWN'] est undefined → channels vide
+      // CHANNEL_STRATEGY_CONFIG['UNKNOWN'] est undefined -> channels vide
       expect(data.leagues).toHaveLength(1);
     });
 
@@ -410,12 +495,12 @@ describe('ChatToolsService — golden set', () => {
       const service = makeService(makeRepo({ getChannelPerfStats }));
 
       await exec(service, 'getChannelPerformance', {
-        args: { channel: 'EV', from: '2026-05-01', to: '2026-06-12' },
+        args: { channel: 'VALUE', from: '2026-05-01', to: '2026-06-12' },
       });
 
       expect(getChannelPerfStats).toHaveBeenCalledWith(
         expect.objectContaining({
-          channel: 'EV',
+          channel: 'VALUE',
           range: expect.objectContaining({
             from: new Date('2026-05-01T00:00:00.000Z'),
             to: new Date('2026-06-12T23:59:59.999Z'),
@@ -442,11 +527,11 @@ describe('ChatToolsService — golden set', () => {
       const service = makeService(makeRepo({ getLeagueStats }));
 
       await exec(service, 'getLeaguePerformance', {
-        args: { channel: 'SV', from: '2026-05-01', to: '2026-06-12' },
+        args: { channel: 'SAFE', from: '2026-05-01', to: '2026-06-12' },
       });
 
       expect(getLeagueStats).toHaveBeenCalledWith(
-        expect.objectContaining({ channel: 'SV' }),
+        expect.objectContaining({ channel: 'SAFE' }),
       );
     });
 
@@ -492,6 +577,88 @@ describe('ChatToolsService — golden set', () => {
     });
   });
 
+  // ── getPicksWithEvaluation ─────────────────────────────────────────────────
+
+  describe('getPicksWithEvaluation', () => {
+    it('appelle le repo avec la date fournie', async () => {
+      const getPicksWithEvaluation = vi.fn().mockResolvedValue(PICKS_EVAL_STUB);
+      const service = makeService(makeRepo({ getPicksWithEvaluation }));
+
+      await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+
+      expect(getPicksWithEvaluation).toHaveBeenCalledWith(
+        expect.objectContaining({ date: '2026-06-12' }),
+      );
+    });
+
+    it('appelle le repo avec la date du jour par défaut quand date absente', async () => {
+      const getPicksWithEvaluation = vi.fn().mockResolvedValue(PICKS_EVAL_STUB);
+      const service = makeService(makeRepo({ getPicksWithEvaluation }));
+
+      await exec(service, 'getPicksWithEvaluation', { args: {} });
+
+      expect(getPicksWithEvaluation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        }),
+      );
+    });
+
+    it('la réponse contient date, asOf, noModelRunCount et fixtures', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+
+      expect(data.date).toBe('2026-06-12');
+      expect(data.asOf).toBeDefined();
+      expect(typeof data.noModelRunCount).toBe('number');
+      expect(Array.isArray(data.fixtures)).toBe(true);
+    });
+
+    it('chaque fixture expose analysisState, lambda et evaluatedPicks', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+      const [first] = data.fixtures;
+
+      expect(first).toBeDefined();
+      expect(['BET', 'NO_BET', 'NO_EVALUATION']).toContain(first.analysisState);
+      expect(first.lambda).toBeDefined();
+      expect(Array.isArray(first.evaluatedPicks)).toBe(true);
+    });
+
+    it('chaque evaluatedPick expose decision et channel', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: '2026-06-12' },
+      });
+      const data = JSON.parse(result.content) as typeof PICKS_EVAL_STUB;
+      const picks = data.fixtures.flatMap((f) => f.evaluatedPicks);
+
+      for (const pick of picks) {
+        expect(['BET', 'NO_BET']).toContain(pick.decision);
+        expect(typeof pick.channel).toBe('string');
+        expect(typeof pick.market).toBe('string');
+        expect(typeof pick.pick).toBe('string');
+      }
+    });
+
+    it('date invalide → erreur de validation', async () => {
+      const service = makeService();
+      const result = await exec(service, 'getPicksWithEvaluation', {
+        args: { date: 'not-a-date' },
+      });
+      const data = JSON.parse(result.content) as { error?: string };
+      expect(data.error).toBeDefined();
+    });
+  });
+
   // ── Structure de la réponse ────────────────────────────────────────────────
 
   describe('structure des réponses', () => {
@@ -500,15 +667,16 @@ describe('ChatToolsService — golden set', () => {
       const tools = [
         [
           'getChannelPerformance',
-          { channel: 'EV', from: '2026-05-01', to: '2026-06-12' },
+          { channel: 'VALUE', from: '2026-05-01', to: '2026-06-12' },
         ],
         [
           'getLeaguePerformance',
-          { channel: 'SV', from: '2026-05-01', to: '2026-06-12' },
+          { channel: 'SAFE', from: '2026-05-01', to: '2026-06-12' },
         ],
         ['getSegmentPerformance', { from: '2026-05-01', to: '2026-06-12' }],
         ['getEdgeAnalysis', { from: '2026-05-01', to: '2026-06-12' }],
         ['getEngineHealth', {}],
+        ['getPicksWithEvaluation', { date: '2026-06-12' }],
         ['getMyStats', { from: '2026-05-01', to: '2026-06-12' }],
       ] as const;
 

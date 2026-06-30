@@ -3,26 +3,26 @@ import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
-import type { CouponProposalDto } from "@/domains/ai-engine/types/coupon";
+import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import {
   CouponCard as SharedCouponCard,
   type NormalizedCouponLeg,
 } from "@/components/coupon-card";
 
 const CANAL_COLOR: Record<string, string> = {
-  EV: "var(--canal-ev)",
-  SV: "var(--canal-sv)",
-  CONF: "var(--canal-conf)",
-  BB: "var(--canal-btts)",
-  NUL: "var(--canal-draw)",
+  VALUE: "var(--canal-value)",
+  SAFE: "var(--canal-safe)",
+  DOMINANT: "var(--canal-dominant)",
+  BTTS: "var(--canal-btts)",
+  DRAW: "var(--canal-draw)",
 };
 
 const CANAL_LABEL: Record<string, string> = {
-  EV: "EV",
-  SV: "SV",
-  CONF: "VICTOIRE",
-  BB: "BB",
-  NUL: "NUL",
+  VALUE: "VALUE",
+  SAFE: "SAFE",
+  DOMINANT: "VICTOIRE",
+  BTTS: "BTTS",
+  DRAW: "DRAW",
 };
 
 export function CouponCard({
@@ -50,7 +50,7 @@ export function CouponCard({
     awayLogo: leg.awayLogo,
     countryLabel: translateCountry(leg.country, locale),
     competitionLabel: translateCompetition(leg.competition, locale),
-    canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-sv)",
+    canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-safe)",
     canalLabel: CANAL_LABEL[leg.canal] ?? leg.canal,
     marketLabel: formatMarketForDisplay(leg.market, loc),
     pickLabel: formatPickForDisplay(leg.pick, leg.market),

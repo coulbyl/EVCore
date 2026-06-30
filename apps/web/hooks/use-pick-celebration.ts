@@ -18,22 +18,6 @@ function collectSettledStatuses(rows: FixtureRow[]): SettledPickStatus[] {
       statuses.push(row.modelRun.betStatus);
     }
 
-    if (
-      row.safeValueBet?.betStatus === "WON" ||
-      row.safeValueBet?.betStatus === "LOST"
-    ) {
-      statuses.push(row.safeValueBet.betStatus);
-    }
-
-    if (row.prediction?.correct === true) statuses.push("WON");
-    if (row.prediction?.correct === false) statuses.push("LOST");
-
-    if (row.drawPrediction?.correct === true) statuses.push("WON");
-    if (row.drawPrediction?.correct === false) statuses.push("LOST");
-
-    if (row.bttsPrediction?.correct === true) statuses.push("WON");
-    if (row.bttsPrediction?.correct === false) statuses.push("LOST");
-
     return statuses;
   });
 }

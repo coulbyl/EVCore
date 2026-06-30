@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { BetSource, StrategyChannel } from '@evcore/db';
 import { toNumber } from '@utils/prisma.utils';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import { formatSigned } from '@modules/dashboard/dashboard.utils';
@@ -37,7 +38,7 @@ function matchesTimeSlot(
 }
 
 // ---------------------------------------------------------------------------
-// Sort by reliability: BET (EV desc) → NO_BET (finalScore desc) → sans run
+// Sort by reliability: EV pick (EV desc) -> scored run (finalScore desc) -> no run
 // ---------------------------------------------------------------------------
 
 function sortByReliability(rows: AuditFixtureRow[]): AuditFixtureRow[] {
@@ -49,12 +50,12 @@ function sortByReliability(rows: AuditFixtureRow[]): AuditFixtureRow[] {
     if (!aHasRun) return 1;
     if (!bHasRun) return -1;
 
-    const aIsBet = a.modelRun?.decision === 'BET';
-    const bIsBet = b.modelRun?.decision === 'BET';
+    const aHasEvPick = a.modelRun?.market !== null && a.modelRun?.pick !== null;
+    const bHasEvPick = b.modelRun?.market !== null && b.modelRun?.pick !== null;
 
-    if (aIsBet !== bIsBet) return aIsBet ? -1 : 1;
+    if (aHasEvPick !== bHasEvPick) return aHasEvPick ? -1 : 1;
 
-    if (aIsBet) {
+    if (aHasEvPick) {
       const aEv = parseFloat(a.modelRun?.ev ?? '0');
       const bEv = parseFloat(b.modelRun?.ev ?? '0');
       return bEv - aEv;
@@ -100,7 +101,7 @@ export class AuditService {
     date: Date,
     filters: Pick<
       AuditFixturesQueryDto,
-      'decision' | 'status' | 'competition' | 'timeSlot'
+      'status' | 'competition' | 'timeSlot'
     > = {},
   ): Promise<AuditFixtureRow[]> {
     const fixtures = await this.repo.getFixturesForDate(
@@ -114,7 +115,13 @@ export class AuditService {
 
     let rows: AuditFixtureRow[] = fixtures.map((f) => {
       const run = f.modelRuns[0] ?? null;
-      const bet = run?.bets[0] ?? null;
+      const bet =
+        run?.bets.find(
+          (b) =>
+            b.source === BetSource.MODEL &&
+            b.channelSelection?.channelDecision.channel ===
+              StrategyChannel.VALUE,
+        ) ?? null;
       const betStatus: AuditFixtureRow['modelRun'] extends infer T
         ? T extends { betStatus: infer S }
           ? S
@@ -149,7 +156,6 @@ export class AuditService {
                 run.features,
               );
               return {
-                decision: run.decision as 'BET' | 'NO_BET',
                 deterministicScore: toNumber(run.deterministicScore).toFixed(2),
                 finalScore: toNumber(run.finalScore).toFixed(3),
                 market: bet?.market ?? null,
@@ -171,11 +177,6 @@ export class AuditService {
           : null,
       };
     });
-
-    // Filtres appliqués après mapping (décision sur le dernier run, créneau horaire)
-    if (filters.decision) {
-      rows = rows.filter((r) => r.modelRun?.decision === filters.decision);
-    }
 
     if (filters.timeSlot) {
       rows = rows.filter((r) =>

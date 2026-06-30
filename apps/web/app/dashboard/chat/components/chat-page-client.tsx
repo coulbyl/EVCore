@@ -9,7 +9,7 @@ import {
   DrawerContent,
   DrawerTitle,
 } from "@evcore/ui";
-import { Menu, Plus } from "lucide-react";
+import { Check, Copy, Menu, Plus } from "lucide-react";
 import { ApiError } from "@/lib/api/shared";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ChatSidebar } from "./chat-sidebar";
@@ -41,6 +41,7 @@ export function ChatPageClient() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingConversationId, setDeletingConversationId] = useState<
     string | null
@@ -49,6 +50,7 @@ export function ChatPageClient() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const activeStreamConversationRef = useRef<string | null>(null);
+  const copyResetRef = useRef<number | null>(null);
   // Conversations whose server history is loaded (or local-only ones that
   // must never be fetched, like error placeholders and fresh conversations).
   const loadedConversationIdsRef = useRef<Set<string>>(new Set());
@@ -80,6 +82,14 @@ export function ChatPageClient() {
       behavior,
     });
   }, [activeId, loading, messages.length, streaming]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetRef.current !== null) {
+        window.clearTimeout(copyResetRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,6 +306,40 @@ export function ChatPageClient() {
     setStreaming(false);
   }
 
+  async function handleCopyConversation() {
+    if (!active || active.messages.length === 0) return;
+
+    const transcript = active.messages
+      .map((message) => {
+        const speaker = message.role === "user" ? "Vous" : "EVA";
+        const picks =
+          message.picks && message.picks.length > 0
+            ? `\n${message.picks
+                .map(
+                  (pick) =>
+                    `- ${pick.channel} | ${pick.match} | ${pick.market} | ${pick.pick} | cote ${pick.odds ?? "n/a"} | proba ${(pick.proba * 100).toFixed(1)}%`,
+                )
+                .join("\n")}`
+            : "";
+        return `${speaker}:\n${message.text || "[vide]"}${picks}`;
+      })
+      .join("\n\n");
+
+    try {
+      await navigator.clipboard.writeText(transcript);
+      setCopied(true);
+      if (copyResetRef.current !== null) {
+        window.clearTimeout(copyResetRef.current);
+      }
+      copyResetRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyResetRef.current = null;
+      }, 2000);
+    } catch {
+      setNotice("Impossible de copier la conversation.");
+    }
+  }
+
   function selectConversation(id: string) {
     setActiveId(id);
     setSidebarOpen(false);
@@ -381,6 +425,24 @@ export function ChatPageClient() {
             <Plus className="size-4" />
           </Button>
         </div>
+
+        {displayMessages.length > 0 ? (
+          <div className="flex items-center justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleCopyConversation()}
+              disabled={!active || active.messages.length === 0}
+            >
+              {copied ? (
+                <Check className="size-4" />
+              ) : (
+                <Copy className="size-4" />
+              )}
+              {copied ? "Copié" : "Copier le chat"}
+            </Button>
+          </div>
+        ) : null}
 
         {displayMessages.length === 0 ? (
           <ChatEmptyState onPick={handleSend} />

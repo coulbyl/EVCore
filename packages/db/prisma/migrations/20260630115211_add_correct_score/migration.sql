@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "Market" ADD VALUE 'CORRECT_SCORE';

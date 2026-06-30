@@ -11,7 +11,7 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const raw = await this.redis.get(key);
-      if (!raw) return null;
+      if (raw === null) return null;
       return JSON.parse(raw) as T;
     } catch {
       return null;

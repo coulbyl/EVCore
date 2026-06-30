@@ -21,6 +21,12 @@ export type EtlBackfillResult = {
   seasons: number[];
 };
 
+export type EtlRebuildResult = {
+  status: "ok";
+  queued: number;
+  seasonIds: string[];
+};
+
 export type EtlRollingStatsResult = {
   status: "ok";
   competitionCode: string;

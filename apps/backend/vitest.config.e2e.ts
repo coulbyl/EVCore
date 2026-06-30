@@ -20,6 +20,9 @@ export default defineConfig({
     include: ['**/*.e2e-spec.ts'],
     setupFiles: ['./test/setup.ts'],
     globalSetup: ['./test/setup/global-e2e.ts'],
+    // DB-backed specs share a single Testcontainers Postgres and truncate
+    // between tests; they must run serially to avoid cross-file interference.
+    fileParallelism: false,
   },
   plugins: [swc.vite({ module: { type: 'es6' } })],
 });

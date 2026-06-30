@@ -11,20 +11,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { prisma } from '@evcore/db';
 
-type BetAuditRow = {
+type SelectionAuditRow = {
   canal: string;
   league: string;
   month: string;
   total: bigint;
   won: bigint;
-};
-
-type PredAuditRow = {
-  canal: string;
-  league: string;
-  month: string;
-  total: bigint;
-  correct: bigint;
 };
 
 type MonthlyRow = {
@@ -39,63 +31,42 @@ type MonthlyRow = {
 async function run(): Promise<void> {
   console.log('EVCore — Backtest data audit\n');
 
-  // ── 1. Bets (EV / SV) ──────────────────────────────────────────────────────
-  const betRows = await prisma.$queryRaw<BetAuditRow[]>`
+  // ── Channel selections (EV / SAFE / DOMINANT / DRAW / BTTS) ───────────────
+  const selectionRows = await prisma.$queryRaw<SelectionAuditRow[]>`
     SELECT
-      CASE WHEN b."isSafeValue" THEN 'SV' ELSE 'EV' END AS canal,
+      CASE cd.channel
+        WHEN 'SAFE' THEN 'SV'
+        WHEN 'DOMINANT' THEN 'CONF'
+        WHEN 'BTTS' THEN 'BB'
+        WHEN 'DRAW' THEN 'NUL'
+        ELSE cd.channel::text
+      END                                                 AS canal,
       c.code                                              AS league,
       TO_CHAR(DATE_TRUNC('month', f."scheduledAt"), 'YYYY-MM') AS month,
       COUNT(*)                                            AS total,
-      COUNT(CASE WHEN b.status = 'WON' THEN 1 END)       AS won
-    FROM bet b
-    JOIN fixture     f ON f.id = b."fixtureId"
+      COUNT(CASE WHEN COALESCE(b.status, cs.result) = 'WON' THEN 1 END) AS won
+    FROM channel_selection cs
+    JOIN channel_decision cd ON cd.id = cs."channelDecisionId"
+    JOIN model_run    mr ON mr.id = cd."modelRunId"
+    JOIN fixture      f ON f.id = mr."fixtureId"
     JOIN season      s ON s.id = f."seasonId"
     JOIN competition c ON c.id = s."competitionId"
-    WHERE b.status IN ('WON', 'LOST')
-      AND b.source = 'MODEL'
-    GROUP BY b."isSafeValue", c.code,
+    LEFT JOIN bet b ON b."channelSelectionId" = cs.id AND b.source = 'MODEL'
+    WHERE COALESCE(b.status, cs.result) IN ('WON', 'LOST')
+    GROUP BY cd.channel, c.code,
              DATE_TRUNC('month', f."scheduledAt")
     ORDER BY canal, league, month
   `;
 
-  // ── 2. Predictions (BTTS / DRAW / CONF) ───────────────────────────────────
-  const predRows = await prisma.$queryRaw<PredAuditRow[]>`
-    SELECT
-      CASE p.channel
-        WHEN 'BTTS' THEN 'BB'
-        WHEN 'DRAW' THEN 'NUL'
-        ELSE 'CONF'
-      END                                                 AS canal,
-      p.competition                                       AS league,
-      TO_CHAR(DATE_TRUNC('month', f."scheduledAt"), 'YYYY-MM') AS month,
-      COUNT(*)                                            AS total,
-      COUNT(CASE WHEN p.correct = true THEN 1 END)        AS correct
-    FROM prediction p
-    JOIN fixture f ON f.id = p."fixtureId"
-    WHERE p.correct IS NOT NULL
-      AND p.channel IN ('BTTS', 'DRAW', 'CONF')
-    GROUP BY p.channel, p.competition,
-             DATE_TRUNC('month', f."scheduledAt")
-    ORDER BY canal, league, month
-  `;
-
-  // ── 3. Merge into uniform rows ─────────────────────────────────────────────
+  // ── 2. Uniform rows ────────────────────────────────────────────────────────
   const rows: MonthlyRow[] = [
-    ...betRows.map((r) => ({
+    ...selectionRows.map((r) => ({
       canal: r.canal,
       league: r.league,
       month: r.month,
       total: Number(r.total),
       won: Number(r.won),
       hitRate: Number(r.total) > 0 ? Number(r.won) / Number(r.total) : 0,
-    })),
-    ...predRows.map((r) => ({
-      canal: r.canal,
-      league: r.league,
-      month: r.month,
-      total: Number(r.total),
-      won: Number(r.correct),
-      hitRate: Number(r.total) > 0 ? Number(r.correct) / Number(r.total) : 0,
     })),
   ];
 

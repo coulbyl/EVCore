@@ -23,6 +23,7 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:stats": "tsx scripts/db-stats.ts",
+    "db:purge:analysis": "tsx scripts/purge-analysis-data.ts",
     "db:scheduled": "tsx scripts/scheduled-fixtures-report.ts",
     "db:audit:fixtures": "tsx scripts/audit-fixtures.ts",
     "db:audit:fri-goals": "tsx scripts/fri-goal-model-audit.ts",

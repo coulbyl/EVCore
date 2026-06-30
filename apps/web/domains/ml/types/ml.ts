@@ -20,11 +20,6 @@ export type MlModelVersion = {
   notes: string | null;
 };
 
-export type BackfillResult = {
-  queued: number;
-  seasonIds: string[];
-};
-
 export type TrainResult = {
   jobId: string;
 };

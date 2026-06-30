@@ -9,8 +9,6 @@ import { BULLMQ_QUEUES } from '@/config/etl.constants';
 import { MlController } from './ml.controller';
 import { MlService } from './ml.service';
 import { MlRepository } from './ml.repository';
-import { MlBackfillService } from './ml.backfill.service';
-import { MlBackfillWorker } from './ml.backfill.worker';
 import { MlSchedulerWorker } from './ml.scheduler.worker';
 import { MlTrainingEventsListener } from './ml.training-events.listener';
 import { MlInferenceModule } from './ml.inference.module';
@@ -23,7 +21,6 @@ import {
 @Module({
   imports: [
     BullModule.registerQueue({ name: BULLMQ_QUEUES.ML_TRAINING }),
-    BullModule.registerQueue({ name: BULLMQ_QUEUES.ML_BACKFILL }),
     BullModule.registerQueue({ name: BULLMQ_QUEUES.ML_SCHEDULER }),
     AuthModule,
     BettingEngineModule,
@@ -34,8 +31,6 @@ import {
   providers: [
     MlService,
     MlRepository,
-    MlBackfillService,
-    MlBackfillWorker,
     MlSchedulerWorker,
     MlTrainingEventsListener,
   ],

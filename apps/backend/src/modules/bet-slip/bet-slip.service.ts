@@ -3,13 +3,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BetSlipType, BetSource, Market, Prisma } from '@evcore/db';
+import {
+  BetSlipType,
+  BetSource,
+  Market,
+  Prisma,
+  StrategyChannel,
+} from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
 import { DEFAULT_STAKE_PCT } from '@modules/betting-engine/ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
+import { SLIP_LIMITS } from '@/config/bankroll.constants';
 import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
@@ -133,14 +140,15 @@ export class BetSlipService {
       });
     }
 
-    // ── Unicité des fixtures dans le slip ────────────────────────────────
-    const modelBetFixtureIds = modelBets.map((b) => b.fixtureId);
-    const userPickFixtureIds = resolvedUserPicks.map((r) => r.fixtureId);
-    const allFixtureIds = [...modelBetFixtureIds, ...userPickFixtureIds];
-
-    if (new Set(allFixtureIds).size !== allFixtureIds.length) {
+    // ── Plafond gain potentiel ───────────────────────────────────────────
+    const totalOdds = resolvedUserPicks.reduce(
+      (acc, r) => acc.times(r.oddsSnapshot),
+      new Decimal(1),
+    );
+    const potentialReturn = new Decimal(input.unitStake).times(totalOdds);
+    if (potentialReturn.gt(SLIP_LIMITS.MAX_POTENTIAL_RETURN)) {
       throw new BadRequestException(
-        'Un slip ne peut pas contenir plusieurs bets du même fixture',
+        `Gain potentiel (${potentialReturn.toFixed(0)} XOF) dépasse le plafond autorisé de ${SLIP_LIMITS.MAX_POTENTIAL_RETURN.toLocaleString()} XOF`,
       );
     }
 
@@ -385,7 +393,11 @@ function toBetSlipView(
         homeScore: item.fixture.homeScore,
         awayScore: item.fixture.awayScore,
         pnl: computePnl(status, stake, odds),
-        canal: item.bet.isSafeValue ? 'SV' : 'EV',
+        canal:
+          item.bet.channelSelection?.channelDecision.channel ===
+          StrategyChannel.SAFE
+            ? 'SAFE'
+            : 'VALUE',
       };
     }),
   };

@@ -4,7 +4,7 @@ import { Loader2, Trophy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
-import { useCoupons } from "@/domains/ai-engine/use-cases/use-coupons";
+import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
@@ -31,8 +31,12 @@ export function CouponsPageClient() {
     <Page className="flex h-full flex-col">
       <PageHeader>
         <div />
-        <PageHeaderActions>
-          <DateNav date={date} onChange={navigateTo} />
+        <PageHeaderActions className="w-full lg:w-auto">
+          <DateNav
+            date={date}
+            onChange={navigateTo}
+            className="w-full lg:w-auto"
+          />
         </PageHeaderActions>
       </PageHeader>
 

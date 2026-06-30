@@ -1,11 +1,57 @@
 import Decimal from 'decimal.js';
 
-export const FEATURE_WEIGHTS = {
-  recentForm: new Decimal('0.30'),
-  xg: new Decimal('0.30'),
-  domExtPerf: new Decimal('0.25'),
-  leagueVolat: new Decimal('0.15'),
-} as const;
+// FEATURE_WEIGHTS (deterministic-score weights) + calculateDeterministicScore
+// now live in @evcore/analysis-core (pure core shared prod ↔ backtest).
+// Re-exported here so existing `./ev.constants` imports keep resolving.
+export { FEATURE_WEIGHTS } from '@evcore/analysis-core';
+
+// Fixed pick-selection algorithm constants now live in the pure core
+// (@evcore/analysis-core/selection). Imported back here so internal league
+// resolvers keep referencing them, and re-exported so existing `./ev.constants`
+// imports stay unchanged. The canonical EV_THRESHOLD (≥ 0.08) intentionally
+// stays app-side (config, never hardcoded in the core).
+import {
+  EV_HARD_CAP,
+  EV_MIN_PROBABILITY_THRESHOLD,
+  MIN_DRAW_DIRECTION_PROBABILITY,
+  MIN_QUALITY_SCORE,
+  FALLBACK_MIN_QUALITY_SCORE,
+  MAX_SELECTION_ODDS,
+  UNDER_HIGH_LAMBDA_THRESHOLD,
+  ONE_X_TWO_AWAY_MAX_ODDS,
+  ONE_X_TWO_DRAW_MAX_ODDS,
+  ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  COMBOS_ENABLED,
+  SAFE_VALUE_MIN_EV,
+  SAFE_VALUE_MAX_ODDS,
+  SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MIN_FACTOR,
+  COMBO_CORRELATION_MAX_FACTOR,
+} from '@evcore/analysis-core';
+export {
+  EV_HARD_CAP,
+  EV_MIN_PROBABILITY_THRESHOLD,
+  MIN_DRAW_DIRECTION_PROBABILITY,
+  MIN_QUALITY_SCORE,
+  FALLBACK_MIN_QUALITY_SCORE,
+  MAX_SELECTION_ODDS,
+  UNDER_HIGH_LAMBDA_THRESHOLD,
+  ONE_X_TWO_AWAY_MAX_ODDS,
+  ONE_X_TWO_DRAW_MAX_ODDS,
+  ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  COMBOS_ENABLED,
+  SAFE_VALUE_MIN_EV,
+  SAFE_VALUE_MAX_ODDS,
+  SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  COMBO_CORRELATION_ALPHA,
+  COMBO_CORRELATION_MIN_FACTOR,
+  COMBO_CORRELATION_MAX_FACTOR,
+};
 
 export const EV_THRESHOLD = new Decimal('0.08');
 
@@ -13,12 +59,6 @@ export const EV_THRESHOLD = new Decimal('0.08');
 // High EV against an efficient bookmaker (Pinnacle) often signals a calibration
 // anomaly (biased λ, xG proxy error) rather than a genuine edge.
 export const EV_MAX_SOFT_ALERT = new Decimal('0.60');
-
-// EV hard cap — reject any pick with EV above this value.
-// An EV > 0.90 is implausible against a sharp market (Pinnacle) and
-// invariably reflects a lambda or xG estimation error (audit 2026-03-22:
-// Burgos EV=0.942 lost 4-0, confirming the anomaly signal).
-export const EV_HARD_CAP = new Decimal('0.90');
 
 // Minimum directional probability for 1X2 HOME and AWAY picks.
 // Prevents selecting V1 when P(home win) < threshold and V2 when
@@ -75,22 +115,6 @@ export function getPickDirectionProbabilityThreshold(
     PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT
   );
 }
-
-// Minimum directional probability for DRAW-based combo picks (e.g. NUL + MOINS 2.5).
-// Combos with DRAW as primary leg repeatedly cleared the EV floor only via high
-// combo odds while P(draw) was 19-27% — audit 2026-03-21/28 showed 0/3 win rate.
-// Raises the bar without disabling the market: the learning loop will adjust further
-// once 50 settled bets are available per market.
-export const MIN_DRAW_DIRECTION_PROBABILITY = new Decimal('0.28');
-
-// Minimum quality score (EV × deterministicScore × longshotPenalty) required
-// for a pick to be selected, given that the fixture already passed
-// MODEL_SCORE_THRESHOLD. Eliminates low-EV picks that barely clear the EV
-// floor with a high score, while keeping high-EV picks from fixtures just above
-// the score threshold. At score=0.60, requires EV >= 0.10 to pass.
-export const MIN_QUALITY_SCORE = new Decimal('0.06');
-export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal('5.0');
-export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal('6.0');
 
 // Per-league minimum selection odds. Each league has a different bookmaker
 // efficiency profile — the optimal floor varies based on lambda (goal rate variance)
@@ -299,19 +323,6 @@ export function getPickMinSelectionOdds(
 // Global floor — kept as a hard minimum across all leagues.
 // The upper bound eliminates long shots where probability overestimation inflates EV.
 export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
-export const MAX_SELECTION_ODDS = new Decimal('4.0');
-
-// Under 2.5 bets at high expected-goal totals are systematically losing — the
-// independent Poisson model overestimates P(Under) due to real-match overdispersion.
-// When λ_home + λ_away exceeds this threshold, reject UNDER outright regardless of EV.
-// Lowered from 2.5 → 2.3 (May 2026 live diagnostic: losses at λ 2.30–2.80 confirmed).
-export const UNDER_HIGH_LAMBDA_THRESHOLD = 2.3;
-
-// Minimum probability for any pick on the EV channel.
-// Picks with P < 40% are statistically unlikely and empirically losing even when
-// the Poisson EV is positive (model overestimates P on edge cases).
-// May 2026 live diagnostic: 3 losses at P=32.6%, 34.4%, 46.8% on EV channel.
-export const EV_MIN_PROBABILITY_THRESHOLD = new Decimal('0.40');
 
 // Bayesian shrinkage — pulls raw Poisson lambdas toward the per-league mean goal rate.
 // Formula: rawLambda = α × (xgFor × xgAgainst / leagueAvg) + (1 - α) × anchor
@@ -466,12 +477,32 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-30: UEL Brier 0.659, CalibErr 0.057 (both FAIL). Poisson
   // over-predicts HOME probability (modeled ~43% vs actual ~30% win rate). HOME
   // blocked in PICK_EV_FLOOR_MAP — only DRAW survives (+89.8% ROI, 6b).
-  // Blend 0.20 gives best DRAW ROI; CalibErr structurally above threshold (S2 noise).
-  UEL: new Decimal('0.20'),
+  // Diagnostic 2026-06-30 (1y, n=152): still FAIL (ECE 0.050). Bias flipped to
+  // over-DRAW (+8pp: pred 25% vs real 17%) and under-HOME (39% vs 49% — strong
+  // home teams in continental cups). Blend 0.20 → 0.35 to pull toward empirical.
+  UEL: new Decimal('0.35'),
   // Backtest 2026-04-30: POL1 Brier 0.6710 (FAIL). Poisson over-predicts HOME in
-  // the balanced Polish Ekstraklasa (actual HOME win rate ~36% vs model ~41%).
-  // Blend 0.20 améliore partiellement — Brier reste ~0.662 (S3 bruitée, trop court).
-  POL1: new Decimal('0.20'),
+  // the balanced Polish Ekstraklasa. Blend 0.20 améliore partiellement.
+  // Diagnostic 2026-06-30 (1y, n=250): worst league (Brier 0.688, ECE 0.074),
+  // over-AWAY +7pp (pred 33% vs real 26%), under-DRAW (25% vs 30%). 0.20 proven
+  // insufficient → 0.40 (same magnitude as J1's HOME-overprediction fix).
+  POL1: new Decimal('0.40'),
+  // Diagnostic 2026-06-30 (1y, n=141): NOR1 fails ECE (0.053) and is the largest
+  // model↔market gap (+0.104). Poisson badly under-models Norwegian home
+  // advantage — pred 40% HOME vs real 56% (over-AWAY +11pp). Strong empirical
+  // pull warranted. Starting 0.40; confirm Brier/ECE post-rebuild.
+  NOR1: new Decimal('0.40'),
+  // Diagnostic 2026-06-30 (1y, n=90): UECL fails ECE (0.054). Same cup pattern as
+  // UEL — under-HOME (pred 39% vs real 52%), over-DRAW (+7pp). Starting 0.35.
+  UECL: new Decimal('0.35'),
+  // Diagnostic 2026-06-30 (1y, n=71): CSL fails ECE (0.060). Mild over-AWAY (+6pp,
+  // pred 36% vs real 30%). Light empirical pull — starting 0.25.
+  CSL: new Decimal('0.25'),
+  // Diagnostic 2026-06-30 (1y, n=300): MLS fails Brier (0.659) but ECE is fine
+  // (0.036) → mostly a discrimination/parity problem (MLS is structurally
+  // balanced), not a systematic bias. Mild over-AWAY (+5pp). Trial 0.25; expect
+  // limited gain — if Brier stays > 0.65 post-rebuild, accept MLS as a hard league.
+  MLS: new Decimal('0.25'),
 };
 
 export function getLeagueThreeWayEmpiricalBlendWeight(
@@ -484,6 +515,40 @@ export function getLeagueThreeWayEmpiricalBlendWeight(
     return THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP[competitionCode];
   }
   return new Decimal(0);
+}
+
+// Per-league goal-LEVEL correction (chantier B, 2026-06-30). Multiplies both
+// lambdas to fix a structural bias where the xG-shrinkage goal expectation is
+// systematically too high (scale < 1) or too low (scale > 1) for a league.
+// Derived by minimising the Over/Under-2.5 + BTTS Brier on the stored lambdas
+// (35k matches) — a deterministic transform validated offline. Direction is
+// stable across 3-4 seasons (over-predictors over-predict every season, etc.),
+// so unlike ROI fits this is robust; magnitudes are kept conservative (capped
+// ±0.10, gentler on the over-predictors whose bias softened in 2025-26).
+// Weighted Brier gain +0.0058 over the listed leagues. Default 1.0 elsewhere.
+const LAMBDA_SCALE_MAP: Record<string, number> = {
+  // Under-predict goals (scale up): -Δtot every season.
+  MLS: 1.1, // -0.24/-0.17/-0.84
+  TUR1: 1.1, // -0.22/-0.28/-0.18
+  NOR1: 1.1, // -0.35/-0.09/-0.24/-0.46
+  NOR2: 1.1, // -0.13/-0.19/-0.21
+  SUI2: 1.1, // -0.17/-0.10/-0.24
+  CSL: 1.1, // -0.29/-0.35
+  ISL1: 1.1, // -0.47/-0.64 (capped from fitted 1.20; low data)
+  SWE2: 1.05, // -0.14/-0.11/-0.18 (smaller bias)
+  // Over-predict goals (scale down): +Δtot every season, softened in 2025-26.
+  SP2: 0.95, // +0.70/+0.01/+0.33 (variable → gentle)
+  MX1: 0.95, // +0.54/+0.53/+0.06
+  J1: 0.95, // +0.43/+0.14/+0.19/+0.09
+};
+
+export function getLeagueLambdaScale(
+  competitionCode: string | null | undefined,
+): number {
+  if (competitionCode != null && competitionCode in LAMBDA_SCALE_MAP) {
+    return LAMBDA_SCALE_MAP[competitionCode];
+  }
+  return 1;
 }
 
 // MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
@@ -686,7 +751,6 @@ export const NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0;
 // (market1), making it impossible to distinguish single vs combo performance
 // in marketPerformance stats. Re-enable once all leagues are calibrated and
 // a dedicated COMBO market key is added to the backtest reporting.
-export const COMBOS_ENABLED = false;
 
 // Leagues with sufficient HT/FT historical data for HALF_TIME_FULL_TIME and
 // FIRST_HALF_WINNER markets. Secondary leagues (SWE1, NOR1, etc.) lack the
@@ -709,15 +773,6 @@ export function isHtftCalibrated(
     competitionCode != null && HTFT_CALIBRATED_LEAGUES.has(competitionCode)
   );
 }
-
-// Minimum qualityScore for a fallback EV pick (applied when the primary best
-// pick was rejected). Prevents selecting a poor substitute just because it is
-// the "best remaining" after rejection of the dominant candidate.
-export const FALLBACK_MIN_QUALITY_SCORE = new Decimal('0.09');
-
-export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal('0.12');
-export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal('0.20');
-export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
 
 // Per-(competition, market, pick) EV soft cap — rejects picks whose EV exceeds
 // the ceiling, independently of the global EV_HARD_CAP (0.90).
@@ -1265,22 +1320,9 @@ export function getSvMinOdds(
 // Adverse line movement threshold: if odds drop by >10% over 7 days, exclude the pick.
 export const LINE_MOVEMENT_THRESHOLD = new Decimal('0.10');
 
-// Minimum EV for safe value bets. Near-zero EV picks (< 0.05) show no reliable
-// edge with the Poisson model — backtest 2026-04-13 shows OVER_1_5 at EV 0.004–0.039
-// losing more often than the probability estimate predicts.
-export const SAFE_VALUE_MIN_EV = new Decimal('0.05');
-
 // Odds window: allow shorter odds than the EV floor but cap to avoid mid-range
 // picks where bookmaker margin erodes expected value disproportionately.
 export const SAFE_VALUE_MIN_ODDS = new Decimal('1.15');
-export const SAFE_VALUE_MAX_ODDS = new Decimal('2.20');
-
-// When the SV winner is Under 3.5 or Under 4.5 and λ_total ≥ this threshold,
-// the engine also evaluates Over 2.5 and Over 3.5 and selects the better
-// qualityScore — fixing the structural Under bias at high expected goals.
-// May 2026 diagnostic: SV systematically picks Under 4.5 (P=76%, EV=poor) over
-// Over 3.5 (P=58%, EV=potentially better) when λ_total ≈ 3.5–4.5.
-export const SV_UNDER_LAMBDA_COMPARISON_THRESHOLD = 3.0;
 
 // Flat stake used when KELLY_ENABLED=false (default — safe fallback)
 export const DEFAULT_STAKE_PCT = new Decimal('0.01');
@@ -1290,9 +1332,3 @@ export const DEFAULT_STAKE_PCT = new Decimal('0.01');
 // Hard cap at 5% per bet regardless of computed Kelly size.
 export const KELLY_FRACTION = new Decimal('0.25');
 export const KELLY_MAX_STAKE_PCT = new Decimal('0.05');
-
-// Combo odds pricing uses the raw product as a base, then applies a damped
-// correlation correction from model joint probability.
-export const COMBO_CORRELATION_ALPHA = new Decimal('0.75');
-export const COMBO_CORRELATION_MIN_FACTOR = new Decimal('0.50');
-export const COMBO_CORRELATION_MAX_FACTOR = new Decimal('1.25');

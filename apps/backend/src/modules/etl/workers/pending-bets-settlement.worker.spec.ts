@@ -6,7 +6,7 @@ import type { FixtureService } from '../../fixture/fixture.service';
 import type { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import type { NotificationService } from '../../notification/notification.service';
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
-import type { CouponSettlementService } from '../../ai-engine/coupon-settlement.service';
+import type { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import type { CacheService } from '@common/redis/cache.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 

@@ -337,7 +337,7 @@ Docs de cadrage Phase 3:
 - [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/phase3-go-watch-no-go.md`
 - [x] Rapport → `packages/db/reports/edge-vs-pinnacle-2026-06-04.md`
 
-### Bloc B — Infrastructure ML ✅ (juin 2026 — détail dans `TODO.md` étapes 3–7bis)
+### Bloc B — Infrastructure ML ✅ (juin 2026 — détail dans `docs/phase3-ml-todo.md` étapes 3–7bis)
 
 - [x] Service `ml-worker` Python dans Docker Compose (image `python:3.12-slim`, accès Redis + PostgreSQL)
 - [x] Queue BullMQ `ml-training` — NestJS pousse le job, Python consomme
@@ -346,7 +346,7 @@ Docs de cadrage Phase 3:
 - [x] Suite de tests pytest ml-worker + job CI (étape 7bis)
 - [ ] Upgrade VPS OVH si besoin (≥ 4 vCPU / 8 GB RAM) avant premier entraînement prod
 
-### Bloc C — Correction layer XGBoost + Calibration ✅ (juin 2026 — détail dans `TODO.md` étapes 4–7)
+### Bloc C — Correction layer XGBoost + Calibration ✅ (juin 2026 — détail dans `docs/phase3-ml-todo.md` étapes 4–7)
 
 > Architecture retenue (voir `docs/phase3-ml-correction-layer.md`) : le modèle apprend
 > **où le Poisson se trompe** (cible `outcome_correct` sur les lignes avec cote Pinnacle) et
@@ -361,7 +361,7 @@ Docs de cadrage Phase 3:
 - [x] Basculement automatique si Brier amélioré ≥ 5% + cooldown 7 jours
 - [x] Rollback manuel via `POST /ml/models/:id/rollback`
 - [x] Job BullMQ hebdomadaire — ré-entraînement si ≥ 50 nouveaux bets settled
-- [ ] **Promotion hors shadow** (décision par segment, voir `TODO.md` étape 7ter) — LA SUITE
+- [ ] **Promotion hors shadow** (décision par segment, voir `docs/phase3-ml-todo.md` étape 7ter) — LA SUITE
 
 ### Bloc D — Gestion dynamique du drawdown
 
@@ -377,11 +377,38 @@ Docs de cadrage Phase 3:
 
 ---
 
+## Refactor Domaine — Architecture des canaux de stratégie
+
+> Cadrage : [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
+> · Plan d'exécution détaillé : [TODO.md](TODO.md)
+>
+> Refactor **transverse** (schéma, betting engine, settlement, API, frontend) qui
+> remplace les trois vocabulaires de canal concurrents (`PredictionChannel`,
+> `CouponLegCanal`, `isSafeValue`) par un enum unique `StrategyChannel`, et
+> représente chaque run comme **multi-canal** au lieu d'un `BET`/`NO_BET` global.
+> Bascule unique et propre : legacy supprimé uniquement **après gate de parité vert**.
+> Aucun nouveau canal activé sans backtest séparé par ligue / marché / saison.
+
+- [ ] Cadrage & gel du design : schéma cible, enum `StrategyChannel` v1 (canaux réels
+      uniquement), grain `ModelRun` (1-à-N), mapping legacy → cible
+- [ ] Contrat & registre de stratégies (`StrategyContext`, `allowedMarkets`, une stratégie
+      par canal) derrière les tables cibles, calculs probabilistes inchangés
+- [ ] Migration schéma : enums + tables `channel_decision` / `channel_selection` + `Bet.channelSelectionId`
+- [ ] Backfill idempotent + transactionnel de l'historique matérialisé
+- [ ] Gate de vérification (réconciliation + parité ancien/nouveau rapport) **avant tout DROP**
+- [ ] Bascule des consommateurs (engine, settlement, API, frontend) dans la même release
+- [ ] Suppression du legacy (`Prediction`, `PredictionChannel`, `CouponLegCanal`,
+      `Bet.isSafeValue`, `ModelRun.decision`) — rollback testé
+- [ ] Nouveaux canaux phasés, backtest avant activation : `BB` côté `NO`, `GOALS`,
+      `CONSENSUS`, `AVOID`, `UNDERDOG`/`FAVORITE`, `MARKET_MOVE`, `FIRST_HALF`, `LIVE_VALUE`
+
+---
+
 ## Phase 4
 
 > Cadrage : [docs/phase4-ai-chat.md](docs/phase4-ai-chat.md) — **EVA** (Expected Value Analyst),
 > assistant conversationnel sur les données du moteur (function calling Groq, lecture seule).
-> Pré-requis : moteur validé comme socle de confiance (ML promu hors shadow, voir Phase 3 / étape 7ter).
+> Pré-requis : moteur validé comme socle de confiance (ML promu hors shadow, voir `docs/phase3-ml-todo.md` étape 7ter).
 
 - [ ] EVA — AI Chat Analyst (spec `docs/phase4-ai-chat.md`)
   - [ ] Migration DB (`chat_conversation`, `chat_message`, `chat_usage`)
@@ -391,6 +418,22 @@ Docs de cadrage Phase 3:
 - [ ] SaaS / multi-tenant
 - [ ] API interne
 - [ ] Groupe premium
+
+---
+
+## Au-delà — Extension multi-sport (différé, non planifié)
+
+> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md)
+>
+> Le cœur probabiliste (Poisson) est spécifique au football ; « ajouter un sport »
+> = écrire un **second socle** derrière la même colonne stratégie/décision, pas une
+> config. Préconditions strictes avant tout code : (1) edge football prouvé — ML
+> promu hors shadow + biais top-picks corrigé ; (2) abstraction `sport` dans le
+> schéma (Market, ChannelSelection, socle pluggable). Tennis = 1ᵉʳ candidat. Tant
+> que les préconditions ne sont pas remplies : **recherche uniquement, pas de code.**
+
+- [-] Tennis (2ᵉ socle) — différé jusqu'aux préconditions ci-dessus
+- [-] Basketball / Esports — réévalués seulement après validation du pattern multi-sport
 
 ---
 

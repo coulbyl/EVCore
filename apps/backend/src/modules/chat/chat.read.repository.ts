@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import {
-  BetSource,
-  FixtureStatus,
-  PredictionChannel,
-  Prisma,
-} from '@evcore/db';
+import { BetSource, FixtureStatus, Prisma, StrategyChannel } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import { CacheService } from '@common/redis/cache.service';
+import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
 import {
   probError,
   round,
@@ -24,6 +20,43 @@ type DateRange = {
 
 type StrictDateRange = { from: Date; to: Date };
 
+// v1 strategy channels, in display order. Channel performance is read straight
+// from settled `channel_selection` rows — every channel, not just the EV/SAFE
+// ones that materialise financial Bets.
+const ALL_CHANNELS: StrategyChannel[] = [
+  StrategyChannel.VALUE,
+  StrategyChannel.SAFE,
+  StrategyChannel.DOMINANT,
+  StrategyChannel.BTTS,
+  StrategyChannel.DRAW,
+];
+
+/** A settled outcome row surfaced by the getPredictionOutcomes tool. */
+type SettledOutcome = {
+  fixture: string;
+  competition: string;
+  date: string;
+  channel: string;
+  pick: string;
+  probability: number;
+  odds: number | null;
+  result: 'WON' | 'LOST';
+  probError: number;
+};
+
+/** One settled channel selection, flattened for the chat read tools. */
+type SettledChannelRow = {
+  channel: StrategyChannel;
+  competition: string;
+  match: string;
+  date: Date;
+  pick: string;
+  probability: Prisma.Decimal;
+  odds: Prisma.Decimal | null;
+  ev: Prisma.Decimal | null;
+  won: boolean;
+};
+
 // JSON-safe payload for the explainFixture tool — built and cached here so a
 // Redis round-trip never reintroduces Date/Decimal instances.
 type FixtureExplanation = {
@@ -38,18 +71,16 @@ type FixtureExplanation = {
   };
   modelRun: {
     id: string;
-    decision: string;
     finalScore: number | null;
     deterministicScore: number | null;
     mlDelta: number | null;
     scoreThreshold: number | null;
     evThreshold: number | null;
     analyzedAt: string;
-    isBackfill: boolean;
   } | null;
   bets: Array<{
     id: string;
-    canal: string;
+    channel: string;
     market: string;
     pick: string;
     probability: number;
@@ -225,7 +256,6 @@ export class ChatReadRepository {
           take: 1,
           select: {
             id: true,
-            decision: true,
             finalScore: true,
             deterministicScore: true,
             mlDelta: true,
@@ -233,7 +263,6 @@ export class ChatReadRepository {
             evThreshold: true,
             features: true,
             analyzedAt: true,
-            isBackfill: true,
             bets: {
               select: {
                 id: true,
@@ -245,18 +274,11 @@ export class ChatReadRepository {
                 qualityScore: true,
                 stakePct: true,
                 status: true,
-                isSafeValue: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
               },
             },
-          },
-        },
-        predictions: {
-          select: {
-            channel: true,
-            market: true,
-            pick: true,
-            probability: true,
-            correct: true,
           },
         },
         oddsSnapshots: {
@@ -285,7 +307,6 @@ export class ChatReadRepository {
       modelRun: run
         ? {
             id: run.id,
-            decision: run.decision,
             finalScore: run.finalScore ? round(run.finalScore) : null,
             deterministicScore: run.deterministicScore
               ? round(run.deterministicScore)
@@ -296,13 +317,14 @@ export class ChatReadRepository {
               : null,
             evThreshold: run.evThreshold ? round(run.evThreshold) : null,
             analyzedAt: run.analyzedAt.toISOString(),
-            isBackfill: run.isBackfill,
           }
         : null,
       bets:
         run?.bets.map((bet) => ({
           id: bet.id,
-          canal: bet.isSafeValue ? 'SV' : 'EV',
+          channel: bet.channelSelection
+            ? bet.channelSelection.channelDecision.channel
+            : StrategyChannel.VALUE,
           market: bet.market,
           pick: bet.pick,
           probability: round(bet.probEstimated),
@@ -312,13 +334,7 @@ export class ChatReadRepository {
           stakePct: round(bet.stakePct),
           status: bet.status,
         })) ?? [],
-      predictions: fixture.predictions.map((prediction) => ({
-        channel: prediction.channel,
-        market: prediction.market,
-        pick: prediction.pick,
-        probability: round(prediction.probability),
-        correct: prediction.correct,
-      })),
+      predictions: [],
     };
   }
 
@@ -326,7 +342,7 @@ export class ChatReadRepository {
 
   async getChannelPerfStats(input: {
     range: StrictDateRange;
-    channel?: string;
+    channel?: StrategyChannel;
   }): Promise<
     Array<{
       channel: string;
@@ -348,79 +364,125 @@ export class ChatReadRepository {
 
   private async _getChannelPerfStats(input: {
     range: StrictDateRange;
-    channel?: string;
+    channel?: StrategyChannel;
   }) {
-    const channels = input.channel
-      ? [input.channel]
-      : ['EV', 'SV', 'CONF', 'DRAW', 'BTTS'];
+    const rows = await this.settledChannelRows({
+      range: input.range,
+      channel: input.channel,
+    });
+    const byChannel = groupBy(rows, (r) => r.channel);
+    const channels = input.channel ? [input.channel] : ALL_CHANNELS;
 
-    return Promise.all(
-      channels.map(async (ch) => {
-        const meta = channelToPrisma(ch);
-        if (meta.isBet) {
-          const bets = await this.prisma.client.bet.findMany({
-            where: {
-              source: BetSource.MODEL,
-              isSafeValue: meta.isSafeValue,
-              status: { in: ['WON', 'LOST'] },
-              modelRun: { isBackfill: false },
-              fixture: {
-                scheduledAt: { gte: input.range.from, lte: input.range.to },
-              },
-            },
-            select: { status: true, oddsSnapshot: true },
-          });
-          if (bets.length === 0)
-            return {
-              channel: ch,
-              roi: null,
-              hitRate: null,
-              netUnits: null,
-              sampleSize: 0,
-            };
-          const won = bets.filter((b) => b.status === 'WON');
-          const totalOdds = sumDecimals(won.map((b) => b.oddsSnapshot));
-          return {
-            channel: ch,
-            roi: settledRoi(totalOdds, bets.length),
-            hitRate: round(new Decimal(won.length).div(bets.length)),
-            netUnits: round(totalOdds.minus(bets.length)),
-            sampleSize: bets.length,
-          };
-        }
-        const preds = await this.prisma.client.prediction.findMany({
-          where: {
-            channel: meta.predChannel,
-            correct: { not: null },
-            modelRun: { isBackfill: false },
-            fixture: {
-              scheduledAt: { gte: input.range.from, lte: input.range.to },
-            },
-          },
-          select: { correct: true },
-        });
-        if (preds.length === 0)
-          return {
-            channel: ch,
-            roi: null,
-            hitRate: null,
-            netUnits: null,
-            sampleSize: 0,
-          };
-        const wonCount = preds.filter((p) => p.correct === true).length;
+    return channels.map((ch) => {
+      // Flat-stake metrics over priced selections (every channel attaches its
+      // own odds — DRAW via implied probability, DOMINANT/BTTS via the market).
+      const priced = (byChannel.get(ch) ?? []).filter((r) => r.odds !== null);
+      if (priced.length === 0) {
         return {
           channel: ch,
           roi: null,
-          hitRate: round(new Decimal(wonCount).div(preds.length)),
+          hitRate: null,
           netUnits: null,
-          sampleSize: preds.length,
+          sampleSize: 0,
         };
-      }),
-    );
+      }
+      const won = priced.filter((r) => r.won);
+      const totalOdds = sumDecimals(won.map((r) => r.odds));
+      return {
+        channel: ch,
+        roi: settledRoi(totalOdds, priced.length),
+        hitRate: round(new Decimal(won.length).div(priced.length)),
+        netUnits: round(totalOdds.minus(priced.length)),
+        sampleSize: priced.length,
+      };
+    });
+  }
+
+  /**
+   * Settled `channel_selection` rows in a window, optionally filtered to one
+   * channel / competition. The single source the chat performance tools read —
+   * covers all five channels, including the prediction-only ones that never
+   * create a financial Bet.
+   */
+  private async settledChannelRows(input: {
+    range: StrictDateRange;
+    channel?: StrategyChannel;
+    competitionCode?: string;
+  }): Promise<SettledChannelRow[]> {
+    const selections = await this.prisma.client.channelSelection.findMany({
+      where: {
+        result: { in: ['WON', 'LOST'] },
+        channelDecision: {
+          is: {
+            ...(input.channel ? { channel: input.channel } : {}),
+            modelRun: {
+              is: {
+                fixture: {
+                  is: {
+                    scheduledAt: {
+                      gte: input.range.from,
+                      lte: input.range.to,
+                    },
+                    ...(input.competitionCode
+                      ? {
+                          season: {
+                            competition: { code: input.competitionCode },
+                          },
+                        }
+                      : {}),
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        pick: true,
+        probability: true,
+        odds: true,
+        ev: true,
+        result: true,
+        channelDecision: {
+          select: {
+            channel: true,
+            modelRun: {
+              select: {
+                fixture: {
+                  select: {
+                    scheduledAt: true,
+                    homeTeam: { select: { name: true } },
+                    awayTeam: { select: { name: true } },
+                    season: {
+                      select: { competition: { select: { code: true } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return selections.map((s) => {
+      const fixture = s.channelDecision.modelRun.fixture;
+      return {
+        channel: s.channelDecision.channel,
+        competition: fixture.season.competition.code,
+        match: `${fixture.homeTeam.name} - ${fixture.awayTeam.name}`,
+        date: fixture.scheduledAt,
+        pick: s.pick,
+        probability: s.probability,
+        odds: s.odds,
+        ev: s.ev,
+        won: s.result === 'WON',
+      };
+    });
   }
 
   async getLeagueStats(input: {
-    channel: string;
+    channel: StrategyChannel;
     range: StrictDateRange;
   }): Promise<
     Array<{
@@ -441,105 +503,35 @@ export class ChatReadRepository {
   }
 
   private async _getLeagueStats(input: {
-    channel: string;
+    channel: StrategyChannel;
     range: StrictDateRange;
   }) {
-    const meta = channelToPrisma(input.channel);
-    if (meta.isBet) {
-      type Row = {
-        competition: string;
-        status: string;
-        odds: Prisma.Decimal | null;
-      };
-      const bets = await this.prisma.client.bet.findMany({
-        where: {
-          source: BetSource.MODEL,
-          isSafeValue: meta.isSafeValue,
-          status: { in: ['WON', 'LOST'] },
-          modelRun: { isBackfill: false },
-          fixture: {
-            scheduledAt: { gte: input.range.from, lte: input.range.to },
-          },
-        },
-        select: {
-          status: true,
-          oddsSnapshot: true,
-          fixture: {
-            select: {
-              season: { select: { competition: { select: { code: true } } } },
-            },
-          },
-        },
-      });
-      const byComp = new Map<string, Row[]>();
-      for (const b of bets) {
-        const code = b.fixture.season.competition.code;
-        const arr = byComp.get(code) ?? [];
-        arr.push({
-          competition: code,
-          status: b.status,
-          odds: b.oddsSnapshot,
-        });
-        byComp.set(code, arr);
-      }
-      return [...byComp.entries()]
-        .map(([comp, rows]) => {
-          const won = rows.filter((r) => r.status === 'WON');
-          return {
-            competition: comp,
-            hitRate: round(new Decimal(won.length).div(rows.length)),
-            roi: settledRoi(sumDecimals(won.map((r) => r.odds)), rows.length),
-            picks: rows.length,
-          };
-        })
-        .sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0));
-    }
-    const preds = await this.prisma.client.prediction.findMany({
-      where: {
-        channel: meta.predChannel,
-        correct: { not: null },
-        modelRun: { isBackfill: false },
-        fixture: {
-          scheduledAt: { gte: input.range.from, lte: input.range.to },
-        },
-      },
-      select: { correct: true, competition: true },
+    const rows = await this.settledChannelRows({
+      range: input.range,
+      channel: input.channel,
     });
-    const byComp = new Map<string, { won: number; total: number }>();
-    for (const p of preds) {
-      const existing = byComp.get(p.competition) ?? { won: 0, total: 0 };
-      existing.total += 1;
-      if (p.correct) existing.won += 1;
-      byComp.set(p.competition, existing);
-    }
+    const priced = rows.filter((r) => r.odds !== null);
+    const byComp = groupBy(priced, (r) => r.competition);
+
     return [...byComp.entries()]
-      .map(([comp, agg]) => ({
-        competition: comp,
-        hitRate: round(new Decimal(agg.won).div(agg.total)),
-        roi: null,
-        picks: agg.total,
-      }))
-      .sort((a, b) => (b.hitRate ?? 0) - (a.hitRate ?? 0));
+      .map(([comp, group]) => {
+        const won = group.filter((r) => r.won);
+        return {
+          competition: comp,
+          hitRate: round(new Decimal(won.length).div(group.length)),
+          roi: settledRoi(sumDecimals(won.map((r) => r.odds)), group.length),
+          picks: group.length,
+        };
+      })
+      .sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0));
   }
 
   async getSettledOutcomes(input: {
     range: StrictDateRange;
-    canal?: string;
+    channel?: StrategyChannel;
     onlyMisses: boolean;
     limit: number;
-  }): Promise<
-    Array<{
-      fixture: string;
-      competition: string;
-      date: string;
-      canal: string;
-      pick: string;
-      probability: number;
-      odds: number | null;
-      result: 'WON' | 'LOST';
-      probError: number;
-    }>
-  > {
+  }): Promise<SettledOutcome[]> {
     const key = rkey('settledOutcomes', input);
     const ttl = isCurrentPeriod(input.range.to)
       ? CHAT_CACHE_TTL.settledOutcomesLive
@@ -552,137 +544,39 @@ export class ChatReadRepository {
 
   private async _getSettledOutcomes(input: {
     range: StrictDateRange;
-    canal?: string;
+    channel?: StrategyChannel;
     onlyMisses: boolean;
     limit: number;
   }) {
-    const isSv = input.canal === 'SV';
-    const isBetCanal =
-      !input.canal || input.canal === 'EV' || input.canal === 'SV';
-    const isPredCanal =
-      !input.canal || ['BB', 'NUL', 'CONF'].includes(input.canal);
+    const selections = await this.settledChannelRows({
+      range: input.range,
+      channel: input.channel,
+    });
+    const rows = selections.map(
+      (s): SettledOutcome => ({
+        fixture: s.match,
+        competition: s.competition,
+        date: s.date.toISOString().slice(0, 10),
+        channel: s.channel,
+        pick: s.pick,
+        probability: round(s.probability),
+        odds: s.odds !== null ? round(s.odds) : null,
+        result: s.won ? 'WON' : 'LOST',
+        probError: probError(s.probability, s.won),
+      }),
+    );
 
-    const rows: Array<{
-      fixture: string;
-      competition: string;
-      date: string;
-      canal: string;
-      pick: string;
-      probability: number;
-      odds: number | null;
-      result: 'WON' | 'LOST';
-      probError: number;
-    }> = [];
-
-    if (isBetCanal) {
-      const bets = await this.prisma.client.bet.findMany({
-        where: {
-          source: BetSource.MODEL,
-          ...(input.canal ? { isSafeValue: isSv } : {}),
-          status: { in: ['WON', 'LOST'] },
-          modelRun: { isBackfill: false },
-          fixture: {
-            scheduledAt: { gte: input.range.from, lte: input.range.to },
-          },
-        },
-        select: {
-          status: true,
-          pick: true,
-          probEstimated: true,
-          oddsSnapshot: true,
-          isSafeValue: true,
-          fixture: {
-            select: {
-              scheduledAt: true,
-              homeTeam: { select: { name: true } },
-              awayTeam: { select: { name: true } },
-              season: { select: { competition: { select: { code: true } } } },
-            },
-          },
-        },
-        take: input.limit,
-        orderBy: { fixture: { scheduledAt: 'desc' } },
-      });
-      for (const b of bets) {
-        const won = b.status === 'WON';
-        rows.push({
-          fixture: `${b.fixture.homeTeam.name} - ${b.fixture.awayTeam.name}`,
-          competition: b.fixture.season.competition.code,
-          date: b.fixture.scheduledAt.toISOString().slice(0, 10),
-          canal: b.isSafeValue ? 'SV' : 'EV',
-          pick: b.pick,
-          probability: round(b.probEstimated),
-          odds: b.oddsSnapshot ? round(b.oddsSnapshot) : null,
-          result: won ? 'WON' : 'LOST',
-          probError: probError(b.probEstimated, won),
-        });
-      }
-    }
-
-    if (isPredCanal && (!input.canal || !isBetCanal)) {
-      const channelFilter =
-        input.canal === 'BB'
-          ? PredictionChannel.BTTS
-          : input.canal === 'NUL'
-            ? PredictionChannel.DRAW
-            : input.canal === 'CONF'
-              ? PredictionChannel.CONF
-              : undefined;
-      const preds = await this.prisma.client.prediction.findMany({
-        where: {
-          ...(channelFilter ? { channel: channelFilter } : {}),
-          correct: { not: null },
-          modelRun: { isBackfill: false },
-          fixture: {
-            scheduledAt: { gte: input.range.from, lte: input.range.to },
-          },
-        },
-        select: {
-          channel: true,
-          pick: true,
-          probability: true,
-          correct: true,
-          fixture: {
-            select: {
-              scheduledAt: true,
-              homeTeam: { select: { name: true } },
-              awayTeam: { select: { name: true } },
-              season: { select: { competition: { select: { code: true } } } },
-            },
-          },
-        },
-        take: input.limit,
-        orderBy: { fixture: { scheduledAt: 'desc' } },
-      });
-      for (const p of preds) {
-        const won = p.correct === true;
-        const canalLabel =
-          p.channel === PredictionChannel.BTTS
-            ? 'BB'
-            : p.channel === PredictionChannel.DRAW
-              ? 'NUL'
-              : 'CONF';
-        rows.push({
-          fixture: `${p.fixture.homeTeam.name} - ${p.fixture.awayTeam.name}`,
-          competition: p.fixture.season.competition.code,
-          date: p.fixture.scheduledAt.toISOString().slice(0, 10),
-          canal: canalLabel,
-          pick: p.pick,
-          probability: round(p.probability),
-          odds: null,
-          result: won ? 'WON' : 'LOST',
-          probError: probError(p.probability, won),
-        });
-      }
-    }
-
-    if (input.onlyMisses) rows.sort((a, b) => b.probError - a.probError);
+    rows.sort((a, b) =>
+      input.onlyMisses
+        ? b.probError - a.probError
+        : b.date.localeCompare(a.date),
+    );
     return rows.slice(0, input.limit);
   }
 
   // ── Group C ──────────────────────────────────────────────────────────────
 
-  async getEdgeStats(input: { range: DateRange }): Promise<
+  async getEdgeStats(input: { range: StrictDateRange }): Promise<
     Array<{
       segment: string;
       picks: number;
@@ -701,24 +595,10 @@ export class ChatReadRepository {
     });
   }
 
-  private async _getEdgeStats(input: { range: DateRange }) {
-    const bets = await this.prisma.client.bet.findMany({
-      where: {
-        source: BetSource.MODEL,
-        status: { in: ['WON', 'LOST'] },
-        oddsSnapshot: { not: null },
-        modelRun: { isBackfill: false },
-        fixture: {
-          scheduledAt: { gte: input.range.from, lte: input.range.to },
-        },
-      },
-      select: {
-        status: true,
-        isSafeValue: true,
-        probEstimated: true,
-        oddsSnapshot: true,
-      },
-    });
+  private async _getEdgeStats(input: { range: StrictDateRange }) {
+    const rows = (await this.settledChannelRows({ range: input.range })).filter(
+      (r) => r.odds !== null,
+    );
 
     type Seg = {
       edgeSum: Decimal;
@@ -727,24 +607,24 @@ export class ChatReadRepository {
       total: number;
     };
     const bySegment = new Map<string, Seg>();
-    for (const b of bets) {
-      // Corrupt snapshot guard: an odds of 0 would make the implied
-      // probability (1/odds) explode.
-      if (!b.oddsSnapshot) continue;
-      const odds = toDecimal(b.oddsSnapshot);
+    for (const r of rows) {
+      // Corrupt snapshot guard: a null/0 odds would make the implied
+      // probability (1/odds) explode (rows are pre-filtered to priced ones).
+      if (r.odds === null) continue;
+      const odds = toDecimal(r.odds);
       if (odds.lte(0)) continue;
-      const seg = b.isSafeValue ? 'SV' : 'EV';
+      const seg = r.channel;
       const existing = bySegment.get(seg) ?? {
         edgeSum: new Decimal(0),
         edgeCount: 0,
         wonOdds: new Decimal(0),
         total: 0,
       };
-      const edge = toDecimal(b.probEstimated).minus(new Decimal(1).div(odds));
+      const edge = toDecimal(r.probability).minus(new Decimal(1).div(odds));
       existing.edgeSum = existing.edgeSum.plus(edge);
       existing.edgeCount += 1;
       existing.total += 1;
-      if (b.status === 'WON') existing.wonOdds = existing.wonOdds.plus(odds);
+      if (r.won) existing.wonOdds = existing.wonOdds.plus(odds);
       bySegment.set(seg, existing);
     }
 
@@ -922,80 +802,310 @@ export class ChatReadRepository {
     }));
   }
 
+  // ── Group F — EVA evaluation context ─────────────────────────────────────
+
+  async getPicksWithEvaluation(input: {
+    date: string;
+    limit: number;
+    maxPicksPerFixture: number;
+  }): Promise<PicksWithEvaluationResult> {
+    const key = rkey('picksWithEvaluation', input);
+    const ttl = CHAT_CACHE_TTL.picksWithEvaluation;
+    return this.cached(key, ttl, {
+      fn: () => this._getPicksWithEvaluation(input),
+      tags: [CHAT_CACHE_TAGS.settlement, CHAT_CACHE_TAGS.engineHealth],
+    });
+  }
+
+  private async _getPicksWithEvaluation(input: {
+    date: string;
+    limit: number;
+    maxPicksPerFixture: number;
+  }): Promise<PicksWithEvaluationResult> {
+    const start = new Date(`${input.date}T00:00:00.000Z`);
+    const end = new Date(`${input.date}T23:59:59.999Z`);
+
+    const fixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: start, lte: end },
+        status: {
+          in: [
+            FixtureStatus.SCHEDULED,
+            FixtureStatus.IN_PROGRESS,
+            FixtureStatus.FINISHED,
+          ],
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+        season: { select: { competition: { select: { code: true } } } },
+        modelRuns: {
+          orderBy: { analyzedAt: 'desc' },
+          take: 1,
+          select: {
+            features: true,
+            bets: {
+              where: { source: BetSource.MODEL, userId: null },
+              select: {
+                market: true,
+                pick: true,
+                channelSelection: {
+                  select: { channelDecision: { select: { channel: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const withRun = fixtures.filter((f) => f.modelRuns.length > 0);
+    const noModelRunCount = fixtures.length - withRun.length;
+
+    const all = withRun.map((f) =>
+      buildFixtureEvaContext(f, input.maxPicksPerFixture),
+    );
+
+    // NO_EVALUATION fixtures carry no analytical signal for EVA — count them but
+    // exclude from the context to stay within LLM token budget.
+    const noEvaluationCount = all.filter(
+      (c) => c.analysisState === 'NO_EVALUATION',
+    ).length;
+    const analytical = all.filter((c) => c.analysisState !== 'NO_EVALUATION');
+
+    analytical.sort((a, b) => {
+      const stateOrder = (s: string) => (s === 'BET' ? 0 : 1);
+      return (
+        stateOrder(a.analysisState) - stateOrder(b.analysisState) ||
+        new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime()
+      );
+    });
+
+    return {
+      date: input.date,
+      asOf: new Date().toISOString(),
+      noModelRunCount,
+      noEvaluationCount,
+      fixtures: analytical.slice(0, input.limit),
+    };
+  }
+
   async findChannelLeagueHitRate(input: {
-    canal: string;
+    channel: StrategyChannel;
     competitionCode: string;
     since: Date;
   }): Promise<number | null> {
-    if (input.canal === 'EV' || input.canal === 'SV') {
-      const rows = await this.prisma.client.bet.groupBy({
-        by: ['status'],
-        where: {
-          source: 'MODEL',
-          isSafeValue: input.canal === 'SV',
-          status: { in: ['WON', 'LOST'] },
-          fixture: {
-            scheduledAt: { gte: input.since },
-            season: { competition: { code: input.competitionCode } },
-          },
-        },
-        _count: true,
-      });
-      return hitRateFromRows(rows);
-    }
-
-    const channel =
-      input.canal === 'BB' ? 'BTTS' : input.canal === 'NUL' ? 'DRAW' : 'CONF';
-    const rows = await this.prisma.client.prediction.groupBy({
-      by: ['correct'],
-      where: {
-        channel: channel as any,
-        correct: { not: null },
-        fixture: {
-          scheduledAt: { gte: input.since },
-          season: { competition: { code: input.competitionCode } },
-        },
-      },
-      _count: true,
+    const rows = await this.settledChannelRows({
+      range: { from: input.since, to: new Date() },
+      channel: input.channel,
+      competitionCode: input.competitionCode,
     });
-    const total = rows.reduce((sum, row) => sum + row._count, 0);
-    if (total === 0) return null;
-    const won = rows
-      .filter((row) => row.correct === true)
-      .reduce((sum, row) => sum + row._count, 0);
-    return won / total;
+    if (rows.length === 0) return null;
+    const won = rows.filter((r) => r.won).length;
+    return won / rows.length;
   }
 }
 
-function hitRateFromRows(
-  rows: Array<{ status: string; _count: number | Prisma.BatchPayload }>,
-): number | null {
-  const counts = rows.map((row) => ({
-    status: row.status,
-    count: typeof row._count === 'number' ? row._count : row._count.count,
-  }));
-  const total = counts.reduce((sum, row) => sum + row.count, 0);
-  if (total === 0) return null;
-  const won = counts
-    .filter((row) => row.status === 'WON')
-    .reduce((sum, row) => sum + row.count, 0);
-  return won / total;
+// ── EVA evaluation context types & builder ───────────────────────────────────
+
+type EvaPickEntry = {
+  channel: string;
+  market: string;
+  pick: string;
+  probability: number | null;
+  odds: number | null;
+  ev: number | null;
+  decision: 'BET' | 'NO_BET';
+  rejectionReason: string | null;
+};
+
+type EvaFixtureContext = {
+  fixtureId: string;
+  match: string;
+  kickoff: string;
+  competition: string;
+  status: string;
+  analysisState: 'BET' | 'NO_BET' | 'NO_EVALUATION';
+  analysisContext: {
+    predictionSource: string | null;
+    fallbackReason: string | null;
+    dataQuality?: {
+      marketOdds: boolean | null;
+      pinnacle: boolean | null;
+      eloHome: boolean | null;
+      eloAway: boolean | null;
+    };
+  };
+  lambda: { home: number; away: number; total: number } | null;
+  shadowSignals?: {
+    lineMovement: number | null;
+    h2h: number | null;
+    congestion: number | null;
+  };
+  evaluatedPicks: EvaPickEntry[];
+};
+
+export type PicksWithEvaluationResult = {
+  date: string;
+  asOf: string;
+  noModelRunCount: number;
+  noEvaluationCount: number;
+  fixtures: EvaFixtureContext[];
+};
+
+type FixtureWithRun = {
+  id: string;
+  scheduledAt: Date;
+  status: string;
+  homeTeam: { name: string };
+  awayTeam: { name: string };
+  season: { competition: { code: string } };
+  modelRuns: Array<{
+    features: unknown;
+    bets: Array<{
+      market: string;
+      pick: string;
+      channelSelection: {
+        channelDecision: { channel: StrategyChannel };
+      } | null;
+    }>;
+  }>;
+};
+
+function buildFixtureEvaContext(
+  fixture: FixtureWithRun,
+  maxPicks: number,
+): EvaFixtureContext {
+  const run = fixture.modelRuns[0];
+  const ctx = extractEvaContextFromFeatures(run.features);
+
+  const betKeys = new Set(
+    run.bets
+      .filter(
+        (b) =>
+          b.channelSelection?.channelDecision.channel === StrategyChannel.VALUE,
+      )
+      .map((b) => `${b.market}|${b.pick}`),
+  );
+  const svKeys = new Set(
+    run.bets
+      .filter(
+        (b) =>
+          b.channelSelection?.channelDecision.channel === StrategyChannel.SAFE,
+      )
+      .map((b) => `${b.market}|${b.pick}`),
+  );
+
+  const picks: EvaPickEntry[] = [];
+  const seen = new Set<string>();
+
+  const addPick = (entry: EvaPickEntry) => {
+    const key = `${entry.channel}|${entry.market}|${entry.pick}|${entry.probability}|${entry.odds}|${entry.ev}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    picks.push(entry);
+  };
+
+  for (const ep of ctx.evaluatedPicks) {
+    const pairKey = `${ep.market}|${ep.pick}`;
+    const isSv = svKeys.has(pairKey);
+    const isEv = betKeys.has(pairKey);
+    const channel = isSv ? StrategyChannel.SAFE : StrategyChannel.VALUE;
+    // decision=BET only when an actual bet record exists — a 'viable' status in
+    // features means the pick passed EV screening, but it may not have been
+    // selected as the final bet (e.g. superseded by a better pick, market issue).
+    const isAccepted = isSv || isEv;
+    const decision = isAccepted ? 'BET' : 'NO_BET';
+    const rejectionReason =
+      ep.rejectionReason ??
+      (ep.status === 'viable' && !isAccepted ? 'not_selected' : null);
+    addPick({
+      channel,
+      market: ep.market,
+      pick: ep.pick,
+      probability: round(ep.probability),
+      odds: round(ep.odds),
+      ev: round(ep.ev),
+      decision,
+      rejectionReason,
+    });
+  }
+
+  // analysisState is derived from the full picks array across ALL channels
+  // currently represented in features/bets.
+  const hasAcceptedPick = picks.some((p) => p.decision === 'BET');
+  const hasEvaluatedEvPicks = ctx.evaluatedPicks.length > 0;
+  const analysisState: EvaFixtureContext['analysisState'] = hasAcceptedPick
+    ? 'BET'
+    : hasEvaluatedEvPicks
+      ? 'NO_BET'
+      : 'NO_EVALUATION';
+
+  const lh = ctx.lambdaHome;
+  const la = ctx.lambdaAway;
+
+  // Trim picks to budget: keep all BET picks, then fill with top rejected
+  // picks sorted by EV descending (closest to threshold = most informative).
+  const betPicks = picks.filter((p) => p.decision === 'BET');
+  const rejectedPicks = picks
+    .filter((p) => p.decision === 'NO_BET')
+    .sort((a, b) => (b.ev ?? -Infinity) - (a.ev ?? -Infinity));
+  const trimmedPicks = [
+    ...betPicks,
+    ...rejectedPicks.slice(0, Math.max(0, maxPicks - betPicks.length)),
+  ];
+
+  // Omit sub-objects that are entirely null — saves tokens for POISSON_MAIN runs.
+  const dataQuality = {
+    marketOdds: ctx.hasMarketOdds,
+    pinnacle: ctx.hasPinnacleOdds,
+    eloHome: ctx.hasHomeElo,
+    eloAway: ctx.hasAwayElo,
+  };
+  const hasDataQuality = Object.values(dataQuality).some((v) => v !== null);
+
+  const shadowSignals = {
+    lineMovement: ctx.shadowLineMovement,
+    h2h: ctx.shadowH2h,
+    congestion: ctx.shadowCongestion,
+  };
+  const hasShadowSignals = Object.values(shadowSignals).some((v) => v !== null);
+
+  return {
+    fixtureId: fixture.id,
+    match: `${fixture.homeTeam.name} - ${fixture.awayTeam.name}`,
+    kickoff: fixture.scheduledAt.toISOString(),
+    competition: fixture.season.competition.code,
+    status: fixture.status,
+    analysisState,
+    analysisContext: {
+      predictionSource: ctx.predictionSource,
+      fallbackReason: ctx.fallbackReason,
+      ...(hasDataQuality ? { dataQuality } : {}),
+    },
+    lambda:
+      lh !== null && la !== null
+        ? { home: round(lh), away: round(la), total: round(lh + la) }
+        : null,
+    ...(hasShadowSignals ? { shadowSignals } : {}),
+    evaluatedPicks: trimmedPicks,
+  };
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-function channelToPrisma(channel: string): {
-  isBet: boolean;
-  isSafeValue?: boolean;
-  predChannel?: PredictionChannel;
-} {
-  if (channel === 'EV') return { isBet: true, isSafeValue: false };
-  if (channel === 'SV') return { isBet: true, isSafeValue: true };
-  const pred =
-    channel === 'CONF'
-      ? PredictionChannel.CONF
-      : channel === 'DRAW'
-        ? PredictionChannel.DRAW
-        : PredictionChannel.BTTS;
-  return { isBet: false, predChannel: pred };
+function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
+  const map = new Map<K, T[]>();
+  for (const item of items) {
+    const k = key(item);
+    const arr = map.get(k) ?? [];
+    arr.push(item);
+    map.set(k, arr);
+  }
+  return map;
 }

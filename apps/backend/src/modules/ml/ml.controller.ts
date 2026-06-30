@@ -14,16 +14,12 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { MlService } from './ml.service';
-import { MlBackfillService } from './ml.backfill.service';
 import { TriggerTrainingDto } from './dto/trigger-training.dto';
 
 @Controller('ml')
 @UseGuards(AuthSessionGuard)
 export class MlController {
-  constructor(
-    private readonly ml: MlService,
-    private readonly backfill: MlBackfillService,
-  ) {}
+  constructor(private readonly ml: MlService) {}
 
   @Post('train')
   @UseGuards(AdminGuard)
@@ -49,12 +45,6 @@ export class MlController {
   @Get('models/active')
   async getActiveModel(@Query('segment') segment: string) {
     return this.ml.getActiveModel(segment ?? 'ALL');
-  }
-
-  @Post('backfill')
-  @UseGuards(AdminGuard)
-  async triggerBackfill() {
-    return this.backfill.queueAllSeasons();
   }
 
   @Post('models/:id/activate')

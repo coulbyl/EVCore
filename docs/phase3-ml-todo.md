@@ -1,0 +1,210 @@
+# EVCore — Phase 3 Plan d'exécution ML
+
+> 📦 **Archive.** Ce plan a été déplacé depuis `TODO.md` (juin 2026) une fois la
+> Phase 3 ML quasi terminée. Il reste la référence détaillée des étapes ML
+> (Bloc B/C de la ROADMAP). Le `TODO.md` actif porte désormais le chantier
+> « Architecture des canaux de stratégie ». Seule suite ML ouverte : étape 7ter
+> (promotion hors shadow).
+>
+> Référence : [ROADMAP.md](../ROADMAP.md) · [phase3-ml-correction-layer.md](phase3-ml-correction-layer.md) · [phase3-go-watch-no-go.md](phase3-go-watch-no-go.md)
+>
+> **Principe directeur** : le ML ne remplace pas le moteur Poisson — il apprend où il se trompe et corrige les probabilités avant la décision. NestJS reste l'autorité finale.
+>
+> **Premier chantier identifié** : `EV / ONE_X_TWO` — edge affiché moyen +19.57%, ROI réel -54.86% sur 22 picks. Biais structurel confirmé.
+> **Référence saine à ne pas toucher** : `SV / OVER_UNDER` — hit rate 73.6%, ROI +5.17%.
+
+---
+
+## Statut
+
+- `[ ]` À faire
+- `[x]` Terminé
+- `[~]` En cours
+- `[-]` Abandonné / hors périmètre v1
+
+---
+
+## Étape 0 — Commit des travaux Codex en attente ✅
+
+- [x] Commit `packages/db/scripts/analyze-edge.ts`
+- [x] Commit `docs/phase3-ml-correction-layer.md` + `docs/phase3-go-watch-no-go.md`
+- [x] Commit `ROADMAP.md` (liens vers les docs Phase 3 ajoutés)
+
+---
+
+## Étape 1 — Préconditions DB ✅
+
+- [x] **PgBouncer** `v1.25.1-p0` dans Docker Compose (dev + prod) — `PGBOUNCER_URL` pour le runtime, `DATABASE_URL` direct pour les migrations
+- [-] **Partitionnement `OddsSnapshot`** — différé : 421k lignes, indexes existants suffisants ; à reconsidérer à 1M+
+- [x] **Index `ModelRun.analyzedAt`** — ajouté pour les scans temporels du dataset ML
+- [x] **Table `ml_model_version`** — migration `20260604174057_phase3_ml_model_version`
+- [x] **Politique de rétention `ModelRun`** — documentée dans le schéma Prisma (commentaire)
+
+---
+
+## Étape 2 — Accumulation de données ✅
+
+- [x] Backfill historique : 1 455 bets backfill + 806 prod = **2 261 bets total**
+- [x] Extraction étendue aux prédictions settlées (`CONF`, `DRAW`, `BTTS`) : **17 370 lignes ML**, **8 742 avec Pinnacle**
+- [x] Volume suffisant pour XGBoost sur `ALL` et les gros canaux `CONF`, `DRAW`, `BTTS`
+- [ ] Re-générer le rapport `edge-vs-Pinnacle` toutes les 2 semaines (cron ou endpoint dédié)
+
+---
+
+## Étape 3 — Infra Python Worker ✅
+
+- [x] Service `ml-worker` dans `docker-compose.yml` (build local, DATABASE_URL + PGBOUNCER_URL + Redis)
+- [x] `apps/ml-worker/` : Dockerfile, requirements.txt, scaffold asyncio
+- [x] Queue BullMQ `ML_TRAINING` dans `BULLMQ_QUEUES`, job `{ segment, triggeredBy }`
+- [x] `MlModule` NestJS : MlController / MlService / MlRepository
+  - `POST /ml/train`, `GET /ml/models`, `GET /ml/models/active`, `POST /ml/models/:id/activate`
+- [x] `POST /ml/backfill` + `MlBackfillWorker` — backfill historique par saison
+- [x] Page admin `/dashboard/ml` — backfill, entraînement, gestion versions
+- [x] `AdminGuard` dédié — suppression de `assertAdmin` dupliqué dans 4 controllers
+- [x] Test de communication : backfill terminé avec succès (1 455 bets générés)
+
+---
+
+## Étape 4 — Feature Engineering + Dataset Pipeline ✅
+
+- [x] `src/data/extract.py` — jointure `ModelRun × Bet/Prediction × Fixture × OddsSnapshot(Pinnacle)`
+- [x] Feature matrix v1 : `prob_estimated`, `deterministic_score`, `ev`, `p_poisson_*`, `p_pinnacle`, `delta_p`, `recent_form`, `xg`, `performance_dom_ext`, `volatilite_ligue`, `odds_segment`, `league_tier`, `canal`, `market`, `pick`
+- [x] Target : `outcome_correct` (`Bet.status WON/LOST` ou `Prediction.correct true/false`)
+- [x] Split temporel `temporal_split()` — 80/20 par ordre chronologique (pas aléatoire)
+- [x] Filtre par segment (`canal:market`) + `ALL`
+- [x] Dataset actuel : 17 370 lignes settlées, 8 742 avec cotes Pinnacle exploitables
+- [x] Validation minimum : split LogReg `ALL` OK — train 3322W/2797L, test 1448W/1175L
+- [x] Segments lançables : `EV:ONE_X_TWO`, `EV:OVER_UNDER`, `EV:BTTS`, `CONF:ONE_X_TWO`, `DRAW:ONE_X_TWO`, `BTTS:BTTS`
+- [-] `SV:OVER_UNDER` retiré du training v1 — référence saine et split Pinnacle exploitable insuffisant après mapping par cote cible
+
+---
+
+## Étape 5 — Modèle v1 : Correction Layer ✅
+
+- [x] `src/models/correction.py` — logistic regression + XGBoost (auto-select ≥200 samples Pinnacle), split temporel 70/30, métriques (Brier, CalErr, ROI simulé)
+- [x] Guard classe balance minimum (20 samples par classe par split)
+- [x] `src/models/persist.py` — joblib → `/app/models/{uuid}.pkl`, INSERT `ml_model_version`
+- [x] Volume Docker `ml_models` (dev + prod) — modèles persistés entre restarts
+- [x] `jobs/train.py` câblé end-to-end : extract → train → persist → retour métriques
+- [x] **Premier entraînement LogReg terminé** sur `ALL` bets-only (757 samples Pinnacle, avant extension Prediction)
+  - Version DB : `1087eb88-510f-48d8-91c6-9147bc234403`
+  - Test split : 228 samples, Brier `0.2418`, Calibration Error `0.0912`, ROI test-set `+20.42%`
+  - Baseline même test split : Brier Poisson/prob actuelle `0.2423` → gain LogReg ≈ `0.2%` seulement (insuffisant pour shadow activation)
+- [x] Lancer entraînement XGBoost (`algorithm: auto`) par segment prioritaire : `CONF:ONE_X_TWO` (4 772), `DRAW:ONE_X_TWO` (1 561), `BTTS:BTTS` (1 185), `ALL` (8 742)
+- [x] Fix structurel XGBoost : `CalibratedClassifierCV(isotonic)` + `n_estimators=150` + `min_child_weight=5` + suppression `scale_pos_weight` — Brier DRAW -9.1%, BTTS -5.8% vs LogReg
+- [x] Rapport comparatif : XGBoost calibré ≥ LogReg sur DRAW/BTTS/CONF, ex æquo sur ALL
+
+---
+
+## Étape 6 — Intégration BettingEngine (Shadow Mode) ✅
+
+> Ne jamais activer directement en prod. Shadow d'abord — les paris ne changent pas mais les corrections sont loggées.
+
+- [x] `MlInferenceService` + `MlInferenceModule` — HTTP client vers le serveur Python (timeout 500ms, fallback gracieux)
+- [x] Shadow mode câblé dans `BettingEngineService.analyzeFixture()` — appel inference, log `shadow_ml_corrected_p` + `shadow_ml_edge_delta` dans `ModelRun.features`
+- [x] Feature flag `FEATURE_FLAGS.SCORING.ML_CORRECTION = false` — activation manuelle uniquement
+- [x] `MlInferenceModule` importé dans `BettingEngineModule`, mock dans tous les tests
+- [~] **Critères de validation shadow** (minimum avant activation prod) :
+  - ≥50 picks résolus en shadow — **en cours** (activer `ML_CORRECTION_ENABLED=true` en prod)
+  - Brier Score corrigé ≥5% mieux que baseline sur la fenêtre shadow
+  - Calibration Error corrigée ≤ baseline
+  - ROI simulé corrigé ≥ ROI baseline sur la même fenêtre
+
+---
+
+## Étape 7 — Activation et pipeline de ré-entraînement ✅
+
+- [x] `POST /ml/models/:id/activate` — bascule `isActive`, notifie par email
+- [x] `POST /ml/models/:id/rollback` — réactive la version précédente (`rollbackOfId`), notifie
+- [x] `MlTrainingEventsListener` (QueueEventsHost) — auto-switch si Brier ≥5% mieux + cooldown 7 jours
+- [x] `MlSchedulerWorker` + queue `ML_SCHEDULER` — cron lundi 03:00 UTC, déclenche re-train si ≥50 bets settled
+- [x] Notification email `sendMlModelActivatedAlert()` sur activation + rollback
+- [x] `ML_MODEL_ACTIVATED` dans `NotificationType` (migration `20260610150025`)
+
+---
+
+## Étape 7bis — Tests ml-worker (suite audit 2026-06-11) ✅
+
+> L'audit du 11 juin a corrigé deux bugs (`_roi_simulated` ignorait le modèle,
+> registre d'inférence figé jusqu'au restart) — aucun test n'existait pour les attraper.
+> 49 tests, exécutés dans l'image ml-worker avec le working-tree monté :
+> `docker run --rm -v "$(pwd)/apps/ml-worker:/app" -w /app evcore-ml-worker:latest \`
+> `  sh -c "pip install -q -r requirements-dev.txt && python -m pytest"`
+
+- [x] Setup pytest dans `apps/ml-worker` (`requirements-dev.txt`, `pyproject.toml`, `tests/`)
+- [x] Tests `correction.py` : `_roi_simulated` (mise seulement si EV corrigée > 0, lignes sans cote non misables, dépend du modèle), `_resolve_algorithm`, `_assert_class_balance`
+- [x] Tests `extract.py` : `_devig_pinnacle` (dont le cas dégénéré une-seule-jambe), `_pinnacle_prob_for_pick` (les 2 côtés), `_target_odds`, `_build_row`
+- [x] Tests `registry.py` : `reload()` swap atomique + éviction des modèles désactivés, noop avant load, réutilise l'URL stockée, fallback segment → ALL
+- [x] Test `server.py` : `/infer` + `POST /reload` resynchronise les segments actifs
+- [x] Job CI (GitHub Actions) — job `ml-worker` parallèle (setup-python 3.12 + cache pip + pytest)
+
+---
+
+## Étape 7ter — Observation shadow + décision de promotion (LA SUITE)
+
+> Le ML tourne en **shadow mode** (étape 6) : il calcule ses corrections et les
+> logge, sans influencer les décisions. Avant l'étape 8, valider que la
+> correction bat réellement le Poisson baseline, segment par segment.
+> Aucune ligne de code moteur ici tant que la décision n'est pas prise — c'est
+> une phase de mesure.
+
+> ⚠️ **BLOQUANT identifié le 2026-06-11** : les 6 modèles ont été activés le 10/06 à 22:40,
+> mais **aucun ModelRun n'a été généré depuis** → `shadow_ml_corrected_p` est `null` partout,
+> 0 bet post-activation settlé. Le Decision Board est donc vide (tout INSUFFICIENT) et le
+> restera tant que (a) le moteur ne refait pas de passes de scoring après activation et
+> (b) ces bets ne settlent pas. **Première action concrète ci-dessous.**
+
+- [ ] **(bloquant)** Confirmer que l'inférence shadow se déclenche à la prochaine passe du moteur (`shadow_ml_corrected_p` non-null sur les nouveaux ModelRun) — sinon investiguer le câblage shadow (ml-worker joignable ? modèles chargés ?)
+- [ ] Suivre ROI/Brier **corrigé (shadow)** vs **baseline** par segment via le Decision Board (`/dashboard/reports`) — l'instrument est en place
+- [ ] Remplir la matrice GO/WATCH/NO-GO ci-dessous au fil de l'accumulation (le board la calcule, report manuel ici pour l'historique)
+- [ ] Décider **par segment** : promouvoir la correction hors shadow (elle influence le pick) uniquement si Brier amélioré ET ROI ≥ baseline sur la fenêtre
+- [ ] Documenter chaque promotion (date, segment, métriques) — la décision est à approbation humaine, comme un `AdjustmentProposal`
+- [ ] Gate étape 8 : ML promu et stable en prod ≥ 30 jours
+
+### Decision Board — page admin `/dashboard/reports` (support de l'étape 7ter)
+
+> Lecture seule v1 : la page informe et recommande GO/WATCH/NO-GO par segment,
+> la promotion hors shadow reste une action backend délibérée (v2).
+> Données : `ModelRun.features.shadow_ml_corrected_p` (persisté par pick pour les
+> canaux EV) comparé à la baseline, sur les bets settlés. Canaux prédiction
+> (CONF/DRAW/BTTS) : méta-métriques `ml_model_version` uniquement (pas de shadow/pick).
+
+- [x] Backend `GET /reports/ml-promotion?window=30d` (AdminGuard) — comparaison Brier/ROI baseline vs corrigé par segment + verdict déterministe
+- [x] Front `apps/web/app/dashboard/reports/` — table verdict par segment, drill-down (modèle actif), état vide/INSUFFICIENT géré + lien nav admin
+- [x] Sélecteur de fenêtre 7j/30j/90j/depuis activation
+- [ ] Drill-down enrichi (v1.1) : courbe calibration corrigée vs baseline, picks de la fenêtre, stabilité sur sous-fenêtres
+- [ ] (v2) Bouton « Promouvoir hors shadow » — décision loggée + cooldown + flag par segment lu par le moteur
+      _(la validation du pipeline shadow est le bloquant n°1 de l'étape 7ter ci-dessus)_
+
+---
+
+## Étape 8 — Drawdown dynamique (après ML stable en prod)
+
+> N'activer qu'une fois le ML en prod depuis ≥30 jours stables (voir étape 7ter).
+
+- [ ] `BettingEngineService` calcule le drawdown courant (ROI glissant 30 derniers bets)
+- [ ] Fraction Kelly dynamique :
+  - Drawdown 0–8% : Kelly normal (config `KELLY_FRACTION`)
+  - Drawdown 8–12% : Kelly × 0.75
+  - Drawdown 12–15% : Kelly × 0.50
+  - Drawdown >15% : Kelly × 0.25 (suspension automatique existante inchangée)
+- [ ] Reprise automatique au palier normal : drawdown revient sous 5% sur 20 bets consécutifs
+- [ ] Log dans `ModelRun.features` : `kelly_fraction_applied`, `current_drawdown_pct`
+
+---
+
+## Matrice GO / WATCH / NO-GO (v1 — mise à jour au fil des rapports)
+
+| Segment                  | Statut         | Action                                                         |
+| ------------------------ | -------------- | -------------------------------------------------------------- |
+| `SV / OVER_UNDER`        | **GO**         | Référence — ne pas corriger, servir de baseline de comparaison |
+| `SV / OVER_UNDER_HT`     | **GO**         | Référence — même logique                                       |
+| `CONF / ONE_X_TWO`       | **WATCH → v1** | 4 772 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `DRAW / ONE_X_TWO`       | **WATCH → v1** | 1 561 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `BTTS / BTTS`            | **WATCH → v1** | 1 185 samples Pinnacle — lancer LogReg puis XGBoost            |
+| `EV / ONE_X_TWO`         | **WATCH → v1** | 585 samples Pinnacle — lancer LogReg segmenté                  |
+| `EV / OVER_UNDER_HT`     | **WATCH**      | ROI +3.97% — légèrement positif, surveiller avant de corriger  |
+| `EV / OVER_UNDER`        | **WATCH → v1** | 147 samples Pinnacle exploitables — lançable mais fragile      |
+| `EV / BTTS`              | **WATCH → v1** | 206 samples Pinnacle — lançable                                |
+| `EV / FIRST_HALF_WINNER` | **NO-GO v1**   | ROI -25.61% — hors périmètre                                   |
+| `HALF_TIME_FULL_TIME`    | **NO-GO v1**   | Hors périmètre v1                                              |

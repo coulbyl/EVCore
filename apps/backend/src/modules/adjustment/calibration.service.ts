@@ -44,12 +44,17 @@ export class CalibrationService {
    */
   async computeForMarket(
     market: string,
-    options: { excludeLambdaFloorHit?: boolean } = {},
+    options: { excludeLambdaFloorHit?: boolean; asOf?: Date } = {},
   ): Promise<CalibrationResult | null> {
     const bets = await this.prisma.client.bet.findMany({
       where: {
         market: market as never,
         status: { in: [BetStatus.WON, BetStatus.LOST] },
+        // Point-in-time guard: only fixtures whose result was known before the
+        // cutoff. Prevents look-ahead leakage when calibrating for a past date.
+        ...(options.asOf
+          ? { fixture: { scheduledAt: { lt: options.asOf } } }
+          : {}),
         ...(options.excludeLambdaFloorHit
           ? {
               NOT: {
@@ -79,7 +84,9 @@ export class CalibrationService {
    * lambdaFloorHit bets are excluded from all market computations to avoid
    * polluting calibration with artificially floored lambda fixtures.
    */
-  async computeAllMarkets(): Promise<
+  async computeAllMarkets(
+    options: { asOf?: Date } = {},
+  ): Promise<
     Partial<
       Record<(typeof CALIBRATION_MARKETS)[number], CalibrationResult | null>
     >
@@ -91,6 +98,7 @@ export class CalibrationService {
     for (const market of CALIBRATION_MARKETS) {
       results[market] = await this.computeForMarket(market, {
         excludeLambdaFloorHit: true,
+        asOf: options.asOf,
       });
     }
 

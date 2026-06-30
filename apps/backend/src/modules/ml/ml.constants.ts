@@ -37,11 +37,6 @@ export const ML_TRAINING_JOB_OPTIONS = {
   removeOnFail: { count: 200 },
 } as const;
 
-export const ML_BACKFILL_JOB_OPTIONS = {
-  removeOnComplete: { count: 100 },
-  removeOnFail: { count: 200 },
-} as const;
-
 export const ML_CRON_SCHEDULES = {
   RETRAIN_CHECK: '0 3 * * 1', // 03:00 UTC every Monday
   CATCH_UP_SWITCH: '0 * * * *', // every hour — catches models trained while QueueEvents was offline

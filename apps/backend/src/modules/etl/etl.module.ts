@@ -19,10 +19,11 @@ import { EloSyncWorker } from './workers/elo-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
-import { AiEngineCouponWorker } from './workers/ai-engine-coupon.worker';
+import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.worker';
+import { CouponWorker } from './workers/coupon.worker';
 import { StandingsSyncWorker } from './workers/standings-sync.worker';
 import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
-import { AiEngineModule } from '../ai-engine/ai-engine.module';
+import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -37,18 +38,18 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.ELO_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.BETTING_ENGINE },
+      { name: BULLMQ_QUEUES.BETTING_ENGINE_REBUILD },
       { name: BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT },
       { name: BULLMQ_QUEUES.AI_ENGINE },
       { name: BULLMQ_QUEUES.STANDINGS_SYNC },
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
       { name: BULLMQ_QUEUES.ML_TRAINING },
       { name: BULLMQ_QUEUES.ML_SCHEDULER },
-      { name: BULLMQ_QUEUES.ML_BACKFILL },
     ),
     BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,
     AdjustmentModule,
-    AiEngineModule,
+    CouponModule,
     BettingEngineModule,
     FixtureModule,
     NotificationModule,
@@ -67,7 +68,8 @@ import { AuthModule } from '../auth/auth.module';
     EloSyncWorker,
     OddsPrematchSyncWorker,
     BettingEngineAnalysisWorker,
-    AiEngineCouponWorker,
+    BettingEngineRebuildWorker,
+    CouponWorker,
     OddsHistoricalImportWorker,
     StandingsSyncWorker,
     RollingHorizonWorker,
