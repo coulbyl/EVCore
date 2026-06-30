@@ -61,8 +61,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-backend:latest
             ghcr.io/${{ github.repository_owner }}/evcore-backend:${{ steps.version.outputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=evcore-backend
+          cache-to: type=gha,mode=max,scope=evcore-backend
 
   docker-web:
     name: Build & push web image to GHCR
@@ -112,8 +112,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-web:latest
             ghcr.io/${{ github.repository_owner }}/evcore-web:${{ steps.version.outputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=evcore-web
+          cache-to: type=gha,mode=max,scope=evcore-web
 
   docker-ml-worker:
     name: Build & push ML worker image to GHCR
@@ -160,8 +160,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:latest
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:${{ steps.version.outputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=evcore-ml-worker
+          cache-to: type=gha,mode=max,scope=evcore-ml-worker
 
   deploy:
     name: Deploy to Hetzner
