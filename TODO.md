@@ -751,9 +751,16 @@ Dataset reconstruit sain (cf. § Reprise).
 - [ ] `LIVE_VALUE` — pipeline live isolé des analyses J-/JT
 - [ ] **A — `CORRECT_SCORE` (score exact)** — nouveau marché/canal. Chantier
       **infra, pas modèle** (la matrice Poisson indépendante existante suffit, DC
-      écarté 2026-06-30) : `CORRECT_SCORE` dans `enum Market` (+ migration), collecte
-      cotes correct-score (vérifier dispo API), résolveur settlement, mapping
-      odds↔proba (cellules de la matrice de score). Backtest séparé avant activation.
+      écarté 2026-06-30). **Dispo API testée 2026-06-30 (API-Football Pro)** : - **bet id 10 = « Exact Score »** (full-time ; 31/62 = mi-temps). Forme :
+        `bookmakers[].bets[id==10].values[]={value:"1:0", odd:"4.75"}`. - **Stockage déjà compatible** : `OddsSnapshot(market,pick,odds)` → un
+        score exact = `market=CORRECT_SCORE, pick="1:0", odds=…`. Seul changement
+        schéma = ajouter `CORRECT_SCORE` à `enum Market` (migration **ton CLI**). - **Worker** : étendre `odds-prematch-sync.worker.ts` (ajouter `EXACT_SCORE:10`
+        à `API_FOOTBALL_BET_IDS`, itérer `.values`, parser `"H:A"`) — pattern O/U. - **Couverture** : 7/12 books, 21→121 scorelines (cellules basses bien cotées). - ⚠️ **FORWARD-ONLY** : `/odds?league&season` = 0 sur l'historique (rétention
+        prematch courte) → **pas de backfill ni backtest ROI**. Comme GOALS alt-lines
+        → `CORRECT_SCORE` démarre en **observation** (settlé analytiquement, jamais
+        staké tant que pas de forward ROI). Reste à faire : enum+migration, worker,
+        résolveur settlement `"H:A"` vs score réel, mapping odds↔matrice, canal +
+        front.
 - [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
       (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
       là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts
