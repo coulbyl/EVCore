@@ -477,12 +477,32 @@ const THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP: Record<string, Decimal> = {
   // Backtest 2026-04-30: UEL Brier 0.659, CalibErr 0.057 (both FAIL). Poisson
   // over-predicts HOME probability (modeled ~43% vs actual ~30% win rate). HOME
   // blocked in PICK_EV_FLOOR_MAP — only DRAW survives (+89.8% ROI, 6b).
-  // Blend 0.20 gives best DRAW ROI; CalibErr structurally above threshold (S2 noise).
-  UEL: new Decimal('0.20'),
+  // Diagnostic 2026-06-30 (1y, n=152): still FAIL (ECE 0.050). Bias flipped to
+  // over-DRAW (+8pp: pred 25% vs real 17%) and under-HOME (39% vs 49% — strong
+  // home teams in continental cups). Blend 0.20 → 0.35 to pull toward empirical.
+  UEL: new Decimal('0.35'),
   // Backtest 2026-04-30: POL1 Brier 0.6710 (FAIL). Poisson over-predicts HOME in
-  // the balanced Polish Ekstraklasa (actual HOME win rate ~36% vs model ~41%).
-  // Blend 0.20 améliore partiellement — Brier reste ~0.662 (S3 bruitée, trop court).
-  POL1: new Decimal('0.20'),
+  // the balanced Polish Ekstraklasa. Blend 0.20 améliore partiellement.
+  // Diagnostic 2026-06-30 (1y, n=250): worst league (Brier 0.688, ECE 0.074),
+  // over-AWAY +7pp (pred 33% vs real 26%), under-DRAW (25% vs 30%). 0.20 proven
+  // insufficient → 0.40 (same magnitude as J1's HOME-overprediction fix).
+  POL1: new Decimal('0.40'),
+  // Diagnostic 2026-06-30 (1y, n=141): NOR1 fails ECE (0.053) and is the largest
+  // model↔market gap (+0.104). Poisson badly under-models Norwegian home
+  // advantage — pred 40% HOME vs real 56% (over-AWAY +11pp). Strong empirical
+  // pull warranted. Starting 0.40; confirm Brier/ECE post-rebuild.
+  NOR1: new Decimal('0.40'),
+  // Diagnostic 2026-06-30 (1y, n=90): UECL fails ECE (0.054). Same cup pattern as
+  // UEL — under-HOME (pred 39% vs real 52%), over-DRAW (+7pp). Starting 0.35.
+  UECL: new Decimal('0.35'),
+  // Diagnostic 2026-06-30 (1y, n=71): CSL fails ECE (0.060). Mild over-AWAY (+6pp,
+  // pred 36% vs real 30%). Light empirical pull — starting 0.25.
+  CSL: new Decimal('0.25'),
+  // Diagnostic 2026-06-30 (1y, n=300): MLS fails Brier (0.659) but ECE is fine
+  // (0.036) → mostly a discrimination/parity problem (MLS is structurally
+  // balanced), not a systematic bias. Mild over-AWAY (+5pp). Trial 0.25; expect
+  // limited gain — if Brier stays > 0.65 post-rebuild, accept MLS as a hard league.
+  MLS: new Decimal('0.25'),
 };
 
 export function getLeagueThreeWayEmpiricalBlendWeight(

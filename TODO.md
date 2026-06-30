@@ -66,6 +66,32 @@ typecheck/lint/617 ✅ · web ✅. Commit `07c866e`.
 > 2026-06-15 pour refléter la nouvelle config. Promotion staking seulement après
 > recalibration modèle (P(NO) compressée = vrai blocage). Re-run l'endpoint chaque saison.
 
+**Calibration modèle par ligue — DIAGNOSTIC (FAIT) + tuning amorcé** : `/backtest/
+calibration` (1 an, 48 ligues) = **12 FAIL**. Croisé avec le **Brier modèle vs
+marché** (cotes dévigées) + le **biais directionnel** (modèle vs réel H/D/A) :
+- **Handicap structurel ~0.035** : le modèle est pire que le marché PARTOUT (même
+  les PASS : BL1 +0.042, SA +0.036) → non récupérable (Poisson-xG = sous-ensemble
+  de l'info). Ne pas le chasser.
+- **Récupérables** (biais directionnel net que le blend empirique corrige) :
+  **NOR1** (pred 40%H vs réel **56%** — rate l'avantage domicile) · **POL1** (pire
+  Brier 0.688, sur-AWAY +7pp) · **UEL/UECL** (cups, sous-HOME / sur-DRAW) · **CSL**
+  (sur-AWAY +6pp) · **MLS** (essai, mais ECE OK → pb discrimination, gain limité).
+- **Ligues dures à accepter** (pred ≈ réel, pas de biais → variance pure, marché
+  aussi haut) : **F2** (0.661, déjà 0.30), **FIN1**.
+- **Indéterminés** (couverture cotes minuscule) : SRB1, POL2, WCQE.
+
+**Mécanisme = existant** : `THREE_WAY_EMPIRICAL_BLEND_WEIGHT_MAP` (ev.constants.ts)
+blende déjà le 1X2 Poisson vers les taux empiriques d'équipe par ligue (I2 0.45,
+J1 0.40…). **Pas de blend marché, pas de nouveau chemin.** Poids de départ posés
+(2026-06-30) : POL1 0.20→0.40, UEL 0.20→0.35, +NOR1 0.40, +UECL 0.35, +CSL 0.25,
++MLS 0.25. backend typecheck/lint ✅.
+
+> **NEXT (boucle à faire tourner par toi)** : `rebuild` ces ligues (CLI) →
+> re-`POST /backtest/calibration?competitionCode=X` → si Brier/ECE encore FAIL,
+> ajuster le poids (overshoot possible) et recommencer. F2/FIN1 = accepter ;
+> suspendre les canaux résultat dessus si besoin. Dixon-Coles = piste séparée
+> (buts, pas 1X2).
+
 ### Session 2026-06-24 — récap
 
 **UX mobile `/dashboard/decisions` — FAIT** : header fixture dédié mobile (équipes
