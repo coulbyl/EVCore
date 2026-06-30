@@ -1859,6 +1859,21 @@ export const AVOID_CONFIG = {
   maxEdge: 0.3,
 } as const;
 
+// ─────────────────────────────────────────────
+// CORRECT_SCORE (exact score) — OBSERVATION ONLY. Value-first: among the
+// scorelines the book prices, emit the single best-EV one the model can price
+// (EV = modelCellProbability × odds − 1). Global config (the value mechanism is
+// league-agnostic). NEVER staked — odds are forward-collected only (no historical
+// backtest), so a selection is recorded + settled analytically to accumulate
+// forward data. `minProbability` drops deep-longshot cells (quote noise);
+// `minEv` keeps only genuine value. Dixon-Coles was rejected (2026-06-30): the
+// independent Poisson matrix is as accurate on scorelines.
+export const CORRECT_SCORE_CONFIG = {
+  enabled: true,
+  minProbability: 0.02,
+  minEv: 0,
+} as const;
+
 export function getChannelStrategyConfig(
   channel: ChannelStrategyConfigChannel,
   competitionCode: string | null | undefined,

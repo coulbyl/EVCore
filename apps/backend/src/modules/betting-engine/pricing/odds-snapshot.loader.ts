@@ -103,6 +103,7 @@ export class OddsSnapshotLoader {
       ouHtBookmaker,
       fhwBookmaker,
       dcBookmaker,
+      csBookmaker,
     ] = await Promise.all([
       this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
       this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
@@ -118,90 +119,110 @@ export class OddsSnapshotLoader {
         cutoff,
       ),
       this.findBestBookmakerForMarket(fixtureId, Market.DOUBLE_CHANCE, cutoff),
+      this.findBestBookmakerForMarket(fixtureId, Market.CORRECT_SCORE, cutoff),
     ]);
 
-    const [ouRows, bttsYesRow, bttsNoRow, htftRows, ouHtRows, fhwRows, dcRows] =
-      await Promise.all([
-        ouBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: ouBookmaker,
-                market: Market.OVER_UNDER,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        bttsBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
-              where: {
-                fixtureId,
-                bookmaker: bttsBookmaker,
-                market: Market.BTTS,
-                pick: 'YES',
-              },
-              select: { odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        bttsBookmaker
-          ? this.prisma.client.oddsSnapshot.findFirst({
-              where: {
-                fixtureId,
-                bookmaker: bttsBookmaker,
-                market: Market.BTTS,
-                pick: 'NO',
-              },
-              select: { odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        htftBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: htftBookmaker,
-                market: Market.HALF_TIME_FULL_TIME,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : [],
-        ouHtBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: ouHtBookmaker,
-                market: Market.OVER_UNDER_HT,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        fhwBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: fhwBookmaker,
-                market: Market.FIRST_HALF_WINNER,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-        dcBookmaker
-          ? this.prisma.client.oddsSnapshot.findMany({
-              where: {
-                fixtureId,
-                bookmaker: dcBookmaker,
-                market: Market.DOUBLE_CHANCE,
-              },
-              select: { pick: true, odds: true },
-              orderBy: { snapshotAt: 'desc' },
-            })
-          : null,
-      ]);
+    const [
+      ouRows,
+      bttsYesRow,
+      bttsNoRow,
+      htftRows,
+      ouHtRows,
+      fhwRows,
+      dcRows,
+      csRows,
+    ] = await Promise.all([
+      ouBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: ouBookmaker,
+              market: Market.OVER_UNDER,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      bttsBookmaker
+        ? this.prisma.client.oddsSnapshot.findFirst({
+            where: {
+              fixtureId,
+              bookmaker: bttsBookmaker,
+              market: Market.BTTS,
+              pick: 'YES',
+            },
+            select: { odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      bttsBookmaker
+        ? this.prisma.client.oddsSnapshot.findFirst({
+            where: {
+              fixtureId,
+              bookmaker: bttsBookmaker,
+              market: Market.BTTS,
+              pick: 'NO',
+            },
+            select: { odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      htftBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: htftBookmaker,
+              market: Market.HALF_TIME_FULL_TIME,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : [],
+      ouHtBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: ouHtBookmaker,
+              market: Market.OVER_UNDER_HT,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      fhwBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: fhwBookmaker,
+              market: Market.FIRST_HALF_WINNER,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      dcBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: dcBookmaker,
+              market: Market.DOUBLE_CHANCE,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      csBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: csBookmaker,
+              market: Market.CORRECT_SCORE,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+    ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
     const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
@@ -268,6 +289,14 @@ export class OddsSnapshotLoader {
       }
     }
 
+    const correctScoreOdds: Partial<Record<string, Decimal>> = {};
+    for (const row of csRows ?? []) {
+      if (!row.pick || !row.odds) continue;
+      if (!(row.pick in correctScoreOdds)) {
+        correctScoreOdds[row.pick] = new Decimal(row.odds.toString());
+      }
+    }
+
     return {
       bookmaker: best.bookmaker,
       snapshotAt: best.snapshotAt,
@@ -285,6 +314,7 @@ export class OddsSnapshotLoader {
       ouHtOdds,
       firstHalfWinnerOdds,
       doubleChanceOdds,
+      correctScoreOdds,
     };
   }
 

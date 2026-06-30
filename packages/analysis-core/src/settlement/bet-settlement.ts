@@ -138,6 +138,13 @@ export function resolvePickBetStatus(
   awayScore: number | null,
 ): BetStatus {
   if (homeScore === null || awayScore === null) return BetStatus.VOID;
+  // CORRECT_SCORE picks are dynamic scorelines "H:A" (not in PICK_CONDITIONS):
+  // won iff the final score matches exactly.
+  if (/^\d+:\d+$/.test(pick)) {
+    return pick === `${homeScore}:${awayScore}`
+      ? BetStatus.WON
+      : BetStatus.LOST;
+  }
   const condition = PICK_CONDITIONS[pick];
   if (!condition) return BetStatus.VOID;
   return condition(homeScore, awayScore) ? BetStatus.WON : BetStatus.LOST;

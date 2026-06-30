@@ -317,7 +317,9 @@ export function computeCorrectScoreMatrix(
   const matrix: Record<string, Decimal> = {};
   for (let h = 0; h < homeDist.length; h++) {
     for (let a = 0; a < awayDist.length; a++) {
-      matrix[`${h}:${a}`] = new Decimal((homeDist[h] ?? 0) * (awayDist[a] ?? 0));
+      matrix[`${h}:${a}`] = new Decimal(
+        (homeDist[h] ?? 0) * (awayDist[a] ?? 0),
+      );
     }
   }
   return matrix;

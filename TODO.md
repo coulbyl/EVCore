@@ -69,6 +69,7 @@ typecheck/lint/617 ✅ · web ✅. Commit `07c866e`.
 **Calibration modèle par ligue — DIAGNOSTIC (FAIT) + tuning amorcé** : `/backtest/
 calibration` (1 an, 48 ligues) = **12 FAIL**. Croisé avec le **Brier modèle vs
 marché** (cotes dévigées) + le **biais directionnel** (modèle vs réel H/D/A) :
+
 - **Handicap structurel ~0.035** : le modèle est pire que le marché PARTOUT (même
   les PASS : BL1 +0.042, SA +0.036) → non récupérable (Poisson-xG = sous-ensemble
   de l'info). Ne pas le chasser.
@@ -103,17 +104,17 @@ GOALS Pas-0. **Ne plus re-tester DC** sans changement majeur d'estimation des λ
 **Pistes buts retenues à la place (2026-06-30) :**
 
 - [ ] **A — Score exact comme produit** (indépendant de DC) : marché inexistant
-  (pas dans `enum Market`, pas de cotes, pas de settlement). Chantier **infra** :
-  ajouter `CORRECT_SCORE` au schéma + collecte cotes correct-score (dispo ?) +
-  résolveur settlement + mapping odds↔proba. La **matrice Poisson indépendante**
-  qu'on a déjà suffit (DC ne l'améliore pas) → pas de travail modèle, juste exposer
-  la distribution de scores existante. À cadrer comme nouveau canal Étape 7.
+      (pas dans `enum Market`, pas de cotes, pas de settlement). Chantier **infra** :
+      ajouter `CORRECT_SCORE` au schéma + collecte cotes correct-score (dispo ?) +
+      résolveur settlement + mapping odds↔proba. La **matrice Poisson indépendante**
+      qu'on a déjà suffit (DC ne l'améliore pas) → pas de travail modèle, juste exposer
+      la distribution de scores existante. À cadrer comme nouveau canal Étape 7.
 - [ ] **B — Meilleure estimation des λ** (vrai levier buts ET 1X2) : les λ viennent
-  du xG sur-shrinké (`LAMBDA_SHRINKAGE_FACTOR=0.7` + blend moyenne ligue). Réduire
-  le shrinkage là où le xG est fiable / passer à une régression Poisson attaque-
-  défense (force d'attaque × force de défense × avantage terrain) améliorerait la
-  calibration de TOUS les marchés (buts + résultat) bien plus que DC. Mesurable via
-  `/backtest/calibration`. C'est le prérequis modèle commun (cf. reprise en tête).
+      du xG sur-shrinké (`LAMBDA_SHRINKAGE_FACTOR=0.7` + blend moyenne ligue). Réduire
+      le shrinkage là où le xG est fiable / passer à une régression Poisson attaque-
+      défense (force d'attaque × force de défense × avantage terrain) améliorerait la
+      calibration de TOUS les marchés (buts + résultat) bien plus que DC. Mesurable via
+      `/backtest/calibration`. C'est le prérequis modèle commun (cf. reprise en tête).
 
 ### Session 2026-06-24 — récap
 
@@ -645,10 +646,10 @@ Dataset reconstruit sain (cf. § Reprise).
   CANDIDATS, pas config finale. Validation **par saison** obligatoire dans
   le `ChannelTuningService` étendu avant activation (cf. méthodo des
   commentaires datés de la config existante). - [x] Config GOALS (2026-06-22) : sous-forme `GoalsLeagueConfig { lines:
-    [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
+  [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
   `getGoalsLineConfigs`. Candidats du sweep seedés **tous `enabled: false`**
   (en attente validation par saison). - [x] `goals.strategy.ts` (2026-06-22) : fonction pure `decideGoals(context,
-    lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
+  lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
   par ligne → ranking value-first (EV ↓, puis proba pour sélections sans
   cote) → 1 sélection rank 1. Enregistrée `registry.ts` (6e primaire).
   10 tests + orchestrateur à jour. backend typecheck/lint/581 tests ✅. - [x] **Tuning étendu (2026-06-22)** : `BacktestRepository` lit `over25/under25`
@@ -752,30 +753,40 @@ Dataset reconstruit sain (cf. § Reprise).
 - [ ] **A — `CORRECT_SCORE` (score exact)** — nouveau marché/canal. Chantier
       **infra, pas modèle** (la matrice Poisson indépendante existante suffit, DC
       écarté 2026-06-30). **Dispo API testée 2026-06-30 (API-Football Pro)** : - **bet id 10 = « Exact Score »** (full-time ; 31/62 = mi-temps). Forme :
-        `bookmakers[].bets[id==10].values[]={value:"1:0", odd:"4.75"}`. - **Stockage déjà compatible** : `OddsSnapshot(market,pick,odds)` → un
-        score exact = `market=CORRECT_SCORE, pick="1:0", odds=…`. Seul changement
-        schéma = ajouter `CORRECT_SCORE` à `enum Market` (migration **ton CLI**). - **Worker** : étendre `odds-prematch-sync.worker.ts` (ajouter `EXACT_SCORE:10`
-        à `API_FOOTBALL_BET_IDS`, itérer `.values`, parser `"H:A"`) — pattern O/U. - **Couverture** : 7/12 books, 21→121 scorelines (cellules basses bien cotées). - ⚠️ **FORWARD-ONLY** : `/odds?league&season` = 0 sur l'historique (rétention
-        prematch courte) → **pas de backfill ni backtest ROI**. Comme GOALS alt-lines
-        → `CORRECT_SCORE` démarre en **observation** (settlé analytiquement, jamais
-        staké tant que pas de forward ROI). - **Incrément 1 — COLLECTE (FAIT 2026-06-30, en attente régen Prisma)** :
-        `CORRECT_SCORE` ajouté à `enum Market` (schéma) ; `EXACT_SCORE:10` dans
-        `API_FOOTBALL_BET_IDS` ; worker `odds-prematch-sync` extrait le bet 10
-        (`extractCorrectScoreOdds`, parse `"H:A"`, skip buckets « Other ») et écrit
-        des `OddsSnapshot(market=CORRECT_SCORE, pick="1:0", odds)` via le pattern
-        `upsertNonOneXTwo` (primaire + secondaire). `correctScoreOdds` ajouté aux 2
-        input-types repo + worker historique (`{}`). backend lint ✅, worker spec
-        17 tests ✅. **⚠️ typecheck rouge sur 2 lignes tant que le client Prisma
-        n'est pas régénéré (enum) → `prisma migrate dev` + `generate` côté TOI.**
-        Une fois régénéré : typecheck vert + la collecte forward démarre au prochain
-        run du sync prematch. - **Incrément 2 — MATRICE DE SCORE (FAIT 2026-06-30)** :
-        `computeCorrectScoreMatrix(λh, λa, maxGoals=6)` (analysis-core/poisson.ts) →
-        `Record<"H:A", Decimal>` normalisé (49 cellules), produit indépendant (DC
-        écarté), **cohérent** 1X2/O/U/BTTS. Fonction pure exportée + 3 tests. Pas
-        encore câblée dans `MatchProbabilities`/features (évite bloat + golden) —
-        câblage à l'incrément 3 avec la stratégie. - **Incréments suivants (à faire)** : 3) canal `CorrectScore` (observation) +
-        mapping odds↔cellule + settlement `"H:A"` vs score réel (+ exposer λh/λa ou
-        la matrice au `StrategyContext`) ; 4) front.
+      `bookmakers[].bets[id==10].values[]={value:"1:0", odd:"4.75"}`. - **Stockage déjà compatible** : `OddsSnapshot(market,pick,odds)` → un
+      score exact = `market=CORRECT_SCORE, pick="1:0", odds=…`. Seul changement
+      schéma = ajouter `CORRECT_SCORE` à `enum Market` (migration **ton CLI**). - **Worker** : étendre `odds-prematch-sync.worker.ts` (ajouter `EXACT_SCORE:10`
+      à `API_FOOTBALL_BET_IDS`, itérer `.values`, parser `"H:A"`) — pattern O/U. - **Couverture** : 7/12 books, 21→121 scorelines (cellules basses bien cotées). - ⚠️ **FORWARD-ONLY** : `/odds?league&season` = 0 sur l'historique (rétention
+      prematch courte) → **pas de backfill ni backtest ROI**. Comme GOALS alt-lines
+      → `CORRECT_SCORE` démarre en **observation** (settlé analytiquement, jamais
+      staké tant que pas de forward ROI). - **Incrément 1 — COLLECTE (FAIT 2026-06-30, en attente régen Prisma)** :
+      `CORRECT_SCORE` ajouté à `enum Market` (schéma) ; `EXACT_SCORE:10` dans
+      `API_FOOTBALL_BET_IDS` ; worker `odds-prematch-sync` extrait le bet 10
+      (`extractCorrectScoreOdds`, parse `"H:A"`, skip buckets « Other ») et écrit
+      des `OddsSnapshot(market=CORRECT_SCORE, pick="1:0", odds)` via le pattern
+      `upsertNonOneXTwo` (primaire + secondaire). `correctScoreOdds` ajouté aux 2
+      input-types repo + worker historique (`{}`). backend lint ✅, worker spec
+      17 tests ✅. **⚠️ typecheck rouge sur 2 lignes tant que le client Prisma
+      n'est pas régénéré (enum) → `prisma migrate dev` + `generate` côté TOI.**
+      Une fois régénéré : typecheck vert + la collecte forward démarre au prochain
+      run du sync prematch. - **Incrément 2 — MATRICE DE SCORE (FAIT 2026-06-30)** :
+      `computeCorrectScoreMatrix(λh, λa, maxGoals=6)` (analysis-core/poisson.ts) →
+      `Record<"H:A", Decimal>` normalisé (49 cellules), produit indépendant (DC
+      écarté), **cohérent** 1X2/O/U/BTTS. Fonction pure exportée + 3 tests. Pas
+      encore câblée dans `MatchProbabilities`/features (évite bloat + golden) —
+      câblage à l'incrément 3 avec la stratégie. - **Incrément 3 — CANAL (FAIT 2026-06-30)** : `StrategyChannel.CORRECT_SCORE`
+      (enum domaine + Prisma, conformance ✅), `CorrectScoreStrategy`/
+      `decideCorrectScore` (primaire) : matrice via `computeCorrectScoreMatrix`, EV
+      par scoreline coté = `p×cote−1`, émet le **meilleur EV** (rank 1), filtre
+      longshots (`minProbability` 0.02) + `minEv` 0. `CORRECT_SCORE_CONFIG` global,
+      observation-only. λh/λa exposés au `StrategyContext` (optionnels, peuplés par
+      le builder, 2 call-sites engine). `FullOddsSnapshot.correctScoreOdds` +
+      `resolveSelectionOdds` case + loader charge les cotes. Settlement :
+      `resolvePickBetStatus` gère "H:A" (fallback auto). Tests strat+settlement+
+      service. analysis-core 40 ✅ · backend 623 ✅ · typecheck/lint ✅. > ⚠️ Migration DB `ALTER TYPE "StrategyChannel" ADD VALUE 'CORRECT_SCORE'` à
+      appliquer côté toi avant qu'un run persiste un canal CORRECT_SCORE. - **Incrément suivant (à faire)** : 4) front — afficher CORRECT_SCORE dans
+      `/dashboard/decisions` (couleur/label `channel-constants`, token CSS, i18n,
+      `formatPickForDisplay` du pick "H:A").
 - [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
       (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
       là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts

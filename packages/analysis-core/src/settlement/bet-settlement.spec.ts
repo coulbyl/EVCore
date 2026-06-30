@@ -22,6 +22,12 @@ describe("resolvePickBetStatus", () => {
     expect(resolvePickBetStatus("HOME", null, 1)).toBe(BetStatus.VOID);
     expect(resolvePickBetStatus("NONSENSE", 1, 0)).toBe(BetStatus.VOID);
   });
+
+  it("settles CORRECT_SCORE picks 'H:A' by exact match", () => {
+    expect(resolvePickBetStatus("2:1", 2, 1)).toBe(BetStatus.WON);
+    expect(resolvePickBetStatus("1:0", 2, 1)).toBe(BetStatus.LOST);
+    expect(resolvePickBetStatus("0:0", 0, 0)).toBe(BetStatus.WON);
+  });
 });
 
 describe("resolveComboPickBetStatus", () => {

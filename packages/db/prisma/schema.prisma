@@ -145,6 +145,7 @@ enum StrategyChannel {
   CONSENSUS
   CONTRARIAN
   AVOID
+  CORRECT_SCORE
   @@schema("public")
 }
 

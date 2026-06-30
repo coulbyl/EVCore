@@ -19,6 +19,8 @@ export type BuildStrategyContextInput = {
   competitionCode: string | null;
   deterministicScore: Decimal;
   probabilities: MatchProbabilities;
+  lambdaHome?: number;
+  lambdaAway?: number;
   evaluatedPicks: readonly EvaluatedPick[];
   odds: FullOddsSnapshot | null;
   signals: ContextSignals;
@@ -43,6 +45,8 @@ export function buildStrategyContext(
     phase: input.phase ?? MODEL_RUN_PHASE.PRE_KICKOFF,
     deterministicScore: input.deterministicScore,
     probabilities: input.probabilities,
+    lambdaHome: input.lambdaHome,
+    lambdaAway: input.lambdaAway,
     evaluatedMarkets: groupPicksByMarket(input.evaluatedPicks),
     odds: input.odds,
     signals: input.signals,

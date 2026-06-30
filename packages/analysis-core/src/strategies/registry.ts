@@ -8,6 +8,7 @@ import { DrawStrategy } from "./draw.strategy";
 import { GoalsStrategy } from "./goals.strategy";
 import { ConsensusStrategy } from "./consensus.strategy";
 import { AvoidStrategy } from "./avoid.strategy";
+import { CorrectScoreStrategy } from "./correct-score.strategy";
 
 export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new ValueStrategy(),
@@ -16,6 +17,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new BttsStrategy(),
   new DrawStrategy(),
   new GoalsStrategy(),
+  new CorrectScoreStrategy(),
   new ConsensusStrategy(),
   new AvoidStrategy(),
 ];

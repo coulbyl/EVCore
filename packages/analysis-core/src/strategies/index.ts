@@ -22,6 +22,10 @@ export { GoalsStrategy, decideGoals } from "./goals.strategy";
 export { ConsensusStrategy, decideConsensus } from "./consensus.strategy";
 export { AvoidStrategy, decideAvoid } from "./avoid.strategy";
 export {
+  CorrectScoreStrategy,
+  decideCorrectScore,
+} from "./correct-score.strategy";
+export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
   getBttsNoConfig,
@@ -31,6 +35,7 @@ export {
   getGoalsLineConfigs,
   CONSENSUS_CONFIG,
   AVOID_CONFIG,
+  CORRECT_SCORE_CONFIG,
   getChannelStrategyConfig,
   type BttsNoLeagueConfig,
   type ChannelStrategyLeagueConfig,

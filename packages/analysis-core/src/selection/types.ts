@@ -36,6 +36,9 @@ export type FullOddsSnapshot = {
   >;
   firstHalfWinnerOdds: { home: Decimal; draw: Decimal; away: Decimal } | null;
   doubleChanceOdds: { "1X": Decimal; X2: Decimal; "12": Decimal | null } | null;
+  // Full-time exact score: scoreline "H:A" → odds. Observation-only market;
+  // optional so existing snapshot builders/tests don't need to set it.
+  correctScoreOdds?: Partial<Record<string, Decimal>>;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

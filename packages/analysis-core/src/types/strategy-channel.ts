@@ -18,6 +18,7 @@ export const STRATEGY_CHANNEL = {
   CONSENSUS: "CONSENSUS",
   CONTRARIAN: "CONTRARIAN",
   AVOID: "AVOID",
+  CORRECT_SCORE: "CORRECT_SCORE",
 } as const;
 
 export type StrategyChannel =

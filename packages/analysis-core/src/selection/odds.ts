@@ -47,6 +47,8 @@ export function resolveSelectionOdds(
       return null;
     case Market.HALF_TIME_FULL_TIME:
       return odds.htftOdds[pick as keyof typeof odds.htftOdds] ?? null;
+    case Market.CORRECT_SCORE:
+      return odds.correctScoreOdds?.[pick] ?? null;
     default:
       return null;
   }

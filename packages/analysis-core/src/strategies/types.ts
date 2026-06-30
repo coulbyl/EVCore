@@ -42,6 +42,12 @@ export type StrategyContext = {
   phase: ModelRunPhase;
   deterministicScore: Decimal;
   probabilities: MatchProbabilities;
+  // Poisson goal expectations behind `probabilities` — exposed so the
+  // CORRECT_SCORE strategy can rebuild the per-scoreline matrix on demand
+  // (kept out of MatchProbabilities/features to avoid bloat). Optional: absent
+  // in legacy/test contexts that don't set them.
+  lambdaHome?: number;
+  lambdaAway?: number;
   evaluatedMarkets: EvaluatedMarket[];
   odds: FullOddsSnapshot | null;
   signals: ContextSignals;
