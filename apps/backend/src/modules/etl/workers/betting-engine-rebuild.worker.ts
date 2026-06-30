@@ -1,12 +1,22 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import type { Job } from 'bullmq';
+import {
+  Processor,
+  WorkerHost,
+  OnWorkerEvent,
+  InjectQueue,
+} from '@nestjs/bullmq';
+import type { Job, Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
 import { FixtureStatus } from '@evcore/db';
-import { BULLMQ_QUEUES } from '@config/etl.constants';
+import {
+  BULLMQ_QUEUES,
+  BULLMQ_DEFAULT_JOB_OPTIONS,
+} from '@config/etl.constants';
+import { formatDateUtc } from '@utils/date.utils';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { NotificationService } from '../../notification/notification.service';
+import type { AiEngineJobData } from './betting-engine-analysis.worker';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type BettingEngineRebuildJobData = {
@@ -24,6 +34,7 @@ type RebuildResult = {
   skipped: number;
   failed: number;
   settled: number;
+  couponDatesQueued: number;
 };
 
 const logger = createLogger('betting-engine-rebuild-worker');
@@ -61,11 +72,13 @@ function buildScheduledAtFilter(
 export class BettingEngineRebuildWorker extends WorkerHost {
   private readonly concurrency: number;
 
-  // eslint-disable-next-line max-params -- Nest constructor injection of 4 providers.
+  // eslint-disable-next-line max-params -- Nest constructor injection of 5 providers.
   constructor(
     private readonly prisma: PrismaService,
     private readonly bettingEngine: BettingEngineService,
     private readonly notification: NotificationService,
+    @InjectQueue(BULLMQ_QUEUES.AI_ENGINE)
+    private readonly aiEngineQueue: Queue<AiEngineJobData>,
     config: ConfigService,
   ) {
     super();
@@ -95,7 +108,7 @@ export class BettingEngineRebuildWorker extends WorkerHost {
         modelRuns: { none: {} },
         ...(scheduledAt ? { scheduledAt } : {}),
       },
-      select: { id: true },
+      select: { id: true, scheduledAt: true },
       orderBy: { scheduledAt: 'asc' },
     });
 
@@ -108,6 +121,8 @@ export class BettingEngineRebuildWorker extends WorkerHost {
     let settled = 0;
     let processed = 0;
     let lastLogged = 0;
+    const couponDates = new Set<string>();
+    let couponDatesQueued = 0;
 
     for (let i = 0; i < total; i += this.concurrency) {
       const batch = fixtures.slice(i, i + this.concurrency);
@@ -136,6 +151,7 @@ export class BettingEngineRebuildWorker extends WorkerHost {
         } else if (outcome.value.analyzed) {
           analyzed += 1;
           settled += outcome.value.settled;
+          couponDates.add(formatDateUtc(batch[j].scheduledAt));
         } else {
           skipped += 1;
         }
@@ -154,11 +170,27 @@ export class BettingEngineRebuildWorker extends WorkerHost {
       }
     }
 
+    couponDatesQueued = await this.queueCouponGeneration(couponDates);
+
     logger.info(
-      { seasonId, analyzed, skipped, failed, settled },
+      {
+        seasonId,
+        analyzed,
+        skipped,
+        failed,
+        settled,
+        couponDatesQueued,
+      },
       'Rebuild job done',
     );
-    return { seasonId, analyzed, skipped, failed, settled };
+    return {
+      seasonId,
+      analyzed,
+      skipped,
+      failed,
+      settled,
+      couponDatesQueued,
+    };
   }
 
   private async rebuildFixture(
@@ -170,6 +202,44 @@ export class BettingEngineRebuildWorker extends WorkerHost {
     }
     const { settled } = await this.bettingEngine.settleOpenBets(fixtureId);
     return { analyzed: true, settled };
+  }
+
+  private async queueCouponGeneration(
+    couponDates: Set<string>,
+  ): Promise<number> {
+    const dates = [...couponDates].sort();
+    if (dates.length === 0) return 0;
+
+    const outcomes = await Promise.allSettled(
+      dates.map((date) =>
+        this.aiEngineQueue.add(
+          'generate-coupons',
+          { date },
+          BULLMQ_DEFAULT_JOB_OPTIONS,
+        ),
+      ),
+    );
+    const queued = outcomes.filter(
+      (outcome) => outcome.status === 'fulfilled',
+    ).length;
+    const failedDates = outcomes
+      .map((outcome, index) =>
+        outcome.status === 'rejected' ? dates[index] : undefined,
+      )
+      .filter((date): date is string => date !== undefined);
+
+    if (failedDates.length > 0) {
+      logger.error(
+        { failedDates, queued, requested: dates.length },
+        'Failed to queue coupon generation after rebuild',
+      );
+    }
+
+    logger.info(
+      { dates, queued, failed: failedDates.length },
+      'AI engine coupon generation queued after rebuild',
+    );
+    return queued;
   }
 
   @OnWorkerEvent('failed')
