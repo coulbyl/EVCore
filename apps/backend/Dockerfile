@@ -27,6 +27,7 @@ ENV DATABASE_URL=$DATABASE_URL
 
 # Build workspace packages in dependency order
 # prisma generate (inside db build) downloads schema-engine for linux-musl
+RUN pnpm --filter @evcore/analysis-core build
 RUN pnpm --filter @evcore/db build
 RUN pnpm --filter @evcore/transactional build
 
