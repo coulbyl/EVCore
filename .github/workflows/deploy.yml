@@ -49,8 +49,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Expose GitHub Actions cache API v2
+        uses: crazy-max/ghaction-github-runtime@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          version: latest
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -62,7 +67,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/evcore-backend:latest
             ghcr.io/${{ github.repository_owner }}/evcore-backend:${{ steps.version.outputs.tag }}
           cache-from: type=gha,scope=evcore-backend
-          cache-to: type=gha,mode=max,scope=evcore-backend
+          cache-to: type=gha,mode=min,scope=evcore-backend
 
   docker-web:
     name: Build & push web image to GHCR
@@ -98,8 +103,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Expose GitHub Actions cache API v2
+        uses: crazy-max/ghaction-github-runtime@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          version: latest
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -113,7 +123,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/evcore-web:latest
             ghcr.io/${{ github.repository_owner }}/evcore-web:${{ steps.version.outputs.tag }}
           cache-from: type=gha,scope=evcore-web
-          cache-to: type=gha,mode=max,scope=evcore-web
+          cache-to: type=gha,mode=min,scope=evcore-web
 
   docker-ml-worker:
     name: Build & push ML worker image to GHCR
@@ -148,8 +158,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Expose GitHub Actions cache API v2
+        uses: crazy-max/ghaction-github-runtime@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          version: latest
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -161,7 +176,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:latest
             ghcr.io/${{ github.repository_owner }}/evcore-ml-worker:${{ steps.version.outputs.tag }}
           cache-from: type=gha,scope=evcore-ml-worker
-          cache-to: type=gha,mode=max,scope=evcore-ml-worker
+          cache-to: type=gha,mode=min,scope=evcore-ml-worker
 
   deploy:
     name: Deploy to Hetzner
