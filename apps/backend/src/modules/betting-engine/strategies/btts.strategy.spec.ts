@@ -76,17 +76,17 @@ function makeContext(
 describe('BttsStrategy', () => {
   const strategy = new BttsStrategy();
 
-  it('still evaluates the global NO side when a league has no YES config', () => {
-    // Unknown league → YES disabled, but NO is global (observation). bttsNo here
-    // is 0.35 (< 0.65) so neither side clears → REJECTED, not DISABLED.
-    expect(strategy.evaluate(makeContext(0.65, 'UNKNOWN_LEAGUE')).status).toBe(
-      CHANNEL_DECISION_STATUS.REJECTED,
+  it('is DISABLED when a league has neither a YES nor a NO config', () => {
+    // Unknown league → YES disabled and NO disabled (NO is per-league now,
+    // default disabled). No candidate to evaluate → DISABLED, not REJECTED.
+    expect(strategy.evaluate(makeContext(0.2, 'UNKNOWN_LEAGUE')).status).toBe(
+      CHANNEL_DECISION_STATUS.DISABLED,
     );
   });
 
-  it('selects the NO side when bttsNo clears the global threshold (0.65)', () => {
-    // bttsYes 0.20 → bttsNo 0.80 ≥ 0.65. Fires even in a league without YES config.
-    const decision = strategy.evaluate(makeContext(0.2, 'UNKNOWN_LEAGUE'));
+  it('selects the NO side when bttsNo clears the per-league threshold', () => {
+    // SA has NO enabled at 0.58 (observation). bttsYes 0.20 → bttsNo 0.80 ≥ 0.58.
+    const decision = strategy.evaluate(makeContext(0.2, 'SA'));
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].pick).toBe('NO');
     expect(decision.selections[0].probability.toNumber()).toBeCloseTo(0.8);

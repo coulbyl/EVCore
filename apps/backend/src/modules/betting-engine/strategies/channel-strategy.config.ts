@@ -4,6 +4,7 @@
 export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
+  getBttsNoConfig,
   CHANNEL_STRATEGY_CONFIG_CHANNELS,
   CHANNEL_STRATEGY_CONFIG,
   GOALS_CONFIG,
@@ -11,6 +12,7 @@ export {
   CONSENSUS_CONFIG,
   AVOID_CONFIG,
   getChannelStrategyConfig,
+  type BttsNoLeagueConfig,
   type ChannelStrategyLeagueConfig,
   type ChannelStrategyConfigChannel,
   type GoalsLine,

@@ -517,6 +517,7 @@
     "colRecSample": "Sample",
     "colSegment": "Line",
     "goalsSection": "GOALS — over/under sweep (line × side)",
+    "bttsNoSection": "BTTS NO — per-league sweep (observation)",
     "verdict": {
       "PASS": "Pass",
       "FAIL": "Fail",

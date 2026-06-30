@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  getBttsNoConfig,
   getChannelStrategyConfig,
   GOALS_CONFIG,
 } from '@modules/betting-engine/strategies/channel-strategy.config';
@@ -9,11 +10,13 @@ import {
   type ChannelTuningRow,
 } from './backtest.repository';
 import {
+  buildBttsNoSweep,
   buildChannelThresholdSweep,
   buildGoalsLineSweep,
 } from './tuning.metrics';
 import { GOALS_TUNING_SIDES, TUNING_CHANNELS } from './tuning.constants';
 import type {
+  BttsNoTuningReport,
   ChannelTuningReport,
   ChannelTuningResponse,
   GoalsTuningReport,
@@ -68,8 +71,24 @@ export class ChannelTuningService {
 
     const reports: ChannelTuningReport[] = [];
     const goalsReports: GoalsTuningReport[] = [];
+    const bttsNoReports: BttsNoTuningReport[] = [];
     for (const [code, group] of byComp) {
       const competitionName = group[0]?.competitionName ?? code;
+      const bttsNoSweep = buildBttsNoSweep(group);
+      if (bttsNoSweep.candidates > 0) {
+        const noConfig = getBttsNoConfig(code);
+        bttsNoReports.push({
+          competitionCode: code,
+          competitionName,
+          candidates: bttsNoSweep.candidates,
+          current: {
+            enabled: noConfig.enabled,
+            threshold: noConfig.threshold,
+          },
+          points: bttsNoSweep.points,
+          recommended: bttsNoSweep.recommended,
+        });
+      }
       for (const channel of TUNING_CHANNELS) {
         const sweep = buildChannelThresholdSweep(channel, group);
         if (sweep.candidates === 0) continue;
@@ -123,12 +142,16 @@ export class ChannelTuningService {
         a.competitionCode.localeCompare(b.competitionCode) ||
         a.side.localeCompare(b.side),
     );
+    bttsNoReports.sort((a, b) =>
+      a.competitionCode.localeCompare(b.competitionCode),
+    );
 
     return {
       from: range.fromIso,
       to: range.toIso,
       reports,
       goalsReports,
+      bttsNoReports,
       generatedAt: new Date().toISOString(),
     };
   }

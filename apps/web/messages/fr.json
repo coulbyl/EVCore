@@ -517,6 +517,7 @@
     "colRecSample": "Échantillon",
     "colSegment": "Ligne",
     "goalsSection": "GOALS — sweep over/under (ligne × côté)",
+    "bttsNoSection": "BTTS NO — sweep par championnat (observation)",
     "verdict": {
       "PASS": "Validé",
       "FAIL": "Échec",

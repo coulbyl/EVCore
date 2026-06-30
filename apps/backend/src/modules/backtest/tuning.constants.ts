@@ -70,3 +70,22 @@ export const GOALS_PROMOTION_RULE: ChannelPromotionRule = {
   hitRateFloor: null,
   roiFloor: 0.05,
 };
+
+/**
+ * BTTS NO tuning — calibrated separately from the YES side. The signal is the
+ * model P(NO BTTS) = 1 − P(YES). NO is structurally more likely in defensive
+ * leagues, so the grid reaches higher than the YES grid. v1 was a single global
+ * threshold (BTTS_NO_CONFIG); this sweep produces a per-league recommendation so
+ * NO can be calibrated championship by championship like YES. Promotion mirrors
+ * BTTS YES (hit rate + non-negative ROI) — BTTS is a prediction channel (never
+ * staked), so a NO selection is recorded + settled analytically only.
+ */
+export const BTTS_NO_TUNING_THRESHOLD_GRID: number[] = [
+  0.5, 0.55, 0.58, 0.6, 0.62, 0.65, 0.68, 0.7,
+];
+
+export const BTTS_NO_PROMOTION_RULE: ChannelPromotionRule = {
+  minSample: 20,
+  hitRateFloor: 0.55,
+  roiFloor: 0,
+};

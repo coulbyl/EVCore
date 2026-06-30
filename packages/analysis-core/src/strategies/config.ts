@@ -35,17 +35,48 @@ const BTTS_DEFAULT: ChannelStrategyLeagueConfig = {
   minSampleN: 20,
 };
 
-// BTTS NO side — calibrated SEPARATELY from YES (TODO Étape 7 / doc §6.1).
-// Global threshold (per-league volume too thin), and OBSERVATION ONLY: the
-// 2026-06-23 feasibility (3 seasons) found P(NO) ≥ 0.65 borderline — +13.8%
-// aggregate but driven by 2024-25 (2023-24 negative on n=10, sample count
-// unstable across seasons). Not staking-grade. BTTS is a prediction channel
-// (never staked), so a NO selection is recorded + settled analytically only —
-// it accumulates forward cross-season data before any staking promotion.
-export const BTTS_NO_CONFIG = {
-  enabled: true,
-  threshold: 0.65,
-} as const;
+// BTTS NO side — calibrated SEPARATELY from YES (TODO Étape 7 / doc §6.1) and
+// now PER-LEAGUE, OBSERVATION ONLY. BTTS is a prediction channel (never staked),
+// so a NO selection is recorded + settled analytically only — zero exposure.
+//
+// Calibration method (2026-06-30, per-league sweep via /backtest/tuning
+// bttsNoReports): NO has NO validated cross-season edge — the per-season sweep
+// shows no league holding positive ROI at a stable threshold (I2 single-season,
+// L1/SA flip to FAIL in 2024-25), and the model's P(NO) carries no lift over the
+// league base rate (at volume thresholds hit rate ≈ base rate). So segments are
+// NOT chosen by ROI (that would bake in 2025-26 variance). Instead, structural:
+//   • eligible = leagues where NO is a genuine co-viable outcome (empirical
+//     no-BTTS base rate ≥ 0.46) AND the model produces real volume (≥ 15 NO
+//     candidates / year at the threshold) — high-scoring leagues stay disabled,
+//   • threshold = 0.58 for defensive leagues (base ≥ 0.50), 0.55 for the
+//     near-even ones — a mild conviction gate, not an ROI-fit.
+// This accumulates clean forward NO data per defensive league. Promote a segment
+// to staking ONLY if a real cross-season edge emerges after the model gains a NO
+// signal (the per-league model recalibration is the actual blocker). Re-run the
+// sweep each season; reopen via the endpoint already in place.
+export type BttsNoLeagueConfig = { enabled: boolean; threshold: number };
+
+const BTTS_NO_DEFAULT: BttsNoLeagueConfig = { enabled: false, threshold: 0.65 };
+
+export const BTTS_NO_CONFIG: Record<string, BttsNoLeagueConfig> = {
+  // base no-BTTS ≥ 0.50 (defensive) → threshold 0.58
+  SA: { enabled: true, threshold: 0.58 }, // base 0.50, n~25/yr, hit 56%
+  BRA1: { enabled: true, threshold: 0.58 }, // base 0.50, n~19/yr
+  FRI: { enabled: true, threshold: 0.58 }, // base 0.50, n~40/yr, hit 55%
+  // base 0.46–0.48 (near-even) → threshold 0.55
+  EL1: { enabled: true, threshold: 0.55 }, // base 0.48, n~16/yr
+  CH: { enabled: true, threshold: 0.55 }, // base 0.47, n~72/yr
+  EL2: { enabled: true, threshold: 0.55 }, // base 0.47, n~26/yr
+  LL: { enabled: true, threshold: 0.55 }, // base 0.47, n~40/yr, hit 55%
+};
+
+// Resolve the BTTS NO config for a league (disabled default when not listed).
+export function getBttsNoConfig(
+  competitionCode: string | null | undefined,
+): BttsNoLeagueConfig {
+  if (competitionCode == null) return BTTS_NO_DEFAULT;
+  return BTTS_NO_CONFIG[competitionCode] ?? BTTS_NO_DEFAULT;
+}
 
 export const CHANNEL_STRATEGY_CONFIG_CHANNELS: ChannelStrategyConfigChannel[] =
   ["DOMINANT", "DRAW", "BTTS"];

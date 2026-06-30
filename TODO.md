@@ -522,6 +522,21 @@ Dataset reconstruit sain (cf. § Reprise).
   → activé en **observation seulement** (BTTS n'est jamais staké ; sélection NO
   enregistrée + settlée analytiquement) pour accumuler des données forward.
   10 tests (YES rétrocompat + NO). backend typecheck/lint/609 tests ✅. > Promotion staking seulement si le signal NO se confirme sur saisons futures.
+  - **PER-LEAGUE (2026-06-30)** : `BTTS_NO_CONFIG` passé de seuil global → **map par
+    championnat** + `getBttsNoConfig(code)` (default disabled). **Outillage d'abord** :
+    `/backtest/tuning` produit désormais `bttsNoReports` par ligue (miroir exact du
+    YES : `probBttsNo`/`oddsBttsNo` au repo, `buildBttsNoSweep`, grille + règle de
+    promotion NO dédiées, DTO). **Verdict calibration** : aucun edge cross-saison
+    (sweep par saison → I2 1 seule saison, L1/SA basculent FAIL en 2024-25 ; la
+    P(NO) du modèle n'a **aucun lift** sur le taux de base de la ligue → à volume,
+    hit ≈ base rate). Le +22%/+16% du 1-an = variance 2025-26. **Décision produit
+    (Option 2 pragmatique)** : sélection **structurelle, pas ROI** — éligible =
+    base no-BTTS ≥ 0.46 (NO co-viable) ET volume ≥ 15/an ; seuil 0.58 (défensives
+    base ≥ 0.50) / 0.55 (quasi-équilibrées). 7 ligues activées en observation :
+    **SA·BRA1·FRI @0.58, EL1·CH·EL2·LL @0.55**. Toujours jamais staké. analysis-core
+    rebuild + backend typecheck/lint/617 tests ✅. > Le vrai blocage = le modèle
+    (P(NO) compressée) ; rouvrir le NO staking seulement après recalibration ligue.
+    Re-run l'endpoint chaque saison.
 - [~] `GOALS` (`OVER_UNDER`) — **canal prioritaire** (probabilités déjà émises).
   Plan figé 2026-06-22 (archi). **Spécificité** : pas un mono-signal comme
   BTTS/DRAW — c'est une **échelle de 8 picks** (Over/Under × {1.5, 2.5, 3.5, 4.5}),

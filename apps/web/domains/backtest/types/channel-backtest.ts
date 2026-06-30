@@ -104,10 +104,31 @@ export type GoalsTuningReport = {
   recommended: ThresholdRecommendation | null;
 };
 
+/** The BTTS NO threshold currently configured for a competition (per-league). */
+export type CurrentBttsNoConfig = {
+  enabled: boolean;
+  threshold: number;
+};
+
+/**
+ * Offline tuning report for BTTS NO on one competition. NO is calibrated
+ * separately from the YES side (different probability scale) and per-league.
+ * Advisory only — observation channel, never staked.
+ */
+export type BttsNoTuningReport = {
+  competitionCode: string;
+  competitionName: string;
+  candidates: number;
+  current: CurrentBttsNoConfig;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
 export type ChannelTuningResponse = {
   from: string;
   to: string;
   reports: ChannelTuningReport[];
   goalsReports: GoalsTuningReport[];
+  bttsNoReports: BttsNoTuningReport[];
   generatedAt: string;
 };

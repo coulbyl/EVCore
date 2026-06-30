@@ -45,6 +45,7 @@ export type ChannelTuningRow = {
   probDraw: number;
   probAway: number;
   probBttsYes: number | null;
+  probBttsNo: number | null;
   // GOALS (Over/Under 2.5) — the only line with usable odds coverage in history.
   probOver25: number | null;
   probUnder25: number | null;
@@ -52,6 +53,7 @@ export type ChannelTuningRow = {
   oddsDraw: number | null;
   oddsAway: number | null;
   oddsBttsYes: number | null;
+  oddsBttsNo: number | null;
   oddsOver25: number | null;
   oddsUnder25: number | null;
 };
@@ -230,7 +232,8 @@ export class BacktestRepository {
     });
 
     const oneXTwoByFixture = await this.latestOneXTwoOdds(to, fixtureWhere);
-    const bttsYesByFixture = await this.latestBttsYesOdds(to, fixtureWhere);
+    const bttsYesByFixture = await this.latestBttsOdds(to, fixtureWhere, 'YES');
+    const bttsNoByFixture = await this.latestBttsOdds(to, fixtureWhere, 'NO');
     const overByFixture = await this.latestOverUnderOdds(
       to,
       fixtureWhere,
@@ -258,12 +261,14 @@ export class BacktestRepository {
         probDraw: probs.draw,
         probAway: probs.away,
         probBttsYes: probs.bttsYes,
+        probBttsNo: probs.bttsNo,
         probOver25: probs.over25,
         probUnder25: probs.under25,
         oddsHome: oneXTwo?.home ?? null,
         oddsDraw: oneXTwo?.draw ?? null,
         oddsAway: oneXTwo?.away ?? null,
         oddsBttsYes: bttsYesByFixture.get(f.id) ?? null,
+        oddsBttsNo: bttsNoByFixture.get(f.id) ?? null,
         oddsOver25: overByFixture.get(f.id) ?? null,
         oddsUnder25: underByFixture.get(f.id) ?? null,
       });
@@ -336,15 +341,16 @@ export class BacktestRepository {
     return byFixture;
   }
 
-  /** Latest BTTS YES odds per fixture in the window. */
-  private async latestBttsYesOdds(
+  /** Latest BTTS odds (one side) per fixture in the window. */
+  private async latestBttsOdds(
     to: Date,
     fixtureWhere: Prisma.FixtureWhereInput,
+    pick: 'YES' | 'NO',
   ): Promise<Map<string, number>> {
     const snapshots = await this.prisma.client.oddsSnapshot.findMany({
       where: {
         market: Market.BTTS,
-        pick: 'YES',
+        pick,
         odds: { not: null },
         snapshotAt: { lte: to },
         fixture: { is: fixtureWhere },
@@ -367,6 +373,7 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
   draw: number;
   away: number;
   bttsYes: number | null;
+  bttsNo: number | null;
   over25: number | null;
   under25: number | null;
 } | null {
@@ -380,6 +387,7 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
   const draw = p['draw'];
   const away = p['away'];
   const bttsYes = p['bttsYes'];
+  const bttsNo = p['bttsNo'];
   const over25 = p['over25'];
   const under25 = p['under25'];
   if (
@@ -389,11 +397,20 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
   ) {
     return null;
   }
+  // P(NO) is mutually exclusive/exhaustive with P(YES); fall back to 1 − YES
+  // when an older snapshot only stored the YES side.
+  const resolvedBttsNo =
+    typeof bttsNo === 'number'
+      ? bttsNo
+      : typeof bttsYes === 'number'
+        ? 1 - bttsYes
+        : null;
   return {
     home,
     draw,
     away,
     bttsYes: typeof bttsYes === 'number' ? bttsYes : null,
+    bttsNo: resolvedBttsNo,
     over25: typeof over25 === 'number' ? over25 : null,
     under25: typeof under25 === 'number' ? under25 : null,
   };

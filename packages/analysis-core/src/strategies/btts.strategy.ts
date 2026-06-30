@@ -2,7 +2,7 @@ import Decimal from "decimal.js";
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
-import { BTTS_NO_CONFIG, getChannelStrategyConfig } from "./config";
+import { getBttsNoConfig, getChannelStrategyConfig } from "./config";
 import type {
   ChannelStrategy,
   StrategyContext,
@@ -17,10 +17,10 @@ export class BttsStrategy implements ChannelStrategy {
 
   evaluate(context: StrategyContext): StrategyDecision {
     const ch = this.channel;
-    // YES is calibrated per league; NO is calibrated separately and globally
-    // (observation only — see BTTS_NO_CONFIG). Both live on the BTTS market.
+    // YES and NO are both calibrated per league but separately (different scales);
+    // NO is observation only — see BTTS_NO_CONFIG. Both live on the BTTS market.
     const yesConfig = getChannelStrategyConfig("BTTS", context.competitionCode);
-    const noConfig = BTTS_NO_CONFIG;
+    const noConfig = getBttsNoConfig(context.competitionCode);
 
     if (!yesConfig.enabled && !noConfig.enabled) {
       return {
