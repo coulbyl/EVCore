@@ -5,7 +5,11 @@
 // buildLambdaConfig is the one app-side factory: it reads the league lookup
 // tables from ev.constants and produces the plain LambdaConfig the core needs.
 import type { LambdaConfig } from '@evcore/analysis-core';
-import { getLeagueHomeAwayFactors, getLeagueMeanLambda } from '../ev.constants';
+import {
+  getLeagueHomeAwayFactors,
+  getLeagueLambdaScale,
+  getLeagueMeanLambda,
+} from '../ev.constants';
 
 export function buildLambdaConfig(
   competitionCode?: string | null,
@@ -16,6 +20,7 @@ export function buildLambdaConfig(
     meanLambda: getLeagueMeanLambda(competitionCode),
     homeAdvFactor,
     awayDisadvFactor,
+    lambdaScale: getLeagueLambdaScale(competitionCode),
   };
 }
 

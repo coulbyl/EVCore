@@ -646,10 +646,10 @@ Dataset reconstruit sain (cf. § Reprise).
   CANDIDATS, pas config finale. Validation **par saison** obligatoire dans
   le `ChannelTuningService` étendu avant activation (cf. méthodo des
   commentaires datés de la config existante). - [x] Config GOALS (2026-06-22) : sous-forme `GoalsLeagueConfig { lines:
-  [{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
+[{ line, side, enabled, threshold, minSampleN }] }` + `GOALS_CONFIG` +
   `getGoalsLineConfigs`. Candidats du sweep seedés **tous `enabled: false`**
   (en attente validation par saison). - [x] `goals.strategy.ts` (2026-06-22) : fonction pure `decideGoals(context,
-  lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
+lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
   par ligne → ranking value-first (EV ↓, puis proba pour sélections sans
   cote) → 1 sélection rank 1. Enregistrée `registry.ts` (6e primaire).
   10 tests + orchestrateur à jour. backend typecheck/lint/581 tests ✅. - [x] **Tuning étendu (2026-06-22)** : `BacktestRepository` lit `over25/under25`
@@ -792,7 +792,14 @@ Dataset reconstruit sain (cf. § Reprise).
       `no_modelable_scoreline`/`below_ev`) fr+en. `formatPickForDisplay` rend "H:A"
       tel quel (fallback). web typecheck ✅ · lint ✅ (2 warns `<img>` préexistants). > **CHANTIER A COMPLET.** Reste data : purge + rebuild (après que la collecte
       forward des cotes ait tourné) pour voir des décisions CORRECT_SCORE peuplées.
-- [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
-      (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
-      là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts
-      ET 1X2. Mesurer via `/backtest/calibration` avant/après. Ne pas mélanger DC.
+- [x] **B — Meilleure estimation des λ (FAIT 2026-06-30)** : **scale de λ par ligue**
+      (`LAMBDA_SCALE_MAP` + `getLeagueLambdaScale`, défaut 1.0) appliqué dans
+      `deriveLambdas` (`config.lambdaScale`, multiplie les 2 λ). Corrige un biais
+      **structurel de niveau de buts** (xG-shrinkage sur/sous-estime les buts par
+      ligue). **Mesuré offline** (transformation déterministe sur les 35k λ stockés) :
+      scale minimisant le Brier O/U2.5+BTTS. **Robuste** : signe du biais stable sur
+      3-4 saisons (≠ ROI). Magnitudes conservatrices (capées ±0.10), gain Brier
+      pondéré **+0.0058**. 11 ligues : MLS/TUR1/NOR1/NOR2/SUI2/CSL/ISL1 @1.10,
+      SWE2 @1.05 (sous-prédisent) ; SP2/MX1/J1 @0.95 (sur-prédisent). λScale optionnel
+      (golden préservé hors-liste). 2 tests. analysis-core 42 ✅ · backend 623 ✅. > Effet au prochain rebuild (O/U + BTTS + correct-score + 1X2 magnitude).
+      > Re-mesurer `/backtest/calibration` post-rebuild, étendre si d'autres biais stables.

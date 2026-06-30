@@ -24,6 +24,11 @@ export type LambdaConfig = {
   meanLambda: number;
   homeAdvFactor: number;
   awayDisadvFactor: number;
+  // Per-league goal-level correction applied to both lambdas. Corrects a
+  // structural bias where the xG-shrinkage goal expectation is systematically
+  // too high/low for a league (measured 2026-06-30: stable across seasons).
+  // Optional, default 1.0 (no change) for unlisted leagues.
+  lambdaScale?: number;
 };
 
 // Bayesian shrinkage weight toward the league mean lambda.
@@ -91,9 +96,10 @@ export function deriveLambdas(
     LAMBDA_SHRINKAGE_FACTOR * ((awayXgFor * homeXgAgainst) / leagueAvg) +
     (1 - LAMBDA_SHRINKAGE_FACTOR) * config.meanLambda;
 
+  const scale = config.lambdaScale ?? 1;
   return {
-    home: clamp(rawHome * config.homeAdvFactor, 0.05, 5),
-    away: clamp(rawAway * config.awayDisadvFactor, 0.05, 5),
+    home: clamp(rawHome * config.homeAdvFactor * scale, 0.05, 5),
+    away: clamp(rawAway * config.awayDisadvFactor * scale, 0.05, 5),
   };
 }
 

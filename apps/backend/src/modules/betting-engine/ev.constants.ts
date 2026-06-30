@@ -517,6 +517,40 @@ export function getLeagueThreeWayEmpiricalBlendWeight(
   return new Decimal(0);
 }
 
+// Per-league goal-LEVEL correction (chantier B, 2026-06-30). Multiplies both
+// lambdas to fix a structural bias where the xG-shrinkage goal expectation is
+// systematically too high (scale < 1) or too low (scale > 1) for a league.
+// Derived by minimising the Over/Under-2.5 + BTTS Brier on the stored lambdas
+// (35k matches) — a deterministic transform validated offline. Direction is
+// stable across 3-4 seasons (over-predictors over-predict every season, etc.),
+// so unlike ROI fits this is robust; magnitudes are kept conservative (capped
+// ±0.10, gentler on the over-predictors whose bias softened in 2025-26).
+// Weighted Brier gain +0.0058 over the listed leagues. Default 1.0 elsewhere.
+const LAMBDA_SCALE_MAP: Record<string, number> = {
+  // Under-predict goals (scale up): -Δtot every season.
+  MLS: 1.1, // -0.24/-0.17/-0.84
+  TUR1: 1.1, // -0.22/-0.28/-0.18
+  NOR1: 1.1, // -0.35/-0.09/-0.24/-0.46
+  NOR2: 1.1, // -0.13/-0.19/-0.21
+  SUI2: 1.1, // -0.17/-0.10/-0.24
+  CSL: 1.1, // -0.29/-0.35
+  ISL1: 1.1, // -0.47/-0.64 (capped from fitted 1.20; low data)
+  SWE2: 1.05, // -0.14/-0.11/-0.18 (smaller bias)
+  // Over-predict goals (scale down): +Δtot every season, softened in 2025-26.
+  SP2: 0.95, // +0.70/+0.01/+0.33 (variable → gentle)
+  MX1: 0.95, // +0.54/+0.53/+0.06
+  J1: 0.95, // +0.43/+0.14/+0.19/+0.09
+};
+
+export function getLeagueLambdaScale(
+  competitionCode: string | null | undefined,
+): number {
+  if (competitionCode != null && competitionCode in LAMBDA_SCALE_MAP) {
+    return LAMBDA_SCALE_MAP[competitionCode];
+  }
+  return 1;
+}
+
 // MODEL_SCORE_THRESHOLD — minimum deterministic score required for a BET
 // decision. Differentiated by market efficiency tier (audit finding: the flat
 // 0.60 threshold blocked 7 winning picks on secondary-market fixtures).
