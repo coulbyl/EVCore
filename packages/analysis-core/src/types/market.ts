@@ -13,6 +13,7 @@ export const Market = {
   HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME",
   OVER_UNDER_HT: "OVER_UNDER_HT",
   FIRST_HALF_WINNER: "FIRST_HALF_WINNER",
+  CORRECT_SCORE: "CORRECT_SCORE",
 } as const;
 
 export type Market = (typeof Market)[keyof typeof Market];

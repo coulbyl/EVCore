@@ -165,6 +165,9 @@ export const API_FOOTBALL_BET_IDS = {
   HALF_TIME_FULL_TIME: 7,
   BTTS: 8,
   FIRST_HALF_WINNER: 13,
+  // Full-time exact score. Observation-only market (forward odds collection) —
+  // no historical odds via API-Football, see TODO Étape 7 item A.
+  EXACT_SCORE: 10,
 } as const;
 
 export const BULLMQ_QUEUES = {

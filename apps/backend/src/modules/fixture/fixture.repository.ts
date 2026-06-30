@@ -157,6 +157,7 @@ export type UpsertOddsSnapshotInput = {
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
+  correctScoreOdds: Record<string, number>;
   source?: OddsSnapshotSource;
 };
 
@@ -185,6 +186,7 @@ export type UpsertSecondaryMarketOddsInput = {
   >;
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
+  correctScoreOdds: Record<string, number>;
   source?: OddsSnapshotSource;
 };
 
@@ -610,7 +612,8 @@ export class FixtureRepository {
       | 'HALF_TIME_FULL_TIME'
       | 'OVER_UNDER_HT'
       | 'FIRST_HALF_WINNER'
-      | 'DOUBLE_CHANCE',
+      | 'DOUBLE_CHANCE'
+      | 'CORRECT_SCORE',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -726,6 +729,9 @@ export class FixtureRepository {
             ),
           ]
         : []),
+      ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
+      ),
     ]);
 
     return oneXTwoId;
@@ -798,6 +804,9 @@ export class FixtureRepository {
             ),
           ]
         : []),
+      ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
+      ),
     ]);
   }
 

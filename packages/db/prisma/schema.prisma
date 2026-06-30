@@ -42,6 +42,7 @@ enum Market {
   HALF_TIME_FULL_TIME
   OVER_UNDER_HT
   FIRST_HALF_WINNER
+  CORRECT_SCORE
   @@schema("public")
 }
 

@@ -758,9 +758,20 @@ Dataset reconstruit sain (cf. § Reprise).
         à `API_FOOTBALL_BET_IDS`, itérer `.values`, parser `"H:A"`) — pattern O/U. - **Couverture** : 7/12 books, 21→121 scorelines (cellules basses bien cotées). - ⚠️ **FORWARD-ONLY** : `/odds?league&season` = 0 sur l'historique (rétention
         prematch courte) → **pas de backfill ni backtest ROI**. Comme GOALS alt-lines
         → `CORRECT_SCORE` démarre en **observation** (settlé analytiquement, jamais
-        staké tant que pas de forward ROI). Reste à faire : enum+migration, worker,
-        résolveur settlement `"H:A"` vs score réel, mapping odds↔matrice, canal +
-        front.
+        staké tant que pas de forward ROI). - **Incrément 1 — COLLECTE (FAIT 2026-06-30, en attente régen Prisma)** :
+        `CORRECT_SCORE` ajouté à `enum Market` (schéma) ; `EXACT_SCORE:10` dans
+        `API_FOOTBALL_BET_IDS` ; worker `odds-prematch-sync` extrait le bet 10
+        (`extractCorrectScoreOdds`, parse `"H:A"`, skip buckets « Other ») et écrit
+        des `OddsSnapshot(market=CORRECT_SCORE, pick="1:0", odds)` via le pattern
+        `upsertNonOneXTwo` (primaire + secondaire). `correctScoreOdds` ajouté aux 2
+        input-types repo + worker historique (`{}`). backend lint ✅, worker spec
+        17 tests ✅. **⚠️ typecheck rouge sur 2 lignes tant que le client Prisma
+        n'est pas régénéré (enum) → `prisma migrate dev` + `generate` côté TOI.**
+        Une fois régénéré : typecheck vert + la collecte forward démarre au prochain
+        run du sync prematch. - **Incréments suivants (à faire)** : 2) exposer la matrice de score
+        (proba correct-score) depuis le Poisson indépendant (analysis-core) ;
+        3) canal `CorrectScore` (observation) + mapping odds↔cellule + résolveur
+        settlement `"H:A"` vs score réel ; 4) front.
 - [ ] **B — Meilleure estimation des λ** — model-improvement channel-agnostic
       (prérequis commun, cf. reprise en tête). Réduire `LAMBDA_SHRINKAGE_FACTOR`
       là où le xG est fiable / régression Poisson attaque-défense. Bénéficie buts
