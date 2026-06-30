@@ -47,6 +47,25 @@ resteront non-activables. C'est le **prérequis modèle** avant de rouvrir ces
 canaux. Surveiller aussi les PASS limites (Brier ~0.65 : `J1`, `I2`, `CH`,
 `SWE2`, `D2`, `SP2`) qui peuvent basculer FAIL d'une saison à l'autre.
 
+### Session 2026-06-30 — récap
+
+**BTTS NO — calibration par championnat (FAIT, observation)** : le côté NO passe
+d'un seuil **global** à une **config par ligue** (`BTTS_NO_CONFIG` map +
+`getBttsNoConfig`), toujours observation-only. **Outillage d'abord** (miroir du
+YES) : `/backtest/tuning` produit `bttsNoReports` par ligue (repo
+`probBttsNo`/`oddsBttsNo`, `buildBttsNoSweep`, grille + règle promo NO, DTO +
+table front onglet Tuning). **Verdict** : aucun edge cross-saison (sweep par
+saison → I2 1 seule saison, L1/SA basculent FAIL en 2024-25 ; la P(NO) du modèle
+n'a **aucun lift** sur le taux de base → à volume, hit ≈ base rate ; le +22/+16%
+du 1-an = variance 2025-26). **Sélection structurelle, pas ROI** : éligible =
+base no-BTTS ≥ 0.46 ET volume ≥ 15/an → **SA·BRA1·FRI @0.58, EL1·CH·EL2·LL @0.55**
+activés en observation (jamais staké). analysis-core rebuild + test ✅ · backend
+typecheck/lint/617 ✅ · web ✅. Commit `07c866e`.
+
+> ⚠️ Décisions NO en base = ancien global → **purge + rebuild** puis date ≤
+> 2026-06-15 pour refléter la nouvelle config. Promotion staking seulement après
+> recalibration modèle (P(NO) compressée = vrai blocage). Re-run l'endpoint chaque saison.
+
 ### Session 2026-06-24 — récap
 
 **UX mobile `/dashboard/decisions` — FAIT** : header fixture dédié mobile (équipes
