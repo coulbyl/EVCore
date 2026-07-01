@@ -813,3 +813,14 @@ lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
       ligues via autre source ; densifier l'historique). Étape 2 = shrinkage proba→
       marché pondéré par la fiabilité des données (étendre `rebalanceThreeWayProbabilities`
       au-delà du 1X2). Garde-fous par ligue déjà en place (EV threshold, suspension FRI).
+- [ ] **ml-worker désynchronisé — CASSÉ depuis le refactor canaux (diagnostic
+      2026-07-01, chantier dans une nouvelle conversation)** : la couche de
+      correction ML (Phase 3, `apps/ml-worker` Python + `apps/backend/src/modules/ml`)
+      n'a **jamais été mise à jour** après le refactor. L'extract SQL plante
+      (`cs.channel` déplacé vers `channel_decision`, migration du 17 juin →
+      **cron d'entraînement en échec depuis ~2 semaines**). En plus : noms de canaux
+      périmés (`EV`→VALUE, `CONF`→DOMINANT), mismatch `canal` entraînement/inférence,
+      codes ligue divergents (`PD/FL1` TS vs `LL/L1` Python), DRAW staké non corrigé,
+      et modèle entraîné sur features **pré-recalibration** (à ré-entraîner sur les
+      model_run régénérés). **Mode shadow → aucun impact money live.**
+      **Doc complète : `docs/ml-worker-sync.md`** (inventaire + plan ordonné + points à vérifier).
