@@ -293,8 +293,13 @@ function mapFixtureState(item: ApiFootballFixture): {
   return {
     scheduledAt: new Date(item.fixture.date),
     status: mapStatus(item.fixture.status.short),
-    homeScore: item.goals.home,
-    awayScore: item.goals.away,
+    // score.fulltime is the 90-minute regulation score — frozen at that value
+    // even if the match goes to extra time/penalties, unlike `goals` (the
+    // running total, which for AET/PEN matches includes ET+penalty goals).
+    // Settlement markets resolve on regulation time only; before minute 90
+    // fulltime is null, so fall back to `goals` for live in-progress tracking.
+    homeScore: item.score.fulltime.home ?? item.goals.home,
+    awayScore: item.score.fulltime.away ?? item.goals.away,
     homeHtScore: item.score.halftime.home,
     awayHtScore: item.score.halftime.away,
   };

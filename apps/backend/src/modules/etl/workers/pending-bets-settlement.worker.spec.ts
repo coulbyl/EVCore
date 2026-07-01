@@ -14,7 +14,41 @@ vi.mock('node:child_process', () => ({
   execFile: vi.fn(),
 }));
 
-function buildFixtureResponse(status: 'NS' | 'FT') {
+// Per-status fixture values. AET: 2-2 at 90 minutes (fulltime), 3-2 after
+// extra time (goals) — the exact Belgium-Senegal scenario reported.
+// Settlement must use fulltime, not the post-extra-time `goals` total.
+const FIXTURE_VALUES_BY_STATUS = {
+  NS: {
+    finished: false,
+    elapsed: null as number | null,
+    homeWinner: false,
+    goals: { home: null as number | null, away: null as number | null },
+    halftime: { home: null as number | null, away: null as number | null },
+    fulltime: { home: null as number | null, away: null as number | null },
+    extratime: { home: null as number | null, away: null as number | null },
+  },
+  FT: {
+    finished: true,
+    elapsed: 90,
+    homeWinner: true,
+    goals: { home: 2, away: 1 },
+    halftime: { home: 1, away: 0 },
+    fulltime: { home: 2, away: 1 },
+    extratime: { home: null as number | null, away: null as number | null },
+  },
+  AET: {
+    finished: true,
+    elapsed: 120,
+    homeWinner: true,
+    goals: { home: 3, away: 2 },
+    halftime: { home: 1, away: 0 },
+    fulltime: { home: 2, away: 2 },
+    extratime: { home: 1, away: 0 },
+  },
+};
+
+function buildFixtureResponse(status: 'NS' | 'FT' | 'AET') {
+  const v = FIXTURE_VALUES_BY_STATUS[status];
   return {
     get: 'fixtures',
     parameters: { id: '999' },
@@ -32,9 +66,9 @@ function buildFixtureResponse(status: 'NS' | 'FT') {
           periods: { first: 1742068800, second: 1742072400 },
           venue: { id: 1, name: 'Stadium', city: 'City' },
           status: {
-            long: status === 'FT' ? 'Match Finished' : 'Not Started',
+            long: v.finished ? 'Match Finished' : 'Not Started',
             short: status,
-            elapsed: status === 'FT' ? 90 : null,
+            elapsed: v.elapsed,
             extra: null,
           },
         },
@@ -49,23 +83,14 @@ function buildFixtureResponse(status: 'NS' | 'FT') {
           standings: true,
         },
         teams: {
-          home: { id: 1, name: 'Home', logo: 'x', winner: status === 'FT' },
+          home: { id: 1, name: 'Home', logo: 'x', winner: v.homeWinner },
           away: { id: 2, name: 'Away', logo: 'x', winner: false },
         },
-        goals: {
-          home: status === 'FT' ? 2 : null,
-          away: status === 'FT' ? 1 : null,
-        },
+        goals: v.goals,
         score: {
-          halftime: {
-            home: status === 'FT' ? 1 : null,
-            away: status === 'FT' ? 0 : null,
-          },
-          fulltime: {
-            home: status === 'FT' ? 2 : null,
-            away: status === 'FT' ? 1 : null,
-          },
-          extratime: { home: null, away: null },
+          halftime: v.halftime,
+          fulltime: v.fulltime,
+          extratime: v.extratime,
           penalty: { home: null, away: null },
         },
       },
@@ -175,6 +200,25 @@ describe('PendingBetsSettlementWorker', () => {
     expect(bettingEngineService.settleOpenBets).toHaveBeenCalledWith(
       'fixture-1',
     );
+  });
+
+  it('settles on the 90-minute score, not the post-extra-time score (AET)', async () => {
+    mockCurlStdoutOnce(buildCurlStdout(buildFixtureResponse('AET')));
+
+    await worker.process({ data: {} } as Job<Record<string, never>>);
+
+    // API-Football: fulltime 2-2, goals (final, incl. ET) 3-2 — must store
+    // the 90-minute score so ONE_X_TWO/DOUBLE_CHANCE/DRAW settle on the draw,
+    // not on the extra-time winner.
+    expect(fixtureService.syncFixtureState).toHaveBeenCalledWith({
+      externalId: 999,
+      scheduledAt: new Date('2025-03-15T20:00:00.000Z'),
+      status: 'FINISHED',
+      homeScore: 2,
+      awayScore: 2,
+      homeHtScore: 1,
+      awayHtScore: 0,
+    });
   });
 
   it('only refreshes fixture state when the fixture is still scheduled', async () => {
