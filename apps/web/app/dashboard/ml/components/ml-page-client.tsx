@@ -42,16 +42,7 @@ import {
 } from "@/domains/ml/use-cases/use-ml";
 import { useTriggerBettingEngineRebuild } from "@/domains/etl/use-cases/use-etl";
 import type { MlModelVersion } from "@/domains/ml/types/ml";
-
-const ML_SEGMENTS = [
-  "ALL",
-  "EV:ONE_X_TWO",
-  "EV:OVER_UNDER",
-  "EV:BTTS",
-  "CONF:ONE_X_TWO",
-  "DRAW:ONE_X_TWO",
-  "BTTS:BTTS",
-] as const;
+import { ML_SEGMENTS } from "./ml-page-constants";
 
 function fmt(n: number | undefined, decimals = 3) {
   return n === undefined ? "—" : n.toFixed(decimals);

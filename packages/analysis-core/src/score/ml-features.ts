@@ -3,8 +3,16 @@
 // Keeping it here makes drift between producer and consumer impossible to miss.
 import Decimal from "decimal.js";
 import type { MatchProbabilities } from "../selection/types";
-import type { ViablePick } from "../selection/types";
 import type { DeterministicFeatures } from "./deterministic-score";
+
+// Minimal shape needed to build the ML feature vector — any channel's
+// top-ranked selection (ViablePick, StrategySelection, ...) satisfies this.
+export type MlShadowPick = {
+  market: string;
+  probability: Decimal;
+  ev: Decimal;
+  odds: Decimal;
+};
 
 export type MlShadowFeatures = {
   prob_estimated: number;
@@ -24,7 +32,7 @@ export type MlShadowFeatures = {
   odds_segment: string;
 };
 
-const TOP5_COMPETITIONS = new Set(["PL", "PD", "BL1", "SA", "FL1"]);
+const TOP5_COMPETITIONS = new Set(["PL", "SA", "LL", "BL1", "L1"]);
 const INTERNATIONAL_COMPETITIONS = new Set(["WC", "UCL", "UEL", "UECL", "FRI"]);
 
 function mlLeagueTier(competitionCode: string | null): string {
@@ -42,23 +50,25 @@ function mlOddsSegment(odds: Decimal): string {
 }
 
 export function buildMlShadowFeatures(input: {
-  valueBet: ViablePick;
+  pick: MlShadowPick;
+  channel: string;
   deterministicScore: Decimal;
   probabilities: MatchProbabilities;
   features: DeterministicFeatures;
   competitionCode: string | null;
 }): MlShadowFeatures {
   const {
-    valueBet,
+    pick,
+    channel,
     deterministicScore,
     probabilities,
     features,
     competitionCode,
   } = input;
   return {
-    prob_estimated: valueBet.probability.toNumber(),
+    prob_estimated: pick.probability.toNumber(),
     deterministic_score: deterministicScore.toNumber(),
-    ev: valueBet.ev.toNumber(),
+    ev: pick.ev.toNumber(),
     delta_p: null,
     p_poisson_home: probabilities.home.toNumber(),
     p_poisson_draw: probabilities.draw.toNumber(),
@@ -67,9 +77,9 @@ export function buildMlShadowFeatures(input: {
     xg: new Decimal(features.xg).toNumber(),
     performance_dom_ext: new Decimal(features.domExtPerf).toNumber(),
     volatilite_ligue: new Decimal(features.leagueVolat).toNumber(),
-    market: valueBet.market,
-    canal: "VALUE",
+    market: pick.market,
+    canal: channel,
     league_tier: mlLeagueTier(competitionCode),
-    odds_segment: mlOddsSegment(valueBet.odds),
+    odds_segment: mlOddsSegment(pick.odds),
   };
 }

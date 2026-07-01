@@ -53,6 +53,10 @@ import type {
 } from './betting-engine.types';
 import { FriModelService } from './fri-model/fri-model.service';
 import { MlInferenceService } from '@modules/ml/ml.inference.service';
+import {
+  ML_SHADOW_CHANNELS,
+  type ShadowMlByChannel,
+} from '@modules/ml/ml.constants';
 import { ChannelDecisionService } from './channel-decision.service';
 import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
 import { BetSettlementService } from './settlement/bet-settlement.service';
@@ -605,29 +609,6 @@ export class BettingEngineService {
         fixtureDate: fixture.scheduledAt,
       });
 
-    // Shadow ML correction — logs corrected probabilities without changing the decision.
-    let shadowMlCorrectedP: number | null = null;
-    let shadowMlEdgeDelta: number | null = null;
-    if (FEATURE_FLAGS.SCORING.ML_CORRECTION && valueBet !== null) {
-      const mlFeatures = buildMlShadowFeatures({
-        valueBet,
-        deterministicScore,
-        probabilities,
-        features,
-        competitionCode,
-      });
-      const mlSegment = `EV:${valueBet.market}`;
-      const mlResult = await this.mlInference.predictShadowCorrection(
-        mlSegment,
-        mlFeatures,
-      );
-      if (mlResult !== null && mlResult.corrected_probability !== null) {
-        shadowMlCorrectedP = mlResult.corrected_probability;
-        shadowMlEdgeDelta =
-          shadowMlCorrectedP - valueBet.probability.toNumber();
-      }
-    }
-
     // Line movement filter — exclude picks with >10% adverse odds drop over 7 days.
     let shadowLineMovement: number | null = null;
     if (
@@ -705,6 +686,37 @@ export class BettingEngineService {
       'Fixture analysis complete',
     );
 
+    // Mutable reference: filled in with per-channel shadow ML results once
+    // the channel decisions exist (they need modelRun.id), then written back
+    // via a single modelRun.update. Never read by decision logic.
+    const modelRunFeatures: Record<string, unknown> = {
+      predictionSource,
+      recentForm: features.recentForm.toNumber(),
+      xg: features.xg.toNumber(),
+      performanceDomExt: features.domExtPerf.toNumber(),
+      volatiliteLigue: features.leagueVolat.toNumber(),
+      lambdaHome: lambda.home,
+      lambdaAway: lambda.away,
+      probabilities: mapProbabilitiesToNumber(probabilities),
+      lambdaFloorHit,
+      shadow_lineMovement: shadowLineMovement,
+      shadow_h2h: shadowH2h,
+      shadow_congestion: shadowCongestion,
+      shadow_lineups: null,
+      shadow_injuries: null,
+      shadow_ml_corrected_p: null,
+      shadow_ml_edge_delta: null,
+      shadow_ml_by_channel: null,
+      homeDrawRate: effectiveHomeStats
+        ? Number(effectiveHomeStats.drawRate)
+        : null,
+      awayDrawRate: effectiveAwayStats
+        ? Number(effectiveAwayStats.drawRate)
+        : null,
+      candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
+      evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks),
+    };
+
     const modelRun = await this.prisma.client.modelRun.create({
       data: {
         fixtureId,
@@ -712,32 +724,7 @@ export class BettingEngineService {
         deterministicScore: toPrismaDecimal(deterministicScore, 4),
         llmDelta: null,
         finalScore: toPrismaDecimal(deterministicScore, 4),
-        features: {
-          predictionSource,
-          recentForm: features.recentForm.toNumber(),
-          xg: features.xg.toNumber(),
-          performanceDomExt: features.domExtPerf.toNumber(),
-          volatiliteLigue: features.leagueVolat.toNumber(),
-          lambdaHome: lambda.home,
-          lambdaAway: lambda.away,
-          probabilities: mapProbabilitiesToNumber(probabilities),
-          lambdaFloorHit,
-          shadow_lineMovement: shadowLineMovement,
-          shadow_h2h: shadowH2h,
-          shadow_congestion: shadowCongestion,
-          shadow_lineups: null,
-          shadow_injuries: null,
-          shadow_ml_corrected_p: shadowMlCorrectedP,
-          shadow_ml_edge_delta: shadowMlEdgeDelta,
-          homeDrawRate: effectiveHomeStats
-            ? Number(effectiveHomeStats.drawRate)
-            : null,
-          awayDrawRate: effectiveAwayStats
-            ? Number(effectiveAwayStats.drawRate)
-            : null,
-          candidatePicks: summarizePicks(candidatePicks.slice(0, 5)),
-          evaluatedPicks: summarizeEvaluatedPicks(evaluatedPicks),
-        },
+        features: modelRunFeatures as Prisma.InputJsonValue,
         openclawRaw: Prisma.JsonNull,
         validatedByBackend: true,
       },
@@ -775,6 +762,28 @@ export class BettingEngineService {
           phase: modelRunPhase,
         }),
       )) ?? [];
+
+    // Shadow ML correction — per channel, logged only; never changes a decision.
+    if (FEATURE_FLAGS.SCORING.ML_CORRECTION) {
+      const shadowMlByChannel = await this.computeShadowMlByChannel({
+        decisions: persistedChannelDecisions,
+        deterministicScore,
+        probabilities,
+        features,
+        competitionCode,
+      });
+      if (shadowMlByChannel !== null) {
+        modelRunFeatures.shadow_ml_by_channel = shadowMlByChannel;
+        const valueResult = shadowMlByChannel[STRATEGY_CHANNEL.VALUE] ?? null;
+        modelRunFeatures.shadow_ml_corrected_p =
+          valueResult?.correctedP ?? null;
+        modelRunFeatures.shadow_ml_edge_delta = valueResult?.edgeDelta ?? null;
+        await this.prisma.client.modelRun.update({
+          where: { id: modelRun.id },
+          data: { features: modelRunFeatures as Prisma.InputJsonValue },
+        });
+      }
+    }
 
     let betCandidate: BetCandidate | null = null;
     let evPickKey: string | null = null;
@@ -1348,6 +1357,69 @@ export class BettingEngineService {
       },
       orderBy: { afterFixture: { scheduledAt: 'desc' } },
     });
+  }
+
+  // Shadow ML correction, per channel. Calls /infer for each channel's
+  // rank-1 SELECTED selection (when it carries odds+ev) and logs the
+  // corrected probability — never fed back into any decision. Channels not
+  // in ML_SHADOW_CHANNELS (e.g. CORRECT_SCORE) are trained but not called
+  // here yet: see docs/ml-worker-sync.md for the volume rationale.
+  private async computeShadowMlByChannel(opts: {
+    decisions: readonly PersistedChannelDecision[];
+    deterministicScore: Decimal;
+    probabilities: MatchProbabilities;
+    features: DeterministicFeatures;
+    competitionCode: string | null;
+  }): Promise<ShadowMlByChannel | null> {
+    const {
+      decisions,
+      deterministicScore,
+      probabilities,
+      features,
+      competitionCode,
+    } = opts;
+
+    const results: ShadowMlByChannel = {};
+    for (const channel of ML_SHADOW_CHANNELS) {
+      const decision = decisions.find(
+        (d) => d.channel === channel && d.status === 'SELECTED',
+      );
+      const selection = decision?.selections.find((s) => s.rank === 1);
+      if (
+        selection === undefined ||
+        selection.odds === undefined ||
+        selection.ev === undefined
+      ) {
+        continue;
+      }
+
+      const mlFeatures = buildMlShadowFeatures({
+        pick: {
+          market: selection.market,
+          probability: selection.probability,
+          ev: selection.ev,
+          odds: selection.odds,
+        },
+        channel,
+        deterministicScore,
+        probabilities,
+        features,
+        competitionCode,
+      });
+      const mlResult = await this.mlInference.predictShadowCorrection(
+        `${channel}:${selection.market}`,
+        mlFeatures,
+      );
+      if (mlResult !== null && mlResult.corrected_probability !== null) {
+        results[channel] = {
+          correctedP: mlResult.corrected_probability,
+          edgeDelta:
+            mlResult.corrected_probability - selection.probability.toNumber(),
+        };
+      }
+    }
+
+    return Object.keys(results).length > 0 ? results : null;
   }
 }
 

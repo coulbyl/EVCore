@@ -1,0 +1,18 @@
+{
+  "topFiveCompetitions": ["PL", "SA", "LL", "BL1", "L1"],
+  "internationalCompetitions": ["WC", "UCL", "UEL", "UECL", "FRI"],
+  "liveShadowChannels": ["VALUE", "DOMINANT", "BTTS", "DRAW", "GOALS"],
+  "trainingSegments": [
+    "ALL",
+    "VALUE:ONE_X_TWO",
+    "VALUE:OVER_UNDER",
+    "VALUE:BTTS",
+    "VALUE:FIRST_HALF_WINNER",
+    "SAFE:ONE_X_TWO",
+    "SAFE:OVER_UNDER",
+    "DOMINANT:ONE_X_TWO",
+    "BTTS:BTTS",
+    "DRAW:ONE_X_TWO",
+    "GOALS:OVER_UNDER"
+  ]
+}

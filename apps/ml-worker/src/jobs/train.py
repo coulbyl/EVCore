@@ -19,14 +19,23 @@ from ..models import correction, persist
 
 logger = logging.getLogger(__name__)
 
+# Canal names mirror the `StrategyChannel` Prisma enum (EV→VALUE, CONF→DOMINANT
+# renamed 2026-07; see docs/ml-worker-sync.md). Each entry needs >=50 settled
+# channel_selection rows to actually train (ML_RETRAIN_MIN_NEW_BETS) —
+# CORRECT_SCORE is excluded: only 1 settled selection exists (observation-only
+# market, not staked).
 VALID_SEGMENTS = frozenset([
     "ALL",
-    "EV:ONE_X_TWO",
-    "EV:OVER_UNDER",
-    "EV:BTTS",
-    "CONF:ONE_X_TWO",
-    "DRAW:ONE_X_TWO",
+    "VALUE:ONE_X_TWO",
+    "VALUE:OVER_UNDER",
+    "VALUE:BTTS",
+    "VALUE:FIRST_HALF_WINNER",
+    "SAFE:ONE_X_TWO",
+    "SAFE:OVER_UNDER",
+    "DOMINANT:ONE_X_TWO",
     "BTTS:BTTS",
+    "DRAW:ONE_X_TWO",
+    "GOALS:OVER_UNDER",
 ])
 
 VALID_ALGORITHMS = frozenset(["auto", "logistic_regression", "xgboost"])

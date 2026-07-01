@@ -52,7 +52,7 @@ const NOW = new Date('2026-06-12T12:00:00Z');
 
 const ML_ACTIVE = {
   id: 'ml-1',
-  segment: 'EV:ONE_X_TWO',
+  segment: 'VALUE:ONE_X_TWO',
   algorithm: 'LogReg',
   metrics: {
     brierScore: 0.21,
@@ -68,7 +68,7 @@ const ML_ACTIVE = {
 
 const ML_INACTIVE = {
   id: 'ml-2',
-  segment: 'EV:ONE_X_TWO',
+  segment: 'VALUE:ONE_X_TWO',
   algorithm: 'LogReg',
   metrics: { brierScore: 0.25, roiShadow: 0.04, sampleSize: 150 },
   isActive: false,
@@ -307,12 +307,12 @@ describe('ChatToolsService — golden set', () => {
       const service = makeService(makeRepo({ getMlModelVersions }));
 
       await exec(service, 'getMLMetrics', {
-        args: { segment: 'EV:ONE_X_TWO' },
+        args: { segment: 'VALUE:ONE_X_TWO' },
         ctx: ADMIN,
       });
 
       expect(getMlModelVersions).toHaveBeenCalledWith(
-        expect.objectContaining({ segment: 'EV:ONE_X_TWO' }),
+        expect.objectContaining({ segment: 'VALUE:ONE_X_TWO' }),
       );
     });
 
