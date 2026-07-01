@@ -77,7 +77,7 @@
       },
       "CORRECT_SCORE": {
         "label": "Exact score",
-        "description": "Best-value exact scoreline (observation only, never staked)."
+        "description": "Most likely exact scoreline (observation only, never staked)."
       }
     },
     "reasons": {
@@ -94,7 +94,7 @@
       "no_model": "No model probabilities",
       "no_odds": "No priced scoreline",
       "no_modelable_scoreline": "No modelable scoreline priced",
-      "below_ev": "Best scoreline below EV floor",
+      "below_conviction": "No scoreline confident enough to predict",
       "BACKFILL": "Backfilled"
     },
     "statuses": {

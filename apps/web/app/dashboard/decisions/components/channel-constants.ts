@@ -80,7 +80,7 @@ const REASON_LABEL_KEY: Record<string, string> = {
   no_model: "reasons.no_model",
   no_odds: "reasons.no_odds",
   no_modelable_scoreline: "reasons.no_modelable_scoreline",
-  below_ev: "reasons.below_ev",
+  below_conviction: "reasons.below_conviction",
   BACKFILL: "reasons.BACKFILL",
 };
 

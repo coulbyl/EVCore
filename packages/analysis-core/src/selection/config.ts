@@ -13,6 +13,10 @@ import type { Market } from "../types";
 export type SelectionConfig = {
   // Per-league EV floor (the canonical >= 0.08 default lives app-side).
   leagueEvThreshold: Decimal;
+  // Per-league minimum model edge (probability − 1/odds) for VALUE picks. Falls
+  // back to VALUE_MIN_EDGE when undefined. Set unreachably high (≥ 1) to suspend
+  // VALUE for a league whose model carries no real edge even at high claimed edge.
+  valueMinEdge?: Decimal;
   // Safe-value per-league floors.
   svMinProbability: Decimal;
   svMinOdds: Decimal;

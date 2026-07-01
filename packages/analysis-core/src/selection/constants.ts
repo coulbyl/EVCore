@@ -60,6 +60,17 @@ export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
 // calibrated and a dedicated COMBO market key exists in backtest reporting.
 export const COMBOS_ENABLED = false;
 
+// Minimum model edge (probability − 1/odds) for a VALUE pick. The EV gate alone
+// is not enough: EV = odds × edge, so an EV floor lets high-odds picks through on
+// a tiny (fake) edge while over-penalising low-odds ones. Settled-pick analysis
+// (2026-07-01, ~1176 VALUE picks across leagues) shows the model is systematically
+// ~8pp overconfident, so its actual hit rate tracks the BOOK implied probability,
+// not its own. Picks split cleanly on edge: below 0.10 the claimed edge is entirely
+// absorbed by overconfidence → breakeven/negative (edge <0.05 → −24% ROI, 0.05–0.10
+// → +0.8%); at edge ≥ 0.10 a real edge survives (+16.8% at 0.10–0.15, +24.5% ≥0.22).
+// This is a VALUE-only gate — SAFE lives on high-confidence small edges by design.
+export const VALUE_MIN_EDGE = new Decimal("0.10");
+
 // Minimum EV for safe value bets. Near-zero EV picks (< 0.05) show no reliable
 // edge with the Poisson model — backtest 2026-04-13 shows OVER_1_5 at EV 0.004–0.039
 // losing more often than the probability estimate predicts.

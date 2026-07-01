@@ -33,12 +33,13 @@ const BASE_ODDS: FullOddsSnapshot = {
 };
 
 function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {
+  // Default edge = 0.64 − 1/1.90 = 0.114, above VALUE_MIN_EDGE (0.10).
   return {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    probability: new Decimal('0.60'),
+    probability: new Decimal('0.64'),
     odds: new Decimal('1.90'),
-    ev: new Decimal('0.14'),
+    ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
     isCombo: false,
     ...overrides,

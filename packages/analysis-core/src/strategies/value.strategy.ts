@@ -1,8 +1,10 @@
+import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { EvaluatedPick, ViablePick } from "../selection/types";
 import {
   FALLBACK_MIN_QUALITY_SCORE,
   LINE_MOVEMENT_THRESHOLD,
+  VALUE_MIN_EDGE,
 } from "../selection/constants";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import type {
@@ -50,7 +52,11 @@ export class ValueStrategy implements ChannelStrategy {
     }
 
     const allPicks = context.evaluatedMarkets.flatMap((m) => m.picks);
-    const best = selectBestEvPick(allPicks);
+    // Edge floor (probability − 1/odds): the model is overconfident, so require a
+    // real market edge, not just positive EV/quality. Per-league config may set it
+    // unreachably high to suspend VALUE for a structurally uninformative league.
+    const minEdge = context.selectionConfig.valueMinEdge ?? VALUE_MIN_EDGE;
+    const best = selectBestEvPick(allPicks, minEdge);
 
     if (best === null) {
       return {
@@ -94,7 +100,10 @@ export class ValueStrategy implements ChannelStrategy {
   }
 }
 
-function selectBestEvPick(picks: EvaluatedPick[]): ViablePick | null {
+function selectBestEvPick(
+  picks: EvaluatedPick[],
+  minEdge: Decimal,
+): ViablePick | null {
   if (picks.length === 0) return null;
 
   const topByQuality = picks.reduce<EvaluatedPick | null>(
@@ -106,6 +115,11 @@ function selectBestEvPick(picks: EvaluatedPick[]): ViablePick | null {
 
   const viable = picks
     .filter((p): p is ViablePick => p.rejectionReason === undefined)
+    .filter((p) =>
+      p.probability
+        .minus(new Decimal(1).div(p.odds))
+        .greaterThanOrEqualTo(minEdge),
+    )
     .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
 
   if (primaryWasRejected) {

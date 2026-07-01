@@ -77,7 +77,7 @@
       },
       "CORRECT_SCORE": {
         "label": "Score exact",
-        "description": "Score exact à meilleure valeur (observation seule, jamais misé)."
+        "description": "Score exact le plus probable (observation seule, jamais misé)."
       }
     },
     "reasons": {
@@ -94,7 +94,7 @@
       "no_model": "Pas de probabilités modèle",
       "no_odds": "Aucun score coté",
       "no_modelable_scoreline": "Aucun score cotable modélisable",
-      "below_ev": "Meilleur score sous le seuil d'EV",
+      "below_conviction": "Aucun score assez probable à prédire",
       "BACKFILL": "Rétro-rempli"
     },
     "statuses": {

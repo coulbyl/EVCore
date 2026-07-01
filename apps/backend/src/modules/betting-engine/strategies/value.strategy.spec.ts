@@ -34,12 +34,13 @@ const BASE_ODDS: FullOddsSnapshot = {
 };
 
 function makePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
+  // Default edge = 0.68 − 1/1.80 = 0.124, comfortably above VALUE_MIN_EDGE (0.10).
   return {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    probability: new Decimal('0.65'),
+    probability: new Decimal('0.68'),
     odds: new Decimal('1.80'),
-    ev: new Decimal('0.17'),
+    ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.11'),
     isCombo: false,
     ...overrides,
@@ -187,6 +188,37 @@ describe('ValueStrategy', () => {
     const decision = strategy.evaluate(ctx);
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].pick).toBe('AWAY');
+  });
+
+  it('rejects a positive-EV pick whose edge is below VALUE_MIN_EDGE (0.10)', () => {
+    // prob 0.62 @ 1.80 → EV +0.116 (positive) but edge = 0.62 − 0.556 = 0.064 < 0.10.
+    const lowEdge = makePick({
+      probability: new Decimal('0.62'),
+      ev: new Decimal('0.116'),
+    });
+    const decision = strategy.evaluate(
+      makeContext({
+        evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [lowEdge] }],
+      }),
+    );
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe('no_viable_pick');
+  });
+
+  it('suspends VALUE when the league config sets an unreachable edge floor', () => {
+    const pick = makePick(); // edge 0.124 — would normally be selected
+    const base = makeContext({
+      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [pick] }],
+    });
+    const decision = strategy.evaluate({
+      ...base,
+      selectionConfig: {
+        ...base.selectionConfig,
+        valueMinEdge: new Decimal('1'),
+      },
+    });
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe('no_viable_pick');
   });
 
   it('enforces allowedMarkets — all market enum values must be listed', () => {

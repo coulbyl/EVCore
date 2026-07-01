@@ -1,6 +1,7 @@
 import type { SelectionConfig } from '@evcore/analysis-core';
 import {
   getLeagueEvThreshold,
+  getValueMinEdge,
   getPickDirectionProbabilityThreshold,
   getPickEvFloor,
   getPickEvSoftCap,
@@ -19,6 +20,7 @@ export function buildSelectionConfig(
 ): SelectionConfig {
   return {
     leagueEvThreshold: getLeagueEvThreshold(competitionCode),
+    valueMinEdge: getValueMinEdge(competitionCode),
     svMinProbability: getSvMinProbability(competitionCode),
     svMinOdds: getSvMinOdds(competitionCode),
     htftCalibrated: isHtftCalibrated(competitionCode),

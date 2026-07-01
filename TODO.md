@@ -802,3 +802,14 @@ lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
       pondéré **+0.0058**. 11 ligues : MLS/TUR1/NOR1/NOR2/SUI2/CSL/ISL1 @1.10,
       SWE2 @1.05 (sous-prédisent) ; SP2/MX1/J1 @0.95 (sur-prédisent). λScale optionnel
       (golden préservé hors-liste). 2 tests. analysis-core 42 ✅ · backend 623 ✅. > Effet au prochain rebuild (O/U + BTTS + correct-score + 1X2 magnitude). > Re-mesurer `/backtest/calibration` post-rebuild, étendre si d'autres biais stables.
+- [ ] **Mal racine — ligues pauvres en données (diagnostic 2026-07-01, à traiter
+      un autre jour)** : le modèle 1X2 est bien calibré sur les grosses ligues
+      (SA calErr 0.010, SP2 0.008) et miscalibré uniquement sur les ligues **pauvres
+      en données** (WCQ* 0.06-0.24, UNL, ISL1, POL, LAT1, FRI, WC, NOR2, FIN1). C'est
+      un problème de **données d'entrée** (xG absent pour l'international/petites
+      ligues, historique court), pas un biais uniforme. VALUE y perd même après le
+      plancher d'edge (WC −30%). **Doc complète : `docs/data-poor-leagues-calibration.md`.**
+      > Étape 1 = **voir si on peut récupérer les données** (xG international/petites
+      ligues via autre source ; densifier l'historique). Étape 2 = shrinkage proba→
+      marché pondéré par la fiabilité des données (étendre `rebalanceThreeWayProbabilities`
+      au-delà du 1X2). Garde-fous par ligue déjà en place (EV threshold, suspension FRI).

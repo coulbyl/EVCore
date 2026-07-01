@@ -17,7 +17,9 @@ type ScoreCandidate = {
 };
 
 // Pure decision: given lambdas + the book's priced scorelines, emit the single
-// best-EV exact score the model can price. Observation-only (never staked).
+// MOST LIKELY exact score the model can price. Observation-only (never staked).
+// This is a prediction, not a value bet — see CORRECT_SCORE_CONFIG for why
+// argmax-EV was rejected (fat-tail longshot noise).
 export function decideCorrectScore(context: StrategyContext): StrategyDecision {
   const ch = STRATEGY_CHANNEL.CORRECT_SCORE;
   if (!CORRECT_SCORE_CONFIG.enabled) {
@@ -48,13 +50,12 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
   }
 
   const matrix = computeCorrectScoreMatrix(lambdaHome, lambdaAway);
-  const minProbability = new Decimal(CORRECT_SCORE_CONFIG.minProbability);
   const candidates: ScoreCandidate[] = [];
   for (const [scoreline, odds] of Object.entries(priced)) {
     if (odds == null) continue;
     const probability = matrix[scoreline];
-    // Skip scorelines beyond the model grid or below the longshot-noise floor.
-    if (!probability || probability.lessThan(minProbability)) continue;
+    // Skip scorelines beyond the model grid (no cell probability to predict on).
+    if (!probability) continue;
     candidates.push({
       scoreline,
       probability,
@@ -72,15 +73,22 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
     };
   }
 
-  const best = candidates.reduce((a, b) => (b.ev.greaterThan(a.ev) ? b : a));
-  if (best.ev.lessThan(CORRECT_SCORE_CONFIG.minEv)) {
+  // Prediction: the single most likely scoreline (NOT argmax-EV — that selects
+  // fat-tail longshot noise; see CORRECT_SCORE_CONFIG).
+  const best = candidates.reduce((a, b) =>
+    b.probability.greaterThan(a.probability) ? b : a,
+  );
+  // Conviction gate: if even the modal scoreline is below the floor, the match is
+  // too open to name a single score → no pick.
+  const minProbability = new Decimal(CORRECT_SCORE_CONFIG.minProbability);
+  if (best.probability.lessThan(minProbability)) {
     return {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.REJECTED,
-      reasonCode: "below_ev",
+      reasonCode: "below_conviction",
       reasonDetails: {
         bestScoreline: best.scoreline,
-        bestEv: best.ev.toNumber(),
+        bestProbability: best.probability.toNumber(),
       },
       selections: [],
     };

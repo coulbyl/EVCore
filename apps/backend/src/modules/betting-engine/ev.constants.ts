@@ -697,6 +697,33 @@ export function getLeagueEvThreshold(competitionCode: string | null): Decimal {
   return EV_THRESHOLD;
 }
 
+// Per-league minimum model edge (probability − 1/odds) for VALUE picks. The core
+// default (VALUE_MIN_EDGE = 0.10) applies to any league not listed here; returning
+// undefined lets the core fall back to it. A league is SUSPENDED for VALUE (edge ≥ 1,
+// unreachable → no pick) only when it is STRUCTURALLY uninformative, not on a stale
+// aggregate. Set 2026-07-01 against the last-year backtest + model calibration:
+//   • FRI (friendlies) — no reliable xG, model 1X2 calibration FAILs (calErr 0.054),
+//     VALUE −24.5% n=17 on recent data. Suspended.
+// NOT suspended (earlier all-history losses were an OLDER model version — the recent
+// window is healthy): SA −38.4% pre-2025-07 → +1.9% recent, model calErr 0.010 (best
+// in panel); SWE1 −18.8% → +29.3% recent. The global 0.10 edge floor governs these.
+const VALUE_SUSPENDED = new Decimal('1');
+const LEAGUE_VALUE_MIN_EDGE_MAP: Record<string, Decimal> = {
+  FRI: VALUE_SUSPENDED,
+};
+
+export function getValueMinEdge(
+  competitionCode: string | null,
+): Decimal | undefined {
+  if (
+    competitionCode !== null &&
+    competitionCode in LEAGUE_VALUE_MIN_EDGE_MAP
+  ) {
+    return LEAGUE_VALUE_MIN_EDGE_MAP[competitionCode];
+  }
+  return undefined;
+}
+
 // ─── European competitions ───────────────────────────────────────────────────
 
 // All competition codes treated as European (UCL/UEL/UECL + legacy alias LDC).
