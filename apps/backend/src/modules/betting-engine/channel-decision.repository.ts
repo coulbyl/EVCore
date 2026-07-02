@@ -51,6 +51,7 @@ export type ChannelDecisionReadRow = {
   id: string;
   modelRunId: string;
   phase: ModelRunPhase;
+  analyzedAt: Date;
   channel: StrategyChannel;
   status: ChannelDecisionStatus;
   reasonCode: string | null;
@@ -203,6 +204,7 @@ export class ChannelDecisionRepository {
         modelRun: {
           select: {
             phase: true,
+            analyzedAt: true,
             fixture: {
               select: {
                 id: true,
@@ -245,10 +247,11 @@ export class ChannelDecisionRepository {
       ],
     });
 
-    return rows.map((row) => ({
+    const mapped: ChannelDecisionReadRow[] = rows.map((row) => ({
       id: row.id,
       modelRunId: row.modelRunId,
       phase: row.modelRun.phase,
+      analyzedAt: row.modelRun.analyzedAt,
       channel: row.channel,
       status: row.status,
       reasonCode: row.reasonCode,
@@ -267,7 +270,30 @@ export class ChannelDecisionRepository {
       awayHtScore: row.modelRun.fixture.awayHtScore,
       selections: row.selections,
     }));
+
+    return latestPerFixtureChannel(mapped);
   }
+}
+
+// A fixture is re-analyzed on a rolling horizon (ModelRun.phase: ADVANCE →
+// PRE_KICKOFF → LIVE, cf docs/EVCORE.md §rolling horizon) — each pass writes
+// its own ChannelDecision per channel (unique on [modelRunId, channel], not
+// [fixtureId, channel]). The read API is fixture-centric, so without this it
+// shows the same channel 2-3x per fixture (once per analysis pass) whenever
+// the pick didn't change between passes. Keep only the most recent pass's
+// decision per (fixture, channel).
+export function latestPerFixtureChannel(
+  rows: ChannelDecisionReadRow[],
+): ChannelDecisionReadRow[] {
+  const latest = new Map<string, ChannelDecisionReadRow>();
+  for (const row of rows) {
+    const key = `${row.fixtureId}:${row.channel}`;
+    const existing = latest.get(key);
+    if (!existing || row.analyzedAt > existing.analyzedAt) {
+      latest.set(key, row);
+    }
+  }
+  return [...latest.values()];
 }
 
 function toJson(
