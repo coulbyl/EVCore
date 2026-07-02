@@ -408,6 +408,16 @@ export class DashboardService {
         vsThreshold: null,
         sampleSize: 0,
       },
+      {
+        channel: 'GOALS',
+        status: 'INACTIVE',
+        primaryMetric: 0,
+        primaryMetricType: 'HIT_RATE',
+        roi: null,
+        hitRate: null,
+        vsThreshold: null,
+        sampleSize: 0,
+      },
     ];
   }
 
@@ -472,6 +482,18 @@ export class DashboardService {
       },
       {
         channel: 'DRAW',
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: null,
+        netUnits: null,
+        maxDrawdown: null,
+        sampleSize: 0,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
+      {
+        channel: 'GOALS',
         hitRate: null,
         avgThreshold: null,
         vsThreshold: null,

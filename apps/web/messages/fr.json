@@ -300,6 +300,7 @@
     "safeValue": "Safe",
     "confidence": "VICTOIRE",
     "matchNull": "NUL",
+    "goals": "BUTS",
     "btts": "BB",
     "bttsLabel": "BB — Les deux équipes marquent",
     "bttsYes": "BB OUI",

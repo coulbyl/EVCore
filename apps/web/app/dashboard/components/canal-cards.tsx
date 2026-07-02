@@ -1,6 +1,13 @@
 "use client";
 
-import { TrendingUp, Shield, Target, Minus, Activity } from "lucide-react";
+import {
+  TrendingUp,
+  Shield,
+  Target,
+  Minus,
+  Activity,
+  Goal,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useChannelHealth } from "@/domains/dashboard/use-cases/get-channel-health";
 import { usePnlByCanal } from "@/domains/dashboard/use-cases/get-pnl-by-canal";
@@ -42,6 +49,11 @@ const CANAL_STYLES = {
     color: "var(--canal-btts)",
     soft: "var(--canal-btts-soft)",
     border: "color-mix(in srgb, var(--canal-btts) 20%, transparent)",
+  },
+  goals: {
+    color: "var(--canal-goals)",
+    soft: "var(--canal-goals-soft)",
+    border: "color-mix(in srgb, var(--canal-goals) 20%, transparent)",
   },
 } as const;
 
@@ -143,9 +155,10 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
   const btts = findHealth("BTTS");
   const conf = findHealth("DOMINANT");
   const draw = findHealth("DRAW");
+  const goals = findHealth("GOALS");
 
   return (
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       <CanalCard
         canal="sv"
         icon={<Shield size={14} />}
@@ -214,6 +227,26 @@ export function CanalCards({ from, to }: { from: string; to: string }) {
           {
             label: t("winRate"),
             value: formatPercent(draw?.hitRate) ?? SKELETON,
+          },
+        ]}
+      />
+      <CanalCard
+        canal="goals"
+        icon={<Goal size={14} />}
+        label={tPicks("goals")}
+        status={goals?.status}
+        rows={[
+          {
+            label: t("roi"),
+            value: formatSignedPercent(goals?.roi) ?? SKELETON,
+          },
+          {
+            label: t("settledBets"),
+            value: goals ? goals.sampleSize : SKELETON,
+          },
+          {
+            label: t("winRate"),
+            value: formatPercent(goals?.hitRate) ?? SKELETON,
           },
         ]}
       />

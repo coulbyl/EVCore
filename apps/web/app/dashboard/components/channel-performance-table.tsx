@@ -9,6 +9,7 @@ const CANAL_LABEL: Record<ChannelStatsItem["channel"], string> = {
   DOMINANT: "VICTOIRE",
   BTTS: "BTTS",
   DRAW: "DRAW",
+  GOALS: "GOALS",
 };
 
 const CANAL_COLOR: Record<ChannelStatsItem["channel"], string> = {
@@ -17,6 +18,7 @@ const CANAL_COLOR: Record<ChannelStatsItem["channel"], string> = {
   DOMINANT: "var(--canal-dominant)",
   BTTS: "var(--canal-btts)",
   DRAW: "var(--canal-draw)",
+  GOALS: "var(--canal-goals)",
 };
 
 const HR_TARGET: Partial<Record<ChannelStatsItem["channel"], number>> = {
