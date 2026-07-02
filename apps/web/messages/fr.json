@@ -124,12 +124,6 @@
     "noPickShort": "aucun pick",
     "pickCount": "{count, plural, one {# pick} other {# picks}}",
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
-    "summary": {
-      "matches": "matchs",
-      "picks": "picks",
-      "withPicks": "avec pick",
-      "avoided": "à éviter"
-    },
     "filters": {
       "all": "Tous",
       "onlyPicks": "Avec pick seulement",

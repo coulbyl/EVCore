@@ -63,6 +63,7 @@ export function DecisionsPageClient() {
       hasData={hasData}
       isError={active.isError}
       isLoading={active.isLoading}
+      subHeaderMobileHidden={view === "matches"}
       subHeader={
         !hasData ? null : view === "matches" ? (
           <MatchFilters {...matchLens} />
