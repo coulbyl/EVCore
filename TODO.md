@@ -805,11 +805,10 @@ lineConfigs)` (testable hors config prod) + classe `GoalsStrategy`. Gate
 - [ ] **Mal racine — ligues pauvres en données (diagnostic 2026-07-01, à traiter
       un autre jour)** : le modèle 1X2 est bien calibré sur les grosses ligues
       (SA calErr 0.010, SP2 0.008) et miscalibré uniquement sur les ligues **pauvres
-      en données** (WCQ* 0.06-0.24, UNL, ISL1, POL, LAT1, FRI, WC, NOR2, FIN1). C'est
+      en données** (WCQ\* 0.06-0.24, UNL, ISL1, POL, LAT1, FRI, WC, NOR2, FIN1). C'est
       un problème de **données d'entrée** (xG absent pour l'international/petites
       ligues, historique court), pas un biais uniforme. VALUE y perd même après le
-      plancher d'edge (WC −30%). **Doc complète : `docs/data-poor-leagues-calibration.md`.**
-      > Étape 1 = **voir si on peut récupérer les données** (xG international/petites
+      plancher d'edge (WC −30%). **Doc complète : `docs/data-poor-leagues-calibration.md`.** > Étape 1 = **voir si on peut récupérer les données** (xG international/petites
       ligues via autre source ; densifier l'historique). Étape 2 = shrinkage proba→
       marché pondéré par la fiabilité des données (étendre `rebalanceThreeWayProbabilities`
       au-delà du 1X2). Garde-fous par ligue déjà en place (EV threshold, suspension FRI).

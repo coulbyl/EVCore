@@ -406,15 +406,27 @@ Docs de cadrage Phase 3:
 
 ## Phase 4
 
-> Cadrage : [docs/phase4-ai-chat.md](docs/phase4-ai-chat.md) — **EVA** (Expected Value Analyst),
-> assistant conversationnel sur les données du moteur (function calling Groq, lecture seule).
-> Pré-requis : moteur validé comme socle de confiance (ML promu hors shadow, voir `docs/phase3-ml-todo.md` étape 7ter).
+> **EVA** (Expected Value Analyst) — d'abord construite (2026-06) comme assistant
+> conversationnel (function calling Groq, 18 tools, SSE, conversations persistées en DB,
+> `/dashboard/chat`), puis **entièrement remplacée** le 2026-07-02 par un flow plus simple :
+> module `analysis-sheet` — fiche d'analyse compacte sur une plage de dates (SQL raw, `json_agg`,
+> une ligne par pick retenu + rejets en résumé, historique de ligne de mouvement sur les
+> réanalyses rolling-horizon), exportable `.txt`/`.json`, et un bouton **"Analyser avec Eva"**
+> qui envoie la fiche à Groq en un seul appel (pas de tool-calling, pas de streaming SSE) et
+> retourne une analyse de cohérence + picks proposés. UI : `/dashboard/analysis-sheet`.
+> Le module `chat` (contrôleur, tools, boucle d'orchestration, `chat.pick-engine`/ladder — redondant
+> avec le module coupon autonome) a été supprimé ; seuls le client Groq et le modèle `ChatUsage`
+> (rate-limit quotidien) ont survécu, réutilisés tels quels. Tables `chat_conversation`/`chat_message`
+> laissées en place (non écrites, suppression explicite à décider plus tard).
 
-- [ ] EVA — AI Chat Analyst (spec `docs/phase4-ai-chat.md`)
-  - [ ] Migration DB (`chat_conversation`, `chat_message`, `chat_usage`)
-  - [ ] Tools lecture seule (groupe A picks/coupons d'abord), orchestration Groq + Zod
-  - [ ] SSE + UI `/dashboard/chat`, rate limiting Redis, caching tools
-  - [ ] Durcissement sécurité + golden set (intentions, adversarial, IDOR, injection par données)
+- [x] EVA — Fiche d'analyse + appel Groq single-shot (`apps/backend/src/modules/analysis-sheet/`,
+      `apps/web/app/dashboard/analysis-sheet/`)
+  - [x] Requête SQL raw (CTE + `json_agg`) par plage de dates, filtres compétition/canal
+  - [x] Export `.txt`/`.json`, bouton "Analyser avec Eva" (Groq, sans tool-calling)
+  - [x] Dédup + historique des passes rolling-horizon (ADVANCE/PRE_KICKOFF/LIVE) pour repérer
+        le line movement
+  - [ ] Durcissement sécurité + golden set (adversarial, injection par données) — pas encore fait
+        pour le nouveau flow single-shot
 - [ ] SaaS / multi-tenant
 - [ ] API interne
 - [ ] Groupe premium

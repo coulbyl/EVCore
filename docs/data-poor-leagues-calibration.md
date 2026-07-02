@@ -30,21 +30,21 @@ Métrique : `calibrationError` (écart moyen |proba prédite − fréquence rée
 
 **Miscalibré (FAIL) — corrélé au manque de données :**
 
-| Ligue | n   | calErr | Type / cause probable                          |
-| ----- | --- | ------ | ---------------------------------------------- |
+| Ligue | n   | calErr | Type / cause probable                           |
+| ----- | --- | ------ | ----------------------------------------------- |
 | WCQCA | 36  | 0.243  | Qualif. mondiale — pas de xG, cross-comp bruité |
-| WCQAS | 8   | 0.176  | idem (+ échantillon minuscule)                 |
-| UNL   | 4   | 0.142  | Nations League — sélections, pas de xG         |
-| WCQSA | 10  | 0.097  | Qualif. mondiale                               |
-| ISL1  | 84  | 0.084  | Petite ligue (Islande)                         |
-| POL2  | 298 | 0.063  | 2e division                                    |
-| POL1  | 296 | 0.062  | Ligue moyenne                                  |
-| WC    | 78  | 0.061  | Coupe du Monde — cross-comp fallback           |
-| WCQAF | 107 | 0.061  | Qualif. mondiale                               |
-| LAT1  | 79  | 0.057  | Petite ligue (Lettonie)                        |
-| FRI   | 184 | 0.054  | Amicaux — pas de xG, contexte non compétitif   |
-| FIN1  | 132 | 0.051  | Petite ligue (Finlande)                        |
-| NOR2  | 180 | 0.051  | 2e division                                    |
+| WCQAS | 8   | 0.176  | idem (+ échantillon minuscule)                  |
+| UNL   | 4   | 0.142  | Nations League — sélections, pas de xG          |
+| WCQSA | 10  | 0.097  | Qualif. mondiale                                |
+| ISL1  | 84  | 0.084  | Petite ligue (Islande)                          |
+| POL2  | 298 | 0.063  | 2e division                                     |
+| POL1  | 296 | 0.062  | Ligue moyenne                                   |
+| WC    | 78  | 0.061  | Coupe du Monde — cross-comp fallback            |
+| WCQAF | 107 | 0.061  | Qualif. mondiale                                |
+| LAT1  | 79  | 0.057  | Petite ligue (Lettonie)                         |
+| FRI   | 184 | 0.054  | Amicaux — pas de xG, contexte non compétitif    |
+| FIN1  | 132 | 0.051  | Petite ligue (Finlande)                         |
+| NOR2  | 180 | 0.051  | 2e division                                     |
 
 → Le classement des FAIL suit exactement l'axe **richesse des données**, pas une famille tactique ou géographique.
 
@@ -52,7 +52,7 @@ Métrique : `calibrationError` (écart moyen |proba prédite − fréquence rée
 
 ## Pourquoi (par type de ligue)
 
-1. **Sélections nationales** (WC, WCQ*, UNL, FRI) : l'API ne fournit pas de xG fiable pour les compétitions internationales. Le modèle tombe sur le **cross-comp fallback** (`NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0` → xG ignoré, forme uniquement) : signal appauvri, λ mal estimés. Les amicaux ajoutent un biais de contexte (matchs non compétitifs).
+1. **Sélections nationales** (WC, WCQ\*, UNL, FRI) : l'API ne fournit pas de xG fiable pour les compétitions internationales. Le modèle tombe sur le **cross-comp fallback** (`NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0` → xG ignoré, forme uniquement) : signal appauvri, λ mal estimés. Les amicaux ajoutent un biais de contexte (matchs non compétitifs).
 2. **Petites divisions / petits championnats** (ISL1, LAT1, FIN1, NOR2, POL2, EST1) : historique court, xG rare ou absent, forte volatilité → estimation λ bruitée.
 3. **Débuts de saison** (transverse) : les fixtures d'août n'ont pas d'historique intra-saison → souvent skippées (pas de `model_run`), ou analysées sur des stats trop maigres.
 

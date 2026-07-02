@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Diagnostics moteur par canal — run with: pnpm --filter @evcore/db db:audit:fixtures [YYYY-MM-DD]
- * Affiche les picks groupés par canal : EV, SV, BB, NUL, CONF.
+ * Affiche les picks groupés par canal : VALUE, SV, BB, NUL, CONF, BUTS.
  * Écrit packages/db/reports/audit-fixtures-YYYY-MM-DD.txt.
  */
 import "dotenv/config";
@@ -24,6 +24,8 @@ function singlePickLabel(market: string, pick: string): string {
     if (pick === "UNDER") return "MOINS DE 2.5";
     if (pick === "OVER_3_5") return "PLUS DE 3.5";
     if (pick === "UNDER_3_5") return "MOINS DE 3.5";
+    if (pick === "OVER_4_5") return "PLUS DE 4.5";
+    if (pick === "UNDER_4_5") return "MOINS DE 4.5";
   }
   if (market === "BTTS") {
     if (pick === "YES") return "BB OUI";
@@ -95,11 +97,35 @@ function predResultLabel(correct: boolean | null): string {
 }
 
 function channelLabel(channel: string): string {
+  if (channel === "VALUE") return "EV";
   if (channel === "SAFE") return "SV";
   if (channel === "BTTS") return "BB";
   if (channel === "DRAW") return "NUL";
   if (channel === "DOMINANT") return "CONF";
+  if (channel === "GOALS") return "BUTS";
   return channel;
+}
+
+// Mirrors GOALS_PICK in packages/analysis-core/src/strategies/goals.strategy.ts
+// — the 2.5 line keeps the bare OVER/UNDER pick strings for historical reasons.
+const GOALS_PICK_LINE: Record<
+  string,
+  { side: "OVER" | "UNDER"; line: number }
+> = {
+  OVER_1_5: { side: "OVER", line: 1.5 },
+  UNDER_1_5: { side: "UNDER", line: 1.5 },
+  OVER: { side: "OVER", line: 2.5 },
+  UNDER: { side: "UNDER", line: 2.5 },
+  OVER_3_5: { side: "OVER", line: 3.5 },
+  UNDER_3_5: { side: "UNDER", line: 3.5 },
+  OVER_4_5: { side: "OVER", line: 4.5 },
+  UNDER_4_5: { side: "UNDER", line: 4.5 },
+};
+
+function parseGoalsPick(
+  pick: string,
+): { side: "OVER" | "UNDER"; line: number } | null {
+  return GOALS_PICK_LINE[pick] ?? null;
 }
 
 function fmtSigned(n: number, decimals = 4): string {
@@ -387,7 +413,7 @@ async function main(): Promise<void> {
       ) ?? [];
 
   const evFixtures = fixtures.filter(
-    (f) => selectedByChannel(f, "EV").length > 0,
+    (f) => selectedByChannel(f, "VALUE").length > 0,
   );
   const svFixtures = fixtures.filter(
     (f) => selectedByChannel(f, "SAFE").length > 0,
@@ -401,8 +427,11 @@ async function main(): Promise<void> {
   const confFixtures = fixtures.filter(
     (f) => selectedByChannel(f, "DOMINANT").length > 0,
   );
+  const goalsFixtures = fixtures.filter(
+    (f) => selectedByChannel(f, "GOALS").length > 0,
+  );
   const noBetFixtures = fixtures.filter(
-    (f) => f.modelRuns.length > 0 && selectedByChannel(f, "EV").length === 0,
+    (f) => f.modelRuns.length > 0 && selectedByChannel(f, "VALUE").length === 0,
   );
   const noRunFixtures = fixtures.filter((f) => f.modelRuns.length === 0);
 
@@ -410,7 +439,7 @@ async function main(): Promise<void> {
 
   // ── Résumé canaux ─────────────────────────────────────────────────────────
 
-  const evSelections = evFixtures.flatMap((f) => selectedByChannel(f, "EV"));
+  const evSelections = evFixtures.flatMap((f) => selectedByChannel(f, "VALUE"));
   const svSelections = svFixtures.flatMap((f) => selectedByChannel(f, "SAFE"));
   const bttsSelections = bttsFixtures.flatMap((f) =>
     selectedByChannel(f, "BTTS"),
@@ -420,6 +449,9 @@ async function main(): Promise<void> {
   );
   const confSelections = confFixtures.flatMap((f) =>
     selectedByChannel(f, "DOMINANT"),
+  );
+  const goalsSelections = goalsFixtures.flatMap((f) =>
+    selectedByChannel(f, "GOALS"),
   );
 
   function countSelectionRes(selections: Array<{ result: string | null }>) {
@@ -441,6 +473,7 @@ async function main(): Promise<void> {
   const bttsStats = countSelectionRes(bttsSelections);
   const drawStats = countSelectionRes(drawSelections);
   const confStats = countSelectionRes(confSelections);
+  const goalsStats = countSelectionRes(goalsSelections);
 
   // ── En-tête ───────────────────────────────────────────────────────────────
 
@@ -499,6 +532,13 @@ async function main(): Promise<void> {
     confStats.lost,
     confStats.pending,
   );
+  cRow(
+    "BUTS",
+    goalsSelections.length,
+    goalsStats.won,
+    goalsStats.lost,
+    goalsStats.pending,
+  );
 
   // ─────────────────────────────────────────────────────────────────────────────
   // EV — Expected Value
@@ -529,7 +569,7 @@ async function main(): Promise<void> {
       `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
     );
 
-    for (const selection of selectedByChannel(f, "EV")) {
+    for (const selection of selectedByChannel(f, "VALUE")) {
       w(renderSelectionPickLine(selection));
     }
     for (const line of renderModelContext(feat, comp, detScore, finalScore)) {
@@ -784,6 +824,60 @@ async function main(): Promise<void> {
             : "✗ score < seuil"
           : "";
       w(`  Modèle   : det=${detScore} → final=${finalScoreStr}  ${flag}`);
+    }
+    if (source) w(`  Source   : ${source}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BUTS — Total de buts (GOALS)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  w();
+  w(
+    `━━━ BUTS — Total de buts (${goalsSelections.length} picks, ${goalsFixtures.length} matchs) ━━━━━━━━━━━━━━━━━━━━━━━━━`,
+  );
+
+  if (goalsFixtures.length === 0) {
+    w("  Aucun pronostic BUTS ce jour.");
+  }
+
+  idx = 0;
+  for (const f of goalsFixtures) {
+    idx++;
+    const selection = selectedByChannel(f, "GOALS")[0]!;
+    const run = f.modelRuns[0];
+    const feat = run?.features;
+    const comp = f.season.competition.code;
+    const prob = Number(selection.probability);
+    const lambdaHome = readNumber(feat, "lambdaHome");
+    const lambdaAway = readNumber(feat, "lambdaAway");
+    const source = readString(feat, "predictionSource");
+    const goalsPick = parseGoalsPick(selection.pick);
+
+    let resultHint = "";
+    if (goalsPick && f.homeScore !== null && f.awayScore !== null) {
+      const totalGoals = f.homeScore + f.awayScore;
+      const correct =
+        goalsPick.side === "OVER"
+          ? totalGoals > goalsPick.line
+          : totalGoals < goalsPick.line;
+      resultHint = correct
+        ? `  ← ${totalGoals} but${totalGoals > 1 ? "s" : ""} ✓`
+        : `  ← ${totalGoals} but${totalGoals > 1 ? "s" : ""} ✗`;
+    }
+
+    w();
+    w(
+      `  [${idx}] ${renderFixtureHeader(f.homeTeam.name, f.awayTeam.name, comp, f.homeScore, f.awayScore, f.homeHtScore, f.awayHtScore)}`,
+    );
+    w(
+      `  Pick     : ${singlePickLabel(selection.market, selection.pick).padEnd(14)}  P=${fmtPct(prob)}  ${predResultLabel(selection.result === "WON" ? true : selection.result === "LOST" ? false : null)}${resultHint}`,
+    );
+
+    if (lambdaHome !== null && lambdaAway !== null) {
+      w(
+        `  Poisson  : λV1=${lambdaHome.toFixed(2)}  λV2=${lambdaAway.toFixed(2)}  xG=${(lambdaHome + lambdaAway).toFixed(2)}`,
+      );
     }
     if (source) w(`  Source   : ${source}`);
   }
