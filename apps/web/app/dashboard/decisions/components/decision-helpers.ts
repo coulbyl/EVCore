@@ -130,39 +130,3 @@ function topEv(group: ChannelDecisionMatchDto): number {
   }
   return max;
 }
-
-export type DaySummary = {
-  matches: number;
-  withPicks: number;
-  picks: number;
-  avoided: number;
-  byChannel: { channel: StrategyChannel; count: number }[];
-};
-
-// One-glance orientation for the day before scanning the cards.
-export function daySummary(matches: ChannelDecisionMatchDto[]): DaySummary {
-  const byChannel = new Map<StrategyChannel, number>();
-  let picks = 0;
-  let withPicks = 0;
-  let avoided = 0;
-
-  for (const group of matches) {
-    if (avoidFlag(group) !== null) avoided += 1;
-    const groupPicks = selectedPicks(group);
-    if (groupPicks.length > 0) withPicks += 1;
-    picks += groupPicks.length;
-    for (const d of groupPicks) {
-      byChannel.set(d.channel, (byChannel.get(d.channel) ?? 0) + 1);
-    }
-  }
-
-  return {
-    matches: matches.length,
-    withPicks,
-    picks,
-    avoided,
-    byChannel: [...byChannel.entries()]
-      .map(([channel, count]) => ({ channel, count }))
-      .sort((a, b) => b.count - a.count),
-  };
-}

@@ -9,6 +9,16 @@ import {
   type ThreeWayProba,
 } from "./markets";
 
+// Empirical share of a match's goals scored in the first half. Football is not
+// half-symmetric — teams open cautiously and games break open later. Measured at
+// 0.444 across 40,550 finished fixtures in this DB (first-half goals 1.239 vs
+// full-time 2.791). The naive λ/2 split assumes 0.50, over-predicting first-half
+// goals by ~13% and inflating every half-time market (HT Over/Under, HT/FT,
+// First-Half Winner). At 0.44, P(HT Over 1.5) lands on the empirical base rate
+// (~0.351 modeled vs 0.353 actual). The second half carries the complement so the
+// two halves still sum to the full-time lambda (coherent with 1X2).
+const FIRST_HALF_GOAL_FRACTION = 0.44;
+
 export function poissonProba(
   lambdaHome: number,
   lambdaAway: number,
@@ -160,18 +170,28 @@ function computeFirstHalfMarketsFromMatchDistributions(
   const lambdaAway = expectedGoalsFromDistribution(awayDist);
 
   const homeHalfDist = normalizedPoissonDistribution(
-    lambdaHome / 2,
+    lambdaHome * FIRST_HALF_GOAL_FRACTION,
     maxGoals,
     factorialCache,
   );
   const awayHalfDist = normalizedPoissonDistribution(
-    lambdaAway / 2,
+    lambdaAway * FIRST_HALF_GOAL_FRACTION,
     maxGoals,
     factorialCache,
   );
-  // First-half and second-half are modeled as independent, identically distributed.
-  const homeSecondDist = homeHalfDist;
-  const awaySecondDist = awayHalfDist;
+  // Halves are independent but NOT identical: the second half carries the larger
+  // share (1 − FIRST_HALF_GOAL_FRACTION) so 1H + 2H sums back to the full-time
+  // lambda, keeping HT/FT coherent with the 1X2 distribution.
+  const homeSecondDist = normalizedPoissonDistribution(
+    lambdaHome * (1 - FIRST_HALF_GOAL_FRACTION),
+    maxGoals,
+    factorialCache,
+  );
+  const awaySecondDist = normalizedPoissonDistribution(
+    lambdaAway * (1 - FIRST_HALF_GOAL_FRACTION),
+    maxGoals,
+    factorialCache,
+  );
 
   const htftTotals = Object.fromEntries(
     HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, 0]),

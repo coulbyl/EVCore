@@ -28,6 +28,15 @@ import type {
 } from './dashboard.types';
 
 const MIN_SETTLED_MODEL = 10;
+// Minimum settled coupons before a user is ranked on the leaderboard at all.
+// Below this, a single lucky longshot coupon (e.g. +900% ROI on one bet)
+// could otherwise permanently outrank consistent, high-volume players —
+// ROI on 1-4 coupons isn't a track record yet. Chosen deliberately as a
+// hard eligibility floor rather than a soft ROI-shrinkage weight: with an
+// unbounded metric like ROI (a single parlay can return orders of magnitude
+// more than a typical coupon), no fixed shrinkage constant reliably tames
+// a large enough outlier — a floor does, by construction.
+const LEADERBOARD_MIN_SETTLED = 5;
 
 type SummaryData = Awaited<ReturnType<DashboardRepository['getSummaryData']>>;
 
@@ -408,6 +417,16 @@ export class DashboardService {
         vsThreshold: null,
         sampleSize: 0,
       },
+      {
+        channel: 'GOALS',
+        status: 'INACTIVE',
+        primaryMetric: 0,
+        primaryMetricType: 'HIT_RATE',
+        roi: null,
+        hitRate: null,
+        vsThreshold: null,
+        sampleSize: 0,
+      },
     ];
   }
 
@@ -482,6 +501,18 @@ export class DashboardService {
         oddsAvailabilityRate: 1,
         trend: 'FLAT' as const,
       },
+      {
+        channel: 'GOALS',
+        hitRate: null,
+        avgThreshold: null,
+        vsThreshold: null,
+        roi: null,
+        netUnits: null,
+        maxDrawdown: null,
+        sampleSize: 0,
+        oddsAvailabilityRate: 1,
+        trend: 'FLAT' as const,
+      },
     ];
   }
 
@@ -517,7 +548,7 @@ export class DashboardService {
     }
 
     const eligible = [...byUser.values()]
-      .filter((u) => u.total >= 1 && u.staked.gt(0))
+      .filter((u) => u.total >= LEADERBOARD_MIN_SETTLED && u.staked.gt(0))
       .map((u) => ({
         username: u.username,
         settled: u.total,

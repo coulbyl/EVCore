@@ -34,9 +34,10 @@ function richContext(): StrategyContext {
   const evPick: EvaluatedPick = {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    probability: new Decimal('0.60'),
+    // edge = 0.64 − 1/1.90 = 0.114, above VALUE_MIN_EDGE (0.10) so VALUE selects it.
+    probability: new Decimal('0.64'),
     odds: new Decimal('1.90'),
-    ev: new Decimal('0.14'),
+    ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
     isCombo: false,
   };
@@ -124,7 +125,7 @@ describe('ChannelDecisionService', () => {
     expect(consensus?.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(consensus?.selections[0]?.pick).toBe('HOME');
 
-    // AVOID (phase 2): the HOME pick edge (0.60 − 1/1.90 ≈ 0.07) is nowhere near
+    // AVOID (phase 2): the HOME pick edge (0.64 − 1/1.90 ≈ 0.11) is nowhere near
     // the 0.30 divergence floor → nothing to avoid.
     const avoid = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.AVOID,

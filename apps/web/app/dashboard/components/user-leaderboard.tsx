@@ -114,7 +114,7 @@ export function UserLeaderboard({
           Top joueurs
         </h2>
         <span className="ml-auto text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
-          ROI · ≥ 1 coupon joué
+          ROI · ≥ 5 coupons joués
         </span>
       </div>
 

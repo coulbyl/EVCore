@@ -29,6 +29,7 @@ export function DecisionsPageFrame({
   view,
   onViewChange,
   subHeader,
+  subHeaderMobileHidden = false,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -42,6 +43,9 @@ export function DecisionsPageFrame({
   view: DecisionsView;
   onViewChange: (view: DecisionsView) => void;
   subHeader?: React.ReactNode;
+  // Some lenses' sub-header (e.g. the "only picks" toggle) isn't worth the
+  // vertical space on small screens — hide the whole bar under `sm:`.
+  subHeaderMobileHidden?: boolean;
 }) {
   const pageOwnsScroll = contentScroll === "page";
 
@@ -59,7 +63,11 @@ export function DecisionsPageFrame({
       </PageHeader>
 
       {subHeader ? (
-        <div className="mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5">
+        <div
+          className={`mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5 ${
+            subHeaderMobileHidden ? "hidden sm:block" : ""
+          }`}
+        >
           {subHeader}
         </div>
       ) : null}

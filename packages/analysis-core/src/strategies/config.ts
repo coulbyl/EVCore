@@ -172,22 +172,26 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
     },
     WC: {
-      // WC backtest 2026-06-02 (WC 2022, cross-comp fallback from WCQ qualifying seasons).
-      // Brier 0.654 / CalibError 3.1% with NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT=1.0 (xG ignored —
-      // non-European qualifying competitions don't provide reliable xG data).
-      // DOMINANT: only 0.60 clears the 55% floor (55.6%, 9 picks, 14% coverage). Fragile on 64 fixtures.
-      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
-      // DRAW: observation mode. No validated signal (ROI negative at all tested thresholds).
-      // WC group stage historical draw rate ~17-23%. Threshold 0.25 = drawOdds < 4.00.
-      // Raised from 0.20 → 0.25 (2026-06-14) after 5 settled picks: Mexico-SA (4.42, ❌) was the
-      // only pick priced above 4.00 — filtering it retrospectively keeps the two correct picks intact.
-      // minSampleN=5 to collect data from WC 2026 group stage without blocking picks.
+      // WC recalibration 2026-07-01 on WC 2026 forward data (group stage + 7 R32 =
+      // 79 fixtures played; WC 2022 produced no settled picks — no odds imported —
+      // so this is single-tournament, in-progress: only structural + data-confirmed
+      // moves, no ROI-fit to variance).
+      // DOMINANT: 0.60 is break-even in the 48-team format (33 picks 66.7% HR, ROI
+      // -0.7%); 0.65 drops the weak 0.60-0.65 band (4W/5L) → 24 picks 75.0% HR,
+      // +10.7% ROI. Raise to 0.65 — consistent with every WCQ config (the expanded
+      // 48-team format is more competitive, so DOMINANT needs a higher bar).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // DRAW (staked): observation-derived but profitable — 31 picks 38.7% HR at avg
+      // odds 3.38, +8.45u (+27% ROI). The model rarely prices draws ≥0.28 (only 12
+      // picks) and raising the gate collapses it; 0.25 = drawOdds < 4.00 captures the
+      // signal. Kept unchanged (raised 0.20 → 0.25 on 2026-06-14).
       DRAW: { enabled: true, threshold: 0.25, minSampleN: 5 },
-      // BTTS: observation mode. WC historically ~48% BTTS rate but model caps BTTS probs at ~0.47
-      // because WCQ cross-comp stats underestimate goal-scoring in tournament context (qualifying is
-      // more defensive). Threshold 0.35 = below normal 0.50 floor, will fire on ~58% of fixtures.
-      // HR on WC 2022 at 0.35: 40.5% (37 picks) — not a validated signal, data collection only.
-      BTTS: { enabled: true, threshold: 0.35, minSampleN: 5 },
+      // BTTS (observation only): 0.35 was an explicit data-collection placeholder
+      // ("will fire on ~58% of fixtures ... data collection only"). Forward data now
+      // supports a real conviction gate: at 0.50, 40 picks 62.5% HR (+21.9% ROI),
+      // stable across 0.45-0.55. Promote 0.35 → 0.50 so the channel emits a genuine
+      // signal instead of noise. minSampleN raised 5 → 10 now that volume exists.
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 10 },
     },
     WCQCA: {
       // WCQCA backtest 2026-06-02 (2026-27 season, 100 fixtures).
@@ -1860,18 +1864,27 @@ export const AVOID_CONFIG = {
 } as const;
 
 // ─────────────────────────────────────────────
-// CORRECT_SCORE (exact score) — OBSERVATION ONLY. Value-first: among the
-// scorelines the book prices, emit the single best-EV one the model can price
-// (EV = modelCellProbability × odds − 1). Global config (the value mechanism is
-// league-agnostic). NEVER staked — odds are forward-collected only (no historical
-// backtest), so a selection is recorded + settled analytically to accumulate
-// forward data. `minProbability` drops deep-longshot cells (quote noise);
-// `minEv` keeps only genuine value. Dixon-Coles was rejected (2026-06-30): the
-// independent Poisson matrix is as accurate on scorelines.
+// CORRECT_SCORE (exact score) — OBSERVATION ONLY, PREDICTION channel (not value).
+// Among the scorelines the book prices, emit the single MOST LIKELY one the model
+// can price (argmax of the Poisson cell probability). Global config (the mechanism
+// is league-agnostic). NEVER staked — odds are forward-collected only (no historical
+// backtest), so a selection is recorded + settled analytically to accumulate forward
+// data; the market price (odds/EV) is still stored for the bettor to judge.
+//
+// Argmax-EV was REJECTED (2026-07-01): on a ~40-outcome fat-tail market, maximizing
+// EV = modelCellProbability × odds − 1 mechanically selects the cell where the model
+// most over-prices vs the book — i.e. pure Poisson rounding noise on longshots
+// (0:4 @ 501, "+1228% EV"), never a real edge. An independent Poisson simply cannot
+// resolve a longshot scoreline to that precision, and the book is right there (same
+// logic as AVOID's extreme-divergence rule above). The most probable scoreline is a
+// credible, short-priced prediction; that is what serves a bettor.
+//
+// `minProbability` is a CONVICTION gate: if even the modal scoreline sits below it,
+// no single score is predictable (match too open) → no pick. Dixon-Coles was rejected
+// (2026-06-30): the independent Poisson matrix is as accurate on scorelines.
 export const CORRECT_SCORE_CONFIG = {
   enabled: true,
-  minProbability: 0.02,
-  minEv: 0,
+  minProbability: 0.05,
 } as const;
 
 export function getChannelStrategyConfig(

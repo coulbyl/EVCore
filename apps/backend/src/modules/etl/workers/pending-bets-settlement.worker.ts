@@ -16,8 +16,6 @@ import { BettingEngineService } from '../../betting-engine/betting-engine.servic
 import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
-import { CacheService } from '@common/redis/cache.service';
-import { CHAT_CACHE_TAGS } from '../../chat/chat.constants';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
@@ -36,9 +34,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
-
-  @Inject(CacheService)
-  private cache!: CacheService;
 
   constructor(
     private readonly fixtureService: FixtureService,
@@ -175,7 +170,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         { calibration },
         'Calibration check complete after settlement',
       );
-      void this.cache.invalidateTag(CHAT_CACHE_TAGS.settlement);
     }
   }
 
@@ -293,8 +287,13 @@ function mapFixtureState(item: ApiFootballFixture): {
   return {
     scheduledAt: new Date(item.fixture.date),
     status: mapStatus(item.fixture.status.short),
-    homeScore: item.goals.home,
-    awayScore: item.goals.away,
+    // score.fulltime is the 90-minute regulation score — frozen at that value
+    // even if the match goes to extra time/penalties, unlike `goals` (the
+    // running total, which for AET/PEN matches includes ET+penalty goals).
+    // Settlement markets resolve on regulation time only; before minute 90
+    // fulltime is null, so fall back to `goals` for live in-progress tracking.
+    homeScore: item.score.fulltime.home ?? item.goals.home,
+    awayScore: item.score.fulltime.away ?? item.goals.away,
     homeHtScore: item.score.halftime.home,
     awayHtScore: item.score.halftime.away,
   };

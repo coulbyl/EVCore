@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@evcore/ui";
-import { CloudAlert, Wifi, WifiOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+const OFFLINE_TOAST_ID = "network-offline";
+const SLOW_CONNECTION_TOAST_ID = "network-slow-connection";
 
 type NetworkInformationLike = {
   effectiveType?: string;
@@ -34,10 +36,14 @@ function isSlowConnection(connection: NetworkInformationLike | null) {
   return typeof connection.rtt === "number" && connection.rtt >= 600;
 }
 
+// Network status is reported via sonner toasts rather than a persistent
+// banner — this component renders nothing itself. Offline/slow-connection
+// toasts use duration: Infinity so they stay up until the condition clears
+// or the user dismisses them (Toaster has closeButton enabled globally);
+// the reconnect confirmation is a normal transient toast.
 export function NetworkStatusBanner() {
   const [isOnline, setIsOnline] = useState(true);
   const [isSlow, setIsSlow] = useState(false);
-  const [showReconnectToast, setShowReconnectToast] = useState(false);
   const wasOfflineRef = useRef(false);
 
   useEffect(() => {
@@ -47,8 +53,10 @@ export function NetworkStatusBanner() {
       const slow = online ? isSlowConnection(connection) : false;
 
       if (online && wasOfflineRef.current) {
-        setShowReconnectToast(true);
-        window.setTimeout(() => setShowReconnectToast(false), 3200);
+        toast.success("Connexion rétablie", {
+          description:
+            "EVCore peut à nouveau synchroniser les données en direct.",
+        });
       }
 
       wasOfflineRef.current = !online;
@@ -70,55 +78,31 @@ export function NetworkStatusBanner() {
     };
   }, []);
 
-  const banner = useMemo(() => {
+  useEffect(() => {
     if (!isOnline) {
-      return {
-        icon: <WifiOff className="size-4" />,
-        title: "Vous êtes hors ligne",
+      toast.error("Vous êtes hors ligne", {
+        id: OFFLINE_TOAST_ID,
         description:
           "Certaines données EVCore peuvent être indisponibles jusqu'au retour de la connexion.",
-        className:
-          "border-danger/30 bg-danger/8 text-danger [&_[data-slot=alert-description]]:text-danger/85",
-      };
+        duration: Infinity,
+      });
+    } else {
+      toast.dismiss(OFFLINE_TOAST_ID);
     }
+  }, [isOnline]);
 
-    if (isSlow) {
-      return {
-        icon: <CloudAlert className="size-4" />,
-        title: "Connexion lente détectée",
+  useEffect(() => {
+    if (isOnline && isSlow) {
+      toast.warning("Connexion lente détectée", {
+        id: SLOW_CONNECTION_TOAST_ID,
         description:
           "Les chargements et mises à jour peuvent prendre un peu plus de temps.",
-        className:
-          "border-warning/30 bg-warning/8 text-warning [&_[data-slot=alert-description]]:text-warning/85",
-      };
+        duration: Infinity,
+      });
+    } else {
+      toast.dismiss(SLOW_CONNECTION_TOAST_ID);
     }
-
-    return null;
   }, [isOnline, isSlow]);
 
-  return (
-    <>
-      {banner ? (
-        <div className="px-4 pb-3 lg:px-5">
-          <Alert className={banner.className}>
-            {banner.icon}
-            <AlertTitle>{banner.title}</AlertTitle>
-            <AlertDescription>{banner.description}</AlertDescription>
-          </Alert>
-        </div>
-      ) : null}
-
-      {showReconnectToast ? (
-        <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 w-[calc(100%-2rem)] max-w-sm sm:bottom-4">
-          <Alert className="border-success/30 bg-success/10 text-success [&_[data-slot=alert-description]]:text-success/85">
-            <Wifi className="size-4" />
-            <AlertTitle>Connexion rétablie</AlertTitle>
-            <AlertDescription>
-              EVCore peut à nouveau synchroniser les données en direct.
-            </AlertDescription>
-          </Alert>
-        </div>
-      ) : null}
-    </>
-  );
+  return null;
 }

@@ -98,15 +98,17 @@ describe('CorrectScoreStrategy', () => {
     expect(d.reasonCode).toBe('no_odds');
   });
 
-  it('emits the highest-EV priced scoreline the model can price', () => {
+  it('emits the most likely priced scoreline, ignoring a longshot with fat EV', () => {
     const matrix = computeCorrectScoreMatrix(1.5, 1.1);
-    // Price two scorelines; give "1:1" odds rich enough to be the best EV.
-    const p10 = matrix['1:0'].toNumber();
+    // "1:1" is the modal scoreline; "0:4" is a fat-tail longshot. Price the
+    // longshot at huge odds so an argmax-EV rule would grab it — the prediction
+    // channel must still pick the most probable score (1:1).
     const p11 = matrix['1:1'].toNumber();
-    // Fair odds = 1/p; inflate 1:1 above fair so its EV beats 1:0 at fair odds.
+    const p04 = matrix['0:4'].toNumber();
+    expect(p11).toBeGreaterThan(p04);
     const odds = {
-      '1:0': new Decimal((1 / p10).toFixed(2)),
-      '1:1': new Decimal((1.5 / p11).toFixed(2)),
+      '1:1': new Decimal((1 / p11).toFixed(2)), // fair → EV ≈ 0
+      '0:4': new Decimal('501'), // absurd value on a noise cell
     };
     const d = strategy.evaluate(
       makeContext({ lambdaHome: 1.5, lambdaAway: 1.1, correctScoreOdds: odds }),
@@ -114,12 +116,13 @@ describe('CorrectScoreStrategy', () => {
     expect(d.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(d.selections[0]?.market).toBe(Market.CORRECT_SCORE);
     expect(d.selections[0]?.pick).toBe('1:1');
-    expect(d.selections[0]?.ev?.greaterThan(0)).toBe(true);
+    // EV is still recorded (price attached) so the bettor can judge it.
+    expect(d.selections[0]?.odds).toBeDefined();
   });
 
-  it('skips deep-longshot cells below the probability floor', () => {
-    // "6:0" has negligible model probability → filtered even at huge odds; with
-    // no other priced line, the decision is REJECTED (no_modelable_scoreline).
+  it('REJECTED (below_conviction) when even the modal scoreline is too unlikely', () => {
+    // "6:0" is a deep-longshot cell far below the conviction floor; with no other
+    // priced line it is the modal candidate but too unlikely to name as a score.
     const d = strategy.evaluate(
       makeContext({
         lambdaHome: 1.2,
@@ -128,6 +131,6 @@ describe('CorrectScoreStrategy', () => {
       }),
     );
     expect(d.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
-    expect(d.reasonCode).toBe('no_modelable_scoreline');
+    expect(d.reasonCode).toBe('below_conviction');
   });
 });

@@ -31,9 +31,11 @@
     "next-intl": "catalog:",
     "next-themes": "catalog:",
     "react": "catalog:",
+    "react-day-picker": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "recharts": "catalog:",
+    "sonner": "catalog:",
     "vaul": "catalog:",
     "zod": "catalog:"
   },

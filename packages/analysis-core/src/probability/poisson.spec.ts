@@ -41,6 +41,20 @@ describe("computePoissonMarkets", () => {
     );
     expect(total).toBeCloseTo(1, 6);
   });
+
+  it("calibrates HT Over 1.5 to the empirical base rate, not the naive λ/2 split", () => {
+    // Full-time goal expectancy ≈ 2.79 (our dataset average). The naive half-
+    // symmetric model uses λ_1H = 2.79/2 = 1.396 → P(HT total ≥ 2) ≈ 0.407, which
+    // over-predicts the observed 0.353. With FIRST_HALF_GOAL_FRACTION = 0.44 the
+    // model must land near the empirical base rate.
+    const m = computePoissonMarkets(1.55, 1.24); // λ_total ≈ 2.79
+    const htOver15 = m.ouHT.OVER_1_5!.toNumber();
+    // Lands in a tight band around the empirical 0.353 (model gives ≈ 0.347)…
+    expect(htOver15).toBeGreaterThan(0.33);
+    expect(htOver15).toBeLessThan(0.37);
+    // …and well below the naive λ/2 value (≈ 0.407) that caused the losing HT picks.
+    expect(htOver15).toBeLessThan(0.4);
+  });
 });
 
 describe("computeCorrectScoreMatrix", () => {

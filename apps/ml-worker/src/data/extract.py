@@ -49,18 +49,23 @@ LEFT JOIN LATERAL (
 ) os ON TRUE
 """
 
+# Settlement lives on `channel_selection.result` for every canal — most
+# canals (DOMINANT/BTTS/DRAW/GOALS) never materialise a `bet` row at all
+# (they aren't individually staked), so `bet` cannot be the source table.
+# `cs.channel` doesn't exist either: it moved to `channel_decision.channel`
+# in migration `20260617000232` (17 juin 2026) — see docs/ml-worker-sync.md.
 _BET_SQL = f"""
 SELECT
     mr."analyzedAt"                 AS analyzed_at,
     mr."deterministicScore"         AS deterministic_score,
     mr.features                     AS features,
-    b.market::text                  AS market,
-    b.pick,
-    CASE WHEN cs.channel = 'SAFE' THEN 'SV' ELSE 'EV' END AS canal,
-    b."probEstimated"               AS prob_estimated,
-    b."oddsSnapshot"                AS odds_bet,
-    b.ev,
-    (b.status = 'WON')              AS outcome_correct,
+    cs.market::text                 AS market,
+    cs.pick,
+    cd.channel::text                AS canal,
+    cs.probability                  AS prob_estimated,
+    cs.odds                         AS odds_bet,
+    cs.ev,
+    (cs.result = 'WON')             AS outcome_correct,
     c.code                          AS competition_code,
     COALESCE(os."homeOdds", os."pickHomeOdds") AS pinnacle_home,
     COALESCE(os."drawOdds", os."pickDrawOdds") AS pinnacle_draw,
@@ -69,15 +74,15 @@ SELECT
     os."noOdds"                     AS pinnacle_no,
     os."overOdds"                   AS pinnacle_over,
     os."underOdds"                  AS pinnacle_under
-FROM model_run mr
-JOIN bet b         ON b."modelRunId"  = mr.id
-JOIN channel_selection cs ON cs.id    = b."channelSelectionId"
+FROM channel_selection cs
+JOIN channel_decision cd ON cd.id     = cs."channelDecisionId"
+JOIN model_run mr         ON mr.id    = cd."modelRunId"
 JOIN fixture f     ON f.id            = mr."fixtureId"
 JOIN season s      ON s.id            = f."seasonId"
 JOIN competition c ON c.id            = s."competitionId"
-{_ODDS_LATERAL_SQL.format(market_ref="b.market")}
-WHERE b.status IN ('WON', 'LOST')
-  AND cs.channel IN ('EV', 'SAFE')
+{_ODDS_LATERAL_SQL.format(market_ref="cs.market")}
+WHERE cs.result IN ('WON', 'LOST')
+  AND cd.channel IN ('VALUE', 'SAFE', 'DOMINANT', 'BTTS', 'DRAW', 'GOALS')
 ORDER BY mr."analyzedAt"
 """
 

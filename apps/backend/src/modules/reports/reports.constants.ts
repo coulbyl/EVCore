@@ -2,17 +2,21 @@ import { ML_MIN_BRIER_IMPROVEMENT } from '@modules/ml/ml.constants';
 import type { PromotionVerdict, SegmentComparison } from './reports.types';
 
 // Segments whose ML correction is captured per pick (shadow_ml_corrected_p on
-// the value bet's ModelRun). Only these can be compared baseline-vs-corrected
-// on realized outcomes. Keys mirror bet.market.
+// the VALUE channel's ModelRun). Only these can be compared baseline-vs-corrected
+// on realized outcomes. Keys mirror channel_selection.market.
+// Canal names renamed 2026-07 (EV→VALUE, CONF→DOMINANT) — see docs/ml-worker-sync.md.
 export const SHADOW_CAPTURED_SEGMENTS = [
-  'EV:ONE_X_TWO',
-  'EV:OVER_UNDER',
-  'EV:BTTS',
+  'VALUE:ONE_X_TWO',
+  'VALUE:OVER_UNDER',
+  'VALUE:BTTS',
 ] as const;
 
-// Prediction channels: no per-pick shadow correction yet — meta-metrics only.
+// Other channels now get shadow ML correction too (shadow_ml_by_channel on
+// ModelRun.features — see betting-engine.service.ts computeShadowMlByChannel),
+// but ReportsRepository only reads the VALUE channel today, so their per-pick
+// Brier/ROI comparison isn't wired up here yet — meta-metrics only for now.
 export const META_ONLY_SEGMENTS = [
-  'CONF:ONE_X_TWO',
+  'DOMINANT:ONE_X_TWO',
   'DRAW:ONE_X_TWO',
   'BTTS:BTTS',
 ] as const;

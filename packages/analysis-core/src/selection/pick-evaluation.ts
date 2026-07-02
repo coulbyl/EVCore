@@ -19,6 +19,7 @@ import {
   SAFE_VALUE_MAX_ODDS,
   SAFE_VALUE_MIN_EV,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
+  VALUE_MIN_EDGE,
 } from "./constants";
 import { buildQualityScore, getPickRejectionReason } from "./pick-validation";
 import type { SelectionConfig } from "./config";
@@ -171,8 +172,19 @@ export function selectBestViablePick(
   );
   const primaryWasRejected = topByQuality?.rejectionReason !== undefined;
 
+  // VALUE-only edge floor: the model is systematically overconfident, so require a
+  // real market edge (probability − 1/odds), not just positive EV. A league config
+  // may set this unreachably high to suspend VALUE entirely (see VALUE_MIN_EDGE).
+  // SAFE runs through selectSafeValuePick and is intentionally not gated here.
+  const minEdge = config.valueMinEdge ?? VALUE_MIN_EDGE;
+
   const viable = evaluated
     .filter((p): p is ViablePick => p.rejectionReason === undefined)
+    .filter((p) =>
+      p.probability
+        .minus(new Decimal(1).div(p.odds))
+        .greaterThanOrEqualTo(minEdge),
+    )
     .sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
 
   if (primaryWasRejected) {

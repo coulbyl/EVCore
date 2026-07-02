@@ -76,7 +76,7 @@ export type ChannelStatus =
   | "INSUFFICIENT_DATA";
 
 export type ChannelHealthItem = {
-  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
+  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
   status: ChannelStatus;
   primaryMetric: number;
   primaryMetricType: "ROI" | "HIT_RATE";
@@ -87,7 +87,7 @@ export type ChannelHealthItem = {
 };
 
 export type ChannelStatsItem = {
-  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW";
+  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
   hitRate: number | null;
   avgThreshold: number | null;
   vsThreshold: number | null;
