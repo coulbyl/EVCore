@@ -30,6 +30,11 @@ import {
   type CalibrationAlert,
 } from './market-coherence';
 import {
+  ShadowPredictionsService,
+  hasDirectionalConflict,
+  type ShadowPrediction,
+} from './shadow-predictions.service';
+import {
   CALIBRATION_GATE,
   DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
@@ -159,6 +164,9 @@ export class BettingEngineService {
     oddsLoader?: OddsSnapshotLoader,
     @Optional()
     betSettlement?: BetSettlementService,
+    // Shadow-only /predictions cross-check; unit tests omit it → shadow null.
+    @Optional()
+    private readonly shadowPredictionsService?: ShadowPredictionsService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
@@ -353,6 +361,7 @@ export class BettingEngineService {
       where: { id: fixtureId },
       select: {
         id: true,
+        externalId: true,
         seasonId: true,
         scheduledAt: true,
         homeTeamId: true,
@@ -679,6 +688,40 @@ export class BettingEngineService {
       }
     }
 
+    // Shadow /predictions cross-check — independent second model (API-Football).
+    // Stored + logged only; a directional conflict with our λ is the strongest
+    // corrupted-input tell but never changes a decision by itself.
+    let shadowPredictions: (ShadowPrediction & { conflict: boolean }) | null =
+      null;
+    if (
+      FEATURE_FLAGS.SCORING.SHADOW_PREDICTIONS &&
+      this.shadowPredictionsService &&
+      fixture.externalId !== null
+    ) {
+      const prediction =
+        await this.shadowPredictionsService.fetchShadowPrediction(
+          fixture.externalId,
+        );
+      if (prediction !== null) {
+        const conflict = hasDirectionalConflict(prediction, lambda);
+        shadowPredictions = { ...prediction, conflict };
+        if (conflict) {
+          logger.warn(
+            {
+              fixtureId,
+              competitionCode: getFixtureCompetitionCode(fixture),
+              homeTeam: getFixtureHomeTeamName(fixture),
+              awayTeam: getFixtureAwayTeamName(fixture),
+              lambdaHome: lambda.home,
+              lambdaAway: lambda.away,
+              shadowPredictions,
+            },
+            'Shadow predictions conflict: API-Football Poisson favors the opposite side — check input data',
+          );
+        }
+      }
+    }
+
     if (valueBet !== null && valueBet.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
       logger.warn(
         {
@@ -737,6 +780,7 @@ export class BettingEngineService {
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
       calibration_alert: calibrationAlert,
+      shadow_predictions: shadowPredictions,
       shadow_h2h: shadowH2h,
       shadow_congestion: shadowCongestion,
       shadow_lineups: null,

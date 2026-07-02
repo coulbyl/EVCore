@@ -105,6 +105,14 @@ export type AnalysisSheetJsonFixture = {
       h2h: number | null;
       congestion: number | null;
     } | null;
+    // API-Football /predictions second opinion (shadow-only). `conflict` is
+    // true when their Poisson comparison favors the opposite side vs our λ.
+    shadowPredictions: {
+      winnerName: string | null;
+      percent: { home: number; draw: number; away: number };
+      poisson: { home: number; away: number };
+      conflict: boolean;
+    } | null;
   };
   avoidFlag: AnalysisSheetAvoidFlag | null;
   calibrationAlert: AnalysisSheetCalibrationAlert | null;
@@ -190,12 +198,56 @@ function toJsonFixture(
             congestion: context.shadowCongestion,
           }
         : null,
+      shadowPredictions: buildShadowPredictions(fixture.features),
     },
     avoidFlag,
     calibrationAlert,
     selectedPicks,
     rejectionSummary,
   };
+}
+
+// Parses ModelRun.features.shadow_predictions (API-Football second opinion,
+// shadow-only). Defensive: malformed payloads yield null.
+function buildShadowPredictions(
+  features: unknown,
+): AnalysisSheetJsonFixture['model']['shadowPredictions'] {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)['shadow_predictions'];
+  if (!raw || typeof raw !== 'object') return null;
+
+  const p = raw as {
+    winnerName?: unknown;
+    percent?: unknown;
+    poisson?: unknown;
+    conflict?: unknown;
+  };
+  const percent = asTriple(p.percent, ['home', 'draw', 'away']);
+  const poisson = asTriple(p.poisson, ['home', 'away']);
+  if (percent === null || poisson === null || typeof p.conflict !== 'boolean') {
+    return null;
+  }
+
+  return {
+    winnerName: typeof p.winnerName === 'string' ? p.winnerName : null,
+    percent: percent as { home: number; draw: number; away: number },
+    poisson: poisson as { home: number; away: number },
+    conflict: p.conflict,
+  };
+}
+
+function asTriple(
+  value: unknown,
+  keys: string[],
+): Record<string, number> | null {
+  if (!value || typeof value !== 'object') return null;
+  const out: Record<string, number> = {};
+  for (const key of keys) {
+    const v = (value as Record<string, unknown>)[key];
+    if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+    out[key] = v;
+  }
+  return out;
 }
 
 // Parses ModelRun.features.calibration_alert (written by the betting engine's
@@ -484,6 +536,14 @@ export function buildTxtSheet(
           `    Offender [${channelLabel(o.channel)}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
         );
       }
+    }
+
+    if (model.shadowPredictions) {
+      const sp = model.shadowPredictions;
+      const conflictStr = sp.conflict ? '  ⚠ CONFLIT de direction avec λ' : '';
+      w(
+        `  2e avis (API-Football) : ${sp.winnerName ?? '—'}  1X2 ${sp.percent.home}/${sp.percent.draw}/${sp.percent.away}%  poisson ${sp.poisson.home}/${sp.poisson.away}${conflictStr}`,
+      );
     }
 
     if (f.calibrationAlert) {

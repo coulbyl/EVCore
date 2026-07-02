@@ -1,3 +1,5 @@
+import { ApiFootballClient } from '../etl/api-football.client';
+import { ShadowPredictionsService } from './shadow-predictions.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
@@ -29,6 +31,8 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
   controllers: [BettingEngineController, ChannelDecisionController],
   providers: [
     BettingEngineService,
+    ApiFootballClient,
+    ShadowPredictionsService,
     H2HService,
     CongestionService,
     FriModelService,
