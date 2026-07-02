@@ -11,11 +11,3 @@ export const ANALYSIS_SHEET_CHANNEL_OPTIONS: {
   { value: "DRAW", label: "Nul" },
   { value: "GOALS", label: "Buts" },
 ];
-
-export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function daysAgoIso(days: number): string {
-  return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
-}

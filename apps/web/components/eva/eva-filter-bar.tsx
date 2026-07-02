@@ -18,16 +18,12 @@ import {
 } from "@evcore/ui";
 import { CalendarIcon, Download, Sparkles } from "lucide-react";
 import type { AnalysisSheetFilters } from "@/domains/analysis-sheet/types/analysis-sheet";
-import { ANALYSIS_SHEET_CHANNEL_OPTIONS } from "./analysis-sheet-constants";
+import { isoToDate, toISODate, todayIso } from "@/lib/date";
+import { ANALYSIS_SHEET_CHANNEL_OPTIONS } from "./eva-constants";
 
-const CALENDAR_START_MONTH = new Date(2020, 0);
 const CALENDAR_END_MONTH = new Date(new Date().getFullYear() + 1, 11);
 
-function isoToDate(iso: string): Date {
-  return new Date(`${iso}T12:00:00Z`);
-}
-
-export function DateRangeFilterBar({
+export function EvaFilterBar({
   filters,
   onFiltersChange,
   onAnalyze,
@@ -41,6 +37,7 @@ export function DateRangeFilterBar({
   onExport: (format: "txt" | "json") => void;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const today = isoToDate(todayIso());
   const range: DateRange = {
     from: isoToDate(filters.from),
     to: isoToDate(filters.to),
@@ -50,8 +47,8 @@ export function DateRangeFilterBar({
     if (!next?.from) return;
     onFiltersChange({
       ...filters,
-      from: next.from.toISOString().slice(0, 10),
-      to: (next.to ?? next.from).toISOString().slice(0, 10),
+      from: toISODate(next.from),
+      to: toISODate(next.to ?? next.from),
     });
     if (next.to) setCalendarOpen(false);
   }
@@ -72,8 +69,9 @@ export function DateRangeFilterBar({
             onSelect={handleRangeSelect}
             numberOfMonths={2}
             captionLayout="dropdown"
-            startMonth={CALENDAR_START_MONTH}
+            startMonth={today}
             endMonth={CALENDAR_END_MONTH}
+            disabled={{ before: today }}
           />
         </PopoverContent>
       </Popover>
@@ -87,7 +85,7 @@ export function DateRangeFilterBar({
             competitionCode: e.target.value.trim() || undefined,
           })
         }
-        className="w-40"
+        className="w-full sm:flex-1"
       />
 
       <Select
@@ -102,7 +100,7 @@ export function DateRangeFilterBar({
           })
         }
       >
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-full sm:w-auto sm:flex-1">
           <SelectValue placeholder="Canal" />
         </SelectTrigger>
         <SelectContent>

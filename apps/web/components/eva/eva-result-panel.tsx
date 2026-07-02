@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle, Skeleton } from "@evcore/ui";
 import { MarkdownArticle } from "@/components/markdown-article";
 import type { AnalyzeWithEvaResult } from "@/domains/analysis-sheet/types/analysis-sheet";
 
-export function AnalysisResultPanel({
+export function EvaResultPanel({
   result,
   isPending,
   error,

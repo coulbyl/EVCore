@@ -22,15 +22,22 @@ import {
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
+// EV et SV sont les deux seuls canaux avec mise automatique sur bankroll —
+// leurs chiffres sont un taux de réussite réel sur paris réglés. CONF, BB,
+// NUL et BUTS sont des signaux consultables et ajoutables manuellement au
+// coupon (pas de mise auto) : on affiche leur volume de signaux généré, pas
+// un taux de réussite, pour ne jamais présenter un signal comme une position
+// réellement jouée.
 const CHANNELS = [
   {
-    tag: "SAFE",
+    tag: "SV",
     label: "Safe Value",
     headline: "Le canal le plus sélectif.",
-    body: "Haute confiance et avantage réel sur la cote. Chaque position est justifiée par les données — pas par l'intuition.",
-    metric: "75.7%",
-    bets: 230,
-    criteria: ["Edge ≥ 8%", "Confiance modèle > 70%", "Cote confirmée"],
+    body: "Haute confiance et avantage réel sur la cote. Mise automatique sur bankroll — chaque position est justifiée par les données, pas par l'intuition.",
+    kind: "staked" as const,
+    metric: "59.0%",
+    bets: 268,
+    criteria: ["Edge ≥ 8%", "Confiance modèle élevée", "Cote confirmée"],
     colorCls: "text-emerald-600 dark:text-emerald-400",
     bgCls: "bg-emerald-500/[0.07] border-emerald-500/20",
     tagCls:
@@ -39,16 +46,32 @@ const CHANNELS = [
     glowCls: "bg-emerald-500/10",
   },
   {
-    tag: "VICTOIRE",
-    label: "VICTOIRE",
-    headline: "L'issue dominante, prouvée.",
-    body: "Issue argmax au-dessus du seuil de la compétition. Une lecture claire de la probabilité la plus probable, sans compromis.",
-    metric: "57.2%",
-    bets: 159,
+    tag: "EV",
+    label: "Expected Value",
+    headline: "La valeur là où les cotes la cachent.",
+    body: "Le modèle cible les positions sous-estimées par le marché. Mise automatique sur bankroll — fréquence de réussite moindre, compensée par des cotes significativement plus hautes.",
+    kind: "staked" as const,
+    metric: "45.5%",
+    bets: 815,
+    criteria: ["EV ≥ 8%", "Cote sous-évaluée", "Marché inefficient"],
+    colorCls: "text-violet-600 dark:text-violet-400",
+    bgCls: "bg-violet-500/[0.07] border-violet-500/20",
+    tagCls:
+      "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20",
+    dotCls: "bg-violet-600 dark:bg-violet-400",
+    glowCls: "bg-violet-500/10",
+  },
+  {
+    tag: "CONF",
+    label: "Confiance",
+    headline: "L'issue dominante, à discernement.",
+    body: "Issue argmax au-dessus du seuil de la compétition. Un signal directionnel clair, à intégrer vous-même au coupon — pas encore de mise automatique tant que la calibration par ligue n'est pas stabilisée sur tous les marchés résultat.",
+    kind: "signal" as const,
+    signals: 7225,
     criteria: [
       "Issue dominante claire",
       "Seuil de ligue validé",
-      "Modèle calibré",
+      "Ajout manuel au coupon",
     ],
     colorCls: "text-blue-600 dark:text-blue-400",
     bgCls: "bg-blue-500/[0.07] border-blue-500/20",
@@ -58,16 +81,16 @@ const CHANNELS = [
     glowCls: "bg-blue-500/10",
   },
   {
-    tag: "BTTS",
+    tag: "BB",
     label: "Les deux équipes marquent",
     headline: "Statistique pure. Pas de biais.",
-    body: "Les deux équipes marquent. Canal stable sur les ligues à forte densité offensive, indépendant du résultat final.",
-    metric: "65.6%",
-    bets: 163,
+    body: "Les deux équipes marquent. Signal stable sur les ligues à forte densité offensive, indépendant du résultat final — ajoutable manuellement au coupon.",
+    kind: "signal" as const,
+    signals: 8698,
     criteria: [
       "Densité offensive élevée",
-      "Historique BTTS > 55%",
-      "Cote validée",
+      "Historique BTTS validé",
+      "Ajout manuel au coupon",
     ],
     colorCls: "text-amber-600 dark:text-amber-400",
     bgCls: "bg-amber-500/[0.07] border-amber-500/20",
@@ -77,19 +100,55 @@ const CHANNELS = [
     glowCls: "bg-amber-500/10",
   },
   {
-    tag: "VALUE",
-    label: "Expected Value",
-    headline: "La valeur là où les cotes la cachent.",
-    body: "Le modèle cible les positions sous-estimées par le marché. Une fréquence de réussite moindre, compensée par des cotes significativement plus hautes.",
-    metric: "33.1%",
-    bets: 423,
-    criteria: ["EV ≥ 8%", "Cote sous-évaluée", "Marché inefficient"],
-    colorCls: "text-violet-600 dark:text-violet-400",
-    bgCls: "bg-violet-500/[0.07] border-violet-500/20",
+    tag: "NUL",
+    label: "Nul",
+    headline: "La probabilité que le marché sous-estime.",
+    body: "Probabilité implicite bookmaker sur le match nul, recoupée au modèle Poisson en secours. Signal ajoutable manuellement au coupon sur les ligues validées.",
+    kind: "signal" as const,
+    signals: 3342,
+    criteria: [
+      "Probabilité implicite bookmaker",
+      "Ligues validées par backtest",
+      "Ajout manuel au coupon",
+    ],
+    colorCls: "text-rose-600 dark:text-rose-400",
+    bgCls: "bg-rose-500/[0.07] border-rose-500/20",
     tagCls:
-      "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/20",
-    dotCls: "bg-violet-600 dark:bg-violet-400",
-    glowCls: "bg-violet-500/10",
+      "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    dotCls: "bg-rose-600 dark:bg-rose-400",
+    glowCls: "bg-rose-500/10",
+  },
+  {
+    tag: "BUTS",
+    label: "Over / Under buts",
+    headline: "La distribution des scores, sans détour.",
+    body: "Matrice de Poisson indépendante sur le total de buts attendu. Le canal au plus grand volume de signaux — ajoutable manuellement au coupon.",
+    kind: "signal" as const,
+    signals: 34655,
+    criteria: [
+      "Lambda calibré par équipe",
+      "Seuils Over/Under multiples",
+      "Ajout manuel au coupon",
+    ],
+    colorCls: "text-cyan-600 dark:text-cyan-400",
+    bgCls: "bg-cyan-500/[0.07] border-cyan-500/20",
+    tagCls:
+      "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+    dotCls: "bg-cyan-600 dark:bg-cyan-400",
+    glowCls: "bg-cyan-500/10",
+  },
+];
+
+const CONTROL_LAYERS = [
+  {
+    tag: "CONSENSUS",
+    title: "Le renfort par accord.",
+    body: "Quand plusieurs canaux indépendants (directionnel, valeur, buts, marché) convergent sur la même issue, CONSENSUS le signale — une confirmation croisée, pas un canal de plus à part entière.",
+  },
+  {
+    tag: "AVOID",
+    title: "Le garde-fou anti-dérive.",
+    body: "AVOID n'émet jamais de pick. Il surveille l'écart entre la probabilité du modèle et celle implicite du marché — un écart trop extrême déclenche une alerte et suspend la publication du match, pas une position.",
   },
 ];
 
@@ -116,23 +175,16 @@ const STEPS = [
 function HeroPreview() {
   const channels = [
     {
-      tag: "SAFE",
-      metric: "75.7%",
-      bets: 230,
+      tag: "SV",
+      metric: "59.0%",
+      bets: 268,
       color: "text-success",
       bg: "bg-success/10 border-success/20",
     },
     {
-      tag: "VICTOIRE",
-      metric: "57.2%",
-      bets: 159,
-      color: "text-canal-safe",
-      bg: "bg-canal-safe/10 border-canal-safe/20",
-    },
-    {
-      tag: "BTTS",
-      metric: "65.6%",
-      bets: 163,
+      tag: "EV",
+      metric: "45.5%",
+      bets: 815,
       color: "text-canal-value",
       bg: "bg-canal-value/10 border-canal-value/20",
     },
@@ -152,9 +204,11 @@ function HeroPreview() {
                 Portefeuille · 30 jours
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
-                +18.6%
+                +5.4%
               </p>
-              <p className="text-xs text-muted-foreground">ROI global simulé</p>
+              <p className="text-xs text-muted-foreground">
+                ROI réel (SV + EV, misé)
+              </p>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-2.5 py-1 text-[0.65rem] font-semibold text-success">
               <span className="size-1.5 animate-pulse rounded-full bg-success" />
@@ -190,17 +244,17 @@ function HeroPreview() {
         {/* Win bar */}
         <div className="px-4 pb-4">
           <div className="mb-1.5 flex justify-between text-[0.65rem] text-muted-foreground">
-            <span>280 gagnés</span>
-            <span className="text-danger/70">133 perdus</span>
+            <span>529 gagnés</span>
+            <span className="text-danger/70">554 perdus</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
             <div
               className="h-full rounded-full bg-success transition-all"
-              style={{ width: "67.8%" }}
+              style={{ width: "48.8%" }}
             />
           </div>
           <p className="mt-2 text-right text-[0.65rem] text-muted-foreground/60">
-            67.8% réussite · 413 paris réglés
+            48.8% réussite · 1083 paris réglés
           </p>
         </div>
       </div>
@@ -302,8 +356,8 @@ export default function LandingPage() {
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/60 lg:justify-start">
             {[
-              "67.4% de réussite (SV+VICTOIRE+BB)",
-              "975 picks · 4 canaux",
+              "48.8% de réussite (SV + EV, misé)",
+              "55 000+ signaux · 6 canaux",
               "Accès sur invitation",
             ].map((s) => (
               <span key={s} className="flex items-center gap-1.5">
@@ -343,15 +397,18 @@ export default function LandingPage() {
               Canaux d&apos;investissement
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Quatre canaux. Quatre edges.
+              Six canaux. Deux niveaux d&apos;engagement.
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-              Chaque canal opère selon ses propres critères. Vous investissez
-              sur les canaux en performance — pas sur tous à la fois.
+              SV et EV reçoivent une mise automatique sur bankroll — leur
+              taux affiché est un vrai résultat sur paris réglés. CONF, BB,
+              NUL et BUTS sont des signaux que vous ajoutez vous-même au
+              coupon ; leur chiffre est un volume de signaux, pas une
+              performance.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CHANNELS.map((c) => (
               <div
                 key={c.tag}
@@ -372,20 +429,33 @@ export default function LandingPage() {
                     className={`flex items-center gap-1 text-[0.65rem] font-semibold ${c.colorCls}`}
                   >
                     <span className={`size-1.5 rounded-full ${c.dotCls}`} />
-                    Actif
+                    {c.kind === "staked" ? "Mise auto" : "Signal"}
                   </span>
                 </div>
 
-                <div>
-                  <p
-                    className={`text-2xl font-black tabular-nums ${c.colorCls}`}
-                  >
-                    {c.metric}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {c.bets} paris · réussite
-                  </p>
-                </div>
+                {c.kind === "staked" ? (
+                  <div>
+                    <p
+                      className={`text-2xl font-black tabular-nums ${c.colorCls}`}
+                    >
+                      {c.metric}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {c.bets} paris réglés · réussite
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p
+                      className={`text-2xl font-black tabular-nums ${c.colorCls}`}
+                    >
+                      {c.signals.toLocaleString("fr-FR")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      signaux générés · à ajouter au coupon
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-[0.82rem] font-semibold text-foreground">
@@ -407,6 +477,26 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Control layers — CONSENSUS & AVOID are meta-signals, not investable channels */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {CONTROL_LAYERS.map((l) => (
+              <div
+                key={l.tag}
+                className="flex flex-col gap-2 rounded-2xl border border-warning/25 bg-warning/[0.05] p-6"
+              >
+                <span className="w-fit rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-widest text-warning">
+                  {l.tag}
+                </span>
+                <p className="text-[0.82rem] font-semibold text-foreground">
+                  {l.title}
+                </p>
+                <p className="text-[0.8rem] leading-6 text-muted-foreground">
+                  {l.body}
+                </p>
               </div>
             ))}
           </div>
@@ -516,9 +606,9 @@ export default function LandingPage() {
               {/* Stats row */}
               <div className="mt-6 grid grid-cols-3 gap-3 border-t border-border pt-5">
                 {[
-                  { v: "67.4%", l: "Réussite" },
-                  { v: "75.7%", l: "SV — meilleur canal" },
-                  { v: "975", l: "Positions" },
+                  { v: "48.8%", l: "Réussite (SV + EV)" },
+                  { v: "59.0%", l: "SV — meilleur canal misé" },
+                  { v: "1 083", l: "Paris réglés" },
                 ].map((s) => (
                   <div key={s.l}>
                     <p className="text-lg font-black tabular-nums text-foreground">

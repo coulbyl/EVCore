@@ -51,6 +51,11 @@ export class AnalysisSheetService {
     if (to < from) {
       throw new BadRequestException('"to" doit être postérieur à "from".');
     }
+    if (from < startOfUtcDay(new Date())) {
+      throw new BadRequestException(
+        'La période ne peut pas commencer dans le passé.',
+      );
+    }
     const rangeDays = (to.getTime() - from.getTime()) / 86_400_000;
     if (rangeDays > ANALYSIS_SHEET_LIMITS.maxRangeDays) {
       throw new BadRequestException(
