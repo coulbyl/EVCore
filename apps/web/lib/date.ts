@@ -1,4 +1,4 @@
-import { format, isValid, parseISO, subDays } from "date-fns";
+import { addDays, format, isValid, parseISO, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
 
 function parseDateValue(value: string): Date | null {
@@ -19,6 +19,11 @@ export function toISODate(d: Date): string {
 /** "2026-04-11" — N jours avant aujourd'hui */
 export function daysAgoIso(n: number): string {
   return format(subDays(new Date(), n), "yyyy-MM-dd");
+}
+
+/** "2026-04-11" — N jours après aujourd'hui */
+export function daysAheadIso(n: number): string {
+  return format(addDays(new Date(), n), "yyyy-MM-dd");
 }
 
 /** "2026-04-11T18:30:00Z" → Date */
