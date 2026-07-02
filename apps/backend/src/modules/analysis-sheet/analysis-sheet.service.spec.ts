@@ -5,6 +5,10 @@ import type { AnalysisSheetRateLimitService } from './analysis-sheet.rate-limit.
 import type { LlmClient } from './groq/groq-llm.types';
 import { ANALYSIS_SHEET_LIMITS } from './analysis-sheet.constants';
 
+function daysFromTodayIso(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+}
+
 function buildService(overrides?: {
   fixtures?: unknown[];
   usageRequests?: number;
@@ -39,10 +43,10 @@ function buildService(overrides?: {
 describe('AnalysisSheetService', () => {
   it('exportJson/exportTxt delegate to the correct renderer', async () => {
     const { service } = buildService();
-    const input = { from: '2026-06-20', to: '2026-06-27' };
+    const input = { from: daysFromTodayIso(0), to: daysFromTodayIso(7) };
 
     const json = await service.exportJson(input);
-    expect(json.range).toEqual({ from: '2026-06-20', to: '2026-06-27' });
+    expect(json.range).toEqual(input);
 
     const txt = await service.exportTxt(input);
     expect(txt).toContain("FICHE D'ANALYSE EVCORE");
@@ -50,7 +54,7 @@ describe('AnalysisSheetService', () => {
 
   it('rejects a date range wider than the configured cap before touching the repository', async () => {
     const { service, repository } = buildService();
-    const from = '2026-01-01';
+    const from = daysFromTodayIso(0);
     const to = new Date(
       Date.parse(from) + (ANALYSIS_SHEET_LIMITS.maxRangeDays + 1) * 86_400_000,
     )
@@ -68,8 +72,8 @@ describe('AnalysisSheetService', () => {
 
     await expect(
       service.analyzeWithEva('user-1', {
-        from: '2026-06-20',
-        to: '2026-06-27',
+        from: daysFromTodayIso(0),
+        to: daysFromTodayIso(7),
       }),
     ).rejects.toThrow();
     expect(repository.getFixturesInRange).not.toHaveBeenCalled();
@@ -80,8 +84,8 @@ describe('AnalysisSheetService', () => {
     const { service, llm, rateLimit } = buildService();
 
     const result = await service.analyzeWithEva('user-1', {
-      from: '2026-06-20',
-      to: '2026-06-27',
+      from: daysFromTodayIso(0),
+      to: daysFromTodayIso(7),
     });
 
     expect(llm.complete).toHaveBeenCalledOnce();
@@ -122,8 +126,8 @@ describe('AnalysisSheetService', () => {
     const { service } = buildService({ fixtures: manyFixtures });
 
     const result = await service.analyzeWithEva('user-1', {
-      from: '2026-06-20',
-      to: '2026-06-27',
+      from: daysFromTodayIso(0),
+      to: daysFromTodayIso(7),
     });
 
     expect(result.truncated).toBe(true);
