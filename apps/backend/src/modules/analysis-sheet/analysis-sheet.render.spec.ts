@@ -48,6 +48,7 @@ describe('buildJsonSheet', () => {
           channel: 'VALUE',
           decisionStatus: 'SELECTED',
           reasonCode: null,
+          reasonDetails: null,
           market: 'ONE_X_TWO',
           pick: 'HOME',
           comboMarket: null,
@@ -63,6 +64,7 @@ describe('buildJsonSheet', () => {
           channel: 'SAFE',
           decisionStatus: 'SELECTED',
           reasonCode: null,
+          reasonDetails: null,
           market: 'BTTS',
           pick: 'YES',
           comboMarket: null,
@@ -78,6 +80,7 @@ describe('buildJsonSheet', () => {
           channel: 'DOMINANT',
           decisionStatus: 'REJECTED',
           reasonCode: 'ev_below_threshold',
+          reasonDetails: null,
           market: null,
           pick: null,
           comboMarket: null,
@@ -126,6 +129,7 @@ describe('buildJsonSheet', () => {
           channel: 'DRAW',
           decisionStatus: 'REJECTED',
           reasonCode: 'ev_below_threshold',
+          reasonDetails: null,
           market: null,
           pick: null,
           comboMarket: null,
@@ -141,6 +145,7 @@ describe('buildJsonSheet', () => {
           channel: 'DRAW',
           decisionStatus: 'REJECTED',
           reasonCode: 'ev_below_threshold',
+          reasonDetails: null,
           market: null,
           pick: null,
           comboMarket: null,
@@ -156,6 +161,7 @@ describe('buildJsonSheet', () => {
           channel: 'DRAW',
           decisionStatus: 'REJECTED',
           reasonCode: 'odds_below_floor',
+          reasonDetails: null,
           market: null,
           pick: null,
           comboMarket: null,
@@ -208,6 +214,132 @@ describe('buildJsonSheet', () => {
     expect(f?.model.shadowSignals).toBeNull();
   });
 
+  it('surfaces a triggered AVOID as a fixture-level flag (it appears in neither selectedPicks nor rejectionSummary)', () => {
+    const f = fixture({
+      selections: [
+        {
+          channel: 'SAFE',
+          decisionStatus: 'SELECTED',
+          reasonCode: null,
+          reasonDetails: null,
+          market: 'OVER_UNDER',
+          pick: 'UNDER_3_5',
+          comboMarket: null,
+          comboPick: null,
+          probability: 0.983,
+          odds: 1.49,
+          ev: 0.4646,
+          qualityScore: 0.3472,
+          rank: 1,
+          result: null,
+        },
+        {
+          channel: 'AVOID',
+          decisionStatus: 'SELECTED',
+          reasonCode: 'extreme_divergence',
+          reasonDetails: {
+            maxEdge: 0.3,
+            offenders: [
+              {
+                channel: 'SAFE',
+                market: 'OVER_UNDER',
+                pick: 'UNDER_3_5',
+                edge: 0.3119,
+              },
+            ],
+          },
+          market: null,
+          pick: null,
+          comboMarket: null,
+          comboPick: null,
+          probability: null,
+          odds: null,
+          ev: null,
+          qualityScore: null,
+          rank: null,
+          result: null,
+        },
+      ],
+    });
+
+    const sheet = buildJsonSheet([f], meta);
+    const [jsonFixture] = sheet.fixtures;
+
+    expect(jsonFixture.avoidFlag).toEqual({
+      reasonCode: 'extreme_divergence',
+      maxEdge: 0.3,
+      offenders: [
+        {
+          channel: 'SAFE',
+          market: 'OVER_UNDER',
+          pick: 'UNDER_3_5',
+          edge: 0.3119,
+        },
+      ],
+    });
+    expect(sheet.summary.avoidedFixtureCount).toBe(1);
+    // The AVOID meta-decision itself is neither a pick nor a rejection.
+    expect(
+      jsonFixture.selectedPicks.filter((p) => p.channel === 'AVOID'),
+    ).toHaveLength(0);
+    expect(
+      jsonFixture.rejectionSummary.filter((r) => r.channel === 'AVOID'),
+    ).toHaveLength(0);
+  });
+
+  it('leaves avoidFlag null when AVOID rejected (no_avoid_signal) and tolerates malformed reasonDetails', () => {
+    const rejected = fixture({
+      selections: [
+        {
+          channel: 'AVOID',
+          decisionStatus: 'REJECTED',
+          reasonCode: 'no_avoid_signal',
+          reasonDetails: null,
+          market: null,
+          pick: null,
+          comboMarket: null,
+          comboPick: null,
+          probability: null,
+          odds: null,
+          ev: null,
+          qualityScore: null,
+          rank: null,
+          result: null,
+        },
+      ],
+    });
+    expect(buildJsonSheet([rejected], meta).fixtures[0]?.avoidFlag).toBeNull();
+    expect(buildJsonSheet([rejected], meta).summary.avoidedFixtureCount).toBe(
+      0,
+    );
+
+    const malformed = fixture({
+      selections: [
+        {
+          channel: 'AVOID',
+          decisionStatus: 'SELECTED',
+          reasonCode: 'extreme_divergence',
+          reasonDetails: { maxEdge: 'oops', offenders: [{ bad: true }, 42] },
+          market: null,
+          pick: null,
+          comboMarket: null,
+          comboPick: null,
+          probability: null,
+          odds: null,
+          ev: null,
+          qualityScore: null,
+          rank: null,
+          result: null,
+        },
+      ],
+    });
+    expect(buildJsonSheet([malformed], meta).fixtures[0]?.avoidFlag).toEqual({
+      reasonCode: 'extreme_divergence',
+      maxEdge: null,
+      offenders: [],
+    });
+  });
+
   it('handles an empty range with zero fixtures', () => {
     const sheet = buildJsonSheet([], meta);
     expect(sheet.summary.fixtureCount).toBe(0);
@@ -224,6 +356,7 @@ describe('buildTxtSheet', () => {
           channel: 'VALUE',
           decisionStatus: 'SELECTED',
           reasonCode: null,
+          reasonDetails: null,
           market: 'ONE_X_TWO',
           pick: 'HOME',
           comboMarket: null,
@@ -239,6 +372,7 @@ describe('buildTxtSheet', () => {
           channel: 'DRAW',
           decisionStatus: 'REJECTED',
           reasonCode: 'probability_too_low',
+          reasonDetails: null,
           market: null,
           pick: null,
           comboMarket: null,
@@ -265,6 +399,48 @@ describe('buildTxtSheet', () => {
     expect(txt.match(/Rejets :/g)).toHaveLength(1);
   });
 
+  it('renders the AVOID warning with its offenders and the summary rollup', () => {
+    const f = fixture({
+      selections: [
+        {
+          channel: 'AVOID',
+          decisionStatus: 'SELECTED',
+          reasonCode: 'extreme_divergence',
+          reasonDetails: {
+            maxEdge: 0.3,
+            offenders: [
+              {
+                channel: 'SAFE',
+                market: 'OVER_UNDER',
+                pick: 'UNDER_3_5',
+                edge: 0.3119,
+              },
+            ],
+          },
+          market: null,
+          pick: null,
+          comboMarket: null,
+          comboPick: null,
+          probability: null,
+          odds: null,
+          ev: null,
+          qualityScore: null,
+          rank: null,
+          result: null,
+        },
+      ],
+    });
+
+    const txt = buildTxtSheet([f], meta);
+
+    expect(txt).toContain('Fixtures flaguées AVOID : 1');
+    expect(txt).toContain(
+      '⚠ AVOID [extreme_divergence] — divergence modèle/marché implausible (edge ≥ 0.30) ; picks exclus du staking',
+    );
+    expect(txt).toContain('Offender [SV]');
+    expect(txt).toContain('edge +0.312');
+  });
+
   it('produces a valid, non-crashing output for an empty fixture list', () => {
     const txt = buildTxtSheet([], meta);
     expect(txt).toContain('Aucune fixture sur cette période.');
@@ -277,6 +453,7 @@ describe('buildTxtSheet', () => {
           channel: 'VALUE',
           decisionStatus: 'SELECTED',
           reasonCode: null,
+          reasonDetails: null,
           market: 'DOUBLE_CHANCE',
           pick: 'X2',
           comboMarket: null,
@@ -299,6 +476,7 @@ describe('buildTxtSheet', () => {
               channel: 'VALUE',
               decisionStatus: 'SELECTED',
               reasonCode: null,
+              reasonDetails: null,
               market: 'DOUBLE_CHANCE',
               pick: 'X2',
               comboMarket: null,
@@ -342,6 +520,7 @@ describe('buildTxtSheet', () => {
           channel: 'VALUE',
           decisionStatus: 'SELECTED',
           reasonCode: null,
+          reasonDetails: null,
           market: 'ONE_X_TWO',
           pick: 'HOME',
           comboMarket: null,

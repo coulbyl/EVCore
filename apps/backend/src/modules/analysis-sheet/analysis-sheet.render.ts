@@ -54,6 +54,26 @@ export type AnalysisSheetRejectionSummary = {
   topReasonCode: string | null;
 };
 
+// One pick that tripped the AVOID gate — model edge (probability − 1/odds)
+// reached AVOID_CONFIG.maxEdge, an implausible model↔market divergence.
+export type AnalysisSheetAvoidOffender = {
+  channel: string;
+  market: string;
+  pick: string;
+  edge: number;
+};
+
+// Fixture-level AVOID flag. AVOID is a meta-channel that emits no pick of its
+// own (SELECTED with empty selections), so it appears in neither selectedPicks
+// nor rejectionSummary — without this field a triggered AVOID is invisible on
+// the sheet while the coupon layer silently drops the fixture's picks from
+// the staking pool.
+export type AnalysisSheetAvoidFlag = {
+  reasonCode: string | null;
+  maxEdge: number | null;
+  offenders: AnalysisSheetAvoidOffender[];
+};
+
 export type AnalysisSheetJsonFixture = {
   fixtureId: string;
   match: string;
@@ -73,6 +93,7 @@ export type AnalysisSheetJsonFixture = {
       congestion: number | null;
     } | null;
   };
+  avoidFlag: AnalysisSheetAvoidFlag | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
 };
@@ -83,6 +104,7 @@ export type AnalysisSheetJson = {
   filters: { competitionCode: string | null; channel: string | null };
   summary: {
     fixtureCount: number;
+    avoidedFixtureCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
     settledRecord: { won: number; lost: number; pending: number; void: number };
@@ -120,6 +142,7 @@ function toJsonFixture(
     }));
 
   const rejectionSummary = buildRejectionSummary(fixture.selections);
+  const avoidFlag = buildAvoidFlag(fixture.selections);
 
   return {
     fixtureId: fixture.fixtureId,
@@ -152,8 +175,60 @@ function toJsonFixture(
           }
         : null,
     },
+    avoidFlag,
     selectedPicks,
     rejectionSummary,
+  };
+}
+
+// AVOID SELECTED = the fixture is flagged (the "selection" is the avoidance
+// itself, with the offending picks in reasonDetails). It carries no
+// market/pick, so it must be surfaced here explicitly.
+function buildAvoidFlag(
+  selections: AnalysisSheetFixture['selections'],
+): AnalysisSheetAvoidFlag | null {
+  const avoid = selections.find(
+    (s) => s.channel === 'AVOID' && s.decisionStatus === 'SELECTED',
+  );
+  if (!avoid) return null;
+
+  const details =
+    avoid.reasonDetails && typeof avoid.reasonDetails === 'object'
+      ? (avoid.reasonDetails as {
+          maxEdge?: unknown;
+          offenders?: unknown;
+        })
+      : {};
+
+  const offenders: AnalysisSheetAvoidOffender[] = Array.isArray(
+    details.offenders,
+  )
+    ? details.offenders.flatMap((o: unknown) => {
+        if (!o || typeof o !== 'object') return [];
+        const raw = o as Record<string, unknown>;
+        if (
+          typeof raw.channel !== 'string' ||
+          typeof raw.market !== 'string' ||
+          typeof raw.pick !== 'string' ||
+          typeof raw.edge !== 'number'
+        ) {
+          return [];
+        }
+        return [
+          {
+            channel: raw.channel,
+            market: raw.market,
+            pick: raw.pick,
+            edge: raw.edge,
+          },
+        ];
+      })
+    : [];
+
+  return {
+    reasonCode: avoid.reasonCode,
+    maxEdge: typeof details.maxEdge === 'number' ? details.maxEdge : null,
+    offenders,
   };
 }
 
@@ -250,6 +325,8 @@ export function buildJsonSheet(
     filters: meta.filters,
     summary: {
       fixtureCount: jsonFixtures.length,
+      avoidedFixtureCount: jsonFixtures.filter((f) => f.avoidFlag !== null)
+        .length,
       byCompetition,
       byChannel,
       settledRecord,
@@ -291,6 +368,11 @@ export function buildTxtSheet(
   w(
     `Réglé : ${won} gagnés / ${lost} perdus / ${pending} en attente / ${voided} annulés`,
   );
+  if (sheet.summary.avoidedFixtureCount > 0) {
+    w(
+      `Fixtures flaguées AVOID : ${sheet.summary.avoidedFixtureCount} (divergence modèle/marché implausible — picks exclus du staking)`,
+    );
+  }
   w();
 
   w('=== Fixtures ===');
@@ -323,6 +405,27 @@ export function buildTxtSheet(
       if (model.shadowSignals.congestion !== null)
         parts.push(`cong=${fmtSigned(model.shadowSignals.congestion, 4)}`);
       if (parts.length > 0) w(`  Shadow : ${parts.join('  ')}`);
+    }
+
+    if (f.avoidFlag) {
+      const cap =
+        f.avoidFlag.maxEdge !== null
+          ? ` (edge ≥ ${f.avoidFlag.maxEdge.toFixed(2)})`
+          : '';
+      w(
+        `  ⚠ AVOID${f.avoidFlag.reasonCode ? ` [${f.avoidFlag.reasonCode}]` : ''} — divergence modèle/marché implausible${cap} ; picks exclus du staking`,
+      );
+      for (const o of f.avoidFlag.offenders) {
+        const label = pickLabel({
+          market: o.market,
+          pick: o.pick,
+          comboMarket: null,
+          comboPick: null,
+        });
+        w(
+          `    Offender [${channelLabel(o.channel)}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
+        );
+      }
     }
 
     if (f.selectedPicks.length === 0) {

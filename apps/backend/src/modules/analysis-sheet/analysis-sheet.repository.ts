@@ -6,6 +6,8 @@ export type AnalysisSheetSelection = {
   channel: string;
   decisionStatus: string;
   reasonCode: string | null;
+  // ChannelDecision.reasonDetails (Json) — carries the AVOID offenders payload.
+  reasonDetails: unknown;
   market: string | null;
   pick: string | null;
   comboMarket: string | null;
@@ -55,6 +57,7 @@ type RawSelection = {
   channel: string;
   decisionStatus: string;
   reasonCode: string | null;
+  reasonDetails: unknown;
   market: string | null;
   pick: string | null;
   comboMarket: string | null;
@@ -161,6 +164,7 @@ export class AnalysisSheetRepository {
               'channel',        cd.channel,
               'decisionStatus', cd.status,
               'reasonCode',     cd."reasonCode",
+              'reasonDetails',  cd."reasonDetails",
               'market',         cs.market,
               'pick',           cs.pick,
               'comboMarket',    cs."comboMarket",
@@ -245,6 +249,7 @@ function mapSelection(selection: RawSelection): AnalysisSheetSelection {
     channel: selection.channel,
     decisionStatus: selection.decisionStatus,
     reasonCode: selection.reasonCode,
+    reasonDetails: selection.reasonDetails ?? null,
     market: selection.market,
     pick: selection.pick,
     comboMarket: selection.comboMarket,
