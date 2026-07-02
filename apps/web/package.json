@@ -34,6 +34,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "recharts": "catalog:",
+    "sonner": "catalog:",
     "vaul": "catalog:",
     "zod": "catalog:"
   },
