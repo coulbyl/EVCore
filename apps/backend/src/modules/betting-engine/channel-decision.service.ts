@@ -59,6 +59,9 @@ export type ChannelDecisionItem = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   reasonDetails: unknown;
+  // Model↔market coherence gate flag on the underlying ModelRun — when true
+  // the whole fixture is excluded from the staking pool.
+  calibrationAlert: boolean;
   selections: ChannelSelectionItem[];
 };
 
@@ -71,6 +74,7 @@ export type ChannelDecisionMatchDecision = Pick<
   | 'status'
   | 'reasonCode'
   | 'reasonDetails'
+  | 'calibrationAlert'
   | 'selections'
 >;
 
@@ -257,6 +261,7 @@ export class ChannelDecisionService {
       status: row.status,
       reasonCode: row.reasonCode,
       reasonDetails: row.reasonDetails,
+      calibrationAlert: row.calibrationAlert,
       selections: row.selections.map(toSelectionItem),
     };
   }
@@ -285,6 +290,7 @@ function toMatchDecision(
     status: item.status,
     reasonCode: item.reasonCode,
     reasonDetails: item.reasonDetails,
+    calibrationAlert: item.calibrationAlert,
     selections: item.selections,
   };
 }

@@ -116,6 +116,11 @@
       "edge": "gap",
       "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
     },
+    "calibration": {
+      "banner": "Suspect data",
+      "tooltipLabel": "Calibration alert",
+      "tooltipDetail": "The model and the market strongly disagree on this match (flipped favorite or extreme gap across several bookmakers). This almost always signals corrupted input data rather than an opportunity — the engine automatically excludes every pick of this match from real bets."
+    },
     "consensus": {
       "tooltipLabel": "Consensus signal",
       "tooltipDetail": "Multiple independent channels selected the same outcome without coordination. This is a reinforced conviction signal — prioritise it in your bankroll allocation."

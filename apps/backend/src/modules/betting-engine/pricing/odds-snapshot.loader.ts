@@ -473,4 +473,59 @@ export class OddsSnapshotLoader {
       },
     };
   }
+
+  // Latest complete 1X2 line per bookmaker (excluding synthetic aggregates).
+  // Feeds the model↔market coherence gate's median implied probability.
+  async findLatestOneXTwoOddsPerBookmaker(fixtureId: string): Promise<
+    {
+      bookmaker: string;
+      homeOdds: Decimal;
+      drawOdds: Decimal;
+      awayOdds: Decimal;
+    }[]
+  > {
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId,
+        market: Market.ONE_X_TWO,
+        bookmaker: { notIn: ['MarketAvg', 'MarketBest'] },
+        homeOdds: { not: null },
+        drawOdds: { not: null },
+        awayOdds: { not: null },
+      },
+      select: {
+        bookmaker: true,
+        snapshotAt: true,
+        homeOdds: true,
+        drawOdds: true,
+        awayOdds: true,
+      },
+      orderBy: [{ snapshotAt: 'desc' }, { bookmaker: 'asc' }],
+    });
+
+    const latestByBookmaker = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      if (!latestByBookmaker.has(row.bookmaker)) {
+        latestByBookmaker.set(row.bookmaker, row);
+      }
+    }
+
+    return Array.from(latestByBookmaker.values()).flatMap((row) => {
+      if (
+        row.homeOdds === null ||
+        row.drawOdds === null ||
+        row.awayOdds === null
+      ) {
+        return [];
+      }
+      return [
+        {
+          bookmaker: row.bookmaker,
+          homeOdds: new Decimal(row.homeOdds.toString()),
+          drawOdds: new Decimal(row.drawOdds.toString()),
+          awayOdds: new Decimal(row.awayOdds.toString()),
+        },
+      ];
+    });
+  }
 }

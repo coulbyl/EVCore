@@ -60,6 +60,27 @@ export const EV_THRESHOLD = new Decimal('0.08');
 // anomaly (biased λ, xG proxy error) rather than a genuine edge.
 export const EV_MAX_SOFT_ALERT = new Decimal('0.60');
 
+// Model↔market coherence gate (calibration alert). Detects corrupted model
+// inputs (missing/inverted team stats → default priors) by comparing the
+// model's 1X2 probabilities against the median implied probability across
+// priority bookmakers. A triggered alert marks the ModelRun
+// (features.calibration_alert), surfaces on the analysis sheet, and drops the
+// fixture from the staking pool (same enforcement path as AVOID) — it never
+// mutates the model's inputs (never infer/fix data at this layer).
+// Origin case: Argentina–Cape Verde 2026-07-03, λ 0.41/0.56 vs market ~1.15.
+export const CALIBRATION_GATE = {
+  ENABLED: true,
+  // |model prob − median implied| on the model's favorite 1X2 outcome.
+  // Aligned with AVOID_CONFIG.maxEdge (0.3) — beyond that, corrupted data is
+  // far more likely than genuine value.
+  MAX_DIVERGENCE: new Decimal('0.30'),
+  // Model and market disagree on the 1X2 favorite AND the model backs its own
+  // favorite at least this far above the market's view of that outcome.
+  FAVORITE_FLIP_MIN_GAP: new Decimal('0.15'),
+  // The median needs at least this many priority bookmakers to be meaningful.
+  MIN_BOOKMAKERS: 2,
+} as const;
+
 // Minimum directional probability for 1X2 HOME and AWAY picks.
 // Prevents selecting V1 when P(home win) < threshold and V2 when
 // P(away win) < threshold — avoids backing the team the model itself

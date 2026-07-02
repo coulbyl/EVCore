@@ -1,4 +1,4 @@
-import { Ban, Sparkles } from "lucide-react";
+import { Ban, Sparkles, TriangleAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
@@ -31,6 +31,7 @@ export function MatchCard({
   const picks = selectedPicks(group);
   const rest = evaluatedRest(group);
   const consensus = hasConsensus(group);
+  const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
 
   const avoidEdgeByChannel = new Map<StrategyChannel, number>(
     avoid?.offenders.map((o) => [o.channel, o.edge]) ?? [],
@@ -76,6 +77,30 @@ export function MatchCard({
           <InfoTooltip
             label={t("avoid.tooltipLabel")}
             description={t("avoid.tooltipDetail")}
+            side="left"
+          />
+        </div>
+      )}
+
+      {calibrationAlert && (
+        <div
+          className="mx-3 mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
+          style={{
+            color: "var(--canal-avoid)",
+            backgroundColor: "var(--canal-avoid-soft)",
+            borderColor:
+              "color-mix(in srgb, var(--canal-avoid) 35%, transparent)",
+          }}
+        >
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">
+              {t("calibration.banner")}
+            </span>
+          </span>
+          <InfoTooltip
+            label={t("calibration.tooltipLabel")}
+            description={t("calibration.tooltipDetail")}
             side="left"
           />
         </div>

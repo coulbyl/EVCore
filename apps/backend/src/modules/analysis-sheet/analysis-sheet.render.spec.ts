@@ -340,6 +340,43 @@ describe('buildJsonSheet', () => {
     });
   });
 
+  it('surfaces a calibration alert from ModelRun features and counts it in the summary', () => {
+    const alertPayload = {
+      reasons: ['extreme_divergence', 'favorite_flip'],
+      modelFavorite: 'AWAY',
+      marketFavorite: 'HOME',
+      modelProbability: 0.38,
+      medianImplied: 0.059,
+      divergence: 0.321,
+      bookmakerCount: 3,
+    };
+    const f = fixture({
+      features: {
+        predictionSource: 'POISSON_MAIN',
+        calibration_alert: alertPayload,
+      },
+    });
+
+    const sheet = buildJsonSheet([f], meta);
+    expect(sheet.fixtures[0]?.calibrationAlert).toEqual(alertPayload);
+    expect(sheet.summary.calibrationAlertCount).toBe(1);
+
+    const txt = buildTxtSheet([f], meta);
+    expect(txt).toContain('Alertes calibration : 1');
+    expect(txt).toContain(
+      '⚠ Calibration [extreme_divergence, favorite_flip] — favori modèle AWAY',
+    );
+
+    // Null when absent or malformed.
+    const clean = buildJsonSheet([fixture({})], meta);
+    expect(clean.fixtures[0]?.calibrationAlert).toBeNull();
+    const malformed = buildJsonSheet(
+      [fixture({ features: { calibration_alert: { reasons: 'oops' } } })],
+      meta,
+    );
+    expect(malformed.fixtures[0]?.calibrationAlert).toBeNull();
+  });
+
   it('handles an empty range with zero fixtures', () => {
     const sheet = buildJsonSheet([], meta);
     expect(sheet.summary.fixtureCount).toBe(0);

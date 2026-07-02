@@ -138,6 +138,14 @@ function readNumber(features: unknown, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+// A ModelRun flagged by the model↔market coherence gate carries a non-null
+// features.calibration_alert object (see betting-engine market-coherence.ts).
+function hasCalibrationAlert(features: unknown): boolean {
+  if (!features || typeof features !== 'object') return false;
+  const alert = (features as Record<string, unknown>)['calibration_alert'];
+  return typeof alert === 'object' && alert !== null;
+}
+
 function readModelProbabilities(features: unknown): Record<string, number> {
   if (!features || typeof features !== 'object') return {};
   const probs = (features as Record<string, unknown>)['probabilities'];
@@ -665,6 +673,15 @@ export class SignalWindowService {
           competitionCode: comp,
         } as Record<string, unknown>,
       };
+
+      // Calibration-alert enforcement (model↔market coherence gate): a flagged
+      // ModelRun means the model's inputs are corrupted-data suspects (e.g.
+      // missing/inverted team stats → default priors), so every pick of the
+      // fixture is unreliable — drop the whole fixture from the staking pool.
+      // Shares the AVOID kill-switch: both enforce implausible-divergence gates.
+      if (opts.enforceAvoid && hasCalibrationAlert(feat)) {
+        continue;
+      }
 
       if (run) {
         // Full market odds (as-of kickoff) — needed to remove the overround and

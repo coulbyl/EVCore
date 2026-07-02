@@ -77,6 +77,9 @@ export type ChannelDecisionDto = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   reasonDetails: unknown;
+  // Model↔market coherence gate flag on the underlying ModelRun — when true
+  // the whole fixture is excluded from the staking pool.
+  calibrationAlert: boolean;
   selections: ChannelSelectionDto[];
 };
 
@@ -89,6 +92,7 @@ export type ChannelDecisionMatchDecisionDto = Pick<
   | "status"
   | "reasonCode"
   | "reasonDetails"
+  | "calibrationAlert"
   | "selections"
 >;
 

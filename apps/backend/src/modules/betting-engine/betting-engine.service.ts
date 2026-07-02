@@ -26,6 +26,11 @@ import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { createLogger } from '@utils/logger';
 import {
+  assessMarketCoherence,
+  type CalibrationAlert,
+} from './market-coherence';
+import {
+  CALIBRATION_GATE,
   DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
@@ -643,6 +648,37 @@ export class BettingEngineService {
       }
     }
 
+    // Model↔market coherence gate: compare the model's 1X2 probabilities to
+    // the median implied probability across priority bookmakers. A triggered
+    // alert is stored in features.calibration_alert (surfaced on the analysis
+    // sheet, enforced at staking) — the analytical decisions are kept intact.
+    let calibrationAlert: CalibrationAlert | null = null;
+    if (CALIBRATION_GATE.ENABLED) {
+      const oneXTwoBooks =
+        await this.oddsLoader.findLatestOneXTwoOddsPerBookmaker(fixtureId);
+      calibrationAlert = assessMarketCoherence({
+        modelProbabilities: {
+          home: probabilities.home,
+          draw: probabilities.draw,
+          away: probabilities.away,
+        },
+        books: oneXTwoBooks,
+      });
+      if (calibrationAlert !== null) {
+        logger.warn(
+          {
+            fixtureId,
+            scheduledAt,
+            competitionCode: getFixtureCompetitionCode(fixture),
+            homeTeam: getFixtureHomeTeamName(fixture),
+            awayTeam: getFixtureAwayTeamName(fixture),
+            calibrationAlert,
+          },
+          'Calibration alert: model↔market coherence gate triggered — fixture will be excluded from the staking pool',
+        );
+      }
+    }
+
     if (valueBet !== null && valueBet.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
       logger.warn(
         {
@@ -700,6 +736,7 @@ export class BettingEngineService {
       probabilities: mapProbabilitiesToNumber(probabilities),
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
+      calibration_alert: calibrationAlert,
       shadow_h2h: shadowH2h,
       shadow_congestion: shadowCongestion,
       shadow_lineups: null,
@@ -762,6 +799,28 @@ export class BettingEngineService {
           phase: modelRunPhase,
         }),
       )) ?? [];
+
+    // EV soft alert across ALL stakeable channels (the VALUE-only alert above
+    // predates the channel refactor and missed e.g. the Argentina SAFE pick at
+    // EV +0.46). CORRECT_SCORE is observation-only → excluded.
+    for (const decision of persistedChannelDecisions) {
+      if (decision.channel === STRATEGY_CHANNEL.CORRECT_SCORE) continue;
+      for (const sel of decision.selections) {
+        if (sel.ev != null && sel.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
+          logger.warn(
+            {
+              fixtureId,
+              channel: decision.channel,
+              market: sel.market,
+              pick: sel.pick,
+              ev: sel.ev.toNumber(),
+              evSoftAlertThreshold: EV_MAX_SOFT_ALERT.toNumber(),
+            },
+            'EV soft alert: high channel-selection EV may indicate calibration anomaly',
+          );
+        }
+      }
+    }
 
     // Shadow ML correction — per channel, logged only; never changes a decision.
     if (FEATURE_FLAGS.SCORING.ML_CORRECTION) {

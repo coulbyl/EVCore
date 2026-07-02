@@ -74,6 +74,19 @@ export type AnalysisSheetAvoidFlag = {
   offenders: AnalysisSheetAvoidOffender[];
 };
 
+// Fixture-level calibration alert (model↔market coherence gate, stored in
+// ModelRun.features.calibration_alert). Signals corrupted model inputs —
+// the fixture's picks are dropped from the staking pool.
+export type AnalysisSheetCalibrationAlert = {
+  reasons: string[];
+  modelFavorite: string;
+  marketFavorite: string;
+  modelProbability: number;
+  medianImplied: number;
+  divergence: number;
+  bookmakerCount: number;
+};
+
 export type AnalysisSheetJsonFixture = {
   fixtureId: string;
   match: string;
@@ -94,6 +107,7 @@ export type AnalysisSheetJsonFixture = {
     } | null;
   };
   avoidFlag: AnalysisSheetAvoidFlag | null;
+  calibrationAlert: AnalysisSheetCalibrationAlert | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
 };
@@ -105,6 +119,7 @@ export type AnalysisSheetJson = {
   summary: {
     fixtureCount: number;
     avoidedFixtureCount: number;
+    calibrationAlertCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
     settledRecord: { won: number; lost: number; pending: number; void: number };
@@ -143,6 +158,7 @@ function toJsonFixture(
 
   const rejectionSummary = buildRejectionSummary(fixture.selections);
   const avoidFlag = buildAvoidFlag(fixture.selections);
+  const calibrationAlert = buildCalibrationAlert(fixture.features);
 
   return {
     fixtureId: fixture.fixtureId,
@@ -176,8 +192,42 @@ function toJsonFixture(
         : null,
     },
     avoidFlag,
+    calibrationAlert,
     selectedPicks,
     rejectionSummary,
+  };
+}
+
+// Parses ModelRun.features.calibration_alert (written by the betting engine's
+// market-coherence gate). Defensive: malformed payloads yield null.
+function buildCalibrationAlert(
+  features: unknown,
+): AnalysisSheetCalibrationAlert | null {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)['calibration_alert'];
+  if (!raw || typeof raw !== 'object') return null;
+
+  const alert = raw as Record<string, unknown>;
+  if (
+    !Array.isArray(alert.reasons) ||
+    typeof alert.modelFavorite !== 'string' ||
+    typeof alert.marketFavorite !== 'string' ||
+    typeof alert.modelProbability !== 'number' ||
+    typeof alert.medianImplied !== 'number' ||
+    typeof alert.divergence !== 'number' ||
+    typeof alert.bookmakerCount !== 'number'
+  ) {
+    return null;
+  }
+
+  return {
+    reasons: alert.reasons.filter((r): r is string => typeof r === 'string'),
+    modelFavorite: alert.modelFavorite,
+    marketFavorite: alert.marketFavorite,
+    modelProbability: alert.modelProbability,
+    medianImplied: alert.medianImplied,
+    divergence: alert.divergence,
+    bookmakerCount: alert.bookmakerCount,
   };
 }
 
@@ -327,6 +377,9 @@ export function buildJsonSheet(
       fixtureCount: jsonFixtures.length,
       avoidedFixtureCount: jsonFixtures.filter((f) => f.avoidFlag !== null)
         .length,
+      calibrationAlertCount: jsonFixtures.filter(
+        (f) => f.calibrationAlert !== null,
+      ).length,
       byCompetition,
       byChannel,
       settledRecord,
@@ -371,6 +424,11 @@ export function buildTxtSheet(
   if (sheet.summary.avoidedFixtureCount > 0) {
     w(
       `Fixtures flaguées AVOID : ${sheet.summary.avoidedFixtureCount} (divergence modèle/marché implausible — picks exclus du staking)`,
+    );
+  }
+  if (sheet.summary.calibrationAlertCount > 0) {
+    w(
+      `Alertes calibration : ${sheet.summary.calibrationAlertCount} (données modèle suspectes vs marché — picks exclus du staking)`,
     );
   }
   w();
@@ -426,6 +484,13 @@ export function buildTxtSheet(
           `    Offender [${channelLabel(o.channel)}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
         );
       }
+    }
+
+    if (f.calibrationAlert) {
+      const a = f.calibrationAlert;
+      w(
+        `  ⚠ Calibration [${a.reasons.join(', ')}] — favori modèle ${a.modelFavorite} (${fmtPct(a.modelProbability)}) vs marché ${a.marketFavorite} (implied ${fmtPct(a.medianImplied)}, ${a.bookmakerCount} books) ; données suspectes, picks exclus du staking`,
+      );
     }
 
     if (f.selectedPicks.length === 0) {
