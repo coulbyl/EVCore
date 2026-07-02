@@ -16,8 +16,6 @@ import { BettingEngineService } from '../../betting-engine/betting-engine.servic
 import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
-import { CacheService } from '@common/redis/cache.service';
-import { CHAT_CACHE_TAGS } from '../../chat/chat.constants';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
 export type PendingBetsSettlementJobData = Record<string, never>;
@@ -36,9 +34,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
-
-  @Inject(CacheService)
-  private cache!: CacheService;
 
   constructor(
     private readonly fixtureService: FixtureService,
@@ -175,7 +170,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         { calibration },
         'Calibration check complete after settlement',
       );
-      void this.cache.invalidateTag(CHAT_CACHE_TAGS.settlement);
     }
   }
 

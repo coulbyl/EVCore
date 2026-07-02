@@ -1,11 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { MlModelVersion } from '@evcore/db';
 import { BULLMQ_QUEUES } from '@/config/etl.constants';
 import { createLogger } from '@utils/logger';
-import { CacheService } from '@common/redis/cache.service';
-import { CHAT_CACHE_TAGS } from '@modules/chat/chat.constants';
 import { NotificationService } from '@modules/notification/notification.service';
 import { MlRepository } from './ml.repository';
 import { MlInferenceService } from './ml.inference.service';
@@ -25,9 +23,6 @@ type TriggerResult = { jobId: string };
 
 @Injectable()
 export class MlService {
-  @Inject(CacheService)
-  private cache!: CacheService;
-
   // eslint-disable-next-line max-params -- DI constructor
   constructor(
     private readonly repo: MlRepository,
@@ -88,7 +83,6 @@ export class MlService {
       roiSimulated: metrics['roiShadow'] ?? 0,
       isRollback: false,
     });
-    void this.cache.invalidateTag(CHAT_CACHE_TAGS.mlModel);
     return model;
   }
 
@@ -105,7 +99,6 @@ export class MlService {
       isRollback: true,
       rolledBackVersionId: id,
     });
-    void this.cache.invalidateTag(CHAT_CACHE_TAGS.mlModel);
     return previous;
   }
 
@@ -162,7 +155,6 @@ export class MlService {
       roiSimulated: metrics['roiShadow'] ?? result.roi_simulated,
       isRollback: false,
     });
-    void this.cache.invalidateTag(CHAT_CACHE_TAGS.mlModel);
   }
 
   async catchUpAutoSwitch(): Promise<void> {
@@ -184,7 +176,6 @@ export class MlService {
 
   async deleteModel(id: string): Promise<void> {
     await this.repo.deleteInactive(id);
-    void this.cache.invalidateTag(CHAT_CACHE_TAGS.mlModel);
     logger.info({ id }, 'ML model deleted');
   }
 

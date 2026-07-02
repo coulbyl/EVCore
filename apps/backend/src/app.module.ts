@@ -24,7 +24,7 @@ import { FormationProgressModule } from './modules/formation-progress/formation-
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { MlModule } from './modules/ml/ml.module';
-import { ChatModule } from './modules/chat/chat.module';
+import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -60,7 +60,7 @@ import { RedisModule } from './common/redis/redis.module';
     FormationProgressModule,
     AnnouncementsModule,
     CouponModule,
-    ChatModule,
+    AnalysisSheetModule,
     MlModule,
   ],
   controllers: [AppController],

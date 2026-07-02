@@ -147,8 +147,8 @@ export function AppShell({
           {
             label: tNav("eva"),
             mobileLabel: tNav("eva"),
-            href: "/dashboard/chat",
-            active: pathname.startsWith("/dashboard/chat"),
+            href: "/dashboard/analysis-sheet",
+            active: pathname.startsWith("/dashboard/analysis-sheet"),
             icon: Sparkles,
           },
         ],
