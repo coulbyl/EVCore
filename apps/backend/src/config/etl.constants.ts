@@ -73,6 +73,13 @@ export const ETL_CONSTANTS = {
   API_FOOTBALL_RATE_LIMIT_MS: 6_000,
   // Delay between /fixtures/statistics calls within a stats-sync job (per fixture)
   STATS_RATE_LIMIT_MS: 2_000,
+  // Prematch odds are fetched for fixtures from J+1 up to J+horizon so each
+  // fixture accumulates several snapshots before kickoff — this is what feeds
+  // the line-movement shadow signal (one snapshot per fixture = no movement).
+  ODDS_PREMATCH_HORIZON_DAYS: 3,
+  // Alert (log + notification) when the daily request counter crosses this
+  // share of the plan's quota. Read best-effort from /status after sync jobs.
+  API_FOOTBALL_QUOTA_ALERT_RATIO: 0.8,
   // Fallback xG proxy when expected_goals is absent from the API response.
   // Used for 2022-23 first half where API-Football did not yet track xG.
   XG_SHOTS_PROXY_FACTOR: 0.4,
@@ -206,7 +213,10 @@ export const ETL_CRON_SCHEDULES = {
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
-  ODDS_PREMATCH_SYNC: '0 18 * * *', // 18:00 UTC daily — pre-match snapshot for next day
+  // 06:00 + 18:00 UTC — two snapshots/day over the J+1..J+3 horizon so the
+  // line-movement signal has points to compare. The 18:00 run stays ahead of
+  // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
+  ODDS_PREMATCH_SYNC: '0 6,18 * * *',
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
   STANDINGS_SYNC: '0 1 * * *', // 01:00 UTC daily — refresh group standings (active during WC/tournament phases)
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)

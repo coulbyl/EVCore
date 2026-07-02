@@ -8,6 +8,7 @@ import { NotificationModule } from '../notification/notification.module';
 import { RollingStatsModule } from '../rolling-stats/rolling-stats.module';
 import { EtlService } from './etl.service';
 import { EtlController } from './etl.controller';
+import { ApiFootballClient } from './api-football.client';
 import { LeagueSyncWorker } from './workers/league-sync.worker';
 import { FixturesSyncWorker } from './workers/fixtures-sync.worker';
 import { PendingBetsSettlementWorker } from './workers/pending-bets-settlement.worker';
@@ -58,6 +59,7 @@ import { AuthModule } from '../auth/auth.module';
   controllers: [EtlController],
   providers: [
     EtlService,
+    ApiFootballClient,
     LeagueSyncWorker,
     FixturesSyncWorker,
     PendingBetsSettlementWorker,
@@ -74,6 +76,6 @@ import { AuthModule } from '../auth/auth.module';
     StandingsSyncWorker,
     RollingHorizonWorker,
   ],
-  exports: [EtlService],
+  exports: [EtlService, ApiFootballClient],
 })
 export class EtlModule {}

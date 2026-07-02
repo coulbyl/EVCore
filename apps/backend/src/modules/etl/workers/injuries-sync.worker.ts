@@ -1,8 +1,7 @@
-import { execFile } from 'node:child_process';
 import { Injectable } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { ConfigService } from '@nestjs/config';
 import { createLogger } from '@utils/logger';
+import { ApiFootballClient } from '../api-football.client';
 import { FixtureService } from '../../fixture/fixture.service';
 import { ETL_CONSTANTS } from '@config/etl.constants';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -24,7 +23,6 @@ export type InjuriesSyncJobData = {
 };
 
 const logger = createLogger('injuries-sync-worker');
-const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 
 type ShadowInjuries = {
   home: number;
@@ -36,13 +34,12 @@ type ShadowInjuries = {
 export class InjuriesSyncWorker {
   constructor(
     private readonly fixtureService: FixtureService,
-    private readonly config: ConfigService,
+    private readonly apiFootball: ApiFootballClient,
     private readonly prisma: PrismaService,
   ) {}
 
   async process(job: Job<InjuriesSyncJobData>): Promise<void> {
     const { season, competitionCode } = job.data;
-    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info({ competitionCode, season }, 'Starting injuries sync');
 
@@ -80,7 +77,7 @@ export class InjuriesSyncWorker {
 
     for (const fixture of targetFixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/injuries?fixture=${fixture.externalId}`;
-      const curlResult = await fetchJsonViaCurl(url, apiKey);
+      const curlResult = await this.apiFootball.fetchJson(url);
 
       if (curlResult.response === null) {
         logger.warn(
@@ -173,94 +170,6 @@ export class InjuriesSyncWorker {
 
     return true;
   }
-}
-
-type CurlJsonResponse = {
-  status: number;
-  body: unknown;
-};
-
-type CurlJsonResult = {
-  response: CurlJsonResponse | null;
-  transientErrorCode?: string;
-};
-
-async function fetchJsonViaCurl(
-  url: string,
-  apiKey: string,
-): Promise<CurlJsonResult> {
-  try {
-    const stdout = await runCurlJsonRequest(url, apiKey);
-    const lastMarker = stdout.lastIndexOf(`\n${CURL_HTTP_CODE_MARKER}:`);
-    if (lastMarker === -1) {
-      throw new Error('curl output missing HTTP code marker');
-    }
-
-    const bodyText = stdout.slice(0, lastMarker);
-    const statusText = stdout
-      .slice(lastMarker + `\n${CURL_HTTP_CODE_MARKER}:`.length)
-      .trim();
-    const status = Number.parseInt(statusText, 10);
-
-    if (Number.isNaN(status)) {
-      throw new Error(`curl returned invalid HTTP code: ${statusText}`);
-    }
-
-    let body: unknown = null;
-    if (bodyText.trim().length > 0) {
-      body = JSON.parse(bodyText);
-    }
-
-    return { response: { status, body } };
-  } catch (error) {
-    const transientErrorCode = getCurlTransientErrorCode(error);
-    if (transientErrorCode !== undefined) {
-      return { response: null, transientErrorCode };
-    }
-    throw error;
-  }
-}
-
-function runCurlJsonRequest(url: string, apiKey: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    execFile(
-      'curl',
-      [
-        '--silent',
-        '--show-error',
-        '--location',
-        '--write-out',
-        `\n${CURL_HTTP_CODE_MARKER}:%{http_code}`,
-        '-H',
-        `x-apisports-key: ${apiKey}`,
-        url,
-      ],
-      (error, stdout) => {
-        if (error) {
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-          reject(error);
-          return;
-        }
-        resolve(stdout);
-      },
-    );
-  });
-}
-
-function getCurlTransientErrorCode(error: unknown): string | undefined {
-  if (!(error instanceof Error)) return undefined;
-
-  const message = error.message.toLowerCase();
-  if (message.includes('timed out')) return 'ETIMEDOUT';
-  if (message.includes('could not resolve host')) return 'ENOTFOUND';
-  if (message.includes('connection reset')) return 'ECONNRESET';
-
-  const exitCode = 'code' in error ? (error.code as number | undefined) : null;
-  if (exitCode === 28) return 'ETIMEDOUT';
-  if (exitCode === 6) return 'ENOTFOUND';
-  if (exitCode === 56) return 'ECONNRESET';
-
-  return undefined;
 }
 
 function countShadowInjuries(

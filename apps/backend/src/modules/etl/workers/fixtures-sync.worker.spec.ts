@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
+import { ApiFootballClient } from '../api-football.client';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import type { Queue } from 'bullmq';
@@ -149,9 +150,11 @@ describe('FixturesSyncWorker', () => {
     },
   };
 
+  const apiFootball = new ApiFootballClient(config as unknown as ConfigService);
+
   const worker = new FixturesSyncWorker(
     fixtureService as unknown as FixtureService,
-    config as unknown as ConfigService,
+    apiFootball,
     prisma as unknown as PrismaService,
     rollingStatsService as unknown as RollingStatsService,
     {
@@ -196,7 +199,7 @@ describe('FixturesSyncWorker', () => {
 
     const localWorker = new FixturesSyncWorker(
       fixtureService as unknown as FixtureService,
-      config as unknown as ConfigService,
+      apiFootball,
       prisma as unknown as PrismaService,
       rollingStatsService as unknown as RollingStatsService,
       injuriesQueue,
