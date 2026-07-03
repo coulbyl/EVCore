@@ -607,7 +607,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.57,
+        // Recalibrated 2026-07-03 on the recent blend (o35 0.45): base−0.05.
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -812,7 +813,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.63,
+        // Recalibrated 2026-07-03 on the recent blend (o35 0.37): base−0.05.
+        threshold: 0.58,
         minSampleN: 15,
       },
       {
