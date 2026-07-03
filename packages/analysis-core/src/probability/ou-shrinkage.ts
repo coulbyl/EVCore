@@ -62,6 +62,32 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     btts: { factor: 0.31, baseYes: 0.64 },
     ouHt: { factor05: 0.27, base05: 0.77, factor15: 0.37, base15: 0.42 },
   },
+  // Batch audit 2026-07-03 (49 leagues, regr_slope realized~predicted per
+  // market). This tranche = the data-poor FAIL list of the doc ∩ audit
+  // criteria (n ≥ 400 analyzed, all four O/U slopes < 0.5). Factors = mean
+  // of the measured line slopes (O/U) or the market's own slope; negatives
+  // clamp to 0 (anti-predictive = publish the base rate).
+  // POL1 slopes: o15 0.21 · o25 0.29 · o35 0.43 · o45 0.45 (n=890).
+  POL1: {
+    factor: 0.35,
+    baseRates: { over15: 0.76, over25: 0.51, over35: 0.3, over45: 0.14 },
+    btts: { factor: 0.09, baseYes: 0.57 },
+    ouHt: { factor05: 0.52, base05: 0.74, factor15: 0.67, base15: 0.37 },
+  },
+  // POL2 slopes: o15 0.31 · o25 0.43 · o35 0.25 · o45 0.25 (n=897).
+  POL2: {
+    factor: 0.31,
+    baseRates: { over15: 0.8, over25: 0.57, over35: 0.32, over45: 0.15 },
+    btts: { factor: 0.32, baseYes: 0.59 },
+    ouHt: { factor05: 0, base05: 0.73, factor15: 0.4, base15: 0.4 },
+  },
+  // FIN1 slopes: o15 0.11 · o25 0.13 · o35 0.47 · o45 0.40 (n=526).
+  FIN1: {
+    factor: 0.28,
+    baseRates: { over15: 0.83, over25: 0.66, over35: 0.44, over45: 0.26 },
+    btts: { factor: 0.3, baseYes: 0.64 },
+    ouHt: { factor05: 0.31, base05: 0.72, factor15: 0.05, base15: 0.4 },
+  },
 };
 
 export function getOverUnderShrinkageConfig(
