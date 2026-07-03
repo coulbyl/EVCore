@@ -77,6 +77,8 @@ import {
   deriveLambdas,
   mapProbabilitiesToNumber,
   rebalanceThreeWayProbabilities,
+  getOverUnderShrinkageConfig,
+  shrinkOverUnderProbabilities,
 } from './math/probability';
 import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
 import { getPickOdds } from './pricing/odds-mapping';
@@ -215,12 +217,18 @@ export class BettingEngineService {
       awayStats,
       buildLambdaConfig(competitionCode),
     );
-    const probabilities = rebalanceThreeWayProbabilities({
-      probabilities: this.computeProbabilities(lambda.home, lambda.away),
-      homeStats,
-      awayStats,
-      blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
-    });
+    // 1X2: empirical blend toward team win/draw rates. O/U: shrinkage toward
+    // the league base rate for data-poor leagues where the measured
+    // calibration slope is near zero (see probability/ou-shrinkage.ts).
+    const probabilities = shrinkOverUnderProbabilities(
+      rebalanceThreeWayProbabilities({
+        probabilities: this.computeProbabilities(lambda.home, lambda.away),
+        homeStats,
+        awayStats,
+        blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
+      }),
+      getOverUnderShrinkageConfig(competitionCode),
+    );
 
     return { deterministicScore, probabilities, lambda, features };
   }

@@ -1,7 +1,7 @@
 # Ligues pauvres en données — mal racine de calibration
 
 Date : 2026-07-01
-Statut : **diagnostic posé, traitement reporté** (à reprendre en évaluant d'abord si on peut récupérer les données manquantes)
+Statut : **diagnostic posé ; piste 2 (shrinkage) implémentée pour les O/U de NOR2 le 2026-07-03** — voir `packages/analysis-core/src/probability/ou-shrinkage.ts`. Les probas O/U plein temps sont rétrécies vers le base rate récent de la ligue avec un facteur égal à la pente de calibration mesurée (NOR2 : 0.25 ; audit : corr(λ, buts) ≈ 0 sur 4 saisons, pente 0.22–0.28 par ligne, Under 3.5 réalisé à 37.5 % en live sur des probas affichées ~69 %). Étendre à une autre ligue = refaire le même audit (pente + base rates récents). Le 1X2 garde son blend empirique existant ; BTTS/mi-temps non mesurés, non traités. La piste 1 (récupérer xG) reste la correction de fond.
 
 ---
 

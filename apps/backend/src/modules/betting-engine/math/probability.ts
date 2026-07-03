@@ -31,6 +31,8 @@ export {
   mapProbabilitiesToNumber,
   deriveLambdas,
   rebalanceThreeWayProbabilities,
+  getOverUnderShrinkageConfig,
+  shrinkOverUnderProbabilities,
   buildMatchupFeatures,
   blendTeamStats,
 } from '@evcore/analysis-core';
