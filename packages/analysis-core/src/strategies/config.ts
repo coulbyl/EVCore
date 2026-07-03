@@ -1262,34 +1262,53 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
-  // o15 0.82 · o25 0.61 · o35 0.37 · o45 0.21 (n=781)
+  // o15 0.82 · o25 0.61 · o35 0.37 · o45 0.21 (n=781) — STALE multi-season avg.
+  // Per-season drift (recalibrated 2026-07-03 on prod data): o35 0.31 → 0.39 →
+  // 0.39 → 0.58 (2026-27, n=57), avg goals 2.79 → 3.98. Blended recent base
+  // (2025-26 + 2026-27): o15 0.87 · o25 0.66 · o35 0.43 · o45 0.24.
+  // Calibration audit (4 seasons, λ from model_run): corr(λ_total, goals) is
+  // ~0 every season (0.07/0.11/−0.09/−0.16) — the model captures the league's
+  // LEVEL, not individual matches. Central lines are noise: predicted
+  // Under 3.5 0.46→0.84 all realize ~0.59–0.74; Over 2.5 is anti-predictive
+  // above 0.70 predicted (0.73 → 0.58 realized). Thresholds below are set
+  // from the observed calibration curve, not base−0.05. Root cause is the
+  // data-poor input (no xG) — see docs/data-poor-leagues-calibration.md.
   NOR2: {
     lines: [
       {
         line: 1.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.77,
+        // Recent base 0.87 − 0.05; curve holds (predicted 0.85 → 0.83 real).
+        threshold: 0.82,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.56,
+        // Recent base 0.66 − 0.05. Do NOT raise further: the curve is
+        // non-monotonic (predicted ≥0.70 realizes 0.58) — high model
+        // confidence on this line is a corrupted-input tell, not conviction.
+        threshold: 0.61,
         minSampleN: 15,
       },
       {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.58,
+        // Was 0.58 (base−0.05 on the stale 0.63 under-rate): realized 37.5%
+        // live 2026-27 (base rate collapsed to 0.42). 0.72 keeps only the
+        // one predicted zone that holds ≥0.70 realized across 4 seasons.
+        threshold: 0.72,
         minSampleN: 15,
       },
       {
         line: 4.5,
         side: "UNDER",
         enabled: true,
+        // Curve holds (predicted 0.75 → 0.81 real). Watch the o45 drift
+        // (0.21 hist → 0.39 in 2026-27) before any loosening.
         threshold: 0.74,
         minSampleN: 15,
       },
