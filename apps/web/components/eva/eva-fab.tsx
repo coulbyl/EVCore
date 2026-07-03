@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import {
   Sheet,
@@ -17,8 +17,26 @@ import { EvaFilterBar } from "./eva-filter-bar";
 import { EvaResultPanel } from "./eva-result-panel";
 import { daysAheadIso, todayIso } from "@/lib/date";
 
+// Discovery ping: shown only until the user opens Eva once.
+const DISCOVERED_KEY = "evcore-eva-fab-discovered";
+
 export function EvaFab() {
   const [open, setOpen] = useState(false);
+  // false on the server and first client render (no hydration mismatch, no
+  // flash for returning users); flipped on after mount for first-timers.
+  const [showPing, setShowPing] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem(DISCOVERED_KEY)) setShowPing(true);
+  }, []);
+
+  function handleOpen() {
+    setOpen(true);
+    if (showPing) {
+      localStorage.setItem(DISCOVERED_KEY, "1");
+      setShowPing(false);
+    }
+  }
   const [filters, setFilters] = useState<AnalysisSheetFilters>({
     from: todayIso(),
     to: daysAheadIso(7),
@@ -39,7 +57,7 @@ export function EvaFab() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         title="Eva"
         className={cn(
           "fixed bottom-24 left-4 z-30 flex size-14 items-center justify-center rounded-full",
@@ -49,7 +67,9 @@ export function EvaFab() {
           "md:bottom-6 md:left-auto md:right-6 md:size-12",
         )}
       >
-        <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
+        {showPing && (
+          <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
+        )}
         <Sparkles className="size-6 md:size-5" />
       </button>
 
