@@ -56,13 +56,40 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(shrunk.under35.toNumber()).toBeGreaterThan(0.6);
   });
 
-  it("leaves 1X2, BTTS and half-time markets untouched", () => {
+  it("shrinks BTTS and HT O/U with their own measured factors and bases", () => {
+    const probabilities = computePoissonMarkets(1.0, 0.8);
+    const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
+
+    const btts = NOR2.btts!;
+    const expectedBtts = new Decimal(btts.baseYes).plus(
+      new Decimal(btts.factor).times(
+        probabilities.bttsYes.minus(btts.baseYes),
+      ),
+    );
+    expect(shrunk.bttsYes.toNumber()).toBeCloseTo(expectedBtts.toNumber(), 12);
+    expect(shrunk.bttsYes.plus(shrunk.bttsNo).toNumber()).toBeCloseTo(1, 12);
+
+    const ouHt = NOR2.ouHt!;
+    const rawOver05 = probabilities.ouHT.OVER_0_5!;
+    const expectedOver05 = new Decimal(ouHt.base05).plus(
+      new Decimal(ouHt.factor05).times(rawOver05.minus(ouHt.base05)),
+    );
+    expect(shrunk.ouHT.OVER_0_5!.toNumber()).toBeCloseTo(
+      expectedOver05.toNumber(),
+      12,
+    );
+    expect(
+      shrunk.ouHT.OVER_1_5!.plus(shrunk.ouHT.UNDER_1_5!).toNumber(),
+    ).toBeCloseTo(1, 12);
+  });
+
+  it("leaves 1X2, HT/FT and First-Half Winner untouched (not measured)", () => {
     const probabilities = computePoissonMarkets(1.4, 1.2);
     const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
     expect(shrunk.home).toBe(probabilities.home);
     expect(shrunk.draw).toBe(probabilities.draw);
     expect(shrunk.away).toBe(probabilities.away);
-    expect(shrunk.bttsYes).toBe(probabilities.bttsYes);
-    expect(shrunk.ouHT).toBe(probabilities.ouHT);
+    expect(shrunk.htft).toBe(probabilities.htft);
+    expect(shrunk.firstHalfWinner).toBe(probabilities.firstHalfWinner);
   });
 });

@@ -33,6 +33,17 @@ export type OverUnderShrinkageConfig = {
     over35: number;
     over45: number;
   };
+  // Optional per-market extensions — a block is only present when the same
+  // audit (slope + recent base rate) was run for that market in that league.
+  // HT/FT and First-Half Winner remain untouched: not measured, and shrinking
+  // their components independently would break their internal coherence.
+  btts?: { factor: number; baseYes: number };
+  ouHt?: {
+    factor05: number;
+    base05: number;
+    factor15: number;
+    base15: number;
+  };
 };
 
 // Per-league config. Only leagues with a measured near-zero discriminative
@@ -42,9 +53,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
   // NOR2 audit 2026-07-03 (746 model runs, 4 seasons): slopes o15 0.22 ·
   // o25 0.22 · o35 0.28 · o45 0.26 → factor 0.25. Base rates blended
   // 2025-26 + 2026-27 (n=304): o15 0.87 · o25 0.66 · o35 0.43 · o45 0.24.
+  // BTTS/HT measured on the same population (n=745, level unbiased):
+  // BTTS slope 0.31, recent base yes 0.64; HT O0.5 slope 0.27 base 0.77;
+  // HT O1.5 slope 0.37 base 0.42.
   NOR2: {
     factor: 0.25,
     baseRates: { over15: 0.87, over25: 0.66, over35: 0.43, over45: 0.24 },
+    btts: { factor: 0.31, baseYes: 0.64 },
+    ouHt: { factor05: 0.27, base05: 0.77, factor15: 0.37, base15: 0.42 },
   },
 };
 
@@ -61,24 +77,30 @@ export function shrinkOverUnderProbabilities<T extends OverUnderProbabilities>(
   probabilities: T,
   config: OverUnderShrinkageConfig | null,
 ): T {
-  if (config === null || config.factor >= 1) return probabilities;
+  if (config === null) return probabilities;
 
-  const factor = Math.max(0, config.factor);
-  const shrink = (over: Decimal, base: number): Decimal => {
-    const shrunk = new Decimal(base).plus(
-      new Decimal(factor).times(over.minus(base)),
-    );
-    // Probability invariant [0, 1] — base and factor are config, the model
-    // value is already a probability, but clamp defensively.
-    return Decimal.max(0, Decimal.min(1, shrunk));
-  };
+  const over15 = shrinkWith(
+    probabilities.over15,
+    config.baseRates.over15,
+    config.factor,
+  );
+  const over25 = shrinkWith(
+    probabilities.over25,
+    config.baseRates.over25,
+    config.factor,
+  );
+  const over35 = shrinkWith(
+    probabilities.over35,
+    config.baseRates.over35,
+    config.factor,
+  );
+  const over45 = shrinkWith(
+    probabilities.over45,
+    config.baseRates.over45,
+    config.factor,
+  );
 
-  const over15 = shrink(probabilities.over15, config.baseRates.over15);
-  const over25 = shrink(probabilities.over25, config.baseRates.over25);
-  const over35 = shrink(probabilities.over35, config.baseRates.over35);
-  const over45 = shrink(probabilities.over45, config.baseRates.over45);
-
-  return {
+  const result: T = {
     ...probabilities,
     over15,
     under15: new Decimal(1).minus(over15),
@@ -89,4 +111,45 @@ export function shrinkOverUnderProbabilities<T extends OverUnderProbabilities>(
     over45,
     under45: new Decimal(1).minus(over45),
   };
+
+  if (config.btts) {
+    const bttsYes = shrinkWith(
+      probabilities.bttsYes,
+      config.btts.baseYes,
+      config.btts.factor,
+    );
+    result.bttsYes = bttsYes;
+    result.bttsNo = new Decimal(1).minus(bttsYes);
+  }
+
+  if (config.ouHt) {
+    const shrunkOuHt = { ...probabilities.ouHT };
+    const over05 = probabilities.ouHT.OVER_0_5;
+    if (over05 !== undefined) {
+      const s = shrinkWith(over05, config.ouHt.base05, config.ouHt.factor05);
+      shrunkOuHt.OVER_0_5 = s;
+      if (probabilities.ouHT.UNDER_0_5 !== undefined) {
+        shrunkOuHt.UNDER_0_5 = new Decimal(1).minus(s);
+      }
+    }
+    const over15Ht = probabilities.ouHT.OVER_1_5;
+    if (over15Ht !== undefined) {
+      const s = shrinkWith(over15Ht, config.ouHt.base15, config.ouHt.factor15);
+      shrunkOuHt.OVER_1_5 = s;
+      if (probabilities.ouHT.UNDER_1_5 !== undefined) {
+        shrunkOuHt.UNDER_1_5 = new Decimal(1).minus(s);
+      }
+    }
+    result.ouHT = shrunkOuHt;
+  }
+
+  return result;
+}
+
+// p' = base + factor × (p − base), factor clamped to [0, 1] (1 = identity,
+// never amplify), result clamped to the probability invariant [0, 1].
+function shrinkWith(over: Decimal, base: number, factor: number): Decimal {
+  const f = Math.min(1, Math.max(0, factor));
+  const shrunk = new Decimal(base).plus(new Decimal(f).times(over.minus(base)));
+  return Decimal.max(0, Decimal.min(1, shrunk));
 }
