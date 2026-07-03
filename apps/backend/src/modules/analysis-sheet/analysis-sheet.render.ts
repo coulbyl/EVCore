@@ -44,6 +44,9 @@ export type AnalysisSheetJsonPick = {
   qualityScore: number | null;
   rank: number;
   result: string | null;
+  // CORRECT_SCORE is a prediction channel (argmax scoreline), never staked —
+  // flagged so external readers don't mistake its picks for playable bets.
+  observationOnly: boolean;
   history: AnalysisSheetPickHistoryEntry[];
 };
 
@@ -161,6 +164,7 @@ function toJsonFixture(
       qualityScore: s.qualityScore,
       rank: s.rank ?? 1,
       result: s.result,
+      observationOnly: s.channel === 'CORRECT_SCORE',
       history: buildPickHistory(fixture.priorPasses, s.channel),
     }));
 
@@ -566,8 +570,17 @@ export function buildTxtSheet(
       const odds = pick.odds !== null ? pick.odds.toFixed(2) : '—';
       const qs =
         pick.qualityScore !== null ? pick.qualityScore.toFixed(4) : '—';
+      // DRAW selects on the bookmaker implied probability (1/odds), so its
+      // EV is 0 by construction — displaying it would be misleading.
+      const evStr =
+        pick.channel === 'DRAW'
+          ? '— (proba implicite marché)'
+          : fmtSigned(pick.ev, 3);
+      const obsStr = pick.observationOnly
+        ? '  [observation — jamais misé]'
+        : '';
       w(
-        `  Pick [${channelLabel(pick.channel)}]  ${label.padEnd(26)}  Prob: ${fmtPct(pick.probability)}  Cote: ${odds}  EV: ${fmtSigned(pick.ev, 3)}  Qualité: ${qs}  ${resultLabel(pick.result)}`,
+        `  Pick [${channelLabel(pick.channel)}]  ${label.padEnd(26)}  Prob: ${fmtPct(pick.probability)}  Cote: ${odds}  EV: ${evStr}  Qualité: ${qs}  ${resultLabel(pick.result)}${obsStr}`,
       );
       if (pick.history.length > 0) {
         const trail = [...pick.history, pick]

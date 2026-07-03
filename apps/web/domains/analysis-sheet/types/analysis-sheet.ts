@@ -37,6 +37,8 @@ export type AnalysisSheetJsonPick = {
   qualityScore: number | null;
   rank: number;
   result: string | null;
+  // CORRECT_SCORE picks are prediction-only, never staked.
+  observationOnly: boolean;
   history: AnalysisSheetPickHistoryEntry[];
 };
 

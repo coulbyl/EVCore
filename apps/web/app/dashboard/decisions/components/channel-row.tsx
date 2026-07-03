@@ -29,6 +29,7 @@ import {
   statusLabel,
 } from "./channel-constants";
 import { ResultBadge } from "./result-badge";
+import { ObservationBadge } from "./observation-badge";
 
 /** Channels that produce a real pick that can be added to a slip. */
 const SLIPPABLE: ReadonlySet<StrategyChannel> = new Set([
@@ -87,7 +88,9 @@ export function ChannelRow({
   const selection =
     decision?.status === "SELECTED" ? decision.selections[0] : undefined;
   const odds = selection ? formatOdds(selection.odds) : null;
-  const ev = selection ? formatEv(selection.ev) : null;
+  // DRAW selects on the bookmaker implied probability (1/odds): its EV is 0
+  // by construction — hide it rather than display a meaningless +0%.
+  const ev = selection && channel !== "DRAW" ? formatEv(selection.ev) : null;
 
   const consensusChannels =
     channel === "CONSENSUS" && decision?.status === "SELECTED"
@@ -111,6 +114,7 @@ export function ChannelRow({
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
+              {channel === "CORRECT_SCORE" && <ObservationBadge />}
               <ResultBadge result={selection.result} />
               {slipContext && SLIPPABLE.has(channel) && decision && (
                 <SlipButton

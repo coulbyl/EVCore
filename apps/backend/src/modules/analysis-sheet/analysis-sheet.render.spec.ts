@@ -478,6 +478,60 @@ describe('buildTxtSheet', () => {
     expect(txt).toContain('edge +0.312');
   });
 
+  it('masks the DRAW EV (0 by construction) and marks CORRECT_SCORE as observation-only', () => {
+    const f = fixture({
+      selections: [
+        {
+          channel: 'DRAW',
+          decisionStatus: 'SELECTED',
+          reasonCode: null,
+          reasonDetails: null,
+          market: 'ONE_X_TWO',
+          pick: 'DRAW',
+          comboMarket: null,
+          comboPick: null,
+          probability: 0.2976,
+          odds: 3.36,
+          ev: 0,
+          qualityScore: null,
+          rank: 1,
+          result: null,
+        },
+        {
+          channel: 'CORRECT_SCORE',
+          decisionStatus: 'SELECTED',
+          reasonCode: null,
+          reasonDetails: null,
+          market: 'CORRECT_SCORE',
+          pick: '1:0',
+          comboMarket: null,
+          comboPick: null,
+          probability: 0.15,
+          odds: 6.5,
+          ev: -0.02,
+          qualityScore: null,
+          rank: 1,
+          result: null,
+        },
+      ],
+    });
+
+    const json = buildJsonSheet([f], meta);
+    const picks = json.fixtures[0].selectedPicks;
+    expect(picks.find((p) => p.channel === 'DRAW')?.observationOnly).toBe(
+      false,
+    );
+    expect(
+      picks.find((p) => p.channel === 'CORRECT_SCORE')?.observationOnly,
+    ).toBe(true);
+
+    const txt = buildTxtSheet([f], meta);
+    expect(txt).toContain('EV: — (proba implicite marché)');
+    expect(txt).toContain('[observation — jamais misé]');
+    // The DRAW line never shows a numeric EV.
+    expect(txt).not.toMatch(/Pick \[NUL\].*EV: \+0\.000/);
+  });
+
   it('produces a valid, non-crashing output for an empty fixture list', () => {
     const txt = buildTxtSheet([], meta);
     expect(txt).toContain('Aucune fixture sur cette période.');

@@ -62,9 +62,7 @@ describe("shrinkOverUnderProbabilities", () => {
 
     const btts = NOR2.btts!;
     const expectedBtts = new Decimal(btts.baseYes).plus(
-      new Decimal(btts.factor).times(
-        probabilities.bttsYes.minus(btts.baseYes),
-      ),
+      new Decimal(btts.factor).times(probabilities.bttsYes.minus(btts.baseYes)),
     );
     expect(shrunk.bttsYes.toNumber()).toBeCloseTo(expectedBtts.toNumber(), 12);
     expect(shrunk.bttsYes.plus(shrunk.bttsNo).toNumber()).toBeCloseTo(1, 12);

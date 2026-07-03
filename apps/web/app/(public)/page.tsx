@@ -400,11 +400,10 @@ export default function LandingPage() {
               Six canaux. Deux niveaux d&apos;engagement.
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-              SV et EV reçoivent une mise automatique sur bankroll — leur
-              taux affiché est un vrai résultat sur paris réglés. CONF, BB,
-              NUL et BUTS sont des signaux que vous ajoutez vous-même au
-              coupon ; leur chiffre est un volume de signaux, pas une
-              performance.
+              SV et EV reçoivent une mise automatique sur bankroll — leur taux
+              affiché est un vrai résultat sur paris réglés. CONF, BB, NUL et
+              BUTS sont des signaux que vous ajoutez vous-même au coupon ; leur
+              chiffre est un volume de signaux, pas une performance.
             </p>
           </div>
 
