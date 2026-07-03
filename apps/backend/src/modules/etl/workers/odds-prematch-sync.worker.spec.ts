@@ -4,7 +4,9 @@ import {
   OddsPrematchSyncWorker,
   extractAdditionalMarketOdds,
   extractOneXTwoOdds,
+  resolveTargetDates,
 } from './odds-prematch-sync.worker';
+import { ApiFootballClient } from '../api-football.client';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
@@ -126,6 +128,7 @@ function buildCurlStdout(body: unknown, status = 200) {
 const fixtureService = {
   findScheduledForDate: vi.fn(),
   upsertOddsSnapshot: vi.fn().mockResolvedValue({ id: 'snap-id' }),
+  upsertOneXTwoOddsSnapshot: vi.fn().mockResolvedValue({ id: 'snap-1x2' }),
 } satisfies Partial<FixtureService>;
 
 const config = {
@@ -136,9 +139,13 @@ const notification = {
   sendEtlFailureAlert: vi.fn().mockResolvedValue(undefined),
 } satisfies Partial<NotificationService>;
 
+// Real client over the mocked execFile — the curl-level behavior (retry on
+// transient errors, HTTP marker parsing) stays covered through the worker.
+const apiFootball = new ApiFootballClient(config as unknown as ConfigService);
+
 const worker = new OddsPrematchSyncWorker(
   fixtureService as unknown as FixtureService,
-  config as unknown as ConfigService,
+  apiFootball,
   notification as unknown as NotificationService,
 );
 
@@ -153,6 +160,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   config.getOrThrow.mockReturnValue('test-api-key');
   fixtureService.upsertOddsSnapshot.mockResolvedValue({ id: 'snap-id' });
+  fixtureService.upsertOneXTwoOddsSnapshot.mockResolvedValue({
+    id: 'snap-1x2',
+  });
+  // Base curl behavior: transient error. Covers the end-of-job quota /status
+  // call (getQuotaUsage → null, no alert) without hanging; per-test
+  // mock*Once implementations are consumed before this base one.
+  vi.mocked(execFile).mockImplementation(((_file, _args, cb) => {
+    cb(Object.assign(new Error('Operation timed out'), { code: 28 }), '', '');
+    return {} as never;
+  }) as unknown as typeof execFile);
   // Skip the 6s rate-limit sleep so tests don't time out
   vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn) => {
     if (typeof fn === 'function') fn();
@@ -256,6 +273,16 @@ describe('OddsPrematchSyncWorker.process', () => {
     expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ bookmaker: 'Pinnacle', homeOdds: 2.08 }),
     );
+    // Non-primary priority books contribute a 1X2-only snapshot so the
+    // engine can compute a multi-book median implied probability.
+    expect(fixtureService.upsertOneXTwoOddsSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookmaker: 'Bet365',
+        homeOdds: 2.1,
+        drawOdds: 3.4,
+        awayOdds: 4.2,
+      }),
+    );
   });
 
   it('skips fixture when API returns non-ok status', async () => {
@@ -286,7 +313,8 @@ describe('OddsPrematchSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(execFile).toHaveBeenCalledTimes(2);
+    // 2 odds calls (transient + success) + 1 end-of-job quota /status call.
+    expect(execFile).toHaveBeenCalledTimes(3);
     expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
   });
 
@@ -300,7 +328,8 @@ describe('OddsPrematchSyncWorker.process', () => {
 
     await worker.process(makeJob({ date: '2026-03-03' }));
 
-    expect(execFile).toHaveBeenCalledTimes(2);
+    // 2 odds attempts + 1 end-of-job quota /status call.
+    expect(execFile).toHaveBeenCalledTimes(3);
     expect(fixtureService.upsertOddsSnapshot).not.toHaveBeenCalled();
   });
 
@@ -362,6 +391,32 @@ describe('OddsPrematchSyncWorker.process', () => {
     await worker.process(makeJob({ date: '2026-03-03' }));
 
     expect(fixtureService.upsertOddsSnapshot).toHaveBeenCalledOnce();
+  });
+});
+
+// ─── resolveTargetDates ───────────────────────────────────────────────────────
+
+describe('resolveTargetDates', () => {
+  it('returns the single explicit date when provided (backfill)', () => {
+    const dates = resolveTargetDates({ date: '2026-03-03' });
+    expect(dates).toHaveLength(1);
+    expect(dates[0]?.toISOString().slice(0, 10)).toBe('2026-03-03');
+  });
+
+  it('covers tomorrow through J+3 by default (multi-snapshot horizon)', () => {
+    const dates = resolveTargetDates({});
+    expect(dates).toHaveLength(3);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const dayMs = 24 * 60 * 60 * 1000;
+    expect(dates.map((d) => (d.getTime() - today.getTime()) / dayMs)).toEqual([
+      1, 2, 3,
+    ]);
+  });
+
+  it('respects an explicit horizonDays and floors it at 1', () => {
+    expect(resolveTargetDates({ horizonDays: 2 })).toHaveLength(2);
+    expect(resolveTargetDates({ horizonDays: 0 })).toHaveLength(1);
   });
 });
 

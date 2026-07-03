@@ -13,6 +13,18 @@ export type AnalysisSheetFilters = {
   channel?: AnalysisSheetChannel;
 };
 
+// One earlier rolling-horizon pass where this channel also had a SELECTED
+// pick — oldest first (line-movement trail).
+export type AnalysisSheetPickHistoryEntry = {
+  analyzedAt: string;
+  phase: string;
+  market: string;
+  pick: string;
+  probability: number;
+  odds: number | null;
+  ev: number;
+};
+
 export type AnalysisSheetJsonPick = {
   channel: string;
   market: string;
@@ -25,6 +37,30 @@ export type AnalysisSheetJsonPick = {
   qualityScore: number | null;
   rank: number;
   result: string | null;
+  history: AnalysisSheetPickHistoryEntry[];
+};
+
+// Fixture-level AVOID flag (meta-channel, no pick of its own).
+export type AnalysisSheetAvoidFlag = {
+  reasonCode: string | null;
+  maxEdge: number | null;
+  offenders: {
+    channel: string;
+    market: string;
+    pick: string;
+    edge: number;
+  }[];
+};
+
+// Fixture-level calibration alert (model↔market coherence gate).
+export type AnalysisSheetCalibrationAlert = {
+  reasons: string[];
+  modelFavorite: string;
+  marketFavorite: string;
+  modelProbability: number;
+  medianImplied: number;
+  divergence: number;
+  bookmakerCount: number;
 };
 
 export type AnalysisSheetRejectionSummary = {
@@ -52,7 +88,15 @@ export type AnalysisSheetJsonFixture = {
       h2h: number | null;
       congestion: number | null;
     } | null;
+    shadowPredictions: {
+      winnerName: string | null;
+      percent: { home: number; draw: number; away: number };
+      poisson: { home: number; away: number };
+      conflict: boolean;
+    } | null;
   };
+  avoidFlag: AnalysisSheetAvoidFlag | null;
+  calibrationAlert: AnalysisSheetCalibrationAlert | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
 };
@@ -63,6 +107,8 @@ export type AnalysisSheetJson = {
   filters: { competitionCode: string | null; channel: string | null };
   summary: {
     fixtureCount: number;
+    avoidedFixtureCount: number;
+    calibrationAlertCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
     settledRecord: { won: number; lost: number; pending: number; void: number };

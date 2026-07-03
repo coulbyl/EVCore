@@ -607,7 +607,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.57,
+        // Recalibrated 2026-07-03 on the recent blend (o35 0.45): base−0.05.
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -812,7 +813,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.63,
+        // Recalibrated 2026-07-03 on the recent blend (o35 0.37): base−0.05.
+        threshold: 0.58,
         minSampleN: 15,
       },
       {
@@ -858,34 +860,39 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.80 · o25 0.59 · o35 0.33 · o45 0.18 (n=547)
+  // Recalibrated 2026-07-03: recent blend (2 last seasons, n=215) o15 0.83 ·
+  // o25 0.66 · o35 0.44 · o45 0.26 — the league drifted offensive vs the
+  // profile these thresholds were derived from (same failure mode as NOR2).
+  // Probabilities are shrunk upstream (probability/ou-shrinkage.ts, factor
+  // 0.28); thresholds follow base−0.05 on the recent blend.
   FIN1: {
     lines: [
       {
         line: 1.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.75,
+        threshold: 0.78,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.54,
+        threshold: 0.61,
         minSampleN: 15,
       },
       {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.62,
+        threshold: 0.51,
         minSampleN: 15,
       },
       {
         line: 4.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.77,
+        threshold: 0.69,
         minSampleN: 15,
       },
     ],
@@ -1262,35 +1269,47 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
-  // o15 0.82 · o25 0.61 · o35 0.37 · o45 0.21 (n=781)
+  // Recalibrated 2026-07-03 on prod data (audit: 746 model runs, 4 seasons).
+  // League drift: o35 0.31 → 0.39 → 0.39 → 0.58 (2026-27), avg goals 2.79 →
+  // 3.98. Blended recent base (2025-26 + 2026-27, n=304): o15 0.87 · o25 0.66
+  // · o35 0.43 · o45 0.24. corr(λ_total, goals) ≈ 0 every season and the
+  // predicted→realized slope is ~0.25 → the model has league-LEVEL signal
+  // only. The calibration itself is handled upstream by the O/U probability
+  // shrinkage (probability/ou-shrinkage.ts, factor 0.25 toward the recent
+  // base rates), so thresholds follow the standard base−0.05 rule on the
+  // RECENT blend. Root cause (no xG in data-poor leagues) tracked in
+  // docs/data-poor-leagues-calibration.md.
   NOR2: {
     lines: [
       {
         line: 1.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.77,
+        threshold: 0.82,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.56,
+        threshold: 0.61,
         minSampleN: 15,
       },
       {
         line: 3.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.58,
+        // Recent under-rate 0.57 − 0.05. Shrunk probabilities cap under35 at
+        // ~0.68 for this league, so the old 0.58 gate on raw (noise) probas —
+        // which realized 37.5% live — cannot recur.
+        threshold: 0.52,
         minSampleN: 15,
       },
       {
         line: 4.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.74,
+        threshold: 0.71,
         minSampleN: 15,
       },
     ],

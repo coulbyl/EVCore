@@ -1,10 +1,9 @@
-import { execFile } from 'node:child_process';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { FixtureStatus } from '@evcore/db';
 import { createLogger } from '@utils/logger';
+import { ApiFootballClient } from '../api-football.client';
 import { BULLMQ_QUEUES, ETL_CONSTANTS } from '@config/etl.constants';
 import {
   ApiFootballFixturesResponseSchema,
@@ -21,7 +20,6 @@ import { notifyOnWorkerFailure } from './etl-worker.utils';
 export type PendingBetsSettlementJobData = Record<string, never>;
 
 const logger = createLogger('pending-bets-settlement-worker');
-const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 
 @Injectable()
 @Processor(BULLMQ_QUEUES.PENDING_BETS_SETTLEMENT)
@@ -29,8 +27,8 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   @Inject(NotificationService)
   private notification!: NotificationService;
 
-  @Inject(ConfigService)
-  private config!: ConfigService;
+  @Inject(ApiFootballClient)
+  private apiFootball!: ApiFootballClient;
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
@@ -47,7 +45,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     const fixtures = await this.fixtureService.findPendingSettlementFixtures(
       new Date(),
     );
-    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
 
     logger.info(
       { fixtureCount: fixtures.length },
@@ -62,7 +59,7 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     for (const fixture of fixtures) {
       try {
         const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?id=${fixture.externalId}`;
-        const curlResult = await fetchJsonViaCurl(url, apiKey);
+        const curlResult = await this.apiFootball.fetchJson(url);
 
         if (curlResult.response === null) {
           skippedFixtures++;
@@ -186,94 +183,6 @@ export class PendingBetsSettlementWorker extends WorkerHost {
       logger,
     });
   }
-}
-
-type CurlJsonResponse = {
-  status: number;
-  body: unknown;
-};
-
-type CurlJsonResult = {
-  response: CurlJsonResponse | null;
-  transientErrorCode?: string;
-};
-
-async function fetchJsonViaCurl(
-  url: string,
-  apiKey: string,
-): Promise<CurlJsonResult> {
-  try {
-    const stdout = await runCurlJsonRequest(url, apiKey);
-    const lastMarker = stdout.lastIndexOf(`\n${CURL_HTTP_CODE_MARKER}:`);
-    if (lastMarker === -1) {
-      throw new Error('curl output missing HTTP code marker');
-    }
-
-    const bodyText = stdout.slice(0, lastMarker);
-    const statusText = stdout
-      .slice(lastMarker + `\n${CURL_HTTP_CODE_MARKER}:`.length)
-      .trim();
-    const status = Number.parseInt(statusText, 10);
-
-    if (Number.isNaN(status)) {
-      throw new Error(`curl returned invalid HTTP code: ${statusText}`);
-    }
-
-    let body: unknown = null;
-    if (bodyText.trim().length > 0) {
-      body = JSON.parse(bodyText);
-    }
-
-    return { response: { status, body } };
-  } catch (error) {
-    const transientErrorCode = getCurlTransientErrorCode(error);
-    if (transientErrorCode !== undefined) {
-      return { response: null, transientErrorCode };
-    }
-    throw error;
-  }
-}
-
-function runCurlJsonRequest(url: string, apiKey: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    execFile(
-      'curl',
-      [
-        '--silent',
-        '--show-error',
-        '--location',
-        '--write-out',
-        `\n${CURL_HTTP_CODE_MARKER}:%{http_code}`,
-        '-H',
-        `x-apisports-key: ${apiKey}`,
-        url,
-      ],
-      (error, stdout) => {
-        if (error) {
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-          reject(error);
-          return;
-        }
-        resolve(stdout);
-      },
-    );
-  });
-}
-
-function getCurlTransientErrorCode(error: unknown): string | undefined {
-  if (!(error instanceof Error)) return undefined;
-
-  const message = error.message.toLowerCase();
-  if (message.includes('timed out')) return 'ETIMEDOUT';
-  if (message.includes('could not resolve host')) return 'ENOTFOUND';
-  if (message.includes('connection reset')) return 'ECONNRESET';
-
-  const exitCode = 'code' in error ? (error.code as number | undefined) : null;
-  if (exitCode === 28) return 'ETIMEDOUT';
-  if (exitCode === 6) return 'ENOTFOUND';
-  if (exitCode === 56) return 'ECONNRESET';
-
-  return undefined;
 }
 
 function mapFixtureState(item: ApiFootballFixture): {

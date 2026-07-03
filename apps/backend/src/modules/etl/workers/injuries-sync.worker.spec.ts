@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
+import { ApiFootballClient } from '../api-football.client';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { PrismaService } from '@/prisma.service';
 import { InjuriesSyncWorker } from './injuries-sync.worker';
@@ -89,9 +90,11 @@ describe('InjuriesSyncWorker', () => {
     },
   };
 
+  const apiFootball = new ApiFootballClient(config as unknown as ConfigService);
+
   const worker = new InjuriesSyncWorker(
     fixtureService as unknown as FixtureService,
-    config as unknown as ConfigService,
+    apiFootball,
     prisma as unknown as PrismaService,
   );
 

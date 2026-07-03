@@ -26,6 +26,16 @@ import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { createLogger } from '@utils/logger';
 import {
+  assessMarketCoherence,
+  type CalibrationAlert,
+} from './market-coherence';
+import {
+  ShadowPredictionsService,
+  hasDirectionalConflict,
+  type ShadowPrediction,
+} from './shadow-predictions.service';
+import {
+  CALIBRATION_GATE,
   DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
@@ -67,6 +77,8 @@ import {
   deriveLambdas,
   mapProbabilitiesToNumber,
   rebalanceThreeWayProbabilities,
+  getOverUnderShrinkageConfig,
+  shrinkOverUnderProbabilities,
 } from './math/probability';
 import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
 import { getPickOdds } from './pricing/odds-mapping';
@@ -154,6 +166,9 @@ export class BettingEngineService {
     oddsLoader?: OddsSnapshotLoader,
     @Optional()
     betSettlement?: BetSettlementService,
+    // Shadow-only /predictions cross-check; unit tests omit it → shadow null.
+    @Optional()
+    private readonly shadowPredictionsService?: ShadowPredictionsService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
@@ -202,12 +217,18 @@ export class BettingEngineService {
       awayStats,
       buildLambdaConfig(competitionCode),
     );
-    const probabilities = rebalanceThreeWayProbabilities({
-      probabilities: this.computeProbabilities(lambda.home, lambda.away),
-      homeStats,
-      awayStats,
-      blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
-    });
+    // 1X2: empirical blend toward team win/draw rates. O/U: shrinkage toward
+    // the league base rate for data-poor leagues where the measured
+    // calibration slope is near zero (see probability/ou-shrinkage.ts).
+    const probabilities = shrinkOverUnderProbabilities(
+      rebalanceThreeWayProbabilities({
+        probabilities: this.computeProbabilities(lambda.home, lambda.away),
+        homeStats,
+        awayStats,
+        blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
+      }),
+      getOverUnderShrinkageConfig(competitionCode),
+    );
 
     return { deterministicScore, probabilities, lambda, features };
   }
@@ -348,6 +369,7 @@ export class BettingEngineService {
       where: { id: fixtureId },
       select: {
         id: true,
+        externalId: true,
         seasonId: true,
         scheduledAt: true,
         homeTeamId: true,
@@ -643,6 +665,71 @@ export class BettingEngineService {
       }
     }
 
+    // Model↔market coherence gate: compare the model's 1X2 probabilities to
+    // the median implied probability across priority bookmakers. A triggered
+    // alert is stored in features.calibration_alert (surfaced on the analysis
+    // sheet, enforced at staking) — the analytical decisions are kept intact.
+    let calibrationAlert: CalibrationAlert | null = null;
+    if (CALIBRATION_GATE.ENABLED) {
+      const oneXTwoBooks =
+        await this.oddsLoader.findLatestOneXTwoOddsPerBookmaker(fixtureId);
+      calibrationAlert = assessMarketCoherence({
+        modelProbabilities: {
+          home: probabilities.home,
+          draw: probabilities.draw,
+          away: probabilities.away,
+        },
+        books: oneXTwoBooks,
+      });
+      if (calibrationAlert !== null) {
+        logger.warn(
+          {
+            fixtureId,
+            scheduledAt,
+            competitionCode: getFixtureCompetitionCode(fixture),
+            homeTeam: getFixtureHomeTeamName(fixture),
+            awayTeam: getFixtureAwayTeamName(fixture),
+            calibrationAlert,
+          },
+          'Calibration alert: model↔market coherence gate triggered — fixture will be excluded from the staking pool',
+        );
+      }
+    }
+
+    // Shadow /predictions cross-check — independent second model (API-Football).
+    // Stored + logged only; a directional conflict with our λ is the strongest
+    // corrupted-input tell but never changes a decision by itself.
+    let shadowPredictions: (ShadowPrediction & { conflict: boolean }) | null =
+      null;
+    if (
+      FEATURE_FLAGS.SCORING.SHADOW_PREDICTIONS &&
+      this.shadowPredictionsService &&
+      fixture.externalId !== null
+    ) {
+      const prediction =
+        await this.shadowPredictionsService.fetchShadowPrediction(
+          fixture.externalId,
+        );
+      if (prediction !== null) {
+        const conflict = hasDirectionalConflict(prediction, lambda);
+        shadowPredictions = { ...prediction, conflict };
+        if (conflict) {
+          logger.warn(
+            {
+              fixtureId,
+              competitionCode: getFixtureCompetitionCode(fixture),
+              homeTeam: getFixtureHomeTeamName(fixture),
+              awayTeam: getFixtureAwayTeamName(fixture),
+              lambdaHome: lambda.home,
+              lambdaAway: lambda.away,
+              shadowPredictions,
+            },
+            'Shadow predictions conflict: API-Football Poisson favors the opposite side — check input data',
+          );
+        }
+      }
+    }
+
     if (valueBet !== null && valueBet.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
       logger.warn(
         {
@@ -700,6 +787,8 @@ export class BettingEngineService {
       probabilities: mapProbabilitiesToNumber(probabilities),
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
+      calibration_alert: calibrationAlert,
+      shadow_predictions: shadowPredictions,
       shadow_h2h: shadowH2h,
       shadow_congestion: shadowCongestion,
       shadow_lineups: null,
@@ -762,6 +851,28 @@ export class BettingEngineService {
           phase: modelRunPhase,
         }),
       )) ?? [];
+
+    // EV soft alert across ALL stakeable channels (the VALUE-only alert above
+    // predates the channel refactor and missed e.g. the Argentina SAFE pick at
+    // EV +0.46). CORRECT_SCORE is observation-only → excluded.
+    for (const decision of persistedChannelDecisions) {
+      if (decision.channel === STRATEGY_CHANNEL.CORRECT_SCORE) continue;
+      for (const sel of decision.selections) {
+        if (sel.ev != null && sel.ev.greaterThan(EV_MAX_SOFT_ALERT)) {
+          logger.warn(
+            {
+              fixtureId,
+              channel: decision.channel,
+              market: sel.market,
+              pick: sel.pick,
+              ev: sel.ev.toNumber(),
+              evSoftAlertThreshold: EV_MAX_SOFT_ALERT.toNumber(),
+            },
+            'EV soft alert: high channel-selection EV may indicate calibration anomaly',
+          );
+        }
+      }
+    }
 
     // Shadow ML correction — per channel, logged only; never changes a decision.
     if (FEATURE_FLAGS.SCORING.ML_CORRECTION) {

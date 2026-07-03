@@ -54,6 +54,39 @@ export type AnalysisSheetRejectionSummary = {
   topReasonCode: string | null;
 };
 
+// One pick that tripped the AVOID gate — model edge (probability − 1/odds)
+// reached AVOID_CONFIG.maxEdge, an implausible model↔market divergence.
+export type AnalysisSheetAvoidOffender = {
+  channel: string;
+  market: string;
+  pick: string;
+  edge: number;
+};
+
+// Fixture-level AVOID flag. AVOID is a meta-channel that emits no pick of its
+// own (SELECTED with empty selections), so it appears in neither selectedPicks
+// nor rejectionSummary — without this field a triggered AVOID is invisible on
+// the sheet while the coupon layer silently drops the fixture's picks from
+// the staking pool.
+export type AnalysisSheetAvoidFlag = {
+  reasonCode: string | null;
+  maxEdge: number | null;
+  offenders: AnalysisSheetAvoidOffender[];
+};
+
+// Fixture-level calibration alert (model↔market coherence gate, stored in
+// ModelRun.features.calibration_alert). Signals corrupted model inputs —
+// the fixture's picks are dropped from the staking pool.
+export type AnalysisSheetCalibrationAlert = {
+  reasons: string[];
+  modelFavorite: string;
+  marketFavorite: string;
+  modelProbability: number;
+  medianImplied: number;
+  divergence: number;
+  bookmakerCount: number;
+};
+
 export type AnalysisSheetJsonFixture = {
   fixtureId: string;
   match: string;
@@ -72,7 +105,17 @@ export type AnalysisSheetJsonFixture = {
       h2h: number | null;
       congestion: number | null;
     } | null;
+    // API-Football /predictions second opinion (shadow-only). `conflict` is
+    // true when their Poisson comparison favors the opposite side vs our λ.
+    shadowPredictions: {
+      winnerName: string | null;
+      percent: { home: number; draw: number; away: number };
+      poisson: { home: number; away: number };
+      conflict: boolean;
+    } | null;
   };
+  avoidFlag: AnalysisSheetAvoidFlag | null;
+  calibrationAlert: AnalysisSheetCalibrationAlert | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
 };
@@ -83,6 +126,8 @@ export type AnalysisSheetJson = {
   filters: { competitionCode: string | null; channel: string | null };
   summary: {
     fixtureCount: number;
+    avoidedFixtureCount: number;
+    calibrationAlertCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
     settledRecord: { won: number; lost: number; pending: number; void: number };
@@ -120,6 +165,8 @@ function toJsonFixture(
     }));
 
   const rejectionSummary = buildRejectionSummary(fixture.selections);
+  const avoidFlag = buildAvoidFlag(fixture.selections);
+  const calibrationAlert = buildCalibrationAlert(fixture.features);
 
   return {
     fixtureId: fixture.fixtureId,
@@ -151,9 +198,139 @@ function toJsonFixture(
             congestion: context.shadowCongestion,
           }
         : null,
+      shadowPredictions: buildShadowPredictions(fixture.features),
     },
+    avoidFlag,
+    calibrationAlert,
     selectedPicks,
     rejectionSummary,
+  };
+}
+
+// Parses ModelRun.features.shadow_predictions (API-Football second opinion,
+// shadow-only). Defensive: malformed payloads yield null.
+function buildShadowPredictions(
+  features: unknown,
+): AnalysisSheetJsonFixture['model']['shadowPredictions'] {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)['shadow_predictions'];
+  if (!raw || typeof raw !== 'object') return null;
+
+  const p = raw as {
+    winnerName?: unknown;
+    percent?: unknown;
+    poisson?: unknown;
+    conflict?: unknown;
+  };
+  const percent = asTriple(p.percent, ['home', 'draw', 'away']);
+  const poisson = asTriple(p.poisson, ['home', 'away']);
+  if (percent === null || poisson === null || typeof p.conflict !== 'boolean') {
+    return null;
+  }
+
+  return {
+    winnerName: typeof p.winnerName === 'string' ? p.winnerName : null,
+    percent: percent as { home: number; draw: number; away: number },
+    poisson: poisson as { home: number; away: number },
+    conflict: p.conflict,
+  };
+}
+
+function asTriple(
+  value: unknown,
+  keys: string[],
+): Record<string, number> | null {
+  if (!value || typeof value !== 'object') return null;
+  const out: Record<string, number> = {};
+  for (const key of keys) {
+    const v = (value as Record<string, unknown>)[key];
+    if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+    out[key] = v;
+  }
+  return out;
+}
+
+// Parses ModelRun.features.calibration_alert (written by the betting engine's
+// market-coherence gate). Defensive: malformed payloads yield null.
+function buildCalibrationAlert(
+  features: unknown,
+): AnalysisSheetCalibrationAlert | null {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)['calibration_alert'];
+  if (!raw || typeof raw !== 'object') return null;
+
+  const alert = raw as Record<string, unknown>;
+  if (
+    !Array.isArray(alert.reasons) ||
+    typeof alert.modelFavorite !== 'string' ||
+    typeof alert.marketFavorite !== 'string' ||
+    typeof alert.modelProbability !== 'number' ||
+    typeof alert.medianImplied !== 'number' ||
+    typeof alert.divergence !== 'number' ||
+    typeof alert.bookmakerCount !== 'number'
+  ) {
+    return null;
+  }
+
+  return {
+    reasons: alert.reasons.filter((r): r is string => typeof r === 'string'),
+    modelFavorite: alert.modelFavorite,
+    marketFavorite: alert.marketFavorite,
+    modelProbability: alert.modelProbability,
+    medianImplied: alert.medianImplied,
+    divergence: alert.divergence,
+    bookmakerCount: alert.bookmakerCount,
+  };
+}
+
+// AVOID SELECTED = the fixture is flagged (the "selection" is the avoidance
+// itself, with the offending picks in reasonDetails). It carries no
+// market/pick, so it must be surfaced here explicitly.
+function buildAvoidFlag(
+  selections: AnalysisSheetFixture['selections'],
+): AnalysisSheetAvoidFlag | null {
+  const avoid = selections.find(
+    (s) => s.channel === 'AVOID' && s.decisionStatus === 'SELECTED',
+  );
+  if (!avoid) return null;
+
+  const details =
+    avoid.reasonDetails && typeof avoid.reasonDetails === 'object'
+      ? (avoid.reasonDetails as {
+          maxEdge?: unknown;
+          offenders?: unknown;
+        })
+      : {};
+
+  const offenders: AnalysisSheetAvoidOffender[] = Array.isArray(
+    details.offenders,
+  )
+    ? details.offenders.flatMap((o: unknown) => {
+        if (!o || typeof o !== 'object') return [];
+        const raw = o as Record<string, unknown>;
+        if (
+          typeof raw.channel !== 'string' ||
+          typeof raw.market !== 'string' ||
+          typeof raw.pick !== 'string' ||
+          typeof raw.edge !== 'number'
+        ) {
+          return [];
+        }
+        return [
+          {
+            channel: raw.channel,
+            market: raw.market,
+            pick: raw.pick,
+            edge: raw.edge,
+          },
+        ];
+      })
+    : [];
+
+  return {
+    reasonCode: avoid.reasonCode,
+    maxEdge: typeof details.maxEdge === 'number' ? details.maxEdge : null,
+    offenders,
   };
 }
 
@@ -250,6 +427,11 @@ export function buildJsonSheet(
     filters: meta.filters,
     summary: {
       fixtureCount: jsonFixtures.length,
+      avoidedFixtureCount: jsonFixtures.filter((f) => f.avoidFlag !== null)
+        .length,
+      calibrationAlertCount: jsonFixtures.filter(
+        (f) => f.calibrationAlert !== null,
+      ).length,
       byCompetition,
       byChannel,
       settledRecord,
@@ -291,6 +473,16 @@ export function buildTxtSheet(
   w(
     `Réglé : ${won} gagnés / ${lost} perdus / ${pending} en attente / ${voided} annulés`,
   );
+  if (sheet.summary.avoidedFixtureCount > 0) {
+    w(
+      `Fixtures flaguées AVOID : ${sheet.summary.avoidedFixtureCount} (divergence modèle/marché implausible — picks exclus du staking)`,
+    );
+  }
+  if (sheet.summary.calibrationAlertCount > 0) {
+    w(
+      `Alertes calibration : ${sheet.summary.calibrationAlertCount} (données modèle suspectes vs marché — picks exclus du staking)`,
+    );
+  }
   w();
 
   w('=== Fixtures ===');
@@ -323,6 +515,42 @@ export function buildTxtSheet(
       if (model.shadowSignals.congestion !== null)
         parts.push(`cong=${fmtSigned(model.shadowSignals.congestion, 4)}`);
       if (parts.length > 0) w(`  Shadow : ${parts.join('  ')}`);
+    }
+
+    if (f.avoidFlag) {
+      const cap =
+        f.avoidFlag.maxEdge !== null
+          ? ` (edge ≥ ${f.avoidFlag.maxEdge.toFixed(2)})`
+          : '';
+      w(
+        `  ⚠ AVOID${f.avoidFlag.reasonCode ? ` [${f.avoidFlag.reasonCode}]` : ''} — divergence modèle/marché implausible${cap} ; picks exclus du staking`,
+      );
+      for (const o of f.avoidFlag.offenders) {
+        const label = pickLabel({
+          market: o.market,
+          pick: o.pick,
+          comboMarket: null,
+          comboPick: null,
+        });
+        w(
+          `    Offender [${channelLabel(o.channel)}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
+        );
+      }
+    }
+
+    if (model.shadowPredictions) {
+      const sp = model.shadowPredictions;
+      const conflictStr = sp.conflict ? '  ⚠ CONFLIT de direction avec λ' : '';
+      w(
+        `  2e avis (API-Football) : ${sp.winnerName ?? '—'}  1X2 ${sp.percent.home}/${sp.percent.draw}/${sp.percent.away}%  poisson ${sp.poisson.home}/${sp.poisson.away}${conflictStr}`,
+      );
+    }
+
+    if (f.calibrationAlert) {
+      const a = f.calibrationAlert;
+      w(
+        `  ⚠ Calibration [${a.reasons.join(', ')}] — favori modèle ${a.modelFavorite} (${fmtPct(a.modelProbability)}) vs marché ${a.marketFavorite} (implied ${fmtPct(a.medianImplied)}, ${a.bookmakerCount} books) ; données suspectes, picks exclus du staking`,
+      );
     }
 
     if (f.selectedPicks.length === 0) {

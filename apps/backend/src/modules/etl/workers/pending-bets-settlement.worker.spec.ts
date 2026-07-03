@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { execFile } from 'node:child_process';
 import type { Job } from 'bullmq';
 import type { ConfigService } from '@nestjs/config';
+import { ApiFootballClient } from '../api-football.client';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import type { NotificationService } from '../../notification/notification.service';
@@ -161,7 +162,7 @@ describe('PendingBetsSettlementWorker', () => {
     vi.clearAllMocks();
     Object.assign(worker, {
       notification: notification as unknown as NotificationService,
-      config: config as unknown as ConfigService,
+      apiFootball: new ApiFootballClient(config as unknown as ConfigService),
       couponSettlement: couponSettlement as unknown as CouponSettlementService,
       cache: cache as unknown as CacheService,
     });

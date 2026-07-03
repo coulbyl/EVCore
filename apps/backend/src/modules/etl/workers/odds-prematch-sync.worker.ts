@@ -1,7 +1,5 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { ConfigService } from '@nestjs/config';
-import { execFile } from 'node:child_process';
 import { createLogger } from '@utils/logger';
 import {
   ApiFootballOddsResponseSchema,
@@ -15,17 +13,23 @@ import {
   API_FOOTBALL_BET_IDS,
 } from '@config/etl.constants';
 import { NotificationService } from '../../notification/notification.service';
-import { tomorrowUtc, formatDateUtc } from '@utils/date.utils';
+import { formatDateUtc } from '@utils/date.utils';
+import { addDays } from 'date-fns';
 import { sleep } from '@utils/async.utils';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
+import {
+  ApiFootballClient,
+  isQuotaExceededError,
+} from '../api-football.client';
 
-// Passing date as job data makes the worker testable and supports backfill.
-// When absent, defaults to tomorrow (standard daily cron use case).
-export type OddsPrematchSyncJobData = { date?: string };
+// Passing date as job data makes the worker testable and supports backfill:
+// with `date` the job syncs that single day; otherwise it covers tomorrow up
+// to J+`horizonDays` (default ODDS_PREMATCH_HORIZON_DAYS) so each fixture
+// accumulates multiple snapshots before kickoff (line-movement feed).
+export type OddsPrematchSyncJobData = { date?: string; horizonDays?: number };
 
 const logger = createLogger('odds-prematch-sync-worker');
 const ODDS_FETCH_ATTEMPTS = 2;
-const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 
 // lockDuration: 10 min — the job fetches odds per fixture with 6 s API delay between
 // each call, so 10+ fixtures easily exceeds the default 30 s lock timeout.
@@ -33,28 +37,34 @@ const CURL_HTTP_CODE_MARKER = '__EVCORE_HTTP_CODE__';
 export class OddsPrematchSyncWorker extends WorkerHost {
   constructor(
     private readonly fixtureService: FixtureService,
-    private readonly config: ConfigService,
+    private readonly apiFootball: ApiFootballClient,
     private readonly notification: NotificationService,
   ) {
     super();
   }
 
   async process(job: Job<OddsPrematchSyncJobData>): Promise<void> {
-    const apiKey = this.config.getOrThrow<string>('API_FOOTBALL_KEY');
-    const targetDate = job.data.date ? new Date(job.data.date) : tomorrowUtc();
-    const dateLabel = formatDateUtc(targetDate);
+    const targetDates = resolveTargetDates(job.data);
+    const dateLabel = targetDates.map(formatDateUtc).join(',');
 
-    logger.info({ date: dateLabel }, 'Starting odds prematch sync');
+    logger.info({ dates: dateLabel }, 'Starting odds prematch sync');
 
-    const fixtures = await this.fixtureService.findScheduledForDate(targetDate);
+    const fixtures = (
+      await Promise.all(
+        targetDates.map((d) => this.fixtureService.findScheduledForDate(d)),
+      )
+    ).flat();
 
     if (fixtures.length === 0) {
-      logger.info({ date: dateLabel }, 'No scheduled fixtures — nothing to do');
+      logger.info(
+        { dates: dateLabel },
+        'No scheduled fixtures — nothing to do',
+      );
       return;
     }
 
     logger.info(
-      { count: fixtures.length, date: dateLabel },
+      { count: fixtures.length, dates: dateLabel },
       'Fetching prematch odds per fixture',
     );
 
@@ -64,39 +74,16 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     for (const { id: fixtureId, externalId } of fixtures) {
       const url = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/odds?fixture=${externalId}`;
       const fetchStartedAt = performance.now();
-      let res: CurlJsonResponse | null = null;
-      let transientErrorCode: string | undefined;
 
-      for (let attempt = 1; attempt <= ODDS_FETCH_ATTEMPTS; attempt++) {
-        const result = await fetchJsonViaCurl(url, apiKey);
-        res = result.response;
-        transientErrorCode = result.transientErrorCode;
-
-        if (res !== null) {
-          break;
-        }
-
-        if (attempt < ODDS_FETCH_ATTEMPTS) {
-          logger.warn(
-            {
-              externalId,
-              networkCode: transientErrorCode ?? 'UNKNOWN',
-              attempt,
-              nextAttempt: attempt + 1,
-              url,
-            },
-            'Transient network error while fetching odds — retrying fixture immediately',
-          );
-        }
-      }
-
+      const result = await this.apiFootball.fetchJson(url, ODDS_FETCH_ATTEMPTS);
+      const res = result.response;
       const durationMs = Math.round(performance.now() - fetchStartedAt);
 
       if (res === null) {
         logger.warn(
           {
             externalId,
-            networkCode: transientErrorCode ?? 'UNKNOWN',
+            networkCode: result.transientErrorCode ?? 'UNKNOWN',
             durationMs,
             url,
           },
@@ -153,7 +140,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
         continue;
       }
 
-      const odds = extractOneXTwoOdds(match.bookmakers);
+      const allOneXTwo = extractAllOneXTwoOdds(match.bookmakers);
+      const odds = allOneXTwo[0] ?? null;
 
       if (!odds) {
         logger.warn(
@@ -166,6 +154,20 @@ export class OddsPrematchSyncWorker extends WorkerHost {
       }
 
       const snapshotAt = new Date(match.update);
+
+      // 1X2 from every priority bookmaker (not only the primary one): the
+      // engine derives a median implied probability across books for the
+      // model↔market coherence gate — a single book is too easy an outlier.
+      for (const bookOdds of allOneXTwo.slice(1)) {
+        await this.fixtureService.upsertOneXTwoOddsSnapshot({
+          fixtureId,
+          bookmaker: bookOdds.bookmaker,
+          snapshotAt,
+          homeOdds: bookOdds.homeOdds,
+          drawOdds: bookOdds.drawOdds,
+          awayOdds: bookOdds.awayOdds,
+        });
+      }
 
       const additionalOdds = extractAdditionalMarketOdds(
         match.bookmakers,
@@ -235,9 +237,37 @@ export class OddsPrematchSyncWorker extends WorkerHost {
     }
 
     logger.info(
-      { synced, skipped, date: dateLabel },
+      { synced, skipped, dates: dateLabel },
       'Odds prematch sync complete',
     );
+
+    await this.checkQuotaUsage();
+  }
+
+  // Best-effort quota observability — the multi-day horizon and 2×/day cron
+  // consume more requests than the old single-day run; alert before the cap
+  // instead of discovering it via failing jobs.
+  private async checkQuotaUsage(): Promise<void> {
+    const usage = await this.apiFootball.getQuotaUsage();
+    if (usage === null || usage.limitDay <= 0) return;
+
+    const ratio = usage.current / usage.limitDay;
+    logger.info(
+      { current: usage.current, limitDay: usage.limitDay },
+      'API-Football daily quota usage',
+    );
+
+    if (ratio >= ETL_CONSTANTS.API_FOOTBALL_QUOTA_ALERT_RATIO) {
+      logger.warn(
+        { current: usage.current, limitDay: usage.limitDay, ratio },
+        'API-Football quota above alert threshold',
+      );
+      await this.notification.sendEtlFailureAlert(
+        BULLMQ_QUEUES.ODDS_PREMATCH_SYNC,
+        'odds-prematch-sync',
+        `API-Football quota at ${usage.current}/${usage.limitDay} (≥ ${Math.round(ETL_CONSTANTS.API_FOOTBALL_QUOTA_ALERT_RATIO * 100)}%)`,
+      );
+    }
   }
 
   @OnWorkerEvent('failed')
@@ -287,92 +317,19 @@ type AdditionalMarketOdds = {
   correctScoreOdds: Record<string, number>;
 };
 
-type CurlJsonResponse = {
-  status: number;
-  body: unknown;
-};
+// Resolves the days this run covers: an explicit `date` wins (backfill /
+// tests); otherwise tomorrow through J+horizonDays.
+export function resolveTargetDates(data: OddsPrematchSyncJobData): Date[] {
+  if (data.date) return [new Date(data.date)];
 
-type CurlJsonResult = {
-  response: CurlJsonResponse | null;
-  transientErrorCode?: string;
-};
-
-async function fetchJsonViaCurl(
-  url: string,
-  apiKey: string,
-): Promise<CurlJsonResult> {
-  try {
-    const stdout = await runCurlJsonRequest(url, apiKey);
-    const lastMarker = stdout.lastIndexOf(`\n${CURL_HTTP_CODE_MARKER}:`);
-    if (lastMarker === -1) {
-      throw new Error('curl output missing HTTP code marker');
-    }
-
-    const bodyText = stdout.slice(0, lastMarker);
-    const statusText = stdout
-      .slice(lastMarker + `\n${CURL_HTTP_CODE_MARKER}:`.length)
-      .trim();
-    const status = Number.parseInt(statusText, 10);
-
-    if (Number.isNaN(status)) {
-      throw new Error(`curl returned invalid HTTP code: ${statusText}`);
-    }
-
-    let body: unknown = null;
-    if (bodyText.trim().length > 0) {
-      body = JSON.parse(bodyText);
-    }
-
-    return { response: { status, body } };
-  } catch (error) {
-    const transientErrorCode = getCurlTransientErrorCode(error);
-    if (transientErrorCode !== undefined) {
-      return { response: null, transientErrorCode };
-    }
-    throw error;
-  }
-}
-
-function runCurlJsonRequest(url: string, apiKey: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    execFile(
-      'curl',
-      [
-        '--silent',
-        '--show-error',
-        '--location',
-        '--write-out',
-        `\n${CURL_HTTP_CODE_MARKER}:%{http_code}`,
-        '-H',
-        `x-apisports-key: ${apiKey}`,
-        url,
-      ],
-      (error, stdout) => {
-        if (error) {
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-          reject(error);
-          return;
-        }
-        resolve(stdout);
-      },
-    );
+  const horizon = data.horizonDays ?? ETL_CONSTANTS.ODDS_PREMATCH_HORIZON_DAYS;
+  const days = Math.max(1, horizon);
+  const today = new Date();
+  return Array.from({ length: days }, (_, i) => {
+    const d = addDays(today, i + 1);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
   });
-}
-
-function getCurlTransientErrorCode(error: unknown): string | undefined {
-  if (!(error instanceof Error)) return undefined;
-
-  const message = error.message.toLowerCase();
-  if (message.includes('timed out')) return 'ETIMEDOUT';
-  if (message.includes('could not resolve host')) return 'ENOTFOUND';
-  if (message.includes('connection reset')) return 'ECONNRESET';
-
-  const exitCode = 'code' in error ? (error.code as number | undefined) : null;
-  if (exitCode === 28) return 'ETIMEDOUT';
-  if (exitCode === 6) return 'ENOTFOUND';
-  if (exitCode === 56) return 'ECONNRESET';
-
-  return undefined;
 }
 
 // Extracts Over/Under 2.5 and BTTS odds from the same bookmaker used for 1X2.
@@ -490,11 +447,13 @@ function extractDoubleChanceOdds(
   return { '1X': homeDrawOdd, X2: drawAwayOdd, '12': homeAwayOdd };
 }
 
-// Extracts Match Winner odds with bookmaker priority: Pinnacle → Bet365 → Unibet → Marathonbet → Bwin.
-// Returns null if no bookmaker has Match Winner data.
-export function extractOneXTwoOdds(
+// Extracts Match Winner odds from every priority bookmaker, in priority
+// order: Pinnacle → Bet365 → Unibet → Marathonbet → Bwin. The first entry is
+// the primary book (drives the full snapshot incl. secondary markets); the
+// rest feed the multi-book median used by the coherence gate.
+export function extractAllOneXTwoOdds(
   bookmakers: OddsBookmaker[],
-): OneXTwoOdds | null {
+): OneXTwoOdds[] {
   const PRIORITY_IDS = [
     API_FOOTBALL_BOOKMAKERS.PINNACLE,
     API_FOOTBALL_BOOKMAKERS.BET365,
@@ -503,6 +462,7 @@ export function extractOneXTwoOdds(
     API_FOOTBALL_BOOKMAKERS.BWIN,
   ] as const;
 
+  const result: OneXTwoOdds[] = [];
   for (const bookmakerId of PRIORITY_IDS) {
     const bk = bookmakers.find((b) => b.id === bookmakerId);
     if (!bk) continue;
@@ -518,15 +478,22 @@ export function extractOneXTwoOdds(
 
     if (!home || !draw || !away) continue;
 
-    return {
+    result.push({
       bookmaker: bk.name,
       homeOdds: home.odd,
       drawOdds: draw.odd,
       awayOdds: away.odd,
-    };
+    });
   }
 
-  return null;
+  return result;
+}
+
+// Backward-compatible single-book variant (primary priority book only).
+export function extractOneXTwoOdds(
+  bookmakers: OddsBookmaker[],
+): OneXTwoOdds | null {
+  return extractAllOneXTwoOdds(bookmakers)[0] ?? null;
 }
 
 function extractOverUnderHtOdds(
@@ -605,15 +572,4 @@ function mapHalfTimeFullTimePick(value: string): string | null {
 
 function normalizeLabel(value: string): string {
   return value.trim().replace(/\s+/g, '').toUpperCase();
-}
-
-function isQuotaExceededError(body: unknown): boolean {
-  return (
-    typeof body === 'object' &&
-    body !== null &&
-    'errors' in body &&
-    typeof (body as Record<string, unknown>)['errors'] === 'object' &&
-    !Array.isArray((body as Record<string, unknown>)['errors']) &&
-    (body as Record<string, unknown>)['errors'] !== null
-  );
 }

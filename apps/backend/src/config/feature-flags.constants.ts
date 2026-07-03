@@ -12,5 +12,9 @@ export const FEATURE_FLAGS = {
     CONGESTION: false, // shadow value computed in BettingEngineService
     LINEUPS: false, // post-hoc only — shadow value: null
     ML_CORRECTION: process.env['ML_CORRECTION_ENABLED'] === 'true', // activate after ≥50 shadow picks validated
+    // API-Football /predictions as an independent second model — shadow only:
+    // stored in features.shadow_predictions, logged on directional conflict
+    // with our λ, never consumed by scoring. ~1 request per analysis pass.
+    SHADOW_PREDICTIONS: process.env['SHADOW_PREDICTIONS_ENABLED'] !== 'false',
   },
 } as const;

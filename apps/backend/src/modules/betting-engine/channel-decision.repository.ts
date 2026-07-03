@@ -56,6 +56,9 @@ export type ChannelDecisionReadRow = {
   status: ChannelDecisionStatus;
   reasonCode: string | null;
   reasonDetails: Prisma.JsonValue | null;
+  // True when the ModelRun was flagged by the model↔market coherence gate
+  // (features.calibration_alert) — the fixture is dropped from staking.
+  calibrationAlert: boolean;
   fixtureId: string;
   scheduledAt: Date;
   homeTeam: string;
@@ -205,6 +208,7 @@ export class ChannelDecisionRepository {
           select: {
             phase: true,
             analyzedAt: true,
+            features: true,
             fixture: {
               select: {
                 id: true,
@@ -256,6 +260,7 @@ export class ChannelDecisionRepository {
       status: row.status,
       reasonCode: row.reasonCode,
       reasonDetails: row.reasonDetails,
+      calibrationAlert: hasCalibrationAlert(row.modelRun.features),
       fixtureId: row.modelRun.fixture.id,
       scheduledAt: row.modelRun.fixture.scheduledAt,
       homeTeam: row.modelRun.fixture.homeTeam.name,
@@ -273,6 +278,16 @@ export class ChannelDecisionRepository {
 
     return latestPerFixtureChannel(mapped);
   }
+}
+
+// Non-null features.calibration_alert = model↔market coherence gate triggered
+// (see betting-engine/market-coherence.ts).
+function hasCalibrationAlert(features: Prisma.JsonValue | null): boolean {
+  if (!features || typeof features !== 'object' || Array.isArray(features)) {
+    return false;
+  }
+  const alert = (features as Record<string, unknown>)['calibration_alert'];
+  return typeof alert === 'object' && alert !== null;
 }
 
 // A fixture is re-analyzed on a rolling horizon (ModelRun.phase: ADVANCE →

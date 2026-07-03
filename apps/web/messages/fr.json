@@ -116,6 +116,11 @@
       "edge": "écart",
       "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
     },
+    "calibration": {
+      "banner": "Données suspectes",
+      "tooltipLabel": "Alerte calibration",
+      "tooltipDetail": "Le modèle et le marché sont en désaccord fort sur ce match (favori inversé ou écart extrême sur plusieurs bookmakers). Cela signale presque toujours des données d'entrée corrompues plutôt qu'une opportunité — le moteur exclut automatiquement tous les picks de ce match des paris réels."
+    },
     "consensus": {
       "tooltipLabel": "Signal consensus",
       "tooltipDetail": "Plusieurs canaux indépendants ont sélectionné le même outcome sans se concerter. C'est un signal de conviction renforcée — à prioriser dans votre allocation bankroll."
