@@ -32,15 +32,15 @@ La fiche d'analyse du 2026-07-02 (matchs du 03/07) a révélé deux failles de d
 
 ## État des lieux — ce qui existe déjà (ne pas réinventer)
 
-| Brique | Où | État |
-| --- | --- | --- |
-| Worker odds prematch (1X2 + O/U + BTTS + HT/FT + DC + CS, multi-books secondaires) | `etl/workers/odds-prematch-sync.worker.ts` | Cron 18:00 UTC, fixtures J+1 uniquement → 1 snapshot/fixture |
-| Historisation snapshots (clé `fixtureId, bookmaker, market, pick, snapshotAt`) | `fixture.repository.ts` / `odds_snapshot` | Append-safe : deux `update` différents = deux lignes. Prêt pour le multi-snapshot |
-| Calcul + gate line movement | `betting-engine.service.ts` (~L612), `value.strategy.ts` | Écrit, flaggé, jamais alimenté |
-| Injuries sync (shadow) | `etl/workers/injuries-sync.worker.ts`, cron 06:00 UTC | Ingéré mais `features.shadow_injuries: null` — non branché au modèle |
-| Soft alert EV élevée (anomalie calibration) | `betting-engine.service.ts` (`EV_MAX_SOFT_ALERT`) | Log uniquement, et **canal VALUE uniquement** (Argentina était un pick SAFE → non couvert) |
-| Gate AVOID au staking (edge ≥ 0.3) | `avoid.strategy.ts`, `coupon.service.ts`, `signal-window.service.ts` | Actif, backtesté (−20 % ROI sur les picks écartés), kill-switch `COUPON_ENFORCE_AVOID` |
-| Flag AVOID visible sur la fiche | `analysis-sheet.render.ts` (`avoidFlag`) | ✅ Fait le 2026-07-02 |
+| Brique                                                                             | Où                                                                   | État                                                                                       |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Worker odds prematch (1X2 + O/U + BTTS + HT/FT + DC + CS, multi-books secondaires) | `etl/workers/odds-prematch-sync.worker.ts`                           | Cron 18:00 UTC, fixtures J+1 uniquement → 1 snapshot/fixture                               |
+| Historisation snapshots (clé `fixtureId, bookmaker, market, pick, snapshotAt`)     | `fixture.repository.ts` / `odds_snapshot`                            | Append-safe : deux `update` différents = deux lignes. Prêt pour le multi-snapshot          |
+| Calcul + gate line movement                                                        | `betting-engine.service.ts` (~L612), `value.strategy.ts`             | Écrit, flaggé, jamais alimenté                                                             |
+| Injuries sync (shadow)                                                             | `etl/workers/injuries-sync.worker.ts`, cron 06:00 UTC                | Ingéré mais `features.shadow_injuries: null` — non branché au modèle                       |
+| Soft alert EV élevée (anomalie calibration)                                        | `betting-engine.service.ts` (`EV_MAX_SOFT_ALERT`)                    | Log uniquement, et **canal VALUE uniquement** (Argentina était un pick SAFE → non couvert) |
+| Gate AVOID au staking (edge ≥ 0.3)                                                 | `avoid.strategy.ts`, `coupon.service.ts`, `signal-window.service.ts` | Actif, backtesté (−20 % ROI sur les picks écartés), kill-switch `COUPON_ENFORCE_AVOID`     |
+| Flag AVOID visible sur la fiche                                                    | `analysis-sheet.render.ts` (`avoidFlag`)                             | ✅ Fait le 2026-07-02                                                                      |
 
 ---
 
@@ -89,7 +89,7 @@ Objectif : second modèle indépendant comme détecteur d'inversion/corruption.
 
 ## Refonte ETL recommandée (constatée en préparant ce plan)
 
-1. **Client API-Football partagé.** Les 9 workers dupliquent chacun la même plomberie `execFile('curl')` + marqueur HTTP + détection d'erreurs transitoires + détection de quota + `sleep(6s)`. Extraire un `etl/api-football.client.ts` unique (retry, rate-limit, quota, parsing) et faire des workers de purs orchestrateurs *fetch → Zod → repository*. C'est un prérequis sain pour C1–C3 qui ajoutent de nouveaux appels ; sans ça, on duplique une 10ᵉ fois.
+1. **Client API-Football partagé.** Les 9 workers dupliquent chacun la même plomberie `execFile('curl')` + marqueur HTTP + détection d'erreurs transitoires + détection de quota + `sleep(6s)`. Extraire un `etl/api-football.client.ts` unique (retry, rate-limit, quota, parsing) et faire des workers de purs orchestrateurs _fetch → Zod → repository_. C'est un prérequis sain pour C1–C3 qui ajoutent de nouveaux appels ; sans ça, on duplique une 10ᵉ fois.
 2. **Suivi de quota actif.** Le quota n'est détecté qu'en réaction (erreur API). Lire le compteur (`/status` en fin de job ou headers) et alerter à 80 % — d'autant que C1/C3 augmentent la consommation.
 3. **1X2 multi-books** (détaillé en C2) — correction d'une limitation du worker actuel plus qu'une feature.
 4. **Hygiène clés** : renouveler le plan Pro avant le **2026-07-05** et régénérer `API_FOOTBALL_KEY` (exposée en clair pendant les tests) ; la clé The Odds API est morte, retirer toute référence.

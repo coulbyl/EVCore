@@ -573,8 +573,12 @@ export function buildTxtSheet(
       // DRAW selects on the bookmaker implied probability (1/odds), so its
       // EV is 0 by construction — displaying it would be misleading.
       const evStr =
-        pick.channel === 'DRAW' ? '— (proba implicite marché)' : fmtSigned(pick.ev, 3);
-      const obsStr = pick.observationOnly ? '  [observation — jamais misé]' : '';
+        pick.channel === 'DRAW'
+          ? '— (proba implicite marché)'
+          : fmtSigned(pick.ev, 3);
+      const obsStr = pick.observationOnly
+        ? '  [observation — jamais misé]'
+        : '';
       w(
         `  Pick [${channelLabel(pick.channel)}]  ${label.padEnd(26)}  Prob: ${fmtPct(pick.probability)}  Cote: ${odds}  EV: ${evStr}  Qualité: ${qs}  ${resultLabel(pick.result)}${obsStr}`,
       );
