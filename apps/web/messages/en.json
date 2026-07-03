@@ -116,6 +116,10 @@
       "edge": "gap",
       "edgeTooltip": "Model/market divergence: {pct} — this pick triggered the Caution signal"
     },
+    "observation": {
+      "badge": "Observation",
+      "tooltip": "Prediction channel (most likely scoreline) — never staked by the engine."
+    },
     "calibration": {
       "banner": "Suspect data",
       "tooltipLabel": "Calibration alert",

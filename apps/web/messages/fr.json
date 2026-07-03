@@ -116,6 +116,10 @@
       "edge": "écart",
       "edgeTooltip": "Divergence modèle/marché : {pct} — ce pick a déclenché le signal Attention"
     },
+    "observation": {
+      "badge": "Observation",
+      "tooltip": "Canal de prédiction (score exact le plus probable) — jamais misé par le moteur."
+    },
     "calibration": {
       "banner": "Données suspectes",
       "tooltipLabel": "Alerte calibration",

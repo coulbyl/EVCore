@@ -22,6 +22,7 @@ import {
 } from "./channel-constants";
 import { FixtureHeading } from "./fixture-heading";
 import { ResultBadge } from "./result-badge";
+import { ObservationBadge } from "./observation-badge";
 
 function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
   if (!raw || typeof raw !== "object") return [];
@@ -106,7 +107,7 @@ export function ChannelSelectionRow({
               {formatOdds(selection.odds)}
             </span>
           )}
-          {formatEv(selection.ev) !== null && (
+          {decision.channel !== "DRAW" && formatEv(selection.ev) !== null && (
             <span className="tabular-nums text-muted-foreground">
               {formatEv(selection.ev)}
             </span>
@@ -114,6 +115,7 @@ export function ChannelSelectionRow({
           {consensusChannels.length > 0 && (
             <ConsensusSourcePills channels={consensusChannels} />
           )}
+          {decision.channel === "CORRECT_SCORE" && <ObservationBadge />}
           <ResultBadge result={selection.result} />
         </div>
       )}
