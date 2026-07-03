@@ -1,7 +1,15 @@
 # Renforcement ETL & cohérence des données — plan d'implémentation
 
-Date : 2026-07-02
-Statut : **Planifié — implémentation prévue le 2026-07-03.** Rien de ce document n'est encore codé, à l'exception de l'exposition du flag AVOID dans la fiche d'analyse (fait le 2026-07-02).
+Date : 2026-07-02 (plan) — implémenté le 2026-07-02/03
+Statut : **Implémenté** sur la branche `feat/etl-coherence-reinforcement` (C1, C2, C3 + refonte client partagé + resync types web). Lint/typecheck monorepo verts, 646 tests backend verts.
+
+Restes à faire (hors périmètre de cette branche) :
+
+- **NotificationType `CALIBRATION_ALERT`** : l'enum Prisma exige une migration (gérée par l'utilisateur via son CLI). En attendant, l'alerte = log warn + `features.calibration_alert` + fiche + bannière décisions + drop staking, sans email/notification in-app dédiés.
+- **Exclusions dans l'UI coupon** : les picks droppés par AVOID/calibration n'atteignent jamais un `CouponProposal` ; afficher « pourquoi ce pick n'est pas dans le coupon » demande que le composer retourne la liste des exclusions (changement d'API). Les bannières de la page décisions couvrent l'essentiel du besoin en attendant.
+- **Seuils C2 à backtester** : `CALIBRATION_GATE` part de MAX_DIVERGENCE=0.30 (aligné AVOID) et FAVORITE_FLIP_MIN_GAP=0.15 — à affiner sur la distribution historique une fois des snapshots accumulés.
+- **Validation C1 passive** : ~48 h de crons pour voir `lineMovement` non-null sur de vraies fixtures.
+- ⚠ **Renouveler l'abonnement API-Football Pro avant le 2026-07-05** et régénérer la clé exposée pendant les tests.
 
 ---
 
