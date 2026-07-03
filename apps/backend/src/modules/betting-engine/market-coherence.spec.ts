@@ -92,7 +92,7 @@ describe('assessMarketCoherence', () => {
   it('does not alert below MIN_BOOKMAKERS (median not meaningful)', () => {
     const alert = assessMarketCoherence({
       modelProbabilities: probs(0.24, 0.38, 0.38),
-      books: [marketArgentina[0]!],
+      books: marketArgentina.slice(0, 1),
     });
     expect(alert).toBeNull();
   });

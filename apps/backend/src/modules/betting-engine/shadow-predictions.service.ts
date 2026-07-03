@@ -77,6 +77,12 @@ export function hasDirectionalConflict(
   lambda: { home: number; away: number },
 ): boolean {
   const ourDirection = Math.sign(lambda.home - lambda.away);
-  const theirDirection = Math.sign(prediction.poisson.home - prediction.poisson.away);
-  return ourDirection !== 0 && theirDirection !== 0 && ourDirection !== theirDirection;
+  const theirDirection = Math.sign(
+    prediction.poisson.home - prediction.poisson.away,
+  );
+  return (
+    ourDirection !== 0 &&
+    theirDirection !== 0 &&
+    ourDirection !== theirDirection
+  );
 }

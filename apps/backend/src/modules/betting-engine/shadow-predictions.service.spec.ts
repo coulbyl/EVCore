@@ -67,9 +67,9 @@ describe('hasDirectionalConflict', () => {
   };
 
   it('flags the Argentina case: their Poisson favors home, our λ favors away', () => {
-    expect(
-      hasDirectionalConflict(prediction, { home: 0.41, away: 0.56 }),
-    ).toBe(true);
+    expect(hasDirectionalConflict(prediction, { home: 0.41, away: 0.56 })).toBe(
+      true,
+    );
   });
 
   it('stays silent when both models point the same way', () => {
