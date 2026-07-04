@@ -428,10 +428,10 @@ describe('buildTxtSheet', () => {
 
     expect(txt).toContain("FICHE D'ANALYSE EVCORE — 2026-06-20 -> 2026-06-27");
     expect(txt).toContain('Arsenal - Chelsea (PL)');
-    expect(txt).toContain('Pick [EV]');
+    expect(txt).toContain('Pick [VALUE]');
     expect(txt).toContain('V1');
     expect(txt).toContain('GAGNÉ');
-    expect(txt).toContain('Rejets : NUL 1 (probability_too_low)');
+    expect(txt).toContain('Rejets : DRAW 1 (probability_too_low)');
     // never one line per rejected candidate — only the rollup line
     expect(txt.match(/Rejets :/g)).toHaveLength(1);
   });
@@ -474,8 +474,96 @@ describe('buildTxtSheet', () => {
     expect(txt).toContain(
       '⚠ AVOID [extreme_divergence] — divergence modèle/marché implausible (edge ≥ 0.30) ; picks exclus du staking',
     );
-    expect(txt).toContain('Offender [SV]');
+    expect(txt).toContain('Offender [SAFE]');
     expect(txt).toContain('edge +0.312');
+  });
+
+  it('lists upcoming flagged fixtures in the deterministic vigilance section', () => {
+    const upcoming = {
+      status: 'SCHEDULED',
+      homeScore: null,
+      awayScore: null,
+    };
+    const avoided = fixture({
+      ...upcoming,
+      fixtureId: 'fx-avoid',
+      homeTeam: 'Argentina',
+      awayTeam: 'Cape Verde Islands',
+      competitionCode: 'WC',
+      features: {
+        predictionSource: 'POISSON_MAIN',
+        calibration_alert: {
+          reasons: ['extreme_divergence', 'favorite_flip'],
+          modelFavorite: 'DRAW',
+          marketFavorite: 'HOME',
+          modelProbability: 0.47,
+          medianImplied: 0.12,
+          divergence: 0.35,
+          bookmakerCount: 4,
+        },
+      },
+      selections: [
+        {
+          channel: 'AVOID',
+          decisionStatus: 'SELECTED',
+          reasonCode: 'extreme_divergence',
+          reasonDetails: { maxEdge: 0.3, offenders: [] },
+          market: null,
+          pick: null,
+          comboMarket: null,
+          comboPick: null,
+          probability: null,
+          odds: null,
+          ev: null,
+          qualityScore: null,
+          rank: null,
+          result: null,
+        },
+      ],
+    });
+    const clean = fixture({
+      ...upcoming,
+      fixtureId: 'fx-clean',
+      homeTeam: 'Sirius',
+      awayTeam: 'Mjallby AIF',
+    });
+
+    const txt = buildTxtSheet([avoided, clean], meta);
+
+    expect(txt).toContain(
+      '=== Vigilance (liste exhaustive calculée par le moteur) ===',
+    );
+    expect(txt).toContain(
+      '⚠ Argentina - Cape Verde Islands (WC, 2026-06-20) — AVOID [extreme_divergence] + Calibration [extreme_divergence, favorite_flip]',
+    );
+    expect(txt).toContain(
+      "Toute fixture à jouer absente de cette liste n'est ni flaguée ni à surveiller.",
+    );
+    // The clean fixture never leaks into the vigilance list.
+    expect(txt).not.toMatch(/^⚠ Sirius - Mjallby AIF/m);
+  });
+
+  it('keeps finished flagged fixtures out of the vigilance section', () => {
+    const finishedFlagged = fixture({
+      features: {
+        predictionSource: 'POISSON_MAIN',
+        calibration_alert: {
+          reasons: ['favorite_flip'],
+          modelFavorite: 'HOME',
+          marketFavorite: 'AWAY',
+          modelProbability: 0.58,
+          medianImplied: 0.36,
+          divergence: 0.22,
+          bookmakerCount: 4,
+        },
+      },
+    });
+
+    const txt = buildTxtSheet([finishedFlagged], meta);
+
+    expect(txt).toContain('Aucune fixture à jouer flaguée sur la période.');
+    // The per-fixture warning line is still rendered for context.
+    expect(txt).toContain('⚠ Calibration [favorite_flip]');
   });
 
   it('masks the DRAW EV (0 by construction) and marks CORRECT_SCORE as observation-only', () => {
@@ -529,7 +617,7 @@ describe('buildTxtSheet', () => {
     expect(txt).toContain('EV: — (proba implicite marché)');
     expect(txt).toContain('[observation — jamais misé]');
     // The DRAW line never shows a numeric EV.
-    expect(txt).not.toMatch(/Pick \[NUL\].*EV: \+0\.000/);
+    expect(txt).not.toMatch(/Pick \[DRAW\].*EV: \+0\.000/);
   });
 
   it('produces a valid, non-crashing output for an empty fixture list', () => {
@@ -600,7 +688,7 @@ describe('buildTxtSheet', () => {
 
     const txt = buildTxtSheet([f], meta);
     expect(txt).toContain(
-      'Historique [EV] (2 analyses) : 44.0%/3.50 → 48.0%/3.20',
+      'Historique [VALUE] (2 analyses) : 44.0%/3.50 → 48.0%/3.20',
     );
   });
 

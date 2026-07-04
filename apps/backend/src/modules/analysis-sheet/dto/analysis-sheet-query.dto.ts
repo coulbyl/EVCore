@@ -1,5 +1,17 @@
-import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
-import { ANALYSIS_SHEET_CHANNELS } from '../analysis-sheet.constants';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+import {
+  ANALYSIS_SHEET_CHANNELS,
+  ANALYSIS_SHEET_COUPONS,
+} from '../analysis-sheet.constants';
 
 export class AnalysisSheetQueryDto {
   @IsDateString()
@@ -19,4 +31,12 @@ export class AnalysisSheetQueryDto {
   @IsOptional()
   @IsIn(['txt', 'json'])
   format?: 'txt' | 'json';
+
+  // Net win the user wants the coupon stakes sized for (analyze flow only).
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(ANALYSIS_SHEET_COUPONS.maxTargetWinAmount)
+  targetWinAmount?: number;
 }

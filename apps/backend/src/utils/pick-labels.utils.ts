@@ -1,5 +1,6 @@
-// French display labels for market/pick/channel/result — shared by any
-// human- or LLM-facing text rendering of picks (analysis-sheet, reports).
+// French display labels for market/pick/result — shared by any human- or
+// LLM-facing text rendering of picks (analysis-sheet, reports). Channels are
+// rendered with their canonical names (VALUE, SAFE, …), never aliased.
 // Mirrors the label tables in packages/db/scripts/audit-fixtures.ts (kept in
 // sync manually — that CLI script lives in a separate package with its own
 // build step, not wired into the backend's module graph).
@@ -62,30 +63,6 @@ export function pickLabel(input: {
     return `${base} + ${singlePickLabel(comboMarket, comboPick)}`;
   }
   return base;
-}
-
-export function channelLabel(channel: string): string {
-  if (channel === 'VALUE') return 'EV';
-  if (channel === 'SAFE') return 'SV';
-  if (channel === 'BTTS') return 'BB';
-  if (channel === 'DRAW') return 'NUL';
-  if (channel === 'DOMINANT') return 'CONF';
-  if (channel === 'GOALS') return 'BUTS';
-  return channel;
-}
-
-export function rejectionLabel(reason: string): string {
-  if (reason === 'ev_above_hard_cap') return 'EV au-dessus du plafond dur';
-  if (reason === 'ev_below_threshold') return 'EV insuffisant';
-  if (reason === 'quality_score_below_threshold')
-    return 'Score qualité insuffisant';
-  if (reason === 'probability_too_low')
-    return 'Probabilité directionnelle insuffisante';
-  if (reason === 'odds_below_floor') return 'Cote trop basse';
-  if (reason === 'odds_above_cap') return 'Cote trop haute';
-  if (reason === 'market_suspended') return 'Marché suspendu';
-  if (reason === 'under_high_lambda') return 'Under rejeté (λ élevé)';
-  return reason;
 }
 
 export function resultLabel(result: string | null): string {

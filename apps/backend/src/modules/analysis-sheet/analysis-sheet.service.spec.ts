@@ -132,4 +132,82 @@ describe('AnalysisSheetService', () => {
 
     expect(result.truncated).toBe(true);
   });
+
+  it('resolves the evcore-coupons block against the sheet, prices it, and strips it from the analysis', async () => {
+    const upcomingFixture = {
+      fixtureId: 'fx-coupon',
+      scheduledAt: new Date(Date.now() + 86_400_000),
+      status: 'SCHEDULED',
+      homeScore: null,
+      awayScore: null,
+      homeTeam: 'Kongsvinger',
+      awayTeam: 'Sogndal',
+      competitionCode: 'NOR2',
+      competitionName: 'OBOS-ligaen',
+      modelRunId: 'mr-1',
+      analyzedAt: new Date(),
+      deterministicScore: 0.66,
+      finalScore: 0.66,
+      features: null,
+      selections: [
+        {
+          channel: 'SAFE',
+          decisionStatus: 'SELECTED',
+          reasonCode: null,
+          reasonDetails: null,
+          market: 'ONE_X_TWO',
+          pick: 'HOME',
+          comboMarket: null,
+          comboPick: null,
+          probability: 0.9,
+          odds: 1.5,
+          ev: 0.35,
+          qualityScore: 0.23,
+          rank: 1,
+          result: null,
+        },
+        {
+          channel: 'GOALS',
+          decisionStatus: 'SELECTED',
+          reasonCode: null,
+          reasonDetails: null,
+          market: 'OVER_UNDER',
+          pick: 'OVER',
+          comboMarket: null,
+          comboPick: null,
+          probability: 0.7,
+          odds: 1.61,
+          ev: 0.11,
+          qualityScore: null,
+          rank: 1,
+          result: null,
+        },
+      ],
+      priorPasses: [],
+    };
+    const block = `Analyse pro.\n\n\`\`\`evcore-coupons\n{"coupons":[{"label":"Solide","legs":[{"fixtureId":"fx-coupon","channel":"SAFE"},{"fixtureId":"fx-coupon","channel":"GOALS"}]}]}\n\`\`\``;
+    const { service, llm } = buildService({
+      fixtures: [upcomingFixture],
+      llmContent: block,
+    });
+
+    const result = await service.analyzeWithEva('user-1', {
+      from: daysFromTodayIso(0),
+      to: daysFromTodayIso(7),
+      targetWinAmount: 300_000,
+    });
+
+    // The target is forwarded to Eva so she can shape coupon profiles…
+    const call = llm.complete.mock.calls[0][0];
+    expect(call.messages[1]!.content).toContain(
+      "Objectif de gain net de l'utilisateur : 300000",
+    );
+    // …but two legs on one fixture is invalid: the engine drops the coupon.
+    expect(result.coupons).toEqual([]);
+    expect(result.droppedCoupons).toEqual([
+      { label: 'Solide', reasonCode: 'duplicate_fixture' },
+    ]);
+    expect(result.targetWinAmount).toBe(300_000);
+    expect(result.analysis).toBe('Analyse pro.');
+  });
 });

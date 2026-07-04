@@ -88,6 +88,24 @@ export function EvaFilterBar({
         className="w-full sm:flex-1"
       />
 
+      <Input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        step={1000}
+        placeholder="Gain visé (FCFA)"
+        value={filters.targetWinAmount ?? ""}
+        onChange={(e) => {
+          const parsed = Number.parseInt(e.target.value, 10);
+          onFiltersChange({
+            ...filters,
+            targetWinAmount:
+              Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
+          });
+        }}
+        className="w-full sm:flex-1"
+      />
+
       <Select
         value={filters.channel ?? "ALL"}
         onValueChange={(value) =>

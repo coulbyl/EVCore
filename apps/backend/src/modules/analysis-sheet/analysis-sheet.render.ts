@@ -1,7 +1,6 @@
 import { getModelScoreThreshold } from '@modules/betting-engine/ev.constants';
 import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
 import {
-  channelLabel,
   fmtPct,
   fmtSigned,
   pickLabel,
@@ -470,7 +469,7 @@ export function buildTxtSheet(
     .join(', ');
   w(`Par compétition : ${byCompetition || '—'}`);
   const byChannel = Object.entries(sheet.summary.byChannel)
-    .map(([channel, count]) => `${channelLabel(channel)} ${count}`)
+    .map(([channel, count]) => `${channel} ${count}`)
     .join(', ');
   w(`Par canal (picks retenus) : ${byChannel || '—'}`);
   const { won, lost, pending, void: voided } = sheet.summary.settledRecord;
@@ -489,6 +488,37 @@ export function buildTxtSheet(
   }
   w();
 
+  // Deterministic, exhaustive vigilance list — the LLM must copy it verbatim
+  // instead of re-deriving flags from the per-fixture blocks (re-derivation
+  // produced hallucinated false positives and missed alerts in production).
+  // Restricted to upcoming fixtures because Eva's answer only covers those.
+  w('=== Vigilance (liste exhaustive calculée par le moteur) ===');
+  const flaggedUpcoming = sheet.fixtures.filter(
+    (f) =>
+      f.score === null && (f.avoidFlag !== null || f.calibrationAlert !== null),
+  );
+  if (flaggedUpcoming.length === 0) {
+    w('Aucune fixture à jouer flaguée sur la période.');
+  }
+  for (const f of flaggedUpcoming) {
+    const tags: string[] = [];
+    if (f.avoidFlag) {
+      tags.push(
+        `AVOID${f.avoidFlag.reasonCode ? ` [${f.avoidFlag.reasonCode}]` : ''}`,
+      );
+    }
+    if (f.calibrationAlert) {
+      tags.push(`Calibration [${f.calibrationAlert.reasons.join(', ')}]`);
+    }
+    w(
+      `⚠ ${f.match} (${f.competition}, ${f.kickoff.slice(0, 10)}) — ${tags.join(' + ')}`,
+    );
+  }
+  w(
+    "Toute fixture à jouer absente de cette liste n'est ni flaguée ni à surveiller.",
+  );
+  w();
+
   w('=== Fixtures ===');
   if (sheet.fixtures.length === 0) {
     w('Aucune fixture sur cette période.');
@@ -498,7 +528,11 @@ export function buildTxtSheet(
     const kickoff = f.kickoff.slice(0, 16).replace('T', ' ');
     const scoreStr = f.score ? `${f.status} ${f.score}` : 'À jouer';
     w();
-    w(`[${kickoff}] ${f.match} (${f.competition}) — ${scoreStr}`);
+    // The [id:...] suffix is the leg reference for Eva's coupon block — the
+    // backend resolves coupons by fixtureId, never by match name.
+    w(
+      `[${kickoff}] ${f.match} (${f.competition}) — ${scoreStr}  [id:${f.fixtureId}]`,
+    );
 
     const { model } = f;
     const lambdaStr = model.lambda
@@ -537,7 +571,7 @@ export function buildTxtSheet(
           comboPick: null,
         });
         w(
-          `    Offender [${channelLabel(o.channel)}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
+          `    Offender [${o.channel}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
         );
       }
     }
@@ -580,7 +614,7 @@ export function buildTxtSheet(
         ? '  [observation — jamais misé]'
         : '';
       w(
-        `  Pick [${channelLabel(pick.channel)}]  ${label.padEnd(26)}  Prob: ${fmtPct(pick.probability)}  Cote: ${odds}  EV: ${evStr}  Qualité: ${qs}  ${resultLabel(pick.result)}${obsStr}`,
+        `  Pick [${pick.channel}]  ${label.padEnd(26)}  Prob: ${fmtPct(pick.probability)}  Cote: ${odds}  EV: ${evStr}  Qualité: ${qs}  ${resultLabel(pick.result)}${obsStr}`,
       );
       if (pick.history.length > 0) {
         const trail = [...pick.history, pick]
@@ -590,7 +624,7 @@ export function buildTxtSheet(
           )
           .join(' → ');
         w(
-          `    Historique [${channelLabel(pick.channel)}] (${pick.history.length + 1} analyses) : ${trail}`,
+          `    Historique [${pick.channel}] (${pick.history.length + 1} analyses) : ${trail}`,
         );
       }
     }
@@ -601,7 +635,7 @@ export function buildTxtSheet(
           const reason = r.topReasonCode
             ? ` (${r.topReasonCode}${r.count > 1 ? ` x${r.count}` : ''})`
             : '';
-          return `${channelLabel(r.channel)} ${r.count}${reason}`;
+          return `${r.channel} ${r.count}${reason}`;
         })
         .join(', ');
       w(`  Rejets : ${rejectStr}`);

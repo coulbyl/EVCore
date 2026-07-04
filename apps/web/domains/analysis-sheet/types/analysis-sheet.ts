@@ -11,6 +11,9 @@ export type AnalysisSheetFilters = {
   to: string;
   competitionCode?: string;
   channel?: AnalysisSheetChannel;
+  // Net win the user wants Eva's coupon stakes sized for (analyze flow only —
+  // never sent on exports).
+  targetWinAmount?: number;
 };
 
 // One earlier rolling-horizon pass where this channel also had a SELECTED
@@ -118,8 +121,42 @@ export type AnalysisSheetJson = {
   fixtures: AnalysisSheetJsonFixture[];
 };
 
+// One coupon leg, fully resolved and priced by the backend from the sheet —
+// the LLM only names fixtureId + channel, never numbers.
+export type EvaCouponLeg = {
+  fixtureId: string;
+  match: string;
+  competition: string;
+  kickoff: string;
+  channel: string;
+  market: string;
+  pick: string;
+  pickLabel: string;
+  probability: number;
+  odds: number;
+  ev: number;
+};
+
+export type EvaCoupon = {
+  label: string;
+  legs: EvaCouponLeg[];
+  totalOdds: number;
+  // Null when the user gave no target win amount.
+  stake: number | null;
+  potentialPayout: number | null;
+  netGain: number | null;
+};
+
+export type DroppedEvaCoupon = {
+  label: string;
+  reasonCode: string;
+};
+
 export type AnalyzeWithEvaResult = {
   analysis: string;
+  coupons: EvaCoupon[];
+  droppedCoupons: DroppedEvaCoupon[];
+  targetWinAmount: number | null;
   sheetSummary: AnalysisSheetJson["summary"];
   model: string;
   generatedAt: string;
