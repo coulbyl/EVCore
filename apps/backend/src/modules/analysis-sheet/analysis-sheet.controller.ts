@@ -61,6 +61,7 @@ export class AnalysisSheetController {
       to: body.to,
       competitionCode: body.competitionCode,
       channel: body.channel,
+      targetWinAmount: body.targetWinAmount,
     });
   }
 }

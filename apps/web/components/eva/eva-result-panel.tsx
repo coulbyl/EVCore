@@ -2,6 +2,7 @@ import { AlertCircle, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle, Skeleton } from "@evcore/ui";
 import { MarkdownArticle } from "@/components/markdown-article";
 import type { AnalyzeWithEvaResult } from "@/domains/analysis-sheet/types/analysis-sheet";
+import { EvaCouponCard } from "./eva-coupon-card";
 
 export function EvaResultPanel({
   result,
@@ -60,6 +61,22 @@ export function EvaResultPanel({
       )}
 
       <MarkdownArticle content={result.analysis} variant="chat" />
+
+      {result.coupons.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {result.coupons.map((coupon) => (
+            <EvaCouponCard key={coupon.label} coupon={coupon} />
+          ))}
+        </div>
+      )}
+
+      {result.droppedCoupons.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {result.droppedCoupons.length === 1
+            ? "Un coupon proposé par Eva a été écarté par le moteur (jambe non éligible)."
+            : `${result.droppedCoupons.length} coupons proposés par Eva ont été écartés par le moteur (jambes non éligibles).`}
+        </p>
+      )}
     </div>
   );
 }

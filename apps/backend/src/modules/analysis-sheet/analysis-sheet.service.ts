@@ -15,6 +15,11 @@ import {
   buildEvaAnalysisSystemPrompt,
   buildEvaAnalysisUserPrompt,
 } from './analysis-sheet.prompt';
+import {
+  resolveEvaCoupons,
+  type DroppedEvaCoupon,
+  type EvaCoupon,
+} from './analysis-sheet.coupons';
 import { AnalysisSheetRateLimitService } from './analysis-sheet.rate-limit.service';
 import { LLM_CLIENT } from './groq/groq-llm.tokens';
 import type { LlmClient } from './groq/groq-llm.types';
@@ -24,10 +29,14 @@ export type AnalysisSheetInput = {
   to: string;
   competitionCode?: string;
   channel?: string;
+  targetWinAmount?: number;
 };
 
 export type AnalyzeWithEvaResult = {
   analysis: string;
+  coupons: EvaCoupon[];
+  droppedCoupons: DroppedEvaCoupon[];
+  targetWinAmount: number | null;
   sheetSummary: AnalysisSheetJson['summary'];
   model: string;
   generatedAt: string;
@@ -129,7 +138,13 @@ export class AnalysisSheetService {
     const response = await this.llm.complete({
       messages: [
         { role: 'system', content: buildEvaAnalysisSystemPrompt() },
-        { role: 'user', content: buildEvaAnalysisUserPrompt(sheetText) },
+        {
+          role: 'user',
+          content: buildEvaAnalysisUserPrompt({
+            sheet: sheetText,
+            targetWinAmount: input.targetWinAmount,
+          }),
+        },
       ],
     });
 
@@ -140,9 +155,21 @@ export class AnalysisSheetService {
       outputTokens: response.usage.outputTokens,
     });
 
+    // The LLM only names legs (fixtureId + channel); odds, eligibility and
+    // all coupon arithmetic are resolved here against the backend's own sheet.
+    const sheetJson = buildJsonSheet(analyzedFixtures, meta);
+    const resolved = resolveEvaCoupons({
+      rawAnalysis: response.content,
+      sheet: sheetJson,
+      targetWinAmount: input.targetWinAmount,
+    });
+
     return {
-      analysis: response.content,
-      sheetSummary: buildJsonSheet(analyzedFixtures, meta).summary,
+      analysis: resolved.analysis,
+      coupons: resolved.coupons,
+      droppedCoupons: resolved.droppedCoupons,
+      targetWinAmount: input.targetWinAmount ?? null,
+      sheetSummary: sheetJson.summary,
       model: response.model,
       generatedAt: meta.generatedAt,
       truncated,
