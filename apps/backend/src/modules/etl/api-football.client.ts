@@ -123,18 +123,32 @@ async function fetchJsonViaCurl(
       throw new Error(`curl returned invalid HTTP code: ${statusText}`);
     }
 
-    let body: unknown = null;
-    if (bodyText.trim().length > 0) {
-      body = JSON.parse(bodyText);
-    }
-
-    return { response: { status, body } };
+    return { response: { status, body: parseBody(bodyText, status) } };
   } catch (error) {
     const transientErrorCode = getCurlTransientErrorCode(error);
     if (transientErrorCode !== undefined) {
       return { response: null, transientErrorCode };
     }
     throw error;
+  }
+}
+
+// The API's edge proxy answers some 5xx with a PLAIN-TEXT body ("upstream
+// connect error or disconnect/reset before headers…"). Parsing that as JSON
+// used to throw a SyntaxError that bypassed the caller's HTTP-status handling
+// entirely (seen in prod on the settlement worker, 2026-07-04). A non-JSON
+// body is never fatal here: keep the status, null the body, and let each
+// caller apply its own non-ok / Zod-failure policy.
+function parseBody(bodyText: string, status: number): unknown {
+  if (bodyText.trim().length === 0) return null;
+  try {
+    return JSON.parse(bodyText);
+  } catch {
+    logger.warn(
+      { status, bodySnippet: bodyText.slice(0, 120) },
+      'API-FOOTBALL returned a non-JSON body — treating body as empty',
+    );
+    return null;
   }
 }
 
