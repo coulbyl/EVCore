@@ -18,10 +18,11 @@ import {
 } from "@evcore/ui";
 import { CalendarIcon, Download, Sparkles } from "lucide-react";
 import type { AnalysisSheetFilters } from "@/domains/analysis-sheet/types/analysis-sheet";
-import { isoToDate, toISODate, todayIso } from "@/lib/date";
+import { isoToDate, toISODate } from "@/lib/date";
 import { ANALYSIS_SHEET_CHANNEL_OPTIONS } from "./eva-constants";
 
 const CALENDAR_END_MONTH = new Date(new Date().getFullYear() + 1, 11);
+const CALENDAR_START_MONTH = new Date(new Date().getFullYear() - 5, 0);
 
 export function EvaFilterBar({
   filters,
@@ -37,7 +38,6 @@ export function EvaFilterBar({
   onExport: (format: "txt" | "json") => void;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const today = isoToDate(todayIso());
   const range: DateRange = {
     from: isoToDate(filters.from),
     to: isoToDate(filters.to),
@@ -69,9 +69,8 @@ export function EvaFilterBar({
             onSelect={handleRangeSelect}
             numberOfMonths={2}
             captionLayout="dropdown"
-            startMonth={today}
+            startMonth={CALENDAR_START_MONTH}
             endMonth={CALENDAR_END_MONTH}
-            disabled={{ before: today }}
           />
         </PopoverContent>
       </Popover>
@@ -85,7 +84,7 @@ export function EvaFilterBar({
             competitionCode: e.target.value.trim() || undefined,
           })
         }
-        className="w-full sm:flex-1"
+        className="w-full sm:min-w-40 sm:flex-1"
       />
 
       <Input
@@ -103,7 +102,7 @@ export function EvaFilterBar({
               Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
           });
         }}
-        className="w-full sm:flex-1"
+        className="w-full sm:min-w-40 sm:flex-1"
       />
 
       <Select
@@ -118,7 +117,7 @@ export function EvaFilterBar({
           })
         }
       >
-        <SelectTrigger className="w-full sm:w-auto sm:flex-1">
+        <SelectTrigger className="w-full sm:w-auto sm:min-w-44 sm:flex-1">
           <SelectValue placeholder="Canal" />
         </SelectTrigger>
         <SelectContent>
