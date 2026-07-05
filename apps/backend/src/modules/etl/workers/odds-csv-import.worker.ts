@@ -24,6 +24,14 @@ const EXTRA_LEAGUE_DIVISION_CODES = new Set([
   'SWZ',
   'USA',
   'NOR',
+  'ARG',
+  'AUT',
+  'BRA',
+  'CHN',
+  'DNK',
+  'FIN',
+  'IRL',
+  'RUS',
 ]);
 
 @Processor(BULLMQ_QUEUES.ODDS_CSV_IMPORT)

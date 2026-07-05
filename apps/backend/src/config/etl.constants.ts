@@ -133,11 +133,30 @@ export const THE_ODDS_API_SPORT_KEYS = {
   BRA1: 'soccer_brazil_campeonato',
   CSL: 'soccer_china_superleague',
   FIN1: 'soccer_finland_veikkausliiga',
+  KOR1: 'soccer_korea_kleague1',
   // International
   J1: 'soccer_japan_j_league',
   MX1: 'soccer_mexico_ligamx',
+  UNL: 'soccer_uefa_nations_league',
   // FIFA World Cup — clé active uniquement pendant le tournoi (11 juin–19 juillet 2026)
   WC: 'soccer_fifa_world_cup',
+  // New leagues (Groupe A round 2, 2026-07)
+  ARG1: 'soccer_argentina_primera_division',
+  AUT1: 'soccer_austria_bundesliga',
+  DEN1: 'soccer_denmark_superliga',
+  IRL1: 'soccer_league_of_ireland',
+  SCO1: 'soccer_spl',
+  BRA2: 'soccer_brazil_serie_b',
+  // Clés ci-dessous inactive côté The Odds API au 2026-07-05 (trêve estivale
+  // ou reprise à venir) — clés existantes, réactivation attendue à la reprise
+  // de saison, pas de retrait à prévoir.
+  BEL1: 'soccer_belgium_first_div',
+  GRE1: 'soccer_greece_super_league',
+  RUS1: 'soccer_russia_premier_league',
+  KSA1: 'soccer_saudi_arabia_pro_league',
+  AUS1: 'soccer_australia_aleague',
+  CHI1: 'soccer_chile_campeonato',
+  D3: 'soccer_germany_liga3',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).
