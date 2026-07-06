@@ -12,7 +12,9 @@ describe('buildEvaAnalysisSystemPrompt', () => {
   });
 
   it('forbids Eva from doing arithmetic itself', () => {
-    expect(prompt).toContain('Tu ne fais JAMAIS d');
+    expect(prompt).toContain(
+      "Tu ne fais JAMAIS l'arithmetique du bloc technique",
+    );
   });
 
   it('forbids unsolicited disclaimers', () => {
@@ -51,12 +53,12 @@ describe('buildEvaAnalysisSystemPrompt', () => {
   });
 
   it('defines the coupon task and the machine-readable block contract', () => {
-    expect(prompt).toContain('Compose 1 a 2 coupons');
+    expect(prompt).toContain('Compose jusqu');
     expect(prompt).toContain('```evcore-coupons');
     expect(prompt).toContain('fixtureId');
     // Coupon arithmetic belongs to the engine, never to Eva.
     expect(prompt).toContain(
-      'Le moteur recalcule et affiche lui-meme cotes totales, mises et gains',
+      'Le moteur recalcule et affiche lui-meme les cotes totales, mises et gains exacts',
     );
   });
 });

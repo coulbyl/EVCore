@@ -30,12 +30,14 @@ export function EvaFilterBar({
   onAnalyze,
   isAnalyzing,
   onExport,
+  analysisEnabled = true,
 }: {
   filters: AnalysisSheetFilters;
   onFiltersChange: (filters: AnalysisSheetFilters) => void;
   onAnalyze: () => void;
   isAnalyzing: boolean;
   onExport: (format: "txt" | "json") => void;
+  analysisEnabled?: boolean;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const range: DateRange = {
@@ -132,10 +134,12 @@ export function EvaFilterBar({
         </SelectContent>
       </Select>
 
-      <Button onClick={onAnalyze} disabled={isAnalyzing} className="gap-2">
-        <Sparkles className="size-4" />
-        {isAnalyzing ? "Analyse en cours…" : "Analyser avec Eva"}
-      </Button>
+      {analysisEnabled && (
+        <Button onClick={onAnalyze} disabled={isAnalyzing} className="gap-2">
+          <Sparkles className="size-4" />
+          {isAnalyzing ? "Analyse en cours…" : "Analyser avec Eva"}
+        </Button>
+      )}
 
       <div className="flex gap-2 sm:ml-auto">
         <Button

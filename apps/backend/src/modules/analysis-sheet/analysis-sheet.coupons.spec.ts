@@ -280,7 +280,7 @@ describe('resolveEvaCoupons', () => {
     });
   }
 
-  it('drops coupons with fewer than 2 or more than 4 legs', () => {
+  it('drops coupons with fewer than 2 or more than 5 legs', () => {
     const single = resolveEvaCoupons({
       rawAnalysis: analysisWithBlock({
         coupons: [
@@ -294,9 +294,9 @@ describe('resolveEvaCoupons', () => {
     ]);
   });
 
-  it('keeps at most 2 coupons', () => {
+  it('keeps at most 3 coupons', () => {
     const proposal = {
-      coupons: [1, 2, 3].map((n) => ({
+      coupons: [1, 2, 3, 4].map((n) => ({
         label: `C${n}`,
         legs: [
           { fixtureId: 'fx-1', channel: 'SAFE' },
@@ -308,7 +308,7 @@ describe('resolveEvaCoupons', () => {
       rawAnalysis: analysisWithBlock(proposal),
       sheet: twoLegSheet,
     });
-    expect(resolved.coupons.map((c) => c.label)).toEqual(['C1', 'C2']);
+    expect(resolved.coupons.map((c) => c.label)).toEqual(['C1', 'C2', 'C3']);
   });
 
   it('labels legs with the French pick vocabulary from the sheet', () => {
