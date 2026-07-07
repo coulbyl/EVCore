@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@evcore/ui";
 import type { LucideIcon } from "lucide-react";
+import { PageLoadingBar } from "./page-loading-bar";
 
 function SidebarAutoClose() {
   const pathname = usePathname();
@@ -85,6 +86,7 @@ export function PageShell({
       }
     >
       <SidebarAutoClose />
+      <PageLoadingBar />
       <Sidebar
         variant="inset"
         collapsible="offcanvas"

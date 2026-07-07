@@ -103,9 +103,12 @@ export function ChannelRow({
             </div>
           </div>
           <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
-            <span className="max-w-full truncate">
-              {formatMarketForDisplay(selection.market, loc)}
-            </span>
+            <ChannelTag channel={channel} />
+            {selection.market !== "CORRECT_SCORE" && (
+              <span className="max-w-full truncate">
+                {formatMarketForDisplay(selection.market, loc)}
+              </span>
+            )}
             <span className="tabular-nums">
               {formatPct(selection.probability)}
             </span>
@@ -124,6 +127,21 @@ export function ChannelRow({
         <RejectedLabel decision={decision} />
       )}
     </div>
+  );
+}
+
+function ChannelTag({ channel }: { channel: StrategyChannel }) {
+  const t = useTranslations("decisions");
+  return (
+    <span
+      className="shrink-0 rounded px-1 py-0.5 text-[0.58rem] font-semibold uppercase tracking-wide"
+      style={{
+        color: CHANNEL_COLOR[channel],
+        backgroundColor: CHANNEL_COLOR_SOFT[channel],
+      }}
+    >
+      {channelLabel(channel, t)}
+    </span>
   );
 }
 
