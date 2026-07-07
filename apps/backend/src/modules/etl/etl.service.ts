@@ -588,6 +588,42 @@ export class EtlService implements OnApplicationBootstrap {
     }
   }
 
+  // Bulk variant of triggerOddsHistoricalImport: enqueues every (competition, season)
+  // pair across the requested competitions (default: all of THE_ODDS_API_SPORT_KEYS),
+  // with a single delay counter spanning the whole batch — staggering per-competition
+  // instead would replay a delay=0 burst once per competition and blow past the
+  // provider's rate limit once more than a couple of leagues are requested at once.
+  async triggerOddsHistoricalImportFull(
+    seasons: number[],
+    competitionCodes?: string[],
+  ): Promise<string[]> {
+    const codes = competitionCodes ?? Object.keys(THE_ODDS_API_SPORT_KEYS);
+    const invalid = codes.filter((c) => !(c in THE_ODDS_API_SPORT_KEYS));
+    if (invalid.length > 0) {
+      const supported = Object.keys(THE_ODDS_API_SPORT_KEYS).join(', ');
+      throw new Error(
+        `Unsupported competition code(s) for historical odds import: ${invalid.join(', ')}. Supported: ${supported}`,
+      );
+    }
+
+    let jobIndex = 0;
+    for (const code of codes as (keyof typeof THE_ODDS_API_SPORT_KEYS)[]) {
+      for (const seasonYear of seasons) {
+        await this.oddsHistoricalImportQueue.add(
+          `odds-historical-${code}-${seasonYear}`,
+          {
+            competitionCode: code,
+            seasonYear,
+          } satisfies OddsHistoricalImportJobData,
+          { ...BULLMQ_DEFAULT_JOB_OPTIONS, delay: jobIndex * 1_000 },
+        );
+        jobIndex++;
+      }
+    }
+
+    return codes;
+  }
+
   async triggerOddsCsvImportForSeasons(
     competitionCode: string,
     seasons: number[],

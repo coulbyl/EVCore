@@ -147,6 +147,10 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: true,
     csvDivisionCode: null,
+    // Qualifying rounds for the next edition kick off in late June, well
+    // before the August default used by domestic leagues — without this the
+    // next edition's season never gets requested from API-Football until August.
+    seasonStartMonth: 5,
   },
   {
     leagueId: 3,
@@ -156,6 +160,7 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: true,
     csvDivisionCode: null,
+    seasonStartMonth: 5,
   },
   {
     leagueId: 848,
@@ -165,6 +170,7 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: true,
     csvDivisionCode: null,
+    seasonStartMonth: 5,
   },
   // International competitions — apiSeasonOverride bypasses the standard
   // seasonStartMonth logic (API Football uses non-calendar season numbering
@@ -646,6 +652,7 @@ async function seedCompetitions() {
         includeInBacktest: competition.includeInBacktest ?? true,
         csvDivisionCode: competition.csvDivisionCode,
         apiSeasonOverride: competition.apiSeasonOverride,
+        seasonStartMonth: competition.seasonStartMonth,
       },
       create: competition,
     });
