@@ -32,6 +32,7 @@
     "db:analyze:signals": "tsx scripts/analyze-signals.ts",
     "db:analyze:edge": "tsx scripts/analyze-edge.ts",
     "db:backtest:ev-tiers": "tsx scripts/backtest-ev-tiers.ts",
+    "db:backtest:invest-ranking": "tsx scripts/backtest-invest-ranking.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

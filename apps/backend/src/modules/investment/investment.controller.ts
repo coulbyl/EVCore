@@ -15,6 +15,7 @@ export class InvestmentController {
       date: query.date ?? today,
       competitionCode: query.competitionCode,
       mode: query.mode ?? 'probability',
+      topN: query.topN,
     });
   }
 }
