@@ -55,7 +55,9 @@ export function InvestmentPickRow({
           <span className="text-sm font-bold text-foreground">
             {formatPickForDisplay(pick.pick, pick.market)}
           </span>
-          <CanalBadge canal={pick.channel} />
+          <Badge variant="outline" className="text-[0.62rem]">
+            {t(`bucket.${pick.probabilityBucket}`)}
+          </Badge>
           <span className="text-[0.68rem] text-muted-foreground">
             {formatMarketForDisplay(pick.market, loc)}
           </span>
@@ -73,9 +75,7 @@ export function InvestmentPickRow({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="outline" className="text-[0.62rem]">
-            {t(`bucket.${pick.probabilityBucket}`)}
-          </Badge>
+          <CanalBadge canal={pick.channel} />
           {ev !== null && (
             <Badge
               variant="outline"
@@ -87,16 +87,6 @@ export function InvestmentPickRow({
               )}
             >
               {ev}
-            </Badge>
-          )}
-          {pick.shortOdds && (
-            <Badge variant="outline" className="text-[0.62rem] text-warning">
-              {t("badge.shortOdds")}
-            </Badge>
-          )}
-          {pick.channelRoiFlag && (
-            <Badge variant="outline" className="text-[0.62rem] text-warning">
-              {t("badge.channelRoiFlag")}
             </Badge>
           )}
           <ResultBadge result={pick.result} finished={pick.score !== null} />

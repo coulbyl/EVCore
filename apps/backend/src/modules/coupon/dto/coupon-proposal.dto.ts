@@ -9,10 +9,15 @@ export type CouponLegDto = {
   id: string;
   fixtureId: string;
   homeTeam: string;
+  homeLogo: string | null;
   awayTeam: string;
+  awayLogo: string | null;
   competition: string;
+  competitionName: string;
   country: string;
   scheduledAt: string;
+  score: string | null;
+  htScore: string | null;
   canal: StrategyChannel;
   market: Market;
   pick: string;

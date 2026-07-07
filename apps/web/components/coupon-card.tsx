@@ -1,17 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import { Check, ShoppingCart } from "lucide-react";
 import {
   Badge,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   ProgressBar,
-  Separator,
   cn,
 } from "@evcore/ui";
+import { CanalBadge } from "@/components/canal-badge";
+import { FixtureCard } from "@/components/fixture-card";
+import { ResultBadge, type ResultValue } from "@/components/result-badge";
 
 export type NormalizedCouponLeg = {
   key: string;
@@ -19,17 +19,21 @@ export type NormalizedCouponLeg = {
   awayTeam: string;
   homeLogo: string | null;
   awayLogo: string | null;
-  countryLabel?: string;
-  competitionLabel: string;
-  canalColor: string;
-  canalLabel: string;
+  country: string | null;
+  competition: string | null;
+  kickoff: string;
+  score: string | null;
+  htScore: string | null;
+  canal: "VALUE" | "SAFE" | "DOMINANT" | "DRAW" | "BTTS" | "GOALS";
   marketLabel: string;
   pickLabel: string;
+  probability: number;
   odds: string | null;
-  isCorrect: boolean | null;
+  result: ResultValue | null;
 };
 
 export type CouponCardProps = {
+  locale: string;
   rank: number;
   combinedOdds: number;
   jointProbability: number;
@@ -41,19 +45,12 @@ export type CouponCardProps = {
   actionSlot?: React.ReactNode;
 };
 
-function LegResultMark({ isCorrect }: { isCorrect: boolean | null }) {
-  if (isCorrect === true)
-    return <span className="text-xs font-bold text-emerald-500">✓</span>;
-  if (isCorrect === false)
-    return <span className="text-xs font-bold text-destructive">✗</span>;
-  return null;
-}
-
 function formatPct(n: number): string {
   return `${(n * 100).toFixed(0)}%`;
 }
 
 export function CouponCard({
+  locale,
   rank,
   combinedOdds,
   jointProbability,
@@ -74,26 +71,26 @@ export function CouponCard({
   return (
     <Card
       className={cn(
-        "gap-4 rounded-[1.45rem] py-5",
+        "gap-3 rounded-2xl py-3",
         isTop
           ? "border-primary/30 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)] shadow-sm"
           : "border-amber-500/30",
       )}
     >
-      <CardHeader className="gap-3 px-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
+      <CardHeader className="px-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
               {isTop && (
                 <Badge
                   variant="accent"
-                  className="rounded-full uppercase tracking-[0.16em]"
+                  className="rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em]"
                 >
                   Meilleur
                 </Badge>
               )}
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Coupon #{rank}
+              <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Coupon {rank}
               </span>
               {betStatus === "WON" && (
                 <span className="text-[0.6rem] font-bold uppercase tracking-widest text-emerald-500">
@@ -106,25 +103,19 @@ export function CouponCard({
                 </span>
               )}
             </div>
-            <CardDescription className="text-sm">
-              {legs.length} sélections combinées pour une cote totale de{" "}
-              <span className="font-mono font-semibold text-foreground">
-                @{combinedOdds.toFixed(2)}
-              </span>
-            </CardDescription>
           </div>
-          <div className="rounded-xl border border-border/70 bg-background/30 px-3 py-2 text-right">
-            <p className="text-[0.68rem] uppercase tracking-[0.16em] text-muted-foreground">
-              Proba
-            </p>
-            <p className={cn("text-sm font-semibold", probColor)}>
-              {formatPct(jointProbability)}
-            </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <Metric label="Cote" value={`@${combinedOdds.toFixed(2)}`} />
+            <Metric
+              label="Proba"
+              value={formatPct(jointProbability)}
+              valueClassName={probColor}
+            />
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-3 px-5">
+      <CardContent className="flex flex-col gap-2.5 px-4">
         <ProgressBar
           value={Math.round(probPct)}
           max={100}
@@ -132,76 +123,9 @@ export function CouponCard({
           showValue={false}
         />
 
-        <Separator />
-
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {legs.map((leg) => (
-            <div
-              key={leg.key}
-              className="rounded-xl border border-border/60 bg-background/20 p-3"
-            >
-              <div className="flex items-start gap-2">
-                <span
-                  className="mt-1 size-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: leg.canalColor }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm font-medium">
-                      {leg.homeLogo && (
-                        <Image
-                          src={leg.homeLogo}
-                          alt={leg.homeTeam}
-                          width={14}
-                          height={14}
-                          className="size-3.5 shrink-0 object-contain"
-                        />
-                      )}
-                      <span className="truncate">{leg.homeTeam}</span>
-                      <span className="font-normal text-muted-foreground">
-                        –
-                      </span>
-                      {leg.awayLogo && (
-                        <Image
-                          src={leg.awayLogo}
-                          alt={leg.awayTeam}
-                          width={14}
-                          height={14}
-                          className="size-3.5 shrink-0 object-contain"
-                        />
-                      )}
-                      <span className="truncate">{leg.awayTeam}</span>
-                    </p>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <LegResultMark isCorrect={leg.isCorrect} />
-                      {leg.odds && (
-                        <span className="font-mono text-xs text-muted-foreground">
-                          @{leg.odds}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                    <span
-                      className="font-mono uppercase tracking-widest"
-                      style={{ color: leg.canalColor }}
-                    >
-                      {leg.canalLabel}
-                    </span>
-                    <span>·</span>
-                    <span className="uppercase tracking-widest text-[0.6rem]">
-                      {leg.countryLabel
-                        ? `${leg.countryLabel} · ${leg.competitionLabel}`
-                        : leg.competitionLabel}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {leg.marketLabel} · {leg.pickLabel}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CouponLegCard key={leg.key} leg={leg} locale={locale} />
           ))}
         </div>
 
@@ -214,6 +138,74 @@ export function CouponCard({
         {actionSlot}
       </CardContent>
     </Card>
+  );
+}
+
+function CouponLegCard({
+  leg,
+  locale,
+}: {
+  leg: NormalizedCouponLeg;
+  locale: string;
+}) {
+  return (
+    <FixtureCard
+      fixture={`${leg.homeTeam} vs ${leg.awayTeam}`}
+      homeLogo={leg.homeLogo}
+      awayLogo={leg.awayLogo}
+      competition={leg.competition}
+      country={leg.country}
+      kickoff={leg.kickoff}
+      score={leg.score}
+      htScore={leg.htScore}
+      locale={locale}
+      className="rounded-xl border-border/70 bg-background/20 shadow-none"
+      headerExtra={
+        <div className="flex shrink-0 items-center gap-2">
+          {leg.odds && (
+            <span className="font-mono text-xs text-muted-foreground">
+              @{leg.odds}
+            </span>
+          )}
+        </div>
+      }
+      bodyClassName="py-2"
+    >
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug">
+            {leg.pickLabel}
+          </p>
+          <ResultBadge result={leg.result} finished={leg.score !== null} />
+        </div>
+        <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.68rem] leading-tight text-muted-foreground">
+          <CanalBadge canal={leg.canal} />
+          <span className="max-w-full truncate">{leg.marketLabel}</span>
+          <span className="tabular-nums">{formatPct(leg.probability)}</span>
+        </p>
+      </div>
+    </FixtureCard>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/30 px-2.5 py-1.5 text-right">
+      <p className="text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className={cn("text-xs font-semibold tabular-nums", valueClassName)}>
+        {value}
+      </p>
+    </div>
   );
 }
 

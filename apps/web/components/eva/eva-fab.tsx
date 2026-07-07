@@ -62,9 +62,9 @@ export function EvaFab() {
         onClick={handleOpen}
         title="Eva"
         className={cn(
-          "fixed bottom-32 left-4 z-30 flex size-14 items-center justify-center rounded-full",
+          "fixed bottom-28 left-3 z-30 flex size-11 items-center justify-center rounded-full",
           "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
-          "shadow-[0_8px_32px_rgba(15,23,42,0.35)] ring-1 ring-accent/40",
+          "shadow-[0_6px_24px_rgba(15,23,42,0.28)] ring-1 ring-accent/40",
           "transition-transform hover:scale-105 active:scale-95",
           "md:bottom-6 md:left-auto md:right-6 md:size-12",
         )}
@@ -72,7 +72,7 @@ export function EvaFab() {
         {showPing && (
           <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
         )}
-        <Sparkles className="size-6 md:size-5" />
+        <Sparkles className="size-5" />
       </button>
 
       <Drawer
