@@ -2,7 +2,17 @@
 
 import { Loader2, TrendingUp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Page, PageHeader, PageHeaderActions, PageContent } from "@evcore/ui";
+import {
+  Page,
+  PageHeader,
+  PageHeaderActions,
+  PageContent,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
 import { useInvestmentPicks } from "@/domains/investment/use-cases/use-investment-picks";
 import type { InvestmentMode } from "@/domains/investment/types/investment";
@@ -29,6 +39,10 @@ const VALID_MODES: InvestmentMode[] = [
 // positions like Value/Safe/Nul.
 const NEGATIVE_ROI_MODES: InvestmentMode[] = ["dominant", "btts", "goals"];
 
+// Options du filtre topN — bornées par INVESTMENT_LIMITS.maxPicks côté
+// backend (15) ; hors de cette liste, le backend garde son défaut par mode.
+const TOP_N_OPTIONS = [3, 5, 10, 15] as const;
+
 export function InvestmentPageClient() {
   const t = useTranslations("investment");
   const locale = useLocale();
@@ -40,16 +54,27 @@ export function InvestmentPageClient() {
   const mode: InvestmentMode = VALID_MODES.includes(modeParam as InvestmentMode)
     ? (modeParam as InvestmentMode)
     : "probability";
-  const { data, isLoading, isError } = useInvestmentPicks(date, mode);
+  const topNParam = Number(searchParams.get("topN"));
+  const topN = (TOP_N_OPTIONS as readonly number[]).includes(topNParam)
+    ? topNParam
+    : null;
+  const { data, isLoading, isError } = useInvestmentPicks({ date, mode, topN });
 
   const picks = data ?? [];
   const fixtureGroups = groupPicksByFixture(picks);
 
-  function navigateTo(next: { date?: string; mode?: InvestmentMode }) {
+  // next.topN : undefined = inchangé, null = retour au défaut du mode
+  function navigateTo(next: {
+    date?: string;
+    mode?: InvestmentMode;
+    topN?: number | null;
+  }) {
     const params = new URLSearchParams({
       date: next.date ?? date,
       mode: next.mode ?? mode,
     });
+    const nextTopN = next.topN === undefined ? topN : next.topN;
+    if (nextTopN !== null) params.set("topN", String(nextTopN));
     router.push(`/dashboard/investment?${params.toString()}`);
   }
 
@@ -61,6 +86,27 @@ export function InvestmentPageClient() {
           onChange={(next) => navigateTo({ mode: next })}
         />
         <PageHeaderActions className="w-full lg:w-auto">
+          <Select
+            value={topN === null ? "auto" : String(topN)}
+            onValueChange={(value) =>
+              navigateTo({ topN: value === "auto" ? null : Number(value) })
+            }
+          >
+            <SelectTrigger
+              aria-label={t("topNLabel")}
+              className="w-full lg:w-auto lg:min-w-28"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">{t("topNAuto")}</SelectItem>
+              {TOP_N_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  Top {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DateNav
             date={date}
             onChange={(iso) => navigateTo({ date: iso })}

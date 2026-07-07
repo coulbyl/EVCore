@@ -77,6 +77,65 @@ const TEAM_ALIASES: Record<string, string[]> = {
   eif: ['ekenas'],
   kooteepee: ['ktp'],
   'turku ps': ['tps turku'],
+  // AUT1 — DB uses club shorthand, API uses German/sponsor names
+  'rapid vienna': ['rapid wien'],
+  'austria vienna': ['austria wien'],
+  'wsg wattens': ['wsg tirol'],
+  'bw linz': ['blau weiss linz'],
+  'scr altach': ['rheindorf altach'],
+  'red bull salzburg': ['rb salzburg'],
+  // BEL1
+  'union st gilloise': ['union saint gilloise'],
+  'st truiden': ['sint truiden'],
+  'beerschot va': ['beerschot wilrijk'],
+  rwdm: ['rwd molenbeek'],
+  'patro eisden': ['patro eisden maasmechelen'],
+  // IRL1
+  'st patrick s athl': ['st patricks athletic'],
+  ucd: ['uc dublin'],
+  // SCO1
+  'heart of midlothian': ['hearts'],
+  // ARG1 — DB abbreviates city/club suffixes, API spells them out
+  'argentinos jrs': ['argentinos juniors'],
+  'gimnasia lp': ['gimnasia la plata'],
+  'gimnasia m': ['gimnasia mendoza'],
+  'belgrano cordoba': ['belgrano de cordoba'],
+  tigre: ['ca tigre ba'],
+  'instituto cordoba': ['instituto de cordoba'],
+  'sarmiento junin': ['sarmiento de junin'],
+  'independ rivadavia': ['independiente rivadavia'],
+  'san martin sj': ['san martin de san juan'],
+  'arsenal sarandi': ['arsenal de sarandi'],
+  'colon santa fe': ['colon de santa fe'],
+  // BRA1 / BRA2
+  crb: ['clube de regatas brasil'],
+  'guarani campinas': ['guarani'],
+  'nautico recife': ['nautico pe'],
+  // GRE1
+  kifisia: ['ae kifisia'],
+  panetolikos: ['panetolikos agrinio'],
+  paok: ['paok thessaloniki'],
+  ofi: ['ofi crete'],
+  'volos nfc': ['volos fc'],
+  lamia: ['pas lamia 1964'],
+  larisa: ['ael'],
+  // KOR1 — Gimcheon Sangmu relocated from Sangju; API still uses old name
+  'jeonbuk motors': ['jeonbuk hyundai motors'],
+  'gimcheon sangmu': ['sangju sangmu'],
+  'asan mugunghwa': ['chungnam asan'],
+  'suwon bluewings': ['suwon samsung bluewings'],
+  // DEN1
+  aalborg: ['aab'],
+  // NOR1
+  'ham kam': ['hamkam'],
+  'sarpsborg 08 ff': ['sarpsborg fk'],
+  // MX1 — Mazatlán's franchise became Atlante for the 2024/25 restart
+  mazatlan: ['atlante'],
+  // International (Nations League / qualifiers) — country name variants
+  czechia: ['czech republic'],
+  turkiye: ['turkey'],
+  'fyr macedonia': ['north macedonia'],
+  'rep of ireland': ['republic of ireland'],
 };
 
 export function teamMatches(

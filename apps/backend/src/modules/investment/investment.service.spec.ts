@@ -13,7 +13,7 @@ import type {
   InvestmentCoherenceRepository,
   LambdaTotals,
 } from './investment-coherence.repository';
-import { INVESTMENT_LIMITS } from './investment.constants';
+import { INVESTMENT_LIMITS, MODE_RANKING } from './investment.constants';
 import { InvestmentService } from './investment.service';
 
 function selection(
@@ -453,16 +453,18 @@ describe('InvestmentService.listBestPicks', () => {
       expect(picks).toEqual([]);
     });
 
-    it('ranks by EV descending instead of probability bucket', async () => {
+    it('ranks by calibrated edge (probability - 1/odds), not by stored EV', async () => {
+      // A: ev 0.20 but edge 0.5 - 1/2.4  = 0.083
+      // B: ev 0.16 but edge 0.8 - 1/1.45 = 0.110 — edge order inverts EV order
       const service = makeService([
         group('VALUE', [
           item({
-            fixtureId: 'fx-high-prob-low-ev',
-            selections: [selection({ ev: 0.09, probability: 0.9, odds: 1.11 })],
+            fixtureId: 'fx-higher-ev-lower-edge',
+            selections: [selection({ ev: 0.2, probability: 0.5, odds: 2.4 })],
           }),
           item({
-            fixtureId: 'fx-lower-prob-high-ev',
-            selections: [selection({ ev: 0.53, probability: 0.6, odds: 2.0 })],
+            fixtureId: 'fx-lower-ev-higher-edge',
+            selections: [selection({ ev: 0.16, probability: 0.8, odds: 1.45 })],
           }),
         ]),
       ]);
@@ -473,9 +475,28 @@ describe('InvestmentService.listBestPicks', () => {
       });
 
       expect(picks.map((p) => p.fixtureId)).toEqual([
-        'fx-lower-prob-high-ev',
-        'fx-high-prob-low-ev',
+        'fx-lower-ev-higher-edge',
+        'fx-higher-ev-lower-edge',
       ]);
+    });
+
+    it('caps the list at MODE_RANKING.value.topN', async () => {
+      const decisions = Array.from(
+        { length: MODE_RANKING.value.topN + 3 },
+        (_, i) =>
+          item({
+            fixtureId: `fx-value-${i}`,
+            selections: [selection({ ev: 0.1 + i * 0.01, odds: 2.0 })],
+          }),
+      );
+      const service = makeService([group('VALUE', decisions)]);
+
+      const picks = await service.listBestPicks({
+        date: '2026-07-06',
+        mode: 'value',
+      });
+
+      expect(picks).toHaveLength(MODE_RANKING.value.topN);
     });
 
     it('defaults to "probability" mode when mode is omitted', async () => {
@@ -575,7 +596,6 @@ describe('InvestmentService.listBestPicks', () => {
     ['dominant', 'DOMINANT'] as const,
     ['btts', 'BTTS'] as const,
     ['goals', 'GOALS'] as const,
-    ['draw', 'DRAW'] as const,
   ])('mode: "%s"', (mode, channel) => {
     it(`restricts to ${channel} only and ranks by probability`, async () => {
       const service = makeService([
@@ -618,6 +638,148 @@ describe('InvestmentService.listBestPicks', () => {
         `fx-${mode}-higher`,
         `fx-${mode}-lower`,
       ]);
+    });
+  });
+
+  describe('mode: "draw"', () => {
+    it('restricts to DRAW and ranks by calibrated edge, not probability', async () => {
+      // A: p 0.30 @ 3.6 -> edge 0.022 ; B: p 0.34 @ 3.0 -> edge 0.007 —
+      // probability would rank B first, edge ranks A first.
+      const service = makeService([
+        group('DRAW', [
+          item({
+            fixtureId: 'fx-draw-higher-prob-lower-edge',
+            channel: 'DRAW',
+            selections: [selection({ probability: 0.34, odds: 3.0 })],
+          }),
+          item({
+            fixtureId: 'fx-draw-lower-prob-higher-edge',
+            channel: 'DRAW',
+            selections: [selection({ probability: 0.3, odds: 3.6 })],
+          }),
+        ]),
+        group('VALUE', [
+          item({
+            fixtureId: 'fx-value-noise',
+            selections: [selection({ ev: 0.5, probability: 0.99 })],
+          }),
+        ]),
+      ]);
+
+      const picks = await service.listBestPicks({
+        date: '2026-07-06',
+        mode: 'draw',
+      });
+
+      expect(picks.map((p) => p.channel)).toEqual(['DRAW', 'DRAW']);
+      expect(picks.map((p) => p.fixtureId)).toEqual([
+        'fx-draw-lower-prob-higher-edge',
+        'fx-draw-higher-prob-lower-edge',
+      ]);
+    });
+
+    it('caps the list at MODE_RANKING.draw.topN', async () => {
+      const decisions = Array.from(
+        { length: MODE_RANKING.draw.topN + 3 },
+        (_, i) =>
+          item({
+            fixtureId: `fx-draw-${i}`,
+            channel: 'DRAW',
+            selections: [selection({ probability: 0.3, odds: 3.0 + i * 0.1 })],
+          }),
+      );
+      const service = makeService([group('DRAW', decisions)]);
+
+      const picks = await service.listBestPicks({
+        date: '2026-07-06',
+        mode: 'draw',
+      });
+
+      expect(picks).toHaveLength(MODE_RANKING.draw.topN);
+    });
+  });
+
+  describe('topN caps per single-channel mode', () => {
+    function manyDecisions(channel: ChannelDecisionItem['channel']) {
+      return Array.from({ length: 8 }, (_, i) =>
+        item({
+          fixtureId: `fx-${channel}-${i}`,
+          channel,
+          selections: [selection({ probability: 0.5 + i * 0.01 })],
+        }),
+      );
+    }
+
+    it('caps dominant and safe at their topN', async () => {
+      const dominant = makeService([
+        group('DOMINANT', manyDecisions('DOMINANT')),
+      ]);
+      const safe = makeService([group('SAFE', manyDecisions('SAFE'))]);
+
+      const dominantPicks = await dominant.listBestPicks({
+        date: '2026-07-06',
+        mode: 'dominant',
+      });
+      const safePicks = await safe.listBestPicks({
+        date: '2026-07-06',
+        mode: 'safe',
+      });
+
+      expect(dominantPicks).toHaveLength(MODE_RANKING.dominant.topN);
+      expect(safePicks).toHaveLength(MODE_RANKING.safe.topN);
+    });
+
+    it('lets an explicit topN override the mode default in both directions', async () => {
+      const tighten = makeService([
+        group('DOMINANT', manyDecisions('DOMINANT')),
+      ]);
+      const loosen = makeService([
+        group('DOMINANT', manyDecisions('DOMINANT')),
+      ]);
+
+      const tightened = await tighten.listBestPicks({
+        date: '2026-07-06',
+        mode: 'dominant',
+        topN: 2,
+      });
+      const loosened = await loosen.listBestPicks({
+        date: '2026-07-06',
+        mode: 'dominant',
+        topN: 8,
+      });
+
+      expect(tightened).toHaveLength(2);
+      expect(loosened).toHaveLength(8);
+    });
+
+    it('never exceeds maxPicks even with a larger explicit topN', async () => {
+      const decisions = Array.from(
+        { length: INVESTMENT_LIMITS.maxPicks + 5 },
+        (_, i) =>
+          item({
+            fixtureId: `fx-many-${i}`,
+            selections: [selection({ probability: 0.5 + i * 0.001 })],
+          }),
+      );
+      const service = makeService([group('VALUE', decisions)]);
+
+      const picks = await service.listBestPicks({
+        date: '2026-07-06',
+        topN: INVESTMENT_LIMITS.maxPicks + 5,
+      });
+
+      expect(picks).toHaveLength(INVESTMENT_LIMITS.maxPicks);
+    });
+
+    it('does not cap btts below maxPicks (no profitable ranking to trust)', async () => {
+      const service = makeService([group('BTTS', manyDecisions('BTTS'))]);
+
+      const picks = await service.listBestPicks({
+        date: '2026-07-06',
+        mode: 'btts',
+      });
+
+      expect(picks).toHaveLength(8);
     });
   });
 });

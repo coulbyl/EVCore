@@ -14,6 +14,7 @@ import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import {
   INVESTMENT_CALIBRATION,
   INVESTMENT_LIMITS,
+  MODE_RANKING,
   NEGATIVE_ROI_CHANNELS,
   ODDS_SHORT_THRESHOLD,
   OVER_UNDER_LINES,
@@ -108,10 +109,14 @@ function compareByProbability(a: InvestmentPick, b: InvestmentPick): number {
   return b.probability - a.probability;
 }
 
-// "value" mode: highest EV first — only meaningful within VALUE_MODE_CHANNELS
-// (see class doc for why EV doesn't discriminate outside VALUE/SAFE).
-function compareByEv(a: InvestmentPick, b: InvestmentPick): number {
-  return (b.ev ?? 0) - (a.ev ?? 0);
+// "edge" ranking: calibrated edge (probability - 1/odds), highest first. The
+// stored EV is computed from the RAW model probability, so ranking by it
+// ranks by model overconfidence; `probability` here is already the
+// bias-corrected one (see class doc), which is what made this ranking the
+// only one still positive on 2026 forward data for VALUE and monotonically
+// improving on DRAW (db:backtest:invest-ranking, 2026-07-07).
+function compareByEdge(a: InvestmentPick, b: InvestmentPick): number {
+  return b.probability - 1 / b.odds - (a.probability - 1 / a.odds);
 }
 
 function clamp01(n: number): number {
@@ -190,23 +195,29 @@ function toInvestmentPick(
  *   favori à cote courte) — voir le contexte du plan pour le raisonnement
  *   complet. EV/qualityScore/canal ne pilotent que des badges informatifs,
  *   jamais une exclusion.
- * - "value" : VALUE uniquement, EV >= EV_THRESHOLD, classés par EV
- *   décroissante. Ajouté après avoir constaté (2026-07-06, ex. journée du
- *   17/05) que le mode probabilité enterre les vrais picks à forte value
- *   (ex. EV +0.53) derrière des favoris à cote courte et EV négative.
+ * - "value" : VALUE uniquement, EV >= EV_THRESHOLD, classés par edge calibré
+ *   (probabilité corrigée - 1/cote) décroissant. Ajouté après avoir constaté
+ *   (2026-07-06, ex. journée du 17/05) que le mode probabilité enterre les
+ *   vrais picks à forte value derrière des favoris à cote courte ; le tri par
+ *   EV brute a ensuite été remplacé par l'edge calibré (2026-07-07, voir
+ *   MODE_RANKING) : l'EV stockée est calculée sur la proba brute sur-confiante,
+ *   donc trier dessus revient à trier par sur-confiance du modèle.
  * - "safe" / "dominant" / "btts" / "goals" / "draw" (SINGLE_CHANNEL_MODE_MAP) :
- *   un onglet par canal restant, chacun restreint à son canal et classé par
- *   probabilité (comme "probability", juste filtré à un seul canal). SAFE a
- *   d'abord été inclus dans "value", mais un backtest jour par jour complet
- *   (pnpm --filter @evcore/db db:backtest:ev-tiers, 2026-07-06) a montré que
- *   son tier EV>=0.08 est PIRE que son tier EV<0.08 (ROI -3.42% vs son propre
- *   tier bas, et -8.38% dans son propre bucket "très probable") — l'edge de
- *   SAFE est la probabilité, pas l'EV. VALUE reste le seul canal où l'EV>=0.08
- *   est majoritairement gagnant (52.6% des jours, +10.73% ROI) sur
- *   l'historique complet ; DOMINANT/BTTS montrent une discrimination
- *   inversée, GOALS aucune — ces 3 canaux ont un ROI agrégé négatif en solo
- *   (channelRoiFlag), affiché sur chaque pick, mais restent consultables
- *   individuellement plutôt que masqués.
+ *   un onglet par canal restant, chacun restreint à son canal, avec tri et
+ *   cap topN par canal (MODE_RANKING) : DRAW par edge calibré top5,
+ *   SAFE/DOMINANT par probabilité top5, BTTS/GOALS par probabilité sans cap
+ *   (aucun classement n'y est rentable — voir investment.constants.ts pour
+ *   les chiffres du backtest). SAFE a d'abord été inclus dans "value", mais
+ *   un backtest jour par jour complet (pnpm --filter @evcore/db
+ *   db:backtest:ev-tiers, 2026-07-06) a montré que son tier EV>=0.08 est PIRE
+ *   que son tier EV<0.08 (ROI -3.42% vs son propre tier bas, et -8.38% dans
+ *   son propre bucket "très probable") — l'edge de SAFE est la probabilité,
+ *   pas l'EV. VALUE reste le seul canal où l'EV>=0.08 est majoritairement
+ *   gagnant (52.6% des jours, +10.73% ROI) sur l'historique complet ;
+ *   DOMINANT/BTTS montrent une discrimination inversée, GOALS aucune — ces 3
+ *   canaux ont un ROI agrégé négatif en solo (channelRoiFlag), affiché sur
+ *   chaque pick, mais restent consultables individuellement plutôt que
+ *   masqués.
  *
  * Une date passée n'est PAS filtrée : les fixtures déjà jouées restent dans
  * la liste avec leur score et le résultat réel de chaque pick (`result`), ce
@@ -241,6 +252,10 @@ export class InvestmentService {
     date: string;
     competitionCode?: string;
     mode?: InvestmentMode;
+    // Explicit display filter from the client — overrides the mode's default
+    // topN (MODE_RANKING) in either direction, but never exceeds maxPicks
+    // (the DTO enforces the same bound at the HTTP boundary).
+    topN?: number;
   }): Promise<InvestmentPick[]> {
     const mode = query.mode ?? 'probability';
     const eligibleChannels = channelsForMode(mode);
@@ -318,7 +333,9 @@ export class InvestmentService {
       picks.push(toInvestmentPick(item, primary, calibration));
     }
 
-    picks.sort(mode === 'value' ? compareByEv : compareByProbability);
-    return picks.slice(0, INVESTMENT_LIMITS.maxPicks);
+    const ranking = MODE_RANKING[mode];
+    picks.sort(ranking.sort === 'edge' ? compareByEdge : compareByProbability);
+    const topN = query.topN ?? ranking.topN ?? Infinity;
+    return picks.slice(0, Math.min(topN, INVESTMENT_LIMITS.maxPicks));
   }
 }

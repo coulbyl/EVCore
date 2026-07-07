@@ -415,12 +415,15 @@ export class EtlController {
   @ApiOperation({
     summary: 'Import historical Pinnacle odds from The Odds API',
     description:
-      'One-shot import of pre-match Pinnacle odds for UCL, Europa or Conference League. ' +
-      'Example: `?seasons=2022,2023,2024` imports seasons 2022-23, 2023-24 and 2024-25.',
+      'One-shot import of pre-match Pinnacle odds for a single competition configured in ' +
+      'THE_ODDS_API_SPORT_KEYS. Example: `?seasons=2022,2023,2024` imports seasons 2022-23, ' +
+      '2023-24 and 2024-25. Use `sync/odds-historical/full` to backfill every configured ' +
+      'competition in one call.',
   })
   @ApiParam({
     name: 'competitionCode',
-    description: 'UEFA competition code: UCL, UEL or UECL.',
+    description:
+      'Competition code configured in THE_ODDS_API_SPORT_KEYS (e.g. PL, UCL, ARG1).',
     example: 'UCL',
   })
   @ApiBadRequestResponse({
@@ -435,6 +438,41 @@ export class EtlController {
     const seasons = this.resolveSeasonYears(seasonsParam);
     await this.etlService.triggerOddsHistoricalImport(code, seasons);
     return { status: 'ok' as const, competitionCode: code, seasons };
+  }
+
+  @Post('sync/odds-historical/full')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Import historical Pinnacle odds from The Odds API across every configured league',
+    description:
+      'Bulk-triggers the odds-historical-import worker for every competition code in ' +
+      'THE_ODDS_API_SPORT_KEYS, or a subset via `codes`, for the given seasons. Jobs are ' +
+      'spaced out across the whole batch (not just per competition) to respect the provider ' +
+      'rate limit. Example: `?seasons=2023,2024,2025` (all leagues) or ' +
+      '`?seasons=2023,2024&codes=PL,SA,ARG1` (subset). ' +
+      'Note: RUS1 is known to return a stale/frozen historical snapshot regardless of the ' +
+      'requested date (see team-name-matching.ts investigation) — exclude it via `codes` ' +
+      'unless that has been resolved with the provider.',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Missing/invalid seasons, or an unsupported competition code in `codes`.',
+    type: EtlErrorResponseDto,
+  })
+  async triggerOddsHistoricalImportFull(
+    @Query('seasons') seasonsParam: string,
+    @Query('codes') codesParam?: string,
+  ) {
+    const seasons = this.resolveSeasonYears(seasonsParam);
+    const codes = codesParam
+      ?.split(',')
+      .map((c) => this.resolveCode(c.trim()))
+      .filter(Boolean);
+
+    const competitionCodes =
+      await this.etlService.triggerOddsHistoricalImportFull(seasons, codes);
+    return { status: 'ok' as const, competitionCodes, seasons };
   }
 
   @Post('sync/standings/:competitionCode')

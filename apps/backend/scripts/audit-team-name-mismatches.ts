@@ -53,10 +53,25 @@ async function auditLeague(
     return null;
   }
 
-  const teams = await prisma.team.findMany({
-    where: { competition: { code } },
-    select: { name: true, shortName: true },
+  // Derived from fixtures rather than Team.competitionId: a club's Team row
+  // keeps a single denormalized competitionId (whichever competition first
+  // synced it), so a club playing both a domestic league and a European cup
+  // (e.g. Rapid Vienna → UEL) would be missing from an AUT1-scoped Team
+  // query even though its fixtures reference the very same row.
+  const fixtureTeams = await prisma.fixture.findMany({
+    where: { season: { competition: { code } } },
+    select: {
+      homeTeam: { select: { name: true, shortName: true } },
+      awayTeam: { select: { name: true, shortName: true } },
+    },
   });
+
+  const teamsByName = new Map<string, { name: string; shortName: string }>();
+  for (const fixture of fixtureTeams) {
+    teamsByName.set(fixture.homeTeam.name, fixture.homeTeam);
+    teamsByName.set(fixture.awayTeam.name, fixture.awayTeam);
+  }
+  const teams = [...teamsByName.values()];
 
   if (teams.length === 0) {
     console.log(

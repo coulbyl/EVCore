@@ -65,7 +65,7 @@ export type InvestmentMode = 'probability' | 'value' | SingleChannelMode;
 export const VALUE_MODE_CHANNELS = ['VALUE'] as const;
 
 // One mode per remaining channel, each restricted to that channel alone and
-// ranked by probability (like "probability" mode, just scoped to one canal).
+// ranked per MODE_RANKING below.
 export const SINGLE_CHANNEL_MODE_MAP: Record<SingleChannelMode, string> = {
   safe: 'SAFE',
   dominant: 'DOMINANT',
@@ -73,3 +73,34 @@ export const SINGLE_CHANNEL_MODE_MAP: Record<SingleChannelMode, string> = {
   goals: 'GOALS',
   draw: 'DRAW',
 };
+
+export type ModeRankingSort = 'probability' | 'edge';
+
+// Per-mode ranking + topN cap, measured day-by-day with the same leak-free
+// calibration as the service (pnpm --filter @evcore/db
+// db:backtest:invest-ranking, 2026-07-07, top5 ROI unless noted):
+// - value/draw: calibrated edge (probability - 1/odds). On VALUE it is the
+//   only ranking still positive on 2026 forward data (+2.3% vs -10.8% for
+//   probability, -3.5% for raw EV); on DRAW it improves monotonically every
+//   year (2023 -11% -> 2026 +12%) while probability ranks near random.
+// - dominant: probability ranking already works — top5 is +3.3% all-time
+//   while the full channel aggregates -23%; the problem is the tail of the
+//   list, not the order. Edge/EV rankings are unstable there (-6% in 2024).
+// - safe: every ranking is positive on 2026 but only 28 eligible top5 days
+//   exist in total — too thin to switch formulas, so keep probability (its
+//   established edge) and just cap the tail.
+// - btts/goals: no ranking is reliably positive on any period — a topN cannot
+//   fix those channels (their fix is model calibration), so no cap: the list
+//   stays a full review surface with the channelRoiFlag badge as the signal.
+export const MODE_RANKING = {
+  probability: { sort: 'probability', topN: null },
+  value: { sort: 'edge', topN: 5 },
+  safe: { sort: 'probability', topN: 5 },
+  dominant: { sort: 'probability', topN: 5 },
+  btts: { sort: 'probability', topN: null },
+  goals: { sort: 'probability', topN: null },
+  draw: { sort: 'edge', topN: 5 },
+} as const satisfies Record<
+  InvestmentMode,
+  { sort: ModeRankingSort; topN: number | null }
+>;

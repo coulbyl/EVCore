@@ -671,6 +671,8 @@
       "evNegative": "EV négative",
       "shortOdds": "Cote très courte",
       "channelRoiFlag": "Canal à ROI historique négatif"
-    }
+    },
+    "topNLabel": "Nombre de picks",
+    "topNAuto": "Auto"
   }
 }
