@@ -53,23 +53,20 @@ function bestProbability(decision: ChannelDecisionMatchDecisionDto): number {
   return decision.selections[0]?.probability ?? 0;
 }
 
-// Decisions that produced a real pick (SELECTED with a selection), AVOID
-// excluded (it has none). Ordered to lead with the strongest signal: CONSENSUS
-// first (validated agreement), then by EV, then by model probability.
+// Decisions that produced a real market pick (SELECTED with a selection).
+// Meta-channels stay fixture-level signals: CONSENSUS is shown in the card
+// header, and AVOID is shown as a banner.
 export function selectedPicks(
   group: ChannelDecisionMatchDto,
 ): ChannelDecisionMatchDecisionDto[] {
   return group.decisions
     .filter(
       (d) =>
-        d.channel !== "AVOID" &&
+        !isMetaChannel(d.channel) &&
         d.status === "SELECTED" &&
         d.selections.length > 0,
     )
     .sort((a, b) => {
-      const aConsensus = a.channel === "CONSENSUS";
-      const bConsensus = b.channel === "CONSENSUS";
-      if (aConsensus !== bConsensus) return aConsensus ? -1 : 1;
       const aEv = bestEv(a);
       const bEv = bestEv(b);
       if (aEv !== null && bEv !== null && aEv !== bEv) return bEv - aEv;
@@ -79,23 +76,28 @@ export function selectedPicks(
     });
 }
 
-// The remaining decisions (rejected / disabled / not-applicable, plus the AVOID
-// row itself) — shown collapsed as "evaluated" detail, the de-emphasised noise.
+// The remaining primary-channel decisions (rejected / disabled /
+// not-applicable) — shown collapsed as "evaluated" detail.
 export function evaluatedRest(
   group: ChannelDecisionMatchDto,
 ): ChannelDecisionMatchDecisionDto[] {
   const picked = new Set(selectedPicks(group).map((d) => d.id));
   return group.decisions.filter(
-    (d) => !picked.has(d.id) && d.channel !== "AVOID",
+    (d) => !picked.has(d.id) && !isMetaChannel(d.channel),
   );
 }
 
 export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
-  return selectedPicks(group).some((d) => d.channel === "CONSENSUS");
+  return group.decisions.some(
+    (d) =>
+      d.channel === "CONSENSUS" &&
+      d.status === "SELECTED" &&
+      d.selections.length > 0,
+  );
 }
 
-// Real pick count (AVOID excluded) — replaces the misleading API selectedCount,
-// which counted AVOID flags and double-counted the CONSENSUS meta-duplicate.
+// Real market pick count — replaces the misleading API selectedCount, which
+// counted AVOID flags and double-counted the CONSENSUS meta-duplicate.
 export function pickCount(group: ChannelDecisionMatchDto): number {
   return selectedPicks(group).length;
 }

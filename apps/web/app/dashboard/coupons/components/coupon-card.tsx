@@ -1,29 +1,13 @@
-import { translateCountry, translateCompetition } from "@/lib/competition-i18n";
 import {
   formatMarketForDisplay,
   formatPickForDisplay,
 } from "@/helpers/fixture";
+import { formatKickoff } from "@/domains/fixture/helpers/fixture";
 import type { CouponProposalDto } from "@/domains/coupon/types/coupon";
 import {
   CouponCard as SharedCouponCard,
   type NormalizedCouponLeg,
 } from "@/components/coupon-card";
-
-const CANAL_COLOR: Record<string, string> = {
-  VALUE: "var(--canal-value)",
-  SAFE: "var(--canal-safe)",
-  DOMINANT: "var(--canal-dominant)",
-  BTTS: "var(--canal-btts)",
-  DRAW: "var(--canal-draw)",
-};
-
-const CANAL_LABEL: Record<string, string> = {
-  VALUE: "VALUE",
-  SAFE: "SAFE",
-  DOMINANT: "VICTOIRE",
-  BTTS: "BTTS",
-  DRAW: "DRAW",
-};
 
 export function CouponCard({
   coupon,
@@ -48,18 +32,23 @@ export function CouponCard({
     awayTeam: leg.awayTeam,
     homeLogo: leg.homeLogo,
     awayLogo: leg.awayLogo,
-    countryLabel: translateCountry(leg.country, locale),
-    competitionLabel: translateCompetition(leg.competition, locale),
-    canalColor: CANAL_COLOR[leg.canal] ?? "var(--canal-safe)",
-    canalLabel: CANAL_LABEL[leg.canal] ?? leg.canal,
+    country: leg.country,
+    competition: leg.competitionName,
+    kickoff: formatKickoff(leg.scheduledAt),
+    score: leg.score,
+    htScore: leg.htScore,
+    canal: leg.canal,
     marketLabel: formatMarketForDisplay(leg.market, loc),
     pickLabel: formatPickForDisplay(leg.pick, leg.market),
+    probability: leg.probability,
     odds: leg.oddsSnapshot != null ? leg.oddsSnapshot.toFixed(2) : null,
-    isCorrect: leg.isCorrect,
+    result:
+      leg.isCorrect === true ? "WON" : leg.isCorrect === false ? "LOST" : null,
   }));
 
   return (
     <SharedCouponCard
+      locale={locale}
       rank={coupon.rank}
       combinedOdds={coupon.combinedOdds}
       jointProbability={coupon.jointProbability}

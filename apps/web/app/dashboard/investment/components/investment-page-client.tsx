@@ -34,9 +34,8 @@ const VALID_MODES: InvestmentMode[] = [
 ];
 
 // DOMINANT/BTTS/GOALS have a negative aggregate settled ROI played solo
-// (checked 2026-07-06) — their tab keeps the same warning tone as the
-// per-pick "channelRoiFlag" badge instead of implying they're validated
-// positions like Value/Safe/Nul.
+// (checked 2026-07-06), so their tab keeps a warning tone instead of implying
+// they're validated positions like Value/Safe/Nul.
 const NEGATIVE_ROI_MODES: InvestmentMode[] = ["dominant", "btts", "goals"];
 
 // Options du filtre topN — bornées par INVESTMENT_LIMITS.maxPicks côté
@@ -117,18 +116,18 @@ export function InvestmentPageClient() {
 
       <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
         <div className="flex h-full min-h-0 flex-col gap-5">
-          <p
-            className={cn(
-              "shrink-0 text-[0.72rem]",
-              NEGATIVE_ROI_MODES.includes(mode)
-                ? "font-medium text-warning"
-                : "text-muted-foreground",
-            )}
-          >
-            {mode === "probability"
-              ? t("subtitle")
-              : t(`subtitleByMode.${mode}`)}
-          </p>
+          {mode !== "probability" && (
+            <p
+              className={cn(
+                "shrink-0 text-[0.72rem]",
+                NEGATIVE_ROI_MODES.includes(mode)
+                  ? "font-medium text-warning"
+                  : "text-muted-foreground",
+              )}
+            >
+              {t(`subtitleByMode.${mode}`)}
+            </p>
+          )}
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             {isLoading && (

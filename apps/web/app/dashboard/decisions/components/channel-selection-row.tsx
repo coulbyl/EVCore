@@ -1,4 +1,4 @@
-import { Badge, Card } from "@evcore/ui";
+import { Badge, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import {
   formatMarketForDisplay,
@@ -8,21 +8,16 @@ import type {
   AvoidOffender,
   AvoidReasonDetails,
   ChannelDecisionDto,
-  ConsensusReasonDetails,
-  StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
   channelLabel,
-  formatEv,
-  formatOdds,
-  formatPct,
   reasonLabel,
 } from "./channel-constants";
-import { FixtureCardHeader } from "@/components/fixture-card-header";
+import { FixtureCard } from "@/components/fixture-card";
 import { ResultBadge } from "@/components/result-badge";
-import { ObservationBadge } from "./observation-badge";
+import { ChannelRow, type SlipContext } from "./channel-row";
 
 function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
   if (!raw || typeof raw !== "object") return [];
@@ -35,13 +30,6 @@ function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
       typeof o.channel === "string" &&
       typeof o.edge === "number",
   );
-}
-
-function parseConsensusChannels(raw: unknown): StrategyChannel[] {
-  if (!raw || typeof raw !== "object") return [];
-  const d = raw as Partial<ConsensusReasonDetails>;
-  if (!Array.isArray(d.channels)) return [];
-  return d.channels.filter((c): c is StrategyChannel => typeof c === "string");
 }
 
 // One SELECTED decision rendered fixture-first (used by the "Par canal" lens).
@@ -57,33 +45,43 @@ export function ChannelSelectionRow({
   const selection = decision.selections[0];
 
   const isAvoid = decision.channel === "AVOID";
-  const isConsensus = decision.channel === "CONSENSUS";
   const avoidOffenders = isAvoid
     ? parseAvoidOffenders(decision.reasonDetails)
     : [];
-  const consensusChannels = isConsensus
-    ? parseConsensusChannels(decision.reasonDetails)
-    : [];
+
+  // Pariable uniquement avant le coup d'envoi : pas de match en cours ni terminé.
+  const isUpcoming =
+    decision.score === null &&
+    new Date(decision.scheduledAt).getTime() > Date.now();
+
+  const slipContext: SlipContext | undefined = isUpcoming
+    ? {
+        fixtureId: decision.fixtureId,
+        fixture: `${decision.homeTeam} vs ${decision.awayTeam}`,
+        homeLogo: decision.homeLogo,
+        awayLogo: decision.awayLogo,
+        competition: decision.competition,
+        scheduledAt: decision.scheduledAt,
+      }
+    : undefined;
 
   return (
-    <Card className="relative flex-col items-stretch gap-2 overflow-hidden border-border/70 p-3 pl-4 transition-colors hover:border-border sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-      <div
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: CHANNEL_COLOR[decision.channel] }}
-        aria-hidden
-      />
-      <FixtureCardHeader
-        fixture={`${decision.homeTeam} vs ${decision.awayTeam}`}
-        homeLogo={decision.homeLogo}
-        awayLogo={decision.awayLogo}
-        competition={decision.competitionName}
-        country={decision.country}
-        kickoff={decision.kickoff}
-        score={decision.score}
-        htScore={decision.htScore}
-        locale={locale}
-      />
-
+    <FixtureCard
+      fixture={`${decision.homeTeam} vs ${decision.awayTeam}`}
+      homeLogo={decision.homeLogo}
+      awayLogo={decision.awayLogo}
+      competition={decision.competitionName}
+      country={decision.country}
+      kickoff={decision.kickoff}
+      score={decision.score}
+      htScore={decision.htScore}
+      locale={locale}
+      className={cn(
+        "transition-colors hover:border-border",
+        isAvoid && "border-[color:var(--canal-avoid)]/40",
+      )}
+      bodyClassName="py-2"
+    >
       {selection === undefined ? (
         <AvoidDetail
           offenders={avoidOffenders}
@@ -91,34 +89,14 @@ export function ChannelSelectionRow({
           locale={loc}
         />
       ) : (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:shrink-0 sm:justify-end">
-          <span className="min-w-0 font-medium">
-            {formatPickForDisplay(selection.pick, selection.market)}
-            <span className="ml-1.5 font-normal text-muted-foreground">
-              {formatMarketForDisplay(selection.market, loc)}
-            </span>
-          </span>
-          <span className="tabular-nums text-muted-foreground">
-            {formatPct(selection.probability)}
-          </span>
-          {formatOdds(selection.odds) !== null && (
-            <span className="tabular-nums font-semibold">
-              {formatOdds(selection.odds)}
-            </span>
-          )}
-          {decision.channel !== "DRAW" && formatEv(selection.ev) !== null && (
-            <span className="tabular-nums text-muted-foreground">
-              {formatEv(selection.ev)}
-            </span>
-          )}
-          {consensusChannels.length > 0 && (
-            <ConsensusSourcePills channels={consensusChannels} />
-          )}
-          {decision.channel === "CORRECT_SCORE" && <ObservationBadge />}
-          <ResultBadge result={selection.result} />
-        </div>
+        <ChannelRow
+          channel={decision.channel}
+          decision={decision}
+          locale={locale}
+          slipContext={slipContext}
+        />
       )}
-    </Card>
+    </FixtureCard>
   );
 }
 
@@ -171,25 +149,5 @@ function AvoidDetail({
         </div>
       ))}
     </div>
-  );
-}
-
-function ConsensusSourcePills({ channels }: { channels: StrategyChannel[] }) {
-  const t = useTranslations("decisions");
-  return (
-    <span className="flex flex-wrap gap-1">
-      {channels.map((ch) => (
-        <Badge
-          key={ch}
-          className="px-0 py-0"
-          style={{
-            color: CHANNEL_COLOR[ch],
-            backgroundColor: CHANNEL_COLOR_SOFT[ch],
-          }}
-        >
-          {channelLabel(ch, t)}
-        </Badge>
-      ))}
-    </span>
   );
 }

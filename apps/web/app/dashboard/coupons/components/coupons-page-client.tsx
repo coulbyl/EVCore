@@ -41,11 +41,7 @@ export function CouponsPageClient() {
       </PageHeader>
 
       <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex h-full min-h-0 flex-col gap-5">
-          <p className="shrink-0 text-[0.72rem] text-muted-foreground">
-            {t("aiNote")}
-          </p>
-
+        <div className="flex h-full min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto">
             {isLoading && (
               <div className="flex items-center justify-center py-16 text-muted-foreground">

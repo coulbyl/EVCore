@@ -163,8 +163,17 @@ export class CouponService {
         awayTeam: leg.fixture.awayTeam.name,
         awayLogo: leg.fixture.awayTeam.logoUrl ?? null,
         competition: leg.fixture.season.competition.code,
+        competitionName: leg.fixture.season.competition.name,
         country: leg.fixture.season.competition.country,
         scheduledAt: leg.fixture.scheduledAt.toISOString(),
+        score: formatFixtureScore({
+          homeScore: leg.fixture.homeScore,
+          awayScore: leg.fixture.awayScore,
+        }),
+        htScore: formatFixtureScore({
+          homeScore: leg.fixture.homeHtScore,
+          awayScore: leg.fixture.awayHtScore,
+        }),
         canal: leg.canal,
         market: leg.market,
         pick: leg.pick,
@@ -177,4 +186,14 @@ export class CouponService {
       })),
     }));
   }
+}
+
+function formatFixtureScore(scores: {
+  homeScore: number | null;
+  awayScore: number | null;
+}): string | null {
+  const { homeScore, awayScore } = scores;
+  return homeScore === null || awayScore === null
+    ? null
+    : `${homeScore}-${awayScore}`;
 }
