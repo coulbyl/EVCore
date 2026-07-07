@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 type MarkdownBlock =
   | {
       type: "heading";
-      level: 1 | 2 | 3;
+      level: 1 | 2 | 3 | 4;
       text: string;
     }
   | {
@@ -90,11 +90,11 @@ function parseMarkdown(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
     if (headingMatch) {
       const hashes = headingMatch[1] ?? "#";
       const text = headingMatch[2]?.trim() ?? "";
-      const level = hashes.length as 1 | 2 | 3;
+      const level = hashes.length as 1 | 2 | 3 | 4;
       blocks.push({ type: "heading", level, text });
       i += 1;
       continue;
@@ -171,7 +171,7 @@ function parseMarkdown(content: string): MarkdownBlock[] {
         current.startsWith(">") ||
         current.startsWith("- ") ||
         current.startsWith("|") ||
-        /^(#{1,3})\s+/.test(current) ||
+        /^(#{1,4})\s+/.test(current) ||
         /^\d+\.\s+/.test(current)
       ) {
         break;

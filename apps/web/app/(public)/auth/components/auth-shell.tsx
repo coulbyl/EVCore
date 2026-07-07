@@ -54,9 +54,7 @@ export function AuthShell({
                   height={20}
                   className="size-5 rounded-md"
                 />
-                <p className="text-[0.6rem] font-bold text-accent">
-                  Core
-                </p>
+                <p className="text-[0.6rem] font-bold text-accent">Core</p>
               </div>
               <h1 className="mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground lg:text-[1.35rem]">
                 {asideTitle}
@@ -103,7 +101,7 @@ export function AuthShell({
                   className="size-5 rounded-md"
                 />
                 <p className="text-[0.6rem] font-bold text-muted-foreground/60">
-                Core
+                  Core
                 </p>
               </div>
 

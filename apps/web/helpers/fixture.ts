@@ -51,6 +51,7 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     HALF_TIME_FULL_TIME: "Mi-temps / Fin de match",
     OVER_UNDER_HT: "Plus/Moins MT",
     FIRST_HALF_WINNER: "Résultat MT",
+    CORRECT_SCORE: "Score exact",
   },
   en: {
     ONE_X_TWO: "Result",
@@ -62,6 +63,7 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     HALF_TIME_FULL_TIME: "Half Time / Full Time",
     OVER_UNDER_HT: "Over/Under HT",
     FIRST_HALF_WINNER: "HT Result",
+    CORRECT_SCORE: "Correct Score",
   },
 };
 

@@ -92,6 +92,8 @@ export type AnalysisSheetCalibrationAlert = {
 export type AnalysisSheetJsonFixture = {
   fixtureId: string;
   match: string;
+  // Display name (e.g. "Premier League"), never the internal code — this is
+  // what Eva reads and reproduces verbatim in her prose.
   competition: string;
   kickoff: string;
   status: string;
@@ -174,7 +176,7 @@ function toJsonFixture(
   return {
     fixtureId: fixture.fixtureId,
     match: `${fixture.homeTeam} - ${fixture.awayTeam}`,
-    competition: fixture.competitionCode,
+    competition: fixture.competitionName,
     kickoff: fixture.scheduledAt.toISOString(),
     status: fixture.status,
     score:

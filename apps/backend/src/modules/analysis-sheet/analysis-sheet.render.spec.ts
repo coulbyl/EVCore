@@ -98,7 +98,7 @@ describe('buildJsonSheet', () => {
     const sheet = buildJsonSheet([f], meta);
 
     expect(sheet.summary.fixtureCount).toBe(1);
-    expect(sheet.summary.byCompetition).toEqual({ PL: 1 });
+    expect(sheet.summary.byCompetition).toEqual({ 'Premier League': 1 });
     expect(sheet.summary.byChannel).toEqual({ VALUE: 1, SAFE: 1 });
     expect(sheet.summary.settledRecord).toEqual({
       won: 1,
@@ -427,9 +427,9 @@ describe('buildTxtSheet', () => {
     const txt = buildTxtSheet([f], meta);
 
     expect(txt).toContain("FICHE D'ANALYSE EVCORE — 2026-06-20 -> 2026-06-27");
-    expect(txt).toContain('Arsenal - Chelsea (PL)');
+    expect(txt).toContain('Arsenal - Chelsea (Premier League)');
     expect(txt).toContain('Pick [VALUE]');
-    expect(txt).toContain('V1');
+    expect(txt).toContain('Victoire domicile');
     expect(txt).toContain('GAGNÉ');
     expect(txt).toContain('Rejets : DRAW 1 (probability_too_low)');
     // never one line per rejected candidate — only the rollup line
@@ -490,6 +490,7 @@ describe('buildTxtSheet', () => {
       homeTeam: 'Argentina',
       awayTeam: 'Cape Verde Islands',
       competitionCode: 'WC',
+      competitionName: 'FIFA World Cup 2026',
       features: {
         predictionSource: 'POISSON_MAIN',
         calibration_alert: {
@@ -534,7 +535,7 @@ describe('buildTxtSheet', () => {
       '=== Vigilance (liste exhaustive calculée par le moteur) ===',
     );
     expect(txt).toContain(
-      '⚠ Argentina - Cape Verde Islands (WC, 2026-06-20) — AVOID [extreme_divergence] + Calibration [extreme_divergence, favorite_flip]',
+      '⚠ Argentina - Cape Verde Islands (FIFA World Cup 2026, 2026-06-20) — AVOID [extreme_divergence] + Calibration [extreme_divergence, favorite_flip]',
     );
     expect(txt).toContain(
       "Toute fixture à jouer absente de cette liste n'est ni flaguée ni à surveiller.",

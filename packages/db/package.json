@@ -31,6 +31,7 @@
     "db:audit:fri-elo": "tsx scripts/fri-elo-audit.ts",
     "db:analyze:signals": "tsx scripts/analyze-signals.ts",
     "db:analyze:edge": "tsx scripts/analyze-edge.ts",
+    "db:backtest:ev-tiers": "tsx scripts/backtest-ev-tiers.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

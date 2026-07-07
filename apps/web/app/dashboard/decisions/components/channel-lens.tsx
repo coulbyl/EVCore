@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, Empty } from "@evcore/ui";
+import { Empty } from "@evcore/ui";
 import { useTranslations } from "next-intl";
+import { ScrollableTabs } from "@/components/scrollable-tabs";
 import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/types/channel-decision";
 import { channelLabel } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
@@ -41,20 +42,21 @@ export function ChannelTabs({
   if (channelGroups.length === 0 || activeChannel === null) return null;
 
   return (
-    <div className="overflow-x-auto">
-      <Tabs value={activeChannel} onValueChange={setSelected}>
-        <TabsList variant="line">
-          {channelGroups.map(({ channel, decisions }) => (
-            <TabsTrigger key={channel} value={channel}>
-              {channelLabel(channel, t)}
-              <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
-                {decisions.length}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-    </div>
+    <ScrollableTabs
+      value={activeChannel}
+      onValueChange={setSelected}
+      items={channelGroups.map(({ channel, decisions }) => ({
+        value: channel,
+        label: (
+          <>
+            {channelLabel(channel, t)}
+            <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
+              {decisions.length}
+            </span>
+          </>
+        ),
+      }))}
+    />
   );
 }
 

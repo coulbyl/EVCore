@@ -21,10 +21,6 @@ import { daysAheadIso, todayIso } from "@/lib/date";
 // Discovery ping: shown only until the user opens Eva once.
 const DISCOVERED_KEY = "evcore-eva-fab-discovered";
 
-// Kill switch for the LLM call only (export .txt/.json stays available) —
-// flip to "false" while the Groq TPM tier can't cover a full analysis request.
-const ANALYSIS_ENABLED = process.env.NEXT_PUBLIC_EVA_ANALYSIS_ENABLED !== "false";
-
 export function EvaFab() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
@@ -66,7 +62,7 @@ export function EvaFab() {
         onClick={handleOpen}
         title="Eva"
         className={cn(
-          "fixed bottom-24 left-4 z-30 flex size-14 items-center justify-center rounded-full",
+          "fixed bottom-32 left-4 z-30 flex size-14 items-center justify-center rounded-full",
           "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
           "shadow-[0_8px_32px_rgba(15,23,42,0.35)] ring-1 ring-accent/40",
           "transition-transform hover:scale-105 active:scale-95",
@@ -109,7 +105,6 @@ export function EvaFab() {
               onAnalyze={() => analyze.mutate(filters)}
               isAnalyzing={analyze.isPending}
               onExport={handleExport}
-              analysisEnabled={ANALYSIS_ENABLED}
             />
 
             {exportError && (

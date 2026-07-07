@@ -22,6 +22,7 @@ import {
   Receipt,
   Settings,
   Ticket,
+  TrendingUp,
   Trophy,
   Users,
 } from "lucide-react";
@@ -156,6 +157,13 @@ export function AppShell({
             icon: Layers,
           },
           {
+            label: tNav("investment"),
+            href: "/dashboard/investment",
+            active: pathname.startsWith("/dashboard/investment"),
+            icon: TrendingUp,
+            featured: true,
+          },
+          {
             label: tNav("coupons"),
             href: "/dashboard/coupons",
             active: pathname.startsWith("/dashboard/coupons"),
@@ -224,6 +232,7 @@ export function AppShell({
   const MOBILE_NAV_ORDER = [
     "/dashboard",
     "/dashboard/decisions",
+    "/dashboard/investment",
     "/dashboard/coupons",
     "/dashboard/fixtures",
   ];

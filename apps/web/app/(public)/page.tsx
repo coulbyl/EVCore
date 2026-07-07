@@ -15,10 +15,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import {
-  isWC2026Active,
-  isWC2026Countdown,
-} from "@/lib/events/world-cup-2026";
+import { isWC2026Active, isWC2026Countdown } from "@/lib/events/world-cup-2026";
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
@@ -290,9 +287,7 @@ export default function LandingPage() {
               height={28}
               className="size-7 rounded-lg"
             />
-            <span className="text-sm font-black text-accent">
-              Core
-            </span>
+            <span className="text-sm font-black text-accent">Core</span>
           </span>
           <div className="flex items-center gap-3">
             <button
@@ -319,9 +314,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section
-        className="relative mx-auto flex min-h-dvh max-w-6xl flex-col items-center justify-center px-6 pb-16 pt-28 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:pb-0 lg:pt-24"
-      >
+      <section className="relative mx-auto flex min-h-dvh max-w-6xl flex-col items-center justify-center px-6 pb-16 pt-28 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:pb-0 lg:pt-24">
         {/* Decorative */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_30%_40%,rgba(15,118,110,0.14)_0%,transparent_65%)]" />
         <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(rgba(100,116,139,0.07)_1px,transparent_1px)] [background-size:30px_30px]" />
@@ -700,9 +693,7 @@ export default function LandingPage() {
               height={20}
               className="size-5 rounded-md"
             />
-            <span className="text-xs font-black text-accent">
-              Core
-            </span>
+            <span className="text-xs font-black text-accent">Core</span>
           </span>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} — Investir sur la valeur, pas sur

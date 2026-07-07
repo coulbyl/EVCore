@@ -1,8 +1,9 @@
 import { Badge } from "@evcore/ui";
-import type { SelectionResult } from "@/domains/channel-decision/types/channel-decision";
+
+export type ResultValue = "PENDING" | "WON" | "LOST" | "VOID";
 
 const RESULT_META: Record<
-  Exclude<SelectionResult, "PENDING">,
+  Exclude<ResultValue, "PENDING">,
   { label: string; variant: "success" | "destructive" | "neutral" }
 > = {
   WON: { label: "Gagné", variant: "success" },
@@ -10,13 +11,22 @@ const RESULT_META: Record<
   VOID: { label: "Annulé", variant: "neutral" },
 };
 
-export function ResultBadge({ result }: { result: SelectionResult | null }) {
+/** Shared pick-result badge (decisions, investment): shows nothing while
+ * pending, and — once a fixture is finished but the pick has no result yet —
+ * an optional "Terminé" fallback. */
+export function ResultBadge({
+  result,
+  finished = false,
+}: {
+  result: ResultValue | null;
+  finished?: boolean;
+}) {
   if (result === null || result === "PENDING") {
-    return (
+    return finished ? (
       <Badge variant="outline" className="text-[0.62rem]">
-        En cours
+        Terminé
       </Badge>
-    );
+    ) : null;
   }
   const meta = RESULT_META[result];
   return (

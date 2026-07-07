@@ -41,6 +41,6 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
     OddsSnapshotLoader,
     BetSettlementService,
   ],
-  exports: [BettingEngineService, FriModelService],
+  exports: [BettingEngineService, FriModelService, ChannelDecisionService],
 })
 export class BettingEngineModule {}

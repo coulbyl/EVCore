@@ -317,6 +317,6 @@ describe('resolveEvaCoupons', () => {
       sheet: twoLegSheet,
     });
     const labels = resolved.coupons[0].legs.map((l) => l.pickLabel);
-    expect(labels).toEqual(['V1', 'PLUS DE 2.5']);
+    expect(labels).toEqual(['Victoire domicile', 'Plus de 2.5 buts']);
   });
 });

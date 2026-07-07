@@ -1,7 +1,9 @@
 export const ANALYSIS_SHEET_PROMPT_VERSION = 'eva-analysis-v2-2026-07-04';
 
 export const ANALYSIS_SHEET_MODELS = {
-  scout: 'openai/gpt-oss-120b',
+  // Default (free tier): higher TPM budget than gpt-oss-120b on our Groq
+  // plan. Override via CHAT_GROQ_MODEL once the gpt-oss-120b tier is paid.
+  scout: 'meta-llama/llama-4-scout-17b-16e-instruct',
   light: 'openai/gpt-oss-20b',
 } as const;
 

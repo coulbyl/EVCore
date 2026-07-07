@@ -1,6 +1,6 @@
 "use client";
 
-import { TriangleAlert, Plus, Check } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from "@evcore/ui";
 import {
   formatMarketForDisplay,
@@ -13,11 +13,8 @@ import type {
   ConsensusReasonDetails,
   StrategyChannel,
 } from "@/domains/channel-decision/types/channel-decision";
-import { useBetSlip } from "@/domains/bet-slip/context/bet-slip-context";
-import {
-  draftItemKey,
-  type BetSlipDraftItem,
-} from "@/domains/bet-slip/types/bet-slip";
+import { AddToCouponButton } from "@/components/add-to-coupon-button";
+import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import {
   CHANNEL_COLOR,
   CHANNEL_COLOR_SOFT,
@@ -28,7 +25,7 @@ import {
   reasonLabel,
   statusLabel,
 } from "./channel-constants";
-import { ResultBadge } from "./result-badge";
+import { ResultBadge } from "@/components/result-badge";
 import { ObservationBadge } from "./observation-badge";
 
 /** Channels that produce a real pick that can be added to a slip. */
@@ -49,20 +46,6 @@ export type SlipContext = {
   competition: string | null;
   scheduledAt: string;
 };
-
-function ChannelChip({ channel }: { channel: StrategyChannel }) {
-  const t = useTranslations("decisions");
-  return (
-    <Badge
-      style={{
-        color: CHANNEL_COLOR[channel],
-        backgroundColor: CHANNEL_COLOR_SOFT[channel],
-      }}
-    >
-      {channelLabel(channel, t)}
-    </Badge>
-  );
-}
 
 function parseConsensusChannels(raw: unknown): StrategyChannel[] {
   if (!raw || typeof raw !== "object") return [];
@@ -98,14 +81,7 @@ export function ChannelRow({
       : [];
 
   return (
-    <div
-      className={cn(
-        "grid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-2.5 py-2.5 sm:grid-cols-[4.75rem_minmax(0,1fr)] sm:gap-x-3",
-        avoidEdge !== undefined && "opacity-60",
-      )}
-    >
-      <ChannelChip channel={channel} />
-
+    <div className={cn("py-2.5", avoidEdge !== undefined && "opacity-60")}>
       {selection ? (
         <div className="min-w-0">
           <div className="flex min-w-0 items-start justify-between gap-2">
@@ -233,8 +209,6 @@ function SlipButton({
   selection: ChannelSelectionDto;
   slipContext: SlipContext;
 }) {
-  const { addItem, removeItem, isInSlip, open, draft } = useBetSlip();
-
   const item: BetSlipDraftItem = {
     modelRunId: decision.modelRunId,
     fixtureId: slipContext.fixtureId,
@@ -256,33 +230,5 @@ function SlipButton({
     stakeOverride: null,
   };
 
-  const key = draftItemKey(item);
-  const inSlip = isInSlip(key);
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (inSlip) {
-      removeItem(key);
-    } else {
-      const shouldOpen = draft.items.length === 0;
-      addItem(item);
-      if (shouldOpen) open();
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      aria-label={inSlip ? "Retirer du coupon" : "Ajouter au coupon"}
-      className={cn(
-        "flex size-5 items-center justify-center rounded-full border transition-all",
-        inSlip
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-border bg-background text-muted-foreground hover:border-accent hover:text-accent",
-      )}
-    >
-      {inSlip ? <Check size={10} strokeWidth={3} /> : <Plus size={11} />}
-    </button>
-  );
+  return <AddToCouponButton item={item} />;
 }

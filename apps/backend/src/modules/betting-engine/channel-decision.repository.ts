@@ -66,6 +66,7 @@ export type ChannelDecisionReadRow = {
   homeLogo: string | null;
   awayLogo: string | null;
   competitionCode: string | null;
+  competitionName: string | null;
   country: string | null;
   homeScore: number | null;
   awayScore: number | null;
@@ -221,7 +222,9 @@ export class ChannelDecisionRepository {
                 awayTeam: { select: { name: true, logoUrl: true } },
                 season: {
                   select: {
-                    competition: { select: { code: true, country: true } },
+                    competition: {
+                      select: { code: true, name: true, country: true },
+                    },
                   },
                 },
               },
@@ -268,6 +271,7 @@ export class ChannelDecisionRepository {
       homeLogo: row.modelRun.fixture.homeTeam.logoUrl,
       awayLogo: row.modelRun.fixture.awayTeam.logoUrl,
       competitionCode: row.modelRun.fixture.season.competition.code,
+      competitionName: row.modelRun.fixture.season.competition.name,
       country: row.modelRun.fixture.season.competition.country,
       homeScore: row.modelRun.fixture.homeScore,
       awayScore: row.modelRun.fixture.awayScore,

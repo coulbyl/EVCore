@@ -7,45 +7,53 @@
 
 export function singlePickLabel(market: string, pick: string): string {
   if (market === 'ONE_X_TWO') {
-    if (pick === 'HOME') return 'V1';
-    if (pick === 'DRAW') return 'NUL';
-    if (pick === 'AWAY') return 'V2';
+    if (pick === 'HOME') return 'Victoire domicile';
+    if (pick === 'DRAW') return 'Match nul';
+    if (pick === 'AWAY') return 'Victoire extérieur';
   }
   if (market === 'OVER_UNDER') {
-    if (pick === 'OVER_1_5') return 'PLUS DE 1.5';
-    if (pick === 'UNDER_1_5') return 'MOINS DE 1.5';
-    if (pick === 'OVER') return 'PLUS DE 2.5';
-    if (pick === 'UNDER') return 'MOINS DE 2.5';
-    if (pick === 'OVER_3_5') return 'PLUS DE 3.5';
-    if (pick === 'UNDER_3_5') return 'MOINS DE 3.5';
-    if (pick === 'OVER_4_5') return 'PLUS DE 4.5';
-    if (pick === 'UNDER_4_5') return 'MOINS DE 4.5';
+    if (pick === 'OVER_1_5') return 'Plus de 1.5 but';
+    if (pick === 'UNDER_1_5') return 'Moins de 1.5 but';
+    if (pick === 'OVER') return 'Plus de 2.5 buts';
+    if (pick === 'UNDER') return 'Moins de 2.5 buts';
+    if (pick === 'OVER_3_5') return 'Plus de 3.5 buts';
+    if (pick === 'UNDER_3_5') return 'Moins de 3.5 buts';
+    if (pick === 'OVER_4_5') return 'Plus de 4.5 buts';
+    if (pick === 'UNDER_4_5') return 'Moins de 4.5 buts';
   }
   if (market === 'BTTS') {
-    if (pick === 'YES') return 'BB OUI';
-    if (pick === 'NO') return 'BB NON';
+    if (pick === 'YES') return 'Les deux équipes marquent : oui';
+    if (pick === 'NO') return 'Les deux équipes marquent : non';
+  }
+  if (market === 'DOUBLE_CHANCE') {
+    if (pick === '1X') return 'Domicile ou match nul';
+    if (pick === 'X2') return 'Match nul ou extérieur';
+    if (pick === '12') return 'Domicile ou extérieur';
   }
   if (market === 'OVER_UNDER_HT') {
-    if (pick === 'OVER_0_5') return 'PLUS DE 0.5 MT';
-    if (pick === 'UNDER_0_5') return 'MOINS DE 0.5 MT';
-    if (pick === 'OVER_1_5') return 'PLUS DE 1.5 MT';
-    if (pick === 'UNDER_1_5') return 'MOINS DE 1.5 MT';
+    if (pick === 'OVER_0_5') return 'Plus de 0.5 but (mi-temps)';
+    if (pick === 'UNDER_0_5') return 'Moins de 0.5 but (mi-temps)';
+    if (pick === 'OVER_1_5') return 'Plus de 1.5 but (mi-temps)';
+    if (pick === 'UNDER_1_5') return 'Moins de 1.5 but (mi-temps)';
   }
   if (market === 'FIRST_HALF_WINNER') {
-    if (pick === 'HOME') return 'MT V1';
-    if (pick === 'DRAW') return 'MT NUL';
-    if (pick === 'AWAY') return 'MT V2';
+    if (pick === 'HOME') return 'Victoire domicile (mi-temps)';
+    if (pick === 'DRAW') return 'Match nul (mi-temps)';
+    if (pick === 'AWAY') return 'Victoire extérieur (mi-temps)';
   }
   if (market === 'HALF_TIME_FULL_TIME') {
-    if (pick === 'HOME_HOME') return 'V1 / V1';
-    if (pick === 'HOME_DRAW') return 'V1 / NUL';
-    if (pick === 'HOME_AWAY') return 'V1 / V2';
-    if (pick === 'DRAW_HOME') return 'NUL / V1';
-    if (pick === 'DRAW_DRAW') return 'NUL / NUL';
-    if (pick === 'DRAW_AWAY') return 'NUL / V2';
-    if (pick === 'AWAY_HOME') return 'V2 / V1';
-    if (pick === 'AWAY_DRAW') return 'V2 / NUL';
-    if (pick === 'AWAY_AWAY') return 'V2 / V2';
+    const htftLabels: Record<string, string> = {
+      HOME_HOME: 'Domicile / Domicile',
+      HOME_DRAW: 'Domicile / Nul',
+      HOME_AWAY: 'Domicile / Extérieur',
+      DRAW_HOME: 'Nul / Domicile',
+      DRAW_DRAW: 'Nul / Nul',
+      DRAW_AWAY: 'Nul / Extérieur',
+      AWAY_HOME: 'Extérieur / Domicile',
+      AWAY_DRAW: 'Extérieur / Nul',
+      AWAY_AWAY: 'Extérieur / Extérieur',
+    };
+    return htftLabels[pick] ?? pick;
   }
   if (market === 'CORRECT_SCORE') return pick;
   return `${market}/${pick}`;

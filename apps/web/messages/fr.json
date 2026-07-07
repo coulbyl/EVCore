@@ -38,6 +38,7 @@
     "summary": "Résumé sélections",
     "investmentSummary": "Résumé investissement",
     "coupons": "Combinés",
+    "investment": "Investir",
     "decisions": "Décisions",
     "decisionsShort": "Décisions"
   },
@@ -641,5 +642,35 @@
     "empty": "Aucun coupon généré pour cette date.",
     "loadError": "Impossible de charger les propositions de coupons.",
     "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers."
+  },
+  "investment": {
+    "pageTitle": "Investir",
+    "modeProbabilityLabel": "Probabilité",
+    "subtitle": "Picks individuels classés par probabilité de réussite — EV affichée à titre indicatif, aucune garantie de gain.",
+    "subtitleByMode": {
+      "value": "Picks à forte value (canal Valeur, EV ≥ 8%), classés par EV décroissante.",
+      "safe": "Picks du canal Sécurité, classés par probabilité de réussite.",
+      "dominant": "Picks du canal Victoire, classés par probabilité — ROI historique négatif en position solo (-23%), à considérer avec prudence.",
+      "btts": "Picks du canal BB, classés par probabilité — ROI historique négatif en position solo (-37%), à considérer avec prudence.",
+      "goals": "Picks du canal Buts, classés par probabilité — ROI historique négatif en position solo (-26%), à considérer avec prudence.",
+      "draw": "Picks du canal Nul, classés par probabilité de réussite."
+    },
+    "empty": "Aucun pick disponible pour cette date.",
+    "loadError": "Impossible de charger les picks.",
+    "addToSlip": "Ajouter au coupon",
+    "added": "Ajouté",
+    "modelProbability": "modèle :",
+    "bucket": {
+      "veryLikely": "Très probable",
+      "solid": "Solide",
+      "moderate": "Moyen",
+      "speculative": "Spéculatif"
+    },
+    "badge": {
+      "evPositive": "Value positive",
+      "evNegative": "EV négative",
+      "shortOdds": "Cote très courte",
+      "channelRoiFlag": "Canal à ROI historique négatif"
+    }
   }
 }
