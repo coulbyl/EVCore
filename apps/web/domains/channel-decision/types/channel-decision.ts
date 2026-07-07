@@ -63,6 +63,7 @@ export type ChannelDecisionDto = {
   fixtureId: string;
   modelRunId: string;
   competition: string | null;
+  competitionName: string | null;
   country: string | null;
   homeTeam: string;
   awayTeam: string;
@@ -100,6 +101,7 @@ export type ChannelDecisionMatchDto = Pick<
   ChannelDecisionDto,
   | "fixtureId"
   | "competition"
+  | "competitionName"
   | "country"
   | "homeTeam"
   | "awayTeam"

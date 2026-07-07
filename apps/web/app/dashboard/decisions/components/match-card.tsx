@@ -1,7 +1,9 @@
 import { Ban, Sparkles, TriangleAlert } from "lucide-react";
-import { Card, CardContent, CardHeader, Separator, cn } from "@evcore/ui";
+import { Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
+import { FixtureCard } from "@/components/fixture-card";
+import { LegConnector } from "@/components/leg-connector";
 import type {
   ChannelDecisionMatchDto,
   StrategyChannel,
@@ -15,7 +17,6 @@ import {
   type AvoidFlag,
 } from "./decision-helpers";
 import { ChannelRow, type SlipContext } from "./channel-row";
-import { FixtureHeading } from "./fixture-heading";
 
 export type MatchGroup = ChannelDecisionMatchDto;
 
@@ -52,16 +53,11 @@ export function MatchCard({
       }
     : undefined;
 
-  return (
-    <Card
-      className={cn(
-        "gap-0 overflow-hidden border-border/70 p-0 transition-colors hover:border-border",
-        avoid && "border-[color:var(--canal-avoid)]/40",
-      )}
-    >
+  const banners = (avoid || calibrationAlert) && (
+    <div className="flex flex-col gap-2 px-3 pt-3">
       {avoid && (
         <div
-          className="mx-3 mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
+          className="flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
           style={{
             color: "var(--canal-avoid)",
             backgroundColor: "var(--canal-avoid-soft)",
@@ -84,7 +80,7 @@ export function MatchCard({
 
       {calibrationAlert && (
         <div
-          className="mx-3 mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
+          className="flex items-start gap-2 rounded-lg border px-3 py-2 text-xs"
           style={{
             color: "var(--canal-avoid)",
             backgroundColor: "var(--canal-avoid-soft)",
@@ -105,75 +101,76 @@ export function MatchCard({
           />
         </div>
       )}
+    </div>
+  );
 
-      <div>
-        <CardHeader className="gap-3 px-4 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
-            <FixtureHeading
-              homeTeam={group.homeTeam}
-              awayTeam={group.awayTeam}
-              homeLogo={group.homeLogo}
-              awayLogo={group.awayLogo}
-              competition={group.competition}
-              country={group.country}
-              locale={locale}
-              score={group.score}
-              htScore={group.htScore}
-            />
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {group.kickoff}
-              </span>
-              <ConvictionBadge pickCount={picks.length} consensus={consensus} />
-            </div>
-          </div>
-        </CardHeader>
+  return (
+    <FixtureCard
+      fixture={`${group.homeTeam} vs ${group.awayTeam}`}
+      homeLogo={group.homeLogo}
+      awayLogo={group.awayLogo}
+      competition={group.competitionName}
+      country={group.country}
+      kickoff={group.kickoff}
+      score={group.score}
+      htScore={group.htScore}
+      locale={locale}
+      className={cn(
+        "transition-colors hover:border-border",
+        avoid && "border-[color:var(--canal-avoid)]/40",
+      )}
+      beforeHeader={banners}
+      headerExtra={
+        <ConvictionBadge pickCount={picks.length} consensus={consensus} />
+      }
+      bodyClassName="flex flex-col gap-2 py-3"
+    >
+      <Separator />
 
-        <CardContent className="flex flex-col gap-2 px-4 pb-4">
-          <Separator />
-
-          {picks.length > 0 ? (
-            <div className="flex flex-col divide-y divide-border/50">
-              {picks.map((decision) => (
+      {picks.length > 0 ? (
+        <div className="flex flex-col">
+          {picks.map((decision, idx) => (
+            <div key={decision.id} className="flex">
+              {picks.length > 1 && (
+                <LegConnector isLast={idx === picks.length - 1} />
+              )}
+              <div className="min-w-0 flex-1 border-t border-border/50 first:border-t-0">
                 <ChannelRow
-                  key={decision.id}
                   channel={decision.channel}
                   decision={decision}
                   locale={locale}
                   avoidEdge={avoidEdgeByChannel.get(decision.channel)}
                   slipContext={slipContext}
                 />
-              ))}
-            </div>
-          ) : (
-            <p className="py-1 text-xs text-muted-foreground/70">
-              {t("noPick")}
-            </p>
-          )}
-
-          {rest.length > 0 && (
-            <details className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md py-1 text-[0.72rem] text-muted-foreground/70 transition-colors hover:text-muted-foreground">
-                <span>{t("evaluatedCount", { count: rest.length })}</span>
-                <span className="text-sm leading-none text-muted-foreground/50 transition-transform group-open:rotate-45">
-                  +
-                </span>
-              </summary>
-              <div className="mt-1 flex flex-col divide-y divide-border/40 opacity-80">
-                {rest.map((decision) => (
-                  <ChannelRow
-                    key={decision.id}
-                    channel={decision.channel}
-                    decision={decision}
-                    locale={locale}
-                  />
-                ))}
               </div>
-            </details>
-          )}
-        </CardContent>
-      </div>
-    </Card>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="py-1 text-xs text-muted-foreground/70">{t("noPick")}</p>
+      )}
+
+      {rest.length > 0 && (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md py-1 text-[0.72rem] text-muted-foreground/70 transition-colors hover:text-muted-foreground">
+            <span>{t("evaluatedCount", { count: rest.length })}</span>
+            <span className="text-sm leading-none text-muted-foreground/50 transition-transform group-open:rotate-45">
+              +
+            </span>
+          </summary>
+          <div className="mt-1 flex flex-col divide-y divide-border/40 opacity-80">
+            {rest.map((decision) => (
+              <ChannelRow
+                key={decision.id}
+                channel={decision.channel}
+                decision={decision}
+                locale={locale}
+              />
+            ))}
+          </div>
+        </details>
+      )}
+    </FixtureCard>
   );
 }
 

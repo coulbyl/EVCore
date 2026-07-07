@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   ChevronRight,
@@ -14,11 +15,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import {
-  daysUntilWC2026,
-  isWC2026Active,
-  isWC2026Countdown,
-} from "@/lib/events/world-cup-2026";
+import { isWC2026Active, isWC2026Countdown } from "@/lib/events/world-cup-2026";
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
@@ -276,33 +273,21 @@ export default function LandingPage() {
   const wc2026Active = isWC2026Active(now);
   const wc2026Countdown = isWC2026Countdown(now);
   const showWC2026 = wc2026Active || wc2026Countdown;
-  const daysLeft = wc2026Countdown ? daysUntilWC2026(now) : 0;
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       {/* ── Fixed header (strip + nav stacked) ── */}
       <header className="fixed left-0 right-0 top-0 z-40 bg-background">
-        {showWC2026 && (
-          <div className="flex items-center justify-center gap-3 border-b border-warning/15 bg-warning/[0.06] px-4 py-2 text-xs font-semibold text-warning">
-            <span>🏆</span>
-            <span>Coupe du Monde 2026</span>
-            <span className="opacity-40">·</span>
-            <span className="font-normal text-warning/70">
-              {wc2026Countdown
-                ? `J-${daysLeft} avant le tournoi`
-                : "Tournoi en cours"}
-            </span>
-            <Link
-              href="/dashboard/wc2026"
-              className="ml-1 flex items-center gap-1 underline underline-offset-2 opacity-80 hover:opacity-100"
-            >
-              Voir l&apos;espace dédié <ChevronRight size={11} />
-            </Link>
-          </div>
-        )}
         <nav className="flex items-center justify-between border-b border-border bg-background/85 px-6 py-4 backdrop-blur-md sm:px-10">
-          <span className="text-sm font-black uppercase tracking-[0.24em] text-accent">
-            EVCore
+          <span className="flex items-center gap-1">
+            <Image
+              src="/icons/icon.svg"
+              alt="EVCore"
+              width={28}
+              height={28}
+              className="size-7 rounded-lg"
+            />
+            <span className="text-sm font-black text-accent">Core</span>
           </span>
           <div className="flex items-center gap-3">
             <button
@@ -329,9 +314,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section
-        className={`relative flex min-h-dvh flex-col items-center justify-center px-6 pb-16 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:pb-0 ${showWC2026 ? "pt-36 lg:pt-32" : "pt-28 lg:pt-24"} mx-auto max-w-6xl`}
-      >
+      <section className="relative mx-auto flex min-h-dvh max-w-6xl flex-col items-center justify-center px-6 pb-16 pt-28 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:pb-0 lg:pt-24">
         {/* Decorative */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_30%_40%,rgba(15,118,110,0.14)_0%,transparent_65%)]" />
         <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(rgba(100,116,139,0.07)_1px,transparent_1px)] [background-size:30px_30px]" />
@@ -702,10 +685,17 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-border px-6 py-8 sm:px-10">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <span className="text-xs font-black uppercase tracking-[0.22em] text-accent/60">
-            EVCore
+          <span className="flex items-center gap-1">
+            <Image
+              src="/icons/icon.svg"
+              alt="EVCore"
+              width={20}
+              height={20}
+              className="size-5 rounded-md"
+            />
+            <span className="text-xs font-black text-accent">Core</span>
           </span>
-          <p className="text-xs text-muted-foreground/35">
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} — Investir sur la valeur, pas sur
             l&apos;émotion
           </p>

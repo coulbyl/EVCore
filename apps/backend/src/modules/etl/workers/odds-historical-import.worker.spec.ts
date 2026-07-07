@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeTeam, teamMatches } from './odds-historical-import.worker';
+import { normalizeTeam, teamMatches } from '../team-name-matching';
 
 describe('OddsHistoricalImportWorker helpers', () => {
   it('normalizes accented team names and separators consistently', () => {

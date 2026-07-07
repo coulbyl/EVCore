@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { BarChart3, TrendingUp, Target } from "lucide-react";
 
 const FEATURES = [
@@ -45,9 +46,16 @@ export function AuthShell({
           {/* ── Aside (left) ── tablet+ */}
           <section className="hidden flex-col justify-between bg-sidebar px-8 py-10 text-sidebar-foreground md:flex lg:px-10 lg:py-12">
             <div>
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.34em] text-accent">
-                EVCore
-              </p>
+              <div className="flex items-center gap-1">
+                <Image
+                  src="/icons/icon.svg"
+                  alt="EVCore"
+                  width={20}
+                  height={20}
+                  className="size-5 rounded-md"
+                />
+                <p className="text-[0.6rem] font-bold text-accent">Core</p>
+              </div>
               <h1 className="mt-5 text-xl font-semibold leading-snug tracking-tight text-sidebar-foreground lg:text-[1.35rem]">
                 {asideTitle}
               </h1>
@@ -84,9 +92,16 @@ export function AuthShell({
           <section className="flex flex-col justify-center md:px-8 md:py-10 lg:px-10">
             <div className="mx-auto w-full max-w-sm">
               {/* Mobile-only branding */}
-              <div className="mb-7 md:hidden">
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.32em] text-muted-foreground/60">
-                  EVCore
+              <div className="mb-7 flex items-center gap-1 md:hidden">
+                <Image
+                  src="/icons/icon.svg"
+                  alt="EVCore"
+                  width={20}
+                  height={20}
+                  className="size-5 rounded-md"
+                />
+                <p className="text-[0.6rem] font-bold text-muted-foreground/60">
+                  Core
                 </p>
               </div>
 
@@ -99,10 +114,10 @@ export function AuthShell({
 
               <div className="mt-8">{children}</div>
 
-              <p className="mt-10 text-center text-xs text-muted-foreground/40">
+              <p className="mt-10 text-center text-xs text-muted-foreground">
                 <Link
                   href="/"
-                  className="transition-colors hover:text-muted-foreground/70"
+                  className="transition-colors hover:text-muted-foreground"
                 >
                   ← Retour à l&apos;accueil
                 </Link>

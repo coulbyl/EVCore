@@ -45,6 +45,7 @@ export type ChannelDecisionItem = {
   fixtureId: string;
   modelRunId: string;
   competition: string | null;
+  competitionName: string | null;
   country: string | null;
   homeTeam: string;
   awayTeam: string;
@@ -82,6 +83,7 @@ export type ChannelDecisionMatchItem = Pick<
   ChannelDecisionItem,
   | 'fixtureId'
   | 'competition'
+  | 'competitionName'
   | 'country'
   | 'homeTeam'
   | 'awayTeam'
@@ -180,6 +182,7 @@ export class ChannelDecisionService {
         group = {
           fixtureId: item.fixtureId,
           competition: item.competition,
+          competitionName: item.competitionName,
           country: item.country,
           homeTeam: item.homeTeam,
           awayTeam: item.awayTeam,
@@ -247,6 +250,7 @@ export class ChannelDecisionService {
       fixtureId: row.fixtureId,
       modelRunId: row.modelRunId,
       competition: row.competitionCode,
+      competitionName: row.competitionName,
       country: row.country,
       homeTeam: row.homeTeam,
       awayTeam: row.awayTeam,

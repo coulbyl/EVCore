@@ -39,6 +39,9 @@ export type NavItem = {
   active?: boolean;
   icon?: LucideIcon;
   badge?: number;
+  // Renders as a raised, accent-filled circular button in the mobile bottom
+  // nav instead of a regular tab — used to spotlight one primary action.
+  featured?: boolean;
 };
 
 export type NavGroup = {
@@ -236,40 +239,78 @@ export function PageShell({
               gridTemplateColumns: `repeat(${bottomNavItems.length}, minmax(0, 1fr))`,
             }}
           >
-            {bottomNavItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-current={item.active ? "page" : undefined}
-                className={cn(
-                  "relative flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
-                  item.active
-                    ? "border border-border bg-secondary text-foreground"
-                    : "border border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                <span className="relative">
-                  {item.icon ? (
-                    <item.icon size={18} className="text-accent" />
-                  ) : (
-                    <span
-                      className={cn(
-                        "h-1.5 w-6 rounded-full",
-                        item.active ? "bg-accent" : "bg-border",
-                      )}
-                    />
+            {bottomNavItems.map((item) =>
+              item.featured ? (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  aria-current={item.active ? "page" : undefined}
+                  className="relative -mt-6 flex flex-col items-center justify-center gap-1 text-center"
+                >
+                  <span
+                    className={cn(
+                      "flex size-14 items-center justify-center rounded-full shadow-lg shadow-accent/30 transition-transform duration-150",
+                      item.active
+                        ? "scale-105 bg-accent text-accent-foreground"
+                        : "bg-accent/90 text-accent-foreground",
+                    )}
+                  >
+                    {item.icon && <item.icon size={24} />}
+                  </span>
+                  <span
+                    className={cn(
+                      "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+                      item.active ? "text-accent" : "text-muted-foreground",
+                    )}
+                  >
+                    {item.mobileLabel ?? item.label}
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  aria-current={item.active ? "page" : undefined}
+                  className={cn(
+                    "relative flex min-h-15 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 text-center transition-all duration-150",
+                    item.active
+                      ? "border border-accent/30 bg-accent/10 text-accent"
+                      : "border border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
                   )}
-                  {item.badge != null && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.55rem] font-bold tabular-nums text-destructive-foreground">
-                      {item.badge > 9 ? "9+" : item.badge}
-                    </span>
-                  )}
-                </span>
-                <span className="max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap">
-                  {item.mobileLabel ?? item.label}
-                </span>
-              </Link>
-            ))}
+                >
+                  <span className="relative">
+                    {item.icon ? (
+                      <item.icon
+                        size={18}
+                        className={
+                          item.active ? "text-accent" : "text-muted-foreground"
+                        }
+                      />
+                    ) : (
+                      <span
+                        className={cn(
+                          "h-1.5 w-6 rounded-full",
+                          item.active ? "bg-accent" : "bg-border",
+                        )}
+                      />
+                    )}
+                    {item.badge != null && item.badge > 0 && (
+                      <span className="absolute -top-1.5 -right-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[0.55rem] font-bold tabular-nums text-destructive-foreground">
+                        {item.badge > 9 ? "9+" : item.badge}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "max-w-full text-[0.63rem] font-semibold leading-tight whitespace-nowrap",
+                      item.active ? "text-accent" : "",
+                    )}
+                  >
+                    {item.mobileLabel ?? item.label}
+                  </span>
+                </Link>
+              ),
+            )}
           </div>
         </nav>
       </SidebarInset>

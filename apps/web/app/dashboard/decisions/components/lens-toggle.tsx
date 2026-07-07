@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { cn } from "@evcore/ui";
+import { ScrollableTabs } from "@/components/scrollable-tabs";
 
 export type DecisionsView = "matches" | "channels";
 
@@ -18,38 +18,13 @@ export function LensToggle({
   const t = useTranslations("decisions");
 
   return (
-    <div className="inline-flex rounded-lg border border-border/60 p-0.5">
-      <Tab active={view === "matches"} onClick={() => onChange("matches")}>
-        {t("lens.matches")}
-      </Tab>
-      <Tab active={view === "channels"} onClick={() => onChange("channels")}>
-        {t("lens.channels")}
-      </Tab>
-    </div>
-  );
-}
-
-function Tab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-        active
-          ? "bg-[color:var(--accent-soft)] text-foreground"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
+    <ScrollableTabs
+      value={view}
+      onValueChange={onChange}
+      items={[
+        { value: "matches", label: t("lens.matches") },
+        { value: "channels", label: t("lens.channels") },
+      ]}
+    />
   );
 }

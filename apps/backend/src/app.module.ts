@@ -25,6 +25,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
 import { CouponModule } from './modules/coupon/coupon.module';
 import { MlModule } from './modules/ml/ml.module';
 import { AnalysisSheetModule } from './modules/analysis-sheet/analysis-sheet.module';
+import { InvestmentModule } from './modules/investment/investment.module';
 import { RedisModule } from './common/redis/redis.module';
 
 @Module({
@@ -61,6 +62,7 @@ import { RedisModule } from './common/redis/redis.module';
     AnnouncementsModule,
     CouponModule,
     AnalysisSheetModule,
+    InvestmentModule,
     MlModule,
   ],
   controllers: [AppController],

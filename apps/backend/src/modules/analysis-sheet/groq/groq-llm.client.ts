@@ -14,6 +14,13 @@ type CompleteInput = Parameters<LlmClient['complete']>[0];
 const GROQ_TIMEOUT_MS = 30_000;
 const MAX_OUTPUT_TOKENS = 2048;
 
+// reasoning_effort is only accepted by Groq's gpt-oss family — sending it to
+// any other model errors out, so it's gated on the model id rather than
+// applied unconditionally.
+const REASONING_MODEL_PREFIX = 'openai/gpt-oss';
+type ReasoningEffort = 'low' | 'medium' | 'high';
+const REASONING_EFFORTS: readonly ReasoningEffort[] = ['low', 'medium', 'high'];
+
 @Injectable()
 export class GroqLlmClient implements LlmClient {
   private readonly logger = new Logger(GroqLlmClient.name);
@@ -61,12 +68,17 @@ export class GroqLlmClient implements LlmClient {
     messages: LlmMessage[],
     model: string,
   ): Promise<LlmResponse> {
+    const reasoningEffort = model.startsWith(REASONING_MODEL_PREFIX)
+      ? this.getReasoningEffort()
+      : undefined;
+
     const response = await this.getSdk().chat.completions.create({
       model,
       messages: messages.map(toGroqMessage),
       max_tokens: MAX_OUTPUT_TOKENS,
       temperature: 0.2,
       stream: false,
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     });
 
     const content = response.choices[0]?.message.content ?? '';
@@ -79,6 +91,20 @@ export class GroqLlmClient implements LlmClient {
         outputTokens: response.usage?.completion_tokens ?? 0,
       },
     };
+  }
+
+  private getReasoningEffort(): ReasoningEffort {
+    const configured = this.config.get<string>(
+      'CHAT_GROQ_REASONING_EFFORT',
+      'high',
+    );
+    if (REASONING_EFFORTS.includes(configured as ReasoningEffort)) {
+      return configured as ReasoningEffort;
+    }
+    this.logger.error(
+      `CHAT_GROQ_REASONING_EFFORT invalide (${configured}), repli sur "high"`,
+    );
+    return 'high';
   }
 
   private getSdk(): Groq {

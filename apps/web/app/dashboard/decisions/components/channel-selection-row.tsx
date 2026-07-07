@@ -20,8 +20,8 @@ import {
   formatPct,
   reasonLabel,
 } from "./channel-constants";
-import { FixtureHeading } from "./fixture-heading";
-import { ResultBadge } from "./result-badge";
+import { FixtureCardHeader } from "@/components/fixture-card-header";
+import { ResultBadge } from "@/components/result-badge";
 import { ObservationBadge } from "./observation-badge";
 
 function parseAvoidOffenders(raw: unknown): AvoidOffender[] {
@@ -72,17 +72,16 @@ export function ChannelSelectionRow({
         style={{ backgroundColor: CHANNEL_COLOR[decision.channel] }}
         aria-hidden
       />
-      <FixtureHeading
-        homeTeam={decision.homeTeam}
-        awayTeam={decision.awayTeam}
+      <FixtureCardHeader
+        fixture={`${decision.homeTeam} vs ${decision.awayTeam}`}
         homeLogo={decision.homeLogo}
         awayLogo={decision.awayLogo}
-        competition={decision.competition}
+        competition={decision.competitionName}
         country={decision.country}
-        locale={locale}
         kickoff={decision.kickoff}
         score={decision.score}
         htScore={decision.htScore}
+        locale={locale}
       />
 
       {selection === undefined ? (
