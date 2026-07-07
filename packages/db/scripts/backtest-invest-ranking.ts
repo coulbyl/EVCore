@@ -134,7 +134,11 @@ type Pool = {
 };
 
 const POOLS: Pool[] = [
-  { label: "VALUE — tous les picks", channel: "VALUE", formulas: VALUE_FORMULAS },
+  {
+    label: "VALUE — tous les picks",
+    channel: "VALUE",
+    formulas: VALUE_FORMULAS,
+  },
   {
     label: `VALUE — gate actuelle EV >= ${EV_THRESHOLD}`,
     channel: "VALUE",
@@ -215,7 +219,9 @@ function computeDailyScoredPicks(rows: Row[]): Map<string, ScoredPick[]> {
 
   for (const dayKey of dayKeys) {
     const dayStart = new Date(`${dayKey}T00:00:00.000Z`);
-    const since = new Date(dayStart.getTime() - CALIBRATION_WINDOW_DAYS * DAY_MS);
+    const since = new Date(
+      dayStart.getTime() - CALIBRATION_WINDOW_DAYS * DAY_MS,
+    );
 
     while (hi < rows.length) {
       const row = rows[hi];
@@ -247,7 +253,10 @@ function computeDailyScoredPicks(rows: Row[]): Map<string, ScoredPick[]> {
   return scored;
 }
 
-function evaluatePool(pool: Pool, scoredByDay: Map<string, ScoredPick[]>): string[] {
+function evaluatePool(
+  pool: Pool,
+  scoredByDay: Map<string, ScoredPick[]>,
+): string[] {
   const dayKeys = [...scoredByDay.keys()].sort();
   const splitIndex = Math.floor(dayKeys.length * TRAIN_SPLIT);
   const splitKey = dayKeys[splitIndex] ?? "9999-12-31";
@@ -274,7 +283,9 @@ function evaluatePool(pool: Pool, scoredByDay: Map<string, ScoredPick[]>): strin
     for (const formula of pool.formulas) {
       const scorable = picks
         .map((p) => ({ pick: p, score: formula.score(p) }))
-        .filter((s): s is { pick: ScoredPick; score: number } => s.score !== null)
+        .filter(
+          (s): s is { pick: ScoredPick; score: number } => s.score !== null,
+        )
         .sort((a, b) => b.score - a.score);
 
       for (const n of TOP_NS) {
@@ -336,7 +347,8 @@ function bucketDiagnostics(picks: ScoredPick[], spec: BucketSpec): string[] {
     const loEdge = i === 0 ? null : spec.edges[i - 1];
     const hiEdge = i === spec.edges.length ? null : spec.edges[i];
     if (loEdge === null || loEdge === undefined) labels.push(`< ${hiEdge}`);
-    else if (hiEdge === null || hiEdge === undefined) labels.push(`>= ${loEdge}`);
+    else if (hiEdge === null || hiEdge === undefined)
+      labels.push(`>= ${loEdge}`);
     else labels.push(`[${loEdge}, ${hiEdge})`);
   }
 
@@ -359,7 +371,9 @@ function bucketDiagnostics(picks: ScoredPick[], spec: BucketSpec): string[] {
     if (!b || b.n === 0) return;
     const roi = ((b.roiSum / b.n) * 100).toFixed(2);
     const hit = ((b.wins / b.n) * 100).toFixed(1);
-    lines.push(`  ${label.padEnd(14)} n=${String(b.n).padStart(5)}  hit ${hit}%  ROI ${roi}%`);
+    lines.push(
+      `  ${label.padEnd(14)} n=${String(b.n).padStart(5)}  hit ${hit}%  ROI ${roi}%`,
+    );
   });
   return lines;
 }
@@ -446,7 +460,9 @@ async function main() {
   const lines: string[] = [];
   const w = (s = "") => lines.push(s);
   w("BACKTEST CLASSEMENT TOPN — modes value & draw (page Investir)");
-  w(`Genere le ${new Date().toISOString()} — ${rows.length} picks settled (VALUE+DRAW)`);
+  w(
+    `Genere le ${new Date().toISOString()} — ${rows.length} picks settled (VALUE+DRAW)`,
+  );
   w(
     `Calibration leak-free : fenetre ${CALIBRATION_WINDOW_DAYS}j, min ${CALIBRATION_MIN_SAMPLES} samples, erreur mesuree avant le debut de chaque jour`,
   );
