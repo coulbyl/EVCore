@@ -7,6 +7,7 @@ import {
   formatPickForDisplay,
 } from "@/helpers/fixture";
 import { AddToCouponButton } from "@/components/add-to-coupon-button";
+import { CanalBadge } from "@/components/canal-badge";
 import { ResultBadge } from "@/components/result-badge";
 import type { BetSlipDraftItem } from "@/domains/bet-slip/types/bet-slip";
 import type { InvestmentPick } from "@/domains/investment/types/investment";
@@ -54,6 +55,7 @@ export function InvestmentPickRow({
           <span className="text-sm font-bold text-foreground">
             {formatPickForDisplay(pick.pick, pick.market)}
           </span>
+          <CanalBadge canal={pick.channel} />
           <span className="text-[0.68rem] text-muted-foreground">
             {formatMarketForDisplay(pick.market, loc)}
           </span>
