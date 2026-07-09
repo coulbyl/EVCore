@@ -68,6 +68,7 @@ export type DroppedEvaCoupon = {
     | 'unknown_pick'
     | 'observation_only'
     | 'missing_odds'
+    | 'insufficient_history'
     | 'ev_below_threshold'
     | 'duplicate_fixture'
     | 'leg_count_out_of_bounds';
@@ -168,6 +169,9 @@ function resolveLeg(
   if (!pick) return { reasonCode: 'unknown_pick' };
   if (pick.observationOnly) return { reasonCode: 'observation_only' };
   if (pick.odds === null) return { reasonCode: 'missing_odds' };
+  if (pick.history.length < ANALYSIS_SHEET_COUPONS.minHistorySnapshots) {
+    return { reasonCode: 'insufficient_history' };
+  }
   if (new Decimal(pick.ev).lessThan(EV_THRESHOLD)) {
     return { reasonCode: 'ev_below_threshold' };
   }

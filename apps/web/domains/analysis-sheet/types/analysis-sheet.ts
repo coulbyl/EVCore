@@ -43,6 +43,11 @@ export type AnalysisSheetJsonPick = {
   // CORRECT_SCORE picks are prediction-only, never staked.
   observationOnly: boolean;
   history: AnalysisSheetPickHistoryEntry[];
+  // probability − rawPoissonProbability for this (market, pick); null when
+  // not covered by the raw-probability export.
+  adjustmentDelta: number | null;
+  // ev − EV_THRESHOLD: margin above the coupon-eligibility EV floor.
+  evMarginToThreshold: number;
 };
 
 // Fixture-level AVOID flag (meta-channel, no pick of its own).
@@ -93,6 +98,8 @@ export type AnalysisSheetJsonFixture = {
       h2h: number | null;
       congestion: number | null;
     } | null;
+    // Share of the 3 shadow signals populated (0-1) — distinct from finalScore.
+    dataCoverage: number;
     shadowPredictions: {
       winnerName: string | null;
       percent: { home: number; draw: number; away: number };
@@ -116,9 +123,19 @@ export type AnalysisSheetJson = {
     calibrationAlertCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
-    settledRecord: { won: number; lost: number; pending: number; void: number };
+    settledRecord: {
+      playable: SettledRecordBucket;
+      observation: SettledRecordBucket;
+    };
   };
   fixtures: AnalysisSheetJsonFixture[];
+};
+
+type SettledRecordBucket = {
+  won: number;
+  lost: number;
+  pending: number;
+  void: number;
 };
 
 // One coupon leg, fully resolved and priced by the backend from the sheet —

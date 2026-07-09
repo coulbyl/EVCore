@@ -1,4 +1,7 @@
-import { getModelScoreThreshold } from '@modules/betting-engine/ev.constants';
+import {
+  EV_THRESHOLD,
+  getModelScoreThreshold,
+} from '@modules/betting-engine/ev.constants';
 import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
 import {
   fmtPct,
@@ -47,6 +50,18 @@ export type AnalysisSheetJsonPick = {
   // flagged so external readers don't mistake its picks for playable bets.
   observationOnly: boolean;
   history: AnalysisSheetPickHistoryEntry[];
+  // probability − rawPoissonProbability for this exact (market, pick) — how
+  // much the 1X2 blend / O/U shrinkage layer moved the published probability
+  // away from the raw Poisson output. Null when the market isn't covered by
+  // the raw-probability export (e.g. CORRECT_SCORE) or the fixture predates
+  // the export (rapport-dev-evcore-fiche 2026-07-09, point #3).
+  adjustmentDelta: number | null;
+  // ev − EV_THRESHOLD: how far above the coupon-eligibility EV floor this
+  // pick sits. A hard threshold treats a pick that clears it by 0.0005 the
+  // same as one clearing it by 0.20 — this makes that margin legible instead
+  // of hidden inside a pass/fail gate (rapport-dev-evcore-fiche 2026-07-09,
+  // point #9).
+  evMarginToThreshold: number;
 };
 
 export type AnalysisSheetRejectionSummary = {
@@ -109,6 +124,12 @@ export type AnalysisSheetJsonFixture = {
       h2h: number | null;
       congestion: number | null;
     } | null;
+    // Share of the 3 shadow signals (lineMovement, h2h, congestion) that are
+    // populated — distinct from finalScore. A low finalScore with high
+    // dataCoverage is a firm negative signal; a low finalScore with low
+    // dataCoverage is an unknown (missing inputs, not a contradicted model)
+    // (rapport-dev-evcore-fiche 2026-07-09, point #8).
+    dataCoverage: number;
     // API-Football /predictions second opinion (shadow-only). `conflict` is
     // true when their Poisson comparison favors the opposite side vs our λ.
     shadowPredictions: {
@@ -134,9 +155,22 @@ export type AnalysisSheetJson = {
     calibrationAlertCount: number;
     byCompetition: Record<string, number>;
     byChannel: Record<string, number>;
-    settledRecord: { won: number; lost: number; pending: number; void: number };
+    // Split by observationOnly: prediction channels (CORRECT_SCORE, or any
+    // pick with no available odds) are never staked, so folding them into
+    // one win/loss record would misrepresent playable performance.
+    settledRecord: {
+      playable: SettledRecordBucket;
+      observation: SettledRecordBucket;
+    };
   };
   fixtures: AnalysisSheetJsonFixture[];
+};
+
+type SettledRecordBucket = {
+  won: number;
+  lost: number;
+  pending: number;
+  void: number;
 };
 
 function toJsonFixture(
@@ -150,6 +184,12 @@ function toJsonFixture(
     context.shadowLineMovement !== null ||
     context.shadowH2h !== null ||
     context.shadowCongestion !== null;
+  const dataCoverage =
+    [
+      context.shadowLineMovement,
+      context.shadowH2h,
+      context.shadowCongestion,
+    ].filter((signal) => signal !== null).length / 3;
 
   const selectedPicks: AnalysisSheetJsonPick[] = fixture.selections
     .filter((s) => s.decisionStatus === 'SELECTED' && s.market && s.pick)
@@ -165,8 +205,23 @@ function toJsonFixture(
       qualityScore: s.qualityScore,
       rank: s.rank ?? 1,
       result: s.result,
-      observationOnly: s.channel === 'CORRECT_SCORE',
-      history: buildPickHistory(fixture.priorPasses, s.channel),
+      // CORRECT_SCORE is observation by design; any other pick with no
+      // resolvable bookmaker odds is unplayable regardless of channel, so it
+      // must not be presented as a live staking candidate.
+      observationOnly: s.channel === 'CORRECT_SCORE' || s.odds === null,
+      history: buildPickHistory({
+        priorPasses: fixture.priorPasses,
+        channel: s.channel,
+        currentMarket: s.market!,
+        currentPick: s.pick!,
+      }),
+      adjustmentDelta: computeAdjustmentDelta({
+        raw: context.rawPoissonProbability,
+        market: s.market!,
+        pick: s.pick!,
+        finalProbability: s.probability,
+      }),
+      evMarginToThreshold: (s.ev ?? 0) - EV_THRESHOLD.toNumber(),
     }));
 
   const rejectionSummary = buildRejectionSummary(fixture.selections);
@@ -203,6 +258,7 @@ function toJsonFixture(
             congestion: context.shadowCongestion,
           }
         : null,
+      dataCoverage,
       shadowPredictions: buildShadowPredictions(fixture.features),
     },
     avoidFlag,
@@ -339,13 +395,101 @@ function buildAvoidFlag(
   };
 }
 
+// Reads the unadjusted Poisson probability for a (market, pick), mirroring
+// the (market, pick) → field mapping in selection/odds.ts::resolveSelectionOdds
+// but against ModelRun.features.rawPoissonProbability instead of a bookmaker
+// odds snapshot. Returns null for markets the raw export doesn't cover
+// (CORRECT_SCORE has no per-scoreline raw probability at this level).
+function readRawProbabilityForPick(
+  raw: Record<string, unknown> | null,
+  market: string,
+  pick: string,
+): number | null {
+  if (!raw) return null;
+  const num = (v: unknown): number | null =>
+    typeof v === 'number' && Number.isFinite(v) ? v : null;
+  const nested = (key: string): Record<string, unknown> | null => {
+    const v = raw[key];
+    return v !== null && typeof v === 'object'
+      ? (v as Record<string, unknown>)
+      : null;
+  };
+
+  switch (market) {
+    case 'ONE_X_TWO':
+      if (pick === 'HOME') return num(raw.home);
+      if (pick === 'DRAW') return num(raw.draw);
+      if (pick === 'AWAY') return num(raw.away);
+      return null;
+    case 'BTTS':
+      if (pick === 'YES') return num(raw.bttsYes);
+      if (pick === 'NO') return num(raw.bttsNo);
+      return null;
+    case 'OVER_UNDER': {
+      // The 2.5 line (the "main" line) has no suffix — goals.strategy.ts
+      // maps it to bare "OVER"/"UNDER"; other lines are suffixed
+      // ("OVER_1_5", "UNDER_3_5", …).
+      if (pick === 'OVER') return num(raw.over25);
+      if (pick === 'UNDER') return num(raw.under25);
+      const key = pick
+        .toLowerCase()
+        .replace(/^over_(\d)_(\d)$/, 'over$1$2')
+        .replace(/^under_(\d)_(\d)$/, 'under$1$2');
+      return num(raw[key]);
+    }
+    case 'DOUBLE_CHANCE':
+      if (pick === '1X') return num(raw.dc1X);
+      if (pick === 'X2') return num(raw.dcX2);
+      if (pick === '12') return num(raw.dc12);
+      return null;
+    case 'FIRST_HALF_WINNER': {
+      const fhw = nested('firstHalfWinner');
+      if (!fhw) return null;
+      if (pick === 'HOME') return num(fhw.home);
+      if (pick === 'DRAW') return num(fhw.draw);
+      if (pick === 'AWAY') return num(fhw.away);
+      return null;
+    }
+    case 'HALF_TIME_FULL_TIME':
+      return num(nested('htft')?.[pick]);
+    case 'OVER_UNDER_HT':
+      return num(nested('ouHT')?.[pick]);
+    default:
+      return null;
+  }
+}
+
+function computeAdjustmentDelta(input: {
+  raw: Record<string, unknown> | null;
+  market: string;
+  pick: string;
+  finalProbability: number | null;
+}): number | null {
+  const rawProbability = readRawProbabilityForPick(
+    input.raw,
+    input.market,
+    input.pick,
+  );
+  if (rawProbability === null || input.finalProbability === null) return null;
+  return input.finalProbability - rawProbability;
+}
+
 // Earlier rolling-horizon passes (oldest first) where this exact channel
 // also had a SELECTED pick — this is the line-movement trail.
-function buildPickHistory(
-  priorPasses: AnalysisSheetPriorPass[],
-  channel: string,
-): AnalysisSheetPickHistoryEntry[] {
-  return priorPasses.flatMap((pass) => {
+//
+// A channel's market/pick can change between passes (e.g. GOALS moving from
+// the 1.5 to the 2.5 line as the model gains prematch odds coverage). Keep
+// only the trailing run that matches the pick's CURRENT market/pick, so a
+// line-movement reader never blends two unrelated markets' odds into one
+// series under the same channel.
+function buildPickHistory(input: {
+  priorPasses: AnalysisSheetPriorPass[];
+  channel: string;
+  currentMarket: string;
+  currentPick: string;
+}): AnalysisSheetPickHistoryEntry[] {
+  const { priorPasses, channel, currentMarket, currentPick } = input;
+  const entries = priorPasses.flatMap((pass) => {
     const pick = pass.selectedPicks.find((s) => s.channel === channel);
     if (!pick || !pick.market || !pick.pick) return [];
     return [
@@ -360,6 +504,19 @@ function buildPickHistory(
       },
     ];
   });
+
+  let startIndex = entries.length;
+  for (let i = entries.length - 1; i >= 0; i -= 1) {
+    if (
+      entries[i].market === currentMarket &&
+      entries[i].pick === currentPick
+    ) {
+      startIndex = i;
+    } else {
+      break;
+    }
+  }
+  return entries.slice(startIndex);
 }
 
 function buildRejectionSummary(
@@ -413,16 +570,22 @@ export function buildJsonSheet(
 
   const byCompetition: Record<string, number> = {};
   const byChannel: Record<string, number> = {};
-  const settledRecord = { won: 0, lost: 0, pending: 0, void: 0 };
+  const settledRecord = {
+    playable: { won: 0, lost: 0, pending: 0, void: 0 },
+    observation: { won: 0, lost: 0, pending: 0, void: 0 },
+  };
 
   for (const f of jsonFixtures) {
     byCompetition[f.competition] = (byCompetition[f.competition] ?? 0) + 1;
     for (const pick of f.selectedPicks) {
       byChannel[pick.channel] = (byChannel[pick.channel] ?? 0) + 1;
-      if (pick.result === 'WON') settledRecord.won += 1;
-      else if (pick.result === 'LOST') settledRecord.lost += 1;
-      else if (pick.result === 'VOID') settledRecord.void += 1;
-      else settledRecord.pending += 1;
+      const bucket = pick.observationOnly
+        ? settledRecord.observation
+        : settledRecord.playable;
+      if (pick.result === 'WON') bucket.won += 1;
+      else if (pick.result === 'LOST') bucket.lost += 1;
+      else if (pick.result === 'VOID') bucket.void += 1;
+      else bucket.pending += 1;
     }
   }
 
@@ -474,9 +637,12 @@ export function buildTxtSheet(
     .map(([channel, count]) => `${channel} ${count}`)
     .join(', ');
   w(`Par canal (picks retenus) : ${byChannel || '—'}`);
-  const { won, lost, pending, void: voided } = sheet.summary.settledRecord;
+  const { playable, observation } = sheet.summary.settledRecord;
   w(
-    `Réglé : ${won} gagnés / ${lost} perdus / ${pending} en attente / ${voided} annulés`,
+    `Réglé (jouable) : ${playable.won} gagnés / ${playable.lost} perdus / ${playable.pending} en attente / ${playable.void} annulés`,
+  );
+  w(
+    `Réglé (observation, jamais misé) : ${observation.won} gagnés / ${observation.lost} perdus / ${observation.pending} en attente / ${observation.void} annulés`,
   );
   if (sheet.summary.avoidedFixtureCount > 0) {
     w(

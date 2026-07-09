@@ -74,6 +74,17 @@ export function ChannelBacktestTab() {
       ),
     },
     {
+      id: "pricedCount",
+      header: t("colPriced"),
+      accessorFn: (r) => r.pricedCount,
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {row.original.pricedCount}
+        </span>
+      ),
+    },
+    {
       id: "hitRate",
       header: t("colHitRate"),
       accessorFn: (r) => r.hitRate,
@@ -148,7 +159,11 @@ export function ChannelBacktestTab() {
                   {report.competitionCode}
                 </p>
                 <p className="text-[0.65rem] text-muted-foreground">
-                  {report.total} · {formatPct(report.hitRate)}
+                  {t("settledPricedSummary", {
+                    total: report.total,
+                    priced: report.pricedCount,
+                  })}{" "}
+                  · {formatPct(report.hitRate)}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-3 text-xs tabular-nums">

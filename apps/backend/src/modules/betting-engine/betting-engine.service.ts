@@ -220,9 +220,13 @@ export class BettingEngineService {
     // 1X2: empirical blend toward team win/draw rates. O/U: shrinkage toward
     // the league base rate for data-poor leagues where the measured
     // calibration slope is near zero (see probability/ou-shrinkage.ts).
+    const rawProbabilities = this.computeProbabilities(
+      lambda.home,
+      lambda.away,
+    );
     const probabilities = shrinkOverUnderProbabilities(
       rebalanceThreeWayProbabilities({
-        probabilities: this.computeProbabilities(lambda.home, lambda.away),
+        probabilities: rawProbabilities,
         homeStats,
         awayStats,
         blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
@@ -230,7 +234,13 @@ export class BettingEngineService {
       getOverUnderShrinkageConfig(competitionCode),
     );
 
-    return { deterministicScore, probabilities, lambda, features };
+    return {
+      deterministicScore,
+      probabilities,
+      rawProbabilities,
+      lambda,
+      features,
+    };
   }
 
   selectBestViablePickForBacktest(input: {
@@ -540,13 +550,18 @@ export class BettingEngineService {
 
     const weights = await this.getEffectiveWeights();
     const predictionSource: PredictionSource = 'POISSON_MAIN';
-    const { features, deterministicScore, lambda, probabilities } =
-      this.computeFromTeamStats(
-        effectiveHomeStats,
-        effectiveAwayStats,
-        weights,
-        competitionCode,
-      );
+    const {
+      features,
+      deterministicScore,
+      lambda,
+      probabilities,
+      rawProbabilities,
+    } = this.computeFromTeamStats(
+      effectiveHomeStats,
+      effectiveAwayStats,
+      weights,
+      competitionCode,
+    );
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
       lambda.away <= MIN_LAMBDA + Number.EPSILON;
@@ -785,6 +800,10 @@ export class BettingEngineService {
       lambdaHome: lambda.home,
       lambdaAway: lambda.away,
       probabilities: mapProbabilitiesToNumber(probabilities),
+      // Unadjusted Poisson output, before the 1X2 blend + O/U shrinkage —
+      // lets the analysis sheet expose an adjustmentDelta per market so the
+      // adjustment layer is auditable pick by pick (rapport-dev 2026-07-09).
+      rawPoissonProbability: mapProbabilitiesToNumber(rawProbabilities),
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
       calibration_alert: calibrationAlert,

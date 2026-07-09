@@ -22,7 +22,31 @@ function pick(
     rank: 1,
     result: null,
     observationOnly: false,
-    history: [],
+    // Two prior snapshots by default so the happy-path tests clear the
+    // minHistorySnapshots gate; individual tests override to `[]` to
+    // exercise the insufficient_history rejection.
+    history: [
+      {
+        analyzedAt: '2026-07-01T16:00:00.000Z',
+        phase: 'ADVANCE',
+        market: 'ONE_X_TWO',
+        pick: 'HOME',
+        probability: 0.88,
+        odds: 1.55,
+        ev: 0.32,
+      },
+      {
+        analyzedAt: '2026-07-02T16:00:00.000Z',
+        phase: 'ADVANCE',
+        market: 'ONE_X_TWO',
+        pick: 'HOME',
+        probability: 0.89,
+        odds: 1.52,
+        ev: 0.34,
+      },
+    ],
+    adjustmentDelta: null,
+    evMarginToThreshold: 0.27,
     ...overrides,
   };
 }
@@ -44,6 +68,7 @@ function fixture(
       predictionSource: 'POISSON_MAIN',
       lambda: null,
       shadowSignals: null,
+      dataCoverage: 0,
       shadowPredictions: null,
     },
     avoidFlag: null,
@@ -65,7 +90,10 @@ function sheet(fixtures: AnalysisSheetJsonFixture[]): AnalysisSheetJson {
       calibrationAlertCount: 0,
       byCompetition: {},
       byChannel: {},
-      settledRecord: { won: 0, lost: 0, pending: 0, void: 0 },
+      settledRecord: {
+        playable: { won: 0, lost: 0, pending: 0, void: 0 },
+        observation: { won: 0, lost: 0, pending: 0, void: 0 },
+      },
     },
     fixtures,
   };
@@ -247,6 +275,17 @@ describe('resolveEvaCoupons', () => {
         fixture({
           fixtureId: 'fx-2',
           selectedPicks: [pick({ ev: 0.079 })],
+        }),
+      ],
+    },
+    {
+      name: 'pick with fewer than minHistorySnapshots prior passes',
+      reasonCode: 'insufficient_history',
+      fixtures: [
+        fixture(),
+        fixture({
+          fixtureId: 'fx-2',
+          selectedPicks: [pick({ history: [] })],
         }),
       ],
     },

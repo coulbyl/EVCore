@@ -529,6 +529,8 @@
     "colChannel": "Canal",
     "colCompetition": "Ligue",
     "colSettled": "Réglés",
+    "colPriced": "Pricés",
+    "settledPricedSummary": "{total} ({priced} pricés)",
     "colHitRate": "Réussite",
     "colRoi": "ROI",
     "colVerdict": "Verdict",

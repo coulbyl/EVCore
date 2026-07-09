@@ -183,7 +183,54 @@ describe('AnalysisSheetService', () => {
           result: null,
         },
       ],
-      priorPasses: [],
+      priorPasses: [
+        {
+          modelRunId: 'mr-0',
+          analyzedAt: new Date('2026-06-30T00:00:00.000Z'),
+          phase: 'ADVANCE',
+          selectedPicks: [
+            {
+              channel: 'SAFE',
+              decisionStatus: 'SELECTED',
+              reasonCode: null,
+              reasonDetails: null,
+              market: 'ONE_X_TWO',
+              pick: 'HOME',
+              comboMarket: null,
+              comboPick: null,
+              probability: 0.88,
+              odds: 1.55,
+              ev: 0.31,
+              qualityScore: 0.2,
+              rank: 1,
+              result: null,
+            },
+          ],
+        },
+        {
+          modelRunId: 'mr-0b',
+          analyzedAt: new Date('2026-07-01T00:00:00.000Z'),
+          phase: 'ADVANCE',
+          selectedPicks: [
+            {
+              channel: 'SAFE',
+              decisionStatus: 'SELECTED',
+              reasonCode: null,
+              reasonDetails: null,
+              market: 'ONE_X_TWO',
+              pick: 'HOME',
+              comboMarket: null,
+              comboPick: null,
+              probability: 0.89,
+              odds: 1.52,
+              ev: 0.33,
+              qualityScore: 0.21,
+              rank: 1,
+              result: null,
+            },
+          ],
+        },
+      ],
     };
     const block = `Analyse pro.\n\n\`\`\`evcore-coupons\n{"coupons":[{"label":"Solide","legs":[{"fixtureId":"fx-coupon","channel":"SAFE"},{"fixtureId":"fx-coupon","channel":"GOALS"}]}]}\n\`\`\``;
     const { service, llm } = buildService({

@@ -157,6 +157,11 @@ export const THE_ODDS_API_SPORT_KEYS = {
   AUS1: 'soccer_australia_aleague',
   CHI1: 'soccer_chile_campeonato',
   D3: 'soccer_germany_liga3',
+  // WC qualifiers — The Odds API only publishes a dedicated key for these two
+  // confederations (verified 2026-07-09 against /v4/sports?all=true); Africa/
+  // Asia/CONCACAF/Oceania have no equivalent key at all, not a config gap.
+  WCQE: 'soccer_fifa_world_cup_qualifiers_europe',
+  WCQSA: 'soccer_fifa_world_cup_qualifiers_south_america',
 } as const;
 
 // Returns the current season code in football-data.co.uk format (YYZZ).

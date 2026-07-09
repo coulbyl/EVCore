@@ -26,6 +26,10 @@ export type EvaFeaturesContext = {
   shadowH2h: number | null;
   shadowCongestion: number | null;
   evaluatedPicks: EvaPickFromFeature[];
+  // Unadjusted Poisson output (before the 1X2 empirical blend and O/U
+  // shrinkage layers) — shape mirrors ModelRun.features.probabilities. Kept
+  // as a raw record; per-pick deltas are computed in the analysis sheet.
+  rawPoissonProbability: Record<string, unknown> | null;
 };
 
 export function extractEvaContextFromFeatures(
@@ -50,7 +54,18 @@ export function extractEvaContextFromFeatures(
     shadowH2h: readFiniteNumber(f, 'shadow_h2h'),
     shadowCongestion: readFiniteNumber(f, 'shadow_congestion'),
     evaluatedPicks: readEvaPicksFromFeature(f),
+    rawPoissonProbability: readRecord(f, 'rawPoissonProbability'),
   };
+}
+
+function readRecord(
+  value: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | null {
+  const raw = value[key];
+  return raw !== null && typeof raw === 'object'
+    ? (raw as Record<string, unknown>)
+    : null;
 }
 
 function emptyEvaContext(): EvaFeaturesContext {
@@ -67,6 +82,7 @@ function emptyEvaContext(): EvaFeaturesContext {
     shadowH2h: null,
     shadowCongestion: null,
     evaluatedPicks: [],
+    rawPoissonProbability: null,
   };
 }
 
