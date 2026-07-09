@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Page,
@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Skeleton,
 } from "@evcore/ui";
 import { useTranslations, useLocale } from "next-intl";
 import { useInvestmentPicks } from "@/domains/investment/use-cases/use-investment-picks";
@@ -57,7 +58,17 @@ export function InvestmentPageClient() {
   const topN = (TOP_N_OPTIONS as readonly number[]).includes(topNParam)
     ? topNParam
     : null;
-  const { data, isLoading, isError } = useInvestmentPicks({ date, mode, topN });
+  const {
+    data,
+    isLoading: isFirstLoading,
+    isFetching,
+    isError,
+  } = useInvestmentPicks({ date, mode, topN });
+  // isLoading alone only covers the very first fetch of a queryKey — revisiting
+  // a date/mode/topN combo whose cache has gone stale re-fetches silently
+  // (isFetching true, isLoading false), leaving the previous filter's picks on
+  // screen with no feedback that new data is loading.
+  const isLoading = isFirstLoading || isFetching;
 
   const picks = data ?? [];
   const fixtureGroups = groupPicksByFixture(picks);
@@ -131,8 +142,10 @@ export function InvestmentPageClient() {
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             {isLoading && (
-              <div className="flex items-center justify-center py-16 text-muted-foreground">
-                <Loader2 size={22} className="animate-spin" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-48 rounded-2xl" />
+                ))}
               </div>
             )}
 

@@ -357,6 +357,15 @@ function DataTable<TData>({
     </Table>
   );
 
+  // Lightweight total-count footer for tables that don't paginate (the full
+  // pagination footer below already states the total as part of "x-y sur n").
+  const totalCountEl =
+    !pagination && !isLoading && data.length > 0 ? (
+      <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-5 sm:text-sm">
+        {data.length} résultat{data.length > 1 ? "s" : ""}
+      </div>
+    ) : null;
+
   const paginationEl = pagination ? (
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:px-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -471,9 +480,11 @@ function DataTable<TData>({
           {afterContent}
         </div>
         {paginationEl ? <div className="sm:hidden">{paginationEl}</div> : null}
+        {totalCountEl ? <div className="sm:hidden">{totalCountEl}</div> : null}
         <div className="hidden min-h-0 flex-1 flex-col overflow-hidden rounded-[1.3rem] border border-border sm:flex sm:overflow-y-auto">
           {tableEl}
           {paginationEl}
+          {totalCountEl}
           {afterContent}
         </div>
       </div>
@@ -489,6 +500,7 @@ function DataTable<TData>({
     >
       {tableEl}
       {paginationEl}
+      {totalCountEl}
       {afterContent}
     </div>
   );
