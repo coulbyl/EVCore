@@ -101,10 +101,8 @@ describe('buildJsonSheet', () => {
     expect(sheet.summary.byCompetition).toEqual({ 'Premier League': 1 });
     expect(sheet.summary.byChannel).toEqual({ VALUE: 1, SAFE: 1 });
     expect(sheet.summary.settledRecord).toEqual({
-      won: 1,
-      lost: 1,
-      pending: 0,
-      void: 0,
+      playable: { won: 1, lost: 1, pending: 0, void: 0 },
+      observation: { won: 0, lost: 0, pending: 0, void: 0 },
     });
 
     const [jsonFixture] = sheet.fixtures;

@@ -11,6 +11,13 @@ export type ChannelBacktestReport = {
   total: number;
   won: number;
   hitRate: number;
+  /**
+   * Selections with a priced odds value — the actual ROI/verdict sample size.
+   * `channel_selection.odds` is a snapshot taken once at selection time (never
+   * backfilled), so this can be far smaller than `total` for a channel/league
+   * where bookmaker coverage was thin when the picks were generated.
+   */
+  pricedCount: number;
   /** Flat-stake ROI over settled selections. */
   roi: number;
   maxDrawdown: number;

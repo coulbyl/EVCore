@@ -28,6 +28,26 @@ export function normalizeTeam(name: string): string {
 // Maps normalized DB names to additional normalized forms used by The Odds API.
 // Needed when the API name shares no prefix/suffix with the DB name.
 const TEAM_ALIASES: Record<string, string[]> = {
+  // SA1 (Saudi Pro League) — DB uses club shorthand, API uses transliteration
+  'al taawon': ['al taawoun'],
+  'al hazm': ['al hazem'],
+  'al qadisiyah': ['al qadsiah'],
+  // HUN1
+  'ferencvarosi tc': ['ferencvaros'],
+  // SUI1
+  grasshoppers: ['grasshopper zurich'],
+  // BEL1
+  'lommel united': ['lommel sk'],
+  // BUL1
+  ludogorets: ['pfc ludogorets razgrad'],
+  // GRE1
+  'olympiakos piraeus': ['olympiacos'],
+  // CZ1
+  'sparta praha': ['sparta prague'],
+  // CSL — club renamed
+  'tianjin teda': ['tianjin jinmen tiger'],
+  // BIH1
+  zrinjski: ['hsk zrinjski mostar'],
   // PL
   wolves: ['wolverhampton wanderers', 'wolverhampton'],
   // BL1 / D2
@@ -128,7 +148,7 @@ const TEAM_ALIASES: Record<string, string[]> = {
   aalborg: ['aab'],
   // NOR1
   'ham kam': ['hamkam'],
-  'sarpsborg 08 ff': ['sarpsborg fk'],
+  'sarpsborg 08': ['sarpsborg fk'],
   // MX1 — Mazatlán's franchise became Atlante for the 2024/25 restart
   mazatlan: ['atlante'],
   // International (Nations League / qualifiers) — country name variants

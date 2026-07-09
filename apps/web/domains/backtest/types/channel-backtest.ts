@@ -20,6 +20,8 @@ export type ChannelBacktestReport = {
   total: number;
   won: number;
   hitRate: number;
+  /** Settled selections with a priced odds snapshot — the real ROI/verdict sample size. */
+  pricedCount: number;
   roi: number;
   maxDrawdown: number;
   calibrationError: number;

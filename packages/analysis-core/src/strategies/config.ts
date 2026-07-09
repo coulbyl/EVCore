@@ -344,17 +344,35 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 15 },
       // SUI1 backtest 2026-05-03: BTTS 0.60 gives 60.6% hr with 22.6% coverage (127 picks).
       BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no DRAW backtest run 2026-05-03): weak
+      // signal, 0.26 gives the best available balance (26.7% HR, n=131/667,
+      // cov 20%). Enabled to observe rather than left at the disabled default.
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 15 },
     },
     TUR1: {
       // TUR1 backtest 2026-05-03: DOMINANT strong progressive signal — 0.55 gives 67.5% hr
       // with 29.6% coverage (252 picks). Clear favourite league.
       // Tuning 2026-06-24 (1y): 0.55 → 0.60 (ROI +6.5%, n=54, cov 30%) — tighter, cleaner.
-      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Tuning 2026-07-09 (post-rebuild, real priced odds): 0.60 → 0.70
+      // (ROI +13.3%, n=77, cov 11%) — tighter still, cleaner ROI.
+      DOMINANT: { enabled: true, threshold: 0.7, minSampleN: 10 },
+      // Tuning 2026-07-09 (post-rebuild, real priced odds): 0.28 validates
+      // (ROI +8.6%, n=363, cov 45%) — supersedes the 2026-07-09 result-only
+      // estimate (same threshold, now confirmed by real ROI with 6x the sample).
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+      // BTTS 0.52 gives 56.5% HR (n=609/997, cov 61%) — strong volume+HR.
+      BTTS: { enabled: true, threshold: 0.52, minSampleN: 10 },
     },
     TUR2: {
       // TUR2 backtest 2026-05-03: DOMINANT extraordinarily strong — 0.60 gives 73.9% hr with
       // 23.3% coverage (211 picks). Chosen over 0.65/0.70 for robustness.
       DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no DRAW/BTTS backtest run 2026-05-03):
+      // DRAW 0.26 gives 30.2% HR (n=424/1052, cov 40%) — good coverage+HR.
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+      // BTTS weaker than DOMINANT here — 0.58 gives 56.1% HR (n=66/1052,
+      // cov 6.3%). Thin — minSampleN raised to 15.
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 15 },
     },
     SWE1: {
       // SWE1 backtest 2026-05-03: DOMINANT validates at 0.55 (58.5%, 32.5%, 195 picks).
@@ -366,9 +384,17 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
     },
     SWE2: {
-      // SWE2 backtest 2026-05-03: DOMINANT no PASS. BTTS marginal at 0.55 (56.2%, 32%, 192 picks)
+      // Result-derived 2026-07-09 (2026-05-03 backtest found no PASS threshold
+      // for DOMINANT — but that was ROI-gated on thin priced odds; DOMINANT
+      // settles on the match result alone). 0.65 gives 60.9% HR (n=92/751,
+      // cov 12%). Enabled to observe rather than left disabled.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // SWE2 backtest 2026-05-03: BTTS marginal at 0.55 (56.2%, 32%, 192 picks)
       // — passes criteria, monitor closely.
       BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no DRAW backtest run 2026-05-03): 0.24
+      // gives 26.9% HR (n=372/751, cov 50%) — best coverage available.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 10 },
     },
     KOR1: {
       // KOR1 backtest 2026-05-24: DRAW ROI +23.2% on 140 preds at 0.26 — strong signal.
@@ -425,12 +451,296 @@ export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
       // CZE1 backtest 2026-05-03: BTTS validates only at 0.50 and 0.52; above 0.55 FAIL.
       // 0.52 preferred for selectivity (56%, 38% coverage, 252 picks).
       BTTS: { enabled: true, threshold: 0.52, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no DRAW backtest run 2026-05-03): 0.26
+      // gives 29.4% HR (n=265/789, cov 34%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
     },
     SRB1: {
       // SRB1 backtest 2026-05-03: DOMINANT validates at 0.55 (63.1%, 30.3%, 217 picks).
       DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 10 },
       // SRB1 backtest 2026-05-03: BTTS 0.58 gives 57.8% hr with 12.6% coverage (90 picks).
       BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no DRAW backtest run 2026-05-03): 0.26
+      // gives 27.0% HR (n=278/863, cov 32%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+    },
+    // First calibration for the leagues below (added 2026-07, no prior config
+    // entry). Tuning 2026-07-09 read from /backtest/tuning (real priced odds,
+    // not the settled-selection total — see channel-backtest.service.ts fix).
+    //
+    // DOMINANT/DRAW/BTTS never require a priced odds snapshot to settle (the
+    // fixture result alone tells us won/lost) — so a segment with no proven
+    // ROI edge is enabled anyway at its best hit-rate threshold, not disabled.
+    // Disabling would stop selection generation entirely (see
+    // dominant.strategy.ts / draw.strategy.ts / btts.strategy.ts:
+    // `!config.enabled` short-circuits before any pick is emitted), which means
+    // zero forward data to recalibrate from tomorrow. Thresholds below marked
+    // "HR-only, ROI unproven" are picked from the raw hit-rate sweep (not gated
+    // on the thin priced-odds ROI) — same observation-first logic as
+    // GOALS_CONFIG/CORRECT_SCORE_CONFIG below.
+    //
+    // BTTS specifically: the BTTS bookmaker market has ~0 priced fixtures
+    // across all 11 leagues (0-3 out of 585-1521), so /backtest/tuning cannot
+    // sweep it at all (its BTTS candidates require priced BTTS odds, unlike
+    // DOMINANT/DRAW). Thresholds below are computed directly from
+    // model_run.features.probabilities.bttsYes vs the actual "both scored"
+    // result — no odds involved, same reasoning as DOMINANT/DRAW above.
+    ARG1: {
+      // Tuning 2026-07-09: HR-only, ROI unproven — 0.65 gives 51.1% HR
+      // (n=94/1227, cov 7.7%, ROI +8.6% on the thin priced subset).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Tuning 2026-07-09: 0.30 gives 34.8% HR (n=1147/1463, cov 78%,
+      // ROI +3.8% on the thin priced subset).
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): base BTTS-yes rate
+      // 0.40 (low-scoring league). 0.50 gives 40.8% HR (n=120/1463, cov 8.2%)
+      // — barely above base rate, weak signal. Enabled to observe.
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 15 },
+    },
+    AUT1: {
+      // Tuning 2026-07-09: HR-only, ROI unproven — 0.65 gives 56.5% HR
+      // (n=69/501, cov 14%, ROI -9.8% on the thin priced subset). Enabled to
+      // observe; HR climbs with threshold while ROI stays flat-negative,
+      // suggesting the priced subset (not the model) is the noisy part.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Tuning 2026-07-09: DRAW validates at 0.32 (ROI +25.3%, n=41, cov 7.2%).
+      // Thin single-window sample — minSampleN raised to 15.
+      DRAW: { enabled: true, threshold: 0.32, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.58 gives 53.1% HR
+      // (n=49/567, cov 8.6%). Thin — minSampleN raised to 15.
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 15 },
+    },
+    BEL1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.65 (ROI +1.3%, n=110, cov 14%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // Tuning 2026-07-09: DRAW validates at 0.32 (ROI +65.2%, n=26, cov 2.9%).
+      // Very thin sample — minSampleN raised to 15, monitor closely.
+      DRAW: { enabled: true, threshold: 0.32, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.55 gives 61.9% HR
+      // (n=236/923, cov 26%) — solid coverage and hit rate.
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    BRA2: {
+      // Tuning 2026-07-09: DOMINANT validates strongly at 0.6 (ROI +25.7%,
+      // n=131, cov 12%).
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Tuning 2026-07-09: HR-only, ROI unproven — ROI negative at every
+      // threshold on the thin priced subset, but 0.30 is the least-bad point
+      // with real coverage (30.0% HR, n=869/1248, cov 70%). Enabled to
+      // observe; ROI signal here (not just thin sampling) may confirm a real
+      // DRAW weakness in this league once forward data accumulates.
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): weak signal overall
+      // (base rate 0.45); 0.52 gives 49.5% HR (n=105/1283, cov 8.3%). Thin —
+      // minSampleN raised to 15, monitor closely.
+      BTTS: { enabled: true, threshold: 0.52, minSampleN: 15 },
+    },
+    CHI1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.65 (ROI +11.4%, n=54, cov 10%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // Tuning 2026-07-09: HR-only, ROI unproven — ROI negative at every
+      // threshold on the thin priced subset; 0.30 is the least-bad point with
+      // usable coverage (26.8% HR, n=127/607, cov 21%). Enabled to observe.
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.55 gives 57.6% HR
+      // (n=205/805, cov 25.5%) — good coverage and hit rate.
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    DEN1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.75 (ROI +12.6%, n=25, cov 5%).
+      // Thin single-window sample — minSampleN raised to 15.
+      DOMINANT: { enabled: true, threshold: 0.75, minSampleN: 15 },
+      // Tuning 2026-07-09: DRAW validates at 0.3 (ROI +11.3%, n=40, cov 7.1%).
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): highest-scoring
+      // league in this batch (base rate 0.61). 0.6 gives 65.4% HR (n=104/561,
+      // cov 18.5%).
+      BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    },
+    GRE1: {
+      // Tuning 2026-07-09: HR-only, ROI unproven — hit rate climbs cleanly
+      // with threshold (53.9% → 75.5% from 0.45 to 0.75) but ROI stays
+      // negative throughout on the thin priced subset. 0.65 balances HR
+      // (68.3%) against coverage (n=120/614, 19.5%). Enabled to observe —
+      // the consistent negative ROI is itself a signal worth tracking
+      // forward, not a reason to go dark on this league.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Tuning 2026-07-09: 0.26 gives the best ROI on the priced subset
+      // (32.0% HR, n=412/674, cov 61%, ROI +3.6%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.58 gives 58.7% HR
+      // (n=46/688, cov 6.7%). Thin — minSampleN raised to 15.
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 15 },
+    },
+    IRL1: {
+      // Tuning 2026-07-09: HR-only, ROI unproven — 0.65 gives 62.7% HR
+      // (n=67/568, cov 12%, ROI -9.2% on the thin priced subset). Enabled to
+      // observe; HR climbs cleanly with threshold (51% → 68.4%) while ROI
+      // stays flat-negative, suggesting the priced subset (not the model
+      // ranking) is the noisy part.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Tuning 2026-07-09: DRAW validates at 0.32 (ROI +11.8%, n=92, cov 15%).
+      DRAW: { enabled: true, threshold: 0.32, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.55 gives 52.1% HR
+      // (n=73/648, cov 11.5%). Modest — minSampleN raised to 15.
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 15 },
+    },
+    KSA1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.65 (100% hit rate, ROI
+      // +24.7%, n=24, cov 35%). Very thin sample (68 candidates total) —
+      // minSampleN raised to 20, monitor closely before trusting the 100% HR.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 20 },
+      // Tuning 2026-07-09: DRAW validates at 0.26 (ROI +12.0%, n=22/76,
+      // cov 29%). Thin — minSampleN raised to 15.
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 15 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.6 gives 61.3% HR
+      // (n=93/891, cov 10.4%).
+      BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    },
+    RUS1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.65 (ROI +5.2%, n=33, cov 18%).
+      // Marginal ROI over a thin sample — minSampleN raised to 15.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Tuning 2026-07-09: DRAW validates at 0.28 (ROI +13.6%, n=79, cov 39%).
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.55 gives 64.2% HR
+      // (n=137/702, cov 19.5%) — solid.
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    SCO1: {
+      // Tuning 2026-07-09: DOMINANT validates at 0.7 (ROI +10.5%, n=80, cov 13%).
+      DOMINANT: { enabled: true, threshold: 0.7, minSampleN: 10 },
+      // Tuning 2026-07-09: DRAW validates at 0.28 (ROI +1.7%, n=289, cov 43%).
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+      // Result-derived 2026-07-09 (no priced BTTS odds): 0.58 gives 64.6% HR
+      // (n=96/678, cov 14.2%) — best balance of HR and coverage (0.6 gives
+      // 74% but drops to n=50).
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    },
+    // Second batch (added 2026-07-09): leagues that had a GOALS_CONFIG entry
+    // but zero CHANNEL_STRATEGY_CONFIG entry (NOR2/EST1/LAT1/POL2/ISL1/SVN1),
+    // and leagues never calibrated at all (ARG2/CHI2/CHN2/KOR2/USA2/FIN2/SUI2
+    // — 0% 1X2 odds coverage, no Odds API sport key configured, but
+    // model_run exists from the betting-engine rebuild so result-derived
+    // calibration is still possible). Same result-only method as above: no
+    // priced odds required for DOMINANT/DRAW/BTTS to settle.
+    NOR2: {
+      // Tuning 2026-07-09 (post-rebuild, real priced odds): 0.5 validates
+      // (ROI +30.1%, n=37, cov 73%) — supersedes the 2026-07-09 result-only
+      // estimate (0.65) now that real ROI data exists.
+      DOMINANT: { enabled: true, threshold: 0.5, minSampleN: 10 },
+      // Weak signal across the board — 0.24 is the best-covered point
+      // (21.8% HR, n=165/779, cov 21%). Monitor closely.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 15 },
+      // 0.6 gives 62.6% HR (n=423/779, cov 54%) — high-BTTS league.
+      BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
+    },
+    EST1: {
+      // Result-derived 2026-07-09: 0.65 gives 74.5% HR (n=149/527, cov 28%) — excellent.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // Weak signal — 0.24 is the best-covered point (22.7% HR, n=225/527,
+      // cov 43%). Monitor closely.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 15 },
+      // 0.5 gives 54.9% HR (n=266/527, cov 50%).
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    },
+    LAT1: {
+      // Result-derived 2026-07-09: 0.65 gives 77.7% HR (n=197/560, cov 35%) — excellent.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // 0.24 gives 31.0% HR (n=245/560, cov 44%) — best coverage available.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 10 },
+      // 0.55 gives 59.7% HR (n=119/560, cov 21%).
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    POL2: {
+      // Result-derived 2026-07-09: 0.6 gives 57.7% HR (n=213/897, cov 24%).
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // 0.24 gives 26.5% HR (n=536/897, cov 60%).
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 10 },
+      // 0.55 gives 62.5% HR (n=240/897, cov 27%).
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    ISL1: {
+      // Result-derived 2026-07-09: 0.65 gives 65.7% HR (n=108/497, cov 22%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // Thin/noisy — 0.24 is the best-covered point (31.3% HR, n=64/497,
+      // cov 13%). Monitor closely.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 15 },
+      // Very high-BTTS league (base rate ~67%+). 0.58 gives 69.0% HR
+      // (n=348/497, cov 70%) — strong balance of HR and coverage.
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    },
+    SVN1: {
+      // Result-derived 2026-07-09: 0.65 gives 66.3% HR (n=104/504, cov 21%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 10 },
+      // 0.26 gives 32.6% HR (n=89/504, cov 18%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+      // 0.58 gives 58.3% HR (n=96/504, cov 19%).
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    },
+    ARG2: {
+      // Result-derived 2026-07-09: low-scoring, tight league. 0.55 gives
+      // 50.3% HR (n=322/2314, cov 14%) — modest signal, above the 33%
+      // 3-outcome baseline. Monitor closely.
+      DOMINANT: { enabled: true, threshold: 0.55, minSampleN: 15 },
+      // 0.28 gives 33.6% HR (n=1534/2314, cov 66%) — good coverage.
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+      // Weak BTTS signal (low-scoring league) — 0.52 gives 57.6% HR
+      // (n=66/2314, cov 2.9%). Thin — minSampleN raised to 15.
+      BTTS: { enabled: true, threshold: 0.52, minSampleN: 15 },
+    },
+    CHI2: {
+      // Result-derived 2026-07-09: 0.65 gives 56.9% HR (n=65/569, cov 11%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // 0.30 spikes to 41.5% HR but is thin (n=41/569, cov 7%) — used anyway,
+      // minSampleN raised to 15 to gate it further.
+      DRAW: { enabled: true, threshold: 0.3, minSampleN: 15 },
+      // 0.5 gives 52.2% HR (n=255/569, cov 45%) — good coverage.
+      BTTS: { enabled: true, threshold: 0.5, minSampleN: 10 },
+    },
+    CHN2: {
+      // Result-derived 2026-07-09: 0.6 gives 58.4% HR (n=149/791, cov 19%).
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // 0.28 gives 35.5% HR (n=234/791, cov 30%).
+      DRAW: { enabled: true, threshold: 0.28, minSampleN: 10 },
+      // 0.52 gives 60.9% HR (n=179/791, cov 23%).
+      BTTS: { enabled: true, threshold: 0.52, minSampleN: 10 },
+    },
+    KOR2: {
+      // Result-derived 2026-07-09: 0.6 gives 54.7% HR (n=139/845, cov 16%).
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // 0.26 gives 31.5% HR (n=321/845, cov 38%).
+      DRAW: { enabled: true, threshold: 0.26, minSampleN: 10 },
+      // 0.55 gives 56.6% HR (n=182/845, cov 22%).
+      BTTS: { enabled: true, threshold: 0.55, minSampleN: 10 },
+    },
+    USA2: {
+      // Result-derived 2026-07-09: weak signal — 0.65 gives 53.6% HR
+      // (n=125/1338, cov 9%). Monitor closely.
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // Weak signal across the board — 0.24 is the best-covered point
+      // (25.5% HR, n=846/1338, cov 63%). Monitor closely.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 15 },
+      // 0.58 gives 55.6% HR (n=169/1338, cov 13%).
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    },
+    FIN2: {
+      // Result-derived 2026-07-09: 0.6 gives 58.6% HR (n=99/320, cov 31%).
+      DOMINANT: { enabled: true, threshold: 0.6, minSampleN: 10 },
+      // Weak signal — 0.24 is the best-covered point (23.9% HR, n=138/320,
+      // cov 43%). Monitor closely.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 15 },
+      // 0.58 gives 69.9% HR (n=103/320, cov 32%) — excellent.
+      BTTS: { enabled: true, threshold: 0.58, minSampleN: 10 },
+    },
+    SUI2: {
+      // Result-derived 2026-07-09: 0.65 gives 64.7% HR (n=85/522, cov 16%).
+      DOMINANT: { enabled: true, threshold: 0.65, minSampleN: 15 },
+      // 0.24 gives 29.1% HR (n=141/522, cov 27%) — best coverage available.
+      DRAW: { enabled: true, threshold: 0.24, minSampleN: 10 },
+      // High-BTTS league (base rate ~87% coverage at 0.5). 0.6 gives 58.8% HR
+      // (n=216/522, cov 41%) — good balance.
+      BTTS: { enabled: true, threshold: 0.6, minSampleN: 10 },
     },
   };
 
@@ -487,6 +797,161 @@ export type GoalsLeagueConfig = {
 // to the coupon pool — signal-window.getTodayPool — which today excludes GOALS).
 // Generated from DB goal-rate × prematch-coverage; re-derive if leagues change.
 export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
+  // o15 0.61 · o25 0.32 · o35 0.14 · o45 0.06 (n=1521) — low-scoring league.
+  // 2.5 UNDER backtest 2026-07-09 (real priced odds): 0.45 validates
+  // (ROI +15.3%, n=41, cov 95%) — kept over the profile estimate (0.63)
+  // since it is real ROI evidence, not a formula.
+  ARG1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.89,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.58 · o25 0.30 · o35 0.12 · o45 0.04 (n=2388) — very low-scoring
+  // league. No 1X2/O-U odds coverage at all (no Odds API sport key) —
+  // thresholds are profile estimates only (base − 0.05), observation only.
+  ARG2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.91,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.76 · o25 0.51 · o35 0.28 · o45 0.13 (n=585)
+  // 2.5 UNDER backtest 2026-07-09: 0.65 validates (ROI +10.5%, n=26, cov 7%,
+  // thin) — kept over the profile estimate (0.44) as real ROI evidence.
+  AUT1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.76 · o25 0.52 · o35 0.30 · o45 0.15 (n=951)
+  // 2.5 UNDER backtest 2026-07-09: 0.65 validates (ROI +15.3%, n=45, cov 8%)
+  // — kept over the profile estimate (0.43) as real ROI evidence.
+  BEL1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 15,
+      },
+    ],
+  },
   // o15 0.83 · o25 0.62 · o35 0.42 · o45 0.21 (n=924)
   BL1: {
     lines: [
@@ -553,6 +1018,41 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
+  // o15 0.64 · o25 0.38 · o35 0.17 · o45 0.06 (n=1300) — low-scoring league.
+  // No 2.5-line backtest recommendation (554 candidates swept, no PASS) —
+  // thresholds below are profile estimates only (base − 0.05), observation only.
+  BRA2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.89,
+        minSampleN: 15,
+      },
+    ],
+  },
   // o15 0.74 · o25 0.49 · o35 0.25 · o45 0.10 (n=1671)
   CH: {
     lines: [
@@ -582,6 +1082,125 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.7,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.74 · o25 0.53 · o35 0.29 · o45 0.13 (n=840)
+  // 2.5 OVER backtest 2026-07-09 (real priced odds): 0.55 validates
+  // (ROI +5.6%, n=56, cov 20%) — kept over the profile estimate (0.48).
+  CHI1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.70 · o25 0.47 · o35 0.26 · o45 0.15 (n=599)
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  CHI2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.72 · o25 0.44 · o35 0.23 · o45 0.11 (n=823) — low-scoring league.
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  CHN2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
         minSampleN: 15,
       },
     ],
@@ -689,6 +1308,41 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.77,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.82 · o25 0.59 · o35 0.36 · o45 0.20 (n=579)
+  // No 2.5-line backtest recommendation (310 candidates swept, no PASS) —
+  // thresholds below are profile estimates only (base − 0.05), observation only.
+  DEN1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
         minSampleN: 15,
       },
     ],
@@ -897,6 +1551,41 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
+  // o15 0.78 · o25 0.58 · o35 0.35 · o45 0.22 (n=338) — high-scoring league.
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  FIN2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+    ],
+  },
   // o15 0.76 · o25 0.53 · o35 0.32 · o45 0.14 (n=343)
   FRI: {
     lines: [
@@ -937,6 +1626,48 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
+  // o15 0.77 · o25 0.52 · o35 0.27 · o45 0.13 (n=712)
+  // 2.5 OVER backtest 2026-07-09 (real priced odds): 0.45 validates
+  // (ROI +7.6%, n=287, cov 66%) — kept over the profile estimate (0.47).
+  GRE1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 15,
+      },
+    ],
+  },
   // o15 0.73 · o25 0.48 · o35 0.25 · o45 0.09 (n=1170)
   I2: {
     lines: [
@@ -966,6 +1697,48 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.7,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.71 · o25 0.47 · o35 0.25 · o45 0.11 (n=661)
+  // No 2.5-line backtest recommendation (468 candidates swept, no PASS) —
+  // thresholds below are profile estimates only (base − 0.05), observation only.
+  IRL1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
         minSampleN: 15,
       },
     ],
@@ -1046,6 +1819,84 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.84,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.71 · o25 0.49 · o35 0.28 · o45 0.13 (n=875)
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  KOR2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.79 · o25 0.56 · o35 0.36 · o45 0.19 (n=918)
+  // No 2.5-line backtest recommendation (only 7 priced candidates — BTTS/O-U
+  // odds coverage barely exists yet for this league) — thresholds below are
+  // profile estimates only (base − 0.05), observation only.
+  KSA1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.76,
         minSampleN: 15,
       },
     ],
@@ -1292,7 +2143,9 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.61,
+        // Tuning 2026-07-09 (post-rebuild, real priced odds): 0.65 validates
+        // (ROI +15.5%, n=38, cov 70%) — supersedes the profile estimate (0.61).
+        threshold: 0.65,
         minSampleN: 15,
       },
       {
@@ -1460,6 +2313,48 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
       },
     ],
   },
+  // o15 0.75 · o25 0.48 · o35 0.27 · o45 0.13 (n=732)
+  // No 2.5-line backtest recommendation (only 25 priced candidates) —
+  // thresholds below are profile estimates only (base − 0.05), observation only.
+  RUS1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 15,
+      },
+    ],
+  },
   // o15 0.73 · o25 0.48 · o35 0.25 · o45 0.11 (n=1139)
   SA: {
     lines: [
@@ -1496,6 +2391,41 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.84,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.78 · o25 0.55 · o35 0.32 · o45 0.14 (n=702)
+  // No 2.5-line backtest recommendation (421 candidates swept, no PASS) —
+  // thresholds below are profile estimates only (base − 0.05), observation only.
+  SCO1: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
         minSampleN: 15,
       },
     ],
@@ -1602,6 +2532,41 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.59,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.80 · o25 0.59 · o35 0.35 · o45 0.16 (n=538) — high-scoring league.
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  SUI2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
         minSampleN: 15,
       },
     ],
@@ -1733,7 +2698,11 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.42,
+        // Tuning 2026-07-09 (post-rebuild, real priced odds): the previous
+        // 0.42 profile estimate was flat-negative in the channels backtest
+        // (-5.8% ROI, n=480 priced). 0.6 validates instead (ROI +32.9%,
+        // n=36, cov 7%) — narrower but genuinely profitable.
+        threshold: 0.6,
         minSampleN: 15,
       },
       {
@@ -1826,6 +2795,48 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.63,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // o15 0.73 · o25 0.50 · o35 0.29 · o45 0.16 (n=1394)
+  // No 1X2/O-U odds coverage at all (no Odds API sport key) — thresholds are
+  // profile estimates only (base − 0.05), observation only.
+  USA2: {
+    lines: [
+      {
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 15,
+      },
+      {
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 15,
+      },
+      {
+        line: 4.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
         minSampleN: 15,
       },
     ],

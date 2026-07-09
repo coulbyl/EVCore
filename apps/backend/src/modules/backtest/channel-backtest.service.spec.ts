@@ -55,6 +55,23 @@ describe('ChannelBacktestService.run', () => {
     expect(res.reports[0]?.verdict).toBe('INSUFFICIENT_DATA');
   });
 
+  it('stays INSUFFICIENT_DATA when total looks well-sampled but few rows are priced', async () => {
+    // 60 settled rows, only 5 with a priced odds snapshot — thin bookmaker
+    // coverage at selection time must not be masked by a large settled total.
+    const priced = Array.from({ length: 5 }, () => row({ won: false }));
+    const unpriced = Array.from({ length: 55 }, () =>
+      row({ won: true, odds: null }),
+    );
+    const res = await new ChannelBacktestService(
+      stubRepo([...priced, ...unpriced]),
+    ).run({});
+    const [report] = res.reports;
+    if (!report) throw new Error('no report');
+    expect(report.total).toBe(60);
+    expect(report.pricedCount).toBe(5);
+    expect(report.verdict).toBe('INSUFFICIENT_DATA');
+  });
+
   it('fails a well-sampled channel whose ROI is below the floor', async () => {
     // 60 losing short-odds picks → ROI ≈ −1, below the floor.
     const rows = Array.from({ length: 60 }, () =>

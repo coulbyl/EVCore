@@ -1,6 +1,7 @@
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
+import { LINE_MOVEMENT_THRESHOLD } from "../selection/constants";
 import { DOMINANT_MIN_MARGIN, getChannelStrategyConfig } from "./config";
 import type {
   ChannelStrategy,
@@ -66,6 +67,24 @@ export class DominantStrategy implements ChannelStrategy {
           margin: first.probability.minus(second.probability).toNumber(),
           minMargin: DOMINANT_MIN_MARGIN.toNumber(),
         },
+        selections: [],
+      };
+    }
+
+    // Same fixture-level adverse-drift guard as ValueStrategy (rapport-dev
+    // 2026-07-09, point #2): DOMINANT is a staked channel and was previously
+    // the only one of the three staked channels with no line-movement check
+    // at all — a pick could clear every threshold while the market had
+    // already moved sharply against it.
+    if (
+      context.signals.lineMovement !== null &&
+      context.signals.lineMovement > LINE_MOVEMENT_THRESHOLD.toNumber()
+    ) {
+      return {
+        channel: ch,
+        status: CHANNEL_DECISION_STATUS.REJECTED,
+        reasonCode: "line_movement",
+        reasonDetails: { movement: context.signals.lineMovement },
         selections: [],
       };
     }

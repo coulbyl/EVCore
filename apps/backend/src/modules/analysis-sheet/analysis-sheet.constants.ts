@@ -24,6 +24,11 @@ export const ANALYSIS_SHEET_COUPONS = {
   // Stakes are rounded up to this unit so the payout always covers the target.
   stakeRoundingUnit: 100,
   maxTargetWinAmount: 100_000_000,
+  // Minimum prior rolling-horizon passes a pick's history must carry before
+  // it can enter a coupon — a pick that just appeared (0-1 prior snapshots)
+  // is a single data point with no line-movement trail to sanity-check it
+  // against (audit 2026-07-09, rapport-dev-evcore-fiche).
+  minHistorySnapshots: 2,
 } as const;
 
 // Channels covered by the sheet — the "primary" staked/decided channels
