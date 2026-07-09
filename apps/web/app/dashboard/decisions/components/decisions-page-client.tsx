@@ -36,6 +36,11 @@ export function DecisionsPageClient() {
     { enabled: view === "channels" },
   );
   const active = view === "matches" ? matches : channels;
+  // isLoading alone only covers the first-ever fetch of a queryKey — toggling
+  // back to a lens whose data is cached (view switch, revisited filter) skips
+  // straight to fetchStatus "fetching" without a "pending" phase, so isLoading
+  // stays false while the network call is in flight. isFetching covers that.
+  const isLoading = active.isLoading || active.isFetching;
 
   // Hooks stay unconditional (rules of hooks); the inactive lens just runs over
   // an empty list. Each lens pins its own bar (filters / tabs) in the sub-header.
@@ -62,7 +67,7 @@ export function DecisionsPageClient() {
       emptyDescription="Le moteur n'a produit aucune décision de canal pour cette date."
       hasData={hasData}
       isError={active.isError}
-      isLoading={active.isLoading}
+      isLoading={isLoading}
       subHeaderMobileHidden={view === "matches"}
       subHeader={
         !hasData ? null : view === "matches" ? (
