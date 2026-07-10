@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import {
   Drawer,
@@ -20,6 +20,55 @@ import { daysAheadIso, todayIso } from "@/lib/date";
 
 // Discovery ping: shown only until the user opens Eva once.
 const DISCOVERED_KEY = "evcore-eva-fab-discovered";
+const FAB_POSITION_KEY = "evcore-eva-fab-position";
+const DRAG_THRESHOLD_PX = 6;
+
+type FabPosition = {
+  x: number;
+  y: number;
+};
+
+type DragState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  originX: number;
+  originY: number;
+  hasDragged: boolean;
+};
+
+function getFabBounds() {
+  const isDesktop = window.innerWidth >= 768;
+  const size = isDesktop ? 48 : 44;
+  const marginX = isDesktop ? 24 : 12;
+  const marginY = isDesktop ? 24 : 112;
+
+  return {
+    marginX,
+    marginY,
+    maxX: Math.max(marginX, window.innerWidth - size - marginX),
+    maxY: Math.max(marginY, window.innerHeight - size - marginY),
+  };
+}
+
+function clampFabPosition(position: FabPosition) {
+  const bounds = getFabBounds();
+
+  return {
+    x: Math.min(Math.max(position.x, bounds.marginX), bounds.maxX),
+    y: Math.min(Math.max(position.y, bounds.marginY), bounds.maxY),
+  };
+}
+
+function getDefaultFabPosition() {
+  const bounds = getFabBounds();
+  const isDesktop = window.innerWidth >= 768;
+
+  return {
+    x: isDesktop ? bounds.maxX : bounds.marginX,
+    y: bounds.maxY,
+  };
+}
 
 export function EvaFab() {
   const isMobile = useIsMobile();
@@ -27,10 +76,51 @@ export function EvaFab() {
   // false on the server and first client render (no hydration mismatch, no
   // flash for returning users); flipped on after mount for first-timers.
   const [showPing, setShowPing] = useState(false);
+  const [position, setPosition] = useState<FabPosition | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef<DragState | null>(null);
+  const suppressClickRef = useRef(false);
 
   useEffect(() => {
     if (!localStorage.getItem(DISCOVERED_KEY)) setShowPing(true);
+
+    const rawPosition = localStorage.getItem(FAB_POSITION_KEY);
+
+    if (!rawPosition) {
+      setPosition(getDefaultFabPosition());
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(rawPosition) as Partial<FabPosition>;
+      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+        setPosition(clampFabPosition({ x: parsed.x, y: parsed.y }));
+        return;
+      }
+    } catch {
+      // Ignore corrupted storage and restore the default placement.
+    }
+
+    setPosition(getDefaultFabPosition());
   }, []);
+
+  useEffect(() => {
+    if (!position) return;
+    localStorage.setItem(FAB_POSITION_KEY, JSON.stringify(position));
+  }, [position]);
+
+  useEffect(() => {
+    if (!position) return;
+
+    function handleResize() {
+      setPosition((currentPosition) =>
+        currentPosition ? clampFabPosition(currentPosition) : currentPosition,
+      );
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [position]);
 
   function handleOpen() {
     setOpen(true);
@@ -55,19 +145,91 @@ export function EvaFab() {
     }
   }
 
+  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!position) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: position.x,
+      originY: position.y,
+      hasDragged: false,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLButtonElement>) {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    const nextPosition = clampFabPosition({
+      x: dragState.originX + deltaX,
+      y: dragState.originY + deltaY,
+    });
+
+    if (
+      !dragState.hasDragged &&
+      Math.hypot(deltaX, deltaY) >= DRAG_THRESHOLD_PX
+    ) {
+      dragState.hasDragged = true;
+      setIsDragging(true);
+    }
+
+    setPosition(nextPosition);
+  }
+
+  function handlePointerEnd(event: React.PointerEvent<HTMLButtonElement>) {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    suppressClickRef.current = dragState.hasDragged;
+    dragStateRef.current = null;
+    setIsDragging(false);
+  }
+
+  function handleClick() {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+
+    handleOpen();
+  }
+
   return (
     <>
       <button
         type="button"
-        onClick={handleOpen}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
         title="Eva"
         className={cn(
-          "fixed bottom-28 left-3 z-30 flex size-11 items-center justify-center rounded-full",
+          "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
           "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
           "shadow-[0_6px_24px_rgba(15,23,42,0.28)] ring-1 ring-accent/40",
-          "transition-transform hover:scale-105 active:scale-95",
-          "md:bottom-6 md:left-auto md:right-6 md:size-12",
+          isDragging
+            ? "cursor-grabbing touch-none transition-none"
+            : "cursor-grab touch-none transition-transform hover:scale-105 active:scale-95",
         )}
+        style={
+          position
+            ? {
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+              }
+            : { visibility: "hidden" }
+        }
       >
         {showPing && (
           <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
