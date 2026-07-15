@@ -9,6 +9,7 @@ import {
   useSupportSocket,
 } from "@/domains/support/use-cases/use-support-chat";
 import { ChatThread } from "./chat-thread";
+import { PushNotificationBanner } from "./push-notification-banner";
 
 export function InboxPageClient() {
   const { data, isLoading } = useOwnConversation();
@@ -36,17 +37,24 @@ export function InboxPageClient() {
           placeholder="Écrire au gestionnaire…"
           emptyMessage="Écrivez-nous — on répond généralement en quelques heures."
           header={
-            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-              <UserAvatar avatarUrl={null} username="Équipe EVCore" size={32} />
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Équipe EVCore
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Répond généralement en quelques heures
-                </p>
+            <>
+              <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+                <UserAvatar
+                  avatarUrl={null}
+                  username="Équipe EVCore"
+                  size={32}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Équipe EVCore
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Répond généralement en quelques heures
+                  </p>
+                </div>
               </div>
-            </div>
+              <PushNotificationBanner />
+            </>
           }
         />
       </div>

@@ -49,6 +49,7 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "catalog:",
     "resend": "^6.12.4",
+    "web-push": "^3.6.7",
     "rxjs": "catalog:",
     "zod": "catalog:"
   },
@@ -64,6 +65,7 @@
     "@types/express": "catalog:",
     "@types/node": "catalog:",
     "@types/qrcode": "^1.5.6",
+    "@types/web-push": "^3.6.4",
     "@types/supertest": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",

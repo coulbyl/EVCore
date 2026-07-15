@@ -437,6 +437,7 @@ model User {
   chatUsage            ChatUsage[]
   supportConversations SupportConversation[]
   supportMessagesSent  SupportMessage[]
+  pushSubscriptions    PushSubscription[]
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
 
@@ -936,6 +937,24 @@ model SupportMessage {
 
   @@index([conversationId, createdAt])
   @@map("support_message")
+  @@schema("public")
+}
+
+// One row per subscribed browser/device (Push API), not per user — the same
+// account can have several active subscriptions (phone + desktop). Endpoint
+// is the dedup key: re-subscribing the same device updates in place.
+model PushSubscription {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscription")
   @@schema("public")
 }
 

@@ -36,8 +36,12 @@ export class AdminAnnouncementsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateAnnouncementDto) {
-    return this.service.update(id, dto);
+  update(
+    @CurrentSession() session: AuthSession,
+    @Param('id') id: string,
+    @Body() dto: UpdateAnnouncementDto,
+  ) {
+    return this.service.update(id, session.user.id, dto);
   }
 
   @Delete(':id')

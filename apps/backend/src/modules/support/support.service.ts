@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRole } from '@evcore/db';
-import { MailService } from '@modules/mail/mail.service';
 import { SupportRepository } from './support.repository';
 import { SupportGateway } from './support.gateway';
+import { SupportNotifierService } from './support-notifier.service';
 import type {
   SupportConversationSummaryDto,
   SupportMessageDto,
@@ -33,7 +33,7 @@ function toMessageDto(raw: RawMessage): SupportMessageDto {
 export class SupportService {
   constructor(
     private readonly repo: SupportRepository,
-    private readonly mail: MailService,
+    private readonly notifier: SupportNotifierService,
     private readonly gateway: SupportGateway,
   ) {}
 
@@ -69,7 +69,7 @@ export class SupportService {
     });
     const dto = toMessageDto(raw);
     this.gateway.emitMessage(conversation.id, dto);
-    await this.notifyAdmin(dto);
+    await this.notifier.notifyAdmin(dto);
     return dto;
   }
 
@@ -89,7 +89,8 @@ export class SupportService {
     });
     const dto = toMessageDto(raw);
     this.gateway.emitMessage(conversationId, dto);
-    await this.notifyUser(conversation.userId, dto);
+    const email = await this.repo.findUserEmail(conversation.userId);
+    await this.notifier.notifyUser(conversation.userId, email, dto);
     return dto;
   }
 
@@ -136,27 +137,5 @@ export class SupportService {
       lastMessage: lastMessage ? toMessageDto(lastMessage) : null,
       unreadCount,
     }));
-  }
-
-  private async notifyAdmin(message: SupportMessageDto): Promise<void> {
-    await this.mail.sendSupportMessage({
-      recipientKind: 'ADMIN',
-      fromUsername: message.senderUsername,
-      preview: message.content,
-    });
-  }
-
-  private async notifyUser(
-    userId: string,
-    message: SupportMessageDto,
-  ): Promise<void> {
-    const email = await this.repo.findUserEmail(userId);
-    if (!email) return;
-    await this.mail.sendSupportMessage({
-      recipientKind: 'USER',
-      to: email,
-      fromUsername: message.senderUsername,
-      preview: message.content,
-    });
   }
 }

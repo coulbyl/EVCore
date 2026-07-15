@@ -17,6 +17,7 @@ import type { SupportConversationSummary } from "@/domains/support/types/support
 import { formatRelativeTime } from "@/lib/date";
 import { ChatThread } from "./chat-thread";
 import { NewConversationDialog } from "./new-conversation-dialog";
+import { PushNotificationBanner } from "./push-notification-banner";
 
 function ConversationRow({
   conversation,
@@ -94,28 +95,31 @@ function ThreadView({
       placeholder="Répondre…"
       emptyMessage="Aucun message pour l'instant."
       header={
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="-ml-1 shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <UserAvatar
-            avatarUrl={conversation.avatarUrl}
-            username={conversation.username}
-            size={32}
-          />
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              {conversation.fullName || conversation.username}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              @{conversation.username}
-            </p>
+        <>
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="-ml-1 shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <UserAvatar
+              avatarUrl={conversation.avatarUrl}
+              username={conversation.username}
+              size={32}
+            />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {conversation.fullName || conversation.username}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                @{conversation.username}
+              </p>
+            </div>
           </div>
-        </div>
+          <PushNotificationBanner />
+        </>
       }
     />
   );
