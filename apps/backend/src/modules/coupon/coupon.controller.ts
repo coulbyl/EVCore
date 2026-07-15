@@ -8,7 +8,12 @@ import {
   ApiNotFoundResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
-import { formatDateUtc, tomorrowUtc } from '@utils/date.utils';
+import {
+  formatDateUtc,
+  tomorrowUtc,
+  parseIsoDate,
+  endOfUtcDay,
+} from '@utils/date.utils';
 import { CouponService } from './coupon.service';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponSummaryService } from './coupon-summary.service';
@@ -18,6 +23,7 @@ import { CouponQueryDto } from './dto/coupon-query.dto';
 import { CouponSummaryQueryDto } from './dto/coupon-summary-query.dto';
 import { CouponIndicesQueryDto } from './dto/coupon-indices-query.dto';
 import { CouponRoiQueryDto } from './dto/coupon-roi-query.dto';
+import { CouponSettleRangeQueryDto } from './dto/coupon-settle-range-query.dto';
 import type { CouponProposalDto } from './dto/coupon-proposal.dto';
 import type { CouponSummaryResponse } from './dto/coupon-summary.dto';
 import type { CouponIndicesResponse } from './dto/coupon-indices.dto';
@@ -156,5 +162,30 @@ export class CouponController {
   async settleOne(@Param('id') id: string): Promise<{ settled: boolean }> {
     await this.settlement.settleProposal(id);
     return { settled: true };
+  }
+
+  @Post('settle-range')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Force re-settlement of every proposal in a forDate range',
+    description:
+      'Re-runs settlement for all proposals (any status, including already-EXPIRED) ' +
+      'whose forDate falls within [from, to]. Idempotent and safe to re-run — use as ' +
+      'catch-up after a settlement bug fix, when you do not have individual proposal IDs.',
+  })
+  @ApiQuery({ name: 'from', required: true, example: '2026-07-01' })
+  @ApiQuery({ name: 'to', required: true, example: '2026-07-15' })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: { resettled: { type: 'number', example: 12 } },
+    },
+  })
+  async settleRange(
+    @Query() query: CouponSettleRangeQueryDto,
+  ): Promise<{ resettled: number }> {
+    const from = parseIsoDate(query.from);
+    const to = endOfUtcDay(parseIsoDate(query.to));
+    return this.settlement.settleRange(from, to);
   }
 }

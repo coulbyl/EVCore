@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, CouponResult, Market } from '@evcore/db';
+import { BetStatus, CouponResult, FixtureStatus, Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import {
   resolveFirstHalfBetStatus,
@@ -64,6 +64,18 @@ export class CouponSettlementService {
     await Promise.all(ready.map((p) => this.settleProposal(p.id)));
   }
 
+  /** Force re-settlement of every proposal (any status) in a `forDate` range —
+   * catch-up for proposals already EXPIRED with a stale/wrong result. */
+  async settleRange(from: Date, to: Date): Promise<{ resettled: number }> {
+    const ids = await this.repo.findIdsInRange(from, to);
+    logger.info(
+      { count: ids.length, from, to },
+      'Force re-settling coupon proposals in range',
+    );
+    await Promise.all(ids.map((id) => this.settleProposal(id)));
+    return { resettled: ids.length };
+  }
+
   async settleProposal(proposalId: string): Promise<void> {
     const proposal = await this.repo.findByIdWithLegs(proposalId);
     if (!proposal) return;
@@ -74,6 +86,7 @@ export class CouponSettlementService {
       where: { id: { in: fixtureIds } },
       select: {
         id: true,
+        status: true,
         homeScore: true,
         awayScore: true,
         homeHtScore: true,
@@ -87,11 +100,6 @@ export class CouponSettlementService {
     const legResults: boolean[] = [];
 
     for (const leg of proposal.legs) {
-      if (leg.isCorrect !== null) {
-        legResults.push(leg.isCorrect);
-        continue;
-      }
-
       const fixture = fixtureMap.get(leg.fixtureId);
       if (!fixture) {
         allResolved = false;
@@ -104,8 +112,13 @@ export class CouponSettlementService {
         leg.market === Market.FIRST_HALF_WINNER;
       const hasHtScores =
         fixture.homeHtScore !== null && fixture.awayHtScore !== null;
+      // FT markets must wait for the fixture to be definitively FINISHED —
+      // homeScore/awayScore can be populated mid-match by live sync and are
+      // not authoritative until the match is actually over.
       const hasFtScores =
-        fixture.homeScore !== null && fixture.awayScore !== null;
+        fixture.status === FixtureStatus.FINISHED &&
+        fixture.homeScore !== null &&
+        fixture.awayScore !== null;
 
       if (isHtMarket && !hasHtScores) {
         allResolved = false;
@@ -134,7 +147,13 @@ export class CouponSettlementService {
         continue;
       }
 
-      await this.repo.settleLeg(leg.id, isCorrect);
+      // Always recompute (never trust a previously stored isCorrect) so a leg
+      // settled from a stale in-progress score before FINISHED self-corrects
+      // here, mirroring BetSettlementService.settleOpenBets. Only write when
+      // the value actually changed, to avoid needless settledAt churn.
+      if (leg.isCorrect !== isCorrect) {
+        await this.repo.settleLeg(leg.id, isCorrect);
+      }
       legResults.push(isCorrect);
     }
 
