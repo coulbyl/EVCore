@@ -17,6 +17,7 @@ export function FixtureCard({
   locale,
   headerExtra,
   beforeHeader,
+  metaExtra,
   className,
   bodyClassName,
   children,
@@ -32,6 +33,8 @@ export function FixtureCard({
   locale: string;
   headerExtra?: ReactNode;
   beforeHeader?: ReactNode;
+  /** Extra info appended after the kickoff time in the header meta line. */
+  metaExtra?: ReactNode;
   className?: string;
   bodyClassName?: string;
   children: ReactNode;
@@ -44,7 +47,7 @@ export function FixtureCard({
       )}
     >
       {beforeHeader}
-      <div className="flex items-start justify-between gap-3 border-b border-border/60 bg-secondary/25 px-4 py-2.5">
+      <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border/60 bg-secondary/25 px-4 py-2.5">
         <FixtureCardHeader
           fixture={fixture}
           homeLogo={homeLogo}
@@ -55,6 +58,7 @@ export function FixtureCard({
           score={score}
           htScore={htScore}
           locale={locale}
+          metaExtra={metaExtra}
         />
         {headerExtra}
       </div>
