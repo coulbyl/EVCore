@@ -670,7 +670,10 @@ model OddsSnapshot {
   drawOdds   Decimal?           @db.Decimal(6, 3)
   awayOdds   Decimal?           @db.Decimal(6, 3)
   pick       String? // for non-1X2 markets
-  odds       Decimal?           @db.Decimal(6, 3) // for non-1X2 markets
+  // Decimal(9,3): CORRECT_SCORE odds on obscure scorelines routinely exceed
+  // 1000 (already seen up to 800 in prod) and can overflow Decimal(6,3) —
+  // 1X2/other markets never come close to this range in practice.
+  odds       Decimal?           @db.Decimal(9, 3) // for non-1X2 markets
   source     OddsSnapshotSource @default(PREMATCH)
   snapshotAt DateTime
   createdAt  DateTime           @default(now())

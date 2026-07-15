@@ -53,6 +53,17 @@ export class OddsCsvImportWorker extends WorkerHost {
     );
 
     const res = await fetch(url);
+    if (res.status === 404) {
+      // The season file simply isn't published yet — routine for a season
+      // that hasn't started, or for smaller leagues football-data.co.uk
+      // covers inconsistently. Not an ops failure: skip quietly instead of
+      // exhausting retries and firing a critical alert every run.
+      logger.warn(
+        { competitionCode, seasonCode, divisionCode, url },
+        'Season file not available (404) — skipping',
+      );
+      return;
+    }
     if (!res.ok) {
       throw new Error(
         `football-data.co.uk responded ${res.status} for season ${seasonCode}`,

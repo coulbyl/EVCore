@@ -181,7 +181,7 @@ describe('OddsCsvImportWorker', () => {
     expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
   });
 
-  it('throws on non-ok CSV response', async () => {
+  it('skips quietly on 404 (season file not published yet)', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
 
     await expect(
@@ -192,7 +192,22 @@ describe('OddsCsvImportWorker', () => {
         seasonCode: string;
         divisionCode: string;
       }>),
-    ).rejects.toThrow('football-data.co.uk responded 404 for season 2425');
+    ).resolves.toBeUndefined();
+    expect(fixtureService.upsertOneXTwoOddsSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('throws on other non-ok CSV responses', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+    await expect(
+      worker.process({
+        data: { competitionCode: 'SA', seasonCode: '2425', divisionCode: 'I1' },
+      } as Job<{
+        competitionCode: string;
+        seasonCode: string;
+        divisionCode: string;
+      }>),
+    ).rejects.toThrow('football-data.co.uk responded 500 for season 2425');
   });
 
   it('uses non-seasonal extra-league URL and filters JPN rows by start year', async () => {
