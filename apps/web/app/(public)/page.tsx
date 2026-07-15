@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { isWC2026Active, isWC2026Countdown } from "@/lib/events/world-cup-2026";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 /* ─── Data ─────────────────────────────────────────────────── */
 
@@ -701,6 +702,8 @@ export default function LandingPage() {
           </p>
         </div>
       </footer>
+
+      <PwaInstallBanner />
     </main>
   );
 }

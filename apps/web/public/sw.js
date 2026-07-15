@@ -46,6 +46,51 @@ self.addEventListener('activate', event => {
   )
 })
 
+// Payload is the JSON string built by PushService: { title, body, url }.
+self.addEventListener('push', event => {
+  if (!event.data) return
+
+  let payload
+  try {
+    payload = event.data.json()
+  } catch {
+    return
+  }
+
+  const { title, body, url } = payload
+  event.waitUntil(
+    self.registration.showNotification(title ?? 'EVCore', {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon.svg',
+      data: { url: url ?? '/dashboard' },
+    }),
+  )
+})
+
+// Focuses an already-open EVCore tab on that route if one exists, otherwise
+// opens a new one — standard "notification click" behavior.
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+  const targetUrl = event.notification.data?.url ?? '/dashboard'
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        for (const client of clientList) {
+          const clientUrl = new URL(client.url)
+          if (clientUrl.pathname === targetUrl && 'focus' in client) {
+            return client.focus()
+          }
+        }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl)
+        }
+      }),
+  )
+})
+
 self.addEventListener('fetch', event => {
   if (IS_DEV_HOST) return
 

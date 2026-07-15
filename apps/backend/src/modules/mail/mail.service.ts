@@ -13,6 +13,7 @@ import {
   renderWeeklyReport,
   renderXgUnavailableReport,
   renderMlModelActivated,
+  renderSupportMessage,
   type BrierAlertProps,
   type EmailVerificationProps,
   type EtlFailureProps,
@@ -20,6 +21,7 @@ import {
   type MlModelActivatedProps,
   type PasswordResetProps,
   type RoiAlertProps,
+  type SupportMessageProps,
   type WeightAdjustmentProps,
   type WeeklyReportProps,
   type XgUnavailableReportProps,
@@ -122,6 +124,20 @@ export class MailService implements OnModuleInit {
       html,
       text,
     );
+  }
+
+  // Support chat notification — routed to the admin inbox address when an
+  // operator writes, or to the specific user's email when the team replies.
+  async sendSupportMessage(
+    props: SupportMessageProps & { to?: string },
+  ): Promise<void> {
+    const { html, text } = await renderSupportMessage(props);
+    if (props.recipientKind === 'ADMIN') {
+      await this.sendToAdmin(`Support — ${props.fromUsername}`, html, text);
+      return;
+    }
+    if (!props.to) return;
+    await this.sendTo(props.to, 'Réponse de l’équipe EVCore', { html, text });
   }
 
   private async sendToAdmin(

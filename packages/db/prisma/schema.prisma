@@ -435,6 +435,9 @@ model User {
   resetTokens          PasswordResetToken[]
   chatConversations    ChatConversation[]
   chatUsage            ChatUsage[]
+  supportConversations SupportConversation[]
+  supportMessagesSent  SupportMessage[]
+  pushSubscriptions    PushSubscription[]
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
 
@@ -670,7 +673,10 @@ model OddsSnapshot {
   drawOdds   Decimal?           @db.Decimal(6, 3)
   awayOdds   Decimal?           @db.Decimal(6, 3)
   pick       String? // for non-1X2 markets
-  odds       Decimal?           @db.Decimal(6, 3) // for non-1X2 markets
+  // Decimal(9,3): CORRECT_SCORE odds on obscure scorelines routinely exceed
+  // 1000 (already seen up to 800 in prod) and can overflow Decimal(6,3) —
+  // 1X2/other markets never come close to this range in practice.
+  odds       Decimal?           @db.Decimal(9, 3) // for non-1X2 markets
   source     OddsSnapshotSource @default(PREMATCH)
   snapshotAt DateTime
   createdAt  DateTime           @default(now())
@@ -885,6 +891,70 @@ model ChatMessage {
 
   @@index([conversationId, createdAt])
   @@map("chat_message")
+  @@schema("public")
+}
+
+// ─────────────────────────────────────────────
+// Support chat — human 1:1 conversation with the EVCore team
+// (feedback + personal questions + Business-tier interest), distinct from
+// the Eva LLM chat above: no tool calls, no token accounting, just messages.
+// ─────────────────────────────────────────────
+
+enum SupportConversationStatus {
+  OPEN
+  CLOSED
+
+  @@schema("public")
+}
+
+model SupportConversation {
+  id         String                     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String                     @db.Uuid
+  user       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     SupportConversationStatus  @default(OPEN)
+  // Read watermarks — one conversation, two sides, each tracks its own "read up to".
+  userReadAt  DateTime?
+  adminReadAt DateTime?
+  messages    SupportMessage[]
+  lastMessageAt DateTime                @default(now())
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([status, lastMessageAt])
+  @@index([userId])
+  @@map("support_conversation")
+  @@schema("public")
+}
+
+model SupportMessage {
+  id             String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  conversationId String              @db.Uuid
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String              @db.Uuid
+  sender         User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("support_message")
+  @@schema("public")
+}
+
+// One row per subscribed browser/device (Push API), not per user — the same
+// account can have several active subscriptions (phone + desktop). Endpoint
+// is the dedup key: re-subscribing the same device updates in place.
+model PushSubscription {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscription")
   @@schema("public")
 }
 

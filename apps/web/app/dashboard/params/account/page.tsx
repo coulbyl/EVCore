@@ -97,6 +97,14 @@ export default async function AccountSettingsPage() {
             statusLabel: t("notificationVisibleStatus"),
             items: isAdmin ? adminNotificationItems : operatorNotificationItems,
           }}
+          pushNotificationLabels={{
+            eyebrow: t("notifications"),
+            title: t("pushNotifications"),
+            description: t("pushNotificationsDescription"),
+            toggleLabel: t("pushNotificationsToggle"),
+            unsupportedHint: t("pushNotificationsUnsupported"),
+            deniedHint: t("pushNotificationsDenied"),
+          }}
           bankrollLabels={{
             eyebrow: t("account"),
             title: t("bankroll"),

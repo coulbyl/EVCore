@@ -215,6 +215,16 @@ export class CouponRepository {
     });
   }
 
+  /** All proposal ids in a `forDate` range, regardless of status — used to force
+   * re-settlement of already-EXPIRED proposals (e.g. after fixing a settlement bug). */
+  async findIdsInRange(from: Date, to: Date): Promise<string[]> {
+    const proposals = await this.prisma.client.couponProposal.findMany({
+      where: { forDate: { gte: from, lte: to } },
+      select: { id: true },
+    });
+    return proposals.map((p) => p.id);
+  }
+
   async deletePendingForDate(forDate: Date): Promise<void> {
     const pending = await this.prisma.client.couponProposal.findMany({
       where: { forDate, status: CouponProposalStatus.PENDING },

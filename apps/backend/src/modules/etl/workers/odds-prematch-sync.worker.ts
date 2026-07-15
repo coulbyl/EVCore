@@ -155,81 +155,98 @@ export class OddsPrematchSyncWorker extends WorkerHost {
 
       const snapshotAt = new Date(match.update);
 
-      // 1X2 from every priority bookmaker (not only the primary one): the
-      // engine derives a median implied probability across books for the
-      // model↔market coherence gate — a single book is too easy an outlier.
-      for (const bookOdds of allOneXTwo.slice(1)) {
-        await this.fixtureService.upsertOneXTwoOddsSnapshot({
-          fixtureId,
-          bookmaker: bookOdds.bookmaker,
-          snapshotAt,
-          homeOdds: bookOdds.homeOdds,
-          drawOdds: bookOdds.drawOdds,
-          awayOdds: bookOdds.awayOdds,
-        });
-      }
+      // A DB write failure for one fixture (e.g. an out-of-range odds value —
+      // CORRECT_SCORE on an obscure scoreline can spike well past three
+      // digits) must not abort the whole run: skip this fixture and keep
+      // going, same as the network/validation skip paths above.
+      try {
+        // 1X2 from every priority bookmaker (not only the primary one): the
+        // engine derives a median implied probability across books for the
+        // model↔market coherence gate — a single book is too easy an outlier.
+        for (const bookOdds of allOneXTwo.slice(1)) {
+          await this.fixtureService.upsertOneXTwoOddsSnapshot({
+            fixtureId,
+            bookmaker: bookOdds.bookmaker,
+            snapshotAt,
+            homeOdds: bookOdds.homeOdds,
+            drawOdds: bookOdds.drawOdds,
+            awayOdds: bookOdds.awayOdds,
+          });
+        }
 
-      const additionalOdds = extractAdditionalMarketOdds(
-        match.bookmakers,
-        odds.bookmaker,
-      );
-
-      await this.fixtureService.upsertOddsSnapshot({
-        fixtureId,
-        bookmaker: odds.bookmaker,
-        snapshotAt,
-        homeOdds: odds.homeOdds,
-        drawOdds: odds.drawOdds,
-        awayOdds: odds.awayOdds,
-        overUnderOdds: additionalOdds.overUnderOdds,
-        bttsYesOdds: additionalOdds.bttsYesOdds,
-        bttsNoOdds: additionalOdds.bttsNoOdds,
-        htftOdds: additionalOdds.htftOdds,
-        ouHtOdds: additionalOdds.ouHtOdds,
-        firstHalfWinnerOdds: additionalOdds.firstHalfWinnerOdds,
-        doubleChanceOdds: additionalOdds.doubleChanceOdds,
-        correctScoreOdds: additionalOdds.correctScoreOdds,
-      });
-
-      // Store secondary market odds from all other priority bookmakers.
-      // Each bookmaker's OVER_UNDER/BTTS/HTFT/OU_HT/FHW data is stored
-      // independently so the engine can pick the best available per market.
-      const SECONDARY_IDS = [
-        API_FOOTBALL_BOOKMAKERS.PINNACLE,
-        API_FOOTBALL_BOOKMAKERS.BET365,
-        API_FOOTBALL_BOOKMAKERS.UNIBET,
-        API_FOOTBALL_BOOKMAKERS.MARATHONBET,
-        API_FOOTBALL_BOOKMAKERS.BWIN,
-      ];
-      for (const id of SECONDARY_IDS) {
-        const bk = match.bookmakers.find((b) => b.id === id);
-        if (!bk || bk.name === odds.bookmaker) continue;
-        const secondary = extractAdditionalMarketOdds(
+        const additionalOdds = extractAdditionalMarketOdds(
           match.bookmakers,
-          bk.name,
+          odds.bookmaker,
         );
-        const hasData =
-          Object.keys(secondary.overUnderOdds).length > 0 ||
-          secondary.bttsYesOdds !== null ||
-          Object.keys(secondary.htftOdds).length > 0 ||
-          Object.keys(secondary.ouHtOdds).length > 0 ||
-          secondary.firstHalfWinnerOdds !== null ||
-          secondary.doubleChanceOdds !== null ||
-          Object.keys(secondary.correctScoreOdds).length > 0;
-        if (!hasData) continue;
-        await this.fixtureService.upsertSecondaryMarketOdds({
+
+        await this.fixtureService.upsertOddsSnapshot({
           fixtureId,
-          bookmaker: bk.name,
+          bookmaker: odds.bookmaker,
           snapshotAt,
-          overUnderOdds: secondary.overUnderOdds,
-          bttsYesOdds: secondary.bttsYesOdds,
-          bttsNoOdds: secondary.bttsNoOdds,
-          htftOdds: secondary.htftOdds,
-          ouHtOdds: secondary.ouHtOdds,
-          firstHalfWinnerOdds: secondary.firstHalfWinnerOdds,
-          doubleChanceOdds: secondary.doubleChanceOdds,
-          correctScoreOdds: secondary.correctScoreOdds,
+          homeOdds: odds.homeOdds,
+          drawOdds: odds.drawOdds,
+          awayOdds: odds.awayOdds,
+          overUnderOdds: additionalOdds.overUnderOdds,
+          bttsYesOdds: additionalOdds.bttsYesOdds,
+          bttsNoOdds: additionalOdds.bttsNoOdds,
+          htftOdds: additionalOdds.htftOdds,
+          ouHtOdds: additionalOdds.ouHtOdds,
+          firstHalfWinnerOdds: additionalOdds.firstHalfWinnerOdds,
+          doubleChanceOdds: additionalOdds.doubleChanceOdds,
+          correctScoreOdds: additionalOdds.correctScoreOdds,
         });
+
+        // Store secondary market odds from all other priority bookmakers.
+        // Each bookmaker's OVER_UNDER/BTTS/HTFT/OU_HT/FHW data is stored
+        // independently so the engine can pick the best available per market.
+        const SECONDARY_IDS = [
+          API_FOOTBALL_BOOKMAKERS.PINNACLE,
+          API_FOOTBALL_BOOKMAKERS.BET365,
+          API_FOOTBALL_BOOKMAKERS.UNIBET,
+          API_FOOTBALL_BOOKMAKERS.MARATHONBET,
+          API_FOOTBALL_BOOKMAKERS.BWIN,
+        ];
+        for (const id of SECONDARY_IDS) {
+          const bk = match.bookmakers.find((b) => b.id === id);
+          if (!bk || bk.name === odds.bookmaker) continue;
+          const secondary = extractAdditionalMarketOdds(
+            match.bookmakers,
+            bk.name,
+          );
+          const hasData =
+            Object.keys(secondary.overUnderOdds).length > 0 ||
+            secondary.bttsYesOdds !== null ||
+            Object.keys(secondary.htftOdds).length > 0 ||
+            Object.keys(secondary.ouHtOdds).length > 0 ||
+            secondary.firstHalfWinnerOdds !== null ||
+            secondary.doubleChanceOdds !== null ||
+            Object.keys(secondary.correctScoreOdds).length > 0;
+          if (!hasData) continue;
+          await this.fixtureService.upsertSecondaryMarketOdds({
+            fixtureId,
+            bookmaker: bk.name,
+            snapshotAt,
+            overUnderOdds: secondary.overUnderOdds,
+            bttsYesOdds: secondary.bttsYesOdds,
+            bttsNoOdds: secondary.bttsNoOdds,
+            htftOdds: secondary.htftOdds,
+            ouHtOdds: secondary.ouHtOdds,
+            firstHalfWinnerOdds: secondary.firstHalfWinnerOdds,
+            doubleChanceOdds: secondary.doubleChanceOdds,
+            correctScoreOdds: secondary.correctScoreOdds,
+          });
+        }
+      } catch (err) {
+        logger.warn(
+          {
+            externalId,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          'Failed to persist odds snapshot for fixture — skipping',
+        );
+        skipped++;
+        await sleep(ETL_CONSTANTS.API_FOOTBALL_RATE_LIMIT_MS);
+        continue;
       }
 
       synced++;

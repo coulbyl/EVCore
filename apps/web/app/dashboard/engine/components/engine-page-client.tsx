@@ -8,12 +8,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@evcore/ui";
-import { Activity, Wrench, Zap } from "lucide-react";
+import { Activity, RotateCcw, Wrench, Zap } from "lucide-react";
 import { useEtlQueueStatus } from "@/domains/etl/use-cases/use-etl";
 import { QueueStatusSection } from "./queue-status-section";
 import { GlobalActionsSection } from "./global-actions-section";
 import { AnalysisSection } from "./analysis-section";
 import { LeagueOpsSection } from "./league-ops-section";
+import { GlobalBackfillSection } from "./global-backfill-section";
+import { CouponSettlementSection } from "./coupon-settlement-section";
 
 export function EnginePageClient() {
   const { data: queueStatus, isLoading: isQueueLoading } = useEtlQueueStatus();
@@ -45,6 +47,10 @@ export function EnginePageClient() {
             <Wrench data-icon="inline-start" />
             Opérations
           </TabsTrigger>
+          <TabsTrigger value="catchup">
+            <RotateCcw data-icon="inline-start" />
+            Rattrapage
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="monitoring" className="mt-6">
@@ -56,8 +62,13 @@ export function EnginePageClient() {
           <AnalysisSection />
         </TabsContent>
 
-        <TabsContent value="operations" className="mt-6">
+        <TabsContent value="operations" className="mt-6 flex flex-col gap-8">
           <LeagueOpsSection />
+          <GlobalBackfillSection />
+        </TabsContent>
+
+        <TabsContent value="catchup" className="mt-6">
+          <CouponSettlementSection />
         </TabsContent>
       </Tabs>
     </div>

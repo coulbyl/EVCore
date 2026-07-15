@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
+import { PushService } from '@modules/push/push.service';
 import type { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import type { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
@@ -39,7 +40,10 @@ type AnnouncementRecord = {
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly push: PushService,
+  ) {}
 
   private toView(announcement: AnnouncementRecord): AnnouncementView {
     return {
@@ -60,6 +64,20 @@ export class AnnouncementsService {
           }
         : null,
     };
+  }
+
+  private async notifyPublished(
+    announcement: Pick<AnnouncementRecord, 'title' | 'description' | 'href'>,
+    excludeUserId: string,
+  ): Promise<void> {
+    await this.push.sendToAllUsers(
+      {
+        title: announcement.title,
+        body: announcement.description,
+        url: announcement.href ?? '/dashboard',
+      },
+      excludeUserId,
+    );
   }
 
   private readonly baseSelect = {
@@ -121,11 +139,16 @@ export class AnnouncementsService {
       select: this.baseSelect,
     });
 
+    if (created.published) {
+      await this.notifyPublished(created, userId);
+    }
+
     return this.toView(created);
   }
 
   async update(
     id: string,
+    userId: string,
     dto: UpdateAnnouncementDto,
   ): Promise<AnnouncementView> {
     const existing = await this.prisma.client.announcement.findUnique({
@@ -164,6 +187,13 @@ export class AnnouncementsService {
       },
       select: this.baseSelect,
     });
+
+    // Only the unpublished → published transition is a "new announcement"
+    // moment — editing text on an already-published one, or unpublishing it,
+    // shouldn't re-notify everyone.
+    if (nextPublished && !existing.published) {
+      await this.notifyPublished(updated, userId);
+    }
 
     return this.toView(updated);
   }

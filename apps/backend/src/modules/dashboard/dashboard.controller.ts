@@ -33,14 +33,8 @@ export class DashboardController {
 
   @Get('pnl')
   getPnlByCanal(@Query() query: PnlQueryDto) {
-    const today = new Date().toISOString().slice(0, 10);
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
-    return this.dashboardService.getPnlByCanal(
-      query.from ?? thirtyDaysAgo,
-      query.to ?? today,
-    );
+    const { from, to } = this.defaultRange(query);
+    return this.dashboardService.getPnlByCanal(from, to);
   }
 
   @Get('competition-stats')
@@ -63,12 +57,22 @@ export class DashboardController {
   }
 
   @Get('channel-health')
-  getChannelHealth(): Promise<ChannelHealthItem[]> {
-    return this.dashboardService.getChannelHealth();
+  getChannelHealth(@Query() query: PnlQueryDto): Promise<ChannelHealthItem[]> {
+    const { from, to } = this.defaultRange(query);
+    return this.dashboardService.getChannelHealth(from, to);
   }
 
   @Get('channel-stats')
-  getChannelStats(): Promise<ChannelStatsItem[]> {
-    return this.dashboardService.getChannelStats();
+  getChannelStats(@Query() query: PnlQueryDto): Promise<ChannelStatsItem[]> {
+    const { from, to } = this.defaultRange(query);
+    return this.dashboardService.getChannelStats(from, to);
+  }
+
+  private defaultRange(query: PnlQueryDto): { from: string; to: string } {
+    const today = new Date().toISOString().slice(0, 10);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    return { from: query.from ?? thirtyDaysAgo, to: query.to ?? today };
   }
 }

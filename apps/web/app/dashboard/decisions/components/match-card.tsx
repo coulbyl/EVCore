@@ -11,7 +11,6 @@ import type {
 import { channelLabel, reasonLabel } from "./channel-constants";
 import {
   avoidFlag,
-  evaluatedRest,
   hasConsensus,
   selectedPicks,
   type AvoidFlag,
@@ -30,7 +29,6 @@ export function MatchCard({
   const t = useTranslations("decisions");
   const avoid = avoidFlag(group);
   const picks = selectedPicks(group);
-  const rest = evaluatedRest(group);
   const consensus = hasConsensus(group);
   const calibrationAlert = group.decisions.some((d) => d.calibrationAlert);
 
@@ -120,9 +118,7 @@ export function MatchCard({
         avoid && "border-[color:var(--canal-avoid)]/40",
       )}
       beforeHeader={banners}
-      headerExtra={
-        <ConvictionBadge pickCount={picks.length} consensus={consensus} />
-      }
+      headerExtra={consensus ? <ConsensusBadge /> : undefined}
       bodyClassName="flex flex-col gap-2 py-3"
     >
       <Separator />
@@ -149,27 +145,6 @@ export function MatchCard({
       ) : (
         <p className="py-1 text-xs text-muted-foreground/70">{t("noPick")}</p>
       )}
-
-      {rest.length > 0 && (
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md py-1 text-[0.72rem] text-muted-foreground/70 transition-colors hover:text-muted-foreground">
-            <span>{t("evaluatedCount", { count: rest.length })}</span>
-            <span className="text-sm leading-none text-muted-foreground/50 transition-transform group-open:rotate-45">
-              +
-            </span>
-          </summary>
-          <div className="mt-1 flex flex-col divide-y divide-border/40 opacity-80">
-            {rest.map((decision) => (
-              <ChannelRow
-                key={decision.id}
-                channel={decision.channel}
-                decision={decision}
-                locale={locale}
-              />
-            ))}
-          </div>
-        </details>
-      )}
     </FixtureCard>
   );
 }
@@ -191,45 +166,25 @@ function AvoidOffenderLine({ avoid }: { avoid: AvoidFlag }) {
   ) : null;
 }
 
-function ConvictionBadge({
-  pickCount,
-  consensus,
-}: {
-  pickCount: number;
-  consensus: boolean;
-}) {
+function ConsensusBadge() {
   const t = useTranslations("decisions");
-  if (pickCount === 0) {
-    return (
-      <span className="text-[0.65rem] font-medium text-muted-foreground/60">
-        {t("noPickShort")}
-      </span>
-    );
-  }
   return (
-    <span className="flex items-center gap-1.5">
-      {consensus && (
-        <span className="flex items-center gap-1">
-          <span
-            className="inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide"
-            style={{
-              color: "var(--canal-consensus)",
-              backgroundColor: "var(--canal-consensus-soft)",
-            }}
-          >
-            <Sparkles className="size-2.5" />
-            {t("channels.CONSENSUS.label")}
-          </span>
-          <InfoTooltip
-            label={t("consensus.tooltipLabel")}
-            description={t("consensus.tooltipDetail")}
-            side="left"
-          />
-        </span>
-      )}
-      <span className="text-[0.65rem] font-semibold tabular-nums text-foreground">
-        {t("pickCount", { count: pickCount })}
+    <span className="flex shrink-0 items-center gap-1">
+      <span
+        className="inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide"
+        style={{
+          color: "var(--canal-consensus)",
+          backgroundColor: "var(--canal-consensus-soft)",
+        }}
+      >
+        <Sparkles className="size-2.5" />
+        {t("channels.CONSENSUS.label")}
       </span>
+      <InfoTooltip
+        label={t("consensus.tooltipLabel")}
+        description={t("consensus.tooltipDetail")}
+        side="left"
+      />
     </span>
   );
 }

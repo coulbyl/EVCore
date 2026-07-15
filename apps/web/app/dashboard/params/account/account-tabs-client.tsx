@@ -15,6 +15,7 @@ import { BadgesSection } from "./components/badges-section";
 import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
 import { NotificationsSection } from "./components/notifications-section";
+import { PushNotificationsSection } from "./components/push-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
 import { SecuritySection } from "./components/security-section";
 
@@ -24,6 +25,7 @@ export function AccountTabsClient({
   hasSession,
   locale,
   notificationLabels,
+  pushNotificationLabels,
   bankrollLabels,
 }: {
   hasSession: boolean;
@@ -35,6 +37,14 @@ export function AccountTabsClient({
     availabilityHint: string;
     statusLabel: string;
     items: NotificationItem[];
+  };
+  pushNotificationLabels: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    toggleLabel: string;
+    unsupportedHint: string;
+    deniedHint: string;
   };
   bankrollLabels: {
     eyebrow: string;
@@ -102,7 +112,10 @@ export function AccountTabsClient({
       </TabsContent>
 
       <TabsContent value="notifications">
-        <NotificationsSection labels={notificationLabels} />
+        <div className="flex flex-col gap-4">
+          <PushNotificationsSection labels={pushNotificationLabels} />
+          <NotificationsSection labels={notificationLabels} />
+        </div>
       </TabsContent>
 
       <TabsContent value="bankroll">

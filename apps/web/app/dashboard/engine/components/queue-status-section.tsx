@@ -25,9 +25,11 @@ const QUEUE_LABELS: Record<string, string> = {
   "elo-sync": "Elo",
   "odds-prematch-sync": "Odds prematch",
   "betting-engine": "Betting engine",
+  "betting-engine-rebuild": "Rebuild engine",
   "odds-historical-import": "Historical odds",
+  "standings-sync": "Standings",
   "rolling-horizon": "Rolling horizon",
-  "ml-backfill": "ML backfill",
+  "ai-engine": "AI Engine",
   "ml-training": "ML training",
   "ml-scheduler": "ML scheduler",
 };

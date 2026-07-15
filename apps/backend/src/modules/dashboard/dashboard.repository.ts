@@ -245,7 +245,14 @@ export class DashboardRepository {
     ]);
   }
 
-  findRecentModelBets(channel: StrategyChannel, take: number) {
+  // Scoped to the dashboard's period filter (fixture.scheduledAt), matching
+  // getSettledBetsForPnl — so channel-health/channel-stats stay consistent
+  // with the SAFE/VALUE PnL cards on the same page instead of always
+  // reflecting an unrelated "last 200 ever" window.
+  findModelBetsInRange(
+    channel: StrategyChannel,
+    range: { since: Date; until: Date },
+  ) {
     return this.prisma.client.bet.findMany({
       where: {
         status: { in: [BetStatus.WON, BetStatus.LOST] },
@@ -254,10 +261,45 @@ export class DashboardRepository {
           is: { channelDecision: { is: { channel } } },
         },
         oddsSnapshot: { not: null },
+        modelRun: {
+          is: {
+            fixture: {
+              is: { scheduledAt: { gte: range.since, lte: range.until } },
+            },
+          },
+        },
       },
       select: { status: true, oddsSnapshot: true, stakePct: true },
       orderBy: { createdAt: 'desc' },
-      take,
+    });
+  }
+
+  // DOMINANT/BTTS/DRAW/GOALS never materialise a Bet (analytical-only channels —
+  // see BetSettlementService docblock), so their settled record lives on
+  // ChannelSelection.result directly instead of the bet table.
+  findChannelSelectionsInRange(
+    channel: StrategyChannel,
+    range: { since: Date; until: Date },
+  ) {
+    return this.prisma.client.channelSelection.findMany({
+      where: {
+        result: { in: [BetStatus.WON, BetStatus.LOST] },
+        odds: { not: null },
+        channelDecision: {
+          is: {
+            channel,
+            modelRun: {
+              is: {
+                fixture: {
+                  is: { scheduledAt: { gte: range.since, lte: range.until } },
+                },
+              },
+            },
+          },
+        },
+      },
+      select: { result: true, odds: true },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

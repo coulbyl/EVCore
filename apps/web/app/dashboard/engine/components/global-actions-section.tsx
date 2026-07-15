@@ -103,6 +103,9 @@ type RowStatus = { ok: boolean; ts?: string; error?: string } | null;
 
 function ActionRow({ def }: { def: ActionDef }) {
   const [status, setStatus] = useState<RowStatus>(null);
+  const isStaleScheduled =
+    def.kind === "global" && def.type === "stale-scheduled";
+  const [lookbackDays, setLookbackDays] = useState("");
   const fullSync = useTriggerFullSync();
   const globalSync = useTriggerGlobalSync(
     def.kind === "global" ? def.type : "fixtures",
@@ -113,7 +116,11 @@ function ActionRow({ def }: { def: ActionDef }) {
     setStatus(null);
     try {
       if (def.kind === "full") await fullSync.mutateAsync();
-      else await globalSync.mutateAsync(undefined);
+      else if (isStaleScheduled && lookbackDays.trim()) {
+        await globalSync.mutateAsync({
+          lookbackDays: Number(lookbackDays),
+        });
+      } else await globalSync.mutateAsync(undefined);
       setStatus({ ok: true, ts: formatTime(new Date()) });
     } catch (err) {
       setStatus({
@@ -136,6 +143,17 @@ function ActionRow({ def }: { def: ActionDef }) {
         )}
       </div>
       <div className="flex shrink-0 items-center gap-3">
+        {isStaleScheduled && (
+          <input
+            type="number"
+            min={1}
+            max={30}
+            placeholder="lookback (j)"
+            value={lookbackDays}
+            onChange={(e) => setLookbackDays(e.target.value)}
+            className="h-9 w-24 rounded-xl border border-border bg-panel px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        )}
         {status?.ok && (
           <div className="flex flex-col items-end gap-0.5">
             <Badge variant="success" className="text-[0.6rem]">
