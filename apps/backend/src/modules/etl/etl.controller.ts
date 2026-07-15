@@ -48,7 +48,8 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   stats: (service) => service.triggerStatsSync(),
   injuries: (service) => service.triggerInjuriesSync(),
   settlement: (service) => service.triggerPendingBetsSettlementSync(),
-  'stale-scheduled': (service) => service.triggerStaleScheduledSync(),
+  'stale-scheduled': (service, body) =>
+    service.triggerStaleScheduledSync(body.lookbackDays),
   'odds-csv': (service) => service.triggerOddsCsvImport(),
   elo: (service) => service.triggerEloSync(),
   'odds-prematch': (service, body) =>
@@ -522,12 +523,7 @@ export class EtlController {
     enum: GLOBAL_SYNC_TYPE_VALUES,
     description: 'Global ETL sync type.',
   })
-  @ApiBody({
-    schema: {
-      oneOf: [{ type: 'object', properties: { date: { type: 'string' } } }],
-    },
-    required: false,
-  })
+  @ApiBody({ type: OddsPrematchSyncBodyDto, required: false })
   @ApiOkResponse({ schema: { example: { status: 'ok' } } })
   @ApiBadRequestResponse({
     description: 'Unsupported ETL sync type.',

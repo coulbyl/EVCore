@@ -8,6 +8,7 @@ import type {
   EtlClearQueueResult,
   EtlHorizonResult,
   EtlLeagueSyncResult,
+  EtlOddsHistoricalFullResult,
   EtlQueueStatus,
   EtlRollingStatsResult,
   EtlSchedulerEntry,
@@ -37,11 +38,13 @@ export function useTriggerFullSync() {
 export function useTriggerGlobalSync(type: GlobalSyncType) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (date?: string) =>
-      clientApiRequest<EtlSyncResult>(`/etl/sync/${type}`, {
+    mutationFn: (opts?: string | { date?: string; lookbackDays?: number }) => {
+      const body = typeof opts === "string" ? { date: opts } : opts;
+      return clientApiRequest<EtlSyncResult>(`/etl/sync/${type}`, {
         method: "POST",
-        body: date ? { date } : undefined,
-      }),
+        body: body?.date || body?.lookbackDays ? body : undefined,
+      });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
   });
 }
@@ -157,6 +160,24 @@ export function useTriggerOddsHistoricalBackfill() {
         `/etl/sync/odds-historical/${opts.competitionCode}/backfill?seasons=${opts.seasons}`,
         { method: "POST" },
       ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
+  });
+}
+
+// Bulk historical Pinnacle odds import across every configured competition
+// (or a subset via `codes`) — the cross-league counterpart of
+// useTriggerOddsHistoricalBackfill, which only targets one competition.
+export function useTriggerOddsHistoricalFullBackfill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (opts: { seasons: string; codes?: string }) => {
+      const params = new URLSearchParams({ seasons: opts.seasons });
+      if (opts.codes?.trim()) params.set("codes", opts.codes.trim());
+      return clientApiRequest<EtlOddsHistoricalFullResult>(
+        `/etl/sync/odds-historical/full?${params.toString()}`,
+        { method: "POST" },
+      );
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
   });
 }

@@ -21,6 +21,12 @@ export type EtlBackfillResult = {
   seasons: number[];
 };
 
+export type EtlOddsHistoricalFullResult = {
+  status: "ok";
+  competitionCodes: string[];
+  seasons: number[];
+};
+
 export type EtlRebuildResult = {
   status: "ok";
   queued: number;
