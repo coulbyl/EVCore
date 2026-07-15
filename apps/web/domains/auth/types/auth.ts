@@ -15,6 +15,7 @@ export type AuthSessionUser = {
   unitMode: string | null;
   unitAmount: string | null;
   unitPercent: string | null;
+  emailSupportNotificationsEnabled: boolean;
 };
 
 export function isAccountVerified(user: AuthSessionUser): boolean {

@@ -107,6 +107,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
 
@@ -143,6 +144,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
         passwordHash: true,
       },
     });
@@ -173,6 +175,8 @@ export class AuthService {
           unitMode: user.unitMode,
           unitAmount: user.unitAmount?.toString() ?? null,
           unitPercent: user.unitPercent?.toString() ?? null,
+          emailSupportNotificationsEnabled:
+            user.emailSupportNotificationsEnabled,
         },
       },
     };
@@ -215,6 +219,7 @@ export class AuthService {
             unitMode: true,
             unitAmount: true,
             unitPercent: true,
+            emailSupportNotificationsEnabled: true,
           },
         },
       },
@@ -259,6 +264,10 @@ export class AuthService {
         ...(dto.unitPercent !== undefined && {
           unitPercent: new Prisma.Decimal(dto.unitPercent),
         }),
+        ...(dto.emailSupportNotificationsEnabled !== undefined && {
+          emailSupportNotificationsEnabled:
+            dto.emailSupportNotificationsEnabled,
+        }),
       },
       select: {
         id: true,
@@ -277,6 +286,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
     return this.toSessionUser(user);
@@ -597,6 +607,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
 
@@ -672,6 +683,7 @@ export class AuthService {
     unitMode: UnitMode | null;
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
+    emailSupportNotificationsEnabled: boolean;
   }): AuthSessionUser {
     return {
       ...user,

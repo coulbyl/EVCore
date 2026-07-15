@@ -105,6 +105,12 @@ export default async function AccountSettingsPage() {
             unsupportedHint: t("pushNotificationsUnsupported"),
             deniedHint: t("pushNotificationsDenied"),
           }}
+          emailNotificationLabels={{
+            eyebrow: t("notifications"),
+            title: t("emailNotifications"),
+            description: t("emailNotificationsDescription"),
+            toggleLabel: t("emailNotificationsToggle"),
+          }}
           bankrollLabels={{
             eyebrow: t("account"),
             title: t("bankroll"),

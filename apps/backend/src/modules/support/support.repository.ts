@@ -22,12 +22,15 @@ export class SupportRepository {
     });
   }
 
+  // Returns null when the user has no email or has opted out of support
+  // notification emails — callers treat a null email as "don't send".
   async findUserEmail(userId: string): Promise<string | null> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: { email: true, emailSupportNotificationsEnabled: true },
     });
-    return user?.email ?? null;
+    if (!user || !user.emailSupportNotificationsEnabled) return null;
+    return user.email;
   }
 
   async userExists(userId: string): Promise<boolean> {
