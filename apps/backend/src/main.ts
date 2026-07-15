@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
@@ -29,6 +30,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   const openApiConfig = new DocumentBuilder()
     .setTitle('EVCore Backend API')

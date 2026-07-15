@@ -435,6 +435,8 @@ model User {
   resetTokens          PasswordResetToken[]
   chatConversations    ChatConversation[]
   chatUsage            ChatUsage[]
+  supportConversations SupportConversation[]
+  supportMessagesSent  SupportMessage[]
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
 
@@ -888,6 +890,52 @@ model ChatMessage {
 
   @@index([conversationId, createdAt])
   @@map("chat_message")
+  @@schema("public")
+}
+
+// ─────────────────────────────────────────────
+// Support chat — human 1:1 conversation with the EVCore team
+// (feedback + personal questions + Business-tier interest), distinct from
+// the Eva LLM chat above: no tool calls, no token accounting, just messages.
+// ─────────────────────────────────────────────
+
+enum SupportConversationStatus {
+  OPEN
+  CLOSED
+
+  @@schema("public")
+}
+
+model SupportConversation {
+  id         String                     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String                     @db.Uuid
+  user       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     SupportConversationStatus  @default(OPEN)
+  // Read watermarks — one conversation, two sides, each tracks its own "read up to".
+  userReadAt  DateTime?
+  adminReadAt DateTime?
+  messages    SupportMessage[]
+  lastMessageAt DateTime                @default(now())
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([status, lastMessageAt])
+  @@index([userId])
+  @@map("support_conversation")
+  @@schema("public")
+}
+
+model SupportMessage {
+  id             String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  conversationId String              @db.Uuid
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String              @db.Uuid
+  sender         User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime            @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("support_message")
   @@schema("public")
 }
 

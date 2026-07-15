@@ -19,6 +19,7 @@ import {
   Layers,
   LayoutDashboard,
   Megaphone,
+  MessageCircle,
   Receipt,
   Settings,
   Ticket,
@@ -36,6 +37,8 @@ import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useLeaderboard } from "@/domains/dashboard/use-cases/get-leaderboard";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { useUnreadCount } from "@/domains/notification/use-cases/use-notifications";
+import { useUnreadSupportCount } from "@/domains/support/use-cases/use-support-chat";
+import { useAdminUnreadSupportCount } from "@/domains/support/use-cases/use-admin-support";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Admin",
@@ -69,6 +72,11 @@ export function AppShell({
   const { data: badges } = useMyBadges();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
+  const { data: operatorInboxUnread } = useUnreadSupportCount(!isAdmin);
+  const { data: adminInboxUnread } = useAdminUnreadSupportCount(isAdmin);
+  const inboxUnreadCount = isAdmin
+    ? (adminInboxUnread?.count ?? 0)
+    : (operatorInboxUnread?.count ?? 0);
 
   const myLeaderboardEntry = useMemo(
     () =>
@@ -186,6 +194,13 @@ export function AppShell({
             active: pathname.startsWith("/dashboard/bet-slips"),
             icon: Receipt,
           },
+          {
+            label: tNav("inbox"),
+            href: "/dashboard/inbox",
+            active: pathname.startsWith("/dashboard/inbox"),
+            icon: MessageCircle,
+            badge: inboxUnreadCount,
+          },
         ],
       },
       {
@@ -209,7 +224,7 @@ export function AppShell({
         ? [{ label: tNav("navGroupAdmin"), items: adminItems }]
         : []),
     ];
-  }, [isAdmin, pathname, tNav]);
+  }, [isAdmin, pathname, tNav, inboxUnreadCount]);
 
   const pinnedNavItems = useMemo(
     () => [
@@ -234,7 +249,7 @@ export function AppShell({
     "/dashboard/decisions",
     "/dashboard/investment",
     "/dashboard/coupons",
-    "/dashboard/fixtures",
+    "/dashboard/inbox",
   ];
 
   const allNavItems = useMemo(
