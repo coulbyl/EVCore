@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import {
+  cn,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -43,8 +44,11 @@ export function ResponsiveDialogContent({
   children: ReactNode;
 }) {
   const isMobile = useIsMobile();
+  // DrawerContent only borders the edge touching the viewport — Dialog's
+  // default full border reads as an unwanted contour on a floating card.
   const Content = isMobile ? DrawerContent : DialogContent;
-  return <Content className={className}>{children}</Content>;
+  const contentClassName = isMobile ? className : cn("border-0", className);
+  return <Content className={contentClassName}>{children}</Content>;
 }
 
 export function ResponsiveDialogHeader({ children }: { children: ReactNode }) {

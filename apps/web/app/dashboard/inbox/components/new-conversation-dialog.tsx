@@ -7,7 +7,6 @@ import { Button } from "@evcore/ui";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
-  ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from "@/components/responsive-dialog";
@@ -51,10 +50,6 @@ export function NewConversationDialog() {
       <ResponsiveDialogContent className="sm:max-w-sm">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Contacter un membre</ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            Démarre une conversation même si le membre n&apos;a jamais ouvert
-            son inbox.
-          </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
         <div className="flex flex-col gap-3 px-4 pb-4 sm:px-0 sm:pb-0">
