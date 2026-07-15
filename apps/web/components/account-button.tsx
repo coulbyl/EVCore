@@ -103,15 +103,17 @@ export function AccountButton({
               {tNav("formation")}
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
-          >
-            <Link href="/dashboard/performance">
-              <Sprout className="text-accent" />
-              {tNav("performance")}
-            </Link>
-          </DropdownMenuItem>
+          {currentUser.role === "ADMIN" ? (
+            <DropdownMenuItem
+              asChild
+              className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+            >
+              <Link href="/dashboard/performance">
+                <Sprout className="text-accent" />
+                {tNav("performance")}
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             asChild
             className="rounded-xl focus:bg-accent/8 focus:text-foreground"
