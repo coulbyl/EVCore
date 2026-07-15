@@ -8,8 +8,7 @@ import {
   type FilterDef,
   type FilterState,
 } from "@evcore/ui";
-import { CanalCards } from "./canal-cards";
-import { ChannelPerformanceTable } from "./channel-performance-table";
+import { ChannelStatusStrip } from "./channel-status-strip";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
 import { PipelineStatus } from "./pipeline-status";
@@ -78,17 +77,12 @@ export function DashboardPageClientAdmin() {
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
-            {/* Row 1 : Canal cards pleine largeur */}
+            {/* Row 1 : Santé des canaux (aperçu, détail sur /performance) */}
             <div className="col-span-2 sm:col-span-6 lg:col-span-12">
-              <CanalCards from={fromIso} to={toIso} />
+              <ChannelStatusStrip from={fromIso} to={toIso} />
             </div>
 
-            {/* Row 2 : Table perf pleine largeur */}
-            <div className="col-span-2 sm:col-span-6 lg:col-span-12">
-              <ChannelPerformanceTable />
-            </div>
-
-            {/* Row 3 : Pipeline + Alertes */}
+            {/* Row 2 : Pipeline + Alertes */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
               <PipelineStatus
                 workers={summary?.workerStatuses ?? []}
@@ -104,7 +98,7 @@ export function DashboardPageClientAdmin() {
               />
             </div>
 
-            {/* Row 4 : Classement ligues + Top joueurs */}
+            {/* Row 3 : Classement ligues + Top joueurs */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
               <CompetitionRanking
                 stats={competitionStats ?? []}

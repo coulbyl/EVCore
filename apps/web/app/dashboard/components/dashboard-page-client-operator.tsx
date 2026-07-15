@@ -12,7 +12,6 @@ import {
 import { OperatorPerformanceCard } from "./operator-performance-card";
 import { WeeklyBrief } from "./weekly-brief";
 import { Announcements } from "@/components/announcements";
-import { CanalCards } from "./canal-cards";
 import { CompetitionRanking } from "./competition-ranking";
 import { UserLeaderboard } from "./user-leaderboard";
 import { useCompetitionStats } from "@/domains/dashboard/use-cases/get-competition-stats";
@@ -99,12 +98,7 @@ export function DashboardPageClientOperator() {
               <OperatorPerformanceCard from={fromIso} to={toIso} />
             </div>
 
-            {/* Row 2 : Canal cards pleine largeur */}
-            <div className="col-span-2 sm:col-span-6 lg:col-span-12">
-              <CanalCards from={fromIso} to={toIso} />
-            </div>
-
-            {/* Row 3 : Classement ligues + Top joueurs */}
+            {/* Row 2 : Classement ligues + Top joueurs */}
             <div className="col-span-2 sm:col-span-3 lg:col-span-6">
               <CompetitionRanking
                 stats={competitionStats ?? []}

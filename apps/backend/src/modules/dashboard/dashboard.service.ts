@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StrategyChannel } from '@evcore/db';
+import { BetStatus, StrategyChannel } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { toNumber } from '@utils/prisma.utils';
 import {
@@ -357,11 +357,23 @@ export class DashboardService {
     });
   }
 
-  async getChannelHealth(): Promise<ChannelHealthItem[]> {
-    const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(StrategyChannel.VALUE, 200),
-      this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
-    ]);
+  async getChannelHealth(
+    from: string,
+    to: string,
+  ): Promise<ChannelHealthItem[]> {
+    const range = {
+      since: startOfUtcDay(parseIsoDate(from)),
+      until: endOfUtcDay(parseIsoDate(to)),
+    };
+    const [evBets, svBets, dominantSel, bttsSel, drawSel, goalsSel] =
+      await Promise.all([
+        this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
+        this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
+      ]);
 
     const evRoi = flatBetRoi(evBets);
     const svRoi = flatBetRoi(svBets);
@@ -387,54 +399,27 @@ export class DashboardService {
         vsThreshold: null,
         sampleSize: svBets.length,
       },
-      {
-        channel: 'DOMINANT',
-        status: 'INACTIVE',
-        primaryMetric: 0,
-        primaryMetricType: 'HIT_RATE',
-        roi: null,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: 0,
-      },
-      {
-        channel: 'BTTS',
-        status: 'INACTIVE',
-        primaryMetric: 0,
-        primaryMetricType: 'HIT_RATE',
-        roi: null,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: 0,
-      },
-      {
-        channel: 'DRAW',
-        status: 'INACTIVE',
-        primaryMetric: 0,
-        primaryMetricType: 'ROI',
-        roi: null,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: 0,
-      },
-      {
-        channel: 'GOALS',
-        status: 'INACTIVE',
-        primaryMetric: 0,
-        primaryMetricType: 'HIT_RATE',
-        roi: null,
-        hitRate: null,
-        vsThreshold: null,
-        sampleSize: 0,
-      },
+      channelHealthFromSelections('DOMINANT', dominantSel, 'HIT_RATE'),
+      channelHealthFromSelections('BTTS', bttsSel, 'HIT_RATE'),
+      channelHealthFromSelections('DRAW', drawSel, 'ROI'),
+      channelHealthFromSelections('GOALS', goalsSel, 'HIT_RATE'),
     ];
   }
 
-  async getChannelStats(): Promise<ChannelStatsItem[]> {
-    const [evBets, svBets] = await Promise.all([
-      this.repo.findRecentModelBets(StrategyChannel.VALUE, 200),
-      this.repo.findRecentModelBets(StrategyChannel.SAFE, 200),
-    ]);
+  async getChannelStats(from: string, to: string): Promise<ChannelStatsItem[]> {
+    const range = {
+      since: startOfUtcDay(parseIsoDate(from)),
+      until: endOfUtcDay(parseIsoDate(to)),
+    };
+    const [evBets, svBets, dominantSel, bttsSel, drawSel, goalsSel] =
+      await Promise.all([
+        this.repo.findModelBetsInRange(StrategyChannel.VALUE, range),
+        this.repo.findModelBetsInRange(StrategyChannel.SAFE, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.DOMINANT, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.BTTS, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.DRAW, range),
+        this.repo.findChannelSelectionsInRange(StrategyChannel.GOALS, range),
+      ]);
 
     // Reverse desc→asc for chronological drawdown computation
     const evChron = [...evBets].reverse();
@@ -465,54 +450,10 @@ export class DashboardService {
         oddsAvailabilityRate: 1,
         trend: 'FLAT' as const,
       },
-      {
-        channel: 'DOMINANT',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: null,
-        netUnits: null,
-        maxDrawdown: null,
-        sampleSize: 0,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      {
-        channel: 'BTTS',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: null,
-        netUnits: null,
-        maxDrawdown: null,
-        sampleSize: 0,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      {
-        channel: 'DRAW',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: null,
-        netUnits: null,
-        maxDrawdown: null,
-        sampleSize: 0,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
-      {
-        channel: 'GOALS',
-        hitRate: null,
-        avgThreshold: null,
-        vsThreshold: null,
-        roi: null,
-        netUnits: null,
-        maxDrawdown: null,
-        sampleSize: 0,
-        oddsAvailabilityRate: 1,
-        trend: 'FLAT' as const,
-      },
+      channelStatsFromSelections('DOMINANT', dominantSel),
+      channelStatsFromSelections('BTTS', bttsSel),
+      channelStatsFromSelections('DRAW', drawSel),
+      channelStatsFromSelections('GOALS', goalsSel),
     ];
   }
 
@@ -633,6 +574,67 @@ function evRoiStatus(
   if (roi >= 0) return 'GREEN';
   if (roi >= -5) return 'ORANGE';
   return 'RED';
+}
+
+// DOMINANT/BTTS/DRAW/GOALS settle via ChannelSelection.result rather than a
+// materialised Bet (see DashboardRepository.findRecentChannelSelections) —
+// reshape into the {status, oddsSnapshot} FlatBet shape so the same flat-stake
+// math as VALUE/SAFE applies.
+type SettledSelection = {
+  // Schema-nullable, but the repository query filters to WON/LOST only.
+  result: BetStatus | null;
+  odds: { toString(): string } | null;
+};
+
+function asFlatBets(selections: SettledSelection[]): FlatBet[] {
+  return selections.map((s) => ({
+    status: s.result ?? '',
+    oddsSnapshot: s.odds,
+  }));
+}
+
+function hitRateOf(selections: SettledSelection[]): number | null {
+  if (selections.length === 0) return null;
+  const won = selections.filter((s) => s.result === BetStatus.WON).length;
+  return won / selections.length;
+}
+
+function channelHealthFromSelections(
+  channel: ChannelHealthItem['channel'],
+  selections: SettledSelection[],
+  primaryMetricType: ChannelHealthItem['primaryMetricType'],
+): ChannelHealthItem {
+  const roi = flatBetRoi(asFlatBets(selections));
+  const hitRate = hitRateOf(selections);
+  return {
+    channel,
+    status: evRoiStatus(roi, selections.length, 30),
+    primaryMetric: (primaryMetricType === 'HIT_RATE' ? hitRate : roi) ?? 0,
+    primaryMetricType,
+    roi,
+    hitRate,
+    vsThreshold: null,
+    sampleSize: selections.length,
+  };
+}
+
+function channelStatsFromSelections(
+  channel: ChannelStatsItem['channel'],
+  selections: SettledSelection[],
+): ChannelStatsItem {
+  const flatBets = asFlatBets(selections);
+  return {
+    channel,
+    hitRate: hitRateOf(selections),
+    avgThreshold: null,
+    vsThreshold: null,
+    roi: flatBetRoi(flatBets),
+    netUnits: netUnitsFromBets(flatBets),
+    maxDrawdown: maxDrawdownFromBets([...flatBets].reverse()),
+    sampleSize: selections.length,
+    oddsAvailabilityRate: 1,
+    trend: 'FLAT' as const,
+  };
 }
 
 function computeSettledCouponReturn(betSlip: LeaderboardSlip): {
