@@ -1,6 +1,7 @@
 "use client";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@evcore/ui";
+import { useLocale, useTranslations } from "next-intl";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { SettingsSectionCard } from "./settings-section-card";
 
@@ -15,13 +16,15 @@ const BADGE_EMOJI: Record<string, string> = {
 };
 
 export function BadgesSection() {
+  const t = useTranslations("account");
+  const locale = useLocale();
   const { data: badges, isLoading } = useMyBadges();
 
   return (
     <SettingsSectionCard
-      eyebrow="Progression"
-      title="Mes badges"
-      description="Débloquez des badges en atteignant des jalons de performance."
+      eyebrow={t("badgesEyebrow")}
+      title={t("badgesTitle")}
+      description={t("badgesDescription")}
     >
       {isLoading ? (
         <div className="flex flex-wrap gap-3">
@@ -55,7 +58,7 @@ export function BadgesSection() {
                     {unlocked && badge.unlockedAt && (
                       <span className="text-[0.6rem] text-muted-foreground">
                         {new Date(badge.unlockedAt).toLocaleDateString(
-                          "fr-FR",
+                          locale,
                           {
                             day: "numeric",
                             month: "short",

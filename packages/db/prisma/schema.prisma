@@ -422,7 +422,7 @@ model User {
   unitMode             UnitMode?
   unitAmount           Decimal?                @db.Decimal(12, 2)
   unitPercent          Decimal?                @db.Decimal(5, 4)
-  emailSupportNotificationsEnabled Boolean     @default(true)
+  emailSupportNotificationsEnabled Boolean     @default(false)
   sessions             Session[]
   betSlips             BetSlip[]
   betSlipItems         BetSlipItem[]
