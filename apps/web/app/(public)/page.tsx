@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight,
-  ChevronRight,
   Moon,
   Sun,
   TrendingUp,
@@ -303,12 +302,6 @@ export default function LandingPage() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Connexion
-            </Link>
-            <Link
-              href="/auth/register"
-              className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-85"
-            >
-              Rejoindre <ChevronRight size={13} />
             </Link>
           </div>
         </nav>
