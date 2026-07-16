@@ -146,11 +146,18 @@ export class AuthService {
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
         passwordHash: true,
+        suspended: true,
       },
     });
 
     if (!user || !verifyPassword(input.password, user.passwordHash)) {
       throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (user.suspended) {
+      throw new UnauthorizedException(
+        'Compte suspendu — contactez un administrateur.',
+      );
     }
 
     const { token, session } = await this.createSession(user.id);
@@ -220,12 +227,18 @@ export class AuthService {
             unitAmount: true,
             unitPercent: true,
             emailSupportNotificationsEnabled: true,
+            suspended: true,
           },
         },
       },
     });
 
     if (!row || row.expiresAt.getTime() <= Date.now()) {
+      return null;
+    }
+
+    if (row.user.suspended) {
+      await this.prisma.client.session.delete({ where: { id: row.id } });
       return null;
     }
 

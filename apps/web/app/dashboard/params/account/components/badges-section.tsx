@@ -57,13 +57,10 @@ export function BadgesSection() {
                     </span>
                     {unlocked && badge.unlockedAt && (
                       <span className="text-[0.6rem] text-muted-foreground">
-                        {new Date(badge.unlockedAt).toLocaleDateString(
-                          locale,
-                          {
-                            day: "numeric",
-                            month: "short",
-                          },
-                        )}
+                        {new Date(badge.unlockedAt).toLocaleDateString(locale, {
+                          day: "numeric",
+                          month: "short",
+                        })}
                       </span>
                     )}
                   </div>

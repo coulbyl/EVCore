@@ -7,11 +7,7 @@ import { SecuritySetupForm } from "./security-setup-form";
 import { SecuritySection } from "./security-section";
 import { SettingsSectionCard } from "./settings-section-card";
 
-export function SecurityMasterDetail({
-  detailOpen,
-}: {
-  detailOpen: boolean;
-}) {
+export function SecurityMasterDetail({ detailOpen }: { detailOpen: boolean }) {
   const t = useTranslations("account");
   const router = useRouter();
 

@@ -4,9 +4,7 @@
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; i++) {
@@ -52,9 +50,7 @@ export async function subscribeToPush(
     // lib.dom's Uint8Array<ArrayBufferLike> vs BufferSource's stricter
     // ArrayBuffer-only requirement is a type-only mismatch (TS 5.7+); the
     // value is a real, freshly-allocated ArrayBuffer at runtime.
-    applicationServerKey: urlBase64ToUint8Array(
-      vapidPublicKey,
-    ) as BufferSource,
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
   });
 }
 
