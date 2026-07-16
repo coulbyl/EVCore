@@ -3,7 +3,9 @@
 > Document de cadrage stratégique, pas un plan d'implémentation. Rien ici n'est encore
 > construit côté billing — voir §8 pour ce qui manque techniquement.
 > Analyse basée sur une lecture complète du code (backend, ml-worker Python, web) et des
-> données réelles en base au 2026-07-15, pas sur la description aspirationnelle d'EVCORE.md.
+> données réelles en base au 2026-07-16, pas sur la description aspirationnelle d'EVCORE.md.
+> Mise à jour 2026-07-16 : chat support 1:1 + notifications web push (support et annonces) +
+> opt-in email par utilisateur construits depuis la version précédente — voir §2 et §6.
 > Contexte technique : [EVCORE.md](../EVCORE.md) · État d'avancement : [ROADMAP.md](../ROADMAP.md)
 
 ---
@@ -15,8 +17,8 @@ et globalement solides sur son canal phare (VALUE) et une fonctionnalité de gé
 coupon déjà backtestée positivement. Mais deux points changent significativement l'ordre des
 priorités par rapport à une première lecture superficielle :
 
-1. **L'échelle actuelle est celle d'un bêta interne, pas d'un produit avec traction** : 24
-   comptes utilisateurs (1 admin + 23 operators), 2 bet slips utilisateur jamais créés, 17
+1. **L'échelle actuelle est celle d'un bêta interne, pas d'un produit avec traction** : 20
+   comptes utilisateurs (1 admin + 19 operators), 2 bet slips utilisateur jamais créés, 16
    badges débloqués au total. Le volume réel vient du moteur (1 926 bets réglés, 39 221
    `ModelRun`), pas d'un usage utilisateur significatif. Vendre un abonnement aujourd'hui,
    c'est vendre à une base quasi inexistante — la priorité immédiate n'est pas le pricing,
@@ -27,6 +29,12 @@ priorités par rapport à une première lecture superficielle :
    généré) après la dernière activation de modèle. Eva est un vrai outil utile mais reste un
    assistant d'analyse single-shot, pas un moteur de décision — le présenter comme "l'IA qui
    trouve vos picks" serait factuellement faux.
+3. **Le mécanisme d'"accompagnement personnalisé" du palier Business, jusqu'ici une simple
+   promesse dans ce document, est maintenant un vrai outil construit** : chat 1:1 temps réel
+   entre un utilisateur et l'équipe EVCore, notifications web push (support + annonces), et
+   opt-in email par utilisateur. Mais construit ne veut pas dire utilisé : **0 abonnement push
+   actif** sur 20 comptes, 10 conversations et 6 messages au total (majoritairement du test
+   interne). L'outil ne remplace pas la traction — voir §7.
 
 Recommandation inchangée sur le fond : **abonnement SaaS freemium**, pas d'affiliation
 bookmaker. Mais l'ordre des étapes change : construire la traction et un vrai historique
@@ -48,9 +56,10 @@ public avant de construire le billing (détail §9).
 | **Correction ML (Phase 3)**                 | **100% shadow, jamais consommée dans une décision réelle** | Flag `ML_CORRECTION_ENABLED` off par défaut ; même activé, le résultat n'est écrit que dans `ModelRun.features` (log), jamais lu par le code qui construit le pick final. Pipeline resté cassé après la dernière activation (aucun `ModelRun` shadow généré) |
 | **Eva** (analyse Groq single-shot)          | Utile, mais un assistant, pas un moteur                    | Modèle `llama-4-scout-17b` (tier gratuit Groq), 1 appel non-streamé par analyse, 2048 tokens max, quota **50 requêtes/jour, identique pour tous les utilisateurs** — aucune distinction de palier n'existe                                                   |
 | **Module Audit**                            | Base de transparence déjà là, non packagée                 | Endpoints publics (`/fixtures`, `/overview`) exposant picks, probabilités, EV et résultats réglés — c'est un outil ops interne aujourd'hui, pas une page "preuve de traçabilité" présentée aux utilisateurs                                                  |
-| **Gamification + Formation**                | Construit, très peu utilisé                                | 7 badges définis, **17 débloqués au total** (tous utilisateurs confondus) — le mécanisme existe, l'engagement réel reste à prouver                                                                                                                           |
+| **Gamification + Formation**                | Construit, très peu utilisé                                | 7 badges définis, **16 débloqués au total** (tous utilisateurs confondus) — le mécanisme existe, l'engagement réel reste à prouver                                                                                                                           |
+| **Chat support 1:1 + notifications push**   | Construit (2026-07-16), pas encore adopté                  | Chat temps réel utilisateur ↔ équipe EVCore, web push (VAPID) pour le support et les annonces, opt-in email par utilisateur (settings) — **10 conversations, 6 messages, 0 abonnement push actif** sur 20 comptes ; l'outil du palier Business existe, l'usage non |
 | **Billing / Stripe / entitlements**         | Inexistant                                                 | Rien à vendre tant que ça n'existe pas — §8                                                                                                                                                                                                                  |
-| **Traction utilisateur**                    | Quasi nulle                                                | 24 comptes, 2 bet slips créés, 355 coupons générés par le moteur (pas par des utilisateurs) — aucune métrique d'engagement à citer dans un pitch aujourd'hui                                                                                                 |
+| **Traction utilisateur**                    | Quasi nulle                                                | 20 comptes (1 admin + 19 operators, contre 24 lors de la précédente lecture), 2 bet slips créés, 355 coupons générés par le moteur (pas par des utilisateurs) — aucune métrique d'engagement à citer dans un pitch aujourd'hui                                 |
 
 ---
 
@@ -77,7 +86,7 @@ Ce qui n'a **pas** de valeur marchande aujourd'hui, à ne surtout pas vendre en 
   pipeline même cassé récemment) et Eva est un assistant d'analyse ponctuel, pas un système de
   décision autonome. Toute communication du type "notre IA choisit vos paris" serait factuellement
   fausse au regard du code actuel — au mieux un futur argument, pas un argument présent.
-- **La traction elle-même** : avec 24 comptes et 2 bet slips utilisateur créés, il n'y a rien
+- **La traction elle-même** : avec 20 comptes et 2 bet slips utilisateur créés, il n'y a rien
   à montrer en "preuve sociale". Un pitch qui s'appuierait sur "nos utilisateurs" serait
   fabriqué. Le seul chiffre honnête à montrer aujourd'hui est la performance du moteur, pas
   l'adoption.
@@ -119,7 +128,7 @@ l'échelle, mais ne conditionne pas le fait de commencer à construire et tester
 | **Paiement à l'usage (coupon ponctuel / crédits Eva)** | Techniquement simple, mais Eva coûte des tokens Groq réels par appel (quota actuel 50/j identique pour tous — pas soutenable en gratuit illimité si un palier payant existe)                      | Complément seulement, pour metering Eva au-delà d'un quota inclus                                             |
 | **Affiliation bookmaker (CPA/revshare)**               | Contredit le positionnement, dépendance à des acteurs dont l'intérêt est opposé à celui d'EVCore                                                                                                  | **Écarté**                                                                                                    |
 | **B2B / API interne**                                  | Cohérent à terme (architecture déjà découplée), mais prématuré : le produit lui-même n'a pas encore de traction B2C à démontrer à un client B2B                                                   | Complément à moyen terme, pas un point de départ                                                              |
-| **Communauté premium (leaderboard/badges)**            | Le mécanisme existe mais n'est quasiment pas utilisé (17 badges débloqués au total) — pas encore prouvé comme levier                                                                              | Garder en levier de rétention, ne pas le vendre comme feature autonome tant que l'usage réel n'est pas prouvé |
+| **Communauté premium (leaderboard/badges)**            | Le mécanisme existe mais n'est quasiment pas utilisé (16 badges débloqués au total) — pas encore prouvé comme levier                                                                              | Garder en levier de rétention, ne pas le vendre comme feature autonome tant que l'usage réel n'est pas prouvé |
 
 ---
 
@@ -167,9 +176,14 @@ que les canaux du moteur ; le palier Business a une capacité explicitement plaf
 ### Business (abonnement payant, capacité explicitement plafonnée — ex. 10 places affichées)
 
 - Tout Premium, plus un vrai service humain, pas une feature :
-  - Accompagnement par l'équipe EVCore — suivi personnalisé
+  - **Accompagnement par l'équipe EVCore — suivi personnalisé.** Le canal existe déjà
+    techniquement (chat 1:1 temps réel + notifications web push construits le 2026-07-16,
+    voir §2) — reste à décider si ce canal est réservé aux clients Business ou ouvert plus
+    largement (aujourd'hui il est disponible à tout utilisateur authentifié, sans distinction
+    de palier, puisqu'aucun entitlement n'existe encore — §8).
   - Définition d'un objectif de profil de pari (ROI cible, bankroll, tolérance au risque) et
-    revue périodique de la trajectoire réelle vs objectif
+    revue périodique de la trajectoire réelle vs objectif — **ceci reste à construire**, le
+    chat ne fait qu'ouvrir un canal de discussion, pas un suivi structuré d'objectif
   - **Coupons manuels ciblés** — même mécanisme de composition que les coupons Premium, mais
     diffusé à un ou plusieurs utilisateurs précis plutôt qu'à tous les abonnés : le coach
     compose un coupon adapté au profil/objectif de CE client, pas un contenu générique. C'est
@@ -195,7 +209,7 @@ qu'ils veulent en plus.
 
 ## 7. Prérequis avant même de parler de pricing : construire la traction
 
-Avec 24 comptes et une utilisation utilisateur quasi nulle (2 bet slips, 17 badges), le vrai
+Avec 20 comptes et une utilisation utilisateur quasi nulle (2 bet slips, 16 badges), le vrai
 chantier prioritaire n'est pas le billing, c'est de faire tourner le produit devant de vrais
 utilisateurs gratuitement d'abord :
 
@@ -204,11 +218,16 @@ utilisateurs gratuitement d'abord :
    preuve de track record plutôt qu'un outil de debug interne. C'est plus utile qu'un pricing
    tant qu'il n'y a personne pour l'acheter.
 2. **Ne pas construire de palier payant avant d'avoir au moins quelques dizaines
-   d'utilisateurs actifs organiques** (au-delà des 24 comptes actuels) qui utilisent VALUE ou
+   d'utilisateurs actifs organiques** (au-delà des 20 comptes actuels) qui utilisent VALUE ou
    le coupon composer sans y être poussés.
 3. **Ne pas vendre l'IA tant qu'elle n'agit pas réellement** — soit finir la promotion hors
    shadow de la couche ML (actuellement bloquée), soit ne jamais en faire un argument avant
    que ce soit vrai.
+4. **Construire un outil n'est pas construire de la traction** : le chat support + push
+   (§2) est disponible depuis le 2026-07-16 et personne ne l'a encore adopté (0 abonnement
+   push actif). Avant de le vendre comme argument Business, il faut d'abord voir s'il est
+   utilisé spontanément par les opérateurs actuels — sinon c'est un deuxième mécanisme
+   construit avant son marché, comme la correction ML.
 
 ---
 
@@ -218,7 +237,9 @@ utilisateurs gratuitement d'abord :
 2. **Modèle `Subscription`/`Plan`** en base + entitlement sur `User`, indépendant du `role`
    `ADMIN/OPERATOR` déjà existant.
 3. **Gate d'accès** sur les endpoints premium (coupon composer, Investment, SAFE/DRAW) —
-   aujourd'hui tout est ouvert à tout utilisateur authentifié.
+   aujourd'hui tout est ouvert à tout utilisateur authentifié. Le chat support (§2) suit la
+   même règle : rien ne le réserve aujourd'hui au palier Business, il faudra ajouter cette
+   distinction en même temps que le reste des gates d'entitlement.
 4. **Quota Eva par palier** — le `ChatUsage`/rate-limit existant est un quota technique global
    (50/j pour tous), pas un mécanisme de palier ; à distinguer explicitement.
 5. **Pages légales** (CGU, confidentialité, mentions de jeu responsable) et **page de
@@ -252,7 +273,7 @@ utilisateurs gratuitement d'abord :
 
 ## 9. Risques à surveiller
 
-- **Vendre avant d'avoir une base** : facturer un produit à 24 comptes internes revient à
+- **Vendre avant d'avoir une base** : facturer un produit à 20 comptes internes revient à
   tester un pricing sans signal statistique exploitable — le vrai risque court-terme n'est pas
   légal, c'est de brûler la crédibilité du narratif "discipline mesurable" en le vendant trop
   tôt, avant que quiconque en dehors de l'équipe ne l'ait validé par l'usage.
@@ -274,7 +295,7 @@ utilisateurs gratuitement d'abord :
 
 1. Construire la page de track record public (données déjà là via le module Audit) — avant
    tout pricing, c'est l'actif de conversion le plus rentable à produire maintenant.
-2. Faire croître l'usage organique (au-delà des 24 comptes actuels) sur VALUE et le coupon
+2. Faire croître l'usage organique (au-delà des 20 comptes actuels) sur VALUE et le coupon
    composer en accès gratuit, pour avoir un vrai signal avant de gater quoi que ce soit.
 3. Construire l'entité "coupon manuel équipe" + son settlement + son ROI public — **avant**
    de publier le moindre coupon manuel, pas après (§9).
