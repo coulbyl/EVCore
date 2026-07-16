@@ -13,6 +13,7 @@
 > l'analyse curatée, des coupons composés, et de l'accompagnement — voir §6. Le pricing est
 > dynamique par construction, pas un catalogue figé — voir §6.
 > Contexte technique : [EVCORE.md](../EVCORE.md) · État d'avancement : [ROADMAP.md](../ROADMAP.md)
+> Maintenance des chiffres cités (formation + ce document) : [formation-content-maintenance.md](./formation-content-maintenance.md)
 
 ---
 
