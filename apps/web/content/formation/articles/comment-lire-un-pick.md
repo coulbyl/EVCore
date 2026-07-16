@@ -46,6 +46,8 @@ Ces bandeaux ne sont pas des erreurs à ignorer. Ce sont les garde-fous qui font
 
 **CORRECT_SCORE (Score exact)** est un canal à part : il affiche le score exact jugé le plus probable par le modèle, marqué d'un badge **Observation**. Contrairement aux six autres, il n'est **jamais** proposé à la mise par le moteur — c'est une prédiction affichée à titre informatif, pas un signal sur lequel EVCore vous invite à miser.
 
+Cette prudence n'est pas de la même nature que celle qui s'applique à BTTS ou GOALS. BTTS et GOALS sont en observation parce que leurs chiffres, testés sur un historique conséquent, restent négatifs. CORRECT_SCORE est en observation parce qu'il est **trop récent** pour être jugé : le canal n'existe que depuis le 1er juillet 2026, contre plusieurs mois pour VALUE, SAFE, DRAW et BTTS. Les tout premiers chiffres sont même prometteurs — mais sur une fenêtre de deux semaines, concentrée sur une seule compétition, ce n'est pas encore un historique. Ce canal sera réévalué une fois qu'il aura accumulé assez de recul, exactement comme DRAW l'a été avant lui.
+
 ## Les trois chiffres à lire ensemble
 
 Sur chaque pick misable, vous retrouvez la cote, la probabilité calibrée, et l'edge (ou l'EV selon la vue) — jamais un seul de ces chiffres isolé :

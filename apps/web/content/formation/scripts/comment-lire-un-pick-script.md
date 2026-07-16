@@ -42,6 +42,8 @@ Parfois, plusieurs canaux indépendants arrivent à la même conclusion sur un m
 
 Un dernier cas à connaître : le canal **Score exact**. Sur sa ligne, un badge **Observation** apparaît, et le marché n'est même pas affiché — parce qu'il n'y en a pas besoin. Score exact montre le résultat exact jugé le plus probable par le modèle, mais il n'est jamais proposé à la mise. C'est une information, pas une recommandation.
 
+Une précision importante : ce n'est pas la même prudence que pour BTTS ou GOALS. Ces deux-là sont en observation parce que leurs chiffres, testés longuement, restent négatifs. Score exact est en observation parce qu'il est tout jeune — lancé le 1er juillet 2026, contre plusieurs mois pour les autres canaux. Les premiers résultats sont même prometteurs, mais sur deux semaines à peine, ce n'est pas encore un historique.
+
 ## Clôture
 
 Quatre choses à retenir en repartant : le canal indique quelle question a été posée au match, les trois chiffres — cote, probabilité, EV — se lisent toujours ensemble, Consensus et les bandeaux d'alerte ne sont pas des canaux de mise mais des qualificatifs de décision, et l'absence de pick est un résultat normal du filtre, pas un problème à contourner.
