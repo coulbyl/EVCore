@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, ArrowRight, Clock, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, FileText, Video } from "lucide-react";
 import {
   Badge,
   PageHeader,
@@ -21,7 +21,7 @@ import {
 
 const CATEGORY_LABELS: Record<FormationCategory, string> = {
   bases: "Les bases",
-  channels: "Les 5 canaux",
+  channels: "Les canaux",
   bankroll: "Bankroll & discipline",
   leagues: "Guide par ligue",
   app: "Comment utiliser l'app",
@@ -140,8 +140,12 @@ export default async function FormationCategoryItemPage({
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1">
-                <Video size={12} />
-                {tFormation("video")}
+                {item.type === "video" ? (
+                  <Video size={12} />
+                ) : (
+                  <FileText size={12} />
+                )}
+                {tFormation(item.type === "video" ? "video" : "article")}
               </Badge>
               <Badge variant="secondary">
                 {tFormation(`difficulty.${item.difficulty}`)}
@@ -160,11 +164,16 @@ export default async function FormationCategoryItemPage({
       </PageHeader>
 
       <section className="flex flex-col gap-5">
-        <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
-          <div className="p-3 sm:p-4">
-            <FormationVideoPlayer meta={item} startAtSeconds={startAtSeconds} />
-          </div>
-        </section>
+        {item.type === "video" ? (
+          <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
+            <div className="p-3 sm:p-4">
+              <FormationVideoPlayer
+                meta={item}
+                startAtSeconds={startAtSeconds}
+              />
+            </div>
+          </section>
+        ) : null}
 
         {item.chapters && item.chapters.length > 0 ? (
           <FormationChapters
@@ -275,8 +284,14 @@ export default async function FormationCategoryItemPage({
                       ) : null}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="gap-1">
-                          <Video size={12} />
-                          {tFormation("video")}
+                          {entry.type === "video" ? (
+                            <Video size={12} />
+                          ) : (
+                            <FileText size={12} />
+                          )}
+                          {tFormation(
+                            entry.type === "video" ? "video" : "article",
+                          )}
                         </Badge>
                         <Badge variant="outline" className="gap-1 tabular-nums">
                           <Clock size={12} />
@@ -285,7 +300,11 @@ export default async function FormationCategoryItemPage({
                       </div>
                     </div>
                     <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors group-hover:text-foreground">
-                      <Video size={16} />
+                      {entry.type === "video" ? (
+                        <Video size={16} />
+                      ) : (
+                        <FileText size={16} />
+                      )}
                     </span>
                   </Link>
                 ))}

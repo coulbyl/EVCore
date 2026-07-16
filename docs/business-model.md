@@ -6,6 +6,12 @@
 > données réelles en base au 2026-07-16, pas sur la description aspirationnelle d'EVCORE.md.
 > Mise à jour 2026-07-16 : chat support 1:1 + notifications web push (support et annonces) +
 > opt-in email par utilisateur construits depuis la version précédente — voir §2 et §6.
+> Mise à jour 2026-07-16 (bis) : recadrage stratégique — EVCore n'a pas encore été promu,
+> l'application est neuve. Les 20 comptes actuels ne sont pas un signal produit, ce sont des
+> comptes internes pré-lancement (voir §7). Le raisonnement se fait en produit/LTV, pas en
+> traction observée. Positionnement produit clarifié : on ne vend pas des "canaux", on vend de
+> l'analyse curatée, des coupons composés, et de l'accompagnement — voir §6. Le pricing est
+> dynamique par construction, pas un catalogue figé — voir §6.
 > Contexte technique : [EVCORE.md](../EVCORE.md) · État d'avancement : [ROADMAP.md](../ROADMAP.md)
 
 ---
@@ -14,52 +20,57 @@
 
 EVCore est un moteur multi-canal complet et opérationnel, avec des chiffres de backtest réels
 et globalement solides sur son canal phare (VALUE) et une fonctionnalité de génération de
-coupon déjà backtestée positivement. Mais deux points changent significativement l'ordre des
-priorités par rapport à une première lecture superficielle :
+coupon déjà backtestée positivement. L'application n'a pas encore été promue — les 20 comptes
+actuels sont des comptes internes pré-lancement, pas un échantillon d'utilisateurs à analyser.
+Trois points structurent la stratégie produit à partir de ce constat :
 
-1. **L'échelle actuelle est celle d'un bêta interne, pas d'un produit avec traction** : 20
-   comptes utilisateurs (1 admin + 19 operators), 2 bet slips utilisateur jamais créés, 16
-   badges débloqués au total. Le volume réel vient du moteur (1 926 bets réglés, 39 221
-   `ModelRun`), pas d'un usage utilisateur significatif. Vendre un abonnement aujourd'hui,
-   c'est vendre à une base quasi inexistante — la priorité immédiate n'est pas le pricing,
-   c'est la traction.
+1. **Le produit ne se vend pas par canal, il se vend par niveau de curation et
+   d'accompagnement.** VALUE (mise réelle) et le Coupon Composer sont les deux actifs qui
+   tiennent hors échantillon — ce sont eux qui justifient le prix, pas un accès brut à chaque
+   signal. BTTS/GOALS et les autres signaux nourrissent la curation en coulisse ; ils ne sont
+   jamais vendus comme un produit autonome. Détail de l'offre en §6.
 2. **L'IA n'est pas encore un argument de vente honnête.** La couche de correction ML
    (Phase 3) est **100% shadow** — elle ne touche jamais un pick réellement montré à un
    utilisateur, et le pipeline qui l'alimente est même resté cassé (aucun `ModelRun` shadow
    généré) après la dernière activation de modèle. Eva est un vrai outil utile mais reste un
    assistant d'analyse single-shot, pas un moteur de décision — le présenter comme "l'IA qui
    trouve vos picks" serait factuellement faux.
-3. **Le mécanisme d'"accompagnement personnalisé" du palier Business, jusqu'ici une simple
-   promesse dans ce document, est maintenant un vrai outil construit** : chat 1:1 temps réel
-   entre un utilisateur et l'équipe EVCore, notifications web push (support + annonces), et
-   opt-in email par utilisateur. Mais construit ne veut pas dire utilisé : **0 abonnement push
-   actif** sur 20 comptes, 10 conversations et 6 messages au total (majoritairement du test
-   interne). L'outil ne remplace pas la traction — voir §7.
+3. **La formation est une brique de confiance à construire, pas un module de gamification
+   décoratif.** Si le produit vend de la curation plutôt que du picking brut, le client doit
+   comprendre pourquoi le Composer a choisi ce coupon — sinon EVCore devient un tipster comme
+   un autre. L'état actuel (7 badges, 16 débloqués au total) est un habillage, pas un contenu
+   pédagogique réel. C'est un prérequis de lancement, pas un chantier post-lancement — voir §7.
+4. **Le mécanisme d'"accompagnement personnalisé" du palier Business est maintenant un vrai
+   outil construit** : chat 1:1 temps réel entre un utilisateur et l'équipe EVCore,
+   notifications web push (support + annonces), et opt-in email par utilisateur. L'usage
+   actuel (0 abonnement push actif, 10 conversations de test) n'est pas un signal — l'outil a
+   été livré la veille du recadrage stratégique, avant tout lancement public.
 
 Recommandation inchangée sur le fond : **abonnement SaaS freemium**, pas d'affiliation
-bookmaker. Mais l'ordre des étapes change : construire la traction et un vrai historique
-public avant de construire le billing (détail §9).
+bookmaker, avec un **pricing dynamique** plutôt qu'un catalogue figé (détail §6). L'ordre des
+étapes est produit-first : finaliser la formation et l'historique public, puis lancer — pas
+attendre un signal de traction qui n'a pas de raison d'exister avant tout lancement (§7, §9).
 
 ---
 
 ## 2. Ce qu'on a construit — état réel par brique
 
-| Brique                                      | Statut réel                                                | Chiffre à l'appui                                                                                                                                                                                                                                            |
-| ------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **VALUE** (mise réelle)                     | Solide, seul canal qui tient hors échantillon              | Top5 par edge calibré : **+14.98% ROI** tout historique (295 picks) ; **+2.27%** sur le seul 2026 forward — le seul classement qui reste positif hors échantillon, quand le tri par probabilité brute tombe à -12.70%                                        |
-| **SAFE** (mise réelle)                      | Prometteur mais échantillon trop fin                       | Seulement 28 jours éligibles au top5 toute la période testée — ROI qui varie de -27% (train) à +2/+10% (2026) : pas assez de volume pour figer une formule                                                                                                   |
-| **DOMINANT** (signal)                       | La preuve que le ranking sauve un canal faible             | Canal complet : **-23.27% ROI** ; mais top5 par probabilité : **+3.30% ROI** — la valeur est dans le classement, pas le canal brut                                                                                                                           |
-| **DRAW** (signal)                           | En amélioration réelle, pas un vœu pieux                   | +1.61% ROI toute la période (1 119 picks), mais +11 à +16% sur 2026 selon la formule vs -19% en 2023                                                                                                                                                         |
-| **BTTS / GOALS** (signaux)                  | Pas rentables sur aucun classement testé à ce jour         | BTTS canal complet -37.22% ROI, GOALS -26.05% — ce sont des signaux à fort volume, pas des canaux à edge prouvé                                                                                                                                              |
-| **Coupon composer** (génération auto Top 3) | Réellement curaté, backtesté, positif                      | Documenté dans le code : Train ROI +100.3%, **Test ROI +61.8%**, hit rate test 51.5%, verdict **PASS** (2026-05-19) — c'est aujourd'hui l'actif le plus vendable du produit                                                                                  |
-| **Investment (page "Investir")**            | Fonctionnalité distincte du coupon, pas un doublon         | Classe les picks individuels par probabilité de gain réelle (pas par EV brut — choix backtesté), applique une correction de biais par canal (ex. SAFE surconfiant de +12.5pt), exclut les picks GOALS qui contredisent le lambda Poisson du moteur           |
-| **Correction ML (Phase 3)**                 | **100% shadow, jamais consommée dans une décision réelle** | Flag `ML_CORRECTION_ENABLED` off par défaut ; même activé, le résultat n'est écrit que dans `ModelRun.features` (log), jamais lu par le code qui construit le pick final. Pipeline resté cassé après la dernière activation (aucun `ModelRun` shadow généré) |
-| **Eva** (analyse Groq single-shot)          | Utile, mais un assistant, pas un moteur                    | Modèle `llama-4-scout-17b` (tier gratuit Groq), 1 appel non-streamé par analyse, 2048 tokens max, quota **50 requêtes/jour, identique pour tous les utilisateurs** — aucune distinction de palier n'existe                                                   |
-| **Module Audit**                            | Base de transparence déjà là, non packagée                 | Endpoints publics (`/fixtures`, `/overview`) exposant picks, probabilités, EV et résultats réglés — c'est un outil ops interne aujourd'hui, pas une page "preuve de traçabilité" présentée aux utilisateurs                                                  |
-| **Gamification + Formation**                | Construit, très peu utilisé                                | 7 badges définis, **16 débloqués au total** (tous utilisateurs confondus) — le mécanisme existe, l'engagement réel reste à prouver                                                                                                                           |
-| **Chat support 1:1 + notifications push**   | Construit (2026-07-16), pas encore adopté                  | Chat temps réel utilisateur ↔ équipe EVCore, web push (VAPID) pour le support et les annonces, opt-in email par utilisateur (settings) — **10 conversations, 6 messages, 0 abonnement push actif** sur 20 comptes ; l'outil du palier Business existe, l'usage non |
-| **Billing / Stripe / entitlements**         | Inexistant                                                 | Rien à vendre tant que ça n'existe pas — §8                                                                                                                                                                                                                  |
-| **Traction utilisateur**                    | Quasi nulle                                                | 20 comptes (1 admin + 19 operators, contre 24 lors de la précédente lecture), 2 bet slips créés, 355 coupons générés par le moteur (pas par des utilisateurs) — aucune métrique d'engagement à citer dans un pitch aujourd'hui                                 |
+| Brique                                      | Statut réel                                                    | Chiffre à l'appui                                                                                                                                                                                                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **VALUE** (mise réelle)                     | Solide, seul canal qui tient hors échantillon                  | Top5 par edge calibré : **+14.98% ROI** tout historique (295 picks) ; **+2.27%** sur le seul 2026 forward — le seul classement qui reste positif hors échantillon, quand le tri par probabilité brute tombe à -12.70%                                              |
+| **SAFE** (mise réelle)                      | Prometteur mais échantillon trop fin                           | Seulement 28 jours éligibles au top5 toute la période testée — ROI qui varie de -27% (train) à +2/+10% (2026) : pas assez de volume pour figer une formule                                                                                                         |
+| **DOMINANT** (signal)                       | La preuve que le ranking sauve un canal faible                 | Canal complet : **-23.27% ROI** ; mais top5 par probabilité : **+3.30% ROI** — la valeur est dans le classement, pas le canal brut                                                                                                                                 |
+| **DRAW** (signal)                           | En amélioration réelle, pas un vœu pieux                       | +1.61% ROI toute la période (1 119 picks), mais +11 à +16% sur 2026 selon la formule vs -19% en 2023                                                                                                                                                               |
+| **BTTS / GOALS** (signaux)                  | Pas rentables sur aucun classement testé à ce jour             | BTTS canal complet -37.22% ROI, GOALS -26.05% — ce sont des signaux à fort volume, pas des canaux à edge prouvé                                                                                                                                                    |
+| **Coupon composer** (génération auto Top 3) | Réellement curaté, backtesté, positif                          | Documenté dans le code : Train ROI +100.3%, **Test ROI +61.8%**, hit rate test 51.5%, verdict **PASS** (2026-05-19) — c'est aujourd'hui l'actif le plus vendable du produit                                                                                        |
+| **Investment (page "Investir")**            | Fonctionnalité distincte du coupon, pas un doublon             | Classe les picks individuels par probabilité de gain réelle (pas par EV brut — choix backtesté), applique une correction de biais par canal (ex. SAFE surconfiant de +12.5pt), exclut les picks GOALS qui contredisent le lambda Poisson du moteur                 |
+| **Correction ML (Phase 3)**                 | **100% shadow, jamais consommée dans une décision réelle**     | Flag `ML_CORRECTION_ENABLED` off par défaut ; même activé, le résultat n'est écrit que dans `ModelRun.features` (log), jamais lu par le code qui construit le pick final. Pipeline resté cassé après la dernière activation (aucun `ModelRun` shadow généré)       |
+| **Eva** (analyse Groq single-shot)          | Utile, mais un assistant, pas un moteur                        | Modèle `llama-4-scout-17b` (tier gratuit Groq), 1 appel non-streamé par analyse, 2048 tokens max, quota **50 requêtes/jour, identique pour tous les utilisateurs** — aucune distinction de palier n'existe                                                         |
+| **Module Audit**                            | Base de transparence déjà là, non packagée                     | Endpoints publics (`/fixtures`, `/overview`) exposant picks, probabilités, EV et résultats réglés — c'est un outil ops interne aujourd'hui, pas une page "preuve de traçabilité" présentée aux utilisateurs                                                        |
+| **Gamification + Formation**                | Squelette technique en place, contenu pédagogique à construire | 7 badges définis, **16 débloqués au total** — le mécanisme de gamification existe mais le contenu de formation réel (comprendre l'edge, la variance, lire un coupon composé, gérer sa bankroll) reste à écrire ; prérequis de lancement, voir §7                   |
+| **Chat support 1:1 + notifications push**   | Construit (2026-07-16), pas encore adopté                      | Chat temps réel utilisateur ↔ équipe EVCore, web push (VAPID) pour le support et les annonces, opt-in email par utilisateur (settings) — **10 conversations, 6 messages, 0 abonnement push actif** sur 20 comptes ; l'outil du palier Business existe, l'usage non |
+| **Billing / Stripe / entitlements**         | Inexistant                                                     | Rien à vendre tant que ça n'existe pas — §8                                                                                                                                                                                                                        |
+| **Traction utilisateur**                    | Non pertinent avant lancement                                  | 20 comptes internes (1 admin + 19 operators), pré-lancement — pas un échantillon à analyser ni un signal produit ; à ne pas citer dans un pitch, ni comme preuve ni comme problème                                                                                 |
 
 ---
 
@@ -134,15 +145,22 @@ l'échelle, mais ne conditionne pas le fait de commencer à construire et tester
 
 ## 6. Structure retenue : essai → gratuit → Premium → Business
 
-Version affinée à partir d'une proposition initiale à 3 paliers (essai/Premium/Business).
+Reformulation du principe de vente : **on ne vend pas un accès à des canaux, on vend trois
+choses — de l'analyse (la preuve), de la curation (le Coupon Composer, Investment), et de
+l'accompagnement (Business)**. Les canaux individuels (VALUE, SAFE, DOMINANT, BTTS, DRAW,
+GOALS) sont la matière première du moteur, jamais des SKU vendus séparément. Un client Premium
+ne "débloque pas BTTS" — il achète l'accès à la curation complète, qui elle-même sait quoi
+faire ou ne pas faire de BTTS.
+
 Décisions actées : l'essai redescend vers un palier gratuit limité plutôt qu'un paywall dur ou
 un accès illimité ; les coupons manuels de l'équipe sont tracés publiquement au même standard
-que les canaux du moteur ; le palier Business a une capacité explicitement plafonnée.
+que le reste du moteur ; le palier Business a une capacité explicitement plafonnée ; **le
+pricing est dynamique, pas un catalogue figé** (détail en fin de section).
 
 ### 0 — Essai (30 jours, à l'inscription)
 
-- Accès complet : tous les canaux (VALUE/SAFE/DOMINANT/BTTS/DRAW/GOALS), coupon composer
-  automatique, Investment, Eva (quota standard), Formation, gamification
+- Accès complet à l'expérience curatoire : Coupon Composer, Investment, VALUE temps réel,
+  formation complète, gamification, Eva (quota standard)
 - Sauf : export de la fiche EVCore
 - 1 device
 - À J+30 : bascule automatique vers le palier Gratuit (pas de coupure brutale, conversion
@@ -150,37 +168,39 @@ que les canaux du moteur ; le palier Business a une capacité explicitement plaf
 
 ### Gratuit (permanent, après l'essai)
 
-- **VALUE** en lecture différée (ex. J-1) — c'est le seul canal qui a un historique
-  défendable, donc le meilleur teaser honnête
-- Formation + gamification en accès libre — canal d'acquisition, jamais gaté
-- Pas de coupon composer, pas d'Investment complet, pas de coupons manuels équipe, pas
+- **VALUE** en lecture différée (ex. J-1) — la seule preuve qu'on peut montrer sans risquer
+  l'argent réel de personne, et le meilleur teaser honnête de ce que fait le moteur
+- Formation + gamification en accès libre — canal d'acquisition et de pédagogie, jamais gaté
+- Pas de Coupon Composer, pas d'Investment complet, pas de coupons manuels équipe, pas
   d'export, Eva en quota réduit
 - 1 device
 
-### Premium (abonnement payant)
+### Premium (abonnement payant) — le produit central
 
-- Tous les canaux en temps réel — y compris BTTS/GOALS, **étiquetés honnêtement** comme
-  signaux à fort volume non encore prouvés rentables (voir §2) plutôt que présentés comme un
-  edge démontré
-- **Coupon composer automatique** (Top 3 quotidien, backtesté +61.8% test ROI) — l'argument de
-  vente principal, pas un "plus"
+- **Coupon Composer** (Top 3 quotidien, backtesté +61.8% test ROI) — l'argument de vente
+  principal : "on curate pour toi", pas un accès à des données brutes
+- **Investment** (classement probabiliste avec correction de biais par canal) — la deuxième
+  porte d'entrée pour le client qui préfère des picks individuels à un coupon groupé
+- Analyse complète en temps réel sur tous les signaux du moteur, **présentée avec son statut
+  réel** (edge prouvé vs signal d'exploration — voir §2/§3) : jamais de signal non prouvé
+  vendu comme un edge démontré
 - **Coupons manuels de l'équipe EVCore — diffusion large** (annonce dashboard ou page dédiée,
   visibles par tous les abonnés Premium+), avec un **ROI/hit-rate public tracké au même
-  standard que les canaux du moteur** — condition non négociable pour rester cohérent avec le
+  standard que le reste du moteur** — condition non négociable pour rester cohérent avec le
   positionnement "discipline mesurable, pas un générateur de tips" (voir §8 pour ce que ça
   implique techniquement)
-- **Investment** (classement probabiliste avec correction de biais par canal)
-- Export de la fiche EVCore, Eva en quota étendu
+- Formation avancée avec suivi de progression individuel, export de la fiche EVCore, Eva en
+  quota étendu
 - 2 devices
 
-### Business (abonnement payant, capacité explicitement plafonnée — ex. 10 places affichées)
+### Business (abonnement payant, capacité explicitement plafonnée — ex. 10-15 places affichées)
 
 - Tout Premium, plus un vrai service humain, pas une feature :
   - **Accompagnement par l'équipe EVCore — suivi personnalisé.** Le canal existe déjà
     techniquement (chat 1:1 temps réel + notifications web push construits le 2026-07-16,
-    voir §2) — reste à décider si ce canal est réservé aux clients Business ou ouvert plus
-    largement (aujourd'hui il est disponible à tout utilisateur authentifié, sans distinction
-    de palier, puisqu'aucun entitlement n'existe encore — §8).
+    voir §2) — reste à réserver ce canal aux clients Business via entitlement (aujourd'hui il
+    est disponible à tout utilisateur authentifié, sans distinction de palier, puisqu'aucun
+    entitlement n'existe encore — §8).
   - Définition d'un objectif de profil de pari (ROI cible, bankroll, tolérance au risque) et
     revue périodique de la trajectoire réelle vs objectif — **ceci reste à construire**, le
     chat ne fait qu'ouvrir un canal de discussion, pas un suivi structuré d'objectif
@@ -198,36 +218,62 @@ que les canaux du moteur ; le palier Business a une capacité explicitement plaf
 **Sur le tracking des coupons ciblés** : un coupon diffusé à un seul client relève du conseil
 personnalisé, pas d'une allégation produit générale — il doit rester tracké (le client voit sa
 propre performance dans son suivi d'objectif), mais n'a pas vocation à être agrégé dans le ROI
-public affiché aux prospects (§6, coupons Premium). Mélanger les deux fausserait le chiffre
-public dans un sens comme dans l'autre — à garder strictement séparés dans le modèle de
+public affiché aux prospects (coupons Premium ci-dessus). Mélanger les deux fausserait le
+chiffre public dans un sens comme dans l'autre — à garder strictement séparés dans le modèle de
 données comme dans l'affichage.
 
 Ne pas construire de 5ᵉ palier avant d'avoir des utilisateurs payants réels à qui demander ce
 qu'ils veulent en plus.
 
+### Pricing dynamique, pas un catalogue figé
+
+Le tarif de chaque palier n'est pas une constante gravée dans le produit — c'est un paramètre
+ajustable (offre de lancement, test A/B, palier fondateur verrouillé, ajustement par marché ou
+par cohorte). Conséquence technique directe : le prix ne doit jamais être hardcodé dans le
+front ni dans les entitlements — il vit dans la configuration du `Plan` Stripe (§8), interrogé
+au moment de l'affichage et du paiement, jamais mémorisé côté client.
+
+Repères de lancement (à valider, pas figés) :
+
+- **Offre fondateur** : un tarif Premium verrouillé à vie pour les N premiers abonnés (ex. les
+  100-200 premiers) — crée de l'urgence au lancement sans dévaloriser le prix catalogue
+  ultérieur, et donne un signal de rareté cohérent avec le plafond du palier Business.
+  Repère de départ : Premium ≈ 30-40€/mois, Business ≈ 150-250€/mois pour 10-15 places — à
+  confirmer par test, pas par intuition.
+- **Annuel** : une seule remise annuelle par palier au lancement, pas de multiplication
+  d'options avant d'avoir des retours réels de conversion.
+- **Contrainte légale inchangée** : quel que soit le prix affiché, aucun ROI ne doit être
+  formulé comme une promesse de gain — toujours historique et daté (voir §4).
+
 ---
 
-## 7. Prérequis avant même de parler de pricing : construire la traction
+## 7. Prérequis de lancement : produit-first, pas traction-first
 
-Avec 20 comptes et une utilisation utilisateur quasi nulle (2 bet slips, 16 badges), le vrai
-chantier prioritaire n'est pas le billing, c'est de faire tourner le produit devant de vrais
-utilisateurs gratuitement d'abord :
+L'application n'a pas encore été promue — les 20 comptes actuels sont internes, pré-lancement.
+Ce n'est donc pas un problème de traction à résoudre, c'est un chantier de préparation de
+lancement à finir. Le raisonnement se fait en LTV/produit attendu, pas en usage observé
+aujourd'hui. Ce qui doit être vrai **avant** le grand lancement :
 
-1. **Publier un vrai historique de traçabilité public** — l'audit module a déjà les données
-   (`/fixtures`, `/overview`), il manque juste une page utilisateur qui les présente comme une
-   preuve de track record plutôt qu'un outil de debug interne. C'est plus utile qu'un pricing
-   tant qu'il n'y a personne pour l'acheter.
-2. **Ne pas construire de palier payant avant d'avoir au moins quelques dizaines
-   d'utilisateurs actifs organiques** (au-delà des 20 comptes actuels) qui utilisent VALUE ou
-   le coupon composer sans y être poussés.
+1. **Une formation réelle, pas décorative.** Le produit vend de la curation (Composer,
+   Investment) plutôt que du picking brut — le client doit comprendre pourquoi un coupon a été
+   composé ainsi, sinon EVCore devient un tipster comme un autre malgré des chiffres
+   supérieurs. C'est un prérequis produit, pas un chantier d'engagement post-lancement.
+   Contenu à construire en détail — voir la suite de la conversation produit.
+2. **Un vrai historique de traçabilité public** — l'audit module a déjà les données
+   (`/fixtures`, `/overview`), il manque une page qui les présente comme une preuve de track
+   record plutôt qu'un outil de debug interne. C'est l'actif de conversion n°1 au lancement :
+   la preuve chiffrée remplace la promesse.
 3. **Ne pas vendre l'IA tant qu'elle n'agit pas réellement** — soit finir la promotion hors
    shadow de la couche ML (actuellement bloquée), soit ne jamais en faire un argument avant
-   que ce soit vrai.
-4. **Construire un outil n'est pas construire de la traction** : le chat support + push
-   (§2) est disponible depuis le 2026-07-16 et personne ne l'a encore adopté (0 abonnement
-   push actif). Avant de le vendre comme argument Business, il faut d'abord voir s'il est
-   utilisé spontanément par les opérateurs actuels — sinon c'est un deuxième mécanisme
-   construit avant son marché, comme la correction ML.
+   que ce soit vrai. Ce point ne dépend pas du calendrier de lancement, il dépend de l'état du
+   code.
+4. **Le chat/push Business doit être gaté avant le lancement**, pas après — aujourd'hui
+   disponible à tout utilisateur authentifié sans entitlement (§8). Le livrer grand public par
+   défaut au lancement viderait l'argument de rareté du palier Business avant même de l'avoir
+   vendu.
+
+Ce chantier ne dépend d'aucun signal d'usage actuel — il conditionne la qualité du lancement
+lui-même, pas une hypothèse à valider avant de lancer.
 
 ---
 
@@ -235,7 +281,8 @@ utilisateurs gratuitement d'abord :
 
 1. **Provider de paiement** (Stripe) — abonnements récurrents, essais, webhooks.
 2. **Modèle `Subscription`/`Plan`** en base + entitlement sur `User`, indépendant du `role`
-   `ADMIN/OPERATOR` déjà existant.
+   `ADMIN/OPERATOR` déjà existant. Le prix vit dans la config du `Plan` (source Stripe),
+   jamais hardcodé dans le front — condition du pricing dynamique posée en §6.
 3. **Gate d'accès** sur les endpoints premium (coupon composer, Investment, SAFE/DRAW) —
    aujourd'hui tout est ouvert à tout utilisateur authentifié. Le chat support (§2) suit la
    même règle : rien ne le réserve aujourd'hui au palier Business, il faudra ajouter cette
@@ -273,10 +320,11 @@ utilisateurs gratuitement d'abord :
 
 ## 9. Risques à surveiller
 
-- **Vendre avant d'avoir une base** : facturer un produit à 20 comptes internes revient à
-  tester un pricing sans signal statistique exploitable — le vrai risque court-terme n'est pas
-  légal, c'est de brûler la crédibilité du narratif "discipline mesurable" en le vendant trop
-  tôt, avant que quiconque en dehors de l'équipe ne l'ait validé par l'usage.
+- **Lancer avant que la formation et la preuve publique soient prêtes** : le grand lancement
+  est la stratégie d'acquisition retenue (pas une traction organique à attendre) — mais lancer
+  sans contenu pédagogique réel ni page de track record revient à vendre la promesse "discipline
+  mesurable" sans en donner les moyens de vérification au client. Le risque n'est pas de lancer
+  tôt, c'est de lancer incomplet sur ces deux points précis (§7).
 - **Sur-vendre BTTS/GOALS ou l'IA** : les deux points où le produit ne tient pas encore ses
   propres chiffres — un seul utilisateur qui compare le ROI annoncé à son vécu suffit à casser
   la confiance.
@@ -293,18 +341,20 @@ utilisateurs gratuitement d'abord :
 
 ## 10. Prochaines étapes concrètes
 
-1. Construire la page de track record public (données déjà là via le module Audit) — avant
-   tout pricing, c'est l'actif de conversion le plus rentable à produire maintenant.
-2. Faire croître l'usage organique (au-delà des 20 comptes actuels) sur VALUE et le coupon
-   composer en accès gratuit, pour avoir un vrai signal avant de gater quoi que ce soit.
+1. **Construire le contenu de formation réel** (edge, variance, lecture d'un coupon composé,
+   bankroll) — prérequis de lancement, pas un chantier d'engagement post-lancement (§7).
+2. Construire la page de track record public (données déjà là via le module Audit) — l'actif
+   de conversion le plus rentable à produire pour le lancement.
 3. Construire l'entité "coupon manuel équipe" + son settlement + son ROI public — **avant**
    de publier le moindre coupon manuel, pas après (§9).
 4. Définir la capacité réelle du palier Business (combien de clients l'équipe peut
-   honnêtement suivre) et fixer le prix en fonction de ce plafond, pas l'inverse.
+   honnêtement suivre) et fixer un repère de prix dynamique en fonction de ce plafond (§6).
 5. Redéfinir le quota Eva par palier (aujourd'hui un flat 50/j technique, pas un plan produit)
    et construire la limitation par device (aucune infra existante aujourd'hui).
 6. Vérifier la catégorisation Stripe (restricted businesses) et caler le wording commercial —
    pas bloquant, mais à faire avant d'intégrer un paiement.
-7. Intégration Stripe + modèle `Subscription` + gate d'accès, une fois 1-4 validés.
-8. Lancer avec la structure essai → gratuit → Premium, mesurer la conversion réelle avant
-   d'ouvrir Business à grande échelle ou d'envisager le B2B.
+7. Intégration Stripe + modèle `Subscription`/`Plan` (prix piloté par config, jamais hardcodé)
+   - gate d'accès, une fois 1-4 validés.
+8. Grand lancement avec la structure essai → gratuit → Premium → Business, tarif fondateur
+   verrouillé sur les premiers abonnés, mesurer la conversion réelle avant d'ajuster le
+   pricing dynamique ou d'envisager le B2B.

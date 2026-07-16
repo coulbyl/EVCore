@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Home, Video } from "lucide-react";
+import { ChevronRight, FileText, Home, Video } from "lucide-react";
 import {
   Badge,
   Button,
@@ -143,7 +143,11 @@ export function FormationCategoryShell({
                           done ? "text-accent" : "text-muted-foreground"
                         }`}
                       >
-                        <Video size={16} />
+                        {item.type === "video" ? (
+                          <Video size={16} />
+                        ) : (
+                          <FileText size={16} />
+                        )}
                       </span>
                     </Link>
                   );

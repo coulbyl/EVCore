@@ -225,17 +225,28 @@ async function readContentFile(
   return { ...meta, content };
 }
 
+const CONTENT_TYPE_DIRS: Record<FormationContentType, string> = {
+  video: "videos",
+  article: "articles",
+};
+
 export async function getFormationIndex(): Promise<FormationContentMeta[]> {
   const contentRoot = await getContentRoot();
-  const videosDir = path.join(contentRoot, "videos");
-
-  const videoPaths = await listMarkdownFilesRecursively(videosDir);
 
   const items = await Promise.all(
-    videoPaths.map((fullPath) => readContentFile("video", fullPath)),
+    (Object.entries(CONTENT_TYPE_DIRS) as [FormationContentType, string][]).map(
+      async ([type, dirName]) => {
+        const paths = await listMarkdownFilesRecursively(
+          path.join(contentRoot, dirName),
+        );
+        return Promise.all(
+          paths.map((fullPath) => readContentFile(type, fullPath)),
+        );
+      },
+    ),
   );
 
-  const metas: FormationContentMeta[] = items.map((item) => {
+  const metas: FormationContentMeta[] = items.flat().map((item) => {
     const { content, ...meta } = item;
     void content;
     return meta;
@@ -249,12 +260,18 @@ export async function getFormationContentBySlug(
   slug: string,
 ): Promise<FormationContentItem | null> {
   const contentRoot = await getContentRoot();
-  const dir = path.join(contentRoot, "videos");
 
-  const paths = await listMarkdownFilesRecursively(dir);
-  for (const fullPath of paths) {
-    const item = await readContentFile("video", fullPath);
-    if (item.slug === slug) return item;
+  for (const [type, dirName] of Object.entries(CONTENT_TYPE_DIRS) as [
+    FormationContentType,
+    string,
+  ][]) {
+    const paths = await listMarkdownFilesRecursively(
+      path.join(contentRoot, dirName),
+    );
+    for (const fullPath of paths) {
+      const item = await readContentFile(type, fullPath);
+      if (item.slug === slug) return item;
+    }
   }
 
   return null;

@@ -203,11 +203,12 @@
     "toc": "Navigation",
     "videos": "Vidéos",
     "video": "Vidéo",
+    "article": "Article",
     "markCompleted": "Marquer comme terminé",
     "completed": "Terminé",
     "categories": {
       "bases": "Les bases",
-      "channels": "Les 5 canaux EVCore",
+      "channels": "Les canaux EVCore",
       "bankroll": "Bankroll & discipline",
       "leagues": "Guide par ligue",
       "app": "Comment utiliser l'app"
