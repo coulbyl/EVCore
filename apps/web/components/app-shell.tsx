@@ -14,8 +14,8 @@ import {
   ClipboardCheck,
   Cpu,
   FlaskConical,
-  Globe,
   GraduationCap,
+  History,
   Layers,
   LayoutDashboard,
   Megaphone,
@@ -207,16 +207,16 @@ export function AppShell({
         label: tNav("navGroupAnalysis"),
         items: [
           {
-            label: tNav("wc2026"),
-            href: "/dashboard/wc2026",
-            active: pathname.startsWith("/dashboard/wc2026"),
-            icon: Globe,
-          },
-          {
             label: tNav("formation"),
             href: "/dashboard/formation",
             active: pathname.startsWith("/dashboard/formation"),
             icon: GraduationCap,
+          },
+          {
+            label: tNav("trackRecord"),
+            href: "/dashboard/track-record",
+            active: pathname.startsWith("/dashboard/track-record"),
+            icon: History,
           },
         ],
       },
