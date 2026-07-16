@@ -22,20 +22,20 @@ class PnlQueryDto {
   to?: string;
 }
 
+// The track-record view (aggregate channel ROI/hit-rate) lives inside the
+// authenticated dashboard, not a public page — every route here requires at
+// least a free-tier session. Never reuse these for a logged-out surface;
+// add a dedicated public endpoint instead if that's needed later.
 @Controller('dashboard')
+@UseGuards(AuthSessionGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  // Worker health + unread alerts — internal ops data, never public.
   @Get('summary')
-  @UseGuards(AuthSessionGuard)
   getSummary(@Query() query: DashboardSummaryQueryDto) {
     return this.dashboardService.getSummary(query.pnlDate);
   }
 
-  // Aggregate channel ROI — intentionally unauthenticated: this is the same
-  // class of data the public track-record page surfaces. Keep it that way;
-  // don't fold in operator/admin-only fields here, add a new endpoint instead.
   @Get('pnl')
   getPnlByCanal(@Query() query: PnlQueryDto) {
     const { from, to } = this.defaultRange(query);
@@ -43,7 +43,6 @@ export class DashboardController {
   }
 
   @Get('competition-stats')
-  @UseGuards(AuthSessionGuard)
   getCompetitionStats(
     @CurrentSession() session: AuthSession,
     @Query('canal') canal?: string,
@@ -56,20 +55,17 @@ export class DashboardController {
     );
   }
 
-  // Public — username + ROI only, no PII.
   @Get('leaderboard')
   getLeaderboard() {
     return this.dashboardService.getLeaderboard();
   }
 
-  // Public — aggregate per-channel ROI/hit-rate, same class as `pnl` above.
   @Get('channel-health')
   getChannelHealth(@Query() query: PnlQueryDto): Promise<ChannelHealthItem[]> {
     const { from, to } = this.defaultRange(query);
     return this.dashboardService.getChannelHealth(from, to);
   }
 
-  // Public — aggregate per-channel ROI/hit-rate, same class as `pnl` above.
   @Get('channel-stats')
   getChannelStats(@Query() query: PnlQueryDto): Promise<ChannelStatsItem[]> {
     const { from, to } = this.defaultRange(query);

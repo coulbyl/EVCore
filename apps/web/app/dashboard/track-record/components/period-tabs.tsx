@@ -11,7 +11,7 @@ export function PeriodTabs({ active }: { active: PeriodKey }) {
       {PERIODS.map((period) => (
         <Link
           key={period.key}
-          href={`/track-record?period=${period.key}`}
+          href={`/dashboard/track-record?period=${period.key}`}
           className={cn(
             "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
             period.key === active
