@@ -164,7 +164,7 @@ export default async function FormationCategoryItemPage({
       </PageHeader>
 
       <section className="flex flex-col gap-5">
-        {item.type === "video" ? (
+        {item.videoUrl ? (
           <section className="overflow-hidden rounded-[1.6rem] border border-border bg-panel-strong shadow-[0_16px_44px_rgba(15,23,42,0.08)]">
             <div className="p-3 sm:p-4">
               <FormationVideoPlayer
