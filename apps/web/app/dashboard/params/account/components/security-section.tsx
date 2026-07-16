@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { CheckCircle, Mail, ShieldCheck, ShieldOff } from "lucide-react";
 import { Button } from "@evcore/ui";
+import { useTranslations } from "next-intl";
 import { SettingsSectionCard } from "./settings-section-card";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { sendVerificationEmail } from "@/domains/auth/use-cases/verify-email";
 import Link from "next/link";
 
 export function SecuritySection() {
+  const t = useTranslations("account");
   const user = useCurrentUser();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -23,19 +25,14 @@ export function SecuritySection() {
       await sendVerificationEmail();
       setSent(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Impossible d'envoyer le code.",
-      );
+      setError(err instanceof Error ? err.message : t("codeSendError"));
     } finally {
       setSending(false);
     }
   }
 
   return (
-    <SettingsSectionCard
-      eyebrow="Sécurité"
-      title="Authentification & vérification"
-    >
+    <SettingsSectionCard eyebrow={t("tabSecurity")} title={t("securityTitle")}>
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
           {isVerified ? (
@@ -45,19 +42,21 @@ export function SecuritySection() {
           )}
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">
-              {isVerified ? "Compte vérifié" : "Compte non vérifié"}
+              {isVerified ? t("accountVerified") : t("accountNotVerified")}
             </p>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {user.mfaMethod === "TOTP"
-                ? "Application d'authentification (TOTP) configurée."
+                ? t("totpConfigured")
                 : user.emailVerified
-                  ? `Email vérifié — ${user.email}`
-                  : "Votre compte n'est pas encore vérifié. Certaines fonctionnalités sont inaccessibles."}
+                  ? t("emailVerifiedMessage", { email: user.email })
+                  : t("notVerifiedMessage")}
             </p>
           </div>
           {!isVerified ? (
             <Button size="sm" variant="outline" asChild>
-              <Link href="/dashboard/params/account/security">Vérifier →</Link>
+              <Link href="/dashboard/params/account/securite/verification">
+                {t("verifyAction")}
+              </Link>
             </Button>
           ) : null}
         </div>
@@ -67,16 +66,15 @@ export function SecuritySection() {
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">
-                Application d&apos;authentification
+                {t("totpTitle")}
               </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Non configurée. Ajoutez une app TOTP pour sécuriser davantage
-                votre compte et récupérer l&apos;accès sans email.
+                {t("totpDescription")}
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link href="/dashboard/params/account/security">
-                Configurer →
+              <Link href="/dashboard/params/account/securite/verification">
+                {t("configureAction")}
               </Link>
             </Button>
           </div>
@@ -87,14 +85,14 @@ export function SecuritySection() {
             <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">
-                Code de vérification
+                {t("verificationCodeTitle")}
               </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Renvoyer un code à {user.email}.
+                {t("resendCodeDescription", { email: user.email })}
               </p>
               {sent ? (
                 <p className="mt-1 text-xs text-green-600">
-                  Code envoyé — vérifiez vos spams.
+                  {t("codeSentMessage")}
                 </p>
               ) : error ? (
                 <p className="mt-1 text-xs text-destructive">{error}</p>
@@ -106,7 +104,7 @@ export function SecuritySection() {
               disabled={sending || sent}
               onClick={handleResendVerification}
             >
-              {sending ? "Envoi…" : sent ? "Envoyé" : "Renvoyer"}
+              {sending ? t("sending") : sent ? t("sent") : t("resend")}
             </Button>
           </div>
         )}

@@ -11,6 +11,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
 import { useMyBadges } from "@/domains/gamification/use-cases/get-my-badges";
 import { FREE_AVATARS, LOCKED_AVATARS } from "@/lib/avatars";
@@ -20,18 +21,6 @@ import {
 } from "@/domains/auth/context/current-user-context";
 import { clientApiRequest } from "@/lib/api/client-api";
 import { updateIdentity } from "@/domains/auth/use-cases/update-identity";
-
-const BADGE_NAME: Record<string, string> = {
-  vol_50: "50 paris réglés",
-  vol_150: "150 paris réglés",
-  streak_5: "Série × 5",
-  calibre: "Brier Score < 0.20",
-};
-
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Admin",
-  OPERATOR: "Opérateur",
-};
 
 type EditableField = "email" | "username" | null;
 
@@ -45,6 +34,9 @@ function EditableInfoRow({
   onCancel,
   saving,
   error,
+  editLabel,
+  saveLabel,
+  cancelLabel,
 }: {
   icon: React.ElementType;
   label: string;
@@ -56,6 +48,9 @@ function EditableInfoRow({
   onCancel: () => void;
   saving: boolean;
   error: string | null;
+  editLabel: string;
+  saveLabel: string;
+  cancelLabel: string;
 }) {
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +89,7 @@ function EditableInfoRow({
             onClick={() => onSave(draft)}
             disabled={saving || draft.trim() === ""}
             className="shrink-0 rounded-md p-1 text-accent hover:bg-accent/10 disabled:opacity-40"
-            title="Enregistrer"
+            title={saveLabel}
           >
             <Check size={14} />
           </button>
@@ -103,7 +98,7 @@ function EditableInfoRow({
             onClick={onCancel}
             disabled={saving}
             className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/40"
-            title="Annuler"
+            title={cancelLabel}
           >
             <X size={14} />
           </button>
@@ -120,7 +115,7 @@ function EditableInfoRow({
             type="button"
             onClick={onStartEdit}
             className="ml-auto shrink-0 rounded-md p-1 text-muted-foreground opacity-0 hover:opacity-100 group-hover:opacity-60 hover:text-foreground transition-opacity"
-            title={`Modifier ${label.toLowerCase()}`}
+            title={editLabel}
           >
             <Pencil size={11} />
           </button>
@@ -131,6 +126,7 @@ function EditableInfoRow({
 }
 
 export function ProfileHeroSection() {
+  const t = useTranslations("account");
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
 
@@ -160,7 +156,7 @@ export function ProfileHeroSection() {
       await clientApiRequest("/auth/me", {
         method: "PATCH",
         body: { avatarUrl },
-        fallbackErrorMessage: "Impossible de sauvegarder l'avatar.",
+        fallbackErrorMessage: t("avatarSaveError"),
       });
       setCurrentUser({ ...currentUser, avatarUrl });
     } finally {
@@ -178,8 +174,7 @@ export function ProfileHeroSection() {
       setCurrentUser({ ...currentUser, ...updated });
       setEditingField(null);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Une erreur est survenue.";
+      const msg = err instanceof Error ? err.message : t("genericError");
       setFieldError(msg);
     } finally {
       setFieldSaving(false);
@@ -217,7 +212,7 @@ export function ProfileHeroSection() {
           {/* Compact horizontal picker */}
           <div className="flex flex-col gap-2 w-full sm:w-auto">
             <p className="text-center text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-left">
-              Avatar
+              {t("avatar")}
             </p>
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {FREE_AVATARS.map((avatar) => (
@@ -281,9 +276,10 @@ export function ProfileHeroSection() {
                     <Tooltip key={avatar.url}>
                       <TooltipTrigger asChild>{btn}</TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        Requiert :{" "}
-                        {BADGE_NAME[avatar.requiredBadge] ??
-                          avatar.requiredBadge}
+                        {t("requires")}{" "}
+                        {t.has(`badgeNames.${avatar.requiredBadge}`)
+                          ? t(`badgeNames.${avatar.requiredBadge}`)
+                          : avatar.requiredBadge}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -307,7 +303,9 @@ export function ProfileHeroSection() {
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-accent/12 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-accent">
                 <ShieldCheck size={10} />
-                {ROLE_LABEL[currentUser.role] ?? currentUser.role}
+                {t.has(`roles.${currentUser.role}`)
+                  ? t(`roles.${currentUser.role}`)
+                  : currentUser.role}
               </span>
             </div>
           </div>
@@ -316,7 +314,7 @@ export function ProfileHeroSection() {
           <div className="group divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
             <EditableInfoRow
               icon={Mail}
-              label="Email"
+              label={t("email")}
               field="email"
               value={currentUser.email}
               editing={editingField === "email"}
@@ -325,10 +323,13 @@ export function ProfileHeroSection() {
               onCancel={cancelEdit}
               saving={fieldSaving}
               error={editingField === "email" ? fieldError : null}
+              editLabel={t("editField", { field: t("email").toLowerCase() })}
+              saveLabel={t("save")}
+              cancelLabel={t("cancel")}
             />
             <EditableInfoRow
               icon={AtSign}
-              label="Identifiant"
+              label={t("username")}
               field="username"
               value={`@${currentUser.username}`}
               editing={editingField === "username"}
@@ -339,6 +340,11 @@ export function ProfileHeroSection() {
               onCancel={cancelEdit}
               saving={fieldSaving}
               error={editingField === "username" ? fieldError : null}
+              editLabel={t("editField", {
+                field: t("username").toLowerCase(),
+              })}
+              saveLabel={t("save")}
+              cancelLabel={t("cancel")}
             />
             {currentUser.bio && (
               <div className="flex items-center gap-3 px-4 py-3">
@@ -347,7 +353,7 @@ export function ProfileHeroSection() {
                   className="shrink-0 text-muted-foreground"
                 />
                 <span className="w-20 shrink-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Biographie
+                  {t("bio")}
                 </span>
                 <span className="truncate text-sm text-foreground">
                   {currentUser.bio}

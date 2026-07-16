@@ -2,6 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   DataTable,
@@ -38,16 +46,20 @@ import {
   Link2,
   MoreHorizontal,
   ShieldCheck,
+  Trash2,
+  UserCheck,
   UserX,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UserAvatar } from "@/components/user-avatar";
+import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import type {
   AdminUserRow,
   AdminUserRole,
 } from "@/domains/admin-users/types/admin-users";
 import { useAdminUsers } from "@/domains/admin-users/use-cases/get-admin-users";
 import { useUpdateAdminUser } from "@/domains/admin-users/use-cases/update-admin-user";
+import { useDeleteAdminUser } from "@/domains/admin-users/use-cases/delete-admin-user";
 import { generateAdminResetLink } from "@/domains/admin-users/use-cases/generate-reset-link";
 
 function roleLabel(role: AdminUserRole) {
@@ -62,16 +74,62 @@ function formatCreatedAt(value: string) {
   });
 }
 
-function UserActions({
+function DeleteUserDialog({
   user,
-  onRoleChange,
+  open,
+  onOpenChange,
+  onConfirm,
+  isDeleting,
 }: {
   user: AdminUserRow;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer {user.fullName} ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Cette action est irréversible : le compte @{user.username} et toutes
+            ses données associées (paris, coupons, sessions…) seront
+            définitivement supprimés.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? "Suppression…" : "Supprimer"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function UserActions({
+  user,
+  isSelf,
+  onRoleChange,
+  onSuspendToggle,
+  onDelete,
+}: {
+  user: AdminUserRow;
+  isSelf: boolean;
   onRoleChange: (role: AdminUserRole) => void;
+  onSuspendToggle: (suspended: boolean) => void;
+  onDelete: () => void;
 }) {
   const [copyState, setCopyState] = useState<
     "idle" | "loading" | "copied" | "error"
   >("idle");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   async function handleCopyResetLink() {
     setCopyState("loading");
@@ -89,60 +147,88 @@ function UserActions({
   const nextRole: AdminUserRole = user.role === "ADMIN" ? "OPERATOR" : "ADMIN";
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="size-8 p-0 text-muted-foreground hover:text-foreground"
-        >
-          <MoreHorizontal size={16} />
-          <span className="sr-only">Actions</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
-          {user.fullName}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onRoleChange(nextRole)}>
-          <ShieldCheck size={14} className="mr-2 text-accent" />
-          Passer en {roleLabel(nextRole)}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleCopyResetLink}
-          disabled={copyState === "loading"}
-        >
-          {copyState === "copied" ? (
-            <Check size={14} className="mr-2 text-success" />
-          ) : copyState === "error" ? (
-            <Link2 size={14} className="mr-2 text-destructive" />
-          ) : (
-            <Copy size={14} className="mr-2" />
-          )}
-          {copyState === "copied"
-            ? "Lien copié"
-            : copyState === "error"
-              ? "Erreur"
-              : copyState === "loading"
-                ? "Génération…"
-                : "Copier le lien reset"}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-muted-foreground focus:text-muted-foreground"
-          disabled
-        >
-          <UserX size={14} className="mr-2" />
-          Suspendre (bientôt)
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-8 p-0 text-muted-foreground hover:text-foreground"
+          >
+            <MoreHorizontal size={16} />
+            <span className="sr-only">Actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            {user.fullName}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onRoleChange(nextRole)}>
+            <ShieldCheck size={14} className="mr-2 text-accent" />
+            Passer en {roleLabel(nextRole)}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleCopyResetLink}
+            disabled={copyState === "loading"}
+          >
+            {copyState === "copied" ? (
+              <Check size={14} className="mr-2 text-success" />
+            ) : copyState === "error" ? (
+              <Link2 size={14} className="mr-2 text-destructive" />
+            ) : (
+              <Copy size={14} className="mr-2" />
+            )}
+            {copyState === "copied"
+              ? "Lien copié"
+              : copyState === "error"
+                ? "Erreur"
+                : copyState === "loading"
+                  ? "Génération…"
+                  : "Copier le lien reset"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => onSuspendToggle(!user.suspended)}
+            disabled={isSelf}
+            className={
+              user.suspended
+                ? undefined
+                : "text-destructive focus:text-destructive"
+            }
+          >
+            {user.suspended ? (
+              <UserCheck size={14} className="mr-2" />
+            ) : (
+              <UserX size={14} className="mr-2" />
+            )}
+            {user.suspended ? "Réactiver" : "Suspendre"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={isSelf}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 size={14} className="mr-2" />
+            Supprimer
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DeleteUserDialog
+        user={user}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={onDelete}
+        isDeleting={false}
+      />
+    </>
   );
 }
 
 export function UsersPageClient() {
   const tCommon = useTranslations("common");
+  const currentUser = useCurrentUser();
   const [q, setQ] = useState("");
   const [role, setRole] = useState<"ALL" | AdminUserRole>("ALL");
   const [page, setPage] = useState(1);
@@ -155,12 +241,27 @@ export function UsersPageClient() {
 
   const usersQuery = useAdminUsers(query);
   const updateUser = useUpdateAdminUser();
+  const deleteUser = useDeleteAdminUser();
 
   const handleRoleChange = useCallback(
     (userId: string, nextRole: AdminUserRole) => {
       void updateUser.mutateAsync({ userId, role: nextRole });
     },
     [updateUser],
+  );
+
+  const handleSuspendToggle = useCallback(
+    (userId: string, suspended: boolean) => {
+      void updateUser.mutateAsync({ userId, suspended });
+    },
+    [updateUser],
+  );
+
+  const handleDelete = useCallback(
+    (userId: string) => {
+      void deleteUser.mutateAsync(userId);
+    },
+    [deleteUser],
   );
 
   const columns = useMemo<ColumnDef<AdminUserRow>[]>(() => {
@@ -214,6 +315,17 @@ export function UsersPageClient() {
         ),
       },
       {
+        id: "status",
+        header: "Statut",
+        accessorFn: (row) => (row.suspended ? 1 : 0),
+        enableSorting: true,
+        cell: ({ row }) => (
+          <Badge variant={row.original.suspended ? "destructive" : "success"}>
+            {row.original.suspended ? "Suspendu" : "Actif"}
+          </Badge>
+        ),
+      },
+      {
         id: "createdAt",
         header: "Créé le",
         accessorFn: (row) => row.createdAt,
@@ -228,15 +340,20 @@ export function UsersPageClient() {
           <div className="flex justify-end">
             <UserActions
               user={row.original}
+              isSelf={row.original.id === currentUser.id}
               onRoleChange={(nextRole) =>
                 handleRoleChange(row.original.id, nextRole)
               }
+              onSuspendToggle={(suspended) =>
+                handleSuspendToggle(row.original.id, suspended)
+              }
+              onDelete={() => handleDelete(row.original.id)}
             />
           </div>
         ),
       },
     ];
-  }, [handleRoleChange]);
+  }, [currentUser.id, handleRoleChange, handleSuspendToggle, handleDelete]);
 
   const total = usersQuery.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -318,9 +435,14 @@ export function UsersPageClient() {
                 </div>
                 <UserActions
                   user={user}
+                  isSelf={user.id === currentUser.id}
                   onRoleChange={(nextRole) =>
                     handleRoleChange(user.id, nextRole)
                   }
+                  onSuspendToggle={(suspended) =>
+                    handleSuspendToggle(user.id, suspended)
+                  }
+                  onDelete={() => handleDelete(user.id)}
                 />
               </div>
 
@@ -332,6 +454,9 @@ export function UsersPageClient() {
                 </Badge>
                 <Badge variant={user.emailVerified ? "success" : "neutral"}>
                   {user.emailVerified ? "Vérifié" : "À vérifier"}
+                </Badge>
+                <Badge variant={user.suspended ? "destructive" : "success"}>
+                  {user.suspended ? "Suspendu" : "Actif"}
                 </Badge>
                 <span className="ml-auto text-xs text-muted-foreground">
                   {formatCreatedAt(user.createdAt)}

@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import type { UnitMode } from '@evcore/db';
 import {
+  IsBoolean,
   IsIn,
   IsNumber,
   IsOptional,
@@ -49,4 +50,8 @@ export class UpdateMeDto {
   @Min(0)
   @Max(1)
   unitPercent?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  emailSupportNotificationsEnabled?: boolean;
 }

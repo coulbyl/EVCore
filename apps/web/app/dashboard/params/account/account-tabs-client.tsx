@@ -1,50 +1,43 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@evcore/ui";
-import {
-  Award,
-  Bell,
-  Globe,
-  Monitor,
-  ShieldCheck,
-  User,
-  Wallet,
-} from "lucide-react";
+import { Bell, Monitor, ShieldCheck, User, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { ProfileHeroSection } from "./components/profile-hero-section";
 import { BadgesSection } from "./components/badges-section";
 import { AppearanceSection } from "./components/appearance-section";
 import { LanguageSection } from "./components/language-section";
-import { NotificationsSection } from "./components/notifications-section";
 import { PushNotificationsSection } from "./components/push-notifications-section";
+import { EmailNotificationsSection } from "./components/email-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
-import { SecuritySection } from "./components/security-section";
-
-type NotificationItem = { key: string; label: string; help: string };
+import { SecurityMasterDetail } from "./components/security-master-detail";
+import type { AccountTabValue } from "./account-tabs-constants";
 
 export function AccountTabsClient({
   hasSession,
   locale,
-  notificationLabels,
+  activeTab,
+  securityDetailOpen,
   pushNotificationLabels,
+  emailNotificationLabels,
   bankrollLabels,
 }: {
   hasSession: boolean;
   locale: "fr" | "en";
-  notificationLabels: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    availabilityHint: string;
-    statusLabel: string;
-    items: NotificationItem[];
-  };
+  activeTab: AccountTabValue;
+  securityDetailOpen: boolean;
   pushNotificationLabels: {
-    eyebrow: string;
     title: string;
     description: string;
     toggleLabel: string;
     unsupportedHint: string;
     deniedHint: string;
+  };
+  emailNotificationLabels: {
+    title: string;
+    description: string;
+    toggleLabel: string;
   };
   bankrollLabels: {
     eyebrow: string;
@@ -62,18 +55,25 @@ export function AccountTabsClient({
     unitOptionalHint: string;
   };
 }) {
+  const t = useTranslations("account");
+  const router = useRouter();
+
   const tabs = [
-    { value: "profil", label: "Profil", icon: User },
-    { value: "apparence", label: "Apparence", icon: Monitor },
-    { value: "langue", label: "Langue", icon: Globe },
-    { value: "securite", label: "Sécurité", icon: ShieldCheck },
-    { value: "notifications", label: "Notifications", icon: Bell },
-    { value: "bankroll", label: "Bankroll", icon: Wallet },
-    { value: "badges", label: "Badges", icon: Award },
+    { value: "profil", label: t("tabProfile"), icon: User },
+    { value: "preferences", label: t("tabPreferences"), icon: Monitor },
+    { value: "securite", label: t("tabSecurity"), icon: ShieldCheck },
+    { value: "notifications", label: t("tabNotifications"), icon: Bell },
+    { value: "bankroll", label: t("tabBankroll"), icon: Wallet },
   ] as const;
 
   return (
-    <Tabs defaultValue="profil" className="gap-0">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) =>
+        router.push(`/dashboard/params/account/${value}`)
+      }
+      className="gap-0"
+    >
       {/* Tab list — scrollable on mobile */}
       <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
         <TabsList
@@ -96,25 +96,25 @@ export function AccountTabsClient({
       <TabsContent value="profil">
         <div className="flex flex-col gap-4">
           {hasSession ? <ProfileHeroSection /> : null}
+          <BadgesSection />
         </div>
       </TabsContent>
 
-      <TabsContent value="apparence">
-        <AppearanceSection />
-      </TabsContent>
-
-      <TabsContent value="langue">
-        <LanguageSection currentLocale={locale} />
+      <TabsContent value="preferences">
+        <div className="flex flex-col gap-4">
+          <AppearanceSection />
+          <LanguageSection currentLocale={locale} />
+        </div>
       </TabsContent>
 
       <TabsContent value="securite">
-        <SecuritySection />
+        <SecurityMasterDetail detailOpen={securityDetailOpen} />
       </TabsContent>
 
       <TabsContent value="notifications">
         <div className="flex flex-col gap-4">
           <PushNotificationsSection labels={pushNotificationLabels} />
-          <NotificationsSection labels={notificationLabels} />
+          <EmailNotificationsSection labels={emailNotificationLabels} />
         </div>
       </TabsContent>
 
@@ -126,10 +126,6 @@ export function AccountTabsClient({
             >[0]["labels"]
           }
         />
-      </TabsContent>
-
-      <TabsContent value="badges">
-        <BadgesSection />
       </TabsContent>
     </Tabs>
   );

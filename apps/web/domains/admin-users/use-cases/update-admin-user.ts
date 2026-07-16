@@ -8,6 +8,7 @@ export type UpdateAdminUserInput = {
   userId: string;
   role?: AdminUserRole;
   emailVerified?: boolean;
+  suspended?: boolean;
 };
 
 export async function updateAdminUser(

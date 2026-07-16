@@ -10,6 +10,8 @@ export type AdminUserRow = {
   avatarUrl: string | null;
   locale: string | null;
   currency: string | null;
+  suspended: boolean;
+  suspendedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

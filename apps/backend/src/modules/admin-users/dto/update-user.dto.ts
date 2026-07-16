@@ -8,4 +8,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   emailVerified?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  suspended?: boolean;
 }

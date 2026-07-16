@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,6 +14,8 @@ import {
 import { AdminGuard } from '@/common/guards/admin.guard';
 import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { AuthService } from '@modules/auth/auth.service';
+import { CurrentSession } from '@modules/auth/current-session.decorator';
+import type { AuthSession } from '@modules/auth/auth.types';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminUsersService } from './admin-users.service';
@@ -31,8 +34,12 @@ export class AdminUsersController {
   }
 
   @Patch(':id')
-  updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.service.updateUser(id, dto);
+  updateUser(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentSession() session: AuthSession,
+  ) {
+    return this.service.updateUser(id, dto, session.user.id);
   }
 
   @Post(':id/reset-password-link')
@@ -40,5 +47,11 @@ export class AdminUsersController {
   async generateResetPasswordLink(@Param('id') id: string) {
     const resetUrl = await this.authService.generateAdminResetLink(id);
     return { resetUrl };
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteUser(@Param('id') id: string, @CurrentSession() session: AuthSession) {
+    return this.service.deleteUser(id, session.user.id);
   }
 }

@@ -18,6 +18,7 @@ export type AuthSessionUser = {
   unitMode: string | null;
   unitAmount: string | null;
   unitPercent: string | null;
+  emailSupportNotificationsEnabled: boolean;
 };
 
 export type AuthSession = {

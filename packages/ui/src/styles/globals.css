@@ -2,6 +2,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Tailwind v4 dropped the pre-v4 default border color (previously gray-200);
+   the bare `border` utility now falls back to currentColor, which reads as a
+   bright contour in dark mode. Restore the old default so every shadcn
+   primitive using unsuffixed `border` (Dialog, AlertDialog, Popover,
+   DropdownMenu, Sheet, Drawer, …) resolves to the theme's --border token. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
+}
+
 /* ── Bento grid system ───────────────────────────────────────────────────── */
 
 @keyframes bento-shimmer {

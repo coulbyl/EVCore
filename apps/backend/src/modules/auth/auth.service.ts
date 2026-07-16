@@ -107,6 +107,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
 
@@ -143,12 +144,20 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
         passwordHash: true,
+        suspended: true,
       },
     });
 
     if (!user || !verifyPassword(input.password, user.passwordHash)) {
       throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (user.suspended) {
+      throw new UnauthorizedException(
+        'Compte suspendu — contactez un administrateur.',
+      );
     }
 
     const { token, session } = await this.createSession(user.id);
@@ -173,6 +182,8 @@ export class AuthService {
           unitMode: user.unitMode,
           unitAmount: user.unitAmount?.toString() ?? null,
           unitPercent: user.unitPercent?.toString() ?? null,
+          emailSupportNotificationsEnabled:
+            user.emailSupportNotificationsEnabled,
         },
       },
     };
@@ -215,12 +226,19 @@ export class AuthService {
             unitMode: true,
             unitAmount: true,
             unitPercent: true,
+            emailSupportNotificationsEnabled: true,
+            suspended: true,
           },
         },
       },
     });
 
     if (!row || row.expiresAt.getTime() <= Date.now()) {
+      return null;
+    }
+
+    if (row.user.suspended) {
+      await this.prisma.client.session.delete({ where: { id: row.id } });
       return null;
     }
 
@@ -259,6 +277,10 @@ export class AuthService {
         ...(dto.unitPercent !== undefined && {
           unitPercent: new Prisma.Decimal(dto.unitPercent),
         }),
+        ...(dto.emailSupportNotificationsEnabled !== undefined && {
+          emailSupportNotificationsEnabled:
+            dto.emailSupportNotificationsEnabled,
+        }),
       },
       select: {
         id: true,
@@ -277,6 +299,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
     return this.toSessionUser(user);
@@ -597,6 +620,7 @@ export class AuthService {
         unitMode: true,
         unitAmount: true,
         unitPercent: true,
+        emailSupportNotificationsEnabled: true,
       },
     });
 
@@ -672,6 +696,7 @@ export class AuthService {
     unitMode: UnitMode | null;
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
+    emailSupportNotificationsEnabled: boolean;
   }): AuthSessionUser {
     return {
       ...user,

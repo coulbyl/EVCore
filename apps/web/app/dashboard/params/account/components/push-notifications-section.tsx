@@ -8,7 +8,6 @@ export function PushNotificationsSection({
   labels,
 }: {
   labels: {
-    eyebrow: string;
     title: string;
     description: string;
     toggleLabel: string;
@@ -23,11 +22,7 @@ export function PushNotificationsSection({
   };
 
   return (
-    <SettingsSectionCard
-      eyebrow={labels.eyebrow}
-      title={labels.title}
-      description={labels.description}
-    >
+    <SettingsSectionCard title={labels.title} description={labels.description}>
       <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-background p-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">
