@@ -31,6 +31,21 @@ Chaque pick appartient à un canal, affiché en badge. Le canal dit **quelle que
 
 Tous les canaux n'ont pas le même niveau de preuve. C'est volontaire, et c'est expliqué en détail dans la leçon dédiée aux canaux : certains (VALUE en tête) ont un historique qui tient sur des données jamais vues par le modèle au moment de l'entraînement ; d'autres restent des signaux d'exploration. La fiche ne masque jamais cette différence.
 
+## CONSENSUS, AVOID, CORRECT_SCORE : trois labels d'un genre différent
+
+Les six canaux ci-dessus produisent des mises. **CONSENSUS**, **AVOID** et **CORRECT_SCORE** ne sont pas des canaux de mise supplémentaires — ce sont trois façons dont le moteur qualifie ou encadre une décision, chacune avec un rôle précis.
+
+**CONSENSUS (Consensus)** apparaît quand plusieurs canaux indépendants arrivent à la même conclusion sur un même match — un badge dans l'en-tête de la carte, avec la liste des canaux qui convergent. C'est un signal renforcé, mais il reste soumis aux mêmes règles de lecture que n'importe quel autre pick : cote, probabilité, edge, jamais un seul chiffre isolé.
+
+**AVOID (Attention)** est un garde-fou, pas un pick. Sur la fiche, il prend deux formes distinctes :
+
+- Un bandeau **Attention**, au-dessus de l'en-tête du match, quand un canal précis a été explicitement écarté à cause d'un écart jugé trop important entre le modèle et le marché — l'écart en points est affiché.
+- Un bandeau **Données suspectes**, plus large, quand le désaccord entre le modèle et le marché est jugé si extrême que le moteur exclut automatiquement **toutes** les décisions de ce match des paris réels — pas seulement un canal.
+
+Ces bandeaux ne sont pas des erreurs à ignorer. Ce sont les garde-fous qui font exactement ce pour quoi ils ont été conçus : vous protéger d'un pick sur un match où le modèle lui-même n'a pas confiance dans ses propres données.
+
+**CORRECT_SCORE (Score exact)** est un canal à part : il affiche le score exact jugé le plus probable par le modèle, marqué d'un badge **Observation**. Contrairement aux six autres, il n'est **jamais** proposé à la mise par le moteur — c'est une prédiction affichée à titre informatif, pas un signal sur lequel EVCore vous invite à miser.
+
 ## Les trois chiffres à lire ensemble
 
 Sur chaque pick misable, vous retrouvez la cote, la probabilité calibrée, et l'edge (ou l'EV selon la vue) — jamais un seul de ces chiffres isolé :
@@ -57,4 +72,5 @@ Un jour sans pick sur un match qui vous intéresse n'est pas une absence de serv
 
 - Le canal indique le type de question posée au match, pas seulement la réponse — et tous les canaux n'ont pas le même niveau de preuve.
 - Cote, probabilité calibrée et edge/EV se lisent toujours ensemble, jamais isolément.
+- CONSENSUS renforce un signal, AVOID vous protège d'un match jugé peu fiable, CORRECT_SCORE est une observation jamais misée — trois rôles différents, à ne pas confondre avec les six canaux de mise.
 - L'absence de pick sur un match est un résultat normal et volontaire du filtre, pas un défaut du système.

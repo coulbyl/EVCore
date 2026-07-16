@@ -38,6 +38,10 @@ Ces bandeaux ne sont pas des erreurs à ignorer — ce sont des garde-fous qui f
 
 Parfois, plusieurs canaux indépendants arrivent à la même conclusion sur un même match. Dans ce cas, un badge **Consensus** apparaît dans l'en-tête de la carte, avec la liste des canaux qui convergent — un signal renforcé, mais qui reste soumis aux mêmes règles de lecture que les autres : cote, probabilité, edge, jamais un seul chiffre isolé.
 
+## Le badge Observation — canal Score exact
+
+Un dernier cas à connaître : le canal **Score exact**. Sur sa ligne, un badge **Observation** apparaît, et le marché n'est même pas affiché — parce qu'il n'y en a pas besoin. Score exact montre le résultat exact jugé le plus probable par le modèle, mais il n'est jamais proposé à la mise. C'est une information, pas une recommandation.
+
 ## Clôture
 
-Trois choses à retenir en repartant : le canal indique quelle question a été posée au match, les trois chiffres — cote, probabilité, EV — se lisent toujours ensemble, et l'absence de pick ou un bandeau d'alerte sont des résultats normaux du filtre, pas un problème à contourner.
+Quatre choses à retenir en repartant : le canal indique quelle question a été posée au match, les trois chiffres — cote, probabilité, EV — se lisent toujours ensemble, Consensus et les bandeaux d'alerte ne sont pas des canaux de mise mais des qualificatifs de décision, et l'absence de pick est un résultat normal du filtre, pas un problème à contourner.
