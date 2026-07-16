@@ -288,6 +288,7 @@
     "badgesTitle": "Mes badges",
     "badgesDescription": "Débloquez des badges en atteignant des jalons de performance.",
     "securityTitle": "Authentification & vérification",
+    "securitySetupHeading": "Vérification du compte",
     "accountVerified": "Compte vérifié",
     "accountNotVerified": "Compte non vérifié",
     "totpConfigured": "Application d'authentification (TOTP) configurée.",

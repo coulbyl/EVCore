@@ -2,8 +2,15 @@ import { Page, PageContent } from "@evcore/ui";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import { AccountTabsClient } from "./account-tabs-client";
+import type { AccountTabValue } from "./account-tabs-constants";
 
-export default async function AccountSettingsPage() {
+export async function AccountPageShell({
+  activeTab,
+  securityDetailOpen,
+}: {
+  activeTab: AccountTabValue;
+  securityDetailOpen: boolean;
+}) {
   const [locale, t, session] = await Promise.all([
     getLocale(),
     getTranslations("account"),
@@ -16,6 +23,8 @@ export default async function AccountSettingsPage() {
         <AccountTabsClient
           hasSession={session !== null}
           locale={(locale as "fr" | "en") ?? "fr"}
+          activeTab={activeTab}
+          securityDetailOpen={securityDetailOpen}
           pushNotificationLabels={{
             title: t("pushNotifications"),
             description: t("pushNotificationsDescription"),

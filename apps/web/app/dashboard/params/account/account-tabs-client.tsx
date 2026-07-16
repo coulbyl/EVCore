@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@evcore/ui";
 import { Bell, Monitor, ShieldCheck, User, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { ProfileHeroSection } from "./components/profile-hero-section";
 import { BadgesSection } from "./components/badges-section";
 import { AppearanceSection } from "./components/appearance-section";
@@ -10,17 +11,22 @@ import { LanguageSection } from "./components/language-section";
 import { PushNotificationsSection } from "./components/push-notifications-section";
 import { EmailNotificationsSection } from "./components/email-notifications-section";
 import { BankrollPreferencesSection } from "./components/bankroll-preferences-section";
-import { SecuritySection } from "./components/security-section";
+import { SecurityMasterDetail } from "./components/security-master-detail";
+import type { AccountTabValue } from "./account-tabs-constants";
 
 export function AccountTabsClient({
   hasSession,
   locale,
+  activeTab,
+  securityDetailOpen,
   pushNotificationLabels,
   emailNotificationLabels,
   bankrollLabels,
 }: {
   hasSession: boolean;
   locale: "fr" | "en";
+  activeTab: AccountTabValue;
+  securityDetailOpen: boolean;
   pushNotificationLabels: {
     title: string;
     description: string;
@@ -50,6 +56,7 @@ export function AccountTabsClient({
   };
 }) {
   const t = useTranslations("account");
+  const router = useRouter();
 
   const tabs = [
     { value: "profil", label: t("tabProfile"), icon: User },
@@ -60,7 +67,13 @@ export function AccountTabsClient({
   ] as const;
 
   return (
-    <Tabs defaultValue="profil" className="gap-0">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) =>
+        router.push(`/dashboard/params/account/${value}`)
+      }
+      className="gap-0"
+    >
       {/* Tab list — scrollable on mobile */}
       <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
         <TabsList
@@ -95,7 +108,7 @@ export function AccountTabsClient({
       </TabsContent>
 
       <TabsContent value="securite">
-        <SecuritySection />
+        <SecurityMasterDetail detailOpen={securityDetailOpen} />
       </TabsContent>
 
       <TabsContent value="notifications">

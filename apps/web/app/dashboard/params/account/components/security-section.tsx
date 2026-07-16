@@ -54,7 +54,7 @@ export function SecuritySection() {
           </div>
           {!isVerified ? (
             <Button size="sm" variant="outline" asChild>
-              <Link href="/dashboard/params/account/security">
+              <Link href="/dashboard/params/account/securite/verification">
                 {t("verifyAction")}
               </Link>
             </Button>
@@ -73,7 +73,7 @@ export function SecuritySection() {
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link href="/dashboard/params/account/security">
+              <Link href="/dashboard/params/account/securite/verification">
                 {t("configureAction")}
               </Link>
             </Button>

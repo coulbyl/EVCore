@@ -288,6 +288,7 @@
     "badgesTitle": "My badges",
     "badgesDescription": "Unlock badges by reaching performance milestones.",
     "securityTitle": "Authentication & verification",
+    "securitySetupHeading": "Account verification",
     "accountVerified": "Account verified",
     "accountNotVerified": "Account not verified",
     "totpConfigured": "Authenticator app (TOTP) configured.",

@@ -10,6 +10,15 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./content/formation/**/*"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/params/account",
+        destination: "/dashboard/params/account/profil",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
