@@ -217,7 +217,6 @@ export const BULLMQ_QUEUES = {
   BETTING_ENGINE_REBUILD: 'betting-engine-rebuild',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
-  STANDINGS_SYNC: 'standings-sync',
   ROLLING_HORIZON: 'rolling-horizon',
 } as const;
 
@@ -242,7 +241,6 @@ export const ETL_CRON_SCHEDULES = {
   // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
   ODDS_PREMATCH_SYNC: '0 6,18 * * *',
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
-  STANDINGS_SYNC: '0 1 * * *', // 01:00 UTC daily — refresh group standings (active during WC/tournament phases)
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
 } as const;
 
@@ -256,7 +254,6 @@ export const ETL_SCHEDULER_KEYS = {
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
-  STANDINGS_SYNC: 'cron:standings-sync',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {

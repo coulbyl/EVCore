@@ -7,7 +7,6 @@ import {
   BrainCircuit,
   CheckCircle2,
   Database,
-  ListOrdered,
   RefreshCw,
   Stethoscope,
   Trophy,
@@ -82,13 +81,6 @@ const ACTIONS: ActionDef[] = [
     label: "Odds CSV",
     icon: <Zap size={14} />,
     description: "Import cotes football-data.co.uk",
-  },
-  {
-    kind: "global",
-    type: "standings",
-    label: "Standings",
-    icon: <ListOrdered size={14} />,
-    description: "Classements des compétitions configurées (WC)",
   },
 ];
 

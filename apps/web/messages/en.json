@@ -649,24 +649,6 @@
       "rejectedPlural": "rejected"
     }
   },
-  "wc2026": {
-    "groupPrefix": "Group",
-    "groupStage": "Group Stage",
-    "standingsUnavailable": "Standings unavailable.",
-    "groupsCount": "{count} groups · Season {season}",
-    "qualified": "Qualified (top 2)",
-    "playoff": "Playoff",
-    "colPlayed": "MP",
-    "colWin": "W",
-    "colDraw": "D",
-    "colLose": "L",
-    "colDiff": "GD",
-    "colPoints": "Pts",
-    "legendPlayed": "MP = matches played",
-    "legendWDL": "W / D / L = win · draw · loss",
-    "legendDiff": "GD = goal diff.",
-    "legendPoints": "Pts = points"
-  },
   "coupons": {
     "pageTitle": "Proposals",
     "empty": "No coupon proposals generated for this date.",

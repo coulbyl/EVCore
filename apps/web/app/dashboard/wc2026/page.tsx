@@ -13,7 +13,6 @@ import {
   isWC2026Countdown,
   WC2026,
 } from "@/lib/events/world-cup-2026";
-import { WC2026Groups } from "@/components/events/wc2026/wc2026-groups";
 
 export const metadata: Metadata = {
   title: "Coupe du Monde 2026 — EVCore",
@@ -94,11 +93,7 @@ export default function WC2026Page() {
         </div>
       </PageHeader>
 
-      <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex flex-col gap-5 pb-6">
-          <WC2026Groups />
-        </div>
-      </PageContent>
+      <PageContent className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 ev-shell-shadow" />
     </Page>
   );
 }

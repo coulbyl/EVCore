@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
   OnApplicationBootstrap,
@@ -39,7 +38,6 @@ import type {
   LeagueSyncType,
 } from './workers/league-sync.worker';
 import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
-import type { StandingsSyncJobData } from './workers/standings-sync.worker';
 import { THE_ODDS_API_SPORT_KEYS } from '../../config/etl.constants';
 
 const logger = createLogger('etl-service');
@@ -113,7 +111,6 @@ export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
   private readonly rollingHorizonEnabled: boolean;
   private readonly rollingHorizonDays: number;
-  private readonly standingsCompetitionCodes: readonly string[];
   private readonly quotaAlertPct: number;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
@@ -146,8 +143,6 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly bettingEngineQueue: Queue<BettingEngineAnalysisJobData>,
     @InjectQueue(BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT)
     private readonly oddsHistoricalImportQueue: Queue<OddsHistoricalImportJobData>,
-    @InjectQueue(BULLMQ_QUEUES.STANDINGS_SYNC)
-    private readonly standingsSyncQueue: Queue<StandingsSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.ROLLING_HORIZON)
     private readonly rollingHorizonQueue: Queue<RollingHorizonJobData>,
     @InjectQueue(BULLMQ_QUEUES.ML_TRAINING)
@@ -166,14 +161,6 @@ export class EtlService implements OnApplicationBootstrap {
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
     this.rollingHorizonEnabled =
       config.get<string>('ETL_ENABLE_ROLLING_HORIZON', 'false') !== 'false';
-    // Standings are only displayed for a handful of competitions (WC groups
-    // today) — scoping the sync to explicit codes avoids burning one
-    // API-Football call per league per day for nothing. Empty = disabled.
-    this.standingsCompetitionCodes = config
-      .get<string>('ETL_STANDINGS_COMPETITIONS', '')
-      .split(',')
-      .map((code) => code.trim())
-      .filter((code) => code.length > 0);
     this.rollingHorizonDays = Number(
       config.get<string>(
         'ETL_ROLLING_HORIZON_DAYS',
@@ -231,10 +218,6 @@ export class EtlService implements OnApplicationBootstrap {
       BETTING_ENGINE_ANALYSIS: config.get<string>(
         'ETL_BETTING_ENGINE_ANALYSIS_CRON',
         ETL_CRON_SCHEDULES.BETTING_ENGINE_ANALYSIS,
-      ),
-      STANDINGS_SYNC: config.get<string>(
-        'ETL_STANDINGS_SYNC_CRON',
-        ETL_CRON_SCHEDULES.STANDINGS_SYNC,
       ),
       ROLLING_HORIZON: config.get<string>(
         'ETL_ROLLING_HORIZON_CRON',
@@ -306,21 +289,6 @@ export class EtlService implements OnApplicationBootstrap {
                 seasonCode: currentSeasonCode,
                 divisionCode: competition.csvDivisionCode,
               } satisfies OddsCsvImportJobData,
-            },
-          );
-        }
-
-        if (this.standingsCompetitionCodes.includes(competition.code)) {
-          await this.standingsSyncQueue.upsertJobScheduler(
-            `${ETL_SCHEDULER_KEYS.STANDINGS_SYNC}:${competition.code}`,
-            { pattern: this.cronSchedules.STANDINGS_SYNC },
-            {
-              name: `standings-sync-${competition.code}-${currentSeason}`,
-              data: {
-                competitionCode: competition.code,
-                leagueId: competition.leagueId,
-                season: currentSeason,
-              } satisfies StandingsSyncJobData,
             },
           );
         }
@@ -444,24 +412,6 @@ export class EtlService implements OnApplicationBootstrap {
       nonCsvCompetitionCodes.map((competitionCode) =>
         this.oddsCsvQueue.removeJobScheduler(
           `${ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT}:${competitionCode}`,
-        ),
-      ),
-    );
-
-    // Standings schedulers are removed for inactive competitions and for any
-    // competition no longer listed in ETL_STANDINGS_COMPETITIONS.
-    const standingsRemovedCodes = competitions
-      .filter(
-        (competition) =>
-          !competition.isActive ||
-          !this.standingsCompetitionCodes.includes(competition.code),
-      )
-      .map((competition) => competition.code);
-
-    await Promise.all(
-      standingsRemovedCodes.map((competitionCode) =>
-        this.standingsSyncQueue.removeJobScheduler(
-          `${ETL_SCHEDULER_KEYS.STANDINGS_SYNC}:${competitionCode}`,
         ),
       ),
     );
@@ -694,65 +644,6 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
-  async triggerStandingsSync(
-    competitionCode: string,
-    season: number,
-  ): Promise<void> {
-    logger.info(
-      { competitionCode, season },
-      'Triggering standings sync for league season',
-    );
-
-    const competition = await this.loadCompetition(competitionCode);
-    await this.standingsSyncQueue.add(
-      'standings-sync',
-      {
-        competitionCode: competition.code,
-        leagueId: competition.leagueId,
-        season,
-      } satisfies StandingsSyncJobData,
-      BULLMQ_DEFAULT_JOB_OPTIONS,
-    );
-
-    logger.info(
-      { competitionCode, season },
-      'Standings sync job enqueued for league season',
-    );
-  }
-
-  // Global variant: current season of the competitions listed in
-  // ETL_STANDINGS_COMPETITIONS (the only ones whose standings are displayed) —
-  // not every active league, which would waste one API call per league.
-  async triggerConfiguredStandingsSync(): Promise<void> {
-    if (this.standingsCompetitionCodes.length === 0) {
-      throw new BadRequestException(
-        'No standings competitions configured (ETL_STANDINGS_COMPETITIONS)',
-      );
-    }
-    await this.refreshCompetitionPlans();
-    const plans = this.competitionPlans.filter(({ competition }) =>
-      this.standingsCompetitionCodes.includes(competition.code),
-    );
-    await Promise.all(
-      plans.map(({ competition, seasons }) => {
-        const currentSeason = seasons[seasons.length - 1];
-        return this.standingsSyncQueue.add(
-          'standings-sync',
-          {
-            competitionCode: competition.code,
-            leagueId: competition.leagueId,
-            season: currentSeason,
-          } satisfies StandingsSyncJobData,
-          BULLMQ_DEFAULT_JOB_OPTIONS,
-        );
-      }),
-    );
-    logger.info(
-      { competitions: plans.map(({ competition }) => competition.code) },
-      'Standings sync jobs enqueued for configured competitions',
-    );
-  }
-
   async triggerRollingStatsSeason(
     competitionCode: string,
     season: number,
@@ -821,7 +712,6 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,
-      [BULLMQ_QUEUES.STANDINGS_SYNC]: this.standingsSyncQueue,
       [BULLMQ_QUEUES.ROLLING_HORIZON]: this.rollingHorizonQueue,
       [BULLMQ_QUEUES.AI_ENGINE]: this.aiEngineQueue,
       [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,

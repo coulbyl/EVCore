@@ -27,7 +27,6 @@ const QUEUE_LABELS: Record<string, string> = {
   "betting-engine": "Betting engine",
   "betting-engine-rebuild": "Rebuild engine",
   "odds-historical-import": "Historical odds",
-  "standings-sync": "Standings",
   "rolling-horizon": "Rolling horizon",
   "ai-engine": "AI Engine",
   "ml-training": "ML training",

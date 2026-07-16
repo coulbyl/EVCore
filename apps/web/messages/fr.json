@@ -649,24 +649,6 @@
       "rejectedPlural": "écartés"
     }
   },
-  "wc2026": {
-    "groupPrefix": "Groupe",
-    "groupStage": "Phase de groupes",
-    "standingsUnavailable": "Classements non disponibles.",
-    "groupsCount": "{count} groupes · Saison {season}",
-    "qualified": "Qualifié (2 premières places)",
-    "playoff": "Barrage",
-    "colPlayed": "MJ",
-    "colWin": "V",
-    "colDraw": "N",
-    "colLose": "D",
-    "colDiff": "DIFF",
-    "colPoints": "Pts",
-    "legendPlayed": "MJ = matchs joués",
-    "legendWDL": "V / N / D = victoire · nul · défaite",
-    "legendDiff": "DIFF = diff. buts",
-    "legendPoints": "Pts = points"
-  },
   "coupons": {
     "pageTitle": "Propositions",
     "empty": "Aucun coupon généré pour cette date.",
