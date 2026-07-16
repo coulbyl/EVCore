@@ -27,7 +27,7 @@ probabilité de 5 défaites d'affilée = (1 − 0.55)^5 ≈ 1.85%
 
 La page Portefeuille affiche un ROI net et un graphique d'évolution du solde. Ces deux indicateurs racontent ce qui s'est réellement passé — mais une baisse récente du solde ne veut pas dire que la stratégie a cessé de fonctionner. La bonne question n'est jamais "est-ce que j'ai perdu les 5 derniers paris ?", mais "est-ce que la méthode de sélection reste la même que celle qui a été testée et documentée ?".
 
-C'est exactement le même principe que dans la leçon sur les canaux : DOMINANT reste rentable sur son top 5, même si certains jours ce top 5 perd. Juger une méthode sur une courte séquence, plutôt que sur son historique complet, est une erreur de lecture statistique — pas un signal que quelque chose ne va pas.
+C'est exactement le même principe que dans la leçon sur les canaux : DOMINANT (Victoire) reste rentable sur son top 5, même si certains jours ce top 5 perd. Juger une méthode sur une courte séquence, plutôt que sur son historique complet, est une erreur de lecture statistique — pas un signal que quelque chose ne va pas.
 
 ## Ce que la discipline veut dire, concrètement
 

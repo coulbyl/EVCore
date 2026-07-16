@@ -19,15 +19,15 @@ Chaque pick appartient à un canal, affiché en badge. Le canal dit **quelle que
 
 | Canal                           | Ce qu'il cherche                                                                                       |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Valeur** (VALUE)              | Une cote à valeur attendue positive — le canal de mise réelle principal                                |
-| **Sécurité** (SAFE)             | Une sélection prudente à rendement régulier, confiance plus élevée                                     |
-| **Victoire** (DOMINANT)         | L'angle le plus affirmé du modèle sur l'issue du match (1N2)                                           |
-| **Nul** (DRAW)                  | Un match nul, via la probabilité implicite du marché                                                   |
-| **BB** (BTTS)                   | Les deux équipes marquent                                                                              |
-| **Buts** (GOALS)                | Plus ou moins de buts (Over/Under)                                                                     |
-| **Consensus**                   | Plusieurs canaux indépendants convergent sur le même pick — signal renforcé                            |
-| **Attention** (AVOID)           | Le match est explicitement écarté : divergence modèle/marché jugée implausible                         |
-| **Score exact** (CORRECT_SCORE) | Le score le plus probable selon le modèle — **affiché en observation seule, jamais proposé à la mise** |
+| **VALUE** (Valeur)              | Une cote à valeur attendue positive — le canal de mise réelle principal                                |
+| **SAFE** (Sécurité)             | Une sélection prudente à rendement régulier, confiance plus élevée                                     |
+| **DOMINANT** (Victoire)         | L'angle le plus affirmé du modèle sur l'issue du match (1N2)                                           |
+| **DRAW** (Nul)                  | Un match nul, via la probabilité implicite du marché                                                   |
+| **BTTS** (BB)                   | Les deux équipes marquent                                                                              |
+| **GOALS** (Buts)                | Plus ou moins de buts (Over/Under)                                                                     |
+| **CONSENSUS** (Consensus)       | Plusieurs canaux indépendants convergent sur le même pick — signal renforcé                            |
+| **AVOID** (Attention)           | Le match est explicitement écarté : divergence modèle/marché jugée implausible                         |
+| **CORRECT_SCORE** (Score exact) | Le score le plus probable selon le modèle — **affiché en observation seule, jamais proposé à la mise** |
 
 Tous les canaux n'ont pas le même niveau de preuve. C'est volontaire, et c'est expliqué en détail dans la leçon dédiée aux canaux : certains (VALUE en tête) ont un historique qui tient sur des données jamais vues par le modèle au moment de l'entraînement ; d'autres restent des signaux d'exploration. La fiche ne masque jamais cette différence.
 

@@ -2,7 +2,7 @@
 
 Durée cible : `3 min à 3 min 30`
 Public : a fini la catégorie "Les bases", entre dans la catégorie "Les canaux" pour la première fois.
-Note prod : afficher le tableau de statut par canal à l'écran (VALUE/SAFE/DOMINANT/DRAW/BTTS/GOALS), avec un code couleur simple — vert pour prouvé, orange pour prometteur, gris pour signal d'exploration.
+Note prod : afficher le tableau de statut par canal à l'écran (VALUE/Valeur, SAFE/Sécurité, DOMINANT/Victoire, DRAW/Nul, BTTS/BB, GOALS/Buts), avec un code couleur simple — vert pour prouvé, orange pour prometteur, gris pour signal d'exploration.
 
 ## Ouverture
 
@@ -14,15 +14,15 @@ Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entra
 
 ## L'état réel, canal par canal
 
-VALUE : le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement — détail dans la prochaine leçon.
+VALUE, en français Valeur : le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement — détail dans la prochaine leçon.
 
-SAFE : des signes positifs récents, mais un échantillon encore trop fin pour figer une formule.
+SAFE, en français Sécurité : des signes positifs récents, mais un échantillon encore trop fin pour figer une formule.
 
-DOMINANT : le canal brut perd de l'argent, mais bien classé — son top 5 quotidien — redevient rentable.
+DOMINANT, en français Victoire : le canal brut perd de l'argent, mais bien classé — son top 5 quotidien — redevient rentable.
 
-DRAW : en amélioration réelle et mesurée, pas encore au niveau de VALUE.
+DRAW, en français Nul : en amélioration réelle et mesurée, pas encore au niveau de VALUE.
 
-BTTS et GOALS : pas rentables sur aucun classement testé à ce jour — des signaux d'exploration, jamais un edge prouvé.
+BTTS, en français BB, et GOALS, en français Buts : pas rentables sur aucun classement testé à ce jour — des signaux d'exploration, jamais un edge prouvé.
 
 ## L'idée la plus importante de toute cette catégorie
 

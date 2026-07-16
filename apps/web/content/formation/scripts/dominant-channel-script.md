@@ -1,4 +1,4 @@
-# Script vidéo — Le canal DOMINANT (compagnon de l'article `dominant-channel`)
+# Script vidéo — Le canal DOMINANT (Victoire) (compagnon de l'article `dominant-channel`)
 
 Durée cible : `2 min 30 à 3 min`
 Public : a vu VALUE et SAFE, comprend déjà le principe d'edge et de classement.
@@ -6,7 +6,7 @@ Note prod : montrer les deux chiffres côte à côte — canal complet moins 23,
 
 ## Ouverture
 
-DOMINANT est l'exemple le plus net de toute la formation : un canal brut qui perd de l'argent, et le même canal, bien classé, qui redevient rentable.
+DOMINANT, en français Victoire, est l'exemple le plus net de toute la formation : un canal brut qui perd de l'argent, et le même canal, bien classé, qui redevient rentable.
 
 ## Ce que le canal cherche
 

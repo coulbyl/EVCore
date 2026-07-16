@@ -18,7 +18,7 @@ related:
 
 ## Pourquoi cette leçon existe
 
-EVCore produit des picks sur plusieurs canaux : VALUE, SAFE, DOMINANT, DRAW, BTTS, GOALS. Il serait facile de les présenter comme six variantes équivalentes d'un même produit — six façons de gagner. Ce ne serait pas honnête, et ce n'est pas ce qu'EVCore fait.
+EVCore produit des picks sur plusieurs canaux : VALUE (Valeur), SAFE (Sécurité), DOMINANT (Victoire), DRAW (Nul), BTTS (BB), GOALS (Buts). Il serait facile de les présenter comme six variantes équivalentes d'un même produit — six façons de gagner. Ce ne serait pas honnête, et ce n'est pas ce qu'EVCore fait.
 
 Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entraînement (des paris "hors échantillon", c'est-à-dire postérieurs aux données utilisées pour calibrer le modèle). Certains canaux tiennent cette épreuve. D'autres non — pas encore, ou pas sur toutes les méthodes de classement testées. Cette leçon est la carte honnête de qui fait quoi, avant de rentrer dans le détail de chaque canal.
 
@@ -26,12 +26,12 @@ Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entra
 
 | Canal        | Ce qu'il cherche                                  | Statut réel                                                                                                       |
 | ------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **VALUE**    | Cotes à valeur attendue positive                  | Le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement (voir la leçon dédiée) |
-| **SAFE**     | Sélections prudentes, rendement régulier          | Prometteur, mais échantillon encore trop fin pour figer une formule                                               |
-| **DOMINANT** | Angle le plus affirmé sur l'issue du match        | Le canal brut perd de l'argent — mais bien classé, une partie redevient rentable                                  |
-| **DRAW**     | Match nul, via la probabilité implicite du marché | En amélioration réelle et mesurable, pas encore au niveau de VALUE                                                |
-| **BTTS**     | Les deux équipes marquent                         | Pas rentable sur aucun classement testé à ce jour                                                                 |
-| **GOALS**    | Plus ou moins de buts                             | Pas rentable sur aucun classement testé à ce jour                                                                 |
+| **VALUE** (Valeur)    | Cotes à valeur attendue positive                  | Le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement (voir la leçon dédiée) |
+| **SAFE** (Sécurité)     | Sélections prudentes, rendement régulier          | Prometteur, mais échantillon encore trop fin pour figer une formule                                               |
+| **DOMINANT** (Victoire) | Angle le plus affirmé sur l'issue du match        | Le canal brut perd de l'argent — mais bien classé, une partie redevient rentable                                  |
+| **DRAW** (Nul)     | Match nul, via la probabilité implicite du marché | En amélioration réelle et mesurable, pas encore au niveau de VALUE                                                |
+| **BTTS** (BB)     | Les deux équipes marquent                         | Pas rentable sur aucun classement testé à ce jour                                                                 |
+| **GOALS** (Buts)    | Plus ou moins de buts                             | Pas rentable sur aucun classement testé à ce jour                                                                 |
 
 Cette table sera revue à chaque nouvel audit de calibration — un canal peut progresser (comme DRAW l'a fait) ou régresser si le marché change. Aucune ligne de ce tableau n'est une promesse pour l'avenir : c'est une photographie datée, pas un contrat.
 

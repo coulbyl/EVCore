@@ -1,4 +1,4 @@
-# Script vidéo — Le canal DRAW (compagnon de l'article `draw-channel`)
+# Script vidéo — Le canal DRAW (Nul) (compagnon de l'article `draw-channel`)
 
 Durée cible : `2 min 30 à 3 min`
 Public : a vu VALUE, SAFE, DOMINANT.
@@ -6,7 +6,7 @@ Note prod : afficher une frise chronologique simple — 2023 en rouge, tout l'hi
 
 ## Ouverture
 
-DRAW était nettement négatif il y a deux ans. Il est aujourd'hui en territoire positif, avec des signes d'amélioration mesurés dans le temps. Cette leçon montre comment lire une trajectoire, pas seulement un chiffre unique.
+DRAW, en français Nul, était nettement négatif il y a deux ans. Il est aujourd'hui en territoire positif, avec des signes d'amélioration mesurés dans le temps. Cette leçon montre comment lire une trajectoire, pas seulement un chiffre unique.
 
 ## Ce que le canal cherche
 

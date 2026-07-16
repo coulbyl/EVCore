@@ -1,5 +1,5 @@
 ---
-title: "Le canal DOMINANT : la preuve que le classement sauve un signal faible"
+title: "Le canal DOMINANT (Victoire) : la preuve que le classement sauve un signal faible"
 category: channels
 difficulty: intermediate
 order: 4
@@ -11,7 +11,7 @@ related: ["channels-overview", "value-channel", "comment-lire-un-pick"]
 
 ## Ce que le canal cherche
 
-DOMINANT identifie l'angle le plus affirmé du modèle sur l'issue d'un match (victoire, nul, défaite — le marché "1N2"). C'est le canal le plus direct : il ne cherche pas un edge par rapport au marché, il affiche simplement ce que le modèle juge le plus probable.
+DOMINANT (Victoire) identifie l'angle le plus affirmé du modèle sur l'issue d'un match (victoire, nul, défaite — le marché "1N2"). C'est le canal le plus direct : il ne cherche pas un edge par rapport au marché, il affiche simplement ce que le modèle juge le plus probable.
 
 ## Le chiffre qui dérange, et celui qui rassure
 

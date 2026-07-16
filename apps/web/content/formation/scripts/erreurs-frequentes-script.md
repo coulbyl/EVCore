@@ -10,13 +10,13 @@ Vous connaissez maintenant tous les canaux EVCore et leurs vrais chiffres. Cette
 
 ## Erreur 1 — confondre haute probabilité et bon pick
 
-Le classement par probabilité brute sur VALUE tombe à moins 12,70% hors échantillon. Le classement par edge calibré, sur les mêmes picks, reste à plus 2,27%. Un pick à 80% n'est pas automatiquement meilleur qu'un pick à 60% — tout dépend de l'écart avec le marché.
+Le classement par probabilité brute sur VALUE, en français Valeur, tombe à moins 12,70% hors échantillon. Le classement par edge calibré, sur les mêmes picks, reste à plus 2,27%. Un pick à 80% n'est pas automatiquement meilleur qu'un pick à 60% — tout dépend de l'écart avec le marché.
 
 ## Erreur 2 — traiter un canal brut comme un produit fini
 
-DOMINANT le prouve : le canal complet perd de l'argent, son top 5 quotidien en gagne. Prendre tous les picks plutôt que la sélection testée revient à ignorer ce qui rend le canal exploitable.
+DOMINANT, en français Victoire, le prouve : le canal complet perd de l'argent, son top 5 quotidien en gagne. Prendre tous les picks plutôt que la sélection testée revient à ignorer ce qui rend le canal exploitable.
 
-## Erreur 3 — traiter BTTS ou GOALS comme des canaux prouvés
+## Erreur 3 — traiter BTTS (BB) ou GOALS (Buts) comme des canaux prouvés
 
 Ce sont des signaux à fort volume, pas des canaux rentables à ce jour. Miser dessus en pensant bénéficier de la même discipline que sur VALUE, c'est se tromper de produit.
 
@@ -26,7 +26,7 @@ Un canal avec un edge réel peut perdre plusieurs paris d'affilée sans que l'ed
 
 ## Erreur 5 — oublier que les chiffres sont datés, pas garantis
 
-Chaque chiffre de cette formation est une mesure historique à une date précise. DRAW est passé de moins 19% en 2023 à des chiffres nettement positifs en 2026 — les canaux sont recalibrés régulièrement, et un chiffre positif aujourd'hui peut évoluer.
+Chaque chiffre de cette formation est une mesure historique à une date précise. DRAW, en français Nul, est passé de moins 19% en 2023 à des chiffres nettement positifs en 2026 — les canaux sont recalibrés régulièrement, et un chiffre positif aujourd'hui peut évoluer.
 
 ## Erreur 6 — ignorer les jours sans pick
 

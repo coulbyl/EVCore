@@ -1,5 +1,5 @@
 ---
-title: "Le canal SAFE : prometteur, mais encore trop jeune pour être figé"
+title: "Le canal SAFE (Sécurité) : prometteur, mais encore trop jeune pour être figé"
 category: channels
 difficulty: intermediate
 order: 3
@@ -11,7 +11,7 @@ related: ["channels-overview", "value-channel", "dominant-channel"]
 
 ## Ce que le canal cherche
 
-SAFE sélectionne des paris à confiance élevée et rendement attendu plus modeste que VALUE — l'idée d'une régularité plutôt que d'un edge maximal. C'est un canal pensé pour un profil de risque différent, pas une version "moins bien" de VALUE.
+SAFE (Sécurité) sélectionne des paris à confiance élevée et rendement attendu plus modeste que VALUE — l'idée d'une régularité plutôt que d'un edge maximal. C'est un canal pensé pour un profil de risque différent, pas une version "moins bien" de VALUE.
 
 ## Les chiffres, et pourquoi ils sont difficiles à interpréter
 

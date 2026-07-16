@@ -1,5 +1,5 @@
 ---
-title: "BTTS et GOALS : des signaux d'exploration, pas un edge prouvé"
+title: "BTTS (BB) et GOALS (Buts) : des signaux d'exploration, pas un edge prouvé"
 category: channels
 difficulty: intermediate
 order: 6
@@ -11,7 +11,7 @@ related: ["channels-overview", "value-channel", "dominant-channel"]
 
 ## Ce que ces canaux cherchent
 
-**BTTS** (Both Teams To Score) identifie les matchs où le modèle juge probable que les deux équipes marquent. **GOALS** identifie une direction sur le total de buts (plus ou moins qu'une ligne donnée — Over/Under). Ce sont deux marchés à très fort volume dans le secteur des paris sportifs, et deux signaux qu'EVCore calcule à chaque match analysé.
+**BTTS** (Both Teams To Score, en français BB) identifie les matchs où le modèle juge probable que les deux équipes marquent. **GOALS** (en français Buts) identifie une direction sur le total de buts (plus ou moins qu'une ligne donnée — Over/Under). Ce sont deux marchés à très fort volume dans le secteur des paris sportifs, et deux signaux qu'EVCore calcule à chaque match analysé.
 
 ## Le chiffre, sans détour
 

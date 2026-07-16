@@ -16,13 +16,13 @@ Les leçons précédentes expliquent ce que chaque canal fait et ce qu'il vaut r
 
 ## 1. Confondre "haute probabilité" et "bon pick"
 
-C'est l'erreur la plus commune, et la plus documentée dans les chiffres EVCore. Le classement par probabilité brute sur VALUE tombe à **−12.70%** sur des données hors échantillon, alors que le classement par edge calibré, sur les mêmes picks, reste à **+2.27%**. Un pick affiché à 80% de probabilité n'est pas automatiquement meilleur qu'un pick à 60% — tout dépend de l'écart entre cette probabilité et ce que le marché affiche. Revoir la leçon "L'edge et l'EV" si ce point n'est pas clair : c'est la base de tout le reste.
+C'est l'erreur la plus commune, et la plus documentée dans les chiffres EVCore. Le classement par probabilité brute sur VALUE (Valeur) tombe à **−12.70%** sur des données hors échantillon, alors que le classement par edge calibré, sur les mêmes picks, reste à **+2.27%**. Un pick affiché à 80% de probabilité n'est pas automatiquement meilleur qu'un pick à 60% — tout dépend de l'écart entre cette probabilité et ce que le marché affiche. Revoir la leçon "L'edge et l'EV" si ce point n'est pas clair : c'est la base de tout le reste.
 
 ## 2. Traiter un canal brut comme un produit fini
 
-DOMINANT en est la preuve la plus nette : le canal complet perd de l'argent (−23.27% ROI), mais son top 5 quotidien par probabilité en gagne (+3.30%). Prendre "tous les picks DOMINANT" plutôt que la sélection testée revient à ignorer précisément ce qui rend le canal exploitable. La curation (Coupon Composer, page Investir) n'est pas un habillage marketing — elle change le signe du résultat.
+DOMINANT (Victoire) en est la preuve la plus nette : le canal complet perd de l'argent (−23.27% ROI), mais son top 5 quotidien par probabilité en gagne (+3.30%). Prendre "tous les picks DOMINANT" plutôt que la sélection testée revient à ignorer précisément ce qui rend le canal exploitable. La curation (Coupon Composer, page Investir) n'est pas un habillage marketing — elle change le signe du résultat.
 
-## 3. Traiter BTTS ou GOALS comme des canaux à edge prouvé
+## 3. Traiter BTTS (BB) ou GOALS (Buts) comme des canaux à edge prouvé
 
 Ce sont des signaux à fort volume, pas des canaux rentables à ce jour, sur aucune méthode de classement testée. Miser dessus en pensant bénéficier de la même discipline que sur VALUE, c'est se tromper de produit.
 
@@ -32,7 +32,7 @@ Un canal avec un edge réel peut perdre plusieurs paris consécutifs sans que ce
 
 ## 5. Oublier que les chiffres affichés sont datés, pas garantis
 
-Chaque chiffre cité dans cette formation (le +2.27% de VALUE, le +3.30% de DOMINANT, le +11/+16% de DRAW) est une mesure historique à une date précise, pas une promesse de performance future. Les canaux sont recalibrés régulièrement — DRAW en est l'exemple le plus visible, passé de −19% en 2023 à des chiffres nettement positifs en 2026. Un chiffre positif aujourd'hui peut évoluer ; c'est pour cela qu'EVCore republie ces audits plutôt que de figer une formule une fois pour toutes.
+Chaque chiffre cité dans cette formation (le +2.27% de VALUE, le +3.30% de DOMINANT, le +11/+16% de DRAW — Nul) est une mesure historique à une date précise, pas une promesse de performance future. Les canaux sont recalibrés régulièrement — DRAW en est l'exemple le plus visible, passé de −19% en 2023 à des chiffres nettement positifs en 2026. Un chiffre positif aujourd'hui peut évoluer ; c'est pour cela qu'EVCore republie ces audits plutôt que de figer une formule une fois pour toutes.
 
 ## 6. Ignorer les jours sans pick
 

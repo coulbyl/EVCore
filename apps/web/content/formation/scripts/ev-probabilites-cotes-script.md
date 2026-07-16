@@ -16,7 +16,7 @@ L'EV, c'est le même écart traduit en rendement attendu : probabilité calibré
 
 ## Pourquoi un seuil, et pas n'importe quel EV positif
 
-EVCore n'affiche un pick VALUE qu'à partir d'un EV de 8% ou plus. Deux raisons : le modèle n'est jamais parfait, et un EV trop fin peut disparaître entièrement dans le bruit statistique. Le seuil filtre mécaniquement les picks les plus fragiles.
+EVCore n'affiche un pick VALUE, en français Valeur, qu'à partir d'un EV de 8% ou plus. Deux raisons : le modèle n'est jamais parfait, et un EV trop fin peut disparaître entièrement dans le bruit statistique. Le seuil filtre mécaniquement les picks les plus fragiles.
 
 ## Le point le plus contre-intuitif
 

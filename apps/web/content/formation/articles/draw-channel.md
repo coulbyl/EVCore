@@ -1,5 +1,5 @@
 ---
-title: "Le canal DRAW : une amélioration réelle, mesurée dans le temps"
+title: "Le canal DRAW (Nul) : une amélioration réelle, mesurée dans le temps"
 category: channels
 difficulty: intermediate
 order: 5
@@ -11,7 +11,7 @@ related: ["channels-overview", "value-channel", "dominant-channel"]
 
 ## Ce que le canal cherche
 
-DRAW cible le match nul, via la probabilité implicite du marché sur cette issue spécifique. C'est un canal historiquement difficile dans le secteur : le nul est l'issue la plus dure à prédire correctement dans le football, et la plupart des approches génériques échouent à en tirer un edge stable.
+DRAW (Nul) cible le match nul, via la probabilité implicite du marché sur cette issue spécifique. C'est un canal historiquement difficile dans le secteur : le nul est l'issue la plus dure à prédire correctement dans le football, et la plupart des approches génériques échouent à en tirer un edge stable.
 
 ## Une trajectoire, pas un chiffre unique
 

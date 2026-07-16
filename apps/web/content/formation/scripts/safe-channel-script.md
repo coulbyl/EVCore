@@ -1,4 +1,4 @@
-# Script vidéo — Le canal SAFE (compagnon de l'article `safe-channel`)
+# Script vidéo — Le canal SAFE (Sécurité) (compagnon de l'article `safe-channel`)
 
 Durée cible : `2 min à 2 min 30`
 Public : vient de voir la leçon VALUE.
@@ -6,7 +6,7 @@ Note prod : insister visuellement sur la taille d'échantillon (28 jours) à cô
 
 ## Ouverture
 
-SAFE affiche des signes encourageants. Mais avec un échantillon encore trop fin pour en tirer une formule définitive — et c'est important de le dire clairement, même quand un canal a l'air bon.
+SAFE, en français Sécurité, affiche des signes encourageants. Mais avec un échantillon encore trop fin pour en tirer une formule définitive — et c'est important de le dire clairement, même quand un canal a l'air bon.
 
 ## Ce que le canal cherche
 

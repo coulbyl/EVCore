@@ -20,7 +20,7 @@ Prenons un pick à 55% de probabilité réelle — un edge positif raisonnable, 
 
 ## Ce que ça change dans la lecture du Portefeuille
 
-Une baisse récente du solde ne veut pas dire que la stratégie a cessé de fonctionner. La bonne question n'est jamais "ai-je perdu les 5 derniers paris ?", mais "la méthode de sélection est-elle toujours celle qui a été testée et documentée ?". DOMINANT reste rentable sur son top 5, même si certains jours ce top 5 perd.
+Une baisse récente du solde ne veut pas dire que la stratégie a cessé de fonctionner. La bonne question n'est jamais "ai-je perdu les 5 derniers paris ?", mais "la méthode de sélection est-elle toujours celle qui a été testée et documentée ?". DOMINANT, en français Victoire, reste rentable sur son top 5, même si certains jours ce top 5 perd.
 
 ## Ce que la discipline veut dire
 

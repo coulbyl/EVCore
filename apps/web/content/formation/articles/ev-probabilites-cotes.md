@@ -31,7 +31,7 @@ L'EV exprime le même avantage, mais en rendement attendu par unité misée. Un 
 
 ## Pourquoi il existe un seuil, et pas "n'importe quel EV positif"
 
-En théorie, un EV légèrement positif suffirait à justifier un pari. En pratique, EVCore n'affiche un pick en canal VALUE qu'à partir d'un EV ≥ 8%. Deux raisons à ce choix :
+En théorie, un EV légèrement positif suffirait à justifier un pari. En pratique, EVCore n'affiche un pick en canal VALUE (Valeur) qu'à partir d'un EV ≥ 8%. Deux raisons à ce choix :
 
 1. **Le modèle n'est jamais parfait.** Une estimation de probabilité comporte toujours une marge d'erreur. Un EV de +2% peut disparaître entièrement si le modèle est simplement légèrement optimiste sur ce match précis — le bruit statistique mange l'avantage.
 2. **Le coût de la marge du bookmaker n'est pas symétrique.** Plus l'edge affiché est faible, plus la part de l'avantage apparent qui vient réellement d'une meilleure lecture du match (plutôt que d'un bruit de calcul) devient incertaine.

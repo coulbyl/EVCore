@@ -1,4 +1,4 @@
-# Script vidéo — Le canal VALUE (compagnon de l'article `value-channel`)
+# Script vidéo — Le canal VALUE (Valeur) (compagnon de l'article `value-channel`)
 
 Durée cible : `2 min 30 à 3 min`
 Public : vient de voir la vue d'ensemble des canaux.
@@ -6,7 +6,7 @@ Note prod : afficher le tableau à deux lignes (top 5 par edge calibré vs top 5
 
 ## Ouverture
 
-VALUE, c'est le canal de mise réelle principal d'EVCore. Et c'est aujourd'hui le seul canal démontré positif sur des données que le modèle n'a jamais vues — à condition d'être bien classé.
+VALUE, en français Valeur, c'est le canal de mise réelle principal d'EVCore. Et c'est aujourd'hui le seul canal démontré positif sur des données que le modèle n'a jamais vues — à condition d'être bien classé.
 
 ## Ce que le canal cherche
 

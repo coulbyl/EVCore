@@ -1,5 +1,5 @@
 ---
-title: "Le canal VALUE : ce qui tient vraiment hors échantillon"
+title: "Le canal VALUE (Valeur) : ce qui tient vraiment hors échantillon"
 category: channels
 difficulty: intermediate
 order: 2
@@ -11,7 +11,7 @@ related: ["channels-overview", "ev-probabilites-cotes", "dominant-channel"]
 
 ## Ce que le canal cherche
 
-VALUE identifie des cotes à valeur attendue positive : des matchs où la probabilité calibrée du moteur dépasse suffisamment la probabilité implicite de la cote (edge et EV définis dans la leçon "L'edge et l'EV"). C'est le canal de mise réelle principal d'EVCore — celui sur lequel l'essentiel de la discipline du produit est construit.
+VALUE (Valeur) identifie des cotes à valeur attendue positive : des matchs où la probabilité calibrée du moteur dépasse suffisamment la probabilité implicite de la cote (edge et EV définis dans la leçon "L'edge et l'EV"). C'est le canal de mise réelle principal d'EVCore — celui sur lequel l'essentiel de la discipline du produit est construit.
 
 ## Les chiffres, datés au 2026-07-16
 
