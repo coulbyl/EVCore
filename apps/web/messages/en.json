@@ -170,20 +170,6 @@
     "label": "Training",
     "title": "Training center",
     "subtitle": "Articles and videos to understand each pick and improve step by step.",
-    "videoHub": {
-      "title": "Video training",
-      "subtitle": "Short videos to understand coupons, probabilities, and discipline without reading articles.",
-      "videoOnly": "videos only",
-      "watchNow": "Watch",
-      "featuredCopy": "Start with this video, then follow the short tracks based on your current goal.",
-      "emptyTitle": "No video available",
-      "emptySubtitle": "New videos are on the way.",
-      "metrics": {
-        "available": "Available",
-        "completed": "Watched",
-        "next": "Next"
-      }
-    },
     "progress": "Progress",
     "open": "Open",
     "browse": "Browse",

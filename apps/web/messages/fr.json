@@ -170,20 +170,6 @@
     "label": "Formation",
     "title": "Centre de formation",
     "subtitle": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape.",
-    "videoHub": {
-      "title": "Formation vidéo",
-      "subtitle": "Des formats courts pour comprendre les coupons, les probabilités et la discipline sans passer par des articles.",
-      "videoOnly": "vidéos seulement",
-      "watchNow": "Regarder",
-      "featuredCopy": "Commencez par cette vidéo, puis enchaînez les parcours courts selon votre objectif du moment.",
-      "emptyTitle": "Aucune vidéo disponible",
-      "emptySubtitle": "De nouvelles vidéos arrivent bientôt.",
-      "metrics": {
-        "available": "Disponibles",
-        "completed": "Vues",
-        "next": "Prochaine"
-      }
-    },
     "progress": "Progression",
     "open": "Ouvrir",
     "browse": "Parcourir",

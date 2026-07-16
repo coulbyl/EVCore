@@ -26,8 +26,8 @@ export default async function FormationVideoPage({
   const item = await getFormationContentBySlug(slug);
   if (!item) notFound();
 
-  // Legacy route kept for backwards compatibility: redirect to the new
-  // category-based reading experience (preserve chapter offset).
+  // Legacy route kept for backwards compatibility: redirect to the flat
+  // reading experience (preserve chapter offset).
   const qs = t ? `?t=${encodeURIComponent(t)}` : "";
-  redirect(`/dashboard/formation/${item.category}/${item.slug}${qs}`);
+  redirect(`/dashboard/formation/${item.slug}${qs}`);
 }
