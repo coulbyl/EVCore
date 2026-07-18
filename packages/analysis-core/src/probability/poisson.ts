@@ -135,7 +135,7 @@ function deriveMarketsFromDistributions(
   // Uses the same truncated+normalized distributions for coherence with 1X2.
   const bttsYes = (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0));
   const bttsNo = 1 - bttsYes;
-  const { htft, ouHT, firstHalfWinner } =
+  const { htft, ouHT, firstHalfWinner, secondHalfWinner } =
     computeFirstHalfMarketsFromMatchDistributions(homeDist, awayDist);
 
   // Draw No Bet: renormalize home/away over the non-draw mass only — distinct
@@ -148,6 +148,25 @@ function deriveMarketsFromDistributions(
   const dnbAway = nonDrawMass.isZero()
     ? new Decimal(0.5)
     : oneXTwo.away.div(nonDrawMass);
+
+  // Clean Sheet: the opposing side fails to score at all.
+  const cleanSheetHome = new Decimal(awayDist[0] ?? 0);
+  const cleanSheetAway = new Decimal(homeDist[0] ?? 0);
+  // Win to Nil: wins AND keeps a clean sheet — with the opposing side held
+  // to 0, any goal from this side is already a win, so it's just clean
+  // sheet × "scored at least once".
+  const winToNilHome = cleanSheetHome.mul(1 - (homeDist[0] ?? 0));
+  const winToNilAway = cleanSheetAway.mul(1 - (awayDist[0] ?? 0));
+
+  // To Win Either Half: home/away win at least one of the two halves.
+  // Inclusion-exclusion assuming H1/H2 independence (same assumption HT/FT
+  // already makes). Not exhaustive by design — see DerivedMarketsProba.
+  const winEitherHalfHome = firstHalfWinner.home
+    .plus(secondHalfWinner.home)
+    .minus(firstHalfWinner.home.mul(secondHalfWinner.home));
+  const winEitherHalfAway = firstHalfWinner.away
+    .plus(secondHalfWinner.away)
+    .minus(firstHalfWinner.away.mul(secondHalfWinner.away));
 
   return {
     over15: new Decimal(over15),
@@ -167,9 +186,16 @@ function deriveMarketsFromDistributions(
     dnbAway,
     teamTotalHome: computeTeamTotalProba(homeDist),
     teamTotalAway: computeTeamTotalProba(awayDist),
+    cleanSheetHome,
+    cleanSheetAway,
+    winToNilHome,
+    winToNilAway,
     htft,
     ouHT,
     firstHalfWinner,
+    secondHalfWinner,
+    winEitherHalfHome,
+    winEitherHalfAway,
   };
 }
 
@@ -226,6 +252,23 @@ function computeFirstHalfMarketsFromMatchDistributions(
     maxGoals,
     factorialCache,
   );
+
+  // Second Half Winner: independent of the first half in this model, so it's
+  // a plain marginal pair over homeSecondDist/awaySecondDist — no need to
+  // fold it into the h1/a1 loop below (that loop exists for HT/FT, which
+  // does depend on both halves).
+  let homeH2 = 0;
+  let drawH2 = 0;
+  let awayH2 = 0;
+  for (let h2 = 0; h2 < homeSecondDist.length; h2++) {
+    for (let a2 = 0; a2 < awaySecondDist.length; a2++) {
+      const p = (homeSecondDist[h2] ?? 0) * (awaySecondDist[a2] ?? 0);
+      if (p <= 0) continue;
+      if (h2 > a2) homeH2 += p;
+      else if (h2 === a2) drawH2 += p;
+      else awayH2 += p;
+    }
+  }
 
   const htftTotals = Object.fromEntries(
     HALF_TIME_FULL_TIME_PICKS.map((pick) => [pick, 0]),
@@ -285,6 +328,11 @@ function computeFirstHalfMarketsFromMatchDistributions(
       home: new Decimal(homeHT),
       draw: new Decimal(drawHT),
       away: new Decimal(awayHT),
+    },
+    secondHalfWinner: {
+      home: new Decimal(homeH2),
+      draw: new Decimal(drawH2),
+      away: new Decimal(awayH2),
     },
   };
 }

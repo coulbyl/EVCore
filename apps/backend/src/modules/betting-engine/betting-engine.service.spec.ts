@@ -64,6 +64,10 @@ function makeMockProbabilities() {
     dnbAway: new Decimal('0.5'),
     teamTotalHome: {},
     teamTotalAway: {},
+    cleanSheetHome: new Decimal('0.3'),
+    cleanSheetAway: new Decimal('0.3'),
+    winToNilHome: new Decimal('0.2'),
+    winToNilAway: new Decimal('0.2'),
     htft: makeHtftProbabilities(),
     ouHT: {},
     firstHalfWinner: {
@@ -71,6 +75,13 @@ function makeMockProbabilities() {
       draw: new Decimal('0.34'),
       away: new Decimal('0.33'),
     },
+    secondHalfWinner: {
+      home: new Decimal('0.33'),
+      draw: new Decimal('0.34'),
+      away: new Decimal('0.33'),
+    },
+    winEitherHalfHome: new Decimal('0.5'),
+    winEitherHalfAway: new Decimal('0.5'),
   };
 }
 
@@ -725,6 +736,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: makeHtftProbabilities('0.01'),
       ouHT: {},
       firstHalfWinner: {
@@ -732,6 +747,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -773,6 +795,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: makeHtftProbabilities('0.01'),
       ouHT: {},
       firstHalfWinner: {
@@ -780,6 +806,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -1453,6 +1486,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: makeHtftProbabilities('0.111111'),
       ouHT: {},
       firstHalfWinner: {
@@ -1460,6 +1497,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1571,6 +1615,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: makeHtftProbabilities('0.111111'),
       ouHT: {},
       firstHalfWinner: {
@@ -1578,6 +1626,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1634,6 +1689,10 @@ describe('BettingEngineService', () => {
         dnbAway: new Decimal('0.5'),
         teamTotalHome: {},
         teamTotalAway: {},
+        cleanSheetHome: new Decimal('0.3'),
+        cleanSheetAway: new Decimal('0.3'),
+        winToNilHome: new Decimal('0.2'),
+        winToNilAway: new Decimal('0.2'),
         htft,
         ouHT: {},
         firstHalfWinner: {
@@ -1641,6 +1700,13 @@ describe('BettingEngineService', () => {
           draw: new Decimal('0.34'),
           away: new Decimal('0.33'),
         },
+        secondHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
+        winEitherHalfHome: new Decimal('0.5'),
+        winEitherHalfAway: new Decimal('0.5'),
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1658,6 +1724,11 @@ describe('BettingEngineService', () => {
         drawNoBetOdds: null,
         teamTotalHomeOdds: {},
         teamTotalAwayOdds: {},
+        cleanSheetHomeOdds: null,
+        cleanSheetAwayOdds: null,
+        winToNilHomeOdds: null,
+        winToNilAwayOdds: null,
+        winEitherHalfOdds: null,
       },
       deterministicScore: new Decimal('0.75'),
       distHome,
@@ -1702,6 +1773,10 @@ describe('BettingEngineService', () => {
         dnbAway: new Decimal('0.5'),
         teamTotalHome: {},
         teamTotalAway: {},
+        cleanSheetHome: new Decimal('0.3'),
+        cleanSheetAway: new Decimal('0.3'),
+        winToNilHome: new Decimal('0.2'),
+        winToNilAway: new Decimal('0.2'),
         htft,
         ouHT: {},
         firstHalfWinner: {
@@ -1709,6 +1784,13 @@ describe('BettingEngineService', () => {
           draw: new Decimal('0.34'),
           away: new Decimal('0.33'),
         },
+        secondHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
+        winEitherHalfHome: new Decimal('0.5'),
+        winEitherHalfAway: new Decimal('0.5'),
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1726,6 +1808,11 @@ describe('BettingEngineService', () => {
         drawNoBetOdds: null,
         teamTotalHomeOdds: {},
         teamTotalAwayOdds: {},
+        cleanSheetHomeOdds: null,
+        cleanSheetAwayOdds: null,
+        winToNilHomeOdds: null,
+        winToNilAwayOdds: null,
+        winEitherHalfOdds: null,
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -1770,6 +1857,10 @@ describe('BettingEngineService', () => {
         dnbAway: new Decimal('0.5'),
         teamTotalHome: {},
         teamTotalAway: {},
+        cleanSheetHome: new Decimal('0.3'),
+        cleanSheetAway: new Decimal('0.3'),
+        winToNilHome: new Decimal('0.2'),
+        winToNilAway: new Decimal('0.2'),
         htft,
         ouHT: {},
         firstHalfWinner: {
@@ -1777,6 +1868,13 @@ describe('BettingEngineService', () => {
           draw: new Decimal('0.34'),
           away: new Decimal('0.33'),
         },
+        secondHalfWinner: {
+          home: new Decimal('0.33'),
+          draw: new Decimal('0.34'),
+          away: new Decimal('0.33'),
+        },
+        winEitherHalfHome: new Decimal('0.5'),
+        winEitherHalfAway: new Decimal('0.5'),
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1794,6 +1892,11 @@ describe('BettingEngineService', () => {
         drawNoBetOdds: null,
         teamTotalHomeOdds: {},
         teamTotalAwayOdds: {},
+        cleanSheetHomeOdds: null,
+        cleanSheetAwayOdds: null,
+        winToNilHomeOdds: null,
+        winToNilAwayOdds: null,
+        winEitherHalfOdds: null,
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -2007,6 +2110,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: {
         ...makeHtftProbabilities('0.01'),
         HOME_HOME: new Decimal('0.65'),
@@ -2017,6 +2124,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -2153,6 +2267,10 @@ describe('BettingEngineService', () => {
       dnbAway: new Decimal('0.5'),
       teamTotalHome: {},
       teamTotalAway: {},
+      cleanSheetHome: new Decimal('0.3'),
+      cleanSheetAway: new Decimal('0.3'),
+      winToNilHome: new Decimal('0.2'),
+      winToNilAway: new Decimal('0.2'),
       htft: makeHtftProbabilities('0.111111'),
       ouHT: {},
       firstHalfWinner: {
@@ -2160,6 +2278,13 @@ describe('BettingEngineService', () => {
         draw: new Decimal('0.34'),
         away: new Decimal('0.33'),
       },
+      secondHalfWinner: {
+        home: new Decimal('0.33'),
+        draw: new Decimal('0.34'),
+        away: new Decimal('0.33'),
+      },
+      winEitherHalfHome: new Decimal('0.5'),
+      winEitherHalfAway: new Decimal('0.5'),
     };
     return {
       deterministicScore: new Decimal('0.70'),

@@ -62,6 +62,11 @@ export type FullOddsSnapshot = {
   drawNoBetOdds: { home: Decimal; away: Decimal } | null;
   teamTotalHomeOdds: TeamTotalOddsMap;
   teamTotalAwayOdds: TeamTotalOddsMap;
+  cleanSheetHomeOdds: { yes: Decimal; no: Decimal } | null;
+  cleanSheetAwayOdds: { yes: Decimal; no: Decimal } | null;
+  winToNilHomeOdds: { yes: Decimal; no: Decimal } | null;
+  winToNilAwayOdds: { yes: Decimal; no: Decimal } | null;
+  winEitherHalfOdds: { home: Decimal; away: Decimal } | null;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

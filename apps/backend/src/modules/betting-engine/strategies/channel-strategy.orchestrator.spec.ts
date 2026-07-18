@@ -33,6 +33,11 @@ const BASE_ODDS: FullOddsSnapshot = {
   drawNoBetOdds: null,
   teamTotalHomeOdds: {},
   teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
 };
 
 function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {

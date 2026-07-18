@@ -73,6 +73,11 @@ export function buildFriMatchProbabilities(
       : oneXTwo.away.div(nonDrawMass),
     teamTotalHome: {},
     teamTotalAway: {},
+    // Requires per-side goal distributions FRI doesn't model, same as teamTotal.
+    cleanSheetHome: ZERO,
+    cleanSheetAway: ZERO,
+    winToNilHome: ZERO,
+    winToNilAway: ZERO,
     htft: {
       HOME_HOME: ZERO,
       HOME_DRAW: ZERO,
@@ -91,6 +96,9 @@ export function buildFriMatchProbabilities(
       UNDER_1_5: ZERO,
     },
     firstHalfWinner: { home: ZERO, draw: ZERO, away: ZERO },
+    secondHalfWinner: { home: ZERO, draw: ZERO, away: ZERO },
+    winEitherHalfHome: ZERO,
+    winEitherHalfAway: ZERO,
   };
 }
 

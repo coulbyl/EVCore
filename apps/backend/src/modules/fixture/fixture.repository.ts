@@ -150,6 +150,8 @@ type TeamTotalOddsInput = Partial<
   >
 >;
 
+type YesNoOddsInput = { yes: number; no: number } | null;
+
 export type UpsertOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -182,6 +184,11 @@ export type UpsertOddsSnapshotInput = {
   drawNoBetOdds: { home: number; away: number } | null;
   teamTotalHomeOdds: TeamTotalOddsInput;
   teamTotalAwayOdds: TeamTotalOddsInput;
+  cleanSheetHomeOdds: YesNoOddsInput;
+  cleanSheetAwayOdds: YesNoOddsInput;
+  winToNilHomeOdds: YesNoOddsInput;
+  winToNilAwayOdds: YesNoOddsInput;
+  winEitherHalfOdds: { home: number; away: number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -214,6 +221,11 @@ export type UpsertSecondaryMarketOddsInput = {
   drawNoBetOdds: { home: number; away: number } | null;
   teamTotalHomeOdds: TeamTotalOddsInput;
   teamTotalAwayOdds: TeamTotalOddsInput;
+  cleanSheetHomeOdds: YesNoOddsInput;
+  cleanSheetAwayOdds: YesNoOddsInput;
+  winToNilHomeOdds: YesNoOddsInput;
+  winToNilAwayOdds: YesNoOddsInput;
+  winEitherHalfOdds: { home: number; away: number } | null;
   source?: OddsSnapshotSource;
 };
 
@@ -643,7 +655,12 @@ export class FixtureRepository {
       | 'CORRECT_SCORE'
       | 'DRAW_NO_BET'
       | 'TEAM_TOTAL_HOME'
-      | 'TEAM_TOTAL_AWAY',
+      | 'TEAM_TOTAL_AWAY'
+      | 'CLEAN_SHEET_HOME'
+      | 'CLEAN_SHEET_AWAY'
+      | 'WIN_TO_NIL_HOME'
+      | 'WIN_TO_NIL_AWAY'
+      | 'TO_WIN_EITHER_HALF',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -784,6 +801,86 @@ export class FixtureRepository {
       ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
       ),
+      ...(data.cleanSheetHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'YES',
+              data.cleanSheetHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'NO',
+              data.cleanSheetHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.cleanSheetAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'YES',
+              data.cleanSheetAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'NO',
+              data.cleanSheetAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'YES',
+              data.winToNilHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'NO',
+              data.winToNilHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'YES',
+              data.winToNilAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'NO',
+              data.winToNilAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winEitherHalfOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'HOME',
+              data.winEitherHalfOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'AWAY',
+              data.winEitherHalfOdds.away,
+            ),
+          ]
+        : []),
     ]);
 
     return oneXTwoId;
@@ -881,6 +978,86 @@ export class FixtureRepository {
       ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
       ),
+      ...(data.cleanSheetHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'YES',
+              data.cleanSheetHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'NO',
+              data.cleanSheetHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.cleanSheetAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'YES',
+              data.cleanSheetAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'NO',
+              data.cleanSheetAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'YES',
+              data.winToNilHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'NO',
+              data.winToNilHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'YES',
+              data.winToNilAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'NO',
+              data.winToNilAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winEitherHalfOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'HOME',
+              data.winEitherHalfOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'AWAY',
+              data.winEitherHalfOdds.away,
+            ),
+          ]
+        : []),
     ]);
   }
 

@@ -31,6 +31,11 @@ const ODDS: FullOddsSnapshot = {
   drawNoBetOdds: null,
   teamTotalHomeOdds: {},
   teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
 };
 
 // Minimal permissive config so the test isolates the edge gate (the per-league

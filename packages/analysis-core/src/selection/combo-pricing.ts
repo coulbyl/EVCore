@@ -156,6 +156,32 @@ export function getPickOddsFromSnapshot(
       null
     );
   }
+  if (market === Market.CLEAN_SHEET_HOME) {
+    return getYesNoOdds(odds.cleanSheetHomeOdds, pick);
+  }
+  if (market === Market.CLEAN_SHEET_AWAY) {
+    return getYesNoOdds(odds.cleanSheetAwayOdds, pick);
+  }
+  if (market === Market.WIN_TO_NIL_HOME) {
+    return getYesNoOdds(odds.winToNilHomeOdds, pick);
+  }
+  if (market === Market.WIN_TO_NIL_AWAY) {
+    return getYesNoOdds(odds.winToNilAwayOdds, pick);
+  }
+  if (market === Market.TO_WIN_EITHER_HALF && odds.winEitherHalfOdds !== null) {
+    if (pick === "HOME") return odds.winEitherHalfOdds.home;
+    if (pick === "AWAY") return odds.winEitherHalfOdds.away;
+  }
+  return null;
+}
+
+function getYesNoOdds(
+  yesNo: { yes: Decimal; no: Decimal } | null,
+  pick: string,
+): Decimal | null {
+  if (yesNo === null) return null;
+  if (pick === "YES") return yesNo.yes;
+  if (pick === "NO") return yesNo.no;
   return null;
 }
 
@@ -225,6 +251,28 @@ export function getModelProbabilityForPick(
         pick as keyof typeof probabilities.teamTotalAway
       ] ?? null
     );
+  }
+  if (market === Market.CLEAN_SHEET_HOME) {
+    if (pick === "YES") return probabilities.cleanSheetHome;
+    if (pick === "NO")
+      return new Decimal(1).minus(probabilities.cleanSheetHome);
+  }
+  if (market === Market.CLEAN_SHEET_AWAY) {
+    if (pick === "YES") return probabilities.cleanSheetAway;
+    if (pick === "NO")
+      return new Decimal(1).minus(probabilities.cleanSheetAway);
+  }
+  if (market === Market.WIN_TO_NIL_HOME) {
+    if (pick === "YES") return probabilities.winToNilHome;
+    if (pick === "NO") return new Decimal(1).minus(probabilities.winToNilHome);
+  }
+  if (market === Market.WIN_TO_NIL_AWAY) {
+    if (pick === "YES") return probabilities.winToNilAway;
+    if (pick === "NO") return new Decimal(1).minus(probabilities.winToNilAway);
+  }
+  if (market === Market.TO_WIN_EITHER_HALF) {
+    if (pick === "HOME") return probabilities.winEitherHalfHome;
+    if (pick === "AWAY") return probabilities.winEitherHalfAway;
   }
   return null;
 }

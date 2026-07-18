@@ -208,6 +208,13 @@ export const API_FOOTBALL_BET_IDS = {
   // Full-time exact score. Observation-only market (forward odds collection) —
   // no historical odds via API-Football, see TODO Étape 7 item A.
   EXACT_SCORE: 10,
+  CLEAN_SHEET_HOME: 27,
+  CLEAN_SHEET_AWAY: 28,
+  WIN_TO_NIL_HOME: 29,
+  WIN_TO_NIL_AWAY: 30,
+  // Two-way market (Home/Away only) — never a third "Draw"/"Neither" value,
+  // confirmed live 2026-07-18 across every fixture in the sample.
+  TO_WIN_EITHER_HALF: 39,
 } as const;
 
 export const BULLMQ_QUEUES = {

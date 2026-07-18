@@ -28,6 +28,11 @@ function snapshot(): FullOddsSnapshot {
     drawNoBetOdds: null,
     teamTotalHomeOdds: {},
     teamTotalAwayOdds: {},
+    cleanSheetHomeOdds: null,
+    cleanSheetAwayOdds: null,
+    winToNilHomeOdds: null,
+    winToNilAwayOdds: null,
+    winEitherHalfOdds: null,
   };
 }
 

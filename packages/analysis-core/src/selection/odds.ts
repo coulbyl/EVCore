@@ -64,9 +64,32 @@ export function resolveSelectionOdds(
         odds.teamTotalAwayOdds[pick as keyof typeof odds.teamTotalAwayOdds] ??
         null
       );
+    case Market.CLEAN_SHEET_HOME:
+      return resolveYesNoOdds(odds.cleanSheetHomeOdds, pick);
+    case Market.CLEAN_SHEET_AWAY:
+      return resolveYesNoOdds(odds.cleanSheetAwayOdds, pick);
+    case Market.WIN_TO_NIL_HOME:
+      return resolveYesNoOdds(odds.winToNilHomeOdds, pick);
+    case Market.WIN_TO_NIL_AWAY:
+      return resolveYesNoOdds(odds.winToNilAwayOdds, pick);
+    case Market.TO_WIN_EITHER_HALF:
+      if (odds.winEitherHalfOdds === null) return null;
+      if (pick === "HOME") return odds.winEitherHalfOdds.home;
+      if (pick === "AWAY") return odds.winEitherHalfOdds.away;
+      return null;
     default:
       return null;
   }
+}
+
+function resolveYesNoOdds(
+  yesNo: { yes: Decimal; no: Decimal } | null,
+  pick: string,
+): Decimal | null {
+  if (yesNo === null) return null;
+  if (pick === "YES") return yesNo.yes;
+  if (pick === "NO") return yesNo.no;
+  return null;
 }
 
 // EV/impliedProbability/odds enrichment to spread into a StrategySelection.

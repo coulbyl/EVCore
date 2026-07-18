@@ -27,12 +27,25 @@ export type DerivedMarketsProba = {
   dnbAway: Decimal;
   teamTotalHome: TeamTotalProba;
   teamTotalAway: TeamTotalProba;
+  // Full-time, closed-form from the marginal goal distributions — the
+  // opposing side fails to score.
+  cleanSheetHome: Decimal;
+  cleanSheetAway: Decimal;
+  winToNilHome: Decimal;
+  winToNilAway: Decimal;
   htft: Record<HalfTimeFullTimePick, Decimal>;
   // First-half derived markets
   ouHT: Partial<
     Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
+  secondHalfWinner: ThreeWayProba;
+  // Inclusion-exclusion over firstHalfWinner/secondHalfWinner (assumed
+  // independent). home+away is NOT bounded by 1 like dc1X/dcX2/dc12 above —
+  // the two events overlap (e.g. home wins H1 while away wins H2 makes both
+  // "wins either half" true simultaneously), so this isn't a two-way split.
+  winEitherHalfHome: Decimal;
+  winEitherHalfAway: Decimal;
 };
 
 export type TeamTotalProba = Partial<
@@ -61,6 +74,7 @@ export type FirstHalfMarkets = {
     Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
+  secondHalfWinner: ThreeWayProba;
 };
 
 export const HALF_TIME_FULL_TIME_PICKS = [

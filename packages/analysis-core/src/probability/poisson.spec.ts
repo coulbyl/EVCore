@@ -91,6 +91,58 @@ describe("computePoissonMarkets", () => {
       m.teamTotalAway.OVER_1_5!.toNumber(),
     );
   });
+
+  it("Clean Sheet is the opposing side's marginal P(0 goals)", () => {
+    const { distHome, distAway } = buildPoissonDistributions(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.cleanSheetHome.toNumber()).toBeCloseTo(distAway[0] ?? 0, 10);
+    expect(m.cleanSheetAway.toNumber()).toBeCloseTo(distHome[0] ?? 0, 10);
+  });
+
+  it("Clean Sheet trends to 1 as the opposing lambda trends to 0", () => {
+    const m = computePoissonMarkets(1.5, 0.02);
+    expect(m.cleanSheetHome.toNumber()).toBeGreaterThan(0.97);
+  });
+
+  it("Win to Nil is always ≤ Clean Sheet for the same side (must also score)", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.winToNilHome.toNumber()).toBeLessThanOrEqual(
+      m.cleanSheetHome.toNumber(),
+    );
+    expect(m.winToNilAway.toNumber()).toBeLessThanOrEqual(
+      m.cleanSheetAway.toNumber(),
+    );
+  });
+
+  it("Second Half Winner sums to ≈ 1 (home+draw+away), independent of first half", () => {
+    const m = computePoissonMarkets(1.5, 1.0);
+    const total = m.secondHalfWinner.home
+      .plus(m.secondHalfWinner.draw)
+      .plus(m.secondHalfWinner.away)
+      .toNumber();
+    expect(total).toBeCloseTo(1, 6);
+  });
+
+  it("To Win Either Half: inclusion-exclusion matches first/second half winner probabilities", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const expectedHome = m.firstHalfWinner.home
+      .plus(m.secondHalfWinner.home)
+      .minus(m.firstHalfWinner.home.mul(m.secondHalfWinner.home));
+    expect(m.winEitherHalfHome.toNumber()).toBeCloseTo(
+      expectedHome.toNumber(),
+      10,
+    );
+    // A union of two events is always ≥ either individual event — and NOT
+    // exclusive with the away side (e.g. home wins H1 and away wins H2
+    // makes both "win either half" true), so home+away is not bounded by 1.
+    expect(m.winEitherHalfHome.toNumber()).toBeGreaterThanOrEqual(
+      m.firstHalfWinner.home.toNumber(),
+    );
+    expect(m.winEitherHalfHome.toNumber()).toBeGreaterThanOrEqual(
+      m.secondHalfWinner.home.toNumber(),
+    );
+    expect(m.winEitherHalfHome.toNumber()).toBeLessThanOrEqual(1);
+  });
 });
 
 describe("computeCorrectScoreMatrix", () => {

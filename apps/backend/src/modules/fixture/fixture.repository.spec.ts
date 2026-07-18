@@ -268,6 +268,11 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
       drawNoBetOdds: { home: 1.22, away: 4.0 },
       teamTotalHomeOdds: {},
       teamTotalAwayOdds: {},
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: null,
     });
 
     const dnbCalls = create.mock.calls.filter(
@@ -301,6 +306,11 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
       drawNoBetOdds: null,
       teamTotalHomeOdds: {},
       teamTotalAwayOdds: {},
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: null,
     });
 
     expect(
@@ -327,6 +337,11 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
       drawNoBetOdds: null,
       teamTotalHomeOdds: { OVER_0_5: 1.11, UNDER_0_5: 6.5 },
       teamTotalAwayOdds: { OVER_1_5: 3.5 },
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: null,
     });
 
     const homeCalls = create.mock.calls.filter(
@@ -344,5 +359,145 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
     expect(awayCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual([
       ['OVER_1_5', 3.5],
     ]);
+  });
+});
+
+describe('FixtureRepository.upsertOddsSnapshot — Clean Sheet / Win to Nil / To Win Either Half', () => {
+  const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const prisma = {
+    client: {
+      oddsSnapshot: {
+        create,
+      },
+    },
+  } as unknown as PrismaService;
+
+  const repository = new FixtureRepository(prisma);
+  const snapshotAt = new Date('2026-07-18T13:00:00.000Z');
+
+  const baseInput = {
+    fixtureId: 'fixture-id',
+    bookmaker: 'Bet365',
+    snapshotAt,
+    homeOdds: 1.57,
+    drawOdds: 4.33,
+    awayOdds: 5.25,
+    overUnderOdds: {},
+    bttsYesOdds: null,
+    bttsNoOdds: null,
+    htftOdds: {},
+    ouHtOdds: {},
+    firstHalfWinnerOdds: null,
+    doubleChanceOdds: null,
+    correctScoreOdds: {},
+    drawNoBetOdds: null,
+    teamTotalHomeOdds: {},
+    teamTotalAwayOdds: {},
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    create.mockResolvedValue({ id: 'snap-id' });
+  });
+
+  it('upserts CLEAN_SHEET_HOME/AWAY rows (Yes/No) when odds are present', async () => {
+    await repository.upsertOddsSnapshot({
+      ...baseInput,
+      cleanSheetHomeOdds: { yes: 2.38, no: 1.53 },
+      cleanSheetAwayOdds: { yes: 6.5, no: 1.11 },
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: null,
+    });
+
+    const homeCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'CLEAN_SHEET_HOME',
+    );
+    const awayCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'CLEAN_SHEET_AWAY',
+    );
+    expect(homeCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['YES', 2.38],
+        ['NO', 1.53],
+      ]),
+    );
+    expect(awayCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['YES', 6.5],
+        ['NO', 1.11],
+      ]),
+    );
+  });
+
+  it('upserts WIN_TO_NIL_HOME/AWAY rows (Yes/No) when odds are present', async () => {
+    await repository.upsertOddsSnapshot({
+      ...baseInput,
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: { yes: 1.95, no: 1.75 },
+      winToNilAwayOdds: { yes: 9.5, no: 1.05 },
+      winEitherHalfOdds: null,
+    });
+
+    const homeCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'WIN_TO_NIL_HOME',
+    );
+    const awayCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'WIN_TO_NIL_AWAY',
+    );
+    expect(homeCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['YES', 1.95],
+        ['NO', 1.75],
+      ]),
+    );
+    expect(awayCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['YES', 9.5],
+        ['NO', 1.05],
+      ]),
+    );
+  });
+
+  it('upserts TO_WIN_EITHER_HALF rows (Home/Away) when odds are present', async () => {
+    await repository.upsertOddsSnapshot({
+      ...baseInput,
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: { home: 1.3, away: 3.0 },
+    });
+
+    const calls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'TO_WIN_EITHER_HALF',
+    );
+    expect(calls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['HOME', 1.3],
+        ['AWAY', 3.0],
+      ]),
+    );
+  });
+
+  it('skips all five markets when their odds are null', async () => {
+    await repository.upsertOddsSnapshot({
+      ...baseInput,
+      cleanSheetHomeOdds: null,
+      cleanSheetAwayOdds: null,
+      winToNilHomeOdds: null,
+      winToNilAwayOdds: null,
+      winEitherHalfOdds: null,
+    });
+
+    const marketsSeen = new Set(
+      create.mock.calls.map(([arg]) => arg.data.market),
+    );
+    expect(marketsSeen.has('CLEAN_SHEET_HOME')).toBe(false);
+    expect(marketsSeen.has('CLEAN_SHEET_AWAY')).toBe(false);
+    expect(marketsSeen.has('WIN_TO_NIL_HOME')).toBe(false);
+    expect(marketsSeen.has('WIN_TO_NIL_AWAY')).toBe(false);
+    expect(marketsSeen.has('TO_WIN_EITHER_HALF')).toBe(false);
   });
 });

@@ -68,6 +68,12 @@ export function mapProbabilitiesToNumber(
         value?.toNumber() ?? 0,
       ]),
     ),
+    cleanSheetHome: probabilities.cleanSheetHome.toNumber(),
+    cleanSheetAway: probabilities.cleanSheetAway.toNumber(),
+    winToNilHome: probabilities.winToNilHome.toNumber(),
+    winToNilAway: probabilities.winToNilAway.toNumber(),
+    winEitherHalfHome: probabilities.winEitherHalfHome.toNumber(),
+    winEitherHalfAway: probabilities.winEitherHalfAway.toNumber(),
     htft: Object.fromEntries(
       Object.entries(probabilities.htft).map(([pick, value]) => [
         pick,
@@ -84,6 +90,11 @@ export function mapProbabilitiesToNumber(
       home: probabilities.firstHalfWinner.home.toNumber(),
       draw: probabilities.firstHalfWinner.draw.toNumber(),
       away: probabilities.firstHalfWinner.away.toNumber(),
+    },
+    secondHalfWinner: {
+      home: probabilities.secondHalfWinner.home.toNumber(),
+      draw: probabilities.secondHalfWinner.draw.toNumber(),
+      away: probabilities.secondHalfWinner.away.toNumber(),
     },
   };
 }
