@@ -24,14 +24,14 @@ Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entra
 
 ## L'état réel, au dernier audit (2026-07-16)
 
-| Canal        | Ce qu'il cherche                                  | Statut réel                                                                                                       |
-| ------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **VALUE** (Valeur)    | Cotes à valeur attendue positive                  | Le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement (voir la leçon dédiée) |
+| Canal                   | Ce qu'il cherche                                  | Statut réel                                                                                                       |
+| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **VALUE** (Valeur)      | Cotes à valeur attendue positive                  | Le seul canal qui reste positif hors échantillon, à condition d'utiliser le bon classement (voir la leçon dédiée) |
 | **SAFE** (Sécurité)     | Sélections prudentes, rendement régulier          | Prometteur, mais échantillon encore trop fin pour figer une formule                                               |
 | **DOMINANT** (Victoire) | Angle le plus affirmé sur l'issue du match        | Le canal brut perd de l'argent — mais bien classé, une partie redevient rentable                                  |
-| **DRAW** (Nul)     | Match nul, via la probabilité implicite du marché | En amélioration réelle et mesurable, pas encore au niveau de VALUE                                                |
-| **BTTS** (BB)     | Les deux équipes marquent                         | Pas rentable sur aucun classement testé à ce jour                                                                 |
-| **GOALS** (Buts)    | Plus ou moins de buts                             | Pas rentable sur aucun classement testé à ce jour                                                                 |
+| **DRAW** (Nul)          | Match nul, via la probabilité implicite du marché | En amélioration réelle et mesurable, pas encore au niveau de VALUE                                                |
+| **BTTS** (BB)           | Les deux équipes marquent                         | Pas rentable sur aucun classement testé à ce jour                                                                 |
+| **GOALS** (Buts)        | Plus ou moins de buts                             | Pas rentable sur aucun classement testé à ce jour                                                                 |
 
 Un canal peut progresser, comme DRAW l'a fait, ou régresser si le marché change. Cette table sera revue à chaque nouvel audit. Aucune ligne n'est une promesse pour l'avenir — juste une photographie datée.
 

@@ -40,9 +40,9 @@ On appelle ça la probabilité calibrée. Calibrée veut dire une chose précise
 Voici l'idée centrale de la méthode : on ne mise jamais sur une probabilité implicite. On mise sur l'écart entre ce que le modèle estime et ce que le marché affiche. Un exemple simplifié :
 
 |         | Cote affichée | Probabilité implicite | Probabilité calibrée EVCore | Écart     |
-| ------- | -------------- | ---------------------- | ---------------------------- | --------- |
-| Match A | 2.20           | 45.5%                   | 45.0%                          | quasi nul |
-| Match B | 2.20           | 45.5%                   | 58.0%                          | +12.5 pts |
+| ------- | ------------- | --------------------- | --------------------------- | --------- |
+| Match A | 2.20          | 45.5%                 | 45.0%                       | quasi nul |
+| Match B | 2.20          | 45.5%                 | 58.0%                       | +12.5 pts |
 
 Sur le Match A, le modèle rejoint l'avis du marché : rien à exploiter, même si la cote paraît attirante. Sur le Match B, il voit une probabilité nettement supérieure à ce que la cote implique. C'est cet écart-là, et lui seul, qui constitue une opportunité. On l'appelle l'edge — sujet de la prochaine leçon.
 

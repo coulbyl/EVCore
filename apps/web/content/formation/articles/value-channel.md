@@ -17,10 +17,10 @@ VALUE identifie des cotes à valeur attendue positive : des matchs où la probab
 
 Deux classements ont été testés sur les picks VALUE : par edge calibré (l'écart de probabilité) et par probabilité brute. Les résultats divergent radicalement une fois confrontés à des données que le modèle n'a jamais vues à l'entraînement — l'année 2026 dans les tests actuels :
 
-| Classement | ROI tout historique | ROI 2026 (hors échantillon) |
-| ---------- | -------------------- | ----------------------------- |
-| **Top 5 par edge calibré** | +14.98% (295 picks) | **+2.27%** |
-| Top 5 par probabilité brute | — | **−12.70%** |
+| Classement                  | ROI tout historique | ROI 2026 (hors échantillon) |
+| --------------------------- | ------------------- | --------------------------- |
+| **Top 5 par edge calibré**  | +14.98% (295 picks) | **+2.27%**                  |
+| Top 5 par probabilité brute | —                   | **−12.70%**                 |
 
 À ce jour, le classement par edge calibré est le seul, sur l'ensemble des canaux EVCore, qui reste positif sur des données hors échantillon.
 

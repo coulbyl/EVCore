@@ -21,7 +21,5 @@ const STATUS_VARIANT: Record<
 };
 
 export function ChannelStatusBadge({ status }: { status: ChannelStatus }) {
-  return (
-    <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
-  );
+  return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
 }

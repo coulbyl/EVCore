@@ -14,11 +14,12 @@ export type PnlByCanalResponse = {
 
 export type PeriodKey = "30" | "90" | "all";
 
-export const PERIODS: { key: PeriodKey; label: string; days: number | null }[] = [
-  { key: "30", label: "30 jours", days: 30 },
-  { key: "90", label: "90 jours", days: 90 },
-  { key: "all", label: "Tout l'historique", days: null },
-];
+export const PERIODS: { key: PeriodKey; label: string; days: number | null }[] =
+  [
+    { key: "30", label: "30 jours", days: 30 },
+    { key: "90", label: "90 jours", days: 90 },
+    { key: "all", label: "Tout l'historique", days: null },
+  ];
 
 // Earliest settled data currently in the DB (verified 2026-07-18) — used as
 // the "from" bound for the "all" period instead of an arbitrary far-past date.

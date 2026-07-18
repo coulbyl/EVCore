@@ -93,7 +93,8 @@ export default async function FormationLessonPage({
             <span className="opacity-40">/</span>
             <span className="truncate text-foreground">{item.title}</span>
             <span className="ml-auto shrink-0 tabular-nums">
-              {tFormation(`categories.${item.category}`)} · {categoryCompletedHint}
+              {tFormation(`categories.${item.category}`)} ·{" "}
+              {categoryCompletedHint}
             </span>
           </nav>
 
@@ -148,7 +149,9 @@ export default async function FormationLessonPage({
           {item.chapters && item.chapters.length > 0 ? (
             <FormationChapters
               chapters={item.chapters}
-              currentStart={Number.isFinite(startAtSeconds) ? startAtSeconds : 0}
+              currentStart={
+                Number.isFinite(startAtSeconds) ? startAtSeconds : 0
+              }
             />
           ) : null}
 
@@ -268,7 +271,10 @@ export default async function FormationLessonPage({
                                 entry.type === "video" ? "video" : "article",
                               )}
                             </Badge>
-                            <Badge variant="outline" className="gap-1 tabular-nums">
+                            <Badge
+                              variant="outline"
+                              className="gap-1 tabular-nums"
+                            >
                               <Clock size={12} />
                               {entry.videoDuration ?? `${entry.readTime} min`}
                             </Badge>

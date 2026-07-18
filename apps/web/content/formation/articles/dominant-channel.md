@@ -19,10 +19,10 @@ Pris dans son ensemble, DOMINANT est négatif : −23.27% de ROI sur l'historiqu
 
 Mais ce chiffre global cache une réalité différente une fois qu'on applique un classement. Les 5 meilleurs picks DOMINANT du jour, sélectionnés par probabilité, affichent un ROI de +3.30% :
 
-| Vue | ROI mesuré |
-| ---- | ----------- |
+| Vue                                     | ROI mesuré  |
+| --------------------------------------- | ----------- |
 | Canal DOMINANT complet (tous les picks) | **−23.27%** |
-| Top 5 par probabilité, chaque jour | **+3.30%** |
+| Top 5 par probabilité, chaque jour      | **+3.30%**  |
 
 ## La leçon la plus importante de toute la catégorie
 

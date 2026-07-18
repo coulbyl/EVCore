@@ -17,17 +17,17 @@ Une fiche EVCore n'est pas un tip isolé. C'est la sortie d'un calcul, et chaque
 
 Chaque pick appartient à un canal, affiché en badge. Le canal indique quelle question le moteur a posée au match, pas seulement quelle réponse il a trouvée :
 
-| Canal                           | Ce qu'il cherche                                                                                       |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **VALUE** (Valeur)              | Une cote à valeur attendue positive — le canal de mise réelle principal                                |
-| **SAFE** (Sécurité)             | Une sélection prudente à rendement régulier, confiance plus élevée                                     |
-| **DOMINANT** (Victoire)         | L'angle le plus affirmé du modèle sur l'issue du match (1N2)                                           |
-| **DRAW** (Nul)                  | Un match nul, via la probabilité implicite du marché                                                   |
-| **BTTS** (BB)                   | Les deux équipes marquent                                                                              |
-| **GOALS** (Buts)                | Plus ou moins de buts (Over/Under)                                                                     |
-| **CONSENSUS**                   | Plusieurs canaux indépendants convergent sur le même pick — signal renforcé                            |
-| **AVOID** (Attention)           | Le match est explicitement écarté : divergence modèle/marché jugée implausible                         |
-| **CORRECT_SCORE** (Score exact) | Le score le plus probable selon le modèle — affiché en observation seule, jamais proposé à la mise     |
+| Canal                           | Ce qu'il cherche                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **VALUE** (Valeur)              | Une cote à valeur attendue positive — le canal de mise réelle principal                            |
+| **SAFE** (Sécurité)             | Une sélection prudente à rendement régulier, confiance plus élevée                                 |
+| **DOMINANT** (Victoire)         | L'angle le plus affirmé du modèle sur l'issue du match (1N2)                                       |
+| **DRAW** (Nul)                  | Un match nul, via la probabilité implicite du marché                                               |
+| **BTTS** (BB)                   | Les deux équipes marquent                                                                          |
+| **GOALS** (Buts)                | Plus ou moins de buts (Over/Under)                                                                 |
+| **CONSENSUS**                   | Plusieurs canaux indépendants convergent sur le même pick — signal renforcé                        |
+| **AVOID** (Attention)           | Le match est explicitement écarté : divergence modèle/marché jugée implausible                     |
+| **CORRECT_SCORE** (Score exact) | Le score le plus probable selon le modèle — affiché en observation seule, jamais proposé à la mise |
 
 Tous les canaux n'ont pas le même niveau de preuve, et ce n'est pas caché. VALUE, par exemple, a un historique qui tient sur des données jamais vues par le modèle à l'entraînement. D'autres restent des signaux d'exploration. La leçon dédiée aux canaux détaille cette hiérarchie — la fiche, elle, ne la maquille jamais.
 

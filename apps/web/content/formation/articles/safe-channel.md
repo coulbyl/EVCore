@@ -17,9 +17,9 @@ SAFE sélectionne des paris à confiance élevée et rendement plus modeste que 
 
 Sur l'ensemble de la période testée, seuls 28 jours ont été éligibles à un classement top 5 sur SAFE — un volume nettement plus faible que VALUE ou DOMINANT. Le ROI mesuré varie fortement selon la période :
 
-| Période | ROI mesuré |
-| -------- | ----------- |
-| Données d'entraînement (train) | −27% |
+| Période                         | ROI mesuré                         |
+| ------------------------------- | ---------------------------------- |
+| Données d'entraînement (train)  | −27%                               |
 | Données 2026 (hors échantillon) | +2% à +10% selon la formule testée |
 
 Cet écart entre −27% et +2/+10% n'est pas une contradiction à balayer. C'est au contraire le signe le plus clair qu'il manque encore de données pour trancher. Avec 28 jours seulement, chaque résultat individuel pèse lourd dans la moyenne.

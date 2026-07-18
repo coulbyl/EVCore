@@ -90,12 +90,10 @@ export function FormationPageClient({
 
   const completedCount = useMemo(
     () => sorted.filter((item) => isCompleted(item.type, item.slug)).length,
-    [isCompleted, sorted]
+    [isCompleted, sorted],
   );
   const totalPercent =
-    sorted.length > 0
-      ? Math.round((completedCount / sorted.length) * 100)
-      : 0;
+    sorted.length > 0 ? Math.round((completedCount / sorted.length) * 100) : 0;
 
   const itemBySlug = useMemo(
     () => new Map(sorted.map((item) => [item.slug, item])),

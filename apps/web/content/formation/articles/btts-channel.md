@@ -18,9 +18,9 @@ BTTS (Both Teams To Score) identifie les matchs où le modèle juge probable que
 Contrairement à VALUE, DOMINANT ou DRAW, aucune méthode de classement testée à ce jour ne rend BTTS ou GOALS rentables :
 
 | Canal | ROI du canal complet |
-| ------ | ---------------------- |
-| BTTS  | **−37.22%**           |
-| GOALS | **−26.05%**           |
+| ----- | -------------------- |
+| BTTS  | **−37.22%**          |
+| GOALS | **−26.05%**          |
 
 Ces chiffres ne sont pas des résultats provisoires en attente d'une meilleure formule de tri. Aucun classement testé jusqu'ici — par probabilité, par edge, ou autre — n'a permis de reproduire sur BTTS ou GOALS l'effet observé sur DOMINANT (canal brut négatif, top classé positif). Ils restent négatifs, quelle que soit la méthode essayée.
 

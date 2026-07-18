@@ -21,15 +21,15 @@ la leçon plutôt que de citer un chiffre orphelin.
 
 ## 2. Carte des chiffres cités → leur source
 
-| Chiffre cité | Leçon(s) / doc concernée | Source | Commande pour rafraîchir | Dernière vérification connue |
-| --- | --- | --- | --- | --- |
-| VALUE top5 edge calibré : +14.98% (295 picks), +2.27% (2026) | `value-channel.md`, business-model §2 | `packages/db/reports/backtest-invest-ranking-YYYY-MM-DD.txt` | `pnpm --filter @evcore/db db:backtest:invest-ranking` | 2026-07-07 — **exact**, revérifié 2026-07-18 |
-| DRAW : +1.61% (1 119 picks), −19% (2023), +11 à +16% (2026) | `draw-channel.md`, business-model §2 | même rapport que ci-dessus (section DRAW, formule `-(lH+lA)`) | `pnpm --filter @evcore/db db:backtest:invest-ranking` | 2026-07-07 — **exact**, revérifié 2026-07-18 |
-| DOMINANT top5 par probabilité : +3.3% all-time | `dominant-channel.md` | commentaire `investment.constants.ts:86` | **aucun script rejouable identifié** — chiffre écrit à la main | non daté dans le commentaire |
-| DOMINANT / BTTS / GOALS canal complet : −23.27% / −37.22% / −26.05% | `dominant-channel.md`, `btts-channel.md`, business-model §2 | commentaire `investment.constants.ts:20` ("checked 2026-07-06") | **aucun script rejouable identifié** — requête ad hoc à l'époque | 2026-07-06 — **daté de ~10 jours**, voir §4 |
-| Coupon Composer : Train +100.3%, Test +61.8%, hit 51.5%, PASS | `docs/business-model.md` §2 | commentaire `coupon.constants.ts` renvoyant à `apps/backend/reports/backtest-selected-params.json` | **fichier et script absents du repo** | 2026-05-19 — non revérifiable en l'état, voir §5 |
-| SAFE : 28 jours éligibles top5, ROI −27% (train) à +2/+10% (2026) | `safe-channel.md`, business-model §2 | même rapport `backtest-invest-ranking` (SAFE n'y est pas encore détaillé dans le même format que VALUE/DRAW — à confirmer au prochain run) | `pnpm --filter @evcore/db db:backtest:invest-ranking` | 29 jours retrouvés par requête directe (dédupliquée) le 2026-07-18 — cohérent |
-| CORRECT_SCORE : observation seule, canal lancé 2026-07-01 | `comment-lire-un-pick.md` | requête SQL directe, dédupliquée par fixture (voir §3) | pas de script committé — à écrire si ce canal doit être suivi dans la durée | 2026-07-18 |
+| Chiffre cité                                                        | Leçon(s) / doc concernée                                    | Source                                                                                                                                     | Commande pour rafraîchir                                                    | Dernière vérification connue                                                  |
+| ------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| VALUE top5 edge calibré : +14.98% (295 picks), +2.27% (2026)        | `value-channel.md`, business-model §2                       | `packages/db/reports/backtest-invest-ranking-YYYY-MM-DD.txt`                                                                               | `pnpm --filter @evcore/db db:backtest:invest-ranking`                       | 2026-07-07 — **exact**, revérifié 2026-07-18                                  |
+| DRAW : +1.61% (1 119 picks), −19% (2023), +11 à +16% (2026)         | `draw-channel.md`, business-model §2                        | même rapport que ci-dessus (section DRAW, formule `-(lH+lA)`)                                                                              | `pnpm --filter @evcore/db db:backtest:invest-ranking`                       | 2026-07-07 — **exact**, revérifié 2026-07-18                                  |
+| DOMINANT top5 par probabilité : +3.3% all-time                      | `dominant-channel.md`                                       | commentaire `investment.constants.ts:86`                                                                                                   | **aucun script rejouable identifié** — chiffre écrit à la main              | non daté dans le commentaire                                                  |
+| DOMINANT / BTTS / GOALS canal complet : −23.27% / −37.22% / −26.05% | `dominant-channel.md`, `btts-channel.md`, business-model §2 | commentaire `investment.constants.ts:20` ("checked 2026-07-06")                                                                            | **aucun script rejouable identifié** — requête ad hoc à l'époque            | 2026-07-06 — **daté de ~10 jours**, voir §4                                   |
+| Coupon Composer : Train +100.3%, Test +61.8%, hit 51.5%, PASS       | `docs/business-model.md` §2                                 | commentaire `coupon.constants.ts` renvoyant à `apps/backend/reports/backtest-selected-params.json`                                         | **fichier et script absents du repo**                                       | 2026-05-19 — non revérifiable en l'état, voir §5                              |
+| SAFE : 28 jours éligibles top5, ROI −27% (train) à +2/+10% (2026)   | `safe-channel.md`, business-model §2                        | même rapport `backtest-invest-ranking` (SAFE n'y est pas encore détaillé dans le même format que VALUE/DRAW — à confirmer au prochain run) | `pnpm --filter @evcore/db db:backtest:invest-ranking`                       | 29 jours retrouvés par requête directe (dédupliquée) le 2026-07-18 — cohérent |
+| CORRECT_SCORE : observation seule, canal lancé 2026-07-01           | `comment-lire-un-pick.md`                                   | requête SQL directe, dédupliquée par fixture (voir §3)                                                                                     | pas de script committé — à écrire si ce canal doit être suivi dans la durée | 2026-07-18                                                                    |
 
 **Gate EV ≥ 0.08 (VALUE/SAFE uniquement)** : source `packages/db/scripts/backtest-ev-tiers.ts`,
 commande `pnpm --filter @evcore/db db:backtest:ev-tiers`, sortie
@@ -78,11 +78,11 @@ commentaires de code écrits à la main) qui y est exposée.
 Une revérification manuelle (dédupliquée, §3) le 2026-07-18 donne des chiffres sensiblement
 différents de ceux cités (toujours négatifs, mais moins) :
 
-| Canal | Cité (2026-07-06) | Mesuré le 2026-07-18 |
-| --- | --- | --- |
-| DOMINANT | −23.27% | −17.34% |
-| BTTS | −37.22% | −24.60% |
-| GOALS | −26.05% | −13.32% |
+| Canal    | Cité (2026-07-06) | Mesuré le 2026-07-18 |
+| -------- | ----------------- | -------------------- |
+| DOMINANT | −23.27%           | −17.34%              |
+| BTTS     | −37.22%           | −24.60%              |
+| GOALS    | −26.05%           | −13.32%              |
 
 La conclusion produit ("pas vendable comme edge prouvé") tient dans les deux cas — mais
 l'ampleur a bougé de façon notable en douze jours, probablement sous l'effet du volume Coupe du

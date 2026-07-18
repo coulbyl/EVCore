@@ -71,7 +71,9 @@ export default async function TrackRecordPage({
         <Badge variant="accent" className="w-fit">
           Historique vérifiable
         </Badge>
-        <PageHeaderTitle>Ce que le moteur EVCore a réellement produit</PageHeaderTitle>
+        <PageHeaderTitle>
+          Ce que le moteur EVCore a réellement produit
+        </PageHeaderTitle>
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
           Ces chiffres viennent des mêmes tables que celles utilisées pour
           calculer chaque pick — pas d&apos;échantillon trié, pas de canal
@@ -145,20 +147,19 @@ export default async function TrackRecordPage({
               </Table>
             </div>
             <p className="text-xs leading-5 text-muted-foreground">
-              &quot;Échantillon insuffisant&quot; : moins de 30 paris réglés
-              sur la période — pas assez de volume pour distinguer un vrai
-              edge du bruit statistique. Un canal marqué comme tel
-              n&apos;est ni recommandé, ni exclu — simplement pas encore
-              mesurable.
+              &quot;Échantillon insuffisant&quot; : moins de 30 paris réglés sur
+              la période — pas assez de volume pour distinguer un vrai edge du
+              bruit statistique. Un canal marqué comme tel n&apos;est ni
+              recommandé, ni exclu — simplement pas encore mesurable.
             </p>
           </section>
 
           <section className="rounded-2xl border border-border bg-panel p-5">
             <p className="text-sm leading-6 text-muted-foreground">
-              Aucun de ces chiffres ne garantit une performance future — ce
-              sont des résultats réels, mesurés sur des paris déjà réglés, à
-              une date donnée. Un canal marqué positif peut redevenir
-              négatif, et inversement.{" "}
+              Aucun de ces chiffres ne garantit une performance future — ce sont
+              des résultats réels, mesurés sur des paris déjà réglés, à une date
+              donnée. Un canal marqué positif peut redevenir négatif, et
+              inversement.{" "}
               <Link
                 href="/dashboard/formation/channels/channels-overview"
                 className="font-medium text-accent underline underline-offset-4 hover:text-accent/80"

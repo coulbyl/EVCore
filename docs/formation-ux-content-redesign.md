@@ -29,14 +29,14 @@ Trois problèmes distincts, de gravité très différente :
 3. **Le ton est effectivement mécanique.** Confirmé en relisant mes propres textes :
    formule de titre identique partout, "À retenir" en fin de chaque leçon avec la
    même structure à 3 puces, annotation `CODE (Français)` collée en général au tout
-   début du premier paragraphe (ex. *"VALUE (Valeur) identifie des cotes..."*), phrases
+   début du premier paragraphe (ex. _"VALUE (Valeur) identifie des cotes..."_), phrases
    qui démarrent presque toujours par "C'est..." ou "Voici...", usage systématique du
    tiret cadratin pour toutes les nuances. Ça lit comme une fiche technique relue par
    personne, pas comme quelqu'un qui explique.
 
 Le point 1 est un bug produit (contenu invisible), le point 2 est un bug UX bloquant
 sur mobile, le point 3 est un vrai défaut éditorial mais le moins urgent des trois —
-le contenu est juste, seulement mal *dit*.
+le contenu est juste, seulement mal _dit_.
 
 ---
 
@@ -50,8 +50,8 @@ Fichier : `apps/web/app/dashboard/formation/components/formation-page-client.tsx
   retient QUE le contenu vidéo. Sur 13 contenus au total (12 articles + 1 vidéo), 12
   sont exclus de la page d'accueil.
 - La carte "featured" (la plus grande, en haut) affiche la vidéo d'intro, dont le
-  résumé dit littéralement *"en cours de production — le script est prêt, le tournage
-  reste à faire"*. C'est la première chose que voit un nouvel utilisateur.
+  résumé dit littéralement _"en cours de production — le script est prêt, le tournage
+  reste à faire"_. C'est la première chose que voit un nouvel utilisateur.
 - Les 3 métriques ("Disponibles: 1", "Vues: 0/1", "Prochaine: 2 min") ne décrivent que
   cette unique vidéo — inutiles et un peu tristes en l'état.
 - Résultat visuel : une page quasi vide, avec un seul CTA vers un contenu qui ne
@@ -120,12 +120,14 @@ un signal de priorité involontaire.
 Réponse courte : **l'idée est bonne, l'exécution actuelle la sabote.**
 
 Ce qui plaide pour les garder :
+
 - La taxonomie elle-même est cohérente et progressive (bases → canaux → bankroll →
   app), et matche exactement comment ce document et les leçons ont été pensés.
-- Une fois qu'on est *dans* une catégorie, la sidebar + progression (`0/7`, barre de
+- Une fois qu'on est _dans_ une catégorie, la sidebar + progression (`0/7`, barre de
   progression) donne un vrai sentiment de parcours structuré — ça, ça fonctionne.
 
 Ce qui plaide contre, en l'état :
+
 - **Le hub les ignore complètement** (§2.1) — les catégories existent dans le code
   mais ne sont jamais présentées comme point d'entrée principal. Un nouvel
   utilisateur ne les découvre pas.
@@ -136,7 +138,7 @@ Ce qui plaide contre, en l'état :
   contenu qui, en tout, ne fait que 12 leçons courtes (2-3 min chacune). C'est
   l'architecture d'un cours à 50 leçons, pas d'un guide de 12 pages.
 
-**Recommandation** : garder la taxonomie comme *système de tags/filtres*, pas comme
+**Recommandation** : garder la taxonomie comme _système de tags/filtres_, pas comme
 hiérarchie de navigation obligatoire à 3 clics. Concrètement : une seule liste
 Formation, scannable en un écran (desktop et mobile), avec les catégories comme
 chips de filtre au-dessus — pas comme des sous-pages séparées. Réintroduire une vraie

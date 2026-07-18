@@ -6,7 +6,8 @@ order: 7
 slug: erreurs-frequentes
 summary: "Comprendre les canaux ne suffit pas si on les exploite mal. Voici les erreurs les plus courantes — et les plus coûteuses — même chez quelqu'un qui a lu toutes les leçons précédentes."
 updatedAt: "2026-07-16"
-related: ["value-channel", "dominant-channel", "btts-channel", "comment-lire-un-pick"]
+related:
+  ["value-channel", "dominant-channel", "btts-channel", "comment-lire-un-pick"]
 ---
 
 ## Pourquoi cette leçon existe

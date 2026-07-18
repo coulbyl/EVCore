@@ -17,11 +17,11 @@ DRAW cible le match nul, via la probabilité implicite du marché sur cette issu
 
 Sur l'ensemble de la période testée (1 119 picks), DRAW affiche un ROI de +1.61% — modeste, mais positif. Ce chiffre global masque une évolution plus intéressante que sa moyenne :
 
-| Période | ROI mesuré |
-| -------- | ----------- |
-| 2023 | **−19%** |
-| Tout l'historique | +1.61% (1 119 picks) |
-| 2026, selon la formule | **+11% à +16%** |
+| Période                | ROI mesuré           |
+| ---------------------- | -------------------- |
+| 2023                   | **−19%**             |
+| Tout l'historique      | +1.61% (1 119 picks) |
+| 2026, selon la formule | **+11% à +16%**      |
 
 DRAW n'a pas toujours été un canal viable — il l'était nettement moins en 2023. La progression vers 2026 vient d'un travail de calibration mesuré dans le temps, pas d'un signal qui aurait toujours été bon et qu'on découvrirait seulement maintenant.
 
