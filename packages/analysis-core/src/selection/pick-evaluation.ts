@@ -1,5 +1,10 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
+import type {
+  ResultBttsProba,
+  ResultTotalGoalsProba,
+  TeamTotalProba,
+} from "../probability";
 import { HALF_TIME_FULL_TIME_PICKS } from "../probability";
 import { calculateEV as calcEV } from "../ev/ev-math";
 import { buildBetPickKey } from "./combo-pricing";
@@ -17,6 +22,7 @@ import type {
   EvaluatedPick,
   FullOddsSnapshot,
   MatchProbabilities,
+  TeamTotalOddsMap,
   ViablePick,
 } from "./types";
 
@@ -534,6 +540,230 @@ export function listEvaluatedPicks(
         ),
       });
     }
+  }
+
+  // Singles DRAW_NO_BET
+  if (odds.drawNoBetOdds !== null) {
+    const dnbCandidates: Array<{
+      pick: "HOME" | "AWAY";
+      probability: Decimal;
+      pickOdds: Decimal;
+    }> = [
+      {
+        pick: "HOME",
+        probability: probabilities.dnbHome,
+        pickOdds: odds.drawNoBetOdds.home,
+      },
+      {
+        pick: "AWAY",
+        probability: probabilities.dnbAway,
+        pickOdds: odds.drawNoBetOdds.away,
+      },
+    ];
+    for (const candidate of dnbCandidates) {
+      const ev = calcEV(candidate.probability, candidate.pickOdds);
+      candidates.push({
+        market: Market.DRAW_NO_BET,
+        pick: candidate.pick,
+        probability: candidate.probability,
+        odds: candidate.pickOdds,
+        ev,
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.DRAW_NO_BET,
+          candidate.pick,
+          candidate.pickOdds,
+        ),
+      });
+    }
+  }
+
+  // Singles TEAM_TOTAL_HOME / TEAM_TOTAL_AWAY
+  const teamTotalGroups: Array<{
+    market: Market;
+    probaMap: TeamTotalProba;
+    oddsMap: TeamTotalOddsMap;
+  }> = [
+    {
+      market: Market.TEAM_TOTAL_HOME,
+      probaMap: probabilities.teamTotalHome,
+      oddsMap: odds.teamTotalHomeOdds,
+    },
+    {
+      market: Market.TEAM_TOTAL_AWAY,
+      probaMap: probabilities.teamTotalAway,
+      oddsMap: odds.teamTotalAwayOdds,
+    },
+  ];
+  for (const group of teamTotalGroups) {
+    for (const [pick, pickOdds] of Object.entries(group.oddsMap)) {
+      if (pickOdds === undefined) continue;
+      const probability = group.probaMap[pick as keyof TeamTotalProba];
+      if (probability === undefined) continue;
+      const ev = calcEV(probability, pickOdds);
+      candidates.push({
+        market: group.market,
+        pick,
+        probability,
+        odds: pickOdds,
+        ev,
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          group.market,
+          pick,
+          pickOdds,
+        ),
+      });
+    }
+  }
+
+  // Singles CLEAN_SHEET_HOME / CLEAN_SHEET_AWAY / WIN_TO_NIL_HOME / WIN_TO_NIL_AWAY
+  // — YES/NO both priced against a real bookmaker two-way market.
+  const yesNoGroups: Array<{
+    market: Market;
+    probability: Decimal;
+    oddsPair: { yes: Decimal; no: Decimal } | null;
+  }> = [
+    {
+      market: Market.CLEAN_SHEET_HOME,
+      probability: probabilities.cleanSheetHome,
+      oddsPair: odds.cleanSheetHomeOdds,
+    },
+    {
+      market: Market.CLEAN_SHEET_AWAY,
+      probability: probabilities.cleanSheetAway,
+      oddsPair: odds.cleanSheetAwayOdds,
+    },
+    {
+      market: Market.WIN_TO_NIL_HOME,
+      probability: probabilities.winToNilHome,
+      oddsPair: odds.winToNilHomeOdds,
+    },
+    {
+      market: Market.WIN_TO_NIL_AWAY,
+      probability: probabilities.winToNilAway,
+      oddsPair: odds.winToNilAwayOdds,
+    },
+  ];
+  for (const group of yesNoGroups) {
+    if (group.oddsPair === null) continue;
+    const yesEv = calcEV(group.probability, group.oddsPair.yes);
+    candidates.push({
+      market: group.market,
+      pick: "YES",
+      probability: group.probability,
+      odds: group.oddsPair.yes,
+      ev: yesEv,
+      qualityScore: buildQualityScore(
+        yesEv,
+        deterministicScore,
+        group.market,
+        "YES",
+        group.oddsPair.yes,
+      ),
+    });
+    const noProbability = new Decimal(1).minus(group.probability);
+    const noEv = calcEV(noProbability, group.oddsPair.no);
+    candidates.push({
+      market: group.market,
+      pick: "NO",
+      probability: noProbability,
+      odds: group.oddsPair.no,
+      ev: noEv,
+      qualityScore: buildQualityScore(
+        noEv,
+        deterministicScore,
+        group.market,
+        "NO",
+        group.oddsPair.no,
+      ),
+    });
+  }
+
+  // Singles TO_WIN_EITHER_HALF
+  if (odds.winEitherHalfOdds !== null) {
+    const wehCandidates: Array<{
+      pick: "HOME" | "AWAY";
+      probability: Decimal;
+      pickOdds: Decimal;
+    }> = [
+      {
+        pick: "HOME",
+        probability: probabilities.winEitherHalfHome,
+        pickOdds: odds.winEitherHalfOdds.home,
+      },
+      {
+        pick: "AWAY",
+        probability: probabilities.winEitherHalfAway,
+        pickOdds: odds.winEitherHalfOdds.away,
+      },
+    ];
+    for (const candidate of wehCandidates) {
+      const ev = calcEV(candidate.probability, candidate.pickOdds);
+      candidates.push({
+        market: Market.TO_WIN_EITHER_HALF,
+        pick: candidate.pick,
+        probability: candidate.probability,
+        odds: candidate.pickOdds,
+        ev,
+        qualityScore: buildQualityScore(
+          ev,
+          deterministicScore,
+          Market.TO_WIN_EITHER_HALF,
+          candidate.pick,
+          candidate.pickOdds,
+        ),
+      });
+    }
+  }
+
+  // Singles RESULT_TOTAL_GOALS — pre-combined pick (e.g. "HOME_OVER_2_5"),
+  // real bookmaker price, not a synthetic combo.
+  for (const [pick, pickOdds] of Object.entries(odds.resultTotalGoalsOdds)) {
+    if (pickOdds === undefined) continue;
+    const probability =
+      probabilities.resultTotalGoals[pick as keyof ResultTotalGoalsProba];
+    if (probability === undefined) continue;
+    const ev = calcEV(probability, pickOdds);
+    candidates.push({
+      market: Market.RESULT_TOTAL_GOALS,
+      pick,
+      probability,
+      odds: pickOdds,
+      ev,
+      qualityScore: buildQualityScore(
+        ev,
+        deterministicScore,
+        Market.RESULT_TOTAL_GOALS,
+        pick,
+        pickOdds,
+      ),
+    });
+  }
+
+  // Singles RESULT_BTTS — pre-combined pick (e.g. "HOME_YES").
+  for (const [pick, pickOdds] of Object.entries(odds.resultBttsOdds)) {
+    if (pickOdds === undefined) continue;
+    const probability =
+      probabilities.resultBtts[pick as keyof ResultBttsProba];
+    if (probability === undefined) continue;
+    const ev = calcEV(probability, pickOdds);
+    candidates.push({
+      market: Market.RESULT_BTTS,
+      pick,
+      probability,
+      odds: pickOdds,
+      ev,
+      qualityScore: buildQualityScore(
+        ev,
+        deterministicScore,
+        Market.RESULT_BTTS,
+        pick,
+        pickOdds,
+      ),
+    });
   }
 
   // Filter: EV >= league threshold and no suspended market

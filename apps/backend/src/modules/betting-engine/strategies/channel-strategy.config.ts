@@ -9,6 +9,8 @@ export {
   CHANNEL_STRATEGY_CONFIG,
   GOALS_CONFIG,
   getGoalsLineConfigs,
+  TEAM_TOTAL_CONFIG,
+  getTeamTotalLineConfigs,
   CONSENSUS_CONFIG,
   AVOID_CONFIG,
   getChannelStrategyConfig,
@@ -19,4 +21,9 @@ export {
   type GoalsSide,
   type GoalsLineConfig,
   type GoalsLeagueConfig,
+  type TeamTotalTeam,
+  type TeamTotalLine,
+  type TeamTotalSide,
+  type TeamTotalLineConfig,
+  type TeamTotalLeagueConfig,
 } from '@evcore/analysis-core';

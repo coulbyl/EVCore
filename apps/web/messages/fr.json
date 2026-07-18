@@ -69,6 +69,18 @@
         "label": "Buts",
         "description": "Plus/moins de buts (Over/Under)."
       },
+      "CLEAN_SHEET": {
+        "label": "Clean sheet",
+        "description": "Une équipe termine le match sans encaisser de but."
+      },
+      "TEAM_TOTAL": {
+        "label": "Buts par équipe",
+        "description": "Plus/moins de buts marqués par une seule équipe."
+      },
+      "WIN_EITHER_HALF": {
+        "label": "Gagne une mi-temps",
+        "description": "Une équipe gagne au moins l'une des deux mi-temps."
+      },
       "CONSENSUS": {
         "label": "Consensus",
         "description": "Plusieurs stratégies indépendantes convergent sur le même pick."
@@ -327,6 +339,9 @@
     "matchNull": "NUL",
     "goals": "BUTS",
     "btts": "BB",
+    "cleanSheet": "CS",
+    "teamTotal": "BUTS ÉQ.",
+    "winEitherHalf": "GAGNE MT",
     "bttsLabel": "BB — Les deux équipes marquent",
     "bttsYes": "BB OUI",
     "bttsNo": "BB NON",

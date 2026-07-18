@@ -98,20 +98,24 @@ Le moteur expose deux familles de canaux :
 
 **Canaux basés sur l'EV (Bet)**
 
-| Canal             | Critère           | Marché                            | Pick                                    |
-| ----------------- | ----------------- | --------------------------------- | --------------------------------------- |
-| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, combos | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| Canal             | Critère           | Marché                                                                                                                | Pick                                    |
+| ----------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                    | HOME / DRAW / AWAY / OVER / UNDER / YES |
 
 **Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
 
-| Canal                | Critère                  | Marché    | Signal                   |
-| -------------------- | ------------------------ | --------- | ------------------------ |
-| **CONF** (Confiance) | P_max ≥ seuil ligue      | ONE_X_TWO | argmax(HOME, DRAW, AWAY) |
-| **BTTS**             | P(BTTS) ≥ seuil ligue    | BTTS      | YES uniquement           |
-| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue | ONE_X_TWO | DRAW uniquement          |
+| Canal                | Critère                      | Marché                       | Signal                             |
+| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------- |
+| **CONF** (Confiance) | P_max ≥ seuil ligue          | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)           |
+| **BTTS**             | P(BTTS) ≥ seuil ligue        | BTTS                         | YES uniquement                     |
+| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue     | ONE_X_TWO                    | DRAW uniquement                    |
+| **GOALS**            | P(side) ≥ seuil ligne/ligue  | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV     |
+| **CLEAN_SHEET**      | P(clean sheet) ≥ seuil ligue | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement |
+| **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
+| **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
 
-Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32).
+Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI) mais **désactivés dans toutes les ligues** en attendant un premier passage de backtest qui fixera les seuils réels (même méthodologie que GOALS).
 
 ---
 

@@ -19,6 +19,12 @@ export { DominantStrategy } from "./dominant.strategy";
 export { BttsStrategy } from "./btts.strategy";
 export { DrawStrategy } from "./draw.strategy";
 export { GoalsStrategy, decideGoals } from "./goals.strategy";
+export { CleanSheetStrategy, decideCleanSheet } from "./clean-sheet.strategy";
+export { TeamTotalStrategy, decideTeamTotal } from "./team-total.strategy";
+export {
+  WinEitherHalfStrategy,
+  decideWinEitherHalf,
+} from "./win-either-half.strategy";
 export { ConsensusStrategy, decideConsensus } from "./consensus.strategy";
 export { AvoidStrategy, decideAvoid } from "./avoid.strategy";
 export {
@@ -33,6 +39,8 @@ export {
   CHANNEL_STRATEGY_CONFIG,
   GOALS_CONFIG,
   getGoalsLineConfigs,
+  TEAM_TOTAL_CONFIG,
+  getTeamTotalLineConfigs,
   CONSENSUS_CONFIG,
   AVOID_CONFIG,
   CORRECT_SCORE_CONFIG,
@@ -44,4 +52,9 @@ export {
   type GoalsSide,
   type GoalsLineConfig,
   type GoalsLeagueConfig,
+  type TeamTotalTeam,
+  type TeamTotalLine,
+  type TeamTotalSide,
+  type TeamTotalLineConfig,
+  type TeamTotalLeagueConfig,
 } from "./config";

@@ -69,6 +69,18 @@
         "label": "Goals",
         "description": "Total goals over/under line."
       },
+      "CLEAN_SHEET": {
+        "label": "Clean sheet",
+        "description": "A team finishes the match without conceding."
+      },
+      "TEAM_TOTAL": {
+        "label": "Team goals",
+        "description": "Over/under goals scored by a single team."
+      },
+      "WIN_EITHER_HALF": {
+        "label": "Wins a half",
+        "description": "A team wins at least one of the two halves."
+      },
       "CONSENSUS": {
         "label": "Consensus",
         "description": "Several independent strategies converge on the same pick."
@@ -327,6 +339,9 @@
     "matchNull": "DRAW",
     "goals": "GOALS",
     "btts": "BTTS",
+    "cleanSheet": "CS",
+    "teamTotal": "TEAM GOALS",
+    "winEitherHalf": "WINS HALF",
     "bttsLabel": "BTTS — Both Teams To Score",
     "bttsYes": "BTTS YES",
     "bttsNo": "BTTS NO",

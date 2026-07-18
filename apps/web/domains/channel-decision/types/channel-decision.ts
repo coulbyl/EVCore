@@ -9,6 +9,9 @@ export type StrategyChannel =
   | "BTTS"
   | "DRAW"
   | "GOALS"
+  | "CLEAN_SHEET"
+  | "TEAM_TOTAL"
+  | "WIN_EITHER_HALF"
   | "CONSENSUS"
   | "AVOID"
   | "CORRECT_SCORE";

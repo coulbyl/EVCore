@@ -100,9 +100,9 @@ describe('ChannelDecisionService', () => {
     const [runId, evaluated] = saveRunDecisions.mock.calls[0];
     expect(runId).toBe('run-1');
 
-    // Orchestrator ran every primary strategy (incl. CORRECT_SCORE) + the
-    // CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(9);
+    // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
+    // TEAM_TOTAL, WIN_EITHER_HALF) + the CONSENSUS & AVOID meta-strategies.
+    expect(evaluated).toHaveLength(12);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.

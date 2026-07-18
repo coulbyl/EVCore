@@ -11,7 +11,12 @@ export type ChannelStrategyLeagueConfig = {
   minSampleN: number;
 };
 
-export type ChannelStrategyConfigChannel = "DOMINANT" | "DRAW" | "BTTS";
+export type ChannelStrategyConfigChannel =
+  | "DOMINANT"
+  | "DRAW"
+  | "BTTS"
+  | "CLEAN_SHEET"
+  | "WIN_EITHER_HALF";
 
 type ChannelStrategyConfigMap = Partial<
   Record<ChannelStrategyConfigChannel, ChannelStrategyLeagueConfig>
@@ -30,6 +35,21 @@ const DRAW_DEFAULT: ChannelStrategyLeagueConfig = {
 };
 
 const BTTS_DEFAULT: ChannelStrategyLeagueConfig = {
+  enabled: false,
+  threshold: 0.99,
+  minSampleN: 20,
+};
+
+// CLEAN_SHEET / WIN_EITHER_HALF — new channels (2026-07-18), no per-league
+// backtest yet. Disabled everywhere until a backtest pass tunes real
+// thresholds per league (same rollout pattern as DOMINANT/DRAW/BTTS above).
+const CLEAN_SHEET_DEFAULT: ChannelStrategyLeagueConfig = {
+  enabled: false,
+  threshold: 0.99,
+  minSampleN: 20,
+};
+
+const WIN_EITHER_HALF_DEFAULT: ChannelStrategyLeagueConfig = {
   enabled: false,
   threshold: 0.99,
   minSampleN: 20,
@@ -79,7 +99,7 @@ export function getBttsNoConfig(
 }
 
 export const CHANNEL_STRATEGY_CONFIG_CHANNELS: ChannelStrategyConfigChannel[] =
-  ["DOMINANT", "DRAW", "BTTS"];
+  ["DOMINANT", "DRAW", "BTTS", "CLEAN_SHEET", "WIN_EITHER_HALF"];
 
 export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
   {
@@ -2854,6 +2874,45 @@ export function getGoalsLineConfigs(
 }
 
 // ─────────────────────────────────────────────
+// TEAM_TOTAL — per-team goals line (2026-07-18), same shape as GOALS but
+// doubled on the team dimension (HOME/AWAY have independent lines/sides).
+// No backtest yet (no historical odds coverage for TEAM_TOTAL — forward
+// PREMATCH sync only, same limitation as GOALS' 1.5/3.5/4.5 lines) — every
+// league starts with zero enabled lines, i.e. the channel is DISABLED
+// everywhere until a backtest pass populates real segments.
+// ─────────────────────────────────────────────
+
+export type TeamTotalTeam = "HOME" | "AWAY";
+export type TeamTotalLine = 0.5 | 1.5 | 2.5 | 3.5 | 4.5;
+export type TeamTotalSide = "OVER" | "UNDER";
+
+export type TeamTotalLineConfig = {
+  team: TeamTotalTeam;
+  line: TeamTotalLine;
+  side: TeamTotalSide;
+  enabled: boolean;
+  threshold: number;
+  minSampleN: number;
+};
+
+export type TeamTotalLeagueConfig = {
+  lines: readonly TeamTotalLineConfig[];
+};
+
+// Empty until backtested per league — see header comment above.
+export const TEAM_TOTAL_CONFIG: Record<string, TeamTotalLeagueConfig> = {};
+
+// Resolve the enabled TEAM_TOTAL line configs for a league (empty when none).
+export function getTeamTotalLineConfigs(
+  competitionCode: string | null | undefined,
+): readonly TeamTotalLineConfig[] {
+  if (competitionCode == null) return [];
+  const leagueConfig = TEAM_TOTAL_CONFIG[competitionCode];
+  if (!leagueConfig) return [];
+  return leagueConfig.lines.filter((l) => l.enabled);
+}
+
+// ─────────────────────────────────────────────
 // CONSENSUS (meta) — emits a 1X2 selection only when ≥ minLevel INDEPENDENT
 // primary strategy classes agree on the same (market, pick). Calibrated
 // GLOBALLY, not per-league: the agreement mechanism is league-agnostic and
@@ -2931,5 +2990,7 @@ export function getChannelStrategyConfig(
 
   if (channel === "DRAW") return DRAW_DEFAULT;
   if (channel === "BTTS") return BTTS_DEFAULT;
+  if (channel === "CLEAN_SHEET") return CLEAN_SHEET_DEFAULT;
+  if (channel === "WIN_EITHER_HALF") return WIN_EITHER_HALF_DEFAULT;
   return DOMINANT_DEFAULT;
 }

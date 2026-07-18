@@ -303,6 +303,31 @@
 - [x] Ordre d'affichage : SV → BB → CONF → DRAW → EV
 - [x] Page Récap avec filtres canal/période, stats et courbe progression
 
+### Bloc 8 — Extension marchés Niveau 1/2/2.b + nouveaux canaux (2026-07-18)
+
+> Suite de `docs/market-coverage-expansion.md`. Deux volets : (a) rendre les 10
+> marchés ajoutés depuis Niveau 1 exploitables par EV/SAFE, (b) ajouter des
+> canaux de prédiction dédiés pour les signaux vraiment indépendants (pas une
+> reformulation d'un canal existant — voir arbitrage dans EVCORE.md).
+
+- [x] `listEvaluatedPicks` évalue désormais DRAW_NO_BET, TEAM_TOTAL_HOME/AWAY,
+      CLEAN_SHEET_HOME/AWAY, WIN_TO_NIL_HOME/AWAY, TO_WIN_EITHER_HALF,
+      RESULT_TOTAL_GOALS, RESULT_BTTS — candidats VALUE (gate EV) au même
+      titre que les marchés historiques.
+- [x] Nouveaux canaux `CLEAN_SHEET`, `TEAM_TOTAL`, `WIN_EITHER_HALF` —
+      DRAW*NO_BET et WIN_TO_NIL/RESULT*\* écartés du statut "canal dédié"
+      (renormalisation/dérivé d'un signal déjà couvert, pas un signal neuf).
+- [x] `CleanSheetStrategy`/`WinEitherHalfStrategy` : argmax entre deux
+      marchés/picks au-dessus d'un seuil par ligue (pattern `BttsStrategy`).
+- [x] `TeamTotalStrategy` : meilleur (équipe × ligne × side) par EV (pattern
+      `GoalsStrategy`, doublé sur la dimension équipe).
+- [ ] **Désactivés dans toutes les ligues** — aucun backtest encore mené ;
+      seuils placeholder dans `tuning.constants.ts`, à peaufiner via la brique
+      de backtest existante avant toute activation (même méthodologie que
+      GOALS).
+- [x] Migration Prisma `StrategyChannel` +3 valeurs — écrite, **non
+      appliquée** (CLI utilisateur).
+
 ### Web UI
 
 - [x] Page 404 (`not-found.tsx`) — layout centré, animation CSS, tokens bento

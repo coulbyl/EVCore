@@ -52,6 +52,12 @@
   --canal-btts-soft: rgba(190, 24, 93, 0.11);
   --canal-goals: #059669;
   --canal-goals-soft: rgba(5, 150, 105, 0.11);
+  --canal-clean-sheet: #0f766e;
+  --canal-clean-sheet-soft: rgba(15, 118, 110, 0.11);
+  --canal-team-total: #ca8a04;
+  --canal-team-total-soft: rgba(202, 138, 4, 0.11);
+  --canal-win-either-half: #9333ea;
+  --canal-win-either-half-soft: rgba(147, 51, 234, 0.11);
   --canal-consensus: #0d9488;
   --canal-consensus-soft: rgba(13, 148, 136, 0.11);
   --canal-avoid: #dc2626;
@@ -123,6 +129,12 @@
   --canal-btts-soft: rgba(244, 114, 182, 0.13);
   --canal-goals: #34d399;
   --canal-goals-soft: rgba(52, 211, 153, 0.13);
+  --canal-clean-sheet: #2dd4bf;
+  --canal-clean-sheet-soft: rgba(45, 212, 191, 0.13);
+  --canal-team-total: #facc15;
+  --canal-team-total-soft: rgba(250, 204, 21, 0.13);
+  --canal-win-either-half: #c084fc;
+  --canal-win-either-half-soft: rgba(192, 132, 252, 0.13);
   --canal-consensus: #2dd4bf;
   --canal-consensus-soft: rgba(45, 212, 191, 0.13);
   --canal-avoid: #f87171;

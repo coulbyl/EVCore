@@ -1,6 +1,9 @@
 export {
   type ThreeWayProba,
   type DerivedMarketsProba,
+  type ResultTotalGoalsProba,
+  type ResultBttsProba,
+  type TeamTotalProba,
   HALF_TIME_FULL_TIME_PICKS,
   type HalfTimeFullTimePick,
   outcomeFromScores,
