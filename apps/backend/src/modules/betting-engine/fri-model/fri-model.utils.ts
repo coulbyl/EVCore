@@ -99,6 +99,9 @@ export function buildFriMatchProbabilities(
     secondHalfWinner: { home: ZERO, draw: ZERO, away: ZERO },
     winEitherHalfHome: ZERO,
     winEitherHalfAway: ZERO,
+    // Requires the joint goal distribution FRI doesn't model, same as teamTotal.
+    resultTotalGoals: {},
+    resultBtts: {},
   };
 }
 

@@ -67,6 +67,17 @@ export type FullOddsSnapshot = {
   winToNilHomeOdds: { yes: Decimal; no: Decimal } | null;
   winToNilAwayOdds: { yes: Decimal; no: Decimal } | null;
   winEitherHalfOdds: { home: Decimal; away: Decimal } | null;
+  // Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+  // a genuine joint price, not a synthetic combo.
+  resultTotalGoalsOdds: Partial<
+    Record<
+      `${"HOME" | "DRAW" | "AWAY"}_${"OVER" | "UNDER"}_${"1_5" | "2_5" | "3_5" | "4_5"}`,
+      Decimal
+    >
+  >;
+  resultBttsOdds: Partial<
+    Record<`${"HOME" | "DRAW" | "AWAY"}_${"YES" | "NO"}`, Decimal>
+  >;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

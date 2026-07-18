@@ -39,6 +39,8 @@ function makeOdds(drawOdds: Decimal | null): FullOddsSnapshot {
     winToNilHomeOdds: null,
     winToNilAwayOdds: null,
     winEitherHalfOdds: null,
+    resultTotalGoalsOdds: {},
+    resultBttsOdds: {},
   };
 }
 

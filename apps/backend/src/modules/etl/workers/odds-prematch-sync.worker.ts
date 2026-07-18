@@ -202,6 +202,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           winToNilHomeOdds: additionalOdds.winToNilHomeOdds,
           winToNilAwayOdds: additionalOdds.winToNilAwayOdds,
           winEitherHalfOdds: additionalOdds.winEitherHalfOdds,
+          resultTotalGoalsOdds: additionalOdds.resultTotalGoalsOdds,
+          resultBttsOdds: additionalOdds.resultBttsOdds,
         });
 
         // Store secondary market odds from all other priority bookmakers.
@@ -236,7 +238,9 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             secondary.cleanSheetAwayOdds !== null ||
             secondary.winToNilHomeOdds !== null ||
             secondary.winToNilAwayOdds !== null ||
-            secondary.winEitherHalfOdds !== null;
+            secondary.winEitherHalfOdds !== null ||
+            Object.keys(secondary.resultTotalGoalsOdds).length > 0 ||
+            Object.keys(secondary.resultBttsOdds).length > 0;
           if (!hasData) continue;
           await this.fixtureService.upsertSecondaryMarketOdds({
             fixtureId,
@@ -258,6 +262,8 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             winToNilHomeOdds: secondary.winToNilHomeOdds,
             winToNilAwayOdds: secondary.winToNilAwayOdds,
             winEitherHalfOdds: secondary.winEitherHalfOdds,
+            resultTotalGoalsOdds: secondary.resultTotalGoalsOdds,
+            resultBttsOdds: secondary.resultBttsOdds,
           });
         }
       } catch (err) {
@@ -367,9 +373,25 @@ type AdditionalMarketOdds = {
   winToNilAwayOdds: YesNoOdds;
   // Two-way market (Home/Away only, no third "Neither" value observed).
   winEitherHalfOdds: { home: number; away: number } | null;
+  // Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+  // a genuine joint price, not a synthetic combo. Sparse: bookmakers don't
+  // price every (side, line) cell.
+  resultTotalGoalsOdds: ResultTotalGoalsOdds;
+  resultBttsOdds: ResultBttsOdds;
 };
 
 type YesNoOdds = { yes: number; no: number } | null;
+
+type ResultTotalGoalsOdds = Partial<
+  Record<
+    `${'HOME' | 'DRAW' | 'AWAY'}_${'OVER' | 'UNDER'}_${'1_5' | '2_5' | '3_5' | '4_5'}`,
+    number
+  >
+>;
+
+type ResultBttsOdds = Partial<
+  Record<`${'HOME' | 'DRAW' | 'AWAY'}_${'YES' | 'NO'}`, number>
+>;
 
 // Sparse map: only lines the bookmaker actually prices are present.
 type TeamTotalOdds = Partial<
@@ -432,6 +454,8 @@ export function extractAdditionalMarketOdds(
       winToNilHomeOdds: null,
       winToNilAwayOdds: null,
       winEitherHalfOdds: null,
+      resultTotalGoalsOdds: {},
+      resultBttsOdds: {},
     };
   }
 
@@ -470,6 +494,12 @@ export function extractAdditionalMarketOdds(
   const twhBet = bk.bets.find(
     (b) => b.id === API_FOOTBALL_BET_IDS.TO_WIN_EITHER_HALF,
   );
+  const resultTotalGoalsBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.RESULT_TOTAL_GOALS,
+  );
+  const resultBttsBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.RESULT_BTTS,
+  );
 
   const overUnderOdds = extractOverUnderOdds(ouBet);
   const bttsYesOdds =
@@ -489,6 +519,8 @@ export function extractAdditionalMarketOdds(
   const winToNilHomeOdds = extractYesNoOdds(wtnHomeBet);
   const winToNilAwayOdds = extractYesNoOdds(wtnAwayBet);
   const winEitherHalfOdds = extractHomeAwayOdds(twhBet);
+  const resultTotalGoalsOdds = extractResultTotalGoalsOdds(resultTotalGoalsBet);
+  const resultBttsOdds = extractResultBttsOdds(resultBttsBet);
 
   return {
     overUnderOdds,
@@ -507,6 +539,8 @@ export function extractAdditionalMarketOdds(
     winToNilHomeOdds,
     winToNilAwayOdds,
     winEitherHalfOdds,
+    resultTotalGoalsOdds,
+    resultBttsOdds,
   };
 }
 
@@ -531,6 +565,48 @@ function extractYesNoOdds(
   const no = bet.values.find((v) => v.value === 'No')?.odd;
   if (yes === undefined || no === undefined) return null;
   return { yes, no };
+}
+
+const RESULT_SIDE_TO_PICK = {
+  Home: 'HOME',
+  Draw: 'DRAW',
+  Away: 'AWAY',
+} as const;
+
+// Result/Total Goals (id 25): a genuine bookmaker joint price ("Home/Over
+// 2.5"), not a synthetic combo — sparse, books don't price every
+// (side, line) cell.
+function extractResultTotalGoalsOdds(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): ResultTotalGoalsOdds {
+  if (!bet) return {};
+  const odds: ResultTotalGoalsOdds = {};
+  for (const value of bet.values) {
+    const match = /^(Home|Draw|Away)\/(Over|Under) (\d+)\.5$/.exec(value.value);
+    if (!match) continue;
+    const [, side, direction, whole] = match;
+    const key =
+      `${RESULT_SIDE_TO_PICK[side as keyof typeof RESULT_SIDE_TO_PICK]}_${direction.toUpperCase()}_${whole}_5` as keyof ResultTotalGoalsOdds;
+    odds[key] = value.odd;
+  }
+  return odds;
+}
+
+// Results/Both Teams Score (id 24): fixed 6-cell grid, "Home/Yes" etc.
+function extractResultBttsOdds(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): ResultBttsOdds {
+  if (!bet) return {};
+  const odds: ResultBttsOdds = {};
+  for (const value of bet.values) {
+    const match = /^(Home|Draw|Away)\/(Yes|No)$/.exec(value.value);
+    if (!match) continue;
+    const [, side, yesNo] = match;
+    const key =
+      `${RESULT_SIDE_TO_PICK[side as keyof typeof RESULT_SIDE_TO_PICK]}_${yesNo.toUpperCase()}` as keyof ResultBttsOdds;
+    odds[key] = value.odd;
+  }
+  return odds;
 }
 
 // Team Total: values like "Over 2.5"/"Under 2.5", sparse up to ~6.5. Parsed

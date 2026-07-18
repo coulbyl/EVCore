@@ -152,6 +152,18 @@ type TeamTotalOddsInput = Partial<
 
 type YesNoOddsInput = { yes: number; no: number } | null;
 
+// Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+// sparse maps, same shape as the extractor output in odds-prematch-sync.worker.ts.
+type ResultTotalGoalsOddsInput = Partial<
+  Record<
+    `${'HOME' | 'DRAW' | 'AWAY'}_${'OVER' | 'UNDER'}_${'1_5' | '2_5' | '3_5' | '4_5'}`,
+    number
+  >
+>;
+type ResultBttsOddsInput = Partial<
+  Record<`${'HOME' | 'DRAW' | 'AWAY'}_${'YES' | 'NO'}`, number>
+>;
+
 export type UpsertOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -189,6 +201,8 @@ export type UpsertOddsSnapshotInput = {
   winToNilHomeOdds: YesNoOddsInput;
   winToNilAwayOdds: YesNoOddsInput;
   winEitherHalfOdds: { home: number; away: number } | null;
+  resultTotalGoalsOdds: ResultTotalGoalsOddsInput;
+  resultBttsOdds: ResultBttsOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -226,6 +240,8 @@ export type UpsertSecondaryMarketOddsInput = {
   winToNilHomeOdds: YesNoOddsInput;
   winToNilAwayOdds: YesNoOddsInput;
   winEitherHalfOdds: { home: number; away: number } | null;
+  resultTotalGoalsOdds: ResultTotalGoalsOddsInput;
+  resultBttsOdds: ResultBttsOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -660,7 +676,9 @@ export class FixtureRepository {
       | 'CLEAN_SHEET_AWAY'
       | 'WIN_TO_NIL_HOME'
       | 'WIN_TO_NIL_AWAY'
-      | 'TO_WIN_EITHER_HALF',
+      | 'TO_WIN_EITHER_HALF'
+      | 'RESULT_TOTAL_GOALS'
+      | 'RESULT_BTTS',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -881,6 +899,12 @@ export class FixtureRepository {
             ),
           ]
         : []),
+      ...Object.entries(data.resultTotalGoalsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_TOTAL_GOALS', pick, odds ?? null),
+      ),
+      ...Object.entries(data.resultBttsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_BTTS', pick, odds ?? null),
+      ),
     ]);
 
     return oneXTwoId;
@@ -1058,6 +1082,12 @@ export class FixtureRepository {
             ),
           ]
         : []),
+      ...Object.entries(data.resultTotalGoalsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_TOTAL_GOALS', pick, odds ?? null),
+      ),
+      ...Object.entries(data.resultBttsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_BTTS', pick, odds ?? null),
+      ),
     ]);
   }
 

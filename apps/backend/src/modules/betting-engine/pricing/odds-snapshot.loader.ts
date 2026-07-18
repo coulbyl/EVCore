@@ -35,19 +35,34 @@ const TEAM_TOTAL_PICKS = [
   'UNDER_6_5',
 ] as const;
 
-function parseTeamTotalRows(
+const RESULT_TOTAL_GOALS_PICKS = (['HOME', 'DRAW', 'AWAY'] as const).flatMap(
+  (side) =>
+    (['1_5', '2_5', '3_5', '4_5'] as const).flatMap((line) => [
+      `${side}_OVER_${line}` as const,
+      `${side}_UNDER_${line}` as const,
+    ]),
+);
+
+const RESULT_BTTS_PICKS = (['HOME', 'DRAW', 'AWAY'] as const).flatMap(
+  (side) => [`${side}_YES` as const, `${side}_NO` as const],
+);
+
+// Generic sparse-pick parser: keeps only rows whose `pick` is a known key
+// for the market, first snapshot wins (rows are already ordered desc by
+// snapshotAt). Reused across every market with a bounded key set (Team
+// Total, Result/Total Goals, Result/BTTS).
+function parseSparseRows<T extends string>(
   rows: { pick: string | null; odds: Prisma.Decimal | null }[] | null,
-): FullOddsSnapshot['teamTotalHomeOdds'] {
-  const odds: FullOddsSnapshot['teamTotalHomeOdds'] = {};
+  validKeys: readonly T[],
+): Partial<Record<T, Decimal>> {
+  const odds: Partial<Record<T, Decimal>> = {};
   for (const row of rows ?? []) {
     if (!row.pick || !row.odds) continue;
     if (
       !(row.pick in odds) &&
-      (TEAM_TOTAL_PICKS as readonly string[]).includes(row.pick)
+      (validKeys as readonly string[]).includes(row.pick)
     ) {
-      odds[row.pick as (typeof TEAM_TOTAL_PICKS)[number]] = new Decimal(
-        row.odds.toString(),
-      );
+      odds[row.pick as T] = new Decimal(row.odds.toString());
     }
   }
   return odds;
@@ -173,6 +188,8 @@ export class OddsSnapshotLoader {
       wtnHomeBookmaker,
       wtnAwayBookmaker,
       twhBookmaker,
+      resultTotalGoalsBookmaker,
+      resultBttsBookmaker,
     ] = await Promise.all([
       this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
       this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
@@ -225,6 +242,12 @@ export class OddsSnapshotLoader {
         Market.TO_WIN_EITHER_HALF,
         cutoff,
       ),
+      this.findBestBookmakerForMarket(
+        fixtureId,
+        Market.RESULT_TOTAL_GOALS,
+        cutoff,
+      ),
+      this.findBestBookmakerForMarket(fixtureId, Market.RESULT_BTTS, cutoff),
     ]);
 
     const [
@@ -244,6 +267,8 @@ export class OddsSnapshotLoader {
       wtnHomeRows,
       wtnAwayRows,
       twhRows,
+      resultTotalGoalsRows,
+      resultBttsRows,
     ] = await Promise.all([
       ouBookmaker
         ? this.prisma.client.oddsSnapshot.findMany({
@@ -423,6 +448,28 @@ export class OddsSnapshotLoader {
             orderBy: { snapshotAt: 'desc' },
           })
         : null,
+      resultTotalGoalsBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: resultTotalGoalsBookmaker,
+              market: Market.RESULT_TOTAL_GOALS,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
+      resultBttsBookmaker
+        ? this.prisma.client.oddsSnapshot.findMany({
+            where: {
+              fixtureId,
+              bookmaker: resultBttsBookmaker,
+              market: Market.RESULT_BTTS,
+            },
+            select: { pick: true, odds: true },
+            orderBy: { snapshotAt: 'desc' },
+          })
+        : null,
     ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
@@ -502,13 +549,18 @@ export class OddsSnapshotLoader {
       }
     }
 
-    const teamTotalHomeOdds = parseTeamTotalRows(ttHomeRows);
-    const teamTotalAwayOdds = parseTeamTotalRows(ttAwayRows);
+    const teamTotalHomeOdds = parseSparseRows(ttHomeRows, TEAM_TOTAL_PICKS);
+    const teamTotalAwayOdds = parseSparseRows(ttAwayRows, TEAM_TOTAL_PICKS);
     const cleanSheetHomeOdds = parseYesNoRows(csHomeRows);
     const cleanSheetAwayOdds = parseYesNoRows(csAwayRows);
     const winToNilHomeOdds = parseYesNoRows(wtnHomeRows);
     const winToNilAwayOdds = parseYesNoRows(wtnAwayRows);
     const winEitherHalfOdds = parseHomeAwayRows(twhRows);
+    const resultTotalGoalsOdds = parseSparseRows(
+      resultTotalGoalsRows,
+      RESULT_TOTAL_GOALS_PICKS,
+    );
+    const resultBttsOdds = parseSparseRows(resultBttsRows, RESULT_BTTS_PICKS);
 
     const correctScoreOdds: Partial<Record<string, Decimal>> = {};
     for (const row of csRows ?? []) {
@@ -544,6 +596,8 @@ export class OddsSnapshotLoader {
       winToNilHomeOdds,
       winToNilAwayOdds,
       winEitherHalfOdds,
+      resultTotalGoalsOdds,
+      resultBttsOdds,
     };
   }
 
@@ -601,6 +655,8 @@ export class OddsSnapshotLoader {
       winToNilHomeOdds: null,
       winToNilAwayOdds: null,
       winEitherHalfOdds: null,
+      resultTotalGoalsOdds: {},
+      resultBttsOdds: {},
     };
   }
 
@@ -710,6 +766,8 @@ export class OddsSnapshotLoader {
         winToNilHomeOdds: null,
         winToNilAwayOdds: null,
         winEitherHalfOdds: null,
+        resultTotalGoalsOdds: {},
+        resultBttsOdds: {},
       },
       offeredBy: {
         home: bestHome.bookmaker,

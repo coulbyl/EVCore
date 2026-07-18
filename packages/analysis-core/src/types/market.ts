@@ -22,6 +22,8 @@ export const Market = {
   WIN_TO_NIL_HOME: "WIN_TO_NIL_HOME",
   WIN_TO_NIL_AWAY: "WIN_TO_NIL_AWAY",
   TO_WIN_EITHER_HALF: "TO_WIN_EITHER_HALF",
+  RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS",
+  RESULT_BTTS: "RESULT_BTTS",
 } as const;
 
 export type Market = (typeof Market)[keyof typeof Market];

@@ -36,6 +36,8 @@ const ODDS: FullOddsSnapshot = {
   winToNilHomeOdds: null,
   winToNilAwayOdds: null,
   winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 function richContext(): StrategyContext {

@@ -172,6 +172,18 @@ export function getPickOddsFromSnapshot(
     if (pick === "HOME") return odds.winEitherHalfOdds.home;
     if (pick === "AWAY") return odds.winEitherHalfOdds.away;
   }
+  if (market === Market.RESULT_TOTAL_GOALS) {
+    return (
+      odds.resultTotalGoalsOdds[
+        pick as keyof typeof odds.resultTotalGoalsOdds
+      ] ?? null
+    );
+  }
+  if (market === Market.RESULT_BTTS) {
+    return (
+      odds.resultBttsOdds[pick as keyof typeof odds.resultBttsOdds] ?? null
+    );
+  }
   return null;
 }
 
@@ -273,6 +285,20 @@ export function getModelProbabilityForPick(
   if (market === Market.TO_WIN_EITHER_HALF) {
     if (pick === "HOME") return probabilities.winEitherHalfHome;
     if (pick === "AWAY") return probabilities.winEitherHalfAway;
+  }
+  if (market === Market.RESULT_TOTAL_GOALS) {
+    return (
+      probabilities.resultTotalGoals[
+        pick as keyof typeof probabilities.resultTotalGoals
+      ] ?? null
+    );
+  }
+  if (market === Market.RESULT_BTTS) {
+    return (
+      probabilities.resultBtts[
+        pick as keyof typeof probabilities.resultBtts
+      ] ?? null
+    );
   }
   return null;
 }

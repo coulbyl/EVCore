@@ -33,6 +33,8 @@ function snapshot(): FullOddsSnapshot {
     winToNilHomeOdds: null,
     winToNilAwayOdds: null,
     winEitherHalfOdds: null,
+    resultTotalGoalsOdds: {},
+    resultBttsOdds: {},
   };
 }
 

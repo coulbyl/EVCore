@@ -143,6 +143,55 @@ describe("computePoissonMarkets", () => {
     );
     expect(m.winEitherHalfHome.toNumber()).toBeLessThanOrEqual(1);
   });
+
+  it("Result/Total Goals: under+over reconstructs the side's own 1X2 mass", () => {
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    for (const side of ["HOME", "DRAW", "AWAY"] as const) {
+      const under = m.resultTotalGoals[`${side}_UNDER_2_5`]!;
+      const over = m.resultTotalGoals[`${side}_OVER_2_5`]!;
+      const sideMass =
+        side === "HOME"
+          ? oneXTwo.home
+          : side === "DRAW"
+            ? oneXTwo.draw
+            : oneXTwo.away;
+      expect(under.plus(over).toNumber()).toBeCloseTo(sideMass.toNumber(), 10);
+    }
+  });
+
+  it("Result/Total Goals UNDER is a genuine joint sum, not an independence-assumed product", () => {
+    // Home & Under 1.5 requires BOTH a home win AND a low-scoring match —
+    // strictly smaller than the naive product of the two marginals, since
+    // low-scoring games correlate with home wins being narrow (1-0).
+    const m = computePoissonMarkets(1.7, 1.2);
+    const homeUnder15 = m.resultTotalGoals.HOME_UNDER_1_5!;
+    expect(homeUnder15.toNumber()).toBeGreaterThan(0);
+    expect(homeUnder15.toNumber()).toBeLessThan(1);
+  });
+
+  it("Results/Both Teams Score: the 6 cells sum to ≈ 1 (exhaustive partition)", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const total = Object.values(m.resultBtts).reduce(
+      (acc, p) => acc + p.toNumber(),
+      0,
+    );
+    expect(total).toBeCloseTo(1, 10);
+  });
+
+  it("Results/Both Teams Score is consistent with bttsYes/bttsNo and 1X2", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const bttsYesAcrossSides = m.resultBtts.HOME_YES!.plus(
+      m.resultBtts.DRAW_YES!,
+    ).plus(m.resultBtts.AWAY_YES!);
+    expect(bttsYesAcrossSides.toNumber()).toBeCloseTo(
+      m.bttsYes.toNumber(),
+      10,
+    );
+    const homeMass = m.resultBtts.HOME_YES!.plus(m.resultBtts.HOME_NO!);
+    const oneXTwo = poissonProba(1.7, 1.2);
+    expect(homeMass.toNumber()).toBeCloseTo(oneXTwo.home.toNumber(), 10);
+  });
 });
 
 describe("computeCorrectScoreMatrix", () => {

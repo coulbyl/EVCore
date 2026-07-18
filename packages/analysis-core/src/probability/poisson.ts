@@ -6,6 +6,8 @@ import {
   type HalfTimeFullTimePick,
   isHalfTimeFullTimePick,
   outcomeFromScores,
+  type ResultBttsProba,
+  type ResultTotalGoalsProba,
   type TeamTotalProba,
   type ThreeWayProba,
 } from "./markets";
@@ -168,6 +170,13 @@ function deriveMarketsFromDistributions(
     .plus(secondHalfWinner.away)
     .minus(firstHalfWinner.away.mul(secondHalfWinner.away));
 
+  const resultTotalGoals = computeResultTotalGoalsProba(
+    homeDist,
+    awayDist,
+    oneXTwo,
+  );
+  const resultBtts = computeResultBttsProba(homeDist, awayDist);
+
   return {
     over15: new Decimal(over15),
     under15: new Decimal(under15),
@@ -196,6 +205,8 @@ function deriveMarketsFromDistributions(
     secondHalfWinner,
     winEitherHalfHome,
     winEitherHalfAway,
+    resultTotalGoals,
+    resultBtts,
   };
 }
 
@@ -215,6 +226,90 @@ function computeTeamTotalProba(dist: number[]): TeamTotalProba {
     proba[`OVER_${line}_5`] = new Decimal(over);
   }
   return proba;
+}
+
+// Result/Total Goals: a genuine bookmaker joint price (e.g. "Home & Over
+// 2.5"), priced here from the joint distribution — not a synthetic combo.
+// For each line, under(side) is a direct joint accumulation; over(side) is
+// the complement within that side's own 1X2 mass (oneXTwo[side] is already
+// the full probability of that outcome, so over = oneXTwo[side] - under).
+function computeResultTotalGoalsProba(
+  homeDist: number[],
+  awayDist: number[],
+  oneXTwo: ThreeWayProba,
+): ResultTotalGoalsProba {
+  const proba: ResultTotalGoalsProba = {};
+  const lines = [1, 2, 3, 4] as const;
+  for (const line of lines) {
+    let underHome = 0;
+    let underDraw = 0;
+    let underAway = 0;
+    for (let h = 0; h <= Math.min(line, homeDist.length - 1); h++) {
+      for (let a = 0; a <= Math.min(line - h, awayDist.length - 1); a++) {
+        const p = (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+        const outcome = outcomeFromScores(h, a);
+        if (outcome === "HOME") underHome += p;
+        else if (outcome === "DRAW") underDraw += p;
+        else underAway += p;
+      }
+    }
+    proba[`HOME_UNDER_${line}_5`] = new Decimal(underHome);
+    proba[`DRAW_UNDER_${line}_5`] = new Decimal(underDraw);
+    proba[`AWAY_UNDER_${line}_5`] = new Decimal(underAway);
+    proba[`HOME_OVER_${line}_5`] = Decimal.max(
+      0,
+      oneXTwo.home.minus(underHome),
+    );
+    proba[`DRAW_OVER_${line}_5`] = Decimal.max(
+      0,
+      oneXTwo.draw.minus(underDraw),
+    );
+    proba[`AWAY_OVER_${line}_5`] = Decimal.max(
+      0,
+      oneXTwo.away.minus(underAway),
+    );
+  }
+  return proba;
+}
+
+// Results/Both Teams Score: a genuine bookmaker joint price (e.g. "Home &
+// BTTS Yes"), priced here directly from the joint distribution.
+function computeResultBttsProba(
+  homeDist: number[],
+  awayDist: number[],
+): ResultBttsProba {
+  let homeYes = 0;
+  let homeNo = 0;
+  let drawYes = 0;
+  let drawNo = 0;
+  let awayYes = 0;
+  let awayNo = 0;
+  for (let h = 0; h < homeDist.length; h++) {
+    for (let a = 0; a < awayDist.length; a++) {
+      const p = (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      if (p <= 0) continue;
+      const bttsYes = h > 0 && a > 0;
+      const outcome = outcomeFromScores(h, a);
+      if (outcome === "HOME") {
+        if (bttsYes) homeYes += p;
+        else homeNo += p;
+      } else if (outcome === "DRAW") {
+        if (bttsYes) drawYes += p;
+        else drawNo += p;
+      } else {
+        if (bttsYes) awayYes += p;
+        else awayNo += p;
+      }
+    }
+  }
+  return {
+    HOME_YES: new Decimal(homeYes),
+    HOME_NO: new Decimal(homeNo),
+    DRAW_YES: new Decimal(drawYes),
+    DRAW_NO: new Decimal(drawNo),
+    AWAY_YES: new Decimal(awayYes),
+    AWAY_NO: new Decimal(awayNo),
+  };
 }
 
 // Derives HT/FT, Over/Under HT, and First Half Winner from the full-time

@@ -46,7 +46,22 @@ export type DerivedMarketsProba = {
   // "wins either half" true simultaneously), so this isn't a two-way split.
   winEitherHalfHome: Decimal;
   winEitherHalfAway: Decimal;
+  // Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+  // priced against a genuine joint bookmaker odd, not a synthetic combo.
+  resultTotalGoals: ResultTotalGoalsProba;
+  resultBtts: ResultBttsProba;
 };
+
+export type ResultTotalGoalsProba = Partial<
+  Record<
+    `${"HOME" | "DRAW" | "AWAY"}_${"OVER" | "UNDER"}_${"1_5" | "2_5" | "3_5" | "4_5"}`,
+    Decimal
+  >
+>;
+
+export type ResultBttsProba = Partial<
+  Record<`${"HOME" | "DRAW" | "AWAY"}_${"YES" | "NO"}`, Decimal>
+>;
 
 export type TeamTotalProba = Partial<
   Record<

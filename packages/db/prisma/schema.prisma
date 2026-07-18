@@ -51,6 +51,8 @@ enum Market {
   WIN_TO_NIL_HOME
   WIN_TO_NIL_AWAY
   TO_WIN_EITHER_HALF
+  RESULT_TOTAL_GOALS
+  RESULT_BTTS
   @@schema("public")
 }
 

@@ -29,6 +29,8 @@ const odds: FullOddsSnapshot = {
   winToNilHomeOdds: null,
   winToNilAwayOdds: null,
   winEitherHalfOdds: { home: new Decimal('1.30'), away: new Decimal('3.00') },
+  resultTotalGoalsOdds: { HOME_OVER_2_5: new Decimal('2.20') },
+  resultBttsOdds: { HOME_YES: new Decimal('2.95') },
 };
 
 describe('resolveSelectionOdds', () => {
@@ -100,6 +102,28 @@ describe('resolveSelectionOdds', () => {
     expect(
       resolveSelectionOdds(odds, Market.TO_WIN_EITHER_HALF, 'AWAY')?.toNumber(),
     ).toBe(3.0);
+  });
+
+  it('resolves Result/Total Goals picks by composed key, null for unpriced cells', () => {
+    expect(
+      resolveSelectionOdds(
+        odds,
+        Market.RESULT_TOTAL_GOALS,
+        'HOME_OVER_2_5',
+      )?.toNumber(),
+    ).toBe(2.2);
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_TOTAL_GOALS, 'AWAY_UNDER_1_5'),
+    ).toBeNull();
+  });
+
+  it('resolves Result/BTTS picks by composed key, null for unpriced cells', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_BTTS, 'HOME_YES')?.toNumber(),
+    ).toBe(2.95);
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_BTTS, 'DRAW_NO'),
+    ).toBeNull();
   });
 });
 

@@ -96,6 +96,18 @@ export function mapProbabilitiesToNumber(
       draw: probabilities.secondHalfWinner.draw.toNumber(),
       away: probabilities.secondHalfWinner.away.toNumber(),
     },
+    resultTotalGoals: Object.fromEntries(
+      Object.entries(probabilities.resultTotalGoals).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    resultBtts: Object.fromEntries(
+      Object.entries(probabilities.resultBtts).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
   };
 }
 
@@ -166,6 +178,27 @@ export function rebalanceThreeWayProbabilities(input: {
 
   const nonDrawMass = home.plus(away);
 
+  // resultTotalGoals' UNDER picks are pure joint-distribution sums
+  // (unaffected by rebalancing); OVER = oneXTwo[side] - UNDER, so only OVER
+  // needs recomputing against the rebalanced home/draw/away to stay
+  // internally consistent (under+over must still equal that side's mass).
+  const sideProbability = { HOME: home, DRAW: draw, AWAY: away } as const;
+  const resultTotalGoals = Object.fromEntries(
+    Object.entries(probabilities.resultTotalGoals).map(([pick, under]) => {
+      if (!pick.includes("_OVER_") || under === undefined) {
+        return [pick, under];
+      }
+      const side = pick.split("_")[0] as keyof typeof sideProbability;
+      const line = pick.replace(`${side}_OVER_`, "");
+      const underPick = `${side}_UNDER_${line}`;
+      const underValue = probabilities.resultTotalGoals[
+        underPick as keyof typeof probabilities.resultTotalGoals
+      ];
+      if (underValue === undefined) return [pick, under];
+      return [pick, Decimal.max(0, sideProbability[side].minus(underValue))];
+    }),
+  ) as MatchProbabilities["resultTotalGoals"];
+
   return {
     ...probabilities,
     home,
@@ -176,6 +209,7 @@ export function rebalanceThreeWayProbabilities(input: {
     dc12: home.plus(away),
     dnbHome: nonDrawMass.isZero() ? new Decimal(0.5) : home.div(nonDrawMass),
     dnbAway: nonDrawMass.isZero() ? new Decimal(0.5) : away.div(nonDrawMass),
+    resultTotalGoals,
   };
 }
 

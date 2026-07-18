@@ -164,6 +164,29 @@ function pinnacleWithAdditionalMarkets() {
           { value: 'Away', odd: 3.0 },
         ],
       },
+      {
+        id: 25,
+        name: 'Result/Total Goals',
+        values: [
+          { value: 'Home/Over 1.5', odd: 1.83 },
+          { value: 'Home/Under 1.5', odd: 7.0 },
+          { value: 'Home/Over 2.5', odd: 2.2 },
+          { value: 'Draw/Over 2.5', odd: 10.0 },
+          { value: 'Away/Under 2.5', odd: 11.0 },
+        ],
+      },
+      {
+        id: 24,
+        name: 'Results/Both Teams Score',
+        values: [
+          { value: 'Home/Yes', odd: 2.95 },
+          { value: 'Draw/Yes', odd: 5.0 },
+          { value: 'Away/Yes', odd: 8.0 },
+          { value: 'Home/No', odd: 2.95 },
+          { value: 'Draw/No', odd: 10.0 },
+          { value: 'Away/No', odd: 9.5 },
+        ],
+      },
     ],
   };
 }
@@ -635,6 +658,40 @@ describe('extractAdditionalMarketOdds', () => {
     expect(additional.winToNilAwayOdds).toBeNull();
     expect(additional.winEitherHalfOdds).toBeNull();
   });
+
+  it('extracts Result/Total Goals odds — sparse, keyed by side+line', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.resultTotalGoalsOdds).toEqual({
+      HOME_OVER_1_5: 1.83,
+      HOME_UNDER_1_5: 7.0,
+      HOME_OVER_2_5: 2.2,
+      DRAW_OVER_2_5: 10.0,
+      AWAY_UNDER_2_5: 11.0,
+    });
+  });
+
+  it('extracts Results/Both Teams Score odds — fixed 6-cell grid', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.resultBttsOdds).toEqual({
+      HOME_YES: 2.95,
+      DRAW_YES: 5.0,
+      AWAY_YES: 8.0,
+      HOME_NO: 2.95,
+      DRAW_NO: 10.0,
+      AWAY_NO: 9.5,
+    });
+  });
+
+  it('returns empty maps for Result/Total Goals and Result/BTTS when the bookmaker is absent', () => {
+    const additional = extractAdditionalMarketOdds([], 'Pinnacle');
+
+    expect(additional.resultTotalGoalsOdds).toEqual({});
+    expect(additional.resultBttsOdds).toEqual({});
+  });
 });
 
 describe('API_FOOTBALL_BET_IDS regression (Double Chance / DNB id fix)', () => {
@@ -651,5 +708,10 @@ describe('API_FOOTBALL_BET_IDS regression (Double Chance / DNB id fix)', () => {
     expect(API_FOOTBALL_BET_IDS.WIN_TO_NIL_HOME).toBe(29);
     expect(API_FOOTBALL_BET_IDS.WIN_TO_NIL_AWAY).toBe(30);
     expect(API_FOOTBALL_BET_IDS.TO_WIN_EITHER_HALF).toBe(39);
+  });
+
+  it('Niveau 2.b bet ids match the live API-Football reference (2026-07-18)', () => {
+    expect(API_FOOTBALL_BET_IDS.RESULT_TOTAL_GOALS).toBe(25);
+    expect(API_FOOTBALL_BET_IDS.RESULT_BTTS).toBe(24);
   });
 });

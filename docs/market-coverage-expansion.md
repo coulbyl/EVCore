@@ -35,6 +35,8 @@ Extraction dans `apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.
 | Win to Nil Home                    | 29                    | `WIN_TO_NIL_HOME`                                                 |
 | Win to Nil Away                    | 30                    | `WIN_TO_NIL_AWAY`                                                 |
 | To Win Either Half                 | 39                    | `TO_WIN_EITHER_HALF`                                              |
+| Result/Total Goals                 | 25                    | `RESULT_TOTAL_GOALS` — vraie cote bookmaker, pick composé          |
+| Results/Both Teams Score           | 24                    | `RESULT_BTTS` — vraie cote bookmaker, pick composé                |
 
 Bookmakers priorisés : Pinnacle → Bet365 → Unibet → Marathonbet → Bwin
 (`API_FOOTBALL_BOOKMAKERS`).
@@ -82,12 +84,21 @@ probabilité jointe déjà calculable comme pour les combos EVCore existants
 (cf. `EVCORE.md` — "un pick peut combiner deux marchés si la probabilité
 jointe est calculable depuis le modèle de Poisson").
 
-- [ ] **Result/Total Goals** — `bet.id = 25` (ex. "Home & Over 2.5",
+- [x] **Result/Total Goals** — `bet.id = 25` (ex. "Home & Over 2.5",
       "Draw & Under 2.5"...). Correspond au point 10 du doc d'analyse
       ("Résultat + total large" : 1X + Under 4.5, Home + Over 1.5, etc.).
-- [ ] **Results/Both Teams Score** — `bet.id = 24` (ex. "Home & BTTS Yes").
+      Couverture réelle : Bet365 (8/10) et Marathonbet (10/10), absent chez
+      Pinnacle/Unibet — capté via `SECONDARY_IDS`. Picks composés
+      `HOME_OVER_2_5` etc., lignes 1.5/2.5/3.5/4.5, cote bookmaker réelle
+      (pas de facteur de corrélation, contrairement au système de combo
+      synthétique — retiré, voir ROADMAP.md).
+- [x] **Results/Both Teams Score** — `bet.id = 24` (ex. "Home & BTTS Yes").
+      Couverture réelle : Bet365 (8/10), absent chez Pinnacle/Unibet/
+      Marathonbet. Grille fixe à 6 cases (`HOME_YES`..`AWAY_NO`).
 - [ ] **Halftime Result/Total Goals** — `bet.id = 51` — variante mi-temps,
-      à faire après les deux ci-dessus si la couverture bookmaker le permet.
+      **reportée** : 0 occurrence observée en direct le 2026-07-18, tous
+      bookmakers confondus (pas seulement les 5 prioritaires) — pas de
+      données pour construire ni tester l'extracteur.
 
 Stocker à la fois la cote bookmaker (comparaison/valeur) et la probabilité
 jointe recalculée en interne depuis la matrice de scores — ne jamais

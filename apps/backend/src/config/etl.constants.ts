@@ -215,6 +215,13 @@ export const API_FOOTBALL_BET_IDS = {
   // Two-way market (Home/Away only) — never a third "Draw"/"Neither" value,
   // confirmed live 2026-07-18 across every fixture in the sample.
   TO_WIN_EITHER_HALF: 39,
+  // Pre-combined bookmaker markets (result × goals / result × BTTS) — a
+  // real joint price, not a synthetic combo. Values like "Home/Over 2.5".
+  RESULT_TOTAL_GOALS: 25,
+  RESULT_BTTS: 24,
+  // Halftime variant (id 51) deferred: 0 occurrences across every
+  // bookmaker in the live sample checked 2026-07-18, not just the 5
+  // priority ones — no data to build or test against.
 } as const;
 
 export const BULLMQ_QUEUES = {

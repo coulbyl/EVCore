@@ -82,6 +82,8 @@ function makeMockProbabilities() {
     },
     winEitherHalfHome: new Decimal('0.5'),
     winEitherHalfAway: new Decimal('0.5'),
+    resultTotalGoals: {},
+    resultBtts: {},
   };
 }
 
@@ -754,6 +756,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -813,6 +817,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     const estimatedOdds = estimateComboOdds({
       combo: {
@@ -1504,6 +1510,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1633,6 +1641,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -1707,6 +1717,8 @@ describe('BettingEngineService', () => {
         },
         winEitherHalfHome: new Decimal('0.5'),
         winEitherHalfAway: new Decimal('0.5'),
+        resultTotalGoals: {},
+        resultBtts: {},
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1729,6 +1741,8 @@ describe('BettingEngineService', () => {
         winToNilHomeOdds: null,
         winToNilAwayOdds: null,
         winEitherHalfOdds: null,
+        resultTotalGoalsOdds: {},
+        resultBttsOdds: {},
       },
       deterministicScore: new Decimal('0.75'),
       distHome,
@@ -1791,6 +1805,8 @@ describe('BettingEngineService', () => {
         },
         winEitherHalfHome: new Decimal('0.5'),
         winEitherHalfAway: new Decimal('0.5'),
+        resultTotalGoals: {},
+        resultBtts: {},
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1813,6 +1829,8 @@ describe('BettingEngineService', () => {
         winToNilHomeOdds: null,
         winToNilAwayOdds: null,
         winEitherHalfOdds: null,
+        resultTotalGoalsOdds: {},
+        resultBttsOdds: {},
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -1875,6 +1893,8 @@ describe('BettingEngineService', () => {
         },
         winEitherHalfHome: new Decimal('0.5'),
         winEitherHalfAway: new Decimal('0.5'),
+        resultTotalGoals: {},
+        resultBtts: {},
       },
       odds: {
         bookmaker: 'Pinnacle',
@@ -1897,6 +1917,8 @@ describe('BettingEngineService', () => {
         winToNilHomeOdds: null,
         winToNilAwayOdds: null,
         winEitherHalfOdds: null,
+        resultTotalGoalsOdds: {},
+        resultBttsOdds: {},
       },
       deterministicScore: new Decimal('0.80'),
       distHome,
@@ -2131,6 +2153,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
       deterministicScore: new Decimal('0.7'),
@@ -2285,6 +2309,8 @@ describe('BettingEngineService', () => {
       },
       winEitherHalfHome: new Decimal('0.5'),
       winEitherHalfAway: new Decimal('0.5'),
+      resultTotalGoals: {},
+      resultBtts: {},
     };
     return {
       deterministicScore: new Decimal('0.70'),

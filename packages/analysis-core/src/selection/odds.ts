@@ -77,6 +77,16 @@ export function resolveSelectionOdds(
       if (pick === "HOME") return odds.winEitherHalfOdds.home;
       if (pick === "AWAY") return odds.winEitherHalfOdds.away;
       return null;
+    case Market.RESULT_TOTAL_GOALS:
+      return (
+        odds.resultTotalGoalsOdds[
+          pick as keyof typeof odds.resultTotalGoalsOdds
+        ] ?? null
+      );
+    case Market.RESULT_BTTS:
+      return (
+        odds.resultBttsOdds[pick as keyof typeof odds.resultBttsOdds] ?? null
+      );
     default:
       return null;
   }

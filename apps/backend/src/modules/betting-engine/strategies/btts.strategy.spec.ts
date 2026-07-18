@@ -30,6 +30,8 @@ const BASE_ODDS: FullOddsSnapshot = {
   winToNilHomeOdds: null,
   winToNilAwayOdds: null,
   winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 function makeContext(
