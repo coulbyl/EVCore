@@ -1,106 +1,15 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
-import type { ComboPick } from "../probability";
 import { isHalfTimeFullTimePick } from "../probability";
-import {
-  COMBO_CORRELATION_ALPHA,
-  COMBO_CORRELATION_MAX_FACTOR,
-  COMBO_CORRELATION_MIN_FACTOR,
-} from "./constants";
 import type { FullOddsSnapshot, MatchProbabilities, ViablePick } from "./types";
 
-// Validated combo pairs — only combinations that are logically consistent and
-// have positive expected correlation. Impossible combos (HOME+DRAW, etc.) are absent.
-export const COMBO_WHITELIST: readonly ComboPick[] = [
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "HOME",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "HOME",
-    market2: Market.OVER_UNDER,
-    pick2: "OVER",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "HOME",
-    market2: Market.BTTS,
-    pick2: "NO",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "AWAY",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "AWAY",
-    market2: Market.OVER_UNDER,
-    pick2: "OVER",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "AWAY",
-    market2: Market.BTTS,
-    pick2: "NO",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "DRAW",
-    market2: Market.OVER_UNDER,
-    pick2: "UNDER",
-  },
-  {
-    market1: Market.ONE_X_TWO,
-    pick1: "DRAW",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  {
-    market1: Market.DOUBLE_CHANCE,
-    pick1: "1X",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  {
-    market1: Market.DOUBLE_CHANCE,
-    pick1: "X2",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  {
-    market1: Market.DOUBLE_CHANCE,
-    pick1: "12",
-    market2: Market.BTTS,
-    pick2: "YES",
-  },
-  // NOTE: {OVER_UNDER/OVER + BTTS/YES} is intentionally excluded.
-  // Over 2.5 and BTTS Yes are near-tautological on the same match: virtually
-  // every Over-2.5 game also satisfies BTTS Yes (except 0-3+ or 3-0+ scores).
-  // The Poisson joint probability correctly captures this near-perfect correlation,
-  // making the combo appear to have massive EV vs the bookmaker's naive product
-  // odds — but the edge is an artifact of the independence assumption in the
-  // bookmaker's pricing, not a genuine model signal.
-] as const;
-
-// Stable identity key for a (single or combo) pick. Used to dedupe / exclude
-// picks across channels (e.g. SV must not re-select the EV pick).
+// Stable identity key for a pick. Used to dedupe / exclude picks across
+// channels (e.g. SV must not re-select the EV pick).
 export function buildBetPickKey(input: {
   market: Market;
   pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
 }): string {
-  return [
-    input.market,
-    input.pick,
-    input.comboMarket ?? "-",
-    input.comboPick ?? "-",
-  ].join("|");
+  return [input.market, input.pick].join("|");
 }
 
 // Returns odds for a pick within a FullOddsSnapshot (single-market, no combo).
@@ -295,56 +204,9 @@ export function getModelProbabilityForPick(
   }
   if (market === Market.RESULT_BTTS) {
     return (
-      probabilities.resultBtts[
-        pick as keyof typeof probabilities.resultBtts
-      ] ?? null
+      probabilities.resultBtts[pick as keyof typeof probabilities.resultBtts] ??
+      null
     );
   }
   return null;
-}
-
-export function estimateComboOdds(input: {
-  combo: ComboPick;
-  probabilities: MatchProbabilities;
-  jointProbability: Decimal;
-  odds1: Decimal;
-  odds2: Decimal;
-}): Decimal {
-  const { combo, probabilities, jointProbability, odds1, odds2 } = input;
-  const probability1 = getModelProbabilityForPick(
-    combo.market1,
-    combo.pick1,
-    probabilities,
-  );
-  const probability2 = getModelProbabilityForPick(
-    combo.market2,
-    combo.pick2,
-    probabilities,
-  );
-
-  const rawProduct = odds1.mul(odds2);
-  if (
-    probability1 === null ||
-    probability2 === null ||
-    jointProbability.lte(0) ||
-    probability1.lte(0) ||
-    probability2.lte(0)
-  ) {
-    return rawProduct;
-  }
-
-  const independentProbability = probability1.mul(probability2);
-  if (independentProbability.lte(0)) {
-    return rawProduct;
-  }
-
-  const correlationFactor = independentProbability
-    .div(jointProbability)
-    .pow(COMBO_CORRELATION_ALPHA);
-  const clampedFactor = Decimal.min(
-    COMBO_CORRELATION_MAX_FACTOR,
-    Decimal.max(COMBO_CORRELATION_MIN_FACTOR, correlationFactor),
-  );
-
-  return rawProduct.mul(clampedFactor);
 }

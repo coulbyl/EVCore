@@ -23,10 +23,6 @@ export type BetSlipDraftItem = {
   market: string;
   pick: string;
   odds: string | null;
-  /** Marché secondaire pour les picks combo (ex. "OVER_UNDER"). */
-  comboMarket?: string;
-  /** Pick secondaire pour les picks combo (ex. "OVER"). */
-  comboPick?: string;
   ev: string | null;
   canal?: string;
   stakeOverride: number | null;
@@ -41,7 +37,7 @@ export type BetSlipDraft = {
 /**
  * Clé stable pour identifier un item dans le brouillon.
  * - Bets MODEL  → betId (déjà unique en base)
- * - Picks USER  → clé composite fixtureId|market|pick|comboMarket|comboPick
+ * - Picks USER  → clé composite fixtureId|market|pick
  *
  * Cette fonction accepte un sous-ensemble des champs de BetSlipDraftItem
  * pour pouvoir être appelée depuis les composants sans construire l'item entier.
@@ -50,10 +46,8 @@ export function draftItemKey(item: {
   fixtureId: string;
   market: string;
   pick: string;
-  comboMarket?: string | null;
-  comboPick?: string | null;
 }): string {
-  return `${item.fixtureId}|${item.market}|${item.pick}|${item.comboMarket ?? "-"}|${item.comboPick ?? "-"}`;
+  return `${item.fixtureId}|${item.market}|${item.pick}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,8 +60,6 @@ export type BetSlipItemView = {
   fixture: string;
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   odds: string | null;
   ev: string;
   stake: string;

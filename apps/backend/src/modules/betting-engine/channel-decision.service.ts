@@ -27,8 +27,6 @@ import {
 export type ChannelSelectionItem = {
   market: Market;
   pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
   probability: number;
   odds: number | null;
   impliedProbability: number | null;
@@ -315,8 +313,6 @@ function toSelectionItem(
   return {
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket,
-    comboPick: selection.comboPick,
     probability: Number(selection.probability),
     odds: toNumber(selection.odds),
     impliedProbability: toNumber(selection.impliedProbability),

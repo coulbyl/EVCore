@@ -115,16 +115,14 @@ Les seuils des canaux de prédiction sont configurés par ligue dans `prediction
 
 ---
 
-### Combos-match (Phase 2)
+### Marchés pré-combinés (RESULT_TOTAL_GOALS, RESULT_BTTS)
 
-Un pick peut combiner deux marchés sur la même fixture si la probabilité jointe est calculable depuis le modèle de Poisson et que l'EV joint ≥ 8%. Maximum 2 marchés par combo.
-
-| Exemples de combos valides       |
-| -------------------------------- |
-| HOME_WIN + BTTS_YES              |
-| AWAY_WIN + OVER_2_5              |
-| DRAW + BTTS_YES                  |
-| DC_1X / DC_X2 / DC_12 + BTTS_YES |
+Retiré (2026-07-18) : le système précédent combinait deux marchés synthétiquement
+(probabilité jointe Poisson + cote corrélée estimée). Il est remplacé par de vrais
+marchés bookmaker pré-combinés — résultat × total de buts (`RESULT_TOTAL_GOALS`) et
+résultat × BTTS (`RESULT_BTTS`) — qui portent une cote réelle plutôt qu'estimée. Ce
+ne sont pas des combos à deux jambes mais des marchés à pick composé (comme
+`HALF_TIME_FULL_TIME`). Voir `docs/market-coverage-expansion.md`.
 
 ### Phase 2+
 

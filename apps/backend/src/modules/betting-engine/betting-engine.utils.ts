@@ -15,13 +15,10 @@ export {
   bookmakerMargin,
   removeOverround,
   calculateKellyStakePct,
-  computeJointProbability,
-  resolveComboPickBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolveFirstHalfBetStatus,
   resolveEarlyBetStatus,
   resolvePickBetStatus,
-  COMBO_WHITELIST,
   buildBetPickKey,
 } from '@evcore/analysis-core';
 export type {
@@ -30,8 +27,4 @@ export type {
   HalfTimeFullTimePick,
   DeterministicFeatures,
   FeatureWeights,
-  ComboPick,
 } from '@evcore/analysis-core';
-
-// COMBO_WHITELIST and buildBetPickKey now live in the pure core
-// (@evcore/analysis-core/selection) and are re-exported above.

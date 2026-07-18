@@ -5,12 +5,10 @@ import { PrismaService } from '@/prisma.service';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
 import { ChannelDecisionService } from '../channel-decision.service';
 import {
-  resolveComboPickBetStatus,
   resolveEarlyBetStatus,
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
-  type ComboPick,
 } from '../betting-engine.utils';
 
 /**
@@ -49,45 +47,19 @@ export class BetSettlementService {
         id: true,
         market: true,
         pick: true,
-        comboMarket: true,
-        comboPick: true,
       },
     });
 
     let settled = 0;
     for (const bet of bets) {
-      let status: BetStatus | null = null;
-
-      const scores = {
+      const status = resolveEarlyBetStatus({
+        market: bet.market,
+        pick: bet.pick,
         homeScore: fixture.homeScore,
         awayScore: fixture.awayScore,
         homeHtScore: fixture.homeHtScore,
         awayHtScore: fixture.awayHtScore,
-      };
-
-      if (bet.comboMarket !== null && bet.comboPick !== null) {
-        // Combo: early-LOST if any leg is irrevocably LOST (e.g. UNDER exceeded)
-        const s1 = resolveEarlyBetStatus({
-          market: bet.market,
-          pick: bet.pick,
-          ...scores,
-        });
-        const s2 = resolveEarlyBetStatus({
-          market: bet.comboMarket,
-          pick: bet.comboPick,
-          ...scores,
-        });
-        if (s1 === BetStatus.LOST || s2 === BetStatus.LOST) {
-          status = BetStatus.LOST;
-        }
-        // Combo WON requires all legs confirmed — defer to settleOpenBets on FINISHED
-      } else {
-        status = resolveEarlyBetStatus({
-          market: bet.market,
-          pick: bet.pick,
-          ...scores,
-        });
-      }
+      });
 
       if (status === null) continue;
       await this.prisma.client.bet.update({
@@ -139,8 +111,6 @@ export class BetSettlementService {
         id: true,
         market: true,
         pick: true,
-        comboMarket: true,
-        comboPick: true,
         oddsSnapshot: true,
         betSlipItems: {
           select: {
@@ -190,19 +160,7 @@ export class BetSettlementService {
       for (const bet of bets) {
         let status: BetStatus;
 
-        if (bet.comboMarket !== null && bet.comboPick !== null) {
-          const combo: ComboPick = {
-            market1: bet.market,
-            pick1: bet.pick,
-            market2: bet.comboMarket,
-            pick2: bet.comboPick,
-          };
-          status = resolveComboPickBetStatus(
-            combo,
-            fixture.homeScore,
-            fixture.awayScore,
-          );
-        } else if (bet.market === Market.HALF_TIME_FULL_TIME) {
+        if (bet.market === Market.HALF_TIME_FULL_TIME) {
           status = resolveHalfTimeFullTimeBetStatus({
             pick: bet.pick,
             homeHtScore: fixture.homeHtScore,

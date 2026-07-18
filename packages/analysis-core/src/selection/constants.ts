@@ -21,11 +21,6 @@ export const EV_HARD_CAP = new Decimal("0.90");
 // May 2026 live diagnostic: 3 losses at P=32.6%, 34.4%, 46.8% on EV channel.
 export const EV_MIN_PROBABILITY_THRESHOLD = new Decimal("0.40");
 
-// Minimum directional probability for DRAW-based combo picks (e.g. NUL + MOINS 2.5).
-// Combos with DRAW as primary leg repeatedly cleared the EV floor only via high
-// combo odds while P(draw) was 19-27% — audit 2026-03-21/28 showed 0/3 win rate.
-export const MIN_DRAW_DIRECTION_PROBABILITY = new Decimal("0.28");
-
 // Minimum quality score (EV × deterministicScore × longshotPenalty) required
 // for a pick to be selected, given that the fixture already passed
 // MODEL_SCORE_THRESHOLD. At score=0.60, requires EV >= 0.10 to pass.
@@ -54,12 +49,6 @@ export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal("0.12");
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal("0.20");
 export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
 
-// Combos disabled globally during the single-pick calibration phase: the
-// backtest tracks combos under their primary market (market1), so single vs
-// combo performance cannot be distinguished. Re-enable once all leagues are
-// calibrated and a dedicated COMBO market key exists in backtest reporting.
-export const COMBOS_ENABLED = false;
-
 // Minimum model edge (probability − 1/odds) for a VALUE pick. The EV gate alone
 // is not enough: EV = odds × edge, so an EV floor lets high-odds picks through on
 // a tiny (fake) edge while over-penalising low-odds ones. Settled-pick analysis
@@ -84,12 +73,6 @@ export const SAFE_VALUE_MAX_ODDS = new Decimal("2.20");
 // the engine also evaluates Over 2.5 and Over 3.5 and selects the better
 // qualityScore — fixing the structural Under bias at high expected goals.
 export const SV_UNDER_LAMBDA_COMPARISON_THRESHOLD = 3.0;
-
-// Combo odds pricing uses the raw product as a base, then applies a damped
-// correlation correction from model joint probability.
-export const COMBO_CORRELATION_ALPHA = new Decimal("0.75");
-export const COMBO_CORRELATION_MIN_FACTOR = new Decimal("0.50");
-export const COMBO_CORRELATION_MAX_FACTOR = new Decimal("1.25");
 
 // A line movement above this fraction triggers the VALUE channel to skip the
 // fixture — price signal is unreliable when the market has already corrected.

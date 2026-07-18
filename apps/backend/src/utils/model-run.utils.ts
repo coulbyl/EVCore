@@ -131,8 +131,6 @@ function readEvaPicksFromFeature(
 export type PickSnapshot = {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: string;
   odds: string;
   ev: string;
@@ -249,15 +247,10 @@ function readPickSnapshot(record: Record<string, unknown>): PickSnapshot[] {
     return [];
   }
 
-  const comboMarket = readString(record, 'comboMarket');
-  const comboPick = readString(record, 'comboPick');
-
   return [
     {
       market,
       pick,
-      ...(comboMarket ? { comboMarket } : {}),
-      ...(comboPick ? { comboPick } : {}),
       probability: probability.toFixed(4),
       odds: odds.toFixed(2),
       ev: formatSigned(ev, 4),

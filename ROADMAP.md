@@ -183,8 +183,8 @@
 
 **Picks quotidiens**
 
-- [x] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
-- [x] `COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)
+- [x] ~~Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)~~ — **retiré 2026-07-18**, remplacé par les marchés bookmaker pré-combinés `RESULT_TOTAL_GOALS`/`RESULT_BTTS`
+- [x] ~~`COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)~~ — **retiré 2026-07-18**
 - [x] Sélection `qualityScore = EV × deterministicScore`, garde d'idempotence par fixture
 - [x] Anti-corrélation — max 1 bet par fixture (meilleur qualityScore conservé)
 - [x] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()`

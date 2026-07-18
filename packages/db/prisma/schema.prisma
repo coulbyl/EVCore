@@ -381,16 +381,13 @@ model Bet {
   fixture              Fixture               @relation(fields: [fixtureId], references: [id])
   market               Market
   pick                 String // HOME | DRAW | AWAY | OVER | UNDER | YES | NO | 1X | X2 | 12
-  pickKey              String // canonical key: "<market>|<pick>|<comboMarket?>|<comboPick?>"
+  pickKey              String // canonical key: "<market>|<pick>"
   probEstimated        Decimal               @db.Decimal(5, 4)
   oddsSnapshot         Decimal?              @db.Decimal(6, 3) // null in MVP phase 1 (no prematch odds)
   ev                   Decimal               @db.Decimal(6, 4) // EV = (probEstimated * oddsSnapshot) - 1
   qualityScore         Decimal?              @db.Decimal(6, 4) // ev × deterministicScore — used for pick pool ranking (null for legacy bets)
   stakePct             Decimal               @db.Decimal(5, 4) // 0.01 = 1% bankroll
   status               BetStatus             @default(PENDING)
-  // combo-match fields: null for single-market picks
-  comboMarket          Market?
-  comboPick            String? // secondary pick (e.g. "YES", "OVER")
   // source: MODEL for engine bets, USER for user-placed picks from evaluated picks
   source               BetSource             @default(MODEL)
   userId               String?               @db.Uuid
@@ -729,8 +726,6 @@ model ChannelSelection {
   channelDecision    ChannelDecision @relation(fields: [channelDecisionId], references: [id])
   market             Market
   pick               String
-  comboMarket        Market?
-  comboPick          String?
   probability        Decimal         @db.Decimal(5, 4)
   odds               Decimal?        @db.Decimal(6, 3)
   impliedProbability Decimal?        @db.Decimal(5, 4)
@@ -813,11 +808,6 @@ model CouponProposalLeg {
   canal            StrategyChannel
   market           Market
   pick             String
-  // Same-match combo (DESIGN.md Étape 6) — a single leg covering two correlated
-  // markets of one fixture. Null for a normal single-market leg. When set, the leg
-  // wins only if BOTH (market, pick) and (comboMarket, comboPick) hit.
-  comboMarket      Market?
-  comboPick        String?
   probability      Decimal        @db.Decimal(5, 4)
   oddsSnapshot     Decimal?       @db.Decimal(6, 3)
   signalScore      Decimal        @db.Decimal(5, 4)

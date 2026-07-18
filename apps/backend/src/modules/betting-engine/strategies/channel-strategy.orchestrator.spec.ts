@@ -51,7 +51,6 @@ function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
-    isCombo: false,
     ...overrides,
   };
 }

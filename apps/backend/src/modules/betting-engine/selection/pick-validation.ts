@@ -12,8 +12,6 @@ import type { EvaluatedPick, ViablePick } from '../betting-engine.types';
 export function summarizePick(pick: ViablePick): {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: number;
   odds: number;
   ev: number;
@@ -22,8 +20,6 @@ export function summarizePick(pick: ViablePick): {
   return {
     market: pick.market,
     pick: pick.pick,
-    comboMarket: pick.comboMarket,
-    comboPick: pick.comboPick,
     probability: pick.probability.toNumber(),
     odds: pick.odds.toNumber(),
     ev: pick.ev.toNumber(),
@@ -34,8 +30,6 @@ export function summarizePick(pick: ViablePick): {
 export function summarizePicks(picks: ViablePick[]): {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: number;
   odds: number;
   ev: number;
@@ -47,8 +41,6 @@ export function summarizePicks(picks: ViablePick[]): {
 export function summarizeEvaluatedPicks(picks: EvaluatedPick[]): {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: number;
   odds: number;
   ev: number;

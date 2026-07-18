@@ -35,7 +35,7 @@ Extraction dans `apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.
 | Win to Nil Home                    | 29                    | `WIN_TO_NIL_HOME`                                                 |
 | Win to Nil Away                    | 30                    | `WIN_TO_NIL_AWAY`                                                 |
 | To Win Either Half                 | 39                    | `TO_WIN_EITHER_HALF`                                              |
-| Result/Total Goals                 | 25                    | `RESULT_TOTAL_GOALS` — vraie cote bookmaker, pick composé          |
+| Result/Total Goals                 | 25                    | `RESULT_TOTAL_GOALS` — vraie cote bookmaker, pick composé         |
 | Results/Both Teams Score           | 24                    | `RESULT_BTTS` — vraie cote bookmaker, pick composé                |
 
 Bookmakers priorisés : Pinnacle → Bet365 → Unibet → Marathonbet → Bwin

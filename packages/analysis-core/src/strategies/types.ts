@@ -69,8 +69,6 @@ export type StrategyContext = {
 export type StrategySelection = {
   market: Market;
   pick: string;
-  comboMarket?: Market;
-  comboPick?: string;
   probability: Decimal;
   odds?: Decimal;
   impliedProbability?: Decimal;

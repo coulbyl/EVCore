@@ -181,13 +181,10 @@ describe("computePoissonMarkets", () => {
 
   it("Results/Both Teams Score is consistent with bttsYes/bttsNo and 1X2", () => {
     const m = computePoissonMarkets(1.7, 1.2);
-    const bttsYesAcrossSides = m.resultBtts.HOME_YES!.plus(
-      m.resultBtts.DRAW_YES!,
-    ).plus(m.resultBtts.AWAY_YES!);
-    expect(bttsYesAcrossSides.toNumber()).toBeCloseTo(
-      m.bttsYes.toNumber(),
-      10,
-    );
+    const bttsYesAcrossSides = m.resultBtts
+      .HOME_YES!.plus(m.resultBtts.DRAW_YES!)
+      .plus(m.resultBtts.AWAY_YES!);
+    expect(bttsYesAcrossSides.toNumber()).toBeCloseTo(m.bttsYes.toNumber(), 10);
     const homeMass = m.resultBtts.HOME_YES!.plus(m.resultBtts.HOME_NO!);
     const oneXTwo = poissonProba(1.7, 1.2);
     expect(homeMass.toNumber()).toBeCloseTo(oneXTwo.home.toNumber(), 10);

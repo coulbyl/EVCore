@@ -191,12 +191,7 @@ function toLeg(
     channel: pick.channel,
     market: pick.market,
     pick: pick.pick,
-    pickLabel: pickLabel({
-      market: pick.market,
-      pick: pick.pick,
-      comboMarket: pick.comboMarket,
-      comboPick: pick.comboPick,
-    }),
+    pickLabel: pickLabel({ market: pick.market, pick: pick.pick }),
     probability: pick.probability,
     odds,
     ev: pick.ev,

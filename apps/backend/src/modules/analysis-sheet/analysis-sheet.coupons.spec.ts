@@ -13,8 +13,6 @@ function pick(
     channel: 'SAFE',
     market: 'ONE_X_TWO',
     pick: 'HOME',
-    comboMarket: null,
-    comboPick: null,
     probability: 0.9,
     odds: 1.5,
     ev: 0.35,

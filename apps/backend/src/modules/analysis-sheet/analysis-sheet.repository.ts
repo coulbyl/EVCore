@@ -10,8 +10,6 @@ export type AnalysisSheetSelection = {
   reasonDetails: unknown;
   market: string | null;
   pick: string | null;
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: number | null;
   odds: number | null;
   ev: number | null;
@@ -60,8 +58,6 @@ type RawSelection = {
   reasonDetails: unknown;
   market: string | null;
   pick: string | null;
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: DecimalLike | null;
   odds: DecimalLike | null;
   ev: DecimalLike | null;
@@ -167,8 +163,6 @@ export class AnalysisSheetRepository {
               'reasonDetails',  cd."reasonDetails",
               'market',         cs.market,
               'pick',           cs.pick,
-              'comboMarket',    cs."comboMarket",
-              'comboPick',      cs."comboPick",
               'probability',    cs.probability,
               'odds',           cs.odds,
               'ev',             cs.ev,
@@ -252,8 +246,6 @@ function mapSelection(selection: RawSelection): AnalysisSheetSelection {
     reasonDetails: selection.reasonDetails ?? null,
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket,
-    comboPick: selection.comboPick,
     probability:
       selection.probability != null ? round(selection.probability) : null,
     odds: selection.odds != null ? round(selection.odds) : null,

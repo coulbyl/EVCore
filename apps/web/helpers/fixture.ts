@@ -204,18 +204,7 @@ export function formatDiagnosticPickForDisplay(
 }
 
 export function formatCombinedPickForDisplay(
-  snapshot: Pick<
-    FixturePickSnapshot,
-    "market" | "pick" | "comboMarket" | "comboPick"
-  >,
+  snapshot: Pick<FixturePickSnapshot, "market" | "pick">,
 ): string {
-  const primary = formatDiagnosticPickForDisplay(
-    snapshot.market,
-    snapshot.pick,
-  );
-  if (!snapshot.comboMarket || !snapshot.comboPick) {
-    return primary;
-  }
-
-  return `${primary} + ${formatDiagnosticPickForDisplay(snapshot.comboMarket, snapshot.comboPick)}`;
+  return formatDiagnosticPickForDisplay(snapshot.market, snapshot.pick);
 }

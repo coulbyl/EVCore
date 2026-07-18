@@ -326,7 +326,6 @@ async function main() {
   const settledSelections = await prisma.channelSelection.findMany({
     where: {
       result: { in: ["WON", "LOST"] },
-      comboMarket: null,
     },
     select: {
       id: true,

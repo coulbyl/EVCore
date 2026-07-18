@@ -38,8 +38,6 @@ export type AnalysisSheetJsonPick = {
   channel: string;
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: number;
   odds: number | null;
   ev: number;
@@ -197,8 +195,6 @@ function toJsonFixture(
       channel: s.channel,
       market: s.market!,
       pick: s.pick!,
-      comboMarket: s.comboMarket,
-      comboPick: s.comboPick,
       probability: s.probability ?? 0,
       odds: s.odds,
       ev: s.ev ?? 0,
@@ -735,8 +731,6 @@ export function buildTxtSheet(
         const label = pickLabel({
           market: o.market,
           pick: o.pick,
-          comboMarket: null,
-          comboPick: null,
         });
         w(
           `    Offender [${o.channel}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
@@ -766,8 +760,6 @@ export function buildTxtSheet(
       const label = pickLabel({
         market: pick.market,
         pick: pick.pick,
-        comboMarket: pick.comboMarket,
-        comboPick: pick.comboPick,
       });
       const odds = pick.odds !== null ? pick.odds.toFixed(2) : '—';
       const qs =

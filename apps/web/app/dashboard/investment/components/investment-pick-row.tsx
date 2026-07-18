@@ -38,8 +38,6 @@ export function InvestmentPickRow({
     market: pick.market,
     pick: pick.pick,
     odds: String(pick.odds),
-    comboMarket: pick.comboMarket ?? undefined,
-    comboPick: pick.comboPick ?? undefined,
     ev: pick.ev === null ? null : String(pick.ev),
     canal: pick.channel,
     stakeOverride: null,

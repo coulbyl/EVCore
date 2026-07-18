@@ -1,21 +1,11 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
-import {
-  HALF_TIME_FULL_TIME_PICKS,
-  computeJointProbability,
-} from "../probability";
+import { HALF_TIME_FULL_TIME_PICKS } from "../probability";
 import { calculateEV as calcEV } from "../ev/ev-math";
+import { buildBetPickKey } from "./combo-pricing";
 import {
-  buildBetPickKey,
-  getPickOddsFromSnapshot,
-  estimateComboOdds,
-  COMBO_WHITELIST,
-} from "./combo-pricing";
-import {
-  COMBOS_ENABLED,
   EV_HARD_CAP,
   FALLBACK_MIN_QUALITY_SCORE,
-  MAX_SELECTION_ODDS,
   SAFE_VALUE_MAX_ODDS,
   SAFE_VALUE_MIN_EV,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
@@ -63,7 +53,6 @@ export function selectSafeValuePick(
   const svMinOdds = config.svMinOdds;
 
   const isEligibleSvPick = (pick: EvaluatedPick): boolean => {
-    if (pick.isCombo) return false;
     if (!safeValueMarkets.has(pick.market)) return false;
     if (pick.probability.lessThan(svMinProbability)) return false;
     if (pick.ev.lessThan(SAFE_VALUE_MIN_EV)) return false;
@@ -71,12 +60,7 @@ export function selectSafeValuePick(
     if (pick.odds.lessThan(svMinOdds)) return false;
     if (pick.odds.greaterThan(SAFE_VALUE_MAX_ODDS)) return false;
     if (suspendedMarkets.has(pick.market)) return false;
-    const pickKey = buildBetPickKey({
-      market: pick.market,
-      pick: pick.pick,
-      comboMarket: pick.comboMarket ?? null,
-      comboPick: pick.comboPick ?? null,
-    });
+    const pickKey = buildBetPickKey({ market: pick.market, pick: pick.pick });
     if (excludedPickKey !== null && pickKey === excludedPickKey) return false;
     return true;
   };
@@ -104,7 +88,6 @@ export function selectSafeValuePick(
     const overCounterparts = evaluatedPicks.filter(
       (p): p is ViablePick =>
         p.rejectionReason === undefined &&
-        !p.isCombo &&
         p.market === Market.OVER_UNDER &&
         (p.pick === "OVER" || p.pick === "OVER_3_5") &&
         p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
@@ -116,12 +99,8 @@ export function selectSafeValuePick(
         p.odds.lessThanOrEqualTo(SAFE_VALUE_MAX_ODDS) &&
         !suspendedMarkets.has(p.market) &&
         (excludedPickKey === null ||
-          buildBetPickKey({
-            market: p.market,
-            pick: p.pick,
-            comboMarket: null,
-            comboPick: null,
-          }) !== excludedPickKey),
+          buildBetPickKey({ market: p.market, pick: p.pick }) !==
+            excludedPickKey),
     );
 
     const bestOver =
@@ -220,7 +199,6 @@ export function listEvaluatedOneXTwoPicks(
         "HOME",
         odds.homeOdds,
       ),
-      isCombo: false,
     },
     {
       market: Market.ONE_X_TWO,
@@ -235,7 +213,6 @@ export function listEvaluatedOneXTwoPicks(
         "DRAW",
         odds.drawOdds,
       ),
-      isCombo: false,
     },
     {
       market: Market.ONE_X_TWO,
@@ -250,7 +227,6 @@ export function listEvaluatedOneXTwoPicks(
         "AWAY",
         odds.awayOdds,
       ),
-      isCombo: false,
     },
   ];
 
@@ -320,7 +296,6 @@ export function listEvaluatedPicks(
         c.pick,
         c.pickOdds,
       ),
-      isCombo: false,
     });
   }
 
@@ -388,7 +363,6 @@ export function listEvaluatedPicks(
         candidate.pick,
         candidate.odds,
       ),
-      isCombo: false,
     });
   }
 
@@ -408,7 +382,6 @@ export function listEvaluatedPicks(
         "YES",
         odds.bttsYesOdds,
       ),
-      isCombo: false,
     });
   }
   if (odds.bttsNoOdds !== null) {
@@ -426,7 +399,6 @@ export function listEvaluatedPicks(
         "NO",
         odds.bttsNoOdds,
       ),
-      isCombo: false,
     });
   }
 
@@ -453,7 +425,6 @@ export function listEvaluatedPicks(
           pick,
           dcOdds,
         ),
-        isCombo: false,
       });
     }
   }
@@ -478,7 +449,6 @@ export function listEvaluatedPicks(
         pick,
         pickOdds,
       ),
-      isCombo: false,
     });
   }
 
@@ -521,7 +491,6 @@ export function listEvaluatedPicks(
         candidate.pick,
         pickOdds,
       ),
-      isCombo: false,
     });
   }
 
@@ -563,54 +532,6 @@ export function listEvaluatedPicks(
           candidate.pick,
           candidate.pickOdds,
         ),
-        isCombo: false,
-      });
-    }
-  }
-
-  // Combos from COMBO_WHITELIST. Disabled globally during single-pick calibration
-  // phase (COMBOS_ENABLED = false). Also disabled per-fixture when lambdas collapse
-  // to the floor (Poisson scoreline mass becomes unreliable).
-  if (COMBOS_ENABLED && !lambdaFloorHit) {
-    for (const combo of COMBO_WHITELIST) {
-      const p1Odds = getPickOddsFromSnapshot(combo.market1, combo.pick1, odds);
-      const p2Odds = getPickOddsFromSnapshot(combo.market2, combo.pick2, odds);
-      if (p1Odds === null || p2Odds === null) continue;
-      if (
-        p1Odds.greaterThan(MAX_SELECTION_ODDS) ||
-        p2Odds.greaterThan(MAX_SELECTION_ODDS)
-      )
-        continue;
-
-      const jointProbability = computeJointProbability(
-        combo,
-        distHome,
-        distAway,
-      );
-      const oddsCombo = estimateComboOdds({
-        combo,
-        probabilities,
-        jointProbability,
-        odds1: p1Odds,
-        odds2: p2Odds,
-      });
-      const ev = calcEV(jointProbability, oddsCombo);
-      candidates.push({
-        market: combo.market1,
-        pick: combo.pick1,
-        comboMarket: combo.market2,
-        comboPick: combo.pick2,
-        probability: jointProbability,
-        odds: oddsCombo,
-        ev,
-        qualityScore: buildQualityScore(
-          ev,
-          deterministicScore,
-          combo.market1,
-          combo.pick1,
-          oddsCombo,
-        ),
-        isCombo: true,
       });
     }
   }

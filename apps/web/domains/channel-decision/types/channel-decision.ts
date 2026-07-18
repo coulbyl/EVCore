@@ -47,8 +47,6 @@ export type ConsensusReasonDetails = {
 export type ChannelSelectionDto = {
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: number;
   odds: number | null;
   impliedProbability: number | null;

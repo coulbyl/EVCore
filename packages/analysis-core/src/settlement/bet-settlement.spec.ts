@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BetStatus, Market } from "../types";
 import {
-  resolveComboPickBetStatus,
   resolveEarlyBetStatus,
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
@@ -27,21 +26,6 @@ describe("resolvePickBetStatus", () => {
     expect(resolvePickBetStatus("2:1", 2, 1)).toBe(BetStatus.WON);
     expect(resolvePickBetStatus("1:0", 2, 1)).toBe(BetStatus.LOST);
     expect(resolvePickBetStatus("0:0", 0, 0)).toBe(BetStatus.WON);
-  });
-});
-
-describe("resolveComboPickBetStatus", () => {
-  const combo = {
-    market1: Market.ONE_X_TWO,
-    pick1: "HOME",
-    market2: Market.BTTS,
-    pick2: "YES",
-  };
-
-  it("WON only when both legs hit", () => {
-    expect(resolveComboPickBetStatus(combo, 2, 1)).toBe(BetStatus.WON);
-    expect(resolveComboPickBetStatus(combo, 1, 0)).toBe(BetStatus.LOST); // BTTS NO
-    expect(resolveComboPickBetStatus(combo, null, 1)).toBe(BetStatus.VOID);
   });
 });
 

@@ -91,10 +91,8 @@ async function main(): Promise<void> {
   const prisma = app.get(PrismaService);
   const engine = app.get(BettingEngineService);
 
-  // Only single-market selections with no price yet. Combo selections are left
-  // to a full engine re-run (their odds need combo-aware pricing).
   const selections = await prisma.client.channelSelection.findMany({
-    where: { odds: null, comboMarket: null },
+    where: { odds: null },
     select: {
       id: true,
       market: true,

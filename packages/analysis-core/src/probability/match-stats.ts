@@ -191,9 +191,10 @@ export function rebalanceThreeWayProbabilities(input: {
       const side = pick.split("_")[0] as keyof typeof sideProbability;
       const line = pick.replace(`${side}_OVER_`, "");
       const underPick = `${side}_UNDER_${line}`;
-      const underValue = probabilities.resultTotalGoals[
-        underPick as keyof typeof probabilities.resultTotalGoals
-      ];
+      const underValue =
+        probabilities.resultTotalGoals[
+          underPick as keyof typeof probabilities.resultTotalGoals
+        ];
       if (underValue === undefined) return [pick, under];
       return [pick, Decimal.max(0, sideProbability[side].minus(underValue))];
     }),

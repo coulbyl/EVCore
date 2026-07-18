@@ -135,12 +135,7 @@ export class CouponSettlementService {
         homeHtScore: fixture.homeHtScore,
         awayHtScore: fixture.awayHtScore,
       };
-      let isCorrect = resolveIsCorrect(leg.market, leg.pick, scores);
-      // Same-match combo (Étape 6): wins only if BOTH selections hit. Resolve the
-      // secondary market only when the primary already won (early-fail otherwise).
-      if (isCorrect === true && leg.comboMarket && leg.comboPick) {
-        isCorrect = resolveIsCorrect(leg.comboMarket, leg.comboPick, scores);
-      }
+      const isCorrect = resolveIsCorrect(leg.market, leg.pick, scores);
 
       if (isCorrect === null) {
         allResolved = false;

@@ -80,17 +80,14 @@ export type FullOddsSnapshot = {
   >;
 };
 
-// Best pick identified by the betting engine across all markets (single or combo).
+// Best pick identified by the betting engine across all markets.
 export type ViablePick = {
   market: Market;
   pick: string;
-  comboMarket?: Market;
-  comboPick?: string;
   probability: Decimal;
   odds: Decimal;
   ev: Decimal;
   qualityScore: Decimal; // ev × deterministicScore
-  isCombo: boolean;
 };
 
 export type EvaluatedPick = ViablePick & {

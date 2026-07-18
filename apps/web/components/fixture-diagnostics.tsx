@@ -92,8 +92,6 @@ function PlacePickButton({
     fixtureId,
     market: snap.market,
     pick: snap.pick,
-    comboMarket: snap.comboMarket,
-    comboPick: snap.comboPick,
   });
   const inSlip = isInSlip(key);
   const disabled = alreadyInUserTicket && !inSlip;
@@ -251,8 +249,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
       market: snap.market,
       pick: snap.pick,
       odds: snap.odds,
-      comboMarket: snap.comboMarket,
-      comboPick: snap.comboPick,
       ev: snap.ev,
       stakeOverride: null,
     };
@@ -311,8 +307,6 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
             {formatCombinedPickForDisplay({
               market: mr.market,
               pick: mr.pick,
-              comboMarket: mr.comboMarket ?? undefined,
-              comboPick: mr.comboPick ?? undefined,
             })}
           </span>
           {mr.ev && (
@@ -456,7 +450,7 @@ export function FixtureDiagnostics({ row }: { row: FixtureRow }) {
             <div className="flex flex-col gap-2">
               {mr.evaluatedPicks.map((snap) => (
                 <EvaluatedPickItem
-                  key={`${snap.market}:${snap.pick}:${snap.comboMarket ?? ""}:${snap.comboPick ?? ""}`}
+                  key={`${snap.market}:${snap.pick}`}
                   snap={snap}
                   fixtureId={row.fixtureId}
                   alreadyInUserTicket={alreadyInUserTicket}

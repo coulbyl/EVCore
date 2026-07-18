@@ -25,8 +25,6 @@ export type InvestmentPick = {
   channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   // Calibrated (bias-corrected) probability — drives probabilityBucket and
   // the ranking. modelProbability is the raw, uncorrected model output.
   probability: number;

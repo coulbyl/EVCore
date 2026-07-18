@@ -11,7 +11,6 @@ import {
   getPickEvFloor,
   getPickMaxSelectionOdds,
   getPickMinSelectionOdds,
-  MIN_DRAW_DIRECTION_PROBABILITY,
 } from './ev.constants';
 
 describe('getLeagueEvThreshold', () => {
@@ -54,15 +53,6 @@ describe('getLeagueEvThreshold', () => {
   it('returns EV_THRESHOLD for unknown competition code', () => {
     expect(getLeagueEvThreshold('UNKNOWN').toNumber()).toBe(
       EV_THRESHOLD.toNumber(),
-    );
-  });
-});
-
-describe('MIN_DRAW_DIRECTION_PROBABILITY', () => {
-  it('is above 0 and below MIN_PICK_DIRECTION_PROBABILITY (0.45)', () => {
-    expect(MIN_DRAW_DIRECTION_PROBABILITY.greaterThan(0)).toBe(true);
-    expect(MIN_DRAW_DIRECTION_PROBABILITY.lessThan(new Decimal('0.45'))).toBe(
-      true,
     );
   });
 });

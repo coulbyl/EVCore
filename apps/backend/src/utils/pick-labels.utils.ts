@@ -59,18 +59,8 @@ export function singlePickLabel(market: string, pick: string): string {
   return `${market}/${pick}`;
 }
 
-export function pickLabel(input: {
-  market: string;
-  pick: string;
-  comboMarket?: string | null;
-  comboPick?: string | null;
-}): string {
-  const { market, pick, comboMarket, comboPick } = input;
-  const base = singlePickLabel(market, pick);
-  if (comboMarket && comboPick) {
-    return `${base} + ${singlePickLabel(comboMarket, comboPick)}`;
-  }
-  return base;
+export function pickLabel(input: { market: string; pick: string }): string {
+  return singlePickLabel(input.market, input.pick);
 }
 
 export function resultLabel(result: string | null): string {

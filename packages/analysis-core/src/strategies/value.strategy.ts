@@ -87,8 +87,6 @@ export class ValueStrategy implements ChannelStrategy {
         {
           market: best.market,
           pick: best.pick,
-          comboMarket: best.comboMarket,
-          comboPick: best.comboPick,
           probability: best.probability,
           odds: best.odds,
           ev: best.ev,

@@ -237,8 +237,6 @@ function SlipButton({
     scheduledAt: slipContext.scheduledAt,
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket ?? undefined,
-    comboPick: selection.comboPick ?? undefined,
     odds: selection.odds !== null ? String(selection.odds) : null,
     ev:
       selection.ev !== null

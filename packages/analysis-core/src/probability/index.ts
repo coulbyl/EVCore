@@ -13,7 +13,6 @@ export {
   buildPoissonDistributions,
   computeCorrectScoreMatrix,
 } from "./poisson";
-export { type ComboPick, computeJointProbability } from "./combo";
 export {
   type OverUnderShrinkageConfig,
   OU_SHRINKAGE_CONFIG,

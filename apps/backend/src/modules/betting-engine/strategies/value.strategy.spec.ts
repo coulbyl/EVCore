@@ -52,7 +52,6 @@ function makePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
     odds: new Decimal('1.80'),
     ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.11'),
-    isCombo: false,
     ...overrides,
   };
 }

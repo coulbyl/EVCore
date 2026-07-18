@@ -1,5 +1,4 @@
 export {
-  resolveComboPickBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolveFirstHalfBetStatus,
   resolveEarlyBetStatus,

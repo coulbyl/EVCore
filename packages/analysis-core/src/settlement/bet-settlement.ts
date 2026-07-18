@@ -1,6 +1,6 @@
 import { BetStatus, Market } from "../types";
 import { outcomeFromScores } from "../probability/markets";
-import { PICK_CONDITIONS, type ComboPick } from "../probability/combo";
+import { PICK_CONDITIONS } from "../probability/combo";
 
 type ResolveHalfTimeFullTimeInput = {
   pick: string;
@@ -18,18 +18,6 @@ type EarlyBetStatusInput = {
   homeHtScore: number | null;
   awayHtScore: number | null;
 };
-
-// Resolve the outcome of a combo-match bet against actual scores.
-export function resolveComboPickBetStatus(
-  combo: ComboPick,
-  homeScore: number | null,
-  awayScore: number | null,
-): BetStatus {
-  if (homeScore === null || awayScore === null) return BetStatus.VOID;
-  const ok1 = PICK_CONDITIONS[combo.pick1]?.(homeScore, awayScore) ?? false;
-  const ok2 = PICK_CONDITIONS[combo.pick2]?.(homeScore, awayScore) ?? false;
-  return ok1 && ok2 ? BetStatus.WON : BetStatus.LOST;
-}
 
 // Resolve the outcome of a HALF_TIME_FULL_TIME bet against half-time and full-time scores.
 export function resolveHalfTimeFullTimeBetStatus(

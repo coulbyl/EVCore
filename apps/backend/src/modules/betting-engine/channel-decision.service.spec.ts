@@ -49,7 +49,6 @@ function richContext(): StrategyContext {
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
-    isCombo: false,
   };
   return buildStrategyContext({
     fixture: {
@@ -171,15 +170,11 @@ describe('ChannelDecisionService', () => {
           id: 's1',
           market: Market.ONE_X_TWO,
           pick: 'HOME',
-          comboMarket: null,
-          comboPick: null,
         },
         {
           id: 's2',
           market: Market.ONE_X_TWO,
           pick: 'AWAY',
-          comboMarket: null,
-          comboPick: null,
         },
       ]);
       const applySelectionResults = vi.fn().mockResolvedValue(undefined);
@@ -212,16 +207,12 @@ describe('ChannelDecisionService', () => {
           id: 'btts',
           market: Market.BTTS,
           pick: 'YES',
-          comboMarket: null,
-          comboPick: null,
         },
         // 1X2 never early-settles → skipped
         {
           id: 'x12',
           market: Market.ONE_X_TWO,
           pick: 'HOME',
-          comboMarket: null,
-          comboPick: null,
         },
       ]);
       const applySelectionResults = vi.fn().mockResolvedValue(undefined);
@@ -277,8 +268,6 @@ describe('ChannelDecisionService', () => {
             {
               market: Market.ONE_X_TWO,
               pick: 'HOME',
-              comboMarket: null,
-              comboPick: null,
               probability: new Decimal('0.6'),
               odds: new Decimal('1.9'),
               impliedProbability: null,
