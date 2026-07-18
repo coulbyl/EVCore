@@ -321,12 +321,23 @@
       marchés/picks au-dessus d'un seuil par ligue (pattern `BttsStrategy`).
 - [x] `TeamTotalStrategy` : meilleur (équipe × ligne × side) par EV (pattern
       `GoalsStrategy`, doublé sur la dimension équipe).
-- [ ] **Désactivés dans toutes les ligues** — aucun backtest encore mené ;
-      seuils placeholder dans `tuning.constants.ts`, à peaufiner via la brique
-      de backtest existante avant toute activation (même méthodologie que
-      GOALS).
-- [x] Migration Prisma `StrategyChannel` +3 valeurs — écrite, **non
-      appliquée** (CLI utilisateur).
+- [x] Migration Prisma `StrategyChannel` +3 valeurs — écrite et **appliquée**.
+- [x] **CLEAN_SHEET / WIN_EITHER_HALF passés en OBSERVATION** (2026-07-18,
+      toutes les ligues actives avec n ≥ 50 fixtures settled) : aucune cote
+      historique n'existe pour ces marchés (stub vide dans
+      `odds-historical-import.worker.ts` ; The Odds API 422 même sur BTTS/DNB
+      — pas de fallback possible), donc pas de ROI backtestable. Seuils
+      dérivés directement des scores FT/HT déjà en base (taux de base par
+      ligue − marge 0.05), même méthodologie que `GOALS_CONFIG`. Jamais misé
+      (observation seule), accumulation forward via la sync PREMATCH
+      démarrée le même jour.
+- [ ] **TEAM_TOTAL reste désactivé** dans toutes les ligues — pas de brique
+      de sweep dédiée (contrairement à GOALS/CLEAN_SHEET/WIN_EITHER_HALF),
+      pas de dérivation base-rate faite. À faire dans un prochain passage.
+- [x] `backtest.repository.ts`/`tuning.metrics.ts` étendus : fetch des cotes
+      CLEAN_SHEET_HOME/AWAY + TO_WIN_EITHER_HALF, sweep par seuil prêt dès
+      que la sync PREMATCH aura accumulé assez de volume forward pour un
+      vrai ROI (`POST /backtest/tuning`, déjà branché via `TUNING_CHANNELS`).
 
 ### Web UI
 

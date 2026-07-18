@@ -148,10 +148,20 @@ describe('decideCleanSheet (pure)', () => {
 describe('CleanSheetStrategy (class, prod config)', () => {
   const strategy = new CleanSheetStrategy();
 
-  it('is DISABLED for every league (no backtest yet)', () => {
+  // BL1 runs in OBSERVATION mode (threshold 0.2, derived from its real
+  // clean-sheet base rate — see CLEAN_SHEET_CONFIG) — no backtested edge yet.
+  it('is SELECTED for an active league in observation mode (BL1)', () => {
     expect(
       strategy.evaluate(makeContext(0.7, 0.7, { competitionCode: 'BL1' }))
         .status,
+    ).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+  });
+
+  it('is DISABLED for a league with no derived config', () => {
+    expect(
+      strategy.evaluate(
+        makeContext(0.7, 0.7, { competitionCode: 'UNKNOWN_LEAGUE' }),
+      ).status,
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
   });
 

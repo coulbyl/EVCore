@@ -115,7 +115,7 @@ Le moteur expose deux familles de canaux :
 | **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
 | **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
 
-Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI) mais **désactivés dans toutes les ligues** en attendant un premier passage de backtest qui fixera les seuils réels (même méthodologie que GOALS).
+Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — CLEAN_SHEET et WIN_EITHER_HALF tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS) ; TEAM_TOTAL reste **désactivé partout** (pas encore de dérivation faite).
 
 ---
 

@@ -83,6 +83,10 @@ function makeContext(
       under35: new Decimal('0.82'),
       over45: new Decimal('0.07'),
       under45: new Decimal('0.93'),
+      cleanSheetHome: new Decimal('0.30'),
+      cleanSheetAway: new Decimal('0.20'),
+      winEitherHalfHome: new Decimal('0.55'),
+      winEitherHalfAway: new Decimal('0.45'),
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.

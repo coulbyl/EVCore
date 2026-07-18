@@ -155,10 +155,20 @@ describe('decideWinEitherHalf (pure)', () => {
 describe('WinEitherHalfStrategy (class, prod config)', () => {
   const strategy = new WinEitherHalfStrategy();
 
-  it('is DISABLED for every league (no backtest yet)', () => {
+  // BL1 runs in OBSERVATION mode (threshold 0.52, derived from its real
+  // wins-a-half base rate — see WIN_EITHER_HALF_CONFIG) — no backtested edge yet.
+  it('is SELECTED for an active league in observation mode (BL1)', () => {
     expect(
       strategy.evaluate(makeContext(0.8, 0.8, { competitionCode: 'BL1' }))
         .status,
+    ).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+  });
+
+  it('is DISABLED for a league with no derived config', () => {
+    expect(
+      strategy.evaluate(
+        makeContext(0.8, 0.8, { competitionCode: 'UNKNOWN_LEAGUE' }),
+      ).status,
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
   });
 
