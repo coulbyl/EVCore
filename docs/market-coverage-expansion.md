@@ -27,6 +27,14 @@ Extraction dans `apps/backend/src/modules/etl/workers/odds-prematch-sync.worker.
 | HT/FT Double                       | 7                     | `HALF_TIME_FULL_TIME`                                             |
 | First Half Winner                  | 13                    | `FIRST_HALF_WINNER`                                               |
 | Exact Score                        | 10                    | `CORRECT_SCORE` — observation seule, pas consommé par le modèle   |
+| Draw No Bet                        | 2                     | `DRAW_NO_BET`                                                     |
+| Team Total Home                    | 16                    | `TEAM_TOTAL_HOME`                                                 |
+| Team Total Away                    | 17                    | `TEAM_TOTAL_AWAY`                                                 |
+| Clean Sheet Home                   | 27                    | `CLEAN_SHEET_HOME`                                                |
+| Clean Sheet Away                   | 28                    | `CLEAN_SHEET_AWAY`                                                |
+| Win to Nil Home                    | 29                    | `WIN_TO_NIL_HOME`                                                 |
+| Win to Nil Away                    | 30                    | `WIN_TO_NIL_AWAY`                                                 |
+| To Win Either Half                 | 39                    | `TO_WIN_EITHER_HALF`                                              |
 
 Bookmakers priorisés : Pinnacle → Bet365 → Unibet → Marathonbet → Bwin
 (`API_FOOTBALL_BOOKMAKERS`).
@@ -47,14 +55,22 @@ total selon que la surperformance offensive vient d'une seule équipe).
 
 ## Niveau 2 — très utiles
 
-- [ ] **Clean Sheet Home/Away** — `bet.id = 27` / `28`, values `Yes`/`No`.
-- [ ] **Win to Nil Home/Away** — `bet.id = 29` / `30`, values `Yes`/`No`.
-      Non garanti disponible sur toutes les fixtures (absent chez Bet365 sur
-      l'échantillon testé le 2026-07-18) — prévoir un extracteur tolérant à
-      l'absence, comme pour BTTS/DC actuellement.
-- [ ] **To Win Either Half** — `bet.id = 39` ("gagne au moins une mi-temps"
-      du doc d'analyse). Disponibilité à revérifier sur un échantillon plus
-      large de ligues avant de committer dessus.
+- [x] **Clean Sheet Home/Away** — `bet.id = 27` / `28`, values `Yes`/`No`.
+      Couverture réelle : Bet365 uniquement (8/10 matchs testés), absent
+      chez Pinnacle/Unibet/Marathonbet — capté via la boucle
+      `SECONDARY_IDS` existante.
+- [x] **Win to Nil Home/Away** — `bet.id = 29` / `30`, values `Yes`/`No`.
+      Couverture réelle : Marathonbet uniquement (10/10), absent chez
+      Bet365/Pinnacle/Unibet — capté via `SECONDARY_IDS`.
+- [x] **To Win Either Half** — `bet.id = 39` ("gagne au moins une mi-temps"
+      du doc d'analyse). Confirmé marché à 2 issues (`Home`/`Away`
+      seulement, jamais de 3e valeur) sur tout l'échantillon testé le
+      2026-07-18. Nécessite `secondHalfWinner` (nouveau — le modèle
+      n'exposait que le vainqueur de la 1ère mi-temps) combiné à
+      `firstHalfWinner` par inclusion-exclusion ; `winEitherHalfHome` et
+      `winEitherHalfAway` ne sont **pas** mutuellement exclusifs (un match
+      1-0 en faveur du domicile en 1ère mi-temps puis 0-1 en faveur de
+      l'extérieur en 2e satisfait les deux simultanément).
 
 ## Niveau 2.b — combos pré-calculés (à avoir, dérivables du Poisson existant)
 
