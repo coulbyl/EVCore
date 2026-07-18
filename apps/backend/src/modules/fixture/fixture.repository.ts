@@ -129,6 +129,27 @@ type HasOneXTwoOddsSnapshotInput = {
   snapshotAt: Date;
 };
 
+// Sparse map: only lines the bookmaker actually prices are present.
+type TeamTotalOddsInput = Partial<
+  Record<
+    | 'OVER_0_5'
+    | 'UNDER_0_5'
+    | 'OVER_1_5'
+    | 'UNDER_1_5'
+    | 'OVER_2_5'
+    | 'UNDER_2_5'
+    | 'OVER_3_5'
+    | 'UNDER_3_5'
+    | 'OVER_4_5'
+    | 'UNDER_4_5'
+    | 'OVER_5_5'
+    | 'UNDER_5_5'
+    | 'OVER_6_5'
+    | 'UNDER_6_5',
+    number
+  >
+>;
+
 export type UpsertOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -158,6 +179,9 @@ export type UpsertOddsSnapshotInput = {
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   correctScoreOdds: Record<string, number>;
+  drawNoBetOdds: { home: number; away: number } | null;
+  teamTotalHomeOdds: TeamTotalOddsInput;
+  teamTotalAwayOdds: TeamTotalOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -187,6 +211,9 @@ export type UpsertSecondaryMarketOddsInput = {
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   correctScoreOdds: Record<string, number>;
+  drawNoBetOdds: { home: number; away: number } | null;
+  teamTotalHomeOdds: TeamTotalOddsInput;
+  teamTotalAwayOdds: TeamTotalOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -613,7 +640,10 @@ export class FixtureRepository {
       | 'OVER_UNDER_HT'
       | 'FIRST_HALF_WINNER'
       | 'DOUBLE_CHANCE'
-      | 'CORRECT_SCORE',
+      | 'CORRECT_SCORE'
+      | 'DRAW_NO_BET'
+      | 'TEAM_TOTAL_HOME'
+      | 'TEAM_TOTAL_AWAY',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -732,6 +762,28 @@ export class FixtureRepository {
       ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
       ),
+      ...(data.drawNoBetOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'HOME',
+              data.drawNoBetOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'AWAY',
+              data.drawNoBetOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.teamTotalHomeOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_HOME', pick, odds ?? null),
+      ),
+      ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
+      ),
     ]);
 
     return oneXTwoId;
@@ -806,6 +858,28 @@ export class FixtureRepository {
         : []),
       ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
+      ),
+      ...(data.drawNoBetOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'HOME',
+              data.drawNoBetOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'AWAY',
+              data.drawNoBetOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.teamTotalHomeOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_HOME', pick, odds ?? null),
+      ),
+      ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
       ),
     ]);
   }

@@ -55,6 +55,42 @@ describe("computePoissonMarkets", () => {
     // …and well below the naive λ/2 value (≈ 0.407) that caused the losing HT picks.
     expect(htOver15).toBeLessThan(0.4);
   });
+
+  it("Draw No Bet home+away sums to 1 and matches the non-draw-renormalized formula", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.dnbHome.plus(m.dnbAway).toNumber()).toBeCloseTo(1, 10);
+
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const expectedDnbHome = oneXTwo.home.div(oneXTwo.home.plus(oneXTwo.away));
+    expect(m.dnbHome.toNumber()).toBeCloseTo(expectedDnbHome.toNumber(), 10);
+  });
+
+  it("Draw No Bet renormalizes above the raw 1X2 probability for the same side", () => {
+    // Dividing by the non-draw mass (< 1, since a draw carries positive
+    // probability) always pushes dnbHome/dnbAway above the raw 1X2 value for
+    // that side — this is what makes DNB distinct from a raw two-way split.
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.dnbHome.toNumber()).toBeGreaterThan(oneXTwo.home.toNumber());
+    expect(m.dnbAway.toNumber()).toBeGreaterThan(oneXTwo.away.toNumber());
+  });
+
+  it("Team Total marginals: Over/Under for the same line sum to 1, independent per side", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(
+      m.teamTotalHome.OVER_1_5!.plus(m.teamTotalHome.UNDER_1_5!).toNumber(),
+    ).toBeCloseTo(1, 10);
+    expect(
+      m.teamTotalAway.OVER_0_5!.plus(m.teamTotalAway.UNDER_0_5!).toNumber(),
+    ).toBeCloseTo(1, 10);
+  });
+
+  it("Team Total home side has higher Over probability than away when lambda is higher", () => {
+    const m = computePoissonMarkets(2.2, 0.9);
+    expect(m.teamTotalHome.OVER_1_5!.toNumber()).toBeGreaterThan(
+      m.teamTotalAway.OVER_1_5!.toNumber(),
+    );
+  });
 });
 
 describe("computeCorrectScoreMatrix", () => {

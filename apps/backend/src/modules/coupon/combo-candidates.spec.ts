@@ -25,6 +25,9 @@ function snapshot(): FullOddsSnapshot {
       X2: new Decimal('2.40'),
       '12': new Decimal('1.30'),
     },
+    drawNoBetOdds: null,
+    teamTotalHomeOdds: {},
+    teamTotalAwayOdds: {},
   };
 }
 

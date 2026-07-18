@@ -194,6 +194,9 @@ export class OddsPrematchSyncWorker extends WorkerHost {
           firstHalfWinnerOdds: additionalOdds.firstHalfWinnerOdds,
           doubleChanceOdds: additionalOdds.doubleChanceOdds,
           correctScoreOdds: additionalOdds.correctScoreOdds,
+          drawNoBetOdds: additionalOdds.drawNoBetOdds,
+          teamTotalHomeOdds: additionalOdds.teamTotalHomeOdds,
+          teamTotalAwayOdds: additionalOdds.teamTotalAwayOdds,
         });
 
         // Store secondary market odds from all other priority bookmakers.
@@ -220,7 +223,10 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             Object.keys(secondary.ouHtOdds).length > 0 ||
             secondary.firstHalfWinnerOdds !== null ||
             secondary.doubleChanceOdds !== null ||
-            Object.keys(secondary.correctScoreOdds).length > 0;
+            Object.keys(secondary.correctScoreOdds).length > 0 ||
+            secondary.drawNoBetOdds !== null ||
+            Object.keys(secondary.teamTotalHomeOdds).length > 0 ||
+            Object.keys(secondary.teamTotalAwayOdds).length > 0;
           if (!hasData) continue;
           await this.fixtureService.upsertSecondaryMarketOdds({
             fixtureId,
@@ -234,6 +240,9 @@ export class OddsPrematchSyncWorker extends WorkerHost {
             firstHalfWinnerOdds: secondary.firstHalfWinnerOdds,
             doubleChanceOdds: secondary.doubleChanceOdds,
             correctScoreOdds: secondary.correctScoreOdds,
+            drawNoBetOdds: secondary.drawNoBetOdds,
+            teamTotalHomeOdds: secondary.teamTotalHomeOdds,
+            teamTotalAwayOdds: secondary.teamTotalAwayOdds,
           });
         }
       } catch (err) {
@@ -332,7 +341,33 @@ type AdditionalMarketOdds = {
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   // Full-time exact score: scoreline "H:A" → odds. Observation-only market.
   correctScoreOdds: Record<string, number>;
+  // Draw No Bet — API-Football calls this bet "Home/Away" (id 2); it is DNB
+  // (draw refunded), distinct from the true Double Chance market (id 12).
+  drawNoBetOdds: { home: number; away: number } | null;
+  teamTotalHomeOdds: TeamTotalOdds;
+  teamTotalAwayOdds: TeamTotalOdds;
 };
+
+// Sparse map: only lines the bookmaker actually prices are present.
+type TeamTotalOdds = Partial<
+  Record<
+    | 'OVER_0_5'
+    | 'UNDER_0_5'
+    | 'OVER_1_5'
+    | 'UNDER_1_5'
+    | 'OVER_2_5'
+    | 'UNDER_2_5'
+    | 'OVER_3_5'
+    | 'UNDER_3_5'
+    | 'OVER_4_5'
+    | 'UNDER_4_5'
+    | 'OVER_5_5'
+    | 'UNDER_5_5'
+    | 'OVER_6_5'
+    | 'UNDER_6_5',
+    number
+  >
+>;
 
 // Resolves the days this run covers: an explicit `date` wins (backfill /
 // tests); otherwise tomorrow through J+horizonDays.
@@ -366,6 +401,9 @@ export function extractAdditionalMarketOdds(
       firstHalfWinnerOdds: null,
       doubleChanceOdds: null,
       correctScoreOdds: {},
+      drawNoBetOdds: null,
+      teamTotalHomeOdds: {},
+      teamTotalAwayOdds: {},
     };
   }
 
@@ -382,6 +420,13 @@ export function extractAdditionalMarketOdds(
   const dcBet = bk.bets.find(
     (b) => b.id === API_FOOTBALL_BET_IDS.DOUBLE_CHANCE,
   );
+  const dnbBet = bk.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.DRAW_NO_BET);
+  const ttHomeBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.TEAM_TOTAL_HOME,
+  );
+  const ttAwayBet = bk.bets.find(
+    (b) => b.id === API_FOOTBALL_BET_IDS.TEAM_TOTAL_AWAY,
+  );
 
   const overUnderOdds = extractOverUnderOdds(ouBet);
   const bttsYesOdds =
@@ -393,6 +438,9 @@ export function extractAdditionalMarketOdds(
   const doubleChanceOdds = extractDoubleChanceOdds(dcBet);
   const csBet = bk.bets.find((b) => b.id === API_FOOTBALL_BET_IDS.EXACT_SCORE);
   const correctScoreOdds = extractCorrectScoreOdds(csBet);
+  const drawNoBetOdds = extractDrawNoBetOdds(dnbBet);
+  const teamTotalHomeOdds = extractTeamTotalOdds(ttHomeBet);
+  const teamTotalAwayOdds = extractTeamTotalOdds(ttAwayBet);
 
   return {
     overUnderOdds,
@@ -403,7 +451,39 @@ export function extractAdditionalMarketOdds(
     firstHalfWinnerOdds,
     doubleChanceOdds,
     correctScoreOdds,
+    drawNoBetOdds,
+    teamTotalHomeOdds,
+    teamTotalAwayOdds,
   };
+}
+
+// Draw No Bet — API-Football's "Home/Away" bet, values literally 'Home'/'Away'.
+function extractDrawNoBetOdds(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): { home: number; away: number } | null {
+  if (!bet) return null;
+  const home = bet.values.find((v) => v.value === 'Home')?.odd;
+  const away = bet.values.find((v) => v.value === 'Away')?.odd;
+  if (home === undefined || away === undefined) return null;
+  return { home, away };
+}
+
+// Team Total: values like "Over 2.5"/"Under 2.5", sparse up to ~6.5. Parsed
+// generically (unlike the goals OVER_UNDER extractor) since the line range
+// is wider and no line has a reserved bare OVER/UNDER key here.
+function extractTeamTotalOdds(
+  bet: OddsBookmaker['bets'][number] | undefined,
+): TeamTotalOdds {
+  if (!bet) return {};
+  const odds: TeamTotalOdds = {};
+  for (const value of bet.values) {
+    const match = /^(Over|Under) (\d+)\.5$/.exec(value.value);
+    if (!match) continue;
+    const [, side, whole] = match;
+    const key = `${side.toUpperCase()}_${whole}_5` as keyof TeamTotalOdds;
+    odds[key] = value.odd;
+  }
+  return odds;
 }
 
 // Extracts full-time exact-score odds: each value is a scoreline "H:A" with its

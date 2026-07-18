@@ -6,6 +6,7 @@ import {
   type HalfTimeFullTimePick,
   isHalfTimeFullTimePick,
   outcomeFromScores,
+  type TeamTotalProba,
   type ThreeWayProba,
 } from "./markets";
 
@@ -137,6 +138,17 @@ function deriveMarketsFromDistributions(
   const { htft, ouHT, firstHalfWinner } =
     computeFirstHalfMarketsFromMatchDistributions(homeDist, awayDist);
 
+  // Draw No Bet: renormalize home/away over the non-draw mass only — distinct
+  // from dc1X/dc12 below, which are unnormalized sums that still include the
+  // draw as part of a two-way payout.
+  const nonDrawMass = oneXTwo.home.plus(oneXTwo.away);
+  const dnbHome = nonDrawMass.isZero()
+    ? new Decimal(0.5)
+    : oneXTwo.home.div(nonDrawMass);
+  const dnbAway = nonDrawMass.isZero()
+    ? new Decimal(0.5)
+    : oneXTwo.away.div(nonDrawMass);
+
   return {
     over15: new Decimal(over15),
     under15: new Decimal(under15),
@@ -151,10 +163,32 @@ function deriveMarketsFromDistributions(
     dc1X: oneXTwo.home.plus(oneXTwo.draw),
     dcX2: oneXTwo.draw.plus(oneXTwo.away),
     dc12: oneXTwo.home.plus(oneXTwo.away),
+    dnbHome,
+    dnbAway,
+    teamTotalHome: computeTeamTotalProba(homeDist),
+    teamTotalAway: computeTeamTotalProba(awayDist),
     htft,
     ouHT,
     firstHalfWinner,
   };
+}
+
+// Team Total: marginal Over/Under X.5 for a single side's own Poisson
+// distribution — no joint distribution needed since each side's goals are
+// modeled independently.
+function computeTeamTotalProba(dist: number[]): TeamTotalProba {
+  const proba: TeamTotalProba = {};
+  const lines = [0, 1, 2, 3, 4, 5, 6] as const;
+  for (const line of lines) {
+    let under = 0;
+    for (let g = 0; g <= Math.min(line, dist.length - 1); g++) {
+      under += dist[g] ?? 0;
+    }
+    const over = Math.max(0, 1 - under);
+    proba[`UNDER_${line}_5`] = new Decimal(under);
+    proba[`OVER_${line}_5`] = new Decimal(over);
+  }
+  return proba;
 }
 
 // Derives HT/FT, Over/Under HT, and First Half Winner from the full-time

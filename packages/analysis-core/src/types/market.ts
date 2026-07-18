@@ -14,6 +14,9 @@ export const Market = {
   OVER_UNDER_HT: "OVER_UNDER_HT",
   FIRST_HALF_WINNER: "FIRST_HALF_WINNER",
   CORRECT_SCORE: "CORRECT_SCORE",
+  DRAW_NO_BET: "DRAW_NO_BET",
+  TEAM_TOTAL_HOME: "TEAM_TOTAL_HOME",
+  TEAM_TOTAL_AWAY: "TEAM_TOTAL_AWAY",
 } as const;
 
 export type Market = (typeof Market)[keyof typeof Market];

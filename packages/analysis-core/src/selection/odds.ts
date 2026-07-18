@@ -49,6 +49,21 @@ export function resolveSelectionOdds(
       return odds.htftOdds[pick as keyof typeof odds.htftOdds] ?? null;
     case Market.CORRECT_SCORE:
       return odds.correctScoreOdds?.[pick] ?? null;
+    case Market.DRAW_NO_BET:
+      if (odds.drawNoBetOdds === null) return null;
+      if (pick === "HOME") return odds.drawNoBetOdds.home;
+      if (pick === "AWAY") return odds.drawNoBetOdds.away;
+      return null;
+    case Market.TEAM_TOTAL_HOME:
+      return (
+        odds.teamTotalHomeOdds[pick as keyof typeof odds.teamTotalHomeOdds] ??
+        null
+      );
+    case Market.TEAM_TOTAL_AWAY:
+      return (
+        odds.teamTotalAwayOdds[pick as keyof typeof odds.teamTotalAwayOdds] ??
+        null
+      );
     default:
       return null;
   }

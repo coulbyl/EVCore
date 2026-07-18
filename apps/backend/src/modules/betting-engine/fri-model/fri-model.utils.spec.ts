@@ -53,6 +53,9 @@ describe('fri-model.utils', () => {
       ouHtOdds: {},
       firstHalfWinnerOdds: null,
       doubleChanceOdds: null,
+      drawNoBetOdds: null,
+      teamTotalHomeOdds: {},
+      teamTotalAwayOdds: {},
     });
 
     const sum = probabilities.home
@@ -95,6 +98,9 @@ describe('fri-model.utils', () => {
       ouHtOdds: {},
       firstHalfWinnerOdds: null,
       doubleChanceOdds: null,
+      drawNoBetOdds: null,
+      teamTotalHomeOdds: {},
+      teamTotalAwayOdds: {},
     });
     const model = buildFriPoissonModel(oneXTwo);
 

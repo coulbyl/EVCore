@@ -31,6 +31,9 @@ function makeOdds(drawOdds: Decimal | null): FullOddsSnapshot {
     ouHtOdds: {},
     firstHalfWinnerOdds: null,
     doubleChanceOdds: null,
+    drawNoBetOdds: null,
+    teamTotalHomeOdds: {},
+    teamTotalAwayOdds: {},
   };
 }
 

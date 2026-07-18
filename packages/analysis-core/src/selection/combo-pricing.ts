@@ -140,6 +140,22 @@ export function getPickOddsFromSnapshot(
   if (market === Market.DOUBLE_CHANCE && odds.doubleChanceOdds !== null) {
     return odds.doubleChanceOdds[pick as "1X" | "X2" | "12"] ?? null;
   }
+  if (market === Market.DRAW_NO_BET && odds.drawNoBetOdds !== null) {
+    if (pick === "HOME") return odds.drawNoBetOdds.home;
+    if (pick === "AWAY") return odds.drawNoBetOdds.away;
+  }
+  if (market === Market.TEAM_TOTAL_HOME) {
+    return (
+      odds.teamTotalHomeOdds[pick as keyof typeof odds.teamTotalHomeOdds] ??
+      null
+    );
+  }
+  if (market === Market.TEAM_TOTAL_AWAY) {
+    return (
+      odds.teamTotalAwayOdds[pick as keyof typeof odds.teamTotalAwayOdds] ??
+      null
+    );
+  }
   return null;
 }
 
@@ -191,6 +207,24 @@ export function getModelProbabilityForPick(
     if (pick === "HOME") return probabilities.firstHalfWinner.home;
     if (pick === "DRAW") return probabilities.firstHalfWinner.draw;
     if (pick === "AWAY") return probabilities.firstHalfWinner.away;
+  }
+  if (market === Market.DRAW_NO_BET) {
+    if (pick === "HOME") return probabilities.dnbHome;
+    if (pick === "AWAY") return probabilities.dnbAway;
+  }
+  if (market === Market.TEAM_TOTAL_HOME) {
+    return (
+      probabilities.teamTotalHome[
+        pick as keyof typeof probabilities.teamTotalHome
+      ] ?? null
+    );
+  }
+  if (market === Market.TEAM_TOTAL_AWAY) {
+    return (
+      probabilities.teamTotalAway[
+        pick as keyof typeof probabilities.teamTotalAway
+      ] ?? null
+    );
   }
   return null;
 }

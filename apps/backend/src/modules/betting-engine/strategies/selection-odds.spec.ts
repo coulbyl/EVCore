@@ -21,6 +21,9 @@ const odds: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: { home: new Decimal('1.22'), away: new Decimal('4.00') },
+  teamTotalHomeOdds: { OVER_1_5: new Decimal('1.57') },
+  teamTotalAwayOdds: {},
 };
 
 describe('resolveSelectionOdds', () => {
@@ -43,6 +46,28 @@ describe('resolveSelectionOdds', () => {
     expect(resolveSelectionOdds(odds, Market.DOUBLE_CHANCE, '1X')).toBeNull();
     expect(resolveSelectionOdds(odds, Market.ONE_X_TWO, 'NOPE')).toBeNull();
     expect(resolveSelectionOdds(null, Market.BTTS, 'YES')).toBeNull();
+  });
+
+  it('resolves Draw No Bet picks', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.DRAW_NO_BET, 'HOME')?.toNumber(),
+    ).toBe(1.22);
+    expect(
+      resolveSelectionOdds(odds, Market.DRAW_NO_BET, 'AWAY')?.toNumber(),
+    ).toBe(4.0);
+  });
+
+  it('resolves Team Total picks per side, null for unpriced lines', () => {
+    expect(
+      resolveSelectionOdds(
+        odds,
+        Market.TEAM_TOTAL_HOME,
+        'OVER_1_5',
+      )?.toNumber(),
+    ).toBe(1.57);
+    expect(
+      resolveSelectionOdds(odds, Market.TEAM_TOTAL_AWAY, 'OVER_1_5'),
+    ).toBeNull();
   });
 });
 

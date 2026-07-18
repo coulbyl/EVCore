@@ -190,12 +190,21 @@ export const API_FOOTBALL_BOOKMAKERS = {
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
-  DOUBLE_CHANCE: 2,
+  // API-Football names this bet "Home/Away" — it is Draw No Bet (draw
+  // refunded), not a raw two-way market. Confirmed live 2026-07-18: id 2
+  // values on a heavy favorite (Home 1.22 / Away 4.00) match DNB pricing,
+  // not Double Chance (see id 12 below). Was previously mislabeled as
+  // DOUBLE_CHANCE here — fixed.
+  DRAW_NO_BET: 2,
   OVER_UNDER_25: 5,
   OVER_UNDER_FIRST_HALF: 6,
   HALF_TIME_FULL_TIME: 7,
   BTTS: 8,
+  // Team Total: goals scored by a single side, independent of the other.
+  TEAM_TOTAL_HOME: 16,
+  TEAM_TOTAL_AWAY: 17,
   FIRST_HALF_WINNER: 13,
+  DOUBLE_CHANCE: 12,
   // Full-time exact score. Observation-only market (forward odds collection) —
   // no historical odds via API-Football, see TODO Étape 7 item A.
   EXACT_SCORE: 10,

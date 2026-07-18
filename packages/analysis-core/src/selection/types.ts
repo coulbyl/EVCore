@@ -8,6 +8,26 @@ import type {
 // Derived market probabilities for a single fixture (Poisson + devig blend).
 export type MatchProbabilities = ReturnType<typeof computePoissonMarkets>;
 
+export type TeamTotalOddsMap = Partial<
+  Record<
+    | "OVER_0_5"
+    | "UNDER_0_5"
+    | "OVER_1_5"
+    | "UNDER_1_5"
+    | "OVER_2_5"
+    | "UNDER_2_5"
+    | "OVER_3_5"
+    | "UNDER_3_5"
+    | "OVER_4_5"
+    | "UNDER_4_5"
+    | "OVER_5_5"
+    | "UNDER_5_5"
+    | "OVER_6_5"
+    | "UNDER_6_5",
+    Decimal
+  >
+>;
+
 // Full odds snapshot across all supported markets for a given bookmaker+fixture.
 export type FullOddsSnapshot = {
   bookmaker: string;
@@ -39,6 +59,9 @@ export type FullOddsSnapshot = {
   // Full-time exact score: scoreline "H:A" → odds. Observation-only market;
   // optional so existing snapshot builders/tests don't need to set it.
   correctScoreOdds?: Partial<Record<string, Decimal>>;
+  drawNoBetOdds: { home: Decimal; away: Decimal } | null;
+  teamTotalHomeOdds: TeamTotalOddsMap;
+  teamTotalAwayOdds: TeamTotalOddsMap;
 };
 
 // Best pick identified by the betting engine across all markets (single or combo).

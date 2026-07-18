@@ -230,3 +230,119 @@ describe('FixtureRepository.upsertFixture', () => {
     });
   });
 });
+
+describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', () => {
+  const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const prisma = {
+    client: {
+      oddsSnapshot: {
+        create,
+      },
+    },
+  } as unknown as PrismaService;
+
+  const repository = new FixtureRepository(prisma);
+  const snapshotAt = new Date('2026-07-18T10:00:00.000Z');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    create.mockResolvedValue({ id: 'snap-id' });
+  });
+
+  it('upserts DRAW_NO_BET rows for both picks when odds are present', async () => {
+    await repository.upsertOddsSnapshot({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Bet365',
+      snapshotAt,
+      homeOdds: 1.57,
+      drawOdds: 4.33,
+      awayOdds: 5.25,
+      overUnderOdds: {},
+      bttsYesOdds: null,
+      bttsNoOdds: null,
+      htftOdds: {},
+      ouHtOdds: {},
+      firstHalfWinnerOdds: null,
+      doubleChanceOdds: null,
+      correctScoreOdds: {},
+      drawNoBetOdds: { home: 1.22, away: 4.0 },
+      teamTotalHomeOdds: {},
+      teamTotalAwayOdds: {},
+    });
+
+    const dnbCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'DRAW_NO_BET',
+    );
+    expect(dnbCalls).toHaveLength(2);
+    expect(dnbCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['HOME', 1.22],
+        ['AWAY', 4.0],
+      ]),
+    );
+  });
+
+  it('skips DRAW_NO_BET entirely when the bookmaker has no DNB odds', async () => {
+    await repository.upsertOddsSnapshot({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Bet365',
+      snapshotAt,
+      homeOdds: 1.57,
+      drawOdds: 4.33,
+      awayOdds: 5.25,
+      overUnderOdds: {},
+      bttsYesOdds: null,
+      bttsNoOdds: null,
+      htftOdds: {},
+      ouHtOdds: {},
+      firstHalfWinnerOdds: null,
+      doubleChanceOdds: null,
+      correctScoreOdds: {},
+      drawNoBetOdds: null,
+      teamTotalHomeOdds: {},
+      teamTotalAwayOdds: {},
+    });
+
+    expect(
+      create.mock.calls.some(([arg]) => arg.data.market === 'DRAW_NO_BET'),
+    ).toBe(false);
+  });
+
+  it('upserts sparse TEAM_TOTAL_HOME/TEAM_TOTAL_AWAY rows per priced line', async () => {
+    await repository.upsertOddsSnapshot({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Bet365',
+      snapshotAt,
+      homeOdds: 1.57,
+      drawOdds: 4.33,
+      awayOdds: 5.25,
+      overUnderOdds: {},
+      bttsYesOdds: null,
+      bttsNoOdds: null,
+      htftOdds: {},
+      ouHtOdds: {},
+      firstHalfWinnerOdds: null,
+      doubleChanceOdds: null,
+      correctScoreOdds: {},
+      drawNoBetOdds: null,
+      teamTotalHomeOdds: { OVER_0_5: 1.11, UNDER_0_5: 6.5 },
+      teamTotalAwayOdds: { OVER_1_5: 3.5 },
+    });
+
+    const homeCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'TEAM_TOTAL_HOME',
+    );
+    const awayCalls = create.mock.calls.filter(
+      ([arg]) => arg.data.market === 'TEAM_TOTAL_AWAY',
+    );
+    expect(homeCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual(
+      expect.arrayContaining([
+        ['OVER_0_5', 1.11],
+        ['UNDER_0_5', 6.5],
+      ]),
+    );
+    expect(awayCalls.map(([arg]) => [arg.data.pick, arg.data.odds])).toEqual([
+      ['OVER_1_5', 3.5],
+    ]);
+  });
+});

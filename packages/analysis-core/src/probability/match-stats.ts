@@ -54,6 +54,20 @@ export function mapProbabilitiesToNumber(
     dc1X: probabilities.dc1X.toNumber(),
     dcX2: probabilities.dcX2.toNumber(),
     dc12: probabilities.dc12.toNumber(),
+    dnbHome: probabilities.dnbHome.toNumber(),
+    dnbAway: probabilities.dnbAway.toNumber(),
+    teamTotalHome: Object.fromEntries(
+      Object.entries(probabilities.teamTotalHome).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    teamTotalAway: Object.fromEntries(
+      Object.entries(probabilities.teamTotalAway).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
     htft: Object.fromEntries(
       Object.entries(probabilities.htft).map(([pick, value]) => [
         pick,
@@ -139,6 +153,8 @@ export function rebalanceThreeWayProbabilities(input: {
     probabilities.away.toNumber() * (1 - weight) + targetAway * weight,
   );
 
+  const nonDrawMass = home.plus(away);
+
   return {
     ...probabilities,
     home,
@@ -147,6 +163,8 @@ export function rebalanceThreeWayProbabilities(input: {
     dc1X: home.plus(draw),
     dcX2: draw.plus(away),
     dc12: home.plus(away),
+    dnbHome: nonDrawMass.isZero() ? new Decimal(0.5) : home.div(nonDrawMass),
+    dnbAway: nonDrawMass.isZero() ? new Decimal(0.5) : away.div(nonDrawMass),
   };
 }
 

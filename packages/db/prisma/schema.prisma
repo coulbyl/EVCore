@@ -43,6 +43,9 @@ enum Market {
   OVER_UNDER_HT
   FIRST_HALF_WINNER
   CORRECT_SCORE
+  DRAW_NO_BET
+  TEAM_TOTAL_HOME
+  TEAM_TOTAL_AWAY
   @@schema("public")
 }
 

@@ -289,6 +289,9 @@ export class OddsHistoricalImportWorker extends WorkerHost {
             firstHalfWinnerOdds: fhw,
             doubleChanceOdds: null,
             correctScoreOdds: {},
+            drawNoBetOdds: null,
+            teamTotalHomeOdds: {},
+            teamTotalAwayOdds: {},
             source: OddsSnapshotSource.HISTORICAL,
           });
         }
