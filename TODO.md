@@ -20,6 +20,50 @@
 
 ## En cours (observation, pas encore staking-grade)
 
+- **`[~]` Nouveaux marchés (DNB/TEAM_TOTAL/CLEAN_SHEET/WIN_TO_NIL/
+  WIN_EITHER_HALF/RESULT_TOTAL_GOALS/RESULT_BTTS)** — wired dans VALUE/SAFE,
+  3 canaux observation-only (`CLEAN_SHEET`, `TEAM_TOTAL`, `WIN_EITHER_HALF`)
+  activés avec seuils dérivés structurellement. Backtest de calibration
+  historique fait (`docs/new-markets-calibration-backtest.md`, script
+  `packages/db/scripts/backtest-new-markets-calibration.ts`) — a révélé un
+  biais HOME sous-estimé/AWAY sur-estimé, corrigé le 2026-07-19 (voir item
+  homeAdvFactor ci-dessous). Reste : extension SAFE/VALUE bloquée tant que
+  les cotes forward ne sont pas accumulées sur ces marchés
+  (`docs/new-markets-safe-value-backtest.md`) — ne pas activer de pick
+  `AWAY_*` sur ces marchés avant, le biais AWAY reste net-négatif même après
+  recalibration (voir ci-dessous).
+
+- **`[~]` homeAdvFactor/awayDisadvFactor recalibrés (2026-07-19)** —
+  `ev.constants.ts` : 1.05/0.95 → 1.00/0.75, validé par grid-search Brier/ECE
+  (46 679 fixtures) + split chronologique 70/30 anti-overfit + simulation ROI
+  VALUE/ONE_X_TWO (+0.78pp). Reste à faire : les picks `AWAY` qui passent
+  encore le seuil EV restent net-négatifs post-recalibration — relancer
+  `backtest-home-advantage-roi-impact.ts` en y ajoutant le plancher d'edge
+  VALUE existant (`getValueMinEdge`, edge≥0.10) pour voir si les deux gardes-
+  fous sont redondants ou complémentaires, avant de considérer toucher au
+  plancher d'edge.
+
+- **`[ ]` H2HService v2** (doc [docs/h2h-service-v2-plan.md](docs/h2h-service-v2-plan.md)) —
+  actuellement 100% shadow (jamais lu par la décision), limites identifiées
+  (pas de seuil d'échantillon, pas de pondération récence). Valeur
+  incrémentale confirmée empiriquement (`backtest-h2h-signal-value.ts` :
+  r=0.05 brut → r=0.08 une fois corrigé, gradient monotone sur 5 buckets —
+  vrai signal, pas du bruit). Prochaines étapes dans l'ordre :
+  - `[ ]` v2.0 — réécrire `computeH2HScore` (seuil n≥3, decay=0.8, nul=0.5) +
+    tests. Rester en shadow.
+  - `[ ]` Backtest de gain de Brier sur le score composite complet avec H2H
+    v2.0 intégré à un poids candidat, avant toute activation.
+  - `[ ]` v2.1 (pondération domicile/extérieur ×3) — backtest de comparaison
+    avant tout code définitif.
+  - `[ ]` v2.2 (signaux H2H par marché : BTTS/Over 2.5/clean sheet/win-to-nil)
+    — un backtest de valeur incrémentale par signal, activation marché par
+    marché.
+  - `[ ]` v2.3a (continuité entraîneur) — faisabilité API-Football vérifiée
+    (`/coachs`, 1725 équipes ≈ 4 min à ingérer). Nouveau modèle Prisma
+    `Coach`/`CoachTenure` + worker ETL + backtest avant activation.
+  - `[-]` v2.3b (turnover effectif complet) — reporté, pas de point-in-time
+    squad snapshot exploitable sans reconstruction lourde via `/transfers`.
+
 - **`[~]` BTTS NO** — activé en observation par ligue (`SA·BRA1·FRI @0.58`,
   `EL1·CH·EL2·LL @0.55`), jamais staké. Aucun edge cross-saison confirmé
   (P(NO) du modèle sans lift sur le taux de base). Re-run `/backtest/tuning`

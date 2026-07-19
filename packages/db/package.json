@@ -35,6 +35,7 @@
     "db:backtest:new-markets-calibration": "tsx scripts/backtest-new-markets-calibration.ts",
     "db:backtest:home-advantage": "tsx scripts/backtest-home-advantage-calibration.ts",
     "db:backtest:home-advantage-roi": "tsx scripts/backtest-home-advantage-roi-impact.ts",
+    "db:backtest:h2h-signal-value": "tsx scripts/backtest-h2h-signal-value.ts",
     "db:backtest:invest-ranking": "tsx scripts/backtest-invest-ranking.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
