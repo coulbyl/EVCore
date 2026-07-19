@@ -331,13 +331,21 @@
       ligue − marge 0.05), même méthodologie que `GOALS_CONFIG`. Jamais misé
       (observation seule), accumulation forward via la sync PREMATCH
       démarrée le même jour.
-- [ ] **TEAM_TOTAL reste désactivé** dans toutes les ligues — pas de brique
-      de sweep dédiée (contrairement à GOALS/CLEAN_SHEET/WIN_EITHER_HALF),
-      pas de dérivation base-rate faite. À faire dans un prochain passage.
+- [x] **TEAM_TOTAL passé en OBSERVATION** (2026-07-19, mêmes 67 ligues) :
+      même méthodologie que `GOALS_CONFIG`, doublée sur la dimension équipe —
+      par (ligue × équipe × ligne), side = OVER si taux empirique ≥ 0.55,
+      UNDER si ≤ 0.45, les deux dans la bande 0.45–0.55 ; seuil = taux du
+      côté choisi − 0.05. Lignes au taux de base > 0.90 exclues (ex. "Away
+      Under 4.5" à 99% — near-certain, aucune valeur informative, contrairement
+      aux lignes GOALS/CLEAN_SHEET qui restent dans une plage incertaine).
+      442 segments dérivés depuis les scores FT réels.
 - [x] `backtest.repository.ts`/`tuning.metrics.ts` étendus : fetch des cotes
       CLEAN_SHEET_HOME/AWAY + TO_WIN_EITHER_HALF, sweep par seuil prêt dès
       que la sync PREMATCH aura accumulé assez de volume forward pour un
       vrai ROI (`POST /backtest/tuning`, déjà branché via `TUNING_CHANNELS`).
+      TEAM_TOTAL n'a pas cette brique de sweep (comme les lignes GOALS
+      1.5/3.5/4.5, qui n'en ont pas non plus faute de cotes historiques) —
+      seule la config structurelle par taux de base a été faite.
 
 ### Web UI
 

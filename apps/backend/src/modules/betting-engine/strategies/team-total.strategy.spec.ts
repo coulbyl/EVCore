@@ -198,12 +198,26 @@ describe('decideTeamTotal (pure)', () => {
 describe('TeamTotalStrategy (class, prod config)', () => {
   const strategy = new TeamTotalStrategy();
 
-  it('is DISABLED for every league (no backtest yet)', () => {
+  // BL1 runs in OBSERVATION mode (HOME OVER_0_5 threshold 0.75, derived from
+  // its real per-team goal base rate — see TEAM_TOTAL_CONFIG) — no
+  // backtested edge yet.
+  it('is SELECTED for an active league in observation mode (BL1)', () => {
     expect(
       strategy.evaluate(
         makeContext(
-          { teamTotalHome: { OVER_1_5: 0.9 } },
+          { teamTotalHome: { OVER_0_5: 0.9 } },
           { competitionCode: 'BL1' },
+        ),
+      ).status,
+    ).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+  });
+
+  it('is DISABLED for a league with no derived config', () => {
+    expect(
+      strategy.evaluate(
+        makeContext(
+          { teamTotalHome: { OVER_0_5: 0.9 } },
+          { competitionCode: 'UNKNOWN_LEAGUE' },
         ),
       ).status,
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);

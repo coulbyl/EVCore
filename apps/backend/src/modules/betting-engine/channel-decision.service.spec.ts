@@ -77,6 +77,8 @@ function richContext(): StrategyContext {
       cleanSheetAway: new Decimal('0.20'),
       winEitherHalfHome: new Decimal('0.55'),
       winEitherHalfAway: new Decimal('0.45'),
+      teamTotalHome: {},
+      teamTotalAway: {},
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
