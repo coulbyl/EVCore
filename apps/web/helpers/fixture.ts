@@ -52,6 +52,16 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     OVER_UNDER_HT: "Plus/Moins MT",
     FIRST_HALF_WINNER: "Résultat MT",
     CORRECT_SCORE: "Score exact",
+    DRAW_NO_BET: "Sans le nul",
+    TEAM_TOTAL_HOME: "Buts domicile",
+    TEAM_TOTAL_AWAY: "Buts extérieur",
+    CLEAN_SHEET_HOME: "Clean sheet domicile",
+    CLEAN_SHEET_AWAY: "Clean sheet extérieur",
+    WIN_TO_NIL_HOME: "Gagne sans encaisser (dom.)",
+    WIN_TO_NIL_AWAY: "Gagne sans encaisser (ext.)",
+    TO_WIN_EITHER_HALF: "Gagne une mi-temps",
+    RESULT_TOTAL_GOALS: "Résultat + total buts",
+    RESULT_BTTS: "Résultat + BTTS",
   },
   en: {
     ONE_X_TWO: "Result",
@@ -64,8 +74,29 @@ const MARKET_LABELS: Record<LocalePickFormat, Record<string, string>> = {
     OVER_UNDER_HT: "Over/Under HT",
     FIRST_HALF_WINNER: "HT Result",
     CORRECT_SCORE: "Correct Score",
+    DRAW_NO_BET: "Draw No Bet",
+    TEAM_TOTAL_HOME: "Home Team Goals",
+    TEAM_TOTAL_AWAY: "Away Team Goals",
+    CLEAN_SHEET_HOME: "Home Clean Sheet",
+    CLEAN_SHEET_AWAY: "Away Clean Sheet",
+    WIN_TO_NIL_HOME: "Home Win to Nil",
+    WIN_TO_NIL_AWAY: "Away Win to Nil",
+    TO_WIN_EITHER_HALF: "To Win Either Half",
+    RESULT_TOTAL_GOALS: "Result & Total Goals",
+    RESULT_BTTS: "Result & BTTS",
   },
 };
+
+// Parses a generic "OVER_X_Y" / "UNDER_X_Y" pick (used by TEAM_TOTAL_* and
+// other multi-line markets) into a French "Plus/Moins de X.Y" label. Returns
+// null when the pick doesn't match the pattern (caller falls back to raw).
+function formatGenericOverUnderPick(pick: string): string | null {
+  const match = /^(OVER|UNDER)_(\d+)_(\d+)$/.exec(pick);
+  if (!match) return null;
+  const [, side, whole, decimal] = match;
+  const label = side === "OVER" ? "Plus de" : "Moins de";
+  return `${label} ${whole}.${decimal}`;
+}
 
 export function formatMarketForDisplay(
   market: string,
@@ -137,6 +168,39 @@ export function formatPickForDisplay(pick: string, market: string): string {
     return htftLabels[p] ?? p;
   }
 
+  if (market === "DRAW_NO_BET" || market === "TO_WIN_EITHER_HALF") {
+    if (p === "HOME") return "Domicile";
+    if (p === "AWAY") return "Extérieur";
+  }
+
+  if (
+    market === "CLEAN_SHEET_HOME" ||
+    market === "CLEAN_SHEET_AWAY" ||
+    market === "WIN_TO_NIL_HOME" ||
+    market === "WIN_TO_NIL_AWAY"
+  ) {
+    if (p === "YES") return "Oui";
+    if (p === "NO") return "Non";
+  }
+
+  if (market === "TEAM_TOTAL_HOME" || market === "TEAM_TOTAL_AWAY") {
+    return formatGenericOverUnderPick(p) ?? p;
+  }
+
+  if (market === "RESULT_TOTAL_GOALS" || market === "RESULT_BTTS") {
+    const sideMatch = /^(HOME|DRAW|AWAY)_(.+)$/.exec(p);
+    const side = sideMatch?.[1];
+    const rest = sideMatch?.[2];
+    if (side && rest) {
+      const sideLabel =
+        side === "HOME" ? "Dom." : side === "AWAY" ? "Ext." : "Nul";
+      if (rest === "YES") return `${sideLabel} + BB Oui`;
+      if (rest === "NO") return `${sideLabel} + BB Non`;
+      const goalsLabel = formatGenericOverUnderPick(rest);
+      if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
+    }
+  }
+
   return p;
 }
 
@@ -198,6 +262,38 @@ export function formatDiagnosticPickForDisplay(
       AWAY_AWAY: "V2 / V2",
     };
     return htftLabels[pick] ?? pick;
+  }
+
+  if (market === "DRAW_NO_BET" || market === "TO_WIN_EITHER_HALF") {
+    if (pick === "HOME") return "V1";
+    if (pick === "AWAY") return "V2";
+  }
+
+  if (
+    market === "CLEAN_SHEET_HOME" ||
+    market === "CLEAN_SHEET_AWAY" ||
+    market === "WIN_TO_NIL_HOME" ||
+    market === "WIN_TO_NIL_AWAY"
+  ) {
+    if (pick === "YES") return "OUI";
+    if (pick === "NO") return "NON";
+  }
+
+  if (market === "TEAM_TOTAL_HOME" || market === "TEAM_TOTAL_AWAY") {
+    return formatGenericOverUnderPick(pick) ?? pick;
+  }
+
+  if (market === "RESULT_TOTAL_GOALS" || market === "RESULT_BTTS") {
+    const sideMatch = /^(HOME|DRAW|AWAY)_(.+)$/.exec(pick);
+    const side = sideMatch?.[1];
+    const rest = sideMatch?.[2];
+    if (side && rest) {
+      const sideLabel = side === "HOME" ? "V1" : side === "AWAY" ? "V2" : "Nul";
+      if (rest === "YES") return `${sideLabel} + BB OUI`;
+      if (rest === "NO") return `${sideLabel} + BB NON`;
+      const goalsLabel = formatGenericOverUnderPick(rest);
+      if (goalsLabel) return `${sideLabel} + ${goalsLabel}`;
+    }
   }
 
   return pick.replace(/_/g, " ");

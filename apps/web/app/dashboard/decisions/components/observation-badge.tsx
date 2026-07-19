@@ -2,8 +2,10 @@ import { Eye } from "lucide-react";
 import { Badge } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 
-// CORRECT_SCORE is a prediction channel (most-likely scoreline), never staked.
-// This badge keeps readers from mistaking its picks for playable bets.
+// Observation-only channels (CORRECT_SCORE, CLEAN_SHEET, TEAM_TOTAL,
+// WIN_EITHER_HALF) are never staked — their picks are recorded and settled
+// analytically only. This badge keeps readers from mistaking them for
+// playable bets.
 export function ObservationBadge() {
   const t = useTranslations("decisions");
   return (
