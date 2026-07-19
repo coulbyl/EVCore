@@ -4,8 +4,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Providers } from "./providers";
 import { PwaRegister } from "./pwa-register";
-import { WC2026EventManager } from "@/components/events/wc2026/wc2026-event-manager";
-import { WC2026Splash } from "@/components/events/wc2026/wc2026-splash";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -57,8 +55,6 @@ export default async function RootLayout({
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
         <PwaRegister />
-        <WC2026EventManager />
-        <WC2026Splash />
       </body>
     </html>
   );
