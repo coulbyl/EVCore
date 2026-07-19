@@ -13,6 +13,9 @@ import type {
   StrategyDecision,
 } from "./types";
 
+// Must mirror every market listEvaluatedPicks() (selection/pick-evaluation.ts)
+// can emit a candidate for — the orchestrator rejects any VALUE selection on
+// a market outside this list (see orchestrator.ts's allowedMarkets check).
 const ALL_MARKETS: readonly Market[] = [
   Market.ONE_X_TWO,
   Market.OVER_UNDER,
@@ -21,6 +24,16 @@ const ALL_MARKETS: readonly Market[] = [
   Market.HALF_TIME_FULL_TIME,
   Market.OVER_UNDER_HT,
   Market.FIRST_HALF_WINNER,
+  Market.DRAW_NO_BET,
+  Market.TEAM_TOTAL_HOME,
+  Market.TEAM_TOTAL_AWAY,
+  Market.CLEAN_SHEET_HOME,
+  Market.CLEAN_SHEET_AWAY,
+  Market.WIN_TO_NIL_HOME,
+  Market.WIN_TO_NIL_AWAY,
+  Market.TO_WIN_EITHER_HALF,
+  Market.RESULT_TOTAL_GOALS,
+  Market.RESULT_BTTS,
 ];
 
 export class ValueStrategy implements ChannelStrategy {

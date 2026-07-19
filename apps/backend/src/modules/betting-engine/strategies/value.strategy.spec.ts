@@ -230,8 +230,12 @@ describe('ValueStrategy', () => {
     expect(decision.reasonCode).toBe('no_viable_pick');
   });
 
-  it('enforces allowedMarkets — all market enum values must be listed', () => {
-    // The EV channel is transverse: it must allow all currently supported markets.
+  it('enforces allowedMarkets — every market listEvaluatedPicks() can emit must be listed', () => {
+    // The EV channel is transverse: it must allow every market
+    // listEvaluatedPicks() (analysis-core/selection/pick-evaluation.ts) can
+    // produce a candidate for, or the orchestrator rejects the selection at
+    // runtime (production incident 2026-07-19: TEAM_TOTAL_HOME was wired into
+    // listEvaluatedPicks but not into this list).
     const supported = [
       Market.ONE_X_TWO,
       Market.OVER_UNDER,
@@ -240,6 +244,16 @@ describe('ValueStrategy', () => {
       Market.HALF_TIME_FULL_TIME,
       Market.OVER_UNDER_HT,
       Market.FIRST_HALF_WINNER,
+      Market.DRAW_NO_BET,
+      Market.TEAM_TOTAL_HOME,
+      Market.TEAM_TOTAL_AWAY,
+      Market.CLEAN_SHEET_HOME,
+      Market.CLEAN_SHEET_AWAY,
+      Market.WIN_TO_NIL_HOME,
+      Market.WIN_TO_NIL_AWAY,
+      Market.TO_WIN_EITHER_HALF,
+      Market.RESULT_TOTAL_GOALS,
+      Market.RESULT_BTTS,
     ];
     for (const market of supported) {
       expect(strategy.allowedMarkets).toContain(market);
