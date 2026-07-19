@@ -65,6 +65,7 @@ function fixture(
       scoreThreshold: 0.6,
       predictionSource: 'POISSON_MAIN',
       lambda: null,
+      offensiveBalance: null,
       shadowSignals: null,
       dataCoverage: 0,
       shadowPredictions: null,

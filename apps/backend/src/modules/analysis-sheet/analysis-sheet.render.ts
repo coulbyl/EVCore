@@ -117,6 +117,14 @@ export type AnalysisSheetJsonFixture = {
     scoreThreshold: number;
     predictionSource: string | null;
     lambda: { home: number; away: number; total: number } | null;
+    // Ratio of the weaker attack to the stronger one (1 = balanced offensive
+    // threat, near 0 = one team carries essentially all of it). Informational
+    // only — helps distinguish Over/team-total picks (asymmetric attack) from
+    // BTTS (balanced attack). Not a strategy signal, no gate depends on it.
+    offensiveBalance: {
+      ratio: number;
+      classification: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC';
+    } | null;
     shadowSignals: {
       lineMovement: number | null;
       h2h: number | null;
@@ -247,6 +255,7 @@ function toJsonFixture(
               total: context.lambdaHome + context.lambdaAway,
             }
           : null,
+      offensiveBalance: context.offensiveBalance,
       shadowSignals: hasShadowSignals
         ? {
             lineMovement: context.shadowLineMovement,
@@ -702,11 +711,14 @@ export function buildTxtSheet(
     const lambdaStr = model.lambda
       ? `  λ: ${model.lambda.home.toFixed(2)}/${model.lambda.away.toFixed(2)} (${model.lambda.total.toFixed(2)})`
       : '';
+    const balanceStr = model.offensiveBalance
+      ? `  Équilibre off. : ${model.offensiveBalance.ratio.toFixed(2)} (${model.offensiveBalance.classification})`
+      : '';
     const sourceStr = model.predictionSource
       ? `  Source: ${model.predictionSource}`
       : '';
     w(
-      `  Score modèle : ${model.finalScore.toFixed(3)} (seuil ${f.competition} ${model.scoreThreshold.toFixed(2)})${sourceStr}${lambdaStr}`,
+      `  Score modèle : ${model.finalScore.toFixed(3)} (seuil ${f.competition} ${model.scoreThreshold.toFixed(2)})${sourceStr}${lambdaStr}${balanceStr}`,
     );
     if (model.shadowSignals) {
       const parts: string[] = [];

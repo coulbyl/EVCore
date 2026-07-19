@@ -74,6 +74,7 @@ import {
   blendTeamStats,
   buildLambdaConfig,
   buildMatchupFeatures,
+  computeOffensiveBalance,
   deriveLambdas,
   mapProbabilitiesToNumber,
   rebalanceThreeWayProbabilities,
@@ -797,6 +798,7 @@ export class BettingEngineService {
       volatiliteLigue: features.leagueVolat.toNumber(),
       lambdaHome: lambda.home,
       lambdaAway: lambda.away,
+      offensiveBalance: computeOffensiveBalance(lambda.home, lambda.away),
       probabilities: mapProbabilitiesToNumber(probabilities),
       // Unadjusted Poisson output, before the 1X2 blend + O/U shrinkage —
       // lets the analysis sheet expose an adjustmentDelta per market so the
@@ -1225,6 +1227,10 @@ export class BettingEngineService {
           eloSnapshotAt: eloSnapshotAt?.toISOString() ?? null,
           lambdaHome: lambda?.home ?? null,
           lambdaAway: lambda?.away ?? null,
+          offensiveBalance:
+            lambda !== null
+              ? computeOffensiveBalance(lambda.home, lambda.away)
+              : null,
           probabilities:
             probabilities !== null
               ? mapProbabilitiesToNumber(probabilities)

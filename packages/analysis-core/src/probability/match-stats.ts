@@ -140,6 +140,39 @@ export function deriveLambdas(
   };
 }
 
+export type OffensiveBalanceClassification =
+  | "BALANCED"
+  | "ASYMMETRIC"
+  | "STRONGLY_ASYMMETRIC";
+
+export type OffensiveBalance = {
+  ratio: number;
+  classification: OffensiveBalanceClassification;
+};
+
+// Ratio of the weaker attack to the stronger one (1 = both teams carry equal
+// offensive threat, near 0 = one team carries essentially all of it).
+// Informational only — not consumed by any strategy threshold, exposed via
+// ModelRun.features to the Eva analysis sheet to help distinguish Over/team
+// total picks (asymmetric attack) from BTTS (balanced attack), per
+// analyse-fiche-evcore-avec-gpt.md §12. Classification bounds are a
+// reasonable placeholder, not backtested.
+export function computeOffensiveBalance(
+  lambdaHome: number,
+  lambdaAway: number,
+): OffensiveBalance {
+  const stronger = Math.max(lambdaHome, lambdaAway);
+  const weaker = Math.min(lambdaHome, lambdaAway);
+  const ratio = stronger > 0 ? weaker / stronger : 1;
+  const classification: OffensiveBalanceClassification =
+    ratio >= 0.5
+      ? "BALANCED"
+      : ratio >= 0.25
+        ? "ASYMMETRIC"
+        : "STRONGLY_ASYMMETRIC";
+  return { ratio, classification };
+}
+
 export function rebalanceThreeWayProbabilities(input: {
   probabilities: MatchProbabilities;
   homeStats: TeamStatsInput;

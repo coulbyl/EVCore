@@ -346,6 +346,19 @@
       TEAM_TOTAL n'a pas cette brique de sweep (comme les lignes GOALS
       1.5/3.5/4.5, qui n'en ont pas non plus faute de cotes historiques) —
       seule la config structurelle par taux de base a été faite.
+- [x] Web : labels FR/EN pour les 10 marchés Niveau 1/2/2.b (`helpers/fixture.ts`)
+      et `ObservationBadge` étendu à CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF sur
+      `/dashboard/decisions` (jusque-là réservé à CORRECT_SCORE) — les 3
+      nouveaux canaux produisent de vraies décisions `SELECTED`, il fallait un
+      vrai libellé et un signal "jamais misé" cohérent.
+- [x] `offensiveBalance` (ratio + classification BALANCED/ASYMMETRIC/
+      STRONGLY_ASYMMETRIC) — `computeOffensiveBalance()` dans
+      `analysis-core/probability/match-stats.ts`, câblé dans
+      `ModelRun.features` et exposé à la fiche Eva (JSON + rendu texte).
+      Reprend la section 12 de `analyse-fiche-evcore-avec-gpt.md` (différencier
+      Over/team total de BTTS selon l'asymétrie offensive). Informationnel
+      uniquement — aucune stratégie ne le consomme, bornes de classification
+      non backtestées.
 
 ### Web UI
 
