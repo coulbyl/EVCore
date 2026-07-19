@@ -9,6 +9,8 @@ import {
   Marker,
   Message,
   MessageContent,
+  MessageFooter,
+  MessageGroup,
   MessageScroller,
   MessageScrollerButton,
   MessageScrollerContent,
@@ -17,7 +19,6 @@ import {
   MessageScrollerViewport,
   Skeleton,
 } from "@evcore/ui";
-import { cn } from "@evcore/ui/cn";
 import { formatDayLabel, formatTime } from "@/lib/date";
 import type { SupportMessage } from "@/domains/support/types/support";
 
@@ -44,19 +45,26 @@ function groupByDay(messages: SupportMessage[]): DayGroup[] {
   return groups;
 }
 
-function isGroupedWithPrevious(
-  messages: SupportMessage[],
-  index: number,
-): boolean {
-  if (index === 0) return false;
-  const prev = messages[index - 1];
-  const current = messages[index];
-  if (!prev || !current || prev.senderRole !== current.senderRole) {
-    return false;
+// One burst = consecutive messages from the same sender within the group
+// window — rendered as one MessageGroup so they read as a single "turn".
+function groupIntoBursts(messages: SupportMessage[]): SupportMessage[][] {
+  const bursts: SupportMessage[][] = [];
+  for (const message of messages) {
+    const lastBurst = bursts[bursts.length - 1];
+    const lastMessage = lastBurst?.[lastBurst.length - 1];
+    const sameBurst =
+      lastMessage &&
+      lastMessage.senderRole === message.senderRole &&
+      new Date(message.createdAt).getTime() -
+        new Date(lastMessage.createdAt).getTime() <
+        GROUP_WINDOW_MS;
+    if (sameBurst && lastBurst) {
+      lastBurst.push(message);
+    } else {
+      bursts.push([message]);
+    }
   }
-  const gapMs =
-    new Date(current.createdAt).getTime() - new Date(prev.createdAt).getTime();
-  return gapMs < GROUP_WINDOW_MS;
+  return bursts;
 }
 
 // Shared message list + composer, used by both the operator's single-thread
@@ -129,59 +137,66 @@ export function ChatThread({
               <MessageScrollerViewport>
                 <MessageScrollerContent className="gap-3 px-4 py-3">
                   {dayGroups.map((group) => (
-                    <div key={group.dayLabel} className="flex flex-col gap-0.5">
+                    <div key={group.dayLabel} className="flex flex-col gap-2">
                       <Marker variant="separator" className="my-2">
                         {group.dayLabel}
                       </Marker>
-                      {group.messages.map((message, index) => {
-                        const isMine = message.senderRole === currentRole;
-                        const grouped = isGroupedWithPrevious(
-                          group.messages,
-                          index,
-                        );
-                        const isRead =
-                          isMine &&
-                          !!otherReadAt &&
-                          new Date(message.createdAt) <=
-                            new Date(otherReadAt);
+                      {groupIntoBursts(group.messages).map((burst) => {
+                        const first = burst[0];
+                        if (!first) return null;
+                        const isMine = first.senderRole === currentRole;
                         return (
                           <MessageScrollerItem
-                            key={message.id}
-                            messageId={message.id}
+                            key={first.id}
+                            messageId={first.id}
                             scrollAnchor={isMine}
-                            className={grouped ? "mt-0.5" : "mt-2"}
                           >
-                            <Message align={isMine ? "end" : "start"}>
-                              <MessageContent>
-                                <Bubble
-                                  align={isMine ? "end" : "start"}
-                                  variant={isMine ? "default" : "secondary"}
-                                >
-                                  <BubbleContent
-                                    className={cn(
-                                      "flex flex-col gap-1.5",
-                                      isMine ? "rounded-br-md" : "rounded-bl-md",
-                                    )}
+                            <MessageGroup>
+                              {burst.map((message) => {
+                                const isRead =
+                                  isMine &&
+                                  !!otherReadAt &&
+                                  new Date(message.createdAt) <=
+                                    new Date(otherReadAt);
+                                return (
+                                  <Message
+                                    key={message.id}
+                                    align={isMine ? "end" : "start"}
                                   >
-                                    <p className="whitespace-pre-wrap break-words">
-                                      {message.content}
-                                    </p>
-                                    <span className="flex items-center gap-1 self-end text-[0.6rem] opacity-70">
-                                      {formatTime(message.createdAt)}
-                                      {isMine &&
-                                        (isRead ? (
-                                          <CheckCheck
-                                            size={12}
-                                            className="text-sky-300"
-                                          />
-                                        ) : (
-                                          <Check size={12} />
-                                        ))}
-                                    </span>
-                                  </BubbleContent>
-                                </Bubble>
-                              </MessageContent>
-                            </Message>
+                                    <MessageContent>
+                                      <Bubble
+                                        align={isMine ? "end" : "start"}
+                                        variant={isMine ? "default" : "secondary"}
+                                      >
+                                        <BubbleContent
+                                          className={
+                                            isMine
+                                              ? "rounded-br-md"
+                                              : "rounded-bl-md"
+                                          }
+                                        >
+                                          <p className="whitespace-pre-wrap break-words">
+                                            {message.content}
+                                          </p>
+                                        </BubbleContent>
+                                      </Bubble>
+                                      <MessageFooter className="gap-1 text-[0.6rem]">
+                                        {formatTime(message.createdAt)}
+                                        {isMine &&
+                                          (isRead ? (
+                                            <CheckCheck
+                                              size={12}
+                                              className="text-sky-300"
+                                            />
+                                          ) : (
+                                            <Check size={12} />
+                                          ))}
+                                      </MessageFooter>
+                                    </MessageContent>
+                                  </Message>
+                                );
+                              })}
+                            </MessageGroup>
                           </MessageScrollerItem>
                         );
                       })}
