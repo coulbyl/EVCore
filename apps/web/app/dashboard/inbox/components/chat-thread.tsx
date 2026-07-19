@@ -123,7 +123,7 @@ export function ChatThread({
     <div className="flex h-full w-full min-w-0 flex-col">
       {header}
 
-      <div className="min-w-0 flex-1 bg-background/40">
+      <div className="min-h-0 min-w-0 flex-1 bg-background/40">
         {isLoading && (
           <div className="flex flex-col gap-2 px-4 py-3">
             <Skeleton className="h-14 w-2/3 rounded-2xl" />
