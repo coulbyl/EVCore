@@ -32,6 +32,9 @@
     "db:analyze:signals": "tsx scripts/analyze-signals.ts",
     "db:analyze:edge": "tsx scripts/analyze-edge.ts",
     "db:backtest:ev-tiers": "tsx scripts/backtest-ev-tiers.ts",
+    "db:backtest:new-markets-calibration": "tsx scripts/backtest-new-markets-calibration.ts",
+    "db:backtest:home-advantage": "tsx scripts/backtest-home-advantage-calibration.ts",
+    "db:backtest:home-advantage-roi": "tsx scripts/backtest-home-advantage-roi-impact.ts",
     "db:backtest:invest-ranking": "tsx scripts/backtest-invest-ranking.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"

@@ -125,12 +125,25 @@ d'investir du temps à attendre des cotes forward dessus.
 
 ## 7. Prochaines étapes
 
-- [ ] Écrire le script (`backtest-new-markets-calibration.ts`)
-- [ ] Ajouter `@evcore/analysis-core` aux dépendances de `packages/db`
-- [ ] Lancer sur 1-2 ligues à fort volume d'abord (validation rapide de la
-      mécanique) avant un run complet toutes ligues
-- [ ] Lire les résultats, identifier les marchés bien calibrés vs ceux qui
-      dérivent
+- [x] Écrire le script (`backtest-new-markets-calibration.ts`)
+- [x] Ajouter `@evcore/analysis-core` aux dépendances de `packages/db`
+- [x] Lancer un run complet toutes ligues (46 679 fixtures traitées, seuil
+      cold-start 5 TeamStats respecté) — voir
+      `packages/db/reports/backtest-new-markets-calibration-2026-07-19.txt`
+- [x] Lire les résultats, identifier les marchés bien calibrés vs ceux qui
+      dérivent — biais systématique HOME sous-estimé / AWAY sur-estimé sur
+      tous les marchés (voir résumé dans la conversation du 2026-07-19),
+      sinon calibration saine partout (ECE < 0.07)
 - [ ] Faire le lien avec `docs/new-markets-safe-value-backtest.md` : les
       marchés bien calibrés ici sont les candidats prioritaires une fois les
       cotes forward disponibles pour le vrai backtest ROI/SAFE
+- [x] Creuser le biais HOME/AWAY — confirmé structurel (pas du bruit) via
+      grid-search + validation chronologique 70/30
+      (`packages/db/scripts/backtest-home-advantage-calibration.ts`) et
+      impact ROI positif sur simulation VALUE ONE_X_TWO
+      (`backtest-home-advantage-roi-impact.ts`, +0.78pp). `ev.constants.ts`
+      recalé le 2026-07-19 : `HOME_ADVANTAGE_LAMBDA_FACTOR` 1.05→1.00,
+      `AWAY_DISADVANTAGE_LAMBDA_FACTOR` 0.95→0.75. AWAY reste net-négatif
+      même après correction sur les picks qui passent encore le seuil EV —
+      le plancher d'edge (`getValueMinEdge`, VALUE-only) reste la garde-fou
+      principale côté AWAY, pas remplacé par ce recalage.
