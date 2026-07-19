@@ -563,6 +563,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@evcore/analysis-core':
+        specifier: workspace:*
+        version: link:../analysis-core
       '@prisma/adapter-pg':
         specifier: 'catalog:'
         version: 7.8.0

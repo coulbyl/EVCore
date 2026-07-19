@@ -37,6 +37,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@evcore/analysis-core": "workspace:*",
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
     "prisma": "catalog:"
