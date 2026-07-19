@@ -21,7 +21,12 @@ import { daysAheadIso, todayIso } from "@/lib/date";
 // Discovery ping: shown only until the user opens Eva once.
 const DISCOVERED_KEY = "evcore-eva-fab-discovered";
 const FAB_POSITION_KEY = "evcore-eva-fab-position";
+const HIDDEN_KEY = "evcore-eva-fab-hidden";
 const DRAG_THRESHOLD_PX = 6;
+// Held longer than this without dragging past the threshold = hide, not open.
+const LONG_PRESS_MS = 500;
+const NUB_WIDTH = 28;
+const NUB_HEIGHT = 48;
 
 type FabPosition = {
   x: number;
@@ -70,6 +75,12 @@ function getDefaultFabPosition() {
   };
 }
 
+// The nub sticks to whichever edge the Fab was last closest to, at the same
+// height — so restoring it feels like picking up where it was left.
+function isNearLeftEdge(x: number): boolean {
+  return x < window.innerWidth / 2;
+}
+
 export function EvaFab() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
@@ -78,11 +89,15 @@ export function EvaFab() {
   const [showPing, setShowPing] = useState(false);
   const [position, setPosition] = useState<FabPosition | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const dragStateRef = useRef<DragState | null>(null);
   const suppressClickRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
 
   useEffect(() => {
     if (!localStorage.getItem(DISCOVERED_KEY)) setShowPing(true);
+    if (localStorage.getItem(HIDDEN_KEY)) setHidden(true);
 
     const rawPosition = localStorage.getItem(FAB_POSITION_KEY);
 
@@ -122,6 +137,25 @@ export function EvaFab() {
     return () => window.removeEventListener("resize", handleResize);
   }, [position]);
 
+  // Clear any pending long-press timer on unmount so it never fires (and
+  // calls setState) after the component is gone.
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
+  }, []);
+
+  function hideEva() {
+    setHidden(true);
+    setOpen(false);
+    localStorage.setItem(HIDDEN_KEY, "1");
+  }
+
+  function showEva() {
+    setHidden(false);
+    localStorage.removeItem(HIDDEN_KEY);
+  }
+
   function handleOpen() {
     setOpen(true);
     if (showPing) {
@@ -157,6 +191,12 @@ export function EvaFab() {
       hasDragged: false,
     };
 
+    longPressFiredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      hideEva();
+    }, LONG_PRESS_MS);
+
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -177,6 +217,11 @@ export function EvaFab() {
     ) {
       dragState.hasDragged = true;
       setIsDragging(true);
+      // A real drag started — this isn't a long press anymore.
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
     }
 
     setPosition(nextPosition);
@@ -190,7 +235,14 @@ export function EvaFab() {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    suppressClickRef.current = dragState.hasDragged;
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+
+    suppressClickRef.current =
+      dragState.hasDragged || longPressFiredRef.current;
+    longPressFiredRef.current = false;
     dragStateRef.current = null;
     setIsDragging(false);
   }
@@ -206,36 +258,63 @@ export function EvaFab() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleClick}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerEnd}
-        onPointerCancel={handlePointerEnd}
-        title="Eva"
-        className={cn(
-          "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
-          "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
-          "shadow-[0_6px_24px_rgba(15,23,42,0.28)] ring-1 ring-accent/40",
-          isDragging
-            ? "cursor-grabbing touch-none transition-none"
-            : "cursor-grab touch-none transition-transform hover:scale-105 active:scale-95",
-        )}
-        style={
-          position
-            ? {
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-              }
-            : { visibility: "hidden" }
-        }
-      >
-        {showPing && (
-          <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
-        )}
-        <Sparkles className="size-5" />
-      </button>
+      {hidden && position && (
+        <button
+          type="button"
+          onClick={showEva}
+          aria-label="Afficher Eva"
+          title="Afficher Eva"
+          className={cn(
+            "fixed z-30 flex items-center justify-center",
+            "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
+            "shadow-[0_6px_24px_rgba(15,23,42,0.28)] ring-1 ring-accent/40",
+            "opacity-60 transition-opacity hover:opacity-100",
+            isNearLeftEdge(position.x)
+              ? "left-0 rounded-r-xl"
+              : "right-0 rounded-l-xl",
+          )}
+          style={{
+            top: `${position.y}px`,
+            width: NUB_WIDTH,
+            height: NUB_HEIGHT,
+          }}
+        >
+          <Sparkles className="size-4" />
+        </button>
+      )}
+
+      {!hidden && (
+        <button
+          type="button"
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
+          title="Eva (appui long pour masquer)"
+          className={cn(
+            "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
+            "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
+            "shadow-[0_6px_24px_rgba(15,23,42,0.28)] ring-1 ring-accent/40",
+            isDragging
+              ? "cursor-grabbing touch-none transition-none"
+              : "cursor-grab touch-none transition-transform hover:scale-105 active:scale-95",
+          )}
+          style={
+            position
+              ? {
+                  left: `${position.x}px`,
+                  top: `${position.y}px`,
+                }
+              : { visibility: "hidden" }
+          }
+        >
+          {showPing && (
+            <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-accent/50" />
+          )}
+          <Sparkles className="size-5" />
+        </button>
+      )}
 
       <Drawer
         open={open}
