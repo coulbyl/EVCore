@@ -402,12 +402,25 @@ export function getLeagueMeanLambda(
 
 // Home advantage correction applied to Poisson lambdas before probability
 // computation. Academic literature (Dixon-Coles, Karlis-Ntzoufras) measures
-// home advantage at 5-8%. Raised from 0.93→0.95 after audit 2026-03-22
-// revealed systematic away-team λ underestimation (Hertha 1.11→5, Alaves
-// 0.76→4, Kiel 0.98→3 across 3 independent fixtures).
-// Symmetric: HOME_ADVANTAGE_LAMBDA_FACTOR × AWAY_DISADVANTAGE_LAMBDA_FACTOR ≈ 1.
-export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.05;
-export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.95;
+// home advantage at 5-8%. Previously raised from 0.93→0.95 after audit
+// 2026-03-22, which fixed 3 specific fixtures with extreme away-λ
+// underestimation (Hertha 1.11→5, Alaves 0.76→4, Kiel 0.98→3) — a narrow
+// fix for clamp-floor cases, not a global calibration check.
+// Recalibrated 2026-07-19 via grid-search Brier/ECE backtest on 46 679
+// historical fixtures (packages/db/scripts/backtest-home-advantage-calibration.ts):
+// the 3-way Brier/ECE was minimized at homeAdvFactor=1.00, awayDisadvFactor=0.75
+// (ECE HOME 0.040→0.020, ECE AWAY 0.053→0.016), confirmed non-overfit via a
+// 70/30 chronological train/test split (same optimum on train-only, still
+// beats the old factors out-of-sample). ROI-impact check on ONE_X_TWO VALUE
+// simulation (packages/db/scripts/backtest-home-advantage-roi-impact.ts,
+// EV>=0.08 only, no edge-floor gate): +0.78pp ROI, but AWAY-side picks that
+// still clear the threshold remain net-negative post-recalibration — the
+// edge-floor gate (getValueMinEdge, VALUE-only) stays the primary AWAY-side
+// safeguard, this factor alone doesn't fully close that gap.
+// No longer symmetric (1.00 × 0.75 = 0.75, not ≈1) — the prior symmetric
+// design assumption didn't hold up against the full historical distribution.
+export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.0;
+export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.75;
 
 // Per-league home advantage overrides.
 // Most leagues use the global 1.05 / 0.95 factors. Balanced divisions with
