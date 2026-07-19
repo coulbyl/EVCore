@@ -344,4 +344,60 @@ describe('ChannelDecisionService', () => {
       expect(safe?.selections).toHaveLength(0);
     });
   });
+
+  describe('listByChannel', () => {
+    // Regression test (2026-07-19): READ_CHANNEL_ORDER is a hardcoded list
+    // that groups.get(channel) is read against — a channel missing from it
+    // is silently dropped from the "Par canal" web lens, not an error. This
+    // already happened once for CORRECT_SCORE, then again for
+    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF.
+    it('includes every primary and meta channel, not just the original six', async () => {
+      const baseRow = {
+        id: 'cd',
+        modelRunId: 'run-1',
+        status: CHANNEL_DECISION_STATUS.SELECTED,
+        reasonCode: null,
+        fixtureId: 'f1',
+        scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
+        homeTeam: 'Home',
+        awayTeam: 'Away',
+        homeLogo: null,
+        awayLogo: null,
+        competitionCode: 'BL1',
+        country: 'Germany',
+        homeScore: null,
+        awayScore: null,
+        homeHtScore: null,
+        awayHtScore: null,
+        selections: [],
+      };
+      const channels = [
+        STRATEGY_CHANNEL.VALUE,
+        STRATEGY_CHANNEL.SAFE,
+        STRATEGY_CHANNEL.DOMINANT,
+        STRATEGY_CHANNEL.BTTS,
+        STRATEGY_CHANNEL.DRAW,
+        STRATEGY_CHANNEL.GOALS,
+        STRATEGY_CHANNEL.CLEAN_SHEET,
+        STRATEGY_CHANNEL.TEAM_TOTAL,
+        STRATEGY_CHANNEL.WIN_EITHER_HALF,
+        STRATEGY_CHANNEL.CORRECT_SCORE,
+        STRATEGY_CHANNEL.AVOID,
+        STRATEGY_CHANNEL.CONSENSUS,
+      ];
+      const findByDate = vi.fn().mockResolvedValue(
+        channels.map((channel, i) => ({
+          ...baseRow,
+          id: `cd-${i}`,
+          channel,
+        })),
+      );
+      const repo = { findByDate } as unknown as ChannelDecisionRepository;
+      const service = new ChannelDecisionService(repo);
+
+      const groups = await service.listByChannel({ date: '2026-01-18' });
+
+      expect(groups.map((g) => g.channel).sort()).toEqual([...channels].sort());
+    });
+  });
 });
