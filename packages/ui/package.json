@@ -52,6 +52,7 @@
     "react-day-picker": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "shadcn": "^4.13.1",
     "sonner": "catalog:",
     "tailwind-merge": "^3.3.1",
     "vaul": "catalog:",
