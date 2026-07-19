@@ -6,6 +6,10 @@ import { Check, CheckCheck, Send } from "lucide-react";
 import {
   Bubble,
   BubbleContent,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
   Marker,
   Message,
   MessageContent,
@@ -210,29 +214,36 @@ export function ChatThread({
         )}
       </div>
 
-      <div className="flex items-end gap-2 border-t border-border p-3">
-        <textarea
-          ref={textareaRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void handleSend();
-            }
-          }}
-          placeholder={placeholder}
-          rows={1}
-          className="max-h-40 min-h-10 flex-1 resize-none rounded-xl border border-border bg-panel px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
-        />
-        <button
-          type="button"
-          onClick={() => void handleSend()}
-          disabled={!draft.trim() || isSending}
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground disabled:opacity-50"
-        >
-          <Send size={16} />
-        </button>
+      <div className="border-t border-border p-3">
+        <InputGroup>
+          <InputGroupTextarea
+            ref={textareaRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            placeholder={placeholder}
+            rows={1}
+            className="max-h-40"
+          />
+          <InputGroupAddon align="block-end">
+            <InputGroupButton
+              type="button"
+              variant="default"
+              size="icon-sm"
+              className="ml-auto"
+              onClick={() => void handleSend()}
+              disabled={!draft.trim() || isSending}
+            >
+              <Send />
+              <span className="sr-only">Envoyer</span>
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
       </div>
     </div>
   );

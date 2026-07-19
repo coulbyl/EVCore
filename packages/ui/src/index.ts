@@ -18,6 +18,7 @@ export * from "./components/empty";
 export * from "./components/feature-card";
 export * from "./components/form";
 export * from "./components/input";
+export * from "./components/input-group";
 export * from "./components/label";
 export * from "./components/bubble";
 export * from "./components/marker";
