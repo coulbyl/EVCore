@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
+    "@shadcn/react": "^0.2.1",
     "@tanstack/react-table": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -3,7 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Check, CheckCheck, Send } from "lucide-react";
-import { Skeleton } from "@evcore/ui";
+import {
+  Bubble,
+  BubbleContent,
+  Marker,
+  Message,
+  MessageContent,
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+  Skeleton,
+} from "@evcore/ui";
 import { cn } from "@evcore/ui/cn";
 import { formatDayLabel, formatTime } from "@/lib/date";
 import type { SupportMessage } from "@/domains/support/types/support";
@@ -75,15 +88,7 @@ export function ChatThread({
   otherReadAt?: string | null;
 }) {
   const [draft, setDraft] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages?.length]);
 
   // Auto-grow with content, capped so a long paste doesn't swallow the thread.
   useEffect(() => {
@@ -106,12 +111,9 @@ export function ChatThread({
     <div className="flex h-full w-full min-w-0 flex-col">
       {header}
 
-      <div
-        ref={scrollRef}
-        className="min-w-0 flex-1 overflow-y-auto bg-background/40 px-4 py-3"
-      >
+      <div className="min-w-0 flex-1 bg-background/40">
         {isLoading && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 px-4 py-3">
             <Skeleton className="h-14 w-2/3 rounded-2xl" />
             <Skeleton className="h-14 w-1/2 self-end rounded-2xl" />
           </div>
@@ -121,57 +123,76 @@ export function ChatThread({
             {emptyMessage}
           </p>
         )}
-        {dayGroups.map((group) => (
-          <div key={group.dayLabel}>
-            <div className="my-3 flex justify-center">
-              <span className="rounded-full bg-secondary px-3 py-1 text-[0.65rem] font-medium text-muted-foreground">
-                {group.dayLabel}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              {group.messages.map((message, index) => {
-                const isMine = message.senderRole === currentRole;
-                const grouped = isGroupedWithPrevious(group.messages, index);
-                const isRead =
-                  isMine &&
-                  !!otherReadAt &&
-                  new Date(message.createdAt) <= new Date(otherReadAt);
-                return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex",
-                      isMine ? "justify-end" : "justify-start",
-                      grouped ? "mt-0.5" : "mt-2",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "flex max-w-[75%] flex-col gap-1.5 rounded-2xl px-3 py-2 text-sm shadow-sm",
-                        isMine
-                          ? "bg-accent text-accent-foreground rounded-br-md"
-                          : "bg-secondary text-foreground rounded-bl-md",
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap break-words">
-                        {message.content}
-                      </p>
-                      <span className="flex items-center gap-1 self-end text-[0.6rem] opacity-70">
-                        {formatTime(message.createdAt)}
-                        {isMine &&
-                          (isRead ? (
-                            <CheckCheck size={12} className="text-sky-300" />
-                          ) : (
-                            <Check size={12} />
-                          ))}
-                      </span>
+        {!isLoading && (messages?.length ?? 0) > 0 && (
+          <MessageScrollerProvider>
+            <MessageScroller>
+              <MessageScrollerViewport>
+                <MessageScrollerContent className="gap-3 px-4 py-3">
+                  {dayGroups.map((group) => (
+                    <div key={group.dayLabel} className="flex flex-col gap-0.5">
+                      <Marker variant="separator" className="my-2">
+                        {group.dayLabel}
+                      </Marker>
+                      {group.messages.map((message, index) => {
+                        const isMine = message.senderRole === currentRole;
+                        const grouped = isGroupedWithPrevious(
+                          group.messages,
+                          index,
+                        );
+                        const isRead =
+                          isMine &&
+                          !!otherReadAt &&
+                          new Date(message.createdAt) <=
+                            new Date(otherReadAt);
+                        return (
+                          <MessageScrollerItem
+                            key={message.id}
+                            messageId={message.id}
+                            scrollAnchor={isMine}
+                            className={grouped ? "mt-0.5" : "mt-2"}
+                          >
+                            <Message align={isMine ? "end" : "start"}>
+                              <MessageContent>
+                                <Bubble
+                                  align={isMine ? "end" : "start"}
+                                  variant={isMine ? "default" : "secondary"}
+                                >
+                                  <BubbleContent
+                                    className={cn(
+                                      "flex flex-col gap-1.5",
+                                      isMine ? "rounded-br-md" : "rounded-bl-md",
+                                    )}
+                                  >
+                                    <p className="whitespace-pre-wrap break-words">
+                                      {message.content}
+                                    </p>
+                                    <span className="flex items-center gap-1 self-end text-[0.6rem] opacity-70">
+                                      {formatTime(message.createdAt)}
+                                      {isMine &&
+                                        (isRead ? (
+                                          <CheckCheck
+                                            size={12}
+                                            className="text-sky-300"
+                                          />
+                                        ) : (
+                                          <Check size={12} />
+                                        ))}
+                                    </span>
+                                  </BubbleContent>
+                                </Bubble>
+                              </MessageContent>
+                            </Message>
+                          </MessageScrollerItem>
+                        );
+                      })}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+                  ))}
+                </MessageScrollerContent>
+              </MessageScrollerViewport>
+              <MessageScrollerButton />
+            </MessageScroller>
+          </MessageScrollerProvider>
+        )}
       </div>
 
       <div className="flex items-end gap-2 border-t border-border p-3">
