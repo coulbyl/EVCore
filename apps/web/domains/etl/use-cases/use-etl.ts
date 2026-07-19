@@ -12,7 +12,6 @@ import type {
   EtlQueueStatus,
   EtlRollingStatsResult,
   EtlSchedulerEntry,
-  EtlStandingsResult,
   EtlSyncResult,
   GlobalSyncType,
   LeagueSyncType,
@@ -84,18 +83,6 @@ export function useTriggerRollingStats() {
       clientApiRequest<EtlRollingStatsResult>(
         `/etl/sync/rolling-stats/${opts.competitionCode}/${opts.season}`,
         { method: "POST", body: { mode: opts.mode } },
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
-  });
-}
-
-export function useTriggerStandingsSync() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (opts: { competitionCode: string; season: number }) =>
-      clientApiRequest<EtlStandingsResult>(
-        `/etl/sync/standings/${opts.competitionCode}?season=${opts.season}`,
-        { method: "POST" },
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etl-queue-status"] }),
   });

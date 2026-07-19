@@ -7,6 +7,7 @@ import {
   resolveTargetDates,
 } from './odds-prematch-sync.worker';
 import { ApiFootballClient } from '../api-football.client';
+import { API_FOOTBALL_BET_IDS } from '@config/etl.constants';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import type { NotificationService } from '../../notification/notification.service';
@@ -95,6 +96,95 @@ function pinnacleWithAdditionalMarkets() {
           { value: '1:0', odd: 4.75 },
           { value: '0:0', odd: 6.25 },
           { value: 'Other', odd: 1.5 },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Home/Away',
+        values: [
+          { value: 'Home', odd: 1.22 },
+          { value: 'Away', odd: 4.0 },
+        ],
+      },
+      {
+        id: 16,
+        name: 'Total - Home',
+        values: [
+          { value: 'Over 0.5', odd: 1.11 },
+          { value: 'Under 0.5', odd: 6.5 },
+          { value: 'Over 1.5', odd: 1.57 },
+          { value: 'Under 1.5', odd: 2.25 },
+        ],
+      },
+      {
+        id: 17,
+        name: 'Total - Away',
+        values: [
+          { value: 'Over 0.5', odd: 1.53 },
+          { value: 'Under 0.5', odd: 2.38 },
+        ],
+      },
+      {
+        id: 27,
+        name: 'Clean Sheet - Home',
+        values: [
+          { value: 'Yes', odd: 2.38 },
+          { value: 'No', odd: 1.53 },
+        ],
+      },
+      {
+        id: 28,
+        name: 'Clean Sheet - Away',
+        values: [
+          { value: 'Yes', odd: 6.5 },
+          { value: 'No', odd: 1.11 },
+        ],
+      },
+      {
+        id: 29,
+        name: 'Win to Nil - Home',
+        values: [
+          { value: 'Yes', odd: 1.95 },
+          { value: 'No', odd: 1.75 },
+        ],
+      },
+      {
+        id: 30,
+        name: 'Win to Nil - Away',
+        values: [
+          { value: 'Yes', odd: 9.5 },
+          { value: 'No', odd: 1.05 },
+        ],
+      },
+      {
+        id: 39,
+        name: 'To Win Either Half',
+        values: [
+          { value: 'Home', odd: 1.3 },
+          { value: 'Away', odd: 3.0 },
+        ],
+      },
+      {
+        id: 25,
+        name: 'Result/Total Goals',
+        values: [
+          { value: 'Home/Over 1.5', odd: 1.83 },
+          { value: 'Home/Under 1.5', odd: 7.0 },
+          { value: 'Home/Over 2.5', odd: 2.2 },
+          { value: 'Draw/Over 2.5', odd: 10.0 },
+          { value: 'Away/Under 2.5', odd: 11.0 },
+        ],
+      },
+      {
+        id: 24,
+        name: 'Results/Both Teams Score',
+        values: [
+          { value: 'Home/Yes', odd: 2.95 },
+          { value: 'Draw/Yes', odd: 5.0 },
+          { value: 'Away/Yes', odd: 8.0 },
+          { value: 'Home/No', odd: 2.95 },
+          { value: 'Draw/No', odd: 10.0 },
+          { value: 'Away/No', odd: 9.5 },
         ],
       },
     ],
@@ -503,5 +593,125 @@ describe('extractAdditionalMarketOdds', () => {
 
     // "Other"/catch-all values are dropped; only "H:A" scorelines are kept.
     expect(additional.correctScoreOdds).toEqual({ '1:0': 4.75, '0:0': 6.25 });
+  });
+
+  it('extracts Draw No Bet odds from the "Home/Away" bet (id 2)', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.drawNoBetOdds).toEqual({ home: 1.22, away: 4.0 });
+  });
+
+  it('extracts sparse Team Total odds per side', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.teamTotalHomeOdds).toEqual({
+      OVER_0_5: 1.11,
+      UNDER_0_5: 6.5,
+      OVER_1_5: 1.57,
+      UNDER_1_5: 2.25,
+    });
+    expect(additional.teamTotalAwayOdds).toEqual({
+      OVER_0_5: 1.53,
+      UNDER_0_5: 2.38,
+    });
+  });
+
+  it('returns null/empty DNB and Team Total when the bookmaker is absent', () => {
+    const additional = extractAdditionalMarketOdds([], 'Pinnacle');
+
+    expect(additional.drawNoBetOdds).toBeNull();
+    expect(additional.teamTotalHomeOdds).toEqual({});
+    expect(additional.teamTotalAwayOdds).toEqual({});
+  });
+
+  it('extracts Clean Sheet Home/Away odds (Yes/No)', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.cleanSheetHomeOdds).toEqual({ yes: 2.38, no: 1.53 });
+    expect(additional.cleanSheetAwayOdds).toEqual({ yes: 6.5, no: 1.11 });
+  });
+
+  it('extracts Win to Nil Home/Away odds (Yes/No)', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.winToNilHomeOdds).toEqual({ yes: 1.95, no: 1.75 });
+    expect(additional.winToNilAwayOdds).toEqual({ yes: 9.5, no: 1.05 });
+  });
+
+  it('extracts To Win Either Half odds (Home/Away, no third value)', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.winEitherHalfOdds).toEqual({ home: 1.3, away: 3.0 });
+  });
+
+  it('returns null for Clean Sheet/Win to Nil/To Win Either Half when the bookmaker is absent', () => {
+    const additional = extractAdditionalMarketOdds([], 'Pinnacle');
+
+    expect(additional.cleanSheetHomeOdds).toBeNull();
+    expect(additional.cleanSheetAwayOdds).toBeNull();
+    expect(additional.winToNilHomeOdds).toBeNull();
+    expect(additional.winToNilAwayOdds).toBeNull();
+    expect(additional.winEitherHalfOdds).toBeNull();
+  });
+
+  it('extracts Result/Total Goals odds — sparse, keyed by side+line', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.resultTotalGoalsOdds).toEqual({
+      HOME_OVER_1_5: 1.83,
+      HOME_UNDER_1_5: 7.0,
+      HOME_OVER_2_5: 2.2,
+      DRAW_OVER_2_5: 10.0,
+      AWAY_UNDER_2_5: 11.0,
+    });
+  });
+
+  it('extracts Results/Both Teams Score odds — fixed 6-cell grid', () => {
+    const bk = pinnacleWithAdditionalMarkets();
+    const additional = extractAdditionalMarketOdds([bk as never], 'Pinnacle');
+
+    expect(additional.resultBttsOdds).toEqual({
+      HOME_YES: 2.95,
+      DRAW_YES: 5.0,
+      AWAY_YES: 8.0,
+      HOME_NO: 2.95,
+      DRAW_NO: 10.0,
+      AWAY_NO: 9.5,
+    });
+  });
+
+  it('returns empty maps for Result/Total Goals and Result/BTTS when the bookmaker is absent', () => {
+    const additional = extractAdditionalMarketOdds([], 'Pinnacle');
+
+    expect(additional.resultTotalGoalsOdds).toEqual({});
+    expect(additional.resultBttsOdds).toEqual({});
+  });
+});
+
+describe('API_FOOTBALL_BET_IDS regression (Double Chance / DNB id fix)', () => {
+  it('DOUBLE_CHANCE points at the real Double Chance bet (id 12), not DNB', () => {
+    expect(API_FOOTBALL_BET_IDS.DOUBLE_CHANCE).toBe(12);
+    expect(API_FOOTBALL_BET_IDS.DRAW_NO_BET).toBe(2);
+    expect(API_FOOTBALL_BET_IDS.TEAM_TOTAL_HOME).toBe(16);
+    expect(API_FOOTBALL_BET_IDS.TEAM_TOTAL_AWAY).toBe(17);
+  });
+
+  it('Niveau 2 bet ids match the live API-Football reference (2026-07-18)', () => {
+    expect(API_FOOTBALL_BET_IDS.CLEAN_SHEET_HOME).toBe(27);
+    expect(API_FOOTBALL_BET_IDS.CLEAN_SHEET_AWAY).toBe(28);
+    expect(API_FOOTBALL_BET_IDS.WIN_TO_NIL_HOME).toBe(29);
+    expect(API_FOOTBALL_BET_IDS.WIN_TO_NIL_AWAY).toBe(30);
+    expect(API_FOOTBALL_BET_IDS.TO_WIN_EITHER_HALF).toBe(39);
+  });
+
+  it('Niveau 2.b bet ids match the live API-Football reference (2026-07-18)', () => {
+    expect(API_FOOTBALL_BET_IDS.RESULT_TOTAL_GOALS).toBe(25);
+    expect(API_FOOTBALL_BET_IDS.RESULT_BTTS).toBe(24);
   });
 });

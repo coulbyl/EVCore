@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Plus, Layers } from "lucide-react";
+import { X } from "lucide-react";
 import { Badge, cn } from "@evcore/ui";
 import {
   formatMarketForDisplay,
@@ -125,49 +125,7 @@ function groupItemsByFixture(items: BetSlipItemView[]): SlipMatchGroup[] {
   return order.map((id) => map.get(id)!);
 }
 
-function ComboLeg({ pick, market }: { pick: string; market: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5">
-        <Plus
-          size={12}
-          strokeWidth={3}
-          className="-ml-[1px] shrink-0 rounded-full bg-accent/12 text-accent"
-        />
-        <span className="text-[0.8rem] font-bold text-foreground">{pick}</span>
-      </div>
-      <p className="ml-[1.3rem] text-[0.62rem] text-muted-foreground">
-        {market}
-      </p>
-    </div>
-  );
-}
-
 function PickContent({ item }: { item: BetSlipItemView }) {
-  const hasCombo = Boolean(item.comboMarket && item.comboPick);
-
-  if (hasCombo) {
-    return (
-      <div>
-        <span className="flex items-center gap-1 text-[0.7rem] font-extrabold italic uppercase tracking-tight text-accent">
-          <Layers size={12} strokeWidth={2.5} />
-          Mycombi
-        </span>
-        <div className="relative mt-1 space-y-1 pl-1">
-          <span className="absolute bottom-2.5 left-[5px] top-2.5 w-px bg-border" />
-          <ComboLeg
-            pick={formatPickForDisplay(item.pick, item.market)}
-            market={formatMarketForDisplay(item.market)}
-          />
-          <ComboLeg
-            pick={formatPickForDisplay(item.comboPick!, item.comboMarket!)}
-            market={formatMarketForDisplay(item.comboMarket!)}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5">

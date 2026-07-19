@@ -29,7 +29,6 @@ export class ReportsRepository {
   async findSettledEvSelections(from: Date): Promise<SettledEvSelectionRow[]> {
     return this.prisma.client.channelSelection.findMany({
       where: {
-        comboMarket: null,
         result: { in: ['WON', 'LOST'] },
         odds: { not: null },
         createdAt: { gte: from },

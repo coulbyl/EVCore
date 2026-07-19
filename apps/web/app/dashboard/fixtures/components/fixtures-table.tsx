@@ -86,21 +86,11 @@ function AddToSlipButton({
     return null;
   }
 
-  const {
-    modelRunId,
-    market,
-    pick,
-    ev,
-    evaluatedPicks,
-    comboMarket,
-    comboPick,
-  } = mr;
+  const { modelRunId, market, pick, ev, evaluatedPicks } = mr;
   const itemKey = draftItemKey({
     fixtureId: row.fixtureId,
     market,
     pick,
-    comboMarket,
-    comboPick,
   });
   const inSlip = isInSlip(itemKey);
 
@@ -111,13 +101,8 @@ function AddToSlipButton({
     } else {
       const shouldOpenCoupon = draft.items.length === 0;
       const odds =
-        evaluatedPicks.find(
-          (p) =>
-            p.market === market &&
-            p.pick === pick &&
-            (p.comboMarket ?? null) === (comboMarket ?? null) &&
-            (p.comboPick ?? null) === (comboPick ?? null),
-        )?.odds ?? null;
+        evaluatedPicks.find((p) => p.market === market && p.pick === pick)
+          ?.odds ?? null;
       const item: BetSlipDraftItem = {
         modelRunId,
         fixtureId: row.fixtureId,
@@ -128,8 +113,6 @@ function AddToSlipButton({
         scheduledAt: row.scheduledAt,
         market,
         pick,
-        comboMarket: comboMarket ?? undefined,
-        comboPick: comboPick ?? undefined,
         odds,
         ev,
         stakeOverride: null,

@@ -32,8 +32,7 @@ type GlobalSyncType =
   | 'odds-csv'
   | 'elo'
   | 'odds-prematch'
-  | 'analysis'
-  | 'standings';
+  | 'analysis';
 
 type SyncBody = OddsPrematchSyncBodyDto;
 type RollingStatsSyncBody = { mode?: 'refresh' | 'rebuild' };
@@ -55,7 +54,6 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
   analysis: (service, body) => service.triggerBettingEngineAnalysis(body.date),
-  standings: (service) => service.triggerConfiguredStandingsSync(),
 };
 
 const LEAGUE_SYNC_HANDLERS: Record<LeagueSyncType, LeagueSyncHandler> = {
@@ -77,7 +75,6 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'elo',
   'odds-prematch',
   'analysis',
-  'standings',
 ] as const satisfies readonly GlobalSyncType[];
 
 const LEAGUE_SYNC_TYPE_VALUES = [
@@ -476,46 +473,13 @@ export class EtlController {
     return { status: 'ok' as const, competitionCodes, seasons };
   }
 
-  @Post('sync/standings/:competitionCode')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Trigger standings sync for a competition',
-    description:
-      'Fetches group standings from API Football for the given competition and season, ' +
-      'then upserts all entries into the `standing` table. ' +
-      'Example: POST /etl/sync/standings/WC?season=2026',
-  })
-  @ApiParam({ name: 'competitionCode', example: 'WC' })
-  @ApiOkResponse({
-    schema: {
-      example: { status: 'ok', competitionCode: 'WC', season: 2026 },
-    },
-  })
-  @ApiBadRequestResponse({
-    description: 'Missing or invalid season query param.',
-  })
-  async triggerStandingsSync(
-    @Param('competitionCode') competitionCode: string,
-    @Query('season') seasonParam?: string,
-  ) {
-    const code = this.resolveCode(competitionCode);
-    const year = Number.parseInt(seasonParam ?? '', 10);
-    if (Number.isNaN(year) || year < 1900 || year > 2100) {
-      throw new BadRequestException(
-        'season query param must be a valid year (e.g. ?season=2026)',
-      );
-    }
-    await this.etlService.triggerStandingsSync(code, year);
-    return { status: 'ok' as const, competitionCode: code, season: year };
-  }
-
   @Post('sync/:type')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, analysis, standings. For league-scoped runs, use ' +
+      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, analysis. For league-scoped runs, use ' +
       '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({

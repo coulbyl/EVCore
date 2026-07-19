@@ -15,6 +15,7 @@
 import "dotenv/config";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import { flatRoi } from "@evcore/analysis-core";
 import { prisma } from "../src/client";
 
 const EV_THRESHOLD = 0.08;
@@ -28,18 +29,10 @@ type Row = {
   result: "WON" | "LOST";
 };
 
-type DayTierStats = {
-  n: number;
-  wonCount: number;
-  roiSum: number;
-};
+type SettledPick = { won: boolean; odds: number };
 
-function emptyStats(): DayTierStats {
-  return { n: 0, wonCount: 0, roiSum: 0 };
-}
-
-function roiPct(stats: DayTierStats): number {
-  return stats.n === 0 ? 0 : (stats.roiSum / stats.n) * 100;
+function roiPct(items: SettledPick[]): number {
+  return flatRoi(items) * 100;
 }
 
 async function main() {
@@ -67,8 +60,8 @@ async function main() {
     ORDER BY day
   `;
 
-  // channel -> day (ISO) -> { below, above } tier stats
-  type ChannelDays = Map<string, { below: DayTierStats; above: DayTierStats }>;
+  // channel -> day (ISO) -> { below, above } settled picks
+  type ChannelDays = Map<string, { below: SettledPick[]; above: SettledPick[] }>;
   const byChannel = new Map<string, ChannelDays>();
 
   for (const row of rows) {
@@ -76,18 +69,12 @@ async function main() {
     byChannel.set(row.channel, channelDays);
 
     const dayKey = row.day.toISOString().slice(0, 10);
-    const tiers = channelDays.get(dayKey) ?? {
-      below: emptyStats(),
-      above: emptyStats(),
-    };
+    const tiers = channelDays.get(dayKey) ?? { below: [], above: [] };
     channelDays.set(dayKey, tiers);
 
     const ev = row.ev ?? -Infinity;
     const tier = ev >= EV_THRESHOLD ? tiers.above : tiers.below;
-    tier.n += 1;
-    const roi = row.result === "WON" ? row.odds - 1 : -1;
-    tier.roiSum += roi;
-    if (row.result === "WON") tier.wonCount += 1;
+    tier.push({ won: row.result === "WON", odds: row.odds });
   }
 
   const lines: string[] = [];
@@ -112,35 +99,31 @@ async function main() {
     let daysAboveNegative = 0;
     let daysBelowPositive = 0;
     let daysBelowNegative = 0;
-    const totalAbove = emptyStats();
-    const totalBelow = emptyStats();
+    const totalAbove: SettledPick[] = [];
+    const totalBelow: SettledPick[] = [];
 
     for (const tiers of channelDays.values()) {
-      if (tiers.above.n >= MIN_PICKS_PER_DAY) {
+      if (tiers.above.length >= MIN_PICKS_PER_DAY) {
         if (roiPct(tiers.above) > 0) daysAbovePositive += 1;
         else daysAboveNegative += 1;
-        totalAbove.n += tiers.above.n;
-        totalAbove.roiSum += tiers.above.roiSum;
-        totalAbove.wonCount += tiers.above.wonCount;
+        totalAbove.push(...tiers.above);
       }
-      if (tiers.below.n >= MIN_PICKS_PER_DAY) {
+      if (tiers.below.length >= MIN_PICKS_PER_DAY) {
         if (roiPct(tiers.below) > 0) daysBelowPositive += 1;
         else daysBelowNegative += 1;
-        totalBelow.n += tiers.below.n;
-        totalBelow.roiSum += tiers.below.roiSum;
-        totalBelow.wonCount += tiers.below.wonCount;
+        totalBelow.push(...tiers.below);
       }
     }
 
     w(`=== ${channel} ===`);
     w(
-      `EV >= ${EV_THRESHOLD} : ${totalAbove.n} picks au total, ROI agrege ${roiPct(totalAbove).toFixed(2)}%`,
+      `EV >= ${EV_THRESHOLD} : ${totalAbove.length} picks au total, ROI agrege ${roiPct(totalAbove).toFixed(2)}%`,
     );
     w(
       `  Jours avec >=${MIN_PICKS_PER_DAY} picks dans ce tier : ${daysAbovePositive + daysAboveNegative} — ${daysAbovePositive} jours positifs, ${daysAboveNegative} jours negatifs (${((100 * daysAbovePositive) / Math.max(1, daysAbovePositive + daysAboveNegative)).toFixed(1)}% des jours positifs)`,
     );
     w(
-      `EV <  ${EV_THRESHOLD} : ${totalBelow.n} picks au total, ROI agrege ${roiPct(totalBelow).toFixed(2)}%`,
+      `EV <  ${EV_THRESHOLD} : ${totalBelow.length} picks au total, ROI agrege ${roiPct(totalBelow).toFixed(2)}%`,
     );
     w(
       `  Jours avec >=${MIN_PICKS_PER_DAY} picks dans ce tier : ${daysBelowPositive + daysBelowNegative} — ${daysBelowPositive} jours positifs, ${daysBelowNegative} jours negatifs (${((100 * daysBelowPositive) / Math.max(1, daysBelowPositive + daysBelowNegative)).toFixed(1)}% des jours positifs)`,

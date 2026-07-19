@@ -46,12 +46,7 @@ export class SafeStrategy implements ChannelStrategy {
     const evDecision = context.previousDecisions.get(STRATEGY_CHANNEL.VALUE);
     const evSel = evDecision?.selections[0];
     const evPickKey = evSel
-      ? buildBetPickKey({
-          market: evSel.market,
-          pick: evSel.pick,
-          comboMarket: evSel.comboMarket ?? null,
-          comboPick: evSel.comboPick ?? null,
-        })
+      ? buildBetPickKey({ market: evSel.market, pick: evSel.pick })
       : null;
 
     const allPicks = context.evaluatedMarkets.flatMap((m) => m.picks);

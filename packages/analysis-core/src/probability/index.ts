@@ -1,6 +1,9 @@
 export {
   type ThreeWayProba,
   type DerivedMarketsProba,
+  type ResultTotalGoalsProba,
+  type ResultBttsProba,
+  type TeamTotalProba,
   HALF_TIME_FULL_TIME_PICKS,
   type HalfTimeFullTimePick,
   outcomeFromScores,
@@ -13,7 +16,6 @@ export {
   buildPoissonDistributions,
   computeCorrectScoreMatrix,
 } from "./poisson";
-export { type ComboPick, computeJointProbability } from "./combo";
 export {
   type OverUnderShrinkageConfig,
   OU_SHRINKAGE_CONFIG,
@@ -24,9 +26,12 @@ export {
   type TeamStatsInput,
   type MatchupFeatures,
   type LambdaConfig,
+  type OffensiveBalance,
+  type OffensiveBalanceClassification,
   LAMBDA_SHRINKAGE_FACTOR,
   mapProbabilitiesToNumber,
   deriveLambdas,
+  computeOffensiveBalance,
   rebalanceThreeWayProbabilities,
   buildMatchupFeatures,
   blendTeamStats,

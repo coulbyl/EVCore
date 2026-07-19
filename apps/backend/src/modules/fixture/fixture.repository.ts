@@ -129,6 +129,41 @@ type HasOneXTwoOddsSnapshotInput = {
   snapshotAt: Date;
 };
 
+// Sparse map: only lines the bookmaker actually prices are present.
+type TeamTotalOddsInput = Partial<
+  Record<
+    | 'OVER_0_5'
+    | 'UNDER_0_5'
+    | 'OVER_1_5'
+    | 'UNDER_1_5'
+    | 'OVER_2_5'
+    | 'UNDER_2_5'
+    | 'OVER_3_5'
+    | 'UNDER_3_5'
+    | 'OVER_4_5'
+    | 'UNDER_4_5'
+    | 'OVER_5_5'
+    | 'UNDER_5_5'
+    | 'OVER_6_5'
+    | 'UNDER_6_5',
+    number
+  >
+>;
+
+type YesNoOddsInput = { yes: number; no: number } | null;
+
+// Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+// sparse maps, same shape as the extractor output in odds-prematch-sync.worker.ts.
+type ResultTotalGoalsOddsInput = Partial<
+  Record<
+    `${'HOME' | 'DRAW' | 'AWAY'}_${'OVER' | 'UNDER'}_${'1_5' | '2_5' | '3_5' | '4_5'}`,
+    number
+  >
+>;
+type ResultBttsOddsInput = Partial<
+  Record<`${'HOME' | 'DRAW' | 'AWAY'}_${'YES' | 'NO'}`, number>
+>;
+
 export type UpsertOddsSnapshotInput = {
   fixtureId: string;
   bookmaker: string;
@@ -158,6 +193,16 @@ export type UpsertOddsSnapshotInput = {
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   correctScoreOdds: Record<string, number>;
+  drawNoBetOdds: { home: number; away: number } | null;
+  teamTotalHomeOdds: TeamTotalOddsInput;
+  teamTotalAwayOdds: TeamTotalOddsInput;
+  cleanSheetHomeOdds: YesNoOddsInput;
+  cleanSheetAwayOdds: YesNoOddsInput;
+  winToNilHomeOdds: YesNoOddsInput;
+  winToNilAwayOdds: YesNoOddsInput;
+  winEitherHalfOdds: { home: number; away: number } | null;
+  resultTotalGoalsOdds: ResultTotalGoalsOddsInput;
+  resultBttsOdds: ResultBttsOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -187,6 +232,16 @@ export type UpsertSecondaryMarketOddsInput = {
   firstHalfWinnerOdds: { home: number; draw: number; away: number } | null;
   doubleChanceOdds: { '1X': number; X2: number; '12': number | null } | null;
   correctScoreOdds: Record<string, number>;
+  drawNoBetOdds: { home: number; away: number } | null;
+  teamTotalHomeOdds: TeamTotalOddsInput;
+  teamTotalAwayOdds: TeamTotalOddsInput;
+  cleanSheetHomeOdds: YesNoOddsInput;
+  cleanSheetAwayOdds: YesNoOddsInput;
+  winToNilHomeOdds: YesNoOddsInput;
+  winToNilAwayOdds: YesNoOddsInput;
+  winEitherHalfOdds: { home: number; away: number } | null;
+  resultTotalGoalsOdds: ResultTotalGoalsOddsInput;
+  resultBttsOdds: ResultBttsOddsInput;
   source?: OddsSnapshotSource;
 };
 
@@ -613,7 +668,17 @@ export class FixtureRepository {
       | 'OVER_UNDER_HT'
       | 'FIRST_HALF_WINNER'
       | 'DOUBLE_CHANCE'
-      | 'CORRECT_SCORE',
+      | 'CORRECT_SCORE'
+      | 'DRAW_NO_BET'
+      | 'TEAM_TOTAL_HOME'
+      | 'TEAM_TOTAL_AWAY'
+      | 'CLEAN_SHEET_HOME'
+      | 'CLEAN_SHEET_AWAY'
+      | 'WIN_TO_NIL_HOME'
+      | 'WIN_TO_NIL_AWAY'
+      | 'TO_WIN_EITHER_HALF'
+      | 'RESULT_TOTAL_GOALS'
+      | 'RESULT_BTTS',
     pick: string,
     odds: number | null,
   ): Promise<void> {
@@ -732,6 +797,114 @@ export class FixtureRepository {
       ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
       ),
+      ...(data.drawNoBetOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'HOME',
+              data.drawNoBetOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'AWAY',
+              data.drawNoBetOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.teamTotalHomeOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_HOME', pick, odds ?? null),
+      ),
+      ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
+      ),
+      ...(data.cleanSheetHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'YES',
+              data.cleanSheetHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'NO',
+              data.cleanSheetHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.cleanSheetAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'YES',
+              data.cleanSheetAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'NO',
+              data.cleanSheetAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'YES',
+              data.winToNilHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'NO',
+              data.winToNilHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'YES',
+              data.winToNilAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'NO',
+              data.winToNilAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winEitherHalfOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'HOME',
+              data.winEitherHalfOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'AWAY',
+              data.winEitherHalfOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.resultTotalGoalsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_TOTAL_GOALS', pick, odds ?? null),
+      ),
+      ...Object.entries(data.resultBttsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_BTTS', pick, odds ?? null),
+      ),
     ]);
 
     return oneXTwoId;
@@ -806,6 +979,114 @@ export class FixtureRepository {
         : []),
       ...Object.entries(data.correctScoreOdds).map(([pick, odds]) =>
         this.upsertNonOneXTwo(ctx, 'CORRECT_SCORE', pick, odds),
+      ),
+      ...(data.drawNoBetOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'HOME',
+              data.drawNoBetOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'DRAW_NO_BET',
+              'AWAY',
+              data.drawNoBetOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.teamTotalHomeOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_HOME', pick, odds ?? null),
+      ),
+      ...Object.entries(data.teamTotalAwayOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'TEAM_TOTAL_AWAY', pick, odds ?? null),
+      ),
+      ...(data.cleanSheetHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'YES',
+              data.cleanSheetHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_HOME',
+              'NO',
+              data.cleanSheetHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.cleanSheetAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'YES',
+              data.cleanSheetAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'CLEAN_SHEET_AWAY',
+              'NO',
+              data.cleanSheetAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilHomeOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'YES',
+              data.winToNilHomeOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_HOME',
+              'NO',
+              data.winToNilHomeOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winToNilAwayOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'YES',
+              data.winToNilAwayOdds.yes,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'WIN_TO_NIL_AWAY',
+              'NO',
+              data.winToNilAwayOdds.no,
+            ),
+          ]
+        : []),
+      ...(data.winEitherHalfOdds
+        ? [
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'HOME',
+              data.winEitherHalfOdds.home,
+            ),
+            this.upsertNonOneXTwo(
+              ctx,
+              'TO_WIN_EITHER_HALF',
+              'AWAY',
+              data.winEitherHalfOdds.away,
+            ),
+          ]
+        : []),
+      ...Object.entries(data.resultTotalGoalsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_TOTAL_GOALS', pick, odds ?? null),
+      ),
+      ...Object.entries(data.resultBttsOdds).map(([pick, odds]) =>
+        this.upsertNonOneXTwo(ctx, 'RESULT_BTTS', pick, odds ?? null),
       ),
     ]);
   }

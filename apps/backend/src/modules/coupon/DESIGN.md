@@ -21,15 +21,15 @@ Avant d'écrire la moindre formule, voici ce que les recherches réclament et qu
 est **déjà implémenté et testé** ailleurs dans le backend. Le module coupon doit
 **consommer** ces briques, pas les recréer.
 
-| Recommandation des recherches                      | Statut EVCore      | Où                                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Loi de Poisson (λ dom/ext, matrice de scores)      | ✅ Fait            | `buildPoissonDistributions`, `computePoissonMarkets`, `deriveMarketsFromPoisson` ([betting-engine.utils.ts](betting-engine.utils.ts))                                                                                                                                                                                                                                                                 |
-| `EV = p × cote − 1`, filtre EV strict              | ✅ Fait            | `calculateEV`, `EV_THRESHOLD = 0.08`, seuils par ligue `LEAGUE_EV_THRESHOLD_MAP` ([ev.constants.ts](../betting-engine/ev.constants.ts))                                                                                                                                                                                                                                                               |
-| Proba jointe **corrélée** même-match (pas `p1×p2`) | ✅ Fait            | `computeJointProbability` (table Poisson bivariée) + `COMBO_WHITELIST` ([betting-engine.utils.ts](../betting-engine/betting-engine.utils.ts))                                                                                                                                                                                                                                                         |
-| Kelly fractionnaire (Quarter Kelly, cap mise)      | ✅ Fait            | `calculateKellyStakePct`, `KELLY_FRACTION=0.25`, `KELLY_MAX_STAKE_PCT=0.05`, flag `KELLY_ENABLED`                                                                                                                                                                                                                                                                                                     |
-| Calibration — **mesure**                           | ✅ Fait            | `CalibrationService` (Brier, meanError) → déclenche `AdjustmentProposal`. ⚠️ **mesure seulement, ne corrige aucune proba au runtime.**                                                                                                                                                                                                                                                                |
-| Calibration — **correction de proba**              | ⚠️ **PAS en prod** | Couche ML XGBoost (`predictShadowCorrection`) = **shadow only** : `shadowMlCorrectedP` est loggé, la décision garde la **proba Poisson brute** ([betting-engine.service.ts:905-925](../betting-engine/betting-engine.service.ts)). Promotion hors shadow = TODO ROADMAP. La seule « calibration » réellement appliquée est **manuelle** : corrections λ + seuils EV par ligue dans `ev.constants.ts`. |
-| Proba implicite bookmaker                          | ✅ Fait (partiel)  | canal DRAW utilise `1/drawOdds`                                                                                                                                                                                                                                                                                                                                                                       |
+| Recommandation des recherches                      | Statut EVCore          | Où                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loi de Poisson (λ dom/ext, matrice de scores)      | ✅ Fait                | `buildPoissonDistributions`, `computePoissonMarkets`, `deriveMarketsFromPoisson` ([betting-engine.utils.ts](betting-engine.utils.ts))                                                                                                                                                                                                                                                                 |
+| `EV = p × cote − 1`, filtre EV strict              | ✅ Fait                | `calculateEV`, `EV_THRESHOLD = 0.08`, seuils par ligue `LEAGUE_EV_THRESHOLD_MAP` ([ev.constants.ts](../betting-engine/ev.constants.ts))                                                                                                                                                                                                                                                               |
+| Proba jointe **corrélée** même-match (pas `p1×p2`) | ❌ Retiré (2026-07-18) | Système synthétique retiré ; remplacé par de vraies cotes bookmaker pré-combinées (`RESULT_TOTAL_GOALS`, `RESULT_BTTS`). Voir Étape 6 ci-dessous.                                                                                                                                                                                                                                                     |
+| Kelly fractionnaire (Quarter Kelly, cap mise)      | ✅ Fait                | `calculateKellyStakePct`, `KELLY_FRACTION=0.25`, `KELLY_MAX_STAKE_PCT=0.05`, flag `KELLY_ENABLED`                                                                                                                                                                                                                                                                                                     |
+| Calibration — **mesure**                           | ✅ Fait                | `CalibrationService` (Brier, meanError) → déclenche `AdjustmentProposal`. ⚠️ **mesure seulement, ne corrige aucune proba au runtime.**                                                                                                                                                                                                                                                                |
+| Calibration — **correction de proba**              | ⚠️ **PAS en prod**     | Couche ML XGBoost (`predictShadowCorrection`) = **shadow only** : `shadowMlCorrectedP` est loggé, la décision garde la **proba Poisson brute** ([betting-engine.service.ts:905-925](../betting-engine/betting-engine.service.ts)). Promotion hors shadow = TODO ROADMAP. La seule « calibration » réellement appliquée est **manuelle** : corrections λ + seuils EV par ligue dans `ev.constants.ts`. |
+| Proba implicite bookmaker                          | ✅ Fait (partiel)      | canal DRAW utilise `1/drawOdds`                                                                                                                                                                                                                                                                                                                                                                       |
 
 **Conséquence directe :**
 
@@ -38,8 +38,9 @@ est **déjà implémenté et testé** ailleurs dans le backend. Le module coupon
   il existe, derrière `KELLY_ENABLED`). Réutiliser `calculateKellyStakePct`.
 - ❌ **Ne pas** réimplémenter `EV = p×cote−1` inline (règle CLAUDE.md : EV défini
   une seule fois dans `config/`). Réutiliser `calculateEV`.
-- ❌ **Ne pas** faire `p1 × p2` pour deux marchés du **même match** — utiliser
-  `computeJointProbability`.
+- ❌ **Ne pas** réintroduire de proba jointe synthétique pour deux marchés du
+  même match — utiliser les vraies cotes bookmaker pré-combinées
+  (`RESULT_TOTAL_GOALS`, `RESULT_BTTS`) quand le marché existe.
 
 ---
 
@@ -405,7 +406,14 @@ findLatestOddsSnapshot`, as-of coup d'envoi) ; helper `computeMarketFair`
   coupon (pas de colonne dédiée → pas de migration). Tests : flat, Kelly capé,
   quarter-Kelly sous le cap, 0 si Kelly ≤ 0. backend typecheck/lint/574 tests.
 
-### ✅ Étape 6 — Combos même-match à value (corrige B11) — FAIT (2026-06-21)
+### ❌ Étape 6 — Combos même-match à value (corrige B11) — RETIRÉ (2026-07-18)
+
+> **Retiré** : le système synthétique décrit ci-dessous (`COMBO_WHITELIST`,
+> `computeJointProbability`, `estimateComboOdds`, colonnes
+> `comboMarket`/`comboPick`) a été supprimé au profit de vrais marchés
+> bookmaker pré-combinés (`RESULT_TOTAL_GOALS`, `RESULT_BTTS` — Niveau 2.b,
+> voir `docs/market-coverage-expansion.md`), qui donnent une cote réelle là
+> où ce système approximait un prix. Section conservée pour l'historique.
 
 - ✅ Générateur pur `buildComboCandidates` ([combo-candidates.ts](combo-candidates.ts)) :
   pour chaque `COMBO_WHITELIST`, proba jointe **bivariée Poisson**

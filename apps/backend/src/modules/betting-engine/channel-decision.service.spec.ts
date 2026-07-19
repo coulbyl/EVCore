@@ -28,6 +28,16 @@ const ODDS: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: null,
+  teamTotalHomeOdds: {},
+  teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 function richContext(): StrategyContext {
@@ -39,7 +49,6 @@ function richContext(): StrategyContext {
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
-    isCombo: false,
   };
   return buildStrategyContext({
     fixture: {
@@ -64,6 +73,12 @@ function richContext(): StrategyContext {
       under35: new Decimal('0.82'),
       over45: new Decimal('0.07'),
       under45: new Decimal('0.93'),
+      cleanSheetHome: new Decimal('0.30'),
+      cleanSheetAway: new Decimal('0.20'),
+      winEitherHalfHome: new Decimal('0.55'),
+      winEitherHalfAway: new Decimal('0.45'),
+      teamTotalHome: {},
+      teamTotalAway: {},
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -91,9 +106,9 @@ describe('ChannelDecisionService', () => {
     const [runId, evaluated] = saveRunDecisions.mock.calls[0];
     expect(runId).toBe('run-1');
 
-    // Orchestrator ran every primary strategy (incl. CORRECT_SCORE) + the
-    // CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(9);
+    // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
+    // TEAM_TOTAL, WIN_EITHER_HALF) + the CONSENSUS & AVOID meta-strategies.
+    expect(evaluated).toHaveLength(12);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.
@@ -161,15 +176,11 @@ describe('ChannelDecisionService', () => {
           id: 's1',
           market: Market.ONE_X_TWO,
           pick: 'HOME',
-          comboMarket: null,
-          comboPick: null,
         },
         {
           id: 's2',
           market: Market.ONE_X_TWO,
           pick: 'AWAY',
-          comboMarket: null,
-          comboPick: null,
         },
       ]);
       const applySelectionResults = vi.fn().mockResolvedValue(undefined);
@@ -202,16 +213,12 @@ describe('ChannelDecisionService', () => {
           id: 'btts',
           market: Market.BTTS,
           pick: 'YES',
-          comboMarket: null,
-          comboPick: null,
         },
         // 1X2 never early-settles → skipped
         {
           id: 'x12',
           market: Market.ONE_X_TWO,
           pick: 'HOME',
-          comboMarket: null,
-          comboPick: null,
         },
       ]);
       const applySelectionResults = vi.fn().mockResolvedValue(undefined);
@@ -267,8 +274,6 @@ describe('ChannelDecisionService', () => {
             {
               market: Market.ONE_X_TWO,
               pick: 'HOME',
-              comboMarket: null,
-              comboPick: null,
               probability: new Decimal('0.6'),
               odds: new Decimal('1.9'),
               impliedProbability: null,
@@ -337,6 +342,62 @@ describe('ChannelDecisionService', () => {
       expect(safe?.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
       expect(safe?.reasonCode).toBe('no_safe_candidate');
       expect(safe?.selections).toHaveLength(0);
+    });
+  });
+
+  describe('listByChannel', () => {
+    // Regression test (2026-07-19): READ_CHANNEL_ORDER is a hardcoded list
+    // that groups.get(channel) is read against — a channel missing from it
+    // is silently dropped from the "Par canal" web lens, not an error. This
+    // already happened once for CORRECT_SCORE, then again for
+    // CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF.
+    it('includes every primary and meta channel, not just the original six', async () => {
+      const baseRow = {
+        id: 'cd',
+        modelRunId: 'run-1',
+        status: CHANNEL_DECISION_STATUS.SELECTED,
+        reasonCode: null,
+        fixtureId: 'f1',
+        scheduledAt: new Date('2026-01-18T14:00:00.000Z'),
+        homeTeam: 'Home',
+        awayTeam: 'Away',
+        homeLogo: null,
+        awayLogo: null,
+        competitionCode: 'BL1',
+        country: 'Germany',
+        homeScore: null,
+        awayScore: null,
+        homeHtScore: null,
+        awayHtScore: null,
+        selections: [],
+      };
+      const channels = [
+        STRATEGY_CHANNEL.VALUE,
+        STRATEGY_CHANNEL.SAFE,
+        STRATEGY_CHANNEL.DOMINANT,
+        STRATEGY_CHANNEL.BTTS,
+        STRATEGY_CHANNEL.DRAW,
+        STRATEGY_CHANNEL.GOALS,
+        STRATEGY_CHANNEL.CLEAN_SHEET,
+        STRATEGY_CHANNEL.TEAM_TOTAL,
+        STRATEGY_CHANNEL.WIN_EITHER_HALF,
+        STRATEGY_CHANNEL.CORRECT_SCORE,
+        STRATEGY_CHANNEL.AVOID,
+        STRATEGY_CHANNEL.CONSENSUS,
+      ];
+      const findByDate = vi.fn().mockResolvedValue(
+        channels.map((channel, i) => ({
+          ...baseRow,
+          id: `cd-${i}`,
+          channel,
+        })),
+      );
+      const repo = { findByDate } as unknown as ChannelDecisionRepository;
+      const service = new ChannelDecisionService(repo);
+
+      const groups = await service.listByChannel({ date: '2026-01-18' });
+
+      expect(groups.map((g) => g.channel).sort()).toEqual([...channels].sort());
     });
   });
 });

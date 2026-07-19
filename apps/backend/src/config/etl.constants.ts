@@ -190,15 +190,38 @@ export const API_FOOTBALL_BOOKMAKERS = {
 // Bet type IDs in the API-Football odds endpoint
 export const API_FOOTBALL_BET_IDS = {
   MATCH_WINNER: 1,
-  DOUBLE_CHANCE: 2,
+  // API-Football names this bet "Home/Away" — it is Draw No Bet (draw
+  // refunded), not a raw two-way market. Confirmed live 2026-07-18: id 2
+  // values on a heavy favorite (Home 1.22 / Away 4.00) match DNB pricing,
+  // not Double Chance (see id 12 below). Was previously mislabeled as
+  // DOUBLE_CHANCE here — fixed.
+  DRAW_NO_BET: 2,
   OVER_UNDER_25: 5,
   OVER_UNDER_FIRST_HALF: 6,
   HALF_TIME_FULL_TIME: 7,
   BTTS: 8,
+  // Team Total: goals scored by a single side, independent of the other.
+  TEAM_TOTAL_HOME: 16,
+  TEAM_TOTAL_AWAY: 17,
   FIRST_HALF_WINNER: 13,
+  DOUBLE_CHANCE: 12,
   // Full-time exact score. Observation-only market (forward odds collection) —
   // no historical odds via API-Football, see TODO Étape 7 item A.
   EXACT_SCORE: 10,
+  CLEAN_SHEET_HOME: 27,
+  CLEAN_SHEET_AWAY: 28,
+  WIN_TO_NIL_HOME: 29,
+  WIN_TO_NIL_AWAY: 30,
+  // Two-way market (Home/Away only) — never a third "Draw"/"Neither" value,
+  // confirmed live 2026-07-18 across every fixture in the sample.
+  TO_WIN_EITHER_HALF: 39,
+  // Pre-combined bookmaker markets (result × goals / result × BTTS) — a
+  // real joint price, not a synthetic combo. Values like "Home/Over 2.5".
+  RESULT_TOTAL_GOALS: 25,
+  RESULT_BTTS: 24,
+  // Halftime variant (id 51) deferred: 0 occurrences across every
+  // bookmaker in the live sample checked 2026-07-18, not just the 5
+  // priority ones — no data to build or test against.
 } as const;
 
 export const BULLMQ_QUEUES = {
@@ -217,7 +240,6 @@ export const BULLMQ_QUEUES = {
   BETTING_ENGINE_REBUILD: 'betting-engine-rebuild',
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
-  STANDINGS_SYNC: 'standings-sync',
   ROLLING_HORIZON: 'rolling-horizon',
 } as const;
 
@@ -242,7 +264,6 @@ export const ETL_CRON_SCHEDULES = {
   // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
   ODDS_PREMATCH_SYNC: '0 6,18 * * *',
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
-  STANDINGS_SYNC: '0 1 * * *', // 01:00 UTC daily — refresh group standings (active during WC/tournament phases)
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
 } as const;
 
@@ -256,7 +277,6 @@ export const ETL_SCHEDULER_KEYS = {
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
-  STANDINGS_SYNC: 'cron:standings-sync',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {

@@ -23,6 +23,16 @@ const BASE_ODDS: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: null,
+  teamTotalHomeOdds: {},
+  teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 type ProbInput = {

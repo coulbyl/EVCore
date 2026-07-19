@@ -22,8 +22,6 @@ function selection(
   return {
     market: 'ONE_X_TWO',
     pick: 'HOME',
-    comboMarket: null,
-    comboPick: null,
     probability: 0.7,
     odds: 1.5,
     impliedProbability: 0.66,

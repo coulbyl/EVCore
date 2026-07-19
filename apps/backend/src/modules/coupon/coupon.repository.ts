@@ -21,8 +21,6 @@ export type SummaryBetRow = {
   id: string;
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   oddsSnapshot: Prisma.Decimal | null;
   qualityScore: Prisma.Decimal | null;
   probEstimated: Prisma.Decimal;
@@ -52,8 +50,6 @@ export type UpsertProposalInput = {
     canal: StrategyChannel;
     market: string;
     pick: string;
-    comboMarket: string | null;
-    comboPick: string | null;
     probability: number;
     oddsSnapshot: number | null;
     signalScore: number;
@@ -147,9 +143,6 @@ export class CouponRepository {
       canal: leg.canal,
       market: leg.market as Prisma.CouponProposalLegCreateInput['market'],
       pick: leg.pick,
-      comboMarket:
-        leg.comboMarket as Prisma.CouponProposalLegCreateInput['comboMarket'],
-      comboPick: leg.comboPick,
       probability: leg.probability,
       oddsSnapshot: leg.oddsSnapshot,
       signalScore: leg.signalScore,
@@ -391,8 +384,6 @@ export class CouponRepository {
         id: true,
         market: true,
         pick: true,
-        comboMarket: true,
-        comboPick: true,
         oddsSnapshot: true,
         qualityScore: true,
         probEstimated: true,

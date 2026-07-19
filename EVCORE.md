@@ -98,33 +98,35 @@ Le moteur expose deux familles de canaux :
 
 **Canaux basés sur l'EV (Bet)**
 
-| Canal             | Critère           | Marché                            | Pick                                    |
-| ----------------- | ----------------- | --------------------------------- | --------------------------------------- |
-| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, combos | HOME / DRAW / AWAY / OVER / UNDER / YES |
-| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| Canal             | Critère           | Marché                                                                                                                | Pick                                    |
+| ----------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                    | HOME / DRAW / AWAY / OVER / UNDER / YES |
 
 **Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
 
-| Canal                | Critère                  | Marché    | Signal                   |
-| -------------------- | ------------------------ | --------- | ------------------------ |
-| **CONF** (Confiance) | P_max ≥ seuil ligue      | ONE_X_TWO | argmax(HOME, DRAW, AWAY) |
-| **BTTS**             | P(BTTS) ≥ seuil ligue    | BTTS      | YES uniquement           |
-| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue | ONE_X_TWO | DRAW uniquement          |
+| Canal                | Critère                      | Marché                       | Signal                             |
+| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------- |
+| **CONF** (Confiance) | P_max ≥ seuil ligue          | ONE_X_TWO                    | argmax(HOME, DRAW, AWAY)           |
+| **BTTS**             | P(BTTS) ≥ seuil ligue        | BTTS                         | YES uniquement                     |
+| **DRAW** (Nul)       | 1/drawOdds ≥ seuil ligue     | ONE_X_TWO                    | DRAW uniquement                    |
+| **GOALS**            | P(side) ≥ seuil ligne/ligue  | OVER_UNDER (1.5/2.5/3.5/4.5) | meilleur (ligne × side) par EV     |
+| **CLEAN_SHEET**      | P(clean sheet) ≥ seuil ligue | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement |
+| **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
+| **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
 
-Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32).
+Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
 
 ---
 
-### Combos-match (Phase 2)
+### Marchés pré-combinés (RESULT_TOTAL_GOALS, RESULT_BTTS)
 
-Un pick peut combiner deux marchés sur la même fixture si la probabilité jointe est calculable depuis le modèle de Poisson et que l'EV joint ≥ 8%. Maximum 2 marchés par combo.
-
-| Exemples de combos valides       |
-| -------------------------------- |
-| HOME_WIN + BTTS_YES              |
-| AWAY_WIN + OVER_2_5              |
-| DRAW + BTTS_YES                  |
-| DC_1X / DC_X2 / DC_12 + BTTS_YES |
+Retiré (2026-07-18) : le système précédent combinait deux marchés synthétiquement
+(probabilité jointe Poisson + cote corrélée estimée). Il est remplacé par de vrais
+marchés bookmaker pré-combinés — résultat × total de buts (`RESULT_TOTAL_GOALS`) et
+résultat × BTTS (`RESULT_BTTS`) — qui portent une cote réelle plutôt qu'estimée. Ce
+ne sont pas des combos à deux jambes mais des marchés à pick composé (comme
+`HALF_TIME_FULL_TIME`). Voir `docs/market-coverage-expansion.md`.
 
 ### Phase 2+
 

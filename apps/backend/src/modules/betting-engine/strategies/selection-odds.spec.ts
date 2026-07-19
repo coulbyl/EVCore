@@ -21,6 +21,16 @@ const odds: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: { home: new Decimal('1.22'), away: new Decimal('4.00') },
+  teamTotalHomeOdds: { OVER_1_5: new Decimal('1.57') },
+  teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: { yes: new Decimal('2.38'), no: new Decimal('1.53') },
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: { home: new Decimal('1.30'), away: new Decimal('3.00') },
+  resultTotalGoalsOdds: { HOME_OVER_2_5: new Decimal('2.20') },
+  resultBttsOdds: { HOME_YES: new Decimal('2.95') },
 };
 
 describe('resolveSelectionOdds', () => {
@@ -43,6 +53,77 @@ describe('resolveSelectionOdds', () => {
     expect(resolveSelectionOdds(odds, Market.DOUBLE_CHANCE, '1X')).toBeNull();
     expect(resolveSelectionOdds(odds, Market.ONE_X_TWO, 'NOPE')).toBeNull();
     expect(resolveSelectionOdds(null, Market.BTTS, 'YES')).toBeNull();
+  });
+
+  it('resolves Draw No Bet picks', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.DRAW_NO_BET, 'HOME')?.toNumber(),
+    ).toBe(1.22);
+    expect(
+      resolveSelectionOdds(odds, Market.DRAW_NO_BET, 'AWAY')?.toNumber(),
+    ).toBe(4.0);
+  });
+
+  it('resolves Team Total picks per side, null for unpriced lines', () => {
+    expect(
+      resolveSelectionOdds(
+        odds,
+        Market.TEAM_TOTAL_HOME,
+        'OVER_1_5',
+      )?.toNumber(),
+    ).toBe(1.57);
+    expect(
+      resolveSelectionOdds(odds, Market.TEAM_TOTAL_AWAY, 'OVER_1_5'),
+    ).toBeNull();
+  });
+
+  it('resolves Clean Sheet picks (Yes/No), null when unpriced', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.CLEAN_SHEET_HOME, 'YES')?.toNumber(),
+    ).toBe(2.38);
+    expect(
+      resolveSelectionOdds(odds, Market.CLEAN_SHEET_HOME, 'NO')?.toNumber(),
+    ).toBe(1.53);
+    expect(
+      resolveSelectionOdds(odds, Market.CLEAN_SHEET_AWAY, 'YES'),
+    ).toBeNull();
+  });
+
+  it('resolves Win to Nil picks, null when unpriced', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.WIN_TO_NIL_HOME, 'YES'),
+    ).toBeNull();
+  });
+
+  it('resolves To Win Either Half picks (Home/Away)', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.TO_WIN_EITHER_HALF, 'HOME')?.toNumber(),
+    ).toBe(1.3);
+    expect(
+      resolveSelectionOdds(odds, Market.TO_WIN_EITHER_HALF, 'AWAY')?.toNumber(),
+    ).toBe(3.0);
+  });
+
+  it('resolves Result/Total Goals picks by composed key, null for unpriced cells', () => {
+    expect(
+      resolveSelectionOdds(
+        odds,
+        Market.RESULT_TOTAL_GOALS,
+        'HOME_OVER_2_5',
+      )?.toNumber(),
+    ).toBe(2.2);
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_TOTAL_GOALS, 'AWAY_UNDER_1_5'),
+    ).toBeNull();
+  });
+
+  it('resolves Result/BTTS picks by composed key, null for unpriced cells', () => {
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_BTTS, 'HOME_YES')?.toNumber(),
+    ).toBe(2.95);
+    expect(
+      resolveSelectionOdds(odds, Market.RESULT_BTTS, 'DRAW_NO'),
+    ).toBeNull();
   });
 });
 

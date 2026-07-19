@@ -15,7 +15,7 @@ type BadgeCode =
   | 'graduate';
 
 const FORMATION_GRADUATE_ARTICLES = [
-  'the-3-channels',
+  'channels-overview',
   'draw-channel',
   'erreurs-frequentes',
   'dominant-channel',

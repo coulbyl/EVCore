@@ -41,6 +41,10 @@ export type ChannelTuningRow = {
   competitionName: string;
   homeScore: number;
   awayScore: number;
+  // Half-time scores — only WIN_EITHER_HALF's outcome needs them; null when
+  // the fixture has no recorded HT score (pre-live-sync history).
+  homeHtScore: number | null;
+  awayHtScore: number | null;
   probHome: number;
   probDraw: number;
   probAway: number;
@@ -49,6 +53,12 @@ export type ChannelTuningRow = {
   // GOALS (Over/Under 2.5) — the only line with usable odds coverage in history.
   probOver25: number | null;
   probUnder25: number | null;
+  // CLEAN_SHEET / WIN_EITHER_HALF — forward-only odds coverage (PREMATCH sync,
+  // started 2026-07-18), see CLEAN_SHEET_CONFIG/WIN_EITHER_HALF_CONFIG header.
+  probCleanSheetHome: number | null;
+  probCleanSheetAway: number | null;
+  probWinEitherHalfHome: number | null;
+  probWinEitherHalfAway: number | null;
   oddsHome: number | null;
   oddsDraw: number | null;
   oddsAway: number | null;
@@ -56,6 +66,10 @@ export type ChannelTuningRow = {
   oddsBttsNo: number | null;
   oddsOver25: number | null;
   oddsUnder25: number | null;
+  oddsCleanSheetHome: number | null;
+  oddsCleanSheetAway: number | null;
+  oddsWinEitherHalfHome: number | null;
+  oddsWinEitherHalfAway: number | null;
 };
 
 /**
@@ -219,6 +233,8 @@ export class BacktestRepository {
         id: true,
         homeScore: true,
         awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
         season: {
           select: { competition: { select: { code: true, name: true } } },
         },
@@ -244,6 +260,30 @@ export class BacktestRepository {
       fixtureWhere,
       'UNDER',
     );
+    const cleanSheetHomeByFixture = await this.latestSimpleOdds({
+      to,
+      fixtureWhere,
+      market: Market.CLEAN_SHEET_HOME,
+      pick: 'YES',
+    });
+    const cleanSheetAwayByFixture = await this.latestSimpleOdds({
+      to,
+      fixtureWhere,
+      market: Market.CLEAN_SHEET_AWAY,
+      pick: 'YES',
+    });
+    const winEitherHalfHomeByFixture = await this.latestSimpleOdds({
+      to,
+      fixtureWhere,
+      market: Market.TO_WIN_EITHER_HALF,
+      pick: 'HOME',
+    });
+    const winEitherHalfAwayByFixture = await this.latestSimpleOdds({
+      to,
+      fixtureWhere,
+      market: Market.TO_WIN_EITHER_HALF,
+      pick: 'AWAY',
+    });
 
     const rows: ChannelTuningRow[] = [];
     for (const f of fixtures) {
@@ -257,6 +297,8 @@ export class BacktestRepository {
         competitionName: f.season.competition.name,
         homeScore: f.homeScore,
         awayScore: f.awayScore,
+        homeHtScore: f.homeHtScore,
+        awayHtScore: f.awayHtScore,
         probHome: probs.home,
         probDraw: probs.draw,
         probAway: probs.away,
@@ -264,6 +306,10 @@ export class BacktestRepository {
         probBttsNo: probs.bttsNo,
         probOver25: probs.over25,
         probUnder25: probs.under25,
+        probCleanSheetHome: probs.cleanSheetHome,
+        probCleanSheetAway: probs.cleanSheetAway,
+        probWinEitherHalfHome: probs.winEitherHalfHome,
+        probWinEitherHalfAway: probs.winEitherHalfAway,
         oddsHome: oneXTwo?.home ?? null,
         oddsDraw: oneXTwo?.draw ?? null,
         oddsAway: oneXTwo?.away ?? null,
@@ -271,6 +317,10 @@ export class BacktestRepository {
         oddsBttsNo: bttsNoByFixture.get(f.id) ?? null,
         oddsOver25: overByFixture.get(f.id) ?? null,
         oddsUnder25: underByFixture.get(f.id) ?? null,
+        oddsCleanSheetHome: cleanSheetHomeByFixture.get(f.id) ?? null,
+        oddsCleanSheetAway: cleanSheetAwayByFixture.get(f.id) ?? null,
+        oddsWinEitherHalfHome: winEitherHalfHomeByFixture.get(f.id) ?? null,
+        oddsWinEitherHalfAway: winEitherHalfAwayByFixture.get(f.id) ?? null,
       });
     }
     return rows;
@@ -365,9 +415,39 @@ export class BacktestRepository {
     }
     return byFixture;
   }
+
+  /** Latest odds for a single (market, pick) per fixture in the window —
+   * generic version of latestBttsOdds/latestOverUnderOdds for markets that
+   * only ever need one side's price (CLEAN_SHEET_*, TO_WIN_EITHER_HALF). */
+  private async latestSimpleOdds(opts: {
+    to: Date;
+    fixtureWhere: Prisma.FixtureWhereInput;
+    market: Market;
+    pick: string;
+  }): Promise<Map<string, number>> {
+    const { to, fixtureWhere, market, pick } = opts;
+    const snapshots = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        market,
+        pick,
+        odds: { not: null },
+        snapshotAt: { lte: to },
+        fixture: { is: fixtureWhere },
+      },
+      select: { fixtureId: true, odds: true },
+      orderBy: [{ fixtureId: 'asc' }, { snapshotAt: 'desc' }],
+    });
+    const byFixture = new Map<string, number>();
+    for (const s of snapshots) {
+      if (byFixture.has(s.fixtureId) || s.odds === null) continue;
+      byFixture.set(s.fixtureId, Number(s.odds));
+    }
+    return byFixture;
+  }
 }
 
-/** Reads the 1X2 + BTTS + Over/Under 2.5 probabilities from a feature snapshot. */
+/** Reads the 1X2 + BTTS + Over/Under 2.5 + CLEAN_SHEET/WIN_EITHER_HALF
+ * probabilities from a feature snapshot. */
 function readSignalProbabilities(features: Prisma.JsonValue): {
   home: number;
   draw: number;
@@ -376,6 +456,10 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
   bttsNo: number | null;
   over25: number | null;
   under25: number | null;
+  cleanSheetHome: number | null;
+  cleanSheetAway: number | null;
+  winEitherHalfHome: number | null;
+  winEitherHalfAway: number | null;
 } | null {
   if (!features || typeof features !== 'object' || Array.isArray(features)) {
     return null;
@@ -390,6 +474,10 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
   const bttsNo = p['bttsNo'];
   const over25 = p['over25'];
   const under25 = p['under25'];
+  const cleanSheetHome = p['cleanSheetHome'];
+  const cleanSheetAway = p['cleanSheetAway'];
+  const winEitherHalfHome = p['winEitherHalfHome'];
+  const winEitherHalfAway = p['winEitherHalfAway'];
   if (
     typeof home !== 'number' ||
     typeof draw !== 'number' ||
@@ -413,5 +501,11 @@ function readSignalProbabilities(features: Prisma.JsonValue): {
     bttsNo: resolvedBttsNo,
     over25: typeof over25 === 'number' ? over25 : null,
     under25: typeof under25 === 'number' ? under25 : null,
+    cleanSheetHome: typeof cleanSheetHome === 'number' ? cleanSheetHome : null,
+    cleanSheetAway: typeof cleanSheetAway === 'number' ? cleanSheetAway : null,
+    winEitherHalfHome:
+      typeof winEitherHalfHome === 'number' ? winEitherHalfHome : null,
+    winEitherHalfAway:
+      typeof winEitherHalfAway === 'number' ? winEitherHalfAway : null,
   };
 }

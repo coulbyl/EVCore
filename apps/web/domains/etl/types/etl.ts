@@ -40,12 +40,6 @@ export type EtlRollingStatsResult = {
   mode: "refresh" | "rebuild";
 };
 
-export type EtlStandingsResult = {
-  status: "ok";
-  competitionCode: string;
-  season: number;
-};
-
 export type EtlHorizonResult = {
   status: "ok";
   enqueuedDates: string[];
@@ -74,7 +68,6 @@ export type GlobalSyncType =
   | "odds-csv"
   | "elo"
   | "odds-prematch"
-  | "analysis"
-  | "standings";
+  | "analysis";
 
 export type LeagueSyncType = "fixtures" | "stats" | "injuries";

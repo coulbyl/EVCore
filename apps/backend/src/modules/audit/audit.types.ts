@@ -10,8 +10,6 @@ export type AuditDiagnostics = {
 export type AuditPickSnapshot = {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: string;
   odds: string;
   ev: string;

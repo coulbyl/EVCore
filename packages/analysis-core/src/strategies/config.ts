@@ -11,7 +11,12 @@ export type ChannelStrategyLeagueConfig = {
   minSampleN: number;
 };
 
-export type ChannelStrategyConfigChannel = "DOMINANT" | "DRAW" | "BTTS";
+export type ChannelStrategyConfigChannel =
+  | "DOMINANT"
+  | "DRAW"
+  | "BTTS"
+  | "CLEAN_SHEET"
+  | "WIN_EITHER_HALF";
 
 type ChannelStrategyConfigMap = Partial<
   Record<ChannelStrategyConfigChannel, ChannelStrategyLeagueConfig>
@@ -30,6 +35,179 @@ const DRAW_DEFAULT: ChannelStrategyLeagueConfig = {
 };
 
 const BTTS_DEFAULT: ChannelStrategyLeagueConfig = {
+  enabled: false,
+  threshold: 0.99,
+  minSampleN: 20,
+};
+
+// CLEAN_SHEET / WIN_EITHER_HALF — new channels (2026-07-18). No historical
+// odds coverage exists for either market (odds-historical-import.worker.ts
+// stub; The Odds API's standard /odds endpoint 422s even on BTTS/DNB, let
+// alone these — see docs/market-coverage-expansion.md) — only the forward
+// PREMATCH sync (API-Football) collects real prices, starting 2026-07-18.
+// So there is no ROI/hit-rate backtest to run yet (unlike DOMINANT/DRAW/BTTS
+// above). Enabled in OBSERVATION mode instead, same methodology as
+// GOALS_CONFIG: threshold = (empirical base rate of the HOME side, the
+// structurally stronger/more reliable signal — away clean-sheet and
+// away-wins-a-half rates are consistently lower across every league in the
+// data) − 0.05, a loose conviction gate meant to accumulate volume, not a
+// fitted edge. Both channels pick argmax(HOME, AWAY) at runtime, so AWAY
+// still surfaces on genuinely exceptional matches. Never staked (only
+// EV/SAFE/DRAW feed the coupon pool) — a SELECTED decision here is recorded
+// + settled analytically, zero exposure. Promote a league to a real
+// backtested threshold only once forward ROI/hit-rate data confirms an edge.
+// Derived 2026-07-18 from settled FT/HT scores (docker exec evcore-postgres
+// psql — see commit for the exact query), all active leagues with n ≥ 50.
+export const CLEAN_SHEET_CONFIG: Record<string, ChannelStrategyLeagueConfig> = {
+  ARG1: { enabled: true, threshold: 0.39, minSampleN: 20 }, // CS home base 0.4352, away 0.3083, n=1521
+  ARG2: { enabled: true, threshold: 0.42, minSampleN: 20 }, // CS home base 0.4692, away 0.3038, n=2406
+  AUS1: { enabled: true, threshold: 0.18, minSampleN: 20 }, // CS home base 0.2323, away 0.2087, n=508
+  AUT1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3128, away 0.2444, n=585
+  BEL1: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3049, away 0.2271, n=951
+  BL1: { enabled: true, threshold: 0.2, minSampleN: 20 }, // CS home base 0.2478, away 0.2024, n=924
+  BRA1: { enabled: true, threshold: 0.31, minSampleN: 20 }, // CS home base 0.3555, away 0.2200, n=1159
+  BRA2: { enabled: true, threshold: 0.36, minSampleN: 20 }, // CS home base 0.4061, away 0.2443, n=1310
+  CH: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3088, away 0.2316, n=1671
+  CHI1: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3000, away 0.2190, n=840
+  CHI2: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3008, away 0.2413, n=605
+  CHN2: { enabled: true, threshold: 0.29, minSampleN: 20 }, // CS home base 0.3426, away 0.2425, n=829
+  CSL: { enabled: true, threshold: 0.21, minSampleN: 20 }, // CS home base 0.2646, away 0.1918, n=756
+  CZE1: { enabled: true, threshold: 0.29, minSampleN: 20 }, // CS home base 0.3382, away 0.2381, n=819
+  D2: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2706, away 0.1894, n=924
+  D3: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2675, away 0.1904, n=1140
+  DEN1: { enabled: true, threshold: 0.2, minSampleN: 20 }, // CS home base 0.2522, away 0.1934, n=579
+  EL1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3112, away 0.2430, n=1671
+  EL2: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3034, away 0.2310, n=1671
+  ERD: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2733, away 0.1791, n=955
+  EST1: { enabled: true, threshold: 0.24, minSampleN: 20 }, // CS home base 0.2870, away 0.2591, n=575
+  F2: { enabled: true, threshold: 0.29, minSampleN: 20 }, // CS home base 0.3383, away 0.2633, n=999
+  FIN1: { enabled: true, threshold: 0.21, minSampleN: 20 }, // CS home base 0.2585, away 0.2264, n=561
+  FIN2: { enabled: true, threshold: 0.2, minSampleN: 20 }, // CS home base 0.2507, away 0.2216, n=343
+  FRI: { enabled: true, threshold: 0.3, minSampleN: 20 }, // CS home base 0.3468, away 0.2370, n=346
+  GRE1: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3174, away 0.2500, n=712
+  I2: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3179, away 0.2325, n=1170
+  IRL1: { enabled: true, threshold: 0.28, minSampleN: 20 }, // CS home base 0.3283, away 0.2530, n=664
+  ISL1: { enabled: true, threshold: 0.17, minSampleN: 20 }, // CS home base 0.2220, away 0.1575, n=527
+  J1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3104, away 0.2520, n=1266
+  KOR1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3065, away 0.2331, n=708
+  KOR2: { enabled: true, threshold: 0.24, minSampleN: 20 }, // CS home base 0.2877, away 0.2729, n=883
+  KSA1: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2712, away 0.2146, n=918
+  L1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3059, away 0.2249, n=925
+  LAT1: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3219, away 0.2449, n=584
+  LL: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3123, away 0.2123, n=1140
+  MLS: { enabled: true, threshold: 0.21, minSampleN: 20 }, // CS home base 0.2641, away 0.1811, n=1132
+  MX1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3071, away 0.1900, n=1016
+  NOR1: { enabled: true, threshold: 0.24, minSampleN: 20 }, // CS home base 0.2868, away 0.2119, n=774
+  NOR2: { enabled: true, threshold: 0.21, minSampleN: 20 }, // CS home base 0.2563, away 0.1834, n=796
+  PL: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2691, away 0.2151, n=1520
+  POL1: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3007, away 0.2135, n=918
+  POL2: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2692, away 0.2292, n=925
+  POR: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3203, away 0.2424, n=924
+  RUS1: { enabled: true, threshold: 0.28, minSampleN: 20 }, // CS home base 0.3320, away 0.2227, n=732
+  SA: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3169, away 0.2687, n=1139
+  SCO1: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3248, away 0.2151, n=702
+  SP2: { enabled: true, threshold: 0.3, minSampleN: 20 }, // CS home base 0.3521, away 0.2366, n=1403
+  SRB1: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3195, away 0.2365, n=892
+  SUI1: { enabled: true, threshold: 0.2, minSampleN: 20 }, // CS home base 0.2507, away 0.1783, n=690
+  SUI2: { enabled: true, threshold: 0.22, minSampleN: 20 }, // CS home base 0.2695, away 0.2156, n=538
+  SVN1: { enabled: true, threshold: 0.23, minSampleN: 20 }, // CS home base 0.2778, away 0.2203, n=522
+  SWE1: { enabled: true, threshold: 0.24, minSampleN: 20 }, // CS home base 0.2950, away 0.2324, n=783
+  SWE2: { enabled: true, threshold: 0.25, minSampleN: 20 }, // CS home base 0.3046, away 0.2259, n=788
+  TUR1: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3054, away 0.2189, n=1028
+  TUR2: { enabled: true, threshold: 0.31, minSampleN: 20 }, // CS home base 0.3562, away 0.2609, n=1081
+  UCL: { enabled: true, threshold: 0.26, minSampleN: 20 }, // CS home base 0.3108, away 0.2030, n=798
+  UECL: { enabled: true, threshold: 0.28, minSampleN: 20 }, // CS home base 0.3344, away 0.2211, n=1262
+  UEL: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3245, away 0.2080, n=721
+  UNL: { enabled: true, threshold: 0.33, minSampleN: 20 }, // CS home base 0.3777, away 0.2500, n=188
+  USA2: { enabled: true, threshold: 0.27, minSampleN: 20 }, // CS home base 0.3159, away 0.2393, n=1396
+  WC: { enabled: true, threshold: 0.28, minSampleN: 20 }, // CS home base 0.3273, away 0.2424, n=165
+  WCQAF: { enabled: true, threshold: 0.33, minSampleN: 20 }, // CS home base 0.3800, away 0.3230, n=421
+  WCQAS: { enabled: true, threshold: 0.35, minSampleN: 20 }, // CS home base 0.4013, away 0.3246, n=456
+  WCQCA: { enabled: true, threshold: 0.4, minSampleN: 20 }, // CS home base 0.4541, away 0.2890, n=218
+  WCQE: { enabled: true, threshold: 0.28, minSampleN: 20 }, // CS home base 0.3268, away 0.2944, n=462
+  WCQSA: { enabled: true, threshold: 0.46, minSampleN: 20 }, // CS home base 0.5140, away 0.2849, n=179
+};
+
+const CLEAN_SHEET_DEFAULT: ChannelStrategyLeagueConfig = {
+  enabled: false,
+  threshold: 0.99,
+  minSampleN: 20,
+};
+
+export const WIN_EITHER_HALF_CONFIG: Record<
+  string,
+  ChannelStrategyLeagueConfig
+> = {
+  ARG1: { enabled: true, threshold: 0.49, minSampleN: 20 }, // WEH home base 0.5358, away 0.3688, n=1521
+  ARG2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5590, away 0.3379, n=2406
+  AUS1: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5610, away 0.5236, n=508
+  AUT1: { enabled: true, threshold: 0.49, minSampleN: 20 }, // WEH home base 0.5350, away 0.4615, n=585
+  BEL1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5720, away 0.4469, n=951
+  BL1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5714, away 0.4805, n=924
+  BRA1: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6066, away 0.4038, n=1159
+  BRA2: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5947, away 0.3817, n=1310
+  CH: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5757, away 0.4554, n=1671
+  CHI1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5828, away 0.4505, n=839
+  CHI2: { enabled: true, threshold: 0.5, minSampleN: 20 }, // WEH home base 0.5515, away 0.4668, n=602
+  CHN2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5585, away 0.4077, n=829
+  CSL: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6058, away 0.4696, n=756
+  CZE1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5824, away 0.4335, n=819
+  D2: { enabled: true, threshold: 0.57, minSampleN: 20 }, // WEH home base 0.6190, away 0.4859, n=924
+  D3: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6061, away 0.4570, n=1140
+  DEN1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5786, away 0.4922, n=579
+  EL1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5829, away 0.4758, n=1671
+  EL2: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5673, away 0.4638, n=1671
+  ERD: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5864, away 0.4607, n=955
+  EST1: { enabled: true, threshold: 0.49, minSampleN: 20 }, // WEH home base 0.5357, away 0.5078, n=575
+  F2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5616, away 0.4575, n=999
+  FIN1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5758, away 0.4759, n=561
+  FIN2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5598, away 0.4665, n=343
+  FRI: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5929, away 0.4159, n=339
+  GRE1: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5640, away 0.4501, n=711
+  I2: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5697, away 0.4380, n=1169
+  IRL1: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5798, away 0.4473, n=664
+  ISL1: { enabled: true, threshold: 0.58, minSampleN: 20 }, // WEH home base 0.6319, away 0.4611, n=527
+  J1: { enabled: true, threshold: 0.49, minSampleN: 20 }, // WEH home base 0.5403, away 0.4597, n=1266
+  KOR1: { enabled: true, threshold: 0.5, minSampleN: 20 }, // WEH home base 0.5452, away 0.4562, n=708
+  KOR2: { enabled: true, threshold: 0.47, minSampleN: 20 }, // WEH home base 0.5176, away 0.4892, n=883
+  KSA1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5719, away 0.4869, n=918
+  L1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5708, away 0.4584, n=925
+  LAT1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5702, away 0.4623, n=584
+  LL: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6088, away 0.4404, n=1140
+  MLS: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6095, away 0.4708, n=1132
+  MX1: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6132, away 0.4262, n=1016
+  NOR1: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5879, away 0.4664, n=774
+  NOR2: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6013, away 0.4893, n=795
+  PL: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5947, away 0.4770, n=1520
+  POL1: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6002, away 0.4412, n=918
+  POL2: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5703, away 0.4838, n=924
+  POR: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5660, away 0.4643, n=924
+  RUS1: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.5956, away 0.4426, n=732
+  SA: { enabled: true, threshold: 0.5, minSampleN: 20 }, // WEH home base 0.5461, away 0.4732, n=1139
+  SCO1: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6040, away 0.4644, n=702
+  SP2: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5852, away 0.4041, n=1403
+  SRB1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5661, away 0.4686, n=892
+  SUI1: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6145, away 0.4681, n=690
+  SUI2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5576, away 0.4851, n=538
+  SVN1: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6019, away 0.4769, n=520
+  SWE1: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5709, away 0.4853, n=783
+  SWE2: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.5952, away 0.4492, n=788
+  TUR1: { enabled: true, threshold: 0.56, minSampleN: 20 }, // WEH home base 0.6076, away 0.4460, n=1027
+  TUR2: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5611, away 0.4306, n=1080
+  UCL: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6040, away 0.4398, n=798
+  UECL: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6008, away 0.4310, n=1260
+  UEL: { enabled: true, threshold: 0.57, minSampleN: 20 }, // WEH home base 0.6172, away 0.4355, n=721
+  UNL: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6043, away 0.4652, n=187
+  USA2: { enabled: true, threshold: 0.52, minSampleN: 20 }, // WEH home base 0.5716, away 0.4398, n=1396
+  WC: { enabled: true, threshold: 0.54, minSampleN: 20 }, // WEH home base 0.5879, away 0.4303, n=165
+  WCQAF: { enabled: true, threshold: 0.48, minSampleN: 20 }, // WEH home base 0.5300, away 0.4317, n=417
+  WCQAS: { enabled: true, threshold: 0.5, minSampleN: 20 }, // WEH home base 0.5507, away 0.4361, n=454
+  WCQCA: { enabled: true, threshold: 0.53, minSampleN: 20 }, // WEH home base 0.5760, away 0.3825, n=217
+  WCQE: { enabled: true, threshold: 0.51, minSampleN: 20 }, // WEH home base 0.5563, away 0.4827, n=462
+  WCQSA: { enabled: true, threshold: 0.55, minSampleN: 20 }, // WEH home base 0.6034, away 0.3073, n=179
+};
+
+const WIN_EITHER_HALF_DEFAULT: ChannelStrategyLeagueConfig = {
   enabled: false,
   threshold: 0.99,
   minSampleN: 20,
@@ -79,7 +257,7 @@ export function getBttsNoConfig(
 }
 
 export const CHANNEL_STRATEGY_CONFIG_CHANNELS: ChannelStrategyConfigChannel[] =
-  ["DOMINANT", "DRAW", "BTTS"];
+  ["DOMINANT", "DRAW", "BTTS", "CLEAN_SHEET", "WIN_EITHER_HALF"];
 
 export const CHANNEL_STRATEGY_CONFIG: Record<string, ChannelStrategyConfigMap> =
   {
@@ -2854,6 +3032,3858 @@ export function getGoalsLineConfigs(
 }
 
 // ─────────────────────────────────────────────
+// TEAM_TOTAL — per-team goals line (2026-07-18), same shape as GOALS but
+// doubled on the team dimension (HOME/AWAY have independent lines/sides).
+// No historical odds coverage exists (forward PREMATCH sync only, same
+// limitation as CLEAN_SHEET/WIN_EITHER_HALF above) — OBSERVATION mode,
+// structural thresholds derived from real FT scores in the DB (no ROI
+// backtest yet). Same curation method as GOALS_CONFIG: per (team, line),
+// side = OVER when the empirical over-rate ≥ 0.55, UNDER when ≤ 0.45, BOTH
+// in the 0.45–0.55 band; threshold = (base rate of the chosen side) − 0.05.
+// Lines where the chosen side's base rate exceeds 0.90 are dropped entirely
+// (e.g. "Away UNDER 4.5" at a 99% base rate) — a near-certain pick fires on
+// almost every fixture and carries no information, unlike GOALS/CLEAN_SHEET
+// where every kept line sits in a genuinely uncertain range. Never staked —
+// a SELECTED decision here is recorded + settled analytically, zero
+// exposure. Derived 2026-07-18 from settled scores (docker exec
+// evcore-postgres psql), all active leagues with n ≥ 50.
+// ─────────────────────────────────────────────
+
+export type TeamTotalTeam = "HOME" | "AWAY";
+export type TeamTotalLine = 0.5 | 1.5 | 2.5 | 3.5 | 4.5;
+export type TeamTotalSide = "OVER" | "UNDER";
+
+export type TeamTotalLineConfig = {
+  team: TeamTotalTeam;
+  line: TeamTotalLine;
+  side: TeamTotalSide;
+  enabled: boolean;
+  threshold: number;
+  minSampleN: number;
+};
+
+export type TeamTotalLeagueConfig = {
+  lines: readonly TeamTotalLineConfig[];
+};
+
+export const TEAM_TOTAL_CONFIG: Record<string, TeamTotalLeagueConfig> = {
+  ARG1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // ARG1 HOME O0_5 base 0.6917
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // ARG1 HOME U1_5 base 0.6759
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // ARG1 HOME U2_5 base 0.8895
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // ARG1 AWAY O0_5 base 0.5648
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // ARG1 AWAY U1_5 base 0.7955
+    ],
+  },
+  ARG2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // ARG2 HOME O0_5 base 0.6962
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // ARG2 HOME U1_5 base 0.6775
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // ARG2 HOME U2_5 base 0.8994
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // ARG2 AWAY O0_5 base 0.5308 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // ARG2 AWAY U0_5 base 0.4692 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // ARG2 AWAY U1_5 base 0.8321
+    ],
+  },
+  AUS1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // AUS1 HOME O0_5 base 0.7913
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // AUS1 HOME O1_5 base 0.4646 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // AUS1 HOME U1_5 base 0.5354 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // AUS1 HOME U2_5 base 0.7697
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // AUS1 HOME U3_5 base 0.8957
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // AUS1 AWAY O0_5 base 0.7677
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // AUS1 AWAY U1_5 base 0.5512
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // AUS1 AWAY U2_5 base 0.8248
+    ],
+  },
+  AUT1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // AUT1 HOME O0_5 base 0.7556
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // AUT1 HOME U1_5 base 0.5812
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // AUT1 HOME U2_5 base 0.8325
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // AUT1 AWAY O0_5 base 0.6872
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // AUT1 AWAY U1_5 base 0.6444
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // AUT1 AWAY U2_5 base 0.8615
+    ],
+  },
+  BEL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // BEL1 HOME O0_5 base 0.7729
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // BEL1 HOME U1_5 base 0.5699
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // BEL1 HOME U2_5 base 0.7939
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // BEL1 AWAY O0_5 base 0.6951
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // BEL1 AWAY U1_5 base 0.6593
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // BEL1 AWAY U2_5 base 0.8707
+    ],
+  },
+  BL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // BL1 HOME O0_5 base 0.7976
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // BL1 HOME O1_5 base 0.5022 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // BL1 HOME U1_5 base 0.4978 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // BL1 HOME U2_5 base 0.7338
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // BL1 HOME U3_5 base 0.8907
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // BL1 AWAY O0_5 base 0.7522
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // BL1 AWAY U1_5 base 0.5833
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // BL1 AWAY U2_5 base 0.7998
+    ],
+  },
+  BRA1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // BRA1 HOME O0_5 base 0.78
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // BRA1 HOME U1_5 base 0.5686
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // BRA1 HOME U2_5 base 0.8309
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // BRA1 AWAY O0_5 base 0.6445
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // BRA1 AWAY U1_5 base 0.7265
+    ],
+  },
+  BRA2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // BRA2 HOME O0_5 base 0.7557
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // BRA2 HOME U1_5 base 0.629
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // BRA2 HOME U2_5 base 0.874
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // BRA2 AWAY O0_5 base 0.5939
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // BRA2 AWAY U1_5 base 0.7725
+    ],
+  },
+  CH: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // CH HOME O0_5 base 0.7684
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // CH HOME U1_5 base 0.5895
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // CH HOME U2_5 base 0.8253
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // CH AWAY O0_5 base 0.6912
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // CH AWAY U1_5 base 0.6888
+    ],
+  },
+  CHI1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // CHI1 HOME O0_5 base 0.781
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // CHI1 HOME O1_5 base 0.4631 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // CHI1 HOME U1_5 base 0.5369 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // CHI1 HOME U2_5 base 0.8131
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // CHI1 AWAY O0_5 base 0.7
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // CHI1 AWAY U1_5 base 0.669
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // CHI1 AWAY U2_5 base 0.8762
+    ],
+  },
+  CHI2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // CHI2 HOME O0_5 base 0.7587
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // CHI2 HOME U1_5 base 0.6
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // CHI2 HOME U2_5 base 0.8281
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // CHI2 AWAY O0_5 base 0.6992
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // CHI2 AWAY U1_5 base 0.6893
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // CHI2 AWAY U2_5 base 0.876
+    ],
+  },
+  CHN2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // CHN2 HOME O0_5 base 0.7575
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // CHN2 HOME U1_5 base 0.5887
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // CHN2 HOME U2_5 base 0.848
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // CHN2 AWAY O0_5 base 0.6574
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // CHN2 AWAY U1_5 base 0.7274
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // CHN2 AWAY U2_5 base 0.8926
+    ],
+  },
+  CSL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // CSL HOME O0_5 base 0.8082
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // CSL HOME O1_5 base 0.4907 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // CSL HOME U1_5 base 0.5093 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // CSL HOME U2_5 base 0.7407
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // CSL HOME U3_5 base 0.8995
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // CSL AWAY O0_5 base 0.7354
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // CSL AWAY U1_5 base 0.6257
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // CSL AWAY U2_5 base 0.8545
+    ],
+  },
+  CZE1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // CZE1 HOME O0_5 base 0.7619
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // CZE1 HOME U1_5 base 0.5617
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // CZE1 HOME U2_5 base 0.8144
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // CZE1 AWAY O0_5 base 0.6618
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // CZE1 AWAY U1_5 base 0.663
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // CZE1 AWAY U2_5 base 0.8584
+    ],
+  },
+  D2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // D2 HOME O0_5 base 0.8106
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // D2 HOME O1_5 base 0.4881 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // D2 HOME U1_5 base 0.5119 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // D2 HOME U2_5 base 0.7695
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // D2 AWAY O0_5 base 0.7294
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // D2 AWAY U1_5 base 0.5952
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // D2 AWAY U2_5 base 0.8431
+    ],
+  },
+  D3: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // D3 HOME O0_5 base 0.8096
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // D3 HOME O1_5 base 0.4939 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // D3 HOME U1_5 base 0.5061 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // D3 HOME U2_5 base 0.7851
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // D3 AWAY O0_5 base 0.7325
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // D3 AWAY U1_5 base 0.6377
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // D3 AWAY U2_5 base 0.8351
+    ],
+  },
+  DEN1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // DEN1 HOME O0_5 base 0.8066
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // DEN1 HOME O1_5 base 0.4732 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // DEN1 HOME U1_5 base 0.5268 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // DEN1 HOME U2_5 base 0.791
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // DEN1 AWAY O0_5 base 0.7478
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // DEN1 AWAY U1_5 base 0.5682
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // DEN1 AWAY U2_5 base 0.8394
+    ],
+  },
+  EL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // EL1 HOME O0_5 base 0.757
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // EL1 HOME U1_5 base 0.5871
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // EL1 HOME U2_5 base 0.8235
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // EL1 AWAY O0_5 base 0.6888
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // EL1 AWAY U1_5 base 0.6709
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // EL1 AWAY U2_5 base 0.8851
+    ],
+  },
+  EL2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // EL2 HOME O0_5 base 0.769
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // EL2 HOME U1_5 base 0.5877
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // EL2 HOME U2_5 base 0.8199
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // EL2 AWAY O0_5 base 0.6966
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // EL2 AWAY U1_5 base 0.6547
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // EL2 AWAY U2_5 base 0.8701
+    ],
+  },
+  ERD: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // ERD HOME O0_5 base 0.8209
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // ERD HOME O1_5 base 0.5026 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // ERD HOME U1_5 base 0.4974 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // ERD HOME U2_5 base 0.7497
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // ERD HOME U3_5 base 0.8869
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // ERD AWAY O0_5 base 0.7267
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // ERD AWAY U1_5 base 0.5885
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // ERD AWAY U2_5 base 0.845
+    ],
+  },
+  EST1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // EST1 HOME O0_5 base 0.7409
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // EST1 HOME U1_5 base 0.5722
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // EST1 HOME U2_5 base 0.7965
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 20,
+      }, // EST1 AWAY O0_5 base 0.713
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 20,
+      }, // EST1 AWAY U1_5 base 0.6104
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // EST1 AWAY U2_5 base 0.8296
+    ],
+  },
+  F2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // F2 HOME O0_5 base 0.7367
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // F2 HOME U1_5 base 0.5976
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // F2 HOME U2_5 base 0.8358
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // F2 AWAY O0_5 base 0.6617
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // F2 AWAY U1_5 base 0.6797
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // F2 AWAY U2_5 base 0.8799
+    ],
+  },
+  FIN1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // FIN1 HOME O0_5 base 0.7736
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // FIN1 HOME O1_5 base 0.4831 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // FIN1 HOME U1_5 base 0.5169 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // FIN1 HOME U2_5 base 0.7594
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // FIN1 AWAY O0_5 base 0.7415
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // FIN1 AWAY U1_5 base 0.6007
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // FIN1 AWAY U2_5 base 0.8556
+    ],
+  },
+  FIN2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // FIN2 HOME O0_5 base 0.7784
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // FIN2 HOME O1_5 base 0.4606 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // FIN2 HOME U1_5 base 0.5394 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // FIN2 HOME U2_5 base 0.7638
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // FIN2 HOME U3_5 base 0.8892
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // FIN2 AWAY O0_5 base 0.7493
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 20,
+      }, // FIN2 AWAY U1_5 base 0.6064
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // FIN2 AWAY U2_5 base 0.8309
+    ],
+  },
+  FRI: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // FRI HOME O0_5 base 0.763
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // FRI HOME O1_5 base 0.4711 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // FRI HOME U1_5 base 0.5289 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // FRI HOME U2_5 base 0.7514
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // FRI HOME U3_5 base 0.8844
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // FRI AWAY O0_5 base 0.6532
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // FRI AWAY U1_5 base 0.7023
+    ],
+  },
+  GRE1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // GRE1 HOME O0_5 base 0.75
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // GRE1 HOME U1_5 base 0.5744
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // GRE1 HOME U2_5 base 0.7949
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // GRE1 AWAY O0_5 base 0.6826
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // GRE1 AWAY U1_5 base 0.6545
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // GRE1 AWAY U2_5 base 0.8876
+    ],
+  },
+  I2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // I2 HOME O0_5 base 0.7675
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // I2 HOME U1_5 base 0.588
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // I2 HOME U2_5 base 0.8436
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // I2 AWAY O0_5 base 0.6821
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // I2 AWAY U1_5 base 0.6829
+    ],
+  },
+  IRL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // IRL1 HOME O0_5 base 0.747
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // IRL1 HOME U1_5 base 0.5858
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // IRL1 HOME U2_5 base 0.8434
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // IRL1 AWAY O0_5 base 0.6717
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // IRL1 AWAY U1_5 base 0.7003
+    ],
+  },
+  ISL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // ISL1 HOME O0_5 base 0.8425
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // ISL1 HOME O1_5 base 0.5787
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // ISL1 HOME U2_5 base 0.6831
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // ISL1 HOME U3_5 base 0.8482
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // ISL1 AWAY O0_5 base 0.778
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // ISL1 AWAY U1_5 base 0.5617
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // ISL1 AWAY U2_5 base 0.8046
+    ],
+  },
+  J1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // J1 HOME O0_5 base 0.748
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // J1 HOME U1_5 base 0.6011
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // J1 HOME U2_5 base 0.8468
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // J1 AWAY O0_5 base 0.6896
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // J1 AWAY U1_5 base 0.6777
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // J1 AWAY U2_5 base 0.8799
+    ],
+  },
+  KOR1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // KOR1 HOME O0_5 base 0.7669
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // KOR1 HOME U1_5 base 0.5918
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // KOR1 HOME U2_5 base 0.8503
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // KOR1 AWAY O0_5 base 0.6935
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // KOR1 AWAY U1_5 base 0.6723
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // KOR1 AWAY U2_5 base 0.8842
+    ],
+  },
+  KOR2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // KOR2 HOME O0_5 base 0.7271
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.56,
+        minSampleN: 20,
+      }, // KOR2 HOME U1_5 base 0.6082
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // KOR2 HOME U2_5 base 0.8471
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 20,
+      }, // KOR2 AWAY O0_5 base 0.7123
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // KOR2 AWAY U1_5 base 0.6399
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // KOR2 AWAY U2_5 base 0.8596
+    ],
+  },
+  KSA1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // KSA1 HOME O0_5 base 0.7854
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // KSA1 HOME U1_5 base 0.5512
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // KSA1 HOME U2_5 base 0.7843
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // KSA1 AWAY O0_5 base 0.7288
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 20,
+      }, // KSA1 AWAY U1_5 base 0.6187
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // KSA1 AWAY U2_5 base 0.8224
+    ],
+  },
+  L1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // L1 HOME O0_5 base 0.7751
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 20,
+      }, // L1 HOME O1_5 base 0.4508 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // L1 HOME U1_5 base 0.5492 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // L1 HOME U2_5 base 0.7859
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // L1 AWAY O0_5 base 0.6941
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // L1 AWAY U1_5 base 0.6368
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // L1 AWAY U2_5 base 0.8454
+    ],
+  },
+  LAT1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // LAT1 HOME O0_5 base 0.7551
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 20,
+      }, // LAT1 HOME O1_5 base 0.4521 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // LAT1 HOME U1_5 base 0.5479 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // LAT1 HOME U2_5 base 0.762
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // LAT1 HOME U3_5 base 0.8904
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // LAT1 AWAY O0_5 base 0.6781
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // LAT1 AWAY U1_5 base 0.6455
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // LAT1 AWAY U2_5 base 0.839
+    ],
+  },
+  LL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // LL HOME O0_5 base 0.7877
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // LL HOME U1_5 base 0.5825
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // LL HOME U2_5 base 0.8044
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // LL AWAY O0_5 base 0.6877
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // LL AWAY U1_5 base 0.6772
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // LL AWAY U2_5 base 0.8965
+    ],
+  },
+  MLS: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // MLS HOME O0_5 base 0.8189
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // MLS HOME O1_5 base 0.5168 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // MLS HOME U1_5 base 0.4832 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // MLS HOME U2_5 base 0.7659
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // MLS AWAY O0_5 base 0.7359
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // MLS AWAY U1_5 base 0.5954
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // MLS AWAY U2_5 base 0.8277
+    ],
+  },
+  MX1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // MX1 HOME O0_5 base 0.81
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // MX1 HOME O1_5 base 0.4833 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // MX1 HOME U1_5 base 0.5167 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // MX1 HOME U2_5 base 0.7687
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // MX1 AWAY O0_5 base 0.6929
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // MX1 AWAY U1_5 base 0.6565
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // MX1 AWAY U2_5 base 0.8799
+    ],
+  },
+  NOR1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // NOR1 HOME O0_5 base 0.7881
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // NOR1 HOME O1_5 base 0.491 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // NOR1 HOME U1_5 base 0.509 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // NOR1 HOME U2_5 base 0.7455
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // NOR1 HOME U3_5 base 0.8863
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 20,
+      }, // NOR1 AWAY O0_5 base 0.7132
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 20,
+      }, // NOR1 AWAY U1_5 base 0.6227
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // NOR1 AWAY U2_5 base 0.8372
+    ],
+  },
+  NOR2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // NOR2 HOME O0_5 base 0.8166
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // NOR2 HOME O1_5 base 0.4899 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // NOR2 HOME U1_5 base 0.5101 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // NOR2 HOME U2_5 base 0.7525
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // NOR2 HOME U3_5 base 0.8957
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // NOR2 AWAY O0_5 base 0.7437
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // NOR2 AWAY U1_5 base 0.5942
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // NOR2 AWAY U2_5 base 0.8191
+    ],
+  },
+  PL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // PL HOME O0_5 base 0.7849
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // PL HOME O1_5 base 0.4803 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // PL HOME U1_5 base 0.5197 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // PL HOME U2_5 base 0.7724
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // PL AWAY O0_5 base 0.7309
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 20,
+      }, // PL AWAY U1_5 base 0.6184
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // PL AWAY U2_5 base 0.852
+    ],
+  },
+  POL1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // POL1 HOME O0_5 base 0.7865
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // POL1 HOME O1_5 base 0.4553 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // POL1 HOME U1_5 base 0.5447 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // POL1 HOME U2_5 base 0.7974
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // POL1 AWAY O0_5 base 0.6993
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // POL1 AWAY U1_5 base 0.6754
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.84,
+        minSampleN: 20,
+      }, // POL1 AWAY U2_5 base 0.89
+    ],
+  },
+  POL2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // POL2 HOME O0_5 base 0.7708
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 20,
+      }, // POL2 HOME O1_5 base 0.4508 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // POL2 HOME U1_5 base 0.5492 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // POL2 HOME U2_5 base 0.8205
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // POL2 AWAY O0_5 base 0.7308
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // POL2 AWAY U1_5 base 0.6422
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // POL2 AWAY U2_5 base 0.8659
+    ],
+  },
+  POR: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // POR HOME O0_5 base 0.7576
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.52,
+        minSampleN: 20,
+      }, // POR HOME U1_5 base 0.5747
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // POR HOME U2_5 base 0.7987
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // POR AWAY O0_5 base 0.6797
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // POR AWAY U1_5 base 0.6526
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // POR AWAY U2_5 base 0.8712
+    ],
+  },
+  RUS1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // RUS1 HOME O0_5 base 0.7773
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // RUS1 HOME U1_5 base 0.5615
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // RUS1 HOME U2_5 base 0.8238
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // RUS1 AWAY O0_5 base 0.668
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // RUS1 AWAY U1_5 base 0.6913
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // RUS1 AWAY U2_5 base 0.8839
+    ],
+  },
+  SA: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // SA HOME O0_5 base 0.7313
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // SA HOME U1_5 base 0.6023
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // SA HOME U2_5 base 0.8499
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // SA AWAY O0_5 base 0.6831
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // SA AWAY U1_5 base 0.6594
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // SA AWAY U2_5 base 0.8832
+    ],
+  },
+  SCO1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // SCO1 HOME O0_5 base 0.7849
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // SCO1 HOME O1_5 base 0.4786 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // SCO1 HOME U1_5 base 0.5214 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // SCO1 HOME U2_5 base 0.7835
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // SCO1 AWAY O0_5 base 0.6752
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // SCO1 AWAY U1_5 base 0.6353
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // SCO1 AWAY U2_5 base 0.859
+    ],
+  },
+  SP2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // SP2 HOME O0_5 base 0.7634
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // SP2 HOME U1_5 base 0.5852
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // SP2 HOME U2_5 base 0.8403
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // SP2 AWAY O0_5 base 0.6479
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 20,
+      }, // SP2 AWAY U1_5 base 0.7163
+    ],
+  },
+  SRB1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // SRB1 HOME O0_5 base 0.7635
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // SRB1 HOME U1_5 base 0.5628
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // SRB1 HOME U2_5 base 0.7937
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // SRB1 AWAY O0_5 base 0.6805
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // SRB1 AWAY U1_5 base 0.6536
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // SRB1 AWAY U2_5 base 0.8475
+    ],
+  },
+  SUI1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // SUI1 HOME O0_5 base 0.8217
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // SUI1 HOME O1_5 base 0.4971 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // SUI1 HOME U1_5 base 0.5029 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // SUI1 HOME U2_5 base 0.7594
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // SUI1 AWAY O0_5 base 0.7493
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // SUI1 AWAY U1_5 base 0.6435
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // SUI1 AWAY U2_5 base 0.8565
+    ],
+  },
+  SUI2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // SUI2 HOME O0_5 base 0.7844
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // SUI2 HOME O1_5 base 0.4572 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // SUI2 HOME U1_5 base 0.5428 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // SUI2 HOME U2_5 base 0.7937
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.68,
+        minSampleN: 20,
+      }, // SUI2 AWAY O0_5 base 0.7305
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // SUI2 AWAY U1_5 base 0.5874
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // SUI2 AWAY U2_5 base 0.8271
+    ],
+  },
+  SVN1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // SVN1 HOME O0_5 base 0.7797
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // SVN1 HOME U1_5 base 0.5536
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // SVN1 HOME U2_5 base 0.795
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 20,
+      }, // SVN1 AWAY O0_5 base 0.7222
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // SVN1 AWAY U1_5 base 0.6341
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // SVN1 AWAY U2_5 base 0.8372
+    ],
+  },
+  SWE1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // SWE1 HOME O0_5 base 0.7676
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // SWE1 HOME U1_5 base 0.5543
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // SWE1 HOME U2_5 base 0.7867
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // SWE1 AWAY O0_5 base 0.705
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // SWE1 AWAY U1_5 base 0.6258
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.79,
+        minSampleN: 20,
+      }, // SWE1 AWAY U2_5 base 0.8429
+    ],
+  },
+  SWE2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // SWE2 HOME O0_5 base 0.7741
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // SWE2 HOME O1_5 base 0.4657 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // SWE2 HOME U1_5 base 0.5343 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // SWE2 HOME U2_5 base 0.7906
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // SWE2 AWAY O0_5 base 0.6954
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // SWE2 AWAY U1_5 base 0.6345
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // SWE2 AWAY U2_5 base 0.8845
+    ],
+  },
+  TUR1: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // TUR1 HOME O0_5 base 0.7811
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.41,
+        minSampleN: 20,
+      }, // TUR1 HOME O1_5 base 0.4611 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.49,
+        minSampleN: 20,
+      }, // TUR1 HOME U1_5 base 0.5389 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // TUR1 HOME U2_5 base 0.7831
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // TUR1 AWAY O0_5 base 0.6946
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // TUR1 AWAY U1_5 base 0.6644
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // TUR1 AWAY U2_5 base 0.8609
+    ],
+  },
+  TUR2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // TUR2 HOME O0_5 base 0.7391
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // TUR2 HOME U1_5 base 0.5865
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // TUR2 HOME U2_5 base 0.7956
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // TUR2 AWAY O0_5 base 0.6438
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // TUR2 AWAY U1_5 base 0.7003
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // TUR2 AWAY U2_5 base 0.8659
+    ],
+  },
+  UCL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // UCL HOME O0_5 base 0.797
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // UCL HOME O1_5 base 0.5025 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.45,
+        minSampleN: 20,
+      }, // UCL HOME U1_5 base 0.4975 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // UCL HOME U2_5 base 0.7431
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.83,
+        minSampleN: 20,
+      }, // UCL HOME U3_5 base 0.8759
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // UCL AWAY O0_5 base 0.6892
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.58,
+        minSampleN: 20,
+      }, // UCL AWAY U1_5 base 0.6291
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // UCL AWAY U2_5 base 0.8145
+    ],
+  },
+  UECL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.73,
+        minSampleN: 20,
+      }, // UECL HOME O0_5 base 0.7789
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // UECL HOME O1_5 base 0.4699 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // UECL HOME U1_5 base 0.5301 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // UECL HOME U2_5 base 0.7662
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // UECL AWAY O0_5 base 0.6656
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // UECL AWAY U1_5 base 0.6767
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // UECL AWAY U2_5 base 0.8748
+    ],
+  },
+  UEL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // UEL HOME O0_5 base 0.792
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.43,
+        minSampleN: 20,
+      }, // UEL HOME O1_5 base 0.4813 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.47,
+        minSampleN: 20,
+      }, // UEL HOME U1_5 base 0.5187 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // UEL HOME U2_5 base 0.7656
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // UEL AWAY O0_5 base 0.6755
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // UEL AWAY U1_5 base 0.6671
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // UEL AWAY U2_5 base 0.8724
+    ],
+  },
+  UNL: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // UNL HOME O0_5 base 0.75
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.54,
+        minSampleN: 20,
+      }, // UNL HOME U1_5 base 0.5851
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.74,
+        minSampleN: 20,
+      }, // UNL HOME U2_5 base 0.7872
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // UNL HOME U3_5 base 0.8989
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 20,
+      }, // UNL AWAY O0_5 base 0.6223
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.6,
+        minSampleN: 20,
+      }, // UNL AWAY U1_5 base 0.6543
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // UNL AWAY U2_5 base 0.8617
+    ],
+  },
+  USA2: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // USA2 HOME O0_5 base 0.7607
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.51,
+        minSampleN: 20,
+      }, // USA2 HOME U1_5 base 0.5566
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.76,
+        minSampleN: 20,
+      }, // USA2 HOME U2_5 base 0.8095
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // USA2 AWAY O0_5 base 0.6841
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // USA2 AWAY U1_5 base 0.6669
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // USA2 AWAY U2_5 base 0.8739
+    ],
+  },
+  WC: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // WC HOME O0_5 base 0.7576
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // WC HOME U1_5 base 0.5515
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // WC HOME U2_5 base 0.7697
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // WC HOME U3_5 base 0.897
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // WC AWAY O0_5 base 0.6727
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.64,
+        minSampleN: 20,
+      }, // WC AWAY U1_5 base 0.6909
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // WC AWAY U2_5 base 0.8727
+    ],
+  },
+  WCQAF: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // WCQAF HOME O0_5 base 0.677
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.61,
+        minSampleN: 20,
+      }, // WCQAF HOME U1_5 base 0.6556
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // WCQAF HOME U2_5 base 0.8219
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.57,
+        minSampleN: 20,
+      }, // WCQAF AWAY O0_5 base 0.62
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // WCQAF AWAY U1_5 base 0.7363
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.82,
+        minSampleN: 20,
+      }, // WCQAF AWAY U2_5 base 0.8694
+    ],
+  },
+  WCQAS: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.63,
+        minSampleN: 20,
+      }, // WCQAS HOME O0_5 base 0.6754
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // WCQAS HOME U1_5 base 0.5987
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.7,
+        minSampleN: 20,
+      }, // WCQAS HOME U2_5 base 0.7522
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // WCQAS HOME U3_5 base 0.8553
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 20,
+      }, // WCQAS AWAY O0_5 base 0.5987
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.65,
+        minSampleN: 20,
+      }, // WCQAS AWAY U1_5 base 0.6974
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // WCQAS AWAY U2_5 base 0.8487
+    ],
+  },
+  WCQCA: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 20,
+      }, // WCQCA HOME O0_5 base 0.711
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // WCQCA HOME U1_5 base 0.578
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.69,
+        minSampleN: 20,
+      }, // WCQCA HOME U2_5 base 0.7431
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.81,
+        minSampleN: 20,
+      }, // WCQCA HOME U3_5 base 0.8578
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 20,
+      }, // WCQCA AWAY O0_5 base 0.5459 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.4,
+        minSampleN: 20,
+      }, // WCQCA AWAY U0_5 base 0.4541 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 20,
+      }, // WCQCA AWAY U1_5 base 0.7202
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.78,
+        minSampleN: 20,
+      }, // WCQCA AWAY U2_5 base 0.8257
+    ],
+  },
+  WCQE: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.66,
+        minSampleN: 20,
+      }, // WCQE HOME O0_5 base 0.7056
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.42,
+        minSampleN: 20,
+      }, // WCQE HOME O1_5 base 0.4654 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.48,
+        minSampleN: 20,
+      }, // WCQE HOME U1_5 base 0.5346 (mid-band, both sides)
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.71,
+        minSampleN: 20,
+      }, // WCQE HOME U2_5 base 0.7554
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.8,
+        minSampleN: 20,
+      }, // WCQE HOME U3_5 base 0.855
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.62,
+        minSampleN: 20,
+      }, // WCQE AWAY O0_5 base 0.6732
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.59,
+        minSampleN: 20,
+      }, // WCQE AWAY U1_5 base 0.6364
+      {
+        team: "AWAY",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.77,
+        minSampleN: 20,
+      }, // WCQE AWAY U2_5 base 0.816
+      {
+        team: "AWAY",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // WCQE AWAY U3_5 base 0.8983
+    ],
+  },
+  WCQSA: {
+    lines: [
+      {
+        team: "HOME",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.67,
+        minSampleN: 20,
+      }, // WCQSA HOME O0_5 base 0.7151
+      {
+        team: "HOME",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.53,
+        minSampleN: 20,
+      }, // WCQSA HOME U1_5 base 0.5754
+      {
+        team: "HOME",
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.72,
+        minSampleN: 20,
+      }, // WCQSA HOME U2_5 base 0.7709
+      {
+        team: "HOME",
+        line: 3.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.85,
+        minSampleN: 20,
+      }, // WCQSA HOME U3_5 base 0.8994
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.44,
+        minSampleN: 20,
+      }, // WCQSA AWAY O0_5 base 0.486 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 0.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.46,
+        minSampleN: 20,
+      }, // WCQSA AWAY U0_5 base 0.514 (mid-band, both sides)
+      {
+        team: "AWAY",
+        line: 1.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.75,
+        minSampleN: 20,
+      }, // WCQSA AWAY U1_5 base 0.8045
+    ],
+  },
+};
+
+// Resolve the enabled TEAM_TOTAL line configs for a league (empty when none).
+export function getTeamTotalLineConfigs(
+  competitionCode: string | null | undefined,
+): readonly TeamTotalLineConfig[] {
+  if (competitionCode == null) return [];
+  const leagueConfig = TEAM_TOTAL_CONFIG[competitionCode];
+  if (!leagueConfig) return [];
+  return leagueConfig.lines.filter((l) => l.enabled);
+}
+
+// ─────────────────────────────────────────────
 // CONSENSUS (meta) — emits a 1X2 selection only when ≥ minLevel INDEPENDENT
 // primary strategy classes agree on the same (market, pick). Calibrated
 // GLOBALLY, not per-league: the agreement mechanism is league-agnostic and
@@ -2921,6 +6951,24 @@ export function getChannelStrategyConfig(
   channel: ChannelStrategyConfigChannel,
   competitionCode: string | null | undefined,
 ): ChannelStrategyLeagueConfig {
+  // CLEAN_SHEET / WIN_EITHER_HALF live in their own side tables (like
+  // BTTS_NO_CONFIG) — structurally-derived OBSERVATION thresholds, not part
+  // of the backtested CHANNEL_STRATEGY_CONFIG table above.
+  if (channel === "CLEAN_SHEET") {
+    return (
+      (competitionCode != null
+        ? CLEAN_SHEET_CONFIG[competitionCode]
+        : undefined) ?? CLEAN_SHEET_DEFAULT
+    );
+  }
+  if (channel === "WIN_EITHER_HALF") {
+    return (
+      (competitionCode != null
+        ? WIN_EITHER_HALF_CONFIG[competitionCode]
+        : undefined) ?? WIN_EITHER_HALF_DEFAULT
+    );
+  }
+
   const leagueConfig =
     competitionCode != null
       ? CHANNEL_STRATEGY_CONFIG[competitionCode]

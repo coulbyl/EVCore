@@ -54,6 +54,26 @@ export function mapProbabilitiesToNumber(
     dc1X: probabilities.dc1X.toNumber(),
     dcX2: probabilities.dcX2.toNumber(),
     dc12: probabilities.dc12.toNumber(),
+    dnbHome: probabilities.dnbHome.toNumber(),
+    dnbAway: probabilities.dnbAway.toNumber(),
+    teamTotalHome: Object.fromEntries(
+      Object.entries(probabilities.teamTotalHome).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    teamTotalAway: Object.fromEntries(
+      Object.entries(probabilities.teamTotalAway).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    cleanSheetHome: probabilities.cleanSheetHome.toNumber(),
+    cleanSheetAway: probabilities.cleanSheetAway.toNumber(),
+    winToNilHome: probabilities.winToNilHome.toNumber(),
+    winToNilAway: probabilities.winToNilAway.toNumber(),
+    winEitherHalfHome: probabilities.winEitherHalfHome.toNumber(),
+    winEitherHalfAway: probabilities.winEitherHalfAway.toNumber(),
     htft: Object.fromEntries(
       Object.entries(probabilities.htft).map(([pick, value]) => [
         pick,
@@ -71,6 +91,23 @@ export function mapProbabilitiesToNumber(
       draw: probabilities.firstHalfWinner.draw.toNumber(),
       away: probabilities.firstHalfWinner.away.toNumber(),
     },
+    secondHalfWinner: {
+      home: probabilities.secondHalfWinner.home.toNumber(),
+      draw: probabilities.secondHalfWinner.draw.toNumber(),
+      away: probabilities.secondHalfWinner.away.toNumber(),
+    },
+    resultTotalGoals: Object.fromEntries(
+      Object.entries(probabilities.resultTotalGoals).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
+    resultBtts: Object.fromEntries(
+      Object.entries(probabilities.resultBtts).map(([pick, value]) => [
+        pick,
+        value?.toNumber() ?? 0,
+      ]),
+    ),
   };
 }
 
@@ -101,6 +138,39 @@ export function deriveLambdas(
     home: clamp(rawHome * config.homeAdvFactor * scale, 0.05, 5),
     away: clamp(rawAway * config.awayDisadvFactor * scale, 0.05, 5),
   };
+}
+
+export type OffensiveBalanceClassification =
+  | "BALANCED"
+  | "ASYMMETRIC"
+  | "STRONGLY_ASYMMETRIC";
+
+export type OffensiveBalance = {
+  ratio: number;
+  classification: OffensiveBalanceClassification;
+};
+
+// Ratio of the weaker attack to the stronger one (1 = both teams carry equal
+// offensive threat, near 0 = one team carries essentially all of it).
+// Informational only — not consumed by any strategy threshold, exposed via
+// ModelRun.features to the Eva analysis sheet to help distinguish Over/team
+// total picks (asymmetric attack) from BTTS (balanced attack), per
+// analyse-fiche-evcore-avec-gpt.md §12. Classification bounds are a
+// reasonable placeholder, not backtested.
+export function computeOffensiveBalance(
+  lambdaHome: number,
+  lambdaAway: number,
+): OffensiveBalance {
+  const stronger = Math.max(lambdaHome, lambdaAway);
+  const weaker = Math.min(lambdaHome, lambdaAway);
+  const ratio = stronger > 0 ? weaker / stronger : 1;
+  const classification: OffensiveBalanceClassification =
+    ratio >= 0.5
+      ? "BALANCED"
+      : ratio >= 0.25
+        ? "ASYMMETRIC"
+        : "STRONGLY_ASYMMETRIC";
+  return { ratio, classification };
 }
 
 export function rebalanceThreeWayProbabilities(input: {
@@ -139,6 +209,30 @@ export function rebalanceThreeWayProbabilities(input: {
     probabilities.away.toNumber() * (1 - weight) + targetAway * weight,
   );
 
+  const nonDrawMass = home.plus(away);
+
+  // resultTotalGoals' UNDER picks are pure joint-distribution sums
+  // (unaffected by rebalancing); OVER = oneXTwo[side] - UNDER, so only OVER
+  // needs recomputing against the rebalanced home/draw/away to stay
+  // internally consistent (under+over must still equal that side's mass).
+  const sideProbability = { HOME: home, DRAW: draw, AWAY: away } as const;
+  const resultTotalGoals = Object.fromEntries(
+    Object.entries(probabilities.resultTotalGoals).map(([pick, under]) => {
+      if (!pick.includes("_OVER_") || under === undefined) {
+        return [pick, under];
+      }
+      const side = pick.split("_")[0] as keyof typeof sideProbability;
+      const line = pick.replace(`${side}_OVER_`, "");
+      const underPick = `${side}_UNDER_${line}`;
+      const underValue =
+        probabilities.resultTotalGoals[
+          underPick as keyof typeof probabilities.resultTotalGoals
+        ];
+      if (underValue === undefined) return [pick, under];
+      return [pick, Decimal.max(0, sideProbability[side].minus(underValue))];
+    }),
+  ) as MatchProbabilities["resultTotalGoals"];
+
   return {
     ...probabilities,
     home,
@@ -147,6 +241,9 @@ export function rebalanceThreeWayProbabilities(input: {
     dc1X: home.plus(draw),
     dcX2: draw.plus(away),
     dc12: home.plus(away),
+    dnbHome: nonDrawMass.isZero() ? new Decimal(0.5) : home.div(nonDrawMass),
+    dnbAway: nonDrawMass.isZero() ? new Decimal(0.5) : away.div(nonDrawMass),
+    resultTotalGoals,
   };
 }
 

@@ -20,13 +20,68 @@ export type DerivedMarketsProba = {
   dc1X: Decimal;
   dcX2: Decimal;
   dc12: Decimal;
+  // Draw No Bet — draw mass excluded and renormalized, distinct from the
+  // unnormalized dc1X/dc12 sums above (those still cover a draw refund
+  // scenario as part of a two-way payout, DNB does not).
+  dnbHome: Decimal;
+  dnbAway: Decimal;
+  teamTotalHome: TeamTotalProba;
+  teamTotalAway: TeamTotalProba;
+  // Full-time, closed-form from the marginal goal distributions — the
+  // opposing side fails to score.
+  cleanSheetHome: Decimal;
+  cleanSheetAway: Decimal;
+  winToNilHome: Decimal;
+  winToNilAway: Decimal;
   htft: Record<HalfTimeFullTimePick, Decimal>;
   // First-half derived markets
   ouHT: Partial<
     Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
+  secondHalfWinner: ThreeWayProba;
+  // Inclusion-exclusion over firstHalfWinner/secondHalfWinner (assumed
+  // independent). home+away is NOT bounded by 1 like dc1X/dcX2/dc12 above —
+  // the two events overlap (e.g. home wins H1 while away wins H2 makes both
+  // "wins either half" true simultaneously), so this isn't a two-way split.
+  winEitherHalfHome: Decimal;
+  winEitherHalfAway: Decimal;
+  // Pre-combined bookmaker markets (result × goals line / result × BTTS) —
+  // priced against a genuine joint bookmaker odd, not a synthetic combo.
+  resultTotalGoals: ResultTotalGoalsProba;
+  resultBtts: ResultBttsProba;
 };
+
+export type ResultTotalGoalsProba = Partial<
+  Record<
+    `${"HOME" | "DRAW" | "AWAY"}_${"OVER" | "UNDER"}_${"1_5" | "2_5" | "3_5" | "4_5"}`,
+    Decimal
+  >
+>;
+
+export type ResultBttsProba = Partial<
+  Record<`${"HOME" | "DRAW" | "AWAY"}_${"YES" | "NO"}`, Decimal>
+>;
+
+export type TeamTotalProba = Partial<
+  Record<
+    | "OVER_0_5"
+    | "UNDER_0_5"
+    | "OVER_1_5"
+    | "UNDER_1_5"
+    | "OVER_2_5"
+    | "UNDER_2_5"
+    | "OVER_3_5"
+    | "UNDER_3_5"
+    | "OVER_4_5"
+    | "UNDER_4_5"
+    | "OVER_5_5"
+    | "UNDER_5_5"
+    | "OVER_6_5"
+    | "UNDER_6_5",
+    Decimal
+  >
+>;
 
 export type FirstHalfMarkets = {
   htft: Record<HalfTimeFullTimePick, Decimal>;
@@ -34,6 +89,7 @@ export type FirstHalfMarkets = {
     Record<"OVER_0_5" | "UNDER_0_5" | "OVER_1_5" | "UNDER_1_5", Decimal>
   >;
   firstHalfWinner: ThreeWayProba;
+  secondHalfWinner: ThreeWayProba;
 };
 
 export const HALF_TIME_FULL_TIME_PICKS = [

@@ -37,6 +37,16 @@ const BASE_ODDS: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: null,
+  teamTotalHomeOdds: {},
+  teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 function makeSafePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
@@ -49,7 +59,6 @@ function makeSafePick(overrides: Partial<EvaluatedPick> = {}): EvaluatedPick {
     odds: new Decimal('1.45'),
     ev: new Decimal('0.06'),
     qualityScore: new Decimal('0.08'),
-    isCombo: false,
     ...overrides,
   };
 }
@@ -112,18 +121,6 @@ describe('SafeStrategy', () => {
     );
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
     expect(decision.reasonCode).toBe('score_below_threshold');
-  });
-
-  it('returns REJECTED with no_safe_candidate when no eligible pick', () => {
-    // Combo picks are excluded
-    const comboPick = makeSafePick({ isCombo: true });
-    const ctx = makeContext({
-      evaluatedMarkets: [{ market: Market.ONE_X_TWO, picks: [comboPick] }],
-    });
-    expect(strategy.evaluate(ctx).status).toBe(
-      CHANNEL_DECISION_STATUS.REJECTED,
-    );
-    expect(strategy.evaluate(ctx).reasonCode).toBe('no_safe_candidate');
   });
 
   it('returns SELECTED with a high-probability single pick', () => {

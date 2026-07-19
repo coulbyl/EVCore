@@ -14,8 +14,6 @@ export type FixtureModelRun = {
   betId: string | null;
   market: string | null;
   pick: string | null;
-  comboMarket: string | null;
-  comboPick: string | null;
   betStatus: "WON" | "LOST" | "PENDING" | null;
   probEstimated: string | null;
   ev: string | null;
@@ -29,8 +27,6 @@ export type FixtureModelRun = {
 export type FixturePickSnapshot = {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: string;
   odds: string;
   ev: string;
@@ -55,8 +51,6 @@ export type FixtureSvBet = {
   betId: string;
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
 };
 
 export type FixtureRow = {

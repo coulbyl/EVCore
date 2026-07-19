@@ -38,6 +38,17 @@ const SLIPPABLE: ReadonlySet<StrategyChannel> = new Set([
   "GOALS",
 ]);
 
+/** Prediction channels never staked — recorded/settled analytically only,
+ * no backtested edge yet (unvalidated thresholds). Flagged with
+ * ObservationBadge so readers don't mistake a SELECTED decision for a
+ * playable bet. */
+const OBSERVATION_ONLY: ReadonlySet<StrategyChannel> = new Set([
+  "CORRECT_SCORE",
+  "CLEAN_SHEET",
+  "TEAM_TOTAL",
+  "WIN_EITHER_HALF",
+]);
+
 export type SlipContext = {
   fixtureId: string;
   fixture: string;
@@ -90,7 +101,7 @@ export function ChannelRow({
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
               {avoidEdge !== undefined && <AvoidEdgeBadge edge={avoidEdge} />}
-              {channel === "CORRECT_SCORE" && <ObservationBadge />}
+              {OBSERVATION_ONLY.has(channel) && <ObservationBadge />}
               <ResultBadge result={selection.result} />
               {slipContext && SLIPPABLE.has(channel) && decision && (
                 <SlipButton
@@ -237,8 +248,6 @@ function SlipButton({
     scheduledAt: slipContext.scheduledAt,
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket ?? undefined,
-    comboPick: selection.comboPick ?? undefined,
     odds: selection.odds !== null ? String(selection.odds) : null,
     ev:
       selection.ev !== null

@@ -19,6 +19,15 @@ export const TUNING_THRESHOLD_GRID: Record<
   DRAW: [0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36],
   // BTTS signal = model P(both teams score).
   BTTS: [0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.65],
+  // CLEAN_SHEET signal = model P(team keeps a clean sheet). Placeholder grid
+  // (2026-07-18, no backtest yet) — same scale as BTTS since both are
+  // binary defensive/offensive signals in a comparable probability range.
+  CLEAN_SHEET: [0.4, 0.45, 0.5, 0.55, 0.6, 0.65],
+  // WIN_EITHER_HALF signal = model P(team wins at least one half) — not
+  // bounded like a two-way split (see analysis-core probability/markets.ts
+  // comment), so the grid reaches higher than BTTS/CLEAN_SHEET. Placeholder
+  // grid (2026-07-18, no backtest yet).
+  WIN_EITHER_HALF: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75],
 };
 
 /**
@@ -41,12 +50,19 @@ export const CHANNEL_PROMOTION_RULE: Record<
   DOMINANT: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   BTTS: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   DRAW: { minSample: 20, hitRateFloor: 0.32, roiFloor: 0.05 },
+  // Placeholder rules (2026-07-18, no backtest yet) — same hit-rate/ROI
+  // methodology as BTTS (both are prediction channels, argmax between two
+  // candidates), to be confirmed once real settled data accumulates.
+  CLEAN_SHEET: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
+  WIN_EITHER_HALF: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
 };
 
 export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
   'DOMINANT',
   'DRAW',
   'BTTS',
+  'CLEAN_SHEET',
+  'WIN_EITHER_HALF',
 ];
 
 /**

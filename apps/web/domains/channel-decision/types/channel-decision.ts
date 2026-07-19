@@ -9,6 +9,9 @@ export type StrategyChannel =
   | "BTTS"
   | "DRAW"
   | "GOALS"
+  | "CLEAN_SHEET"
+  | "TEAM_TOTAL"
+  | "WIN_EITHER_HALF"
   | "CONSENSUS"
   | "AVOID"
   | "CORRECT_SCORE";
@@ -47,8 +50,6 @@ export type ConsensusReasonDetails = {
 export type ChannelSelectionDto = {
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: number;
   odds: number | null;
   impliedProbability: number | null;

@@ -35,14 +35,6 @@ class CreateBetSlipItemDto {
   pick?: string;
 
   @IsOptional()
-  @IsString()
-  comboMarket?: string;
-
-  @IsOptional()
-  @IsString()
-  comboPick?: string;
-
-  @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(1)

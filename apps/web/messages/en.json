@@ -20,7 +20,6 @@
     "navGroupTracking": "Tracking",
     "navGroupAnalysis": "Analysis",
     "navGroupAdmin": "Admin",
-    "wc2026": "WC2026",
     "performance": "Performance",
     "bankroll": "Bankroll",
     "betSlips": "My bet slips",
@@ -33,6 +32,7 @@
     "engine": "Engine & ETL",
     "glossary": "Glossary",
     "formation": "Training",
+    "trackRecord": "Track record",
     "notifications": "Notifications",
     "settings": "Settings",
     "help": "Help",
@@ -68,6 +68,18 @@
       "GOALS": {
         "label": "Goals",
         "description": "Total goals over/under line."
+      },
+      "CLEAN_SHEET": {
+        "label": "Clean sheet",
+        "description": "A team finishes the match without conceding."
+      },
+      "TEAM_TOTAL": {
+        "label": "Team goals",
+        "description": "Over/under goals scored by a single team."
+      },
+      "WIN_EITHER_HALF": {
+        "label": "Wins a half",
+        "description": "A team wins at least one of the two halves."
       },
       "CONSENSUS": {
         "label": "Consensus",
@@ -170,20 +182,6 @@
     "label": "Training",
     "title": "Training center",
     "subtitle": "Articles and videos to understand each pick and improve step by step.",
-    "videoHub": {
-      "title": "Video training",
-      "subtitle": "Short videos to understand coupons, probabilities, and discipline without reading articles.",
-      "videoOnly": "videos only",
-      "watchNow": "Watch",
-      "featuredCopy": "Start with this video, then follow the short tracks based on your current goal.",
-      "emptyTitle": "No video available",
-      "emptySubtitle": "New videos are on the way.",
-      "metrics": {
-        "available": "Available",
-        "completed": "Watched",
-        "next": "Next"
-      }
-    },
     "progress": "Progress",
     "open": "Open",
     "browse": "Browse",
@@ -203,11 +201,12 @@
     "toc": "Navigation",
     "videos": "Videos",
     "video": "Video",
+    "article": "Article",
     "markCompleted": "Mark as completed",
     "completed": "Completed",
     "categories": {
       "bases": "Basics",
-      "channels": "The 5 EVCore channels",
+      "channels": "The EVCore channels",
       "bankroll": "Bankroll & discipline",
       "leagues": "League guide",
       "app": "Using the app"
@@ -340,6 +339,9 @@
     "matchNull": "DRAW",
     "goals": "GOALS",
     "btts": "BTTS",
+    "cleanSheet": "CS",
+    "teamTotal": "TEAM GOALS",
+    "winEitherHalf": "WINS HALF",
     "bttsLabel": "BTTS — Both Teams To Score",
     "bttsYes": "BTTS YES",
     "bttsNo": "BTTS NO",
@@ -648,24 +650,6 @@
       "rejected": "rejected",
       "rejectedPlural": "rejected"
     }
-  },
-  "wc2026": {
-    "groupPrefix": "Group",
-    "groupStage": "Group Stage",
-    "standingsUnavailable": "Standings unavailable.",
-    "groupsCount": "{count} groups · Season {season}",
-    "qualified": "Qualified (top 2)",
-    "playoff": "Playoff",
-    "colPlayed": "MP",
-    "colWin": "W",
-    "colDraw": "D",
-    "colLose": "L",
-    "colDiff": "GD",
-    "colPoints": "Pts",
-    "legendPlayed": "MP = matches played",
-    "legendWDL": "W / D / L = win · draw · loss",
-    "legendDiff": "GD = goal diff.",
-    "legendPoints": "Pts = points"
   },
   "coupons": {
     "pageTitle": "Proposals",

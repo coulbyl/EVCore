@@ -11,8 +11,6 @@ export async function createBetSlip(draft: BetSlipDraft): Promise<BetSlipView> {
         modelRunId: item.modelRunId,
         market: item.market,
         pick: item.pick,
-        comboMarket: item.comboMarket,
-        comboPick: item.comboPick,
         stakeOverride: item.stakeOverride ?? undefined,
       })),
     },

@@ -22,7 +22,12 @@ class PnlQueryDto {
   to?: string;
 }
 
+// The track-record view (aggregate channel ROI/hit-rate) lives inside the
+// authenticated dashboard, not a public page — every route here requires at
+// least a free-tier session. Never reuse these for a logged-out surface;
+// add a dedicated public endpoint instead if that's needed later.
 @Controller('dashboard')
+@UseGuards(AuthSessionGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
@@ -38,7 +43,6 @@ export class DashboardController {
   }
 
   @Get('competition-stats')
-  @UseGuards(AuthSessionGuard)
   getCompetitionStats(
     @CurrentSession() session: AuthSession,
     @Query('canal') canal?: string,

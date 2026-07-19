@@ -9,11 +9,9 @@ import {
   removeOverround,
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
-import { getLeagueEvThreshold } from '@modules/betting-engine/ev.constants';
 import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
-import { buildComboCandidates } from './combo-candidates';
 import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
   type CouponChannel,
@@ -69,14 +67,6 @@ export type ScoredPick = {
   canal: Canal;
   market: string;
   pick: string;
-  /**
-   * Same-match combo secondary market/pick (DESIGN.md Étape 6). `null` for a normal
-   * single-market leg. When set, `market`/`pick` is the primary leg, `probability`
-   * is the bivariate-Poisson joint and `oddsSnapshot` the correlation-damped
-   * combined odds; the leg wins only if BOTH selections hit.
-   */
-  comboMarket: string | null;
-  comboPick: string | null;
   probability: number;
   calibratedHitRate: number;
   /**
@@ -514,14 +504,12 @@ export class SignalWindowService {
    * - DRAW (+9.9%) is **promoted** to the real pool (B7): its selections are read
    *   straight from `channel_selection` (not `Bet`) when `includeDraw` is set.
    *
-   * Same-match combos (Étape 6) are added here as VALUE legs when `includeCombos`.
    * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
    * (virtual SAFE/BTTS rules), kept distinct on purpose — it never stakes.
    */
   async getTodayPool(
     date: string,
     opts: {
-      includeCombos?: boolean;
       includeDraw?: boolean;
       enforceAvoid?: boolean;
     } = {},
@@ -652,8 +640,6 @@ export class SignalWindowService {
         awayScore: f.awayScore ?? null,
         homeHtScore: f.homeHtScore ?? null,
         awayHtScore: f.awayHtScore ?? null,
-        comboMarket: null,
-        comboPick: null,
         legEV: null, // set in CouponComposerService.scorePicks()
         edge: null, // set in CouponComposerService.scorePicks()
         lambdaHome,
@@ -726,46 +712,6 @@ export class SignalWindowService {
             betId: bet.id,
             modelRunId: null,
           });
-        }
-
-        // Same-match combos (DESIGN.md Étape 6) — generated from the model lambdas
-        // + market odds, gated by the league EV threshold. Each combo is a single
-        // leg (one fixture slot) carrying two correlated markets. Mapped to the
-        // VALUE channel: a combo is selected purely on joint EV. Off by default
-        // (opts.includeCombos), so live behaviour is unchanged until backtested.
-        if (
-          opts.includeCombos &&
-          snapshot &&
-          lambdaHome !== null &&
-          lambdaAway !== null
-        ) {
-          const evThreshold = getLeagueEvThreshold(comp).toNumber();
-          const combos = buildComboCandidates({
-            lambdaHome,
-            lambdaAway,
-            snapshot,
-            evThreshold,
-          });
-          for (const cand of combos) {
-            picks.push({
-              ...base,
-              canal: StrategyChannel.VALUE as Canal,
-              market: cand.combo.market1,
-              pick: cand.combo.pick1,
-              comboMarket: cand.combo.market2,
-              comboPick: cand.combo.pick2,
-              probability: cand.jointProbability,
-              calibratedHitRate: 0,
-              calibratedProbability: null,
-              oddsSnapshot: cand.combinedOdds,
-              pMarketFair: null,
-              bookmakerMargin: null,
-              isCorrect: null,
-              signalScore: 0,
-              betId: null,
-              modelRunId: run.id,
-            });
-          }
         }
 
         // DRAW staking (B7 promotion) — DRAW selections live in channel_selection,
@@ -907,8 +853,6 @@ export class SignalWindowService {
           awayScore: f.awayScore ?? null,
           homeHtScore: f.homeHtScore ?? null,
           awayHtScore: f.awayHtScore ?? null,
-          comboMarket: null,
-          comboPick: null,
           legEV: null, // set in CouponComposerService.scorePicks()
           pMarketFair: null,
           bookmakerMargin: null,

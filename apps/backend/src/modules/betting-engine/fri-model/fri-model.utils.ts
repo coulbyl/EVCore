@@ -45,6 +45,7 @@ export function eloExpectedScore(
 export function buildFriMatchProbabilities(
   oneXTwo: ThreeWayProba,
 ): MatchProbabilities {
+  const nonDrawMass = oneXTwo.home.plus(oneXTwo.away);
   return {
     home: oneXTwo.home,
     draw: oneXTwo.draw,
@@ -62,6 +63,21 @@ export function buildFriMatchProbabilities(
     dc1X: oneXTwo.home.plus(oneXTwo.draw),
     dcX2: oneXTwo.draw.plus(oneXTwo.away),
     dc12: oneXTwo.home.plus(oneXTwo.away),
+    // Derivable from home/away alone (no goal distribution needed), unlike
+    // teamTotal below which requires per-side Poisson marginals FRI doesn't model.
+    dnbHome: nonDrawMass.isZero()
+      ? new Decimal(0.5)
+      : oneXTwo.home.div(nonDrawMass),
+    dnbAway: nonDrawMass.isZero()
+      ? new Decimal(0.5)
+      : oneXTwo.away.div(nonDrawMass),
+    teamTotalHome: {},
+    teamTotalAway: {},
+    // Requires per-side goal distributions FRI doesn't model, same as teamTotal.
+    cleanSheetHome: ZERO,
+    cleanSheetAway: ZERO,
+    winToNilHome: ZERO,
+    winToNilAway: ZERO,
     htft: {
       HOME_HOME: ZERO,
       HOME_DRAW: ZERO,
@@ -80,6 +96,12 @@ export function buildFriMatchProbabilities(
       UNDER_1_5: ZERO,
     },
     firstHalfWinner: { home: ZERO, draw: ZERO, away: ZERO },
+    secondHalfWinner: { home: ZERO, draw: ZERO, away: ZERO },
+    winEitherHalfHome: ZERO,
+    winEitherHalfAway: ZERO,
+    // Requires the joint goal distribution FRI doesn't model, same as teamTotal.
+    resultTotalGoals: {},
+    resultBtts: {},
   };
 }
 

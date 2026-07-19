@@ -183,8 +183,8 @@
 
 **Picks quotidiens**
 
-- [x] Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)
-- [x] `COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)
+- [x] ~~Calcul probabilité jointe combo-match depuis table Poisson bivariée (`betting-engine.utils.ts`)~~ — **retiré 2026-07-18**, remplacé par les marchés bookmaker pré-combinés `RESULT_TOTAL_GOALS`/`RESULT_BTTS`
+- [x] ~~`COMBO_WHITELIST` — 12 combinaisons valides (1X2 × BTTS/OVER, DC × BTTS, OVER × BTTS)~~ — **retiré 2026-07-18**
 - [x] Sélection `qualityScore = EV × deterministicScore`, garde d'idempotence par fixture
 - [x] Anti-corrélation — max 1 bet par fixture (meilleur qualityScore conservé)
 - [x] `BULLMQ_QUEUES.BETTING_ENGINE` + scheduler `onApplicationBootstrap()`
@@ -302,6 +302,63 @@
 - [x] Boutons cote et panier pour canaux CONF/DRAW/BTTS
 - [x] Ordre d'affichage : SV → BB → CONF → DRAW → EV
 - [x] Page Récap avec filtres canal/période, stats et courbe progression
+
+### Bloc 8 — Extension marchés Niveau 1/2/2.b + nouveaux canaux (2026-07-18)
+
+> Suite de `docs/market-coverage-expansion.md`. Deux volets : (a) rendre les 10
+> marchés ajoutés depuis Niveau 1 exploitables par EV/SAFE, (b) ajouter des
+> canaux de prédiction dédiés pour les signaux vraiment indépendants (pas une
+> reformulation d'un canal existant — voir arbitrage dans EVCORE.md).
+
+- [x] `listEvaluatedPicks` évalue désormais DRAW_NO_BET, TEAM_TOTAL_HOME/AWAY,
+      CLEAN_SHEET_HOME/AWAY, WIN_TO_NIL_HOME/AWAY, TO_WIN_EITHER_HALF,
+      RESULT_TOTAL_GOALS, RESULT_BTTS — candidats VALUE (gate EV) au même
+      titre que les marchés historiques.
+- [x] Nouveaux canaux `CLEAN_SHEET`, `TEAM_TOTAL`, `WIN_EITHER_HALF` —
+      DRAW*NO_BET et WIN_TO_NIL/RESULT*\* écartés du statut "canal dédié"
+      (renormalisation/dérivé d'un signal déjà couvert, pas un signal neuf).
+- [x] `CleanSheetStrategy`/`WinEitherHalfStrategy` : argmax entre deux
+      marchés/picks au-dessus d'un seuil par ligue (pattern `BttsStrategy`).
+- [x] `TeamTotalStrategy` : meilleur (équipe × ligne × side) par EV (pattern
+      `GoalsStrategy`, doublé sur la dimension équipe).
+- [x] Migration Prisma `StrategyChannel` +3 valeurs — écrite et **appliquée**.
+- [x] **CLEAN_SHEET / WIN_EITHER_HALF passés en OBSERVATION** (2026-07-18,
+      toutes les ligues actives avec n ≥ 50 fixtures settled) : aucune cote
+      historique n'existe pour ces marchés (stub vide dans
+      `odds-historical-import.worker.ts` ; The Odds API 422 même sur BTTS/DNB
+      — pas de fallback possible), donc pas de ROI backtestable. Seuils
+      dérivés directement des scores FT/HT déjà en base (taux de base par
+      ligue − marge 0.05), même méthodologie que `GOALS_CONFIG`. Jamais misé
+      (observation seule), accumulation forward via la sync PREMATCH
+      démarrée le même jour.
+- [x] **TEAM_TOTAL passé en OBSERVATION** (2026-07-19, mêmes 67 ligues) :
+      même méthodologie que `GOALS_CONFIG`, doublée sur la dimension équipe —
+      par (ligue × équipe × ligne), side = OVER si taux empirique ≥ 0.55,
+      UNDER si ≤ 0.45, les deux dans la bande 0.45–0.55 ; seuil = taux du
+      côté choisi − 0.05. Lignes au taux de base > 0.90 exclues (ex. "Away
+      Under 4.5" à 99% — near-certain, aucune valeur informative, contrairement
+      aux lignes GOALS/CLEAN_SHEET qui restent dans une plage incertaine).
+      442 segments dérivés depuis les scores FT réels.
+- [x] `backtest.repository.ts`/`tuning.metrics.ts` étendus : fetch des cotes
+      CLEAN_SHEET_HOME/AWAY + TO_WIN_EITHER_HALF, sweep par seuil prêt dès
+      que la sync PREMATCH aura accumulé assez de volume forward pour un
+      vrai ROI (`POST /backtest/tuning`, déjà branché via `TUNING_CHANNELS`).
+      TEAM_TOTAL n'a pas cette brique de sweep (comme les lignes GOALS
+      1.5/3.5/4.5, qui n'en ont pas non plus faute de cotes historiques) —
+      seule la config structurelle par taux de base a été faite.
+- [x] Web : labels FR/EN pour les 10 marchés Niveau 1/2/2.b (`helpers/fixture.ts`)
+      et `ObservationBadge` étendu à CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF sur
+      `/dashboard/decisions` (jusque-là réservé à CORRECT_SCORE) — les 3
+      nouveaux canaux produisent de vraies décisions `SELECTED`, il fallait un
+      vrai libellé et un signal "jamais misé" cohérent.
+- [x] `offensiveBalance` (ratio + classification BALANCED/ASYMMETRIC/
+      STRONGLY_ASYMMETRIC) — `computeOffensiveBalance()` dans
+      `analysis-core/probability/match-stats.ts`, câblé dans
+      `ModelRun.features` et exposé à la fiche Eva (JSON + rendu texte).
+      Reprend la section 12 de `analyse-fiche-evcore-avec-gpt.md` (différencier
+      Over/team total de BTTS selon l'asymétrie offensive). Informationnel
+      uniquement — aucune stratégie ne le consomme, bornes de classification
+      non backtestées.
 
 ### Web UI
 

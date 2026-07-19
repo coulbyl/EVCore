@@ -14,7 +14,6 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { isWC2026Active, isWC2026Countdown } from "@/lib/events/world-cup-2026";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 /* ─── Data ─────────────────────────────────────────────────── */
@@ -268,11 +267,6 @@ export default function LandingPage() {
 
   // Pre-mount: assume dark (matches ThemeProvider defaultTheme="dark")
   const isDark = !mounted || resolvedTheme === "dark";
-
-  const now = new Date();
-  const wc2026Active = isWC2026Active(now);
-  const wc2026Countdown = isWC2026Countdown(now);
-  const showWC2026 = wc2026Active || wc2026Countdown;
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
@@ -654,9 +648,9 @@ export default function LandingPage() {
             <span className="text-accent">C&apos;est ça, investir.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            {showWC2026
-              ? "La Coupe du monde 2026 se prépare avec une lecture claire des matchs et des coupons IA. L'objectif reste le même : investir avec méthode."
-              : "Accès sur invitation. L'objectif n'est pas de multiplier les paris — c'est de construire un portefeuille avec méthode."}
+            Accès sur invitation. L&apos;objectif n&apos;est pas de
+            multiplier les paris — c&apos;est de construire un portefeuille
+            avec méthode.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

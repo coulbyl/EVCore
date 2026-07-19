@@ -13,11 +13,20 @@ export type EvaPickFromFeature = {
   rejectionReason: string | null;
 };
 
+export type OffensiveBalanceFromFeature = {
+  ratio: number;
+  classification: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC';
+} | null;
+
 export type EvaFeaturesContext = {
   predictionSource: PredictionSource | null;
   fallbackReason: string | null;
   lambdaHome: number | null;
   lambdaAway: number | null;
+  // Ratio of the weaker attack to the stronger one — see
+  // analysis-core/probability/match-stats.ts computeOffensiveBalance().
+  // Informational only, not consumed by any strategy threshold.
+  offensiveBalance: OffensiveBalanceFromFeature;
   hasMarketOdds: boolean | null;
   hasPinnacleOdds: boolean | null;
   hasHomeElo: boolean | null;
@@ -46,6 +55,7 @@ export function extractEvaContextFromFeatures(
     fallbackReason: readString(f, 'fallbackReason'),
     lambdaHome: readFiniteNumber(f, 'lambdaHome'),
     lambdaAway: readFiniteNumber(f, 'lambdaAway'),
+    offensiveBalance: readOffensiveBalance(f),
     hasMarketOdds: readBooleanOrNull(f, 'hasMarketOdds'),
     hasPinnacleOdds: readBooleanOrNull(f, 'hasPinnacleOdds'),
     hasHomeElo: readBooleanOrNull(f, 'hasHomeElo'),
@@ -68,12 +78,31 @@ function readRecord(
     : null;
 }
 
+function readOffensiveBalance(
+  value: Record<string, unknown>,
+): OffensiveBalanceFromFeature {
+  const raw = readRecord(value, 'offensiveBalance');
+  if (!raw) return null;
+  const ratio = raw['ratio'];
+  const classification = raw['classification'];
+  if (
+    typeof ratio !== 'number' ||
+    (classification !== 'BALANCED' &&
+      classification !== 'ASYMMETRIC' &&
+      classification !== 'STRONGLY_ASYMMETRIC')
+  ) {
+    return null;
+  }
+  return { ratio, classification };
+}
+
 function emptyEvaContext(): EvaFeaturesContext {
   return {
     predictionSource: null,
     fallbackReason: null,
     lambdaHome: null,
     lambdaAway: null,
+    offensiveBalance: null,
     hasMarketOdds: null,
     hasPinnacleOdds: null,
     hasHomeElo: null,
@@ -131,8 +160,6 @@ function readEvaPicksFromFeature(
 export type PickSnapshot = {
   market: string;
   pick: string;
-  comboMarket?: string;
-  comboPick?: string;
   probability: string;
   odds: string;
   ev: string;
@@ -249,15 +276,10 @@ function readPickSnapshot(record: Record<string, unknown>): PickSnapshot[] {
     return [];
   }
 
-  const comboMarket = readString(record, 'comboMarket');
-  const comboPick = readString(record, 'comboPick');
-
   return [
     {
       market,
       pick,
-      ...(comboMarket ? { comboMarket } : {}),
-      ...(comboPick ? { comboPick } : {}),
       probability: probability.toFixed(4),
       odds: odds.toFixed(2),
       ev: formatSigned(ev, 4),

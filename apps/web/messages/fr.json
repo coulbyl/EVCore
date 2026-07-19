@@ -20,7 +20,6 @@
     "navGroupTracking": "Suivi",
     "navGroupAnalysis": "Analyse",
     "navGroupAdmin": "Admin",
-    "wc2026": "Coupe du monde 2026",
     "performance": "Performance",
     "bankroll": "Portefeuille",
     "betSlips": "Mes coupons",
@@ -33,6 +32,7 @@
     "engine": "Moteur & ETL",
     "glossary": "Glossaire",
     "formation": "Formation",
+    "trackRecord": "Historique vérifiable",
     "notifications": "Notifications",
     "settings": "Paramètres",
     "help": "Aide",
@@ -68,6 +68,18 @@
       "GOALS": {
         "label": "Buts",
         "description": "Plus/moins de buts (Over/Under)."
+      },
+      "CLEAN_SHEET": {
+        "label": "Clean sheet",
+        "description": "Une équipe termine le match sans encaisser de but."
+      },
+      "TEAM_TOTAL": {
+        "label": "Buts par équipe",
+        "description": "Plus/moins de buts marqués par une seule équipe."
+      },
+      "WIN_EITHER_HALF": {
+        "label": "Gagne une mi-temps",
+        "description": "Une équipe gagne au moins l'une des deux mi-temps."
       },
       "CONSENSUS": {
         "label": "Consensus",
@@ -170,20 +182,6 @@
     "label": "Formation",
     "title": "Centre de formation",
     "subtitle": "Articles et vidéos pour comprendre chaque pick et progresser étape par étape.",
-    "videoHub": {
-      "title": "Formation vidéo",
-      "subtitle": "Des formats courts pour comprendre les coupons, les probabilités et la discipline sans passer par des articles.",
-      "videoOnly": "vidéos seulement",
-      "watchNow": "Regarder",
-      "featuredCopy": "Commencez par cette vidéo, puis enchaînez les parcours courts selon votre objectif du moment.",
-      "emptyTitle": "Aucune vidéo disponible",
-      "emptySubtitle": "De nouvelles vidéos arrivent bientôt.",
-      "metrics": {
-        "available": "Disponibles",
-        "completed": "Vues",
-        "next": "Prochaine"
-      }
-    },
     "progress": "Progression",
     "open": "Ouvrir",
     "browse": "Parcourir",
@@ -203,11 +201,12 @@
     "toc": "Navigation",
     "videos": "Vidéos",
     "video": "Vidéo",
+    "article": "Article",
     "markCompleted": "Marquer comme terminé",
     "completed": "Terminé",
     "categories": {
       "bases": "Les bases",
-      "channels": "Les 5 canaux EVCore",
+      "channels": "Les canaux EVCore",
       "bankroll": "Bankroll & discipline",
       "leagues": "Guide par ligue",
       "app": "Comment utiliser l'app"
@@ -340,6 +339,9 @@
     "matchNull": "NUL",
     "goals": "BUTS",
     "btts": "BB",
+    "cleanSheet": "CS",
+    "teamTotal": "BUTS ÉQ.",
+    "winEitherHalf": "GAGNE MT",
     "bttsLabel": "BB — Les deux équipes marquent",
     "bttsYes": "BB OUI",
     "bttsNo": "BB NON",
@@ -648,24 +650,6 @@
       "rejected": "écarté",
       "rejectedPlural": "écartés"
     }
-  },
-  "wc2026": {
-    "groupPrefix": "Groupe",
-    "groupStage": "Phase de groupes",
-    "standingsUnavailable": "Classements non disponibles.",
-    "groupsCount": "{count} groupes · Saison {season}",
-    "qualified": "Qualifié (2 premières places)",
-    "playoff": "Barrage",
-    "colPlayed": "MJ",
-    "colWin": "V",
-    "colDraw": "N",
-    "colLose": "D",
-    "colDiff": "DIFF",
-    "colPoints": "Pts",
-    "legendPlayed": "MJ = matchs joués",
-    "legendWDL": "V / N / D = victoire · nul · défaite",
-    "legendDiff": "DIFF = diff. buts",
-    "legendPoints": "Pts = points"
   },
   "coupons": {
     "pageTitle": "Propositions",

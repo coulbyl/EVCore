@@ -56,17 +56,8 @@ function singlePickLabel(market: string, pick: string): string {
   return `${market}/${pick}`;
 }
 
-function pickLabel(
-  market: string,
-  pick: string,
-  comboMarket?: string | null,
-  comboPick?: string | null,
-): string {
-  const base = singlePickLabel(market, pick);
-  if (comboMarket && comboPick) {
-    return `${base} + ${singlePickLabel(comboMarket, comboPick)}`;
-  }
-  return base;
+function pickLabel(market: string, pick: string): string {
+  return singlePickLabel(market, pick);
 }
 
 function rejectionLabel(reason: string): string {
@@ -142,8 +133,6 @@ function fmtPct(n: number, decimals = 1): string {
 type RawPick = {
   market: string;
   pick: string;
-  comboMarket?: string | null;
-  comboPick?: string | null;
   probability: number;
   odds: number;
   ev: number;
@@ -299,20 +288,13 @@ function renderSelectionPickLine(selection: {
   channel: string;
   market: string;
   pick: string;
-  comboMarket: string | null;
-  comboPick: string | null;
   ev: unknown;
   qualityScore: unknown;
   probability: unknown;
   odds: unknown;
   result: string | null;
 }): string {
-  const label = pickLabel(
-    selection.market,
-    selection.pick,
-    selection.comboMarket,
-    selection.comboPick,
-  );
+  const label = pickLabel(selection.market, selection.pick);
   const ev = selection.ev != null ? Number(selection.ev) : 0;
   const prob = Number(selection.probability);
   const qs =
@@ -365,8 +347,6 @@ async function main(): Promise<void> {
                   id: true,
                   market: true,
                   pick: true,
-                  comboMarket: true,
-                  comboPick: true,
                   ev: true,
                   qualityScore: true,
                   probability: true,
@@ -580,12 +560,7 @@ async function main(): Promise<void> {
     if (evaluatedPicks.length > 0) {
       w(`  Évalués (${evaluatedPicks.length}) :`);
       for (const ep of evaluatedPicks) {
-        const label = pickLabel(
-          ep.market,
-          ep.pick,
-          ep.comboMarket,
-          ep.comboPick,
-        ).padEnd(26);
+        const label = pickLabel(ep.market, ep.pick).padEnd(26);
         const st =
           ep.status === "viable"
             ? "Viable"
@@ -948,12 +923,7 @@ async function main(): Promise<void> {
         : "";
 
     for (const ep of evaluatedPicks) {
-      const label = pickLabel(
-        ep.market,
-        ep.pick,
-        ep.comboMarket,
-        ep.comboPick,
-      ).padEnd(26);
+      const label = pickLabel(ep.market, ep.pick).padEnd(26);
       const st =
         ep.status === "viable"
           ? `Viable pick-level${scoreFlag}`

@@ -10,8 +10,6 @@ function sel(overrides: Partial<SettleableSelection>): SettleableSelection {
   return {
     market: Market.ONE_X_TWO,
     pick: 'HOME',
-    comboMarket: null,
-    comboPick: null,
     ...overrides,
   };
 }
@@ -53,20 +51,6 @@ describe('resolveSelectionFinalResult', () => {
       ),
     ).toBe(BetStatus.WON);
   });
-
-  it('settles a combo as WON only when both legs win', () => {
-    expect(
-      resolveSelectionFinalResult(
-        sel({
-          market: Market.ONE_X_TWO,
-          pick: 'HOME',
-          comboMarket: Market.OVER_UNDER,
-          comboPick: 'OVER',
-        }),
-        SCORES_2_1,
-      ),
-    ).toBe(BetStatus.WON);
-  });
 });
 
 describe('resolveSelectionEarlyResult', () => {
@@ -102,20 +86,6 @@ describe('resolveSelectionEarlyResult', () => {
     expect(
       resolveSelectionEarlyResult(
         sel({ market: Market.OVER_UNDER, pick: 'UNDER' }),
-        { homeScore: 2, awayScore: 1, homeHtScore: null, awayHtScore: null },
-      ),
-    ).toBe(BetStatus.LOST);
-  });
-
-  it('early-LOSES a combo when one leg is irrevocably lost', () => {
-    expect(
-      resolveSelectionEarlyResult(
-        sel({
-          market: Market.ONE_X_TWO,
-          pick: 'HOME',
-          comboMarket: Market.OVER_UNDER,
-          comboPick: 'UNDER',
-        }),
         { homeScore: 2, awayScore: 1, homeHtScore: null, awayHtScore: null },
       ),
     ).toBe(BetStatus.LOST);

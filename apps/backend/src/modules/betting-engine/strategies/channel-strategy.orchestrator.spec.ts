@@ -30,6 +30,16 @@ const BASE_ODDS: FullOddsSnapshot = {
   ouHtOdds: {},
   firstHalfWinnerOdds: null,
   doubleChanceOdds: null,
+  drawNoBetOdds: null,
+  teamTotalHomeOdds: {},
+  teamTotalAwayOdds: {},
+  cleanSheetHomeOdds: null,
+  cleanSheetAwayOdds: null,
+  winToNilHomeOdds: null,
+  winToNilAwayOdds: null,
+  winEitherHalfOdds: null,
+  resultTotalGoalsOdds: {},
+  resultBttsOdds: {},
 };
 
 function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {
@@ -41,7 +51,6 @@ function pick(overrides: Partial<EvaluatedPick>): EvaluatedPick {
     odds: new Decimal('1.90'),
     ev: new Decimal('0.22'),
     qualityScore: new Decimal('0.20'),
-    isCombo: false,
     ...overrides,
   };
 }
@@ -74,6 +83,12 @@ function makeContext(
       under35: new Decimal('0.82'),
       over45: new Decimal('0.07'),
       under45: new Decimal('0.93'),
+      cleanSheetHome: new Decimal('0.30'),
+      cleanSheetAway: new Decimal('0.20'),
+      winEitherHalfHome: new Decimal('0.55'),
+      winEitherHalfAway: new Decimal('0.45'),
+      teamTotalHome: {},
+      teamTotalAway: {},
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.

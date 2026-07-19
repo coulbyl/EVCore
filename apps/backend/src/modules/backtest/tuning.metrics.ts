@@ -53,6 +53,8 @@ function buildSelectables(
 ): Selectable[] {
   if (channel === 'DRAW') return drawSelectables(rows);
   if (channel === 'BTTS') return bttsSelectables(rows);
+  if (channel === 'CLEAN_SHEET') return cleanSheetSelectables(rows);
+  if (channel === 'WIN_EITHER_HALF') return winEitherHalfSelectables(rows);
   return dominantSelectables(rows);
 }
 
@@ -103,6 +105,76 @@ function bttsSelectables(rows: ChannelTuningRow[]): Selectable[] {
       signal: r.probBttsYes,
       won: r.homeScore > 0 && r.awayScore > 0,
       odds: r.oddsBttsYes,
+    });
+  }
+  return out;
+}
+
+// CLEAN_SHEET — argmax(probCleanSheetHome, probCleanSheetAway), no margin gate
+// (unlike DOMINANT's 3-way argmax, CleanSheetStrategy doesn't require one).
+function cleanSheetSelectables(rows: ChannelTuningRow[]): Selectable[] {
+  const out: Selectable[] = [];
+  for (const r of rows) {
+    const candidates = [
+      {
+        side: 'HOME' as const,
+        p: r.probCleanSheetHome,
+        odds: r.oddsCleanSheetHome,
+      },
+      {
+        side: 'AWAY' as const,
+        p: r.probCleanSheetAway,
+        odds: r.oddsCleanSheetAway,
+      },
+    ].filter(
+      (c): c is { side: 'HOME' | 'AWAY'; p: number; odds: number } =>
+        c.p !== null && c.odds !== null,
+    );
+    if (candidates.length === 0) continue;
+    const best = candidates.reduce((a, b) => (b.p > a.p ? b : a));
+    out.push({
+      signal: best.p,
+      won: best.side === 'HOME' ? r.awayScore === 0 : r.homeScore === 0,
+      odds: best.odds,
+    });
+  }
+  return out;
+}
+
+// WIN_EITHER_HALF — argmax(probWinEitherHalfHome, probWinEitherHalfAway).
+// Requires HT scores to resolve the outcome (a team can win the match without
+// winning either half outright — see win-either-half.strategy.ts).
+function winEitherHalfSelectables(rows: ChannelTuningRow[]): Selectable[] {
+  const out: Selectable[] = [];
+  for (const r of rows) {
+    if (r.homeHtScore === null || r.awayHtScore === null) continue;
+    const candidates = [
+      {
+        side: 'HOME' as const,
+        p: r.probWinEitherHalfHome,
+        odds: r.oddsWinEitherHalfHome,
+      },
+      {
+        side: 'AWAY' as const,
+        p: r.probWinEitherHalfAway,
+        odds: r.oddsWinEitherHalfAway,
+      },
+    ].filter(
+      (c): c is { side: 'HOME' | 'AWAY'; p: number; odds: number } =>
+        c.p !== null && c.odds !== null,
+    );
+    if (candidates.length === 0) continue;
+    const best = candidates.reduce((a, b) => (b.p > a.p ? b : a));
+    const homeWonHalf =
+      r.homeHtScore > r.awayHtScore ||
+      r.homeScore - r.homeHtScore > r.awayScore - r.awayHtScore;
+    const awayWonHalf =
+      r.awayHtScore > r.homeHtScore ||
+      r.awayScore - r.awayHtScore > r.homeScore - r.homeHtScore;
+    out.push({
+      signal: best.p,
+      won: best.side === 'HOME' ? homeWonHalf : awayWonHalf,
+      odds: best.odds,
     });
   }
   return out;

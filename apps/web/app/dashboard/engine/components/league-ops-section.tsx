@@ -16,7 +16,6 @@ import {
   useTriggerOddsCsvBackfill,
   useTriggerOddsHistoricalBackfill,
   useTriggerRollingStats,
-  useTriggerStandingsSync,
   useTriggerStatsBackfill,
 } from "@/domains/etl/use-cases/use-etl";
 import type {
@@ -29,26 +28,18 @@ type LeagueActionStatus = { ok: boolean; error?: string } | null;
 
 function LeagueSyncButtons({ competitionCode }: { competitionCode: string }) {
   const [statuses, setStatuses] = useState<
-    Record<LeagueSyncType | "standings", LeagueActionStatus>
+    Record<LeagueSyncType, LeagueActionStatus>
   >({
     fixtures: null,
     stats: null,
     injuries: null,
-    standings: null,
   });
 
   const fixturesSync = useTriggerLeagueSync("fixtures");
   const statsSync = useTriggerLeagueSync("stats");
   const injuriesSync = useTriggerLeagueSync("injuries");
-  const standingsSync = useTriggerStandingsSync();
-  const [standingSeason, setStandingSeason] = useState(
-    String(new Date().getFullYear()),
-  );
 
-  async function trigger(
-    key: LeagueSyncType | "standings",
-    fn: () => Promise<unknown>,
-  ) {
+  async function trigger(key: LeagueSyncType, fn: () => Promise<unknown>) {
     setStatuses((prev) => ({ ...prev, [key]: null }));
     try {
       await fn();
@@ -63,8 +54,6 @@ function LeagueSyncButtons({ competitionCode }: { competitionCode: string }) {
       }));
     }
   }
-
-  const season = Number(standingSeason);
 
   return (
     <div className="flex flex-col gap-3">
@@ -113,42 +102,6 @@ function LeagueSyncButtons({ competitionCode }: { competitionCode: string }) {
             )}
           </div>
         ))}
-      </div>
-
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-col gap-1">
-          <label className="text-[0.65rem] font-medium text-muted-foreground">
-            Standings — saison
-          </label>
-          <input
-            type="number"
-            value={standingSeason}
-            onChange={(e) => setStandingSeason(e.target.value)}
-            className="h-9 w-24 rounded-xl border border-border bg-panel px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
-          />
-        </div>
-        <div className="flex flex-col items-start gap-0.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              trigger("standings", () =>
-                standingsSync.mutateAsync({ competitionCode, season }),
-              )
-            }
-            disabled={standingsSync.isPending || !season}
-          >
-            {standingsSync.isPending ? "En cours…" : "Standings"}
-            {statuses.standings?.ok && (
-              <CheckCircle2 size={12} className="ml-1 text-success" />
-            )}
-          </Button>
-          {statuses.standings?.error && (
-            <p className="text-[0.6rem] text-danger">
-              {statuses.standings.error}
-            </p>
-          )}
-        </div>
       </div>
     </div>
   );

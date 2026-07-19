@@ -1,15 +1,6 @@
-import Decimal from "decimal.js";
-import { Market } from "../types";
-
-export type ComboPick = {
-  market1: Market;
-  pick1: string;
-  market2: Market;
-  pick2: string;
-};
-
-// Conditions mapping pick names → score predicates.
-// Used by computeJointProbability and the settlement resolvers.
+// Conditions mapping pick names → score predicates. Shared by the settlement
+// resolvers (resolvePickBetStatus, resolveFirstHalfBetStatus) to check a
+// single-market pick against a final/half-time score.
 export const PICK_CONDITIONS: Record<
   string,
   (h: number, a: number) => boolean
@@ -33,23 +24,3 @@ export const PICK_CONDITIONS: Record<
   X2: (h, a) => a >= h,
   "12": (h, a) => h !== a,
 };
-
-// Joint probability over all goal-score combinations (h, a) satisfying both pick conditions.
-// Assumes goal independence between home and away (standard Poisson model).
-export function computeJointProbability(
-  combo: ComboPick,
-  distHome: number[],
-  distAway: number[],
-): Decimal {
-  let joint = 0;
-  const cond1 = PICK_CONDITIONS[combo.pick1];
-  const cond2 = PICK_CONDITIONS[combo.pick2];
-  for (let h = 0; h < distHome.length; h++) {
-    for (let a = 0; a < distAway.length; a++) {
-      if (cond1?.(h, a) && cond2?.(h, a)) {
-        joint += (distHome[h] ?? 0) * (distAway[a] ?? 0);
-      }
-    }
-  }
-  return new Decimal(joint);
-}

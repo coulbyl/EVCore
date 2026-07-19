@@ -27,8 +27,6 @@ import {
 export type ChannelSelectionItem = {
   market: Market;
   pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
   probability: number;
   odds: number | null;
   impliedProbability: number | null;
@@ -278,6 +276,10 @@ const READ_CHANNEL_ORDER: readonly StrategyChannel[] = [
   STRATEGY_CHANNEL.BTTS,
   STRATEGY_CHANNEL.DRAW,
   STRATEGY_CHANNEL.GOALS,
+  STRATEGY_CHANNEL.CLEAN_SHEET,
+  STRATEGY_CHANNEL.TEAM_TOTAL,
+  STRATEGY_CHANNEL.WIN_EITHER_HALF,
+  STRATEGY_CHANNEL.CORRECT_SCORE,
   // AVOID gates the primaries above; CONSENSUS aggregates them last.
   STRATEGY_CHANNEL.AVOID,
   STRATEGY_CHANNEL.CONSENSUS,
@@ -315,8 +317,6 @@ function toSelectionItem(
   return {
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket,
-    comboPick: selection.comboPick,
     probability: Number(selection.probability),
     odds: toNumber(selection.odds),
     impliedProbability: toNumber(selection.impliedProbability),

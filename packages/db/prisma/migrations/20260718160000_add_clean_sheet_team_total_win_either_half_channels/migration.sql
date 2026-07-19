@@ -1,0 +1,4 @@
+-- AlterEnum
+ALTER TYPE "StrategyChannel" ADD VALUE 'CLEAN_SHEET';
+ALTER TYPE "StrategyChannel" ADD VALUE 'TEAM_TOTAL';
+ALTER TYPE "StrategyChannel" ADD VALUE 'WIN_EITHER_HALF';

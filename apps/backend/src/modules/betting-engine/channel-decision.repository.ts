@@ -36,8 +36,6 @@ export type ChannelDecisionFilters = {
 export type ChannelSelectionReadRow = {
   market: Market;
   pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
   probability: Prisma.Decimal;
   odds: Prisma.Decimal | null;
   impliedProbability: Prisma.Decimal | null;
@@ -158,8 +156,6 @@ export class ChannelDecisionRepository {
         id: true,
         market: true,
         pick: true,
-        comboMarket: true,
-        comboPick: true,
       },
     });
   }
@@ -235,8 +231,6 @@ export class ChannelDecisionRepository {
           select: {
             market: true,
             pick: true,
-            comboMarket: true,
-            comboPick: true,
             probability: true,
             odds: true,
             impliedProbability: true,
@@ -328,8 +322,6 @@ function toSelectionData(
   return {
     market: selection.market,
     pick: selection.pick,
-    comboMarket: selection.comboMarket ?? null,
-    comboPick: selection.comboPick ?? null,
     probability: selection.probability,
     odds: selection.odds ?? null,
     impliedProbability: selection.impliedProbability ?? null,

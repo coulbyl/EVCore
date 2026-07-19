@@ -8,8 +8,6 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronRight,
-  Plus,
-  Layers,
 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTitle, cn } from "@evcore/ui";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -120,50 +118,8 @@ function groupItemsByFixture(items: BetSlipDraftItem[]): MatchGroup[] {
   return order.map((id) => map.get(id)!);
 }
 
-function ComboLeg({ pick, market }: { pick: string; market: string }) {
-  return (
-    <div className="relative">
-      <div className="flex items-center gap-1.5">
-        <Plus
-          size={13}
-          strokeWidth={3}
-          className="-ml-[1px] shrink-0 rounded-full bg-accent/12 text-accent"
-        />
-        <span className="text-[0.82rem] font-bold text-foreground">{pick}</span>
-      </div>
-      <p className="ml-[1.35rem] text-[0.64rem] text-muted-foreground">
-        {market}
-      </p>
-    </div>
-  );
-}
-
-/** Étiquette d'un pick (simple ou MYCOMBI intra-match), sans cote ni cadre. */
+/** Étiquette d'un pick, sans cote ni cadre. */
 function PickLabel({ item }: { item: BetSlipDraftItem }) {
-  const hasCombo = Boolean(item.comboMarket && item.comboPick);
-
-  if (hasCombo) {
-    return (
-      <div>
-        <span className="flex items-center gap-1 text-[0.72rem] font-extrabold italic uppercase tracking-tight text-accent">
-          <Layers size={12} strokeWidth={2.5} />
-          Mycombi
-        </span>
-        <div className="relative mt-1 space-y-1 pl-1">
-          <span className="absolute bottom-2.5 left-[6px] top-2.5 w-px bg-border" />
-          <ComboLeg
-            pick={formatPickForDisplay(item.pick, item.market)}
-            market={formatMarketForDisplay(item.market)}
-          />
-          <ComboLeg
-            pick={formatPickForDisplay(item.comboPick!, item.comboMarket!)}
-            market={formatMarketForDisplay(item.comboMarket!)}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="flex items-center gap-1.5">
@@ -430,11 +386,7 @@ export function BetSlipDrawer() {
   const totalItems = draft.items.length;
   const isCombo = draft.type === "COMBO" && totalItems >= 2;
 
-  // BetClic-style: une combo intra-match (MYCOMBI) compte 2 sélections.
-  const selectionCount = draft.items.reduce(
-    (n, i) => n + (i.comboMarket && i.comboPick ? 2 : 1),
-    0,
-  );
+  const selectionCount = draft.items.length;
 
   const totalOdds = draft.items.reduce((acc, item) => {
     const o = item.odds ? Number.parseFloat(item.odds) : 1;

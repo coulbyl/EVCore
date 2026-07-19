@@ -74,6 +74,7 @@ import {
   blendTeamStats,
   buildLambdaConfig,
   buildMatchupFeatures,
+  computeOffensiveBalance,
   deriveLambdas,
   mapProbabilitiesToNumber,
   rebalanceThreeWayProbabilities,
@@ -113,8 +114,6 @@ export type BetCandidate = {
   market: Market;
   pick: string;
   pickKey: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
   probability: Decimal;
   odds: Decimal;
   ev: Decimal;
@@ -799,6 +798,7 @@ export class BettingEngineService {
       volatiliteLigue: features.leagueVolat.toNumber(),
       lambdaHome: lambda.home,
       lambdaAway: lambda.away,
+      offensiveBalance: computeOffensiveBalance(lambda.home, lambda.away),
       probabilities: mapProbabilitiesToNumber(probabilities),
       // Unadjusted Poisson output, before the 1X2 blend + O/U shrinkage —
       // lets the analysis sheet expose an adjustmentDelta per market so the
@@ -929,20 +929,13 @@ export class BettingEngineService {
       const pickKey = buildBetPickKey({
         market: valueBet.market,
         pick: valueBet.pick,
-        comboMarket: valueBet.comboMarket ?? null,
-        comboPick: valueBet.comboPick ?? null,
       });
       evPickKey = pickKey;
 
       const channelSelectionId = findChannelSelectionId(
         persistedChannelDecisions,
         STRATEGY_CHANNEL.VALUE,
-        {
-          market: valueBet.market,
-          pick: valueBet.pick,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-        },
+        { market: valueBet.market, pick: valueBet.pick },
       );
 
       betCandidate = {
@@ -951,8 +944,6 @@ export class BettingEngineService {
         market: valueBet.market,
         pick: valueBet.pick,
         pickKey,
-        comboMarket: valueBet.comboMarket ?? null,
-        comboPick: valueBet.comboPick ?? null,
         probability: valueBet.probability,
         odds: valueBet.odds,
         ev: valueBet.ev,
@@ -987,8 +978,6 @@ export class BettingEngineService {
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
-            comboMarket: valueBet.comboMarket ?? null,
-            comboPick: valueBet.comboPick ?? null,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1014,19 +1003,12 @@ export class BettingEngineService {
         const svPickKey = `sv:${buildBetPickKey({
           market: svPick.market,
           pick: svPick.pick,
-          comboMarket: null,
-          comboPick: null,
         })}`;
 
         const channelSelectionId = findChannelSelectionId(
           persistedChannelDecisions,
           STRATEGY_CHANNEL.SAFE,
-          {
-            market: svPick.market,
-            pick: svPick.pick,
-            comboMarket: null,
-            comboPick: null,
-          },
+          { market: svPick.market, pick: svPick.pick },
         );
 
         const existingSvBet = await this.prisma.client.bet.findFirst({
@@ -1056,8 +1038,6 @@ export class BettingEngineService {
               market: svPick.market,
               pick: svPick.pick,
               pickKey: svPickKey,
-              comboMarket: null,
-              comboPick: null,
               probEstimated: toPrismaDecimal(svPick.probability, 4),
               oddsSnapshot: toPrismaDecimal(svPick.odds, 3),
               ev: toPrismaDecimal(svPick.ev, 4),
@@ -1247,6 +1227,10 @@ export class BettingEngineService {
           eloSnapshotAt: eloSnapshotAt?.toISOString() ?? null,
           lambdaHome: lambda?.home ?? null,
           lambdaAway: lambda?.away ?? null,
+          offensiveBalance:
+            lambda !== null
+              ? computeOffensiveBalance(lambda.home, lambda.away)
+              : null,
           probabilities:
             probabilities !== null
               ? mapProbabilitiesToNumber(probabilities)
@@ -1324,19 +1308,12 @@ export class BettingEngineService {
       const pickKey = buildBetPickKey({
         market: valueBet.market,
         pick: valueBet.pick,
-        comboMarket: valueBet.comboMarket ?? null,
-        comboPick: valueBet.comboPick ?? null,
       });
 
       const channelSelectionId = findChannelSelectionId(
         persistedChannelDecisions,
         STRATEGY_CHANNEL.VALUE,
-        {
-          market: valueBet.market,
-          pick: valueBet.pick,
-          comboMarket: valueBet.comboMarket ?? null,
-          comboPick: valueBet.comboPick ?? null,
-        },
+        { market: valueBet.market, pick: valueBet.pick },
       );
 
       betCandidate = {
@@ -1345,8 +1322,6 @@ export class BettingEngineService {
         market: valueBet.market,
         pick: valueBet.pick,
         pickKey,
-        comboMarket: valueBet.comboMarket ?? null,
-        comboPick: valueBet.comboPick ?? null,
         probability: valueBet.probability,
         odds: valueBet.odds,
         ev: valueBet.ev,
@@ -1381,8 +1356,6 @@ export class BettingEngineService {
             market: valueBet.market,
             pick: valueBet.pick,
             pickKey,
-            comboMarket: valueBet.comboMarket ?? null,
-            comboPick: valueBet.comboPick ?? null,
             probEstimated: toPrismaDecimal(valueBet.probability, 4),
             oddsSnapshot: toPrismaDecimal(valueBet.odds, 3),
             ev: toPrismaDecimal(valueBet.ev, 4),
@@ -1563,24 +1536,13 @@ export class BettingEngineService {
 export function findChannelSelectionId(
   decisions: readonly PersistedChannelDecision[],
   channel: StrategyChannel,
-  pick: {
-    market: Market;
-    pick: string;
-    comboMarket: Market | null;
-    comboPick: string | null;
-  },
+  pick: { market: Market; pick: string },
 ): string | null {
   const decision = decisions.find((d) => d.channel === channel);
   if (!decision) return null;
   const key = buildBetPickKey(pick);
   const match = decision.selections.find(
-    (sel) =>
-      buildBetPickKey({
-        market: sel.market,
-        pick: sel.pick,
-        comboMarket: sel.comboMarket ?? null,
-        comboPick: sel.comboPick ?? null,
-      }) === key,
+    (sel) => buildBetPickKey({ market: sel.market, pick: sel.pick }) === key,
   );
   return match?.id ?? null;
 }

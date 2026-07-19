@@ -45,8 +45,6 @@ export type InvestmentPick = {
   channel: StrategyChannel;
   market: Market;
   pick: string;
-  comboMarket: Market | null;
-  comboPick: string | null;
   // Calibrated (bias-corrected) probability — see class doc. This is what
   // drives probabilityBucket and the ranking, not the raw model output.
   probability: number;
@@ -169,8 +167,6 @@ function toInvestmentPick(
     channel: item.channel,
     market: primary.market,
     pick: primary.pick,
-    comboMarket: primary.comboMarket,
-    comboPick: primary.comboPick,
     probability,
     modelProbability,
     probabilityBucket: bucketFor(probability),

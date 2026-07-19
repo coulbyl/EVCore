@@ -21,18 +21,8 @@ import { BetSlipRepository } from './bet-slip.repository';
 import type { CreateBetSlipDto } from './dto/create-bet-slip.dto';
 import type { BetSlipSummaryView, BetSlipView } from './bet-slip.types';
 
-function buildPickKey(input: {
-  market: string;
-  pick: string;
-  comboMarket?: string | null;
-  comboPick?: string | null;
-}): string {
-  return [
-    input.market,
-    input.pick,
-    input.comboMarket ?? '-',
-    input.comboPick ?? '-',
-  ].join('|');
+function buildPickKey(input: { market: string; pick: string }): string {
+  return [input.market, input.pick].join('|');
 }
 
 @Injectable()
@@ -112,11 +102,7 @@ export class BetSlipService {
 
       const diag = extractModelRunFeatureDiagnostics(mr.features);
       const evalPick = diag.evaluatedPicks.find(
-        (p) =>
-          p.market === item.market &&
-          p.pick === item.pick &&
-          (p.comboMarket ?? null) === (item.comboMarket ?? null) &&
-          (p.comboPick ?? null) === (item.comboPick ?? null),
+        (p) => p.market === item.market && p.pick === item.pick,
       );
 
       if (!evalPick) {
@@ -165,17 +151,8 @@ export class BetSlipService {
 
       for (const resolved of resolvedUserPicks) {
         const { item, market, fixtureId } = resolved;
-        const comboMarket =
-          item.comboMarket && item.comboMarket in Market
-            ? (item.comboMarket as Market)
-            : undefined;
 
-        const pickKey = buildPickKey({
-          market,
-          pick: item.pick!,
-          comboMarket: comboMarket ?? null,
-          comboPick: item.comboPick ?? null,
-        });
+        const pickKey = buildPickKey({ market, pick: item.pick! });
 
         const existingBet = await tx.bet.findFirst({
           where: {
@@ -195,8 +172,6 @@ export class BetSlipService {
               market,
               pick: item.pick!,
               pickKey,
-              ...(comboMarket ? { comboMarket } : {}),
-              ...(item.comboPick ? { comboPick: item.comboPick } : {}),
               probEstimated: toPrismaDecimal(resolved.probEstimated, 4),
               oddsSnapshot: toPrismaDecimal(resolved.oddsSnapshot, 3),
               ev: toPrismaDecimal(resolved.ev, 4),
@@ -381,8 +356,6 @@ function toBetSlipView(
         fixture: `${item.fixture.homeTeam.name} vs ${item.fixture.awayTeam.name}`,
         market: item.bet.market,
         pick: item.bet.pick,
-        comboMarket: item.bet.comboMarket ?? null,
-        comboPick: item.bet.comboPick ?? null,
         odds: odds !== null ? odds.toFixed(2) : null,
         ev: formatSigned(Number(item.bet.ev), 4),
         stake: stake.toFixed(2),

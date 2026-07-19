@@ -12,6 +12,8 @@ function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
     competitionName: 'Test League',
     homeScore: 0,
     awayScore: 0,
+    homeHtScore: 0,
+    awayHtScore: 0,
     probHome: 0.4,
     probDraw: 0.3,
     probAway: 0.3,
@@ -19,6 +21,10 @@ function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
     probBttsNo: 0.5,
     probOver25: 0.5,
     probUnder25: 0.5,
+    probCleanSheetHome: 0.3,
+    probCleanSheetAway: 0.2,
+    probWinEitherHalfHome: 0.55,
+    probWinEitherHalfAway: 0.45,
     oddsHome: 2.0,
     oddsDraw: 3.3,
     oddsAway: 3.5,
@@ -26,6 +32,10 @@ function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
     oddsBttsNo: 1.9,
     oddsOver25: 1.9,
     oddsUnder25: 2.0,
+    oddsCleanSheetHome: 2.5,
+    oddsCleanSheetAway: 3.5,
+    oddsWinEitherHalfHome: 1.7,
+    oddsWinEitherHalfAway: 2.1,
     ...partial,
   };
 }
@@ -101,6 +111,93 @@ describe('buildChannelThresholdSweep — BTTS', () => {
     const at65 = sweep.points.find((p) => p.threshold === 0.65)!;
     expect(at65.total).toBe(1);
     expect(at65.won).toBe(1);
+  });
+});
+
+describe('buildChannelThresholdSweep — CLEAN_SHEET', () => {
+  it('picks argmax(home, away) and wins when that side kept a clean sheet', () => {
+    const rows: ChannelTuningRow[] = [
+      // HOME argmax, away scores 0 → HOME clean sheet → won
+      row({
+        probCleanSheetHome: 0.62,
+        probCleanSheetAway: 0.2,
+        oddsCleanSheetHome: 2.1,
+        homeScore: 2,
+        awayScore: 0,
+      }),
+      // AWAY argmax, home scores 0 → AWAY clean sheet → won
+      row({
+        probCleanSheetHome: 0.2,
+        probCleanSheetAway: 0.55,
+        oddsCleanSheetAway: 3.2,
+        homeScore: 0,
+        awayScore: 1,
+      }),
+      // HOME argmax but away also scores → lost
+      row({
+        probCleanSheetHome: 0.6,
+        probCleanSheetAway: 0.15,
+        oddsCleanSheetHome: 2.0,
+        homeScore: 2,
+        awayScore: 1,
+      }),
+      // no odds on either side → dropped
+      row({
+        probCleanSheetHome: 0.7,
+        probCleanSheetAway: 0.1,
+        oddsCleanSheetHome: null,
+        oddsCleanSheetAway: null,
+        homeScore: 3,
+        awayScore: 0,
+      }),
+    ];
+    const sweep = buildChannelThresholdSweep('CLEAN_SHEET', rows);
+    expect(sweep.candidates).toBe(3);
+    const at55 = sweep.points.find((p) => p.threshold === 0.55)!;
+    expect(at55.total).toBe(3); // 0.62, 0.6 and 0.55 all clear the 0.55 gate
+    expect(at55.won).toBe(2); // first two win, the HOME-argmax-but-conceded one loses
+  });
+});
+
+describe('buildChannelThresholdSweep — WIN_EITHER_HALF', () => {
+  it('picks argmax(home, away) and wins when that side won at least one half', () => {
+    const rows: ChannelTuningRow[] = [
+      // HOME argmax, home led at HT → won
+      row({
+        probWinEitherHalfHome: 0.62,
+        probWinEitherHalfAway: 0.4,
+        oddsWinEitherHalfHome: 1.6,
+        homeHtScore: 1,
+        awayHtScore: 0,
+        homeScore: 1,
+        awayScore: 1,
+      }),
+      // HOME argmax, home never led either half → lost
+      row({
+        probWinEitherHalfHome: 0.6,
+        probWinEitherHalfAway: 0.4,
+        oddsWinEitherHalfHome: 1.7,
+        homeHtScore: 0,
+        awayHtScore: 1,
+        homeScore: 1,
+        awayScore: 2,
+      }),
+      // missing HT scores → dropped entirely
+      row({
+        probWinEitherHalfHome: 0.7,
+        probWinEitherHalfAway: 0.3,
+        oddsWinEitherHalfHome: 1.5,
+        homeHtScore: null,
+        awayHtScore: null,
+        homeScore: 2,
+        awayScore: 0,
+      }),
+    ];
+    const sweep = buildChannelThresholdSweep('WIN_EITHER_HALF', rows);
+    expect(sweep.candidates).toBe(2);
+    const at60 = sweep.points.find((p) => p.threshold === 0.6)!;
+    expect(at60.total).toBe(2);
+    expect(at60.won).toBe(1);
   });
 });
 

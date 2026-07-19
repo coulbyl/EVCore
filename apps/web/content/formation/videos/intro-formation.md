@@ -3,23 +3,18 @@ title: "Découvrir EVCore : comment lire un pick"
 category: bases
 difficulty: beginner
 order: 1
-readTime: 4
+readTime: 2
 slug: intro-formation
-summary: "Une courte vidéo pour comprendre les éléments d'un pick dans l'app."
-updatedAt: "2026-05-01"
-videoProvider: youtube
-videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-videoDuration: "4 min"
-chapters:
-  [
-    { "label": "Intro", "start": 0 },
-    { "label": "Canaux", "start": 55 },
-    { "label": "Lire l'EV", "start": 135 },
-    { "label": "Conclusion", "start": 220 },
-  ]
-related: ["comment-lire-un-pick", "the-3-channels", "ev-probabilites-cotes"]
+summary: "Vidéo d'introduction en cours de production — le script est prêt, le tournage reste à faire."
+updatedAt: "2026-07-16"
+related: ["comment-lire-un-pick", "channels-overview", "ev-probabilites-cotes"]
 ---
 
-## À propos de cette vidéo
+## Vidéo en cours de production
 
-Cette vidéo présente la structure des picks dans EVCore et où retrouver les informations essentielles.
+La vidéo d'introduction d'EVCore n'est pas encore tournée. Le script complet existe déjà —
+voir `content/formation/scripts/app-walkthrough-script.md` — et sera filmé prochainement.
+
+Une fois la vidéo produite, ce fichier sera mis à jour avec `videoUrl`, `videoProvider`,
+`videoDuration` et les chapitres réels. En attendant, consultez la leçon "Comment lire une
+fiche EVCore" pour le même contenu au format article.

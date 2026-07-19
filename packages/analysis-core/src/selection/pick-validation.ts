@@ -4,7 +4,6 @@ import {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,
   MAX_SELECTION_ODDS,
-  MIN_DRAW_DIRECTION_PROBABILITY,
   MIN_QUALITY_SCORE,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_AWAY_MAX_ODDS,
@@ -73,16 +72,6 @@ export function getPickRejectionReason(
     ) {
       return "probability_too_low";
     }
-    // Combo picks with DRAW as primary leg (e.g. NUL + MOINS 2.5) passed the EV
-    // floor via high combo odds while P(draw) was 19-27% — audit 2026-03-28: 0/3.
-    // Require a minimum draw probability before accepting DRAW-based combos.
-    if (
-      pick.pick === "DRAW" &&
-      pick.isCombo &&
-      probabilities.draw.lessThan(MIN_DRAW_DIRECTION_PROBABILITY)
-    ) {
-      return "probability_too_low";
-    }
   }
 
   if (pick.ev.lessThan(config.pickEvFloor(pick.market, pick.pick, minEv))) {
@@ -112,16 +101,11 @@ export function getPickRejectionReason(
     if (pick.odds.greaterThan(maxSelectionOdds)) {
       return "odds_above_cap";
     }
-  } else if (!pick.isCombo && pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
-    // For combos, individual leg odds are already filtered upstream — only apply
-    // the cap to single picks where the pick odds IS the leg odds.
+  } else if (pick.odds.greaterThan(MAX_SELECTION_ODDS)) {
     return "odds_above_cap";
   }
 
-  if (
-    suspendedMarkets.has(pick.market) ||
-    (pick.comboMarket !== undefined && suspendedMarkets.has(pick.comboMarket))
-  ) {
+  if (suspendedMarkets.has(pick.market)) {
     return "market_suspended";
   }
 

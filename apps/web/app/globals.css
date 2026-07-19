@@ -74,55 +74,6 @@ body {
   opacity: 0.8;
 }
 
-/* ── World Cup 2026 event theme ──────────────────────────────────────── */
-html:not(.dark)[data-event="wc2026"] {
-  --accent: #c9a84c;
-  --accent-soft: rgba(201, 168, 76, 0.12);
-  --canal-value: #c98b1d;
-  --canal-value-soft: rgba(201, 139, 29, 0.12);
-  --background: #efe7d8;
-  --foreground: #352d20;
-  --muted: #846f4f;
-  --panel: #f6eedf;
-  --panel-strong: #fffaf1;
-  --border: rgba(201, 168, 76, 0.22);
-  --sidebar: #f1e6d3;
-  --sidebar-muted: #e7d9bb;
-  --sidebar-foreground: #3f3320;
-  --sidebar-border: rgba(201, 168, 76, 0.2);
-  --secondary: #eadbb9;
-  --secondary-foreground: #433521;
-  --input: rgba(120, 93, 41, 0.2);
-  --ring: rgba(201, 168, 76, 0.34);
-}
-
-html:not(.dark)[data-event="wc2026"] body {
-  background:
-    radial-gradient(circle at top left, #fdf9f0, #f4ebda 42%, #e9dcc2 100%),
-    linear-gradient(135deg, rgba(201, 168, 76, 0.075), rgba(255, 251, 242, 0.76));
-}
-
-html:not(.dark)[data-event="wc2026"] .ev-grid-glow {
-  background-image:
-    radial-gradient(circle at top right, rgba(201, 168, 76, 0.15), transparent 32%),
-    radial-gradient(circle at 18% 8%, rgba(222, 190, 110, 0.11), transparent 36%),
-    linear-gradient(180deg, rgba(252, 247, 236, 0.72), rgba(244, 236, 219, 0.38));
-}
-
-html.dark[data-event="wc2026"] {
-  --accent: #c9a84c;
-  --accent-soft: rgba(201, 168, 76, 0.13);
-  --canal-value: #e8b84b;
-  --canal-value-soft: rgba(232, 184, 75, 0.11);
-  --background: #0a0f1e;
-  --panel: #111827;
-  --panel-strong: #1a2236;
-  --border: rgba(201, 168, 76, 0.12);
-  --sidebar: #070c17;
-  --sidebar-muted: #0f1a2d;
-  --sidebar-border: rgba(201, 168, 76, 0.1);
-}
-
 @keyframes fade-slide-up {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -133,12 +84,3 @@ html.dark[data-event="wc2026"] {
   50%      { transform: translateY(-8px); }
 }
 
-@keyframes wc2026-flag-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.9); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes wc2026-trophy-glow {
-  0%, 100% { filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.4)); }
-  50%       { filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.8)); }
-}

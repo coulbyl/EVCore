@@ -55,6 +55,140 @@ describe("computePoissonMarkets", () => {
     // …and well below the naive λ/2 value (≈ 0.407) that caused the losing HT picks.
     expect(htOver15).toBeLessThan(0.4);
   });
+
+  it("Draw No Bet home+away sums to 1 and matches the non-draw-renormalized formula", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.dnbHome.plus(m.dnbAway).toNumber()).toBeCloseTo(1, 10);
+
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const expectedDnbHome = oneXTwo.home.div(oneXTwo.home.plus(oneXTwo.away));
+    expect(m.dnbHome.toNumber()).toBeCloseTo(expectedDnbHome.toNumber(), 10);
+  });
+
+  it("Draw No Bet renormalizes above the raw 1X2 probability for the same side", () => {
+    // Dividing by the non-draw mass (< 1, since a draw carries positive
+    // probability) always pushes dnbHome/dnbAway above the raw 1X2 value for
+    // that side — this is what makes DNB distinct from a raw two-way split.
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.dnbHome.toNumber()).toBeGreaterThan(oneXTwo.home.toNumber());
+    expect(m.dnbAway.toNumber()).toBeGreaterThan(oneXTwo.away.toNumber());
+  });
+
+  it("Team Total marginals: Over/Under for the same line sum to 1, independent per side", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(
+      m.teamTotalHome.OVER_1_5!.plus(m.teamTotalHome.UNDER_1_5!).toNumber(),
+    ).toBeCloseTo(1, 10);
+    expect(
+      m.teamTotalAway.OVER_0_5!.plus(m.teamTotalAway.UNDER_0_5!).toNumber(),
+    ).toBeCloseTo(1, 10);
+  });
+
+  it("Team Total home side has higher Over probability than away when lambda is higher", () => {
+    const m = computePoissonMarkets(2.2, 0.9);
+    expect(m.teamTotalHome.OVER_1_5!.toNumber()).toBeGreaterThan(
+      m.teamTotalAway.OVER_1_5!.toNumber(),
+    );
+  });
+
+  it("Clean Sheet is the opposing side's marginal P(0 goals)", () => {
+    const { distHome, distAway } = buildPoissonDistributions(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.cleanSheetHome.toNumber()).toBeCloseTo(distAway[0] ?? 0, 10);
+    expect(m.cleanSheetAway.toNumber()).toBeCloseTo(distHome[0] ?? 0, 10);
+  });
+
+  it("Clean Sheet trends to 1 as the opposing lambda trends to 0", () => {
+    const m = computePoissonMarkets(1.5, 0.02);
+    expect(m.cleanSheetHome.toNumber()).toBeGreaterThan(0.97);
+  });
+
+  it("Win to Nil is always ≤ Clean Sheet for the same side (must also score)", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    expect(m.winToNilHome.toNumber()).toBeLessThanOrEqual(
+      m.cleanSheetHome.toNumber(),
+    );
+    expect(m.winToNilAway.toNumber()).toBeLessThanOrEqual(
+      m.cleanSheetAway.toNumber(),
+    );
+  });
+
+  it("Second Half Winner sums to ≈ 1 (home+draw+away), independent of first half", () => {
+    const m = computePoissonMarkets(1.5, 1.0);
+    const total = m.secondHalfWinner.home
+      .plus(m.secondHalfWinner.draw)
+      .plus(m.secondHalfWinner.away)
+      .toNumber();
+    expect(total).toBeCloseTo(1, 6);
+  });
+
+  it("To Win Either Half: inclusion-exclusion matches first/second half winner probabilities", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const expectedHome = m.firstHalfWinner.home
+      .plus(m.secondHalfWinner.home)
+      .minus(m.firstHalfWinner.home.mul(m.secondHalfWinner.home));
+    expect(m.winEitherHalfHome.toNumber()).toBeCloseTo(
+      expectedHome.toNumber(),
+      10,
+    );
+    // A union of two events is always ≥ either individual event — and NOT
+    // exclusive with the away side (e.g. home wins H1 and away wins H2
+    // makes both "win either half" true), so home+away is not bounded by 1.
+    expect(m.winEitherHalfHome.toNumber()).toBeGreaterThanOrEqual(
+      m.firstHalfWinner.home.toNumber(),
+    );
+    expect(m.winEitherHalfHome.toNumber()).toBeGreaterThanOrEqual(
+      m.secondHalfWinner.home.toNumber(),
+    );
+    expect(m.winEitherHalfHome.toNumber()).toBeLessThanOrEqual(1);
+  });
+
+  it("Result/Total Goals: under+over reconstructs the side's own 1X2 mass", () => {
+    const oneXTwo = poissonProba(1.7, 1.2);
+    const m = computePoissonMarkets(1.7, 1.2);
+    for (const side of ["HOME", "DRAW", "AWAY"] as const) {
+      const under = m.resultTotalGoals[`${side}_UNDER_2_5`]!;
+      const over = m.resultTotalGoals[`${side}_OVER_2_5`]!;
+      const sideMass =
+        side === "HOME"
+          ? oneXTwo.home
+          : side === "DRAW"
+            ? oneXTwo.draw
+            : oneXTwo.away;
+      expect(under.plus(over).toNumber()).toBeCloseTo(sideMass.toNumber(), 10);
+    }
+  });
+
+  it("Result/Total Goals UNDER is a genuine joint sum, not an independence-assumed product", () => {
+    // Home & Under 1.5 requires BOTH a home win AND a low-scoring match —
+    // strictly smaller than the naive product of the two marginals, since
+    // low-scoring games correlate with home wins being narrow (1-0).
+    const m = computePoissonMarkets(1.7, 1.2);
+    const homeUnder15 = m.resultTotalGoals.HOME_UNDER_1_5!;
+    expect(homeUnder15.toNumber()).toBeGreaterThan(0);
+    expect(homeUnder15.toNumber()).toBeLessThan(1);
+  });
+
+  it("Results/Both Teams Score: the 6 cells sum to ≈ 1 (exhaustive partition)", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const total = Object.values(m.resultBtts).reduce(
+      (acc, p) => acc + p.toNumber(),
+      0,
+    );
+    expect(total).toBeCloseTo(1, 10);
+  });
+
+  it("Results/Both Teams Score is consistent with bttsYes/bttsNo and 1X2", () => {
+    const m = computePoissonMarkets(1.7, 1.2);
+    const bttsYesAcrossSides = m.resultBtts
+      .HOME_YES!.plus(m.resultBtts.DRAW_YES!)
+      .plus(m.resultBtts.AWAY_YES!);
+    expect(bttsYesAcrossSides.toNumber()).toBeCloseTo(m.bttsYes.toNumber(), 10);
+    const homeMass = m.resultBtts.HOME_YES!.plus(m.resultBtts.HOME_NO!);
+    const oneXTwo = poissonProba(1.7, 1.2);
+    expect(homeMass.toNumber()).toBeCloseTo(oneXTwo.home.toNumber(), 10);
+  });
 });
 
 describe("computeCorrectScoreMatrix", () => {

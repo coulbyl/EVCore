@@ -20,7 +20,6 @@ const logger = createLogger('coupon');
 @Injectable()
 export class CouponService {
   private readonly kellyEnabled: boolean;
-  private readonly combosEnabled: boolean;
   private readonly stakeDraw: boolean;
   private readonly enforceAvoid: boolean;
 
@@ -32,9 +31,6 @@ export class CouponService {
     config: ConfigService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
-    // Same-match combos (Étape 6) — off by default until backtested per league.
-    this.combosEnabled =
-      config.get<string>('COUPON_COMBOS_ENABLED', 'false') === 'true';
     // DRAW staking (B7) — on by default: backtested +9.9% ROI, product-approved.
     // Kept env-toggleable (COUPON_STAKE_DRAW=false) as a kill-switch.
     this.stakeDraw =
@@ -65,7 +61,6 @@ export class CouponService {
     const [window, rawPicks] = await Promise.all([
       this.signalWindow.computeSignalWindow(windowDays, asOf),
       this.signalWindow.getTodayPool(date, {
-        includeCombos: this.combosEnabled,
         includeDraw: this.stakeDraw,
         enforceAvoid: this.enforceAvoid,
       }),
@@ -120,8 +115,6 @@ export class CouponService {
           canal: leg.canal,
           market: leg.market,
           pick: leg.pick,
-          comboMarket: leg.comboMarket,
-          comboPick: leg.comboPick,
           probability: leg.probability,
           oddsSnapshot: leg.oddsSnapshot,
           signalScore: leg.signalScore,
@@ -177,8 +170,6 @@ export class CouponService {
         canal: leg.canal,
         market: leg.market,
         pick: leg.pick,
-        comboMarket: leg.comboMarket ?? null,
-        comboPick: leg.comboPick ?? null,
         probability: Number(leg.probability),
         oddsSnapshot: leg.oddsSnapshot ? Number(leg.oddsSnapshot) : null,
         signalScore: Number(leg.signalScore),
