@@ -103,10 +103,20 @@ function evalResultTotalGoalsKey(
   if (side !== outcome) return 0;
   const ouSide = match[2]!;
   const line = parseLine(match[3]!);
-  return ouSide === "OVER" ? (totalGoals > line ? 1 : 0) : totalGoals < line ? 1 : 0;
+  return ouSide === "OVER"
+    ? totalGoals > line
+      ? 1
+      : 0
+    : totalGoals < line
+      ? 1
+      : 0;
 }
 
-function evalResultBttsKey(key: string, outcome: Outcome, btts: boolean): 0 | 1 {
+function evalResultBttsKey(
+  key: string,
+  outcome: Outcome,
+  btts: boolean,
+): 0 | 1 {
   const match = /^(HOME|DRAW|AWAY)_(YES|NO)$/.exec(key);
   if (!match) throw new Error(`Unexpected result/btts key: ${key}`);
   const side = match[1]! as Outcome;
@@ -221,7 +231,9 @@ async function main() {
     });
     statsByTeamSeason.set(key, arr);
   }
-  out(`  ${statsRaw.length} lignes TeamStats chargées (${teamIds.length} équipes).`);
+  out(
+    `  ${statsRaw.length} lignes TeamStats chargées (${teamIds.length} équipes).`,
+  );
 
   out("Replay du pipeline Poisson par fixture...");
   const points: PickPoint[] = [];
@@ -331,9 +343,11 @@ async function main() {
       const homeSecondHalf = fixture.homeScore - fixture.homeHtScore;
       const awaySecondHalf = fixture.awayScore - fixture.awayHtScore;
       const homeWonEitherHalf =
-        fixture.homeHtScore > fixture.awayHtScore || homeSecondHalf > awaySecondHalf;
+        fixture.homeHtScore > fixture.awayHtScore ||
+        homeSecondHalf > awaySecondHalf;
       const awayWonEitherHalf =
-        fixture.awayHtScore > fixture.homeHtScore || awaySecondHalf > homeSecondHalf;
+        fixture.awayHtScore > fixture.homeHtScore ||
+        awaySecondHalf > homeSecondHalf;
       points.push({
         market: "TO_WIN_EITHER_HALF",
         pick: "HOME",

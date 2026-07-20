@@ -61,7 +61,10 @@ async function main() {
   `;
 
   // channel -> day (ISO) -> { below, above } settled picks
-  type ChannelDays = Map<string, { below: SettledPick[]; above: SettledPick[] }>;
+  type ChannelDays = Map<
+    string,
+    { below: SettledPick[]; above: SettledPick[] }
+  >;
   const byChannel = new Map<string, ChannelDays>();
 
   for (const row of rows) {

@@ -145,7 +145,9 @@ function runGridSearch(
         const actualDraw = r.outcome === 1 ? 1 : 0;
         const actualAway = r.outcome === 2 ? 1 : 0;
         brierSum +=
-          (home - actualHome) ** 2 + (draw - actualDraw) ** 2 + (away - actualAway) ** 2;
+          (home - actualHome) ** 2 +
+          (draw - actualDraw) ** 2 +
+          (away - actualAway) ** 2;
         homeProbSum += home;
         homeHitSum += actualHome;
         awayProbSum += away;
@@ -188,7 +190,9 @@ function validateFull(
     const actualDraw = r.outcome === 1 ? 1 : 0;
     const actualAway = r.outcome === 2 ? 1 : 0;
     brierSum +=
-      (home - actualHome) ** 2 + (draw - actualDraw) ** 2 + (away - actualAway) ** 2;
+      (home - actualHome) ** 2 +
+      (draw - actualDraw) ** 2 +
+      (away - actualAway) ** 2;
     homePoints.push({ prob: home, actual: actualHome });
     awayPoints.push({ prob: away, actual: actualAway });
   }
@@ -337,9 +341,11 @@ async function main() {
   out("Grid-search homeAdvFactor × awayDisadvFactor (Brier 3-way)...");
   const SEARCH_MAX_GOALS = 8;
   const homeFactors: number[] = [];
-  for (let v = 0.95; v <= 1.301; v += 0.025) homeFactors.push(Math.round(v * 1000) / 1000);
+  for (let v = 0.95; v <= 1.301; v += 0.025)
+    homeFactors.push(Math.round(v * 1000) / 1000);
   const awayFactors: number[] = [];
-  for (let v = 0.65; v <= 1.001; v += 0.025) awayFactors.push(Math.round(v * 1000) / 1000);
+  for (let v = 0.65; v <= 1.001; v += 0.025)
+    awayFactors.push(Math.round(v * 1000) / 1000);
 
   const { best, all: allCandidates } = runGridSearch(
     raws,
@@ -354,20 +360,28 @@ async function main() {
   out(`  ${dateLabel} — grid-search Brier 3-way sur ${raws.length} fixtures`);
   out("═══════════════════════════════════════════════════════");
   out();
-  out(`Grille : ${homeFactors.length} × ${awayFactors.length} = ${homeFactors.length * awayFactors.length} candidats.`);
+  out(
+    `Grille : ${homeFactors.length} × ${awayFactors.length} = ${homeFactors.length * awayFactors.length} candidats.`,
+  );
   out();
 
   // Valeur actuelle pour comparaison directe.
   const currentCandidate = allCandidates.find(
-    (c) => c.homeFactor === CURRENT_HOME_FACTOR && c.awayFactor === CURRENT_AWAY_FACTOR,
+    (c) =>
+      c.homeFactor === CURRENT_HOME_FACTOR &&
+      c.awayFactor === CURRENT_AWAY_FACTOR,
   );
-  out(`Config actuelle (ev.constants.ts) : homeAdvFactor=${CURRENT_HOME_FACTOR}, awayDisadvFactor=${CURRENT_AWAY_FACTOR}`);
+  out(
+    `Config actuelle (ev.constants.ts) : homeAdvFactor=${CURRENT_HOME_FACTOR}, awayDisadvFactor=${CURRENT_AWAY_FACTOR}`,
+  );
   if (currentCandidate) {
     out(
       `  Brier=${currentCandidate.brier.toFixed(4)}  HOME proba moy=${(100 * currentCandidate.avgHomeProb).toFixed(1)}% / réel=${(100 * currentCandidate.homeHitRate).toFixed(1)}%  AWAY proba moy=${(100 * currentCandidate.avgAwayProb).toFixed(1)}% / réel=${(100 * currentCandidate.awayHitRate).toFixed(1)}%`,
     );
   } else {
-    out("  (hors grille exacte — voir top 10 ci-dessous pour les valeurs proches)");
+    out(
+      "  (hors grille exacte — voir top 10 ci-dessous pour les valeurs proches)",
+    );
   }
   out();
 
@@ -384,10 +398,20 @@ async function main() {
       `Meilleur candidat : homeAdvFactor=${best.homeFactor}, awayDisadvFactor=${best.awayFactor} (Brier=${best.brier.toFixed(4)})`,
     );
     out();
-    out("Validation avec le pipeline complet (computePoissonMarkets, maxGoals=10 par défaut)...");
+    out(
+      "Validation avec le pipeline complet (computePoissonMarkets, maxGoals=10 par défaut)...",
+    );
 
-    const beforeValidation = validateFull(raws, CURRENT_HOME_FACTOR, CURRENT_AWAY_FACTOR);
-    const afterValidation = validateFull(raws, best.homeFactor, best.awayFactor);
+    const beforeValidation = validateFull(
+      raws,
+      CURRENT_HOME_FACTOR,
+      CURRENT_AWAY_FACTOR,
+    );
+    const afterValidation = validateFull(
+      raws,
+      best.homeFactor,
+      best.awayFactor,
+    );
 
     out();
     out("Avant (config actuelle 1.05 / 0.95) :");
@@ -410,9 +434,7 @@ async function main() {
     out(
       "validation sur les 30% derniers (jamais vus par la recherche) — si le",
     );
-    out(
-      "candidat retenu ne bat plus la config actuelle en hors-échantillon,",
-    );
+    out("candidat retenu ne bat plus la config actuelle en hors-échantillon,");
     out("c'est un signe d'overfit plutôt qu'un vrai biais structurel.");
     out();
 
@@ -435,11 +457,21 @@ async function main() {
     );
     out();
 
-    const currentOnTest = validateFull(testRaws, CURRENT_HOME_FACTOR, CURRENT_AWAY_FACTOR);
-    const trainedOnTest = validateFull(testRaws, bestTrain.homeFactor, bestTrain.awayFactor);
+    const currentOnTest = validateFull(
+      testRaws,
+      CURRENT_HOME_FACTOR,
+      CURRENT_AWAY_FACTOR,
+    );
+    const trainedOnTest = validateFull(
+      testRaws,
+      bestTrain.homeFactor,
+      bestTrain.awayFactor,
+    );
     const fullOnTest = validateFull(testRaws, best.homeFactor, best.awayFactor);
 
-    out("Sur le jeu de test (30% les plus récents, jamais vus par le grid-search train) :");
+    out(
+      "Sur le jeu de test (30% les plus récents, jamais vus par le grid-search train) :",
+    );
     out(
       `  Config actuelle (1.05 / 0.95)              : Brier=${currentOnTest.brier.toFixed(4)}  ECE HOME=${currentOnTest.homeEce.toFixed(4)}  ECE AWAY=${currentOnTest.awayEce.toFixed(4)}`,
     );

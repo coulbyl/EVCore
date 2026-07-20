@@ -170,7 +170,9 @@ export function ChatThread({
                                     <MessageContent>
                                       <Bubble
                                         align={isMine ? "end" : "start"}
-                                        variant={isMine ? "default" : "secondary"}
+                                        variant={
+                                          isMine ? "default" : "secondary"
+                                        }
                                       >
                                         <BubbleContent
                                           className={

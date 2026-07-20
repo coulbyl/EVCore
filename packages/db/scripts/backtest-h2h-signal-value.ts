@@ -29,7 +29,10 @@
 import "dotenv/config";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { computePoissonMarkets, type TeamStatsInput } from "@evcore/analysis-core";
+import {
+  computePoissonMarkets,
+  type TeamStatsInput,
+} from "@evcore/analysis-core";
 import { prisma } from "../src/client";
 
 const MIN_PRIOR_TEAM_STATS = 5;
@@ -142,7 +145,10 @@ function rawH2HScore(legs: H2HLeg[], favoriteTeamId: string): number | null {
   return favoriteWins / legs.length;
 }
 
-function improvedH2HScore(legs: H2HLeg[], favoriteTeamId: string): number | null {
+function improvedH2HScore(
+  legs: H2HLeg[],
+  favoriteTeamId: string,
+): number | null {
   if (legs.length < H2H_MIN_SAMPLE) return null;
   let weightedSum = 0;
   let weightTotal = 0;
@@ -154,7 +160,8 @@ function improvedH2HScore(legs: H2HLeg[], favoriteTeamId: string): number | null
         : leg.awayScore > leg.homeScore
           ? leg.awayTeamId
           : null;
-    const indicator = winnerTeamId === null ? 0.5 : winnerTeamId === favoriteTeamId ? 1 : 0;
+    const indicator =
+      winnerTeamId === null ? 0.5 : winnerTeamId === favoriteTeamId ? 1 : 0;
     weightedSum += weight * indicator;
     weightTotal += weight;
   });
@@ -198,7 +205,10 @@ async function main() {
   const dateLabel = generatedAt.toISOString().slice(0, 10);
   const reportsDir = join(process.cwd(), "reports");
   mkdirSync(reportsDir, { recursive: true });
-  const outputPath = join(reportsDir, `backtest-h2h-signal-value-${dateLabel}.txt`);
+  const outputPath = join(
+    reportsDir,
+    `backtest-h2h-signal-value-${dateLabel}.txt`,
+  );
   const lines: string[] = [];
   const out = (line = "") => {
     console.log(line);
@@ -324,7 +334,8 @@ async function main() {
     const probHome = markets.home.toNumber();
     const probAway = markets.away.toNumber();
 
-    const favoriteTeamId = probHome >= probAway ? fixture.homeTeamId : fixture.awayTeamId;
+    const favoriteTeamId =
+      probHome >= probAway ? fixture.homeTeamId : fixture.awayTeamId;
     const modelProb = probHome >= probAway ? probHome : probAway;
 
     const winnerTeamId =
@@ -347,7 +358,8 @@ async function main() {
     if (raw !== null) rawPoints.push({ h2h: raw, modelProb, actual });
 
     const improved = improvedH2HScore(legs, favoriteTeamId);
-    if (improved !== null) improvedPoints.push({ h2h: improved, modelProb, actual });
+    if (improved !== null)
+      improvedPoints.push({ h2h: improved, modelProb, actual });
 
     processed++;
   }
@@ -355,7 +367,9 @@ async function main() {
   out(
     `  ${processed} fixtures avec modelProb valide, ${skippedColdStart} exclues (cold-start).`,
   );
-  out(`  ${rawPoints.length} avec >=1 H2H (RAW), ${improvedPoints.length} avec >=${H2H_MIN_SAMPLE} H2H (IMPROVED).`);
+  out(
+    `  ${rawPoints.length} avec >=1 H2H (RAW), ${improvedPoints.length} avec >=${H2H_MIN_SAMPLE} H2H (IMPROVED).`,
+  );
 
   function report(label: string, points: Point[]) {
     out();
@@ -383,16 +397,21 @@ async function main() {
       [0.8, 1.001],
     ];
     out();
-    out("  Bucket H2H | n     | modelProb moy | taux réel | gap (réel-modelProb)");
+    out(
+      "  Bucket H2H | n     | modelProb moy | taux réel | gap (réel-modelProb)",
+    );
     for (const [lo, hi] of bins) {
       const bucket = points.filter((p) => p.h2h >= lo && p.h2h < hi);
       if (bucket.length === 0) {
-        out(`  [${lo.toFixed(1)}-${hi === 1.001 ? "1.0" : hi.toFixed(1)}) | 0     | -             | -         | -`);
+        out(
+          `  [${lo.toFixed(1)}-${hi === 1.001 ? "1.0" : hi.toFixed(1)}) | 0     | -             | -         | -`,
+        );
         continue;
       }
       const avgModelProb =
         bucket.reduce((s, p) => s + p.modelProb, 0) / bucket.length;
-      const actualRate = bucket.reduce((s, p) => s + p.actual, 0) / bucket.length;
+      const actualRate =
+        bucket.reduce((s, p) => s + p.actual, 0) / bucket.length;
       out(
         `  [${lo.toFixed(1)}-${hi === 1.001 ? "1.0" : hi.toFixed(1)}) | ${String(bucket.length).padEnd(5)} | ${(100 * avgModelProb).toFixed(1)}%        | ${(100 * actualRate).toFixed(1)}%     | ${(100 * (actualRate - avgModelProb)).toFixed(1)}pp`,
       );
@@ -405,8 +424,14 @@ async function main() {
   out(`  ${dateLabel} — favori = home/away avec la plus haute proba modèle`);
   out("═══════════════════════════════════════════════════════");
 
-  report("RAW (formule actuelle h2h.service.ts, pas de seuil, nul=0)", rawPoints);
-  report(`IMPROVED (n>=${H2H_MIN_SAMPLE}, decay=${H2H_DECAY}, nul=0.5)`, improvedPoints);
+  report(
+    "RAW (formule actuelle h2h.service.ts, pas de seuil, nul=0)",
+    rawPoints,
+  );
+  report(
+    `IMPROVED (n>=${H2H_MIN_SAMPLE}, decay=${H2H_DECAY}, nul=0.5)`,
+    improvedPoints,
+  );
 
   const report_ = lines.join("\n");
   writeFileSync(outputPath, `${report_}\n`, "utf8");
