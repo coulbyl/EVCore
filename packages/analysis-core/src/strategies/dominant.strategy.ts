@@ -2,7 +2,11 @@ import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
 import { priceForSelection } from "../selection";
 import { LINE_MOVEMENT_THRESHOLD } from "../selection/constants";
-import { DOMINANT_MIN_MARGIN, getChannelStrategyConfig } from "./config";
+import {
+  DOMINANT_MIN_MARGIN,
+  DOMINANT_MIN_ODDS,
+  getChannelStrategyConfig,
+} from "./config";
 import type {
   ChannelStrategy,
   StrategyContext,
@@ -89,6 +93,30 @@ export class DominantStrategy implements ChannelStrategy {
       };
     }
 
+    const priced = priceForSelection({
+      odds: context.odds,
+      market: Market.ONE_X_TWO,
+      pick: first.pick,
+      probability: first.probability,
+    });
+
+    // Below this, the pick is a near-certain favorite with a trivial payout —
+    // floods the feed without adding value (see DOMINANT_MIN_ODDS). Only
+    // gates when the book has a price; price-less selections still pass
+    // through for analytical settlement, same as every other rejection here.
+    if (priced.odds !== undefined && priced.odds.lessThan(DOMINANT_MIN_ODDS)) {
+      return {
+        channel: ch,
+        status: CHANNEL_DECISION_STATUS.REJECTED,
+        reasonCode: "below_min_odds",
+        reasonDetails: {
+          odds: priced.odds.toNumber(),
+          minOdds: DOMINANT_MIN_ODDS.toNumber(),
+        },
+        selections: [],
+      };
+    }
+
     return {
       channel: ch,
       status: CHANNEL_DECISION_STATUS.SELECTED,
@@ -97,12 +125,7 @@ export class DominantStrategy implements ChannelStrategy {
           market: Market.ONE_X_TWO,
           pick: first.pick,
           probability: first.probability,
-          ...priceForSelection({
-            odds: context.odds,
-            market: Market.ONE_X_TWO,
-            pick: first.pick,
-            probability: first.probability,
-          }),
+          ...priced,
           rank: 1,
         },
       ],

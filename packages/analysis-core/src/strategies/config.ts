@@ -5,6 +5,15 @@ import Decimal from "decimal.js";
 // cluster near 33% (model has no real conviction).
 export const DOMINANT_MIN_MARGIN = new Decimal("0.05");
 
+// DOMINANT has no upper odds bound (unlike SAFE) but does need a floor: below
+// this, the pick is a near-certain heavy favorite with a trivial payout —
+// backtest 2026-07-20 shows the <1.20 bucket is DOMINANT's best-performing
+// (89% hit rate, +1.23% ROI), so this isn't about accuracy, it's volume — the
+// World Cup group stage flooded the feed with these low-value picks. Applied
+// only when the book has a price; a price-less selection still passes through
+// for analytical settlement.
+export const DOMINANT_MIN_ODDS = new Decimal("1.20");
+
 export type ChannelStrategyLeagueConfig = {
   enabled: boolean;
   threshold: number;
