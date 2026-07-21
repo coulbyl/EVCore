@@ -5,6 +5,7 @@ import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
+  resolveWinEitherHalfBetStatus,
 } from '../betting-engine/betting-engine.utils';
 import { CouponRepository } from './coupon.repository';
 import { createLogger } from '@utils/logger';
@@ -39,8 +40,16 @@ function resolveIsCorrect(
     market === Market.FIRST_HALF_WINNER
   ) {
     status = resolveFirstHalfBetStatus(pick, homeHtScore, awayHtScore);
+  } else if (market === Market.TO_WIN_EITHER_HALF) {
+    status = resolveWinEitherHalfBetStatus(
+      pick,
+      homeHtScore,
+      awayHtScore,
+      homeScore,
+      awayScore,
+    );
   } else {
-    status = resolvePickBetStatus(pick, homeScore, awayScore);
+    status = resolvePickBetStatus(market, pick, homeScore, awayScore);
   }
 
   if (status === BetStatus.WON) return true;

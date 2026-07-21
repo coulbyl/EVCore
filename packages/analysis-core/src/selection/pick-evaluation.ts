@@ -746,8 +746,7 @@ export function listEvaluatedPicks(
   // Singles RESULT_BTTS — pre-combined pick (e.g. "HOME_YES").
   for (const [pick, pickOdds] of Object.entries(odds.resultBttsOdds)) {
     if (pickOdds === undefined) continue;
-    const probability =
-      probabilities.resultBtts[pick as keyof ResultBttsProba];
+    const probability = probabilities.resultBtts[pick as keyof ResultBttsProba];
     if (probability === undefined) continue;
     const ev = calcEV(probability, pickOdds);
     candidates.push({

@@ -648,9 +648,8 @@ export default function LandingPage() {
             <span className="text-accent">C&apos;est ça, investir.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Accès sur invitation. L&apos;objectif n&apos;est pas de
-            multiplier les paris — c&apos;est de construire un portefeuille
-            avec méthode.
+            Accès sur invitation. L&apos;objectif n&apos;est pas de multiplier
+            les paris — c&apos;est de construire un portefeuille avec méthode.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

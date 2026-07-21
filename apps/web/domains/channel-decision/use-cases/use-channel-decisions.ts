@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
 import type {
   ChannelDecisionChannelGroupDto,
@@ -57,6 +57,26 @@ export function useChannelDecisionMatches(
     },
     enabled: options.enabled ?? true,
     staleTime: 120_000,
+  });
+}
+
+// Catch-up: force re-settlement of every ChannelSelection (the "won/lost"
+// analytical mirror, independent of coupon proposals) whose fixture kicked
+// off within [from, to] — use after a settlement resolver bug fix.
+export function useSettleChannelDecisionsRange() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (opts: { from: string; to: string }) => {
+      const params = new URLSearchParams(opts);
+      return clientApiRequest<{
+        fixturesResettled: number;
+        selectionsResettled: number;
+      }>(`/channel-decisions/settle-range?${params.toString()}`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["channel-decisions-by-match"] }),
   });
 }
 

@@ -164,6 +164,39 @@ export class ChannelDecisionService {
     return { settled: updates.length };
   }
 
+  /**
+   * Catch-up: force final re-settlement of every ChannelSelection on every
+   * FINISHED fixture in [from, to] — idempotent, safe to re-run. Mirrors
+   * CouponSettlementService.settleRange (doc §5): use after a settlement
+   * resolver bug fix, or when a fixture's score was corrected after it was
+   * already settled, to self-correct without re-analysing the fixture.
+   */
+  async settleRange(
+    from: Date,
+    to: Date,
+  ): Promise<{ fixturesResettled: number; selectionsResettled: number }> {
+    const fixtures =
+      await this.repository.findFinishedFixturesWithSelectionsInRange(from, to);
+
+    let selectionsResettled = 0;
+    for (const fixture of fixtures) {
+      if (fixture.homeScore === null || fixture.awayScore === null) continue;
+      const { settled } = await this.settleFixtureSelections({
+        fixtureId: fixture.id,
+        scores: {
+          homeScore: fixture.homeScore,
+          awayScore: fixture.awayScore,
+          homeHtScore: fixture.homeHtScore,
+          awayHtScore: fixture.awayHtScore,
+        },
+        mode: 'final',
+      });
+      selectionsResettled += settled;
+    }
+
+    return { fixturesResettled: fixtures.length, selectionsResettled };
+  }
+
   // Read API (doc §5): normalised per-channel decisions for a day, grouped by
   // match or by channel. REJECTED decisions + reasonCode are exposed.
   async listByMatch(

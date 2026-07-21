@@ -25,10 +25,10 @@ Avant de coder quoi que ce soit, on a vérifié que corriger H2H a un intérêt
 réel (`packages/db/scripts/backtest-h2h-signal-value.ts`, 46 679 fixtures,
 favori = home/away avec la plus haute proba modèle recalibré) :
 
-| Version                                          | n      | Corrélation (score H2H, résidu réel−modelProb) | Écart bucket extrême |
-| ------------------------------------------------- | ------ | ----------------------------------------------- | --------------------- |
-| RAW (formule actuelle)                             | 36 763 | r=0.0525                                         | -3.2pp → +3.2pp (6.4pp) |
-| IMPROVED (seuil n≥3, decay=0.8, nul=0.5)           | 17 194 | r=0.0785                                         | -7.1pp → +5.8pp (13pp) |
+| Version                                  | n      | Corrélation (score H2H, résidu réel−modelProb) | Écart bucket extrême    |
+| ---------------------------------------- | ------ | ---------------------------------------------- | ----------------------- |
+| RAW (formule actuelle)                   | 36 763 | r=0.0525                                       | -3.2pp → +3.2pp (6.4pp) |
+| IMPROVED (seuil n≥3, decay=0.8, nul=0.5) | 17 194 | r=0.0785                                       | -7.1pp → +5.8pp (13pp)  |
 
 Gradient monotone sur les 5 buckets dans les deux cas — pas du bruit. La
 version corrigée double quasiment l'amplitude du signal malgré un
@@ -72,6 +72,7 @@ scientifique, mais ils convergent avec notre propre résultat empirique
    propre marché, pas juste du résultat 1X2.
 
 Sources (qualité variable, voir avertissement ci-dessus) :
+
 - [Head-to-Head Statistics in Football Betting](https://winfulltime.com/blog/head-to-head-statistics)
 - [How Head-to-Head Records Power AI Soccer Prediction Models](https://www.sportbotai.com/blog/head-to-head-records-soccer-ai-prediction-models)
 - [How H2H Records Shape Soccer Prediction Models](https://www.sportbotai.com/blog/head-to-head-records-soccer-prediction-models-ai-betting-value)
@@ -91,6 +92,7 @@ marcher.**
 ### 3.1 v2.0 — Score de résultat corrigé (déjà validé, §1)
 
 `computeH2HScore` réécrit avec :
+
 - `H2H_MIN_SAMPLE = 3` (retourne `null` en dessous, comme le cold-start
   gate des TeamStats)
 - Pondération `decay=0.8` sur les manches les plus récentes en premier
@@ -127,13 +129,13 @@ marchés qu'EVCore trade réellement, pas seulement 1X2. Sur le même pool de
 confrontations point-in-time déjà récupéré par `computeH2HScore`, calculer
 en plus (même méthodologie decay+seuil que 3.1) :
 
-| Signal                         | Formule (sur les mêmes manches H2H)                                   | Canal cible                              |
-| ------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------- |
-| `h2hBttsRate`                    | taux pondéré de manches où les deux équipes ont marqué                 | BTTS                                       |
-| `h2hOver25Rate`                  | taux pondéré de manches avec total buts > 2.5                          | OVER_UNDER                                 |
-| `h2hAvgTotalGoals`               | moyenne pondérée du total de buts                                      | RESULT_TOTAL_GOALS, TEAM_TOTAL             |
-| `h2hCleanSheetRate` (home/away)  | taux pondéré où l'équipe (côté domicile/extérieur actuel) a gardé sa cage inviolée face à cet adversaire précis | CLEAN_SHEET                     |
-| `h2hWinToNilRate` (home/away)    | taux pondéré où l'équipe a gagné sans encaisser face à cet adversaire  | WIN_TO_NIL                                 |
+| Signal                          | Formule (sur les mêmes manches H2H)                                                                             | Canal cible                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `h2hBttsRate`                   | taux pondéré de manches où les deux équipes ont marqué                                                          | BTTS                           |
+| `h2hOver25Rate`                 | taux pondéré de manches avec total buts > 2.5                                                                   | OVER_UNDER                     |
+| `h2hAvgTotalGoals`              | moyenne pondérée du total de buts                                                                               | RESULT_TOTAL_GOALS, TEAM_TOTAL |
+| `h2hCleanSheetRate` (home/away) | taux pondéré où l'équipe (côté domicile/extérieur actuel) a gardé sa cage inviolée face à cet adversaire précis | CLEAN_SHEET                    |
+| `h2hWinToNilRate` (home/away)   | taux pondéré où l'équipe a gagné sans encaisser face à cet adversaire                                           | WIN_TO_NIL                     |
 
 Point d'attention : `h2hCleanSheetRate`/`h2hWinToNilRate` sont **orientés
 par le côté domicile/extérieur de la fixture cible**, pas par "favori" —
@@ -189,6 +191,7 @@ empirique (backtest de valeur incrémentale, même protocole que §1) ne
 justifie l'investissement en ingestion.
 
 Plan d'implémentation v2.3a :
+
 - Nouveau modèle Prisma `Coach`/`CoachTenure` (`teamId`, `coachName`,
   `startDate`, `endDate?`) — migration à la main comme le reste du projet.
 - Nouveau worker ETL `coachs-sync.worker.ts` (BullMQ, calqué sur

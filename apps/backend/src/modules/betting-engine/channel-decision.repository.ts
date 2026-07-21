@@ -175,6 +175,39 @@ export class ChannelDecisionRepository {
     });
   }
 
+  // Catch-up scope for `settleRange`: every FINISHED fixture with a final
+  // score in [from, to] that has at least one ChannelSelection to re-settle.
+  async findFinishedFixturesWithSelectionsInRange(
+    from: Date,
+    to: Date,
+  ): Promise<
+    {
+      id: string;
+      homeScore: number | null;
+      awayScore: number | null;
+      homeHtScore: number | null;
+      awayHtScore: number | null;
+    }[]
+  > {
+    return this.prisma.client.fixture.findMany({
+      where: {
+        status: 'FINISHED',
+        scheduledAt: { gte: from, lte: to },
+        modelRuns: {
+          some: { channelDecisions: { some: { selections: { some: {} } } } },
+        },
+      },
+      select: {
+        id: true,
+        homeScore: true,
+        awayScore: true,
+        homeHtScore: true,
+        awayHtScore: true,
+      },
+      orderBy: { scheduledAt: 'asc' },
+    });
+  }
+
   async findByDate(
     filters: ChannelDecisionFilters,
   ): Promise<ChannelDecisionReadRow[]> {

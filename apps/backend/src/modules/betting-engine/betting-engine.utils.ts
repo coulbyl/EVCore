@@ -19,6 +19,7 @@ export {
   resolveFirstHalfBetStatus,
   resolveEarlyBetStatus,
   resolvePickBetStatus,
+  resolveWinEitherHalfBetStatus,
   buildBetPickKey,
 } from '@evcore/analysis-core';
 export type {

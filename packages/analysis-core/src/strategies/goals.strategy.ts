@@ -47,9 +47,13 @@ type GoalsCandidate = {
   priced: ReturnType<typeof priceForSelection>;
 };
 
-// Rank candidates value-first: highest EV when priced, then highest probability
-// for price-less candidates (kept for analytical settlement when no book price
-// exists). Mirrors the value-driven ordering used for coupons.
+// Rank priced candidates by EV (best value-driven ordering used for coupons).
+// Only called on candidates that already have a book price — an unpriced
+// candidate is never selected (see decideGoals): ranking price-less
+// candidates by raw probability always favours the highest-probability
+// enabled line (P(under) grows monotonically with the line), which floods
+// the feed with a single unactionable line instead of spreading forward
+// observation data across every configured line.
 function compareGoalsCandidates(a: GoalsCandidate, b: GoalsCandidate): number {
   const aEv = a.priced.ev ?? null;
   const bEv = b.priced.ev ?? null;
@@ -117,8 +121,24 @@ export function decideGoals(
     };
   }
 
-  candidates.sort(compareGoalsCandidates);
-  const best = candidates[0];
+  // A price-less pick is never selected: the book had no price for any
+  // above-threshold line on this fixture, so there is nothing to rank on
+  // (the old probability fallback deterministically favoured whichever
+  // enabled line had the highest baseline probability — usually 4.5 or 3.5
+  // UNDER — flooding the feed with a pick nobody could ever act on).
+  const priced = candidates.filter((c) => c.priced.odds !== undefined);
+  if (priced.length === 0) {
+    return {
+      channel,
+      status: CHANNEL_DECISION_STATUS.REJECTED,
+      reasonCode: "no_priced_line",
+      reasonDetails: { candidateLines: candidates.map((c) => c.pick) },
+      selections: [],
+    };
+  }
+
+  priced.sort(compareGoalsCandidates);
+  const best = priced[0];
   if (!best)
     return {
       channel,

@@ -21,7 +21,11 @@ export function decideWinEitherHalf(
 ): StrategyDecision {
   const ch = STRATEGY_CHANNEL.WIN_EITHER_HALF;
   if (!config.enabled) {
-    return { channel: ch, status: CHANNEL_DECISION_STATUS.DISABLED, selections: [] };
+    return {
+      channel: ch,
+      status: CHANNEL_DECISION_STATUS.DISABLED,
+      selections: [],
+    };
   }
 
   const { winEitherHalfHome, winEitherHalfAway } = context.probabilities;

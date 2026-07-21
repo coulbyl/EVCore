@@ -25,7 +25,11 @@
 import "dotenv/config";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { computePoissonMarkets, flatRoi, type TeamStatsInput } from "@evcore/analysis-core";
+import {
+  computePoissonMarkets,
+  flatRoi,
+  type TeamStatsInput,
+} from "@evcore/analysis-core";
 import { prisma } from "../src/client";
 
 const MIN_PRIOR_TEAM_STATS = 5;
@@ -161,7 +165,9 @@ async function main() {
   }));
   out(`  ${fixtures.length} fixtures terminées trouvées.`);
 
-  out("Chargement des cotes ONE_X_TWO (snapshot le plus récent <= coup d'envoi, même convention que backtest.repository.ts)...");
+  out(
+    "Chargement des cotes ONE_X_TWO (snapshot le plus récent <= coup d'envoi, même convention que backtest.repository.ts)...",
+  );
   const oddsSnapshots = await prisma.oddsSnapshot.findMany({
     where: {
       market: "ONE_X_TWO",
@@ -169,22 +175,34 @@ async function main() {
       drawOdds: { not: null },
       awayOdds: { not: null },
     },
-    select: { fixtureId: true, homeOdds: true, drawOdds: true, awayOdds: true, snapshotAt: true },
+    select: {
+      fixtureId: true,
+      homeOdds: true,
+      drawOdds: true,
+      awayOdds: true,
+      snapshotAt: true,
+    },
     orderBy: [{ fixtureId: "asc" }, { snapshotAt: "desc" }],
   });
   const fixtureById = new Map(fixtures.map((f) => [f.id, f]));
-  const oddsByFixture = new Map<string, { home: number; draw: number; away: number }>();
+  const oddsByFixture = new Map<
+    string,
+    { home: number; draw: number; away: number }
+  >();
   for (const s of oddsSnapshots) {
     if (oddsByFixture.has(s.fixtureId)) continue;
     const fixture = fixtureById.get(s.fixtureId);
-    if (!fixture || s.snapshotAt.getTime() > fixture.scheduledAt.getTime()) continue;
+    if (!fixture || s.snapshotAt.getTime() > fixture.scheduledAt.getTime())
+      continue;
     oddsByFixture.set(s.fixtureId, {
       home: Number(s.homeOdds),
       draw: Number(s.drawOdds),
       away: Number(s.awayOdds),
     });
   }
-  out(`  ${oddsByFixture.size} fixtures avec cote ONE_X_TWO pré-match disponible.`);
+  out(
+    `  ${oddsByFixture.size} fixtures avec cote ONE_X_TWO pré-match disponible.`,
+  );
 
   out("Chargement des TeamStats point-in-time...");
   const teamIds = Array.from(
@@ -224,7 +242,9 @@ async function main() {
     statsByTeamSeason.set(key, arr);
   }
 
-  out("Simulation VALUE (ONE_X_TWO, EV max >= 0.08) — ancien vs nouveau facteur...");
+  out(
+    "Simulation VALUE (ONE_X_TWO, EV max >= 0.08) — ancien vs nouveau facteur...",
+  );
   const oldBets: SelectedBet[] = [];
   const newBets: SelectedBet[] = [];
   let sameSideCount = 0;
@@ -314,12 +334,17 @@ async function main() {
 
   const roiOld = flatRoi(oldBets) * 100;
   const roiNew = flatRoi(newBets) * 100;
-  const winRateOld = (oldBets.filter((b) => b.won).length / Math.max(1, oldBets.length)) * 100;
-  const winRateNew = (newBets.filter((b) => b.won).length / Math.max(1, newBets.length)) * 100;
+  const winRateOld =
+    (oldBets.filter((b) => b.won).length / Math.max(1, oldBets.length)) * 100;
+  const winRateNew =
+    (newBets.filter((b) => b.won).length / Math.max(1, newBets.length)) * 100;
 
   const bySide = (bets: SelectedBet[], pick: Pick) => {
     const subset = bets.filter((b) => b.pick === pick);
-    return { n: subset.length, roi: subset.length > 0 ? flatRoi(subset) * 100 : 0 };
+    return {
+      n: subset.length,
+      roi: subset.length > 0 ? flatRoi(subset) * 100 : 0,
+    };
   };
 
   out();
@@ -329,14 +354,18 @@ async function main() {
   out("═══════════════════════════════════════════════════════");
   out();
   out(`Ancien facteur (${OLD_HOME_FACTOR} / ${OLD_AWAY_FACTOR}) :`);
-  out(`  Picks sélectionnés : ${oldBets.length}  ROI=${roiOld.toFixed(2)}%  Win rate=${winRateOld.toFixed(1)}%`);
+  out(
+    `  Picks sélectionnés : ${oldBets.length}  ROI=${roiOld.toFixed(2)}%  Win rate=${winRateOld.toFixed(1)}%`,
+  );
   for (const pick of ["HOME", "DRAW", "AWAY"] as const) {
     const s = bySide(oldBets, pick);
     out(`    ${pick.padEnd(5)} n=${s.n}  ROI=${s.roi.toFixed(2)}%`);
   }
   out();
   out(`Nouveau facteur (${NEW_HOME_FACTOR} / ${NEW_AWAY_FACTOR}) :`);
-  out(`  Picks sélectionnés : ${newBets.length}  ROI=${roiNew.toFixed(2)}%  Win rate=${winRateNew.toFixed(1)}%`);
+  out(
+    `  Picks sélectionnés : ${newBets.length}  ROI=${roiNew.toFixed(2)}%  Win rate=${winRateNew.toFixed(1)}%`,
+  );
   for (const pick of ["HOME", "DRAW", "AWAY"] as const) {
     const s = bySide(newBets, pick);
     out(`    ${pick.padEnd(5)} n=${s.n}  ROI=${s.roi.toFixed(2)}%`);

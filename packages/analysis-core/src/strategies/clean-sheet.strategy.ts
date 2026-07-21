@@ -22,7 +22,11 @@ export function decideCleanSheet(
 ): StrategyDecision {
   const ch = STRATEGY_CHANNEL.CLEAN_SHEET;
   if (!config.enabled) {
-    return { channel: ch, status: CHANNEL_DECISION_STATUS.DISABLED, selections: [] };
+    return {
+      channel: ch,
+      status: CHANNEL_DECISION_STATUS.DISABLED,
+      selections: [],
+    };
   }
 
   const { cleanSheetHome, cleanSheetAway } = context.probabilities;
