@@ -9,6 +9,7 @@ import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
+  resolveWinEitherHalfBetStatus,
 } from '../betting-engine.utils';
 
 /**
@@ -177,8 +178,17 @@ export class BetSettlementService {
             fixture.homeHtScore,
             fixture.awayHtScore,
           );
+        } else if (bet.market === Market.TO_WIN_EITHER_HALF) {
+          status = resolveWinEitherHalfBetStatus(
+            bet.pick,
+            fixture.homeHtScore,
+            fixture.awayHtScore,
+            fixture.homeScore,
+            fixture.awayScore,
+          );
         } else {
           status = resolvePickBetStatus(
+            bet.market,
             bet.pick,
             fixture.homeScore,
             fixture.awayScore,

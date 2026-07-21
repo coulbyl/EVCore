@@ -4,6 +4,7 @@ import {
   resolveFirstHalfBetStatus,
   resolveHalfTimeFullTimeBetStatus,
   resolvePickBetStatus,
+  resolveWinEitherHalfBetStatus,
 } from './betting-engine.utils';
 
 export type SettleableSelection = {
@@ -49,7 +50,18 @@ export function resolveSelectionFinalResult(
     );
   }
 
+  if (selection.market === Market.TO_WIN_EITHER_HALF) {
+    return resolveWinEitherHalfBetStatus(
+      selection.pick,
+      scores.homeHtScore,
+      scores.awayHtScore,
+      scores.homeScore,
+      scores.awayScore,
+    );
+  }
+
   return resolvePickBetStatus(
+    selection.market,
     selection.pick,
     scores.homeScore,
     scores.awayScore,
