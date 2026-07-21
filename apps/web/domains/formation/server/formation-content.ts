@@ -246,11 +246,17 @@ export async function getFormationIndex(): Promise<FormationContentMeta[]> {
     ),
   );
 
-  const metas: FormationContentMeta[] = items.flat().map((item) => {
-    const { content, ...meta } = item;
-    void content;
-    return meta;
-  });
+  const metas: FormationContentMeta[] = items
+    .flat()
+    // A video without `videoUrl` hasn't been filmed yet — keep the markdown
+    // (script, production notes) in the repo but hide it from every listing
+    // until `videoUrl` is added.
+    .filter((item) => item.type !== "video" || Boolean(item.videoUrl))
+    .map((item) => {
+      const { content, ...meta } = item;
+      void content;
+      return meta;
+    });
 
   metas.sort((a, b) => a.title.localeCompare(b.title));
   return metas;
@@ -270,7 +276,12 @@ export async function getFormationContentBySlug(
     );
     for (const fullPath of paths) {
       const item = await readContentFile(type, fullPath);
-      if (item.slug === slug) return item;
+      if (item.slug !== slug) continue;
+      // Not filmed yet — same visibility rule as getFormationIndex, applied
+      // here too so the lesson page 404s instead of showing a bare "coming
+      // soon" placeholder for a direct/bookmarked link.
+      if (item.type === "video" && !item.videoUrl) return null;
+      return item;
     }
   }
 
