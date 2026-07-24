@@ -21,7 +21,9 @@ const ODDS: FullOddsSnapshot = {
   homeOdds: new Decimal('1.90'),
   drawOdds: new Decimal('3.30'),
   awayOdds: new Decimal('4.50'),
-  overUnderOdds: {},
+  // UNDER_3_5 priced so GOALS has a book price to select on (commit 4a10108:
+  // an unpriced above-threshold candidate is rejected, never selected).
+  overUnderOdds: { UNDER_3_5: new Decimal('1.30') },
   bttsYesOdds: null,
   bttsNoOdds: null,
   htftOdds: {},
@@ -124,8 +126,8 @@ describe('ChannelDecisionService', () => {
     expect(ev?.selections[0]?.pick).toBe('HOME');
 
     // GOALS BL1 is enabled (observation) across lines: Over 1.5 (0.74 < 0.78)
-    // and Over 2.5 (0.40 < 0.57) fail their gates, but Under 3.5 (0.82 ≥ 0.53)
-    // clears → SELECTED on the UNDER_3_5 line.
+    // and Over 2.5 (0.40 < 0.45, retuned 2026-07-24) fail their gates, but
+    // Under 3.5 (0.82 ≥ 0.53) clears → SELECTED on the UNDER_3_5 line.
     const goals = evaluated.find(
       (d: { channel: string }) => d.channel === STRATEGY_CHANNEL.GOALS,
     );
