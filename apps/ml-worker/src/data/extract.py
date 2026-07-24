@@ -26,18 +26,35 @@ logger = logging.getLogger(__name__)
 # fixed named columns (old homeOdds/yesOdds/overOdds/... columns) so any
 # market's arbitrary pick strings (TEAM_TOTAL's "OVER_1_5", etc.) work without
 # a new column per market family.
+#
+# ONE_X_TWO is a special case: every Pinnacle/Bet365 row for that market has
+# `pick IS NULL` (confirmed live 2026-07-24, 64928/64928 rows) — the 1X2 price
+# lives in the dedicated homeOdds/drawOdds/awayOdds columns instead, never in
+# pick/odds. `jsonb_object_agg` hard-errors ("null value not allowed for
+# object key") the moment it aggregates a NULL key, which is what took down
+# training for every segment (ONE_X_TWO is shared by VALUE/DOMINANT/DRAW/SAFE)
+# after the picks_odds rewrite — `pick IS NOT NULL` below is the fix. The
+# home/draw/away MAX(...) columns restore the 1X2 price from its real column
+# (merged into the same picks_odds dict, keyed HOME/DRAW/AWAY, in Python).
 _ODDS_LATERAL_SQL = """
 LEFT JOIN LATERAL (
-    SELECT jsonb_object_agg(pick, odds) AS picks_odds
+    SELECT
+        jsonb_object_agg(pick, odds) FILTER (WHERE pick IS NOT NULL) AS picks_odds,
+        MAX("homeOdds") AS home_odds,
+        MAX("drawOdds") AS draw_odds,
+        MAX("awayOdds") AS away_odds
     FROM (
-        SELECT DISTINCT ON (pick)
+        SELECT DISTINCT ON (COALESCE(pick, '__1x2__'))
             pick,
-            odds
+            odds,
+            "homeOdds",
+            "drawOdds",
+            "awayOdds"
         FROM odds_snapshot
         WHERE "fixtureId" = f.id
           AND bookmaker IN ('Pinnacle', 'Bet365')
           AND market = cs.market
-        ORDER BY pick, (bookmaker = 'Pinnacle') DESC, "snapshotAt" DESC
+        ORDER BY COALESCE(pick, '__1x2__'), (bookmaker = 'Pinnacle') DESC, "snapshotAt" DESC
     ) latest
 ) os ON TRUE
 """
@@ -65,7 +82,10 @@ SELECT
     cs.ev,
     (cs.result = 'WON')             AS outcome_correct,
     c.code                          AS competition_code,
-    os.picks_odds                   AS picks_odds
+    os.picks_odds                   AS picks_odds,
+    os.home_odds                    AS home_odds,
+    os.draw_odds                    AS draw_odds,
+    os.away_odds                    AS away_odds
 FROM channel_selection cs
 JOIN channel_decision cd ON cd.id     = cs."channelDecisionId"
 JOIN model_run mr         ON mr.id    = cd."modelRunId"
@@ -201,7 +221,14 @@ def _build_row(raw: dict[str, Any]) -> dict[str, Any]:
     pick: str = raw["pick"]
     market: str = raw["market"]
     prob_estimated = float(raw["prob_estimated"])
-    picks_odds: dict[str, float] = raw.get("picks_odds") or {}
+    picks_odds: dict[str, float] = dict(raw.get("picks_odds") or {})
+    # ONE_X_TWO's price lives in the dedicated homeOdds/drawOdds/awayOdds
+    # columns, not pick/odds (see _ODDS_LATERAL_SQL) — merge it into the same
+    # generic map so devig/target-odds lookups don't need a market special case.
+    for key, raw_key in (("HOME", "home_odds"), ("DRAW", "draw_odds"), ("AWAY", "away_odds")):
+        value = _num(raw.get(raw_key))
+        if value is not None:
+            picks_odds.setdefault(key, value)
     target_odds = _num(raw.get("odds_bet")) or _num(picks_odds.get(pick))
     p_pinnacle = _devig_pick(market, pick, picks_odds)
     poisson = _extract_poisson(features, market, pick)

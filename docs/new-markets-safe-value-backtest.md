@@ -153,7 +153,7 @@ nouveau marché :
 
 - [ ] Laisser tourner la Phase 1 (aucune action — accumulation forward)
 - [ ] Revérifier le volume settled par marché périodiquement (`docker exec
-  evcore-postgres psql` sur `bet` filtré `market IN (...)`)
+evcore-postgres psql` sur `bet` filtré `market IN (...)`)
 - [ ] Une fois le volume minimum atteint sur au moins un marché : écrire le
       script de la Phase 2
 - [ ] Revue humaine des résultats + décision d'extension `safeValueMarkets`

@@ -1,5 +1,6 @@
 // Mirrors apps/backend/src/modules/ml/ml.constants.ts ML_SEGMENTS. Canal
 // names renamed 2026-07 (EV→VALUE, CONF→DOMINANT) — see docs/ml-worker-sync.md.
+// CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF added 2026-07-24.
 export const ML_SEGMENTS = [
   "ALL",
   "VALUE:ONE_X_TWO",
@@ -12,4 +13,9 @@ export const ML_SEGMENTS = [
   "BTTS:BTTS",
   "DRAW:ONE_X_TWO",
   "GOALS:OVER_UNDER",
+  "CLEAN_SHEET:CLEAN_SHEET_HOME",
+  "CLEAN_SHEET:CLEAN_SHEET_AWAY",
+  "TEAM_TOTAL:TEAM_TOTAL_HOME",
+  "TEAM_TOTAL:TEAM_TOTAL_AWAY",
+  "WIN_EITHER_HALF:TO_WIN_EITHER_HALF",
 ] as const;

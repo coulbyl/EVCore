@@ -11,6 +11,7 @@ import {
   Stethoscope,
   Trophy,
   TrendingUp,
+  Users,
   Zap,
 } from "lucide-react";
 import {
@@ -74,6 +75,13 @@ const ACTIONS: ActionDef[] = [
     label: "Elo",
     icon: <Trophy size={14} />,
     description: "Recalcul des ratings Elo",
+  },
+  {
+    kind: "global",
+    type: "coach",
+    label: "Coachs",
+    icon: <Users size={14} />,
+    description: "Historique des mandats d'entraîneur (H2H sameCoach)",
   },
   {
     kind: "global",
