@@ -161,6 +161,25 @@ class TestBuildRow:
         assert row["p_pinnacle"] is None
         assert row["delta_p"] is None
 
+    def test_one_x_two_reads_price_from_dedicated_columns_not_picks_odds(self) -> None:
+        # Regression (2026-07-24 prod incident): every Pinnacle/Bet365
+        # ONE_X_TWO row has pick IS NULL in the DB — the price lives in
+        # homeOdds/drawOdds/awayOdds, never in picks_odds. _build_row must
+        # merge those columns into picks_odds itself so devig/target-odds
+        # work without a market special case.
+        row = extract._build_row(
+            self._raw(
+                picks_odds={},
+                home_odds=1.9,
+                draw_odds=3.5,
+                away_odds=4.0,
+            )
+        )
+        assert row["p_pinnacle"] is not None
+        assert row["pinnacle_home_odds"] == pytest.approx(1.9)
+        assert row["pinnacle_draw_odds"] == pytest.approx(3.5)
+        assert row["pinnacle_away_odds"] == pytest.approx(4.0)
+
     def test_ev_derived_when_absent(self) -> None:
         row = extract._build_row(self._raw(ev=None))
         # ev = prob_estimated * odds_bet - 1 = 0.55 * 2.0 - 1 = 0.10

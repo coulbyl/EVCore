@@ -22,12 +22,12 @@ async def start(config: Config) -> None:
     async def process(job: Any, token: str) -> Any:  # noqa: ARG001
         handler = _HANDLERS.get(job.name)
         if handler is None:
-            logger.warning("unknown job name, skipping", extra={"name": job.name})
+            logger.warning("unknown job name, skipping", extra={"job_name": job.name})
             return None
         try:
             return await handler(job.data, config)
         except Exception:
-            logger.exception("job failed", extra={"name": job.name})
+            logger.exception("job failed", extra={"job_name": job.name})
             raise
 
     concurrency = 1

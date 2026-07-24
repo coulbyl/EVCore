@@ -154,6 +154,53 @@ rang 1 du canal, quel que soit le marché), et `buildMlShadowFeatures`
 3 canaux n'a donc touché que l'extraction (entraînement offline) — le
 chemin d'inférence live était déjà prêt.
 
+### 5ter. Incident prod "Entraînement échoué" (§5bis a cassé TOUS les canaux) — CORRIGÉ 2026-07-24
+
+Le rewrite §5bis (`_ODDS_LATERAL_SQL` en JSON générique `{pick: odds}`) a
+cassé l'entraînement en production le jour même, pas seulement pour les 3
+nouveaux canaux — **pour tous**, y compris VALUE/DOMINANT/DRAW/SAFE.
+
+**Cause** : `jsonb_object_agg(pick, odds)` lève une erreur Postgres dure
+("null value not allowed for object key") dès qu'il agrège une ligne où
+`pick IS NULL`. Or **100% des lignes Pinnacle/Bet365 du marché ONE_X_TWO**
+(64928/64928, vérifié en direct) ont `pick IS NULL` — le prix 1X2 vit dans
+les colonnes dédiées `homeOdds`/`drawOdds`/`awayOdds`, jamais dans
+`pick`/`odds`. `ONE_X_TWO` étant partagé par VALUE/DOMINANT/DRAW/SAFE,
+n'importe quel entraînement sur n'importe quel canal déclenchait ce crash.
+
+**Bug masquant** (a fait perdre du temps de diagnostic) : `worker.py`
+loggait l'exception via `logger.exception("job failed", extra={"name":
+job.name})` — `extra={"name": ...}` entre en collision avec l'attribut
+interne `name` de `LogRecord` (le nom du logger lui-même), donc ce log
+plante à son tour avec `KeyError: "Attempt to overwrite 'name' in
+LogRecord"`. C'est CE message qui remontait en prod, pas l'erreur réelle
+(`jsonb_object_agg`) — corrigé en renommant la clé en `job_name`.
+
+**Correctifs** (`apps/ml-worker/src/data/extract.py`) :
+- `jsonb_object_agg(pick, odds) FILTER (WHERE pick IS NOT NULL)` — ne
+  crashe plus.
+- `MAX("homeOdds")`/`MAX("drawOdds")`/`MAX("awayOdds")` récupérés en
+  parallèle dans la même lateral join, fusionnés dans le même dict
+  `picks_odds` (clés `HOME`/`DRAW`/`AWAY`) côté Python — restaure le devig
+  Pinnacle pour ONE_X_TWO/FIRST_HALF_WINNER sans réintroduire un cas
+  spécial par marché dans `_devig_pick`.
+
+**Vérifié en direct** (conteneurs relancés par l'utilisateur) : `extract_dataset`
++ `correction.train()` de bout en bout sur `DOMINANT:ONE_X_TWO` (5643
+lignes Pinnacle, Brier 0.207), `CLEAN_SHEET:CLEAN_SHEET_HOME` (169, Brier
+0.312), `TEAM_TOTAL:TEAM_TOTAL_HOME` (211, Brier 0.181),
+`WIN_EITHER_HALF:TO_WIN_EITHER_HALF` (228, Brier 0.219) — tous OK.
+
+**Leçon** : les tests unitaires sur `_build_row`/`_devig_pick` n'ont pas
+attrapé ce bug — ils passent un `picks_odds` déjà construit en Python, ils
+ne testent jamais le SQL lui-même. Un bug purement SQL (comportement
+d'agrégat sur une valeur NULL) ne peut être attrapé que par une exécution
+réelle contre la DB. Test de non-régression ajouté
+(`test_one_x_two_reads_price_from_dedicated_columns_not_picks_odds`) qui
+verrouille au moins le contrat Python (fusion des colonnes dédiées dans
+`picks_odds`), mais ne remplace pas une vérification contre la DB réelle
+avant de livrer un changement touchant `_ODDS_LATERAL_SQL`.
+
 ### 6. Ré-entraînement sur données recalibrées — FAIT (voir §"Session du 2026-07-01 (suite)")
 
 Tous les `ml_model_version` existants (32 lignes, dont 7 actives) ont été **désactivés** en base le 2026-07-01 (`isActive = false`, note d'audit ajoutée) : ils avaient été entraînés soit sur l'extract cassé, soit avant la recalibration HT/plancher d'edge VALUE (voir [[project_value_edge_floor]]). Un nouveau cycle a été déclenché le même jour depuis `/dashboard/ml` — détail plus bas.
