@@ -25,6 +25,11 @@ export const SHADOW_CAPTURED_SEGMENTS = [
   'DRAW:ONE_X_TWO',
   'BTTS:BTTS',
   'GOALS:OVER_UNDER',
+  'CLEAN_SHEET:CLEAN_SHEET_HOME',
+  'CLEAN_SHEET:CLEAN_SHEET_AWAY',
+  'TEAM_TOTAL:TEAM_TOTAL_HOME',
+  'TEAM_TOTAL:TEAM_TOTAL_AWAY',
+  'WIN_EITHER_HALF:TO_WIN_EITHER_HALF',
 ] as const;
 
 // Segments with an active model but no per-pick shadow correction wired at

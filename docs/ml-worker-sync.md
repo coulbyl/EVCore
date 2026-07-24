@@ -60,6 +60,62 @@ Décision prise après lecture des volumes réels en base (paris/sélections ré
 
 `CORRECT_SCORE` reste hors périmètre (marché observation-only depuis la modale correct-score, commit `63e0a0e`) — un seul settlement en base, loin du minimum de 50 (`ML_RETRAIN_MIN_NEW_BETS`). À revisiter quand le volume existera.
 
+### 5bis. CLEAN_SHEET / TEAM_TOTAL / WIN_EITHER_HALF ajoutés — 2026-07-24
+
+Le tableau ci-dessus (§5) est daté du 2026-07-01, avant que ces 3 canaux
+n'existent. Revérifié en direct le 2026-07-24 :
+
+| Canal           | Sélections réglées | Cote Pinnacle/Bet365 |  Entraînement  | Inférence live |
+| --------------- | ------------------: | :-------------------: | :------------: | :-------------: |
+| CLEAN_SHEET     |          171 / 122 | ✅ Bet365 uniquement |       ✅       |        ✅        |
+| TEAM_TOTAL      |          219 / 122 | ✅ Pinnacle (3346/3040) |    ✅       |        ✅        |
+| WIN_EITHER_HALF |                238 | ✅ Bet365 uniquement |       ✅       |        ✅        |
+| CORRECT_SCORE   |    1365 (427 fixtures dédupliquées) | ✅ Pinnacle (9974) | ❌ non fait | ❌ |
+
+Le doc affirmait "aucune cote historique n'existe" pour ces marchés — c'était
+vrai début juillet mais plus le 07-24 (la sync PREMATCH a élargi sa
+couverture entretemps). `TEAM_TOTAL` a une vraie couverture Pinnacle ;
+`CLEAN_SHEET`/`WIN_EITHER_HALF` n'en ont **aucune**, uniquement Bet365 —
+décision utilisateur (2026-07-24) : élargir la source de dévigage de
+`extract.py` à `Pinnacle OR Bet365` (Pinnacle préféré quand les deux
+existent) plutôt que d'attendre une couverture Pinnacle qui n'arrivera peut-être
+jamais pour ces marchés.
+
+Changements (`apps/ml-worker/src/data/extract.py`) :
+
+- `_ODDS_LATERAL_SQL` : remplace les colonnes nommées fixes
+  (`homeOdds`/`yesOdds`/`overOdds`/...) par un objet JSON générique
+  `{pick: odds}` par (fixture, marché) — nécessaire car `TEAM_TOTAL` a des
+  picks arbitraires par ligne (`OVER_1_5`, `UNDER_2_5`, ...), pas juste
+  HOME/DRAW/AWAY/YES/NO/OVER/UNDER. Source `bookmaker IN ('Pinnacle',
+  'Bet365')`, priorité à Pinnacle via `ORDER BY (bookmaker = 'Pinnacle')
+  DESC`.
+- `_devig_pinnacle`/`_pinnacle_prob_for_pick`/`_target_odds` remplacés par
+  `_complement_picks(market, pick)` (quelles issues concurrentes dévig
+  contre) + `_devig_pick(market, pick, picks_odds)` (générique, marche pour
+  n'importe quel marché à 2/3 issues connu).
+- `_extract_poisson` devient sensible au marché (`market` en paramètre) —
+  lit `cleanSheetHome/Away`, `winEitherHalfHome/Away`,
+  `teamTotalHome/Away[pick]` selon le cas, au lieu de toujours chercher
+  home/draw/away/bttsYes/over25.
+- `CORRECT_SCORE` toujours exclu — dévigger un marché à ~50 issues (une par
+  score) est un problème différent des marchés à 2/3 issues gérés ici, pas
+  une extension triviale du même code.
+
+`ML_SEGMENTS`/`ML_SHADOW_CHANNELS` (backend), `VALID_SEGMENTS` (Python),
+`ml-shadow-contract.json` (contrat partagé) mis à jour en cohérence — les 3
+sont vérifiés identiques par `ml.constants.spec.ts`/`test_ml_shadow_contract.py`.
+`reports.constants.ts` (`SHADOW_CAPTURED_SEGMENTS`) étendu aussi : ces 3
+canaux ont maintenant une vraie comparaison Brier dans le rapport de
+promotion (`GET /reports/ml-promotion`), pas juste `META_ONLY`.
+
+**`computeShadowMlByChannel` (betting-engine.service.ts) n'a nécessité
+aucun changement** — il itère déjà `ML_SHADOW_CHANNELS` génériquement (pick
+rang 1 du canal, quel que soit le marché), et `buildMlShadowFeatures`
+(ml-features.ts) n'a aucune branche spécifique à un marché. L'ajout de ces
+3 canaux n'a donc touché que l'extraction (entraînement offline) — le
+chemin d'inférence live était déjà prêt.
+
 ### 6. Ré-entraînement sur données recalibrées — FAIT (voir §"Session du 2026-07-01 (suite)")
 
 Tous les `ml_model_version` existants (32 lignes, dont 7 actives) ont été **désactivés** en base le 2026-07-01 (`isActive = false`, note d'audit ajoutée) : ils avaient été entraînés soit sur l'extract cassé, soit avant la recalibration HT/plancher d'edge VALUE (voir [[project_value_edge_floor]]). Un nouveau cycle a été déclenché le même jour depuis `/dashboard/ml` — détail plus bas.

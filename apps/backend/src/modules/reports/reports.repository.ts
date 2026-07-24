@@ -24,6 +24,9 @@ export const REPORTED_CHANNELS = [
   StrategyChannel.BTTS,
   StrategyChannel.DRAW,
   StrategyChannel.GOALS,
+  StrategyChannel.CLEAN_SHEET,
+  StrategyChannel.TEAM_TOTAL,
+  StrategyChannel.WIN_EITHER_HALF,
 ] as const;
 
 export type ActiveModelRow = {
