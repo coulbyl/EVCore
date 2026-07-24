@@ -229,24 +229,103 @@ Plan d'implémentation v2.3a :
 
 ## 5. Plan d'exécution
 
-- [ ] Réécrire `computeH2HScore` (v2.0 : seuil n≥3, decay 0.8, nul=0.5) +
+- [x] Réécrire `computeH2HScore` (v2.0 : seuil n≥3, decay 0.8, nul=0.5) +
       mettre à jour `h2h.service.spec.ts` (cas n<3, cas avec nuls, cas
-      pondération)
-- [ ] Backtest de gain de Brier sur le score composite complet avec le
-      score H2H v2.0 intégré à un poids candidat (nouveau script, réutiliser
-      la méthodologie de `backtest-h2h-signal-value.ts`)
-- [ ] Si gain confirmé : activer avec le poids retenu, documenté dans
-      `ev.constants.ts`
-- [ ] v2.1 (venue-weighting) : backtest de comparaison avant tout code
-      définitif
-- [ ] v2.2 (signaux par marché) : un backtest de valeur incrémentale par
-      signal (BTTS, Over 2.5, clean sheet home/away, win-to-nil home/away),
-      activer marché par marché selon le résultat, pas en bloc
-- [ ] v2.3a (continuité entraîneur) : modèle Prisma `Coach`/`CoachTenure` +
-      worker ETL `coachs-sync.worker.ts` (API-Football `/coachs`, faisable
-      à faible coût — vérifié 2026-07-19, 1725 équipes ≈ 4 min à ingérer) +
-      backtest de valeur incrémentale (flag `sameCoach` vs corrélation
-      résiduelle du score H2H) avant activation
+      pondération) — 2026-07-23
+- [x] Backtest de gain de Brier sur le score composite complet avec le
+      score H2H v2.0 intégré à un poids candidat (`packages/db/scripts/backtest-h2h-brier-gain.ts`,
+      réutilise la méthodologie de `backtest-h2h-signal-value.ts`) — 2026-07-23.
+      Split chronologique train 70% (n=12056) / validation 30% (n=5167),
+      correction `logit(P) += beta * (h2h - 0.5)`, beta appris par grille sur
+      le train (optimum intérieur réel, pas un bord de grille) : **beta=0.55**.
+      Gain confirmé hors échantillon : Brier validation 0.241648 → 0.239980
+      (Δ=-0.001668), logloss 0.676298 → 0.672822 (Δ=-0.003475). Gain faible en
+      valeur absolue (cohérent avec r=0.0785, signal secondaire) mais net et
+      dans le bon sens sur un split jamais revu après coup.
+- [x] Stabilité par saison/compétition (même script, sections dédiées) — 2026-07-23.
+      Beta=0.55 appliqué tel quel (pas de refit par groupe) sur l'ensemble
+      train+validation. Par saison (n≥100) : 3/4 améliorées (2025-26 n=9477,
+      2024-25 n=6281, 2023-24 n=619) ; seule 2026-27 (saison en cours, n=844)
+      se dégrade légèrement (+0.0005). Par compétition (top 20 par volume,
+      n≥100) : 15/20 améliorées, 5 dégradées (League One, Primera Nacional,
+      Premier Division, K League 2, K League 1) sans pattern pays/niveau
+      évident — cohérent avec un signal faible-mais-réel, pas un artefact
+      d'une ligue. Verdict : gain stable dans l'ensemble, pas universel.
+- [x] Décision produit (2026-07-23) : scope large — corriger
+      lambdaHome/lambdaAway avant `computePoissonMarkets` plutôt que l'EV
+      d'un seul pick, pour que tous les marchés dérivés restent cohérents
+      entre eux. Backtesté avant tout code définitif
+      (`packages/db/scripts/backtest-h2h-lambda-adjustment-all-markets.ts`) :
+      gamma=0.20 (optimum train), validation n=5167 — 1X2 favori amélioré
+      (Brier -0.0016) et 6/7 marchés dérivés améliorés (BTTS seul dégradé,
+      +0.0004, marginal). Verdict : pas d'effet de bord négatif significatif.
+- [x] **Activé en production — 2026-07-23.** `H2H_GAMMA=0.2` dans
+      `ev.constants.ts`, `FEATURE_FLAGS.SCORING.H2H=true`. Câblage dans
+      `betting-engine.service.ts` : favori déterminé sur les probabilités
+      1X2 non corrigées (pas de circularité) → `h2hService.computeH2HScore`
+      → si activé et score non-null, `adjustLambdaForH2H` (`h2h.utils.ts`)
+      ajuste lambda → `probabilitiesFromLambda` recalcule 1X2/BTTS/O-U/clean
+      sheet/win-to-nil à partir du lambda ajusté (même pipeline de
+      calibration — blend empirique + shrinkage O/U — que le chemin
+      baseline). `deterministicScore`/`features` restent inchangés (dérivés
+      des TeamStats bruts, pas de lambda). `h2h_correction_applied` loggé
+      dans `ModelRun.features` pour l'audit. Tests : suite complète
+      backend verte (758 passent, 6 échecs pré-existants sans lien —
+      `goals.strategy.spec.ts`, confirmés via `git stash`).
+- [x] v2.1 (venue-weighting) : backtest de comparaison
+      (`packages/db/scripts/backtest-h2h-venue-weighting.ts`) — 2026-07-23.
+      Grille de venueMultiplier (poids ×N sur les manches où le favori
+      jouait déjà au même domicile/extérieur), optimum train=1.5. Sur
+      validation (n=14019) : IMPROVED |r|=0.0724 vs VENUE_WEIGHTED
+      |r|=0.0728 — gain techniquement positif mais Δr=0.0004, dans le bruit
+      pour une corrélation à ce volume. **Rejeté** : pas de gain net
+      pratique, complexité non gratuite (plan §3.2) — H2H reste sans
+      pondération venue.
+- [x] v2.2 (signaux par marché) : backtest de valeur incrémentale par
+      signal (`packages/db/scripts/backtest-h2h-market-signals.ts`) — 2026-07-23.
+      Correction logit(P_marché) += delta\*(signal-0.5) par marché,
+      indépendante du 1X2, validation n=8964 par marché : BTTS gain
+      négligeable/bruit (ΔBrier=-0.000022, **rejeté**, même standard que
+      v2.1) ; OVER 2.5 (-0.000787), CLEAN SHEET home (-0.002262) / away
+      (-0.001714), WIN TO NIL home (-0.001407) / away (-0.001047) montrent
+      un gain net hors échantillon. `H2HService.computeH2HMarketSignals`
+      implémenté (réutilise le même pool de manches que `computeH2HScore`,
+      une seule requête DB en plus via `Promise.all`), câblé en **shadow
+      uniquement** dans `ModelRun.features`
+      (`shadow_h2h_btts/over25/clean_sheet_home/away/win_to_nil_home/away/sample_size`).
+      **Pas encore activé** : ces signaux sont corrélés au score H2H 1X2
+      déjà actif via l'ajustement lambda (§4) — une équipe qui domine
+      historiquement gagne aussi plus souvent à zéro. Activer une
+      correction logit indépendante par-dessus risquerait de compter deux
+      fois le même signal sous-jacent. Reste à faire avant activation : un
+      backtest combiné (lambda H2H + correction par marché toutes actives
+      ensemble) pour vérifier qu'elles ne se neutralisent/amplifient pas de
+      façon non prévue — pas fait dans cette passe.
+- [x] v2.3a (continuité entraîneur) — code complet, 2026-07-23. Clé
+      API-Football fournie par l'utilisateur et vérifiée en direct (`GET
+      /status`, plan Ultra actif jusqu'au 2026-08-05, mémoire projet
+      corrigée). `GET /coachs?team={id}` confirmé sur Real Madrid (3
+      coachs, 7 manches de carrière). Livré :
+      - modèle Prisma `CoachTenure` (`teamId`, `coachName`, `startDate`,
+        `endDate?`, unique `[teamId, coachName, startDate]`) — migration
+        déjà appliquée côté utilisateur (client Prisma régénéré, typecheck
+        vert) ;
+      - `schemas/coachs.schema.ts` (Zod, validé contre une réponse API
+        réelle) ;
+      - `workers/coachs-sync.worker.ts` : un `GET /coachs` par équipe
+        suivie (rate-limit 6s comme les autres workers API-Football),
+        upsert par manche, filtre silencieux des équipes hors périmètre
+        (pas de FK) — 4 tests unitaires verts ;
+      - nouvelle queue BullMQ `COACH_SYNC`, cron hebdomadaire dimanche
+        01:00 UTC (changements d'entraîneur rares — un passage complet
+        ≈ 1725 équipes × 6s ≈ 2.9h, pas de cron quotidien), endpoint manuel
+        `POST /etl/sync/coach`.
+      **Pas encore backfillé/activé** : la table `coach_tenure` est vide
+      tant que le worker n'a pas tourné au moins une fois (cron du
+      prochain dimanche, ou déclenchement manuel — ~2.9h, à lancer
+      consciemment vu la durée). Le backtest de valeur incrémentale (flag
+      `sameCoach` vs corrélation résiduelle du score H2H) ne peut être fait
+      qu'une fois la table peuplée — reste la toute dernière étape.
 - [ ] v2.3b (turnover effectif complet) : reporté — `/players/squads` ne
       donne que l'effectif actuel, reconstruction via `/transfers`
       lourde/fragile, pas de plan concret tant qu'aucune preuve empirique

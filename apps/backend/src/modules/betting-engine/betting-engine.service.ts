@@ -22,6 +22,7 @@ import {
 } from './betting-engine.utils';
 import { PrismaService } from '@/prisma.service';
 import { H2HService } from './h2h.service';
+import { adjustLambdaForH2H } from './h2h.utils';
 import { CongestionService } from './congestion.service';
 import { toPrismaDecimal } from '@utils/prisma.utils';
 import { createLogger } from '@utils/logger';
@@ -50,7 +51,7 @@ import {
   NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
-import { LINE_MOVEMENT_THRESHOLD } from './ev.constants';
+import { H2H_GAMMA, LINE_MOVEMENT_THRESHOLD } from './ev.constants';
 import { BankrollService } from '@modules/bankroll/bankroll.service';
 import type {
   EvaluatedPick,
@@ -223,15 +224,12 @@ export class BettingEngineService {
       lambda.home,
       lambda.away,
     );
-    const probabilities = shrinkOverUnderProbabilities(
-      rebalanceThreeWayProbabilities({
-        probabilities: rawProbabilities,
-        homeStats,
-        awayStats,
-        blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
-      }),
-      getOverUnderShrinkageConfig(competitionCode),
-    );
+    const probabilities = this.probabilitiesFromLambda({
+      lambda,
+      homeStats,
+      awayStats,
+      competitionCode,
+    });
 
     return {
       deterministicScore,
@@ -240,6 +238,31 @@ export class BettingEngineService {
       lambda,
       features,
     };
+  }
+
+  // 1X2 empirical blend + O/U shrinkage, shared by computeFromTeamStats and
+  // the H2H lambda-adjustment path (docs/h2h-service-v2-plan.md §4) so a
+  // recomputed lambda pair goes through the exact same calibration steps.
+  probabilitiesFromLambda(input: {
+    lambda: { home: number; away: number };
+    homeStats: TeamStatsInput;
+    awayStats: TeamStatsInput;
+    competitionCode?: string | null;
+  }): MatchProbabilities {
+    const { lambda, homeStats, awayStats, competitionCode } = input;
+    const rawProbabilities = this.computeProbabilities(
+      lambda.home,
+      lambda.away,
+    );
+    return shrinkOverUnderProbabilities(
+      rebalanceThreeWayProbabilities({
+        probabilities: rawProbabilities,
+        homeStats,
+        awayStats,
+        blendWeight: getLeagueThreeWayEmpiricalBlendWeight(competitionCode),
+      }),
+      getOverUnderShrinkageConfig(competitionCode),
+    );
   }
 
   selectBestViablePickForBacktest(input: {
@@ -552,8 +575,8 @@ export class BettingEngineService {
     const {
       features,
       deterministicScore,
-      lambda,
-      probabilities,
+      lambda: baselineLambda,
+      probabilities: baselineProbabilities,
       rawProbabilities,
     } = this.computeFromTeamStats(
       effectiveHomeStats,
@@ -561,6 +584,59 @@ export class BettingEngineService {
       weights,
       competitionCode,
     );
+
+    // H2H v2.0 (docs/h2h-service-v2-plan.md §4, scope large): the favorite is
+    // defined from the pre-correction 1X2 probabilities (no circularity),
+    // then — if enabled and a score exists (n>=3 H2H legs) — lambdaHome/Away
+    // are nudged toward the H2H-dominant side and every derived market
+    // (1X2, BTTS, O/U, clean sheet, win-to-nil, ...) is recomputed from that
+    // single adjusted lambda pair, keeping them mutually consistent.
+    const favoriteIsHome = baselineProbabilities.home.greaterThanOrEqualTo(
+      baselineProbabilities.away,
+    );
+    const favoriteTeamId = favoriteIsHome
+      ? fixture.homeTeamId
+      : fixture.awayTeamId;
+    const [shadowH2h, shadowH2hMarketSignals] = await Promise.all([
+      this.h2hService.computeH2HScore({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        favoriteTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+      // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates, shadow
+      // only: backtested individually (5/6 show a real out-of-sample Brier
+      // gain, BTTS is noise-level) but not yet activated — needs a combined
+      // backtest against the lambda correction above to rule out
+      // double-counting the correlated result-based H2H signal.
+      this.h2hService.computeH2HMarketSignals({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        fixtureDate: fixture.scheduledAt,
+        limit: 5,
+      }),
+    ]);
+
+    const h2hCorrectionApplied =
+      FEATURE_FLAGS.SCORING.H2H && shadowH2h !== null;
+    const lambda = h2hCorrectionApplied
+      ? adjustLambdaForH2H({
+          lambda: baselineLambda,
+          favoriteIsHome,
+          h2hScore: shadowH2h,
+          gamma: H2H_GAMMA,
+        })
+      : baselineLambda;
+    const probabilities = h2hCorrectionApplied
+      ? this.probabilitiesFromLambda({
+          lambda,
+          homeStats: effectiveHomeStats,
+          awayStats: effectiveAwayStats,
+          competitionCode,
+        })
+      : baselineProbabilities;
+
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
       lambda.away <= MIN_LAMBDA + Number.EPSILON;
@@ -626,18 +702,6 @@ export class BettingEngineService {
     let valueBet: ViablePick | null = candidatePicks[0] ?? null;
     const initialValueBet = valueBet;
 
-    const favoriteTeamId = probabilities.home.greaterThanOrEqualTo(
-      probabilities.away,
-    )
-      ? fixture.homeTeamId
-      : fixture.awayTeamId;
-    const shadowH2h = await this.h2hService.computeH2HScore({
-      homeTeamId: fixture.homeTeamId,
-      awayTeamId: fixture.awayTeamId,
-      favoriteTeamId,
-      fixtureDate: fixture.scheduledAt,
-      limit: 5,
-    });
     const shadowCongestion =
       await this.congestionService.computeCongestionScore({
         homeTeamId: fixture.homeTeamId,
@@ -809,6 +873,14 @@ export class BettingEngineService {
       calibration_alert: calibrationAlert,
       shadow_predictions: shadowPredictions,
       shadow_h2h: shadowH2h,
+      h2h_correction_applied: h2hCorrectionApplied,
+      shadow_h2h_btts: shadowH2hMarketSignals.btts,
+      shadow_h2h_over25: shadowH2hMarketSignals.over25,
+      shadow_h2h_clean_sheet_home: shadowH2hMarketSignals.cleanSheetHome,
+      shadow_h2h_clean_sheet_away: shadowH2hMarketSignals.cleanSheetAway,
+      shadow_h2h_win_to_nil_home: shadowH2hMarketSignals.winToNilHome,
+      shadow_h2h_win_to_nil_away: shadowH2hMarketSignals.winToNilAway,
+      shadow_h2h_sample_size: shadowH2hMarketSignals.sampleSize,
       shadow_congestion: shadowCongestion,
       shadow_lineups: null,
       shadow_injuries: null,

@@ -8,7 +8,7 @@ export const FEATURE_FLAGS = {
   SCORING: {
     LINE_MOVEMENT: true, // filter picks with >10% adverse odds movement over 7 days
     INJURIES: false, // shadow collected by injuries-sync worker
-    H2H: false, // shadow value computed in BettingEngineService
+    H2H: true, // lambda-adjustment applied in BettingEngineService (docs/h2h-service-v2-plan.md §4, activated 2026-07-23)
     CONGESTION: false, // shadow value computed in BettingEngineService
     LINEUPS: false, // post-hoc only — shadow value: null
     ML_CORRECTION: process.env['ML_CORRECTION_ENABLED'] === 'true', // activate after ≥50 shadow picks validated
