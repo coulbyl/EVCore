@@ -27,6 +27,7 @@ import { PrismaService } from '@/prisma.service';
 import { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
+import type { CoachSyncJobData } from './workers/coachs-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
@@ -153,6 +154,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly bettingEngineRebuildQueue: Queue<BettingEngineRebuildJobData>,
     @InjectQueue(BULLMQ_QUEUES.AI_ENGINE)
     private readonly aiEngineQueue: Queue,
+    @InjectQueue(BULLMQ_QUEUES.COACH_SYNC)
+    private readonly coachSyncQueue: Queue<CoachSyncJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
@@ -210,6 +213,10 @@ export class EtlService implements OnApplicationBootstrap {
       ELO_SYNC: config.get<string>(
         'ETL_ELO_SYNC_CRON',
         ETL_CRON_SCHEDULES.ELO_SYNC,
+      ),
+      COACH_SYNC: config.get<string>(
+        'ETL_COACH_SYNC_CRON',
+        ETL_CRON_SCHEDULES.COACH_SYNC,
       ),
       ODDS_PREMATCH_SYNC: config.get<string>(
         'ETL_ODDS_PREMATCH_SYNC_CRON',
@@ -337,6 +344,15 @@ export class EtlService implements OnApplicationBootstrap {
       {
         name: 'elo-sync',
         data: {} satisfies EloSyncJobData,
+      },
+    );
+
+    await this.coachSyncQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.COACH_SYNC,
+      { pattern: this.cronSchedules.COACH_SYNC },
+      {
+        name: 'coach-sync',
+        data: {} satisfies CoachSyncJobData,
       },
     );
 
@@ -644,6 +660,14 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  async triggerCoachSync(): Promise<void> {
+    await this.coachSyncQueue.add(
+      'coach-sync',
+      {} satisfies CoachSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
   async triggerRollingStatsSeason(
     competitionCode: string,
     season: number,
@@ -709,6 +733,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.STALE_SCHEDULED_SYNC]: this.staleScheduledSyncQueue,
       [BULLMQ_QUEUES.ODDS_CSV_IMPORT]: this.oddsCsvQueue,
       [BULLMQ_QUEUES.ELO_SYNC]: this.eloSyncQueue,
+      [BULLMQ_QUEUES.COACH_SYNC]: this.coachSyncQueue,
       [BULLMQ_QUEUES.ODDS_PREMATCH_SYNC]: this.oddsPrematchQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE]: this.bettingEngineQueue,
       [BULLMQ_QUEUES.ODDS_HISTORICAL_IMPORT]: this.oddsHistoricalImportQueue,

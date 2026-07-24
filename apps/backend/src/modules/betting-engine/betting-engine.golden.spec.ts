@@ -39,6 +39,15 @@ function makeDeps(): {
   return {
     h2h: {
       computeH2HScore: vi.fn().mockResolvedValue(0.5),
+      computeH2HMarketSignals: vi.fn().mockResolvedValue({
+        btts: null,
+        over25: null,
+        cleanSheetHome: null,
+        cleanSheetAway: null,
+        winToNilHome: null,
+        winToNilAway: null,
+        sampleSize: 0,
+      }),
     } as unknown as H2HService,
     congestion: {
       computeCongestionScore: vi.fn().mockResolvedValue(0.1),

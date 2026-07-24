@@ -13,6 +13,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { PrismaService } from '@/prisma.service';
 import type { OddsCsvImportJobData } from './workers/odds-csv-import.worker';
 import type { EloSyncJobData } from './workers/elo-sync.worker';
+import type { CoachSyncJobData } from './workers/coachs-sync.worker';
 import type { StaleScheduledSyncJobData } from './workers/stale-scheduled-sync.worker';
 import type { OddsPrematchSyncJobData } from './workers/odds-prematch-sync.worker';
 import type { OddsHistoricalImportJobData } from './workers/odds-historical-import.worker';
@@ -90,6 +91,7 @@ describe('EtlService', () => {
   const mlSchedulerQueue = makeQueue();
   const bettingEngineRebuildQueue = makeQueue();
   const aiEngineQueue = makeQueue();
+  const coachSyncQueue = makeQueue<CoachSyncJobData>();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -134,6 +136,7 @@ describe('EtlService', () => {
     mlSchedulerQueue as Queue,
     bettingEngineRebuildQueue as Queue,
     aiEngineQueue as Queue,
+    coachSyncQueue as Queue<CoachSyncJobData>,
     configMock,
     prismaMock,
     rollingStatsServiceMock,

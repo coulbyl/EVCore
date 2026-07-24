@@ -31,6 +31,7 @@ type GlobalSyncType =
   | 'stale-scheduled'
   | 'odds-csv'
   | 'elo'
+  | 'coach'
   | 'odds-prematch'
   | 'analysis';
 
@@ -51,6 +52,7 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
     service.triggerStaleScheduledSync(body.lookbackDays),
   'odds-csv': (service) => service.triggerOddsCsvImport(),
   elo: (service) => service.triggerEloSync(),
+  coach: (service) => service.triggerCoachSync(),
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
   analysis: (service, body) => service.triggerBettingEngineAnalysis(body.date),
@@ -144,6 +146,13 @@ export class EtlController {
           delayed: 0,
         },
         'elo-sync': {
+          active: 0,
+          waiting: 0,
+          completed: 1,
+          failed: 0,
+          delayed: 0,
+        },
+        'coach-sync': {
           active: 0,
           waiting: 0,
           completed: 1,

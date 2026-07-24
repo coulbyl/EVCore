@@ -422,6 +422,17 @@ export function getLeagueMeanLambda(
 export const HOME_ADVANTAGE_LAMBDA_FACTOR = 1.0;
 export const AWAY_DISADVANTAGE_LAMBDA_FACTOR = 0.75;
 
+// H2H v2.0 lambda-adjustment coefficient (docs/h2h-service-v2-plan.md §4,
+// scope large — shifts lambdaHome/lambdaAway toward the H2H-dominant side
+// before Poisson markets are computed, so every derived market stays
+// internally consistent). gamma=0.20 is the train-optimal value from
+// packages/db/scripts/backtest-h2h-lambda-adjustment-all-markets.ts
+// (2026-07-23): validation Brier improved for 1X2 favori (-0.0016) and 6/7
+// derived markets (BTTS marginally worse, +0.0004). Gated behind
+// FEATURE_FLAGS.SCORING.H2H — h2h.utils.ts no-ops if the score is null
+// (n<3 H2H legs) regardless of this constant.
+export const H2H_GAMMA = 0.2;
+
 // Per-league home advantage overrides.
 // Most leagues use the global 1.05 / 0.95 factors. Balanced divisions with
 // more parity or lower tactical asymmetry require a smaller correction.
