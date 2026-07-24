@@ -102,6 +102,44 @@ Changements (`apps/ml-worker/src/data/extract.py`) :
   score) est un problème différent des marchés à 2/3 issues gérés ici, pas
   une extension triviale du même code.
 
+#### Plan pour CORRECT_SCORE — prochaine session
+
+Bonne nouvelle découverte en faisant §5bis : la généralisation de
+`_ODDS_LATERAL_SQL` en JSON générique `{pick: odds}` (au lieu de colonnes
+nommées) capture **déjà** tout le tableau de cotes CORRECT_SCORE d'un match
+(toutes les scorelines cotées, ex. `{"0:0": 8.5, "1:0": 6.0, "2:1": 9.0, ...}`)
+sans rien changer côté SQL — le plombage lourd est fait. Volume confirmé
+07-24 : 1365 lignes réglées / 427 fixtures dédupliquées, 9974 lignes de cote
+Pinnacle — largement au-dessus du plancher de 50 (`ML_RETRAIN_MIN_NEW_BETS`).
+
+Reste précisément à faire (2 points, pas plus) :
+
+1. **Dévigage multi-issues** (`extract.py`) — `_complement_picks` retourne
+   une liste FIXE par marché (`["HOME","DRAW","AWAY"]` etc.), ce qui ne
+   marche pas pour CORRECT_SCORE : le groupe à dévigger contre n'est pas une
+   liste connue à l'avance, c'est **toutes les clés présentes dans
+   `picks_odds` pour cette ligne** (le tableau de cotes réellement observé
+   pour ce match précis, variable d'un match à l'autre). Ajouter un cas
+   spécial dans `_devig_pick` : si `market == "CORRECT_SCORE"`, dévigger le
+   pick cible contre `list(picks_odds.values())` (toutes les scorelines
+   cotées de ce match), pas contre `_complement_picks`.
+2. **Feature Poisson manquante** (`_extract_poisson` + backend) —
+   `features.probabilities` sur `ModelRun` ne contient **pas** la matrice de
+   score exact aujourd'hui : `computeCorrectScoreMatrix` est calculée à la
+   volée dans `correct-score.strategy.ts` au moment de la décision, jamais
+   persistée. Sans backend change, `p_poisson_pick` resterait `null` pour
+   CORRECT_SCORE (dégradé mais pas bloquant — `correction.py` tolère déjà
+   des features manquantes via l'imputer médian ; à évaluer si ça vaut le
+   coup d'ajouter la persistance complète de la matrice avant d'entraîner,
+   ou si dégrader ce champ pour ce canal suffit pour une première passe).
+
+Une fois ces deux points traités : ajouter `CORRECT_SCORE:CORRECT_SCORE` à
+`ML_SEGMENTS`/`ML_SHADOW_CHANNELS` (backend), `VALID_SEGMENTS` (train.py),
+`ml-shadow-contract.json`, et `SHADOW_CAPTURED_SEGMENTS`
+(reports.constants.ts) — même mécanique que CLEAN_SHEET/TEAM_TOTAL/
+WIN_EITHER_HALF ci-dessus, `computeShadowMlByChannel` n'a besoin d'aucun
+changement (déjà générique par canal).
+
 `ML_SEGMENTS`/`ML_SHADOW_CHANNELS` (backend), `VALID_SEGMENTS` (Python),
 `ml-shadow-contract.json` (contrat partagé) mis à jour en cohérence — les 3
 sont vérifiés identiques par `ml.constants.spec.ts`/`test_ml_shadow_contract.py`.
