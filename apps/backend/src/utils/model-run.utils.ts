@@ -33,6 +33,7 @@ export type EvaFeaturesContext = {
   hasAwayElo: boolean | null;
   shadowLineMovement: number | null;
   shadowH2h: number | null;
+  h2hCorrectionApplied: boolean | null;
   shadowCongestion: number | null;
   evaluatedPicks: EvaPickFromFeature[];
   // Unadjusted Poisson output (before the 1X2 empirical blend and O/U
@@ -62,6 +63,7 @@ export function extractEvaContextFromFeatures(
     hasAwayElo: readBooleanOrNull(f, 'hasAwayElo'),
     shadowLineMovement: readFiniteNumber(f, 'shadow_lineMovement'),
     shadowH2h: readFiniteNumber(f, 'shadow_h2h'),
+    h2hCorrectionApplied: readBooleanOrNull(f, 'h2h_correction_applied'),
     shadowCongestion: readFiniteNumber(f, 'shadow_congestion'),
     evaluatedPicks: readEvaPicksFromFeature(f),
     rawPoissonProbability: readRecord(f, 'rawPoissonProbability'),
@@ -109,6 +111,7 @@ function emptyEvaContext(): EvaFeaturesContext {
     hasAwayElo: null,
     shadowLineMovement: null,
     shadowH2h: null,
+    h2hCorrectionApplied: null,
     shadowCongestion: null,
     evaluatedPicks: [],
     rawPoissonProbability: null,

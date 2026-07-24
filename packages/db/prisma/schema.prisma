@@ -272,9 +272,30 @@ model Team {
   homeFixtures  Fixture[]   @relation("HomeTeam")
   awayFixtures  Fixture[]   @relation("AwayTeam")
   stats         TeamStats[]
+  coachTenures  CoachTenure[]
   createdAt     DateTime    @default(now())
 
   @@map("team")
+  @@schema("public")
+}
+
+// Managerial spell history per team — feeds the `sameCoach` H2H discount
+// proxy (docs/h2h-service-v2-plan.md §3.4, v2.3a): "does this past H2H leg
+// still reflect the same tactical philosophy". One row per tenure;
+// endDate null = still in charge as of last sync (coachs-sync.worker.ts,
+// API-Football GET /coachs?team={id}).
+model CoachTenure {
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  teamId    String    @db.Uuid
+  team      Team      @relation(fields: [teamId], references: [id])
+  coachName String
+  startDate DateTime
+  endDate   DateTime?
+  syncedAt  DateTime  @default(now())
+
+  @@unique([teamId, coachName, startDate])
+  @@index([teamId, startDate])
+  @@map("coach_tenure")
   @@schema("public")
 }
 

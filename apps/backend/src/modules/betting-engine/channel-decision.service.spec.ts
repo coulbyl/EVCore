@@ -21,7 +21,9 @@ const ODDS: FullOddsSnapshot = {
   homeOdds: new Decimal('1.90'),
   drawOdds: new Decimal('3.30'),
   awayOdds: new Decimal('4.50'),
-  overUnderOdds: {},
+  // UNDER_3_5 priced so GOALS has a book price to select on (commit 4a10108:
+  // an unpriced above-threshold candidate is rejected, never selected).
+  overUnderOdds: { UNDER_3_5: new Decimal('1.30') },
   bttsYesOdds: null,
   bttsNoOdds: null,
   htftOdds: {},

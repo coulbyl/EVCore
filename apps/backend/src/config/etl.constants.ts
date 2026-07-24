@@ -233,6 +233,7 @@ export const BULLMQ_QUEUES = {
   ODDS_CSV_IMPORT: 'odds-csv-import',
   ODDS_PREMATCH_SYNC: 'odds-prematch-sync',
   ELO_SYNC: 'elo-sync',
+  COACH_SYNC: 'coach-sync',
   BETTING_ENGINE: 'betting-engine',
   // Historical rebuild: re-runs the betting engine on FINISHED fixtures that
   // have no ModelRun yet (idempotent), per season. Renamed from ml-backfill —
@@ -259,6 +260,10 @@ export const ETL_CRON_SCHEDULES = {
   INJURIES_SYNC: '0 6 * * *', // 06:00 UTC daily — shadow injuries refresh
   ODDS_CSV_IMPORT: '0 5 * * 1', // 05:00 UTC every Monday
   ELO_SYNC: '0 3 * * *', // 03:00 UTC daily — refresh friendly-match Elo reference data
+  // 01:00 UTC every Sunday — coach changes are rare (docs/h2h-service-v2-plan.md
+  // §3.4), and a full pass is ~1725 teams * 6s rate limit ≈ 2.9h, so weekly is
+  // plenty. Runs before the Sunday FIXTURES_SYNC/STATS_SYNC/INJURIES_SYNC batch.
+  COACH_SYNC: '0 1 * * 0',
   // 06:00 + 18:00 UTC — two snapshots/day over the J+1..J+3 horizon so the
   // line-movement signal has points to compare. The 18:00 run stays ahead of
   // BETTING_ENGINE_ANALYSIS (20:00) so next-day fixtures analyze on fresh odds.
@@ -274,6 +279,7 @@ export const ETL_SCHEDULER_KEYS = {
   STALE_SCHEDULED_SYNC: 'cron:stale-scheduled-sync',
   ODDS_CSV_IMPORT: 'cron:odds-csv-import',
   ELO_SYNC: 'cron:elo-sync',
+  COACH_SYNC: 'cron:coach-sync',
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',

@@ -92,6 +92,15 @@ function makeConfig(kellyEnabled = false): ConfigService {
 function makeH2hServiceMock(score: number | null = null): H2HService {
   return {
     computeH2HScore: vi.fn().mockResolvedValue(score),
+    computeH2HMarketSignals: vi.fn().mockResolvedValue({
+      btts: null,
+      over25: null,
+      cleanSheetHome: null,
+      cleanSheetAway: null,
+      winToNilHome: null,
+      winToNilAway: null,
+      sampleSize: 0,
+    }),
   } as unknown as H2HService;
 }
 
@@ -1048,6 +1057,13 @@ describe('BettingEngineService', () => {
         leagueVolat: new Decimal('0.4'),
       },
     });
+    // h2hService is mocked with a non-null score (0.6), so H2H_GAMMA
+    // correction (FEATURE_FLAGS.SCORING.H2H) recomputes probabilities from
+    // the adjusted lambda — mock that path too so this test's fixed
+    // probability=0.5 expectation isn't perturbed by real Poisson math.
+    vi.spyOn(service, 'probabilitiesFromLambda').mockReturnValue(
+      makeMockProbabilities(),
+    );
 
     const result = await service.analyzeFixture('fixture-id');
 
@@ -1065,6 +1081,7 @@ describe('BettingEngineService', () => {
         data: expect.objectContaining({
           features: expect.objectContaining({
             shadow_h2h: 0.6,
+            h2h_correction_applied: true,
             shadow_congestion: 0.2,
             candidatePicks: expect.arrayContaining([
               expect.objectContaining({

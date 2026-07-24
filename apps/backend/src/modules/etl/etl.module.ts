@@ -17,6 +17,7 @@ import { StatsSyncWorker } from './workers/stats-sync.worker';
 import { OddsPrematchSyncWorker } from './workers/odds-prematch-sync.worker';
 import { InjuriesSyncWorker } from './workers/injuries-sync.worker';
 import { EloSyncWorker } from './workers/elo-sync.worker';
+import { CoachSyncWorker } from './workers/coachs-sync.worker';
 import { StaleScheduledSyncWorker } from './workers/stale-scheduled-sync.worker';
 import { OddsHistoricalImportWorker } from './workers/odds-historical-import.worker';
 import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.worker';
@@ -36,6 +37,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.STALE_SCHEDULED_SYNC },
       { name: BULLMQ_QUEUES.ODDS_CSV_IMPORT },
       { name: BULLMQ_QUEUES.ELO_SYNC },
+      { name: BULLMQ_QUEUES.COACH_SYNC },
       { name: BULLMQ_QUEUES.ODDS_PREMATCH_SYNC },
       { name: BULLMQ_QUEUES.BETTING_ENGINE },
       { name: BULLMQ_QUEUES.BETTING_ENGINE_REBUILD },
@@ -66,6 +68,7 @@ import { AuthModule } from '../auth/auth.module';
     InjuriesSyncWorker,
     OddsCsvImportWorker,
     EloSyncWorker,
+    CoachSyncWorker,
     OddsPrematchSyncWorker,
     BettingEngineAnalysisWorker,
     BettingEngineRebuildWorker,

@@ -131,7 +131,11 @@ describe('decideGoals (pure)', () => {
   });
 
   it('selects the OVER side when its probability clears the threshold', () => {
-    const decision = decideGoals(makeContext({ over25: 0.62 }), [OVER_25]);
+    const ctx = makeContext(
+      { over25: 0.62 },
+      { odds: { ...BASE_ODDS, overUnderOdds: { OVER: new Decimal('1.90') } } },
+    );
+    const decision = decideGoals(ctx, [OVER_25]);
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].market).toBe(Market.OVER_UNDER);
     expect(decision.selections[0].pick).toBe('OVER');
@@ -140,13 +144,26 @@ describe('decideGoals (pure)', () => {
   });
 
   it('selects at exactly the threshold (boundary — lessThan, not lte)', () => {
-    const decision = decideGoals(makeContext({ over25: 0.55 }), [OVER_25]);
+    const ctx = makeContext(
+      { over25: 0.55 },
+      { odds: { ...BASE_ODDS, overUnderOdds: { OVER: new Decimal('1.90') } } },
+    );
+    const decision = decideGoals(ctx, [OVER_25]);
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
   });
 
   it('uses the correct pick string per line (3.5 → OVER_3_5)', () => {
     const cfg: GoalsLineConfig = { ...OVER_25, line: 3.5, threshold: 0.4 };
-    const decision = decideGoals(makeContext({ over35: 0.45 }), [cfg]);
+    const ctx = makeContext(
+      { over35: 0.45 },
+      {
+        odds: {
+          ...BASE_ODDS,
+          overUnderOdds: { OVER_3_5: new Decimal('1.90') },
+        },
+      },
+    );
+    const decision = decideGoals(ctx, [cfg]);
     expect(decision.selections[0].pick).toBe('OVER_3_5');
   });
 
@@ -161,11 +178,14 @@ describe('decideGoals (pure)', () => {
     expect(sel.ev?.toNumber()).toBeCloseTo(0.62 * 1.9 - 1, 10);
   });
 
-  it('records a price-less selection when no OVER_UNDER odds exist', () => {
-    const sel = decideGoals(makeContext({ over25: 0.62 }), [OVER_25])
-      .selections[0];
-    expect(sel.odds).toBeUndefined();
-    expect(sel.ev).toBeUndefined();
+  it('rejects with no_priced_line when no above-threshold line has a book price', () => {
+    // commit 4a10108: an unpriced candidate is never selected — falling back
+    // to the highest-probability line flooded the feed with unactionable
+    // picks (9147 GOALS UNDER_4.5 selections, 0.6% actually priced).
+    const decision = decideGoals(makeContext({ over25: 0.62 }), [OVER_25]);
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe('no_priced_line');
+    expect(decision.selections).toHaveLength(0);
   });
 
   it('among qualifying candidates, picks the highest EV', () => {
@@ -204,9 +224,18 @@ describe('GoalsStrategy (class, prod config)', () => {
 
   it('evaluates enabled observation segments (BL1 OVER 2.5 @ 0.57)', () => {
     // GOALS is enabled in observation; over25 0.7 ≥ BL1 Over 2.5 gate 0.57, and
-    // the other lines stay at 0 (below their gates) → SELECTED OVER.
+    // the other lines stay at 0 (below their gates) → SELECTED OVER once priced.
     const decision = strategy.evaluate(
-      makeContext({ over25: 0.7 }, { competitionCode: 'BL1' }),
+      makeContext(
+        { over25: 0.7 },
+        {
+          competitionCode: 'BL1',
+          odds: {
+            ...BASE_ODDS,
+            overUnderOdds: { OVER: new Decimal('1.90') },
+          },
+        },
+      ),
     );
     expect(decision.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
     expect(decision.selections[0].pick).toBe('OVER');
