@@ -1140,6 +1140,9 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.83 · o25 0.62 · o35 0.42 · o45 0.21 (n=924)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, real priced odds,
+  // n=107 candidates): 0.57 -> 0.45 (ROI +15.6%, n=106, hit 70%) — the old
+  // profile-estimate threshold left almost the whole sample unpriced.
   BL1: {
     lines: [
       {
@@ -1153,7 +1156,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.57,
+        threshold: 0.45,
         minSampleN: 15,
       },
       {
@@ -1166,6 +1169,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.72 · o25 0.46 · o35 0.22 · o45 0.10 (n=1159)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=58 candidates):
+  // 0.41 -> 0.45 (ROI +13.0%, n=44, hit 57%).
   BRA1: {
     lines: [
       {
@@ -1179,7 +1184,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.41,
+        threshold: 0.45,
         minSampleN: 15,
       },
       {
@@ -1241,6 +1246,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.74 · o25 0.49 · o35 0.25 · o45 0.10 (n=1671)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=257 candidates):
+  // 0.44 -> 0.5 (ROI +11.7%, n=69, hit 61%).
   CH: {
     lines: [
       {
@@ -1254,7 +1261,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.44,
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -1535,6 +1542,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.73 · o25 0.50 · o35 0.26 · o45 0.12 (n=1671)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=266 candidates):
+  // 0.45 -> 0.6 (ROI +11.0%, n=51, hit 65%).
   EL1: {
     lines: [
       {
@@ -1548,7 +1557,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.45,
+        threshold: 0.6,
         minSampleN: 15,
       },
       {
@@ -1568,6 +1577,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.74 · o25 0.50 · o35 0.28 · o45 0.13 (n=1671)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=295 candidates):
+  // 0.45 -> 0.6 (ROI +27.4%, n=30, hit 67%).
   EL2: {
     lines: [
       {
@@ -1581,7 +1592,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.45,
+        threshold: 0.6,
         minSampleN: 15,
       },
       {
@@ -2089,6 +2100,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.77 · o25 0.54 · o35 0.32 · o45 0.16 (n=925)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=136 candidates):
+  // 0.49 -> 0.55 (ROI +18.3%, n=39, hit 69%).
   L1: {
     lines: [
       {
@@ -2102,7 +2115,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.49,
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
@@ -2209,6 +2222,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.81 · o25 0.60 · o35 0.37 · o45 0.21 (n=1132)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=80 candidates):
+  // 0.55 -> 0.6 (ROI +18.2%, n=34, hit 76%).
   MLS: {
     lines: [
       {
@@ -2222,7 +2237,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.55,
+        threshold: 0.6,
         minSampleN: 15,
       },
       {
@@ -2330,9 +2345,11 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        // Tuning 2026-07-09 (post-rebuild, real priced odds): 0.65 validates
-        // (ROI +15.5%, n=38, cov 70%) — supersedes the profile estimate (0.61).
-        threshold: 0.65,
+        // Tuning 2026-07-09 (post-rebuild, real priced odds) set 0.65 (ROI
+        // +15.5%, n=38, cov 70%). Retuned 2026-07-24 (larger n=43 sweep):
+        // 0.65 -> 0.45 (ROI +10.4%, n=43, hit 77%) — the higher threshold was
+        // overfit to the smaller earlier sample, missing most real value.
+        threshold: 0.45,
         minSampleN: 15,
       },
       {
@@ -2388,6 +2405,9 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.76 · o25 0.50 · o35 0.30 · o45 0.14 (n=918)
+  // 2.5 retuned 2026-07-24 (backtest-tuning sweep, n=122 candidates):
+  // OVER 0.45 -> 0.55 (ROI +20.6%, n=35, hit 66%),
+  // UNDER 0.45 -> 0.5 (ROI +11.1%, n=53, hit 58%).
   POL1: {
     lines: [
       {
@@ -2401,14 +2421,14 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.45,
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.45,
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -2468,6 +2488,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.75 · o25 0.53 · o35 0.30 · o45 0.13 (n=924)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=117 candidates):
+  // 0.48 -> 0.5 (ROI +21.3%, n=43, hit 67%).
   POR: {
     lines: [
       {
@@ -2481,7 +2503,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.48,
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -2543,6 +2565,9 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.73 · o25 0.48 · o35 0.25 · o45 0.11 (n=1139)
+  // 2.5 retuned 2026-07-24 (backtest-tuning sweep, n=151 candidates):
+  // OVER 0.43 -> 0.5 (ROI +11.3%, n=26, hit 58%),
+  // UNDER 0.47 -> 0.55 (ROI +27.9%, n=73, hit 68%).
   SA: {
     lines: [
       {
@@ -2556,14 +2581,14 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.43,
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "UNDER",
         enabled: true,
-        threshold: 0.47,
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
@@ -2618,6 +2643,9 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.69 · o25 0.45 · o35 0.25 · o45 0.11 (n=1403)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=213 candidates):
+  // 0.4 -> 0.55 (ROI +9.7%, n=106, hit 60%) — the old threshold let too many
+  // low-edge picks through.
   SP2: {
     lines: [
       {
@@ -2631,7 +2659,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.4,
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
@@ -2698,6 +2726,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.81 · o25 0.59 · o35 0.36 · o45 0.19 (n=690)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=36 candidates):
+  // 0.54 -> 0.5 (ROI +7.4%, n=34, hit 68%).
   SUI1: {
     lines: [
       {
@@ -2711,7 +2741,7 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.54,
+        threshold: 0.5,
         minSampleN: 15,
       },
       {
@@ -2865,6 +2895,8 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
     ],
   },
   // o15 0.77 · o25 0.53 · o35 0.31 · o45 0.16 (n=1028)
+  // 2.5 OVER retuned 2026-07-24 (backtest-tuning sweep, n=98 candidates):
+  // 0.48 -> 0.55 (ROI +10.9%, n=25, hit 64%).
   TUR1: {
     lines: [
       {
@@ -2878,18 +2910,18 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         line: 2.5,
         side: "OVER",
         enabled: true,
-        threshold: 0.48,
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
         line: 2.5,
         side: "UNDER",
         enabled: true,
-        // Tuning 2026-07-09 (post-rebuild, real priced odds): the previous
-        // 0.42 profile estimate was flat-negative in the channels backtest
-        // (-5.8% ROI, n=480 priced). 0.6 validates instead (ROI +32.9%,
-        // n=36, cov 7%) — narrower but genuinely profitable.
-        threshold: 0.6,
+        // Tuning 2026-07-09 (post-rebuild, real priced odds) set 0.6 (ROI
+        // +32.9%, n=36, cov 7%), replacing a flat-negative 0.42 profile
+        // estimate. Retuned 2026-07-24 (n=98 candidates): 0.6 -> 0.55
+        // (ROI +26.7%, n=29, hit 66%) — comparable ROI, wider coverage.
+        threshold: 0.55,
         minSampleN: 15,
       },
       {
@@ -3024,6 +3056,39 @@ export const GOALS_CONFIG: Record<string, GoalsLeagueConfig> = {
         side: "UNDER",
         enabled: true,
         threshold: 0.79,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // No prior config — added 2026-07-24 (backtest-tuning sweep, n=104
+  // candidates, World Cup 2026 fixtures).
+  WC: {
+    lines: [
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.5,
+        minSampleN: 15,
+      },
+      {
+        line: 2.5,
+        side: "UNDER",
+        enabled: true,
+        threshold: 0.55,
+        minSampleN: 15,
+      },
+    ],
+  },
+  // No prior config — added 2026-07-24 (backtest-tuning sweep, n=43
+  // candidates, World Cup Qualification - Europe).
+  WCQE: {
+    lines: [
+      {
+        line: 2.5,
+        side: "OVER",
+        enabled: true,
+        threshold: 0.45,
         minSampleN: 15,
       },
     ],
