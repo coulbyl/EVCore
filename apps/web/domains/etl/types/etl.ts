@@ -67,6 +67,7 @@ export type GlobalSyncType =
   | "stale-scheduled"
   | "odds-csv"
   | "elo"
+  | "coach"
   | "odds-prematch"
   | "analysis";
 

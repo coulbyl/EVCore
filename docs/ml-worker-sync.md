@@ -65,12 +65,12 @@ Décision prise après lecture des volumes réels en base (paris/sélections ré
 Le tableau ci-dessus (§5) est daté du 2026-07-01, avant que ces 3 canaux
 n'existent. Revérifié en direct le 2026-07-24 :
 
-| Canal           | Sélections réglées | Cote Pinnacle/Bet365 |  Entraînement  | Inférence live |
-| --------------- | ------------------: | :-------------------: | :------------: | :-------------: |
-| CLEAN_SHEET     |          171 / 122 | ✅ Bet365 uniquement |       ✅       |        ✅        |
-| TEAM_TOTAL      |          219 / 122 | ✅ Pinnacle (3346/3040) |    ✅       |        ✅        |
-| WIN_EITHER_HALF |                238 | ✅ Bet365 uniquement |       ✅       |        ✅        |
-| CORRECT_SCORE   |    1365 (427 fixtures dédupliquées) | ✅ Pinnacle (9974) | ❌ non fait | ❌ |
+| Canal           |               Sélections réglées |  Cote Pinnacle/Bet365   | Entraînement | Inférence live |
+| --------------- | -------------------------------: | :---------------------: | :----------: | :------------: |
+| CLEAN_SHEET     |                        171 / 122 |  ✅ Bet365 uniquement   |      ✅      |       ✅       |
+| TEAM_TOTAL      |                        219 / 122 | ✅ Pinnacle (3346/3040) |      ✅      |       ✅       |
+| WIN_EITHER_HALF |                              238 |  ✅ Bet365 uniquement   |      ✅      |       ✅       |
+| CORRECT_SCORE   | 1365 (427 fixtures dédupliquées) |   ✅ Pinnacle (9974)    | ❌ non fait  |       ❌       |
 
 Le doc affirmait "aucune cote historique n'existe" pour ces marchés — c'était
 vrai début juillet mais plus le 07-24 (la sync PREMATCH a élargi sa
@@ -88,8 +88,8 @@ Changements (`apps/ml-worker/src/data/extract.py`) :
   `{pick: odds}` par (fixture, marché) — nécessaire car `TEAM_TOTAL` a des
   picks arbitraires par ligne (`OVER_1_5`, `UNDER_2_5`, ...), pas juste
   HOME/DRAW/AWAY/YES/NO/OVER/UNDER. Source `bookmaker IN ('Pinnacle',
-  'Bet365')`, priorité à Pinnacle via `ORDER BY (bookmaker = 'Pinnacle')
-  DESC`.
+'Bet365')`, priorité à Pinnacle via `ORDER BY (bookmaker = 'Pinnacle')
+DESC`.
 - `_devig_pinnacle`/`_pinnacle_prob_for_pick`/`_target_odds` remplacés par
   `_complement_picks(market, pick)` (quelles issues concurrentes dévig
   contre) + `_devig_pick(market, pick, picks_odds)` (générique, marche pour
@@ -177,6 +177,7 @@ LogRecord"`. C'est CE message qui remontait en prod, pas l'erreur réelle
 (`jsonb_object_agg`) — corrigé en renommant la clé en `job_name`.
 
 **Correctifs** (`apps/ml-worker/src/data/extract.py`) :
+
 - `jsonb_object_agg(pick, odds) FILTER (WHERE pick IS NOT NULL)` — ne
   crashe plus.
 - `MAX("homeOdds")`/`MAX("drawOdds")`/`MAX("awayOdds")` récupérés en
@@ -186,10 +187,11 @@ LogRecord"`. C'est CE message qui remontait en prod, pas l'erreur réelle
   spécial par marché dans `_devig_pick`.
 
 **Vérifié en direct** (conteneurs relancés par l'utilisateur) : `extract_dataset`
-+ `correction.train()` de bout en bout sur `DOMINANT:ONE_X_TWO` (5643
-lignes Pinnacle, Brier 0.207), `CLEAN_SHEET:CLEAN_SHEET_HOME` (169, Brier
-0.312), `TEAM_TOTAL:TEAM_TOTAL_HOME` (211, Brier 0.181),
-`WIN_EITHER_HALF:TO_WIN_EITHER_HALF` (228, Brier 0.219) — tous OK.
+
+- `correction.train()` de bout en bout sur `DOMINANT:ONE_X_TWO` (5643
+  lignes Pinnacle, Brier 0.207), `CLEAN_SHEET:CLEAN_SHEET_HOME` (169, Brier
+  0.312), `TEAM_TOTAL:TEAM_TOTAL_HOME` (211, Brier 0.181),
+  `WIN_EITHER_HALF:TO_WIN_EITHER_HALF` (228, Brier 0.219) — tous OK.
 
 **Leçon** : les tests unitaires sur `_build_row`/`_devig_pick` n'ont pas
 attrapé ce bug — ils passent un `picks_odds` déjà construit en Python, ils
