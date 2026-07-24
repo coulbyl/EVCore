@@ -8,8 +8,26 @@ export type SettledEvSelectionRow = {
   probability: Prisma.Decimal;
   odds: Prisma.Decimal | null;
   createdAt: Date;
-  channelDecision: { modelRun: { features: Prisma.JsonValue } };
+  channelDecision: {
+    channel: StrategyChannel;
+    modelRun: { features: Prisma.JsonValue };
+  };
 };
+
+// Channels with per-pick shadow ML correction wired at inference time
+// (betting-engine.service.ts computeShadowMlByChannel) — mirrors
+// ML_SHADOW_CHANNELS minus SAFE (intentionally excluded from live inference,
+// see docs/ml-worker-sync.md).
+export const REPORTED_CHANNELS = [
+  StrategyChannel.VALUE,
+  StrategyChannel.DOMINANT,
+  StrategyChannel.BTTS,
+  StrategyChannel.DRAW,
+  StrategyChannel.GOALS,
+  StrategyChannel.CLEAN_SHEET,
+  StrategyChannel.TEAM_TOTAL,
+  StrategyChannel.WIN_EITHER_HALF,
+] as const;
 
 export type ActiveModelRow = {
   id: string;
@@ -24,15 +42,16 @@ export type ActiveModelRow = {
 export class ReportsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Settled single EV-channel selections with odds, in the window, joined to
-  // the ModelRun features (which carry shadow_ml_corrected_p).
+  // Settled selections (across every channel with shadow ML correction
+  // wired) with odds, in the window, joined to the ModelRun features (which
+  // carry shadow_ml_by_channel).
   async findSettledEvSelections(from: Date): Promise<SettledEvSelectionRow[]> {
     return this.prisma.client.channelSelection.findMany({
       where: {
         result: { in: ['WON', 'LOST'] },
         odds: { not: null },
         createdAt: { gte: from },
-        channelDecision: { channel: StrategyChannel.VALUE },
+        channelDecision: { channel: { in: [...REPORTED_CHANNELS] } },
       },
       select: {
         market: true,
@@ -41,7 +60,10 @@ export class ReportsRepository {
         odds: true,
         createdAt: true,
         channelDecision: {
-          select: { modelRun: { select: { features: true } } },
+          select: {
+            channel: true,
+            modelRun: { select: { features: true } },
+          },
         },
       },
       orderBy: { createdAt: 'asc' },

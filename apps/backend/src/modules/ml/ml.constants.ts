@@ -1,8 +1,11 @@
 // Canal names mirror the `StrategyChannel` Prisma enum (EV→VALUE, CONF→DOMINANT
 // renamed 2026-07; see docs/ml-worker-sync.md). Each entry needs >=50 settled
-// channel_selection rows to actually train (ML_RETRAIN_MIN_NEW_BETS) —
-// CORRECT_SCORE is excluded: only 1 settled selection exists (observation-only
-// market, not staked).
+// channel_selection rows to actually train (ML_RETRAIN_MIN_NEW_BETS).
+// CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF added 2026-07-24 (real settled
+// volume + Pinnacle/Bet365 odds coverage confirmed — see
+// apps/ml-worker/src/data/extract.py). CORRECT_SCORE is excluded: de-vigging
+// a ~50-scoreline market needs different logic than the two/three-way
+// markets extract.py handles — deferred.
 export const ML_SEGMENTS = [
   'ALL',
   'VALUE:ONE_X_TWO',
@@ -15,6 +18,11 @@ export const ML_SEGMENTS = [
   'BTTS:BTTS',
   'DRAW:ONE_X_TWO',
   'GOALS:OVER_UNDER',
+  'CLEAN_SHEET:CLEAN_SHEET_HOME',
+  'CLEAN_SHEET:CLEAN_SHEET_AWAY',
+  'TEAM_TOTAL:TEAM_TOTAL_HOME',
+  'TEAM_TOTAL:TEAM_TOTAL_AWAY',
+  'WIN_EITHER_HALF:TO_WIN_EITHER_HALF',
 ] as const;
 export type MlSegment = (typeof ML_SEGMENTS)[number];
 
@@ -27,6 +35,9 @@ export const ML_SHADOW_CHANNELS = [
   'BTTS',
   'DRAW',
   'GOALS',
+  'CLEAN_SHEET',
+  'TEAM_TOTAL',
+  'WIN_EITHER_HALF',
 ] as const;
 export type MlShadowChannel = (typeof ML_SHADOW_CHANNELS)[number];
 

@@ -1,25 +1,41 @@
 import { ML_MIN_BRIER_IMPROVEMENT } from '@modules/ml/ml.constants';
 import type { PromotionVerdict, SegmentComparison } from './reports.types';
 
-// Segments whose ML correction is captured per pick (shadow_ml_corrected_p on
-// the VALUE channel's ModelRun). Only these can be compared baseline-vs-corrected
-// on realized outcomes. Keys mirror channel_selection.market.
+// Segments whose ML correction is captured per pick (shadow_ml_by_channel on
+// ModelRun.features — see betting-engine.service.ts computeShadowMlByChannel).
+// Only these can be compared baseline-vs-corrected on realized outcomes.
+// Format "CHANNEL:MARKET" — both parts are needed to disambiguate rows sharing
+// a market across channels (e.g. VALUE:OVER_UNDER vs GOALS:OVER_UNDER).
 // Canal names renamed 2026-07 (EV→VALUE, CONF→DOMINANT) — see docs/ml-worker-sync.md.
+//
+// Note on ROI (2026-07-24, extended beyond VALUE): only VALUE has a
+// well-defined "would this still have been selected" replay (EV_THRESHOLD
+// gate on the corrected probability). DOMINANT/DRAW/BTTS/GOALS select by a
+// per-league probability threshold, not by EV — replaying their policy would
+// need each channel's own threshold config, not a copy-paste of VALUE's EV
+// gate (flagged in docs/ml-worker-sync.md as a real design decision, not
+// done here). For non-VALUE segments `correctedRoi` is left `null`
+// (comparable to "no pick cleared the policy gate") — Brier comparison alone
+// still gives a real, honest verdict ceiling (WATCH at most, never a false GO).
 export const SHADOW_CAPTURED_SEGMENTS = [
   'VALUE:ONE_X_TWO',
   'VALUE:OVER_UNDER',
   'VALUE:BTTS',
-] as const;
-
-// Other channels now get shadow ML correction too (shadow_ml_by_channel on
-// ModelRun.features — see betting-engine.service.ts computeShadowMlByChannel),
-// but ReportsRepository only reads the VALUE channel today, so their per-pick
-// Brier/ROI comparison isn't wired up here yet — meta-metrics only for now.
-export const META_ONLY_SEGMENTS = [
   'DOMINANT:ONE_X_TWO',
   'DRAW:ONE_X_TWO',
   'BTTS:BTTS',
+  'GOALS:OVER_UNDER',
+  'CLEAN_SHEET:CLEAN_SHEET_HOME',
+  'CLEAN_SHEET:CLEAN_SHEET_AWAY',
+  'TEAM_TOTAL:TEAM_TOTAL_HOME',
+  'TEAM_TOTAL:TEAM_TOTAL_AWAY',
+  'WIN_EITHER_HALF:TO_WIN_EITHER_HALF',
 ] as const;
+
+// Segments with an active model but no per-pick shadow correction wired at
+// all (kept for a future channel not yet in ML_SHADOW_CHANNELS) — currently
+// empty, every live-inference channel now gets at least a Brier comparison.
+export const META_ONLY_SEGMENTS: readonly string[] = [];
 
 // Minimum settled, comparable picks before a verdict is allowed — mirrors the
 // engine's 50-bet calibration floor. Below this, the verdict is INSUFFICIENT.

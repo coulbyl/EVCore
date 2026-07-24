@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { StrategyChannel } from '@evcore/db';
 import { EV_THRESHOLD } from '@modules/betting-engine/ev.constants';
 import {
   ReportsRepository,
@@ -36,6 +37,22 @@ function readNumber(json: unknown, key: string): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+// Per-channel shadow correction lives in features.shadow_ml_by_channel[channel]
+// (betting-engine.service.ts computeShadowMlByChannel) — VALUE additionally
+// gets a top-level shadow_ml_corrected_p shortcut for older consumers, but
+// also appears under its own key here, so this lookup is channel-uniform.
+function readChannelCorrectedP(json: unknown, channel: string): number | null {
+  if (json === null || typeof json !== 'object') return null;
+  const byChannel = (json as Record<string, unknown>)['shadow_ml_by_channel'];
+  if (byChannel === null || typeof byChannel !== 'object') return null;
+  const entry = (byChannel as Record<string, unknown>)[channel];
+  if (entry === null || typeof entry !== 'object') return null;
+  const correctedP = (entry as Record<string, unknown>)['correctedP'];
+  return typeof correctedP === 'number' && Number.isFinite(correctedP)
+    ? correctedP
+    : null;
+}
+
 @Injectable()
 export class ReportsService {
   constructor(private readonly repo: ReportsRepository) {}
@@ -64,8 +81,13 @@ export class ReportsService {
       (segment) => {
         const active = activeBySegment.get(segment) ?? null;
         const segmentFrom = this.segmentWindowStart(window, from, active);
-        const market = segment.split(':')[1];
-        const comparison = this.compareSegment(selections, market, segmentFrom);
+        const [channel, market] = segment.split(':');
+        const comparison = this.compareSegment({
+          selections,
+          channel: channel as StrategyChannel,
+          market,
+          from: segmentFrom,
+        });
         const { verdict, brierImprovement } =
           comparison !== null
             ? computeVerdict(comparison)
@@ -110,26 +132,34 @@ export class ReportsService {
   }
 
   // Baseline vs corrected Brier + policy ROI over the comparable settled bets
-  // of one segment. Returns null when no bet carries a shadow correction.
-  private compareSegment(
-    selections: SettledEvSelectionRow[],
-    market: string,
-    from: Date,
-  ): SegmentComparison | null {
+  // of one (channel, market) segment. Returns null when no bet carries a
+  // shadow correction. ROI policy replay (correctedRoi) is only meaningful
+  // for VALUE (EV-threshold selection) — other channels select by a per-
+  // league probability threshold (see reports.constants.ts comment), so
+  // correctedRoi stays null for them and the verdict is capped at WATCH.
+  private compareSegment(input: {
+    selections: SettledEvSelectionRow[];
+    channel: StrategyChannel;
+    market: string;
+    from: Date;
+  }): SegmentComparison | null {
+    const { selections, channel, market, from } = input;
     let n = 0;
     let baselineBrierSum = new Decimal(0);
     let correctedBrierSum = new Decimal(0);
     let baselineProfit = new Decimal(0);
     let correctedProfit = new Decimal(0);
     let correctedPlaced = 0;
+    const replayRoi = channel === StrategyChannel.VALUE;
 
     for (const selection of selections) {
+      if (selection.channelDecision.channel !== channel) continue;
       if (selection.market !== market) continue;
       if (selection.createdAt < from) continue;
       if (selection.odds === null) continue;
-      const correctedP = readNumber(
+      const correctedP = readChannelCorrectedP(
         selection.channelDecision.modelRun.features,
-        'shadow_ml_corrected_p',
+        channel,
       );
       if (correctedP === null) continue;
 
@@ -147,11 +177,14 @@ export class ReportsService {
       const profit = outcome === 1 ? odds.minus(1) : new Decimal(-1);
       baselineProfit = baselineProfit.plus(profit);
 
-      // Corrected policy: would the model still place it? (corrected EV ≥ floor)
-      const correctedEv = odds.times(correctedP).minus(1);
-      if (correctedEv.greaterThanOrEqualTo(EV_THRESHOLD)) {
-        correctedProfit = correctedProfit.plus(profit);
-        correctedPlaced += 1;
+      // Corrected policy (VALUE only): would the model still place it?
+      // (corrected EV ≥ floor)
+      if (replayRoi) {
+        const correctedEv = odds.times(correctedP).minus(1);
+        if (correctedEv.greaterThanOrEqualTo(EV_THRESHOLD)) {
+          correctedProfit = correctedProfit.plus(profit);
+          correctedPlaced += 1;
+        }
       }
     }
 
@@ -163,7 +196,7 @@ export class ReportsService {
       correctedBrier: correctedBrierSum.div(n).toNumber(),
       baselineRoi: baselineProfit.div(n).toNumber(),
       correctedRoi:
-        correctedPlaced > 0
+        replayRoi && correctedPlaced > 0
           ? correctedProfit.div(correctedPlaced).toNumber()
           : null,
     };

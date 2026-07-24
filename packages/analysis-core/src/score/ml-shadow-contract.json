@@ -1,7 +1,16 @@
 {
   "topFiveCompetitions": ["PL", "SA", "LL", "BL1", "L1"],
   "internationalCompetitions": ["WC", "UCL", "UEL", "UECL", "FRI"],
-  "liveShadowChannels": ["VALUE", "DOMINANT", "BTTS", "DRAW", "GOALS"],
+  "liveShadowChannels": [
+    "VALUE",
+    "DOMINANT",
+    "BTTS",
+    "DRAW",
+    "GOALS",
+    "CLEAN_SHEET",
+    "TEAM_TOTAL",
+    "WIN_EITHER_HALF"
+  ],
   "trainingSegments": [
     "ALL",
     "VALUE:ONE_X_TWO",
@@ -13,6 +22,11 @@
     "DOMINANT:ONE_X_TWO",
     "BTTS:BTTS",
     "DRAW:ONE_X_TWO",
-    "GOALS:OVER_UNDER"
+    "GOALS:OVER_UNDER",
+    "CLEAN_SHEET:CLEAN_SHEET_HOME",
+    "CLEAN_SHEET:CLEAN_SHEET_AWAY",
+    "TEAM_TOTAL:TEAM_TOTAL_HOME",
+    "TEAM_TOTAL:TEAM_TOTAL_AWAY",
+    "WIN_EITHER_HALF:TO_WIN_EITHER_HALF"
   ]
 }

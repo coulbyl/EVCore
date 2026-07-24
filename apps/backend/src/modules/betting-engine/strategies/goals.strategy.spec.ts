@@ -222,9 +222,10 @@ describe('GoalsStrategy (class, prod config)', () => {
     ).toBe(CHANNEL_DECISION_STATUS.DISABLED);
   });
 
-  it('evaluates enabled observation segments (BL1 OVER 2.5 @ 0.57)', () => {
-    // GOALS is enabled in observation; over25 0.7 ≥ BL1 Over 2.5 gate 0.57, and
-    // the other lines stay at 0 (below their gates) → SELECTED OVER once priced.
+  it('evaluates enabled observation segments (BL1 OVER 2.5 @ 0.45)', () => {
+    // GOALS is enabled in observation; over25 0.7 ≥ BL1 Over 2.5 gate 0.45
+    // (retuned 2026-07-24, backtest-tuning sweep), and the other lines stay
+    // at 0 (below their gates) → SELECTED OVER once priced.
     const decision = strategy.evaluate(
       makeContext(
         { over25: 0.7 },
