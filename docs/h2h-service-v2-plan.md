@@ -303,23 +303,19 @@ Plan d'implémentation v2.3a :
       façon non prévue — pas fait dans cette passe.
 - [x] v2.3a (continuité entraîneur) — code complet, 2026-07-23. Clé
       API-Football fournie par l'utilisateur et vérifiée en direct (`GET
-      /status`, plan Ultra actif jusqu'au 2026-08-05, mémoire projet
+    /status`, plan Ultra actif jusqu'au 2026-08-05, mémoire projet
       corrigée). `GET /coachs?team={id}` confirmé sur Real Madrid (3
-      coachs, 7 manches de carrière). Livré :
-      - modèle Prisma `CoachTenure` (`teamId`, `coachName`, `startDate`,
-        `endDate?`, unique `[teamId, coachName, startDate]`) — migration
-        déjà appliquée côté utilisateur (client Prisma régénéré, typecheck
-        vert) ;
-      - `schemas/coachs.schema.ts` (Zod, validé contre une réponse API
-        réelle) ;
-      - `workers/coachs-sync.worker.ts` : un `GET /coachs` par équipe
-        suivie (rate-limit 6s comme les autres workers API-Football),
-        upsert par manche, filtre silencieux des équipes hors périmètre
-        (pas de FK) — 4 tests unitaires verts ;
-      - nouvelle queue BullMQ `COACH_SYNC`, cron hebdomadaire dimanche
-        01:00 UTC (changements d'entraîneur rares — un passage complet
-        ≈ 1725 équipes × 6s ≈ 2.9h, pas de cron quotidien), endpoint manuel
-        `POST /etl/sync/coach`.
+      coachs, 7 manches de carrière). Livré : - modèle Prisma `CoachTenure` (`teamId`, `coachName`, `startDate`,
+      `endDate?`, unique `[teamId, coachName, startDate]`) — migration
+      déjà appliquée côté utilisateur (client Prisma régénéré, typecheck
+      vert) ; - `schemas/coachs.schema.ts` (Zod, validé contre une réponse API
+      réelle) ; - `workers/coachs-sync.worker.ts` : un `GET /coachs` par équipe
+      suivie (rate-limit 6s comme les autres workers API-Football),
+      upsert par manche, filtre silencieux des équipes hors périmètre
+      (pas de FK) — 4 tests unitaires verts ; - nouvelle queue BullMQ `COACH_SYNC`, cron hebdomadaire dimanche
+      01:00 UTC (changements d'entraîneur rares — un passage complet
+      ≈ 1725 équipes × 6s ≈ 2.9h, pas de cron quotidien), endpoint manuel
+      `POST /etl/sync/coach`.
       **Pas encore backfillé/activé** : la table `coach_tenure` est vide
       tant que le worker n'a pas tourné au moins une fois (cron du
       prochain dimanche, ou déclenchement manuel — ~2.9h, à lancer
