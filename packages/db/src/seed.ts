@@ -193,6 +193,7 @@ const COMPETITIONS = [
     country: "Poland",
     isActive: false,
     csvDivisionCode: "POL",
+    seasonStartMonth: 6, // saison juillet→mai (vérifié sur 3 saisons, ~18-21 juillet)
   },
   {
     leagueId: 207,
@@ -201,6 +202,7 @@ const COMPETITIONS = [
     country: "Switzerland",
     isActive: false,
     csvDivisionCode: "SWZ",
+    seasonStartMonth: 6, // saison juillet→mai
   },
   {
     leagueId: 203,
@@ -264,6 +266,7 @@ const COMPETITIONS = [
     country: "Austria",
     isActive: false,
     csvDivisionCode: "AUT", // football-data.co.uk "extra leagues" (new/AUT.csv)
+    seasonStartMonth: 6, // saison juillet→mai
     includeInBacktest: true, // odds historiques via The Odds API (soccer_austria_bundesliga)
   },
   {
@@ -273,6 +276,7 @@ const COMPETITIONS = [
     country: "Denmark",
     isActive: false,
     csvDivisionCode: "DNK", // football-data.co.uk "extra leagues" (new/DNK.csv)
+    seasonStartMonth: 6, // saison juillet→mai
     includeInBacktest: true, // odds historiques via The Odds API (soccer_denmark_superliga)
   },
   {
@@ -292,6 +296,7 @@ const COMPETITIONS = [
     country: "Scotland",
     isActive: false,
     csvDivisionCode: "SC0", // football-data.co.uk main division (dossier par saison)
+    seasonStartMonth: 6, // saison juillet→mai
     includeInBacktest: true, // odds historiques via The Odds API (soccer_spl)
   },
   {
@@ -331,6 +336,7 @@ const COMPETITIONS = [
     country: "Russia",
     isActive: false,
     csvDivisionCode: "RUS", // football-data.co.uk "extra leagues" (new/RUS.csv)
+    seasonStartMonth: 6, // saison juillet→mai
     includeInBacktest: true, // odds historiques via The Odds API (soccer_russia_premier_league)
   },
   {
@@ -379,6 +385,7 @@ const COMPETITIONS = [
     country: "Poland",
     isActive: false,
     csvDivisionCode: null,
+    seasonStartMonth: 6, // saison juillet→mai — même calendrier que POL1
   },
   {
     leagueId: 345,
@@ -387,6 +394,7 @@ const COMPETITIONS = [
     country: "Czech Republic",
     isActive: false,
     csvDivisionCode: null,
+    seasonStartMonth: 6, // saison juillet→mai
   },
   {
     leagueId: 208,
@@ -395,6 +403,7 @@ const COMPETITIONS = [
     country: "Switzerland",
     isActive: false,
     csvDivisionCode: null,
+    seasonStartMonth: 6, // saison juillet→mai — même calendrier que SUI1
   },
   {
     leagueId: 204,
@@ -411,6 +420,7 @@ const COMPETITIONS = [
     country: "Serbia",
     isActive: false,
     csvDivisionCode: null,
+    seasonStartMonth: 6, // saison juillet→mai
   },
   {
     leagueId: 373,
@@ -419,6 +429,7 @@ const COMPETITIONS = [
     country: "Slovenia",
     isActive: false,
     csvDivisionCode: null,
+    seasonStartMonth: 6, // saison juillet→mai
   },
   {
     leagueId: 104,
