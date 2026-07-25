@@ -24,6 +24,7 @@ import { BettingEngineAnalysisWorker } from './workers/betting-engine-analysis.w
 import { BettingEngineRebuildWorker } from './workers/betting-engine-rebuild.worker';
 import { CouponWorker } from './workers/coupon.worker';
 import { RollingHorizonWorker } from './workers/rolling-horizon.worker';
+import { SeasonRolloverSyncWorker } from './workers/season-rollover-sync.worker';
 import { CouponModule } from '../coupon/coupon.module';
 import { AdjustmentModule } from '../adjustment/adjustment.module';
 import { AuthModule } from '../auth/auth.module';
@@ -46,6 +47,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: BULLMQ_QUEUES.ROLLING_HORIZON },
       { name: BULLMQ_QUEUES.ML_TRAINING },
       { name: BULLMQ_QUEUES.ML_SCHEDULER },
+      { name: BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC },
     ),
     BullModule.registerFlowProducer({ name: 'rolling-horizon-flow' }),
     AuthModule,
@@ -75,6 +77,7 @@ import { AuthModule } from '../auth/auth.module';
     CouponWorker,
     OddsHistoricalImportWorker,
     RollingHorizonWorker,
+    SeasonRolloverSyncWorker,
   ],
   exports: [EtlService, ApiFootballClient],
 })

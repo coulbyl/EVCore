@@ -69,6 +69,7 @@ export type GlobalSyncType =
   | "elo"
   | "coach"
   | "odds-prematch"
-  | "analysis";
+  | "analysis"
+  | "season-rollover";
 
 export type LeagueSyncType = "fixtures" | "stats" | "injuries";

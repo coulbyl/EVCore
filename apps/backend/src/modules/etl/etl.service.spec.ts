@@ -3,6 +3,7 @@ import { EtlService } from './etl.service';
 import {
   BULLMQ_DEFAULT_JOB_OPTIONS,
   ETL_CONSTANTS,
+  ETL_SCHEDULER_KEYS,
   DEFAULT_SEASON_START_MONTH,
   getCurrentCsvSeasonCode,
   ROLLING_HORIZON_DEFAULTS,
@@ -21,6 +22,7 @@ import type { LeagueSyncJobData } from './workers/league-sync.worker';
 import type { PendingBetsSettlementJobData } from './workers/pending-bets-settlement.worker';
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
+import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
 import type { RollingStatsService } from '../rolling-stats/rolling-stats.service';
 
 type MockQueue<T> = Pick<
@@ -92,6 +94,7 @@ describe('EtlService', () => {
   const bettingEngineRebuildQueue = makeQueue();
   const aiEngineQueue = makeQueue();
   const coachSyncQueue = makeQueue<CoachSyncJobData>();
+  const seasonRolloverSyncQueue = makeQueue<SeasonRolloverSyncJobData>();
   const prismaMockRaw = {
     client: {
       competition: {
@@ -137,6 +140,7 @@ describe('EtlService', () => {
     bettingEngineRebuildQueue as Queue,
     aiEngineQueue as Queue,
     coachSyncQueue as Queue<CoachSyncJobData>,
+    seasonRolloverSyncQueue as Queue<SeasonRolloverSyncJobData>,
     configMock,
     prismaMock,
     rollingStatsServiceMock,
@@ -191,6 +195,35 @@ describe('EtlService', () => {
         },
       );
     });
+  });
+
+  // Regression: upsertJobScheduler bakes `season` into a recurring job's
+  // template once, at call time — BullMQ never recomputes it. Without this
+  // method being called periodically (SeasonRolloverSyncWorker), a season
+  // rollover stays stuck on the old year until the next process restart.
+  it('re-upserts the league-season and odds-csv-import schedulers with the current season', async () => {
+    const result = await service.refreshLeagueSeasonSchedulers();
+
+    expect(result).toEqual({ competitionsRefreshed: TEST_COMPETITIONS.length });
+    // fixtures + stats + injuries, per competition.
+    expect(leagueSyncQueue.upsertJobScheduler).toHaveBeenCalledTimes(
+      TEST_COMPETITIONS.length * 3,
+    );
+    expect(leagueSyncQueue.upsertJobScheduler).toHaveBeenCalledWith(
+      `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:fixtures:${TEST_COMPETITIONS[0].code}`,
+      expect.objectContaining({ pattern: expect.any(String) }),
+      expect.objectContaining({
+        name: `fixtures-sync-${TEST_COMPETITIONS[0].code}-${CURRENT_SEASON}`,
+        data: expect.objectContaining({
+          season: CURRENT_SEASON,
+          competitionCode: TEST_COMPETITIONS[0].code,
+        }),
+      }),
+    );
+    // Both TEST_COMPETITIONS have a csvDivisionCode set.
+    expect(oddsCsvQueue.upsertJobScheduler).toHaveBeenCalledTimes(
+      TEST_COMPETITIONS.length,
+    );
   });
 
   it('dispatches one pending bets settlement job', async () => {

@@ -34,6 +34,7 @@ import type { PendingBetsSettlementJobData } from './workers/pending-bets-settle
 import type { BettingEngineAnalysisJobData } from './workers/betting-engine-analysis.worker';
 import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
+import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -156,6 +157,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly aiEngineQueue: Queue,
     @InjectQueue(BULLMQ_QUEUES.COACH_SYNC)
     private readonly coachSyncQueue: Queue<CoachSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC)
+    private readonly seasonRolloverSyncQueue: Queue<SeasonRolloverSyncJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
@@ -230,6 +233,10 @@ export class EtlService implements OnApplicationBootstrap {
         'ETL_ROLLING_HORIZON_CRON',
         ETL_CRON_SCHEDULES.ROLLING_HORIZON,
       ),
+      SEASON_ROLLOVER_SYNC: config.get<string>(
+        'ETL_SEASON_ROLLOVER_SYNC_CRON',
+        ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC,
+      ),
     };
     this.leagueSeasonSyncs = {
       fixtures: {
@@ -268,39 +275,7 @@ export class EtlService implements OnApplicationBootstrap {
       return;
     }
 
-    await this.refreshCompetitionPlans();
-    await this.cleanupInactiveSchedulers();
-
-    const currentSeasonCode = getCurrentCsvSeasonCode();
-
-    this.logApiFootballBudget(this.competitionPlans);
-
-    await Promise.all(
-      this.competitionPlans.map(async ({ competition, seasons }) => {
-        const currentSeason = seasons[seasons.length - 1];
-
-        await Promise.all(
-          LEAGUE_SEASON_SYNC_KINDS.map((kind) =>
-            this.upsertLeagueSeasonScheduler(kind, competition, currentSeason),
-          ),
-        );
-
-        if (competition.csvDivisionCode) {
-          await this.oddsCsvQueue.upsertJobScheduler(
-            `${ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT}:${competition.code}`,
-            { pattern: this.cronSchedules.ODDS_CSV_IMPORT },
-            {
-              name: `odds-csv-import-${competition.code}-${currentSeasonCode}`,
-              data: {
-                competitionCode: competition.code,
-                seasonCode: currentSeasonCode,
-                divisionCode: competition.csvDivisionCode,
-              } satisfies OddsCsvImportJobData,
-            },
-          );
-        }
-      }),
-    );
+    await this.refreshLeagueSeasonSchedulers();
 
     await this.oddsPrematchQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.ODDS_PREMATCH_SYNC,
@@ -374,7 +349,65 @@ export class EtlService implements OnApplicationBootstrap {
       },
     );
 
+    // Keeps refreshLeagueSeasonSchedulers() itself running periodically —
+    // see ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC for why this exists.
+    await this.seasonRolloverSyncQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.SEASON_ROLLOVER_SYNC,
+      { pattern: this.cronSchedules.SEASON_ROLLOVER_SYNC },
+      {
+        name: 'season-rollover-sync',
+        data: {} satisfies SeasonRolloverSyncJobData,
+      },
+    );
+
     logger.info('ETL job schedulers registered');
+  }
+
+  // Re-derives each active competition's current season and re-upserts the
+  // league-sync (fixtures/stats/injuries) + odds-csv-import job scheduler
+  // templates with it. Called once at boot and then periodically by
+  // SeasonRolloverSyncWorker (see ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC) —
+  // upsertJobScheduler only bakes `season` into the template at call time,
+  // it never recomputes on its own, so without this a season rollover would
+  // stay unsynced until the next process restart.
+  async refreshLeagueSeasonSchedulers(): Promise<{
+    competitionsRefreshed: number;
+  }> {
+    await this.refreshCompetitionPlans();
+    await this.cleanupInactiveSchedulers();
+
+    const currentSeasonCode = getCurrentCsvSeasonCode();
+
+    this.logApiFootballBudget(this.competitionPlans);
+
+    await Promise.all(
+      this.competitionPlans.map(async ({ competition, seasons }) => {
+        const currentSeason = seasons[seasons.length - 1];
+
+        await Promise.all(
+          LEAGUE_SEASON_SYNC_KINDS.map((kind) =>
+            this.upsertLeagueSeasonScheduler(kind, competition, currentSeason),
+          ),
+        );
+
+        if (competition.csvDivisionCode) {
+          await this.oddsCsvQueue.upsertJobScheduler(
+            `${ETL_SCHEDULER_KEYS.ODDS_CSV_IMPORT}:${competition.code}`,
+            { pattern: this.cronSchedules.ODDS_CSV_IMPORT },
+            {
+              name: `odds-csv-import-${competition.code}-${currentSeasonCode}`,
+              data: {
+                competitionCode: competition.code,
+                seasonCode: currentSeasonCode,
+                divisionCode: competition.csvDivisionCode,
+              } satisfies OddsCsvImportJobData,
+            },
+          );
+        }
+      }),
+    );
+
+    return { competitionsRefreshed: this.competitionPlans.length };
   }
 
   private async refreshCompetitionPlans(): Promise<void> {

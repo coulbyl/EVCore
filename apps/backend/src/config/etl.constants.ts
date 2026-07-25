@@ -242,6 +242,7 @@ export const BULLMQ_QUEUES = {
   ODDS_HISTORICAL_IMPORT: 'odds-historical-import',
   AI_ENGINE: 'ai-engine',
   ROLLING_HORIZON: 'rolling-horizon',
+  SEASON_ROLLOVER_SYNC: 'season-rollover-sync',
 } as const;
 
 export const BULLMQ_DEFAULT_JOB_OPTIONS = {
@@ -270,6 +271,16 @@ export const ETL_CRON_SCHEDULES = {
   ODDS_PREMATCH_SYNC: '0 6,18 * * *',
   BETTING_ENGINE_ANALYSIS: '0 20 * * *', // 20:00 UTC daily — analyze next-day fixtures after prematch odds sync
   ROLLING_HORIZON: '0 17 * * *', // 17:00 UTC daily — warm preview for J+1..J+4 (J+1 gets overwritten by 18:00/20:00 authoritative runs)
+  // 01:45 UTC daily, just before FIXTURES_SYNC (02:00) — re-derives each
+  // competition's current season (activeSeasons()/apiSeasonOverride) and
+  // re-upserts the league-sync job schedulers with it. Without this, a
+  // season's cron scheduler stays pinned to whatever season was current at
+  // the last process boot: upsertJobScheduler's job-template `data.season`
+  // is fixed once and BullMQ replays it on every tick — it never
+  // recomputes on its own — so a season rollover (e.g. Aug 1) got silently
+  // skipped until the next redeploy. Found 2026-07-25: leagues whose new
+  // season had already started weren't syncing.
+  SEASON_ROLLOVER_SYNC: '45 1 * * *',
 } as const;
 
 // Stable keys for upsertJobScheduler — one per queue (idempotent on restart)
@@ -283,6 +294,7 @@ export const ETL_SCHEDULER_KEYS = {
   ODDS_PREMATCH_SYNC: 'cron:odds-prematch-sync',
   BETTING_ENGINE_ANALYSIS: 'cron:betting-engine-analysis',
   ROLLING_HORIZON: 'cron:rolling-horizon',
+  SEASON_ROLLOVER_SYNC: 'cron:season-rollover-sync',
 } as const;
 
 export const ROLLING_HORIZON_DEFAULTS = {
