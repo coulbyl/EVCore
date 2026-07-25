@@ -43,6 +43,10 @@ export type InvestmentPick = {
   scheduledAt: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  // Informational only (coach-continuity.constants.ts) — never feeds
+  // scoring/EV. See ChannelDecisionItem for the definition.
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   channel: StrategyChannel;
   market: Market;
   pick: string;
@@ -166,6 +170,8 @@ function toInvestmentPick(
     scheduledAt: item.scheduledAt,
     homeLogo: item.homeLogo,
     awayLogo: item.awayLogo,
+    homeNewCoach: item.homeNewCoach,
+    awayNewCoach: item.awayNewCoach,
     channel: item.channel,
     market: primary.market,
     pick: primary.pick,

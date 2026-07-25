@@ -28,6 +28,7 @@ describe('RollingStatsService', () => {
   const teamStatsCreateMany = vi.fn();
   const teamStatsUpdate = vi.fn();
   const transaction = vi.fn();
+  const coachTenureFindMany = vi.fn();
 
   const prismaService = {
     client: {
@@ -40,6 +41,9 @@ describe('RollingStatsService', () => {
         createMany: teamStatsCreateMany,
         update: teamStatsUpdate,
       },
+      coachTenure: {
+        findMany: coachTenureFindMany,
+      },
       $transaction: transaction,
     },
   };
@@ -51,8 +55,12 @@ describe('RollingStatsService', () => {
     teamStatsCreateMany.mockReset();
     teamStatsUpdate.mockReset();
     transaction.mockReset();
+    coachTenureFindMany.mockReset();
     teamStatsCreateMany.mockResolvedValue({ count: 0 });
     transaction.mockResolvedValue([]);
+    // Most tests don't care about coach data — empty by default keeps
+    // recentForm's reset-on-coach-change behaviour a no-op for them.
+    coachTenureFindMany.mockResolvedValue([]);
   });
 
   it('builds season stats from one fixture scan and writes only missing rows', async () => {
@@ -156,6 +164,54 @@ describe('RollingStatsService', () => {
     expect(result.teamStatsWritten).toBe(1);
     expect(result.createdCount).toBe(0);
     expect(result.updatedCount).toBe(1);
+  });
+
+  it("re-centers recentForm on a coach change instead of blending in the previous coach's results", async () => {
+    fixtureFindUnique.mockResolvedValue({
+      id: 'fixture-3',
+      seasonId: 'season-1',
+      scheduledAt: new Date('2024-08-10T12:00:00.000Z'),
+    });
+    fixtureFindMany.mockResolvedValue([
+      // Two losses under the old coach.
+      makeFixture({
+        id: 'fixture-1',
+        scheduledAt: new Date('2024-08-01T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-b',
+        homeScore: 0,
+        awayScore: 1,
+      }),
+      makeFixture({
+        id: 'fixture-2',
+        scheduledAt: new Date('2024-08-05T12:00:00.000Z'),
+        homeTeamId: 'team-c',
+        awayTeamId: 'team-a',
+        homeScore: 1,
+        awayScore: 0,
+      }),
+      // A win, but only after a coach change on 2024-08-08 — should be
+      // scored on its own, not blended with the two losses above.
+      makeFixture({
+        id: 'fixture-3',
+        scheduledAt: new Date('2024-08-10T12:00:00.000Z'),
+        homeTeamId: 'team-a',
+        awayTeamId: 'team-b',
+        homeScore: 2,
+        awayScore: 0,
+      }),
+    ]);
+    coachTenureFindMany.mockResolvedValue([
+      { teamId: 'team-a', startDate: new Date('2024-01-01T00:00:00.000Z') },
+      { teamId: 'team-a', startDate: new Date('2024-08-08T00:00:00.000Z') },
+    ]);
+
+    const service = new RollingStatsService(prismaService as never);
+    const stats = await service.computeStats('team-a', 'fixture-3');
+
+    // A lone win scores recentForm = 1 exactly (calculateRecentForm).
+    // Blended with the two prior losses it would come out to ~0.41 instead.
+    expect(stats.recentForm.toNumber()).toBeCloseTo(1, 6);
   });
 
   it('computes stats for one team without refetching fixtures per team/fixture pair', async () => {

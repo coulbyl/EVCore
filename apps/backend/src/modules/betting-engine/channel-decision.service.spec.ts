@@ -307,7 +307,11 @@ describe('ChannelDecisionService', () => {
           selections: [],
         },
       ]);
-      const repo = { findByDate } as unknown as ChannelDecisionRepository;
+      const findNewCoachTeams = vi.fn().mockResolvedValue(new Set());
+      const repo = {
+        findByDate,
+        findNewCoachTeams,
+      } as unknown as ChannelDecisionRepository;
       const service = new ChannelDecisionService(repo);
 
       const groups = await service.listByMatch({
@@ -394,7 +398,11 @@ describe('ChannelDecisionService', () => {
           channel,
         })),
       );
-      const repo = { findByDate } as unknown as ChannelDecisionRepository;
+      const findNewCoachTeams = vi.fn().mockResolvedValue(new Set());
+      const repo = {
+        findByDate,
+        findNewCoachTeams,
+      } as unknown as ChannelDecisionRepository;
       const service = new ChannelDecisionService(repo);
 
       const groups = await service.listByChannel({ date: '2026-01-18' });

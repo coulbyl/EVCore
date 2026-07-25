@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 
 function TeamLogo({ src, name }: { src: string | null; name: string }) {
@@ -17,6 +18,8 @@ export function FixtureName({
   fixture,
   homeLogo,
   awayLogo,
+  homeBadge,
+  awayBadge,
   className = "text-xs font-semibold text-foreground",
   logoPosition = "start",
   stacked = false,
@@ -24,6 +27,10 @@ export function FixtureName({
   fixture: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  /** Rendered right after that team's name — e.g. a "new coach" chip. Only
+   * the stacked (card header) layout has room for these. */
+  homeBadge?: ReactNode;
+  awayBadge?: ReactNode;
   className?: string;
   logoPosition?: "start" | "end";
   /** Below `sm`, home and away each get their own full-width line — only
@@ -49,12 +56,14 @@ export function FixtureName({
         {logoPosition === "start" && <TeamLogo src={homeLogo} name={home} />}
         <span className="min-w-0 shrink truncate">{home}</span>
         {logoPosition === "end" && <TeamLogo src={homeLogo} name={home} />}
+        {homeBadge}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
         <span className="shrink-0 font-normal text-muted-foreground">vs</span>
         {logoPosition === "start" && <TeamLogo src={awayLogo} name={away} />}
         <span className="min-w-0 shrink truncate">{away}</span>
         {logoPosition === "end" && <TeamLogo src={awayLogo} name={away} />}
+        {awayBadge}
       </span>
     </div>
   );

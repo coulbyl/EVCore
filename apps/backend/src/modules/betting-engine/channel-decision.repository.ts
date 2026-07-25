@@ -14,6 +14,7 @@ import type {
   StrategySelection,
 } from './channel-strategy.types';
 import type { SettleableSelection } from './channel-selection-settlement';
+import { NEW_COACH_WINDOW_MATCHES } from './coach-continuity.constants';
 
 export type SettleableSelectionRow = SettleableSelection & { id: string };
 
@@ -66,6 +67,8 @@ export type ChannelDecisionReadRow = {
   fixtureId: string;
   fixtureStatus: FixtureStatus;
   scheduledAt: Date;
+  homeTeamId: string;
+  awayTeamId: string;
   homeTeam: string;
   awayTeam: string;
   homeLogo: string | null;
@@ -255,6 +258,8 @@ export class ChannelDecisionRepository {
                 awayScore: true,
                 homeHtScore: true,
                 awayHtScore: true,
+                homeTeamId: true,
+                awayTeamId: true,
                 homeTeam: { select: { name: true, logoUrl: true } },
                 awayTeam: { select: { name: true, logoUrl: true } },
                 season: {
@@ -302,6 +307,8 @@ export class ChannelDecisionRepository {
       fixtureId: row.modelRun.fixture.id,
       fixtureStatus: row.modelRun.fixture.status,
       scheduledAt: row.modelRun.fixture.scheduledAt,
+      homeTeamId: row.modelRun.fixture.homeTeamId,
+      awayTeamId: row.modelRun.fixture.awayTeamId,
       homeTeam: row.modelRun.fixture.homeTeam.name,
       awayTeam: row.modelRun.fixture.awayTeam.name,
       homeLogo: row.modelRun.fixture.homeTeam.logoUrl,
@@ -317,6 +324,57 @@ export class ChannelDecisionRepository {
     }));
 
     return latestPerFixtureChannel(mapped);
+  }
+
+  // Informational only (see coach-continuity.constants.ts) — teams whose
+  // current coach (most recent coach_tenure with startDate <= that team's
+  // own match date) has taken charge for fewer than NEW_COACH_WINDOW_MATCHES
+  // finished matches. `teamAsOf` keys are teamId, one entry per team appearing
+  // in the response the caller is building (a team plays at most once on any
+  // given date, so this doesn't need per-fixture disambiguation).
+  async findNewCoachTeams(
+    teamAsOf: ReadonlyMap<string, Date>,
+  ): Promise<Set<string>> {
+    if (teamAsOf.size === 0) return new Set();
+
+    const teamIds = [...teamAsOf.keys()];
+    const tenures = await this.prisma.client.coachTenure.findMany({
+      where: { teamId: { in: teamIds } },
+      select: { teamId: true, startDate: true },
+      orderBy: { startDate: 'desc' },
+    });
+
+    const startsByTeam = new Map<string, Date[]>();
+    for (const tenure of tenures) {
+      const starts = startsByTeam.get(tenure.teamId);
+      if (starts) starts.push(tenure.startDate);
+      else startsByTeam.set(tenure.teamId, [tenure.startDate]);
+    }
+
+    const newCoachTeams = new Set<string>();
+    await Promise.all(
+      [...teamAsOf.entries()].map(async ([teamId, asOf]) => {
+        // startsByTeam[teamId] is sorted desc (from the query above), so the
+        // first entry <= asOf is that team's current coach as of that date.
+        const coachStart = startsByTeam
+          .get(teamId)
+          ?.find((start) => start <= asOf);
+        if (!coachStart) return;
+
+        const gamesPlayed = await this.prisma.client.fixture.count({
+          where: {
+            OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+            status: 'FINISHED',
+            scheduledAt: { gte: coachStart, lt: asOf },
+          },
+        });
+        if (gamesPlayed < NEW_COACH_WINDOW_MATCHES) {
+          newCoachTeams.add(teamId);
+        }
+      }),
+    );
+
+    return newCoachTeams;
   }
 }
 

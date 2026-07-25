@@ -17,6 +17,8 @@ export type InvestmentFixtureGroup = {
   kickoff: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   score: string | null;
   htScore: string | null;
   picks: InvestmentPick[];
@@ -45,6 +47,8 @@ export function groupPicksByFixture(
         kickoff: pick.kickoff,
         homeLogo: pick.homeLogo,
         awayLogo: pick.awayLogo,
+        homeNewCoach: pick.homeNewCoach,
+        awayNewCoach: pick.awayNewCoach,
         score: pick.score,
         htScore: pick.htScore,
         picks: [],

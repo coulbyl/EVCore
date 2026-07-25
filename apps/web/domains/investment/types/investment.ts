@@ -30,6 +30,10 @@ export type InvestmentPick = {
   scheduledAt: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  // Informational only — never affects scoring/EV. True when that team has
+  // played fewer than 5 finished matches under its current coach.
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
   market: string;
   pick: string;

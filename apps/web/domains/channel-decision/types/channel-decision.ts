@@ -78,6 +78,10 @@ export type ChannelDecisionDto = {
   awayTeam: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  // Informational only — never affects scoring/EV. True when that team has
+  // played fewer than 5 finished matches under its current coach.
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   kickoff: string;
   scheduledAt: string;
   score: string | null;
@@ -117,6 +121,8 @@ export type ChannelDecisionMatchDto = Pick<
   | "awayTeam"
   | "homeLogo"
   | "awayLogo"
+  | "homeNewCoach"
+  | "awayNewCoach"
   | "kickoff"
   | "scheduledAt"
   | "score"

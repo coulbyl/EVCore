@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   BetStatus,
   FixtureStatus,
   ModelRunPhase,
   StrategyChannel,
 } from '@evcore/db';
+import type { PrismaService } from '@/prisma.service';
 import {
+  ChannelDecisionRepository,
   latestPerFixtureChannel,
   type ChannelDecisionReadRow,
 } from './channel-decision.repository';
@@ -26,6 +28,8 @@ function row(
     fixtureId: 'fx-1',
     fixtureStatus: FixtureStatus.SCHEDULED,
     scheduledAt: new Date('2026-07-02T23:00:00Z'),
+    homeTeamId: 'team-portugal',
+    awayTeamId: 'team-croatia',
     homeTeam: 'Portugal',
     awayTeam: 'Croatia',
     homeLogo: null,
@@ -93,5 +97,79 @@ describe('latestPerFixtureChannel', () => {
   it('is a no-op when there is only one analysis pass per fixture', () => {
     const rows = [row({ id: 'only-one' })];
     expect(latestPerFixtureChannel(rows)).toEqual(rows);
+  });
+});
+
+describe('ChannelDecisionRepository.findNewCoachTeams', () => {
+  function makeRepo(coachTenureRows: unknown[], gamesPlayed: number) {
+    const coachTenureFindMany = vi.fn().mockResolvedValue(coachTenureRows);
+    const fixtureCount = vi.fn().mockResolvedValue(gamesPlayed);
+    const prisma = {
+      client: {
+        coachTenure: { findMany: coachTenureFindMany },
+        fixture: { count: fixtureCount },
+      },
+    } as unknown as PrismaService;
+
+    return { repo: new ChannelDecisionRepository(prisma), fixtureCount };
+  }
+
+  it('flags a team under NEW_COACH_WINDOW_MATCHES finished matches since their current coach started', async () => {
+    const { repo, fixtureCount } = makeRepo(
+      [{ teamId: 'team-a', startDate: new Date('2026-06-01T00:00:00Z') }],
+      3,
+    );
+
+    const result = await repo.findNewCoachTeams(
+      new Map([['team-a', new Date('2026-07-01T00:00:00Z')]]),
+    );
+
+    expect(result).toEqual(new Set(['team-a']));
+    expect(fixtureCount).toHaveBeenCalledWith({
+      where: {
+        OR: [{ homeTeamId: 'team-a' }, { awayTeamId: 'team-a' }],
+        status: 'FINISHED',
+        scheduledAt: {
+          gte: new Date('2026-06-01T00:00:00Z'),
+          lt: new Date('2026-07-01T00:00:00Z'),
+        },
+      },
+    });
+  });
+
+  it('does not flag a team that has played 5+ matches under their current coach', async () => {
+    const { repo } = makeRepo(
+      [{ teamId: 'team-a', startDate: new Date('2026-01-01T00:00:00Z') }],
+      5,
+    );
+
+    const result = await repo.findNewCoachTeams(
+      new Map([['team-a', new Date('2026-07-01T00:00:00Z')]]),
+    );
+
+    expect(result).toEqual(new Set());
+  });
+
+  it('skips a team with no coach_tenure row on or before its match date', async () => {
+    const { repo } = makeRepo(
+      // Only a future tenure — not yet in charge as of the match date.
+      [{ teamId: 'team-a', startDate: new Date('2026-08-01T00:00:00Z') }],
+      0,
+    );
+
+    const result = await repo.findNewCoachTeams(
+      new Map([['team-a', new Date('2026-07-01T00:00:00Z')]]),
+    );
+
+    expect(result).toEqual(new Set());
+  });
+
+  it('returns an empty set without querying when given no teams', async () => {
+    const { repo, fixtureCount } = makeRepo([], 0);
+
+    const result = await repo.findNewCoachTeams(new Map());
+
+    expect(result).toEqual(new Set());
+    expect(fixtureCount).not.toHaveBeenCalled();
   });
 });

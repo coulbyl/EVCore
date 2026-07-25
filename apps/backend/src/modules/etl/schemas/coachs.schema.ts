@@ -5,10 +5,15 @@ import { z } from 'zod';
 // the queried team, each carrying their FULL managerial career (not just
 // the tenure at the queried team) — career[].team.id can reference teams
 // outside our tracked set, filtered out at ingestion (coachs-sync.worker.ts).
+// career[].team.id can also be null outright (team externalId=88, career
+// leg index 2, hit live 2026-07-25) — API-FOOTBALL doesn't always resolve
+// the club for old/defunct legs. The worker already drops legs whose id
+// doesn't map to a tracked team, so null just takes that same path instead
+// of rejecting the coach's entire career (and this team's whole payload).
 
 const CareerEntrySchema = z.object({
   team: z.object({
-    id: z.number().int().positive(),
+    id: z.number().int().positive().nullable(),
     name: z.string(),
   }),
   start: z.string().min(1).nullable(),

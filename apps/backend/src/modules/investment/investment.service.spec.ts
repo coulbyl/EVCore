@@ -48,6 +48,8 @@ function item(
     awayTeam: 'Away FC',
     homeLogo: null,
     awayLogo: null,
+    homeNewCoach: false,
+    awayNewCoach: false,
     kickoff: '18:00',
     scheduledAt: '2026-07-06T18:00:00.000Z',
     score: null,

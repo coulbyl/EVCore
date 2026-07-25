@@ -111,7 +111,45 @@ class TeamSeasonAccumulator {
   scoredMatches = 0;
   draws = 0;
 
+  // Sorted ascending coach_tenure start dates for this team (empty when no
+  // sync data exists — behaviour is then unchanged from before this field
+  // existed). recentForm is a 5-result trailing window (rolling-stats.utils
+  // calculateRecentForm); without this, the first match under a new coach
+  // is scored using a window still 100% composed of the previous coach's
+  // results — backtested 2026-07-25 (db:coach-bounce-backtest): teams
+  // outperform that stale-window expectation by +0.08 pt/match on average
+  // (positive across every home/away × opponent-strength stratum), and
+  // recentForm stays measurably below the dataset average through the
+  // entire 5-match window after a change (0.377 → 0.432 vs a 0.461
+  // baseline) — i.e. it's a lagging indicator, not an already-priced-in one.
+  private coachStarts: Date[] = [];
+  private coachIndex = -1;
+
+  setCoachStarts(starts: Date[]): void {
+    this.coachStarts = starts;
+  }
+
+  // Re-centers recentForm at each coach change by dropping the window
+  // instead of letting it straddle two coaches' results.
+  private advanceCoachAndResetOnChange(asOf: Date): void {
+    if (this.coachStarts.length === 0) return;
+
+    let index = this.coachIndex;
+    while (index + 1 < this.coachStarts.length) {
+      const nextStart = this.coachStarts[index + 1];
+      if (!nextStart || nextStart.getTime() > asOf.getTime()) break;
+      index += 1;
+    }
+
+    if (index !== this.coachIndex) {
+      this.recentResults = [];
+      this.coachIndex = index;
+    }
+  }
+
   addFixture(fixture: SeasonFixture, teamId: string): void {
+    this.advanceCoachAndResetOnChange(fixture.scheduledAt);
+
     const result = resultForTeam(fixture as Fixture, teamId);
     if (result) {
       this.recentResults.push(result);
@@ -373,7 +411,10 @@ export class RollingStatsService {
     const startedAt = Date.now();
 
     const fixtures = await this.loadFinishedSeasonFixtures(seasonId);
-    const rows = this.computeSeasonRows(fixtures);
+    const coachStartsByTeam = await this.loadCoachStartsByTeam(
+      this.teamIdsFromFixtures(fixtures),
+    );
+    const rows = this.computeSeasonRows(fixtures, coachStartsByTeam);
     const existingRows = await this.loadExistingTeamStats(seasonId);
     const { createdCount, updatedCount } = await this.persistSeasonRows(
       rows,
@@ -443,8 +484,11 @@ export class RollingStatsService {
     const fixtureIdsToRefresh = new Set(
       fixtures.slice(firstMissingFixtureIndex).map((fixture) => fixture.id),
     );
-    const rows = this.computeSeasonRows(fixtures).filter((row) =>
-      fixtureIdsToRefresh.has(row.afterFixtureId),
+    const coachStartsByTeam = await this.loadCoachStartsByTeam(
+      this.teamIdsFromFixtures(fixtures),
+    );
+    const rows = this.computeSeasonRows(fixtures, coachStartsByTeam).filter(
+      (row) => fixtureIdsToRefresh.has(row.afterFixtureId),
     );
     const { createdCount, updatedCount } = await this.persistSeasonRows(
       rows,
@@ -525,7 +569,10 @@ export class RollingStatsService {
     const fixturesUpToTarget = finishedFixtures.filter(
       (fixture) => fixture.scheduledAt <= afterFixture.scheduledAt,
     );
-    const rows = this.computeSeasonRows(fixturesUpToTarget);
+    const coachStartsByTeam = await this.loadCoachStartsByTeam(
+      this.teamIdsFromFixtures(fixturesUpToTarget),
+    );
+    const rows = this.computeSeasonRows(fixturesUpToTarget, coachStartsByTeam);
     const row = rows.find(
       (entry) =>
         entry.teamId === teamId && entry.afterFixtureId === afterFixture.id,
@@ -536,6 +583,7 @@ export class RollingStatsService {
     }
 
     const teamAccumulator = new TeamSeasonAccumulator();
+    teamAccumulator.setCoachStarts(coachStartsByTeam.get(teamId) ?? []);
     const leagueAccumulator = new LeagueVolatilityAccumulator();
 
     for (const fixture of fixturesUpToTarget) {
@@ -568,7 +616,10 @@ export class RollingStatsService {
     });
   }
 
-  private computeSeasonRows(fixtures: SeasonFixture[]): TeamStatsRow[] {
+  private computeSeasonRows(
+    fixtures: SeasonFixture[],
+    coachStartsByTeam: Map<string, Date[]>,
+  ): TeamStatsRow[] {
     const teamAccumulators = new Map<string, TeamSeasonAccumulator>();
     const leagueAccumulator = new LeagueVolatilityAccumulator();
     const rows: TeamStatsRow[] = [];
@@ -579,12 +630,14 @@ export class RollingStatsService {
       const homeAccumulator = this.getTeamAccumulator(
         teamAccumulators,
         fixture.homeTeamId,
+        coachStartsByTeam,
       );
       homeAccumulator.addFixture(fixture, fixture.homeTeamId);
 
       const awayAccumulator = this.getTeamAccumulator(
         teamAccumulators,
         fixture.awayTeamId,
+        coachStartsByTeam,
       );
       awayAccumulator.addFixture(fixture, fixture.awayTeamId);
 
@@ -629,13 +682,50 @@ export class RollingStatsService {
   private getTeamAccumulator(
     index: Map<string, TeamSeasonAccumulator>,
     teamId: string,
+    coachStartsByTeam: Map<string, Date[]>,
   ): TeamSeasonAccumulator {
     let accumulator = index.get(teamId);
     if (!accumulator) {
       accumulator = new TeamSeasonAccumulator();
+      accumulator.setCoachStarts(coachStartsByTeam.get(teamId) ?? []);
       index.set(teamId, accumulator);
     }
     return accumulator;
+  }
+
+  // Sorted ascending per team — TeamSeasonAccumulator walks this with a
+  // forward-only pointer as it processes that team's fixtures in
+  // chronological order, so ascending order here is load-bearing.
+  private async loadCoachStartsByTeam(
+    teamIds: readonly string[],
+  ): Promise<Map<string, Date[]>> {
+    if (teamIds.length === 0) return new Map();
+
+    const rows = await this.prisma.client.coachTenure.findMany({
+      where: { teamId: { in: [...teamIds] } },
+      select: { teamId: true, startDate: true },
+      orderBy: { startDate: 'asc' },
+    });
+
+    const byTeam = new Map<string, Date[]>();
+    for (const row of rows) {
+      const starts = byTeam.get(row.teamId);
+      if (starts) {
+        starts.push(row.startDate);
+      } else {
+        byTeam.set(row.teamId, [row.startDate]);
+      }
+    }
+    return byTeam;
+  }
+
+  private teamIdsFromFixtures(fixtures: SeasonFixture[]): string[] {
+    const ids = new Set<string>();
+    for (const fixture of fixtures) {
+      ids.add(fixture.homeTeamId);
+      ids.add(fixture.awayTeamId);
+    }
+    return [...ids];
   }
 
   private async loadExistingTeamStats(

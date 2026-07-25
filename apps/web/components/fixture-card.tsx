@@ -10,6 +10,8 @@ export function FixtureCard({
   fixture,
   homeLogo,
   awayLogo,
+  homeBadge,
+  awayBadge,
   competition,
   country,
   kickoff,
@@ -27,6 +29,9 @@ export function FixtureCard({
   fixture: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  /** Rendered right after that team's name (e.g. a "new coach" chip). */
+  homeBadge?: ReactNode;
+  awayBadge?: ReactNode;
   competition: string | null;
   country: string | null;
   kickoff: string;
@@ -57,6 +62,8 @@ export function FixtureCard({
           fixture={fixture}
           homeLogo={homeLogo}
           awayLogo={awayLogo}
+          homeBadge={homeBadge}
+          awayBadge={awayBadge}
           competition={competition}
           country={country}
           kickoff={kickoff}

@@ -1,4 +1,5 @@
 import { FixtureCard } from "@/components/fixture-card";
+import { NewCoachChip } from "@/components/new-coach-badge";
 import type { InvestmentFixtureGroup } from "./investment-constants";
 import { InvestmentPickRow } from "./investment-pick-row";
 
@@ -21,6 +22,12 @@ export function InvestmentFixtureCard({
       htScore={group.htScore}
       status={group.fixtureStatus}
       locale={locale}
+      homeBadge={
+        group.homeNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
+      awayBadge={
+        group.awayNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
     >
       {group.picks.map((pick, idx) => (
         <InvestmentPickRow
