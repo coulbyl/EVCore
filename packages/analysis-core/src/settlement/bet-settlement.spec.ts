@@ -222,4 +222,52 @@ describe("resolveEarlyBetStatus", () => {
       }),
     ).toBe(BetStatus.LOST);
   });
+
+  // Regression: TEAM_TOTAL_HOME/AWAY share the "UNDER_1_5" pick shape with
+  // OVER_UNDER, but the line is against a single team's goals — 1-1 (each
+  // team on exactly 1) must NOT early-settle an away UNDER_1_5 as LOST just
+  // because the combined total (2) crosses the threshold.
+  it("evaluates TEAM_TOTAL_AWAY against the away team's goals only, not the combined total", () => {
+    expect(
+      resolveEarlyBetStatus({
+        market: Market.TEAM_TOTAL_AWAY,
+        pick: "UNDER_1_5",
+        homeScore: 1,
+        awayScore: 1,
+        ...base,
+      }),
+    ).toBeNull();
+
+    expect(
+      resolveEarlyBetStatus({
+        market: Market.TEAM_TOTAL_AWAY,
+        pick: "UNDER_1_5",
+        homeScore: 0,
+        awayScore: 2,
+        ...base,
+      }),
+    ).toBe(BetStatus.LOST);
+  });
+
+  it("evaluates TEAM_TOTAL_HOME against the home team's goals only, not the combined total", () => {
+    expect(
+      resolveEarlyBetStatus({
+        market: Market.TEAM_TOTAL_HOME,
+        pick: "OVER_0_5",
+        homeScore: 0,
+        awayScore: 2,
+        ...base,
+      }),
+    ).toBeNull();
+
+    expect(
+      resolveEarlyBetStatus({
+        market: Market.TEAM_TOTAL_HOME,
+        pick: "OVER_0_5",
+        homeScore: 1,
+        awayScore: 0,
+        ...base,
+      }),
+    ).toBe(BetStatus.WON);
+  });
 });

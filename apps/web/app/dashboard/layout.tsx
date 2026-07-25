@@ -4,6 +4,7 @@ import { PwaInstallBanner } from "@/components/pwa-install-banner";
 import { BetSlipProvider } from "@/domains/bet-slip/context/bet-slip-provider";
 import { BetSlipDrawer } from "@/components/bet-slip-drawer";
 import { EvaFab } from "@/components/eva/eva-fab";
+import { PageSearchFab } from "@/components/page-search/page-search-fab";
 import { getCurrentSession } from "@/domains/auth/use-cases/get-current-session";
 import { CurrencyProvider } from "@/providers/currency-provider";
 import type { AppCurrency } from "@/helpers/number";
@@ -31,6 +32,7 @@ export default async function DashboardLayout({
           <AppShell headerNotice={<NetworkStatusBanner />}>{children}</AppShell>
           <BetSlipDrawer />
           <EvaFab />
+          <PageSearchFab />
           <PwaInstallBanner />
         </BetSlipProvider>
       </CurrentUserProvider>

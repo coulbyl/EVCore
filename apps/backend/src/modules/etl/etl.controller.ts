@@ -33,7 +33,8 @@ type GlobalSyncType =
   | 'elo'
   | 'coach'
   | 'odds-prematch'
-  | 'analysis';
+  | 'analysis'
+  | 'season-rollover';
 
 type SyncBody = OddsPrematchSyncBodyDto;
 type RollingStatsSyncBody = { mode?: 'refresh' | 'rebuild' };
@@ -56,6 +57,13 @@ const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
   'odds-prematch': (service, body) =>
     service.triggerOddsPrematchSync(body.date),
   analysis: (service, body) => service.triggerBettingEngineAnalysis(body.date),
+  // Re-derives each competition's current season and re-upserts the
+  // league-sync job schedulers with it (see ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC
+  // for why this exists) — manual escape hatch for when a season rollover
+  // needs to be picked up before the next 01:45 UTC cron tick.
+  'season-rollover': async (service) => {
+    await service.refreshLeagueSeasonSchedulers();
+  },
 };
 
 const LEAGUE_SYNC_HANDLERS: Record<LeagueSyncType, LeagueSyncHandler> = {
@@ -75,8 +83,10 @@ const GLOBAL_SYNC_TYPE_VALUES = [
   'stale-scheduled',
   'odds-csv',
   'elo',
+  'coach',
   'odds-prematch',
   'analysis',
+  'season-rollover',
 ] as const satisfies readonly GlobalSyncType[];
 
 const LEAGUE_SYNC_TYPE_VALUES = [
@@ -488,8 +498,8 @@ export class EtlController {
     summary: 'Trigger ETL sync by type',
     description:
       'Triggers one ETL flow by type. Supported global types: fixtures, stats, injuries, ' +
-      'settlement, stale-scheduled, odds-csv, elo, odds-prematch, analysis. For league-scoped runs, use ' +
-      '`/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
+      'settlement, stale-scheduled, odds-csv, elo, coach, odds-prematch, analysis, season-rollover. ' +
+      'For league-scoped runs, use `/etl/sync/:type/:competitionCode` with fixtures, stats, or injuries.',
   })
   @ApiParam({
     name: 'type',

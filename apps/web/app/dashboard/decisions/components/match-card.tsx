@@ -3,6 +3,7 @@ import { Separator, cn } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { FixtureCard } from "@/components/fixture-card";
+import { NewCoachChip } from "@/components/new-coach-badge";
 import { LegConnector } from "@/components/leg-connector";
 import type {
   ChannelDecisionMatchDto,
@@ -112,7 +113,14 @@ export function MatchCard({
       kickoff={group.kickoff}
       score={group.score}
       htScore={group.htScore}
+      status={group.fixtureStatus}
       locale={locale}
+      homeBadge={
+        group.homeNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
+      awayBadge={
+        group.awayNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
       className={cn(
         "transition-colors hover:border-border",
         avoid && "border-[color:var(--canal-avoid)]/40",

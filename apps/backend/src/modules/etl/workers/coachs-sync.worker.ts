@@ -86,6 +86,7 @@ export class CoachSyncWorker extends WorkerHost {
       for (const coach of parsed.data.response) {
         if (!coach.name) continue;
         for (const leg of coach.career) {
+          if (leg.team.id === null) continue;
           const tenureTeamId = teamIdByExternalId.get(leg.team.id);
           if (!tenureTeamId || !leg.start) continue;
 

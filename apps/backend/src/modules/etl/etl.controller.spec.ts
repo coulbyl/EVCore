@@ -18,6 +18,9 @@ describe('EtlController', () => {
       triggerStaleScheduledSync: vi.fn().mockResolvedValue(undefined),
       triggerOddsCsvImport: vi.fn().mockResolvedValue(undefined),
       triggerEloSync: vi.fn().mockResolvedValue(undefined),
+      refreshLeagueSeasonSchedulers: vi
+        .fn()
+        .mockResolvedValue({ competitionsRefreshed: 2 }),
       triggerOddsPrematchSync: vi.fn().mockResolvedValue(undefined),
       triggerBettingEngineAnalysis: vi.fn().mockResolvedValue(undefined),
       triggerRollingStatsSeason: vi.fn().mockResolvedValue(undefined),
@@ -112,6 +115,16 @@ describe('EtlController', () => {
       status: 'ok',
     });
     expect(service.triggerEloSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers season rollover sync and returns ok', async () => {
+    const service = makeService();
+    const controller = new EtlController(service);
+
+    await expect(controller.triggerSync('season-rollover')).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(service.refreshLeagueSeasonSchedulers).toHaveBeenCalledTimes(1);
   });
 
   it('triggers league-scoped sync and returns competitionCode', async () => {

@@ -26,6 +26,13 @@ export type ChannelDecisionStatus =
 
 export type ModelRunPhase = "ADVANCE" | "PRE_KICKOFF" | "LIVE";
 
+export type FixtureStatus =
+  | "SCHEDULED"
+  | "IN_PROGRESS"
+  | "FINISHED"
+  | "POSTPONED"
+  | "CANCELLED";
+
 export type SelectionResult = "PENDING" | "WON" | "LOST" | "VOID";
 
 export type AvoidOffender = {
@@ -62,6 +69,7 @@ export type ChannelSelectionDto = {
 export type ChannelDecisionDto = {
   id: string;
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   modelRunId: string;
   competition: string | null;
   competitionName: string | null;
@@ -70,6 +78,10 @@ export type ChannelDecisionDto = {
   awayTeam: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  // Informational only — never affects scoring/EV. True when that team has
+  // played fewer than 5 finished matches under its current coach.
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   kickoff: string;
   scheduledAt: string;
   score: string | null;
@@ -101,6 +113,7 @@ export type ChannelDecisionMatchDecisionDto = Pick<
 export type ChannelDecisionMatchDto = Pick<
   ChannelDecisionDto,
   | "fixtureId"
+  | "fixtureStatus"
   | "competition"
   | "competitionName"
   | "country"
@@ -108,6 +121,8 @@ export type ChannelDecisionMatchDto = Pick<
   | "awayTeam"
   | "homeLogo"
   | "awayLogo"
+  | "homeNewCoach"
+  | "awayNewCoach"
   | "kickoff"
   | "scheduledAt"
   | "score"

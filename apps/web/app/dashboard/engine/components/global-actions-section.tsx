@@ -5,6 +5,7 @@ import { Badge, Button } from "@evcore/ui";
 import {
   AlertCircle,
   BrainCircuit,
+  CalendarClock,
   CheckCircle2,
   Database,
   RefreshCw,
@@ -89,6 +90,14 @@ const ACTIONS: ActionDef[] = [
     label: "Odds CSV",
     icon: <Zap size={14} />,
     description: "Import cotes football-data.co.uk",
+  },
+  {
+    kind: "global",
+    type: "season-rollover",
+    label: "Rollover saison",
+    icon: <CalendarClock size={14} />,
+    description:
+      "Recalcule la saison courante par ligue et remet à jour les schedulers fixtures/stats/injuries (auto tous les jours à 01:45 UTC — bouton pour forcer avant)",
   },
 ];
 

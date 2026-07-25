@@ -103,6 +103,64 @@ describe('CoachSyncWorker', () => {
     );
   });
 
+  it('skips a career leg with a null team id without rejecting the whole payload', async () => {
+    const upsert = vi.fn().mockResolvedValue({});
+    const prisma = {
+      client: {
+        team: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([{ id: 'real-madrid-id', externalId: 541 }]),
+        },
+        coachTenure: { upsert },
+      },
+    } as unknown as PrismaService;
+
+    const apiFootball = makeApiFootballMock({
+      541: {
+        get: 'coachs',
+        parameters: { team: '541' },
+        results: 1,
+        response: [
+          {
+            id: 1584,
+            name: 'Z. Zidane',
+            career: [
+              {
+                team: { id: 541, name: 'Real Madrid' },
+                start: '2019-03-01',
+                end: '2021-05-01',
+              },
+              // API-FOOTBALL doesn't always resolve the club for old legs
+              // (team externalId=88, career index 2, hit live 2026-07-25) —
+              // must be skipped, not fail Zod validation for the whole team.
+              {
+                team: { id: null, name: 'Unknown Club' },
+                start: '2010-01-01',
+                end: '2011-01-01',
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const worker = new CoachSyncWorker(
+      prisma,
+      apiFootball,
+      makeNotificationMock(),
+    );
+
+    await worker.process({ data: {} } as never);
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ coachName: 'Z. Zidane' }),
+      }),
+    );
+  });
+
   it('stores a null endDate for a coach still in charge', async () => {
     const upsert = vi.fn().mockResolvedValue({});
     const prisma = {

@@ -39,6 +39,7 @@ function item(
   return {
     id: 'decision-1',
     fixtureId: 'fx-1',
+    fixtureStatus: 'SCHEDULED',
     modelRunId: 'run-1',
     competition: 'PL',
     competitionName: 'Premier League',
@@ -47,6 +48,8 @@ function item(
     awayTeam: 'Away FC',
     homeLogo: null,
     awayLogo: null,
+    homeNewCoach: false,
+    awayNewCoach: false,
     kickoff: '18:00',
     scheduledAt: '2026-07-06T18:00:00.000Z',
     score: null,

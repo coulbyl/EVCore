@@ -65,6 +65,12 @@
   --canal-correct-score: #7c3aed;
   --canal-correct-score-soft: rgba(124, 58, 237, 0.11);
 
+  /* Not a channel — informational-only team status (e.g. "new coach" on a
+     match card). Fuchsia so it never overlaps a canal hue or the accent
+     color already used by the IN_PROGRESS fixture-status badge. */
+  --new-coach: #c026d3;
+  --new-coach-soft: rgba(192, 38, 211, 0.11);
+
   /* ── Bento layout ── */
   --gap-bento: 12px;
   --gap-bento-compact: 8px;
@@ -114,7 +120,7 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --input: rgba(226, 232, 240, 0.1);
-  --ring: rgba(20, 184, 166, 0.40);
+  --ring: rgba(20, 184, 166, 0.4);
 
   /* ── Canal identities ── */
   --canal-value: #f59e0b;
@@ -141,6 +147,9 @@
   --canal-avoid-soft: rgba(248, 113, 113, 0.13);
   --canal-correct-score: #a78bfa;
   --canal-correct-score-soft: rgba(167, 139, 250, 0.13);
+
+  --new-coach: #e879f9;
+  --new-coach-soft: rgba(232, 121, 249, 0.13);
 
   /* ── Bento layout ── */
   --shadow-bento-rest: 0 1px 3px rgba(0, 0, 0, 0.16);
@@ -203,6 +212,8 @@
   --color-canal-avoid-soft: var(--canal-avoid-soft);
   --color-canal-correct-score: var(--canal-correct-score);
   --color-canal-correct-score-soft: var(--canal-correct-score-soft);
+  --color-new-coach: var(--new-coach);
+  --color-new-coach-soft: var(--new-coach-soft);
 
   /* ── Bento layout ── */
   --spacing-bento: var(--gap-bento);
@@ -237,13 +248,22 @@ body {
   color: var(--foreground);
   background:
     radial-gradient(circle at top left, #f2f6fb, #e9eff7 38%, #dce4ee 100%),
-    linear-gradient(135deg, rgba(15, 118, 110, 0.035), rgba(223, 231, 241, 0.72));
+    linear-gradient(
+      135deg,
+      rgba(15, 118, 110, 0.035),
+      rgba(223, 231, 241, 0.72)
+    );
   overflow-y: auto;
 }
 
 .dark body {
   background:
-    radial-gradient(circle at top left, rgba(15, 25, 40, 0.98), rgba(11, 18, 30, 0.96) 44%, rgba(8, 14, 24, 0.98) 100%),
+    radial-gradient(
+      circle at top left,
+      rgba(15, 25, 40, 0.98),
+      rgba(11, 18, 30, 0.96) 44%,
+      rgba(8, 14, 24, 0.98) 100%
+    ),
     linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(13, 21, 32, 0.2));
 }
 
@@ -320,15 +340,27 @@ pre {
 
 .ev-grid-glow {
   background-image:
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.05), transparent 30%),
-    radial-gradient(circle at 18% 8%, rgba(15, 118, 110, 0.03), transparent 34%),
+    radial-gradient(
+      circle at top right,
+      rgba(15, 118, 110, 0.05),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 18% 8%,
+      rgba(15, 118, 110, 0.03),
+      transparent 34%
+    ),
     linear-gradient(180deg, rgba(229, 235, 242, 0.4), rgba(229, 235, 242, 0.15));
   background-size: auto;
 }
 
 .dark .ev-grid-glow {
   background-image:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 30%),
+    radial-gradient(
+      circle at top right,
+      rgba(20, 184, 166, 0.08),
+      transparent 30%
+    ),
     radial-gradient(circle at 18% 8%, rgba(36, 52, 77, 0.22), transparent 34%),
     linear-gradient(180deg, rgba(24, 36, 55, 0.36), rgba(18, 29, 46, 0.2));
 }

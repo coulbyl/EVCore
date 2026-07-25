@@ -10,12 +10,15 @@ export function formatEv(ev: number | null): string | null {
 
 export type InvestmentFixtureGroup = {
   fixtureId: string;
+  fixtureStatus: InvestmentPick["fixtureStatus"];
   fixture: string;
   competition: string | null;
   country: string | null;
   kickoff: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   score: string | null;
   htScore: string | null;
   picks: InvestmentPick[];
@@ -37,12 +40,15 @@ export function groupPicksByFixture(
     if (!group) {
       group = {
         fixtureId: pick.fixtureId,
+        fixtureStatus: pick.fixtureStatus,
         fixture: pick.fixture,
         competition: pick.competition,
         country: pick.country,
         kickoff: pick.kickoff,
         homeLogo: pick.homeLogo,
         awayLogo: pick.awayLogo,
+        homeNewCoach: pick.homeNewCoach,
+        awayNewCoach: pick.awayNewCoach,
         score: pick.score,
         htScore: pick.htScore,
         picks: [],

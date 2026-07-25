@@ -303,7 +303,7 @@ Plan d'implémentation v2.3a :
       façon non prévue — pas fait dans cette passe.
 - [x] v2.3a (continuité entraîneur) — code complet, 2026-07-23. Clé
       API-Football fournie par l'utilisateur et vérifiée en direct (`GET
-    /status`, plan Ultra actif jusqu'au 2026-08-05, mémoire projet
+/status`, plan Ultra actif jusqu'au 2026-08-05, mémoire projet
       corrigée). `GET /coachs?team={id}` confirmé sur Real Madrid (3
       coachs, 7 manches de carrière). Livré : - modèle Prisma `CoachTenure` (`teamId`, `coachName`, `startDate`,
       `endDate?`, unique `[teamId, coachName, startDate]`) — migration

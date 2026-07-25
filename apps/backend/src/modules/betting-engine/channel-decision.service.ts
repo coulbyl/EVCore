@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { BetStatus, Market, ModelRunPhase } from '@evcore/db';
+import type {
+  BetStatus,
+  FixtureStatus,
+  Market,
+  ModelRunPhase,
+} from '@evcore/db';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import {
   ChannelDecisionRepository,
@@ -41,6 +46,7 @@ export type ChannelSelectionItem = {
 export type ChannelDecisionItem = {
   id: string;
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   modelRunId: string;
   competition: string | null;
   competitionName: string | null;
@@ -49,6 +55,11 @@ export type ChannelDecisionItem = {
   awayTeam: string;
   homeLogo: string | null;
   awayLogo: string | null;
+  // Informational only (coach-continuity.constants.ts) — true when that team
+  // has played fewer than NEW_COACH_WINDOW_MATCHES finished matches under
+  // its current coach as of this fixture. Never feeds scoring/EV.
+  homeNewCoach: boolean;
+  awayNewCoach: boolean;
   kickoff: string;
   scheduledAt: string;
   score: string | null;
@@ -80,6 +91,7 @@ export type ChannelDecisionMatchDecision = Pick<
 export type ChannelDecisionMatchItem = Pick<
   ChannelDecisionItem,
   | 'fixtureId'
+  | 'fixtureStatus'
   | 'competition'
   | 'competitionName'
   | 'country'
@@ -87,6 +99,8 @@ export type ChannelDecisionMatchItem = Pick<
   | 'awayTeam'
   | 'homeLogo'
   | 'awayLogo'
+  | 'homeNewCoach'
+  | 'awayNewCoach'
   | 'kickoff'
   | 'scheduledAt'
   | 'score'
@@ -204,14 +218,18 @@ export class ChannelDecisionService {
   ): Promise<ChannelDecisionMatchItem[]> {
     const rows = await this.findRows(query);
     const resultMap = buildResultMap(rows);
+    const newCoachTeams = await this.repository.findNewCoachTeams(
+      teamAsOfFromRows(rows),
+    );
     const groups = new Map<string, ChannelDecisionMatchItem>();
 
     for (const row of rows) {
-      const item = enrichAvoidItem(this.toItem(row), resultMap);
+      const item = enrichAvoidItem(this.toItem(row, newCoachTeams), resultMap);
       let group = groups.get(item.fixtureId);
       if (group === undefined) {
         group = {
           fixtureId: item.fixtureId,
+          fixtureStatus: item.fixtureStatus,
           competition: item.competition,
           competitionName: item.competitionName,
           country: item.country,
@@ -219,6 +237,8 @@ export class ChannelDecisionService {
           awayTeam: item.awayTeam,
           homeLogo: item.homeLogo,
           awayLogo: item.awayLogo,
+          homeNewCoach: item.homeNewCoach,
+          awayNewCoach: item.awayNewCoach,
           kickoff: item.kickoff,
           scheduledAt: item.scheduledAt,
           score: item.score,
@@ -246,10 +266,13 @@ export class ChannelDecisionService {
       status: query.status ?? CHANNEL_DECISION_STATUS.SELECTED,
     });
     const resultMap = buildResultMap(rows);
+    const newCoachTeams = await this.repository.findNewCoachTeams(
+      teamAsOfFromRows(rows),
+    );
     const groups = new Map<StrategyChannel, ChannelDecisionItem[]>();
 
     for (const row of rows) {
-      const item = enrichAvoidItem(this.toItem(row), resultMap);
+      const item = enrichAvoidItem(this.toItem(row, newCoachTeams), resultMap);
       const group = groups.get(item.channel) ?? [];
       group.push(item);
       groups.set(item.channel, group);
@@ -275,10 +298,14 @@ export class ChannelDecisionService {
     });
   }
 
-  private toItem(row: ChannelDecisionReadRow): ChannelDecisionItem {
+  private toItem(
+    row: ChannelDecisionReadRow,
+    newCoachTeams: ReadonlySet<string>,
+  ): ChannelDecisionItem {
     return {
       id: row.id,
       fixtureId: row.fixtureId,
+      fixtureStatus: row.fixtureStatus,
       modelRunId: row.modelRunId,
       competition: row.competitionCode,
       competitionName: row.competitionName,
@@ -287,6 +314,8 @@ export class ChannelDecisionService {
       awayTeam: row.awayTeam,
       homeLogo: row.homeLogo,
       awayLogo: row.awayLogo,
+      homeNewCoach: newCoachTeams.has(row.homeTeamId),
+      awayNewCoach: newCoachTeams.has(row.awayTeamId),
       kickoff: formatTimeUtc(row.scheduledAt),
       scheduledAt: row.scheduledAt.toISOString(),
       score: formatScoreLine(row.homeScore, row.awayScore),
@@ -340,6 +369,18 @@ function formatScoreLine(
   away: number | null,
 ): string | null {
   return home === null || away === null ? null : `${home}-${away}`;
+}
+
+// One entry per team appearing in `rows`, keyed by teamId — a team plays at
+// most once on any given date (the scope every caller queries at), so no
+// per-fixture disambiguation is needed here.
+function teamAsOfFromRows(rows: ChannelDecisionReadRow[]): Map<string, Date> {
+  const teamAsOf = new Map<string, Date>();
+  for (const row of rows) {
+    teamAsOf.set(row.homeTeamId, row.scheduledAt);
+    teamAsOf.set(row.awayTeamId, row.scheduledAt);
+  }
+  return teamAsOf;
 }
 
 function toSelectionItem(

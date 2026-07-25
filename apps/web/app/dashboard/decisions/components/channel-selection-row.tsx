@@ -16,6 +16,7 @@ import {
   reasonLabel,
 } from "./channel-constants";
 import { FixtureCard } from "@/components/fixture-card";
+import { NewCoachChip } from "@/components/new-coach-badge";
 import { ResultBadge } from "@/components/result-badge";
 import { ChannelRow, type SlipContext } from "./channel-row";
 
@@ -75,7 +76,14 @@ export function ChannelSelectionRow({
       kickoff={decision.kickoff}
       score={decision.score}
       htScore={decision.htScore}
+      status={decision.fixtureStatus}
       locale={locale}
+      homeBadge={
+        decision.homeNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
+      awayBadge={
+        decision.awayNewCoach ? <NewCoachChip locale={locale} /> : undefined
+      }
       className={cn(
         "transition-colors hover:border-border",
         isAvoid && "border-[color:var(--canal-avoid)]/40",
