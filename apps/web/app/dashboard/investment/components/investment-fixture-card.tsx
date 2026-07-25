@@ -19,6 +19,7 @@ export function InvestmentFixtureCard({
       kickoff={group.kickoff}
       score={group.score}
       htScore={group.htScore}
+      status={group.fixtureStatus}
       locale={locale}
     >
       {group.picks.map((pick, idx) => (

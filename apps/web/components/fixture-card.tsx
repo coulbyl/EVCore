@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@evcore/ui";
 import { FixtureCardHeader } from "@/components/fixture-card-header";
+import { FixtureStatusBadge } from "@/components/fixture-status-badge";
 
 /** Shared match card shell: bordered/rounded panel with a fixture header
  * band on top and arbitrary content below. Used by Investment and decisions
@@ -14,6 +15,7 @@ export function FixtureCard({
   kickoff,
   score,
   htScore,
+  status,
   locale,
   headerExtra,
   beforeHeader,
@@ -30,6 +32,9 @@ export function FixtureCard({
   kickoff: string;
   score: string | null;
   htScore: string | null;
+  /** Fixture status (SCHEDULED, IN_PROGRESS, POSTPONED, ...) — surfaced as a
+   * badge only for states a kickoff time + score can't already convey. */
+  status?: string;
   locale: string;
   headerExtra?: ReactNode;
   beforeHeader?: ReactNode;
@@ -58,7 +63,12 @@ export function FixtureCard({
           score={score}
           htScore={htScore}
           locale={locale}
-          metaExtra={metaExtra}
+          metaExtra={
+            <>
+              {status && <FixtureStatusBadge status={status} locale={locale} />}
+              {metaExtra}
+            </>
+          }
         />
         {headerExtra}
       </div>

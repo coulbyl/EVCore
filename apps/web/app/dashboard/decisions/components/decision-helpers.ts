@@ -101,34 +101,3 @@ export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
 export function pickCount(group: ChannelDecisionMatchDto): number {
   return selectedPicks(group).length;
 }
-
-// Sort matches by actionability: avoided last, then consensus first, then more
-// picks, then best EV, then kickoff — so the decisions that matter rise up.
-export function compareMatchesByConviction(
-  a: ChannelDecisionMatchDto,
-  b: ChannelDecisionMatchDto,
-): number {
-  const aAvoid = avoidFlag(a) !== null;
-  const bAvoid = avoidFlag(b) !== null;
-  if (aAvoid !== bAvoid) return aAvoid ? 1 : -1;
-
-  if (hasConsensus(a) !== hasConsensus(b)) return hasConsensus(a) ? -1 : 1;
-
-  const countDiff = pickCount(b) - pickCount(a);
-  if (countDiff !== 0) return countDiff;
-
-  const aEv = topEv(a);
-  const bEv = topEv(b);
-  if (aEv !== bEv) return bEv - aEv;
-
-  return a.kickoff.localeCompare(b.kickoff);
-}
-
-function topEv(group: ChannelDecisionMatchDto): number {
-  let max = 0;
-  for (const d of selectedPicks(group)) {
-    const ev = bestEv(d);
-    if (ev !== null && ev > max) max = ev;
-  }
-  return max;
-}

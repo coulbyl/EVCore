@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, Market, ModelRunPhase, Prisma } from '@evcore/db';
+import {
+  BetStatus,
+  FixtureStatus,
+  Market,
+  ModelRunPhase,
+  Prisma,
+} from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
 import type {
   ChannelDecisionStatus,
@@ -58,6 +64,7 @@ export type ChannelDecisionReadRow = {
   // (features.calibration_alert) — the fixture is dropped from staking.
   calibrationAlert: boolean;
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   scheduledAt: Date;
   homeTeam: string;
   awayTeam: string;
@@ -242,6 +249,7 @@ export class ChannelDecisionRepository {
             fixture: {
               select: {
                 id: true,
+                status: true,
                 scheduledAt: true,
                 homeScore: true,
                 awayScore: true,
@@ -292,6 +300,7 @@ export class ChannelDecisionRepository {
       reasonDetails: row.reasonDetails,
       calibrationAlert: hasCalibrationAlert(row.modelRun.features),
       fixtureId: row.modelRun.fixture.id,
+      fixtureStatus: row.modelRun.fixture.status,
       scheduledAt: row.modelRun.fixture.scheduledAt,
       homeTeam: row.modelRun.fixture.homeTeam.name,
       awayTeam: row.modelRun.fixture.awayTeam.name,

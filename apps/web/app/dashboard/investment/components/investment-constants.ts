@@ -10,6 +10,7 @@ export function formatEv(ev: number | null): string | null {
 
 export type InvestmentFixtureGroup = {
   fixtureId: string;
+  fixtureStatus: InvestmentPick["fixtureStatus"];
   fixture: string;
   competition: string | null;
   country: string | null;
@@ -37,6 +38,7 @@ export function groupPicksByFixture(
     if (!group) {
       group = {
         fixtureId: pick.fixtureId,
+        fixtureStatus: pick.fixtureStatus,
         fixture: pick.fixture,
         competition: pick.competition,
         country: pick.country,

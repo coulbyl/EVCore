@@ -26,6 +26,13 @@ export type ChannelDecisionStatus =
 
 export type ModelRunPhase = "ADVANCE" | "PRE_KICKOFF" | "LIVE";
 
+export type FixtureStatus =
+  | "SCHEDULED"
+  | "IN_PROGRESS"
+  | "FINISHED"
+  | "POSTPONED"
+  | "CANCELLED";
+
 export type SelectionResult = "PENDING" | "WON" | "LOST" | "VOID";
 
 export type AvoidOffender = {
@@ -62,6 +69,7 @@ export type ChannelSelectionDto = {
 export type ChannelDecisionDto = {
   id: string;
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   modelRunId: string;
   competition: string | null;
   competitionName: string | null;
@@ -101,6 +109,7 @@ export type ChannelDecisionMatchDecisionDto = Pick<
 export type ChannelDecisionMatchDto = Pick<
   ChannelDecisionDto,
   | "fixtureId"
+  | "fixtureStatus"
   | "competition"
   | "competitionName"
   | "country"

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { BetStatus, ModelRunPhase, StrategyChannel } from '@evcore/db';
+import {
+  BetStatus,
+  FixtureStatus,
+  ModelRunPhase,
+  StrategyChannel,
+} from '@evcore/db';
 import {
   latestPerFixtureChannel,
   type ChannelDecisionReadRow,
@@ -19,6 +24,7 @@ function row(
     reasonCode: null,
     reasonDetails: null,
     fixtureId: 'fx-1',
+    fixtureStatus: FixtureStatus.SCHEDULED,
     scheduledAt: new Date('2026-07-02T23:00:00Z'),
     homeTeam: 'Portugal',
     awayTeam: 'Croatia',

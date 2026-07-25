@@ -162,14 +162,23 @@ export function resolveEarlyBetStatus({
   if (market === Market.ONE_X_TWO || market === Market.DOUBLE_CHANCE)
     return null;
 
-  const totalGoals = homeScore + awayScore;
-
   if (market === Market.BTTS) {
     const bothScored = homeScore >= 1 && awayScore >= 1;
     if (pick === "YES") return bothScored ? BetStatus.WON : null;
     if (pick === "NO") return bothScored ? BetStatus.LOST : null;
     return null;
   }
+
+  // TEAM_TOTAL_HOME/AWAY share the "OVER_x_5"/"UNDER_x_5" pick shape with the
+  // combined-goals OVER_UNDER market below, but the line is against a single
+  // team's goals — using homeScore+awayScore here would settle e.g. an away
+  // UNDER_1_5 as LOST off the home team's goals too.
+  const relevantGoals =
+    market === Market.TEAM_TOTAL_HOME
+      ? homeScore
+      : market === Market.TEAM_TOTAL_AWAY
+        ? awayScore
+        : homeScore + awayScore;
 
   // OVER picks: irrevocably WON once goal threshold is crossed
   const OVER_WON_THRESHOLD: Record<string, number> = {
@@ -190,12 +199,12 @@ export function resolveEarlyBetStatus({
 
   const overThreshold = OVER_WON_THRESHOLD[pick];
   if (overThreshold !== undefined) {
-    return totalGoals >= overThreshold ? BetStatus.WON : null;
+    return relevantGoals >= overThreshold ? BetStatus.WON : null;
   }
 
   const underThreshold = UNDER_LOST_THRESHOLD[pick];
   if (underThreshold !== undefined) {
-    return totalGoals >= underThreshold ? BetStatus.LOST : null;
+    return relevantGoals >= underThreshold ? BetStatus.LOST : null;
   }
 
   return null;

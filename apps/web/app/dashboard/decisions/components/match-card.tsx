@@ -112,6 +112,7 @@ export function MatchCard({
       kickoff={group.kickoff}
       score={group.score}
       htScore={group.htScore}
+      status={group.fixtureStatus}
       locale={locale}
       className={cn(
         "transition-colors hover:border-border",

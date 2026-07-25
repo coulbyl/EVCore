@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Switch } from "@evcore/ui";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
-import { compareMatchesByConviction, pickCount } from "./decision-helpers";
+import { pickCount } from "./decision-helpers";
 import { MatchCard } from "./match-card";
 
 // Filter state for the "Par match" lens. Lifted into a hook so the filter
@@ -14,10 +14,10 @@ import { MatchCard } from "./match-card";
 export function useMatchLens(matches: ChannelDecisionMatchDto[]) {
   const [onlyPicks, setOnlyPicks] = useState(false);
 
-  // Conviction sort is the default; the "only picks" toggle narrows the day.
+  // Chronological order (scheduledAt desc) comes straight from the API — no
+  // client-side re-sort. The "only picks" toggle narrows the day.
   const visible = useMemo(() => {
-    const sorted = [...matches].sort(compareMatchesByConviction);
-    return sorted.filter((m) => !(onlyPicks && pickCount(m) === 0));
+    return matches.filter((m) => !(onlyPicks && pickCount(m) === 0));
   }, [matches, onlyPicks]);
 
   return { onlyPicks, setOnlyPicks, visible };

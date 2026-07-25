@@ -13,8 +13,16 @@ export type InvestmentMode =
   | "goals"
   | "draw";
 
+export type FixtureStatus =
+  | "SCHEDULED"
+  | "IN_PROGRESS"
+  | "FINISHED"
+  | "POSTPONED"
+  | "CANCELLED";
+
 export type InvestmentPick = {
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   fixture: string;
   competition: string | null;
   country: string | null;

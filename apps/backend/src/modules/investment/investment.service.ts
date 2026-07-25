@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { BetStatus, Market } from '@evcore/db';
+import type { BetStatus, FixtureStatus, Market } from '@evcore/db';
 import {
   ChannelDecisionService,
   type ChannelDecisionItem,
@@ -33,6 +33,7 @@ import { InvestmentCoherenceRepository } from './investment-coherence.repository
 
 export type InvestmentPick = {
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   fixture: string;
   // Competition display name (e.g. "Premier League"), not the internal code —
   // the code (SWE1, D2, …) means nothing to a user.
@@ -157,6 +158,7 @@ function toInvestmentPick(
   const probability = clamp01(modelProbability - meanError);
   return {
     fixtureId: item.fixtureId,
+    fixtureStatus: item.fixtureStatus,
     fixture: `${item.homeTeam} vs ${item.awayTeam}`,
     competition: item.competitionName,
     country: item.country,
@@ -332,6 +334,12 @@ export class InvestmentService {
     const ranking = MODE_RANKING[mode];
     picks.sort(ranking.sort === 'edge' ? compareByEdge : compareByProbability);
     const topN = query.topN ?? ranking.topN ?? Infinity;
-    return picks.slice(0, Math.min(topN, INVESTMENT_LIMITS.maxPicks));
+    const selected = picks.slice(0, Math.min(topN, INVESTMENT_LIMITS.maxPicks));
+
+    // Selection above stays ranked by edge/probability (doc: topN ranking) —
+    // only the display order is chronological, earliest kickoff first.
+    return selected.sort(
+      (a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt),
+    );
   }
 }

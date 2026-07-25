@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { BetStatus, Market, ModelRunPhase } from '@evcore/db';
+import type {
+  BetStatus,
+  FixtureStatus,
+  Market,
+  ModelRunPhase,
+} from '@evcore/db';
 import { startOfUtcDay, endOfUtcDay, formatTimeUtc } from '@utils/date.utils';
 import {
   ChannelDecisionRepository,
@@ -41,6 +46,7 @@ export type ChannelSelectionItem = {
 export type ChannelDecisionItem = {
   id: string;
   fixtureId: string;
+  fixtureStatus: FixtureStatus;
   modelRunId: string;
   competition: string | null;
   competitionName: string | null;
@@ -80,6 +86,7 @@ export type ChannelDecisionMatchDecision = Pick<
 export type ChannelDecisionMatchItem = Pick<
   ChannelDecisionItem,
   | 'fixtureId'
+  | 'fixtureStatus'
   | 'competition'
   | 'competitionName'
   | 'country'
@@ -212,6 +219,7 @@ export class ChannelDecisionService {
       if (group === undefined) {
         group = {
           fixtureId: item.fixtureId,
+          fixtureStatus: item.fixtureStatus,
           competition: item.competition,
           competitionName: item.competitionName,
           country: item.country,
@@ -279,6 +287,7 @@ export class ChannelDecisionService {
     return {
       id: row.id,
       fixtureId: row.fixtureId,
+      fixtureStatus: row.fixtureStatus,
       modelRunId: row.modelRunId,
       competition: row.competitionCode,
       competitionName: row.competitionName,

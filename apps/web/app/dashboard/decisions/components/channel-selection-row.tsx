@@ -75,6 +75,7 @@ export function ChannelSelectionRow({
       kickoff={decision.kickoff}
       score={decision.score}
       htScore={decision.htScore}
+      status={decision.fixtureStatus}
       locale={locale}
       className={cn(
         "transition-colors hover:border-border",

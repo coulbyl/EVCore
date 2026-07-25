@@ -39,6 +39,7 @@ function item(
   return {
     id: 'decision-1',
     fixtureId: 'fx-1',
+    fixtureStatus: 'SCHEDULED',
     modelRunId: 'run-1',
     competition: 'PL',
     competitionName: 'Premier League',
