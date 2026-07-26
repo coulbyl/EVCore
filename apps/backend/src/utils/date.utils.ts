@@ -13,12 +13,24 @@ export function parseUnderstatDatetimeUtc(value: string): Date {
   return parseIsoDate(value.replace(' ', 'T') + 'Z');
 }
 
-export function seasonFallbackStartDate(year: number): Date {
-  return parseIsoDate(`${year}-08-01T00:00:00Z`);
+// Approximate season boundaries used when API-FOOTBALL doesn't return exact
+// season dates. Mirrors the crosses-calendar-year split in seasonNameFromYear:
+// seasonStartMonth is 0-indexed (e.g. 7 = August, 2 = March).
+export function seasonFallbackStartDate(
+  year: number,
+  seasonStartMonth: number,
+): Date {
+  const month = String(seasonStartMonth + 1).padStart(2, '0');
+  return parseIsoDate(`${year}-${month}-01T00:00:00Z`);
 }
 
-export function seasonFallbackEndDate(year: number): Date {
-  return parseIsoDate(`${year + 1}-05-31T00:00:00Z`);
+export function seasonFallbackEndDate(
+  year: number,
+  seasonStartMonth: number,
+): Date {
+  return seasonStartMonth >= 6
+    ? parseIsoDate(`${year + 1}-05-31T00:00:00Z`)
+    : parseIsoDate(`${year}-12-31T00:00:00Z`);
 }
 
 export function oneDayWindow(date: Date): { from: Date; to: Date } {

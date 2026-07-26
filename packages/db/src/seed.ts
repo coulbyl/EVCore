@@ -128,7 +128,7 @@ const COMPETITIONS = [
     country: "Japan",
     isActive: true,
     csvDivisionCode: "JPN",
-    seasonStartMonth: 1,
+    seasonStartMonth: 1, // saison calendaire fév→déc (vérifié API-Football)
   },
   {
     leagueId: 262,
@@ -137,7 +137,7 @@ const COMPETITIONS = [
     country: "Mexico",
     isActive: false,
     csvDivisionCode: "MEX",
-    seasonStartMonth: 6,
+    seasonStartMonth: 6, // saison juillet→mai (vérifié API-Football)
   },
   {
     leagueId: 2,
@@ -160,7 +160,7 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: true,
     csvDivisionCode: null,
-    seasonStartMonth: 5,
+    seasonStartMonth: 5, // même logique que UCL — qualifs dès juin
   },
   {
     leagueId: 848,
@@ -170,7 +170,7 @@ const COMPETITIONS = [
     isActive: true,
     includeInBacktest: true,
     csvDivisionCode: null,
-    seasonStartMonth: 5,
+    seasonStartMonth: 5, // même logique que UCL — qualifs dès juin
   },
   // International competitions — apiSeasonOverride bypasses the standard
   // seasonStartMonth logic (API Football uses non-calendar season numbering
@@ -219,7 +219,7 @@ const COMPETITIONS = [
     country: "Sweden",
     isActive: false,
     csvDivisionCode: "SWE",
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // saison calendaire mars→nov (vérifié API-Football)
   },
   {
     leagueId: 114,
@@ -228,7 +228,7 @@ const COMPETITIONS = [
     country: "Sweden",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // même calendrier que SWE1
   },
   {
     leagueId: 253,
@@ -237,7 +237,9 @@ const COMPETITIONS = [
     country: "USA",
     isActive: false,
     csvDivisionCode: "USA",
-    seasonStartMonth: 2,
+    // saison calendaire fév→déc (vérifié API-Football sur 2012-2026 : coup
+    // d'envoi 21 fév-4 mars chaque année, sauf 2021 décalé mi-avril post-COVID)
+    seasonStartMonth: 1,
   },
   {
     leagueId: 103,
@@ -246,7 +248,7 @@ const COMPETITIONS = [
     country: "Norway",
     isActive: false,
     csvDivisionCode: "NOR",
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // saison calendaire mars→déc (vérifié API-Football, ex: 2026 14/03→06/12)
   },
   // --- New leagues (Groupe A round 2, 2026-07 — backtest possible) ---
   {
@@ -306,7 +308,11 @@ const COMPETITIONS = [
     country: "Brazil",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 3, // même calendrier que BRA1
+    // Ne suit plus le même calendrier que BRA1 depuis 2026 : la Série B est
+    // restée en mars (2026-03-21) pendant que la Série A a été avancée à
+    // janvier pour le Mondial (vérifié API-Football) — seasonStartMonth
+    // distinct, mars, cohérent avec l'historique (avril) et 2026.
+    seasonStartMonth: 2,
     includeInBacktest: true, // odds historiques via The Odds API (soccer_brazil_serie_b)
   },
   // Odds API key inactive au 2026-07-05 (trêve estivale) — clé existante,
@@ -438,7 +444,7 @@ const COMPETITIONS = [
     country: "Norway",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // même calendrier que NOR1
   },
   // --- New leagues (Groupe B round 2, 2026-07 — vues sur le book, pas de
   // clé The Odds API disponible → observation seule, pas de backtest ROI) ---
@@ -499,7 +505,7 @@ const COMPETITIONS = [
     country: "USA",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 2, // même calendrier que MLS
+    seasonStartMonth: 1, // même calendrier que MLS
     includeInBacktest: false, // pas de source odds historiques
   },
   // --- Leagues Asie / Amériques / Nordiques ---
@@ -510,7 +516,13 @@ const COMPETITIONS = [
     country: "Brazil",
     isActive: false,
     csvDivisionCode: "BRA", // football-data.co.uk "extra leagues" (new/BRA.csv)
-    seasonStartMonth: 3,
+    // Calendrier historiquement avril-mai, mais la CFB l'a avancé chaque année
+    // depuis 2023 pour boucler avant le Mondial 2026 (2023-04-15 → 2024-04-13
+    // → 2025-03-29 → 2026-01-28, vérifié API-Football). seasonStartMonth=0
+    // (janvier) pour ne pas rater le début de saison si la tendance continue —
+    // les années où le coup d'envoi est plus tardif, les syncs de
+    // janvier-mars ne remontent simplement rien (sans effet de bord).
+    seasonStartMonth: 0,
     includeInBacktest: true, // odds historiques via The Odds API (soccer_brazil_campeonato)
   },
   {
@@ -520,7 +532,7 @@ const COMPETITIONS = [
     country: "South-Korea",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 1,
+    seasonStartMonth: 1, // saison calendaire fév→déc (vérifié API-Football)
     includeInBacktest: true, // odds historiques via The Odds API (soccer_korea_kleague1)
   },
   {
@@ -530,7 +542,7 @@ const COMPETITIONS = [
     country: "China",
     isActive: false,
     csvDivisionCode: "CHN", // football-data.co.uk "extra leagues" (new/CHN.csv)
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // saison calendaire, coup d'envoi fév-avr selon les années (vérifié API-Football)
     includeInBacktest: true, // odds historiques via The Odds API (soccer_china_superleague)
   },
   {
@@ -540,7 +552,7 @@ const COMPETITIONS = [
     country: "Finland",
     isActive: false,
     csvDivisionCode: "FIN", // football-data.co.uk "extra leagues" (new/FIN.csv)
-    seasonStartMonth: 3,
+    seasonStartMonth: 3, // saison calendaire avril→nov (vérifié API-Football)
     includeInBacktest: true, // odds historiques via The Odds API (soccer_finland_veikkausliiga)
   },
   {
@@ -550,7 +562,7 @@ const COMPETITIONS = [
     country: "Iceland",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 3,
+    seasonStartMonth: 3, // saison calendaire avril→oct (vérifié API-Football)
     includeInBacktest: false,
   },
   {
@@ -560,7 +572,7 @@ const COMPETITIONS = [
     country: "Estonia",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // saison calendaire mars→nov (vérifié API-Football)
     includeInBacktest: false,
   },
   {
@@ -570,7 +582,7 @@ const COMPETITIONS = [
     country: "Latvia",
     isActive: false,
     csvDivisionCode: null,
-    seasonStartMonth: 2,
+    seasonStartMonth: 2, // saison calendaire mars→nov (vérifié API-Football)
     includeInBacktest: false,
   },
   {

@@ -17,6 +17,7 @@ import {
   ETL_CONSTANTS,
   BULLMQ_QUEUES,
   BULLMQ_DEFAULT_JOB_OPTIONS,
+  DEFAULT_SEASON_START_MONTH,
 } from '@config/etl.constants';
 import { PrismaService } from '@/prisma.service';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -133,11 +134,13 @@ export class FixturesSyncWorker {
     );
 
     // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
+    const seasonStartMonth =
+      competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season),
-      startDate: seasonFallbackStartDate(season),
-      endDate: seasonFallbackEndDate(season),
+      name: seasonNameFromYear(season, seasonStartMonth),
+      startDate: seasonFallbackStartDate(season, seasonStartMonth),
+      endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     logger.info(

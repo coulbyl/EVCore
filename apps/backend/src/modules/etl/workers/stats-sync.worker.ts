@@ -4,7 +4,10 @@ import { createLogger } from '@utils/logger';
 import { ApiFootballClient } from '../api-football.client';
 import { ApiFootballStatisticsResponseSchema } from '../schemas/stats.schema';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS } from '@config/etl.constants';
+import {
+  ETL_CONSTANTS,
+  DEFAULT_SEASON_START_MONTH,
+} from '@config/etl.constants';
 import { sleep } from '@utils/async.utils';
 import { NotificationService } from '../../notification/notification.service';
 import { seasonNameFromYear } from '@utils/season.utils';
@@ -61,11 +64,13 @@ export class StatsSyncWorker {
     const competition = await this.fixtureService.upsertCompetition(
       toUpsertCompetitionInput(competitionMeta),
     );
+    const seasonStartMonth =
+      competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
-      name: seasonNameFromYear(season),
-      startDate: seasonFallbackStartDate(season),
-      endDate: seasonFallbackEndDate(season),
+      name: seasonNameFromYear(season, seasonStartMonth),
+      startDate: seasonFallbackStartDate(season, seasonStartMonth),
+      endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     const fixtures = await this.fixtureService.findFinishedWithoutXg(
@@ -150,7 +155,7 @@ export class StatsSyncWorker {
 
     if (xgUnavailableIds.length > 0) {
       await this.notification.sendXgUnavailableReport(
-        seasonNameFromYear(season),
+        seasonNameFromYear(season, seasonStartMonth),
         xgUnavailableIds,
       );
     }
