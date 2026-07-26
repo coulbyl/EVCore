@@ -259,9 +259,11 @@ export class RollingStatsService {
     year: number,
     competitionCode: string,
   ): Promise<RollingStatsRunResult> {
+    const seasonStartMonth =
+      await this.resolveSeasonStartMonth(competitionCode);
     const season = await this.prisma.client.season.findFirst({
       where: {
-        name: seasonNameFromYear(year),
+        name: seasonNameFromYear(year, seasonStartMonth),
         competition: { code: competitionCode },
       },
       select: { id: true },
@@ -339,9 +341,11 @@ export class RollingStatsService {
     year: number,
     competitionCode: string,
   ): Promise<RollingStatsRunResult> {
+    const seasonStartMonth =
+      await this.resolveSeasonStartMonth(competitionCode);
     const season = await this.prisma.client.season.findFirst({
       where: {
-        name: seasonNameFromYear(year),
+        name: seasonNameFromYear(year, seasonStartMonth),
         competition: { code: competitionCode },
       },
       select: { id: true },
@@ -352,6 +356,19 @@ export class RollingStatsService {
     }
 
     return this.refreshSeason(season.id);
+  }
+
+  private async resolveSeasonStartMonth(
+    competitionCode: string,
+  ): Promise<number> {
+    const competition = await this.prisma.client.competition.findFirst({
+      where: { code: competitionCode },
+      select: { seasonStartMonth: true },
+    });
+    if (!competition) {
+      throw new Error(`competition not found: ${competitionCode}`);
+    }
+    return competition.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
   }
 
   async refreshLeague(

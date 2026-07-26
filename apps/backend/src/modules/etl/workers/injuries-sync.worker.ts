@@ -3,7 +3,10 @@ import { Job } from 'bullmq';
 import { createLogger } from '@utils/logger';
 import { ApiFootballClient } from '../api-football.client';
 import { FixtureService } from '../../fixture/fixture.service';
-import { ETL_CONSTANTS } from '@config/etl.constants';
+import {
+  ETL_CONSTANTS,
+  DEFAULT_SEASON_START_MONTH,
+} from '@config/etl.constants';
 import { seasonNameFromYear } from '@utils/season.utils';
 import {
   seasonFallbackEndDate,
@@ -58,11 +61,13 @@ export class InjuriesSyncWorker {
     const competitionRecord = await this.fixtureService.upsertCompetition(
       toUpsertCompetitionInput(competitionMeta),
     );
+    const seasonStartMonth =
+      competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season),
-      startDate: seasonFallbackStartDate(season),
-      endDate: seasonFallbackEndDate(season),
+      name: seasonNameFromYear(season, seasonStartMonth),
+      startDate: seasonFallbackStartDate(season, seasonStartMonth),
+      endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     const fixtures = await this.fixtureService.findScheduledBySeason(

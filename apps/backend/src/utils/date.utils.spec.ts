@@ -22,12 +22,21 @@ describe('date.utils', () => {
     );
   });
 
-  it('returns EPL fallback season bounds', () => {
-    expect(seasonFallbackStartDate(2021).toISOString()).toBe(
+  it('returns EPL fallback season bounds (cross-year, seasonStartMonth=7)', () => {
+    expect(seasonFallbackStartDate(2021, 7).toISOString()).toBe(
       '2021-08-01T00:00:00.000Z',
     );
-    expect(seasonFallbackEndDate(2021).toISOString()).toBe(
+    expect(seasonFallbackEndDate(2021, 7).toISOString()).toBe(
       '2022-05-31T00:00:00.000Z',
+    );
+  });
+
+  it('returns calendar-year fallback season bounds (seasonStartMonth=2)', () => {
+    expect(seasonFallbackStartDate(2023, 2).toISOString()).toBe(
+      '2023-03-01T00:00:00.000Z',
+    );
+    expect(seasonFallbackEndDate(2023, 2).toISOString()).toBe(
+      '2023-12-31T00:00:00.000Z',
     );
   });
 
