@@ -16,6 +16,7 @@ import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
   type CouponChannel,
   type VirtualCouponChannel,
+  BTTS_STAKED_LEAGUES,
   CANAL_BASE_WEIGHT,
   COUPON_PARAMS,
   VIRTUAL_COUPON_RULES,
@@ -35,6 +36,26 @@ export function isExtremeDivergence(
 ): boolean {
   if (odds === null || odds <= 1) return false;
   return probability - 1 / odds >= AVOID_CONFIG.maxEdge;
+}
+
+type ChannelSelectionCandidate = {
+  channel: StrategyChannel;
+  selections: Array<{
+    market: Market;
+    pick: string;
+    probability: Decimal;
+    odds: Decimal | null;
+  }>;
+};
+
+// Picks the rank-1 selection for a given channel out of the channelDecisions
+// relation loaded by getTodayPool (one decision per channel per ModelRun,
+// @@unique([modelRunId, channel])).
+function findChannelSelection(
+  channelDecisions: ChannelSelectionCandidate[],
+  channel: StrategyChannel,
+) {
+  return channelDecisions.find((cd) => cd.channel === channel)?.selections[0];
 }
 
 const DOW_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const;
@@ -495,14 +516,19 @@ export class SignalWindowService {
   /**
    * REAL coupon pool (B7) — the staking-eligible source. It reads only `Bet`
    * rows of source `MODEL`, which the engine materialises **for EV/SAFE** (the two
-   * channels measured +ROI, cf. DESIGN.md B-ROI). DOMINANT/BTTS/DRAW are NOT
-   * materialised as MODEL bets, so in practice this pool ≈ EV + SAFE — by design,
-   * not by accident:
+   * channels measured +ROI, cf. DESIGN.md B-ROI). DOMINANT is NOT materialised
+   * as MODEL bets, so beyond EV/SAFE this pool only grows via explicit
+   * `channel_selection`-based promotions:
    *
-   * - DOMINANT/BTTS are **prediction-only** channels (ROI −2.1% / +1.0%, DOMINANT
-   *   EV anti-predictive) → tracked via `channel_selection`, never staked.
+   * - DOMINANT is a **prediction-only** channel (ROI −2.1%, EV anti-predictive)
+   *   → tracked via `channel_selection`, never staked.
    * - DRAW (+9.9%) is **promoted** to the real pool (B7): its selections are read
    *   straight from `channel_selection` (not `Bet`) when `includeDraw` is set.
+   * - TEAM_TOTAL (+3.40% ROI, n=845, all leagues — no league has enough volume
+   *   to segment yet) is promoted the same way when `includeTeamTotal` is set.
+   * - BTTS (+0.76% ROI overall, but +2.64%/+5.19%/+3.74% on PL/BL1/SA
+   *   specifically — see `BTTS_STAKED_LEAGUES`) is promoted **only for those
+   *   leagues** when `includeBtts` is set; other leagues stay observation-only.
    *
    * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
    * (virtual SAFE/BTTS rules), kept distinct on purpose — it never stakes.
@@ -511,6 +537,8 @@ export class SignalWindowService {
     date: string,
     opts: {
       includeDraw?: boolean;
+      includeTeamTotal?: boolean;
+      includeBtts?: boolean;
       enforceAvoid?: boolean;
     } = {},
   ): Promise<ScoredPick[]> {
@@ -555,12 +583,22 @@ export class SignalWindowService {
                 },
               },
             },
-            // DRAW is a staking channel (B-ROI +9.9%) but isn't materialised as a
-            // MODEL Bet — read its selection straight from channel_selection so it
-            // can enter the real pool (B7 promotion). Gated by opts.includeDraw.
+            // DRAW/TEAM_TOTAL/BTTS are staking channels (B7 promotions) but
+            // aren't materialised as MODEL Bets — read their selection straight
+            // from channel_selection so they can enter the real pool. Each is
+            // gated by its own opts.include* flag (see findChannelSelection below).
             channelDecisions: {
-              where: { channel: StrategyChannel.DRAW },
+              where: {
+                channel: {
+                  in: [
+                    StrategyChannel.DRAW,
+                    StrategyChannel.TEAM_TOTAL,
+                    StrategyChannel.BTTS,
+                  ],
+                },
+              },
               select: {
+                channel: true,
                 selections: {
                   where: { rank: 1, odds: { not: null } },
                   select: {
@@ -572,6 +610,7 @@ export class SignalWindowService {
                   take: 1,
                 },
               },
+              take: 3,
             },
           },
           orderBy: { analyzedAt: 'desc' },
@@ -714,32 +753,48 @@ export class SignalWindowService {
           });
         }
 
-        // DRAW staking (B7 promotion) — DRAW selections live in channel_selection,
-        // not in MODEL bets, so read them here to make DRAW a real, staking-eligible
-        // pool leg. Backtested +9.9% ROI (B-ROI); gated by opts.includeDraw.
+        // DRAW/TEAM_TOTAL/BTTS staking (B7 promotions) — these channels' selections
+        // live in channel_selection, not in MODEL bets, so read them here to make
+        // each a real, staking-eligible pool leg when its opts.include* flag is set.
+        const pushChannelSelectionPick = (channel: StrategyChannel) => {
+          const sel = findChannelSelection(run.channelDecisions, channel);
+          if (!sel || sel.odds === null) return;
+          const fair = snapshot
+            ? computeMarketFair(sel.market, sel.pick, snapshot)
+            : null;
+          picks.push({
+            ...base,
+            canal: channel as Canal,
+            market: sel.market,
+            pick: sel.pick,
+            probability: Number(sel.probability),
+            calibratedHitRate: 0,
+            calibratedProbability: null,
+            oddsSnapshot: Number(sel.odds),
+            pMarketFair: fair?.pMarketFair ?? null,
+            bookmakerMargin: fair?.bookmakerMargin ?? null,
+            isCorrect: null,
+            signalScore: 0,
+            betId: null,
+            modelRunId: run.id,
+          });
+        };
+
+        // Backtested +9.9% ROI (B-ROI); gated by opts.includeDraw.
         if (opts.includeDraw) {
-          const drawSel = run.channelDecisions[0]?.selections[0];
-          if (drawSel && drawSel.odds !== null) {
-            const drawFair = snapshot
-              ? computeMarketFair(drawSel.market, drawSel.pick, snapshot)
-              : null;
-            picks.push({
-              ...base,
-              canal: StrategyChannel.DRAW as Canal,
-              market: drawSel.market,
-              pick: drawSel.pick,
-              probability: Number(drawSel.probability),
-              calibratedHitRate: 0,
-              calibratedProbability: null,
-              oddsSnapshot: Number(drawSel.odds),
-              pMarketFair: drawFair?.pMarketFair ?? null,
-              bookmakerMargin: drawFair?.bookmakerMargin ?? null,
-              isCorrect: null,
-              signalScore: 0,
-              betId: null,
-              modelRunId: run.id,
-            });
-          }
+          pushChannelSelectionPick(StrategyChannel.DRAW);
+        }
+        // +3.40% ROI (n=845), all leagues — no league has enough volume yet to
+        // segment (db:backtest:team-total-btts-competition, 2026-07-28).
+        if (opts.includeTeamTotal) {
+          pushChannelSelectionPick(StrategyChannel.TEAM_TOTAL);
+        }
+        // Restricted to BTTS_STAKED_LEAGUES — see that constant's doc comment.
+        if (
+          opts.includeBtts &&
+          (BTTS_STAKED_LEAGUES as readonly string[]).includes(comp)
+        ) {
+          pushChannelSelectionPick(StrategyChannel.BTTS);
         }
       }
     }

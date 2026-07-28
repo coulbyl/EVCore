@@ -41,5 +41,6 @@ export const ANALYSIS_SHEET_CHANNELS = [
   'BTTS',
   'DRAW',
   'GOALS',
+  'TEAM_TOTAL',
 ] as const;
 export type AnalysisSheetChannel = (typeof ANALYSIS_SHEET_CHANNELS)[number];

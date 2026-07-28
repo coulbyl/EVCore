@@ -21,6 +21,8 @@ const logger = createLogger('coupon');
 export class CouponService {
   private readonly kellyEnabled: boolean;
   private readonly stakeDraw: boolean;
+  private readonly stakeTeamTotal: boolean;
+  private readonly stakeBtts: boolean;
   private readonly enforceAvoid: boolean;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
@@ -35,6 +37,15 @@ export class CouponService {
     // Kept env-toggleable (COUPON_STAKE_DRAW=false) as a kill-switch.
     this.stakeDraw =
       config.get<string>('COUPON_STAKE_DRAW', 'true') !== 'false';
+    // TEAM_TOTAL staking (B7 promotion, 2026-07-28) — backtested +3.40% ROI
+    // (n=845, all leagues). Kill-switch: COUPON_STAKE_TEAM_TOTAL=false.
+    this.stakeTeamTotal =
+      config.get<string>('COUPON_STAKE_TEAM_TOTAL', 'true') !== 'false';
+    // BTTS staking (B7 promotion, 2026-07-28) — restricted to
+    // BTTS_STAKED_LEAGUES inside getTodayPool (per-league split shows a real
+    // edge/loss divide, not a uniform +0.76%). Kill-switch: COUPON_STAKE_BTTS=false.
+    this.stakeBtts =
+      config.get<string>('COUPON_STAKE_BTTS', 'true') !== 'false';
     // AVOID enforcement — on by default: drops staking picks whose model↔market
     // divergence is implausible (≥ AVOID_CONFIG.maxEdge); validated -20% ROI on
     // those picks over 3 seasons. Kill-switch: COUPON_ENFORCE_AVOID=false.
@@ -62,6 +73,8 @@ export class CouponService {
       this.signalWindow.computeSignalWindow(windowDays, asOf),
       this.signalWindow.getTodayPool(date, {
         includeDraw: this.stakeDraw,
+        includeTeamTotal: this.stakeTeamTotal,
+        includeBtts: this.stakeBtts,
         enforceAvoid: this.enforceAvoid,
       }),
     ]);

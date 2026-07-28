@@ -11,7 +11,8 @@ export type InvestmentMode =
   | "dominant"
   | "btts"
   | "goals"
-  | "draw";
+  | "draw"
+  | "teamTotal";
 
 export type FixtureStatus =
   | "SCHEDULED"
@@ -34,7 +35,14 @@ export type InvestmentPick = {
   // played fewer than 5 finished matches under its current coach.
   homeNewCoach: boolean;
   awayNewCoach: boolean;
-  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
+  channel:
+    | "VALUE"
+    | "SAFE"
+    | "DOMINANT"
+    | "BTTS"
+    | "DRAW"
+    | "GOALS"
+    | "TEAM_TOTAL";
   market: string;
   pick: string;
   // Calibrated (bias-corrected) probability — drives probabilityBucket and

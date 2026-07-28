@@ -270,10 +270,10 @@ describe('InvestmentService.listBestPicks', () => {
 
   it('flags short odds and negative-ROI channels without excluding the pick', async () => {
     const service = makeService([
-      group('BTTS', [
+      group('DOMINANT', [
         item({
-          fixtureId: 'fx-btts',
-          channel: 'BTTS',
+          fixtureId: 'fx-dominant',
+          channel: 'DOMINANT',
           selections: [selection({ probability: 0.66, odds: 1.15, ev: -0.05 })],
         }),
       ]),
