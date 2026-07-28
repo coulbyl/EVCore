@@ -24,6 +24,7 @@ enum FixtureStatus {
   FINISHED
   POSTPONED
   CANCELLED
+
   @@schema("public")
 }
 
@@ -31,6 +32,7 @@ enum ModelRunPhase {
   ADVANCE
   PRE_KICKOFF
   LIVE
+
   @@schema("public")
 }
 
@@ -53,6 +55,7 @@ enum Market {
   TO_WIN_EITHER_HALF
   RESULT_TOTAL_GOALS
   RESULT_BTTS
+
   @@schema("public")
 }
 
@@ -61,18 +64,21 @@ enum BetStatus {
   WON
   LOST
   VOID
+
   @@schema("public")
 }
 
 enum BetSource {
   MODEL
   USER
+
   @@schema("public")
 }
 
 enum BetSlipType {
   SIMPLE
   COMBO
+
   @@schema("public")
 }
 
@@ -81,24 +87,28 @@ enum BankrollTransactionType {
   BET_PLACED
   BET_WON
   BET_VOID
+
   @@schema("public")
 }
 
 enum UserRole {
   ADMIN
   OPERATOR
+
   @@schema("public")
 }
 
 enum UnitMode {
   FIXED
   PCT
+
   @@schema("public")
 }
 
 enum FormationContentType {
   ARTICLE
   VIDEO
+
   @@schema("public")
 }
 
@@ -107,12 +117,14 @@ enum AdjustmentStatus {
   APPLIED
   REJECTED
   FROZEN
+
   @@schema("public")
 }
 
 enum OddsSnapshotSource {
   PREMATCH
   HISTORICAL
+
   @@schema("public")
 }
 
@@ -125,17 +137,20 @@ enum NotificationType {
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
   ML_MODEL_ACTIVATED
+
   @@schema("public")
 }
 
 enum MfaMethod {
   EMAIL
   TOTP
+
   @@schema("public")
 }
 
 enum SportType {
   FOOTBALL
+
   @@schema("public")
 }
 
@@ -159,6 +174,7 @@ enum StrategyChannel {
   CONTRARIAN
   AVOID
   CORRECT_SCORE
+
   @@schema("public")
 }
 
@@ -169,6 +185,7 @@ enum ChannelDecisionStatus {
   INSUFFICIENT_DATA
   MISSING_ODDS
   NOT_APPLICABLE
+
   @@schema("public")
 }
 
@@ -262,18 +279,18 @@ model Standing {
 }
 
 model Team {
-  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  externalId    Int         @unique // football-data.org ID
+  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  externalId    Int           @unique // football-data.org ID
   name          String
   shortName     String
   logoUrl       String?
-  competitionId String      @db.Uuid
-  competition   Competition @relation(fields: [competitionId], references: [id])
-  homeFixtures  Fixture[]   @relation("HomeTeam")
-  awayFixtures  Fixture[]   @relation("AwayTeam")
+  competitionId String        @db.Uuid
+  competition   Competition   @relation(fields: [competitionId], references: [id])
+  homeFixtures  Fixture[]     @relation("HomeTeam")
+  awayFixtures  Fixture[]     @relation("AwayTeam")
   stats         TeamStats[]
   coachTenures  CoachTenure[]
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime      @default(now())
 
   @@map("team")
   @@schema("public")
@@ -435,45 +452,45 @@ model Bet {
 }
 
 model User {
-  id                   String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  email                String                  @unique
-  username             String                  @unique
-  passwordHash         String
-  fullName             String
-  bio                  String?
-  role                 UserRole                @default(OPERATOR)
-  emailVerified        Boolean                 @default(false)
-  mfaMethod            MfaMethod?
-  totpSecret           String?
-  totpVerified         Boolean                 @default(false)
-  avatarUrl            String?
-  theme                String?
-  locale               String?
-  currency             String?
-  unitMode             UnitMode?
-  unitAmount           Decimal?                @db.Decimal(12, 2)
-  unitPercent          Decimal?                @db.Decimal(5, 4)
-  emailSupportNotificationsEnabled Boolean     @default(false)
-  suspended            Boolean                 @default(false)
-  suspendedAt          DateTime?
-  sessions             Session[]
-  betSlips             BetSlip[]
-  betSlipItems         BetSlipItem[]
-  bets                 Bet[]
-  bankrollTransactions BankrollTransaction[]
-  contentProgress      UserContentProgress[]
-  announcements        Announcement[]
-  badges               UserBadge[]
-  notificationReads    UserNotificationRead[]
-  verificationCodes    EmailVerificationCode[]
-  resetTokens          PasswordResetToken[]
-  chatConversations    ChatConversation[]
-  chatUsage            ChatUsage[]
-  supportConversations SupportConversation[]
-  supportMessagesSent  SupportMessage[]
-  pushSubscriptions    PushSubscription[]
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
+  id                               String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email                            String                  @unique
+  username                         String                  @unique
+  passwordHash                     String
+  fullName                         String
+  bio                              String?
+  role                             UserRole                @default(OPERATOR)
+  emailVerified                    Boolean                 @default(false)
+  mfaMethod                        MfaMethod?
+  totpSecret                       String?
+  totpVerified                     Boolean                 @default(false)
+  avatarUrl                        String?
+  theme                            String?
+  locale                           String?
+  currency                         String?
+  unitMode                         UnitMode?
+  unitAmount                       Decimal?                @db.Decimal(12, 2)
+  unitPercent                      Decimal?                @db.Decimal(5, 4)
+  emailSupportNotificationsEnabled Boolean                 @default(true)
+  suspended                        Boolean                 @default(false)
+  suspendedAt                      DateTime?
+  sessions                         Session[]
+  betSlips                         BetSlip[]
+  betSlipItems                     BetSlipItem[]
+  bets                             Bet[]
+  bankrollTransactions             BankrollTransaction[]
+  contentProgress                  UserContentProgress[]
+  announcements                    Announcement[]
+  badges                           UserBadge[]
+  notificationReads                UserNotificationRead[]
+  verificationCodes                EmailVerificationCode[]
+  resetTokens                      PasswordResetToken[]
+  chatConversations                ChatConversation[]
+  chatUsage                        ChatUsage[]
+  supportConversations             SupportConversation[]
+  supportMessagesSent              SupportMessage[]
+  pushSubscriptions                PushSubscription[]
+  createdAt                        DateTime                @default(now())
+  updatedAt                        DateTime                @updatedAt
 
   @@map("users")
   @@schema("public")
@@ -824,21 +841,21 @@ model CouponProposal {
 }
 
 model CouponProposalLeg {
-  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  couponProposalId String         @db.Uuid
-  couponProposal   CouponProposal @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
-  fixtureId        String         @db.Uuid
-  fixture          Fixture        @relation(fields: [fixtureId], references: [id])
+  id               String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponProposalId String          @db.Uuid
+  couponProposal   CouponProposal  @relation(fields: [couponProposalId], references: [id], onDelete: Cascade)
+  fixtureId        String          @db.Uuid
+  fixture          Fixture         @relation(fields: [fixtureId], references: [id])
   canal            StrategyChannel
   market           Market
   pick             String
-  probability      Decimal        @db.Decimal(5, 4)
-  oddsSnapshot     Decimal?       @db.Decimal(6, 3)
-  signalScore      Decimal        @db.Decimal(5, 4)
+  probability      Decimal         @db.Decimal(5, 4)
+  oddsSnapshot     Decimal?        @db.Decimal(6, 3)
+  signalScore      Decimal         @db.Decimal(5, 4)
   featureSnapshot  Json
   isCorrect        Boolean?
   settledAt        DateTime?
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime        @default(now())
 
   @@index([couponProposalId])
   @@index([fixtureId])
@@ -935,17 +952,17 @@ enum SupportConversationStatus {
 }
 
 model SupportConversation {
-  id         String                     @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId     String                     @db.Uuid
-  user       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status     SupportConversationStatus  @default(OPEN)
+  id            String                    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String                    @db.Uuid
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status        SupportConversationStatus @default(OPEN)
   // Read watermarks — one conversation, two sides, each tracks its own "read up to".
-  userReadAt  DateTime?
-  adminReadAt DateTime?
-  messages    SupportMessage[]
-  lastMessageAt DateTime                @default(now())
-  createdAt   DateTime                  @default(now())
-  updatedAt   DateTime                  @updatedAt
+  userReadAt    DateTime?
+  adminReadAt   DateTime?
+  messages      SupportMessage[]
+  lastMessageAt DateTime                  @default(now())
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
 
   @@index([status, lastMessageAt])
   @@index([userId])
@@ -1007,19 +1024,19 @@ model ChatUsage {
 // Written by the auto-calibration loop after each AdjustmentProposal is evaluated.
 // Used by the backtest controller and Grafana dashboards (Phase 2).
 model CalibrationReport {
-  id             String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  channel        StrategyChannel
-  competitionCode String?        // null = all leagues combined
-  startDate      DateTime        @db.Date
-  endDate        DateTime        @db.Date
-  betCount       Int
-  brierScore     Decimal         @db.Decimal(8, 6)
-  calibrationError Decimal       @db.Decimal(8, 6)
-  roi            Decimal         @db.Decimal(8, 5)
+  id               String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  channel          StrategyChannel
+  competitionCode  String? // null = all leagues combined
+  startDate        DateTime        @db.Date
+  endDate          DateTime        @db.Date
+  betCount         Int
+  brierScore       Decimal         @db.Decimal(8, 6)
+  calibrationError Decimal         @db.Decimal(8, 6)
+  roi              Decimal         @db.Decimal(8, 5)
   // Serialized EV-bin distribution (analysis-core EvBin[])
-  evBins         Json            @default("[]")
-  triggeredBy    String          @default("auto") // "auto" | "manual"
-  createdAt      DateTime        @default(now())
+  evBins           Json            @default("[]")
+  triggeredBy      String          @default("auto") // "auto" | "manual"
+  createdAt        DateTime        @default(now())
 
   @@index([channel, endDate])
   @@index([createdAt])
@@ -1030,18 +1047,18 @@ model CalibrationReport {
 // Per-channel tuning result produced by the channel-tuning backtest.
 // Replaces the current in-memory-only output of ChannelTuningService.
 model ChannelTuningResult {
-  id              String                  @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id              String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
   channel         StrategyChannel
   competitionCode String?
-  configSnapshot  Json                    // serialized ChannelStrategyConfigChannel config
+  configSnapshot  Json // serialized ChannelStrategyConfigChannel config
   betCount        Int
-  roi             Decimal                 @db.Decimal(8, 5)
-  hitRate         Decimal                 @db.Decimal(5, 4)
-  maxDrawdown     Decimal                 @db.Decimal(8, 5)
+  roi             Decimal         @db.Decimal(8, 5)
+  hitRate         Decimal         @db.Decimal(5, 4)
+  maxDrawdown     Decimal         @db.Decimal(8, 5)
   // Whether this result beat the current prod config (for auto-apply gating)
-  improved        Boolean                 @default(false)
+  improved        Boolean         @default(false)
   appliedAt       DateTime?
-  createdAt       DateTime                @default(now())
+  createdAt       DateTime        @default(now())
 
   @@index([channel, createdAt])
   @@map("channel_tuning_result")
