@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   getBttsNoConfig,
   getChannelStrategyConfig,
+  getTeamTotalLineConfigs,
   GOALS_CONFIG,
 } from '@modules/betting-engine/strategies/channel-strategy.config';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
@@ -13,13 +14,21 @@ import {
   buildBttsNoSweep,
   buildChannelThresholdSweep,
   buildGoalsLineSweep,
+  buildTeamTotalSweep,
 } from './tuning.metrics';
-import { GOALS_TUNING_SIDES, TUNING_CHANNELS } from './tuning.constants';
+import {
+  GOALS_TUNING_LINES,
+  GOALS_TUNING_SIDES,
+  TEAM_TOTAL_TEAMS,
+  TEAM_TOTAL_TUNING_LINES,
+  TUNING_CHANNELS,
+} from './tuning.constants';
 import type {
   BttsNoTuningReport,
   ChannelTuningReport,
   ChannelTuningResponse,
   GoalsTuningReport,
+  TeamTotalTuningReport,
 } from './dto/backtest-tuning.dto';
 
 function dateRange(from?: string, to?: string) {
@@ -72,6 +81,7 @@ export class ChannelTuningService {
     const reports: ChannelTuningReport[] = [];
     const goalsReports: GoalsTuningReport[] = [];
     const bttsNoReports: BttsNoTuningReport[] = [];
+    const teamTotalReports: TeamTotalTuningReport[] = [];
     for (const [code, group] of byComp) {
       const competitionName = group[0]?.competitionName ?? code;
       const bttsNoSweep = buildBttsNoSweep(group);
@@ -107,28 +117,59 @@ export class ChannelTuningService {
           recommended: sweep.recommended,
         });
       }
-      for (const side of GOALS_TUNING_SIDES) {
-        const sweep = buildGoalsLineSweep(side, group);
-        if (sweep.candidates === 0) continue;
-        const current = GOALS_CONFIG[code]?.lines.find(
-          (l) => l.line === sweep.line && l.side === side,
-        );
-        goalsReports.push({
-          competitionCode: code,
-          competitionName,
-          line: sweep.line,
-          side,
-          candidates: sweep.candidates,
-          current: current
-            ? {
-                enabled: current.enabled,
-                threshold: current.threshold,
-                minSampleN: current.minSampleN,
-              }
-            : null,
-          points: sweep.points,
-          recommended: sweep.recommended,
-        });
+      for (const line of GOALS_TUNING_LINES) {
+        for (const side of GOALS_TUNING_SIDES) {
+          const sweep = buildGoalsLineSweep(line, side, group);
+          if (sweep.candidates === 0) continue;
+          const current = GOALS_CONFIG[code]?.lines.find(
+            (l) => l.line === sweep.line && l.side === side,
+          );
+          goalsReports.push({
+            competitionCode: code,
+            competitionName,
+            line: sweep.line,
+            side,
+            candidates: sweep.candidates,
+            current: current
+              ? {
+                  enabled: current.enabled,
+                  threshold: current.threshold,
+                  minSampleN: current.minSampleN,
+                }
+              : null,
+            points: sweep.points,
+            recommended: sweep.recommended,
+          });
+        }
+      }
+      for (const team of TEAM_TOTAL_TEAMS) {
+        for (const line of TEAM_TOTAL_TUNING_LINES) {
+          for (const side of GOALS_TUNING_SIDES) {
+            const sweep = buildTeamTotalSweep({ team, line, side }, group);
+            if (sweep.candidates === 0) continue;
+            const current = getTeamTotalLineConfigs(code).find(
+              (l) =>
+                l.team === team && l.line === sweep.line && l.side === side,
+            );
+            teamTotalReports.push({
+              competitionCode: code,
+              competitionName,
+              team,
+              line: sweep.line,
+              side,
+              candidates: sweep.candidates,
+              current: current
+                ? {
+                    enabled: current.enabled,
+                    threshold: current.threshold,
+                    minSampleN: current.minSampleN,
+                  }
+                : null,
+              points: sweep.points,
+              recommended: sweep.recommended,
+            });
+          }
+        }
       }
     }
 
@@ -145,6 +186,12 @@ export class ChannelTuningService {
     bttsNoReports.sort((a, b) =>
       a.competitionCode.localeCompare(b.competitionCode),
     );
+    teamTotalReports.sort(
+      (a, b) =>
+        a.competitionCode.localeCompare(b.competitionCode) ||
+        a.team.localeCompare(b.team) ||
+        a.side.localeCompare(b.side),
+    );
 
     return {
       from: range.fromIso,
@@ -152,6 +199,7 @@ export class ChannelTuningService {
       reports,
       goalsReports,
       bttsNoReports,
+      teamTotalReports,
       generatedAt: new Date().toISOString(),
     };
   }

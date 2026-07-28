@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   DataTable,
   Empty,
@@ -7,6 +8,7 @@ import {
   EmptyHeader,
   EmptyTitle,
   type ColumnDef,
+  type DateRange,
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { useRunModelCalibration } from "@/domains/backtest/use-cases/run-channel-backtest";
@@ -14,12 +16,14 @@ import type { ModelCalibrationReport } from "@/domains/backtest/types/channel-ba
 import { formatDecimal } from "./formatters";
 import { ANALYSIS_STORAGE_KEY, formatPct } from "./analysis-constants";
 import { AnalysisRunBar } from "./analysis-run-bar";
+import { toIsoDateParam } from "./date-range-utils";
 import { useStoredResult } from "./use-stored-result";
 import { VerdictBadge } from "./verdict-badge";
 
 export function ModelCalibrationTab() {
   const t = useTranslations("performancePage");
   const common = useTranslations("common");
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
   const mutation = useRunModelCalibration();
   const { result } = useStoredResult(
     mutation.data,
@@ -84,8 +88,10 @@ export function ModelCalibrationTab() {
       </p>
       <AnalysisRunBar
         isPending={mutation.isPending}
-        onRun={() => mutation.mutate()}
+        onRun={() => mutation.mutate(toIsoDateParam(range))}
         window={result ? { from: result.from, to: result.to } : null}
+        range={range}
+        onRangeChange={setRange}
       />
 
       {mutation.error ? (

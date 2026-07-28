@@ -76,7 +76,17 @@ export type ChannelStatus =
   | "INSUFFICIENT_DATA";
 
 export type ChannelHealthItem = {
-  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
+  channel:
+    | "VALUE"
+    | "SAFE"
+    | "DOMINANT"
+    | "BTTS"
+    | "DRAW"
+    | "GOALS"
+    | "CLEAN_SHEET"
+    | "TEAM_TOTAL"
+    | "WIN_EITHER_HALF"
+    | "CORRECT_SCORE";
   status: ChannelStatus;
   primaryMetric: number;
   primaryMetricType: "ROI" | "HIT_RATE";
@@ -87,7 +97,17 @@ export type ChannelHealthItem = {
 };
 
 export type ChannelStatsItem = {
-  channel: "VALUE" | "SAFE" | "DOMINANT" | "BTTS" | "DRAW" | "GOALS";
+  channel:
+    | "VALUE"
+    | "SAFE"
+    | "DOMINANT"
+    | "BTTS"
+    | "DRAW"
+    | "GOALS"
+    | "CLEAN_SHEET"
+    | "TEAM_TOTAL"
+    | "WIN_EITHER_HALF"
+    | "CORRECT_SCORE";
   hitRate: number | null;
   avgThreshold: number | null;
   vsThreshold: number | null;
@@ -97,4 +117,17 @@ export type ChannelStatsItem = {
   sampleSize: number;
   oddsAvailabilityRate: number;
   trend: "UP" | "FLAT" | "DOWN";
+};
+
+/** One (channel × competition) row — see backend dashboard.types.ts for the
+ * full rationale. Independent tracking section on the track-record page. */
+export type ChannelCompetitionStatItem = {
+  channel: ChannelStatsItem["channel"];
+  competitionCode: string;
+  competitionName: string;
+  competitionCountry: string;
+  roi: number | null;
+  hitRate: number | null;
+  sampleSize: number;
+  status: ChannelStatus;
 };

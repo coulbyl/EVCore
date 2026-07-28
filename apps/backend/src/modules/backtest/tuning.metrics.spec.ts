@@ -3,6 +3,7 @@ import {
   buildBttsNoSweep,
   buildChannelThresholdSweep,
   buildGoalsLineSweep,
+  buildTeamTotalSweep,
 } from './tuning.metrics';
 import type { ChannelTuningRow } from './backtest.repository';
 
@@ -19,23 +20,39 @@ function row(partial: Partial<ChannelTuningRow>): ChannelTuningRow {
     probAway: 0.3,
     probBttsYes: 0.5,
     probBttsNo: 0.5,
+    probOver15: 0.7,
+    probUnder15: 0.3,
     probOver25: 0.5,
     probUnder25: 0.5,
+    probOver35: 0.3,
+    probUnder35: 0.7,
+    probOver45: 0.15,
+    probUnder45: 0.85,
     probCleanSheetHome: 0.3,
     probCleanSheetAway: 0.2,
     probWinEitherHalfHome: 0.55,
     probWinEitherHalfAway: 0.45,
+    probTeamTotalHome: null,
+    probTeamTotalAway: null,
     oddsHome: 2.0,
     oddsDraw: 3.3,
     oddsAway: 3.5,
     oddsBttsYes: 1.9,
     oddsBttsNo: 1.9,
+    oddsOver15: 1.4,
+    oddsUnder15: 2.9,
     oddsOver25: 1.9,
     oddsUnder25: 2.0,
+    oddsOver35: 2.8,
+    oddsUnder35: 1.45,
+    oddsOver45: 4.5,
+    oddsUnder45: 1.2,
     oddsCleanSheetHome: 2.5,
     oddsCleanSheetAway: 3.5,
     oddsWinEitherHalfHome: 1.7,
     oddsWinEitherHalfAway: 2.1,
+    oddsTeamTotalHome: null,
+    oddsTeamTotalAway: null,
     ...partial,
   };
 }
@@ -231,7 +248,7 @@ describe('buildGoalsLineSweep — OVER 2.5', () => {
       row({ probOver25: 0.6, oddsOver25: 1.95, homeScore: 1, awayScore: 1 }), // 2 goals → lost
       row({ probOver25: 0.7, oddsOver25: null, homeScore: 3, awayScore: 0 }), // no odds → dropped
     ];
-    const sweep = buildGoalsLineSweep('OVER', rows);
+    const sweep = buildGoalsLineSweep(2.5, 'OVER', rows);
     expect(sweep.side).toBe('OVER');
     expect(sweep.line).toBe(2.5);
     expect(sweep.candidates).toBe(2); // third dropped (no odds)
@@ -247,7 +264,7 @@ describe('buildGoalsLineSweep — UNDER 2.5', () => {
       row({ probUnder25: 0.6, oddsUnder25: 2.0, homeScore: 1, awayScore: 1 }), // 2 goals → won
       row({ probUnder25: 0.58, oddsUnder25: 2.1, homeScore: 2, awayScore: 2 }), // 4 goals → lost
     ];
-    const sweep = buildGoalsLineSweep('UNDER', rows);
+    const sweep = buildGoalsLineSweep(2.5, 'UNDER', rows);
     expect(sweep.candidates).toBe(2);
     const at55 = sweep.points.find((p) => p.threshold === 0.55)!;
     expect(at55.total).toBe(2);
@@ -259,8 +276,79 @@ describe('buildGoalsLineSweep — UNDER 2.5', () => {
     const rows: ChannelTuningRow[] = Array.from({ length: 25 }, () =>
       row({ probUnder25: 0.6, oddsUnder25: 2.0, homeScore: 0, awayScore: 1 }),
     );
-    const sweep = buildGoalsLineSweep('UNDER', rows);
+    const sweep = buildGoalsLineSweep(2.5, 'UNDER', rows);
     expect(sweep.recommended?.verdict).toBe('PASS');
     expect(sweep.recommended!.roi).toBeGreaterThan(0);
+  });
+});
+
+describe('buildGoalsLineSweep — OVER 1.5 (non-default line)', () => {
+  it('reads the 1.5-line prob/odds fields and wins when total goals > 1.5', () => {
+    const rows: ChannelTuningRow[] = [
+      row({ probOver15: 0.75, oddsOver15: 1.3, homeScore: 1, awayScore: 1 }), // 2 goals → won
+      row({ probOver15: 0.7, oddsOver15: 1.35, homeScore: 0, awayScore: 1 }), // 1 goal → lost
+      row({ probOver15: 0.8, oddsOver15: null, homeScore: 3, awayScore: 0 }), // no odds → dropped
+    ];
+    const sweep = buildGoalsLineSweep(1.5, 'OVER', rows);
+    expect(sweep.side).toBe('OVER');
+    expect(sweep.line).toBe(1.5);
+    expect(sweep.candidates).toBe(2);
+    const at70 = sweep.points.find((p) => p.threshold === 0.65)!;
+    expect(at70.total).toBe(2);
+    expect(at70.won).toBe(1);
+  });
+});
+
+describe('buildTeamTotalSweep', () => {
+  it('reads the team-specific pick map and wins when that team alone clears the line', () => {
+    const rows: ChannelTuningRow[] = [
+      // HOME scores 2 → OVER 1.5 (home) wins
+      row({
+        probTeamTotalHome: { OVER_1_5: 0.58 },
+        oddsTeamTotalHome: { OVER_1_5: 1.8 },
+        homeScore: 2,
+        awayScore: 0,
+      }),
+      // HOME scores 1 → OVER 1.5 (home) loses
+      row({
+        probTeamTotalHome: { OVER_1_5: 0.55 },
+        oddsTeamTotalHome: { OVER_1_5: 1.85 },
+        homeScore: 1,
+        awayScore: 3,
+      }),
+      // no odds for this pick → dropped
+      row({
+        probTeamTotalHome: { OVER_1_5: 0.6 },
+        oddsTeamTotalHome: null,
+        homeScore: 2,
+        awayScore: 0,
+      }),
+    ];
+    const sweep = buildTeamTotalSweep(
+      { team: 'HOME', line: 1.5, side: 'OVER' },
+      rows,
+    );
+    expect(sweep.team).toBe('HOME');
+    expect(sweep.line).toBe(1.5);
+    expect(sweep.candidates).toBe(2);
+    const at55 = sweep.points.find((p) => p.threshold === 0.55)!;
+    expect(at55.total).toBe(2);
+    expect(at55.won).toBe(1);
+  });
+
+  it('keeps HOME and AWAY selections independent — an AWAY row never leaks into a HOME sweep', () => {
+    const rows: ChannelTuningRow[] = [
+      row({
+        probTeamTotalAway: { UNDER_0_5: 0.7 },
+        oddsTeamTotalAway: { UNDER_0_5: 1.4 },
+        homeScore: 2,
+        awayScore: 0,
+      }),
+    ];
+    const sweep = buildTeamTotalSweep(
+      { team: 'HOME', line: 0.5, side: 'UNDER' },
+      rows,
+    );
+    expect(sweep.candidates).toBe(0);
   });
 });

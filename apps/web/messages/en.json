@@ -554,6 +554,7 @@
     "tuningHint": "Offline threshold sweep → recommended threshold per league. Advisory: copy into the config manually.",
     "runAnalysis": "Run analysis",
     "analysisWindow": "Window {from} → {to}",
+    "analysisWindowPicker": "Window (default: 1 year)",
     "analysisIdle": "Run the analysis to see results.",
     "analysisEmpty": "No data in the window.",
     "colChannel": "Channel",
@@ -571,8 +572,10 @@
     "colRecRoi": "Rec. ROI",
     "colRecSample": "Sample",
     "colSegment": "Line",
+    "colTeam": "Team",
     "goalsSection": "GOALS — over/under sweep (line × side)",
     "bttsNoSection": "BTTS NO — per-league sweep (observation)",
+    "teamTotalSection": "TEAM_TOTAL — per-team sweep (line × side, observation)",
     "verdict": {
       "PASS": "Pass",
       "FAIL": "Fail",

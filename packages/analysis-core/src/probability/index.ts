@@ -36,3 +36,10 @@ export {
   buildMatchupFeatures,
   blendTeamStats,
 } from "./match-stats";
+export {
+  type H2HMarketSignalInputs,
+  H2H_MARKET_SIGNAL_DELTAS,
+  logit,
+  sigmoid,
+  applyH2HMarketSignalCorrection,
+} from "./h2h-market-signal-correction";

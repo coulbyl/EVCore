@@ -48,6 +48,11 @@ function makeDeps(): {
         winToNilAway: null,
         sampleSize: 0,
       }),
+      computeH2HScorelineSignal: vi.fn().mockResolvedValue({
+        scoreline: null,
+        confidence: null,
+        sampleSize: 0,
+      }),
     } as unknown as H2HService,
     congestion: {
       computeCongestionScore: vi.fn().mockResolvedValue(0.1),

@@ -16,9 +16,11 @@ import {
 } from "@evcore/ui";
 import { serverApiRequest } from "@/lib/api/server-api";
 import type {
+  ChannelCompetitionStatItem,
   ChannelHealthItem,
   ChannelStatsItem,
 } from "@/domains/dashboard/types/dashboard";
+import { ChannelCompetitionSection } from "./components/channel-competition-section";
 import { ChannelStatusBadge } from "./components/channel-status-badge";
 import { PeriodTabs } from "./components/period-tabs";
 import {
@@ -38,21 +40,35 @@ export const metadata: Metadata = {
 };
 
 async function getTrackRecordData(from: string, to: string) {
-  const [pnl, channelStats, channelHealth] = await Promise.all([
-    serverApiRequest<PnlByCanalResponse>(
-      `/dashboard/pnl?from=${from}&to=${to}`,
-      { fallbackErrorMessage: "Impossible de charger le résumé." },
-    ),
-    serverApiRequest<ChannelStatsItem[]>(
-      `/dashboard/channel-stats?from=${from}&to=${to}`,
-      { fallbackErrorMessage: "Impossible de charger les canaux." },
-    ),
-    serverApiRequest<ChannelHealthItem[]>(
-      `/dashboard/channel-health?from=${from}&to=${to}`,
-      { fallbackErrorMessage: "Impossible de charger le statut des canaux." },
-    ),
-  ]);
-  return { pnl, rows: mergeChannelData(channelStats, channelHealth) };
+  const [pnl, channelStats, channelHealth, channelCompetitionStats] =
+    await Promise.all([
+      serverApiRequest<PnlByCanalResponse>(
+        `/dashboard/pnl?from=${from}&to=${to}`,
+        { fallbackErrorMessage: "Impossible de charger le résumé." },
+      ),
+      serverApiRequest<ChannelStatsItem[]>(
+        `/dashboard/channel-stats?from=${from}&to=${to}`,
+        { fallbackErrorMessage: "Impossible de charger les canaux." },
+      ),
+      serverApiRequest<ChannelHealthItem[]>(
+        `/dashboard/channel-health?from=${from}&to=${to}`,
+        {
+          fallbackErrorMessage: "Impossible de charger le statut des canaux.",
+        },
+      ),
+      serverApiRequest<ChannelCompetitionStatItem[]>(
+        `/dashboard/channel-stats-by-competition?from=${from}&to=${to}`,
+        {
+          fallbackErrorMessage:
+            "Impossible de charger le détail par compétition.",
+        },
+      ),
+    ]);
+  return {
+    pnl,
+    rows: mergeChannelData(channelStats, channelHealth),
+    channelCompetitionStats,
+  };
 }
 
 export default async function TrackRecordPage({
@@ -63,7 +79,10 @@ export default async function TrackRecordPage({
   const { period: periodParam } = await searchParams;
   const period = resolvePeriod(periodParam);
   const { from, to } = dateRangeForPeriod(period);
-  const { pnl, rows } = await getTrackRecordData(from, to);
+  const { pnl, rows, channelCompetitionStats } = await getTrackRecordData(
+    from,
+    to,
+  );
 
   return (
     <Page className="flex h-full flex-col">
@@ -153,6 +172,8 @@ export default async function TrackRecordPage({
               recommandé, ni exclu — simplement pas encore mesurable.
             </p>
           </section>
+
+          <ChannelCompetitionSection rows={channelCompetitionStats} />
 
           <section className="rounded-2xl border border-border bg-panel p-5">
             <p className="text-sm leading-6 text-muted-foreground">

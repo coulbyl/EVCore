@@ -126,11 +126,32 @@ export type BttsNoTuningReport = {
   recommended: ThresholdRecommendation | null;
 };
 
+/** HOME/AWAY side that the TEAM_TOTAL tuning sweep evaluates independently. */
+export type TeamTotalTeam = "HOME" | "AWAY";
+
+/**
+ * Offline tuning report for one TEAM_TOTAL (competition × team × line ×
+ * side) — same shape as `GoalsTuningReport` plus the team dimension.
+ * Advisory only — observation channel, never staked.
+ */
+export type TeamTotalTuningReport = {
+  competitionCode: string;
+  competitionName: string;
+  team: TeamTotalTeam;
+  line: number;
+  side: GoalsTuningSide;
+  candidates: number;
+  current: CurrentChannelConfig | null;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
 export type ChannelTuningResponse = {
   from: string;
   to: string;
   reports: ChannelTuningReport[];
   goalsReports: GoalsTuningReport[];
   bttsNoReports: BttsNoTuningReport[];
+  teamTotalReports: TeamTotalTuningReport[];
   generatedAt: string;
 };

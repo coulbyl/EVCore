@@ -16,14 +16,14 @@ const STATUS_DOT: Record<ChannelStatus, string> = {
   INSUFFICIENT_DATA: "bg-muted-foreground/50",
 };
 
-const CHANNEL_ORDER: ChannelHealthItem["channel"][] = [
+const CHANNEL_ORDER = [
   "VALUE",
   "SAFE",
   "DOMINANT",
   "BTTS",
   "DRAW",
   "GOALS",
-];
+] as const satisfies readonly ChannelHealthItem["channel"][];
 
 /** At-a-glance channel health for the admin dashboard — just the status dot,
  * no metrics. Full ROI/hitRate/drawdown breakdown lives on /dashboard/performance
@@ -35,7 +35,7 @@ export function ChannelStatusStrip({ from, to }: { from: string; to: string }) {
 
   const byChannel = new Map(healthItems.map((h) => [h.channel, h]));
 
-  const CHANNEL_LABEL: Record<ChannelHealthItem["channel"], string> = {
+  const CHANNEL_LABEL: Record<(typeof CHANNEL_ORDER)[number], string> = {
     VALUE: tPicks("evChannel"),
     SAFE: tPicks("safeValue"),
     DOMINANT: tPicks("confidence"),

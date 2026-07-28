@@ -269,7 +269,26 @@ export class DashboardRepository {
           },
         },
       },
-      select: { status: true, oddsSnapshot: true, stakePct: true },
+      select: {
+        status: true,
+        oddsSnapshot: true,
+        stakePct: true,
+        modelRun: {
+          select: {
+            fixture: {
+              select: {
+                season: {
+                  select: {
+                    competition: {
+                      select: { code: true, name: true, country: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -298,7 +317,29 @@ export class DashboardRepository {
           },
         },
       },
-      select: { result: true, odds: true },
+      select: {
+        result: true,
+        odds: true,
+        channelDecision: {
+          select: {
+            modelRun: {
+              select: {
+                fixture: {
+                  select: {
+                    season: {
+                      select: {
+                        competition: {
+                          select: { code: true, name: true, country: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

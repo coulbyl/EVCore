@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Badge,
   DataTable,
@@ -8,6 +9,7 @@ import {
   EmptyHeader,
   EmptyTitle,
   type ColumnDef,
+  type DateRange,
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import {
@@ -23,6 +25,7 @@ import {
   roiToneClass,
 } from "./analysis-constants";
 import { AnalysisRunBar } from "./analysis-run-bar";
+import { toIsoDateParam } from "./date-range-utils";
 import { useStoredResult } from "./use-stored-result";
 import { VerdictBadge } from "./verdict-badge";
 
@@ -30,6 +33,7 @@ export function ChannelBacktestTab() {
   const t = useTranslations("performancePage");
   const tc = useTranslations("decisions");
   const common = useTranslations("common");
+  const [range, setRange] = useState<DateRange | undefined>(undefined);
   const mutation = useRunChannelBacktest();
   const { result } = useStoredResult(
     mutation.data,
@@ -120,8 +124,10 @@ export function ChannelBacktestTab() {
       <p className="text-sm text-muted-foreground">{t("channelsHint")}</p>
       <AnalysisRunBar
         isPending={mutation.isPending}
-        onRun={() => mutation.mutate()}
+        onRun={() => mutation.mutate(toIsoDateParam(range))}
         window={result ? { from: result.from, to: result.to } : null}
+        range={range}
+        onRangeChange={setRange}
       />
 
       {mutation.error ? (
