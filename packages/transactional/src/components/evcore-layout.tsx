@@ -4,36 +4,48 @@ import {
   Head,
   Hr,
   Html,
+  Img,
   Preview,
+  Row,
+  Column,
   Section,
   Text,
 } from "@react-email/components";
 import { type PropsWithChildren } from "react";
 import { palette } from "./palette";
+import { EVCORE_LOGO_DATA_URI } from "./logo";
+
+const FONT_STACK =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 const styles = {
   body: {
     backgroundColor: palette.bg.page,
-    fontFamily: '"Courier New", Courier, monospace',
+    fontFamily: FONT_STACK,
     margin: 0,
-    padding: "28px 0",
+    padding: "32px 12px",
   },
   container: {
     backgroundColor: palette.bg.surface,
     border: `1px solid ${palette.border.default}`,
-    borderRadius: "8px",
+    borderRadius: "12px",
     margin: "0 auto",
-    maxWidth: "560px",
-    padding: "24px",
+    maxWidth: "540px",
+    overflow: "hidden" as const,
   },
-  brandSection: {
-    marginBottom: "4px",
+  header: {
+    borderBottom: `1px solid ${palette.border.default}`,
+    padding: "20px 32px 18px",
+  },
+  logo: {
+    borderRadius: "10px",
+    display: "block",
   },
   brand: {
-    color: palette.brand,
-    fontSize: "16px",
+    color: palette.text.primary,
+    fontSize: "15px",
     fontWeight: "700",
-    letterSpacing: "3px",
+    letterSpacing: "0.2px",
     margin: 0,
   },
   tagline: {
@@ -41,15 +53,20 @@ const styles = {
     fontSize: "11px",
     margin: "2px 0 0",
   },
+  content: {
+    padding: "28px 32px 8px",
+  },
   divider: {
     borderColor: palette.border.default,
-    margin: "16px 0",
+    margin: "8px 0 0",
   },
   footer: {
     color: palette.text.subtle,
     fontSize: "12px",
     lineHeight: "18px",
     margin: 0,
+    padding: "16px 32px 22px",
+    textAlign: "center" as const,
   },
 } as const;
 
@@ -64,17 +81,27 @@ export function EvCoreLayout({ preview, children }: EvCoreLayoutProps) {
       <Preview>{preview}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          <Section style={styles.brandSection}>
-            <Text style={styles.brand}>EVCORE</Text>
-            <Text style={styles.tagline}>Autonomous EV Betting Engine</Text>
+          <Section style={styles.header}>
+            <Row>
+              <Column style={{ width: "36px" }}>
+                <Img
+                  src={EVCORE_LOGO_DATA_URI}
+                  alt="EVCore"
+                  width="36"
+                  height="36"
+                  style={styles.logo}
+                />
+              </Column>
+              <Column style={{ paddingLeft: "12px" }}>
+                <Text style={styles.brand}>EVCore</Text>
+                <Text style={styles.tagline}>Autonomous EV Betting Engine</Text>
+              </Column>
+            </Row>
           </Section>
 
-          <Hr style={styles.divider} />
-
-          {children}
+          <Section style={styles.content}>{children}</Section>
 
           <Hr style={styles.divider} />
-
           <Text style={styles.footer}>
             Notification automatique — ne pas répondre à cet email.
           </Text>

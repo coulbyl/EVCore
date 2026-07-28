@@ -3,31 +3,7 @@ import { createElement } from "react";
 import { renderEmail } from "../render";
 import { type SupportMessageProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
-import { palette } from "../components/palette";
-
-const styles = {
-  heading: {
-    color: palette.text.primary,
-    fontSize: "20px",
-    margin: "0 0 12px",
-  },
-  intro: {
-    color: palette.text.secondary,
-    fontSize: "14px",
-    lineHeight: "22px",
-    margin: "0 0 16px",
-  },
-  preview: {
-    backgroundColor: palette.bg.surface,
-    borderRadius: "6px",
-    color: palette.text.primary,
-    fontSize: "14px",
-    lineHeight: "20px",
-    margin: 0,
-    padding: "12px 16px",
-    whiteSpace: "pre-wrap" as const,
-  },
-} as const;
+import { headingStyle, insetBlock, intro } from "../components/shared-styles";
 
 export function SupportMessageEmail({
   recipientKind,
@@ -38,17 +14,17 @@ export function SupportMessageEmail({
     recipientKind === "ADMIN"
       ? `Nouveau message de ${fromUsername}`
       : "Nouvelle réponse de l'équipe EVCore";
-  const intro =
+  const introText =
     recipientKind === "ADMIN"
       ? `${fromUsername} a envoyé un message dans le support EVCore.`
       : "L'équipe EVCore vous a répondu. Ouvrez l'application pour continuer la conversation.";
 
   return (
     <EvCoreLayout preview={heading}>
-      <Heading style={styles.heading}>{heading}</Heading>
+      <Heading style={headingStyle()}>{heading}</Heading>
       <Section>
-        <Text style={styles.intro}>{intro}</Text>
-        <Text style={styles.preview}>{preview}</Text>
+        <Text style={intro}>{introText}</Text>
+        <Text style={insetBlock}>{preview}</Text>
       </Section>
     </EvCoreLayout>
   );
