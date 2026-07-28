@@ -4,7 +4,13 @@ import { renderEmail } from "../render";
 import { type MlModelActivatedProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { badgeStyle, headingStyle, label, metric, value } from "../components/shared-styles";
+import {
+  badgeStyle,
+  headingStyle,
+  label,
+  metric,
+  value,
+} from "../components/shared-styles";
 
 export function MlModelActivatedEmail({
   versionId,

@@ -19,17 +19,17 @@ Pendant longtemps, BTTS n'a été qu'un signal d'exploration : rentable sur aucu
 
 En le découpant par championnat, l'explication est apparue : ce n'est pas un edge diffus et faible partout, c'est un edge réel sur trois championnats précis, dilué par des pertes ailleurs.
 
-| Championnat            | Volume (n) | ROI mesuré  |
-| ----------------------- | ---------- | ----------- |
-| **Bundesliga**           | 241        | **+5.19%**  |
-| **Serie A**              | 209        | **+3.74%**  |
-| **Premier League**       | 768        | **+2.64%**  |
-| La Liga                 | 788        | −0.77%      |
-| Championship             | 536        | −1.09%      |
-| League One               | 268        | −1.93%      |
-| League Two               | 259        | −2.34%      |
-| Coupe du Monde           | 115        | −1.29%      |
-| Brasileirão Série A      | 100        | **−14.18%** |
+| Championnat         | Volume (n) | ROI mesuré  |
+| ------------------- | ---------- | ----------- |
+| **Bundesliga**      | 241        | **+5.19%**  |
+| **Serie A**         | 209        | **+3.74%**  |
+| **Premier League**  | 768        | **+2.64%**  |
+| La Liga             | 788        | −0.77%      |
+| Championship        | 536        | −1.09%      |
+| League One          | 268        | −1.93%      |
+| League Two          | 259        | −2.34%      |
+| Coupe du Monde      | 115        | −1.29%      |
+| Brasileirão Série A | 100        | **−14.18%** |
 
 Chaque ligne de ce tableau représente au moins 100 sélections réglées — assez pour distinguer un vrai signal du bruit, pas un découpage arbitraire après coup pour faire dire aux chiffres ce qu'on veut.
 

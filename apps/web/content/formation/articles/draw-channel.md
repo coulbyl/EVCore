@@ -17,11 +17,11 @@ DRAW cible le match nul, via la probabilité implicite du marché sur cette issu
 
 Sur l'ensemble de la période testée (4 110 sélections réglées, au dernier audit du 2026-07-28), DRAW affiche un ROI de **+5.35%** — l'un des deux canaux les plus solides d'EVCore avec VALUE. Ce chiffre global masque une évolution encore plus intéressante que sa moyenne :
 
-| Période                | ROI mesuré           |
-| ---------------------- | -------------------- |
-| 2023                   | **−19%**             |
+| Période                | ROI mesuré                |
+| ---------------------- | ------------------------- |
+| 2023                   | **−19%**                  |
 | Tout l'historique      | +5.35% (4 110 sélections) |
-| 2026, selon la formule | **+11% à +16%**      |
+| 2026, selon la formule | **+11% à +16%**           |
 
 DRAW n'a pas toujours été un canal viable — il l'était nettement moins en 2023. La progression continue vers 2026 vient d'un travail de calibration mesuré dans le temps, pas d'un signal qui aurait toujours été bon et qu'on découvrirait seulement maintenant.
 

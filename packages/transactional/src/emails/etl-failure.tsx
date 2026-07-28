@@ -4,7 +4,12 @@ import { renderEmail } from "../render";
 import { type EtlFailureProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { headingStyle, insetBlock, label, value } from "../components/shared-styles";
+import {
+  headingStyle,
+  insetBlock,
+  label,
+  value,
+} from "../components/shared-styles";
 
 const styles = {
   errorBox: {

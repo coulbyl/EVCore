@@ -4,7 +4,13 @@ import { renderEmail } from "../render";
 import { type XgUnavailableReportProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { headingStyle, insetBlock, label, note, value } from "../components/shared-styles";
+import {
+  headingStyle,
+  insetBlock,
+  label,
+  note,
+  value,
+} from "../components/shared-styles";
 
 export function XgUnavailableReportEmail({
   season,

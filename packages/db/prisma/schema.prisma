@@ -209,6 +209,41 @@ enum CouponResult {
   @@schema("public")
 }
 
+// Subscriptions (apps/backend/src/modules/subscriptions/DESIGN.md) — mise
+// virtuelle automatique, indépendante du portefeuille réel.
+enum SubscriptionSourceType {
+  COUPON_BEST // CouponProposal, rank = 1 uniquement
+  COUPON_ALL // Chaque CouponProposal généré ce jour-là (rank 1..maxCoupons), mise pleine sur chacun
+  CHANNEL_VALUE
+  CHANNEL_SAFE
+  CHANNEL_DOMINANT
+  CHANNEL_DRAW
+  CHANNEL_BTTS
+  CHANNEL_TEAM_TOTAL
+
+  @@map("subscription_source_type")
+  @@schema("public")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  ENDED // endDate dépassée, terminé naturellement
+  CANCELLED // arrêté par l'utilisateur avant endDate
+
+  @@map("subscription_status")
+  @@schema("public")
+}
+
+// Uniquement pertinent quand sourceType est un CHANNEL_* (ignoré/null pour
+// COUPON_BEST/COUPON_ALL, validé côté API — voir DESIGN.md).
+enum SubscriptionChannelPickMode {
+  INVESTIR // pick(s) classé(s)/calibré(s) (MODE_RANKING), comme la page Investir
+  DECISIONS // match(s) le(s) plus tôt du jour par heure de coup d'envoi, non classé, comme la page Decisions
+
+  @@map("subscription_channel_pick_mode")
+  @@schema("public")
+}
+
 // ─────────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────────
@@ -478,6 +513,7 @@ model User {
   betSlipItems                     BetSlipItem[]
   bets                             Bet[]
   bankrollTransactions             BankrollTransaction[]
+  subscriptions                    Subscription[]
   contentProgress                  UserContentProgress[]
   announcements                    Announcement[]
   badges                           UserBadge[]
@@ -776,6 +812,7 @@ model ChannelSelection {
   result             BetStatus? // PENDING → WON/LOST/VOID after settlement; Bet.status is financial authority
   settledAt          DateTime?
   bets               Bet[]
+  subscriptionEvents SubscriptionEvent[]
   createdAt          DateTime        @default(now())
 
   // Idempotence du backfill (doc §13) : un rang unique par décision.
@@ -830,6 +867,7 @@ model CouponProposal {
   rank                   Int                  @default(1) // 1 = meilleur coupon du jour, 2 = second, etc.
   lastFixtureScheduledAt DateTime
   legs                   CouponProposalLeg[]
+  subscriptionEvents     SubscriptionEvent[]
   generatedAt            DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 
@@ -860,6 +898,97 @@ model CouponProposalLeg {
   @@index([couponProposalId])
   @@index([fixtureId])
   @@map("coupon_proposal_leg")
+  @@schema("public")
+}
+
+// ─────────────────────────────────────────────
+// Subscriptions — mise virtuelle automatique, suivi de discipline
+// (apps/backend/src/modules/subscriptions/DESIGN.md)
+// ─────────────────────────────────────────────
+
+model Subscription {
+  id              String                       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId          String                       @db.Uuid
+  user            User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType      SubscriptionSourceType
+  // Dénormalisé au moment de la création — si le catalogue change de libellé
+  // plus tard, l'historique affiché reste celui vu par l'utilisateur au moment
+  // de l'abonnement, pas une réécriture rétroactive.
+  sourceLabel     String
+  // Obligatoire si sourceType est un CHANNEL_*, doit être null pour
+  // COUPON_BEST/COUPON_ALL (validé côté API, pas de contrainte DB — Prisma ne
+  // fait pas de check conditionnel inter-colonnes).
+  channelPickMode SubscriptionChannelPickMode?
+  // Idem : obligatoire si sourceType est un CHANNEL_* (valeur du catalogue
+  // SUBSCRIPTION_TOPN_OPTIONS, 1/3/5), null pour COUPON_BEST (toujours 1 par
+  // définition) et COUPON_ALL (toujours "tous", pas de notion de topN).
+  topN            Int?
+  stakePerEvent   Decimal                      @db.Decimal(14, 2)
+  // Jours de semaine éligibles, 0=dimanche..6=samedi ; vide si seule la
+  // condition ligue est utilisée.
+  daysOfWeek      Int[]
+  // Codes de compétition choisis librement par l'utilisateur (ex. ['PL','BL1']),
+  // validés à la création contre Competition.code (Competition.isActive = true) —
+  // vide si aucune condition de championnat n'est utilisée. Combiné à daysOfWeek
+  // par OR. Pas de FK Prisma directe vers Competition (tableau de codes, pas de
+  // relation many-to-many) — même choix que les codes en dur dans
+  // BTTS_STAKED_LEAGUES/LAMBDA_SCALE_MAP ailleurs dans le code.
+  competitionCodes String[]
+  startDate       DateTime                     @db.Date
+  endDate         DateTime                     @db.Date
+  status          SubscriptionStatus           @default(ACTIVE)
+  cancelledAt     DateTime?
+  // Compteurs incrémentés à chaque règlement d'un SubscriptionEvent — évite de
+  // resommer l'historique complet à chaque affichage.
+  totalEvents     Int                          @default(0)
+  settledEvents   Int                          @default(0)
+  wonEvents       Int                          @default(0)
+  totalStaked     Decimal                      @default(0) @db.Decimal(14, 2)
+  netPnl          Decimal                      @default(0) @db.Decimal(14, 2)
+  events          SubscriptionEvent[]
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+
+  @@index([userId, status])
+  @@index([status, endDate])
+  @@map("subscription")
+  @@schema("public")
+}
+
+// Un événement par occurrence de la source, un jour où la condition de
+// l'abonnement était remplie. Pour COUPON_BEST/CHANNEL_* à topN=1, exactement
+// un événement par jour. Pour COUPON_ALL et CHANNEL_* à topN>1, jusqu'à
+// plusieurs événements le même jour (un par coupon/pick trouvé). PENDING
+// (result = null) tant que le résultat réel n'est pas connu.
+model SubscriptionEvent {
+  id                 String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  subscriptionId     String            @db.Uuid
+  subscription       Subscription      @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  date               DateTime          @db.Date
+  // Exactement un des deux est renseigné, selon subscription.sourceType.
+  couponProposalId   String?           @db.Uuid
+  couponProposal     CouponProposal?   @relation(fields: [couponProposalId], references: [id])
+  channelSelectionId String?           @db.Uuid
+  channelSelection   ChannelSelection? @relation(fields: [channelSelectionId], references: [id])
+  // Copié depuis Subscription.stakePerEvent à la création — l'historique déjà
+  // simulé ne doit jamais être réécrit rétroactivement.
+  stake              Decimal           @db.Decimal(14, 2)
+  odds               Decimal?          @db.Decimal(6, 3)
+  result             BetStatus? // null = en attente
+  pnl                Decimal?          @db.Decimal(14, 2)
+  settledAt          DateTime?
+  createdAt          DateTime          @default(now())
+
+  // Pas juste (subscriptionId, date) : COUPON_ALL (plusieurs coupons/jour) et
+  // CHANNEL_* avec topN > 1 (plusieurs picks/jour) produisent chacun plusieurs
+  // événements le même jour, différenciés par couponProposalId/channelSelectionId
+  // respectivement. Pour COUPON_BEST et CHANNEL_* à topN=1, cette contrainte se
+  // comporte comme (subscriptionId, date) — même garantie d'idempotence, juste
+  // exprimée plus largement pour couvrir tous les cas.
+  @@unique([subscriptionId, date, couponProposalId, channelSelectionId])
+  @@index([subscriptionId])
+  @@index([result, date])
+  @@map("subscription_event")
   @@schema("public")
 }
 

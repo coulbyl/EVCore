@@ -6,7 +6,8 @@ order: 1
 slug: unite-de-mise
 summary: "Une unité de mise stable protège contre le staking improvisé. Voici comment la configurer, et comment suivre son solde dans le temps."
 updatedAt: "2026-07-16"
-related: ["variance-et-patience", "allocation-et-timing", "comment-lire-un-pick"]
+related:
+  ["variance-et-patience", "allocation-et-timing", "comment-lire-un-pick"]
 ---
 
 ## Pourquoi une unité de mise, et pas une somme au hasard

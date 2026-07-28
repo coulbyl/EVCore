@@ -27,7 +27,7 @@ Chaque canal a été confronté à des données qu'il n'a jamais vues à l'entra
 ## L'état réel, au dernier audit (2026-07-28)
 
 | Canal                   | Ce qu'il cherche                                  | Statut réel                                                                                                                 |
-| ----------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| ----------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **VALUE** (Valeur)      | Cotes à valeur attendue positive                  | Le canal le plus solide hors échantillon : +9.71% ROI sur 1 333 sélections réglées                                          |
 | **DRAW** (Nul)          | Match nul, via la probabilité implicite du marché | Rentable et confirmé sur gros volume : +5.35% ROI sur 4 110 sélections                                                      |
 | **TEAM_TOTAL**          | Buts d'une seule équipe, plus ou moins une ligne  | Signal net (+3.40% ROI, hit 62.1%) mais tout juste activé — seulement 9 jours d'historique, à surveiller de près            |

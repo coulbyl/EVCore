@@ -30,6 +30,7 @@ import {
 } from './channel-selection-settlement';
 
 export type ChannelSelectionItem = {
+  id: string;
   market: Market;
   pick: string;
   probability: number;
@@ -389,6 +390,7 @@ function toSelectionItem(
   const toNumber = (value: { toString(): string } | null): number | null =>
     value === null ? null : Number(value);
   return {
+    id: selection.id,
     market: selection.market,
     pick: selection.pick,
     probability: Number(selection.probability),

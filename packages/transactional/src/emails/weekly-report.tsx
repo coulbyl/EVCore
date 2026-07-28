@@ -4,7 +4,10 @@ import { renderEmail } from "../render";
 import { type WeeklyReportProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { headingStyle, label as metricLabel } from "../components/shared-styles";
+import {
+  headingStyle,
+  label as metricLabel,
+} from "../components/shared-styles";
 
 const styles = {
   period: { color: palette.text.subtle, fontSize: "12px", margin: "0 0 20px" },

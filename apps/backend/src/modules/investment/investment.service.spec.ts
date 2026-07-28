@@ -20,6 +20,7 @@ function selection(
   overrides: Partial<ChannelSelectionItem> = {},
 ): ChannelSelectionItem {
   return {
+    id: 'sel-1',
     market: 'ONE_X_TWO',
     pick: 'HOME',
     probability: 0.7,

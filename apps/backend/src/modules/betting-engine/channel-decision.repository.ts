@@ -41,6 +41,7 @@ export type ChannelDecisionFilters = {
 };
 
 export type ChannelSelectionReadRow = {
+  id: string;
   market: Market;
   pick: string;
   probability: Prisma.Decimal;
@@ -275,6 +276,7 @@ export class ChannelDecisionRepository {
         },
         selections: {
           select: {
+            id: true,
             market: true,
             pick: true,
             probability: true,

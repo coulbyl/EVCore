@@ -15,5 +15,6 @@ import { InvestmentCoherenceRepository } from './investment-coherence.repository
     InvestmentCalibrationRepository,
     InvestmentCoherenceRepository,
   ],
+  exports: [InvestmentService],
 })
 export class InvestmentModule {}

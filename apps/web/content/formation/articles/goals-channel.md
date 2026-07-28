@@ -17,9 +17,9 @@ GOALS identifie une direction sur le total de buts d'un match, plus ou moins une
 
 L'audit du 2026-07-28, sur l'historique complet (15 685 sélections réglées — de loin le plus gros échantillon de tous les canaux d'EVCore), confirme un ROI négatif :
 
-| Canal | Volume (n) | ROI mesuré  |
-| ----- | ---------- | ----------- |
-| GOALS | 15 685     | **−5.39%**  |
+| Canal | Volume (n) | ROI mesuré |
+| ----- | ---------- | ---------- |
+| GOALS | 15 685     | **−5.39%** |
 
 Ce chiffre mérite une mise en garde particulière : sur une fenêtre plus courte et récente, GOALS peut apparaître ponctuellement positif (+1.5% a été observé sur une fenêtre de 90 jours, par exemple) — une série favorable, statistiquement possible même sur un canal négatif en moyenne. C'est exactement le piège que la leçon sur la variance décrit : juger un canal sur une fenêtre récente plutôt que sur son historique complet aurait conduit à l'activer à tort. L'audit complet, avec un échantillon quinze fois plus grand, tranche dans l'autre sens.
 

@@ -56,8 +56,7 @@ function computeGroupStats(rows: Row[]): GroupStat[] {
     .map(([code, groupRows]) => {
       const won = groupRows.filter((r) => r.result === BetStatus.WON).length;
       const pnl = groupRows.reduce(
-        (sum, r) =>
-          sum + (r.result === BetStatus.WON ? r.odds - 1 : -1),
+        (sum, r) => sum + (r.result === BetStatus.WON ? r.odds - 1 : -1),
         0,
       );
       return {
@@ -131,8 +130,10 @@ async function main() {
     const rows: Row[] = selections.map((s) => ({
       result: s.result!,
       odds: toNum(s.odds),
-      competitionCode: s.channelDecision.modelRun.fixture.season.competition.code,
-      competitionName: s.channelDecision.modelRun.fixture.season.competition.name,
+      competitionCode:
+        s.channelDecision.modelRun.fixture.season.competition.code,
+      competitionName:
+        s.channelDecision.modelRun.fixture.season.competition.name,
       competitionCountry:
         s.channelDecision.modelRun.fixture.season.competition.country,
     }));

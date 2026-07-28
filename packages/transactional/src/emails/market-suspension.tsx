@@ -4,7 +4,12 @@ import { renderEmail } from "../render";
 import { type MarketSuspensionProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { badgeStyle, headingStyle, label, value } from "../components/shared-styles";
+import {
+  badgeStyle,
+  headingStyle,
+  label,
+  value,
+} from "../components/shared-styles";
 
 const styles = {
   info: { color: palette.text.secondary, fontSize: "13px", margin: "0" },

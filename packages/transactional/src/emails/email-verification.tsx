@@ -4,7 +4,12 @@ import { renderEmail } from "../render";
 import { type EmailVerificationProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-import { headingStyle, hint, insetBlock, intro } from "../components/shared-styles";
+import {
+  headingStyle,
+  hint,
+  insetBlock,
+  intro,
+} from "../components/shared-styles";
 
 const styles = {
   code: {

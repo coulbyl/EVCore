@@ -28,11 +28,11 @@ Cette hiérarchie n'est pas figée : elle change avec chaque audit, exactement c
 
 Le Coupon Composer applique déjà cette logique de pondération par canal en coulisse. Sur 376 coupons réglés au dernier audit, le résultat global est un ROI de +32.2% à mise plate — mais ce chiffre demande deux nuances avant d'en tirer une conclusion :
 
-| | Volume | Taux de réussite | ROI (mise plate) |
-| --- | --- | --- | --- |
-| Coupon classé n°1 du jour | 171 | 32.2% | **+45.3%** |
-| Coupon classé n°2 du jour | 116 | 30.2% | +28.4% |
-| Coupon classé n°3 du jour | 89 | 28.1% | +12.0% |
+|                           | Volume | Taux de réussite | ROI (mise plate) |
+| ------------------------- | ------ | ---------------- | ---------------- |
+| Coupon classé n°1 du jour | 171    | 32.2%            | **+45.3%**       |
+| Coupon classé n°2 du jour | 116    | 30.2%            | +28.4%           |
+| Coupon classé n°3 du jour | 89     | 28.1%            | +12.0%           |
 
 D'abord, la cote combinée moyenne de ces coupons (4.36) explique le taux de réussite modeste : c'est un profil de combiné, où le profit vient de gains ponctuels qui compensent large — exactement le principe déjà couvert par la leçon sur la variance. Ensuite, le coupon classé n°1 du jour est nettement plus rentable que les suivants : à capital limité, le prioriser a plus de sens que de répartir également entre les trois.
 
