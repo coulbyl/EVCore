@@ -6,7 +6,7 @@ order: 2
 slug: variance-et-patience
 summary: "Un edge positif n'empêche pas une série de défaites. Comprendre pourquoi, avec un exemple chiffré, est ce qui sépare une discipline tenue d'un abandon prématuré."
 updatedAt: "2026-07-16"
-related: ["unite-de-mise", "ev-probabilites-cotes"]
+related: ["unite-de-mise", "allocation-et-timing", "ev-probabilites-cotes"]
 ---
 
 ## Le piège le plus commun après un edge réel

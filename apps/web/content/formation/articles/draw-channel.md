@@ -4,8 +4,8 @@ category: channels
 difficulty: intermediate
 order: 5
 slug: draw-channel
-summary: "DRAW était nettement négatif il y a deux ans. Il est aujourd'hui en territoire positif, avec des signes clairs d'amélioration récente. Voici comment lire une trajectoire, pas seulement un chiffre figé."
-updatedAt: "2026-07-16"
+summary: "DRAW était nettement négatif il y a deux ans. Il est aujourd'hui l'un des deux canaux les plus solides d'EVCore, avec des signes clairs d'amélioration continue. Voici comment lire une trajectoire, pas seulement un chiffre figé."
+updatedAt: "2026-07-28"
 related: ["channels-overview", "value-channel", "dominant-channel"]
 ---
 
@@ -15,15 +15,15 @@ DRAW cible le match nul, via la probabilité implicite du marché sur cette issu
 
 ## Une trajectoire, pas un chiffre unique
 
-Sur l'ensemble de la période testée (1 119 picks), DRAW affiche un ROI de +1.61% — modeste, mais positif. Ce chiffre global masque une évolution plus intéressante que sa moyenne :
+Sur l'ensemble de la période testée (4 110 sélections réglées, au dernier audit du 2026-07-28), DRAW affiche un ROI de **+5.35%** — l'un des deux canaux les plus solides d'EVCore avec VALUE. Ce chiffre global masque une évolution encore plus intéressante que sa moyenne :
 
 | Période                | ROI mesuré           |
 | ---------------------- | -------------------- |
 | 2023                   | **−19%**             |
-| Tout l'historique      | +1.61% (1 119 picks) |
+| Tout l'historique      | +5.35% (4 110 sélections) |
 | 2026, selon la formule | **+11% à +16%**      |
 
-DRAW n'a pas toujours été un canal viable — il l'était nettement moins en 2023. La progression vers 2026 vient d'un travail de calibration mesuré dans le temps, pas d'un signal qui aurait toujours été bon et qu'on découvrirait seulement maintenant.
+DRAW n'a pas toujours été un canal viable — il l'était nettement moins en 2023. La progression continue vers 2026 vient d'un travail de calibration mesuré dans le temps, pas d'un signal qui aurait toujours été bon et qu'on découvrirait seulement maintenant.
 
 ## Pourquoi cette leçon compte au-delà du chiffre
 
@@ -38,5 +38,5 @@ C'est aussi un rappel utile : un canal qui n'est pas encore au niveau de VALUE a
 ## À retenir
 
 - DRAW est passé d'un ROI franchement négatif en 2023 à un ROI positif et croissant en 2026 — une vraie trajectoire, mesurée et datée.
-- Le chiffre global (+1.61% sur tout l'historique) reste modeste : c'est la tendance récente qui est le signal le plus intéressant.
+- Le chiffre global (+5.35% sur tout l'historique, 4 110 sélections) confirme DRAW comme l'un des deux canaux les plus solides d'EVCore, aux côtés de VALUE.
 - Un canal encore jeune peut mûrir, à condition que la preuve suive.
