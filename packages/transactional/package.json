@@ -25,6 +25,7 @@
   "devDependencies": {
     "@evcore/eslint-config": "workspace:*",
     "@evcore/typescript-config": "workspace:*",
+    "@react-email/ui": "6.5.0",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

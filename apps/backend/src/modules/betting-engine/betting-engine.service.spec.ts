@@ -101,6 +101,11 @@ function makeH2hServiceMock(score: number | null = null): H2HService {
       winToNilAway: null,
       sampleSize: 0,
     }),
+    computeH2HScorelineSignal: vi.fn().mockResolvedValue({
+      scoreline: null,
+      confidence: null,
+      sampleSize: 0,
+    }),
   } as unknown as H2HService;
 }
 

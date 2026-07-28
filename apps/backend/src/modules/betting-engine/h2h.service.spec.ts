@@ -210,3 +210,66 @@ describe('H2HService.computeH2HMarketSignals', () => {
     expect(result.winToNilAway).toBeCloseTo(0.64 / weightTotal, 8);
   });
 });
+
+describe('H2HService.computeH2HScorelineSignal', () => {
+  it('returns nulls with sampleSize when fewer than 3 valid legs are found', async () => {
+    const service = new H2HService(
+      makePrismaMock([
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 2, awayScore: 1 },
+      ]),
+    );
+
+    await expect(
+      service.computeH2HScorelineSignal({
+        homeTeamId: 'home',
+        awayTeamId: 'away',
+        fixtureDate: new Date('2026-03-03T00:00:00.000Z'),
+      }),
+    ).resolves.toEqual({ scoreline: null, confidence: null, sampleSize: 1 });
+  });
+
+  it('orients each leg score to the target fixture home/away sides before counting', async () => {
+    const service = new H2HService(
+      makePrismaMock([
+        // leg 1 (most recent, weight 1): 'home' played away, lost 0-2 -> oriented 2:0 for target home/away
+        { homeTeamId: 'away', awayTeamId: 'home', homeScore: 0, awayScore: 2 },
+        // leg 2 (weight 0.8): 'home' played at home, won 2-0 -> oriented 2:0
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 2, awayScore: 0 },
+        // leg 3 (weight 0.64): 'home' played at home, drew 1-1 -> oriented 1:1
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 1, awayScore: 1 },
+      ]),
+    );
+
+    const result = await service.computeH2HScorelineSignal({
+      homeTeamId: 'home',
+      awayTeamId: 'away',
+      fixtureDate: new Date('2026-03-03T00:00:00.000Z'),
+    });
+
+    const weightTotal = 1 + 0.8 + 0.64;
+    expect(result.scoreline).toBe('2:0');
+    expect(result.confidence).toBeCloseTo((1 + 0.8) / weightTotal, 8);
+    expect(result.sampleSize).toBe(3);
+  });
+
+  it('breaks a weight tie by picking whichever scoreline is iterated first (documented, not load-bearing)', async () => {
+    const service = new H2HService(
+      makePrismaMock([
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 1, awayScore: 0 },
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 0, awayScore: 1 },
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 1, awayScore: 0 },
+        { homeTeamId: 'home', awayTeamId: 'away', homeScore: 0, awayScore: 1 },
+      ]),
+    );
+
+    const result = await service.computeH2HScorelineSignal({
+      homeTeamId: 'home',
+      awayTeamId: 'away',
+      fixtureDate: new Date('2026-03-03T00:00:00.000Z'),
+      limit: 4,
+    });
+
+    expect(['1:0', '0:1']).toContain(result.scoreline);
+    expect(result.sampleSize).toBe(4);
+  });
+});

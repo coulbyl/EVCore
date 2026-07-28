@@ -150,6 +150,11 @@ const POOLS: Pool[] = [
   { label: "DOMINANT", channel: "DOMINANT", formulas: SINGLE_CHANNEL_FORMULAS },
   { label: "BTTS", channel: "BTTS", formulas: SINGLE_CHANNEL_FORMULAS },
   {
+    label: "TEAM_TOTAL",
+    channel: "TEAM_TOTAL",
+    formulas: SINGLE_CHANNEL_FORMULAS,
+  },
+  {
     label: "GOALS — hors picks lambda-incoherents (comme en prod)",
     channel: "GOALS",
     formulas: SINGLE_CHANNEL_FORMULAS,
@@ -415,7 +420,15 @@ const DRAW_DIAGNOSTICS: BucketSpec[] = [
 ];
 
 async function main() {
-  const channels = ["VALUE", "DRAW", "SAFE", "DOMINANT", "BTTS", "GOALS"];
+  const channels = [
+    "VALUE",
+    "DRAW",
+    "SAFE",
+    "DOMINANT",
+    "BTTS",
+    "GOALS",
+    "TEAM_TOTAL",
+  ];
   // Dedup rolling-horizon passes: only the latest ModelRun per (fixture, channel).
   const rows = await prisma.$queryRaw<Row[]>`
     WITH latest AS (
@@ -461,7 +474,7 @@ async function main() {
   const w = (s = "") => lines.push(s);
   w("BACKTEST CLASSEMENT TOPN — modes value & draw (page Investir)");
   w(
-    `Genere le ${new Date().toISOString()} — ${rows.length} picks settled (VALUE+DRAW)`,
+    `Genere le ${new Date().toISOString()} — ${rows.length} picks settled (${channels.join("+")})`,
   );
   w(
     `Calibration leak-free : fenetre ${CALIBRATION_WINDOW_DAYS}j, min ${CALIBRATION_MIN_SAMPLES} samples, erreur mesuree avant le debut de chaque jour`,

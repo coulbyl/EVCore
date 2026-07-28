@@ -17,10 +17,13 @@ export type ProbabilityBucket =
 export const ODDS_SHORT_THRESHOLD = 1.2;
 
 // Channels with a negative aggregate settled ROI in production (checked
-// 2026-07-06: DOMINANT -23.27%, GOALS -26.05%, BTTS -37.22% over 7k-35k settled
-// picks). Surfaced as a contextual badge only — a specific pick from one of
-// these channels can still be a legitimate individual choice.
-export const NEGATIVE_ROI_CHANNELS = ['DOMINANT', 'GOALS', 'BTTS'] as const;
+// 2026-07-06: DOMINANT -23.27%, GOALS -26.05%. BTTS was -37.22% then but
+// re-measured 2026-07-28 at +0.76% all-time (n=3983), up to +5.19%/+3.74%/
+// +2.64% on BL1/SA/PL specifically — removed from this list; see
+// BTTS_STAKED_LEAGUES in coupon.constants.ts for its staking scope). Surfaced
+// as a contextual badge only — a specific pick from one of these channels can
+// still be a legitimate individual choice.
+export const NEGATIVE_ROI_CHANNELS = ['DOMINANT', 'GOALS'] as const;
 
 export const INVESTMENT_LIMITS = {
   maxPicks: 15,
@@ -50,7 +53,13 @@ export const OVER_UNDER_LINES: Record<string, number> = {
   UNDER_4_5: 4.5,
 };
 
-export type SingleChannelMode = 'safe' | 'dominant' | 'btts' | 'goals' | 'draw';
+export type SingleChannelMode =
+  | 'safe'
+  | 'dominant'
+  | 'btts'
+  | 'goals'
+  | 'draw'
+  | 'teamTotal';
 export type InvestmentMode = 'probability' | 'value' | SingleChannelMode;
 
 // EV only predicts a better outcome within VALUE — verified 2026-07-06 with a
@@ -72,6 +81,7 @@ export const SINGLE_CHANNEL_MODE_MAP: Record<SingleChannelMode, string> = {
   btts: 'BTTS',
   goals: 'GOALS',
   draw: 'DRAW',
+  teamTotal: 'TEAM_TOTAL',
 };
 
 export type ModeRankingSort = 'probability' | 'edge';
@@ -92,6 +102,10 @@ export type ModeRankingSort = 'probability' | 'edge';
 // - btts/goals: no ranking is reliably positive on any period — a topN cannot
 //   fix those channels (their fix is model calibration), so no cap: the list
 //   stays a full review surface with the channelRoiFlag badge as the signal.
+// - teamTotal: probability ranking is the WORST option (-3.30% to -6.29% ROI)
+//   vs edge/EV (+24% to +27% top3) — same "high probas die, low ones cash"
+//   pattern as value/draw. Provisional: measured on only 9 trading days
+//   (db:backtest:invest-ranking, 2026-07-28) — revisit once more data accrues.
 export const MODE_RANKING = {
   probability: { sort: 'probability', topN: null },
   value: { sort: 'edge', topN: 5 },
@@ -100,6 +114,7 @@ export const MODE_RANKING = {
   btts: { sort: 'probability', topN: null },
   goals: { sort: 'probability', topN: null },
   draw: { sort: 'edge', topN: 5 },
+  teamTotal: { sort: 'edge', topN: 3 },
 } as const satisfies Record<
   InvestmentMode,
   { sort: ModeRankingSort; topN: number | null }

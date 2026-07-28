@@ -12,8 +12,16 @@ import type { StrategyChannel } from '@evcore/db';
 
 export type CouponChannel = Extract<
   StrategyChannel,
-  'VALUE' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT'
+  'VALUE' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT' | 'TEAM_TOTAL'
 >;
+
+// BTTS staking (B7-style promotion, 2026-07-28) — the aggregate all-time ROI
+// (+0.76%, n=3983) hides a real per-league split: only these 3 leagues are
+// statistically conclusive (n>=100) AND ROI-positive (db:backtest:team-total-
+// btts-competition). La Liga/Championship/League One/League Two/World Cup/
+// Brasileirão are also conclusive but negative (down to -14.18% for BRA1) —
+// BTTS is staked ONLY on this whitelist, not globally.
+export const BTTS_STAKED_LEAGUES = ['PL', 'BL1', 'SA'] as const;
 
 export type VirtualCouponChannel =
   | 'SAFE_HT_OVER05'
@@ -34,6 +42,9 @@ export const MAX_COUPON_SELECTIONS: Record<CouponChannel, number> = {
   DOMINANT: 5,
   DRAW: 2,
   VALUE: 2,
+  // Aligned with the backtested topN=3 ranking (db:backtest:invest-ranking,
+  // 2026-07-28) — edge-ranked, not probability-ranked (see MODE_RANKING.teamTotal).
+  TEAM_TOTAL: 3,
 } as const;
 
 export const CANAL_BASE_WEIGHT: Record<CouponChannel, number> = {
@@ -42,6 +53,10 @@ export const CANAL_BASE_WEIGHT: Record<CouponChannel, number> = {
   BTTS: 0.62,
   VALUE: 0.36,
   DRAW: 0.2,
+  // Conservative launch weight (2026-07-28) — below DRAW's, since TEAM_TOTAL's
+  // +3.40% ROI (n=845) rests on only 9 days of history. Revisit once more days
+  // accumulate.
+  TEAM_TOTAL: 0.15,
 } as const;
 
 export const COUPON_PARAMS = {
@@ -68,6 +83,7 @@ export const COUPON_PARAMS = {
     VALUE: 5,
     DOMINANT: 20,
     DRAW: 20,
+    TEAM_TOTAL: 20,
   } as Record<CouponChannel, number>,
 } as const;
 

@@ -4,25 +4,9 @@ import { renderEmail } from "../render";
 import { type RoiAlertProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
+import { headingStyle, label, value } from "../components/shared-styles";
 
 const styles = {
-  heading: {
-    color: palette.status.alert,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  label: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 2px",
-  },
-  value: {
-    color: palette.text.primary,
-    fontSize: "15px",
-    fontWeight: "600",
-    margin: "0 0 12px",
-  },
   hint: { color: palette.status.caution, fontSize: "13px", margin: "0" },
 } as const;
 
@@ -30,12 +14,12 @@ export function RoiAlertEmail({ market, roi, betCount }: RoiAlertProps) {
   const roiPct = (roi * 100).toFixed(2);
   return (
     <EvCoreLayout preview={`ROI Alert — ${market}: ${roiPct}%`}>
-      <Heading style={styles.heading}>ROI Alert</Heading>
+      <Heading style={headingStyle(palette.status.alert)}>ROI Alert</Heading>
       <Section>
-        <Text style={styles.label}>MARCHÉ</Text>
-        <Text style={styles.value}>{market}</Text>
-        <Text style={styles.label}>ROI ACTUEL</Text>
-        <Text style={styles.value}>
+        <Text style={label}>Marché</Text>
+        <Text style={value}>{market}</Text>
+        <Text style={label}>ROI actuel</Text>
+        <Text style={value}>
           {roiPct}% sur {betCount} paris
         </Text>
         <Text style={styles.hint}>

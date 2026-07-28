@@ -52,10 +52,18 @@ export const CHANNEL_LABELS: Record<ChannelStatsItem["channel"], string> = {
   DRAW: "DRAW (Nul)",
   BTTS: "BTTS (BB)",
   GOALS: "GOALS (Buts)",
+  CLEAN_SHEET: "CLEAN_SHEET (Cage inviolée)",
+  TEAM_TOTAL: "TEAM_TOTAL (Buts par équipe)",
+  WIN_EITHER_HALF: "WIN_EITHER_HALF (Gagne une mi-temps)",
+  CORRECT_SCORE: "CORRECT_SCORE (Score exact)",
 };
 
 // Display order matching the formation lessons (VALUE/SAFE proven or
 // promising, DOMINANT/DRAW improving, BTTS/GOALS exploratory signals).
+// CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF/CORRECT_SCORE appended last —
+// newer, observation-only channels (see docs/ml-worker-sync.md,
+// project-correct-score-immature memory), shown honestly like every other
+// channel rather than hidden.
 export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "VALUE",
   "SAFE",
@@ -63,6 +71,10 @@ export const CHANNEL_DISPLAY_ORDER: ChannelStatsItem["channel"][] = [
   "DRAW",
   "BTTS",
   "GOALS",
+  "CLEAN_SHEET",
+  "TEAM_TOTAL",
+  "WIN_EITHER_HALF",
+  "CORRECT_SCORE",
 ];
 
 export type MergedChannelRow = ChannelStatsItem & {

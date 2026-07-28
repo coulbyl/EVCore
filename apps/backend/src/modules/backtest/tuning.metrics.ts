@@ -13,10 +13,17 @@ import {
   CHANNEL_PROMOTION_RULE,
   GOALS_PROMOTION_RULE,
   GOALS_TUNING_THRESHOLD_GRID,
+  TEAM_TOTAL_PROMOTION_RULE,
+  TEAM_TOTAL_TUNING_THRESHOLD_GRID,
   TUNING_THRESHOLD_GRID,
   type ChannelPromotionRule,
   type GoalsTuningSide,
 } from './tuning.constants';
+import type {
+  GoalsLine,
+  TeamTotalLine,
+  TeamTotalTeam,
+} from '@modules/betting-engine/strategies/channel-strategy.config';
 
 const DOMINANT_MARGIN = DOMINANT_MIN_MARGIN.toNumber();
 
@@ -257,25 +264,53 @@ export function buildChannelThresholdSweep(
 
 export type GoalsLineSweep = {
   side: GoalsTuningSide;
-  line: number;
+  line: GoalsLine;
   candidates: number;
   points: ThresholdPoint[];
   recommended: ThresholdRecommendation | null;
 };
 
+// (prob, odds) field lookup per (line × side) — the row keeps one flat pair
+// per line (see backtest.repository.ts ChannelTuningRow), same convention
+// used for every other config-driven channel above.
+function goalsFields(
+  r: ChannelTuningRow,
+  line: GoalsLine,
+  side: GoalsTuningSide,
+): { signal: number | null; odds: number | null } {
+  switch (line) {
+    case 1.5:
+      return side === 'OVER'
+        ? { signal: r.probOver15, odds: r.oddsOver15 }
+        : { signal: r.probUnder15, odds: r.oddsUnder15 };
+    case 2.5:
+      return side === 'OVER'
+        ? { signal: r.probOver25, odds: r.oddsOver25 }
+        : { signal: r.probUnder25, odds: r.oddsUnder25 };
+    case 3.5:
+      return side === 'OVER'
+        ? { signal: r.probOver35, odds: r.oddsOver35 }
+        : { signal: r.probUnder35, odds: r.oddsUnder35 };
+    case 4.5:
+      return side === 'OVER'
+        ? { signal: r.probOver45, odds: r.oddsOver45 }
+        : { signal: r.probUnder45, odds: r.oddsUnder45 };
+  }
+}
+
 function goalsSelectables(
   rows: ChannelTuningRow[],
+  line: GoalsLine,
   side: GoalsTuningSide,
 ): Selectable[] {
   const out: Selectable[] = [];
   for (const r of rows) {
-    const signal = side === 'OVER' ? r.probOver25 : r.probUnder25;
-    const odds = side === 'OVER' ? r.oddsOver25 : r.oddsUnder25;
+    const { signal, odds } = goalsFields(r, line, side);
     if (signal === null || odds === null || odds <= 0) continue;
     const totalGoals = r.homeScore + r.awayScore;
     out.push({
       signal,
-      won: side === 'OVER' ? totalGoals > 2 : totalGoals < 3,
+      won: side === 'OVER' ? totalGoals > line : totalGoals < line,
       odds,
     });
   }
@@ -323,16 +358,78 @@ export function buildBttsNoSweep(rows: ChannelTuningRow[]): BttsNoSweep {
 
 /** Threshold sweep + ROI-driven recommendation for one GOALS (line × side). */
 export function buildGoalsLineSweep(
+  line: GoalsLine,
   side: GoalsTuningSide,
   rows: ChannelTuningRow[],
 ): GoalsLineSweep {
-  const selectables = goalsSelectables(rows, side);
+  const selectables = goalsSelectables(rows, line, side);
   const points = sweepGrid(GOALS_TUNING_THRESHOLD_GRID, selectables);
   return {
     side,
-    line: 2.5,
+    line,
     candidates: selectables.length,
     points,
     recommended: recommendFrom(GOALS_PROMOTION_RULE, points),
+  };
+}
+
+// ─────────────────────────────────────────────
+// TEAM_TOTAL (per-team Over/Under) sweep — same shape as GOALS, doubled on
+// the team dimension. Signal/odds come from the row's raw pick->value maps
+// (probTeamTotalHome/Away, oddsTeamTotalHome/Away), keyed "OVER_X_Y"/
+// "UNDER_X_Y" (see team-total.strategy.ts teamTotalPick()).
+// ─────────────────────────────────────────────
+
+export type TeamTotalSweep = {
+  team: TeamTotalTeam;
+  line: TeamTotalLine;
+  side: GoalsTuningSide;
+  candidates: number;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
+function teamTotalPick(line: TeamTotalLine, side: GoalsTuningSide): string {
+  return `${side}_${String(line).replace('.', '_')}`;
+}
+
+function teamTotalSelectables(
+  rows: ChannelTuningRow[],
+  opts: { team: TeamTotalTeam; line: TeamTotalLine; side: GoalsTuningSide },
+): Selectable[] {
+  const { team, line, side } = opts;
+  const pick = teamTotalPick(line, side);
+  const out: Selectable[] = [];
+  for (const r of rows) {
+    const probs = team === 'HOME' ? r.probTeamTotalHome : r.probTeamTotalAway;
+    const oddsMap = team === 'HOME' ? r.oddsTeamTotalHome : r.oddsTeamTotalAway;
+    const signal = probs?.[pick] ?? null;
+    const odds = oddsMap?.[pick] ?? null;
+    if (signal === null || odds === null || odds <= 0) continue;
+    const teamGoals = team === 'HOME' ? r.homeScore : r.awayScore;
+    out.push({
+      signal,
+      won: side === 'OVER' ? teamGoals > line : teamGoals < line,
+      odds,
+    });
+  }
+  return out;
+}
+
+/** Threshold sweep + ROI-driven recommendation for one TEAM_TOTAL (team × line × side). */
+export function buildTeamTotalSweep(
+  opts: { team: TeamTotalTeam; line: TeamTotalLine; side: GoalsTuningSide },
+  rows: ChannelTuningRow[],
+): TeamTotalSweep {
+  const { team, line, side } = opts;
+  const selectables = teamTotalSelectables(rows, { team, line, side });
+  const points = sweepGrid(TEAM_TOTAL_TUNING_THRESHOLD_GRID, selectables);
+  return {
+    team,
+    line,
+    side,
+    candidates: selectables.length,
+    points,
+    recommended: recommendFrom(TEAM_TOTAL_PROMOTION_RULE, points),
   };
 }

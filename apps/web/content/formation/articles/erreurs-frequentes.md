@@ -2,7 +2,7 @@
 title: "Les erreurs les plus fréquentes en exploitant EVCore"
 category: channels
 difficulty: intermediate
-order: 7
+order: 9
 slug: erreurs-frequentes
 summary: "Comprendre les canaux ne suffit pas si on les exploite mal. Voici les erreurs les plus courantes — et les plus coûteuses — même chez quelqu'un qui a lu toutes les leçons précédentes."
 updatedAt: "2026-07-16"

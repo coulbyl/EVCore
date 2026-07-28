@@ -17,6 +17,7 @@ const CHANNEL_MODE_KEY: Record<
   btts: "BTTS",
   goals: "GOALS",
   draw: "DRAW",
+  teamTotal: "TEAM_TOTAL",
 };
 
 const MODE_ORDER: InvestmentMode[] = [
@@ -24,6 +25,7 @@ const MODE_ORDER: InvestmentMode[] = [
   "value",
   "safe",
   "dominant",
+  "teamTotal",
   "btts",
   "goals",
   "draw",

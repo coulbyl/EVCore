@@ -32,6 +32,9 @@ import {
 import { InvestmentCoherenceRepository } from './investment-coherence.repository';
 
 export type InvestmentPick = {
+  // Underlying ChannelSelection id — lets other services (e.g. Subscriptions)
+  // link a pick shown here back to the exact DB row it came from.
+  channelSelectionId: string;
   fixtureId: string;
   fixtureStatus: FixtureStatus;
   fixture: string;
@@ -161,6 +164,7 @@ function toInvestmentPick(
   const meanError = calibration[item.channel] ?? 0;
   const probability = clamp01(modelProbability - meanError);
   return {
+    channelSelectionId: primary.id,
     fixtureId: item.fixtureId,
     fixtureStatus: item.fixtureStatus,
     fixture: `${item.homeTeam} vs ${item.awayTeam}`,

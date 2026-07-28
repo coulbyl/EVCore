@@ -4,35 +4,18 @@ import { renderEmail } from "../render";
 import { type EtlFailureProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
+import {
+  headingStyle,
+  insetBlock,
+  label,
+  value,
+} from "../components/shared-styles";
 
 const styles = {
-  heading: {
-    color: palette.status.alert,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  label: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 2px",
-  },
-  value: {
-    color: palette.text.primary,
-    fontSize: "15px",
-    fontWeight: "600",
-    margin: "0 0 12px",
-  },
   errorBox: {
-    backgroundColor: palette.bg.code,
-    border: `1px solid ${palette.badge.alert.border}`,
-    borderRadius: "4px",
+    ...insetBlock,
+    borderColor: palette.badge.alert.border,
     color: palette.badge.alert.text,
-    fontSize: "12px",
-    lineHeight: "18px",
-    margin: "0",
-    padding: "10px 12px",
-    wordBreak: "break-all" as const,
   },
 } as const;
 
@@ -43,13 +26,13 @@ export function EtlFailureEmail({
 }: EtlFailureProps) {
   return (
     <EvCoreLayout preview={`ETL Failure — ${queue} / ${jobName}`}>
-      <Heading style={styles.heading}>ETL Failure</Heading>
+      <Heading style={headingStyle(palette.status.alert)}>ETL Failure</Heading>
       <Section>
-        <Text style={styles.label}>QUEUE</Text>
-        <Text style={styles.value}>{queue}</Text>
-        <Text style={styles.label}>JOB</Text>
-        <Text style={styles.value}>{jobName}</Text>
-        <Text style={styles.label}>ERREUR</Text>
+        <Text style={label}>Queue</Text>
+        <Text style={value}>{queue}</Text>
+        <Text style={label}>Job</Text>
+        <Text style={value}>{jobName}</Text>
+        <Text style={label}>Erreur</Text>
         <Text style={styles.errorBox}>{errorMessage}</Text>
       </Section>
     </EvCoreLayout>

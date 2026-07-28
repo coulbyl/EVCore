@@ -81,6 +81,7 @@ import {
   rebalanceThreeWayProbabilities,
   getOverUnderShrinkageConfig,
   shrinkOverUnderProbabilities,
+  applyH2HMarketSignalCorrection,
 } from './math/probability';
 import { getLeagueThreeWayEmpiricalBlendWeight } from './ev.constants';
 import { getPickOdds } from './pricing/odds-mapping';
@@ -597,26 +598,38 @@ export class BettingEngineService {
     const favoriteTeamId = favoriteIsHome
       ? fixture.homeTeamId
       : fixture.awayTeamId;
-    const [shadowH2h, shadowH2hMarketSignals] = await Promise.all([
-      this.h2hService.computeH2HScore({
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        favoriteTeamId,
-        fixtureDate: fixture.scheduledAt,
-        limit: 5,
-      }),
-      // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates, shadow
-      // only: backtested individually (5/6 show a real out-of-sample Brier
-      // gain, BTTS is noise-level) but not yet activated — needs a combined
-      // backtest against the lambda correction above to rule out
-      // double-counting the correlated result-based H2H signal.
-      this.h2hService.computeH2HMarketSignals({
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        fixtureDate: fixture.scheduledAt,
-        limit: 5,
-      }),
-    ]);
+    const [shadowH2h, shadowH2hMarketSignals, shadowH2hScoreline] =
+      await Promise.all([
+        this.h2hService.computeH2HScore({
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          favoriteTeamId,
+          fixtureDate: fixture.scheduledAt,
+          limit: 5,
+        }),
+        // v2.2 (docs/h2h-service-v2-plan.md §3.3) — per-market rates, shadow
+        // only: backtested individually (5/6 show a real out-of-sample Brier
+        // gain, BTTS is noise-level) but not yet activated — needs a combined
+        // backtest against the lambda correction above to rule out
+        // double-counting the correlated result-based H2H signal.
+        this.h2hService.computeH2HMarketSignals({
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          fixtureDate: fixture.scheduledAt,
+          limit: 5,
+        }),
+        // CORRECT_SCORE-specific, shadow only (memory
+        // project-correct-score-immature, 2026-07-28) — marginal, not yet
+        // significant lift (p=0.06-0.08 on historical backtest); logged so
+        // backtest-h2h-scoreline-signal.ts can re-evaluate as live volume
+        // grows, never read by decision logic.
+        this.h2hService.computeH2HScorelineSignal({
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          fixtureDate: fixture.scheduledAt,
+          limit: 5,
+        }),
+      ]);
 
     const h2hCorrectionApplied =
       FEATURE_FLAGS.SCORING.H2H && shadowH2h !== null;
@@ -628,7 +641,7 @@ export class BettingEngineService {
           gamma: H2H_GAMMA,
         })
       : baselineLambda;
-    const probabilities = h2hCorrectionApplied
+    const preMarketSignalProbabilities = h2hCorrectionApplied
       ? this.probabilitiesFromLambda({
           lambda,
           homeStats: effectiveHomeStats,
@@ -636,6 +649,17 @@ export class BettingEngineService {
           competitionCode,
         })
       : baselineProbabilities;
+    // Per-market logit-shift on top of the lambda-adjusted probabilities —
+    // combined backtest confirmed a real additional Brier gain on all 6
+    // markets, not redundant with the H2H lambda correction above (see
+    // memory project-h2h-market-signals-ready, packages/db/reports/
+    // backtest-h2h-market-signals-combined-2026-07-28.txt).
+    const probabilities = FEATURE_FLAGS.SCORING.H2H_MARKET_SIGNALS
+      ? applyH2HMarketSignalCorrection(
+          preMarketSignalProbabilities,
+          shadowH2hMarketSignals,
+        )
+      : preMarketSignalProbabilities;
 
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -881,6 +905,8 @@ export class BettingEngineService {
       shadow_h2h_win_to_nil_home: shadowH2hMarketSignals.winToNilHome,
       shadow_h2h_win_to_nil_away: shadowH2hMarketSignals.winToNilAway,
       shadow_h2h_sample_size: shadowH2hMarketSignals.sampleSize,
+      shadow_h2h_scoreline: shadowH2hScoreline.scoreline,
+      shadow_h2h_scoreline_confidence: shadowH2hScoreline.confidence,
       shadow_congestion: shadowCongestion,
       shadow_lineups: null,
       shadow_injuries: null,

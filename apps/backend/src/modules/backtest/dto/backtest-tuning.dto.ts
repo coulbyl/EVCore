@@ -1,4 +1,9 @@
-import type { ChannelStrategyConfigChannel } from '@modules/betting-engine/strategies/channel-strategy.config';
+import type {
+  ChannelStrategyConfigChannel,
+  GoalsLine,
+  TeamTotalLine,
+  TeamTotalTeam,
+} from '@modules/betting-engine/strategies/channel-strategy.config';
 import type {
   ThresholdPoint,
   ThresholdRecommendation,
@@ -35,7 +40,24 @@ export type ChannelTuningReport = {
 export type GoalsTuningReport = {
   competitionCode: string;
   competitionName: string;
-  line: number;
+  line: GoalsLine;
+  side: GoalsTuningSide;
+  candidates: number;
+  current: CurrentChannelConfig | null;
+  points: ThresholdPoint[];
+  recommended: ThresholdRecommendation | null;
+};
+
+/**
+ * Offline tuning report for one TEAM_TOTAL (competition × team × line ×
+ * side) — same shape as `GoalsTuningReport` plus the team dimension.
+ * Advisory only — a human edits `TEAM_TOTAL_CONFIG`.
+ */
+export type TeamTotalTuningReport = {
+  competitionCode: string;
+  competitionName: string;
+  team: TeamTotalTeam;
+  line: TeamTotalLine;
   side: GoalsTuningSide;
   candidates: number;
   current: CurrentChannelConfig | null;
@@ -73,5 +95,7 @@ export type ChannelTuningResponse = {
   goalsReports: GoalsTuningReport[];
   /** One row per competition with at least one BTTS NO candidate. */
   bttsNoReports: BttsNoTuningReport[];
+  /** One row per TEAM_TOTAL (competition × team × line × side) with at least one candidate. */
+  teamTotalReports: TeamTotalTuningReport[];
   generatedAt: string;
 };

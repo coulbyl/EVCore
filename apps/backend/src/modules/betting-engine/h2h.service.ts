@@ -38,6 +38,20 @@ export type H2HMarketSignals = {
   sampleSize: number;
 };
 
+// Shadow-only, CORRECT_SCORE-specific — never read by decision logic (see
+// memory project-correct-score-immature, 2026-07-28 diagnostic). The
+// decay-weighted most-frequent H2H scoreline (oriented to the target
+// fixture's home/away sides), logged so `packages/db/scripts/
+// backtest-h2h-scoreline-signal.ts` can evaluate it against settled results
+// as volume accumulates — argmax==H2H-top showed a +1.1-1.5pp lift over
+// disagreement on a 39.5k-fixture backtest (p=0.06-0.08, not yet
+// significant).
+export type H2HScorelineSignal = {
+  scoreline: string | null;
+  confidence: number | null;
+  sampleSize: number;
+};
+
 const H2H_LIMIT_DEFAULT = 5;
 // docs/h2h-service-v2-plan.md §3.1 — n<3 is as "confident" as n=5, so gate it like TeamStats cold-start.
 const H2H_MIN_SAMPLE = 3;
@@ -121,6 +135,47 @@ export class H2HService {
       ),
       winToNilHome: weightedRate((leg) => teamWinToNilInLeg(leg, homeTeamId)),
       winToNilAway: weightedRate((leg) => teamWinToNilInLeg(leg, awayTeamId)),
+      sampleSize: legs.length,
+    };
+  }
+
+  async computeH2HScorelineSignal(
+    input: FetchLegsInput,
+  ): Promise<H2HScorelineSignal> {
+    const { homeTeamId } = input;
+    const legs = await this.fetchLegs(input);
+
+    if (legs.length < H2H_MIN_SAMPLE) {
+      return { scoreline: null, confidence: null, sampleSize: legs.length };
+    }
+
+    const weights = new Map<string, Decimal>();
+    let weightTotal = new Decimal(0);
+    legs.forEach((leg, i) => {
+      const weight = H2H_DECAY.pow(i);
+      // Orient the past leg's score to the target fixture's home/away sides —
+      // a leg where today's home team played away still counts, flipped.
+      const [orientedHome, orientedAway] =
+        leg.homeTeamId === homeTeamId
+          ? [leg.homeScore, leg.awayScore]
+          : [leg.awayScore, leg.homeScore];
+      const key = `${orientedHome}:${orientedAway}`;
+      weights.set(key, (weights.get(key) ?? new Decimal(0)).plus(weight));
+      weightTotal = weightTotal.plus(weight);
+    });
+
+    let topScoreline: string | null = null;
+    let topWeight = new Decimal(-1);
+    for (const [scoreline, weight] of weights) {
+      if (weight.greaterThan(topWeight)) {
+        topScoreline = scoreline;
+        topWeight = weight;
+      }
+    }
+
+    return {
+      scoreline: topScoreline,
+      confidence: topWeight.div(weightTotal).toNumber(),
       sampleSize: legs.length,
     };
   }

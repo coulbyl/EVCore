@@ -4,60 +4,13 @@ import { renderEmail } from "../render";
 import { type MlModelActivatedProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-
-const styles = {
-  headingActivate: {
-    color: palette.status.success,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  headingRollback: {
-    color: palette.status.rollback,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  badgeActivate: {
-    backgroundColor: palette.badge.success.bg,
-    border: `1px solid ${palette.badge.success.border}`,
-    borderRadius: "4px",
-    color: palette.badge.success.text,
-    display: "inline-block",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "1px",
-    margin: "0 0 16px",
-    padding: "3px 8px",
-  },
-  badgeRollback: {
-    backgroundColor: palette.badge.warning.bg,
-    border: `1px solid ${palette.badge.warning.border}`,
-    borderRadius: "4px",
-    color: palette.badge.warning.text,
-    display: "inline-block",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "1px",
-    margin: "0 0 16px",
-    padding: "3px 8px",
-  },
-  label: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 2px",
-  },
-  value: {
-    color: palette.text.primary,
-    fontSize: "15px",
-    fontWeight: "600",
-    margin: "0 0 12px",
-  },
-  metric: {
-    color: palette.text.secondary,
-    fontSize: "13px",
-    margin: "0 0 6px",
-  },
-} as const;
+import {
+  badgeStyle,
+  headingStyle,
+  label,
+  metric,
+  value,
+} from "../components/shared-styles";
 
 export function MlModelActivatedEmail({
   versionId,
@@ -69,10 +22,9 @@ export function MlModelActivatedEmail({
   isRollback,
   rolledBackVersionId,
 }: MlModelActivatedProps) {
-  const headingStyle = isRollback
-    ? styles.headingRollback
-    : styles.headingActivate;
-  const badgeStyle = isRollback ? styles.badgeRollback : styles.badgeActivate;
+  const headingColor = isRollback
+    ? palette.status.rollback
+    : palette.status.success;
   const title = isRollback ? "ML Model — Rollback" : "ML Model — Auto-Activé";
   const preview = isRollback
     ? `Rollback ML ${segment} — version ${rolledBackVersionId ?? ""} annulée`
@@ -80,34 +32,34 @@ export function MlModelActivatedEmail({
 
   return (
     <EvCoreLayout preview={preview}>
-      <Heading style={headingStyle}>{title}</Heading>
-      <Text style={badgeStyle}>{isRollback ? "ROLLBACK" : "AUTO-SWITCH"}</Text>
+      <Heading style={headingStyle(headingColor)}>{title}</Heading>
+      <Text style={badgeStyle(isRollback ? "warning" : "success")}>
+        {isRollback ? "Rollback" : "Auto-switch"}
+      </Text>
       <Section>
-        <Text style={styles.label}>VERSION ID</Text>
-        <Text style={styles.value}>{versionId}</Text>
+        <Text style={label}>Version ID</Text>
+        <Text style={value}>{versionId}</Text>
 
-        <Text style={styles.label}>SEGMENT</Text>
-        <Text style={styles.value}>{segment}</Text>
+        <Text style={label}>Segment</Text>
+        <Text style={value}>{segment}</Text>
 
-        <Text style={styles.label}>ALGORITHME</Text>
-        <Text style={styles.value}>{algorithm}</Text>
+        <Text style={label}>Algorithme</Text>
+        <Text style={value}>{algorithm}</Text>
 
         {isRollback && rolledBackVersionId != null && (
           <>
-            <Text style={styles.label}>VERSION ANNULÉE</Text>
-            <Text style={styles.value}>{rolledBackVersionId}</Text>
+            <Text style={label}>Version annulée</Text>
+            <Text style={value}>{rolledBackVersionId}</Text>
           </>
         )}
 
         {!isRollback && (
           <>
-            <Text style={styles.metric}>
-              Brier Score : {brierScore.toFixed(4)}
-            </Text>
-            <Text style={styles.metric}>
+            <Text style={metric}>Brier Score : {brierScore.toFixed(4)}</Text>
+            <Text style={metric}>
               Calibration Error : {calibrationError.toFixed(4)}
             </Text>
-            <Text style={styles.metric}>
+            <Text style={metric}>
               ROI simulé : {(roiSimulated * 100).toFixed(2)}%
             </Text>
           </>

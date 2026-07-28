@@ -30,6 +30,7 @@ export {
   type LambdaConfig,
   type OffensiveBalance,
   type OffensiveBalanceClassification,
+  type H2HMarketSignalInputs,
   mapProbabilitiesToNumber,
   deriveLambdas,
   computeOffensiveBalance,
@@ -38,4 +39,5 @@ export {
   shrinkOverUnderProbabilities,
   buildMatchupFeatures,
   blendTeamStats,
+  applyH2HMarketSignalCorrection,
 } from '@evcore/analysis-core';

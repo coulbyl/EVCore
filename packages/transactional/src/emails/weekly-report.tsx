@@ -4,16 +4,13 @@ import { renderEmail } from "../render";
 import { type WeeklyReportProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
+import {
+  headingStyle,
+  label as metricLabel,
+} from "../components/shared-styles";
 
 const styles = {
-  heading: { color: palette.status.info, fontSize: "20px", margin: "0 0 6px" },
   period: { color: palette.text.subtle, fontSize: "12px", margin: "0 0 20px" },
-  metricLabel: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 4px",
-  },
   metricValue: {
     color: palette.text.primary,
     fontSize: "22px",
@@ -49,25 +46,27 @@ export function WeeklyReportEmail({
     <EvCoreLayout
       preview={`Rapport hebdo — ROI ${roiSign}${roiPct}% — ${betsPlaced} paris`}
     >
-      <Heading style={styles.heading}>Rapport Hebdomadaire</Heading>
+      <Heading style={headingStyle(palette.status.info)}>
+        Rapport Hebdomadaire
+      </Heading>
       <Text style={styles.period}>
         {periodStart.slice(0, 10)} → {periodEnd.slice(0, 10)}
       </Text>
       <Section>
         <Row>
           <Column style={{ paddingRight: "16px" }}>
-            <Text style={styles.metricLabel}>ROI (1X2)</Text>
+            <Text style={metricLabel}>ROI (1X2)</Text>
             <Text style={roiStyle}>
               {roiSign}
               {roiPct}%
             </Text>
           </Column>
           <Column style={{ paddingRight: "16px" }}>
-            <Text style={styles.metricLabel}>PARIS JOUÉS</Text>
+            <Text style={metricLabel}>Paris joués</Text>
             <Text style={styles.metricValue}>{betsPlaced}</Text>
           </Column>
           <Column>
-            <Text style={styles.metricLabel}>BRIER SCORE</Text>
+            <Text style={metricLabel}>Brier score</Text>
             <Text style={styles.metricValue}>{brierScore.toFixed(4)}</Text>
           </Column>
         </Row>

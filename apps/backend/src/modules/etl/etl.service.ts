@@ -35,6 +35,7 @@ import type { BettingEngineAnalysisJobData } from './workers/betting-engine-anal
 import type { BettingEngineRebuildJobData } from './workers/betting-engine-rebuild.worker';
 import type { RollingHorizonJobData } from './workers/rolling-horizon.worker';
 import type { SeasonRolloverSyncJobData } from './workers/season-rollover-sync.worker';
+import type { SubscriptionMatchingJobData } from './workers/subscription-matching.worker';
 import type {
   LeagueSyncJobData,
   LeagueSyncType,
@@ -159,6 +160,8 @@ export class EtlService implements OnApplicationBootstrap {
     private readonly coachSyncQueue: Queue<CoachSyncJobData>,
     @InjectQueue(BULLMQ_QUEUES.SEASON_ROLLOVER_SYNC)
     private readonly seasonRolloverSyncQueue: Queue<SeasonRolloverSyncJobData>,
+    @InjectQueue(BULLMQ_QUEUES.SUBSCRIPTION_MATCHING)
+    private readonly subscriptionMatchingQueue: Queue<SubscriptionMatchingJobData>,
     config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly rollingStatsService: RollingStatsService,
@@ -236,6 +239,10 @@ export class EtlService implements OnApplicationBootstrap {
       SEASON_ROLLOVER_SYNC: config.get<string>(
         'ETL_SEASON_ROLLOVER_SYNC_CRON',
         ETL_CRON_SCHEDULES.SEASON_ROLLOVER_SYNC,
+      ),
+      SUBSCRIPTION_MATCHING: config.get<string>(
+        'ETL_SUBSCRIPTION_MATCHING_CRON',
+        ETL_CRON_SCHEDULES.SUBSCRIPTION_MATCHING,
       ),
     };
     this.leagueSeasonSyncs = {
@@ -357,6 +364,15 @@ export class EtlService implements OnApplicationBootstrap {
       {
         name: 'season-rollover-sync',
         data: {} satisfies SeasonRolloverSyncJobData,
+      },
+    );
+
+    await this.subscriptionMatchingQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.SUBSCRIPTION_MATCHING,
+      { pattern: this.cronSchedules.SUBSCRIPTION_MATCHING },
+      {
+        name: 'subscription-matching',
+        data: {} satisfies SubscriptionMatchingJobData,
       },
     );
 
@@ -775,6 +791,7 @@ export class EtlService implements OnApplicationBootstrap {
       [BULLMQ_QUEUES.ML_TRAINING]: this.mlTrainingQueue,
       [BULLMQ_QUEUES.ML_SCHEDULER]: this.mlSchedulerQueue,
       [BULLMQ_QUEUES.BETTING_ENGINE_REBUILD]: this.bettingEngineRebuildQueue,
+      [BULLMQ_QUEUES.SUBSCRIPTION_MATCHING]: this.subscriptionMatchingQueue,
     };
   }
 

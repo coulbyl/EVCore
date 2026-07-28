@@ -8,6 +8,7 @@ import type { BettingEngineService } from '../../betting-engine/betting-engine.s
 import type { NotificationService } from '../../notification/notification.service';
 import type { AdjustmentService } from '../../adjustment/adjustment.service';
 import type { CouponSettlementService } from '../../coupon/coupon-settlement.service';
+import type { SubscriptionSettlementService } from '../../subscriptions/subscription-settlement.service';
 import type { CacheService } from '@common/redis/cache.service';
 import { PendingBetsSettlementWorker } from './pending-bets-settlement.worker';
 
@@ -148,6 +149,10 @@ describe('PendingBetsSettlementWorker', () => {
     settleReadyProposals: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<CouponSettlementService>;
 
+  const subscriptionSettlement = {
+    settleReadyEvents: vi.fn().mockResolvedValue(undefined),
+  } satisfies Partial<SubscriptionSettlementService>;
+
   const cache = {
     invalidateTag: vi.fn().mockResolvedValue(undefined),
   } satisfies Partial<CacheService>;
@@ -164,6 +169,8 @@ describe('PendingBetsSettlementWorker', () => {
       notification: notification as unknown as NotificationService,
       apiFootball: new ApiFootballClient(config as unknown as ConfigService),
       couponSettlement: couponSettlement as unknown as CouponSettlementService,
+      subscriptionSettlement:
+        subscriptionSettlement as unknown as SubscriptionSettlementService,
       cache: cache as unknown as CacheService,
     });
     fixtureService.syncFixtureState.mockResolvedValue(undefined);

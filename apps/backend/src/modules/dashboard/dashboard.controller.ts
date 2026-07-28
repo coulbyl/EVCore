@@ -4,7 +4,11 @@ import { AuthSessionGuard } from '@modules/auth/auth-session.guard';
 import { CurrentSession } from '@modules/auth/current-session.decorator';
 import type { AuthSession } from '@modules/auth/auth.types';
 import { DashboardService } from './dashboard.service';
-import type { ChannelHealthItem, ChannelStatsItem } from './dashboard.types';
+import type {
+  ChannelCompetitionStatItem,
+  ChannelHealthItem,
+  ChannelStatsItem,
+} from './dashboard.types';
 
 class DashboardSummaryQueryDto {
   @IsOptional()
@@ -70,6 +74,14 @@ export class DashboardController {
   getChannelStats(@Query() query: PnlQueryDto): Promise<ChannelStatsItem[]> {
     const { from, to } = this.defaultRange(query);
     return this.dashboardService.getChannelStats(from, to);
+  }
+
+  @Get('channel-stats-by-competition')
+  getChannelStatsByCompetition(
+    @Query() query: PnlQueryDto,
+  ): Promise<ChannelCompetitionStatItem[]> {
+    const { from, to } = this.defaultRange(query);
+    return this.dashboardService.getChannelStatsByCompetition(from, to);
   }
 
   private defaultRange(query: PnlQueryDto): { from: string; to: string } {

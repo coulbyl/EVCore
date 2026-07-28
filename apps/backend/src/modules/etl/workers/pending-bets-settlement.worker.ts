@@ -13,6 +13,7 @@ import {
 import { FixtureService } from '../../fixture/fixture.service';
 import { BettingEngineService } from '../../betting-engine/betting-engine.service';
 import { CouponSettlementService } from '../../coupon/coupon-settlement.service';
+import { SubscriptionSettlementService } from '../../subscriptions/subscription-settlement.service';
 import { NotificationService } from '../../notification/notification.service';
 import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
@@ -32,6 +33,9 @@ export class PendingBetsSettlementWorker extends WorkerHost {
 
   @Inject(CouponSettlementService)
   private couponSettlement!: CouponSettlementService;
+
+  @Inject(SubscriptionSettlementService)
+  private subscriptionSettlement!: SubscriptionSettlementService;
 
   constructor(
     private readonly fixtureService: FixtureService,
@@ -160,6 +164,10 @@ export class PendingBetsSettlementWorker extends WorkerHost {
     // bug: once fixtures were already finished from a prior run, subsequent worker
     // executions had finishedFixtures=0 and coupons were never settled.
     await this.couponSettlement.settleReadyProposals();
+    // Same tick, same reasoning — Subscription events settle as soon as their
+    // underlying coupon/channel selection has a result (DESIGN.md §Pipeline
+    // quotidien, 2).
+    await this.subscriptionSettlement.settleReadyEvents();
 
     if (settledBets > 0) {
       const calibration = await this.adjustmentService.runCalibrationCheck();

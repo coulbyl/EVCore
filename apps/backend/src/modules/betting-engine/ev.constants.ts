@@ -560,7 +560,10 @@ export function getLeagueThreeWayEmpiricalBlendWeight(
 // stable across 3-4 seasons (over-predictors over-predict every season, etc.),
 // so unlike ROI fits this is robust; magnitudes are kept conservative (capped
 // ±0.10, gentler on the over-predictors whose bias softened in 2025-26).
-// Weighted Brier gain +0.0058 over the listed leagues. Default 1.0 elsewhere.
+// Weighted Brier gain +0.0058 over the original 11 leagues (2026-06-30);
+// FIN1/BL1 added 2026-07-28 with their own validated per-league gains (see
+// comments below) — not yet folded into this aggregate figure. Default 1.0
+// elsewhere.
 const LAMBDA_SCALE_MAP: Record<string, number> = {
   // Under-predict goals (scale up): -Δtot every season.
   MLS: 1.1, // -0.24/-0.17/-0.84
@@ -571,6 +574,19 @@ const LAMBDA_SCALE_MAP: Record<string, number> = {
   CSL: 1.1, // -0.29/-0.35
   ISL1: 1.1, // -0.47/-0.64 (capped from fitted 1.20; low data)
   SWE2: 1.05, // -0.14/-0.11/-0.18 (smaller bias)
+  // FIN1: season-by-season gap +5.4%/+0.2%/+7.5%/+38.4% (2026 partial,
+  // n=50) — stable, never negative, accelerating. No prior lambda
+  // correction (OU_SHRINKAGE_CONFIG.FIN1.factor=1, a no-op on full-time
+  // lines). Backtest 2026-07-28 (db:backtest:lambda-scale-calibration):
+  // fitted 1.22 on OVER2.5+BTTS Brier, capped 1.10 (ISL1 precedent) →
+  // validation Brier -0.0166 (n=443, real out-of-sample gain).
+  FIN1: 1.1,
+  // BL1: season-by-season gap +0.042/+0.071/+0.112 goals/match (2023-24 →
+  // 2025-26), stable and growing DESPITE the existing meanLambda anchor
+  // (LEAGUE_MEAN_LAMBDA_MAP.BL1=1.7) — the anchor alone no longer covers
+  // the drift. Backtest 2026-07-28: fitted 1.14, capped 1.10 → validation
+  // Brier -0.0105 (n=783).
+  BL1: 1.1,
   // Over-predict goals (scale down): +Δtot every season, softened in 2025-26.
   SP2: 0.95, // +0.70/+0.01/+0.33 (variable → gentle)
   MX1: 0.95, // +0.54/+0.53/+0.06

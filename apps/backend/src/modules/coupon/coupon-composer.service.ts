@@ -57,10 +57,21 @@ export function calibratedLegProbability(leg: {
 }
 
 // Markets with a production calibration sample — these are exactly the markets
-// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS). Other leg markets
-// (OVER_UNDER_HT, DOUBLE_CHANCE, …) have no measured bias and fall back to the
-// legacy blend.
-const CALIBRATED_MARKETS = new Set(['ONE_X_TWO', 'OVER_UNDER', 'BTTS']);
+// CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS / TEAM_TOTAL_HOME /
+// TEAM_TOTAL_AWAY). Other leg markets (OVER_UNDER_HT, DOUBLE_CHANCE, …) have no
+// measured bias and fall back to the legacy blend. TEAM_TOTAL_HOME/AWAY added
+// 2026-08 alongside TEAM_TOTAL staking — betCount was 28/19 (VALUE/SAFE picks
+// landing on these markets) as of 2026-07-28, both below MIN_BET_COUNT=50, but
+// the `cal.betCount >= MIN_BET_COUNT` gate below already ramps this up safely:
+// it silently keeps using the legacy blend until each market crosses 50, no
+// separate activation step needed once that happens.
+const CALIBRATED_MARKETS = new Set([
+  'ONE_X_TWO',
+  'OVER_UNDER',
+  'BTTS',
+  'TEAM_TOTAL_HOME',
+  'TEAM_TOTAL_AWAY',
+]);
 
 // Principled per-market calibration: shift the raw model probability by the
 // measured mean signed error (meanError = mean(p − outcome); positive = the

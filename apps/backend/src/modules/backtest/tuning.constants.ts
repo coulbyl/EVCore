@@ -1,4 +1,9 @@
-import type { ChannelStrategyConfigChannel } from '@modules/betting-engine/strategies/channel-strategy.config';
+import type {
+  ChannelStrategyConfigChannel,
+  GoalsLine,
+  TeamTotalLine,
+  TeamTotalTeam,
+} from '@modules/betting-engine/strategies/channel-strategy.config';
 
 /**
  * Offline threshold-tuning grids and promotion floors for the three
@@ -68,20 +73,51 @@ export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
 /**
  * GOALS (Over/Under) tuning. The calibration unit is (line × side), not the
  * league alone — each lives on its own probability scale — so the sweep runs
- * per side. v1 covers only the 2.5 line (the only one with odds coverage).
- * Promotion is ROI-driven (like DRAW): high-probability low lines clear any
- * hit-rate floor trivially but bleed ROI after the vig, so hit rate is not a
- * meaningful gate here. The recommendation must still be confirmed per-season
- * before flipping a segment to enabled in `GOALS_CONFIG`.
+ * per (line × side). Odds coverage for 1.5/3.5/4.5 confirmed 2026-07-28
+ * (2600/2603/1611 fixtures, PREMATCH sync) — swept alongside 2.5 (the-odds-api
+ * backfill, deepest history) since GOALS_CONFIG's "cannot backtest 1.5/3.5/4.5"
+ * limitation no longer holds. Promotion is ROI-driven (like DRAW):
+ * high-probability low lines clear any hit-rate floor trivially but bleed ROI
+ * after the vig, so hit rate is not a meaningful gate here. The recommendation
+ * must still be confirmed per-season before flipping a segment to enabled in
+ * `GOALS_CONFIG`.
  */
 export const GOALS_TUNING_SIDES = ['OVER', 'UNDER'] as const;
 export type GoalsTuningSide = (typeof GOALS_TUNING_SIDES)[number];
+
+export const GOALS_TUNING_LINES: GoalsLine[] = [1.5, 2.5, 3.5, 4.5];
 
 export const GOALS_TUNING_THRESHOLD_GRID: number[] = [
   0.45, 0.5, 0.55, 0.6, 0.65,
 ];
 
 export const GOALS_PROMOTION_RULE: ChannelPromotionRule = {
+  minSample: 20,
+  hitRateFloor: null,
+  roiFloor: 0.05,
+};
+
+/**
+ * TEAM_TOTAL (per-team Over/Under) tuning — same shape as GOALS, doubled on
+ * the team dimension (HOME/AWAY have independent lines/sides). No historical
+ * ROI backtest exists yet (TEAM_TOTAL_CONFIG's thresholds are structural,
+ * derived from raw score base rates — see its header comment); odds coverage
+ * confirmed 2026-07-28 (417 fixtures per team, PREMATCH sync only, smaller
+ * than GOALS — most (league × line × side × team) combinations will land
+ * below minSample, which is expected, not a bug). Grid/rule start as a copy
+ * of GOALS' (identical structure, ROI-driven) — revisit once real volume
+ * accumulates.
+ */
+export const TEAM_TOTAL_TEAMS: TeamTotalTeam[] = ['HOME', 'AWAY'];
+export const TEAM_TOTAL_TUNING_LINES: TeamTotalLine[] = [
+  0.5, 1.5, 2.5, 3.5, 4.5,
+];
+
+export const TEAM_TOTAL_TUNING_THRESHOLD_GRID: number[] = [
+  0.45, 0.5, 0.55, 0.6, 0.65,
+];
+
+export const TEAM_TOTAL_PROMOTION_RULE: ChannelPromotionRule = {
   minSample: 20,
   hitRateFloor: null,
   roiFloor: 0.05,

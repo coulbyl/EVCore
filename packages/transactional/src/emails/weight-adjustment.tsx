@@ -4,60 +4,13 @@ import { renderEmail } from "../render";
 import { type WeightAdjustmentProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
-
-const styles = {
-  headingApply: {
-    color: palette.status.success,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  headingRollback: {
-    color: palette.status.rollback,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  badgeApply: {
-    backgroundColor: palette.badge.success.bg,
-    border: `1px solid ${palette.badge.success.border}`,
-    borderRadius: "4px",
-    color: palette.badge.success.text,
-    display: "inline-block",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "1px",
-    margin: "0 0 16px",
-    padding: "3px 8px",
-  },
-  badgeRollback: {
-    backgroundColor: palette.badge.warning.bg,
-    border: `1px solid ${palette.badge.warning.border}`,
-    borderRadius: "4px",
-    color: palette.badge.warning.text,
-    display: "inline-block",
-    fontSize: "11px",
-    fontWeight: "700",
-    letterSpacing: "1px",
-    margin: "0 0 16px",
-    padding: "3px 8px",
-  },
-  label: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 2px",
-  },
-  value: {
-    color: palette.text.primary,
-    fontSize: "15px",
-    fontWeight: "600",
-    margin: "0 0 12px",
-  },
-  metric: {
-    color: palette.text.secondary,
-    fontSize: "13px",
-    margin: "0 0 6px",
-  },
-} as const;
+import {
+  badgeStyle,
+  headingStyle,
+  label,
+  metric,
+  value,
+} from "../components/shared-styles";
 
 export function WeightAdjustmentEmail({
   proposalId,
@@ -66,10 +19,9 @@ export function WeightAdjustmentEmail({
   meanError,
   rolledBackProposalId,
 }: WeightAdjustmentProps) {
-  const headingStyle = isRollback
-    ? styles.headingRollback
-    : styles.headingApply;
-  const badgeStyle = isRollback ? styles.badgeRollback : styles.badgeApply;
+  const headingColor = isRollback
+    ? palette.status.rollback
+    : palette.status.success;
   const title = isRollback
     ? "Rollback de Poids"
     : "Ajustement de Poids Auto-Appliqué";
@@ -79,26 +31,26 @@ export function WeightAdjustmentEmail({
 
   return (
     <EvCoreLayout preview={preview}>
-      <Heading style={headingStyle}>{title}</Heading>
-      <Text style={badgeStyle}>{isRollback ? "ROLLBACK" : "AUTO-APPLY"}</Text>
+      <Heading style={headingStyle(headingColor)}>{title}</Heading>
+      <Text style={badgeStyle(isRollback ? "warning" : "success")}>
+        {isRollback ? "Rollback" : "Auto-apply"}
+      </Text>
       <Section>
-        <Text style={styles.label}>PROPOSAL ID</Text>
-        <Text style={styles.value}>{proposalId}</Text>
+        <Text style={label}>Proposal ID</Text>
+        <Text style={value}>{proposalId}</Text>
 
         {isRollback && rolledBackProposalId != null && (
           <>
-            <Text style={styles.label}>PROPOSAL ANNULÉ</Text>
-            <Text style={styles.value}>{rolledBackProposalId}</Text>
+            <Text style={label}>Proposal annulé</Text>
+            <Text style={value}>{rolledBackProposalId}</Text>
           </>
         )}
 
         {!isRollback && brierScore != null && (
-          <Text style={styles.metric}>
-            Brier Score : {brierScore.toFixed(4)}
-          </Text>
+          <Text style={metric}>Brier Score : {brierScore.toFixed(4)}</Text>
         )}
         {!isRollback && meanError != null && (
-          <Text style={styles.metric}>Mean Error : {meanError.toFixed(4)}</Text>
+          <Text style={metric}>Mean Error : {meanError.toFixed(4)}</Text>
         )}
       </Section>
     </EvCoreLayout>

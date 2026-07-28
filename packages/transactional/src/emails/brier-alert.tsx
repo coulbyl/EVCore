@@ -4,25 +4,9 @@ import { renderEmail } from "../render";
 import { type BrierAlertProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
+import { headingStyle, label, value } from "../components/shared-styles";
 
 const styles = {
-  heading: {
-    color: palette.status.warning,
-    fontSize: "20px",
-    margin: "0 0 14px",
-  },
-  label: {
-    color: palette.text.label,
-    fontSize: "11px",
-    letterSpacing: "1px",
-    margin: "0 0 2px",
-  },
-  value: {
-    color: palette.text.primary,
-    fontSize: "15px",
-    fontWeight: "600",
-    margin: "0 0 12px",
-  },
   warn: { color: palette.status.caution, fontSize: "13px", margin: "0" },
 } as const;
 
@@ -31,12 +15,14 @@ export function BrierAlertEmail({ seasonId, brierScore }: BrierAlertProps) {
     <EvCoreLayout
       preview={`Brier Score Alert — Saison ${seasonId}: ${brierScore.toFixed(4)}`}
     >
-      <Heading style={styles.heading}>Brier Score Alert</Heading>
+      <Heading style={headingStyle(palette.status.warning)}>
+        Brier Score Alert
+      </Heading>
       <Section>
-        <Text style={styles.label}>SAISON</Text>
-        <Text style={styles.value}>{seasonId}</Text>
-        <Text style={styles.label}>BRIER SCORE</Text>
-        <Text style={styles.value}>{brierScore.toFixed(4)}</Text>
+        <Text style={label}>Saison</Text>
+        <Text style={value}>{seasonId}</Text>
+        <Text style={label}>Brier score</Text>
+        <Text style={value}>{brierScore.toFixed(4)}</Text>
         <Text style={styles.warn}>
           Seuil d&apos;alerte : 0.25. Une calibration automatique peut être
           déclenchée si les conditions sont réunies (≥ 50 paris, délai de 7

@@ -4,35 +4,23 @@ import { renderEmail } from "../render";
 import { type EmailVerificationProps } from "../types";
 import { EvCoreLayout } from "../components/evcore-layout";
 import { palette } from "../components/palette";
+import {
+  headingStyle,
+  hint,
+  insetBlock,
+  intro,
+} from "../components/shared-styles";
 
 const styles = {
-  heading: {
-    color: palette.text.primary,
-    fontSize: "20px",
-    margin: "0 0 12px",
-  },
-  intro: {
-    color: palette.text.secondary,
-    fontSize: "14px",
-    lineHeight: "22px",
-    margin: "0 0 20px",
-  },
-  codeBox: {
-    backgroundColor: palette.bg.code,
-    border: `1px solid ${palette.border.default}`,
-    borderRadius: "6px",
-    letterSpacing: "8px",
+  code: {
+    ...insetBlock,
     color: palette.brand,
-    fontSize: "28px",
+    fontSize: "26px",
     fontWeight: "700",
+    letterSpacing: "8px",
+    margin: "0 0 20px",
     padding: "14px 20px",
     textAlign: "center" as const,
-    margin: "0 0 20px",
-  },
-  expiry: {
-    color: palette.text.subtle,
-    fontSize: "12px",
-    margin: 0,
   },
 } as const;
 
@@ -43,14 +31,14 @@ export function EmailVerificationEmail({
 }: EmailVerificationProps) {
   return (
     <EvCoreLayout preview={`Code de vérification EVCore — ${code}`}>
-      <Heading style={styles.heading}>Vérification de votre email</Heading>
+      <Heading style={headingStyle()}>Vérification de votre email</Heading>
       <Section>
-        <Text style={styles.intro}>
+        <Text style={intro}>
           Bonjour {username}, utilisez le code ci-dessous pour vérifier votre
           adresse email et activer votre compte EVCore.
         </Text>
-        <Text style={styles.codeBox}>{code}</Text>
-        <Text style={styles.expiry}>
+        <Text style={styles.code}>{code}</Text>
+        <Text style={hint}>
           Ce code est valable {expiresInMinutes} minutes. Ne le partagez pas.
         </Text>
       </Section>
