@@ -172,10 +172,17 @@ export class SubscriptionsRepository {
     });
   }
 
-  // Un événement par (subscriptionId, date, couponProposalId, channelSelectionId)
-  // — createMany + skipDuplicates fait respecter l'idempotence via la
-  // contrainte @@unique du modèle sans pré-vérification manuelle ; le count
-  // retourné exclut les doublons déjà présents.
+  // Un abonnement déjà matché pour cette date a forcément ses événements du
+  // jour en base — les sources (coupons/topN) sont déterministes par date,
+  // donc rejouer le job le même jour n'a rien de nouveau à produire.
+  async hasEventForDate(subscriptionId: string, date: Date): Promise<boolean> {
+    const existing = await this.prisma.client.subscriptionEvent.findFirst({
+      where: { subscriptionId, date },
+      select: { id: true },
+    });
+    return existing !== null;
+  }
+
   async createEventsSkippingDuplicates(
     events: Array<{
       subscriptionId: string;
@@ -225,6 +232,7 @@ export class SubscriptionsRepository {
         subscriptionId: true,
         stake: true,
         odds: true,
+        subscription: { select: { userId: true, sourceLabel: true } },
         couponProposal: { select: { result: true } },
         channelSelection: { select: { result: true } },
       },
@@ -278,6 +286,7 @@ export class SubscriptionsRepository {
                   select: {
                     fixture: {
                       select: {
+                        scheduledAt: true,
                         homeTeam: { select: { name: true } },
                         awayTeam: { select: { name: true } },
                       },

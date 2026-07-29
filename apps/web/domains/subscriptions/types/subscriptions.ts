@@ -8,7 +8,10 @@ export type SubscriptionSourceType =
   | "CHANNEL_BTTS"
   | "CHANNEL_TEAM_TOTAL";
 
-export type SubscriptionChannelPickMode = "INVESTIR" | "DECISIONS";
+export type SubscriptionChannelPickMode =
+  | "INVESTIR"
+  | "DECISIONS_FIRST"
+  | "DECISIONS_LAST";
 
 export type SubscriptionStatus = "ACTIVE" | "ENDED" | "CANCELLED";
 
@@ -73,7 +76,13 @@ export type Subscription = {
 export type SubscriptionEvent = {
   id: string;
   date: string;
-  label: string;
+  // ISO datetime — coup d'envoi du match, null pour un événement Coupon
+  // (pas de fixture unique).
+  kickoff: string | null;
+  fixture: { homeTeam: string; awayTeam: string } | null;
+  market: string | null;
+  pick: string | null;
+  combinedOdds: string | null;
   stake: string;
   odds: string | null;
   result: "WON" | "LOST" | "VOID" | null;

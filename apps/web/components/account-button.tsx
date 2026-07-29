@@ -4,7 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { GraduationCap, LogOut, Settings, Sprout, Wallet } from "lucide-react";
+import {
+  GraduationCap,
+  LogOut,
+  MessageCircle,
+  Repeat,
+  Settings,
+  Sprout,
+  Wallet,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,6 +100,24 @@ export function AccountButton({
             <Link href="/dashboard/bankroll">
               <Wallet className="text-accent" />
               {tNav("bankroll")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
+            <Link href="/dashboard/inbox">
+              <MessageCircle className="text-accent" />
+              {tNav("inbox")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
+            <Link href="/dashboard/subscriptions">
+              <Repeat className="text-accent" />
+              {tNav("subscriptions")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem

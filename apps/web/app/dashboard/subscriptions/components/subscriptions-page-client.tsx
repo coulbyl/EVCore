@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
+  Button,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -14,21 +16,19 @@ import {
   PageHeaderTitle,
   StatCard,
 } from "@evcore/ui";
-import { Repeat, Target, TrendingUp, Wallet } from "lucide-react";
+import { Plus, Repeat, Target, TrendingUp, Wallet } from "lucide-react";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import { useCurrentUser } from "@/domains/auth/context/current-user-context";
 import { useSubscriptions } from "@/domains/subscriptions/use-cases/get-subscriptions";
-import { CreateSubscriptionDialog } from "./create-subscription-dialog";
 import { SubscriptionCard } from "./subscription-card";
-import { SubscriptionDetailDialog } from "./subscription-detail-dialog";
 
 export function SubscriptionsPageClient() {
+  const t = useTranslations("subscriptions");
   const { formatAmount, formatSigned } = useCurrencyFormat();
   const currentUser = useCurrentUser();
   const { data: subscriptions = [], isLoading } = useSubscriptions(
     currentUser.id,
   );
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const active = subscriptions.filter((s) => s.status === "ACTIVE");
   const totalStaked = subscriptions.reduce(
@@ -39,86 +39,82 @@ export function SubscriptionsPageClient() {
   const globalRoi = totalStaked > 0 ? (netPnl / totalStaked) * 100 : null;
 
   return (
-    <Page>
+    <Page className="flex h-full flex-col">
       <PageHeader>
         <div>
-          <PageHeaderTitle>Abonnements</PageHeaderTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Une discipline figée par abonnement, simulée automatiquement —
-            indépendant du portefeuille réel.
-          </p>
+          <PageHeaderTitle>{t("pageTitle")}</PageHeaderTitle>
+          <p className="mt-1 text-xs text-muted-foreground">{t("subtitle")}</p>
         </div>
         <PageHeaderActions>
-          <CreateSubscriptionDialog />
+          <Button className="gap-2" asChild size="sm">
+            <Link href="/dashboard/subscriptions/new">
+              <Plus size={14} />
+              {t("newSubscription")}
+            </Link>
+          </Button>
         </PageHeaderActions>
       </PageHeader>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-5 lg:grid-cols-4">
-        <StatCard
-          label="Abonnements actifs"
-          value={String(active.length)}
-          icon={<Repeat size={14} />}
-        />
-        <StatCard
-          label="Total misé (simulé)"
-          value={formatAmount(totalStaked)}
-          icon={<Wallet size={14} />}
-        />
-        <StatCard
-          label="Gain/perte net"
-          value={formatSigned(netPnl)}
-          tone={netPnl >= 0 ? "success" : "danger"}
-          icon={<TrendingUp size={14} />}
-        />
-        <StatCard
-          label="ROI global"
-          value={
-            globalRoi === null
-              ? "—"
-              : `${globalRoi >= 0 ? "+" : ""}${globalRoi.toFixed(1)}%`
-          }
-          tone={globalRoi !== null && globalRoi >= 0 ? "success" : "danger"}
-          icon={<Target size={14} />}
-        />
-      </div>
-
-      <PageContent>
-        {isLoading ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Chargement…
-          </p>
-        ) : subscriptions.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Repeat />
-              </EmptyMedia>
-              <EmptyTitle>Aucun abonnement</EmptyTitle>
-              <EmptyDescription>
-                Crée un abonnement pour suivre automatiquement une discipline de
-                mise, sans y toucher jour après jour.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {subscriptions.map((sub) => (
-              <SubscriptionCard
-                key={sub.id}
-                subscription={sub}
-                onClick={() => setSelectedId(sub.id)}
-              />
-            ))}
+      <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
+        <div className="flex h-full min-h-0 flex-col gap-5">
+          <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              label={t("stats.activeCount")}
+              value={String(active.length)}
+              icon={<Repeat size={14} />}
+              compact
+            />
+            <StatCard
+              label={t("stats.totalStaked")}
+              value={formatAmount(totalStaked)}
+              icon={<Wallet size={14} />}
+              compact
+            />
+            <StatCard
+              label={t("stats.netPnl")}
+              value={formatSigned(netPnl)}
+              tone={netPnl >= 0 ? "success" : "danger"}
+              icon={<TrendingUp size={14} />}
+              compact
+            />
+            <StatCard
+              label={t("stats.globalRoi")}
+              value={
+                globalRoi === null
+                  ? "—"
+                  : `${globalRoi >= 0 ? "+" : ""}${globalRoi.toFixed(1)}%`
+              }
+              tone={globalRoi !== null && globalRoi >= 0 ? "success" : "danger"}
+              icon={<Target size={14} />}
+              compact
+            />
           </div>
-        )}
-      </PageContent>
 
-      <SubscriptionDetailDialog
-        subscriptionId={selectedId}
-        onOpenChange={(open) => {
-          if (!open) setSelectedId(null);
-        }}
-      />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {isLoading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("loading")}
+              </p>
+            ) : subscriptions.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Repeat />
+                  </EmptyMedia>
+                  <EmptyTitle>{t("empty.title")}</EmptyTitle>
+                  <EmptyDescription>{t("empty.description")}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 pb-4 md:grid-cols-2 xl:grid-cols-3">
+                {subscriptions.map((sub) => (
+                  <SubscriptionCard key={sub.id} subscription={sub} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </PageContent>
     </Page>
   );
 }

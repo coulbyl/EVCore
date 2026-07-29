@@ -238,7 +238,15 @@ enum SubscriptionStatus {
 // COUPON_BEST/COUPON_ALL, validé côté API — voir DESIGN.md).
 enum SubscriptionChannelPickMode {
   INVESTIR // pick(s) classé(s)/calibré(s) (MODE_RANKING), comme la page Investir
-  DECISIONS // match(s) le(s) plus tôt du jour par heure de coup d'envoi, non classé, comme la page Decisions
+  // Les deux variantes DECISIONS_* restent volontairement sans classement
+  // (pas de proba/edge/calibration) — seul l'axe chronologique change. Un
+  // backtest day-by-day (db:backtest:decisions-ranking, 2026-07-29) montre
+  // que "derniers du jour" bat ou égale "premiers du jour" sur les 6 canaux
+  // CHANNEL_* (ex. TEAM_TOTAL top3 : -13.00% -> +21.15%, BTTS top3 : -3.28%
+  // -> +1.39%) sans qu'aucune des deux ne domine partout à tous les topN —
+  // laissé au choix de l'utilisateur plutôt que tranché unilatéralement.
+  DECISIONS_FIRST // match(s) le(s) plus tôt du jour par heure de coup d'envoi
+  DECISIONS_LAST // match(s) le(s) plus tard du jour par heure de coup d'envoi
 
   @@map("subscription_channel_pick_mode")
   @@schema("public")

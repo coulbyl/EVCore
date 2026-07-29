@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Database,
+  Repeat,
   RefreshCw,
   Stethoscope,
   Trophy,
@@ -98,6 +99,14 @@ const ACTIONS: ActionDef[] = [
     icon: <CalendarClock size={14} />,
     description:
       "Recalcule la saison courante par ligue et remet à jour les schedulers fixtures/stats/injuries (auto tous les jours à 01:45 UTC — bouton pour forcer avant)",
+  },
+  {
+    kind: "global",
+    type: "subscription-matching",
+    label: "Abonnements",
+    icon: <Repeat size={14} />,
+    description:
+      "Matche les abonnements actifs du jour (auto toutes les heures — bouton pour forcer avant)",
   },
 ];
 

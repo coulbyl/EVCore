@@ -549,6 +549,16 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
+  // Manuel escape hatch pour tester une souscription sans attendre le prochain
+  // tick horaire (ETL_SUBSCRIPTION_MATCHING_CRON, '0 * * * *').
+  async triggerSubscriptionMatching(): Promise<void> {
+    await this.subscriptionMatchingQueue.add(
+      'subscription-matching',
+      {} satisfies SubscriptionMatchingJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+  }
+
   async triggerStatsSync(): Promise<void> {
     await this.triggerLeagueSeasonSync('stats');
   }

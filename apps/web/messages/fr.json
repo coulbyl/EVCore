@@ -692,5 +692,123 @@
     },
     "topNLabel": "Nombre de picks",
     "topNAuto": "Auto"
+  },
+  "subscriptions": {
+    "pageTitle": "Abonnements",
+    "subtitle": "Une discipline figée par abonnement, simulée automatiquement — indépendant du portefeuille réel.",
+    "newSubscription": "Nouvel abonnement",
+    "loading": "Chargement…",
+    "stats": {
+      "activeCount": "Abonnements actifs",
+      "totalStaked": "Total misé (simulé)",
+      "netPnl": "Gain/perte net",
+      "globalRoi": "ROI global"
+    },
+    "empty": {
+      "title": "Aucun abonnement",
+      "description": "Crée un abonnement pour suivre automatiquement une discipline de mise, sans y toucher jour après jour."
+    },
+    "card": {
+      "stakePerEvent": "Mise / événement",
+      "roiCumulative": "ROI cumulé",
+      "hitRate": "Taux de réussite",
+      "eventsSettled": "{settled}/{total} événement(s) réglé(s) · {staked} misé au total"
+    },
+    "status": {
+      "ACTIVE": "Actif",
+      "ENDED": "Terminé",
+      "CANCELLED": "Annulé"
+    },
+    "sources": {
+      "COUPON_BEST": "Coupon (meilleur du jour)",
+      "COUPON_ALL": "Coupon (chaque coupon généré)",
+      "CHANNEL_VALUE": "VALUE (Valeur)",
+      "CHANNEL_SAFE": "SAFE (Sécurité)",
+      "CHANNEL_DOMINANT": "DOMINANT (Victoire)",
+      "CHANNEL_DRAW": "DRAW (Nul)",
+      "CHANNEL_BTTS": "BTTS (BB)",
+      "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
+    },
+    "pickModes": {
+      "INVESTIR": "Picks Investir (classés et calibrés)",
+      "DECISIONS_FIRST": "Premiers matchs du jour (Decisions, non classé)",
+      "DECISIONS_LAST": "Derniers matchs du jour (Decisions, non classé)"
+    },
+    "pickModeShort": {
+      "INVESTIR": "Investir",
+      "DECISIONS_FIRST": "Decisions (premiers)",
+      "DECISIONS_LAST": "Decisions (derniers)"
+    },
+    "topN": "Top {n}",
+    "weekdayFull": {
+      "0": "Dimanche",
+      "1": "Lundi",
+      "2": "Mardi",
+      "3": "Mercredi",
+      "4": "Jeudi",
+      "5": "Vendredi",
+      "6": "Samedi"
+    },
+    "weekdayShort": {
+      "0": "Dim",
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mer",
+      "4": "Jeu",
+      "5": "Ven",
+      "6": "Sam"
+    },
+    "leaguePresets": {
+      "TOP5_EUROPE": "Grands championnats européens",
+      "UEFA_CUPS": "Coupes européennes (UEFA)"
+    },
+    "dayConditions": {
+      "allDays": "Tous les jours",
+      "competitions": "{count} championnat(s)",
+      "none": "Aucune condition"
+    },
+    "form": {
+      "loadingCatalog": "Chargement du catalogue…",
+      "title": "Nouvel abonnement",
+      "description": "Une discipline figée : source, mise, jours, période. Suivi automatique, sans lien avec le portefeuille réel.",
+      "sourceLabel": "Source",
+      "pickModeLabel": "Sélection des picks quotidiens",
+      "topNLabel": "Nombre de picks / jour",
+      "stakeLabel": "Mise par événement",
+      "weekdaysLabel": "Jours de semaine",
+      "leaguesLabel": "Championnats (optionnel, en plus des jours cochés)",
+      "leaguesPlaceholder": "Choisir des championnats...",
+      "leaguesSearchPlaceholder": "Rechercher un championnat...",
+      "leaguesEmpty": "Aucun championnat trouvé.",
+      "dayConditionMissing": "Coche au moins un jour de semaine ou choisis au moins un championnat.",
+      "startDateLabel": "Date de début",
+      "endDateLabel": "Date de fin",
+      "endDateBeforeStart": "La date de fin doit être après la date de début.",
+      "createError": "Impossible de créer l'abonnement.",
+      "submitting": "Création…",
+      "submit": "Créer l'abonnement"
+    },
+    "detail": {
+      "notFoundTitle": "Détail de l'abonnement",
+      "notFound": "Abonnement introuvable.",
+      "notFoundOrDeleted": "Abonnement introuvable ou déjà supprimé.",
+      "cancel": "Annuler l'abonnement",
+      "statLabels": {
+        "status": "Statut",
+        "totalStaked": "Total misé",
+        "roi": "ROI"
+      },
+      "history": "Historique des événements",
+      "historyEmpty": "Aucun événement pour le moment.",
+      "results": {
+        "WON": "Gagné",
+        "LOST": "Perdu",
+        "VOID": "Remboursé"
+      },
+      "pending": "En attente",
+      "odds": "cote {value}",
+      "couponLabel": "Coupon — cote combinée {value}",
+      "genericEvent": "Événement"
+    }
   }
 }

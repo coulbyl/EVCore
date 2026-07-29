@@ -1,22 +1,47 @@
+import type { useTranslations } from "next-intl";
+import {
+  formatMarketForDisplay,
+  formatPickForDisplay,
+} from "@/helpers/fixture";
 import type {
   Subscription,
-  SubscriptionStatus,
+  SubscriptionChannelPickMode,
+  SubscriptionEvent,
+  SubscriptionSourceType,
 } from "@/domains/subscriptions/types/subscriptions";
 
-export const STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  ACTIVE: "Actif",
-  ENDED: "Terminé",
-  CANCELLED: "Annulé",
-};
+type Translator = ReturnType<typeof useTranslations>;
 
-export const STATUS_TONE: Record<
-  SubscriptionStatus,
-  "accent" | "success" | "neutral"
-> = {
-  ACTIVE: "accent",
-  ENDED: "neutral",
-  CANCELLED: "neutral",
-};
+export function statusLabel(status: Subscription["status"], t: Translator) {
+  return t(`status.${status}`);
+}
+
+export function sourceLabel(sourceType: SubscriptionSourceType, t: Translator) {
+  return t(`sources.${sourceType}`);
+}
+
+export function pickModeLabel(mode: string, t: Translator) {
+  return t(`pickModes.${mode}`);
+}
+
+export function pickModeShortLabel(
+  mode: SubscriptionChannelPickMode,
+  t: Translator,
+) {
+  return t(`pickModeShort.${mode}`);
+}
+
+export function weekdayFullLabel(value: number, t: Translator) {
+  return t(`weekdayFull.${value}`);
+}
+
+export function weekdayShortLabel(value: number, t: Translator) {
+  return t(`weekdayShort.${value}`);
+}
+
+export function leaguePresetLabel(presetId: string, t: Translator) {
+  return t(`leaguePresets.${presetId}`);
+}
 
 // roiPct est déjà calculé côté backend (SubscriptionsService) — évite de
 // dupliquer la logique d'arrondi/division ici.
@@ -29,21 +54,40 @@ export function subscriptionHitRatePct(sub: Subscription): number | null {
   return (sub.wonEvents / sub.settledEvents) * 100;
 }
 
-export function formatDayConditions(sub: Subscription): string {
+export function formatDayConditions(sub: Subscription, t: Translator): string {
   const parts: string[] = [];
   if (sub.daysOfWeek.length === 7) {
-    parts.push("Tous les jours");
+    parts.push(t("dayConditions.allDays"));
   } else if (sub.daysOfWeek.length > 0) {
-    const labels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
     parts.push(
       [...sub.daysOfWeek]
         .sort((a, b) => a - b)
-        .map((d) => labels[d])
+        .map((d) => weekdayShortLabel(d, t))
         .join(", "),
     );
   }
   if (sub.competitionCodes.length > 0) {
-    parts.push(`${sub.competitionCodes.length} championnat(s)`);
+    parts.push(
+      t("dayConditions.competitions", { count: sub.competitionCodes.length }),
+    );
   }
-  return parts.length > 0 ? parts.join(" · ") : "Aucune condition";
+  return parts.length > 0 ? parts.join(" · ") : t("dayConditions.none");
+}
+
+// Marché/pick sont des codes fermés — traduits ici (pas côté backend) via les
+// mêmes dictionnaires que la page Investir/Décisions (helpers/fixture.ts),
+// une seule source de vérité pour ces libellés.
+export function eventLabel(
+  event: SubscriptionEvent,
+  t: Translator,
+  locale: string,
+): string {
+  if (event.fixture && event.market && event.pick) {
+    const loc = locale === "en" ? "en" : "fr";
+    return `${event.fixture.homeTeam} vs ${event.fixture.awayTeam} — ${formatPickForDisplay(event.pick, event.market)} · ${formatMarketForDisplay(event.market, loc)}`;
+  }
+  if (event.combinedOdds !== null) {
+    return t("detail.couponLabel", { value: event.combinedOdds });
+  }
+  return t("detail.genericEvent");
 }
