@@ -70,17 +70,25 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
 ] as const;
 
 export type SubscriptionChannelPickModeDef = {
-  id: 'INVESTIR' | 'DECISIONS';
+  id: 'INVESTIR' | 'DECISIONS_FIRST' | 'DECISIONS_LAST';
   label: string;
 };
 
 // Uniquement proposé/pertinent quand la source choisie est un CHANNEL_*.
+// Les deux variantes DECISIONS_* restent sans classement proba/edge — voir
+// le commentaire sur SubscriptionChannelPickMode (schema.prisma) pour le
+// backtest qui justifie de laisser le choix à l'utilisateur plutôt que de
+// trancher unilatéralement.
 export const SUBSCRIPTION_CHANNEL_PICK_MODES: readonly SubscriptionChannelPickModeDef[] =
   [
     { id: 'INVESTIR', label: 'Picks Investir (classés et calibrés)' },
     {
-      id: 'DECISIONS',
+      id: 'DECISIONS_FIRST',
       label: 'Premiers matchs du jour (Decisions, non classé)',
+    },
+    {
+      id: 'DECISIONS_LAST',
+      label: 'Derniers matchs du jour (Decisions, non classé)',
     },
   ] as const;
 

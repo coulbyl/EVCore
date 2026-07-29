@@ -70,6 +70,7 @@ export type GlobalSyncType =
   | "coach"
   | "odds-prematch"
   | "analysis"
-  | "season-rollover";
+  | "season-rollover"
+  | "subscription-matching";
 
 export type LeagueSyncType = "fixtures" | "stats" | "injuries";

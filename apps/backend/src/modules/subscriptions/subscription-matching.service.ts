@@ -35,7 +35,13 @@ export class SubscriptionMatchingService {
 
   // Point d'entrée du job quotidien (voir DESIGN.md §Pipeline quotidien, 1).
   // Idempotent : rejouable plusieurs fois par jour sans dupliquer d'événement
-  // (contrainte @@unique + createMany skipDuplicates côté repository).
+  // — matchOne() s'arrête dès qu'un événement existe déjà pour la date
+  // (repository.hasEventForDate), donc les sources ne sont jamais réévaluées
+  // deux fois le même jour. Ne pas se fier à la contrainte @@unique du
+  // modèle : couponProposalId/channelSelectionId sont mutuellement exclusifs
+  // (l'un des deux est toujours NULL), et Postgres ne déduplique pas des
+  // colonnes NULL dans une contrainte unique — createMany({ skipDuplicates })
+  // seul ne suffit pas.
   async runDailyMatching(now: Date = new Date()): Promise<void> {
     const today = startOfUtcDay(now);
 
@@ -80,6 +86,12 @@ export class SubscriptionMatchingService {
       subscription.competitionCodes,
     );
     if (!eligible) return;
+
+    const alreadyMatched = await this.repository.hasEventForDate(
+      subscription.id,
+      today,
+    );
+    if (alreadyMatched) return;
 
     const candidates = await this.findEventCandidates(subscription, today);
     if (candidates.length === 0) return;
@@ -174,8 +186,12 @@ export class SubscriptionMatchingService {
       }));
     }
 
-    // 'DECISIONS' : premiers matchs du jour par heure de coup d'envoi, sans
-    // classement (voir DESIGN.md §Décisions de conception, point 2).
+    // 'DECISIONS_FIRST'/'DECISIONS_LAST' : matchs du jour par heure de coup
+    // d'envoi, sans classement proba/edge (voir DESIGN.md §Décisions de
+    // conception, point 2) — seul l'axe chronologique (premiers vs derniers)
+    // change, laissé au choix de l'utilisateur (backtest day-by-day
+    // db:backtest:decisions-ranking, 2026-07-29 : "derniers" bat ou égale
+    // "premiers" sur les 6 canaux mais aucun des deux ne domine partout).
     const groups = await this.channelDecisionService.listByChannel({
       date: toIsoDate(today),
       channel: source.channel,
@@ -186,7 +202,13 @@ export class SubscriptionMatchingService {
     const withOdds = group.decisions.filter(
       (d) => d.selections[0] && d.selections[0].odds !== null,
     );
-    return withOdds.slice(0, topN).map((decision) => {
+    // listByChannel trie déjà par coup d'envoi croissant — inverser suffit
+    // pour obtenir les derniers du jour en premier.
+    const ordered =
+      subscription.channelPickMode === 'DECISIONS_LAST'
+        ? [...withOdds].reverse()
+        : withOdds;
+    return ordered.slice(0, topN).map((decision) => {
       const primary = decision.selections[0];
       return {
         couponProposalId: null,

@@ -692,5 +692,123 @@
     },
     "topNLabel": "Number of picks",
     "topNAuto": "Auto"
+  },
+  "subscriptions": {
+    "pageTitle": "Subscriptions",
+    "subtitle": "A discipline fixed per subscription, simulated automatically — independent from the real portfolio.",
+    "newSubscription": "New subscription",
+    "loading": "Loading…",
+    "stats": {
+      "activeCount": "Active subscriptions",
+      "totalStaked": "Total staked (simulated)",
+      "netPnl": "Net profit/loss",
+      "globalRoi": "Global ROI"
+    },
+    "empty": {
+      "title": "No subscriptions",
+      "description": "Create a subscription to automatically track a staking discipline, without touching it day after day."
+    },
+    "card": {
+      "stakePerEvent": "Stake / event",
+      "roiCumulative": "Cumulative ROI",
+      "hitRate": "Hit rate",
+      "eventsSettled": "{settled}/{total} event(s) settled · {staked} staked in total"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "ENDED": "Ended",
+      "CANCELLED": "Cancelled"
+    },
+    "sources": {
+      "COUPON_BEST": "Bet slip (best of the day)",
+      "COUPON_ALL": "Bet slip (every slip generated)",
+      "CHANNEL_VALUE": "VALUE",
+      "CHANNEL_SAFE": "SAFE",
+      "CHANNEL_DOMINANT": "DOMINANT",
+      "CHANNEL_DRAW": "DRAW",
+      "CHANNEL_BTTS": "BTTS",
+      "CHANNEL_TEAM_TOTAL": "TEAM_TOTAL"
+    },
+    "pickModes": {
+      "INVESTIR": "Invest picks (ranked and calibrated)",
+      "DECISIONS_FIRST": "First matches of the day (Decisions, unranked)",
+      "DECISIONS_LAST": "Last matches of the day (Decisions, unranked)"
+    },
+    "pickModeShort": {
+      "INVESTIR": "Invest",
+      "DECISIONS_FIRST": "Decisions (first)",
+      "DECISIONS_LAST": "Decisions (last)"
+    },
+    "topN": "Top {n}",
+    "weekdayFull": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    },
+    "weekdayShort": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "leaguePresets": {
+      "TOP5_EUROPE": "Major European leagues",
+      "UEFA_CUPS": "European cups (UEFA)"
+    },
+    "dayConditions": {
+      "allDays": "Every day",
+      "competitions": "{count} competition(s)",
+      "none": "No condition"
+    },
+    "form": {
+      "loadingCatalog": "Loading catalog…",
+      "title": "New subscription",
+      "description": "A fixed discipline: source, stake, days, period. Automatic tracking, no link to the real portfolio.",
+      "sourceLabel": "Source",
+      "pickModeLabel": "Daily pick selection",
+      "topNLabel": "Picks per day",
+      "stakeLabel": "Stake per event",
+      "weekdaysLabel": "Days of week",
+      "leaguesLabel": "Leagues (optional, in addition to checked days)",
+      "leaguesPlaceholder": "Choose leagues...",
+      "leaguesSearchPlaceholder": "Search a league...",
+      "leaguesEmpty": "No league found.",
+      "dayConditionMissing": "Check at least one day of week or choose at least one league.",
+      "startDateLabel": "Start date",
+      "endDateLabel": "End date",
+      "endDateBeforeStart": "End date must be after start date.",
+      "createError": "Unable to create the subscription.",
+      "submitting": "Creating…",
+      "submit": "Create subscription"
+    },
+    "detail": {
+      "notFoundTitle": "Subscription detail",
+      "notFound": "Subscription not found.",
+      "notFoundOrDeleted": "Subscription not found or already deleted.",
+      "cancel": "Cancel subscription",
+      "statLabels": {
+        "status": "Status",
+        "totalStaked": "Total staked",
+        "roi": "ROI"
+      },
+      "history": "Event history",
+      "historyEmpty": "No event yet.",
+      "results": {
+        "WON": "Won",
+        "LOST": "Lost",
+        "VOID": "Refunded"
+      },
+      "pending": "Pending",
+      "odds": "odds {value}",
+      "couponLabel": "Bet slip — combined odds {value}",
+      "genericEvent": "Event"
+    }
   }
 }

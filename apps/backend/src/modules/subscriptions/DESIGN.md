@@ -15,13 +15,15 @@ Contrainte explicite sur les **sources** (Coupon/canaux) : **pas de composition 
 ## Décisions de conception (tranchées, pour ne pas bloquer sur des questions ouvertes)
 
 1. **Sources V1 : Coupon + tous les canaux réellement mis en production** (VALUE, SAFE, DOMINANT, DRAW, BTTS, TEAM_TOTAL) — pas seulement Coupon. GOALS est explicitement exclu du catalogue : on sait déjà qu'il perd de l'argent (leçon `goals-channel.md`), l'offrir comme cible d'abonnement contredirait toute la discipline qu'on vient de documenter.
-2. **Un canal produit jusqu'à `topN` événements par jour, avec deux façons de choisir lesquels — laissées au choix de l'utilisateur** (`channelPickMode` + `topN`) :
+2. **Un canal produit jusqu'à `topN` événements par jour, avec trois façons de choisir lesquels — laissées au choix de l'utilisateur** (`channelPickMode` + `topN`) :
    - **`INVESTIR`** (recommandé par défaut) : réutilise exactement `MODE_RANKING`/`InvestmentService.listBestPicks({ date, mode, topN })` (edge pour DRAW/VALUE/TEAM_TOTAL, probabilité pour SAFE/DOMINANT/BTTS), prend les `topN` premiers de la liste classée/calibrée. Zéro nouvelle logique de classement à inventer ou à backtester.
-   - **`DECISIONS`** : la page Decisions n'applique aucun classement — elle liste chaque décision `SELECTED` du canal ce jour-là, triée par heure de coup d'envoi (`ChannelDecisionRepository.findByDate`, ordre déjà utilisé par la page). Les événements retenus sont **les `topN` premiers de cette liste** (les matchs les plus tôt dans la journée), sans calibration ni tri par edge/probabilité.
+   - **`DECISIONS_FIRST`** / **`DECISIONS_LAST`** : aucun classement proba/edge/calibration — on liste chaque décision `SELECTED` du canal ce jour-là, triée par heure de coup d'envoi (`ChannelDecisionRepository.findByDate`, ordre déjà utilisé par la page Decisions), et on retient soit les `topN` **premiers** (kickoff le plus tôt) soit les `topN` **derniers** (kickoff le plus tard) de cette liste.
+
+     Un backtest day-by-day (`db:backtest:decisions-ranking`, 2026-07-29, pool identique — SELECTED, rank=1, odds non nulle, sans calibration/AVOID/EV-gate) montre que "derniers" bat ou égale "premiers" sur les 6 canaux CHANNEL\_\*, parfois nettement (TEAM_TOTAL top3 : -13.00% → +21.15% ; BTTS top3 : -3.28% → +1.39%), mais qu'aucune des deux variantes ne domine partout à tous les topN (ex. DRAW top5 : premiers +9.13% > derniers +8.11%) — pas assez tranché pour figer un seul comportement, donc les deux variantes sont proposées plutôt qu'une seule imposée.
 
    **`topN` est obligatoire pour toute source `CHANNEL_*`**, choisi dans un catalogue fermé de valeurs (`SUBSCRIPTION_TOPN_OPTIONS = [1, 3, 5]`) — pas un entier libre. 1 seul événement/jour n'a statistiquement pas de sens pour juger une discipline (les ROI mesurés cette session, ex. +5.35% DRAW, viennent de milliers de sélections, pas d'un pick isolé par jour) ; 3 et 5 sont repris tels quels des valeurs déjà backtestées dans `MODE_RANKING`/`db:backtest:invest-ranking` (`TOP_NS = [3, 5]`), donc pas des choix arbitraires. Chaque événement retenu porte la mise pleine `stakePerEvent` (même convention que `COUPON_ALL` — pas de mise divisée entre les `topN` picks du jour).
 
-   Ce n'est pas un doublon : ce sont deux disciplines réellement différentes à tester ("suivre les `topN` matchs les plus tôt du jour, sans curation" vs "suivre les `topN` meilleurs picks du jour, curés et calibrés") — exactement la question posée par la leçon `channels-overview.md` ("le classement compte plus que le canal"), que l'abonnement permet maintenant de vérifier soi-même plutôt que de la lire seulement. Un canal peut produire beaucoup plus de décisions que `topN` le même jour (ex. 246 décisions TEAM_TOTAL en une journée observées le 2026-07-26) — les deux modes tranchent cette abondance différemment, mais toujours vers au plus `topN` événements par jour (moins si le canal a produit moins de décisions que `topN` ce jour-là).
+   Ce n'est pas un doublon : ce sont des disciplines réellement différentes à tester ("suivre les `topN` matchs les plus tôt/tard du jour, sans curation" vs "suivre les `topN` meilleurs picks du jour, curés et calibrés") — exactement la question posée par la leçon `channels-overview.md` ("le classement compte plus que le canal"), que l'abonnement permet maintenant de vérifier soi-même plutôt que de la lire seulement. Un canal peut produire beaucoup plus de décisions que `topN` le même jour (ex. 246 décisions TEAM_TOTAL en une journée observées le 2026-07-26) — les trois modes tranchent cette abondance différemment, mais toujours vers au plus `topN` événements par jour (moins si le canal a produit moins de décisions que `topN` ce jour-là).
 
 3. **Deux façons de souscrire au Coupon** : `COUPON_BEST` (le coupon classé n°1 du jour uniquement — celui dont on a mesuré le meilleur ROI, +45.3% vs +28.4%/+12.0% pour rank 2/3, formation `allocation-et-timing.md`) et `COUPON_ALL` (chaque coupon généré ce jour-là, rank 1 à `maxCoupons`, mise pleine sur chacun — pour l'utilisateur qui veut suivre la production complète du jour plutôt que se limiter au meilleur).
 4. **Condition de jour = union (OR), pas intersection.** "Vendredi/samedi/dimanche ET les jours de championnats européens" élargit les jours éligibles, il ne les restreint pas — un abonnement est éligible un jour donné si CE jour correspond à l'un OU l'autre des filtres actifs.
@@ -59,8 +61,9 @@ enum SubscriptionStatus {
 // Uniquement pertinent quand sourceType est un CHANNEL_* (ignoré/null pour
 // COUPON_BEST/COUPON_ALL, validé côté API — voir §Décisions de conception, point 2).
 enum SubscriptionChannelPickMode {
-  INVESTIR   // pick #1 classé/calibré (MODE_RANKING), comme la page Investir
-  DECISIONS  // premier match du jour par heure de coup d'envoi, non classé, comme la page Decisions
+  INVESTIR         // pick #1 classé/calibré (MODE_RANKING), comme la page Investir
+  DECISIONS_FIRST  // premier(s) match(s) du jour par heure de coup d'envoi, non classé
+  DECISIONS_LAST   // dernier(s) match(s) du jour par heure de coup d'envoi, non classé
 
   @@map("subscription_channel_pick_mode")
   @@schema("public")
@@ -178,7 +181,14 @@ export type SubscriptionSourceDef = {
 // COUPON_BEST/COUPON_ALL.
 export const SUBSCRIPTION_CHANNEL_PICK_MODES = [
   { id: 'INVESTIR', label: 'Picks Investir (classés et calibrés)' },
-  { id: 'DECISIONS', label: 'Premiers matchs du jour (Decisions, non classé)' },
+  {
+    id: 'DECISIONS_FIRST',
+    label: 'Premiers matchs du jour (Decisions, non classé)',
+  },
+  {
+    id: 'DECISIONS_LAST',
+    label: 'Derniers matchs du jour (Decisions, non classé)',
+  },
 ] as const;
 
 // Catalogue fermé, pas un entier libre — 1 seul événement/jour n'a pas de
@@ -273,12 +283,12 @@ Nouveau job BullMQ, module `etl` (même convention que `PENDING_BETS_SETTLEMENT`
 Pour chaque `Subscription` avec `status = ACTIVE` et `today` ∈ `[startDate, endDate]` :
 
 1. Vérifier l'éligibilité du jour : `dayOfWeek(today) ∈ daysOfWeek` OU (`competitionCodes` non vide ET au moins une `Fixture` aujourd'hui dont `season.competition.code ∈ competitionCodes`).
-2. Si non éligible, ou si un `SubscriptionEvent` existe déjà pour `(subscriptionId, today)` (idempotence via `@@unique`), ne rien faire.
+2. Si non éligible, ou si un `SubscriptionEvent` existe déjà pour `(subscriptionId, today)` (`repository.hasEventForDate` — pas la contrainte `@@unique`, inefficace ici car `couponProposalId`/`channelSelectionId` sont mutuellement exclusifs et Postgres ne déduplique pas des colonnes NULL), ne rien faire.
 3. Si éligible : chercher le ou les événements source du jour —
    - `COUPON_BEST` → `CouponProposal.findFirst({ where: { forDate: today, rank: 1 } })` — un seul événement.
    - `COUPON_ALL` → `CouponProposal.findMany({ where: { forDate: today } })` — un événement par proposition trouvée (jusqu'à `COUPON_PARAMS.maxCoupons`, donc jusqu'à 3 le même jour), chacun avec la mise pleine `stakePerEvent` (pas divisée entre eux).
    - `CHANNEL_*` avec `channelPickMode = 'INVESTIR'` → réutiliser `InvestmentService.listBestPicks({ date: today, mode: investmentMode, topN: subscription.topN })`, un événement par pick retourné (jusqu'à `topN`, moins s'il y a moins de picks éligibles ce jour-là) ; résoudre la `ChannelSelection` sous-jacente pour lier chacun.
-   - `CHANNEL_*` avec `channelPickMode = 'DECISIONS'` → réutiliser `ChannelDecisionService.listByChannel({ date: today, channel, status: SELECTED })` (même appel que la page Decisions, déjà trié par heure de coup d'envoi croissante), prendre les `topN` premières décisions de la liste (leur sélection `rank = 1`) — sans calibration ni classement par edge/probabilité, juste les `topN` matchs qui commencent le plus tôt.
+   - `CHANNEL_*` avec `channelPickMode = 'DECISIONS_FIRST'` ou `'DECISIONS_LAST'` → réutiliser `ChannelDecisionService.listByChannel({ date: today, channel, status: SELECTED })` (même appel que la page Decisions, déjà trié par heure de coup d'envoi croissante), prendre les `topN` premières (`DECISIONS_FIRST`) ou dernières (`DECISIONS_LAST`, liste inversée) décisions (leur sélection `rank = 1`) — sans calibration ni classement par edge/probabilité, juste les `topN` matchs qui commencent le plus tôt ou le plus tard.
 4. Si la source n'existe pas encore ce jour-là (rien généré), ne rien créer — retenté au prochain passage horaire, jusqu'à `endDate`. Si le jour se termine sans qu'aucune source n'ait existé (ex. aucun match ce jour dans l'univers suivi), le jour reste simplement sans événement — pas une erreur, juste un jour sans pari, cohérent avec la discipline documentée dans `variance-et-patience.md` ("l'absence de pick fait partie de la discipline").
 5. Créer un `SubscriptionEvent` par événement source trouvé (`stake` = `subscription.stakePerEvent`, `odds` copiée de la source, `result = null`), incrémenter `Subscription.totalEvents` et `totalStaked` d'autant (donc +3×`stakePerEvent` un jour où `COUPON_ALL` trouve 3 coupons, ou où un `CHANNEL_*` à `topN=3` trouve 3 picks éligibles).
 6. Une fois `today > endDate`, passer `status` à `ENDED` (vérifié à chaque tick du job, sur les abonnements encore `ACTIVE`).
@@ -289,6 +299,8 @@ Ajouter un appel `subscriptionSettlement.settleReadyEvents()` dans `PendingBetsS
 
 - Copier le résultat, calculer `pnl` (`stake * (odds − 1)` si WON, `−stake` si LOST, `0` si VOID).
 - Incrémenter `Subscription.settledEvents`, `wonEvents` (si WON), `netPnl` — écriture atomique (`increment`), pas de recalcul complet.
+
+**Push notification (2026-07-29)** : après avoir réglé tous les événements du run, un seul `PushService.sendToUser()` par abonnement touché (pas un par événement — évite de spammer un abonnement `topN=5` qui règle ses 5 picks dans le même passage), avec un résumé agrégé ("3 gagné(s), 1 perdu(s) · +1 234 F"). Réutilise l'infra `push_subscription` déjà en place pour l'inbox (`SupportNotifierService.notifyUser`) — aucune nouvelle brique, même pattern `sendToUser(userId, { title, body, url })`.
 
 ## API (`apps/backend/src/modules/subscriptions/`)
 

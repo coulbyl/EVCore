@@ -184,14 +184,29 @@ export class SubscriptionsService {
     const events = await this.repository.findEventsForSubscription(id);
     return {
       ...serializeSubscription(sub),
+      // Pas de libellé pré-construit ici : marché/pick sont des codes fermés
+      // traduits côté frontend (formatMarketForDisplay/formatPickForDisplay,
+      // apps/web/helpers/fixture.ts) — dupliquer ce mapping ici casserait le
+      // i18n et la source unique de vérité pour ces libellés.
       events: events.map((e) => ({
         id: e.id,
         date: e.date.toISOString().slice(0, 10),
-        label: e.couponProposal
-          ? `Coupon — cote combinée ${e.couponProposal.combinedOdds.toFixed(2)}`
-          : e.channelSelection
-            ? `${e.channelSelection.channelDecision.modelRun.fixture.homeTeam.name} vs ${e.channelSelection.channelDecision.modelRun.fixture.awayTeam.name} — ${e.channelSelection.market} ${e.channelSelection.pick}`
-            : 'Événement',
+        kickoff:
+          e.channelSelection?.channelDecision.modelRun.fixture.scheduledAt.toISOString() ??
+          null,
+        fixture: e.channelSelection
+          ? {
+              homeTeam:
+                e.channelSelection.channelDecision.modelRun.fixture.homeTeam
+                  .name,
+              awayTeam:
+                e.channelSelection.channelDecision.modelRun.fixture.awayTeam
+                  .name,
+            }
+          : null,
+        market: e.channelSelection?.market ?? null,
+        pick: e.channelSelection?.pick ?? null,
+        combinedOdds: e.couponProposal?.combinedOdds.toFixed(2) ?? null,
         stake: e.stake.toFixed(2),
         odds: e.odds?.toFixed(2) ?? null,
         result: e.result,
