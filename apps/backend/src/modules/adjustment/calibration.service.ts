@@ -13,6 +13,7 @@ const CALIBRATION_MARKETS = [
   Market.BTTS,
   Market.TEAM_TOTAL_HOME,
   Market.TEAM_TOTAL_AWAY,
+  Market.OVER_UNDER_HT,
 ] as const;
 
 export type CalibrationInput = {

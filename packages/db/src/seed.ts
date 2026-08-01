@@ -684,6 +684,130 @@ async function seedCompetitions() {
   console.log(`[db:seed] competitions upserted: ${COMPETITIONS.length}`);
 }
 
+// UEFA cup competitions (UCL/UEL/UECL, + legacy alias LDC) always span two
+// calendar years by convention, even though their qualifying rounds kick off
+// in June. Mirrors isEuropeanCompetition() in apps/backend/ev.constants.ts —
+// duplicated here (not imported) so this package stays independent of the
+// backend app.
+const EUROPEAN_CUP_CODES = new Set(["UCL", "UEL", "UECL", "LDC"]);
+
+// Mirrors DEFAULT_SEASON_START_MONTH in apps/backend/config/etl.constants.ts.
+const DEFAULT_SEASON_START_MONTH_FALLBACK = 7; // August
+
+// Mirrors seasonNameFromYear() in apps/backend/utils/season.utils.ts.
+function canonicalSeasonName(
+  year: number,
+  seasonStartMonth: number | null,
+  competitionCode: string,
+): string {
+  const effectiveMonth = seasonStartMonth ?? DEFAULT_SEASON_START_MONTH_FALLBACK;
+  const spansTwoYears =
+    effectiveMonth >= 6 || EUROPEAN_CUP_CODES.has(competitionCode);
+  return spansTwoYears ? `${year}-${String(year + 1).slice(-2)}` : `${year}`;
+}
+
+type SeasonForMerge = {
+  id: string;
+  name: string;
+  competitionId: string;
+  competition: { code: string; seasonStartMonth: number | null };
+};
+
+// One-off repair, safe to leave here permanently — it's a no-op once the DB
+// has no duplicates left. `upsertSeason` keys on (competitionId, name), and
+// the two-year-vs-calendar-year name format depends on `seasonStartMonth`.
+// Whenever that value changed for a competition (correcting UCL/UEL/UECL to
+// capture June qualifiers, or setting the real start month for a domestic
+// league that had been defaulting to August), any sync that ran before vs.
+// after the change computed a DIFFERENT name for the same real season —
+// splitting its fixtures across two `season` rows instead of updating one.
+// Audit 2026-08-01 found 21 such pairs across 15 competitions in the dev DB
+// (fixed there by hand); this generalizes the fix for prod. For each
+// duplicate pair it merges every row into whichever one matches the
+// competition's CURRENT canonical name, reassigning fixtures (and standings,
+// skipping any that would collide with an existing one) before deleting the
+// emptied duplicate.
+async function consolidateDuplicateSeasons() {
+  const seasons: SeasonForMerge[] = await prisma.season.findMany({
+    select: {
+      id: true,
+      name: true,
+      competitionId: true,
+      competition: { select: { code: true, seasonStartMonth: true } },
+    },
+  });
+
+  const byCompetition = new Map<string, SeasonForMerge[]>();
+  for (const season of seasons) {
+    const list = byCompetition.get(season.competitionId) ?? [];
+    list.push(season);
+    byCompetition.set(season.competitionId, list);
+  }
+
+  let mergedCount = 0;
+
+  for (const competitionSeasons of byCompetition.values()) {
+    const byYear = new Map<number, SeasonForMerge[]>();
+    for (const season of competitionSeasons) {
+      const yearMatch = /^(\d{4})/.exec(season.name);
+      if (!yearMatch?.[1]) continue;
+      const year = Number(yearMatch[1]);
+      const list = byYear.get(year) ?? [];
+      list.push(season);
+      byYear.set(year, list);
+    }
+
+    for (const [year, group] of byYear) {
+      if (group.length < 2) continue;
+
+      const { code, seasonStartMonth } = group[0]!.competition;
+      const canonicalName = canonicalSeasonName(year, seasonStartMonth, code);
+      const canonical = group.find((s) => s.name === canonicalName);
+      if (!canonical) continue;
+
+      for (const stale of group.filter((s) => s.id !== canonical.id)) {
+        await prisma.$transaction(async (tx) => {
+          await tx.fixture.updateMany({
+            where: { seasonId: stale.id },
+            data: { seasonId: canonical.id },
+          });
+
+          const staleStandings = await tx.standing.findMany({
+            where: { seasonId: stale.id },
+          });
+          for (const standing of staleStandings) {
+            const collision = await tx.standing.findFirst({
+              where: {
+                seasonId: canonical.id,
+                competitionId: standing.competitionId,
+                teamApiId: standing.teamApiId,
+              },
+              select: { id: true },
+            });
+            if (collision) {
+              await tx.standing.delete({ where: { id: standing.id } });
+            } else {
+              await tx.standing.update({
+                where: { id: standing.id },
+                data: { seasonId: canonical.id },
+              });
+            }
+          }
+
+          await tx.season.delete({ where: { id: stale.id } });
+        });
+
+        mergedCount++;
+        console.log(
+          `[db:seed] merged duplicate season ${code} "${stale.name}" -> "${canonical.name}"`,
+        );
+      }
+    }
+  }
+
+  console.log(`[db:seed] duplicate seasons merged: ${mergedCount}`);
+}
+
 function normalizeIdentifier(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -824,6 +948,7 @@ async function seedBadges() {
 
 async function main() {
   await seedCompetitions();
+  await consolidateDuplicateSeasons();
   await seedAdminUser();
   await seedBadges();
 }

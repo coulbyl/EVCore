@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { VALUE_MIN_EDGE } from '@evcore/analysis-core';
 import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
 import {
   calculateEV,
@@ -8,6 +10,7 @@ import {
   DEFAULT_STAKE_PCT,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
+  getValueMinEdge,
 } from '@modules/betting-engine/ev.constants';
 import {
   COUPON_PARAMS,
@@ -58,19 +61,24 @@ export function calibratedLegProbability(leg: {
 
 // Markets with a production calibration sample — these are exactly the markets
 // CalibrationService tracks (ONE_X_TWO / OVER_UNDER / BTTS / TEAM_TOTAL_HOME /
-// TEAM_TOTAL_AWAY). Other leg markets (OVER_UNDER_HT, DOUBLE_CHANCE, …) have no
+// TEAM_TOTAL_AWAY / OVER_UNDER_HT). Other leg markets (DOUBLE_CHANCE, …) have no
 // measured bias and fall back to the legacy blend. TEAM_TOTAL_HOME/AWAY added
 // 2026-08 alongside TEAM_TOTAL staking — betCount was 28/19 (VALUE/SAFE picks
 // landing on these markets) as of 2026-07-28, both below MIN_BET_COUNT=50, but
 // the `cal.betCount >= MIN_BET_COUNT` gate below already ramps this up safely:
 // it silently keeps using the legacy blend until each market crosses 50, no
-// separate activation step needed once that happens.
+// separate activation step needed once that happens. OVER_UNDER_HT added
+// 2026-08-01 (subscription audit): 132 settled bets, meanError +0.075
+// (mild overconfidence) — coupon legs on this market were previously
+// unadjusted, e.g. a repeated 0.76-modelled UNDER_1_5 HT pick that lost
+// across all three ranked coupons on 2026-07-29.
 const CALIBRATED_MARKETS = new Set([
   'ONE_X_TWO',
   'OVER_UNDER',
   'BTTS',
   'TEAM_TOTAL_HOME',
   'TEAM_TOTAL_AWAY',
+  'OVER_UNDER_HT',
 ]);
 
 // Principled per-market calibration: shift the raw model probability by the
@@ -130,6 +138,38 @@ export function comparePicksBySignalThenProbability(
 ): number {
   if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
   return legProbability(b) - legProbability(a);
+}
+
+// VALUE-only edge floor, mirroring the standalone VALUE channel's own gate
+// (`selectBestViablePick` in analysis-core: probability − 1/odds ≥
+// getValueMinEdge(league) ?? VALUE_MIN_EDGE=0.10). Before this, a VALUE leg
+// that would be REJECTED as a standalone VALUE pick could still ride into a
+// coupon whenever a partner leg's EV compensated for it at the combined-coupon
+// level — audit 2026-08-01 found COUPON_ALL subscriptions at 0/19 settled
+// wins. SAFE/BTTS/... legs are unaffected: VALUE_MIN_EDGE is deliberately
+// VALUE-only, same as in the channel strategy.
+export function clearsValueEdgeFloor(
+  leg: {
+    canal: string;
+    calibratedProbability: number | null;
+    oddsSnapshot: number | null;
+    featureSnapshot: Record<string, unknown>;
+  },
+  getMinEdge: (
+    competitionCode: string | null,
+  ) => Decimal | undefined = getValueMinEdge,
+): boolean {
+  if (leg.canal !== 'VALUE') return true;
+  if (leg.calibratedProbability === null || leg.oddsSnapshot === null) {
+    return false;
+  }
+  const competitionCode =
+    (leg.featureSnapshot['competitionCode'] as string | undefined) ?? null;
+  const minEdge = getMinEdge(competitionCode) ?? VALUE_MIN_EDGE;
+  const edge = new Decimal(leg.calibratedProbability).minus(
+    new Decimal(1).div(leg.oddsSnapshot),
+  );
+  return edge.greaterThanOrEqualTo(minEdge);
 }
 
 @Injectable()
@@ -214,7 +254,9 @@ export class CouponComposerService {
   ): ComposedCoupon[] {
     // EVCore est value-driven : un coupon ne se construit que sur des jambes à
     // cote RÉELLE (B2 — plus de FALLBACK_ODDS). Une jambe sans cote n'a pas d'EV.
-    const pricedPicks = scoredPicks.filter((p) => p.oddsSnapshot !== null);
+    const pricedPicks = scoredPicks
+      .filter((p) => p.oddsSnapshot !== null)
+      .filter((p) => clearsValueEdgeFloor(p));
 
     const distinctFixtures = new Set(pricedPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];

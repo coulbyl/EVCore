@@ -138,7 +138,7 @@ export class FixturesSyncWorker {
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season, seasonStartMonth),
+      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
       startDate: seasonFallbackStartDate(season, seasonStartMonth),
       endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });
@@ -167,6 +167,19 @@ export class FixturesSyncWorker {
       { season, fixtureCount: data.response.length },
       'Fixtures sync complete',
     );
+
+    // Pairs aller/retour legs for this season's knockout rounds now that fresh
+    // scores are in — leg2's aggregate-score context depends on leg1's result.
+    // Idempotent: already-assigned legs are skipped (MatchLegDetectionService).
+    const legsUpdated = await this.fixtureService.detectKnockoutLegsForSeason(
+      seasonRecord.id,
+    );
+    if (legsUpdated > 0) {
+      logger.info(
+        { competitionCode, season, legsUpdated },
+        'Knockout leg pairs detected',
+      );
+    }
 
     if (rollingStatsRefreshNeeded) {
       await this.rollingStatsService.refreshSeason(seasonRecord.id);

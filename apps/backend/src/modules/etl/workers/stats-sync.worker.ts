@@ -68,7 +68,7 @@ export class StatsSyncWorker {
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
-      name: seasonNameFromYear(season, seasonStartMonth),
+      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
       startDate: seasonFallbackStartDate(season, seasonStartMonth),
       endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });
@@ -155,7 +155,7 @@ export class StatsSyncWorker {
 
     if (xgUnavailableIds.length > 0) {
       await this.notification.sendXgUnavailableReport(
-        seasonNameFromYear(season, seasonStartMonth),
+        seasonNameFromYear(season, seasonStartMonth, competitionCode),
         xgUnavailableIds,
       );
     }

@@ -16,12 +16,31 @@ export type SubscriptionSourceDef = {
   channel?: StrategyChannel;
   // Mode Investir réutilisé quand channelPickMode === 'INVESTIR'.
   investmentMode?: InvestmentMode;
+  // topN autorisés pour ce canal — undefined sur une source COUPON.
+  topNOptions?: readonly number[];
 };
+
+// Catalogue fermé, pas un entier libre — 1 seul événement/jour n'a pas de
+// sens statistique pour juger une discipline ; 3 et 5 sont repris tels quels
+// des valeurs déjà backtestées dans MODE_RANKING (TOP_NS = [3, 5]).
+const DEFAULT_CHANNEL_TOPN_OPTIONS = [1, 3, 5] as const;
+
+// VALUE : top3 retiré — db:backtest:invest-ranking (2026-08-01, tout
+// l'historique + 2026 isole) montre edgeCal top3 nettement sous top5
+// (ROI 10.4% vs 14.5% tout l'historique, -7.8% vs +6.7% sur 2026 seul,
+// valid split 3.6% vs 9.7%). Ni un plafonnement ni une penalite de l'edge
+// au-dela du pic observe (0.15-0.2) ne rattrape l'ecart en topN=3 — la
+// largeur (5) compte plus que la forme du score a ce N. TEAM_TOTAL a ete
+// teste dans l'autre sens (son topN=3 actuel bat 5/7/10, ne pas y toucher).
+const VALUE_TOPN_OPTIONS = [1, 5] as const;
 
 // Catalogue fermé — voir DESIGN.md §Décisions de conception, point 1. GOALS
 // exclu volontairement : mesuré négatif (-5.39% ROI, 15 685 sélections,
 // db:backtest:team-total-btts-competition 2026-07-28), l'offrir comme cible
 // d'abonnement contredirait la discipline documentée dans goals-channel.md.
+// CORRECT_SCORE/CLEAN_SHEET/WIN_EITHER_HALF testés aussi (2026-08-01) : pas
+// de quoi les ajouter — CORRECT_SCORE catastrophique sur le split valid a
+// tout topN, les deux autres n'ont que 13-14 jours de données exploitables.
 export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
   { id: 'COUPON_BEST', label: 'Coupon (meilleur du jour)', kind: 'COUPON' },
   { id: 'COUPON_ALL', label: 'Coupon (chaque coupon généré)', kind: 'COUPON' },
@@ -31,6 +50,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'VALUE',
     investmentMode: 'value',
+    topNOptions: VALUE_TOPN_OPTIONS,
   },
   {
     id: 'CHANNEL_SAFE',
@@ -38,6 +58,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'SAFE',
     investmentMode: 'safe',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
     id: 'CHANNEL_DOMINANT',
@@ -45,6 +66,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'DOMINANT',
     investmentMode: 'dominant',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
     id: 'CHANNEL_DRAW',
@@ -52,6 +74,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'DRAW',
     investmentMode: 'draw',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
     id: 'CHANNEL_BTTS',
@@ -59,6 +82,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'BTTS',
     investmentMode: 'btts',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
   {
     id: 'CHANNEL_TEAM_TOTAL',
@@ -66,6 +90,7 @@ export const SUBSCRIPTION_SOURCES: readonly SubscriptionSourceDef[] = [
     kind: 'CHANNEL',
     channel: 'TEAM_TOTAL',
     investmentMode: 'teamTotal',
+    topNOptions: DEFAULT_CHANNEL_TOPN_OPTIONS,
   },
 ] as const;
 
@@ -91,11 +116,6 @@ export const SUBSCRIPTION_CHANNEL_PICK_MODES: readonly SubscriptionChannelPickMo
       label: 'Derniers matchs du jour (Decisions, non classé)',
     },
   ] as const;
-
-// Catalogue fermé, pas un entier libre — 1 seul événement/jour n'a pas de
-// sens statistique pour juger une discipline ; 3 et 5 sont repris tels quels
-// des valeurs déjà backtestées dans MODE_RANKING (TOP_NS = [3, 5]).
-export const SUBSCRIPTION_TOPN_OPTIONS = [1, 3, 5] as const;
 
 export type SubscriptionLeaguePresetDef = {
   id: string;

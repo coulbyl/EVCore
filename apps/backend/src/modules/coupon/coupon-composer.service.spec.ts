@@ -1,8 +1,10 @@
+import Decimal from 'decimal.js';
 import { describe, expect, it } from 'vitest';
 import {
   CouponComposerService,
   calibratedLegProbability,
   calibrateLegProbability,
+  clearsValueEdgeFloor,
   comparePicksBySignalThenProbability,
   recommendedCouponStakePct,
   LEG_PROBABILITY_MODEL_WEIGHT,
@@ -101,10 +103,10 @@ describe('calibrateLegProbability', () => {
     expect(value).toBeGreaterThanOrEqual(0.05); // capMin
   });
 
-  it('falls back to the blend for an untracked market (e.g. OVER_UNDER_HT)', () => {
+  it('falls back to the blend for an untracked market (e.g. DOUBLE_CHANCE)', () => {
     const leg = { probability: 0.8, calibratedHitRate: 0.6 };
     const value = calibrateLegProbability(
-      { ...leg, market: 'OVER_UNDER_HT' },
+      { ...leg, market: 'DOUBLE_CHANCE' },
       calibration,
     );
     expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
@@ -117,6 +119,62 @@ describe('calibrateLegProbability', () => {
       calibration,
     );
     expect(value).toBeCloseTo(calibratedLegProbability(leg), 10);
+  });
+});
+
+describe('clearsValueEdgeFloor', () => {
+  const getMinEdge = () => new Decimal('0.10');
+
+  it('never gates non-VALUE canals', () => {
+    const leg = {
+      canal: 'SAFE',
+      calibratedProbability: null,
+      oddsSnapshot: null,
+      featureSnapshot: {},
+    };
+    expect(clearsValueEdgeFloor(leg, getMinEdge)).toBe(true);
+  });
+
+  it('rejects a VALUE leg without a calibrated probability or odds', () => {
+    const leg = {
+      canal: 'VALUE',
+      calibratedProbability: null,
+      oddsSnapshot: 2.5,
+      featureSnapshot: {},
+    };
+    expect(clearsValueEdgeFloor(leg, getMinEdge)).toBe(false);
+  });
+
+  it('rejects a VALUE leg below the edge floor', () => {
+    const leg = {
+      canal: 'VALUE',
+      calibratedProbability: 0.55, // 1/odds = 0.5 → edge = 0.05 < 0.10
+      oddsSnapshot: 2.0,
+      featureSnapshot: {},
+    };
+    expect(clearsValueEdgeFloor(leg, getMinEdge)).toBe(false);
+  });
+
+  it('accepts a VALUE leg at or above the edge floor', () => {
+    const leg = {
+      canal: 'VALUE',
+      calibratedProbability: 0.65, // 1/odds = 0.5 → edge = 0.15 ≥ 0.10
+      oddsSnapshot: 2.0,
+      featureSnapshot: {},
+    };
+    expect(clearsValueEdgeFloor(leg, getMinEdge)).toBe(true);
+  });
+
+  it('uses the per-league override (e.g. a suspended league) over the default floor', () => {
+    const leg = {
+      canal: 'VALUE',
+      calibratedProbability: 0.65,
+      oddsSnapshot: 2.0,
+      featureSnapshot: { competitionCode: 'FRI' },
+    };
+    const getSuspended = (code: string | null) =>
+      code === 'FRI' ? new Decimal('1') : undefined;
+    expect(clearsValueEdgeFloor(leg, getSuspended)).toBe(false);
   });
 });
 
@@ -173,6 +231,32 @@ describe('CouponComposerService.compose', () => {
     calibratedHitRate: 0.6875,
     oddsSnapshot: 2.5,
     signalScore: 0.6,
+  });
+
+  it('excludes a VALUE leg below the edge floor from every composed coupon', () => {
+    const weakValuePick = makePick({
+      fixtureId: 'f4',
+      canal: 'VALUE',
+      market: 'DOUBLE_CHANCE',
+      probability: 0.55,
+      calibratedHitRate: 0.55,
+      calibratedProbability: 0.55, // 1/odds = 0.5 → edge = 0.05 < VALUE_MIN_EDGE (0.10)
+      oddsSnapshot: 2.0,
+      signalScore: 0.5,
+    });
+
+    const withoutWeakLeg = service.compose([safePick, bttsStrong, bttsWeak]);
+    const withWeakLeg = service.compose([
+      safePick,
+      bttsStrong,
+      bttsWeak,
+      weakValuePick,
+    ]);
+
+    expect(
+      withWeakLeg.some((c) => c.legs.some((l) => l.fixtureId === 'f4')),
+    ).toBe(false);
+    expect(withWeakLeg).toEqual(withoutWeakLeg);
   });
 
   it('computes pick-specific joint probabilities for the same canal mix', () => {

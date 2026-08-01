@@ -124,6 +124,7 @@ describe('FixturesSyncWorker', () => {
       changed: true,
       affectsRollingStats: false,
     }),
+    detectKnockoutLegsForSeason: vi.fn().mockResolvedValue(0),
   } satisfies Partial<FixtureService>;
 
   const rollingStatsService = {
@@ -175,6 +176,7 @@ describe('FixturesSyncWorker', () => {
       changed: true,
       affectsRollingStats: false,
     });
+    fixtureService.detectKnockoutLegsForSeason.mockResolvedValue(0);
     rollingStatsService.refreshSeason.mockResolvedValue({
       seasonId: 'season-id',
       fixtureCount: 1,
@@ -260,6 +262,9 @@ describe('FixturesSyncWorker', () => {
       }),
     );
     expect(fixtureService.upsertFixtureChain).toHaveBeenCalledTimes(1);
+    expect(fixtureService.detectKnockoutLegsForSeason).toHaveBeenCalledWith(
+      'season-id',
+    );
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });
 

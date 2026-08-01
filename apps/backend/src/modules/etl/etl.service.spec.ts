@@ -28,7 +28,7 @@ import type { RollingStatsService } from '../rolling-stats/rolling-stats.service
 
 type MockQueue<T> = Pick<
   Queue<T>,
-  'add' | 'upsertJobScheduler' | 'removeJobScheduler'
+  'add' | 'upsertJobScheduler' | 'removeJobScheduler' | 'getJobScheduler'
 >;
 
 function makeQueue<T>(): MockQueue<T> {
@@ -36,6 +36,7 @@ function makeQueue<T>(): MockQueue<T> {
     add: vi.fn().mockResolvedValue({}),
     upsertJobScheduler: vi.fn().mockResolvedValue({}),
     removeJobScheduler: vi.fn().mockResolvedValue(undefined),
+    getJobScheduler: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -227,6 +228,57 @@ describe('EtlService', () => {
     expect(oddsCsvQueue.upsertJobScheduler).toHaveBeenCalledTimes(
       TEST_COMPETITIONS.length,
     );
+  });
+
+  // Regression: 'routine' fixtures-sync only fetches a forward-looking 2-day
+  // window (FixturesSyncWorker.buildFixturesUrl) — it never looks backward.
+  // Without a one-off backfill on rollover, everything played between the new
+  // season's real start and this refresh running is permanently unsynced
+  // (audit 2026-08-01: SVN1 "2026-27" Round 1 never made it into the DB).
+  it('triggers a one-off fixtures backfill when a competition season rolls over', async () => {
+    leagueSyncQueue.getJobScheduler = vi
+      .fn()
+      .mockImplementation((id: string) =>
+        id ===
+        `${ETL_SCHEDULER_KEYS.LEAGUE_SYNC}:fixtures:${TEST_COMPETITIONS[0].code}`
+          ? Promise.resolve({
+              key: id,
+              name: `fixtures-sync-${TEST_COMPETITIONS[0].code}-${CURRENT_SEASON - 1}`,
+              template: { data: { season: CURRENT_SEASON - 1 } },
+            })
+          : Promise.resolve(undefined),
+      );
+
+    await service.refreshLeagueSeasonSchedulers();
+
+    expect(leagueSyncQueue.add).toHaveBeenCalledWith(
+      `fixtures-sync-${TEST_COMPETITIONS[0].code}-${CURRENT_SEASON}`,
+      expect.objectContaining({
+        season: CURRENT_SEASON,
+        competitionCode: TEST_COMPETITIONS[0].code,
+        syncScope: 'backfill',
+      }),
+      BULLMQ_DEFAULT_JOB_OPTIONS,
+    );
+    // The other competition's scheduler was unchanged (no prior scheduler) —
+    // no backfill for it.
+    expect(leagueSyncQueue.add).not.toHaveBeenCalledWith(
+      expect.stringContaining(TEST_COMPETITIONS[1].code),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it('does not backfill when the scheduled season is unchanged', async () => {
+    leagueSyncQueue.getJobScheduler = vi.fn().mockResolvedValue({
+      key: 'irrelevant',
+      name: 'irrelevant',
+      template: { data: { season: CURRENT_SEASON } },
+    });
+
+    await service.refreshLeagueSeasonSchedulers();
+
+    expect(leagueSyncQueue.add).not.toHaveBeenCalled();
   });
 
   it('dispatches one pending bets settlement job', async () => {

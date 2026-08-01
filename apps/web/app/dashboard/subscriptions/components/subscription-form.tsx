@@ -57,7 +57,6 @@ export function SubscriptionForm() {
   useEffect(() => {
     if (!catalog) return;
     setSourceType((prev) => prev ?? catalog.sources[0]?.id ?? null);
-    setTopN((prev) => prev ?? catalog.topNOptions[0] ?? null);
   }, [catalog]);
 
   const selectedSource = useMemo(
@@ -65,6 +64,20 @@ export function SubscriptionForm() {
     [catalog, sourceType],
   );
   const isChannelSource = selectedSource?.kind === "CHANNEL";
+  const topNOptions = useMemo(
+    () => selectedSource?.topNOptions ?? [],
+    [selectedSource],
+  );
+
+  // topN est propre au canal choisi (ex. VALUE n'offre pas top3) — recale sur
+  // une option valide dès que la source change, plutôt que de laisser une
+  // valeur obsolète issue du canal précédent.
+  useEffect(() => {
+    if (topNOptions.length === 0) return;
+    setTopN((prev) =>
+      prev !== null && topNOptions.includes(prev) ? prev : topNOptions[0]!,
+    );
+  }, [topNOptions]);
 
   const competitionOptions = useMemo(
     () =>
@@ -183,7 +196,7 @@ export function SubscriptionForm() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {catalog.topNOptions.map((n) => (
+                {topNOptions.map((n) => (
                   <SelectItem key={n} value={String(n)}>
                     {t("topN", { n })}
                   </SelectItem>

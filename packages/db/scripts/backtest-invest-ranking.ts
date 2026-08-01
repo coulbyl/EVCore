@@ -63,11 +63,37 @@ function lambdaTotal(p: ScoredPick): number | null {
   return p.lambdaHome + p.lambdaAway;
 }
 
+// Hypothese testee le 2026-08-01 : le diagnostic par tranche d'edgeCal (VALUE,
+// tout l'historique) montre une relation en cloche, pas croissante — le ROI
+// grimpe jusqu'a [0.15, 0.2) (31.4%) puis REDESCEND au-dela (18.6% pour
+// >= 0.2). Un tri "edge decroissant" prend donc systematiquement la queue
+// extreme en premier, exactement la zone qui sous-performe le pic juste en
+// dessous — ce qui explique pourquoi edgeCal fait bien pire en topN=3 (la
+// queue domine) qu'en topN=5 (diluee). EDGE_PEAK=0.15 est le seuil observe,
+// pas un absolu : a confirmer sur le split train/valid avant d'en tirer une
+// conclusion (l'echantillon au-dela de 0.15 est mince, n=74+40=114).
+const EDGE_PEAK = 0.15;
+
+function edgeCalOf(p: ScoredPick): number {
+  return p.probCal - 1 / p.odds;
+}
+
 const VALUE_FORMULAS: Formula[] = [
   { name: "probCal (tri du mode proba)", score: (p) => p.probCal },
   { name: "evRaw (tri actuel du mode value)", score: (p) => p.ev },
   { name: "evCal = probCal*cote - 1", score: (p) => p.probCal * p.odds - 1 },
   { name: "edgeCal = probCal - 1/cote", score: (p) => p.probCal - 1 / p.odds },
+  {
+    name: `edgeCapped @ ${EDGE_PEAK} (plafonne l'edge, ne redescend pas)`,
+    score: (p) => Math.min(edgeCalOf(p), EDGE_PEAK),
+  },
+  {
+    name: `edgeHump @ ${EDGE_PEAK} (penalise l'edge au-dela du pic, tente)`,
+    score: (p) => {
+      const e = edgeCalOf(p);
+      return e <= EDGE_PEAK ? e : EDGE_PEAK - (e - EDGE_PEAK);
+    },
+  },
 ];
 
 // Canaux mono-mode (safe/dominant/btts/goals) : tri actuel = probCal, plus
@@ -152,6 +178,25 @@ const POOLS: Pool[] = [
   {
     label: "TEAM_TOTAL",
     channel: "TEAM_TOTAL",
+    formulas: SINGLE_CHANNEL_FORMULAS,
+  },
+  // Non proposes en abonnement aujourd'hui (pas dans SUBSCRIPTION_SOURCES),
+  // testes ici sur demande pour voir si un topN sauverait CORRECT_SCORE
+  // (immature, cf. correct-score-immature.md) ou s'il y a matiere a elargir
+  // CLEAN_SHEET / WIN_EITHER_HALF au catalogue.
+  {
+    label: "CORRECT_SCORE",
+    channel: "CORRECT_SCORE",
+    formulas: SINGLE_CHANNEL_FORMULAS,
+  },
+  {
+    label: "CLEAN_SHEET",
+    channel: "CLEAN_SHEET",
+    formulas: SINGLE_CHANNEL_FORMULAS,
+  },
+  {
+    label: "WIN_EITHER_HALF",
+    channel: "WIN_EITHER_HALF",
     formulas: SINGLE_CHANNEL_FORMULAS,
   },
   {
@@ -428,6 +473,9 @@ async function main() {
     "BTTS",
     "GOALS",
     "TEAM_TOTAL",
+    "CORRECT_SCORE",
+    "CLEAN_SHEET",
+    "WIN_EITHER_HALF",
   ];
   // Dedup rolling-horizon passes: only the latest ModelRun per (fixture, channel).
   const rows = await prisma.$queryRaw<Row[]>`
