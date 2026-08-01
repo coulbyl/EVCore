@@ -65,7 +65,7 @@ export class InjuriesSyncWorker {
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season, seasonStartMonth),
+      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
       startDate: seasonFallbackStartDate(season, seasonStartMonth),
       endDate: seasonFallbackEndDate(season, seasonStartMonth),
     });

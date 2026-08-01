@@ -76,7 +76,7 @@ type CompetitionPlan = {
 
 type LeagueSeasonQueue<T extends LeagueSyncJobData> = Pick<
   Queue<T>,
-  'add' | 'upsertJobScheduler' | 'removeJobScheduler'
+  'add' | 'upsertJobScheduler' | 'removeJobScheduler' | 'getJobScheduler'
 >;
 
 type LeagueSeasonSyncConfig<T extends LeagueSyncJobData> = {
@@ -895,8 +895,19 @@ export class EtlService implements OnApplicationBootstrap {
     season: number,
   ): Promise<void> {
     const sync = this.leagueSeasonSyncs[kind];
+    const schedulerId = `${sync.schedulerKey}:${competition.code}`;
+
+    if (kind === 'fixtures') {
+      await this.backfillFixturesOnSeasonRollover({
+        sync,
+        schedulerId,
+        competition,
+        season,
+      });
+    }
+
     await sync.queue.upsertJobScheduler(
-      `${sync.schedulerKey}:${competition.code}`,
+      schedulerId,
       { pattern: sync.cronPattern },
       {
         name: sync.jobName(competition.code, season),
@@ -910,6 +921,48 @@ export class EtlService implements OnApplicationBootstrap {
             : {}),
         } satisfies LeagueSyncJobData,
       },
+    );
+  }
+
+  // A 'routine' fixtures-sync only ever fetches a forward-looking 2-day
+  // window (see FixturesSyncWorker.buildFixturesUrl) — it never looks
+  // backward. When `season` rolls over (e.g. 2025 → 2026), everything played
+  // between the new season's real start date and this scheduler refresh
+  // running is permanently invisible to 'routine' syncs, since nothing else
+  // ever asks for it. Audit 2026-08-01: SVN1's entire "2026-27" Round 1 never
+  // made it into the DB this way, leaving teams with zero rolling TeamStats
+  // and no model_run for their first games of the new season (Celje vs
+  // Maribor, Round 3, still had no finished match on record to build a
+  // pre-match feature snapshot from). Firing one one-off 'backfill' job
+  // (whole-season fetch, no date filter) whenever the scheduler's baked-in
+  // season changes closes that gap without touching the routine cadence.
+  private async backfillFixturesOnSeasonRollover(options: {
+    sync: LeagueSeasonSyncConfig<LeagueSyncJobData>;
+    schedulerId: string;
+    competition: CompetitionRow;
+    season: number;
+  }): Promise<void> {
+    const { sync, schedulerId, competition, season } = options;
+    const existing = await sync.queue.getJobScheduler(schedulerId);
+    const previousSeason = existing?.template?.data?.season;
+
+    if (previousSeason === undefined || previousSeason === season) return;
+
+    logger.info(
+      { competitionCode: competition.code, previousSeason, season },
+      'Season rollover detected — triggering one-off fixtures backfill',
+    );
+
+    await sync.queue.add(
+      sync.jobName(competition.code, season),
+      {
+        syncType: sync.syncType,
+        season,
+        competitionCode: competition.code,
+        leagueId: competition.leagueId,
+        syncScope: 'backfill',
+      } satisfies LeagueSyncJobData,
+      BULLMQ_DEFAULT_JOB_OPTIONS,
     );
   }
 

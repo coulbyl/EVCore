@@ -89,6 +89,7 @@ describe('CalibrationService.computeAllMarkets', () => {
     expect(results[Market.BTTS]).toBeNull();
     expect(results[Market.TEAM_TOTAL_HOME]).toBeNull();
     expect(results[Market.TEAM_TOTAL_AWAY]).toBeNull();
+    expect(results[Market.OVER_UNDER_HT]).toBeNull();
   });
 
   it('queries each market independently', async () => {
@@ -100,7 +101,7 @@ describe('CalibrationService.computeAllMarkets', () => {
     const service = new CalibrationService(prisma);
     await service.computeAllMarkets();
 
-    expect(findMany).toHaveBeenCalledTimes(5);
+    expect(findMany).toHaveBeenCalledTimes(6);
     const calledMarkets = findMany.mock.calls.map(
       (call) => (call[0] as { where: { market: string } }).where.market,
     );
@@ -109,6 +110,7 @@ describe('CalibrationService.computeAllMarkets', () => {
     expect(calledMarkets).toContain(Market.BTTS);
     expect(calledMarkets).toContain(Market.TEAM_TOTAL_HOME);
     expect(calledMarkets).toContain(Market.TEAM_TOTAL_AWAY);
+    expect(calledMarkets).toContain(Market.OVER_UNDER_HT);
   });
 });
 

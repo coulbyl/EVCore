@@ -263,7 +263,7 @@ export class RollingStatsService {
       await this.resolveSeasonStartMonth(competitionCode);
     const season = await this.prisma.client.season.findFirst({
       where: {
-        name: seasonNameFromYear(year, seasonStartMonth),
+        name: seasonNameFromYear(year, seasonStartMonth, competitionCode),
         competition: { code: competitionCode },
       },
       select: { id: true },
@@ -345,7 +345,7 @@ export class RollingStatsService {
       await this.resolveSeasonStartMonth(competitionCode);
     const season = await this.prisma.client.season.findFirst({
       where: {
-        name: seasonNameFromYear(year, seasonStartMonth),
+        name: seasonNameFromYear(year, seasonStartMonth, competitionCode),
         competition: { code: competitionCode },
       },
       select: { id: true },
