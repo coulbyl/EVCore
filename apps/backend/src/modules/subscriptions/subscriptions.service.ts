@@ -10,7 +10,6 @@ import {
   SUBSCRIPTION_CHANNEL_PICK_MODES,
   SUBSCRIPTION_LEAGUE_PRESETS,
   SUBSCRIPTION_SOURCES,
-  SUBSCRIPTION_TOPN_OPTIONS,
   SUBSCRIPTION_WEEKDAYS,
   findSubscriptionSource,
 } from './subscription.constants';
@@ -80,7 +79,6 @@ export class SubscriptionsService {
     return {
       sources: SUBSCRIPTION_SOURCES,
       channelPickModes: SUBSCRIPTION_CHANNEL_PICK_MODES,
-      topNOptions: SUBSCRIPTION_TOPN_OPTIONS,
       leaguePresets: SUBSCRIPTION_LEAGUE_PRESETS,
       weekdays: SUBSCRIPTION_WEEKDAYS,
       competitions,
@@ -106,11 +104,10 @@ export class SubscriptionsService {
           'topN est obligatoire pour une source canal',
         );
       }
-      if (
-        !(SUBSCRIPTION_TOPN_OPTIONS as readonly number[]).includes(dto.topN)
-      ) {
+      const topNOptions = source.topNOptions ?? [];
+      if (!topNOptions.includes(dto.topN)) {
         throw new BadRequestException(
-          `topN doit être l'une de ces valeurs : ${SUBSCRIPTION_TOPN_OPTIONS.join(', ')}`,
+          `topN doit être l'une de ces valeurs : ${topNOptions.join(', ')}`,
         );
       }
     } else {

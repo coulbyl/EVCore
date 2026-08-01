@@ -21,6 +21,8 @@ export type SubscriptionSourceDef = {
   kind: "COUPON" | "CHANNEL";
   channel?: string;
   investmentMode?: string;
+  // topN autorisés pour ce canal — absent sur une source COUPON.
+  topNOptions?: number[];
 };
 
 export type SubscriptionChannelPickModeDef = {
@@ -45,7 +47,6 @@ export type SubscriptionWeekday = { value: number; label: string };
 export type SubscriptionCatalog = {
   sources: SubscriptionSourceDef[];
   channelPickModes: SubscriptionChannelPickModeDef[];
-  topNOptions: number[];
   leaguePresets: SubscriptionLeaguePreset[];
   weekdays: SubscriptionWeekday[];
   competitions: SubscriptionCompetitionOption[];
