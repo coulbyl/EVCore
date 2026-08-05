@@ -4,12 +4,14 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { InvestmentModule } from '@modules/investment/investment.module';
 import { BettingEngineModule } from '@modules/betting-engine/betting-engine.module';
 import { PushModule } from '@modules/push/push.module';
+import { NotificationModule } from '@modules/notification/notification.module';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionMatchingService } from './subscription-matching.service';
 import { SubscriptionSettlementService } from './subscription-settlement.service';
+import { SubscriptionNotifierService } from './subscription-notifier.service';
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { SubscriptionSettlementService } from './subscription-settlement.service
     InvestmentModule,
     BettingEngineModule,
     PushModule,
+    NotificationModule,
     // Même queue que EtlModule (nom partagé, deux enregistrements client
     // pointant sur la même queue BullMQ/Redis) — juste pour pouvoir déclencher
     // un run différé à la création d'un abonnement (SubscriptionsService),
@@ -30,6 +33,7 @@ import { SubscriptionSettlementService } from './subscription-settlement.service
     SubscriptionsService,
     SubscriptionMatchingService,
     SubscriptionSettlementService,
+    SubscriptionNotifierService,
   ],
   exports: [SubscriptionMatchingService, SubscriptionSettlementService],
 })

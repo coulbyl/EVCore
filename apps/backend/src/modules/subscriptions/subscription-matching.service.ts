@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, SubscriptionSourceType } from '@evcore/db';
+import { NotificationType, Prisma, SubscriptionSourceType } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { InvestmentService } from '@modules/investment/investment.service';
 import { ChannelDecisionService } from '@modules/betting-engine/channel-decision.service';
 import { findSubscriptionSource } from './subscription.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
+import { SubscriptionNotifierService } from './subscription-notifier.service';
 
 const logger = createLogger('subscription-matching');
 
@@ -39,10 +40,16 @@ function earliestLegKickoff(legs: { fixture: { scheduledAt: Date } }[]): Date {
 
 @Injectable()
 export class SubscriptionMatchingService {
+  // 4 collaborateurs distincts et légitimes (repository + 2 sources de
+  // picks + notifier groupé push/in-app) ; regrouper repository/notifier
+  // n'aurait pas de sens fonctionnel, même logique que EtlService pour ses
+  // queues.
+  // eslint-disable-next-line max-params
   constructor(
     private readonly repository: SubscriptionsRepository,
     private readonly investmentService: InvestmentService,
     private readonly channelDecisionService: ChannelDecisionService,
+    private readonly notifier: SubscriptionNotifierService,
   ) {}
 
   // Point d'entrée du job quotidien (voir DESIGN.md §Pipeline quotidien, 1).
@@ -83,7 +90,9 @@ export class SubscriptionMatchingService {
   private async matchOne(
     subscription: {
       id: string;
+      userId: string;
       sourceType: SubscriptionSourceType;
+      sourceLabel: string;
       channelPickMode: string | null;
       topN: number | null;
       stakePerEvent: Prisma.Decimal;
@@ -131,6 +140,20 @@ export class SubscriptionMatchingService {
         created,
         stake.mul(created),
       );
+      // Jusqu'ici totalement silencieux — un seul envoi groupé même si
+      // plusieurs événements arrivent le même jour (topN > 1), même logique
+      // que le règlement (voir SubscriptionSettlementService.tallyMessage).
+      await this.notifier.notify({
+        userId: subscription.userId,
+        type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+        title: `Abonnement — ${subscription.sourceLabel}`,
+        body:
+          created > 1
+            ? `${created} nouveaux événements ajoutés`
+            : `${created} nouvel événement ajouté`,
+        url: `/dashboard/subscriptions/${subscription.id}`,
+        payload: { subscriptionId: subscription.id, created },
+      });
     }
   }
 

@@ -5,7 +5,11 @@ export type NotificationType =
   | "WEEKLY_REPORT"
   | "ETL_FAILURE"
   | "WEIGHT_ADJUSTMENT"
-  | "XG_UNAVAILABLE_REPORT";
+  | "XG_UNAVAILABLE_REPORT"
+  // Personnelles (Notification.userId non-null côté backend) — voir
+  // subscription-notifier.service.ts.
+  | "SUBSCRIPTION_EVENTS_ADDED"
+  | "SUBSCRIPTION_SETTLED";
 
 export type NotificationSeverity = "high" | "medium" | "low";
 
@@ -20,6 +24,9 @@ export const NOTIFICATION_SEVERITY: Record<
   WEIGHT_ADJUSTMENT: "low",
   WEEKLY_REPORT: "low",
   XG_UNAVAILABLE_REPORT: "low",
+  // Informationnelles, jamais critiques — même palette que WEEKLY_REPORT.
+  SUBSCRIPTION_EVENTS_ADDED: "low",
+  SUBSCRIPTION_SETTLED: "low",
 };
 
 export type NotificationView = {
