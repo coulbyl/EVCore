@@ -714,6 +714,13 @@
       "hitRate": "Taux de réussite",
       "eventsSettled": "{settled}/{total} événement(s) réglé(s) · {staked} misé au total"
     },
+    "deleteDialog": {
+      "title": "Supprimer cet abonnement ?",
+      "description": "Cette action est irréversible : l'abonnement et son historique d'événements simulés seront définitivement supprimés.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer",
+      "confirming": "Suppression…"
+    },
     "status": {
       "ACTIVE": "Actif",
       "ENDED": "Terminé",
@@ -793,12 +800,14 @@
       "notFound": "Abonnement introuvable.",
       "notFoundOrDeleted": "Abonnement introuvable ou déjà supprimé.",
       "cancel": "Annuler l'abonnement",
+      "delete": "Supprimer",
       "statLabels": {
-        "status": "Statut",
         "totalStaked": "Total misé",
+        "netPnl": "Gain/perte net",
         "roi": "ROI"
       },
       "history": "Historique des événements",
+      "historyLimited": "{shown} plus récent(s) affiché(s)",
       "historyEmpty": "Aucun événement pour le moment.",
       "results": {
         "WON": "Gagné",

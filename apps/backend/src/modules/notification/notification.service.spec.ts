@@ -10,6 +10,9 @@ function makePrisma(): PrismaService {
       notification: {
         create: vi.fn().mockResolvedValue({}),
         findMany: vi.fn().mockResolvedValue([]),
+        // Broadcast par défaut (userId null) — matche le comportement des
+        // notifications existantes avant l'ajout des notifs personnelles.
+        findUnique: vi.fn().mockResolvedValue({ userId: null }),
         count: vi.fn().mockResolvedValue(0),
         update: vi.fn().mockResolvedValue({}),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -214,6 +217,45 @@ describe('NotificationService — list & mark read', () => {
         },
       }),
     );
+  });
+
+  it('marks a personal notification as read directly, without the shared read table', async () => {
+    const prisma = makePrisma();
+    vi.mocked(prisma.client.notification.findUnique).mockResolvedValue({
+      userId: 'user-1',
+    } as never);
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.markRead('notif-id-1', 'user-1');
+
+    expect(prisma.client.notification.updateMany).toHaveBeenCalledWith({
+      where: { id: 'notif-id-1', userId: 'user-1' },
+      data: { read: true, readAt: expect.any(Date) },
+    });
+    expect(prisma.client.userNotificationRead.upsert).not.toHaveBeenCalled();
+  });
+
+  it('persists a personal notification with userId set', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.notifyUser({
+      userId: 'user-1',
+      type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+      title: 'Abonnement — VALUE',
+      body: '2 nouveaux événements ajoutés',
+      payload: { subscriptionId: 'sub-1', created: 2 },
+    });
+
+    expect(prisma.client.notification.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+        title: 'Abonnement — VALUE',
+        body: '2 nouveaux événements ajoutés',
+        payload: { subscriptionId: 'sub-1', created: 2 },
+      },
+    });
   });
 
   it('marks all visible notifications as read', async () => {

@@ -223,9 +223,23 @@ export class NotificationService {
     offset: number;
   }> {
     const types = this.allowedTypes(query.role);
+    // Deux régimes mergés (voir schema.prisma§Notification) : le broadcast
+    // filtré par rôle + lu via UserNotificationRead, et le personnel
+    // (userId = moi) où `read` sur la ligne elle-même fait foi.
     const where: Prisma.NotificationWhereInput = {
-      type: { in: types },
-      ...(query.unread ? { reads: { none: { userId: query.userId } } } : {}),
+      OR: [
+        {
+          userId: null,
+          type: { in: types },
+          ...(query.unread
+            ? { reads: { none: { userId: query.userId } } }
+            : {}),
+        },
+        {
+          userId: query.userId,
+          ...(query.unread ? { read: false } : {}),
+        },
+      ],
     };
     const [raw, total] = await Promise.all([
       this.prisma.client.notification.findMany({
@@ -240,9 +254,9 @@ export class NotificationService {
       this.prisma.client.notification.count({ where }),
     ]);
     const data: NotificationView[] = raw.map(
-      ({ reads, read: _r, readAt: _ra, ...n }) => ({
+      ({ reads, read, readAt: _ra, ...n }) => ({
         ...n,
-        isRead: reads.length > 0,
+        isRead: n.userId ? read : reads.length > 0,
       }),
     );
     return { data, total, limit: query.limit, offset: query.offset };
@@ -255,14 +269,30 @@ export class NotificationService {
     const types = this.allowedTypes(role);
     const count = await this.prisma.client.notification.count({
       where: {
-        type: { in: types },
-        reads: { none: { userId } },
+        OR: [
+          { userId: null, type: { in: types }, reads: { none: { userId } } },
+          { userId, read: false },
+        ],
       },
     });
     return { count };
   }
 
   async markRead(notificationId: string, userId: string): Promise<void> {
+    const notification = await this.prisma.client.notification.findUnique({
+      where: { id: notificationId },
+      select: { userId: true },
+    });
+    if (!notification) return;
+    if (notification.userId) {
+      // Personnelle — pas de table de lecture partagée, et seul le
+      // destinataire peut la marquer lue (scope par userId dans le where).
+      await this.prisma.client.notification.updateMany({
+        where: { id: notificationId, userId },
+        data: { read: true, readAt: new Date() },
+      });
+      return;
+    }
     await this.prisma.client.userNotificationRead.upsert({
       where: { userId_notificationId: { userId, notificationId } },
       create: { userId, notificationId },
@@ -272,15 +302,63 @@ export class NotificationService {
 
   async markAllRead(userId: string, role: UserRole): Promise<void> {
     const types = this.allowedTypes(role);
-    const unread = await this.prisma.client.notification.findMany({
-      where: { type: { in: types }, reads: { none: { userId } } },
-      select: { id: true },
-    });
-    if (unread.length === 0) return;
-    await this.prisma.client.userNotificationRead.createMany({
-      data: unread.map((n) => ({ userId, notificationId: n.id })),
-      skipDuplicates: true,
-    });
+    const [unreadBroadcast] = await Promise.all([
+      this.prisma.client.notification.findMany({
+        where: {
+          userId: null,
+          type: { in: types },
+          reads: { none: { userId } },
+        },
+        select: { id: true },
+      }),
+    ]);
+    await Promise.all([
+      unreadBroadcast.length > 0
+        ? this.prisma.client.userNotificationRead.createMany({
+            data: unreadBroadcast.map((n) => ({
+              userId,
+              notificationId: n.id,
+            })),
+            skipDuplicates: true,
+          })
+        : Promise.resolve(),
+      this.prisma.client.notification.updateMany({
+        where: { userId, read: false },
+        data: { read: true, readAt: new Date() },
+      }),
+    ]);
+  }
+
+  // Notification personnelle (userId non-null) — voir SaveNotificationInput
+  // pour le régime broadcast (types système/ops). Ne throw jamais : un échec
+  // de persistance ne doit pas faire échouer l'appelant (settlement, matching…).
+  async notifyUser(input: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    body: string;
+    payload?: Prisma.InputJsonValue;
+  }): Promise<void> {
+    try {
+      await this.prisma.client.notification.create({
+        data: {
+          userId: input.userId,
+          type: input.type,
+          title: input.title,
+          body: input.body,
+          payload: input.payload,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        {
+          type: input.type,
+          userId: input.userId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'Failed to persist personal notification',
+      );
+    }
   }
 
   private async save(input: SaveNotificationInput): Promise<void> {

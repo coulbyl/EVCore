@@ -1,6 +1,23 @@
 import type { StrategyChannel } from '@evcore/db';
 import type { InvestmentMode } from '@modules/investment/investment.constants';
 
+// Payload du job BullMQ SUBSCRIPTION_MATCHING — vide, le job réévalue tous
+// les abonnements actifs à chaque passage (voir SubscriptionMatchingService).
+// Source unique de vérité : le worker (etl/workers/subscription-matching.worker.ts)
+// et SubscriptionsService (déclenchement à la création) importent ce type
+// plutôt que d'en dupliquer chacun une définition.
+export type SubscriptionMatchingJobData = Record<string, never>;
+
+// Déclenchement à la création d'un abonnement (voir SubscriptionsService.create) :
+// au lieu d'attendre jusqu'à 1h le prochain tick cron, on planifie un run
+// différé de courte durée. Le délai laisse le temps à d'éventuelles créations
+// quasi simultanées (plusieurs abonnements créés à la suite) de se regrouper
+// dans un seul run via `deduplication` (BullMQ) plutôt que d'empiler un job
+// par création.
+export const SUBSCRIPTION_MATCHING_TRIGGER_DELAY_MS = 5_000;
+export const SUBSCRIPTION_MATCHING_TRIGGER_DEDUP_ID =
+  'subscription-matching-on-create';
+
 export type SubscriptionSourceDef = {
   id:
     | 'COUPON_BEST'
@@ -148,6 +165,13 @@ export const SUBSCRIPTION_WEEKDAYS = [
   { value: 5, label: 'Vendredi' },
   { value: 6, label: 'Samedi' },
 ] as const;
+
+// Détail d'un abonnement (GET /subscriptions/:id) : un abonnement peut courir
+// sur une saison entière, on ne veut pas resservir des centaines
+// d'événements — l'historique affiché se limite aux plus récents (déjà
+// triés par date desc), les compteurs cumulés (totalEvents, netPnl, …)
+// restent eux calculés sur l'ensemble.
+export const SUBSCRIPTION_DETAIL_EVENTS_LIMIT = 50;
 
 export function findSubscriptionSource(
   id: string,

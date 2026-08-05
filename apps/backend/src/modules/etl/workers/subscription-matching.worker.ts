@@ -3,11 +3,12 @@ import { Job } from 'bullmq';
 import { Inject, Injectable } from '@nestjs/common';
 import { createLogger } from '@utils/logger';
 import { BULLMQ_QUEUES } from '@config/etl.constants';
+import type { SubscriptionMatchingJobData } from '../../subscriptions/subscription.constants';
 import { SubscriptionMatchingService } from '../../subscriptions/subscription-matching.service';
 import { NotificationService } from '../../notification/notification.service';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
-export type SubscriptionMatchingJobData = Record<string, never>;
+export type { SubscriptionMatchingJobData };
 
 const logger = createLogger('subscription-matching-worker');
 

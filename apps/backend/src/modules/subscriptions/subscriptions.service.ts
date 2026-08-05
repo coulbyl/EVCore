@@ -3,16 +3,25 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import Decimal from 'decimal.js';
+import { createLogger } from '@utils/logger';
+import { BULLMQ_QUEUES } from '@config/etl.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
 import type { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import {
   SUBSCRIPTION_CHANNEL_PICK_MODES,
   SUBSCRIPTION_LEAGUE_PRESETS,
+  SUBSCRIPTION_MATCHING_TRIGGER_DEDUP_ID,
+  SUBSCRIPTION_MATCHING_TRIGGER_DELAY_MS,
   SUBSCRIPTION_SOURCES,
   SUBSCRIPTION_WEEKDAYS,
   findSubscriptionSource,
+  type SubscriptionMatchingJobData,
 } from './subscription.constants';
+
+const logger = createLogger('subscriptions');
 
 function toDateOnlyUtc(isoDate: string): Date {
   return new Date(`${isoDate}T00:00:00.000Z`);
@@ -72,7 +81,11 @@ function serializeSubscription(sub: {
 
 @Injectable()
 export class SubscriptionsService {
-  constructor(private readonly repository: SubscriptionsRepository) {}
+  constructor(
+    private readonly repository: SubscriptionsRepository,
+    @InjectQueue(BULLMQ_QUEUES.SUBSCRIPTION_MATCHING)
+    private readonly subscriptionMatchingQueue: Queue<SubscriptionMatchingJobData>,
+  ) {}
 
   async getCatalog() {
     const competitions = await this.repository.findActiveCompetitions();
@@ -165,7 +178,39 @@ export class SubscriptionsService {
       endDate,
     });
 
+    // N'a d'effet que si l'abonnement démarre aujourd'hui — sinon rien à
+    // matcher avant son startDate, inutile de réveiller le job pour rien.
+    if (startDate.getTime() === startOfTodayUtc().getTime()) {
+      await this.triggerMatchingSoon();
+    }
+
     return serializeSubscription(created);
+  }
+
+  // Évite d'attendre jusqu'à 1h (tick cron ETL_SUBSCRIPTION_MATCHING_CRON) le
+  // premier événement d'un abonnement créé aujourd'hui. Le délai + la
+  // déduplication BullMQ regroupent plusieurs créations quasi simultanées en
+  // un seul run plutôt que d'empiler un job par création (voir
+  // subscription.constants.ts pour les valeurs). Best-effort : l'abonnement
+  // est déjà créé en base à ce stade, une erreur ici (Redis indisponible…) ne
+  // doit jamais faire échouer la requête — le tick cron horaire reste le
+  // filet de sécurité.
+  private async triggerMatchingSoon(): Promise<void> {
+    try {
+      await this.subscriptionMatchingQueue.add(
+        'subscription-matching',
+        {} satisfies SubscriptionMatchingJobData,
+        {
+          delay: SUBSCRIPTION_MATCHING_TRIGGER_DELAY_MS,
+          deduplication: { id: SUBSCRIPTION_MATCHING_TRIGGER_DEDUP_ID },
+        },
+      );
+    } catch (err) {
+      logger.warn(
+        { err },
+        'Failed to enqueue immediate subscription-matching run — will still run on the next hourly tick',
+      );
+    }
   }
 
   async list(userId: string) {
@@ -199,11 +244,32 @@ export class SubscriptionsService {
               awayTeam:
                 e.channelSelection.channelDecision.modelRun.fixture.awayTeam
                   .name,
+              homeLogo:
+                e.channelSelection.channelDecision.modelRun.fixture.homeTeam
+                  .logoUrl,
+              awayLogo:
+                e.channelSelection.channelDecision.modelRun.fixture.awayTeam
+                  .logoUrl,
+              country:
+                e.channelSelection.channelDecision.modelRun.fixture.season
+                  .competition.country,
             }
           : null,
         market: e.channelSelection?.market ?? null,
         pick: e.channelSelection?.pick ?? null,
         combinedOdds: e.couponProposal?.combinedOdds.toFixed(2) ?? null,
+        // Composition du coupon — vide pour un événement CHANNEL_* (déjà
+        // porté par fixture/market/pick ci-dessus).
+        legs:
+          e.couponProposal?.legs.map((leg) => ({
+            market: leg.market,
+            pick: leg.pick,
+            homeTeam: leg.fixture.homeTeam.name,
+            awayTeam: leg.fixture.awayTeam.name,
+            homeLogo: leg.fixture.homeTeam.logoUrl,
+            awayLogo: leg.fixture.awayTeam.logoUrl,
+            country: leg.fixture.season.competition.country,
+          })) ?? [],
         stake: e.stake.toFixed(2),
         odds: e.odds?.toFixed(2) ?? null,
         result: e.result,
@@ -221,5 +287,13 @@ export class SubscriptionsService {
       );
     }
     return { cancelled: true };
+  }
+
+  async remove(id: string, userId: string) {
+    const removed = await this.repository.remove(id, userId);
+    if (!removed) {
+      throw new NotFoundException('Abonnement introuvable');
+    }
+    return { deleted: true };
   }
 }

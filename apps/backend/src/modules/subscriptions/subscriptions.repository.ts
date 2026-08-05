@@ -8,6 +8,7 @@ import {
 } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { PrismaService } from '@/prisma.service';
+import { SUBSCRIPTION_DETAIL_EVENTS_LIMIT } from './subscription.constants';
 
 export type CreateSubscriptionInput = {
   userId: string;
@@ -20,6 +21,12 @@ export type CreateSubscriptionInput = {
   competitionCodes: string[];
   startDate: Date;
   endDate: Date;
+};
+
+// Logo + nom repris sur chaque event du détail d'abonnement — aide à
+// retrouver le match chez un bookmaker (recherche par équipe/logo).
+const SUBSCRIPTION_EVENT_TEAM_SELECT = {
+  select: { name: true, logoUrl: true } satisfies Prisma.TeamSelect,
 };
 
 const SUBSCRIPTION_LIST_SELECT = {
@@ -95,6 +102,15 @@ export class SubscriptionsRepository {
     return result.count > 0;
   }
 
+  // Suppression définitive — les SubscriptionEvent liés sont supprimés en
+  // cascade au niveau DB (onDelete: Cascade sur subscription_event.subscriptionId).
+  async remove(id: string, userId: string) {
+    const result = await this.prisma.client.subscription.deleteMany({
+      where: { id, userId },
+    });
+    return result.count > 0;
+  }
+
   // Catalogue du multi-select de compétitions (GET /subscriptions/catalog) —
   // aucun endpoint "liste des compétitions" réutilisable ailleurs dans le
   // backend, requête autonome ici plutôt que d'en créer un nouveau module.
@@ -160,14 +176,24 @@ export class SubscriptionsRepository {
   findCouponProposalRankOne(forDate: Date) {
     return this.prisma.client.couponProposal.findFirst({
       where: { forDate, rank: 1 },
-      select: { id: true, combinedOdds: true, result: true },
+      select: {
+        id: true,
+        combinedOdds: true,
+        result: true,
+        legs: { select: { fixture: { select: { scheduledAt: true } } } },
+      },
     });
   }
 
   findAllCouponProposals(forDate: Date) {
     return this.prisma.client.couponProposal.findMany({
       where: { forDate },
-      select: { id: true, combinedOdds: true, result: true },
+      select: {
+        id: true,
+        combinedOdds: true,
+        result: true,
+        legs: { select: { fixture: { select: { scheduledAt: true } } } },
+      },
       orderBy: { rank: 'asc' },
     });
   }
@@ -267,6 +293,7 @@ export class SubscriptionsRepository {
     return this.prisma.client.subscriptionEvent.findMany({
       where: { subscriptionId },
       orderBy: { date: 'desc' },
+      take: SUBSCRIPTION_DETAIL_EVENTS_LIMIT,
       select: {
         id: true,
         date: true,
@@ -275,7 +302,26 @@ export class SubscriptionsRepository {
         result: true,
         pnl: true,
         settledAt: true,
-        couponProposal: { select: { combinedOdds: true } },
+        couponProposal: {
+          select: {
+            combinedOdds: true,
+            legs: {
+              select: {
+                market: true,
+                pick: true,
+                fixture: {
+                  select: {
+                    homeTeam: SUBSCRIPTION_EVENT_TEAM_SELECT,
+                    awayTeam: SUBSCRIPTION_EVENT_TEAM_SELECT,
+                    season: {
+                      select: { competition: { select: { country: true } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
         channelSelection: {
           select: {
             market: true,
@@ -287,8 +333,13 @@ export class SubscriptionsRepository {
                     fixture: {
                       select: {
                         scheduledAt: true,
-                        homeTeam: { select: { name: true } },
-                        awayTeam: { select: { name: true } },
+                        homeTeam: SUBSCRIPTION_EVENT_TEAM_SELECT,
+                        awayTeam: SUBSCRIPTION_EVENT_TEAM_SELECT,
+                        season: {
+                          select: {
+                            competition: { select: { country: true } },
+                          },
+                        },
                       },
                     },
                   },

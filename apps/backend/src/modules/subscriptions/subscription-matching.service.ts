@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, SubscriptionSourceType } from '@evcore/db';
+import { NotificationType, Prisma, SubscriptionSourceType } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
 import { InvestmentService } from '@modules/investment/investment.service';
 import { ChannelDecisionService } from '@modules/betting-engine/channel-decision.service';
 import { findSubscriptionSource } from './subscription.constants';
 import { SubscriptionsRepository } from './subscriptions.repository';
+import { SubscriptionNotifierService } from './subscription-notifier.service';
 
 const logger = createLogger('subscription-matching');
 
@@ -25,12 +26,30 @@ function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Un coupon combine plusieurs matchs — dès que le premier a débuté, le
+// coupon entier n'est plus "plaçable" (un bookmaker refuserait la
+// combinaison). On compare donc l'instant de création de l'abonnement au
+// coup d'envoi le plus tôt parmi ses legs, pas au dernier.
+function earliestLegKickoff(legs: { fixture: { scheduledAt: Date } }[]): Date {
+  return legs.reduce(
+    (min, leg) =>
+      leg.fixture.scheduledAt < min ? leg.fixture.scheduledAt : min,
+    new Date(0), // pas de legs => traité comme déjà commencé, donc exclu
+  );
+}
+
 @Injectable()
 export class SubscriptionMatchingService {
+  // 4 collaborateurs distincts et légitimes (repository + 2 sources de
+  // picks + notifier groupé push/in-app) ; regrouper repository/notifier
+  // n'aurait pas de sens fonctionnel, même logique que EtlService pour ses
+  // queues.
+  // eslint-disable-next-line max-params
   constructor(
     private readonly repository: SubscriptionsRepository,
     private readonly investmentService: InvestmentService,
     private readonly channelDecisionService: ChannelDecisionService,
+    private readonly notifier: SubscriptionNotifierService,
   ) {}
 
   // Point d'entrée du job quotidien (voir DESIGN.md §Pipeline quotidien, 1).
@@ -71,12 +90,15 @@ export class SubscriptionMatchingService {
   private async matchOne(
     subscription: {
       id: string;
+      userId: string;
       sourceType: SubscriptionSourceType;
+      sourceLabel: string;
       channelPickMode: string | null;
       topN: number | null;
       stakePerEvent: Prisma.Decimal;
       daysOfWeek: number[];
       competitionCodes: string[];
+      createdAt: Date;
     },
     today: Date,
   ): Promise<void> {
@@ -93,7 +115,11 @@ export class SubscriptionMatchingService {
     );
     if (alreadyMatched) return;
 
-    const candidates = await this.findEventCandidates(subscription, today);
+    const candidates = await this.findEventCandidates(
+      subscription,
+      today,
+      subscription.createdAt,
+    );
     if (candidates.length === 0) return;
 
     const stake = new Decimal(subscription.stakePerEvent);
@@ -114,6 +140,20 @@ export class SubscriptionMatchingService {
         created,
         stake.mul(created),
       );
+      // Jusqu'ici totalement silencieux — un seul envoi groupé même si
+      // plusieurs événements arrivent le même jour (topN > 1), même logique
+      // que le règlement (voir SubscriptionSettlementService.tallyMessage).
+      await this.notifier.notify({
+        userId: subscription.userId,
+        type: NotificationType.SUBSCRIPTION_EVENTS_ADDED,
+        title: `Abonnement — ${subscription.sourceLabel}`,
+        body:
+          created > 1
+            ? `${created} nouveaux événements ajoutés`
+            : `${created} nouvel événement ajouté`,
+        url: `/dashboard/subscriptions/${subscription.id}`,
+        payload: { subscriptionId: subscription.id, created },
+      });
     }
   }
 
@@ -138,10 +178,19 @@ export class SubscriptionMatchingService {
       topN: number | null;
     },
     today: Date,
+    createdAt: Date,
   ): Promise<EventCandidate[]> {
+    // Un abonnement ne doit jamais récupérer un match déjà commencé/joué au
+    // moment de sa création — le job tourne toutes les heures (cron), donc un
+    // abonnement créé en cours de journée verrait sinon les picks du matin
+    // déjà joués ré-ajoutés dès le premier passage. On exclut tout candidat
+    // dont le coup d'envoi (ou, pour un coupon, le premier match qui le
+    // compose) précède l'instant de création.
     if (subscription.sourceType === SubscriptionSourceType.COUPON_BEST) {
       const proposal = await this.repository.findCouponProposalRankOne(today);
-      if (!proposal) return [];
+      if (!proposal || earliestLegKickoff(proposal.legs) < createdAt) {
+        return [];
+      }
       return [
         {
           couponProposalId: proposal.id,
@@ -153,11 +202,13 @@ export class SubscriptionMatchingService {
 
     if (subscription.sourceType === SubscriptionSourceType.COUPON_ALL) {
       const proposals = await this.repository.findAllCouponProposals(today);
-      return proposals.map((p) => ({
-        couponProposalId: p.id,
-        channelSelectionId: null,
-        odds: new Decimal(p.combinedOdds),
-      }));
+      return proposals
+        .filter((p) => earliestLegKickoff(p.legs) >= createdAt)
+        .map((p) => ({
+          couponProposalId: p.id,
+          channelSelectionId: null,
+          odds: new Decimal(p.combinedOdds),
+        }));
     }
 
     // Sources CHANNEL_* : channelPickMode et topN sont garantis non-null par
@@ -179,11 +230,14 @@ export class SubscriptionMatchingService {
         mode: source.investmentMode,
         topN,
       });
-      return picks.slice(0, topN).map((pick) => ({
-        couponProposalId: null,
-        channelSelectionId: pick.channelSelectionId,
-        odds: new Decimal(pick.odds),
-      }));
+      return picks
+        .filter((pick) => new Date(pick.scheduledAt) >= createdAt)
+        .slice(0, topN)
+        .map((pick) => ({
+          couponProposalId: null,
+          channelSelectionId: pick.channelSelectionId,
+          odds: new Decimal(pick.odds),
+        }));
     }
 
     // 'DECISIONS_FIRST'/'DECISIONS_LAST' : matchs du jour par heure de coup
@@ -200,7 +254,10 @@ export class SubscriptionMatchingService {
     if (!group) return [];
 
     const withOdds = group.decisions.filter(
-      (d) => d.selections[0] && d.selections[0].odds !== null,
+      (d) =>
+        d.selections[0] &&
+        d.selections[0].odds !== null &&
+        new Date(d.scheduledAt) >= createdAt,
     );
     // listByChannel trie déjà par coup d'envoi croissant — inverser suffit
     // pour obtenir les derniers du jour en premier.

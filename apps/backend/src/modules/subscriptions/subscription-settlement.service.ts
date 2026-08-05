@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { BetStatus, CouponResult } from '@evcore/db';
+import { BetStatus, CouponResult, NotificationType } from '@evcore/db';
 import Decimal from 'decimal.js';
 import { createLogger } from '@utils/logger';
-import { PushService } from '@modules/push/push.service';
 import { SubscriptionsRepository } from './subscriptions.repository';
+import { SubscriptionNotifierService } from './subscription-notifier.service';
 
 const logger = createLogger('subscription-settlement');
 
@@ -61,7 +61,7 @@ function computePnl(
 export class SubscriptionSettlementService {
   constructor(
     private readonly repository: SubscriptionsRepository,
-    private readonly push: PushService,
+    private readonly notifier: SubscriptionNotifierService,
   ) {}
 
   // Appelé depuis PendingBetsSettlementWorker, même cadence que le règlement
@@ -110,10 +110,19 @@ export class SubscriptionSettlementService {
 
     await Promise.all(
       [...tallies.entries()].map(([subscriptionId, tally]) =>
-        this.push.sendToUser(tally.userId, {
+        this.notifier.notify({
+          userId: tally.userId,
+          type: NotificationType.SUBSCRIPTION_SETTLED,
           title: `Abonnement — ${tally.sourceLabel}`,
           body: tallyMessage(tally),
           url: `/dashboard/subscriptions/${subscriptionId}`,
+          payload: {
+            subscriptionId,
+            won: tally.won,
+            lost: tally.lost,
+            void: tally.void,
+            pnl: tally.pnl.toFixed(2),
+          },
         }),
       ),
     );

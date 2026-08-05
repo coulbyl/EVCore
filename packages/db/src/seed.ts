@@ -700,7 +700,8 @@ function canonicalSeasonName(
   seasonStartMonth: number | null,
   competitionCode: string,
 ): string {
-  const effectiveMonth = seasonStartMonth ?? DEFAULT_SEASON_START_MONTH_FALLBACK;
+  const effectiveMonth =
+    seasonStartMonth ?? DEFAULT_SEASON_START_MONTH_FALLBACK;
   const spansTwoYears =
     effectiveMonth >= 6 || EUROPEAN_CUP_CODES.has(competitionCode);
   return spansTwoYears ? `${year}-${String(year + 1).slice(-2)}` : `${year}`;

@@ -65,8 +65,10 @@ export class DashboardRepository {
           modelRun: { analyzedAt: { gte: todayStart, lte: todayEnd } },
         },
       }),
+      // userId: null — exclut les notifications personnelles (abonnements),
+      // ce compteur ne couvre que les alertes admin/ops broadcast.
       this.prisma.client.notification.count({
-        where: { read: false },
+        where: { read: false, userId: null },
       }),
       this.prisma.client.notification.count({
         where: {

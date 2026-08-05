@@ -137,6 +137,10 @@ enum NotificationType {
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
   ML_MODEL_ACTIVATED
+  // Personnelles (Notification.userId non-null) — voir commentaire sur le
+  // modèle Notification.
+  SUBSCRIPTION_EVENTS_ADDED
+  SUBSCRIPTION_SETTLED
 
   @@schema("public")
 }
@@ -526,6 +530,7 @@ model User {
   announcements                    Announcement[]
   badges                           UserBadge[]
   notificationReads                UserNotificationRead[]
+  notifications                    Notification[]
   verificationCodes                EmailVerificationCode[]
   resetTokens                      PasswordResetToken[]
   chatConversations                ChatConversation[]
@@ -711,8 +716,17 @@ model MarketSuspension {
 }
 
 // In-app notifications — persisted for dashboard and future mobile app.
+// Deux régimes selon userId :
+//  - userId null  : broadcast admin/ops (ROI_ALERT, MARKET_SUSPENSION, …),
+//    visible par rôle (NotificationService.allowedTypes), lu par utilisateur
+//    via UserNotificationRead (plusieurs lecteurs possibles par notif).
+//  - userId rempli : notification personnelle (ex. SUBSCRIPTION_*), un seul
+//    destinataire possible — read/readAt ci-dessous sont alors la source de
+//    vérité directe, UserNotificationRead ne s'applique pas.
 model Notification {
   id        String                 @id @default(cuid())
+  userId    String?                @db.Uuid
+  user      User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
   body      String
@@ -723,6 +737,7 @@ model Notification {
   reads     UserNotificationRead[]
 
   @@index([read, createdAt])
+  @@index([userId, read, createdAt])
   @@map("notification")
   @@schema("public")
 }

@@ -714,6 +714,13 @@
       "hitRate": "Hit rate",
       "eventsSettled": "{settled}/{total} event(s) settled · {staked} staked in total"
     },
+    "deleteDialog": {
+      "title": "Delete this subscription?",
+      "description": "This action is irreversible: the subscription and its simulated event history will be permanently deleted.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "confirming": "Deleting…"
+    },
     "status": {
       "ACTIVE": "Active",
       "ENDED": "Ended",
@@ -793,12 +800,14 @@
       "notFound": "Subscription not found.",
       "notFoundOrDeleted": "Subscription not found or already deleted.",
       "cancel": "Cancel subscription",
+      "delete": "Delete",
       "statLabels": {
-        "status": "Status",
         "totalStaked": "Total staked",
+        "netPnl": "Net profit/loss",
         "roi": "ROI"
       },
       "history": "Event history",
+      "historyLimited": "{shown} most recent shown",
       "historyEmpty": "No event yet.",
       "results": {
         "WON": "Won",

@@ -23,6 +23,7 @@ export function FixtureName({
   className = "text-xs font-semibold text-foreground",
   logoPosition = "start",
   stacked = false,
+  wrap = false,
 }: {
   fixture: string;
   homeLogo: string | null;
@@ -40,10 +41,21 @@ export function FixtureName({
    * by the card header; the compact bet-slip list keeps the plain single-line
    * form since it has no logos/badges competing for space. */
   stacked?: boolean;
+  /** Wrap long team names onto extra lines instead of truncating with an
+   * ellipsis — for contexts where the full name matters more than a tight
+   * single line (e.g. matching a bet against a bookmaker's listing). */
+  wrap?: boolean;
 }) {
   const [home, away] = fixture.split(" vs ");
+  const nameClass = wrap
+    ? "min-w-0 shrink break-words"
+    : "min-w-0 shrink truncate";
   if (!home || !away) {
-    return <p className={`truncate ${className}`}>{fixture}</p>;
+    return (
+      <p className={`${wrap ? "break-words" : "truncate"} ${className}`}>
+        {fixture}
+      </p>
+    );
   }
 
   const layout = stacked
@@ -54,14 +66,14 @@ export function FixtureName({
     <div className={`flex min-w-0 ${layout} ${className}`}>
       <span className="flex min-w-0 items-center gap-1.5">
         {logoPosition === "start" && <TeamLogo src={homeLogo} name={home} />}
-        <span className="min-w-0 shrink truncate">{home}</span>
+        <span className={nameClass}>{home}</span>
         {logoPosition === "end" && <TeamLogo src={homeLogo} name={home} />}
         {homeBadge}
       </span>
       <span className="flex min-w-0 items-center gap-1.5">
         <span className="shrink-0 font-normal text-muted-foreground">vs</span>
         {logoPosition === "start" && <TeamLogo src={awayLogo} name={away} />}
-        <span className="min-w-0 shrink truncate">{away}</span>
+        <span className={nameClass}>{away}</span>
         {logoPosition === "end" && <TeamLogo src={awayLogo} name={away} />}
         {awayBadge}
       </span>

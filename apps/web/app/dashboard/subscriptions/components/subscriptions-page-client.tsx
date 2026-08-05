@@ -40,24 +40,29 @@ export function SubscriptionsPageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <PageHeader>
-        <div>
+      <PageHeader className="flex-row items-center justify-between gap-3">
+        <div className="min-w-0">
           <PageHeaderTitle>{t("pageTitle")}</PageHeaderTitle>
-          <p className="mt-1 text-xs text-muted-foreground">{t("subtitle")}</p>
+          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+            {t("subtitle")}
+          </p>
         </div>
-        <PageHeaderActions>
+        <PageHeaderActions className="shrink-0">
           <Button className="gap-2" asChild size="sm">
-            <Link href="/dashboard/subscriptions/new">
+            <Link
+              href="/dashboard/subscriptions/new"
+              aria-label={t("newSubscription")}
+            >
               <Plus size={14} />
-              {t("newSubscription")}
+              <span className="hidden sm:inline">{t("newSubscription")}</span>
             </Link>
           </Button>
         </PageHeaderActions>
       </PageHeader>
 
       <PageContent className="min-h-0 flex-1 overflow-hidden p-4 sm:p-5 ev-shell-shadow">
-        <div className="flex h-full min-h-0 flex-col gap-5">
-          <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-5">
+          <div className="grid shrink-0 grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-4">
             <StatCard
               label={t("stats.activeCount")}
               value={String(active.length)}
