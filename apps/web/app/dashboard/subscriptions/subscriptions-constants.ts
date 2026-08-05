@@ -1,12 +1,7 @@
 import type { useTranslations } from "next-intl";
-import {
-  formatMarketForDisplay,
-  formatPickForDisplay,
-} from "@/helpers/fixture";
 import type {
   Subscription,
   SubscriptionChannelPickMode,
-  SubscriptionEvent,
   SubscriptionSourceType,
 } from "@/domains/subscriptions/types/subscriptions";
 
@@ -72,22 +67,4 @@ export function formatDayConditions(sub: Subscription, t: Translator): string {
     );
   }
   return parts.length > 0 ? parts.join(" · ") : t("dayConditions.none");
-}
-
-// Marché/pick sont des codes fermés — traduits ici (pas côté backend) via les
-// mêmes dictionnaires que la page Investir/Décisions (helpers/fixture.ts),
-// une seule source de vérité pour ces libellés.
-export function eventLabel(
-  event: SubscriptionEvent,
-  t: Translator,
-  locale: string,
-): string {
-  if (event.fixture && event.market && event.pick) {
-    const loc = locale === "en" ? "en" : "fr";
-    return `${event.fixture.homeTeam} vs ${event.fixture.awayTeam} — ${formatPickForDisplay(event.pick, event.market)} · ${formatMarketForDisplay(event.market, loc)}`;
-  }
-  if (event.combinedOdds !== null) {
-    return t("detail.couponLabel", { value: event.combinedOdds });
-  }
-  return t("detail.genericEvent");
 }

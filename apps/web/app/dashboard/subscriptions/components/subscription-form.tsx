@@ -143,7 +143,7 @@ export function SubscriptionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
       <div className="space-y-1.5">
         <Label>{t("form.sourceLabel")}</Label>
         <Select

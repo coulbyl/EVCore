@@ -1,29 +1,15 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@evcore/ui";
-import { Ticket } from "lucide-react";
-import { CanalBadge } from "@/components/canal-badge";
 import { useCurrencyFormat } from "@/providers/currency-provider";
 import type { Subscription } from "@/domains/subscriptions/types/subscriptions";
+import { SubscriptionSourceHeader } from "./subscription-source-badge";
 import {
   formatDayConditions,
-  pickModeShortLabel,
-  sourceLabel,
   statusLabel,
   subscriptionHitRatePct,
   subscriptionRoiPct,
 } from "../subscriptions-constants";
-
-const CHANNEL_BY_SOURCE: Partial<
-  Record<Subscription["sourceType"], Parameters<typeof CanalBadge>[0]["canal"]>
-> = {
-  CHANNEL_VALUE: "VALUE",
-  CHANNEL_SAFE: "SAFE",
-  CHANNEL_DOMINANT: "DOMINANT",
-  CHANNEL_DRAW: "DRAW",
-  CHANNEL_BTTS: "BTTS",
-  CHANNEL_TEAM_TOTAL: "TEAM_TOTAL",
-};
 
 export function SubscriptionCard({
   subscription,
@@ -34,7 +20,6 @@ export function SubscriptionCard({
   const { formatAmount } = useCurrencyFormat();
   const roi = subscriptionRoiPct(subscription);
   const hitRate = subscriptionHitRatePct(subscription);
-  const channel = CHANNEL_BY_SOURCE[subscription.sourceType];
 
   return (
     <Link
@@ -42,24 +27,7 @@ export function SubscriptionCard({
       className="flex w-full flex-col gap-3 rounded-[1.15rem] border border-border bg-panel-strong px-4 py-4 text-left shadow-sm transition hover:border-accent/50 sm:rounded-[1.55rem] sm:px-5 sm:py-5"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {channel ? (
-            <CanalBadge canal={channel} />
-          ) : (
-            <Badge variant="secondary" className="gap-1.5">
-              <Ticket size={12} />
-              {sourceLabel(subscription.sourceType, t)}
-            </Badge>
-          )}
-          {subscription.channelPickMode ? (
-            <span className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-              {pickModeShortLabel(subscription.channelPickMode, t)}
-              {subscription.topN
-                ? ` · ${t("topN", { n: subscription.topN })}`
-                : ""}
-            </span>
-          ) : null}
-        </div>
+        <SubscriptionSourceHeader subscription={subscription} />
         <Badge
           variant={subscription.status === "ACTIVE" ? "default" : "secondary"}
         >

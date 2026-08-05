@@ -80,10 +80,27 @@ export type SubscriptionEvent = {
   // ISO datetime — coup d'envoi du match, null pour un événement Coupon
   // (pas de fixture unique).
   kickoff: string | null;
-  fixture: { homeTeam: string; awayTeam: string } | null;
+  fixture: {
+    homeTeam: string;
+    awayTeam: string;
+    homeLogo: string | null;
+    awayLogo: string | null;
+    country: string;
+  } | null;
   market: string | null;
   pick: string | null;
   combinedOdds: string | null;
+  // Composition du coupon — vide pour un événement CHANNEL_* (déjà porté par
+  // fixture/market/pick ci-dessus).
+  legs: Array<{
+    market: string;
+    pick: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeLogo: string | null;
+    awayLogo: string | null;
+    country: string;
+  }>;
   stake: string;
   odds: string | null;
   result: "WON" | "LOST" | "VOID" | null;

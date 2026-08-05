@@ -110,7 +110,17 @@ type MultiComboboxProps = {
   emptyLabel?: string;
   className?: string;
   disabled?: boolean;
+  /** Removable chips listing every selection below the trigger. Off by
+   * default once a handful of options are picked it turns into a wall of
+   * badges — the trigger's "N sélectionné(s)" count plus the popover's own
+   * checkmarks already cover both feedback and removal. */
+  showSelectedTags?: boolean;
 };
+
+// Passé ce nombre de puces affichées, on replie derrière un "+N" plutôt que
+// de laisser la sélection s'étaler sur plusieurs lignes — l'utilisateur doit
+// toujours voir ce qu'il a choisi, juste pas d'un coup si c'est beaucoup.
+const COLLAPSED_TAG_COUNT = 4;
 
 // Même socle (Popover + Command) que Combobox ci-dessus, en sélection multiple
 // avec puces retirables — pas de nouvelle dépendance, même stack Radix/cmdk
@@ -124,9 +134,16 @@ function MultiCombobox({
   emptyLabel = "Aucun résultat.",
   className,
   disabled,
+  showSelectedTags = true,
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [tagsExpanded, setTagsExpanded] = React.useState(false);
   const selectedOptions = options.filter((opt) => value.includes(opt.value));
+  const hasOverflow = selectedOptions.length > COLLAPSED_TAG_COUNT;
+  const visibleOptions =
+    hasOverflow && !tagsExpanded
+      ? selectedOptions.slice(0, COLLAPSED_TAG_COUNT)
+      : selectedOptions;
 
   function toggle(optionValue: string) {
     onChange(
@@ -186,9 +203,9 @@ function MultiCombobox({
           </Command>
         </PopoverContent>
       </Popover>
-      {selectedOptions.length > 0 && (
+      {showSelectedTags && selectedOptions.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {selectedOptions.map((opt) => (
+          {visibleOptions.map((opt) => (
             <Badge key={opt.value} variant="secondary" className="gap-1 pr-1">
               {opt.label}
               <button
@@ -201,6 +218,17 @@ function MultiCombobox({
               </button>
             </Badge>
           ))}
+          {hasOverflow && (
+            <button
+              type="button"
+              onClick={() => setTagsExpanded((v) => !v)}
+              className="rounded-full border border-border px-2 text-xs text-muted-foreground hover:border-accent hover:text-accent"
+            >
+              {tagsExpanded
+                ? "Réduire"
+                : `+${selectedOptions.length - COLLAPSED_TAG_COUNT}`}
+            </button>
+          )}
         </div>
       )}
     </div>

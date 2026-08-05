@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -47,5 +48,11 @@ export class SubscriptionsController {
   @HttpCode(HttpStatus.OK)
   cancel(@CurrentSession() session: AuthSession, @Param('id') id: string) {
     return this.subscriptionsService.cancel(id, session.user.id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  remove(@CurrentSession() session: AuthSession, @Param('id') id: string) {
+    return this.subscriptionsService.remove(id, session.user.id);
   }
 }
