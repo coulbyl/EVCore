@@ -98,6 +98,7 @@ function makePrisma(oddsRows: OddsRow[]): PrismaService {
         findMany: vi.fn(),
       },
       teamStats: {
+        count: vi.fn().mockResolvedValue(10),
         findFirst: vi
           .fn()
           .mockResolvedValueOnce(HOME_STATS)

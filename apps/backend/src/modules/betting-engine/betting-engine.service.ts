@@ -49,6 +49,9 @@ import {
   isNationalTeamCompetition,
   NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
   NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_MIN_GAMES,
 } from './ev.constants';
 import { FEATURE_FLAGS } from '@config/feature-flags.constants';
 import { H2H_GAMMA, LINE_MOVEMENT_THRESHOLD } from './ev.constants';
@@ -551,6 +554,79 @@ export class BettingEngineService {
               xgWeight: NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
             })
           : awayCross;
+      }
+    } else if (!isEuropeanCompetition(competitionCode)) {
+      // Every remaining domestic league, only for teams with a thin
+      // current-season sample (season rollover window) — gated on a games-
+      // played count, not just null, so a fixture with e.g. 1-2 current-
+      // season matches can still stabilise against last season's larger
+      // sample. Established mid-season fixtures (both sides already past
+      // DOMESTIC_SEASON_ROLLOVER_MIN_GAMES) never reach this fallback and
+      // never get diluted with a stale prior-season snapshot. See
+      // DOMESTIC_SEASON_ROLLOVER_* in ev.constants.ts for why this fallback
+      // exists and why its weights are unvalidated.
+      const [homeGamesPlayed, awayGamesPlayed] = await Promise.all([
+        this.prisma.client.teamStats.count({
+          where: {
+            teamId: fixture.homeTeamId,
+            afterFixture: {
+              seasonId: fixture.seasonId,
+              scheduledAt: { lt: fixture.scheduledAt },
+            },
+          },
+        }),
+        this.prisma.client.teamStats.count({
+          where: {
+            teamId: fixture.awayTeamId,
+            afterFixture: {
+              seasonId: fixture.seasonId,
+              scheduledAt: { lt: fixture.scheduledAt },
+            },
+          },
+        }),
+      ]);
+
+      const homeThin = homeGamesPlayed < DOMESTIC_SEASON_ROLLOVER_MIN_GAMES;
+      const awayThin = awayGamesPlayed < DOMESTIC_SEASON_ROLLOVER_MIN_GAMES;
+
+      if (homeThin || awayThin) {
+        const [homeCross, awayCross] = await Promise.all([
+          homeThin
+            ? this.findCrossCompStats(
+                fixture.homeTeamId,
+                fixture.scheduledAt,
+                fixture.seasonId,
+              )
+            : null,
+          awayThin
+            ? this.findCrossCompStats(
+                fixture.awayTeamId,
+                fixture.scheduledAt,
+                fixture.seasonId,
+              )
+            : null,
+        ]);
+
+        if (homeCross) {
+          effectiveHomeStats = homeStats
+            ? blendTeamStats({
+                primary: homeStats,
+                secondary: homeCross,
+                formWeight: DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT,
+                xgWeight: DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT,
+              })
+            : homeCross;
+        }
+        if (awayCross) {
+          effectiveAwayStats = awayStats
+            ? blendTeamStats({
+                primary: awayStats,
+                secondary: awayCross,
+                formWeight: DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT,
+                xgWeight: DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT,
+              })
+            : awayCross;
+        }
       }
     }
 
