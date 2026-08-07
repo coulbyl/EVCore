@@ -150,6 +150,7 @@ function makePrismaMock(
         findMany: vi.fn(),
       },
       teamStats: {
+        count: vi.fn().mockResolvedValue(10),
         findFirst: vi
           .fn()
           .mockResolvedValueOnce({
@@ -685,6 +686,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce(null)
@@ -737,6 +739,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi.fn(),
         },
         oddsSnapshot: {
@@ -842,6 +845,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi.fn(),
         },
         oddsSnapshot: {
@@ -927,6 +931,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi.fn(),
         },
         oddsSnapshot: {
@@ -995,6 +1000,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -1123,6 +1129,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -1212,6 +1219,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -1343,6 +1351,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -1740,6 +1749,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -1859,6 +1869,7 @@ describe('BettingEngineService', () => {
           }),
         },
         teamStats: {
+          count: vi.fn().mockResolvedValue(10),
           findFirst: vi
             .fn()
             .mockResolvedValueOnce({
@@ -2021,6 +2032,7 @@ describe('BettingEngineService', () => {
             findMany: vi.fn(),
           },
           teamStats: {
+            count: vi.fn().mockResolvedValue(10),
             findFirst: vi
               .fn()
               .mockResolvedValueOnce({
