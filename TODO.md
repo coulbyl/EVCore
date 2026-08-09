@@ -6,15 +6,72 @@
 > **Principe directeur** : un canal = une **stratégie de sélection**, pas un marché.
 > Aucun nouveau canal n'est activé sans backtest séparé par ligue/marché/saison.
 >
-> ⚠️ Ce fichier ne couvre que le chantier **canaux de stratégie / calibration
-> modèle**. Le travail récent sur EVA (chat, persona pro, coupons pricés,
-> filter bar) n'y est pas suivi.
+> ⚠️ Ce fichier couvre le chantier **canaux de stratégie / calibration
+> modèle** ET, depuis le 2026-08-09, le **générateur de coupon** (section
+> dédiée ci-dessous). Le travail EVA (chat, persona pro, filter bar) n'y est
+> pas suivi.
 
 ## Statut
 
 - `[ ]` À faire
 - `[~]` En cours / observation
 - `[-]` Abandonné / hors périmètre v1
+
+---
+
+## Générateur de coupon (chantier 2026-08-09, branche `feat/coupon-generator-intelligence`)
+
+> Historique complet : Bloc 9 de [ROADMAP.md](ROADMAP.md). Rien ici n'est
+> bloquant pour merger la branche — ce sont des suites, pas des prérequis.
+
+- `[~]` **LONGSHOT_WEEKEND/MIDWEEK en observation** — généré en vrai chaque
+  weekend/mardi-jeudi, badge "Expérimental" côté UI, jamais staké comme une
+  recommandation validée.
+  - `[ ]` Laisser accumuler quelques semaines de règlements réels avant
+    d'envisager un backtest (`composeGreedy` n'avait jamais tourné en prod
+    avant cette session — pas d'historique multi-jours à rejouer).
+  - `[ ]` Écrire `db:backtest:coupon-longshot` une fois assez de coupons
+    LONGSHOT réglés (WON/LOST/VOID/PARTIAL) — mesurer hit-rate réel du
+    coupon complet vs cote, pas juste par jambe.
+  - `[ ]` Ne retirer le badge "Expérimental" / n'activer au même niveau que
+    le profil par défaut qu'après un backtest vert avec split train/valid.
+
+- `[ ]` **Pondération des signaux leg-level dans `signalScore`** (A4, pas
+  fait volontairement) — `priorAnalysisCount`, `offensiveBalance`,
+  `shadowConflict` sont exposés dans `ScoredPick`/`featureSnapshot` mais
+  n'influencent encore rien. `db:backtest:coupon-quality-signals` (2026-08-09)
+  a montré `train n=0` sur ces champs — trop récemment enrichis dans
+  `ModelRun.features` pour un vrai split. Relancer ce script dans 2-3
+  semaines ; ne pondérer que si train ET valid confirment (même règle que
+  partout ailleurs dans ce fichier).
+
+- `[ ]` **FADE (pick inverse sur divergence extrême seule)** —
+  `COUPON_ENFORCE_AVOID_FADE=false`, signal le mieux corroboré du backtest
+  qualité (train +18%/valid +20%) mais n=15-17 à peine au-dessus du seuil
+  minimal. Revalider avec plus de données avant d'activer.
+
+- `[ ]` **DRAW — ligues supplémentaires non confirmées** — `FRI`, `KOR1`,
+  `KOR2`, `CSL`, `BRA2`, `WC`, `CHN2` montrent un ROI agrégé positif (jusqu'à
+  +41%) mais `train n=0` sur `db:backtest:channel-league-whitelist`
+  (2026-08-09) — pas assez d'historique pour un split. Ne pas les ajouter à
+  `DRAW_STAKED_LEAGUES` sur la base du seul agrégat ; relancer le script
+  périodiquement.
+
+- `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`** —
+  `coupon-summary.service.ts`, `coupon-indices.service.ts` et deux requêtes
+  de `coupon.repository.ts` filtrent uniquement `WON`/`LOST`. C'était sans
+  conséquence tant que `PARTIAL` était du code mort (corrigé le 2026-08-09,
+  cf. Bloc 9) — maintenant qu'il est atteignable (legs voidées sur fixture
+  `POSTPONED`/`CANCELLED`), ces vues excluent silencieusement les coupons
+  `PARTIAL`/`VOID` des stats au lieu de les compter explicitement (VOID :
+  correct de l'exclure, mise remboursée ; PARTIAL : à trancher — probablement
+  à inclure comme un gain partiel plutôt qu'à ignorer).
+
+- `[ ]` **Calibration `k`/`decayHalfLifeDays`/`windowDays`** — mesurée
+  (`db:backtest:signal-window-calibration`), gain réel mais marginal et pas
+  appliqué (compromis réactivité vs stabilité, cf. Bloc 9). À reconsidérer
+  seulement si ces valeurs semblent un jour concrètement mauvaises en usage,
+  pas par optimisation pure du score de calibration.
 
 ---
 

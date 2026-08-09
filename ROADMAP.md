@@ -360,6 +360,77 @@
       uniquement — aucune stratégie ne le consomme, bornes de classification
       non backtestées.
 
+### Bloc 9 — Générateur de coupon : sélection intelligente + longshot (2026-08-09)
+
+> Diagnostic initial : sélection de jambes non pondérée par la qualité (stabilité
+> temporelle, cohérence interne, déséquilibre offensif), filtre AVOID binaire
+> jetant des picks valides, répétition des mêmes jambes dominantes entre les
+> coupons générés le même jour, DRAW staké sans whitelist par ligue,
+> `COUPON_PARAMS.minCouponEV` jamais re-backtesté depuis sa source documentée
+> (fichier `backtest-selected-params.json` introuvable dans ce repo). Branche
+> `feat/coupon-generator-intelligence`. Reste à faire : [TODO.md](TODO.md).
+
+**Architecture préalable**
+
+- [x] Signaux `offensiveBalance`/`shadow_predictions.conflict`/`dataCoverage`
+      unifiés dans `apps/backend/src/utils/model-run.utils.ts` — supprime la
+      duplication entre `analysis-sheet` et `coupon` qui avait laissé les deux
+      pipelines diverger
+- [x] `OddsSnapshotLoader.findLatestOddsSnapshotsBatch` — élimine le N+1 sur
+      les cotes (une requête au lieu de ~34/fixture), condition de viabilité
+      du pool multi-jours
+
+**Sélection et composition**
+
+- [x] Routage AVOID gradué (`classifyAvoidSignal` : CLEAN/FADE/DROP/KEEP) —
+      remplace le filtre binaire qui jetait des picks validés +51% ROI
+      (régime KEEP) ; FADE (pick inverse) reste shadow (`COUPON_ENFORCE_AVOID_FADE=false`, n=15-17 trop fin)
+- [x] `SignalWindowService.getTodayPool` → `getPoolForRange` — pool
+      multi-jours, fenêtres weekend (ven→dim) / midweek européen (mar→jeu)
+      auto-détectées (`coupon.worker.ts::resolveGenerationWindow`)
+- [x] `CouponComposerService.compose` — sélecteur `composeExhaustive`
+      (≤5 legs) / `composeGreedy` (longshot), règles d'anti-corrélation
+      partagées entre les deux + plafond de jambes par jour
+- [x] Diversité inter-coupons (`selectDiverseCoupons`) — le top-N par EV ne
+      renvoie plus des coupons quasi-identiques partageant la même jambe forte
+- [x] Profils `LONGSHOT_WEEKEND`/`LONGSHOT_MIDWEEK` (cote cible 50-70,
+      8-12 legs) — **activés en observation permanente** (aucun backtest
+      dédié encore possible, pas d'historique multi-jours à rejouer), badge
+      "Expérimental" côté frontend (`CouponProposalDto.experimental`)
+
+**Backtests et recalibration (données réelles, split train/valid)**
+
+- [x] `BTTS_STAKED_LEAGUES` re-validé : `[PL, BL1, SA]` → `[PL, BL1]` (SA
+      instable — signe qui s'inverse entre train et valid)
+- [x] Nouvelle whitelist `DRAW_STAKED_LEAGUES` par ligue : `[I2, POR, BL1]`
+      (avant : DRAW staké globalement sur un poids bas, masquant un écart de
+      ROI de +41% à -45% selon la ligue)
+- [x] `COUPON_PARAMS.minCouponEV` recalibré 0.05 → 0.15 (403 vrais
+      `CouponProposal` réglés depuis 2023, train ROI +28.3%→+29.2%, valid
+      +19.8%→+23.2%) ; source documentée corrigée en tête de
+      `coupon.constants.ts`
+- [x] Calibration `k`/`decayHalfLifeDays`/`windowDays` mesurée (Brier
+      walk-forward) — gain réel mais marginal, **non appliqué** : une mémoire
+      plus longue sacrifierait la réactivité aux dérives de canal/ligue déjà
+      observées cette session (CONSENSUS, DRAW, BTTS/SA)
+- [x] Scripts ajoutés (`packages/db/scripts/`) : `backtest-coupon-quality-signals.ts`,
+      `backtest-channel-league-whitelist.ts`, `backtest-coupon-params-validation.ts`,
+      `backtest-signal-window-calibration.ts`
+
+**Bugs corrigés en cours de route**
+
+- [x] `CouponRepository.deletePendingForDate` effaçait tous les profils
+      PENDING du jour, pas seulement celui régénéré — aurait supprimé le
+      profil DEFAULT à chaque génération LONGSHOT sur la même date
+- [x] Dashboard : égalité stricte sur `forDate` faisait disparaître un
+      coupon multi-jours généré vendredi dès samedi/dimanche, même encore
+      `PENDING`
+- [x] Settlement bloqué indéfiniment sur fixture `POSTPONED`/`CANCELLED`
+      (jamais `FINISHED`) — confirmé réel (45+96 fixtures), `CouponResult.VOID`/`PARTIAL`
+      désormais atteignables (`PARTIAL` était du code mort avant ce fix)
+
+---
+
 ### Web UI
 
 - [x] Page 404 (`not-found.tsx`) — layout centré, animation CSS, tokens bento
