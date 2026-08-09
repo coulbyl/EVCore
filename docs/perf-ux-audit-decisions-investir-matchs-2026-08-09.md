@@ -14,17 +14,17 @@
 | Pas de pagination forcée sur `/fixtures/scoring` (Matchs)                                     | ✅ **Corrigé** (2026-08-09) — `limit` par défaut à 50 + scroll infini frontend (`useInfiniteQuery`) | Moyenne                                        |
 | Filtres `timeSlot`/`betStatus` appliqués après le fetch (Matchs)                              | ✅ **`timeSlot` corrigé** (borne SQL sur `scheduledAt`) — `betStatus` **laissé en mémoire** (risque de réécrire le join "dernier run / top-2 EV" pour un gain jugé trop faible vs le risque) | Basse (sauf si pas de `limit`)                 |
 | Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Matchs corrigé** (scroll infini) — Décisions/Investir toujours non paginés côté frontend          | Moyenne                                        |
-| Inbox caché sur mobile, aucune notification in-app pour les messages support                  | **Confirmé, réel** — pas encore traité                                                              | Haute                                          |
+| Inbox caché sur mobile, aucune notification in-app pour les messages support                  | **Notification in-app corrigée** (2026-08-09, `NotificationType.SUPPORT_MESSAGE`) — Inbox toujours absent de la nav mobile (§5.A, décision A1/A2 en attente) | Haute                                          |
 | Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant** — pas encore traité                                                        | Moyenne                                        |
-| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | **Confirmé, réel** — pas encore traité                                                               | Haute (bloquant si tu multiplies les annonces) |
+| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | **Notification in-app corrigée** (2026-08-09, `NotificationType.ANNOUNCEMENT_PUBLISHED`) — page historique + `AnnouncementRead` toujours à faire (§7.1/§7.2) | Haute (bloquant si tu multiplies les annonces) |
 | Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
 | Regroupement par ligue / mode d'affichage                                                     | Inexistant sur ces 3 pages, mais un précédent réutilisable existe (Track Record) — pas encore traité | Fonctionnalité à construire                    |
 | Latence au login — `scryptSync` bloquant l'event loop Node                                    | ✅ **Corrigé** (2026-08-09) — `crypto.scrypt` async, mêmes paramètres N/r/p/maxmem                  | Haute                                          |
 | Email reset password → localhost en prod                                                      | ✅ **Corrigé** (`APP_URL` ajoutée en prod le 2026-08-09 — à vérifier après redéploiement/restart)   | —                                              |
 | Logo EVCore invisible dans les emails transactionnels                                         | ✅ **Corrigé** (2026-08-09) — URL hébergée (`https://c-evcore.com/icons/icon-192.png`) au lieu du data URI | Moyenne                                        |
 | Clé `GROQ_API_KEY` collée en clair dans le chat pendant la session                            | ✅ **Faite tourner** (confirmé par toi le 2026-08-09)                                                | **Haute, immédiate**                           |
-| Aucun rate-limiting sur `POST /auth/login`                                                    | **Confirmé, absent** — pas encore traité                                                            | Haute                                          |
-| Anomalie `RUS1` / marché DRAW : 0% hit sur 22 paris réglés                                    | **Constaté, pas expliqué** — pas encore investigué                                                  | Moyenne                                        |
+| Aucun rate-limiting sur `POST /auth/login`                                                    | ✅ **Corrigé** (2026-08-09) — `@nestjs/throttler`, 5 tentatives/60s par IP                          | Haute                                          |
+| Anomalie `RUS1` / marché DRAW : 0% hit sur 22 paris réglés                                    | ✅ **Expliquée et corrigée** (2026-08-09) — pas un signal RUS1 : `backtest-channel-league-whitelist.ts` comptait chaque repasse d'analyse (ADVANCE) comme un pari indépendant. n=22 réel = 6 matchs (aucun n'était nul). Dédup ajoutée, n global DRAW corrigé de 4838 → 3735 | Moyenne                                        |
 | `settleProposal` écrit les legs puis le résultat coupon en séquence, hors transaction DB      | **Constaté, risque faible** — pas encore traité                                                     | Basse                                          |
 
 ---
@@ -236,11 +236,33 @@ Points relevés pendant le travail sur le générateur de coupon et pendant l'au
 
 Pendant la session, un `.env` de prod a été collé directement dans la conversation, contenant un `GROQ_API_KEY` réel. Je n'ai jamais reproduit ni loggé cette valeur (règle secrets du `CLAUDE.md`), mais elle est restée visible en clair dans l'historique de chat. **Si ce n'est pas déjà fait : faire tourner cette clé côté Groq dès que possible** — un secret vu une fois dans un chat ne doit plus être considéré comme confidentiel.
 
-### 11.2 Aucun rate-limiting sur `/auth/login`
+### 11.2 Aucun rate-limiting sur `/auth/login` ✅ corrigé
+
+> **2026-08-09** : `@nestjs/throttler` ajouté, appliqué uniquement sur
+> `POST /auth/login` (5 tentatives / 60s, suivi par IP) — pas de guard
+> global, pas d'impact sur le reste de l'API. Vérifié en direct : 429 dès
+> la 6ᵉ tentative.
 
 Vérifié : aucun `ThrottlerModule`/`@Throttle` dans `apps/backend/src/modules/auth/` ni dans `app.module.ts`. Au-delà de la latence `scryptSync` déjà notée en §8, l'absence de limite de tentatives sur le login est un vrai gap de sécurité (brute force, credential stuffing) — indépendant du fix de perf, à traiter comme son propre chantier (`@nestjs/throttler` sur le contrôleur auth, ou au niveau guard global).
 
-### 11.3 Anomalie de données — `RUS1` / marché DRAW à 0% hit (n=22)
+### 11.3 Anomalie de données — `RUS1` / marché DRAW à 0% hit (n=22) ✅ expliquée et corrigée
+
+> **2026-08-09** : ce n'était pas un signal de ligue. `backtest-channel-league-whitelist.ts`
+> comptait chaque repasse d'analyse (`ModelRun.phase = ADVANCE`, ré-exécutée
+> à intervalles réguliers avant kickoff) comme un pari indépendant, au lieu
+> de ne garder que la dernière passe par `(fixture, channel)` — même bug de
+> fond que celui corrigé sur `findByDate` en vague 1, mais dans un script
+> ad hoc plutôt que dans l'API de lecture. Vérification en base : les
+> "22 paris" RUS1/DRAW étaient en réalité **6 matchs distincts** (aucun n'a
+> fini nul — 2-4, 1-2, 2-1, 1-2, 0-2 — donc le 0% en lui-même était correct,
+> mais sur un échantillon 3.7× plus petit que rapporté). Corrigé dans
+> `fetchRows()` (dédup par dernière `analyzedAt` par fixture, même pattern
+> `DISTINCT ON`). Effet mesuré à l'échelle globale : le nombre réel de
+> sélections DRAW réglées passe de 4838 à 3735 — ce biais gonflait le n de
+> **toutes** les ligues du script, pas seulement RUS1 ; certaines
+> confirmations "n≥20" du whitelisting pourraient être à revérifier avec les
+> chiffres corrigés (RUS1 lui-même tombe sous le seuil et disparaît du
+> rapport).
 
 Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (backtest per-league DRAW/BTTS de la Vague B/C) : la ligue russe `RUS1` affiche 0% de hit rate sur 22 paris DRAW réglés (ROI -100%), un écart bien plus extrême que les autres ligues à échantillon comparable. Jamais creusé plus loin — pourrait être un vrai signal (marché DRAW structurellement mauvais sur cette ligue), une anomalie de règlement (mapping fixture/score erroné côté ETL pour cette compétition), ou juste un petit échantillon malchanceux. À vérifier avant de faire confiance à `RUS1` dans n'importe quel canal, et avant d'étendre `DRAW_STAKED_LEAGUES`.
 
@@ -254,7 +276,8 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 
 > **Suivi des vagues** — branche `fix/perf-ux-audit` (toutes les vagues de ce
 > chantier y sont empilées). Vague 1 (points 1-7) fermée le 2026-08-09,
-> commit `7e5d1854`.
+> commit `7e5d1854`. Vague 2 (points 8 [notifications seulement], 12, 16)
+> fermée le 2026-08-09, commit `66962691`.
 
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
 2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
@@ -263,13 +286,13 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 5. ~~`findNewCoachTeams` → une requête groupée au lieu de N (§1.2)~~ ✅ fait le 2026-08-09 (vague 1) — `channel-decision.repository.ts`.
 6. ~~`findByDate` → `DISTINCT ON` en SQL au lieu de dédup en mémoire (§1.1)~~ ✅ fait le 2026-08-09 (vague 1), même pattern que `investment-calibration.repository.ts`.
 7. ~~`FixtureScoringQueryDto.limit` → valeur par défaut forcée (§1.4)~~ ✅ fait le 2026-08-09 (vague 1) — `limit` par défaut 50 + `timeSlot` déplacé dans le `where` Prisma. `betStatus` **laissé en mémoire** (le join "dernier run / top-2 EV par fixture" est trop risqué à reproduire en SQL pour le gain, cf priorité "Basse" du §1.4). Effet de bord découvert et corrigé le même jour : le frontend Matchs n'avait jamais eu de vraie pagination (comptait sur "pas de `limit` = tout charger") — ajout d'un scroll infini (`useInfiniteQuery` + sentinel `IntersectionObserver`) dans `use-fixtures.ts`/`fixtures-table.tsx`, qui couvre une partie du point 15 pour cette page.
-8. `NotificationType.SUPPORT_MESSAGE` + `NotificationType.ANNOUNCEMENT_PUBLISHED` (§5.B + §7.3) — même chantier, même pattern, à faire ensemble.
+8. ~~`NotificationType.SUPPORT_MESSAGE` + `NotificationType.ANNOUNCEMENT_PUBLISHED` (§5.B + §7.3)~~ ✅ fait le 2026-08-09 (vague 2) — les deux créent maintenant une vraie ligne `Notification` en plus du push/email existant. Migration Prisma lancée par toi le même jour.
 9. **Page "Annonces" côté utilisateur** (§7.1) — prérequis direct avant de multiplier les annonces, sinon les anciennes se perdent dès qu'une nouvelle les remplace en bannière.
 10. Modèle `AnnouncementRead` (§7.2) — remplace le `localStorage`, débloque un vrai compteur de non-lus.
 11. Décider A1 vs A2 pour la nav mobile (§5.A) — le slot "Plus" (A2) peut héberger Inbox ET Annonces d'un coup.
-12. Rate-limiting sur `/auth/login` (§11.2) — chantier sécurité séparé de la perf login.
+12. ~~Rate-limiting sur `/auth/login` (§11.2)~~ ✅ fait le 2026-08-09 (vague 2) — `@nestjs/throttler`, 5/60s par IP, scope limité à cette route.
 13. Clarifier le bug des onglets (§4) avant d'y toucher.
 14. Concevoir le regroupement par ligue + modes d'affichage (§3) — commencer par le dropdown pattern Track Record.
 15. Pagination/virtualisation frontend (§2) — Matchs fait (cf point 7) ; reste Décisions et Investir.
-16. Investiguer l'anomalie `RUS1` DRAW (§11.3) avant toute extension de `DRAW_STAKED_LEAGUES`.
+16. ~~Investiguer l'anomalie `RUS1` DRAW (§11.3)~~ ✅ fait le 2026-08-09 (vague 2) — pas un signal de ligue, un bug de comptage dans le script de backtest (repasses d'analyse comptées comme paris indépendants). Corrigé, n global DRAW révisé 4838 → 3735.
 17. Onboarding (§6) — démarrer par le quick-win (pont Formation), cadrer le tour guidé à part.
