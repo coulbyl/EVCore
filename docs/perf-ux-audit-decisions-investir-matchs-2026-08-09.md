@@ -9,23 +9,23 @@
 
 | Sujet                                                                                         | Verdict                                                                                             | Priorité                                       |
 | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| N+1 sur `findNewCoachTeams` (Décisions + Investir)                                            | **Confirmé, réel**                                                                                  | Haute                                          |
-| Sur-fetch + dédup en mémoire sur `findByDate` (Décisions + Investir)                          | **Confirmé, réel**                                                                                  | Haute                                          |
-| Pas de pagination forcée sur `/fixtures/scoring` (Matchs)                                     | **Confirmé**                                                                                        | Moyenne                                        |
-| Filtres `timeSlot`/`betStatus` appliqués après le fetch (Matchs)                              | **Confirmé**                                                                                        | Basse (sauf si pas de `limit`)                 |
-| Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Confirmé**                                                                                        | Moyenne                                        |
-| Inbox caché sur mobile, aucune notification in-app pour les messages support                  | **Confirmé, réel**                                                                                  | Haute                                          |
-| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant**                                                                            | Moyenne                                        |
-| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | **Confirmé, réel**                                                                                  | Haute (bloquant si tu multiplies les annonces) |
-| Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4                                                 | À clarifier avec toi                           |
-| Regroupement par ligue / mode d'affichage                                                     | Inexistant sur ces 3 pages, mais un précédent réutilisable existe (Track Record)                    | Fonctionnalité à construire                    |
-| Latence au login — `scryptSync` bloquant l'event loop Node                                    | **Confirmé, réel**                                                                                  | Haute                                          |
+| N+1 sur `findNewCoachTeams` (Décisions + Investir)                                            | ✅ **Corrigé** (2026-08-09, branche `fix/perf-ux-audit`) — requête groupée au lieu du `count` en boucle | Haute                                          |
+| Sur-fetch + dédup en mémoire sur `findByDate` (Décisions + Investir)                          | ✅ **Corrigé** (2026-08-09) — `DISTINCT ON` en SQL, même pattern que `investment-calibration.repository.ts` | Haute                                          |
+| Pas de pagination forcée sur `/fixtures/scoring` (Matchs)                                     | ✅ **Corrigé** (2026-08-09) — `limit` par défaut à 50 + scroll infini frontend (`useInfiniteQuery`) | Moyenne                                        |
+| Filtres `timeSlot`/`betStatus` appliqués après le fetch (Matchs)                              | ✅ **`timeSlot` corrigé** (borne SQL sur `scheduledAt`) — `betStatus` **laissé en mémoire** (risque de réécrire le join "dernier run / top-2 EV" pour un gain jugé trop faible vs le risque) | Basse (sauf si pas de `limit`)                 |
+| Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Matchs corrigé** (scroll infini) — Décisions/Investir toujours non paginés côté frontend          | Moyenne                                        |
+| Inbox caché sur mobile, aucune notification in-app pour les messages support                  | **Confirmé, réel** — pas encore traité                                                              | Haute                                          |
+| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant** — pas encore traité                                                        | Moyenne                                        |
+| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | **Confirmé, réel** — pas encore traité                                                               | Haute (bloquant si tu multiplies les annonces) |
+| Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
+| Regroupement par ligue / mode d'affichage                                                     | Inexistant sur ces 3 pages, mais un précédent réutilisable existe (Track Record) — pas encore traité | Fonctionnalité à construire                    |
+| Latence au login — `scryptSync` bloquant l'event loop Node                                    | ✅ **Corrigé** (2026-08-09) — `crypto.scrypt` async, mêmes paramètres N/r/p/maxmem                  | Haute                                          |
 | Email reset password → localhost en prod                                                      | ✅ **Corrigé** (`APP_URL` ajoutée en prod le 2026-08-09 — à vérifier après redéploiement/restart)   | —                                              |
-| Logo EVCore invisible dans les emails transactionnels                                         | **Confirmé, réel** — cause identifiée, pas un bug de code                                           | Moyenne                                        |
-| Clé `GROQ_API_KEY` collée en clair dans le chat pendant la session                            | **Exposition réelle** — à faire tourner si pas déjà fait                                            | **Haute, immédiate**                           |
-| Aucun rate-limiting sur `POST /auth/login`                                                    | **Confirmé, absent** — aucun `ThrottlerModule`/`@Throttle` sur le module auth                       | Haute                                          |
-| Anomalie `RUS1` / marché DRAW : 0% hit sur 22 paris réglés                                    | **Constaté, pas expliqué** — à vérifier avant de faire confiance à la ligue                         | Moyenne                                        |
-| `settleProposal` écrit les legs puis le résultat coupon en séquence, hors transaction DB      | **Constaté, risque faible** — pas de perte de donnée, juste un état intermédiaire possible si crash | Basse                                          |
+| Logo EVCore invisible dans les emails transactionnels                                         | ✅ **Corrigé** (2026-08-09) — URL hébergée (`https://c-evcore.com/icons/icon-192.png`) au lieu du data URI | Moyenne                                        |
+| Clé `GROQ_API_KEY` collée en clair dans le chat pendant la session                            | ✅ **Faite tourner** (confirmé par toi le 2026-08-09)                                                | **Haute, immédiate**                           |
+| Aucun rate-limiting sur `POST /auth/login`                                                    | **Confirmé, absent** — pas encore traité                                                            | Haute                                          |
+| Anomalie `RUS1` / marché DRAW : 0% hit sur 22 paris réglés                                    | **Constaté, pas expliqué** — pas encore investigué                                                  | Moyenne                                        |
+| `settleProposal` écrit les legs puis le résultat coupon en séquence, hors transaction DB      | **Constaté, risque faible** — pas encore traité                                                     | Basse                                          |
 
 ---
 
@@ -252,13 +252,17 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 
 ## 10. Plan proposé pour la session suivante (à prioriser ensemble)
 
+> **Suivi des vagues** — branche `fix/perf-ux-audit` (toutes les vagues de ce
+> chantier y sont empilées). Vague 1 (points 1-7) fermée le 2026-08-09,
+> commit `7e5d1854`.
+
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
-2. **Faire tourner `GROQ_API_KEY`** (§11.1) — exposée en clair dans le chat, coût nul, à faire immédiatement.
-3. **`scryptSync` → `scrypt` async** (§8) — même paramètres de sécurité, corrige la latence globale ressentie sous charge.
-4. **Logo email → URL hébergée au lieu d'un data URI** (§9bis) — petit fix, un seul composant partagé à corriger pour tous les emails transactionnels.
-5. `findNewCoachTeams` → une requête groupée au lieu de N (§1.2) — le plus gros gain pour le moins de risque côté Décisions/Investir.
-6. `findByDate` → `DISTINCT ON` en SQL au lieu de dédup en mémoire (§1.1), même pattern que `investment-calibration.repository.ts`.
-7. `FixtureScoringQueryDto.limit` → valeur par défaut forcée + déplacer `timeSlot`/`betStatus` dans le `where` Prisma (§1.4).
+2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
+3. ~~**`scryptSync` → `scrypt` async** (§8)~~ ✅ fait le 2026-08-09 (vague 1) — même paramètres de sécurité, `auth.utils.ts`.
+4. ~~**Logo email → URL hébergée au lieu d'un data URI** (§9bis)~~ ✅ fait le 2026-08-09 (vague 1) — `evcore-layout.tsx`, `logo.ts` supprimé.
+5. ~~`findNewCoachTeams` → une requête groupée au lieu de N (§1.2)~~ ✅ fait le 2026-08-09 (vague 1) — `channel-decision.repository.ts`.
+6. ~~`findByDate` → `DISTINCT ON` en SQL au lieu de dédup en mémoire (§1.1)~~ ✅ fait le 2026-08-09 (vague 1), même pattern que `investment-calibration.repository.ts`.
+7. ~~`FixtureScoringQueryDto.limit` → valeur par défaut forcée (§1.4)~~ ✅ fait le 2026-08-09 (vague 1) — `limit` par défaut 50 + `timeSlot` déplacé dans le `where` Prisma. `betStatus` **laissé en mémoire** (le join "dernier run / top-2 EV par fixture" est trop risqué à reproduire en SQL pour le gain, cf priorité "Basse" du §1.4). Effet de bord découvert et corrigé le même jour : le frontend Matchs n'avait jamais eu de vraie pagination (comptait sur "pas de `limit` = tout charger") — ajout d'un scroll infini (`useInfiniteQuery` + sentinel `IntersectionObserver`) dans `use-fixtures.ts`/`fixtures-table.tsx`, qui couvre une partie du point 15 pour cette page.
 8. `NotificationType.SUPPORT_MESSAGE` + `NotificationType.ANNOUNCEMENT_PUBLISHED` (§5.B + §7.3) — même chantier, même pattern, à faire ensemble.
 9. **Page "Annonces" côté utilisateur** (§7.1) — prérequis direct avant de multiplier les annonces, sinon les anciennes se perdent dès qu'une nouvelle les remplace en bannière.
 10. Modèle `AnnouncementRead` (§7.2) — remplace le `localStorage`, débloque un vrai compteur de non-lus.
@@ -266,6 +270,6 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 12. Rate-limiting sur `/auth/login` (§11.2) — chantier sécurité séparé de la perf login.
 13. Clarifier le bug des onglets (§4) avant d'y toucher.
 14. Concevoir le regroupement par ligue + modes d'affichage (§3) — commencer par le dropdown pattern Track Record.
-15. Pagination/virtualisation frontend (§2) — après le fix backend, pour voir si le problème persiste une fois les endpoints allégés.
+15. Pagination/virtualisation frontend (§2) — Matchs fait (cf point 7) ; reste Décisions et Investir.
 16. Investiguer l'anomalie `RUS1` DRAW (§11.3) avant toute extension de `DRAW_STAKED_LEAGUES`.
 17. Onboarding (§6) — démarrer par le quick-win (pont Formation), cadrer le tour guidé à part.
