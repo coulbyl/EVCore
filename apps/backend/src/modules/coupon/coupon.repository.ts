@@ -389,7 +389,9 @@ export class CouponRepository {
     });
   }
 
-  async settleLeg(legId: string, isCorrect: boolean): Promise<void> {
+  // `isCorrect: null` marks a voided leg (postponed/cancelled fixture) —
+  // distinct from "not yet settled" (isCorrect null AND settledAt null).
+  async settleLeg(legId: string, isCorrect: boolean | null): Promise<void> {
     await this.prisma.client.couponProposalLeg.update({
       where: { id: legId },
       data: { isCorrect, settledAt: new Date() },
