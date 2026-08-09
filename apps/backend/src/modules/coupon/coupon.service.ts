@@ -24,6 +24,7 @@ export class CouponService {
   private readonly stakeTeamTotal: boolean;
   private readonly stakeBtts: boolean;
   private readonly enforceAvoid: boolean;
+  private readonly enableAvoidFade: boolean;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
@@ -51,18 +52,36 @@ export class CouponService {
     // those picks over 3 seasons. Kill-switch: COUPON_ENFORCE_AVOID=false.
     this.enforceAvoid =
       config.get<string>('COUPON_ENFORCE_AVOID', 'true') !== 'false';
+    // FADE regime (stake the opposite pick on extreme-divergence-alone) —
+    // backtested +18%/+20% ROI train/valid (2026-08-09,
+    // backtest-coupon-quality-signals), but n=15-17 barely clears the
+    // MIN_SAMPLE floor — off by default until more settled data confirms it.
+    this.enableAvoidFade =
+      config.get<string>('COUPON_ENFORCE_AVOID_FADE', 'false') === 'true';
   }
 
   async generateCoupons(
     date: string,
-    opts: { windowDays?: number; profile?: CouponProfileName } = {},
+    opts: {
+      windowDays?: number;
+      profile?: CouponProfileName;
+      /**
+       * Last day (inclusive) of a multi-day fixture window — e.g. `date`
+       * Friday, `to` Sunday for a weekend coupon, or `date` Tuesday, `to`
+       * Thursday for a midweek European-nights coupon. Defaults to `date`
+       * (single day, unchanged behaviour). `forDate` in the persisted
+       * proposal stays keyed on `date` (the generation day) regardless —
+       * only the fixture pool widens; each leg keeps its own `scheduledAt`.
+       */
+      to?: string;
+    } = {},
   ): Promise<void> {
-    const { windowDays = COUPON_PARAMS.windowDays, profile } = opts;
+    const { windowDays = COUPON_PARAMS.windowDays, profile, to = date } = opts;
     // Profil indicatif optionnel ; défaut = bornes backtestées (pas de régression,
     // multi-profil non activé tant que la gate de backtest n'est pas verte).
     const profileBounds = resolveCouponProfile(profile);
     logger.info(
-      { date, windowDays, profile: profile ?? 'DEFAULT' },
+      { date, to, windowDays, profile: profile ?? 'DEFAULT' },
       'Generating coupons',
     );
 
@@ -71,11 +90,12 @@ export class CouponService {
 
     const [window, rawPicks] = await Promise.all([
       this.signalWindow.computeSignalWindow(windowDays, asOf),
-      this.signalWindow.getTodayPool(date, {
+      this.signalWindow.getPoolForRange(date, to, {
         includeDraw: this.stakeDraw,
         includeTeamTotal: this.stakeTeamTotal,
         includeBtts: this.stakeBtts,
         enforceAvoid: this.enforceAvoid,
+        enableAvoidFade: this.enableAvoidFade,
       }),
     ]);
 
@@ -85,7 +105,7 @@ export class CouponService {
       'Pool loaded',
     );
 
-    const scoredPicks = this.composer.scorePicks(rawPicks, window, date);
+    const scoredPicks = this.composer.scorePicks(rawPicks, window);
     const coupons = this.composer.compose(scoredPicks, profileBounds);
 
     if (coupons.length === 0) {
@@ -112,8 +132,15 @@ export class CouponService {
         forDate: new Date(`${date}T00:00:00.000Z`),
         rank: coupon.rank,
         signalWindowDays: windowDays,
-        targetOddsMin: 1.0,
-        targetOddsMax: COUPON_PARAMS.maxCombinedOdds,
+        // Reflects the PROFILE actually used, not a hardcoded default — two
+        // profiles generated for the same date/windowDays must land on
+        // distinct rows under the forDate_signalWindowDays_targetOddsMin_
+        // targetOddsMax_rank unique constraint, not silently upsert into
+        // each other. For the (unnamed) default profile this is numerically
+        // identical to the previous hardcoded 1.0/maxCombinedOdds, so no
+        // change for existing live generation.
+        targetOddsMin: profileBounds.minCombinedOdds,
+        targetOddsMax: profileBounds.maxCombinedOdds,
         combinedOdds: coupon.combinedOdds,
         jointProbability: coupon.jointProbability,
         signalScore: coupon.signalScore,

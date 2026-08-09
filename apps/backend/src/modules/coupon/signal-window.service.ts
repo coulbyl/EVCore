@@ -11,12 +11,19 @@ import {
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
 import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
-import { extractModelRunFeatureDiagnostics } from '@utils/model-run.utils';
+import {
+  computeDataCoverage,
+  extractEvaContextFromFeatures,
+  extractModelRunFeatureDiagnostics,
+  hasCalibrationAlert,
+  readShadowConflict,
+} from '@utils/model-run.utils';
 import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
   type CouponChannel,
   type VirtualCouponChannel,
   BTTS_STAKED_LEAGUES,
+  DRAW_STAKED_LEAGUES,
   CANAL_BASE_WEIGHT,
   COUPON_PARAMS,
   VIRTUAL_COUPON_RULES,
@@ -78,6 +85,20 @@ export type SignalWindow = {
   marketCalibration: MarketCalibration;
 };
 
+export type GetPoolOpts = {
+  includeDraw?: boolean;
+  includeTeamTotal?: boolean;
+  includeBtts?: boolean;
+  enforceAvoid?: boolean;
+  /**
+   * Stake the FADE regime's opposite pick instead of dropping it. Default
+   * off — n=15-17 barely clears MIN_SAMPLE (cf.
+   * backtest-coupon-quality-signals, 2026-08-09); leave disabled until more
+   * settled data confirms it.
+   */
+  enableAvoidFade?: boolean;
+};
+
 export type ScoredPick = {
   fixtureId: string;
   homeTeam: string;
@@ -85,6 +106,9 @@ export type ScoredPick = {
   competition: string;
   country: string;
   scheduledAt: Date;
+  /** Fixture's own scheduled day (`YYYY-MM-DD`, UTC) — anti-correlation cap
+   * across a multi-day pool (weekend/midweek windows) keys on this. */
+  dayBucket: string;
   canal: Canal;
   market: string;
   pick: string;
@@ -123,6 +147,17 @@ export type ScoredPick = {
   modelThreshold: number | null;
   recentForm: number | null;
   modelProbabilities: Record<string, number>;
+  /** Fraction (0-1) des 3 signaux shadow (line movement/H2H/congestion) présents. */
+  dataCoverage: number | null;
+  /** `shadow_predictions.conflict` — désaccord Poisson API-Football vs λ interne. */
+  shadowConflict: boolean | null;
+  offensiveBalance: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC' | null;
+  /**
+   * Nombre de ModelRun antérieurs (sur les 5 derniers) où ce même (market, pick)
+   * était déjà la sélection retenue — signal de stabilité dans le temps
+   * (validé +8% ROI à 6+ passes vs -12.5% à 1-3 passes, cf. plan coupon 2026-08-09).
+   */
+  priorAnalysisCount: number;
   isCorrect: boolean | null;
   signalScore: number;
   featureSnapshot: Record<string, unknown>;
@@ -149,12 +184,29 @@ function readNumber(features: unknown, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-// A ModelRun flagged by the model↔market coherence gate carries a non-null
-// features.calibration_alert object (see betting-engine market-coherence.ts).
-function hasCalibrationAlert(features: unknown): boolean {
-  if (!features || typeof features !== 'object') return false;
-  const alert = (features as Record<string, unknown>)['calibration_alert'];
-  return typeof alert === 'object' && alert !== null;
+type PriorRun = {
+  bets: Array<{ market: Market; pick: string }>;
+  channelDecisions: Array<{
+    selections: Array<{ market: Market; pick: string }>;
+  }>;
+};
+
+// Number of the fixture's earlier ModelRun passes (oldest excluded via slice(1)
+// upstream) where this exact (market, pick) was already the retained selection —
+// stability signal, validated +8% ROI at 6+ confirming passes vs -12.5% at 1-3
+// (cf. plan coupon 2026-08-09).
+function countPriorAnalyses(
+  priorRuns: PriorRun[],
+  market: Market,
+  pick: string,
+): number {
+  return priorRuns.filter(
+    (run) =>
+      run.bets.some((b) => b.market === market && b.pick === pick) ||
+      run.channelDecisions.some((cd) =>
+        cd.selections.some((s) => s.market === market && s.pick === pick),
+      ),
+  ).length;
 }
 
 function readModelProbabilities(features: unknown): Record<string, number> {
@@ -312,6 +364,36 @@ function overUnderOpposite(pick: string): string | null {
   if (pick.startsWith('OVER_')) return `UNDER_${pick.slice('OVER_'.length)}`;
   if (pick.startsWith('UNDER_')) return `OVER_${pick.slice('UNDER_'.length)}`;
   return null;
+}
+
+// AVOID regime for a leg, from its two independent signals — validated on
+// settled MODEL bets (2026-08-09 plan): neither signal alone is a reliable
+// fade (extreme divergence alone: -16.7% ROI on the original pick but +19.3%
+// on its opposite over n=32; calibration alert alone: -14.2%/-19.9% on
+// either side, no edge, n=55) — but BOTH together flip back to the original
+// pick being excellent (+51% ROI, n=32). A plain OR (today's binary AVOID)
+// throws away that last case.
+export type AvoidRegime = 'CLEAN' | 'FADE' | 'DROP' | 'KEEP';
+
+export function classifyAvoidSignal(
+  extremeDivergence: boolean,
+  calibrationAlert: boolean,
+): AvoidRegime {
+  if (!extremeDivergence && !calibrationAlert) return 'CLEAN';
+  if (extremeDivergence && calibrationAlert) return 'KEEP';
+  return extremeDivergence ? 'FADE' : 'DROP';
+}
+
+// Two-outcome opposite of a pick, for markets where "fade the model" means
+// literally staking the other side — a strict superset of overUnderOpposite
+// (also covers OVER_UNDER_HT/TEAM_TOTAL_HOME/TEAM_TOTAL_AWAY, which share the
+// same OVER_x/UNDER_x pick naming) plus the YES/NO markets. `null` for
+// three-way or non-exhaustive markets (ONE_X_TWO, DOUBLE_CHANCE, ...) — no
+// clean fade exists there, per the plan's scope.
+function oppositePick(pick: string): string | null {
+  if (pick === 'YES') return 'NO';
+  if (pick === 'NO') return 'YES';
+  return overUnderOpposite(pick);
 }
 
 // Sibling outcome odds for a market+pick — the OTHER mutually-exclusive outcomes,
@@ -522,28 +604,41 @@ export class SignalWindowService {
    *
    * - DOMINANT is a **prediction-only** channel (ROI −2.1%, EV anti-predictive)
    *   → tracked via `channel_selection`, never staked.
-   * - DRAW (+9.9%) is **promoted** to the real pool (B7): its selections are read
-   *   straight from `channel_selection` (not `Bet`) when `includeDraw` is set.
+   * - DRAW (aggregate ROI hides a per-league spread of +41% to -45% — see
+   *   `DRAW_STAKED_LEAGUES`) is promoted **only for those leagues** when
+   *   `includeDraw` is set; other leagues stay observation-only.
    * - TEAM_TOTAL (+3.40% ROI, n=845, all leagues — no league has enough volume
    *   to segment yet) is promoted the same way when `includeTeamTotal` is set.
-   * - BTTS (+0.76% ROI overall, but +2.64%/+5.19%/+3.74% on PL/BL1/SA
-   *   specifically — see `BTTS_STAKED_LEAGUES`) is promoted **only for those
-   *   leagues** when `includeBtts` is set; other leagues stay observation-only.
+   * - BTTS (aggregate ROI hides a per-league split too — see
+   *   `BTTS_STAKED_LEAGUES`) is promoted **only for those leagues** when
+   *   `includeBtts` is set; other leagues stay observation-only.
    *
    * The separate {@link getTodayVirtualPool} is a **prediction/observation** pool
    * (virtual SAFE/BTTS rules), kept distinct on purpose — it never stakes.
    */
   async getTodayPool(
     date: string,
-    opts: {
-      includeDraw?: boolean;
-      includeTeamTotal?: boolean;
-      includeBtts?: boolean;
-      enforceAvoid?: boolean;
-    } = {},
+    opts: GetPoolOpts = {},
   ): Promise<ScoredPick[]> {
-    const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+    return this.getPoolForRange(date, date, opts);
+  }
+
+  /**
+   * {@link getTodayPool}, extended to a `[fromDate, toDate]` window (inclusive,
+   * both in `date` form) — the weekend (Fri→Sun) / midweek European-nights
+   * (Tue→Thu) coupon windows read fixtures across several days here instead of
+   * one `getTodayPool` call per day. Every {@link ScoredPick} carries a
+   * `dayBucket` (the fixture's own scheduled day) so composition can still
+   * apply a per-day anti-correlation cap on top of the existing per-fixture/
+   * per-canal-market/per-competition ones.
+   */
+  async getPoolForRange(
+    fromDate: string,
+    toDate: string,
+    opts: GetPoolOpts = {},
+  ): Promise<ScoredPick[]> {
+    const dayStart = new Date(`${fromDate}T00:00:00.000Z`);
+    const dayEnd = new Date(`${toDate}T23:59:59.999Z`);
 
     const fixtures = await this.prisma.client.fixture.findMany({
       where: { scheduledAt: { gte: dayStart, lte: dayEnd } },
@@ -614,7 +709,10 @@ export class SignalWindowService {
             },
           },
           orderBy: { analyzedAt: 'desc' },
-          take: 1,
+          // 6 passes covers the deepest history observed in analysis sheets
+          // (ADVANCE re-runs over the rolling horizon window) — modelRuns[0] is
+          // the current run, modelRuns[1..] feed priorAnalysisCount below.
+          take: 6,
         },
       },
       orderBy: { scheduledAt: 'asc' },
@@ -646,10 +744,20 @@ export class SignalWindowService {
       WC: 0.52,
     };
 
+    // One batched query for every fixture's odds instead of one per fixture
+    // (findLatestOddsSnapshot alone runs ~34 sequential Prisma calls each) —
+    // condition of viability once the pool spans more than a single day.
+    const oddsSnapshots = await this.oddsLoader.findLatestOddsSnapshotsBatch(
+      fixtures
+        .filter((f) => f.modelRuns[0])
+        .map((f) => ({ fixtureId: f.id, cutoff: f.scheduledAt })),
+    );
+
     const picks: ScoredPick[] = [];
 
     for (const f of fixtures) {
       const run = f.modelRuns[0];
+      const priorRuns = f.modelRuns.slice(1);
       const comp = f.season.competition.code;
       const competitionName = f.season.competition.name;
       const country = f.season.competition.country;
@@ -665,6 +773,15 @@ export class SignalWindowService {
 
       const recentForm = readNumber(feat, 'recentForm');
       const modelProbabilities = readModelProbabilities(feat);
+      const dataCoverage =
+        feat !== undefined ? computeDataCoverage(feat) : null;
+      const shadowConflict =
+        feat !== undefined ? readShadowConflict(feat) : null;
+      const offensiveBalance =
+        feat !== undefined
+          ? (extractEvaContextFromFeatures(feat).offensiveBalance
+              ?.classification ?? null)
+          : null;
 
       const base = {
         fixtureId: f.id,
@@ -675,6 +792,7 @@ export class SignalWindowService {
         competition: competitionName,
         country,
         scheduledAt: f.scheduledAt,
+        dayBucket: f.scheduledAt.toISOString().slice(0, 10),
         homeScore: f.homeScore ?? null,
         awayScore: f.awayScore ?? null,
         homeHtScore: f.homeHtScore ?? null,
@@ -688,6 +806,9 @@ export class SignalWindowService {
         modelThreshold,
         recentForm,
         modelProbabilities,
+        dataCoverage,
+        shadowConflict,
+        offensiveBalance,
         featureSnapshot: {
           lambdaHome,
           lambdaAway,
@@ -696,56 +817,89 @@ export class SignalWindowService {
           modelThreshold,
           recentForm,
           competitionCode: comp,
+          dataCoverage,
+          shadowConflict,
+          offensiveBalance,
         } as Record<string, unknown>,
       };
 
-      // Calibration-alert enforcement (model↔market coherence gate): a flagged
-      // ModelRun means the model's inputs are corrupted-data suspects (e.g.
-      // missing/inverted team stats → default priors), so every pick of the
-      // fixture is unreliable — drop the whole fixture from the staking pool.
-      // Shares the AVOID kill-switch: both enforce implausible-divergence gates.
-      if (opts.enforceAvoid && hasCalibrationAlert(feat)) {
-        continue;
-      }
+      // AVOID/calibration routing (graduated — replaces the old blanket
+      // fixture-level drop). Validated on settled MODEL bets (plan
+      // 2026-08-09): CLEAN and KEEP stake the original pick, DROP stakes
+      // nothing, FADE stakes the opposite pick only when opts.enableAvoidFade
+      // is explicitly set (shadow by default — see classifyAvoidSignal).
+      const calibAlert = hasCalibrationAlert(feat);
 
       if (run) {
         // Full market odds (as-of kickoff) — needed to remove the overround and
         // compute each leg's fair market probability + bookmaker margin.
-        const snapshot = await this.oddsLoader.findLatestOddsSnapshot(
-          f.id,
-          f.scheduledAt,
-        );
+        const snapshot = oddsSnapshots.get(f.id) ?? null;
 
         for (const bet of run.bets) {
           const betOdds = bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null;
-          // AVOID enforcement: drop legs whose model↔market divergence is
-          // implausible (≥ AVOID_CONFIG.maxEdge) — validated -20% ROI on those.
-          if (
-            opts.enforceAvoid &&
-            isExtremeDivergence(Number(bet.probEstimated), betOdds)
-          ) {
-            continue;
+          const extremeDiv = isExtremeDivergence(
+            Number(bet.probEstimated),
+            betOdds,
+          );
+          const regime = opts.enforceAvoid
+            ? classifyAvoidSignal(extremeDiv, calibAlert)
+            : 'CLEAN';
+          if (regime === 'DROP') continue;
+
+          let market = bet.market;
+          let pick = bet.pick;
+          let probability = Number(bet.probEstimated);
+          let legOdds = betOdds;
+          // bet.status settles the ORIGINAL pick — for a faded leg the
+          // opposite won exactly when the original lost.
+          let isCorrect =
+            bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
+
+          if (regime === 'FADE') {
+            const opp = oppositePick(bet.pick);
+            const oppOdds =
+              opp && snapshot
+                ? getPickOddsFromSnapshot(bet.market, opp, snapshot)
+                : null;
+            if (!opts.enableAvoidFade || opp === null || oppOdds === null) {
+              continue; // shadow-only for now — same net effect as DROP
+            }
+            market = bet.market;
+            pick = opp;
+            probability = 1 - probability;
+            legOdds = oppOdds.toNumber();
+            isCorrect =
+              bet.status === 'LOST'
+                ? true
+                : bet.status === 'WON'
+                  ? false
+                  : null;
           }
+
           const channel =
             bet.channelSelection?.channelDecision.channel ??
             StrategyChannel.VALUE;
           const canal: Canal = channel as Canal;
-          const isCorrect =
-            bet.status === 'WON' ? true : bet.status === 'LOST' ? false : null;
           const fair = snapshot
-            ? computeMarketFair(bet.market, bet.pick, snapshot)
+            ? computeMarketFair(market, pick, snapshot)
             : null;
           picks.push({
             ...base,
             canal,
-            market: bet.market,
-            pick: bet.pick,
-            probability: Number(bet.probEstimated),
+            market,
+            pick,
+            probability,
             calibratedHitRate: 0, // set in CouponComposerService.scorePicks()
             calibratedProbability: null, // set in CouponComposerService.scorePicks()
-            oddsSnapshot: betOdds,
+            oddsSnapshot: legOdds,
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,
+            // A faded leg is a synthetic pick the model never actually
+            // selected across prior passes — no history to count.
+            priorAnalysisCount:
+              regime === 'FADE'
+                ? 0
+                : countPriorAnalyses(priorRuns, bet.market, bet.pick),
             isCorrect,
             signalScore: 0,
             betId: bet.id,
@@ -759,6 +913,17 @@ export class SignalWindowService {
         const pushChannelSelectionPick = (channel: StrategyChannel) => {
           const sel = findChannelSelection(run.channelDecisions, channel);
           if (!sel || sel.odds === null) return;
+          // Same graduated AVOID routing as the bets loop above, applied to
+          // the promoted channels (DRAW/TEAM_TOTAL/BTTS) — FADE stays
+          // shadow-only here too (no dedicated opposite-leg construction for
+          // these channels yet, only DROP/KEEP/CLEAN are actionable).
+          const regime = opts.enforceAvoid
+            ? classifyAvoidSignal(
+                isExtremeDivergence(Number(sel.probability), Number(sel.odds)),
+                calibAlert,
+              )
+            : 'CLEAN';
+          if (regime === 'DROP' || regime === 'FADE') return;
           const fair = snapshot
             ? computeMarketFair(sel.market, sel.pick, snapshot)
             : null;
@@ -773,6 +938,11 @@ export class SignalWindowService {
             oddsSnapshot: Number(sel.odds),
             pMarketFair: fair?.pMarketFair ?? null,
             bookmakerMargin: fair?.bookmakerMargin ?? null,
+            priorAnalysisCount: countPriorAnalyses(
+              priorRuns,
+              sel.market,
+              sel.pick,
+            ),
             isCorrect: null,
             signalScore: 0,
             betId: null,
@@ -780,8 +950,11 @@ export class SignalWindowService {
           });
         };
 
-        // Backtested +9.9% ROI (B-ROI); gated by opts.includeDraw.
-        if (opts.includeDraw) {
+        // Restricted to DRAW_STAKED_LEAGUES — see that constant's doc comment.
+        if (
+          opts.includeDraw &&
+          (DRAW_STAKED_LEAGUES as readonly string[]).includes(comp)
+        ) {
           pushChannelSelectionPick(StrategyChannel.DRAW);
         }
         // +3.40% ROI (n=845), all leagues — no league has enough volume yet to
@@ -863,6 +1036,11 @@ export class SignalWindowService {
       const finalScore = run.finalScore ? Number(run.finalScore) : null;
       const recentForm = readNumber(feat, 'recentForm');
       const modelProbabilities = readModelProbabilities(feat);
+      const dataCoverage = computeDataCoverage(feat);
+      const shadowConflict = readShadowConflict(feat);
+      const offensiveBalance =
+        extractEvaContextFromFeatures(feat).offensiveBalance?.classification ??
+        null;
       const evaluatedPicks = extractModelRunFeatureDiagnostics(
         run.features,
       ).evaluatedPicks;
@@ -904,6 +1082,7 @@ export class SignalWindowService {
           competition: competitionName,
           country,
           scheduledAt: f.scheduledAt,
+          dayBucket: f.scheduledAt.toISOString().slice(0, 10),
           homeScore: f.homeScore ?? null,
           awayScore: f.awayScore ?? null,
           homeHtScore: f.homeHtScore ?? null,
@@ -919,6 +1098,11 @@ export class SignalWindowService {
           modelThreshold: null,
           recentForm,
           modelProbabilities,
+          dataCoverage,
+          shadowConflict,
+          offensiveBalance,
+          // Not queried here (single-pass pool, prediction-only — never staked).
+          priorAnalysisCount: 0,
           featureSnapshot: {
             lambdaHome,
             lambdaAway,

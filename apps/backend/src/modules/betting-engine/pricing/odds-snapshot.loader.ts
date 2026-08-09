@@ -94,6 +94,246 @@ function parseHomeAwayRows(
   };
 }
 
+type RawOddsRow = {
+  bookmaker: string;
+  market: Market;
+  pick: string | null;
+  odds: Prisma.Decimal | null;
+  snapshotAt: Date;
+  homeOdds: Prisma.Decimal | null;
+  drawOdds: Prisma.Decimal | null;
+  awayOdds: Prisma.Decimal | null;
+};
+
+// Best bookmaker for a market: latest snapshotAt, ties broken by bookmakerRank
+// — same selection as the original per-market query. Note: like the original,
+// this does NOT apply `cutoff` (only the ONE_X_TWO leg below does) — preserved
+// as-is rather than silently changed while refactoring.
+function pickBestBookmaker(rows: RawOddsRow[], market: Market): string | null {
+  const marketRows = rows.filter((r) => r.market === market && r.odds !== null);
+  if (marketRows.length === 0) return null;
+  const latestTs = Math.max(...marketRows.map((r) => r.snapshotAt.getTime()));
+  const seen = new Set<string>();
+  const atLatest = marketRows
+    .filter((r) => r.snapshotAt.getTime() === latestTs)
+    .filter((r) => (seen.has(r.bookmaker) ? false : seen.add(r.bookmaker)));
+  return atLatest.reduce((a, b) =>
+    bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
+  ).bookmaker;
+}
+
+// Rows for one (market, bookmaker), newest first — same "most recent wins"
+// ordering the original per-market Prisma queries relied on for parse*/find().
+function rowsForMarketBookmaker(
+  rows: RawOddsRow[],
+  market: Market,
+  bookmaker: string | null,
+): { pick: string | null; odds: Prisma.Decimal | null }[] {
+  if (bookmaker === null) return [];
+  return rows
+    .filter((r) => r.market === market && r.bookmaker === bookmaker)
+    .sort((a, b) => b.snapshotAt.getTime() - a.snapshotAt.getTime());
+}
+
+// Pure, DB-independent assembly of a fixture's FullOddsSnapshot from every
+// oddsSnapshot row it has (any market/bookmaker/time) — the single source of
+// truth for both findLatestOddsSnapshot (one fixture, one query) and
+// findLatestOddsSnapshotsBatch (many fixtures, one query, grouped in memory).
+// Reproduces exactly what the pre-refactor per-market Prisma calls computed.
+function assembleFullOddsSnapshot(
+  rows: RawOddsRow[],
+  cutoff: Date,
+): FullOddsSnapshot | null {
+  const oneXTwoRows = rows.filter(
+    (r) =>
+      r.market === Market.ONE_X_TWO &&
+      r.snapshotAt.getTime() <= cutoff.getTime() &&
+      r.homeOdds !== null &&
+      r.drawOdds !== null &&
+      r.awayOdds !== null,
+  );
+  if (oneXTwoRows.length === 0) return null;
+
+  const latestSnapshotAt = Math.max(
+    ...oneXTwoRows.map((r) => r.snapshotAt.getTime()),
+  );
+  const sameSnapshotRows = oneXTwoRows.filter(
+    (r) => r.snapshotAt.getTime() === latestSnapshotAt,
+  );
+  const best = sameSnapshotRows.reduce((a, b) =>
+    bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
+  );
+  if (
+    best.homeOdds === null ||
+    best.drawOdds === null ||
+    best.awayOdds === null
+  ) {
+    return null;
+  }
+
+  const rowsFor = (market: Market) =>
+    rowsForMarketBookmaker(rows, market, pickBestBookmaker(rows, market));
+
+  const ouRows = rowsFor(Market.OVER_UNDER);
+  const htftRows = rowsFor(Market.HALF_TIME_FULL_TIME);
+  const ouHtRows = rowsFor(Market.OVER_UNDER_HT);
+  const fhwRows = rowsFor(Market.FIRST_HALF_WINNER);
+  const dcRows = rowsFor(Market.DOUBLE_CHANCE);
+  const csRows = rowsFor(Market.CORRECT_SCORE);
+  const dnbRows = rowsFor(Market.DRAW_NO_BET);
+  const ttHomeRows = rowsFor(Market.TEAM_TOTAL_HOME);
+  const ttAwayRows = rowsFor(Market.TEAM_TOTAL_AWAY);
+  const csHomeRows = rowsFor(Market.CLEAN_SHEET_HOME);
+  const csAwayRows = rowsFor(Market.CLEAN_SHEET_AWAY);
+  const wtnHomeRows = rowsFor(Market.WIN_TO_NIL_HOME);
+  const wtnAwayRows = rowsFor(Market.WIN_TO_NIL_AWAY);
+  const twhRows = rowsFor(Market.TO_WIN_EITHER_HALF);
+  const resultTotalGoalsRows = rowsFor(Market.RESULT_TOTAL_GOALS);
+  const resultBttsRows = rowsFor(Market.RESULT_BTTS);
+  const bttsBookmaker = pickBestBookmaker(rows, Market.BTTS);
+  const bttsRows = rowsForMarketBookmaker(rows, Market.BTTS, bttsBookmaker);
+  const bttsYesRow = bttsRows.find((r) => r.pick === 'YES') ?? null;
+  const bttsNoRow = bttsRows.find((r) => r.pick === 'NO') ?? null;
+
+  const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
+  const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
+  const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
+  let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
+  let doubleChanceOdds: FullOddsSnapshot['doubleChanceOdds'] = null;
+
+  for (const row of ouRows) {
+    if (!row.pick || !row.odds) continue;
+    if (
+      !(row.pick in overUnderOdds) &&
+      (row.pick === 'OVER_1_5' ||
+        row.pick === 'UNDER_1_5' ||
+        row.pick === 'OVER' ||
+        row.pick === 'UNDER' ||
+        row.pick === 'OVER_3_5' ||
+        row.pick === 'UNDER_3_5' ||
+        row.pick === 'OVER_4_5' ||
+        row.pick === 'UNDER_4_5')
+    ) {
+      overUnderOdds[row.pick] = new Decimal(row.odds.toString());
+    }
+  }
+  for (const row of htftRows) {
+    if (!row.pick || !row.odds) continue;
+    if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {
+      htftOdds[row.pick] = new Decimal(row.odds.toString());
+    }
+  }
+  for (const row of ouHtRows) {
+    if (!row.pick || !row.odds) continue;
+    if (
+      !(row.pick in ouHtOdds) &&
+      (row.pick === 'OVER_0_5' ||
+        row.pick === 'UNDER_0_5' ||
+        row.pick === 'OVER_1_5' ||
+        row.pick === 'UNDER_1_5')
+    ) {
+      ouHtOdds[row.pick] = new Decimal(row.odds.toString());
+    }
+  }
+  {
+    const homeRow = fhwRows.find((r) => r.pick === 'HOME');
+    const drawRow = fhwRows.find((r) => r.pick === 'DRAW');
+    const awayRow = fhwRows.find((r) => r.pick === 'AWAY');
+    if (homeRow?.odds && drawRow?.odds && awayRow?.odds) {
+      firstHalfWinnerOdds = {
+        home: new Decimal(homeRow.odds.toString()),
+        draw: new Decimal(drawRow.odds.toString()),
+        away: new Decimal(awayRow.odds.toString()),
+      };
+    }
+  }
+  {
+    const row1X = dcRows.find((r) => r.pick === '1X');
+    const rowX2 = dcRows.find((r) => r.pick === 'X2');
+    const row12 = dcRows.find((r) => r.pick === '12');
+    if (row1X?.odds && rowX2?.odds) {
+      doubleChanceOdds = {
+        '1X': new Decimal(row1X.odds.toString()),
+        X2: new Decimal(rowX2.odds.toString()),
+        '12': row12?.odds ? new Decimal(row12.odds.toString()) : null,
+      };
+    }
+  }
+
+  let drawNoBetOdds: FullOddsSnapshot['drawNoBetOdds'] = null;
+  {
+    const homeRow = dnbRows.find((r) => r.pick === 'HOME');
+    const awayRow = dnbRows.find((r) => r.pick === 'AWAY');
+    if (homeRow?.odds && awayRow?.odds) {
+      drawNoBetOdds = {
+        home: new Decimal(homeRow.odds.toString()),
+        away: new Decimal(awayRow.odds.toString()),
+      };
+    }
+  }
+
+  const teamTotalHomeOdds = parseSparseRows(ttHomeRows, TEAM_TOTAL_PICKS);
+  const teamTotalAwayOdds = parseSparseRows(ttAwayRows, TEAM_TOTAL_PICKS);
+  const cleanSheetHomeOdds = parseYesNoRows(csHomeRows);
+  const cleanSheetAwayOdds = parseYesNoRows(csAwayRows);
+  const winToNilHomeOdds = parseYesNoRows(wtnHomeRows);
+  const winToNilAwayOdds = parseYesNoRows(wtnAwayRows);
+  const winEitherHalfOdds = parseHomeAwayRows(twhRows);
+  const resultTotalGoalsOdds = parseSparseRows(
+    resultTotalGoalsRows,
+    RESULT_TOTAL_GOALS_PICKS,
+  );
+  const resultBttsOdds = parseSparseRows(resultBttsRows, RESULT_BTTS_PICKS);
+
+  const correctScoreOdds: Partial<Record<string, Decimal>> = {};
+  for (const row of csRows) {
+    if (!row.pick || !row.odds) continue;
+    if (!(row.pick in correctScoreOdds)) {
+      correctScoreOdds[row.pick] = new Decimal(row.odds.toString());
+    }
+  }
+
+  return {
+    bookmaker: best.bookmaker,
+    snapshotAt: best.snapshotAt,
+    homeOdds: new Decimal(best.homeOdds.toString()),
+    drawOdds: new Decimal(best.drawOdds.toString()),
+    awayOdds: new Decimal(best.awayOdds.toString()),
+    overUnderOdds,
+    bttsYesOdds: bttsYesRow?.odds
+      ? new Decimal(bttsYesRow.odds.toString())
+      : null,
+    bttsNoOdds: bttsNoRow?.odds ? new Decimal(bttsNoRow.odds.toString()) : null,
+    htftOdds,
+    ouHtOdds,
+    firstHalfWinnerOdds,
+    doubleChanceOdds,
+    correctScoreOdds,
+    drawNoBetOdds,
+    teamTotalHomeOdds,
+    teamTotalAwayOdds,
+    cleanSheetHomeOdds,
+    cleanSheetAwayOdds,
+    winToNilHomeOdds,
+    winToNilAwayOdds,
+    winEitherHalfOdds,
+    resultTotalGoalsOdds,
+    resultBttsOdds,
+  };
+}
+
+const RAW_ODDS_ROW_SELECT = {
+  fixtureId: true,
+  bookmaker: true,
+  market: true,
+  pick: true,
+  odds: true,
+  snapshotAt: true,
+  homeOdds: true,
+  drawOdds: true,
+  awayOdds: true,
+} as const;
+
 /**
  * Data-access for odds snapshots. Resolves the consolidated, as-of view of a
  * fixture's market odds (best bookmaker per market) used by the betting engine.
@@ -599,6 +839,41 @@ export class OddsSnapshotLoader {
       resultTotalGoalsOdds,
       resultBttsOdds,
     };
+  }
+
+  // Batched counterpart of findLatestOddsSnapshot — one query for every
+  // fixture instead of one per fixture (findLatestOddsSnapshot alone runs
+  // ~34 sequential Prisma calls per fixture). Built on the same pure
+  // assembleFullOddsSnapshot() used nowhere else — kept deliberately
+  // separate from findLatestOddsSnapshot so its existing, tested per-market
+  // bookmaker-resolution behaviour above is untouched. Used by pool builders
+  // that score many fixtures at once (SignalWindowService.getTodayPool /
+  // getPoolForRange).
+  async findLatestOddsSnapshotsBatch(
+    requests: Array<{ fixtureId: string; cutoff: Date }>,
+  ): Promise<Map<string, FullOddsSnapshot | null>> {
+    const result = new Map<string, FullOddsSnapshot | null>();
+    if (requests.length === 0) return result;
+
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: { fixtureId: { in: requests.map((r) => r.fixtureId) } },
+      select: RAW_ODDS_ROW_SELECT,
+    });
+
+    const rowsByFixture = new Map<string, RawOddsRow[]>();
+    for (const row of rows) {
+      const bucket = rowsByFixture.get(row.fixtureId);
+      if (bucket) bucket.push(row);
+      else rowsByFixture.set(row.fixtureId, [row]);
+    }
+
+    for (const { fixtureId, cutoff } of requests) {
+      result.set(
+        fixtureId,
+        assembleFullOddsSnapshot(rowsByFixture.get(fixtureId) ?? [], cutoff),
+      );
+    }
+    return result;
   }
 
   async findLatestOneXTwoOddsSnapshotByBookmaker(

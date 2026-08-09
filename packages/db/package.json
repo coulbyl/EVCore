@@ -47,6 +47,9 @@
     "db:backtest:invest-ranking": "tsx scripts/backtest-invest-ranking.ts",
     "db:backtest:decisions-ranking": "tsx scripts/backtest-decisions-ranking.ts",
     "db:backtest:team-total-btts-competition": "tsx scripts/backtest-team-total-btts-competition.ts",
+    "db:backtest:coupon-quality-signals": "tsx scripts/backtest-coupon-quality-signals.ts",
+    "db:backtest:channel-league-whitelist": "tsx scripts/backtest-channel-league-whitelist.ts",
+    "db:backtest:coupon-params-validation": "tsx scripts/backtest-coupon-params-validation.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

@@ -16,6 +16,8 @@ import {
   COUPON_PARAMS,
   CANAL_BASE_WEIGHT,
   DEFAULT_COUPON_PROFILE,
+  EXHAUSTIVE_LEG_THRESHOLD,
+  GREEDY_START_VARIANTS,
   type CouponProfileBounds,
 } from './coupon.constants';
 import type {
@@ -172,17 +174,130 @@ export function clearsValueEdgeFloor(
   return edge.greaterThanOrEqualTo(minEdge);
 }
 
+// Shared anti-correlation bookkeeping — used identically by composeExhaustive
+// (DFS) and composeGreedy (longshot) so the two strategies can never drift
+// apart on what counts as "too correlated" (1/fixture, 1/canal+market,
+// 2/competition, and an optional per-day cap for multi-day pools).
+type AntiCorrelationState = {
+  canalMarketCounts: Map<string, number>;
+  compCounts: Map<string, number>;
+  dayCounts: Map<string, number>;
+};
+
+function createAntiCorrelationState(legs: ScoredPick[]): AntiCorrelationState {
+  const state: AntiCorrelationState = {
+    canalMarketCounts: new Map(),
+    compCounts: new Map(),
+    dayCounts: new Map(),
+  };
+  for (const leg of legs) recordAntiCorrelation(state, leg);
+  return state;
+}
+
+function recordAntiCorrelation(
+  state: AntiCorrelationState,
+  leg: ScoredPick,
+): void {
+  const cmKey = `${leg.canal}:${leg.market}`;
+  state.canalMarketCounts.set(
+    cmKey,
+    (state.canalMarketCounts.get(cmKey) ?? 0) + 1,
+  );
+  state.compCounts.set(
+    leg.competition,
+    (state.compCounts.get(leg.competition) ?? 0) + 1,
+  );
+  state.dayCounts.set(
+    leg.dayBucket,
+    (state.dayCounts.get(leg.dayBucket) ?? 0) + 1,
+  );
+}
+
+function violatesAntiCorrelation(
+  current: ScoredPick[],
+  next: ScoredPick,
+  ctx: { state: AntiCorrelationState; profile: CouponProfileBounds },
+): boolean {
+  const { state, profile } = ctx;
+  if (current.some((p) => p.fixtureId === next.fixtureId)) return true;
+
+  const cmKey = `${next.canal}:${next.market}`;
+  if ((state.canalMarketCounts.get(cmKey) ?? 0) >= 1) return true;
+
+  if ((state.compCounts.get(next.competition) ?? 0) >= 2) return true;
+
+  if (
+    profile.maxLegsPerDay !== undefined &&
+    (state.dayCounts.get(next.dayBucket) ?? 0) >= profile.maxLegsPerDay
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function legKey(leg: ScoredPick): string {
+  return `${leg.fixtureId}:${leg.canal}:${leg.market}:${leg.pick}`;
+}
+
+// Above this fraction of a candidate's legs already appearing in a coupon
+// we've already selected, it reads as "the same bet again" rather than a
+// genuinely different option — the exact complaint that motivated this
+// (plan 2026-08-09): the strongest leg in the pool would ride into nearly
+// every one of the top-N coupons by EV alone, since removing it barely moves
+// the ranking. This is a presentation/diversity policy, not a probability
+// threshold — no backtest gate needed, unlike EV/odds/probability bounds.
+const MAX_SHARED_LEG_RATIO = 0.5;
+
+function sharedLegRatio(
+  candidate: ComposedCoupon,
+  against: ComposedCoupon,
+): number {
+  const againstKeys = new Set(against.legs.map(legKey));
+  const shared = candidate.legs.filter((l) =>
+    againstKeys.has(legKey(l)),
+  ).length;
+  return shared / candidate.legs.length;
+}
+
+// Greedy selection from the EV-sorted viable list: take the best coupon,
+// then keep taking the next-best one that doesn't overlap too heavily with
+// what's already picked — same EV-first ranking, but the top-N no longer
+// collapse into near-duplicates of each other. Backfills with the best
+// remaining candidates (ignoring overlap) if the pool is too thin to fill
+// `maxCoupons` diversely, so this never returns fewer coupons than before.
+function selectDiverseCoupons(
+  viableSortedByEV: ComposedCoupon[],
+  maxCoupons: number,
+): ComposedCoupon[] {
+  const selected: ComposedCoupon[] = [];
+  for (const candidate of viableSortedByEV) {
+    if (selected.length >= maxCoupons) break;
+    const tooSimilar = selected.some(
+      (s) => sharedLegRatio(candidate, s) >= MAX_SHARED_LEG_RATIO,
+    );
+    if (!tooSimilar) selected.push(candidate);
+  }
+  if (selected.length < maxCoupons) {
+    for (const candidate of viableSortedByEV) {
+      if (selected.length >= maxCoupons) break;
+      if (!selected.includes(candidate)) selected.push(candidate);
+    }
+  }
+  return selected;
+}
+
 @Injectable()
 export class CouponComposerService {
-  scorePicks(
-    picks: ScoredPick[],
-    window: SignalWindow,
-    date: string,
-  ): ScoredPick[] {
-    const d = new Date(`${date}T12:00:00.000Z`);
-    const dow = DOW_LABELS[(d.getUTCDay() + 6) % 7];
-
+  // Day-of-week factor is read per-pick from its OWN `dayBucket` — a
+  // multi-day pool (weekend/midweek window, cf. SignalWindowService
+  // .getPoolForRange) mixes fixtures from different days, so a single `date`
+  // parameter applied to every pick would misattribute Saturday/Sunday legs
+  // to Friday's dow factor.
+  scorePicks(picks: ScoredPick[], window: SignalWindow): ScoredPick[] {
     return picks.map((pick) => {
+      const d = new Date(`${pick.dayBucket}T12:00:00.000Z`);
+      const dow = DOW_LABELS[(d.getUTCDay() + 6) % 7];
       const canalBase = CANAL_BASE_WEIGHT[pick.canal];
       const windowRate =
         window.calibratedCanalHitRates[pick.canal] ?? canalBase;
@@ -265,13 +380,21 @@ export class CouponComposerService {
       .sort(comparePicksBySignalThenProbability)
       .slice(0, MAX_POOL_SIZE);
 
-    const candidates: ComposedCoupon[] = [];
-    this.buildCombinations(pool, [], { out: candidates, profile });
+    // Exhaustive DFS stays exact and cheap up to EXHAUSTIVE_LEG_THRESHOLD legs
+    // (C(25,5)≈2300 combinations); beyond that (longshot profiles, 8-12 legs)
+    // it explodes (C(25,10)≈3.3M) — composeGreedy trades exactness for a
+    // handful of good-enough candidates. Both share buildCoupon and the
+    // anti-correlation rules above, so neither can silently diverge from the
+    // other on what makes two legs "too correlated".
+    const candidates: ComposedCoupon[] =
+      profile.maxLegs <= EXHAUSTIVE_LEG_THRESHOLD
+        ? this.composeExhaustive(pool, profile)
+        : this.composeGreedy(pool, profile);
 
     const seen = new Set<string>();
     const unique = candidates.filter((c) => {
       const key = c.legs
-        .map((l) => `${l.fixtureId}:${l.canal}:${l.market}:${l.pick}`)
+        .map((l) => legKey(l))
         .sort()
         .join('|');
       if (seen.has(key)) return false;
@@ -292,9 +415,18 @@ export class CouponComposerService {
       )
       .sort(compareCouponsByEV);
 
-    return viable
-      .slice(0, COUPON_PARAMS.maxCoupons)
-      .map((c, i) => ({ ...c, rank: i + 1 }));
+    return selectDiverseCoupons(viable, COUPON_PARAMS.maxCoupons).map(
+      (c, i) => ({ ...c, rank: i + 1 }),
+    );
+  }
+
+  private composeExhaustive(
+    pool: ScoredPick[],
+    profile: CouponProfileBounds,
+  ): ComposedCoupon[] {
+    const candidates: ComposedCoupon[] = [];
+    this.buildCombinations(pool, [], { out: candidates, profile });
+    return candidates;
   }
 
   private buildCombinations(
@@ -317,29 +449,59 @@ export class CouponComposerService {
 
     if (current.length === profile.maxLegs) return;
 
-    const canalMarketCounts = new Map<string, number>();
-    const compCounts = new Map<string, number>();
-    for (const p of current) {
-      const cmKey = `${p.canal}:${p.market}`;
-      canalMarketCounts.set(cmKey, (canalMarketCounts.get(cmKey) ?? 0) + 1);
-      compCounts.set(p.competition, (compCounts.get(p.competition) ?? 0) + 1);
-    }
+    const state = createAntiCorrelationState(current);
 
     for (let i = 0; i < remaining.length; i++) {
       const next = remaining[i];
-
-      // Anti-correlation: no two legs from the same fixture
-      if (current.some((p) => p.fixtureId === next.fixtureId)) continue;
-
-      // Anti-correlation: max 1 leg per (canal, market)
-      const cmKey = `${next.canal}:${next.market}`;
-      if ((canalMarketCounts.get(cmKey) ?? 0) >= 1) continue;
-
-      // Anti-correlation: max 2 legs per competition
-      if ((compCounts.get(next.competition) ?? 0) >= 2) continue;
-
+      if (violatesAntiCorrelation(current, next, { state, profile })) continue;
       this.buildCombinations(remaining.slice(i + 1), [...current, next], ctx);
     }
+  }
+
+  // Longshot composition (8-12+ legs, cote cible 50-70) — a bounded greedy
+  // walk instead of the exhaustive DFS above, which is intractable at this
+  // leg count (cf. EXHAUSTIVE_LEG_THRESHOLD). Tries GREEDY_START_VARIANTS
+  // distinct starting legs (the pool is already sorted by signal strength),
+  // each time greedily accepting the next-best remaining leg that doesn't
+  // violate anti-correlation or push combinedOdds past the profile ceiling —
+  // skipping (not stopping on) a leg that would breach the ceiling, so a
+  // single strong-odds candidate doesn't prematurely end the walk.
+  private composeGreedy(
+    pool: ScoredPick[],
+    profile: CouponProfileBounds,
+  ): ComposedCoupon[] {
+    const candidates: ComposedCoupon[] = [];
+    const variantCount = Math.min(pool.length, GREEDY_START_VARIANTS);
+
+    for (let start = 0; start < variantCount; start++) {
+      const current: ScoredPick[] = [pool[start]];
+      const state = createAntiCorrelationState(current);
+
+      for (let i = 0; i < pool.length; i++) {
+        if (i === start) continue;
+        if (current.length >= profile.maxLegs) break;
+
+        const next = pool[i];
+        if (violatesAntiCorrelation(current, next, { state, profile }))
+          continue;
+
+        const combinedOdds = this.computeCombinedOdds([...current, next]);
+        if (combinedOdds > profile.maxCombinedOdds) continue;
+
+        current.push(next);
+        recordAntiCorrelation(state, next);
+      }
+
+      if (current.length < 2) continue;
+      const distinctFixtures = new Set(current.map((p) => p.fixtureId));
+      if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) continue;
+
+      candidates.push(
+        this.buildCoupon(current, this.computeCombinedOdds(current)),
+      );
+    }
+
+    return candidates;
   }
 
   private computeCombinedOdds(legs: ScoredPick[]): number {

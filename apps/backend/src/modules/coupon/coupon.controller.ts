@@ -70,7 +70,21 @@ export class CouponController {
       'Runs the full coupon-generation pipeline for the target date. Idempotent: existing proposals for that date are replaced. Defaults to tomorrow (UTC).',
   })
   @ApiQuery({ name: 'date', required: false, example: '2026-05-17' })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    description:
+      'Last day (inclusive) of a multi-day fixture window. Defaults to `date`.',
+    example: '2026-05-19',
+  })
   @ApiQuery({ name: 'windowDays', required: false, example: 14 })
+  @ApiQuery({
+    name: 'profile',
+    required: false,
+    description:
+      'Risk profile (SAFE/BALANCED/AGGRESSIVE/LONGSHOT_WEEKEND/LONGSHOT_MIDWEEK). Defaults to the backtested live profile.',
+    example: 'BALANCED',
+  })
   @ApiOkResponse({
     description: 'Generation completed successfully.',
     schema: {
@@ -83,7 +97,11 @@ export class CouponController {
     @Query() query: CouponQueryDto,
   ): Promise<{ generated: boolean }> {
     const date = query.date ?? formatDateUtc(tomorrowUtc());
-    await this.coupon.generateCoupons(date, { windowDays: query.windowDays });
+    await this.coupon.generateCoupons(date, {
+      windowDays: query.windowDays,
+      profile: query.profile,
+      to: query.to,
+    });
     return { generated: true };
   }
 

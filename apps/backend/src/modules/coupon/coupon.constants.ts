@@ -1,11 +1,27 @@
 /**
- * Hyperparamètres du coupon — outputs du backtest (2026-05-19).
+ * Hyperparamètres du coupon.
  *
- * Source : apps/backend/reports/backtest-selected-params.json
- * Train ROI : +100.3% | Test ROI : +61.8% | Test hit rate : 51.5% | verdict : PASS
+ * Source (réécrite 2026-08-09 — le fichier `backtest-selected-params.json`
+ * cité ici auparavant n'existe pas dans ce repo, gap documenté dans
+ * docs/formation-content-maintenance.md §5) :
+ * packages/db/scripts/backtest-coupon-params-validation.ts, rejouable via
+ * `pnpm --filter @evcore/db db:backtest:coupon-params-validation`. Valide sur
+ * les 403 vrais `CouponProposal` réglés depuis 2023-04-15 (pas une
+ * simulation), split train/valid 60/40 par jour :
+ *   - global (tous les paramètres actuels)   : train ROI +28.3% | valid ROI +19.8%
+ *   - `minCouponEV` resserré à 0.15           : train ROI +29.2% | valid ROI +23.2%
+ *     (0.20+ dégrade train, 0.30 inverse le signe — non retenu)
+ *   - `maxCombinedOdds` resserré (≤4/≤5)      : train s'améliore (+36%/+39%)
+ *     mais valid s'effondre (-18.5%/-1.6%) — signature de surapprentissage,
+ *     PAS resserré, gardé à 6.0.
  *
- * NE PAS modifier manuellement — relancer le backtest et mettre à jour depuis
- * backtest-selected-params.json.
+ * `k`/`capMin`/`capMax`/`decayHalfLifeDays`/`windowDays`/`nLeagueMin` ne sont
+ * PAS couverts par ce script (ils alimentent la calibration canal/jour/ligue
+ * dans SignalWindowService.computeSignalWindow, pas testée ici) — hérités
+ * sans nouvelle validation, à couvrir par un futur backtest dédié.
+ *
+ * NE PAS modifier manuellement — relancer le backtest ci-dessus pour toute
+ * révision.
  */
 
 import type { StrategyChannel } from '@evcore/db';
@@ -15,13 +31,25 @@ export type CouponChannel = Extract<
   'VALUE' | 'SAFE' | 'BTTS' | 'DRAW' | 'DOMINANT' | 'TEAM_TOTAL'
 >;
 
-// BTTS staking (B7-style promotion, 2026-07-28) — the aggregate all-time ROI
-// (+0.76%, n=3983) hides a real per-league split: only these 3 leagues are
-// statistically conclusive (n>=100) AND ROI-positive (db:backtest:team-total-
-// btts-competition). La Liga/Championship/League One/League Two/World Cup/
-// Brasileirão are also conclusive but negative (down to -14.18% for BRA1) —
-// BTTS is staked ONLY on this whitelist, not globally.
-export const BTTS_STAKED_LEAGUES = ['PL', 'BL1', 'SA'] as const;
+// BTTS staking (B7-style promotion) — the aggregate ROI hides a real
+// per-league split. Re-validated 2026-08-09 with a temporal train/valid split
+// (db:backtest:channel-league-whitelist, 60/40 by day, confirmed only if both
+// halves clear n>=20 AND stay positive): SA dropped out (train -2.84%, valid
+// +20.47% — sign flips across the split, not reliably positive) versus the
+// 2026-07-28 aggregate-only backtest that had included it. PL/BL1 remain
+// confirmed in both periods.
+export const BTTS_STAKED_LEAGUES = ['PL', 'BL1'] as const;
+
+// DRAW staking, per-league (added 2026-08-09) — DRAW previously staked
+// globally off a single low CANAL_BASE_WEIGHT.DRAW=0.2 prior, which hid a
+// per-league ROI spread from +41% to -45%. db:backtest:channel-league-
+// whitelist (60/40 split by day, confirmed only if both halves clear n>=20
+// AND stay positive) confirms exactly these 3: I2 +6.7%, POR +10.5%,
+// BL1 +15.8%, train and valid both positive. Several other leagues look
+// promising in the aggregate (FRI, KOR1/2, CSL, BRA2, WC, CHN2) but have no
+// train-period sample yet (too little settled history) — revisit once they
+// do, don't add them off the aggregate alone.
+export const DRAW_STAKED_LEAGUES = ['I2', 'POR', 'BL1'] as const;
 
 export type VirtualCouponChannel =
   | 'SAFE_HT_OVER05'
@@ -65,10 +93,12 @@ export const COUPON_PARAMS = {
   capMax: 0.8,
   minCalibratedJointProbability: 0.25,
   // Seuil d'EV de coupon (Étape 1 — EV au cœur du coupon). Un coupon n'est viable
-  // que si `couponEV = P_coupon × Odd_coupon − 1 ≥ minCouponEV`. Valeur proposée
-  // 0.05 en attendant le backtest dédié (Étape 7 / profils de risque Étape 4) —
-  // à promouvoir comme sortie de backtest, pas réglage manuel durable.
-  minCouponEV: 0.05,
+  // que si `couponEV = P_coupon × Odd_coupon − 1 ≥ minCouponEV`. Resserré de
+  // 0.05 à 0.15 le 2026-08-09 (db:backtest:coupon-params-validation, sur les
+  // 403 CouponProposal réels réglés) : train ROI +28.3%→+29.2%, valid ROI
+  // +19.8%→+23.2%, les deux améliorés — 0.20 dégrade train, 0.30 inverse le
+  // signe, non retenus.
+  minCouponEV: 0.15,
   maxLegs: 3,
   maxCoupons: 3,
   maxCombinedOdds: 6.0,
@@ -91,7 +121,12 @@ export const COUPON_PARAMS = {
 // Profils de risque (Étape 4 — corrige B8/B9)
 // ─────────────────────────────────────────────
 
-export type CouponProfileName = 'SAFE' | 'BALANCED' | 'AGGRESSIVE';
+export type CouponProfileName =
+  | 'SAFE'
+  | 'BALANCED'
+  | 'AGGRESSIVE'
+  | 'LONGSHOT_WEEKEND'
+  | 'LONGSHOT_MIDWEEK';
 
 /**
  * Bornes d'un profil de risque — source unique des contraintes appliquées par
@@ -105,7 +140,32 @@ export type CouponProfileBounds = {
   maxCombinedOdds: number;
   minJointProbability: number;
   minCouponEV: number;
+  /**
+   * Plafond de jambes par jour calendaire (`ScoredPick.dayBucket`) — évite
+   * qu'un coupon multi-jours (fenêtre weekend/midweek) concentre tout son
+   * risque sur un seul jour. `undefined` = pas de plafond (profils mono-jour
+   * actuels, comportement inchangé).
+   */
+  maxLegsPerDay?: number;
 };
+
+/**
+ * Au-delà de ce nombre de jambes, `compose()` bascule de la recherche
+ * exhaustive (`composeExhaustive`, DFS sur le pool trié) au glouton borné
+ * (`composeGreedy`) — C(25,5)=2300 combinaisons reste traitable, C(25,8)≈1M
+ * ne l'est plus. Les profils actuels (SAFE/BALANCED/AGGRESSIVE, ≤5 legs)
+ * restent tous sur l'exhaustif ; seuls les profils LONGSHOT (8-12 legs)
+ * basculent sur le glouton.
+ */
+export const EXHAUSTIVE_LEG_THRESHOLD = 5;
+
+/**
+ * Nombre de points de départ distincts essayés par `composeGreedy` (chacun
+ * force la jambe de rang N du pool trié en premier, puis complète glouton) —
+ * donne plusieurs coupons longshot candidats au lieu d'un seul, sans repasser
+ * à une recherche exhaustive intraitable sur autant de jambes.
+ */
+export const GREEDY_START_VARIANTS = 3;
 
 /**
  * Profils indicatifs (DESIGN.md Étape 4) — **valeurs à confirmer par backtest,
@@ -137,6 +197,31 @@ export const COUPON_PROFILES: Record<CouponProfileName, CouponProfileBounds> = {
     maxCombinedOdds: 12.0,
     minJointProbability: 0.1,
     minCouponEV: 0.15,
+  },
+  // Longshot multi-jours (plan coupon 2026-08-09) — cote combinée cible
+  // 50-70 sur la fenêtre weekend (ven→dim) / midweek européen (mar→jeu),
+  // routé vers CouponComposerService.composeGreedy (> EXHAUSTIVE_LEG_THRESHOLD
+  // legs). maxLegsPerDay évite qu'un coupon 3 jours se concentre sur un seul
+  // jour. Valeurs indicatives — comme SAFE/BALANCED/AGGRESSIVE, à confirmer
+  // par un backtest dédié (db:backtest:coupon-longshot, pas encore écrit)
+  // avant toute activation en génération live.
+  LONGSHOT_WEEKEND: {
+    minLegs: 6,
+    maxLegs: 12,
+    minCombinedOdds: 50.0,
+    maxCombinedOdds: 70.0,
+    minJointProbability: 0.01,
+    minCouponEV: 0.2,
+    maxLegsPerDay: 5,
+  },
+  LONGSHOT_MIDWEEK: {
+    minLegs: 6,
+    maxLegs: 12,
+    minCombinedOdds: 50.0,
+    maxCombinedOdds: 70.0,
+    minJointProbability: 0.01,
+    minCouponEV: 0.2,
+    maxLegsPerDay: 5,
   },
 } as const;
 

@@ -112,8 +112,6 @@ function toCompetitionPlan(competition: CompetitionRow): CompetitionPlan {
 @Injectable()
 export class EtlService implements OnApplicationBootstrap {
   private readonly schedulingEnabled: boolean;
-  private readonly rollingHorizonEnabled: boolean;
-  private readonly rollingHorizonDays: number;
   private readonly quotaAlertPct: number;
   private readonly dailyQuota: number;
   private readonly avgScheduledFixturesPerLeaguePerDay: number;
@@ -168,14 +166,6 @@ export class EtlService implements OnApplicationBootstrap {
   ) {
     this.schedulingEnabled =
       config.get<string>('ETL_SCHEDULING_ENABLED', 'true') !== 'false';
-    this.rollingHorizonEnabled =
-      config.get<string>('ETL_ENABLE_ROLLING_HORIZON', 'false') !== 'false';
-    this.rollingHorizonDays = Number(
-      config.get<string>(
-        'ETL_ROLLING_HORIZON_DAYS',
-        String(ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS),
-      ),
-    );
     this.quotaAlertPct = Number(
       config.get<string>('API_FOOTBALL_QUOTA_ALERT_PCT', '80'),
     );
@@ -302,23 +292,21 @@ export class EtlService implements OnApplicationBootstrap {
       },
     );
 
-    if (this.rollingHorizonEnabled) {
-      await this.rollingHorizonQueue.upsertJobScheduler(
-        ETL_SCHEDULER_KEYS.ROLLING_HORIZON,
-        { pattern: this.cronSchedules.ROLLING_HORIZON },
-        {
-          name: 'rolling-horizon',
-          data: {
-            startOffsetDays: ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS,
-            horizonDays: this.rollingHorizonDays,
-          } satisfies RollingHorizonJobData,
-        },
-      );
-      logger.info(
-        { horizonDays: this.rollingHorizonDays },
-        'Rolling horizon scheduler registered',
-      );
-    }
+    await this.rollingHorizonQueue.upsertJobScheduler(
+      ETL_SCHEDULER_KEYS.ROLLING_HORIZON,
+      { pattern: this.cronSchedules.ROLLING_HORIZON },
+      {
+        name: 'rolling-horizon',
+        data: {
+          startOffsetDays: ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS,
+          horizonDays: ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS,
+        } satisfies RollingHorizonJobData,
+      },
+    );
+    logger.info(
+      { horizonDays: ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS },
+      'Rolling horizon scheduler registered',
+    );
 
     await this.eloSyncQueue.upsertJobScheduler(
       ETL_SCHEDULER_KEYS.ELO_SYNC,
@@ -853,7 +841,8 @@ export class EtlService implements OnApplicationBootstrap {
   }): Promise<{ enqueuedDates: string[] }> {
     const startOffset =
       options?.startOffsetDays ?? ROLLING_HORIZON_DEFAULTS.START_OFFSET_DAYS;
-    const horizonDays = options?.horizonDays ?? this.rollingHorizonDays;
+    const horizonDays =
+      options?.horizonDays ?? ROLLING_HORIZON_DEFAULTS.HORIZON_DAYS;
 
     const today = new Date();
     const enqueuedDates = Array.from({ length: horizonDays }, (_, i) =>

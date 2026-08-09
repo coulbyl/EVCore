@@ -70,6 +70,43 @@ export function extractEvaContextFromFeatures(
   };
 }
 
+// A ModelRun flagged by the model↔market coherence gate carries a non-null
+// features.calibration_alert object (see betting-engine market-coherence.ts).
+// Single source of truth for the existence check — signal-window.service.ts
+// and analysis-sheet.render.ts (buildCalibrationAlert, for the full object)
+// both read the same underlying key.
+export function hasCalibrationAlert(features: unknown): boolean {
+  if (!features || typeof features !== 'object') return false;
+  const alert = (features as Record<string, unknown>)['calibration_alert'];
+  return typeof alert === 'object' && alert !== null;
+}
+
+// ModelRun.features.shadow_predictions.conflict — true when API-Football's
+// second-opinion Poisson comparison contradicts the internal lambda-based
+// prediction. Defensive: malformed/missing payloads yield null (unknown, not
+// "no conflict").
+export function readShadowConflict(features: unknown): boolean | null {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)['shadow_predictions'];
+  if (!raw || typeof raw !== 'object') return null;
+  const conflict = (raw as Record<string, unknown>)['conflict'];
+  return typeof conflict === 'boolean' ? conflict : null;
+}
+
+// Fraction of the 3 shadow signals (line movement, H2H, congestion) present
+// for this ModelRun — same formula as analysis-sheet.render.ts::toJsonFixture,
+// now backed by the same extractEvaContextFromFeatures() read.
+export function computeDataCoverage(features: unknown): number {
+  const context = extractEvaContextFromFeatures(features);
+  return (
+    [
+      context.shadowLineMovement,
+      context.shadowH2h,
+      context.shadowCongestion,
+    ].filter((signal) => signal !== null).length / 3
+  );
+}
+
 function readRecord(
   value: Record<string, unknown>,
   key: string,

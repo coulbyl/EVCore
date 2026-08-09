@@ -2,7 +2,11 @@ import {
   EV_THRESHOLD,
   getModelScoreThreshold,
 } from '@modules/betting-engine/ev.constants';
-import { extractEvaContextFromFeatures } from '@utils/model-run.utils';
+import {
+  computeDataCoverage,
+  extractEvaContextFromFeatures,
+  readShadowConflict,
+} from '@utils/model-run.utils';
 import {
   fmtPct,
   fmtSigned,
@@ -190,12 +194,7 @@ function toJsonFixture(
     context.shadowLineMovement !== null ||
     context.shadowH2h !== null ||
     context.shadowCongestion !== null;
-  const dataCoverage =
-    [
-      context.shadowLineMovement,
-      context.shadowH2h,
-      context.shadowCongestion,
-    ].filter((signal) => signal !== null).length / 3;
+  const dataCoverage = computeDataCoverage(fixture.features);
 
   const selectedPicks: AnalysisSheetJsonPick[] = fixture.selections
     .filter((s) => s.decisionStatus === 'SELECTED' && s.market && s.pick)
@@ -290,7 +289,8 @@ function buildShadowPredictions(
   };
   const percent = asTriple(p.percent, ['home', 'draw', 'away']);
   const poisson = asTriple(p.poisson, ['home', 'away']);
-  if (percent === null || poisson === null || typeof p.conflict !== 'boolean') {
+  const conflict = readShadowConflict(features);
+  if (percent === null || poisson === null || conflict === null) {
     return null;
   }
 
@@ -298,7 +298,7 @@ function buildShadowPredictions(
     winnerName: typeof p.winnerName === 'string' ? p.winnerName : null,
     percent: percent as { home: number; draw: number; away: number },
     poisson: poisson as { home: number; away: number },
-    conflict: p.conflict,
+    conflict,
   };
 }
 
