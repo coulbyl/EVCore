@@ -29,6 +29,7 @@
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
     "@nestjs/platform-socket.io": "catalog:",
+    "@nestjs/throttler": "catalog:",
     "@nestjs/websockets": "catalog:",
     "socket.io": "catalog:",
     "@nestjs/swagger": "catalog:",

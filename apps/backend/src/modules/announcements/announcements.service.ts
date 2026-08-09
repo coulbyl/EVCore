@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
 import { PushService } from '@modules/push/push.service';
+import { NotificationService } from '@modules/notification/notification.service';
 import type { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import type { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
@@ -43,6 +44,7 @@ export class AnnouncementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly push: PushService,
+    private readonly notification: NotificationService,
   ) {}
 
   private toView(announcement: AnnouncementRecord): AnnouncementView {
@@ -67,17 +69,28 @@ export class AnnouncementsService {
   }
 
   private async notifyPublished(
-    announcement: Pick<AnnouncementRecord, 'title' | 'description' | 'href'>,
+    announcement: Pick<
+      AnnouncementRecord,
+      'id' | 'title' | 'description' | 'href'
+    >,
     excludeUserId: string,
   ): Promise<void> {
-    await this.push.sendToAllUsers(
-      {
+    await Promise.all([
+      this.push.sendToAllUsers(
+        {
+          title: announcement.title,
+          body: announcement.description,
+          url: announcement.href ?? '/dashboard',
+        },
+        excludeUserId,
+      ),
+      this.notification.sendAnnouncementPublished({
+        announcementId: announcement.id,
         title: announcement.title,
         body: announcement.description,
-        url: announcement.href ?? '/dashboard',
-      },
-      excludeUserId,
-    );
+        href: announcement.href,
+      }),
+    ]);
   }
 
   private readonly baseSelect = {

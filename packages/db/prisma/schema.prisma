@@ -141,6 +141,10 @@ enum NotificationType {
   // modèle Notification.
   SUBSCRIPTION_EVENTS_ADDED
   SUBSCRIPTION_SETTLED
+  SUPPORT_MESSAGE
+  // Broadcast (Notification.userId null) — voir OPERATOR_TYPES dans
+  // notification.service.ts.
+  ANNOUNCEMENT_PUBLISHED
 
   @@schema("public")
 }

@@ -65,6 +65,13 @@ function formatStats(s: Stats): string {
   return `n=${s.n}, hit=${s.hitPct.toFixed(1)}%, ROI=${s.roiPct.toFixed(2)}%`;
 }
 
+// A fixture is re-analyzed on a rolling horizon in the run-up to kickoff
+// (ModelRun.phase ADVANCE re-runs daily/hourly) — each pass writes its own
+// ChannelDecision/ChannelSelection for that (fixture, channel). Without
+// dedup, one real match inflates n by however many passes it got re-analyzed
+// (confirmed 2026-08-09 on RUS1/DRAW: reported n=22 was actually 6 distinct
+// matches, none of them draws — same DISTINCT ON pattern already used by
+// ChannelDecisionRepository.findByDate).
 async function fetchRows(channel: StrategyChannel): Promise<Row[]> {
   const selections = await prisma.channelSelection.findMany({
     where: {
@@ -79,8 +86,10 @@ async function fetchRows(channel: StrategyChannel): Promise<Row[]> {
         select: {
           modelRun: {
             select: {
+              analyzedAt: true,
               fixture: {
                 select: {
+                  id: true,
                   scheduledAt: true,
                   season: {
                     select: {
@@ -96,7 +105,20 @@ async function fetchRows(channel: StrategyChannel): Promise<Row[]> {
     },
   });
 
-  return selections.map((s) => ({
+  const latestPerFixture = new Map<string, (typeof selections)[number]>();
+  for (const s of selections) {
+    const fixtureId = s.channelDecision.modelRun.fixture.id;
+    const existing = latestPerFixture.get(fixtureId);
+    if (
+      !existing ||
+      s.channelDecision.modelRun.analyzedAt >
+        existing.channelDecision.modelRun.analyzedAt
+    ) {
+      latestPerFixture.set(fixtureId, s);
+    }
+  }
+
+  return [...latestPerFixture.values()].map((s) => ({
     result: s.result!,
     odds: toNum(s.odds),
     competitionCode: s.channelDecision.modelRun.fixture.season.competition.code,
