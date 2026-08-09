@@ -50,6 +50,7 @@
     "db:backtest:coupon-quality-signals": "tsx scripts/backtest-coupon-quality-signals.ts",
     "db:backtest:channel-league-whitelist": "tsx scripts/backtest-channel-league-whitelist.ts",
     "db:backtest:coupon-params-validation": "tsx scripts/backtest-coupon-params-validation.ts",
+    "db:backtest:signal-window-calibration": "tsx scripts/backtest-signal-window-calibration.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
