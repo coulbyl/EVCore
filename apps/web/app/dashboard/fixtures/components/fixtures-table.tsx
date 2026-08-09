@@ -26,6 +26,7 @@ import {
 } from "@/domains/bet-slip/types/bet-slip";
 import { FixtureDiagnostics } from "@/components/fixture-diagnostics";
 import { useFixtures } from "@/domains/fixture/use-cases/use-fixtures";
+import { InfiniteScrollSentinel } from "./infinite-scroll-sentinel";
 
 // ---------------------------------------------------------------------------
 // Cell badge helpers
@@ -341,7 +342,14 @@ export function FixturesTable({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { allRows, isLoading, isError } = useFixtures(date);
+  const {
+    allRows,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useFixtures(date);
 
   const selectedRow = allRows.find((r) => r.fixtureId === selectedId) ?? null;
   const columns = makeColumns(isAdmin);
@@ -387,6 +395,12 @@ export function FixturesTable({
             onSelect={() => handleRowClick(row)}
           />
         )}
+        afterContent={
+          <InfiniteScrollSentinel
+            onVisible={fetchNextPage}
+            disabled={!hasNextPage || isFetchingNextPage || isLoading}
+          />
+        }
         className="flex-1"
       />
 

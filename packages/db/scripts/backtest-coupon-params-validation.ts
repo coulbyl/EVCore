@@ -101,7 +101,11 @@ async function fetchRows(): Promise<Row[]> {
   });
 }
 
-function splitByDay(rows: Row[]): { train: Row[]; valid: Row[]; splitKey: string } {
+function splitByDay(rows: Row[]): {
+  train: Row[];
+  valid: Row[];
+  splitKey: string;
+} {
   const dayKeys = Array.from(new Set(rows.map((r) => r.dayKey))).sort();
   const splitIndex = Math.floor(dayKeys.length * TRAIN_SPLIT);
   const splitKey = dayKeys[splitIndex] ?? "9999-12-31";
@@ -129,7 +133,9 @@ async function main() {
 
   out("═══════════════════════════════════════════════════════");
   out("  EVCore — Validation COUPON_PARAMS sur CouponProposal réel réglé");
-  out(`  ${dateLabel} — seuil min-échantillon par bucket : n>=${MIN_SPLIT_SAMPLE}`);
+  out(
+    `  ${dateLabel} — seuil min-échantillon par bucket : n>=${MIN_SPLIT_SAMPLE}`,
+  );
   out("  ⚠ Biais de survie : ne teste que le RESSERREMENT des seuils actuels,");
   out("  pas leur relâchement (cf. commentaire en tête du script).");
   out("═══════════════════════════════════════════════════════");
@@ -152,11 +158,17 @@ async function main() {
   out();
   out("──── 2. Resserrement de minCouponEV (couponEV enregistré) ────");
   const withEV = allRows.filter((r) => r.couponEV !== null);
-  out(`  (${allRows.length - withEV.length}/${allRows.length} coupons sans couponEV enregistré — exclus de cette section)`);
+  out(
+    `  (${allRows.length - withEV.length}/${allRows.length} coupons sans couponEV enregistré — exclus de cette section)`,
+  );
   for (const threshold of EV_THRESHOLDS) {
     const subsetAll = withEV.filter((r) => r.couponEV! >= threshold);
-    const subsetTrain = train.filter((r) => r.couponEV !== null && r.couponEV >= threshold);
-    const subsetValid = valid.filter((r) => r.couponEV !== null && r.couponEV >= threshold);
+    const subsetTrain = train.filter(
+      (r) => r.couponEV !== null && r.couponEV >= threshold,
+    );
+    const subsetValid = valid.filter(
+      (r) => r.couponEV !== null && r.couponEV >= threshold,
+    );
     out(`  minCouponEV >= ${threshold.toFixed(2)} :`);
     out(`    overall : ${formatStats(computeStats(subsetAll))}`);
     out(`    train   : ${formatStats(computeStats(subsetTrain))}`);
@@ -180,7 +192,9 @@ async function main() {
   out("═══════════════════════════════════════════════════════");
   out("  Verdict : un resserrement n'est actionnable que si train ET valid");
   out("  dépassent n>=MIN_SPLIT_SAMPLE et améliorent le ROI dans les deux —");
-  out("  sinon les paramètres LIVE actuels restent la meilleure option connue.");
+  out(
+    "  sinon les paramètres LIVE actuels restent la meilleure option connue.",
+  );
   out("═══════════════════════════════════════════════════════");
 
   const report = lines.join("\n");

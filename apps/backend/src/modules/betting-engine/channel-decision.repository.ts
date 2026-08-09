@@ -223,21 +223,40 @@ export class ChannelDecisionRepository {
     filters: ChannelDecisionFilters,
   ): Promise<ChannelDecisionReadRow[]> {
     const { range, competition, channel, status, market, phase } = filters;
+
+    // A fixture is re-analyzed on a rolling horizon (ModelRun.phase: ADVANCE →
+    // PRE_KICKOFF → LIVE), each pass writing its own ChannelDecision per
+    // channel. Resolve the latest pass per (fixture, channel) in SQL
+    // (DISTINCT ON, same pattern as InvestmentCalibrationRepository) instead
+    // of fetching every pass and deduping in memory.
+    const idRows = await this.prisma.client.$queryRaw<{ id: string }[]>`
+      SELECT DISTINCT ON (f.id, cd.channel) cd.id
+      FROM channel_decision cd
+      JOIN model_run mr ON mr.id = cd."modelRunId"
+      JOIN fixture f ON f.id = mr."fixtureId"
+      JOIN season s ON s.id = f."seasonId"
+      JOIN competition comp ON comp.id = s."competitionId"
+      WHERE f."scheduledAt" >= ${range.gte}
+        AND f."scheduledAt" <= ${range.lte}
+        ${phase ? Prisma.sql`AND mr.phase = ${phase}::"ModelRunPhase"` : Prisma.empty}
+        ${competition ? Prisma.sql`AND comp.code = ${competition}` : Prisma.empty}
+        ${channel ? Prisma.sql`AND cd.channel = ${channel}::"StrategyChannel"` : Prisma.empty}
+        ${status ? Prisma.sql`AND cd.status = ${status}::"ChannelDecisionStatus"` : Prisma.empty}
+        ${
+          market
+            ? Prisma.sql`AND EXISTS (
+                SELECT 1 FROM channel_selection cs
+                WHERE cs."channelDecisionId" = cd.id AND cs.market = ${market}::"Market"
+              )`
+            : Prisma.empty
+        }
+      ORDER BY f.id, cd.channel, mr."analyzedAt" DESC
+    `;
+
+    if (idRows.length === 0) return [];
+
     const rows = await this.prisma.client.channelDecision.findMany({
-      where: {
-        modelRun: {
-          ...(phase ? { phase } : {}),
-          fixture: {
-            scheduledAt: range,
-            ...(competition
-              ? { season: { competition: { code: competition } } }
-              : {}),
-          },
-        },
-        ...(channel ? { channel } : {}),
-        ...(status ? { status } : {}),
-        ...(market ? { selections: { some: { market } } } : {}),
-      },
+      where: { id: { in: idRows.map((r) => r.id) } },
       select: {
         id: true,
         modelRunId: true,
@@ -325,7 +344,7 @@ export class ChannelDecisionRepository {
       selections: row.selections,
     }));
 
-    return latestPerFixtureChannel(mapped);
+    return mapped;
   }
 
   // Informational only (see coach-continuity.constants.ts) — teams whose
@@ -353,28 +372,56 @@ export class ChannelDecisionRepository {
       else startsByTeam.set(tenure.teamId, [tenure.startDate]);
     }
 
-    const newCoachTeams = new Set<string>();
-    await Promise.all(
-      [...teamAsOf.entries()].map(async ([teamId, asOf]) => {
-        // startsByTeam[teamId] is sorted desc (from the query above), so the
-        // first entry <= asOf is that team's current coach as of that date.
-        const coachStart = startsByTeam
-          .get(teamId)
-          ?.find((start) => start <= asOf);
-        if (!coachStart) return;
+    // startsByTeam[teamId] is sorted desc (from the query above), so the
+    // first entry <= asOf is that team's current coach as of that date.
+    const windowByTeam = new Map<string, { start: Date; end: Date }>();
+    for (const [teamId, asOf] of teamAsOf) {
+      const coachStart = startsByTeam
+        .get(teamId)
+        ?.find((start) => start <= asOf);
+      if (coachStart)
+        windowByTeam.set(teamId, { start: coachStart, end: asOf });
+    }
 
-        const gamesPlayed = await this.prisma.client.fixture.count({
-          where: {
-            OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
-            status: 'FINISHED',
-            scheduledAt: { gte: coachStart, lt: asOf },
-          },
-        });
-        if (gamesPlayed < NEW_COACH_WINDOW_MATCHES) {
-          newCoachTeams.add(teamId);
-        }
-      }),
+    if (windowByTeam.size === 0) return new Set();
+
+    const windows = [...windowByTeam.values()];
+    const earliestStart = windows.reduce(
+      (min, w) => (w.start < min ? w.start : min),
+      windows[0].start,
     );
+    const latestEnd = windows.reduce(
+      (max, w) => (w.end > max ? w.end : max),
+      windows[0].end,
+    );
+
+    // One bounding query for every team's window instead of a per-team
+    // fixture.count — each team's actual games-played is then computed
+    // in memory against its own [coachStart, asOf) range.
+    const candidateFixtures = await this.prisma.client.fixture.findMany({
+      where: {
+        OR: [...windowByTeam.keys()].flatMap((teamId) => [
+          { homeTeamId: teamId },
+          { awayTeamId: teamId },
+        ]),
+        status: 'FINISHED',
+        scheduledAt: { gte: earliestStart, lt: latestEnd },
+      },
+      select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+    });
+
+    const newCoachTeams = new Set<string>();
+    for (const [teamId, { start, end }] of windowByTeam) {
+      const gamesPlayed = candidateFixtures.filter(
+        (f) =>
+          (f.homeTeamId === teamId || f.awayTeamId === teamId) &&
+          f.scheduledAt >= start &&
+          f.scheduledAt < end,
+      ).length;
+      if (gamesPlayed < NEW_COACH_WINDOW_MATCHES) {
+        newCoachTeams.add(teamId);
+      }
+    }
 
     return newCoachTeams;
   }
@@ -388,27 +435,6 @@ function hasCalibrationAlert(features: Prisma.JsonValue | null): boolean {
   }
   const alert = (features as Record<string, unknown>)['calibration_alert'];
   return typeof alert === 'object' && alert !== null;
-}
-
-// A fixture is re-analyzed on a rolling horizon (ModelRun.phase: ADVANCE →
-// PRE_KICKOFF → LIVE, cf docs/EVCORE.md §rolling horizon) — each pass writes
-// its own ChannelDecision per channel (unique on [modelRunId, channel], not
-// [fixtureId, channel]). The read API is fixture-centric, so without this it
-// shows the same channel 2-3x per fixture (once per analysis pass) whenever
-// the pick didn't change between passes. Keep only the most recent pass's
-// decision per (fixture, channel).
-export function latestPerFixtureChannel(
-  rows: ChannelDecisionReadRow[],
-): ChannelDecisionReadRow[] {
-  const latest = new Map<string, ChannelDecisionReadRow>();
-  for (const row of rows) {
-    const key = `${row.fixtureId}:${row.channel}`;
-    const existing = latest.get(key);
-    if (!existing || row.analyzedAt > existing.analyzedAt) {
-      latest.set(key, row);
-    }
-  }
-  return [...latest.values()];
 }
 
 function toJson(

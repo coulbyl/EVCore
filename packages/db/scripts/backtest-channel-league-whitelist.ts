@@ -99,17 +99,19 @@ async function fetchRows(channel: StrategyChannel): Promise<Row[]> {
   return selections.map((s) => ({
     result: s.result!,
     odds: toNum(s.odds),
-    competitionCode:
-      s.channelDecision.modelRun.fixture.season.competition.code,
-    competitionName:
-      s.channelDecision.modelRun.fixture.season.competition.name,
+    competitionCode: s.channelDecision.modelRun.fixture.season.competition.code,
+    competitionName: s.channelDecision.modelRun.fixture.season.competition.name,
     dayKey: s.channelDecision.modelRun.fixture.scheduledAt
       .toISOString()
       .slice(0, 10),
   }));
 }
 
-function splitByDay(rows: Row[]): { train: Row[]; valid: Row[]; splitKey: string } {
+function splitByDay(rows: Row[]): {
+  train: Row[];
+  valid: Row[];
+  splitKey: string;
+} {
   const dayKeys = Array.from(new Set(rows.map((r) => r.dayKey))).sort();
   const splitIndex = Math.floor(dayKeys.length * TRAIN_SPLIT);
   const splitKey = dayKeys[splitIndex] ?? "9999-12-31";
@@ -137,7 +139,9 @@ async function main() {
 
   out("═══════════════════════════════════════════════════════");
   out("  EVCore — Whitelist par ligue (DRAW / BTTS), split train/valid 60/40");
-  out(`  ${dateLabel} — confirmé seulement si train ET valid >= n=${MIN_SPLIT_SAMPLE} et positifs`);
+  out(
+    `  ${dateLabel} — confirmé seulement si train ET valid >= n=${MIN_SPLIT_SAMPLE} et positifs`,
+  );
   out("═══════════════════════════════════════════════════════");
 
   for (const channel of CHANNELS) {
@@ -158,9 +162,15 @@ async function main() {
       const name =
         allRows.find((r) => r.competitionCode === code)?.competitionName ??
         code;
-      const overall = computeStats(allRows.filter((r) => r.competitionCode === code));
-      const trainStats = computeStats(train.filter((r) => r.competitionCode === code));
-      const validStats = computeStats(valid.filter((r) => r.competitionCode === code));
+      const overall = computeStats(
+        allRows.filter((r) => r.competitionCode === code),
+      );
+      const trainStats = computeStats(
+        train.filter((r) => r.competitionCode === code),
+      );
+      const validStats = computeStats(
+        valid.filter((r) => r.competitionCode === code),
+      );
       const confirmed =
         trainStats.n >= MIN_SPLIT_SAMPLE &&
         validStats.n >= MIN_SPLIT_SAMPLE &&
@@ -170,7 +180,15 @@ async function main() {
         trainStats.n >= MIN_SPLIT_SAMPLE &&
         validStats.n >= MIN_SPLIT_SAMPLE &&
         Math.sign(trainStats.roiPct) !== Math.sign(validStats.roiPct);
-      return { code, name, overall, trainStats, validStats, confirmed, conflicting };
+      return {
+        code,
+        name,
+        overall,
+        trainStats,
+        validStats,
+        confirmed,
+        conflicting,
+      };
     });
 
     perLeague.sort((a, b) => b.overall.n - a.overall.n);
@@ -191,15 +209,21 @@ async function main() {
       );
     }
 
-    const confirmedLeagues = perLeague.filter((l) => l.confirmed).map((l) => l.code);
+    const confirmedLeagues = perLeague
+      .filter((l) => l.confirmed)
+      .map((l) => l.code);
     out();
-    out(`  → Ligues confirmées (train+valid positifs, n>=${MIN_SPLIT_SAMPLE} chacun) : ${confirmedLeagues.join(", ") || "aucune"}`);
+    out(
+      `  → Ligues confirmées (train+valid positifs, n>=${MIN_SPLIT_SAMPLE} chacun) : ${confirmedLeagues.join(", ") || "aucune"}`,
+    );
   }
 
   out();
   out("═══════════════════════════════════════════════════════");
   out("  Rappel : ce filtre par ligue est grossier (le marché est-il jouable");
-  out("  ici) — il ne remplace pas un scoring leg-level une fois dans le pool.");
+  out(
+    "  ici) — il ne remplace pas un scoring leg-level une fois dans le pool.",
+  );
   out("═══════════════════════════════════════════════════════");
 
   const report = lines.join("\n");
