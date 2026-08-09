@@ -210,7 +210,7 @@ export class EtlController {
       'Enqueues odds-prematch-sync + betting-engine-analysis for a sliding window of ' +
       'upcoming days (default J+1..J+4). Each day is processed independently; ' +
       'J+1 is always re-run even if it was analyzed as J+2 the day before. ' +
-      'This is the manual counterpart of the ETL_ENABLE_ROLLING_HORIZON cron.',
+      'This is the manual counterpart of the always-on rolling horizon cron.',
   })
   @ApiBody({ type: AnalysisHorizonBodyDto, required: false })
   @ApiOkResponse({

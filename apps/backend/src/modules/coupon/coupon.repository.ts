@@ -8,6 +8,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { endOfUtcDay, startOfUtcDay } from '@utils/date.utils';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -184,12 +185,28 @@ export class CouponRepository {
     }
   }
 
+  // "Live on this day" — NOT `forDate` equality. A multi-day window (weekend/
+  // midweek LONGSHOT, cf. SignalWindowService.getPoolForRange) is generated
+  // once, keyed on its first day (`forDate` = the Friday it was generated),
+  // but its legs keep playing through Sunday — a coupon must stay visible
+  // on Saturday and Sunday too, not only on the exact day it was generated.
+  // `lastFixtureScheduledAt` (already the max of every leg's kickoff) makes
+  // this a pure range check with no schema change: the window
+  // [forDate, lastFixtureScheduledAt] must overlap the requested day.
+  // Degenerates to the old exact-match behaviour for every single-day
+  // profile, where lastFixtureScheduledAt always falls on `forDate` itself.
   async findByDate(
-    forDate: Date,
+    day: Date,
     status?: CouponProposalStatus,
   ): Promise<CouponProposalWithLegs[]> {
+    const dayStart = startOfUtcDay(day);
+    const dayEnd = endOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
-      where: { forDate, ...(status ? { status } : {}) },
+      where: {
+        forDate: { lte: dayEnd },
+        lastFixtureScheduledAt: { gte: dayStart },
+        ...(status ? { status } : {}),
+      },
       include: WITH_LEGS,
       orderBy: { rank: 'asc' },
     });
@@ -218,9 +235,23 @@ export class CouponRepository {
     return proposals.map((p) => p.id);
   }
 
-  async deletePendingForDate(forDate: Date): Promise<void> {
+  // Scoped to the profile about to be regenerated (targetOddsMin/Max, same
+  // fields as the upsert unique key) — NOT every pending proposal for the
+  // date. Generating a second profile for the same date (e.g. LONGSHOT after
+  // the default) must never wipe out the first profile's freshly-created
+  // PENDING proposals, which a date-only delete would do.
+  async deletePendingForDate(
+    forDate: Date,
+    targetOddsMin: number,
+    targetOddsMax: number,
+  ): Promise<void> {
     const pending = await this.prisma.client.couponProposal.findMany({
-      where: { forDate, status: CouponProposalStatus.PENDING },
+      where: {
+        forDate,
+        status: CouponProposalStatus.PENDING,
+        targetOddsMin: new Prisma.Decimal(targetOddsMin),
+        targetOddsMax: new Prisma.Decimal(targetOddsMax),
+      },
       select: { id: true },
     });
     if (pending.length === 0) return;
@@ -358,7 +389,9 @@ export class CouponRepository {
     });
   }
 
-  async settleLeg(legId: string, isCorrect: boolean): Promise<void> {
+  // `isCorrect: null` marks a voided leg (postponed/cancelled fixture) —
+  // distinct from "not yet settled" (isCorrect null AND settledAt null).
+  async settleLeg(legId: string, isCorrect: boolean | null): Promise<void> {
     await this.prisma.client.couponProposalLeg.update({
       where: { id: legId },
       data: { isCorrect, settledAt: new Date() },

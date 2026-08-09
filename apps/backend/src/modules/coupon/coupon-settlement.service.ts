@@ -106,12 +106,30 @@ export class CouponSettlementService {
     const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
 
     let allResolved = true;
+    let voidedLegs = 0;
     const legResults: boolean[] = [];
 
     for (const leg of proposal.legs) {
       const fixture = fixtureMap.get(leg.fixtureId);
       if (!fixture) {
         allResolved = false;
+        continue;
+      }
+
+      // A postponed/cancelled fixture will never reach FINISHED — waiting on
+      // it would retry forever (confirmed real: 45 POSTPONED + 96 CANCELLED
+      // fixtures in this DB). Standard betting treatment: void this leg,
+      // dropping it from the win/loss combinatorics instead of blocking the
+      // whole coupon on a match that's never going to produce a score.
+      if (
+        fixture.status === FixtureStatus.POSTPONED ||
+        fixture.status === FixtureStatus.CANCELLED
+      ) {
+        // Unlike the resolved-leg case below, `isCorrect === null` can't
+        // distinguish "never settled" from "already voided" — always write
+        // rather than skip, so a freshly-voided leg's settledAt actually gets set.
+        await this.repo.settleLeg(leg.id, null);
+        voidedLegs++;
         continue;
       }
 
@@ -185,13 +203,31 @@ export class CouponSettlementService {
       return;
     }
 
+    // Every leg voided (postponed/cancelled) — nothing left to grade.
+    if (legResults.length === 0) {
+      await this.repo.updateResult(proposalId, CouponResult.VOID);
+      logger.info(
+        { proposalId, result: CouponResult.VOID, voidedLegs },
+        'Proposal voided: every leg postponed/cancelled',
+      );
+      return;
+    }
+
     const correct = legResults.filter(Boolean).length;
+    // correct === legResults.length always holds here (anyLost already
+    // returned above otherwise) — PARTIAL marks a coupon that won on every
+    // graded leg but had at least one leg voided along the way, so it reads
+    // differently from a clean WON rather than being silently indistinguishable.
     const result: CouponResult =
-      correct === legResults.length ? CouponResult.WON : CouponResult.PARTIAL;
+      correct === legResults.length
+        ? voidedLegs > 0
+          ? CouponResult.PARTIAL
+          : CouponResult.WON
+        : CouponResult.PARTIAL;
 
     await this.repo.updateResult(proposalId, result);
     logger.info(
-      { proposalId, result, correct, total: legResults.length },
+      { proposalId, result, correct, total: legResults.length, voidedLegs },
       'Proposal settled',
     );
   }

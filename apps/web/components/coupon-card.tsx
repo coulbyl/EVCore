@@ -40,6 +40,13 @@ export type CouponCardProps = {
   signalScore: number;
   reasoning?: string | null;
   isTop?: boolean;
+  /**
+   * LONGSHOT_WEEKEND/MIDWEEK profile (cote cible 50-70) — no dedicated
+   * backtest exists yet, generated purely to observe real settlement data.
+   * Always shown with this badge, never as an unlabeled recommendation
+   * alongside the backtested default profile.
+   */
+  isExperimental?: boolean;
   betStatus?: "WON" | "LOST" | null;
   legs: NormalizedCouponLeg[];
   actionSlot?: React.ReactNode;
@@ -56,6 +63,7 @@ export function CouponCard({
   jointProbability,
   reasoning,
   isTop = false,
+  isExperimental = false,
   betStatus,
   legs,
   actionSlot,
@@ -87,6 +95,14 @@ export function CouponCard({
                   className="rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em]"
                 >
                   Meilleur
+                </Badge>
+              )}
+              {isExperimental && (
+                <Badge
+                  variant="warning"
+                  className="rounded-full px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.14em]"
+                >
+                  Expérimental
                 </Badge>
               )}
               <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">

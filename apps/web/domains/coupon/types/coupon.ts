@@ -30,6 +30,13 @@ export type CouponProposalDto = {
   signalWindowDays: number;
   targetOddsMin: number;
   targetOddsMax: number;
+  /**
+   * True for LONGSHOT_WEEKEND/MIDWEEK proposals — no dedicated backtest
+   * exists yet, generated purely to observe real settlement data. Always
+   * render with a clearly distinguishing badge, never as an unlabeled
+   * recommendation alongside the backtested default profile.
+   */
+  experimental: boolean;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;

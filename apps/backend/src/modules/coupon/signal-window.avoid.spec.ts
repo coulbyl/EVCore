@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { isExtremeDivergence } from './signal-window.service';
+import {
+  classifyAvoidSignal,
+  isExtremeDivergence,
+} from './signal-window.service';
 import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
 
 // AVOID enforcement at staking time — drops legs whose model edge over the
@@ -30,5 +33,28 @@ describe('isExtremeDivergence', () => {
   it('is safe when odds are missing or invalid', () => {
     expect(isExtremeDivergence(0.9, null)).toBe(false);
     expect(isExtremeDivergence(0.9, 1)).toBe(false);
+  });
+});
+
+// Graduated AVOID routing (plan 2026-08-09) — replaces the old plain OR of
+// the two signals. Validated on settled MODEL bets: extreme divergence alone
+// → fade (opposite pick +19.3% ROI, n=32); calibration alert alone → no edge
+// either side (n=55) → drop; both together → the ORIGINAL pick is excellent
+// (+51% ROI, n=32) → keep, where a plain OR would have dropped it.
+describe('classifyAvoidSignal', () => {
+  it('is CLEAN when neither signal fires', () => {
+    expect(classifyAvoidSignal(false, false)).toBe('CLEAN');
+  });
+
+  it('is FADE when only extreme divergence fires', () => {
+    expect(classifyAvoidSignal(true, false)).toBe('FADE');
+  });
+
+  it('is DROP when only the calibration alert fires', () => {
+    expect(classifyAvoidSignal(false, true)).toBe('DROP');
+  });
+
+  it('is KEEP when both fire together', () => {
+    expect(classifyAvoidSignal(true, true)).toBe('KEEP');
   });
 });
