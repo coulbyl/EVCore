@@ -8,6 +8,7 @@ import {
   StrategyChannel,
 } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { endOfUtcDay, startOfUtcDay } from '@utils/date.utils';
 
 const FIXTURE_SELECT = {
   id: true,
@@ -184,12 +185,28 @@ export class CouponRepository {
     }
   }
 
+  // "Live on this day" — NOT `forDate` equality. A multi-day window (weekend/
+  // midweek LONGSHOT, cf. SignalWindowService.getPoolForRange) is generated
+  // once, keyed on its first day (`forDate` = the Friday it was generated),
+  // but its legs keep playing through Sunday — a coupon must stay visible
+  // on Saturday and Sunday too, not only on the exact day it was generated.
+  // `lastFixtureScheduledAt` (already the max of every leg's kickoff) makes
+  // this a pure range check with no schema change: the window
+  // [forDate, lastFixtureScheduledAt] must overlap the requested day.
+  // Degenerates to the old exact-match behaviour for every single-day
+  // profile, where lastFixtureScheduledAt always falls on `forDate` itself.
   async findByDate(
-    forDate: Date,
+    day: Date,
     status?: CouponProposalStatus,
   ): Promise<CouponProposalWithLegs[]> {
+    const dayStart = startOfUtcDay(day);
+    const dayEnd = endOfUtcDay(day);
     return this.prisma.client.couponProposal.findMany({
-      where: { forDate, ...(status ? { status } : {}) },
+      where: {
+        forDate: { lte: dayEnd },
+        lastFixtureScheduledAt: { gte: dayStart },
+        ...(status ? { status } : {}),
+      },
       include: WITH_LEGS,
       orderBy: { rank: 'asc' },
     });
