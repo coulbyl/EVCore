@@ -60,7 +60,11 @@ type Entry = {
   count: number;
 };
 
-function decayWeight(dayMs: number, nowMs: number, halfLifeDays: number): number {
+function decayWeight(
+  dayMs: number,
+  nowMs: number,
+  halfLifeDays: number,
+): number {
   const daysAgo = (nowMs - dayMs) / DAY_MS;
   return Math.pow(0.5, daysAgo / halfLifeDays);
 }
@@ -131,7 +135,13 @@ function emptyWalk(): WalkResult {
 // which naturally weights by that day's volume).
 function walkForward(
   entries: Entry[],
-  params: { k: number; decayHalfLifeDays: number; windowDays: number; capMin: number; capMax: number },
+  params: {
+    k: number;
+    decayHalfLifeDays: number;
+    windowDays: number;
+    capMin: number;
+    capMax: number;
+  },
   splitKey: string,
 ): { train: WalkResult; valid: WalkResult; overall: WalkResult } {
   const byCanal = new Map<string, Entry[]>();
@@ -149,17 +159,32 @@ function walkForward(
     const prior = CANAL_BASE_WEIGHT[canal];
     if (prior === undefined) continue; // unmodelled channel (e.g. TEAM_TOTAL) — out of scope here
 
-    const days = Array.from(new Set(canalEntries.map((e) => e.day.toISOString().slice(0, 10)))).sort();
+    const days = Array.from(
+      new Set(canalEntries.map((e) => e.day.toISOString().slice(0, 10))),
+    ).sort();
     for (const dayKey of days) {
       const dayMs = new Date(`${dayKey}T00:00:00.000Z`).getTime();
       const since = dayMs - params.windowDays * DAY_MS;
       const priorEntries = canalEntries.filter(
         (e) => e.day.getTime() >= since && e.day.getTime() < dayMs,
       );
-      const { correct, total } = hitsForWeighted(priorEntries, dayMs, params.decayHalfLifeDays);
-      const estimate = calibrate(correct, total, prior, params.k, params.capMin, params.capMax);
+      const { correct, total } = hitsForWeighted(
+        priorEntries,
+        dayMs,
+        params.decayHalfLifeDays,
+      );
+      const estimate = calibrate(
+        correct,
+        total,
+        prior,
+        params.k,
+        params.capMin,
+        params.capMax,
+      );
 
-      const todaysEntries = canalEntries.filter((e) => e.day.toISOString().slice(0, 10) === dayKey);
+      const todaysEntries = canalEntries.filter(
+        (e) => e.day.toISOString().slice(0, 10) === dayKey,
+      );
       for (const e of todaysEntries) {
         const outcome = e.correct ? 1 : 0;
         const brier = (estimate - outcome) ** 2 * e.count;
@@ -196,24 +221,40 @@ async function main() {
   };
 
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Calibration SignalWindowService (k / decayHalfLifeDays / windowDays)");
-  out(`  ${dateLabel} — Brier score walk-forward jour par jour, plus bas = mieux`);
+  out(
+    "  EVCore — Calibration SignalWindowService (k / decayHalfLifeDays / windowDays)",
+  );
+  out(
+    `  ${dateLabel} — Brier score walk-forward jour par jour, plus bas = mieux`,
+  );
   out("═══════════════════════════════════════════════════════");
 
   const allEntries = await fetchAllEntries();
-  const dayKeys = Array.from(new Set(allEntries.map((e) => e.day.toISOString().slice(0, 10)))).sort();
+  const dayKeys = Array.from(
+    new Set(allEntries.map((e) => e.day.toISOString().slice(0, 10))),
+  ).sort();
   const splitIndex = Math.floor(dayKeys.length * TRAIN_SPLIT);
   const splitKey = dayKeys[splitIndex] ?? "9999-12-31";
   out();
-  out(`Jours avec paris réglés : ${dayKeys.length} (${dayKeys[0]} → ${dayKeys[dayKeys.length - 1]}) — split au ${splitKey}`);
+  out(
+    `Jours avec paris réglés : ${dayKeys.length} (${dayKeys[0]} → ${dayKeys[dayKeys.length - 1]}) — split au ${splitKey}`,
+  );
 
   const baseline = walkForward(
     allEntries,
-    { k: LIVE_K, decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS, windowDays: LIVE_WINDOW_DAYS, capMin: LIVE_CAP_MIN, capMax: LIVE_CAP_MAX },
+    {
+      k: LIVE_K,
+      decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS,
+      windowDays: LIVE_WINDOW_DAYS,
+      capMin: LIVE_CAP_MIN,
+      capMax: LIVE_CAP_MAX,
+    },
     splitKey,
   );
   out();
-  out(`Référence LIVE (k=${LIVE_K}, decayHalfLifeDays=${LIVE_DECAY_HALF_LIFE_DAYS}, windowDays=${LIVE_WINDOW_DAYS}) :`);
+  out(
+    `Référence LIVE (k=${LIVE_K}, decayHalfLifeDays=${LIVE_DECAY_HALF_LIFE_DAYS}, windowDays=${LIVE_WINDOW_DAYS}) :`,
+  );
   out(`  overall : ${formatWalk(baseline.overall)}`);
   out(`  train   : ${formatWalk(baseline.train)}`);
   out(`  valid   : ${formatWalk(baseline.valid)}`);
@@ -221,47 +262,100 @@ async function main() {
   out();
   out("──── 1. Sensibilité à k (poids du prior bayésien) ────");
   for (const k of K_GRID) {
-    const r = walkForward(allEntries, { k, decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS, windowDays: LIVE_WINDOW_DAYS, capMin: LIVE_CAP_MIN, capMax: LIVE_CAP_MAX }, splitKey);
+    const r = walkForward(
+      allEntries,
+      {
+        k,
+        decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS,
+        windowDays: LIVE_WINDOW_DAYS,
+        capMin: LIVE_CAP_MIN,
+        capMax: LIVE_CAP_MAX,
+      },
+      splitKey,
+    );
     const marker = k === LIVE_K ? " (actuel)" : "";
-    out(`  k=${k}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`);
+    out(
+      `  k=${k}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`,
+    );
   }
 
   out();
   out("──── 2. Sensibilité à decayHalfLifeDays (décroissance de récence) ────");
   for (const d of DECAY_GRID) {
-    const r = walkForward(allEntries, { k: LIVE_K, decayHalfLifeDays: d, windowDays: LIVE_WINDOW_DAYS, capMin: LIVE_CAP_MIN, capMax: LIVE_CAP_MAX }, splitKey);
-    const marker = d === LIVE_DECAY_HALF_LIFE_DAYS ? " (actuel)" : d === 9999 ? " (quasi pas de décroissance)" : "";
-    out(`  decayHalfLifeDays=${d}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`);
+    const r = walkForward(
+      allEntries,
+      {
+        k: LIVE_K,
+        decayHalfLifeDays: d,
+        windowDays: LIVE_WINDOW_DAYS,
+        capMin: LIVE_CAP_MIN,
+        capMax: LIVE_CAP_MAX,
+      },
+      splitKey,
+    );
+    const marker =
+      d === LIVE_DECAY_HALF_LIFE_DAYS
+        ? " (actuel)"
+        : d === 9999
+          ? " (quasi pas de décroissance)"
+          : "";
+    out(
+      `  decayHalfLifeDays=${d}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`,
+    );
   }
 
   out();
   out("──── 3. Sensibilité à windowDays (fenêtre glissante) ────");
   for (const w of WINDOW_GRID) {
-    const r = walkForward(allEntries, { k: LIVE_K, decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS, windowDays: w, capMin: LIVE_CAP_MIN, capMax: LIVE_CAP_MAX }, splitKey);
+    const r = walkForward(
+      allEntries,
+      {
+        k: LIVE_K,
+        decayHalfLifeDays: LIVE_DECAY_HALF_LIFE_DAYS,
+        windowDays: w,
+        capMin: LIVE_CAP_MIN,
+        capMax: LIVE_CAP_MAX,
+      },
+      splitKey,
+    );
     const marker = w === LIVE_WINDOW_DAYS ? " (actuel)" : "";
-    out(`  windowDays=${w}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`);
+    out(
+      `  windowDays=${w}${marker} : train ${formatWalk(r.train)} | valid ${formatWalk(r.valid)}`,
+    );
   }
 
   out();
-  out("──── 4. capMin/capMax — fréquence de saturation (bornes actuelles 0.05/0.8) ────");
+  out(
+    "──── 4. capMin/capMax — fréquence de saturation (bornes actuelles 0.05/0.8) ────",
+  );
   let clamped = 0;
   let total = 0;
   for (const canal of CANALS) {
     const prior = CANAL_BASE_WEIGHT[canal]!;
     const canalEntries = allEntries.filter((e) => e.channel === canal);
-    const days = Array.from(new Set(canalEntries.map((e) => e.day.toISOString().slice(0, 10)))).sort();
+    const days = Array.from(
+      new Set(canalEntries.map((e) => e.day.toISOString().slice(0, 10))),
+    ).sort();
     for (const dayKey of days) {
       const dayMs = new Date(`${dayKey}T00:00:00.000Z`).getTime();
       const since = dayMs - LIVE_WINDOW_DAYS * DAY_MS;
-      const priorEntries = canalEntries.filter((e) => e.day.getTime() >= since && e.day.getTime() < dayMs);
-      const { correct, total: weightedTotal } = hitsForWeighted(priorEntries, dayMs, LIVE_DECAY_HALF_LIFE_DAYS);
+      const priorEntries = canalEntries.filter(
+        (e) => e.day.getTime() >= since && e.day.getTime() < dayMs,
+      );
+      const { correct, total: weightedTotal } = hitsForWeighted(
+        priorEntries,
+        dayMs,
+        LIVE_DECAY_HALF_LIFE_DAYS,
+      );
       if (weightedTotal === 0) continue;
       const raw = (correct + LIVE_K * prior) / (weightedTotal + LIVE_K);
       total++;
       if (raw < LIVE_CAP_MIN || raw > LIVE_CAP_MAX) clamped++;
     }
   }
-  out(`  Estimations (jour × canal) : ${total}, dont saturées : ${clamped} (${total > 0 ? ((clamped / total) * 100).toFixed(1) : "0"}%)`);
+  out(
+    `  Estimations (jour × canal) : ${total}, dont saturées : ${clamped} (${total > 0 ? ((clamped / total) * 100).toFixed(1) : "0"}%)`,
+  );
 
   out();
   out("═══════════════════════════════════════════════════════");

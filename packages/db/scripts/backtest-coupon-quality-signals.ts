@@ -196,9 +196,11 @@ async function findOppositeOdds(
   return row?.odds ? toNum(row.odds) : null;
 }
 
-function splitByDay(
-  rows: BaseRow[],
-): { train: BaseRow[]; valid: BaseRow[]; splitKey: string } {
+function splitByDay(rows: BaseRow[]): {
+  train: BaseRow[];
+  valid: BaseRow[];
+  splitKey: string;
+} {
   const dayKeys = Array.from(
     new Set(rows.map((r) => r.scheduledAt.toISOString().slice(0, 10))),
   ).sort();
@@ -271,9 +273,7 @@ async function main() {
   for (const val of [false, true]) {
     out(`  conflict=${val} :`);
     for (const [period, rows] of periods) {
-      const stats = computeStats(
-        rows.filter((r) => r.shadowConflict === val),
-      );
+      const stats = computeStats(rows.filter((r) => r.shadowConflict === val));
       out(`    ${period.padEnd(7)} : ${formatStats(stats)}`);
     }
   }
@@ -326,8 +326,12 @@ async function main() {
   const fadeCandidates = withDiv.filter(
     (r) => r.extremeDiv && !r.calibAlert && oppositePick(r.pick) !== null,
   );
-  const fadeRows: { won: boolean; odds: number; scheduledAt: Date; id: string }[] =
-    [];
+  const fadeRows: {
+    won: boolean;
+    odds: number;
+    scheduledAt: Date;
+    id: string;
+  }[] = [];
   for (const r of fadeCandidates) {
     const opp = oppositePick(r.pick);
     if (!opp) continue;
@@ -345,8 +349,12 @@ async function main() {
       id: r.id,
     });
   }
-  const fadeTrain = fadeRows.filter((r) => r.scheduledAt.toISOString().slice(0, 10) < splitKey);
-  const fadeValid = fadeRows.filter((r) => r.scheduledAt.toISOString().slice(0, 10) >= splitKey);
+  const fadeTrain = fadeRows.filter(
+    (r) => r.scheduledAt.toISOString().slice(0, 10) < splitKey,
+  );
+  const fadeValid = fadeRows.filter(
+    (r) => r.scheduledAt.toISOString().slice(0, 10) >= splitKey,
+  );
   out(`  overall : ${formatStats(computeStats(fadeRows))}`);
   out(`  train   : ${formatStats(computeStats(fadeTrain))}`);
   out(`  valid   : ${formatStats(computeStats(fadeValid))}`);
