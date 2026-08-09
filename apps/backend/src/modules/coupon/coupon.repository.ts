@@ -218,9 +218,23 @@ export class CouponRepository {
     return proposals.map((p) => p.id);
   }
 
-  async deletePendingForDate(forDate: Date): Promise<void> {
+  // Scoped to the profile about to be regenerated (targetOddsMin/Max, same
+  // fields as the upsert unique key) — NOT every pending proposal for the
+  // date. Generating a second profile for the same date (e.g. LONGSHOT after
+  // the default) must never wipe out the first profile's freshly-created
+  // PENDING proposals, which a date-only delete would do.
+  async deletePendingForDate(
+    forDate: Date,
+    targetOddsMin: number,
+    targetOddsMax: number,
+  ): Promise<void> {
     const pending = await this.prisma.client.couponProposal.findMany({
-      where: { forDate, status: CouponProposalStatus.PENDING },
+      where: {
+        forDate,
+        status: CouponProposalStatus.PENDING,
+        targetOddsMin: new Prisma.Decimal(targetOddsMin),
+        targetOddsMax: new Prisma.Decimal(targetOddsMax),
+      },
       select: { id: true },
     });
     if (pending.length === 0) return;

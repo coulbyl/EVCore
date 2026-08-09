@@ -10,6 +10,7 @@ import {
 } from './coupon-composer.service';
 import {
   COUPON_PARAMS,
+  COUPON_PROFILES,
   resolveCouponProfile,
   type CouponProfileName,
 } from './coupon.constants';
@@ -86,7 +87,11 @@ export class CouponService {
     );
 
     const asOf = new Date(`${date}T00:00:00.000Z`);
-    await this.repo.deletePendingForDate(asOf);
+    await this.repo.deletePendingForDate(
+      asOf,
+      profileBounds.minCombinedOdds,
+      profileBounds.maxCombinedOdds,
+    );
 
     const [window, rawPicks] = await Promise.all([
       this.signalWindow.computeSignalWindow(windowDays, asOf),
@@ -180,6 +185,9 @@ export class CouponService {
       signalWindowDays: p.signalWindowDays,
       targetOddsMin: Number(p.targetOddsMin),
       targetOddsMax: Number(p.targetOddsMax),
+      experimental:
+        Number(p.targetOddsMin) >=
+        COUPON_PROFILES.LONGSHOT_WEEKEND.minCombinedOdds,
       combinedOdds: Number(p.combinedOdds),
       jointProbability: Number(p.jointProbability),
       signalScore: Number(p.signalScore),

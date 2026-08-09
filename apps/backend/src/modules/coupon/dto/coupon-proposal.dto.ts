@@ -34,6 +34,15 @@ export type CouponProposalDto = {
   signalWindowDays: number;
   targetOddsMin: number;
   targetOddsMax: number;
+  /**
+   * True for LONGSHOT_WEEKEND/MIDWEEK proposals (targetOddsMin at or above
+   * that profile's floor) — no dedicated backtest exists yet for these
+   * (composeGreedy has never run in prod), generated purely to observe real
+   * settlement data. The frontend must always show these with a clearly
+   * distinguishing badge, never as an unlabeled recommendation alongside
+   * the backtested default profile.
+   */
+  experimental: boolean;
   combinedOdds: number;
   jointProbability: number;
   signalScore: number;
