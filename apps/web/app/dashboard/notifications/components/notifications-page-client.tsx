@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BellOff, CheckCheck, Clock } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, BellOff, CheckCheck, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button, Skeleton } from "@evcore/ui";
 import {
@@ -11,6 +12,8 @@ import {
 } from "@/domains/notification/use-cases/use-notifications";
 import {
   NOTIFICATION_SEVERITY,
+  NOTIFICATION_LINKS,
+  NOTIFICATION_BODY_IS_HTML,
   type NotificationView,
   type NotificationSeverity,
 } from "@/domains/notification/types/notification";
@@ -109,9 +112,20 @@ function NotificationRow({
         <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">
           {n.title}
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          {n.body}
-        </p>
+        {NOTIFICATION_BODY_IS_HTML.has(n.type) ? null : (
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            {n.body}
+          </p>
+        )}
+        {NOTIFICATION_LINKS[n.type] ? (
+          <Link
+            href={NOTIFICATION_LINKS[n.type]!}
+            className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          >
+            Voir
+            <ArrowRight size={13} />
+          </Link>
+        ) : null}
       </div>
       {!n.isRead ? (
         <button

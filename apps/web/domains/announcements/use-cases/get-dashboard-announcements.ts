@@ -2,10 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { clientApiRequest } from "@/lib/api/client-api";
-import type { Announcement } from "../types/announcements";
+import type { UserAnnouncement } from "../types/announcements";
 
-export async function getDashboardAnnouncements(): Promise<Announcement[]> {
-  return clientApiRequest<Announcement[]>("/dashboard/announcements", {
+export async function getDashboardAnnouncements(): Promise<
+  UserAnnouncement[]
+> {
+  return clientApiRequest<UserAnnouncement[]>("/dashboard/announcements", {
     fallbackErrorMessage: "Impossible de charger les annonces.",
   });
 }

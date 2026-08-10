@@ -28,6 +28,7 @@
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
+    "updates": "Annonces",
     "ml": "Moteur ML",
     "reports": "Rapports",
     "engine": "Moteur & ETL",
@@ -178,6 +179,16 @@
       "medium": "Moyenne",
       "low": "Faible"
     }
+  },
+  "updates": {
+    "title": "Annonces",
+    "subtitle": "Historique des annonces publiées par l'équipe EVCore.",
+    "empty": "Aucune annonce",
+    "emptyDescription": "Rien à signaler pour le moment.",
+    "unread": "Non lues",
+    "all": "Toutes",
+    "close": "Fermer",
+    "isRead": "Lu"
   },
   "formation": {
     "label": "Formation",

@@ -15,6 +15,10 @@ export type Announcement = {
   } | null;
 };
 
+// GET /dashboard/announcements — per-user read state (AnnouncementRead),
+// distinct from the admin-only Announcement shape above.
+export type UserAnnouncement = Announcement & { isRead: boolean };
+
 export type CreateAnnouncementInput = {
   title: string;
   description: string;

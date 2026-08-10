@@ -9,7 +9,9 @@ export type NotificationType =
   // Personnelles (Notification.userId non-null côté backend) — voir
   // subscription-notifier.service.ts.
   | "SUBSCRIPTION_EVENTS_ADDED"
-  | "SUBSCRIPTION_SETTLED";
+  | "SUBSCRIPTION_SETTLED"
+  | "SUPPORT_MESSAGE"
+  | "ANNOUNCEMENT_PUBLISHED";
 
 export type NotificationSeverity = "high" | "medium" | "low";
 
@@ -27,7 +29,23 @@ export const NOTIFICATION_SEVERITY: Record<
   // Informationnelles, jamais critiques — même palette que WEEKLY_REPORT.
   SUBSCRIPTION_EVENTS_ADDED: "low",
   SUBSCRIPTION_SETTLED: "low",
+  SUPPORT_MESSAGE: "low",
+  ANNOUNCEMENT_PUBLISHED: "low",
 };
+
+// Where "voir plus" should navigate to for types whose full content lives on
+// another page — `ANNOUNCEMENT_PUBLISHED`'s body is rich-text HTML (the
+// admin editor's output), never meant to be dumped as raw markup in the
+// notification list, so it's hidden there in favor of this link.
+export const NOTIFICATION_LINKS: Partial<Record<NotificationType, string>> = {
+  SUPPORT_MESSAGE: "/dashboard/inbox",
+  ANNOUNCEMENT_PUBLISHED: "/dashboard/updates",
+};
+
+// Types whose `body` is not plain text and must never be rendered directly.
+export const NOTIFICATION_BODY_IS_HTML = new Set<NotificationType>([
+  "ANNOUNCEMENT_PUBLISHED",
+]);
 
 export type NotificationView = {
   id: string;

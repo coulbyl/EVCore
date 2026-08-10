@@ -76,6 +76,7 @@ export function DashboardPageClientOperator() {
                 title: item.title,
                 description: item.description,
                 href: item.href ?? undefined,
+                isRead: item.isRead,
               }))}
             />
           )}
