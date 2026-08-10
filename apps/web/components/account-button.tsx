@@ -7,6 +7,7 @@ import { useState } from "react";
 import {
   GraduationCap,
   LogOut,
+  Megaphone,
   MessageCircle,
   Repeat,
   Settings,
@@ -127,6 +128,15 @@ export function AccountButton({
             <Link href="/dashboard/formation">
               <GraduationCap className="text-accent" />
               {tNav("formation")}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
+            <Link href="/dashboard/updates">
+              <Megaphone className="text-accent" />
+              {tNav("updates")}
             </Link>
           </DropdownMenuItem>
           {currentUser.role === "ADMIN" ? (

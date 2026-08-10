@@ -264,7 +264,7 @@ export function AppShell({
     "/dashboard/decisions",
     "/dashboard/investment",
     "/dashboard/coupons",
-    "/dashboard/formation",
+    "/dashboard/inbox",
   ];
 
   const allNavItems = useMemo(
