@@ -241,6 +241,7 @@ export function PageSearchFab() {
           onClick={showFab}
           aria-label="Afficher la recherche"
           title="Afficher la recherche"
+          data-tour="page-search-fab"
           className={cn(
             "fixed z-30 flex items-center justify-center",
             "bg-panel-strong text-accent ring-2 ring-accent/40",
@@ -269,6 +270,7 @@ export function PageSearchFab() {
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
           title="Rechercher dans la page (appui long pour masquer)"
+          data-tour="page-search-fab"
           className={cn(
             "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
             "bg-panel-strong text-accent ring-2 ring-accent/40",

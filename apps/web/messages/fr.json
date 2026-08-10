@@ -270,6 +270,14 @@
       "title": "Annonces",
       "description": "L'historique des annonces publiées par l'équipe — jamais perdu même si tu as fermé la bannière du dashboard."
     },
+    "evaFab": {
+      "title": "Eva",
+      "description": "Ton assistante d'analyse — pose-lui une question sur un match ou une période, elle répond avec les données du moteur. Appui long pour la masquer."
+    },
+    "pageSearchFab": {
+      "title": "Recherche dans la page",
+      "description": "Cherche un texte directement dans la page affichée — pratique sur une longue liste de matchs. Masquée par défaut, appui long pour la cacher à nouveau."
+    },
     "notifications": {
       "title": "Notifications",
       "description": "Alertes de performance et annonces de l'équipe apparaissent ici — toujours accessible, où que tu sois dans l'app."

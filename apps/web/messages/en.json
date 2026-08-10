@@ -270,6 +270,14 @@
       "title": "Announcements",
       "description": "The history of announcements published by the team — never lost even after you close the dashboard banner."
     },
+    "evaFab": {
+      "title": "Eva",
+      "description": "Your analysis assistant — ask about a match or a period and she answers using the engine's data. Long-press to hide it."
+    },
+    "pageSearchFab": {
+      "title": "Search this page",
+      "description": "Search text directly on the current page — handy on a long list of matches. Hidden by default, long-press to hide it again."
+    },
     "notifications": {
       "title": "Notifications",
       "description": "Performance alerts and team announcements show up here — always reachable, wherever you are in the app."

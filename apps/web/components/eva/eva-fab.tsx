@@ -264,6 +264,7 @@ export function EvaFab() {
           onClick={showEva}
           aria-label="Afficher Eva"
           title="Afficher Eva"
+          data-tour="eva-fab"
           className={cn(
             "fixed z-30 flex items-center justify-center",
             "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",
@@ -292,6 +293,7 @@ export function EvaFab() {
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
           title="Eva (appui long pour masquer)"
+          data-tour="eva-fab"
           className={cn(
             "fixed z-30 flex size-11 items-center justify-center rounded-full md:size-12",
             "bg-gradient-to-br from-accent via-accent to-accent/70 text-accent-foreground",

@@ -150,6 +150,20 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     descriptionKey: "updates.description",
   },
   {
+    id: "evaFab",
+    route: null,
+    selector: '[data-tour="eva-fab"]',
+    titleKey: "evaFab.title",
+    descriptionKey: "evaFab.description",
+  },
+  {
+    id: "pageSearchFab",
+    route: null,
+    selector: '[data-tour="page-search-fab"]',
+    titleKey: "pageSearchFab.title",
+    descriptionKey: "pageSearchFab.description",
+  },
+  {
     id: "notifications",
     route: null,
     selector: '[data-tour="notification-bell"]',
