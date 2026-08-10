@@ -152,7 +152,7 @@
     "evaluatedCount": "{count, plural, one {# other channel evaluated} other {# other channels evaluated}}",
     "filters": {
       "all": "All",
-      "onlyPicks": "With pick only",
+      "label": "Filters",
       "noMatch": "No fixture matches the filters.",
       "groupByNone": "No grouping",
       "groupByLeague": "Group by league"
@@ -810,6 +810,7 @@
     },
     "topNLabel": "Number of picks",
     "topNAuto": "Auto",
+    "filtersLabel": "Filters",
     "groupByNone": "No grouping",
     "groupByLeague": "Group by league",
     "helpLink": "Edge and EV explained"

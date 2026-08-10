@@ -8,6 +8,7 @@ import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/
 import { groupByCompetition } from "@/lib/group-by-competition";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
+import { FiltersPopover } from "@/components/filters-popover";
 import { channelLabel } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
 
@@ -55,30 +56,38 @@ export function ChannelTabs({
   if (channelGroups.length === 0 || activeChannel === null) return null;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-      <ScrollableTabs
-        value={activeChannel}
-        onValueChange={setSelected}
-        items={channelGroups.map(({ channel, decisions }) => ({
-          value: channel,
-          label: (
-            <>
-              {channelLabel(channel, t)}
-              <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
-                {decisions.length}
-              </span>
-            </>
-          ),
-        }))}
-      />
-      <GroupBySelect
-        value={groupBy}
-        onChange={setGroupBy}
-        labels={{
-          none: t("filters.groupByNone"),
-          league: t("filters.groupByLeague"),
-        }}
-      />
+    <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1">
+        <ScrollableTabs
+          value={activeChannel}
+          onValueChange={setSelected}
+          items={channelGroups.map(({ channel, decisions }) => ({
+            value: channel,
+            label: (
+              <>
+                {channelLabel(channel, t)}
+                <span className="ml-1 tabular-nums text-[0.65rem] opacity-60">
+                  {decisions.length}
+                </span>
+              </>
+            ),
+          }))}
+        />
+      </div>
+      <FiltersPopover
+        label={t("filters.label")}
+        active={groupBy !== "none"}
+      >
+        <GroupBySelect
+          value={groupBy}
+          onChange={setGroupBy}
+          labels={{
+            none: t("filters.groupByNone"),
+            league: t("filters.groupByLeague"),
+          }}
+          className="w-full"
+        />
+      </FiltersPopover>
     </div>
   );
 }

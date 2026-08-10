@@ -1,62 +1,51 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Switch } from "@evcore/ui";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
 import { groupByCompetition } from "@/lib/group-by-competition";
 import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
-import { pickCount } from "./decision-helpers";
 import { MatchCard } from "./match-card";
 
-// Filter state for the "Par match" lens. Lifted into a hook so the filter
+// Grouping state for the "Par match" lens. Lifted into a hook so the filter
 // bar (pinned in a second page header, outside the scroll) and the scrolling
 // card grid can read the same state from different DOM regions. Channel
 // filtering lives in the dedicated "Par canal" lens, not here.
 export function useMatchLens(matches: ChannelDecisionMatchDto[]) {
-  const [onlyPicks, setOnlyPicks] = useState(false);
   const [groupBy, setGroupBy] = useState<GroupByMode>("none");
 
   // Chronological order (scheduledAt desc) comes straight from the API — no
-  // client-side re-sort. The "only picks" toggle narrows the day.
-  const visible = useMemo(() => {
-    return matches.filter((m) => !(onlyPicks && pickCount(m) === 0));
-  }, [matches, onlyPicks]);
-
-  return { onlyPicks, setOnlyPicks, groupBy, setGroupBy, visible };
+  // client-side re-sort or filtering here.
+  return { groupBy, setGroupBy, visible: matches };
 }
 
 export type MatchLensState = ReturnType<typeof useMatchLens>;
 
-// The "only picks" toggle + grouping select — rendered as direct siblings of
-// DateNav in the header row (same level as Investir's filters), not a
-// separate boxed panel.
-export function MatchFilters({
-  onlyPicks,
-  setOnlyPicks,
-  groupBy,
-  setGroupBy,
-}: MatchLensState) {
+// The grouping select — collapsed into a FiltersPopover (see
+// decisions-page-frame.tsx) instead of its own full-width row, which used to
+// push mobile users several screens' worth of chrome down before any match
+// content.
+export function MatchFilters({ groupBy, setGroupBy }: MatchLensState) {
   const t = useTranslations("decisions");
 
   return (
-    <Fragment>
-      <label className="flex w-full shrink-0 items-center gap-2 text-xs text-muted-foreground lg:w-auto">
-        <Switch checked={onlyPicks} onCheckedChange={setOnlyPicks} />
-        {t("filters.onlyPicks")}
-      </label>
-      <GroupBySelect
-        value={groupBy}
-        onChange={setGroupBy}
-        labels={{
-          none: t("filters.groupByNone"),
-          league: t("filters.groupByLeague"),
-        }}
-        className="w-full lg:w-auto lg:min-w-[190px]"
-      />
-    </Fragment>
+    <GroupBySelect
+      value={groupBy}
+      onChange={setGroupBy}
+      labels={{
+        none: t("filters.groupByNone"),
+        league: t("filters.groupByLeague"),
+      }}
+      className="w-full"
+    />
   );
+}
+
+// True when a non-default filter is set — drives the FiltersPopover's
+// active-state dot so collapsing the controls doesn't hide that state.
+export function hasActiveMatchFilters(state: MatchLensState): boolean {
+  return state.groupBy !== "none";
 }
 
 // The scrolling card grid for the "Par match" lens.

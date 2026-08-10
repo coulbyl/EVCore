@@ -152,7 +152,7 @@
     "evaluatedCount": "{count, plural, one {# autre canal évalué} other {# autres canaux évalués}}",
     "filters": {
       "all": "Tous",
-      "onlyPicks": "Avec pick seulement",
+      "label": "Filtres",
       "noMatch": "Aucun match ne correspond aux filtres.",
       "groupByNone": "Aucun groupement",
       "groupByLeague": "Grouper par ligue"
@@ -810,6 +810,7 @@
     },
     "topNLabel": "Nombre de picks",
     "topNAuto": "Auto",
+    "filtersLabel": "Filtres",
     "groupByNone": "Aucun groupement",
     "groupByLeague": "Grouper par ligue",
     "helpLink": "L'edge et l'EV expliqués"

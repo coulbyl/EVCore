@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   // manifest est auto-généré par app/manifest.ts — ne pas dupliquer ici
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "EVCore",
   },
   icons: {

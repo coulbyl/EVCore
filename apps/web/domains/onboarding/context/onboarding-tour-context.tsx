@@ -91,34 +91,62 @@ export function OnboardingTourProvider({
     );
     activeStepsRef.current = activeSteps;
 
+    // driver.js decides its own Next-vs-Done button (and which handler to
+    // fire) by checking whether the NEXT step's element already exists on
+    // the CURRENT page — a lookahead that has no idea we're about to
+    // router.push() there. Most transitions "happen" to pass that check by
+    // coincidence (global shell elements like Eva/the bell/account menu
+    // exist on every page), but the first transition onto a page-specific
+    // element that isn't the current page fails it — driver.js concludes
+    // "no next step" and fires onDoneClick instead of onNextClick, ending
+    // the tour early. Fix: both handlers below run the exact same logic,
+    // driven by OUR OWN activeStepsRef bounds — never driver.js's guess —
+    // and each step's popover.nextBtnText is set explicitly so the label
+    // matches our real "is this the last step" answer too.
+    const handleAdvance = (opts: { index?: number; driver: Driver }) => {
+      const nextIndex = (opts.index ?? 0) + 1;
+      const nextStep = activeStepsRef.current[nextIndex];
+      if (!nextStep) {
+        finish();
+        return;
+      }
+      if (nextStep.route && nextStep.route !== pathnameRef.current) {
+        router.push(nextStep.route);
+      }
+      opts.driver.moveNext();
+    };
+
     const instance = driver({
       allowClose: true,
       overlayColor: "#0d1520",
       overlayOpacity: 0.65,
       stagePadding: 6,
       stageRadius: 12,
-      nextBtnText: t("next"),
       prevBtnText: t("prev"),
-      doneBtnText: t("done"),
-      steps: activeSteps.map((step) => ({
+      steps: activeSteps.map((step, index) => ({
         element: step.selector ?? undefined,
         popover: {
           title: t(step.titleKey),
           description: t(step.descriptionKey),
+          nextBtnText:
+            index === activeSteps.length - 1 ? t("done") : t("next"),
+          // Same reasoning as nextBtnText: driver.js would otherwise
+          // disable "previous" based on its own current-page lookahead
+          // instead of our activeStepsRef bounds check in onPrevClick.
+          disableButtons: index === 0 ? (["previous"] as const) : [],
         },
         waitForElement: 2500,
         skipMissingElement: true,
       })),
       onCloseClick: () => finish(),
-      onDoneClick: () => finish(),
-      onNextClick: (_element, _step, opts) => {
-        const nextIndex = (opts.index ?? 0) + 1;
-        const nextRoute = activeStepsRef.current[nextIndex]?.route;
-        if (nextRoute && nextRoute !== pathnameRef.current) {
-          router.push(nextRoute);
-        }
-        opts.driver.moveNext();
-      },
+      // Safety net: driver.js's own internal skipMissingElement cascade can
+      // in theory run off the end of the steps array and self-destroy
+      // without going through any of our click handlers — make sure
+      // finish() (marking hasSeenOnboarding, cleaning up driverRef) still
+      // runs if that ever happens.
+      onDestroyStarted: () => finish(),
+      onDoneClick: (_element, _step, opts) => handleAdvance(opts),
+      onNextClick: (_element, _step, opts) => handleAdvance(opts),
       onPrevClick: (_element, _step, opts) => {
         const prevIndex = (opts.index ?? 0) - 1;
         if (prevIndex < 0) return;

@@ -21,6 +21,7 @@ import type { InvestmentMode } from "@/domains/investment/types/investment";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { FormationHelpLink } from "@/components/formation-help-link";
+import { FiltersPopover } from "@/components/filters-popover";
 import { cn } from "@evcore/ui";
 import { groupByCompetition } from "@/lib/group-by-competition";
 import { translateCountry } from "@/lib/competition-i18n";
@@ -104,40 +105,42 @@ export function InvestmentPageClient() {
           onChange={(next) => navigateTo({ mode: next })}
         />
         <PageHeaderActions className="w-full lg:w-auto">
-          <GroupBySelect
-            value={groupBy}
-            onChange={setGroupBy}
-            labels={{
-              none: t("groupByNone"),
-              league: t("groupByLeague"),
-            }}
-            className="w-full lg:w-auto lg:min-w-40"
-          />
-          <Select
-            value={topN === null ? "auto" : String(topN)}
-            onValueChange={(value) =>
-              navigateTo({ topN: value === "auto" ? null : Number(value) })
-            }
+          <FiltersPopover
+            label={t("filtersLabel")}
+            active={groupBy !== "none" || topN !== null}
           >
-            <SelectTrigger
-              aria-label={t("topNLabel")}
-              className="w-full lg:w-auto lg:min-w-28"
+            <GroupBySelect
+              value={groupBy}
+              onChange={setGroupBy}
+              labels={{
+                none: t("groupByNone"),
+                league: t("groupByLeague"),
+              }}
+              className="w-full"
+            />
+            <Select
+              value={topN === null ? "auto" : String(topN)}
+              onValueChange={(value) =>
+                navigateTo({ topN: value === "auto" ? null : Number(value) })
+              }
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">{t("topNAuto")}</SelectItem>
-              {TOP_N_OPTIONS.map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  Top {n}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger aria-label={t("topNLabel")} className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">{t("topNAuto")}</SelectItem>
+                {TOP_N_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    Top {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltersPopover>
           <DateNav
             date={date}
             onChange={(iso) => navigateTo({ date: iso })}
-            className="w-full lg:w-auto"
+            className="flex-1"
           />
           <FormationHelpLink
             slug="ev-probabilites-cotes"

@@ -25,7 +25,6 @@ export * from "./components/marker";
 export * from "./components/message";
 export * from "./components/message-scroller";
 export * from "./components/page";
-export * from "./components/page-shell";
 export * from "./components/pagination";
 export * from "./components/password-input";
 export * from "./components/progress-bar";

@@ -15,7 +15,6 @@
     "./styles/theme.css": "./src/styles/theme.css",
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/*": "./src/lib/*.ts",
-    "./page-shell": "./src/components/page-shell.tsx",
     "./section-header": "./src/components/section-header.tsx",
     "./stat-card": "./src/components/stat-card.tsx",
     "./top-nav": "./src/components/top-nav.tsx",
