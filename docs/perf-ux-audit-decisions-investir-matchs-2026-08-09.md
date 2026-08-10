@@ -16,7 +16,7 @@
 | Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Matchs corrigé** (scroll infini) — Décisions/Investir toujours non paginés côté frontend          | Moyenne                                        |
 | Inbox caché sur mobile, aucune notification in-app pour les messages support                  | **Notification in-app corrigée** (2026-08-09, `NotificationType.SUPPORT_MESSAGE`) — Inbox toujours absent de la nav mobile (§5.A, décision A1/A2 en attente) | Haute                                          |
 | Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant** — pas encore traité                                                        | Moyenne                                        |
-| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | **Notification in-app corrigée** (2026-08-09, `NotificationType.ANNOUNCEMENT_PUBLISHED`) — page historique + `AnnouncementRead` toujours à faire (§7.1/§7.2) | Haute (bloquant si tu multiplies les annonces) |
+| Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | ✅ **Corrigé** (2026-08-09) — page `/dashboard/updates`, modèle `AnnouncementRead`, notification in-app, entrée de nav avec badge | Haute (bloquant si tu multiplies les annonces) |
 | Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
 | Regroupement par ligue / mode d'affichage                                                     | Inexistant sur ces 3 pages, mais un précédent réutilisable existe (Track Record) — pas encore traité | Fonctionnalité à construire                    |
 | Latence au login — `scryptSync` bloquant l'event loop Node                                    | ✅ **Corrigé** (2026-08-09) — `crypto.scrypt` async, mêmes paramètres N/r/p/maxmem                  | Haute                                          |
@@ -266,6 +266,29 @@ Vérifié : aucun `ThrottlerModule`/`@Throttle` dans `apps/backend/src/modules/a
 
 Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (backtest per-league DRAW/BTTS de la Vague B/C) : la ligue russe `RUS1` affiche 0% de hit rate sur 22 paris DRAW réglés (ROI -100%), un écart bien plus extrême que les autres ligues à échantillon comparable. Jamais creusé plus loin — pourrait être un vrai signal (marché DRAW structurellement mauvais sur cette ligue), une anomalie de règlement (mapping fixture/score erroné côté ETL pour cette compétition), ou juste un petit échantillon malchanceux. À vérifier avant de faire confiance à `RUS1` dans n'importe quel canal, et avant d'étendre `DRAW_STAKED_LEAGUES`.
 
+### 7.4 Body HTML brut affiché dans `/dashboard/notifications` ✅ corrigé
+
+> **2026-08-09**, repéré en testant la vague 3 : `NotificationType.ANNOUNCEMENT_PUBLISHED`
+> stocke `Announcement.description` tel quel dans `Notification.body` — du
+> rich-text HTML produit par l'éditeur admin (`<p>...</p>`), jamais du texte
+> brut. `notifications-page-client.tsx` affichait ce body directement, donc
+> les balises apparaissaient en clair dans la liste. Corrigé côté frontend
+> uniquement (le body en base reste du HTML, potentiellement utile ailleurs) :
+> `NOTIFICATION_BODY_IS_HTML` masque le body pour ce type, remplacé par un
+> lien "Voir" (`NOTIFICATION_LINKS`) vers `/dashboard/updates` (et
+> `/dashboard/inbox` pour `SUPPORT_MESSAGE`, même mécanisme). Au passage :
+> ces deux nouveaux types n'avaient jamais été ajoutés à
+> `NOTIFICATION_SEVERITY` côté frontend (`domains/notification/types/notification.ts`)
+> — leur badge de sévérité était silencieusement absent (`undefined` sur un
+> `Record` typé, TypeScript ne l'aurait pas laissé passer avec `satisfies`
+> mais l'objet n'utilisait qu'une annotation de type). Ajoutés en `"low"`.
+>
+> **Non traité, à surveiller** : le push notification des annonces
+> (`AnnouncementsService.notifyPublished` → `PushService.sendToAllUsers`)
+> envoie aussi `announcement.description` brut comme corps de notification
+> navigateur — même défaut, pas encore corrigé, pré-existant (pas introduit
+> par la vague 3).
+
 ### 11.4 `settleProposal` — écritures séquentielles hors transaction
 
 `coupon-settlement.service.ts` (`settleProposal`) écrit chaque leg (`settleLeg`) puis le résultat final du coupon en séquence, sans transaction Prisma (`$transaction`) englobante. Risque faible en pratique — un crash à mi-chemin laisserait des legs réglés mais pas de résultat coupon final, rattrapable au prochain passage du cron (idempotent) — mais ça reste un état intermédiaire visible en base pendant une fenêtre courte. À noter, pas urgent.
@@ -277,7 +300,13 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 > **Suivi des vagues** — branche `fix/perf-ux-audit` (toutes les vagues de ce
 > chantier y sont empilées). Vague 1 (points 1-7) fermée le 2026-08-09,
 > commit `7e5d1854`. Vague 2 (points 8 [notifications seulement], 12, 16)
-> fermée le 2026-08-09, commit `66962691`.
+> fermée le 2026-08-09, commit `66962691`. Vague 3 (points 9-10) fermée le
+> 2026-08-09, commit `b5e76819` — au passage, entrée de nav ajoutée pour
+> `/dashboard/updates` (pinnée en sidebar, pas besoin d'attendre la
+> décision A1/A2 du point 11 puisque ça ne touche pas la barre mobile à 5
+> slots), et fix d'un bug découvert en testant : le body HTML des
+> annonces s'affichait brut dans `/dashboard/notifications` (balises
+> `<p>` visibles) — cf §7.4 ci-dessous.
 
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
 2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
@@ -287,9 +316,9 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 6. ~~`findByDate` → `DISTINCT ON` en SQL au lieu de dédup en mémoire (§1.1)~~ ✅ fait le 2026-08-09 (vague 1), même pattern que `investment-calibration.repository.ts`.
 7. ~~`FixtureScoringQueryDto.limit` → valeur par défaut forcée (§1.4)~~ ✅ fait le 2026-08-09 (vague 1) — `limit` par défaut 50 + `timeSlot` déplacé dans le `where` Prisma. `betStatus` **laissé en mémoire** (le join "dernier run / top-2 EV par fixture" est trop risqué à reproduire en SQL pour le gain, cf priorité "Basse" du §1.4). Effet de bord découvert et corrigé le même jour : le frontend Matchs n'avait jamais eu de vraie pagination (comptait sur "pas de `limit` = tout charger") — ajout d'un scroll infini (`useInfiniteQuery` + sentinel `IntersectionObserver`) dans `use-fixtures.ts`/`fixtures-table.tsx`, qui couvre une partie du point 15 pour cette page.
 8. ~~`NotificationType.SUPPORT_MESSAGE` + `NotificationType.ANNOUNCEMENT_PUBLISHED` (§5.B + §7.3)~~ ✅ fait le 2026-08-09 (vague 2) — les deux créent maintenant une vraie ligne `Notification` en plus du push/email existant. Migration Prisma lancée par toi le même jour.
-9. **Page "Annonces" côté utilisateur** (§7.1) — prérequis direct avant de multiplier les annonces, sinon les anciennes se perdent dès qu'une nouvelle les remplace en bannière.
-10. Modèle `AnnouncementRead` (§7.2) — remplace le `localStorage`, débloque un vrai compteur de non-lus.
-11. Décider A1 vs A2 pour la nav mobile (§5.A) — le slot "Plus" (A2) peut héberger Inbox ET Annonces d'un coup.
+9. ~~**Page "Annonces" côté utilisateur** (§7.1)~~ ✅ fait le 2026-08-09 (vague 3) — `/dashboard/updates`, filtre Toutes/Non lues, ouverture = marquage lu.
+10. ~~Modèle `AnnouncementRead` (§7.2)~~ ✅ fait le 2026-08-09 (vague 3) — remplace le `localStorage`, la bannière dashboard et la nouvelle page partagent le même état serveur. Migration lancée par toi le même jour.
+11. Décider A1 vs A2 pour la nav mobile (§5.A) — ne bloque plus Annonces (déjà accessible via la sidebar), reste pertinent pour Inbox sur la barre basse mobile à 5 slots.
 12. ~~Rate-limiting sur `/auth/login` (§11.2)~~ ✅ fait le 2026-08-09 (vague 2) — `@nestjs/throttler`, 5/60s par IP, scope limité à cette route.
 13. Clarifier le bug des onglets (§4) avant d'y toucher.
 14. Concevoir le regroupement par ligue + modes d'affichage (§3) — commencer par le dropdown pattern Track Record.
