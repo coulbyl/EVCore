@@ -152,7 +152,9 @@
     "filters": {
       "all": "All",
       "onlyPicks": "With pick only",
-      "noMatch": "No fixture matches the filters."
+      "noMatch": "No fixture matches the filters.",
+      "groupByNone": "No grouping",
+      "groupByLeague": "Group by league"
     }
   },
   "notifications": {
@@ -702,7 +704,9 @@
       "channelRoiFlag": "Channel with negative historical ROI"
     },
     "topNLabel": "Number of picks",
-    "topNAuto": "Auto"
+    "topNAuto": "Auto",
+    "groupByNone": "No grouping",
+    "groupByLeague": "Group by league"
   },
   "subscriptions": {
     "pageTitle": "Subscriptions",
