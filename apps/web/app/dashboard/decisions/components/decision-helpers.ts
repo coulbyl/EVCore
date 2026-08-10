@@ -95,9 +95,3 @@ export function hasConsensus(group: ChannelDecisionMatchDto): boolean {
       d.selections.length > 0,
   );
 }
-
-// Real market pick count — replaces the misleading API selectedCount, which
-// counted AVOID flags and double-counted the CONSENSUS meta-duplicate.
-export function pickCount(group: ChannelDecisionMatchDto): number {
-  return selectedPicks(group).length;
-}
