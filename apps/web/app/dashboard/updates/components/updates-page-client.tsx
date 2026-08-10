@@ -110,7 +110,9 @@ export function UpdatesPageClient() {
           </DialogHeader>
           <div className="border-t border-border" />
           <div className="max-h-[55vh] overflow-y-auto">
-            {selected ? <RichTextViewer content={selected.description} /> : null}
+            {selected ? (
+              <RichTextViewer content={selected.description} />
+            ) : null}
           </div>
           <div className="border-t border-border" />
           <DialogFooter>

@@ -23,6 +23,8 @@ export type LeagueSyncJobData = {
   competitionCode: string;
   leagueId: number;
   syncScope?: 'routine' | 'backfill';
+  // Only read by the 'fixtures' sync type — see FixturesSyncJobData.
+  lookaheadDays?: number;
 };
 
 const logger = createLogger('league-sync-worker');

@@ -77,6 +77,12 @@ export const ETL_CONSTANTS = {
   // fixture accumulates several snapshots before kickoff — this is what feeds
   // the line-movement shadow signal (one snapshot per fixture = no movement).
   ODDS_PREMATCH_HORIZON_DAYS: 3,
+  // Routine fixtures-sync is forward-only (no lookback — see
+  // backfillFixturesOnSeasonRollover in etl.service.ts for the season-start
+  // gap that lookback would otherwise be needed for). J+0 up to J+horizon
+  // keeps schedule changes (postponements, kickoff-time moves) fresh ahead
+  // of kickoff without a full season refetch every run.
+  FIXTURES_ROUTINE_LOOKAHEAD_DAYS: 3,
   // Alert (log + notification) when the daily request counter crosses this
   // share of the plan's quota. Read best-effort from /status after sync jobs.
   API_FOOTBALL_QUOTA_ALERT_RATIO: 0.8,

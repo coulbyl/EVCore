@@ -74,10 +74,7 @@ export function ChannelTabs({
           }))}
         />
       </div>
-      <FiltersPopover
-        label={t("filters.label")}
-        active={groupBy !== "none"}
-      >
+      <FiltersPopover label={t("filters.label")} active={groupBy !== "none"}>
         <GroupBySelect
           value={groupBy}
           onChange={setGroupBy}

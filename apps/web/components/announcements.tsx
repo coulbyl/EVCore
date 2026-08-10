@@ -38,10 +38,7 @@ export function Announcements({
   const markRead = useMarkAnnouncementRead();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const current = useMemo(
-    () => items.find((item) => !item.isRead),
-    [items],
-  );
+  const current = useMemo(() => items.find((item) => !item.isRead), [items]);
 
   function handleMarkAsRead() {
     if (!current) return;
