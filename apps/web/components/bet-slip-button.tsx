@@ -23,6 +23,7 @@ export function BetSlipButton() {
         type="button"
         onClick={open}
         title="Mon coupon"
+        data-tour="bet-slip-composer"
         className={cn(
           "relative flex size-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors md:size-auto md:min-h-11 md:gap-2 md:px-3",
           hasItems

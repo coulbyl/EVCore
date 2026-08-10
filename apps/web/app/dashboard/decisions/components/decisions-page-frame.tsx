@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Target } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Empty,
   EmptyDescription,
@@ -14,6 +15,7 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
+import { FormationHelpLink } from "@/components/formation-help-link";
 import { LensToggle, type DecisionsView } from "./lens-toggle";
 
 export function DecisionsPageFrame({
@@ -28,8 +30,8 @@ export function DecisionsPageFrame({
   onDateChange,
   view,
   onViewChange,
+  headerExtra,
   subHeader,
-  subHeaderMobileHidden = false,
 }: {
   children: React.ReactNode;
   contentScroll?: "page" | "child";
@@ -42,11 +44,15 @@ export function DecisionsPageFrame({
   onDateChange: (iso: string) => void;
   view: DecisionsView;
   onViewChange: (view: DecisionsView) => void;
+  // Small controls (e.g. the "only picks" switch + group-by select) inlined
+  // next to DateNav in the header row — same level as Investir's filters,
+  // instead of a separate boxed row below.
+  headerExtra?: React.ReactNode;
+  // Wider content (e.g. the channel tab strip) that needs its own row —
+  // kept as a distinct boxed panel below the header.
   subHeader?: React.ReactNode;
-  // Some lenses' sub-header (e.g. the "only picks" toggle) isn't worth the
-  // vertical space on small screens — hide the whole bar under `sm:`.
-  subHeaderMobileHidden?: boolean;
 }) {
+  const t = useTranslations("decisions");
   const pageOwnsScroll = contentScroll === "page";
 
   return (
@@ -54,20 +60,22 @@ export function DecisionsPageFrame({
       <PageHeader>
         <LensToggle view={view} onChange={onViewChange} />
         <PageHeaderActions className="w-full lg:w-auto">
+          {headerExtra}
           <DateNav
             date={date}
             onChange={onDateChange}
             className="w-full lg:w-auto"
           />
+          <FormationHelpLink
+            slug="comment-lire-un-pick"
+            label={t("helpLink")}
+            tourId="decisions-help"
+          />
         </PageHeaderActions>
       </PageHeader>
 
       {subHeader ? (
-        <div
-          className={`mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5 ${
-            subHeaderMobileHidden ? "hidden sm:block" : ""
-          }`}
-        >
+        <div className="mb-4 shrink-0 border border-border bg-panel-strong p-4 sm:mb-5">
           {subHeader}
         </div>
       ) : null}

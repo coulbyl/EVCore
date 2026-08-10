@@ -38,7 +38,10 @@ export function InboxPageClient() {
           emptyMessage="Écrivez-nous — on répond généralement en quelques heures."
           header={
             <>
-              <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <div
+                data-tour="inbox-thread"
+                className="flex items-center gap-3 border-b border-border px-4 py-3"
+              >
                 <UserAvatar
                   avatarUrl={null}
                   username="Équipe EVCore"

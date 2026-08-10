@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -19,7 +20,11 @@ import { useInvestmentPicks } from "@/domains/investment/use-cases/use-investmen
 import type { InvestmentMode } from "@/domains/investment/types/investment";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
+import { FormationHelpLink } from "@/components/formation-help-link";
 import { cn } from "@evcore/ui";
+import { groupByCompetition } from "@/lib/group-by-competition";
+import { translateCountry } from "@/lib/competition-i18n";
+import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { groupPicksByFixture } from "./investment-constants";
 import { InvestmentFixtureCard } from "./investment-fixture-card";
 import { InvestmentModeToggle } from "./investment-mode-toggle";
@@ -32,6 +37,7 @@ const VALID_MODES: InvestmentMode[] = [
   "btts",
   "goals",
   "draw",
+  "teamTotal",
 ];
 
 // DOMINANT/BTTS/GOALS have a negative aggregate settled ROI played solo
@@ -48,6 +54,8 @@ export function InvestmentPageClient() {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [groupBy, setGroupBy] = useState<GroupByMode>("none");
 
   const date = searchParams.get("date") ?? todayIso();
   const modeParam = searchParams.get("mode");
@@ -96,6 +104,15 @@ export function InvestmentPageClient() {
           onChange={(next) => navigateTo({ mode: next })}
         />
         <PageHeaderActions className="w-full lg:w-auto">
+          <GroupBySelect
+            value={groupBy}
+            onChange={setGroupBy}
+            labels={{
+              none: t("groupByNone"),
+              league: t("groupByLeague"),
+            }}
+            className="w-full lg:w-auto lg:min-w-40"
+          />
           <Select
             value={topN === null ? "auto" : String(topN)}
             onValueChange={(value) =>
@@ -121,6 +138,11 @@ export function InvestmentPageClient() {
             date={date}
             onChange={(iso) => navigateTo({ date: iso })}
             className="w-full lg:w-auto"
+          />
+          <FormationHelpLink
+            slug="ev-probabilites-cotes"
+            label={t("helpLink")}
+            tourId="investment-help"
           />
         </PageHeaderActions>
       </PageHeader>
@@ -164,14 +186,50 @@ export function InvestmentPageClient() {
 
             {!isLoading && !isError && picks.length > 0 && (
               <div className="columns-1 gap-4 pb-4 sm:columns-2 lg:columns-3">
-                {fixtureGroups.map((group) => (
-                  <div
-                    key={group.fixtureId}
-                    className="mb-4 break-inside-avoid"
-                  >
-                    <InvestmentFixtureCard group={group} locale={locale} />
-                  </div>
-                ))}
+                {groupBy === "none"
+                  ? fixtureGroups.map((group) => (
+                      <div
+                        key={group.fixtureId}
+                        className="mb-4 break-inside-avoid"
+                      >
+                        <InvestmentFixtureCard group={group} locale={locale} />
+                      </div>
+                    ))
+                  : groupByCompetition(
+                      fixtureGroups,
+                      (g) => g.competition ?? "—",
+                    ).map((competitionGroup) => (
+                      <Fragment key={competitionGroup.key}>
+                        <div className="mb-2 [column-span:all]">
+                          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            {competitionGroup.key}
+                            {competitionGroup.items[0]?.country && (
+                              <span className="ml-1.5 font-normal normal-case opacity-70">
+                                ·{" "}
+                                {translateCountry(
+                                  competitionGroup.items[0].country,
+                                  locale,
+                                )}
+                              </span>
+                            )}
+                            <span className="ml-1.5 font-normal opacity-60">
+                              ({competitionGroup.items.length})
+                            </span>
+                          </h3>
+                        </div>
+                        {competitionGroup.items.map((group) => (
+                          <div
+                            key={group.fixtureId}
+                            className="mb-4 break-inside-avoid"
+                          >
+                            <InvestmentFixtureCard
+                              group={group}
+                              locale={locale}
+                            />
+                          </div>
+                        ))}
+                      </Fragment>
+                    ))}
               </div>
             )}
           </div>

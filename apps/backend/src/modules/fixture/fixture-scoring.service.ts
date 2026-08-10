@@ -70,10 +70,20 @@ const TIME_SLOTS = {
   night: { start: 22, end: 23 },
 } as const;
 
-function matchesTimeSlot(date: Date, slot: keyof typeof TIME_SLOTS): boolean {
-  const hour = date.getUTCHours();
+// Absolute [start, end] bounds of a time slot on the given day, so the slot
+// can be applied as a `scheduledAt` bound in the Prisma `where` instead of
+// filtering fetched rows in memory.
+function timeSlotBounds(
+  date: Date,
+  slot: keyof typeof TIME_SLOTS,
+): { gte: Date; lte: Date } {
   const { start, end } = TIME_SLOTS[slot];
-  return hour >= start && hour <= end;
+  const dayStart = startOfUtcDay(date);
+  const gte = new Date(dayStart);
+  gte.setUTCHours(start, 0, 0, 0);
+  const lte = new Date(dayStart);
+  lte.setUTCHours(end, 59, 59, 999);
+  return { gte, lte };
 }
 
 // ---------------------------------------------------------------------------
@@ -129,8 +139,12 @@ export class FixtureScoringService {
     const { cursor, limit } = options;
     const usePagination = limit != null;
 
+    const scheduledAtBounds = filters.timeSlot
+      ? timeSlotBounds(date, filters.timeSlot)
+      : { gte: startOfUtcDay(date), lte: endOfUtcDay(date) };
+
     const baseWhere: Prisma.FixtureWhereInput = {
-      scheduledAt: { gte: startOfUtcDay(date), lte: endOfUtcDay(date) },
+      scheduledAt: scheduledAtBounds,
       ...(filters.status ? { status: filters.status as FixtureStatus } : {}),
       season: {
         competition: {
@@ -238,13 +252,7 @@ export class FixtureScoringService {
     const hasMore = usePagination && fixtures.length > limit;
     const fixturesPage = hasMore ? fixtures.slice(0, limit) : fixtures;
 
-    const filteredFixtures = filters.timeSlot
-      ? fixturesPage.filter((f) =>
-          matchesTimeSlot(f.scheduledAt, filters.timeSlot!),
-        )
-      : fixturesPage;
-
-    let rows: ScoredFixtureRow[] = filteredFixtures.map((f) => {
+    let rows: ScoredFixtureRow[] = fixturesPage.map((f) => {
       const run = f.modelRuns[0] ?? null;
       const bet =
         run?.bets.find(

@@ -141,6 +141,10 @@ enum NotificationType {
   // modèle Notification.
   SUBSCRIPTION_EVENTS_ADDED
   SUBSCRIPTION_SETTLED
+  SUPPORT_MESSAGE
+  // Broadcast (Notification.userId null) — voir OPERATOR_TYPES dans
+  // notification.service.ts.
+  ANNOUNCEMENT_PUBLISHED
 
   @@schema("public")
 }
@@ -518,6 +522,7 @@ model User {
   unitAmount                       Decimal?                @db.Decimal(12, 2)
   unitPercent                      Decimal?                @db.Decimal(5, 4)
   emailSupportNotificationsEnabled Boolean                 @default(true)
+  hasSeenOnboarding                Boolean                 @default(false)
   suspended                        Boolean                 @default(false)
   suspendedAt                      DateTime?
   sessions                         Session[]
@@ -528,6 +533,7 @@ model User {
   subscriptions                    Subscription[]
   contentProgress                  UserContentProgress[]
   announcements                    Announcement[]
+  announcementReads                AnnouncementRead[]
   badges                           UserBadge[]
   notificationReads                UserNotificationRead[]
   notifications                    Notification[]
@@ -576,21 +582,37 @@ model PasswordResetToken {
 }
 
 model Announcement {
-  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id          String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
   title       String
   description String
   href        String?
-  published   Boolean   @default(false)
+  published   Boolean            @default(false)
   publishedAt DateTime?
   expiresAt   DateTime?
-  createdById String?   @db.Uuid
-  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdById String?            @db.Uuid
+  createdBy   User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  reads       AnnouncementRead[]
 
   @@index([published, publishedAt])
   @@index([createdAt])
   @@map("announcement")
+  @@schema("public")
+}
+
+// Per-user read tracking for announcements — replaces the frontend
+// localStorage dismissed-ids store (doc perf-ux-audit §7.2): survives a
+// device change / cache clear, and makes a real unread counter possible.
+model AnnouncementRead {
+  userId         String       @db.Uuid
+  announcementId String       @db.Uuid
+  readAt         DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, announcementId])
+  @@map("announcement_read")
   @@schema("public")
 }
 

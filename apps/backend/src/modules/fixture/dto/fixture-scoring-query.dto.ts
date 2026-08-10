@@ -8,6 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { FIXTURE_SCORING_PAGINATION } from '@config/pagination.constants';
 
 export class FixtureScoringQueryDto {
   @IsOptional()
@@ -39,6 +40,6 @@ export class FixtureScoringQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
-  limit?: number;
+  @Max(FIXTURE_SCORING_PAGINATION.maxLimit)
+  limit: number = FIXTURE_SCORING_PAGINATION.defaultLimit;
 }

@@ -68,19 +68,29 @@ export function DecisionsPageClient() {
       hasData={hasData}
       isError={active.isError}
       isLoading={isLoading}
-      subHeaderMobileHidden={view === "matches"}
-      subHeader={
-        !hasData ? null : view === "matches" ? (
+      headerExtra={
+        !hasData || view !== "matches" ? null : (
           <MatchFilters {...matchLens} />
-        ) : (
+        )
+      }
+      subHeader={
+        !hasData || view !== "channels" ? null : (
           <ChannelTabs {...channelLens} />
         )
       }
     >
       {view === "matches" ? (
-        <MatchGrid visible={matchLens.visible} locale={locale} />
+        <MatchGrid
+          visible={matchLens.visible}
+          locale={locale}
+          groupBy={matchLens.groupBy}
+        />
       ) : (
-        <ChannelList activeGroup={channelLens.activeGroup} locale={locale} />
+        <ChannelList
+          activeGroup={channelLens.activeGroup}
+          locale={locale}
+          groupBy={channelLens.groupBy}
+        />
       )}
     </DecisionsPageFrame>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import {
@@ -14,39 +14,17 @@ import {
 } from "@evcore/ui";
 import { useTranslations } from "next-intl";
 import { RichTextViewer } from "./rich-text-viewer";
+import { useMarkAnnouncementRead } from "@/domains/announcements/use-cases/mark-announcement-read";
 
 type AnnouncementItem = {
   id: string;
   title: string;
   description: string;
   href?: string;
+  isRead: boolean;
 };
 
 export type { AnnouncementItem };
-
-const DISMISSED_STORAGE_KEY = "evcore:dashboard:announcements:dismissed:v1";
-
-type DismissedStore = { ids: string[] };
-
-function readDismissedIds(): string[] {
-  try {
-    const raw = localStorage.getItem(DISMISSED_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Partial<DismissedStore>;
-    return Array.isArray(parsed.ids)
-      ? parsed.ids.filter((id): id is string => typeof id === "string")
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeDismissedIds(ids: string[]): void {
-  localStorage.setItem(
-    DISMISSED_STORAGE_KEY,
-    JSON.stringify({ ids } satisfies DismissedStore),
-  );
-}
 
 export function Announcements({
   items,
@@ -57,38 +35,18 @@ export function Announcements({
 }) {
   const t = useTranslations("dashboard.announcements");
   const router = useRouter();
-  const [dismissed, setDismissed] = useState<Record<string, true>>({});
+  const markRead = useMarkAnnouncementRead();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const itemIds = new Set(items.map((item) => item.id));
-    const cleanedIds = readDismissedIds().filter((id) => itemIds.has(id));
-    writeDismissedIds(cleanedIds);
-    setDismissed(
-      Object.fromEntries(cleanedIds.map((id) => [id, true] as const)) as Record<
-        string,
-        true
-      >,
-    );
-  }, [items]);
-
-  const visible = useMemo(
-    () => items.filter((item) => !dismissed[item.id]),
-    [dismissed, items],
+  const current = useMemo(
+    () => items.find((item) => !item.isRead),
+    [items],
   );
-
-  const current = visible[0];
-
-  function dismiss(id: string) {
-    const nextIds = Array.from(new Set([...readDismissedIds(), id]));
-    writeDismissedIds(nextIds);
-    setDismissed((prev) => ({ ...prev, [id]: true }));
-  }
 
   function handleMarkAsRead() {
     if (!current) return;
     const href = current.href;
-    dismiss(current.id);
+    markRead.mutate(current.id);
     setDialogOpen(false);
     if (href) {
       router.push(href);

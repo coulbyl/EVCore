@@ -17,6 +17,7 @@ export function IndicesDrawerButton() {
         size="sm"
         onClick={() => setOpen(true)}
         className="h-7 gap-1.5 text-xs"
+        data-tour="fixtures-indices"
       >
         <BarChart2 size={12} />
         Indice de paris

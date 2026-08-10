@@ -16,6 +16,7 @@ const OPERATOR_TYPES: NotificationType[] = [
   NotificationType.ROI_ALERT,
   NotificationType.MARKET_SUSPENSION,
   NotificationType.WEEKLY_REPORT,
+  NotificationType.ANNOUNCEMENT_PUBLISHED,
 ];
 
 export type NotificationView = Omit<Notification, 'read' | 'readAt'> & {
@@ -208,6 +209,24 @@ export class NotificationService {
       payload: { ...payload },
     });
     await this.mail.sendMlModelActivated(payload);
+  }
+
+  // Broadcast (userId null) — mirrors AnnouncementsService's existing push
+  // notification, doesn't replace it: this is what makes a published
+  // announcement show up in the bell / `/dashboard/notifications` too,
+  // instead of only ever reaching users who already granted push permission.
+  async sendAnnouncementPublished(payload: {
+    announcementId: string;
+    title: string;
+    body: string;
+    href: string | null;
+  }): Promise<void> {
+    await this.save({
+      type: NotificationType.ANNOUNCEMENT_PUBLISHED,
+      title: payload.title,
+      body: payload.body,
+      payload: { announcementId: payload.announcementId, href: payload.href },
+    });
   }
 
   async list(query: {

@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   GraduationCap,
+  HelpCircle,
   LogOut,
+  Megaphone,
   MessageCircle,
   Repeat,
   Settings,
@@ -26,6 +28,7 @@ import { logout } from "@/domains/auth/use-cases/logout";
 import type { AuthSessionUser } from "@/domains/auth/types/auth";
 import { UserAvatar } from "@/components/user-avatar";
 import { useTranslations } from "next-intl";
+import { useOnboardingTour } from "@/domains/onboarding/context/onboarding-tour-context";
 
 export function AccountButton({
   currentUser,
@@ -36,6 +39,7 @@ export function AccountButton({
   const queryClient = useQueryClient();
   const tNav = useTranslations("nav");
   const tAuth = useTranslations("auth");
+  const { startTour } = useOnboardingTour();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -56,6 +60,7 @@ export function AccountButton({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-tour="account-menu-trigger"
           className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border/80 bg-panel-strong p-0.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           aria-label="Ouvrir le menu du compte"
         >
@@ -129,6 +134,15 @@ export function AccountButton({
               {tNav("formation")}
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            asChild
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+          >
+            <Link href="/dashboard/updates">
+              <Megaphone className="text-accent" />
+              {tNav("updates")}
+            </Link>
+          </DropdownMenuItem>
           {currentUser.role === "ADMIN" ? (
             <DropdownMenuItem
               asChild
@@ -148,6 +162,13 @@ export function AccountButton({
               <Settings className="text-accent" />
               {tNav("settings")}
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="rounded-xl focus:bg-accent/8 focus:text-foreground"
+            onSelect={() => startTour()}
+          >
+            <HelpCircle className="text-accent" />
+            {tNav("replayTour")}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

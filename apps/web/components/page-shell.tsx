@@ -208,7 +208,10 @@ export function PageShell({
           {topBanner}
           <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-5">
             <div className="flex min-w-0 items-center gap-2">
-              <SidebarTrigger className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground" />
+              <SidebarTrigger
+                data-tour="mobile-nav-trigger"
+                className="lg:hidden size-9 rounded-xl border border-border bg-panel-strong text-muted-foreground hover:bg-secondary hover:text-foreground"
+              />
               <Link
                 href="/dashboard"
                 className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 lg:hidden"

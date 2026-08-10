@@ -86,7 +86,10 @@ export default async function TrackRecordPage({
 
   return (
     <Page className="flex h-full flex-col">
-      <PageHeader className="flex-col items-start gap-2">
+      <PageHeader
+        data-tour="track-record-title"
+        className="flex-col items-start gap-2"
+      >
         <Badge variant="accent" className="w-fit">
           Historique vérifiable
         </Badge>

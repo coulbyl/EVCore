@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma.service';
 import { PushService } from '@modules/push/push.service';
+import { NotificationService } from '@modules/notification/notification.service';
 import type { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import type { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
@@ -20,6 +21,8 @@ export type AnnouncementView = {
     fullName: string;
   } | null;
 };
+
+export type UserAnnouncementView = AnnouncementView & { isRead: boolean };
 
 type AnnouncementRecord = {
   id: string;
@@ -43,6 +46,7 @@ export class AnnouncementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly push: PushService,
+    private readonly notification: NotificationService,
   ) {}
 
   private toView(announcement: AnnouncementRecord): AnnouncementView {
@@ -67,17 +71,28 @@ export class AnnouncementsService {
   }
 
   private async notifyPublished(
-    announcement: Pick<AnnouncementRecord, 'title' | 'description' | 'href'>,
+    announcement: Pick<
+      AnnouncementRecord,
+      'id' | 'title' | 'description' | 'href'
+    >,
     excludeUserId: string,
   ): Promise<void> {
-    await this.push.sendToAllUsers(
-      {
+    await Promise.all([
+      this.push.sendToAllUsers(
+        {
+          title: announcement.title,
+          body: announcement.description,
+          url: announcement.href ?? '/dashboard',
+        },
+        excludeUserId,
+      ),
+      this.notification.sendAnnouncementPublished({
+        announcementId: announcement.id,
         title: announcement.title,
         body: announcement.description,
-        url: announcement.href ?? '/dashboard',
-      },
-      excludeUserId,
-    );
+        href: announcement.href,
+      }),
+    ]);
   }
 
   private readonly baseSelect = {
@@ -111,6 +126,55 @@ export class AnnouncementsService {
     });
 
     return items.map((item) => this.toView(item));
+  }
+
+  // Same scope as listPublished, plus per-user read state (doc §7.1/§7.2) —
+  // powers the user-facing history page, replacing the localStorage
+  // dismissed-ids store the dashboard banner used to rely on alone.
+  async listPublishedForUser(userId: string): Promise<UserAnnouncementView[]> {
+    const now = new Date();
+    const items = await this.prisma.client.announcement.findMany({
+      where: {
+        published: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        ...this.baseSelect,
+        reads: { where: { userId }, select: { readAt: true } },
+      },
+    });
+
+    return items.map((item) => ({
+      ...this.toView(item),
+      isRead: item.reads.length > 0,
+    }));
+  }
+
+  async unreadCountForUser(userId: string): Promise<{ count: number }> {
+    const now = new Date();
+    const count = await this.prisma.client.announcement.count({
+      where: {
+        published: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        reads: { none: { userId } },
+      },
+    });
+    return { count };
+  }
+
+  async markRead(userId: string, announcementId: string): Promise<void> {
+    const exists = await this.prisma.client.announcement.findUnique({
+      where: { id: announcementId },
+      select: { id: true },
+    });
+    if (!exists) throw new NotFoundException('Announcement not found');
+
+    await this.prisma.client.announcementRead.upsert({
+      where: { userId_announcementId: { userId, announcementId } },
+      create: { userId, announcementId },
+      update: {},
+    });
   }
 
   async listAdmin(): Promise<AnnouncementView[]> {

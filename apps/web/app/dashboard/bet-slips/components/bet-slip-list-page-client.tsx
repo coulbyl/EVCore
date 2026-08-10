@@ -337,7 +337,10 @@ export function BetSlipListPageClient() {
 
   return (
     <Page className="flex h-full flex-col">
-      <PageContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5 ev-shell-shadow">
+      <PageContent
+        data-tour="bet-slips-summary"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5 ev-shell-shadow"
+      >
         <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[3fr_2fr] lg:grid-rows-1 lg:gap-5">
           <div className="flex min-h-0 flex-col gap-4">
             {filter}

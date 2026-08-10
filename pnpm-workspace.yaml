@@ -15,6 +15,7 @@ catalog:
   react: "^19.2.7"
   react-dom: "^19.2.7"
   lucide-react: "^0.577.0"
+  "driver.js": "^1.8.0"
   next: "16.2.9"
   "@types/react": "19.2.17"
   "@types/react-dom": "19.2.3"
@@ -75,6 +76,7 @@ catalog:
   # ETL & async
   "@nestjs/bullmq": "^11.0.4"
   "@nestjs/config": "^4.0.4"
+  "@nestjs/throttler": "^6.4.0"
   bullmq: "^5.78.0"
   ioredis: "^5.11.1"
   cheerio: "^1.2.0"

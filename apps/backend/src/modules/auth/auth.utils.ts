@@ -3,14 +3,39 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
+  scrypt,
   scryptSync,
   timingSafeEqual,
+  type ScryptOptions,
 } from 'node:crypto';
 import {
   AUTH_SESSION_COOKIE,
   AUTH_SESSION_TTL_MS,
   COOKIE_DOMAIN,
 } from './auth.constants';
+
+// Wraps node:crypto's callback-based scrypt so password hashing runs on
+// libuv's thread pool instead of blocking the event loop (unlike
+// scryptSync below) — see doc §8, latency under concurrent logins.
+function scryptDerive(input: {
+  password: string;
+  salt: string;
+  keylen: number;
+  options: ScryptOptions;
+}): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(
+      input.password,
+      input.salt,
+      input.keylen,
+      input.options,
+      (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      },
+    );
+  });
+}
 
 const SCRYPT_KEYLEN = 64;
 const SCRYPT_N = 32768;
@@ -22,18 +47,23 @@ export function normalizeIdentifier(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function hashPassword(password: string): string {
+export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, SCRYPT_KEYLEN, {
-    N: SCRYPT_N,
-    r: SCRYPT_R,
-    p: SCRYPT_P,
-    maxmem: SCRYPT_MAXMEM,
-  }).toString('hex');
+  const hash = (
+    await scryptDerive({
+      password,
+      salt,
+      keylen: SCRYPT_KEYLEN,
+      options: { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P, maxmem: SCRYPT_MAXMEM },
+    })
+  ).toString('hex');
   return `${SCRYPT_N}:${SCRYPT_R}:${SCRYPT_P}:${salt}:${hash}`;
 }
 
-export function verifyPassword(password: string, storedHash: string): boolean {
+export async function verifyPassword(
+  password: string,
+  storedHash: string,
+): Promise<boolean> {
   const parts = storedHash.split(':');
 
   let N: number;
@@ -61,12 +91,14 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   if (!salt || !expectedHash || !N || !r || !p) return false;
 
   const maxmem = 128 * N * r * p * 2;
-  const actualHash = scryptSync(password, salt, SCRYPT_KEYLEN, {
-    N,
-    r,
-    p,
-    maxmem,
-  }).toString('hex');
+  const actualHash = (
+    await scryptDerive({
+      password,
+      salt,
+      keylen: SCRYPT_KEYLEN,
+      options: { N, r, p, maxmem },
+    })
+  ).toString('hex');
   return timingSafeEqual(
     Buffer.from(actualHash, 'hex'),
     Buffer.from(expectedHash, 'hex'),

@@ -87,7 +87,7 @@ export class AuthService {
         email,
         username,
         fullName: input.fullName.trim(),
-        passwordHash: hashPassword(input.password),
+        passwordHash: await hashPassword(input.password),
         bio: input.bio?.trim() || null,
       },
       select: {
@@ -108,6 +108,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
 
@@ -145,12 +146,13 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
         passwordHash: true,
         suspended: true,
       },
     });
 
-    if (!user || !verifyPassword(input.password, user.passwordHash)) {
+    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
@@ -184,6 +186,7 @@ export class AuthService {
           unitPercent: user.unitPercent?.toString() ?? null,
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
+          hasSeenOnboarding: user.hasSeenOnboarding,
         },
       },
     };
@@ -227,6 +230,7 @@ export class AuthService {
             unitAmount: true,
             unitPercent: true,
             emailSupportNotificationsEnabled: true,
+            hasSeenOnboarding: true,
             suspended: true,
           },
         },
@@ -281,6 +285,9 @@ export class AuthService {
           emailSupportNotificationsEnabled:
             dto.emailSupportNotificationsEnabled,
         }),
+        ...(dto.hasSeenOnboarding !== undefined && {
+          hasSeenOnboarding: dto.hasSeenOnboarding,
+        }),
       },
       select: {
         id: true,
@@ -300,6 +307,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
     return this.toSessionUser(user);
@@ -503,6 +511,7 @@ export class AuthService {
       throw new BadRequestException('Lien invalide ou expiré');
     }
 
+    const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.client.$transaction([
       this.prisma.client.passwordResetToken.update({
         where: { id: record.id },
@@ -510,7 +519,7 @@ export class AuthService {
       }),
       this.prisma.client.user.update({
         where: { id: record.userId },
-        data: { passwordHash: hashPassword(dto.newPassword) },
+        data: { passwordHash },
       }),
       this.prisma.client.session.deleteMany({
         where: { userId: record.userId },
@@ -540,10 +549,11 @@ export class AuthService {
       throw new UnauthorizedException('Code TOTP invalide');
     }
 
+    const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.client.$transaction([
       this.prisma.client.user.update({
         where: { id: user.id },
-        data: { passwordHash: hashPassword(dto.newPassword) },
+        data: { passwordHash },
       }),
       this.prisma.client.session.deleteMany({
         where: { userId: user.id },
@@ -621,6 +631,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
 
@@ -697,6 +708,7 @@ export class AuthService {
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
     emailSupportNotificationsEnabled: boolean;
+    hasSeenOnboarding: boolean;
   }): AuthSessionUser {
     return {
       ...user,

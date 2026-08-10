@@ -28,6 +28,7 @@
     "audit": "Audit",
     "users": "Utilisateurs",
     "announcements": "Annonces",
+    "updates": "Annonces",
     "ml": "Moteur ML",
     "reports": "Rapports",
     "engine": "Moteur & ETL",
@@ -36,6 +37,7 @@
     "trackRecord": "Historique vérifiable",
     "notifications": "Notifications",
     "settings": "Paramètres",
+    "replayTour": "Revoir le guide",
     "help": "Aide",
     "summary": "Résumé sélections",
     "investmentSummary": "Résumé investissement",
@@ -151,8 +153,11 @@
     "filters": {
       "all": "Tous",
       "onlyPicks": "Avec pick seulement",
-      "noMatch": "Aucun match ne correspond aux filtres."
-    }
+      "noMatch": "Aucun match ne correspond aux filtres.",
+      "groupByNone": "Aucun groupement",
+      "groupByLeague": "Grouper par ligue"
+    },
+    "helpLink": "Comment lire une fiche"
   },
   "notifications": {
     "title": "Notifications",
@@ -177,6 +182,117 @@
       "high": "Critique",
       "medium": "Moyenne",
       "low": "Faible"
+    }
+  },
+  "updates": {
+    "title": "Annonces",
+    "subtitle": "Historique des annonces publiées par l'équipe EVCore.",
+    "empty": "Aucune annonce",
+    "emptyDescription": "Rien à signaler pour le moment.",
+    "unread": "Non lues",
+    "all": "Toutes",
+    "close": "Fermer",
+    "isRead": "Lu"
+  },
+  "onboarding": {
+    "next": "Suivant",
+    "prev": "Précédent",
+    "done": "Terminé",
+    "welcome": {
+      "title": "Bienvenue sur EVCore",
+      "description": "Un tour complet des pages et outils de l'app. Ferme-le à tout moment — tu pourras toujours le relancer depuis le menu de ton profil."
+    },
+    "mobileNav": {
+      "title": "Le menu complet",
+      "description": "Sur mobile, ce bouton ouvre le menu complet de navigation — toutes les sections y sont, même celles qui ne rentrent pas dans la barre du bas."
+    },
+    "dashboardFilter": {
+      "title": "Accueil — la période",
+      "description": "Ce filtre change la période affichée sur les cartes de performance et de classement ci-dessous."
+    },
+    "dashboardPerformance": {
+      "title": "Ta performance",
+      "description": "Tes stats de paris sur la période choisie — ROI, taux de réussite, volume."
+    },
+    "dashboardRanking": {
+      "title": "Classements",
+      "description": "Le classement des ligues par performance du moteur, et celui des utilisateurs les plus disciplinés."
+    },
+    "dashboardSubscriptions": {
+      "title": "Tes abonnements",
+      "description": "Un raccourci vers tes abonnements actifs — la mise virtuelle automatique dont on reparle plus loin dans ce tour."
+    },
+    "decisions": {
+      "title": "Décisions",
+      "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
+    },
+    "investment": {
+      "title": "Investir",
+      "description": "Tous les picks du jour classés par probabilité ou par EV, canal par canal. Le « ? » détaille comment l'edge et l'EV sont calculés."
+    },
+    "fixtures": {
+      "title": "Matchs",
+      "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
+    },
+    "coupons": {
+      "title": "Combinés",
+      "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
+    },
+    "betSlipComposer": {
+      "title": "Mon coupon",
+      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions ou Investir — ce bouton te suit partout dans l'app."
+    },
+    "betSlips": {
+      "title": "Mes coupons",
+      "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
+    },
+    "subscriptions": {
+      "title": "Abonnements",
+      "description": "Une discipline figée par abonnement — mise virtuelle automatique sur un canal ou un combiné, suivie sans que tu aies à y penser."
+    },
+    "bankroll": {
+      "title": "Portefeuille",
+      "description": "Ton solde, tes dépôts et ton ROI net — le suivi financier réel, indépendant des abonnements simulés."
+    },
+    "trackRecord": {
+      "title": "Historique vérifiable",
+      "description": "Ce que le moteur a réellement produit, canal par canal — jamais un échantillon trié, un canal négatif reste affiché comme tel."
+    },
+    "formation": {
+      "title": "Formation",
+      "description": "Des articles courts sur la stratégie de paris — probabilités implicites, unité de mise, variance, canaux. À consulter à ton rythme."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "description": "Une messagerie directe avec l'équipe EVCore, pour tes questions ou retours."
+    },
+    "updates": {
+      "title": "Annonces",
+      "description": "L'historique des annonces publiées par l'équipe — jamais perdu même si tu as fermé la bannière du dashboard."
+    },
+    "evaFab": {
+      "title": "Eva",
+      "description": "Ton assistante d'analyse — pose-lui une question sur un match ou une période, elle répond avec les données du moteur. Appui long pour la masquer."
+    },
+    "pageSearchFab": {
+      "title": "Recherche dans la page",
+      "description": "Cherche un texte directement dans la page affichée — pratique sur une longue liste de matchs. Masquée par défaut, appui long pour la cacher à nouveau."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Alertes de performance et annonces de l'équipe apparaissent ici — toujours accessible, où que tu sois dans l'app."
+    },
+    "accountMenu": {
+      "title": "Ton menu de profil",
+      "description": "Portefeuille, Inbox, Abonnements, Formation, Annonces et Paramètres — tout ce qu'on vient de voir est aussi accessible d'ici."
+    },
+    "profileBadges": {
+      "title": "Profil et badges",
+      "description": "Ton profil et les badges débloqués en cours de route — assiduité, discipline, volume de paris."
+    },
+    "accountSettings": {
+      "title": "Paramètres",
+      "description": "Apparence, langue, notifications, préférences de bankroll et sécurité — tout se règle depuis ces onglets."
     }
   },
   "formation": {
@@ -659,7 +775,8 @@
     "pageTitle": "Propositions",
     "empty": "Aucun coupon généré pour cette date.",
     "loadError": "Impossible de charger les propositions de coupons.",
-    "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers."
+    "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
+    "helpLink": "La carte des canaux"
   },
   "investment": {
     "pageTitle": "Investir",
@@ -671,7 +788,8 @@
       "dominant": "Picks du canal Victoire, classés par probabilité — ROI historique négatif en position solo (-23%), à considérer avec prudence.",
       "btts": "Picks du canal BB, classés par probabilité — ROI historique négatif en position solo (-37%), à considérer avec prudence.",
       "goals": "Picks du canal Buts, classés par probabilité — ROI historique négatif en position solo (-26%), à considérer avec prudence.",
-      "draw": "Picks du canal Nul, classés par probabilité de réussite."
+      "draw": "Picks du canal Nul, classés par probabilité de réussite.",
+      "teamTotal": "Picks du canal Buts par équipe, classés par probabilité de réussite."
     },
     "empty": "Aucun pick disponible pour cette date.",
     "loadError": "Impossible de charger les picks.",
@@ -691,7 +809,10 @@
       "channelRoiFlag": "Canal à ROI historique négatif"
     },
     "topNLabel": "Nombre de picks",
-    "topNAuto": "Auto"
+    "topNAuto": "Auto",
+    "groupByNone": "Aucun groupement",
+    "groupByLeague": "Grouper par ligue",
+    "helpLink": "L'edge et l'EV expliqués"
   },
   "subscriptions": {
     "pageTitle": "Abonnements",

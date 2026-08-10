@@ -13,7 +13,11 @@ import {
 } from "@react-email/components";
 import { type PropsWithChildren } from "react";
 import { palette } from "./palette";
-import { EVCORE_LOGO_DATA_URI } from "./logo";
+
+// Hosted URL instead of an inlined data: URI — many mail clients (Gmail
+// webmail, corporate security gateways in particular) strip base64-encoded
+// images embedded directly in the HTML, so the logo never rendered.
+const EVCORE_LOGO_URL = "https://c-evcore.com/icons/icon-192.png";
 
 const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -85,7 +89,7 @@ export function EvCoreLayout({ preview, children }: EvCoreLayoutProps) {
             <Row>
               <Column style={{ width: "36px" }}>
                 <Img
-                  src={EVCORE_LOGO_DATA_URI}
+                  src={EVCORE_LOGO_URL}
                   alt="EVCore"
                   width="36"
                   height="36"

@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { CurrentSession } from './current-session.decorator';
 import { AuthSessionGuard } from './auth-session.guard';
@@ -41,6 +42,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response,
