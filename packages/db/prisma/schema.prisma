@@ -522,6 +522,7 @@ model User {
   unitAmount                       Decimal?                @db.Decimal(12, 2)
   unitPercent                      Decimal?                @db.Decimal(5, 4)
   emailSupportNotificationsEnabled Boolean                 @default(true)
+  hasSeenOnboarding                Boolean                 @default(false)
   suspended                        Boolean                 @default(false)
   suspendedAt                      DateTime?
   sessions                         Session[]

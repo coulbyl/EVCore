@@ -38,7 +38,11 @@ export function CouponsPageClient() {
             onChange={navigateTo}
             className="w-full lg:w-auto"
           />
-          <FormationHelpLink slug="channels-overview" label={t("helpLink")} />
+          <FormationHelpLink
+            slug="channels-overview"
+            label={t("helpLink")}
+            tourId="coupons-help"
+          />
         </PageHeaderActions>
       </PageHeader>
 

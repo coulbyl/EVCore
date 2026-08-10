@@ -37,6 +37,7 @@
     "trackRecord": "Track record",
     "notifications": "Notifications",
     "settings": "Settings",
+    "replayTour": "Replay guide",
     "help": "Help",
     "summary": "Selections summary",
     "investmentSummary": "Investment summary",
@@ -192,6 +193,31 @@
     "all": "All",
     "close": "Close",
     "isRead": "Read"
+  },
+  "onboarding": {
+    "next": "Next",
+    "prev": "Previous",
+    "done": "Done",
+    "welcome": {
+      "title": "Welcome to EVCore",
+      "description": "A quick tour of the key pages — Decisions, Investment, Bet slips, and notifications. 5 steps, close it anytime."
+    },
+    "decisions": {
+      "title": "Decisions",
+      "description": "Every match of the day, with what each channel thinks. The \"?\" button here explains how to read a pick anytime."
+    },
+    "investment": {
+      "title": "Investment",
+      "description": "All of today's picks ranked by probability or EV, channel by channel. The \"?\" breaks down how edge and EV are calculated."
+    },
+    "coupons": {
+      "title": "Bet slips",
+      "description": "Combos generated automatically from the best picks. The \"?\" opens the channel reliability map for what's being combined."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Performance alerts and team announcements show up here — always reachable, wherever you are in the app."
+    }
   },
   "formation": {
     "label": "Training",

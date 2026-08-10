@@ -54,4 +54,8 @@ export class UpdateMeDto {
   @IsOptional()
   @IsBoolean()
   emailSupportNotificationsEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasSeenOnboarding?: boolean;
 }

@@ -27,6 +27,7 @@
     "@tiptap/starter-kit": "catalog:",
     "canvas-confetti": "^1.9.4",
     "date-fns": "catalog:",
+    "driver.js": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",

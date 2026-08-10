@@ -142,6 +142,7 @@ export function InvestmentPageClient() {
           <FormationHelpLink
             slug="ev-probabilites-cotes"
             label={t("helpLink")}
+            tourId="investment-help"
           />
         </PageHeaderActions>
       </PageHeader>

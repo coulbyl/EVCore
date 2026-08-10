@@ -108,6 +108,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
 
@@ -145,6 +146,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
         passwordHash: true,
         suspended: true,
       },
@@ -184,6 +186,7 @@ export class AuthService {
           unitPercent: user.unitPercent?.toString() ?? null,
           emailSupportNotificationsEnabled:
             user.emailSupportNotificationsEnabled,
+          hasSeenOnboarding: user.hasSeenOnboarding,
         },
       },
     };
@@ -227,6 +230,7 @@ export class AuthService {
             unitAmount: true,
             unitPercent: true,
             emailSupportNotificationsEnabled: true,
+            hasSeenOnboarding: true,
             suspended: true,
           },
         },
@@ -281,6 +285,9 @@ export class AuthService {
           emailSupportNotificationsEnabled:
             dto.emailSupportNotificationsEnabled,
         }),
+        ...(dto.hasSeenOnboarding !== undefined && {
+          hasSeenOnboarding: dto.hasSeenOnboarding,
+        }),
       },
       select: {
         id: true,
@@ -300,6 +307,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
     return this.toSessionUser(user);
@@ -623,6 +631,7 @@ export class AuthService {
         unitAmount: true,
         unitPercent: true,
         emailSupportNotificationsEnabled: true,
+        hasSeenOnboarding: true,
       },
     });
 
@@ -699,6 +708,7 @@ export class AuthService {
     unitAmount: Prisma.Decimal | null;
     unitPercent: Prisma.Decimal | null;
     emailSupportNotificationsEnabled: boolean;
+    hasSeenOnboarding: boolean;
   }): AuthSessionUser {
     return {
       ...user,

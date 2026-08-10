@@ -69,6 +69,7 @@ export function DecisionsPageFrame({
           <FormationHelpLink
             slug="comment-lire-un-pick"
             label={t("helpLink")}
+            tourId="decisions-help"
           />
         </PageHeaderActions>
       </PageHeader>

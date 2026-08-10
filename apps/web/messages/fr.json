@@ -37,6 +37,7 @@
     "trackRecord": "Historique vérifiable",
     "notifications": "Notifications",
     "settings": "Paramètres",
+    "replayTour": "Revoir le guide",
     "help": "Aide",
     "summary": "Résumé sélections",
     "investmentSummary": "Résumé investissement",
@@ -192,6 +193,31 @@
     "all": "Toutes",
     "close": "Fermer",
     "isRead": "Lu"
+  },
+  "onboarding": {
+    "next": "Suivant",
+    "prev": "Précédent",
+    "done": "Terminé",
+    "welcome": {
+      "title": "Bienvenue sur EVCore",
+      "description": "Un tour rapide pour repérer les pages clés — Décisions, Investir, Combinés et les notifications. 5 étapes, tu peux fermer à tout moment."
+    },
+    "decisions": {
+      "title": "Décisions",
+      "description": "Chaque match du jour, avec ce que les canaux en pensent. Le bouton « ? » ici t'explique comment lire une fiche à tout moment."
+    },
+    "investment": {
+      "title": "Investir",
+      "description": "Tous les picks du jour classés par probabilité ou par EV, canal par canal. Le « ? » détaille comment l'edge et l'EV sont calculés."
+    },
+    "coupons": {
+      "title": "Combinés",
+      "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Alertes de performance et annonces de l'équipe apparaissent ici — toujours accessible, où que tu sois dans l'app."
+    }
   },
   "formation": {
     "label": "Formation",
