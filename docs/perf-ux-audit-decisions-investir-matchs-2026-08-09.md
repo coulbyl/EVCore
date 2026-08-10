@@ -15,7 +15,7 @@
 | Filtres `timeSlot`/`betStatus` appliqués après le fetch (Matchs)                              | ✅ **`timeSlot` corrigé** (borne SQL sur `scheduledAt`) — `betStatus` **laissé en mémoire** (risque de réécrire le join "dernier run / top-2 EV" pour un gain jugé trop faible vs le risque) | Basse (sauf si pas de `limit`)                 |
 | Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Matchs corrigé** (scroll infini) — Décisions/Investir toujours non paginés côté frontend          | Moyenne                                        |
 | Inbox caché sur mobile, aucune notification in-app pour les messages support                  | ✅ **Corrigé** (2026-08-09) — Inbox remplace Formation dans la barre basse mobile (§5.A) ; notification in-app déjà faite en vague 2 | Haute                                          |
-| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Quick-win fait** (2026-08-09, pont Formation) — tour guidé toujours à cadrer (lib choisie : driver.js) | Moyenne                                        |
+| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | ✅ **Corrigé** (2026-08-09) — quick-win + tour guidé driver.js (5 étapes), rejouable depuis le popover compte | Moyenne                                        |
 | Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | ✅ **Corrigé** (2026-08-09) — page `/dashboard/updates`, modèle `AnnouncementRead`, notification in-app, entrée de nav avec badge | Haute (bloquant si tu multiplies les annonces) |
 | Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
 | Regroupement par ligue / mode d'affichage                                                     | ✅ **Regroupement fait** (2026-08-09) — sélecteur Aucun/Ligue sur Décisions (Par match + Par canal) et Investir, pattern Track Record. Toggle Liste/Grille **laissé de côté** (chantier séparé, pas de vue liste existante) | Fonctionnalité à construire                    |
@@ -221,9 +221,22 @@ L'item **Inbox** (`/dashboard/inbox`, icône `MessageCircle`, badge `inboxUnread
 > react-joyride — agnostique du framework donc pas de risque de retard de
 > compat sur React 19/Next 16, plus léger, et son API config-objet suffit
 > pour un tour plat en 5-6 étapes (pas besoin du JSX par étape de
-> react-joyride). Reste à cadrer : les étapes exactes, le flag
-> `hasSeenOnboarding` (migration Prisma), le point d'entrée "Revoir le
-> guide" depuis le profil.
+> react-joyride).
+>
+> **2026-08-10 — point 2 fait.** Tour guidé driver.js, 5 étapes : Bienvenue
+> (pas d'élément ciblé) → Décisions → Investir → Coupons → cloche de
+> notifications. Chaque étape "page" cible le lien "?" Formation posé au
+> point 1 (toujours rendu, contrairement à une carte de pick/coupon qui
+> peut être absente selon l'heure) — un seul `driver()` persistant pour
+> les 5 étapes, `onNextClick`/`onPrevClick` poussent la route puis
+> laissent le `waitForElement`/`skipMissingElement` propre à driver.js
+> récupérer la cible une fois la nouvelle page montée (vérifié dans le
+> code source de la lib, pas juste ses types, que `waitForElement`
+> re-sonde bien via un `MutationObserver` plutôt qu'un check unique).
+> `User.hasSeenOnboarding` (migration lancée par toi) déclenche le tour
+> automatiquement à la première visite ; fermer le tour en cours de route
+> compte comme "vu" (pas de re-nag au login suivant), rejouable à volonté
+> via "Revoir le guide" dans le popover compte.
 
 ---
 
@@ -385,6 +398,10 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 > 2026-08-09 : point 15 sans code (voir §2, Investir déjà borné, Décisions
 > pas de vrai problème mesuré) ; point 11 avec code (voir §5, nav mobile —
 > Inbox remplace Formation, Formation + Annonces dans le popover compte).
+> Vague 5 (points 13-14) fermée le 2026-08-09 : bug des onglets identifié
+> (§4, c'était en fait le bug `teamTotal`) et regroupement par ligue
+> ajouté (§3). Vague 6 (point 17, onboarding) fermée le 2026-08-10 —
+> **dernière vague, tous les points du §10 sont clos.**
 
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
 2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
@@ -402,4 +419,4 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 14. ~~Concevoir le regroupement par ligue + modes d'affichage (§3)~~ ✅ regroupement fait le 2026-08-09 (vague 5) — dropdown pattern Track Record. Toggle Liste/Grille laissé de côté (voir §3).
 15. ~~Pagination/virtualisation frontend (§2)~~ Matchs fait (cf point 7). Décisions/Investir **fermés sans code** le 2026-08-09 (vague 4) — Investir déjà borné à 15 picks/mode, Décisions borné à une journée, pas de problème mesuré aujourd'hui. À rouvrir si une lenteur réelle est constatée.
 16. ~~Investiguer l'anomalie `RUS1` DRAW (§11.3)~~ ✅ fait le 2026-08-09 (vague 2) — pas un signal de ligue, un bug de comptage dans le script de backtest (repasses d'analyse comptées comme paris indépendants). Corrigé, n global DRAW révisé 4838 → 3735.
-17. Onboarding (§6) — ~~quick-win (pont Formation)~~ ✅ fait le 2026-08-09 (vague 6). Tour guidé : lib choisie (driver.js), reste à cadrer (étapes, `hasSeenOnboarding`, "Revoir le guide").
+17. ~~Onboarding (§6)~~ ✅ fait — quick-win le 2026-08-09 (vague 6), tour guidé driver.js le 2026-08-10 (5 étapes, `hasSeenOnboarding`, "Revoir le guide"). Dernier point du §10, chantier fermé.
