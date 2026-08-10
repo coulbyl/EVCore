@@ -684,7 +684,8 @@
       "dominant": "Picks du canal Victoire, classés par probabilité — ROI historique négatif en position solo (-23%), à considérer avec prudence.",
       "btts": "Picks du canal BB, classés par probabilité — ROI historique négatif en position solo (-37%), à considérer avec prudence.",
       "goals": "Picks du canal Buts, classés par probabilité — ROI historique négatif en position solo (-26%), à considérer avec prudence.",
-      "draw": "Picks du canal Nul, classés par probabilité de réussite."
+      "draw": "Picks du canal Nul, classés par probabilité de réussite.",
+      "teamTotal": "Picks du canal Buts par équipe, classés par probabilité de réussite."
     },
     "empty": "Aucun pick disponible pour cette date.",
     "loadError": "Impossible de charger les picks.",

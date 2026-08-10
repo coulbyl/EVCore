@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Switch } from "@evcore/ui";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
@@ -28,8 +28,9 @@ export function useMatchLens(matches: ChannelDecisionMatchDto[]) {
 
 export type MatchLensState = ReturnType<typeof useMatchLens>;
 
-// The "only picks" toggle + grouping select. Lives in the pinned sub-header
-// so it stays visible while the cards scroll underneath.
+// The "only picks" toggle + grouping select — rendered as direct siblings of
+// DateNav in the header row (same level as Investir's filters), not a
+// separate boxed panel.
 export function MatchFilters({
   onlyPicks,
   setOnlyPicks,
@@ -39,8 +40,8 @@ export function MatchFilters({
   const t = useTranslations("decisions");
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-      <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+    <Fragment>
+      <label className="flex w-full shrink-0 items-center gap-2 text-xs text-muted-foreground lg:w-auto">
         <Switch checked={onlyPicks} onCheckedChange={setOnlyPicks} />
         {t("filters.onlyPicks")}
       </label>
@@ -51,8 +52,9 @@ export function MatchFilters({
           none: t("filters.groupByNone"),
           league: t("filters.groupByLeague"),
         }}
+        className="w-full lg:w-auto lg:min-w-[190px]"
       />
-    </div>
+    </Fragment>
   );
 }
 

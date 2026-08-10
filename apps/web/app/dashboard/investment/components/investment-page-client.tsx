@@ -35,6 +35,7 @@ const VALID_MODES: InvestmentMode[] = [
   "btts",
   "goals",
   "draw",
+  "teamTotal",
 ];
 
 // DOMINANT/BTTS/GOALS have a negative aggregate settled ROI played solo

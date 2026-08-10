@@ -28,6 +28,7 @@ export function DecisionsPageFrame({
   onDateChange,
   view,
   onViewChange,
+  headerExtra,
   subHeader,
 }: {
   children: React.ReactNode;
@@ -41,6 +42,12 @@ export function DecisionsPageFrame({
   onDateChange: (iso: string) => void;
   view: DecisionsView;
   onViewChange: (view: DecisionsView) => void;
+  // Small controls (e.g. the "only picks" switch + group-by select) inlined
+  // next to DateNav in the header row — same level as Investir's filters,
+  // instead of a separate boxed row below.
+  headerExtra?: React.ReactNode;
+  // Wider content (e.g. the channel tab strip) that needs its own row —
+  // kept as a distinct boxed panel below the header.
   subHeader?: React.ReactNode;
 }) {
   const pageOwnsScroll = contentScroll === "page";
@@ -50,6 +57,7 @@ export function DecisionsPageFrame({
       <PageHeader>
         <LensToggle view={view} onChange={onViewChange} />
         <PageHeaderActions className="w-full lg:w-auto">
+          {headerExtra}
           <DateNav
             date={date}
             onChange={onDateChange}

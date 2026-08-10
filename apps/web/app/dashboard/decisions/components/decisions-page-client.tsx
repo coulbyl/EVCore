@@ -68,10 +68,13 @@ export function DecisionsPageClient() {
       hasData={hasData}
       isError={active.isError}
       isLoading={isLoading}
-      subHeader={
-        !hasData ? null : view === "matches" ? (
+      headerExtra={
+        !hasData || view !== "matches" ? null : (
           <MatchFilters {...matchLens} />
-        ) : (
+        )
+      }
+      subHeader={
+        !hasData || view !== "channels" ? null : (
           <ChannelTabs {...channelLens} />
         )
       }
