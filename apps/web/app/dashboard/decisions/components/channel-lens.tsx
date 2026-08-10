@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { ScrollableTabs } from "@/components/scrollable-tabs";
 import type { ChannelDecisionChannelGroupDto } from "@/domains/channel-decision/types/channel-decision";
 import { groupByCompetition } from "@/lib/group-by-competition";
+import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { channelLabel } from "./channel-constants";
 import { ChannelSelectionRow } from "./channel-selection-row";
@@ -125,6 +126,11 @@ export function ChannelList({
         <section key={competitionGroup.key} className="flex flex-col gap-3">
           <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {competitionGroup.key}
+            {competitionGroup.items[0]?.country && (
+              <span className="ml-1.5 font-normal normal-case opacity-70">
+                · {translateCountry(competitionGroup.items[0].country, locale)}
+              </span>
+            )}
             <span className="ml-1.5 font-normal opacity-60">
               ({competitionGroup.items.length})
             </span>

@@ -22,6 +22,7 @@ import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
 import { cn } from "@evcore/ui";
 import { groupByCompetition } from "@/lib/group-by-competition";
+import { translateCountry } from "@/lib/competition-i18n";
 import { GroupBySelect, type GroupByMode } from "@/components/group-by-select";
 import { groupPicksByFixture } from "./investment-constants";
 import { InvestmentFixtureCard } from "./investment-fixture-card";
@@ -196,6 +197,15 @@ export function InvestmentPageClient() {
                         <div className="mb-2 [column-span:all]">
                           <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                             {competitionGroup.key}
+                            {competitionGroup.items[0]?.country && (
+                              <span className="ml-1.5 font-normal normal-case opacity-70">
+                                ·{" "}
+                                {translateCountry(
+                                  competitionGroup.items[0].country,
+                                  locale,
+                                )}
+                              </span>
+                            )}
                             <span className="ml-1.5 font-normal opacity-60">
                               ({competitionGroup.items.length})
                             </span>

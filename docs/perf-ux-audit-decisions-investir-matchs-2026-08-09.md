@@ -18,7 +18,7 @@
 | Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant** — pas encore traité                                                        | Moyenne                                        |
 | Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | ✅ **Corrigé** (2026-08-09) — page `/dashboard/updates`, modèle `AnnouncementRead`, notification in-app, entrée de nav avec badge | Haute (bloquant si tu multiplies les annonces) |
 | Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
-| Regroupement par ligue / mode d'affichage                                                     | Inexistant sur ces 3 pages, mais un précédent réutilisable existe (Track Record) — pas encore traité | Fonctionnalité à construire                    |
+| Regroupement par ligue / mode d'affichage                                                     | ✅ **Regroupement fait** (2026-08-09) — sélecteur Aucun/Ligue sur Décisions (Par match + Par canal) et Investir, pattern Track Record. Toggle Liste/Grille **laissé de côté** (chantier séparé, pas de vue liste existante) | Fonctionnalité à construire                    |
 | Latence au login — `scryptSync` bloquant l'event loop Node                                    | ✅ **Corrigé** (2026-08-09) — `crypto.scrypt` async, mêmes paramètres N/r/p/maxmem                  | Haute                                          |
 | Email reset password → localhost en prod                                                      | ✅ **Corrigé** (`APP_URL` ajoutée en prod le 2026-08-09 — à vérifier après redéploiement/restart)   | —                                              |
 | Logo EVCore invisible dans les emails transactionnels                                         | ✅ **Corrigé** (2026-08-09) — URL hébergée (`https://c-evcore.com/icons/icon-192.png`) au lieu du data URI | Moyenne                                        |
@@ -100,6 +100,28 @@ Aucune des 3 pages ne groupe par ligue aujourd'hui — liste plate partout (par 
 - Un sélecteur "Grouper par : Aucun / Ligue" (dropdown, pattern Track Record) au-dessus de la liste
 - Un toggle "Vue : Liste / Grille" indépendant du regroupement
 - Groupement par ligue = simple `groupBy(competition.name)` côté client sur les données déjà chargées (pas de nouvel appel API) tant que la pagination n'est pas en place ; à revoir si on passe à une pagination serveur
+
+> **2026-08-09 — regroupement fait, toggle vue laissé de côté.** Sélecteur
+> "Grouper par : Aucun / Ligue" ajouté sur Décisions (Par match + Par
+> canal) et Investir — `groupByCompetition` (`apps/web/lib/group-by-competition.ts`)
+> + `GroupBySelect` (`apps/web/components/group-by-select.tsx`) partagés
+> par les 3 emplacements, groupby 100% client sur les données déjà
+> chargées, aucun nouvel appel API. Le toggle Liste/Grille n'a pas été
+> fait : aucune des deux pages n'a de vue liste existante à activer, il
+> faudrait la construire de zéro — chantier séparé si besoin.
+>
+> **Effets de bord découverts en testant** :
+> - Décisions "Par match" cachait tout son bandeau de filtres (dont le
+>   nouveau sélecteur) sur mobile (`subHeaderMobileHidden`, pensé pour un
+>   simple switch peu utile sur petit écran) — retiré, et le bandeau
+>   déplacé au même niveau qu'Investir (dans la ligne de `DateNav`) au
+>   lieu d'un panneau encadré séparé. "Par canal" garde son panneau
+>   dédié (bande d'onglets trop large pour la même ligne).
+> - Investir : le mode `teamTotal` ("Buts par équipe") n'était pas dans
+>   `VALID_MODES` malgré sa présence dans `MODE_ORDER` — chaque clic sur
+>   cet onglet retombait silencieusement sur "Probabilité" (URL à jour,
+>   onglet actif et données chargées faux). Bug réel, sans lien avec le
+>   regroupement, corrigé au passage.
 
 ---
 
@@ -348,7 +370,7 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 11. ~~Décider A1 vs A2 pour la nav mobile (§5.A)~~ ✅ fait le 2026-08-09 (vague 4) — ni l'un ni l'autre au final, voir §5 pour le détail (Inbox remplace Formation, Formation + Annonces ajoutées au popover compte).
 12. ~~Rate-limiting sur `/auth/login` (§11.2)~~ ✅ fait le 2026-08-09 (vague 2) — `@nestjs/throttler`, 5/60s par IP, scope limité à cette route.
 13. Clarifier le bug des onglets (§4) avant d'y toucher.
-14. Concevoir le regroupement par ligue + modes d'affichage (§3) — commencer par le dropdown pattern Track Record.
+14. ~~Concevoir le regroupement par ligue + modes d'affichage (§3)~~ ✅ regroupement fait le 2026-08-09 (vague 5) — dropdown pattern Track Record. Toggle Liste/Grille laissé de côté (voir §3).
 15. ~~Pagination/virtualisation frontend (§2)~~ Matchs fait (cf point 7). Décisions/Investir **fermés sans code** le 2026-08-09 (vague 4) — Investir déjà borné à 15 picks/mode, Décisions borné à une journée, pas de problème mesuré aujourd'hui. À rouvrir si une lenteur réelle est constatée.
 16. ~~Investiguer l'anomalie `RUS1` DRAW (§11.3)~~ ✅ fait le 2026-08-09 (vague 2) — pas un signal de ligue, un bug de comptage dans le script de backtest (repasses d'analyse comptées comme paris indépendants). Corrigé, n global DRAW révisé 4838 → 3735.
 17. Onboarding (§6) — démarrer par le quick-win (pont Formation), cadrer le tour guidé à part.
