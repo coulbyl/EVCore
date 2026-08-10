@@ -242,7 +242,7 @@ describe('FixturesSyncWorker', () => {
         '--location',
         '-H',
         'x-apisports-key: test-api-key',
-        'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-16',
+        'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-18',
       ]),
       expect.any(Function),
     );
@@ -327,6 +327,34 @@ describe('FixturesSyncWorker', () => {
       'curl',
       expect.arrayContaining([
         'https://v3.football.api-sports.io/fixtures?league=135&season=2024',
+      ]),
+      expect.any(Function),
+    );
+  });
+
+  it('honors an explicit lookaheadDays override for routine jobs', async () => {
+    mockCurlStdoutOnce(buildCurlStdout(buildFixturesResponse(135, 2024)));
+
+    await worker.process({
+      data: {
+        competitionCode: 'SA',
+        season: 2024,
+        leagueId: 135,
+        syncScope: 'routine',
+        lookaheadDays: 7,
+      },
+    } as Job<{
+      competitionCode: string;
+      season: number;
+      leagueId: number;
+      syncScope: 'routine' | 'backfill';
+      lookaheadDays: number;
+    }>);
+
+    expect(execFile).toHaveBeenCalledWith(
+      'curl',
+      expect.arrayContaining([
+        'https://v3.football.api-sports.io/fixtures?league=135&season=2024&from=2026-03-15&to=2026-03-22',
       ]),
       expect.any(Function),
     );

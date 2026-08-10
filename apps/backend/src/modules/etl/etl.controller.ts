@@ -46,7 +46,7 @@ type LeagueSyncHandler = (
 ) => Promise<void>;
 
 const GLOBAL_SYNC_HANDLERS: Record<GlobalSyncType, GlobalSyncHandler> = {
-  fixtures: (service) => service.triggerFixturesSync(),
+  fixtures: (service, body) => service.triggerFixturesSync(body.lookaheadDays),
   stats: (service) => service.triggerStatsSync(),
   injuries: (service) => service.triggerInjuriesSync(),
   settlement: (service) => service.triggerPendingBetsSettlementSync(),

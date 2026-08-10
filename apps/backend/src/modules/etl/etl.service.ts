@@ -517,8 +517,8 @@ export class EtlService implements OnApplicationBootstrap {
     logger.info(payload, 'API-Football daily budget estimate');
   }
 
-  async triggerFixturesSync(): Promise<void> {
-    await this.triggerLeagueSeasonSync('fixtures');
+  async triggerFixturesSync(lookaheadDays?: number): Promise<void> {
+    await this.triggerLeagueSeasonSync('fixtures', { lookaheadDays });
   }
 
   async triggerPendingBetsSettlementSync(): Promise<void> {
@@ -906,7 +906,10 @@ export class EtlService implements OnApplicationBootstrap {
           competitionCode: competition.code,
           leagueId: competition.leagueId,
           ...(kind === 'fixtures'
-            ? ({ syncScope: 'routine' } satisfies Partial<LeagueSyncJobData>)
+            ? ({
+                syncScope: 'routine',
+                lookaheadDays: ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS,
+              } satisfies Partial<LeagueSyncJobData>)
             : {}),
         } satisfies LeagueSyncJobData,
       },
@@ -955,7 +958,10 @@ export class EtlService implements OnApplicationBootstrap {
     );
   }
 
-  private async triggerLeagueSeasonSync(kind: LeagueSyncType): Promise<void> {
+  private async triggerLeagueSeasonSync(
+    kind: LeagueSyncType,
+    options?: { lookaheadDays?: number },
+  ): Promise<void> {
     await this.refreshCompetitionPlans();
     const jobs = this.competitionPlans.flatMap(({ competition, seasons }) => {
       const selectedSeasons =
@@ -969,7 +975,12 @@ export class EtlService implements OnApplicationBootstrap {
         competitionCode: competition.code,
         leagueId: competition.leagueId,
         ...(kind === 'fixtures'
-          ? ({ syncScope: 'routine' } satisfies Partial<LeagueSyncJobData>)
+          ? ({
+              syncScope: 'routine',
+              lookaheadDays:
+                options?.lookaheadDays ??
+                ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS,
+            } satisfies Partial<LeagueSyncJobData>)
           : {}),
       }));
     });

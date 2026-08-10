@@ -19,7 +19,9 @@ export function useMarkAnnouncementRead() {
     mutationFn: markAnnouncementRead,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["dashboard-announcements"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["dashboard-announcements"],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["dashboard-announcements-unread-count"],
         }),

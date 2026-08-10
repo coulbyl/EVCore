@@ -23,19 +23,16 @@ type OnboardingTourContextValue = {
   startTour: () => void;
 };
 
-const OnboardingTourContext =
-  createContext<OnboardingTourContextValue | null>(null);
+const OnboardingTourContext = createContext<OnboardingTourContextValue | null>(
+  null,
+);
 
 // Mounted once in dashboard/layout.tsx, wrapping AppShell — a single
 // driver.js instance drives every step in ONBOARDING_STEPS. Most steps live
 // on their own route: onNextClick/onPrevClick push the route first, then
 // let driver.js's own `waitForElement` (per step) pick up the target once
 // the new page has mounted, instead of us hand-rolling a polling effect.
-export function OnboardingTourProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function OnboardingTourProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("onboarding");
   const router = useRouter();
   const pathname = usePathname();
@@ -128,8 +125,7 @@ export function OnboardingTourProvider({
         popover: {
           title: t(step.titleKey),
           description: t(step.descriptionKey),
-          nextBtnText:
-            index === activeSteps.length - 1 ? t("done") : t("next"),
+          nextBtnText: index === activeSteps.length - 1 ? t("done") : t("next"),
           // Same reasoning as nextBtnText: driver.js would otherwise
           // disable "previous" based on its own current-page lookahead
           // instead of our activeStepsRef bounds check in onPrevClick.

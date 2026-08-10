@@ -192,6 +192,7 @@ describe('EtlService', () => {
           competitionCode: competition.code,
           leagueId: competition.leagueId,
           syncScope: 'routine',
+          lookaheadDays: ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS,
         },
         {
           ...BULLMQ_DEFAULT_JOB_OPTIONS,

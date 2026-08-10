@@ -1,8 +1,10 @@
 import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ETL_CONSTANTS } from '@config/etl.constants';
 
 // Shared body for POST /etl/sync/:type — fields are only read by the sync
-// types that need them (date: odds-prematch, analysis; lookbackDays: stale-scheduled).
+// types that need them (date: odds-prematch, analysis; lookbackDays:
+// stale-scheduled; lookaheadDays: fixtures).
 export class OddsPrematchSyncBodyDto {
   @ApiPropertyOptional({
     description:
@@ -25,4 +27,17 @@ export class OddsPrematchSyncBodyDto {
   @Min(1)
   @Max(30)
   lookbackDays?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Only used by the fixtures sync type: how many days forward (from today) ' +
+      'the routine sync window should cover. Defaults to the worker-configured value ' +
+      'when omitted. Has no effect on backfill runs, which never filter by date.',
+    example: ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(30)
+  lookaheadDays?: number;
 }

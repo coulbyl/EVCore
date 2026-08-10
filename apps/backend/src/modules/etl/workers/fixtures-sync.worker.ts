@@ -41,6 +41,9 @@ export type FixturesSyncJobData = {
   competitionCode: string;
   leagueId: number;
   syncScope?: 'routine' | 'backfill';
+  // Only read when syncScope === 'routine'. Defaults to
+  // ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS.
+  lookaheadDays?: number;
 };
 
 const logger = createLogger('fixtures-sync-worker');
@@ -85,6 +88,7 @@ export class FixturesSyncWorker {
       leagueId,
       season,
       syncScope,
+      lookaheadDays: job.data.lookaheadDays,
     });
 
     logger.info(
@@ -277,6 +281,7 @@ function buildFixturesUrl(input: {
   leagueId: string;
   season: number;
   syncScope: 'routine' | 'backfill';
+  lookaheadDays?: number;
 }): string {
   const base = `${ETL_CONSTANTS.API_FOOTBALL_BASE}/fixtures?league=${input.leagueId}&season=${input.season}`;
 
@@ -284,8 +289,12 @@ function buildFixturesUrl(input: {
     return base;
   }
 
+  const lookaheadDays =
+    input.lookaheadDays ?? ETL_CONSTANTS.FIXTURES_ROUTINE_LOOKAHEAD_DAYS;
   const from = startOfUtcDay(new Date());
-  const to = endOfUtcDay(new Date(from.getTime() + 24 * 60 * 60 * 1000));
+  const to = endOfUtcDay(
+    new Date(from.getTime() + lookaheadDays * 24 * 60 * 60 * 1000),
+  );
 
   return `${base}&from=${formatDateUtc(from)}&to=${formatDateUtc(to)}`;
 }
