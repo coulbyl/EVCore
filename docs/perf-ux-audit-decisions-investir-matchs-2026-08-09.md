@@ -26,6 +26,10 @@
 | Aucun rate-limiting sur `POST /auth/login`                                                    | ✅ **Corrigé** (2026-08-09) — `@nestjs/throttler`, 5 tentatives/60s par IP                          | Haute                                          |
 | Anomalie `RUS1` / marché DRAW : 0% hit sur 22 paris réglés                                    | ✅ **Expliquée et corrigée** (2026-08-09) — pas un signal RUS1 : `backtest-channel-league-whitelist.ts` comptait chaque repasse d'analyse (ADVANCE) comme un pari indépendant. n=22 réel = 6 matchs (aucun n'était nul). Dédup ajoutée, n global DRAW corrigé de 4838 → 3735 | Moyenne                                        |
 | `settleProposal` écrit les legs puis le résultat coupon en séquence, hors transaction DB      | **Constaté, risque faible** — pas encore traité                                                     | Basse                                          |
+| Tour guidé onboarding : ne couvrait que 5 sections, se terminait tôt (bug nav driver.js)       | ✅ **Corrigé** (2026-08-10, branche `fix/onboarding-tour-nav-bug`) — étendu à 24 étapes (toute section user-reachable), bug de fin prématurée résolu (§6) | Haute (régression post-merge signalée par toi) |
+| Header mobile Décisions/Investir trop haut (filtres empilés plein-largeur)                    | ✅ **Corrigé** (2026-08-10) — filtres secondaires repliés dans un `FiltersPopover` (§12.2)          | Haute (régression post-merge signalée par toi) |
+| Switch "Avec pick seulement" (Décisions) devenu inutile                                       | ✅ **Retiré** (2026-08-10) — cf §12.3                                                                | Basse                                          |
+| Header non compatible mode plein écran iOS/Android (bandeau noir sur l'encoche/Dynamic Island) | ✅ **Corrigé** (2026-08-10) — `statusBarStyle` + `safe-area-inset` (§12.4)                          | Haute (bug production, capture fournie)        |
 
 ---
 
@@ -237,6 +241,24 @@ L'item **Inbox** (`/dashboard/inbox`, icône `MessageCircle`, badge `inboxUnread
 > automatiquement à la première visite ; fermer le tour en cours de route
 > compte comme "vu" (pas de re-nag au login suivant), rejouable à volonté
 > via "Revoir le guide" dans le popover compte.
+>
+> **2026-08-10 — étendu à 24 étapes, puis bug de fin prématurée corrigé
+> (post-merge).** Sur ta demande, le tour couvre maintenant toutes les
+> sections user-reachable : dashboard (4 blocs), inbox, nav utilisateur
+> (dont le tiroir sidenav mobile), annonces, composeur de coupon, mes
+> coupons, abonnement, matchs, bankroll, track record, formation, mises à
+> jour, FAB Eva, FAB recherche, notifications, menu compte, profil/badges,
+> paramètres — volontairement **sans** les écrans admin (invisibles pour
+> un user normal). Après merge et test en prod, tu as signalé que le tour
+> se terminait tôt (bouton "Terminé" affiché sur "menu de profil", avant
+> Profil/Badges et Paramètres). Cause : driver.js décide lui-même
+> Next-vs-Terminé en vérifiant si l'étape suivante existe sur la page
+> **courante**, avant toute navigation — un faux "aucune étape suivante"
+> pour les deux premières étapes ciblant une page différente et non
+> globale. Fix : `onNextClick`/`onDoneClick` pilotés entièrement par notre
+> propre tableau d'étapes (`activeStepsRef`), plus par la logique interne
+> de driver.js ; `onDestroyStarted` ajouté en filet de sécurité (Échap,
+> clic overlay). Branche `fix/onboarding-tour-nav-bug`, commit `e9e29f4c`.
 
 ---
 
@@ -383,6 +405,64 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 
 ---
 
+## 12. Post-merge (2026-08-10) — bugs de prod signalés après le merge de la vague 6
+
+Chantier §10 fermé et mergé (PR #178) le 2026-08-10. Trois points remontés par toi
+après test en prod, traités sur une nouvelle branche `fix/onboarding-tour-nav-bug`
+(hors périmètre de l'audit initial, mais suite directe du même chantier onboarding/UI).
+
+### 12.1 Tour guidé — fin prématurée
+
+Voir §6 (mis à jour) — bug de navigation driver.js, corrigé (commit `e9e29f4c`).
+
+### 12.2 Header mobile Décisions/Investir — trop d'espace vertical
+
+**Signalé avec captures.** Le travail de regroupement par ligue (§3, vague 5) avait
+ajouté `MatchFilters`/`GroupBySelect`/`FormationHelpLink` dans `PageHeaderActions`
+avec chaque contrôle en `w-full lg:w-auto` — sur mobile, `flex flex-wrap` empilait
+chaque contrôle sur sa propre ligne pleine largeur (jusqu'à 5 lignes de chrome avant
+le premier match). Fix : nouveau composant partagé `FiltersPopover`
+(`apps/web/components/filters-popover.tsx`) qui replie les contrôles secondaires
+derrière un bouton "Filtres" (pastille si un filtre est actif) — utilisé sur
+Décisions "Par match" (switch + regroupement), "Par canal" (regroupement) et
+Investir (regroupement + topN). `DateNav` passe de `w-full lg:w-auto` à `flex-1`
+pour partager sa ligne avec le bouton Filtres et le lien d'aide au lieu de forcer
+la sienne. Commit `6812bbbe`.
+
+### 12.3 Switch "Avec pick seulement" (Décisions) — retiré
+
+Devenu caduc selon toi ("plus besoin de ça") — retiré de `match-lens.tsx` avec son
+helper `pickCount` et la clé i18n `filters.onlyPicks`. Le sélecteur de regroupement
+reste seul dans le `FiltersPopover` de "Par match". Commit `2f570804`.
+
+### 12.4 Header non compatible plein écran iOS/Android — bandeau noir sur l'encoche
+
+**Signalé avec capture** — bandeau noir opaque recouvrant la zone de
+l'encoche/Dynamic Island sur certains iPhones, visible dans le header et sur la
+landing page. Diagnostic (recherche web + audit du repo) :
+
+- **Cause racine** : `appleWebApp.statusBarStyle: "black-translucent"`
+  (`apps/web/app/layout.tsx`) fait passer la PWA standalone iOS en plein écran sous
+  la barre de statut, qui devient alors un bandeau translucide superposé — sans
+  lien avec le thème clair/sombre de l'app.
+- Le dashboard (`page-shell.tsx`) gérait déjà correctement
+  `env(safe-area-inset-top/bottom)` sur son header/nav — le vrai trou était la
+  **landing page**, dont le header `fixed top-0` n'avait aucune compensation.
+- `packages/ui/src/components/page-shell.tsx` (doublon mort, jamais importé nulle
+  part) supprimé au passage.
+
+**Fix** : `statusBarStyle` → `"default"` (barre opaque, contenu sous elle, plus
+d'overlay) ; `pt-[env(safe-area-inset-top)]` ajouté au header de la landing page ;
+`overscroll-behavior: none` sur `body` (rebond de scroll en mode standalone).
+Vérifié avec Chromium (`Emulation.setSafeAreaInsetsOverride` via CDP — Playwright
+ne reproduit pas nativement les vrais insets iOS) contre l'app réelle sur le
+port 3000 : header dashboard et landing passent tous les deux sous une encoche
+simulée de 59px sans chevauchement. **Reste à confirmer sur un vrai iPhone**
+(Safari + PWA installée) avant de considérer le point définitivement clos.
+Commit `1acd125e`.
+
+---
+
 ## 10. Plan proposé pour la session suivante (à prioriser ensemble)
 
 > **Suivi des vagues** — branche `fix/perf-ux-audit` (toutes les vagues de ce
@@ -401,7 +481,13 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 > Vague 5 (points 13-14) fermée le 2026-08-09 : bug des onglets identifié
 > (§4, c'était en fait le bug `teamTotal`) et regroupement par ligue
 > ajouté (§3). Vague 6 (point 17, onboarding) fermée le 2026-08-10 —
-> **dernière vague, tous les points du §10 sont clos.**
+> **tous les points du §10 sont clos, PR #178 mergée sur `main`.**
+> Post-merge (§12), branche `fix/onboarding-tour-nav-bug` : tour étendu à
+> 24 étapes + bug de fin prématurée (`e9e29f4c`), header mobile
+> Décisions/Investir replié en `FiltersPopover` (`6812bbbe`), switch
+> "Avec pick seulement" retiré (`2f570804`), safe-area iOS/Android
+> corrigée (`1acd125e`) — **tout fermé, à confirmer sur iPhone réel pour
+> le point 12.4 uniquement.**
 
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
 2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
