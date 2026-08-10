@@ -271,7 +271,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-dvh overflow-x-hidden bg-background text-foreground">
       {/* ── Fixed header (strip + nav stacked) ── */}
-      <header className="fixed left-0 right-0 top-0 z-40 bg-background">
+      <header className="fixed left-0 right-0 top-0 z-40 bg-background pt-[env(safe-area-inset-top)]">
         <nav className="flex items-center justify-between border-b border-border bg-background/85 px-6 py-4 backdrop-blur-md sm:px-10">
           <span className="flex items-center gap-1">
             <Image

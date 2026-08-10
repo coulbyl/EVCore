@@ -10,6 +10,8 @@
 
 body {
   font-family: var(--font-sans), sans-serif;
+  /* PWA standalone mode has no browser chrome to absorb scroll rubber-banding */
+  overscroll-behavior: none;
 }
 
 .ev-date-input::-webkit-calendar-picker-indicator {
