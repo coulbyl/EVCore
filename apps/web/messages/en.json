@@ -200,7 +200,27 @@
     "done": "Done",
     "welcome": {
       "title": "Welcome to EVCore",
-      "description": "A quick tour of the key pages — Decisions, Investment, Bet slips, and notifications. 5 steps, close it anytime."
+      "description": "A full tour of the app's pages and tools. Close it anytime — you can always replay it from your profile menu."
+    },
+    "mobileNav": {
+      "title": "The full menu",
+      "description": "On mobile, this button opens the full navigation menu — every section is there, even the ones that don't fit the bottom bar."
+    },
+    "dashboardFilter": {
+      "title": "Home — the period",
+      "description": "This filter changes the period shown on the performance and ranking cards below."
+    },
+    "dashboardPerformance": {
+      "title": "Your performance",
+      "description": "Your betting stats over the selected period — ROI, win rate, volume."
+    },
+    "dashboardRanking": {
+      "title": "Rankings",
+      "description": "League ranking by engine performance, and the leaderboard of the most disciplined users."
+    },
+    "dashboardSubscriptions": {
+      "title": "Your subscriptions",
+      "description": "A shortcut to your active subscriptions — the automatic virtual staking covered later in this tour."
     },
     "decisions": {
       "title": "Decisions",
@@ -210,13 +230,61 @@
       "title": "Investment",
       "description": "All of today's picks ranked by probability or EV, channel by channel. The \"?\" breaks down how edge and EV are calculated."
     },
+    "fixtures": {
+      "title": "Matches",
+      "description": "Every match of the day, filterable by status. The betting index gives you the key stats at a glance."
+    },
     "coupons": {
-      "title": "Bet slips",
+      "title": "Combos",
       "description": "Combos generated automatically from the best picks. The \"?\" opens the channel reliability map for what's being combined."
+    },
+    "betSlipComposer": {
+      "title": "My bet slip",
+      "description": "Build your own bet slip by adding picks from Decisions or Investment — this button follows you everywhere in the app."
+    },
+    "betSlips": {
+      "title": "My bet slips",
+      "description": "Your history of placed bet slips — settled or pending — with the period summary up top."
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "description": "A fixed discipline per subscription — automatic virtual staking on a channel or combo, tracked without you having to think about it."
+    },
+    "bankroll": {
+      "title": "Bankroll",
+      "description": "Your balance, deposits, and net ROI — real money tracking, independent from simulated subscriptions."
+    },
+    "trackRecord": {
+      "title": "Track record",
+      "description": "What the engine actually produced, channel by channel — never a cherry-picked sample, a negative channel stays shown as such."
+    },
+    "formation": {
+      "title": "Training",
+      "description": "Short articles on betting strategy — implied probabilities, unit staking, variance, channels. Browse at your own pace."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "description": "A direct line to the EVCore team for your questions or feedback."
+    },
+    "updates": {
+      "title": "Announcements",
+      "description": "The history of announcements published by the team — never lost even after you close the dashboard banner."
     },
     "notifications": {
       "title": "Notifications",
       "description": "Performance alerts and team announcements show up here — always reachable, wherever you are in the app."
+    },
+    "accountMenu": {
+      "title": "Your profile menu",
+      "description": "Bankroll, Inbox, Subscriptions, Training, Announcements and Settings — everything we just covered is also reachable from here."
+    },
+    "profileBadges": {
+      "title": "Profile and badges",
+      "description": "Your profile and the badges you've unlocked along the way — consistency, discipline, betting volume."
+    },
+    "accountSettings": {
+      "title": "Settings",
+      "description": "Appearance, language, notifications, bankroll preferences and security — all set from these tabs."
     }
   },
   "formation": {

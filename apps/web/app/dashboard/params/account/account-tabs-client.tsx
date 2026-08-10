@@ -77,6 +77,7 @@ export function AccountTabsClient({
       {/* Tab list — scrollable on mobile */}
       <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
         <TabsList
+          data-tour="account-tabs-list"
           variant="line"
           className="mb-5 w-max gap-0 border-b border-border pb-0"
         >
@@ -94,7 +95,7 @@ export function AccountTabsClient({
       </div>
 
       <TabsContent value="profil">
-        <div className="flex flex-col gap-4">
+        <div data-tour="account-profile-badges" className="flex flex-col gap-4">
           {hasSession ? <ProfileHeroSection /> : null}
           <BadgesSection />
         </div>

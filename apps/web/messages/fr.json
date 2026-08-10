@@ -200,7 +200,27 @@
     "done": "Terminé",
     "welcome": {
       "title": "Bienvenue sur EVCore",
-      "description": "Un tour rapide pour repérer les pages clés — Décisions, Investir, Combinés et les notifications. 5 étapes, tu peux fermer à tout moment."
+      "description": "Un tour complet des pages et outils de l'app. Ferme-le à tout moment — tu pourras toujours le relancer depuis le menu de ton profil."
+    },
+    "mobileNav": {
+      "title": "Le menu complet",
+      "description": "Sur mobile, ce bouton ouvre le menu complet de navigation — toutes les sections y sont, même celles qui ne rentrent pas dans la barre du bas."
+    },
+    "dashboardFilter": {
+      "title": "Accueil — la période",
+      "description": "Ce filtre change la période affichée sur les cartes de performance et de classement ci-dessous."
+    },
+    "dashboardPerformance": {
+      "title": "Ta performance",
+      "description": "Tes stats de paris sur la période choisie — ROI, taux de réussite, volume."
+    },
+    "dashboardRanking": {
+      "title": "Classements",
+      "description": "Le classement des ligues par performance du moteur, et celui des utilisateurs les plus disciplinés."
+    },
+    "dashboardSubscriptions": {
+      "title": "Tes abonnements",
+      "description": "Un raccourci vers tes abonnements actifs — la mise virtuelle automatique dont on reparle plus loin dans ce tour."
     },
     "decisions": {
       "title": "Décisions",
@@ -210,13 +230,61 @@
       "title": "Investir",
       "description": "Tous les picks du jour classés par probabilité ou par EV, canal par canal. Le « ? » détaille comment l'edge et l'EV sont calculés."
     },
+    "fixtures": {
+      "title": "Matchs",
+      "description": "Tous les matchs du jour, filtrables par statut. L'indice de paris agrège les stats clés d'un coup d'œil."
+    },
     "coupons": {
       "title": "Combinés",
       "description": "Des combinés générés automatiquement à partir des meilleurs picks. Le « ? » ouvre la carte de fiabilité des canaux qu'on combine."
     },
+    "betSlipComposer": {
+      "title": "Mon coupon",
+      "description": "Construis ton propre coupon en ajoutant des picks depuis Décisions ou Investir — ce bouton te suit partout dans l'app."
+    },
+    "betSlips": {
+      "title": "Mes coupons",
+      "description": "L'historique de tes coupons placés, réglés ou en attente, avec le récapitulatif de la période en tête."
+    },
+    "subscriptions": {
+      "title": "Abonnements",
+      "description": "Une discipline figée par abonnement — mise virtuelle automatique sur un canal ou un combiné, suivie sans que tu aies à y penser."
+    },
+    "bankroll": {
+      "title": "Portefeuille",
+      "description": "Ton solde, tes dépôts et ton ROI net — le suivi financier réel, indépendant des abonnements simulés."
+    },
+    "trackRecord": {
+      "title": "Historique vérifiable",
+      "description": "Ce que le moteur a réellement produit, canal par canal — jamais un échantillon trié, un canal négatif reste affiché comme tel."
+    },
+    "formation": {
+      "title": "Formation",
+      "description": "Des articles courts sur la stratégie de paris — probabilités implicites, unité de mise, variance, canaux. À consulter à ton rythme."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "description": "Une messagerie directe avec l'équipe EVCore, pour tes questions ou retours."
+    },
+    "updates": {
+      "title": "Annonces",
+      "description": "L'historique des annonces publiées par l'équipe — jamais perdu même si tu as fermé la bannière du dashboard."
+    },
     "notifications": {
       "title": "Notifications",
       "description": "Alertes de performance et annonces de l'équipe apparaissent ici — toujours accessible, où que tu sois dans l'app."
+    },
+    "accountMenu": {
+      "title": "Ton menu de profil",
+      "description": "Portefeuille, Inbox, Abonnements, Formation, Annonces et Paramètres — tout ce qu'on vient de voir est aussi accessible d'ici."
+    },
+    "profileBadges": {
+      "title": "Profil et badges",
+      "description": "Ton profil et les badges débloqués en cours de route — assiduité, discipline, volume de paris."
+    },
+    "accountSettings": {
+      "title": "Paramètres",
+      "description": "Apparence, langue, notifications, préférences de bankroll et sécurité — tout se règle depuis ces onglets."
     }
   },
   "formation": {

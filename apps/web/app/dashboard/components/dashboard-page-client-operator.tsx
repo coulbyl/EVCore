@@ -85,23 +85,31 @@ export function DashboardPageClientOperator() {
           <WeeklyBrief />
 
           {/* Filter */}
-          <FilterBar
-            filters={FILTER_DEFS}
-            value={filters}
-            onChange={setFilters}
-            onReset={() => setFilters(DEFAULT_FILTERS)}
-            className="[&>div]:w-[260px]"
-          />
+          <div data-tour="dashboard-filter">
+            <FilterBar
+              filters={FILTER_DEFS}
+              value={filters}
+              onChange={setFilters}
+              onReset={() => setFilters(DEFAULT_FILTERS)}
+              className="[&>div]:w-[260px]"
+            />
+          </div>
 
           {/* ── Bento grid principal ── */}
           <div className="bento-grid">
             {/* Row 1 : Performance pleine largeur */}
-            <div className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col">
+            <div
+              data-tour="dashboard-performance"
+              className="col-span-2 sm:col-span-6 lg:col-span-12 flex flex-col"
+            >
               <OperatorPerformanceCard from={fromIso} to={toIso} />
             </div>
 
             {/* Row 2 : Classement ligues + Top joueurs */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
+            <div
+              data-tour="dashboard-ranking"
+              className="col-span-2 sm:col-span-3 lg:col-span-6"
+            >
               <CompetitionRanking
                 stats={competitionStats ?? []}
                 isLoading={competitionLoading}
@@ -117,7 +125,10 @@ export function DashboardPageClientOperator() {
             </div>
 
             {/* Row 3 : Raccourci Abonnements */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-6">
+            <div
+              data-tour="dashboard-subscriptions-shortcut"
+              className="col-span-2 sm:col-span-3 lg:col-span-6"
+            >
               <SubscriptionsShortcutCard />
             </div>
           </div>

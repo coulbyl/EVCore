@@ -41,7 +41,7 @@ export function SubscriptionsPageClient() {
   return (
     <Page className="flex h-full flex-col">
       <PageHeader className="flex-row items-center justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0" data-tour="subscriptions-title">
           <PageHeaderTitle>{t("pageTitle")}</PageHeaderTitle>
           <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
             {t("subtitle")}

@@ -39,7 +39,7 @@ export function UpdatesPageClient() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
+      <div data-tour="updates-title">
         <h1 className="text-lg font-semibold text-foreground">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>

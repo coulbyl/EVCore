@@ -12,6 +12,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { driver, type Driver } from "driver.js";
 import { clientApiRequest } from "@/lib/api/client-api";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   useCurrentUser,
   useSetCurrentUser,
@@ -26,9 +27,9 @@ const OnboardingTourContext =
   createContext<OnboardingTourContextValue | null>(null);
 
 // Mounted once in dashboard/layout.tsx, wrapping AppShell — a single
-// driver.js instance drives all 5 steps. Steps 2-4 live on different
-// routes: onNextClick/onPrevClick push the route first, then let
-// driver.js's own `waitForElement` (per step) pick up the target once
+// driver.js instance drives every step in ONBOARDING_STEPS. Most steps live
+// on their own route: onNextClick/onPrevClick push the route first, then
+// let driver.js's own `waitForElement` (per step) pick up the target once
 // the new page has mounted, instead of us hand-rolling a polling effect.
 export function OnboardingTourProvider({
   children,
@@ -38,10 +39,17 @@ export function OnboardingTourProvider({
   const t = useTranslations("onboarding");
   const router = useRouter();
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const currentUser = useCurrentUser();
   const setCurrentUser = useSetCurrentUser();
 
   const driverRef = useRef<Driver | null>(null);
+  // Which steps startTour() is currently driving through — a filtered view
+  // of ONBOARDING_STEPS (mobile-only steps dropped on desktop). onNextClick/
+  // onPrevClick must index into THIS array, not the unfiltered constant,
+  // since opts.index refers to a position in whatever `steps` was passed to
+  // driver().
+  const activeStepsRef = useRef(ONBOARDING_STEPS);
   const hasAutoStartedRef = useRef(false);
   const finishedRef = useRef(false);
   // Read inside driver.js hooks created once per startTour() call — a ref
@@ -50,6 +58,10 @@ export function OnboardingTourProvider({
   useEffect(() => {
     pathnameRef.current = pathname;
   }, [pathname]);
+  const isMobileRef = useRef(isMobile);
+  useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
 
   // Any way out (close button, Escape, overlay click, or finishing the
   // last step) counts as "seen" — a tour closed early is a normal outcome
@@ -74,6 +86,11 @@ export function OnboardingTourProvider({
     driverRef.current?.destroy();
     finishedRef.current = false;
 
+    const activeSteps = ONBOARDING_STEPS.filter(
+      (step) => !step.mobileOnly || isMobileRef.current,
+    );
+    activeStepsRef.current = activeSteps;
+
     const instance = driver({
       allowClose: true,
       overlayColor: "#0d1520",
@@ -83,7 +100,7 @@ export function OnboardingTourProvider({
       nextBtnText: t("next"),
       prevBtnText: t("prev"),
       doneBtnText: t("done"),
-      steps: ONBOARDING_STEPS.map((step) => ({
+      steps: activeSteps.map((step) => ({
         element: step.selector ?? undefined,
         popover: {
           title: t(step.titleKey),
@@ -96,7 +113,7 @@ export function OnboardingTourProvider({
       onDoneClick: () => finish(),
       onNextClick: (_element, _step, opts) => {
         const nextIndex = (opts.index ?? 0) + 1;
-        const nextRoute = ONBOARDING_STEPS[nextIndex]?.route;
+        const nextRoute = activeStepsRef.current[nextIndex]?.route;
         if (nextRoute && nextRoute !== pathnameRef.current) {
           router.push(nextRoute);
         }
@@ -105,7 +122,7 @@ export function OnboardingTourProvider({
       onPrevClick: (_element, _step, opts) => {
         const prevIndex = (opts.index ?? 0) - 1;
         if (prevIndex < 0) return;
-        const prevRoute = ONBOARDING_STEPS[prevIndex]?.route;
+        const prevRoute = activeStepsRef.current[prevIndex]?.route;
         if (prevRoute && prevRoute !== pathnameRef.current) {
           router.push(prevRoute);
         }

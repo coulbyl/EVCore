@@ -60,6 +60,7 @@ export function AccountButton({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-tour="account-menu-trigger"
           className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border/80 bg-panel-strong p-0.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           aria-label="Ouvrir le menu du compte"
         >

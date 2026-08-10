@@ -110,7 +110,10 @@ export function FormationPageClient({
 
   return (
     <Page className="flex h-full flex-col">
-      <PageHeader className="lg:flex-col lg:items-stretch lg:justify-start">
+      <PageHeader
+        data-tour="formation-title"
+        className="lg:flex-col lg:items-stretch lg:justify-start"
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-3">
