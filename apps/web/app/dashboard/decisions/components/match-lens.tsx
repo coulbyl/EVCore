@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Switch } from "@evcore/ui";
 import type { ChannelDecisionMatchDto } from "@/domains/channel-decision/types/channel-decision";
@@ -29,9 +29,10 @@ export function useMatchLens(matches: ChannelDecisionMatchDto[]) {
 
 export type MatchLensState = ReturnType<typeof useMatchLens>;
 
-// The "only picks" toggle + grouping select — rendered as direct siblings of
-// DateNav in the header row (same level as Investir's filters), not a
-// separate boxed panel.
+// The "only picks" toggle + grouping select — collapsed into a FiltersPopover
+// (see decisions-page-frame.tsx) instead of stacking each as its own
+// full-width row, which used to push mobile users several screens' worth of
+// chrome down before any match content.
 export function MatchFilters({
   onlyPicks,
   setOnlyPicks,
@@ -41,8 +42,8 @@ export function MatchFilters({
   const t = useTranslations("decisions");
 
   return (
-    <Fragment>
-      <label className="flex w-full shrink-0 items-center gap-2 text-xs text-muted-foreground lg:w-auto">
+    <>
+      <label className="flex items-center gap-2 text-sm text-foreground">
         <Switch checked={onlyPicks} onCheckedChange={setOnlyPicks} />
         {t("filters.onlyPicks")}
       </label>
@@ -53,10 +54,16 @@ export function MatchFilters({
           none: t("filters.groupByNone"),
           league: t("filters.groupByLeague"),
         }}
-        className="w-full lg:w-auto lg:min-w-[190px]"
+        className="w-full"
       />
-    </Fragment>
+    </>
   );
+}
+
+// True when a non-default filter is set — drives the FiltersPopover's
+// active-state dot so collapsing the controls doesn't hide that state.
+export function hasActiveMatchFilters(state: MatchLensState): boolean {
+  return state.onlyPicks || state.groupBy !== "none";
 }
 
 // The scrolling card grid for the "Par match" lens.

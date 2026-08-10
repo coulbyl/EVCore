@@ -1,15 +1,21 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   useChannelDecisionChannels,
   useChannelDecisionMatches,
 } from "@/domains/channel-decision/use-cases/use-channel-decisions";
 import { todayIso } from "@/lib/date";
+import { FiltersPopover } from "@/components/filters-popover";
 import { DecisionsPageFrame } from "./decisions-page-frame";
 import type { DecisionsView } from "./lens-toggle";
-import { MatchFilters, MatchGrid, useMatchLens } from "./match-lens";
+import {
+  MatchFilters,
+  MatchGrid,
+  hasActiveMatchFilters,
+  useMatchLens,
+} from "./match-lens";
 import { ChannelTabs, ChannelList, useChannelLens } from "./channel-lens";
 
 // Single decisions surface: one route, two lenses (by match / by channel)
@@ -20,6 +26,7 @@ export function DecisionsPageClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("decisions");
 
   const date = searchParams.get("date") ?? today;
   const view: DecisionsView =
@@ -70,7 +77,12 @@ export function DecisionsPageClient() {
       isLoading={isLoading}
       headerExtra={
         !hasData || view !== "matches" ? null : (
-          <MatchFilters {...matchLens} />
+          <FiltersPopover
+            label={t("filters.label")}
+            active={hasActiveMatchFilters(matchLens)}
+          >
+            <MatchFilters {...matchLens} />
+          </FiltersPopover>
         )
       }
       subHeader={
