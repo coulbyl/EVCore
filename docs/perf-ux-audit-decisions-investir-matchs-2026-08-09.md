@@ -75,6 +75,18 @@ Aucune pagination ni virtualisation trouvée sur `decisions/` ou `investment/` (
 
 Sur mobile, avec ~131 fixtures/jour et plusieurs picks chacune, ça peut contribuer à une lenteur perçue même si le backend répond vite (temps de rendu DOM + hydratation React). À traiter comme un axe séparé du backend, pas un substitut.
 
+> **2026-08-09** — investigué en vague 4. Contrairement à Matchs, ni
+> Décisions ni Investir n'ont de vrai sur-fetch à corriger : `/investments`
+> est déjà plafonné à 15 picks/mode (`INVESTMENT_LIMITS.maxPicks`) ;
+> `/channel-decisions/by-match|by-channel` (`ChannelDecisionListQueryDto`) n'a
+> toujours aucun `limit`/`cursor`, mais son fetch reste borné à une seule
+> journée (~131 matchs × quelques canaux, pas un historique qui grossit sans
+> fin) — le vrai coût ici est le rendu DOM (toutes les cartes d'un coup), pas
+> la taille de la requête réseau. **Décision : laissé de côté** — pas de
+> problème mesuré aujourd'hui qui justifie le risque d'un rendu progressif ou
+> d'une pagination SQL sur ces deux endpoints. À rouvrir seulement si une
+> lenteur réelle est constatée sur ces pages.
+
 ---
 
 ## 3. Regroupement par ligue / modes d'affichage
@@ -306,7 +318,9 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 > décision A1/A2 du point 11 puisque ça ne touche pas la barre mobile à 5
 > slots), et fix d'un bug découvert en testant : le body HTML des
 > annonces s'affichait brut dans `/dashboard/notifications` (balises
-> `<p>` visibles) — cf §7.4 ci-dessous.
+> `<p>` visibles) — cf §7.4 ci-dessous. Vague 4 : point 15 fermé sans code
+> le 2026-08-09 (voir §2) — Investir déjà borné, Décisions n'a pas de vrai
+> problème mesuré aujourd'hui.
 
 1. ~~**`APP_URL` en prod** (§9)~~ ✅ fait le 2026-08-09 — reste à vérifier après restart backend.
 2. ~~**Faire tourner `GROQ_API_KEY`** (§11.1)~~ ✅ fait, confirmé par toi le 2026-08-09.
@@ -322,6 +336,6 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 12. ~~Rate-limiting sur `/auth/login` (§11.2)~~ ✅ fait le 2026-08-09 (vague 2) — `@nestjs/throttler`, 5/60s par IP, scope limité à cette route.
 13. Clarifier le bug des onglets (§4) avant d'y toucher.
 14. Concevoir le regroupement par ligue + modes d'affichage (§3) — commencer par le dropdown pattern Track Record.
-15. Pagination/virtualisation frontend (§2) — Matchs fait (cf point 7) ; reste Décisions et Investir.
+15. ~~Pagination/virtualisation frontend (§2)~~ Matchs fait (cf point 7). Décisions/Investir **fermés sans code** le 2026-08-09 (vague 4) — Investir déjà borné à 15 picks/mode, Décisions borné à une journée, pas de problème mesuré aujourd'hui. À rouvrir si une lenteur réelle est constatée.
 16. ~~Investiguer l'anomalie `RUS1` DRAW (§11.3)~~ ✅ fait le 2026-08-09 (vague 2) — pas un signal de ligue, un bug de comptage dans le script de backtest (repasses d'analyse comptées comme paris indépendants). Corrigé, n global DRAW révisé 4838 → 3735.
 17. Onboarding (§6) — démarrer par le quick-win (pont Formation), cadrer le tour guidé à part.
