@@ -8,6 +8,7 @@ import { useCoupons } from "@/domains/coupon/use-cases/use-coupons";
 import { useCouponCelebration } from "@/hooks/use-coupon-celebration";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
+import { FormationHelpLink } from "@/components/formation-help-link";
 import { CouponCard } from "./coupon-card";
 
 export function CouponsPageClient() {
@@ -37,6 +38,7 @@ export function CouponsPageClient() {
             onChange={navigateTo}
             className="w-full lg:w-auto"
           />
+          <FormationHelpLink slug="channels-overview" label={t("helpLink")} />
         </PageHeaderActions>
       </PageHeader>
 

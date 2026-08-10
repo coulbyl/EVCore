@@ -155,7 +155,8 @@
       "noMatch": "Aucun match ne correspond aux filtres.",
       "groupByNone": "Aucun groupement",
       "groupByLeague": "Grouper par ligue"
-    }
+    },
+    "helpLink": "Comment lire une fiche"
   },
   "notifications": {
     "title": "Notifications",
@@ -672,7 +673,8 @@
     "pageTitle": "Propositions",
     "empty": "Aucun coupon généré pour cette date.",
     "loadError": "Impossible de charger les propositions de coupons.",
-    "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers."
+    "aiNote": "Ces propositions sont générées par notre moteur IA, qui s'améliore en continu grâce aux résultats passés. Il ne s'agit pas de conseils financiers.",
+    "helpLink": "La carte des canaux"
   },
   "investment": {
     "pageTitle": "Investir",
@@ -707,7 +709,8 @@
     "topNLabel": "Nombre de picks",
     "topNAuto": "Auto",
     "groupByNone": "Aucun groupement",
-    "groupByLeague": "Grouper par ligue"
+    "groupByLeague": "Grouper par ligue",
+    "helpLink": "L'edge et l'EV expliqués"
   },
   "subscriptions": {
     "pageTitle": "Abonnements",

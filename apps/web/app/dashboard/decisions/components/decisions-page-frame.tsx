@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Target } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Empty,
   EmptyDescription,
@@ -14,6 +15,7 @@ import {
   Skeleton,
 } from "@evcore/ui";
 import { DateNav } from "@/components/date-nav";
+import { FormationHelpLink } from "@/components/formation-help-link";
 import { LensToggle, type DecisionsView } from "./lens-toggle";
 
 export function DecisionsPageFrame({
@@ -50,6 +52,7 @@ export function DecisionsPageFrame({
   // kept as a distinct boxed panel below the header.
   subHeader?: React.ReactNode;
 }) {
+  const t = useTranslations("decisions");
   const pageOwnsScroll = contentScroll === "page";
 
   return (
@@ -62,6 +65,10 @@ export function DecisionsPageFrame({
             date={date}
             onChange={onDateChange}
             className="w-full lg:w-auto"
+          />
+          <FormationHelpLink
+            slug="comment-lire-un-pick"
+            label={t("helpLink")}
           />
         </PageHeaderActions>
       </PageHeader>

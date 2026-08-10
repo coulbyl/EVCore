@@ -15,7 +15,7 @@
 | Filtres `timeSlot`/`betStatus` appliqués après le fetch (Matchs)                              | ✅ **`timeSlot` corrigé** (borne SQL sur `scheduledAt`) — `betStatus` **laissé en mémoire** (risque de réécrire le join "dernier run / top-2 EV" pour un gain jugé trop faible vs le risque) | Basse (sauf si pas de `limit`)                 |
 | Aucune pagination/virtualisation frontend (les 3 pages)                                       | **Matchs corrigé** (scroll infini) — Décisions/Investir toujours non paginés côté frontend          | Moyenne                                        |
 | Inbox caché sur mobile, aucune notification in-app pour les messages support                  | ✅ **Corrigé** (2026-08-09) — Inbox remplace Formation dans la barre basse mobile (§5.A) ; notification in-app déjà faite en vague 2 | Haute                                          |
-| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Confirmé, inexistant** — pas encore traité                                                        | Moyenne                                        |
+| Aucun onboarding utilisateur (tour guidé, tooltips)                                           | **Quick-win fait** (2026-08-09, pont Formation) — tour guidé toujours à cadrer (lib choisie : driver.js) | Moyenne                                        |
 | Annonces : pas de page historique, pas de notification in-app, lu/non-lu en localStorage seul | ✅ **Corrigé** (2026-08-09) — page `/dashboard/updates`, modèle `AnnouncementRead`, notification in-app, entrée de nav avec badge | Haute (bloquant si tu multiplies les annonces) |
 | Bug "tab actif non stylé"                                                                     | **Non reproduit** dans les 3 écrans cités — voir §4, en attente de précision de ta part             | À clarifier avec toi                           |
 | Regroupement par ligue / mode d'affichage                                                     | ✅ **Regroupement fait** (2026-08-09) — sélecteur Aucun/Ligue sur Décisions (Par match + Par canal) et Investir, pattern Track Record. Toggle Liste/Grille **laissé de côté** (chantier séparé, pas de vue liste existante) | Fonctionnalité à construire                    |
@@ -125,7 +125,20 @@ Aucune des 3 pages ne groupe par ligue aujourd'hui — liste plate partout (par 
 
 ---
 
-## 4. Bug "onglet actif non stylé" — non reproduit, besoin de précision
+## 4. Bug "onglet actif non stylé" — ✅ identifié et corrigé (2026-08-09)
+
+> C'était en fait le bug `VALID_MODES` d'Investir (cf §3, vague 5) : cliquer
+> sur "Buts par équipe" mettait bien `mode=teamTotal` dans l'URL, mais
+> `VALID_MODES` ne connaissait pas cette valeur → retombait sur
+> "probability", donc "Probabilité" restait visuellement actif malgré le
+> clic. Vu de l'extérieur ça ressemble exactement à un "onglet qui ne se
+> stylise pas" — pas un problème de CSS/Tailwind comme supposé plus bas,
+> un vrai bug fonctionnel qui invalidait aussi les données affichées.
+> Corrigé dans `investment-page-client.tsx`.
+
+<details>
+<summary>Diagnostic original (non reproduit avec les infos disponibles à l'époque)</summary>
+
 
 Recherche menée sur les 3 écrans cités :
 
@@ -138,6 +151,8 @@ Recherche menée sur les 3 écrans cités :
 **Seule piste concrète trouvée** : dans `packages/ui/src/components/tabs.tsx` (variant `"line"`, ~lignes 67-70), le style de fond de l'onglet actif est défini par deux règles Tailwind qui peuvent entrer en conflit selon le thème clair/sombre — l'ordre de génération CSS (pas l'ordre d'écriture JSX) décide laquelle s'applique, ce qui peut donner un rendu incohérent en dark mode.
 
 **Ce qu'il me faut pour trancher** : soit une capture précise de l'onglet fautif (avec le thème actif visible), soit le nom de l'écran si ce n'est pas un des 3 ci-dessus. Sans ça je risquerais de "corriger" un composant qui n'a rien.
+
+</details>
 
 ---
 
@@ -195,6 +210,20 @@ L'item **Inbox** (`/dashboard/inbox`, icône `MessageCircle`, badge `inboxUnread
 3. **Empty states pédagogiques** — plutôt qu'un modal intrusif, des indices contextuels légers directement dans les écrans vides (ex. première visite sur Investir sans historique → encart explicatif au lieu d'un écran vide silencieux). Moins intrusif que 2, complémentaire.
 
 **Séquence recommandée** : 1 (quick-win, cette semaine) → 3 (continu, à intégrer page par page) → 2 (le plus gros morceau, à cadrer à part avec choix de lib).
+
+> **2026-08-09 — point 1 fait, lib choisie pour le point 2.** Icône "?"
+> (`HelpCircle`) ajoutée sur Décisions, Investir et Coupons
+> (`apps/web/components/formation-help-link.tsx`), chacune pointant vers
+> l'article Formation le plus pertinent : `comment-lire-un-pick` (Décisions),
+> `ev-probabilites-cotes` (Investir, edge/EV = ce qui classe les picks),
+> `channels-overview` (Coupons, carte de fiabilité des canaux qu'on
+> combine). Pour le tour guidé (point 2) : **driver.js** retenu plutôt que
+> react-joyride — agnostique du framework donc pas de risque de retard de
+> compat sur React 19/Next 16, plus léger, et son API config-objet suffit
+> pour un tour plat en 5-6 étapes (pas besoin du JSX par étape de
+> react-joyride). Reste à cadrer : les étapes exactes, le flag
+> `hasSeenOnboarding` (migration Prisma), le point d'entrée "Revoir le
+> guide" depuis le profil.
 
 ---
 
@@ -369,8 +398,8 @@ Repéré dans les résultats du script `backtest-channel-league-whitelist.ts` (b
 10. ~~Modèle `AnnouncementRead` (§7.2)~~ ✅ fait le 2026-08-09 (vague 3) — remplace le `localStorage`, la bannière dashboard et la nouvelle page partagent le même état serveur. Migration lancée par toi le même jour.
 11. ~~Décider A1 vs A2 pour la nav mobile (§5.A)~~ ✅ fait le 2026-08-09 (vague 4) — ni l'un ni l'autre au final, voir §5 pour le détail (Inbox remplace Formation, Formation + Annonces ajoutées au popover compte).
 12. ~~Rate-limiting sur `/auth/login` (§11.2)~~ ✅ fait le 2026-08-09 (vague 2) — `@nestjs/throttler`, 5/60s par IP, scope limité à cette route.
-13. Clarifier le bug des onglets (§4) avant d'y toucher.
+13. ~~Clarifier le bug des onglets (§4)~~ ✅ résolu le 2026-08-09 (vague 5) — c'était le bug `VALID_MODES`/`teamTotal` d'Investir, pas un problème de style Tailwind. Voir §4/§3.
 14. ~~Concevoir le regroupement par ligue + modes d'affichage (§3)~~ ✅ regroupement fait le 2026-08-09 (vague 5) — dropdown pattern Track Record. Toggle Liste/Grille laissé de côté (voir §3).
 15. ~~Pagination/virtualisation frontend (§2)~~ Matchs fait (cf point 7). Décisions/Investir **fermés sans code** le 2026-08-09 (vague 4) — Investir déjà borné à 15 picks/mode, Décisions borné à une journée, pas de problème mesuré aujourd'hui. À rouvrir si une lenteur réelle est constatée.
 16. ~~Investiguer l'anomalie `RUS1` DRAW (§11.3)~~ ✅ fait le 2026-08-09 (vague 2) — pas un signal de ligue, un bug de comptage dans le script de backtest (repasses d'analyse comptées comme paris indépendants). Corrigé, n global DRAW révisé 4838 → 3735.
-17. Onboarding (§6) — démarrer par le quick-win (pont Formation), cadrer le tour guidé à part.
+17. Onboarding (§6) — ~~quick-win (pont Formation)~~ ✅ fait le 2026-08-09 (vague 6). Tour guidé : lib choisie (driver.js), reste à cadrer (étapes, `hasSeenOnboarding`, "Revoir le guide").

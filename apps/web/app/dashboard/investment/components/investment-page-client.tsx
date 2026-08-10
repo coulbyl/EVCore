@@ -20,6 +20,7 @@ import { useInvestmentPicks } from "@/domains/investment/use-cases/use-investmen
 import type { InvestmentMode } from "@/domains/investment/types/investment";
 import { todayIso } from "@/lib/date";
 import { DateNav } from "@/components/date-nav";
+import { FormationHelpLink } from "@/components/formation-help-link";
 import { cn } from "@evcore/ui";
 import { groupByCompetition } from "@/lib/group-by-competition";
 import { translateCountry } from "@/lib/competition-i18n";
@@ -137,6 +138,10 @@ export function InvestmentPageClient() {
             date={date}
             onChange={(iso) => navigateTo({ date: iso })}
             className="w-full lg:w-auto"
+          />
+          <FormationHelpLink
+            slug="ev-probabilites-cotes"
+            label={t("helpLink")}
           />
         </PageHeaderActions>
       </PageHeader>
