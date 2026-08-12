@@ -31,10 +31,11 @@ function toIsoDate(date: Date): string {
 // combinaison). On compare donc l'instant de création de l'abonnement au
 // coup d'envoi le plus tôt parmi ses legs, pas au dernier.
 function earliestLegKickoff(legs: { fixture: { scheduledAt: Date } }[]): Date {
+  if (legs.length === 0) return new Date(0); // pas de legs => déjà commencé, donc exclu
   return legs.reduce(
     (min, leg) =>
       leg.fixture.scheduledAt < min ? leg.fixture.scheduledAt : min,
-    new Date(0), // pas de legs => traité comme déjà commencé, donc exclu
+    legs[0].fixture.scheduledAt,
   );
 }
 
