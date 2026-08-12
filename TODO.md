@@ -278,6 +278,20 @@
   nouvelle conversation, plan ordonné dans la doc.
 - `[ ]` **[optionnel]** Exposer un backfill par fenêtre de dates, seulement si
   le rebuild par saisons via `ml-backfill` s'avère insuffisant.
+- `[ ]` **[ETL] `model_run.features.injuries` semble non alimenté** (trouvé en
+  analyse manuelle de coupon, 2026-08-14) — sur Heart of Midlothian–Benfica
+  (Europa League, 3e tour qualif retour), `features.injuries` vaut
+  `{"home": 0, "away": 0, "total": 0}` alors que Hearts jouait sans un seul
+  défenseur central ni latéral valide (Halkett, Fagan-Walcott, Borchgrevink,
+  Kingsley tous blessés — confirmé par la presse). Le modèle 1X2 (29,4% /
+  20,4% / 50,2%) est calculé sans ce signal, ce qui a produit un pick VALUE
+  (Double Chance 1X) qui semblait solide sur le papier (EV 0.30, cohérent
+  avec DOMINANT à EV négatif) mais reposait sur une lecture incomplète.
+  Vérifier si l'ETL blessures tourne encore (worker en échec silencieux ?),
+  si la source de données blessures est vide pour cette compétition/ce
+  niveau (Écosse, coupes européennes), ou si le champ n'a simplement jamais
+  été câblé sur ce pipeline d'analyse. À creuser avant de refaire confiance
+  aux picks sur des matchs avec un contexte de blessures significatif.
 - `[ ]` **[ETL] AUS1 — trou d'intersaison, heuristique locale en retard d'un
   cran vs API-FOOTBALL** (mesuré en direct 2026-08-13 via `/leagues?id=188`) —
   API-FOOTBALL a déjà basculé son flag `current` sur la saison 2026-27
