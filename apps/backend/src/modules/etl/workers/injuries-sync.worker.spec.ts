@@ -41,9 +41,39 @@ function buildCurlStdout(body: unknown, status = 200) {
   return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
 }
 
+// InjuriesSyncWorker also calls /leagues (fetchLeagueSeasonDates, best-effort
+// season date lookup) before its per-fixture /injuries calls. Dispatch
+// execFile by URL rather than a single FIFO queue, so the /leagues lookup
+// (always answered with a safe empty default here) doesn't shift the
+// per-fixture /injuries responses each test queues via mockCurlStdoutOnce.
+const DEFAULT_LEAGUES_STDOUT = buildCurlStdout({
+  get: 'leagues',
+  parameters: {},
+  errors: [],
+  results: 0,
+  response: [],
+});
+
+const mainCallQueue: string[] = [];
+
 function mockCurlStdoutOnce(stdout: string) {
-  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
-    cb(null, stdout, '');
+  mainCallQueue.push(stdout);
+}
+
+function isLeaguesUrl(args: readonly string[]): boolean {
+  const url = args[args.length - 1];
+  return typeof url === 'string' && url.includes('/leagues?id=');
+}
+
+function installExecFileDispatcher() {
+  mainCallQueue.length = 0;
+  vi.mocked(execFile).mockImplementation(((_file, args, cb) => {
+    if (isLeaguesUrl(args as string[])) {
+      cb(null, DEFAULT_LEAGUES_STDOUT, '');
+    } else {
+      const next = mainCallQueue.shift();
+      cb(null, next ?? buildCurlStdout({}, 500), '');
+    }
     return {} as never;
   }) as unknown as typeof execFile);
 }
@@ -100,6 +130,7 @@ describe('InjuriesSyncWorker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    installExecFileDispatcher();
     fixtureService.upsertCompetition.mockResolvedValue({
       id: 'competition-id',
     });
@@ -240,7 +271,9 @@ describe('InjuriesSyncWorker', () => {
       data: { season: 2025, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(execFile).toHaveBeenCalledTimes(1);
+    // 1 call for the /leagues season-date lookup + 1 for the near fixture's
+    // /injuries (the far fixture is filtered out before any fetch).
+    expect(execFile).toHaveBeenCalledTimes(2);
     expect(execFile).toHaveBeenCalledWith(
       'curl',
       expect.arrayContaining([

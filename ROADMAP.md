@@ -431,6 +431,100 @@
 
 ---
 
+### Bloc 10 — Audit calibration DB prod : coupons, canaux observation, promotion par ligue (2026-08-12)
+
+> Première session avec accès lecture seule à la DB de prod (méthode :
+> [PROD_DB_ACCESS.md](PROD_DB_ACCESS.md)). Post-mortem d'un coupon manuel
+> raté (2 jambes sur 3 cassées) qui a mené à un audit plus large : calibration
+> réelle de `jointProbability`, ratio gagné/perdu des legs refusées par
+> canal, pourquoi 7 canaux sur 10 n'ont jamais atteint un coupon/abonnement/
+> pari réel, et classement par ligue de CORRECT_SCORE + des 4 canaux jamais
+> évalués (CONSENSUS/GOALS/CLEAN_SHEET/WIN_EITHER_HALF). Détail complet et
+> requêtes dans la conversation source ; suites d'action dans [TODO.md](TODO.md).
+
+**Bugs corrigés en cours de route**
+
+- [x] `SignalWindowService`'s `canals` (signal-window.service.ts:528)
+      oubliait `TEAM_TOTAL` — retombait sur le prior statique gelé
+      `CANAL_BASE_WEIGHT.TEAM_TOTAL=0.15` au lieu d'un taux calibré réel,
+      et le départage par probabilité brute non calibrée faisait piocher
+      préférentiellement les pires legs historiques (29.4% de réussite sur
+      les 17 legs choisies vs 60.3% sur les 3 009 laissées de côté)
+- [x] Export JSON de la fiche (`analysis-sheet.render.ts`) : les picks
+      `OVER_UNDER` sur la ligne 2.5 s'affichent en `"OVER"`/`"UNDER"` bruts
+      (convention historique sans suffixe de ligne, `goals.strategy.ts`) —
+      ajout d'un champ `label` (via `pickLabel()`, déjà utilisé côté `.txt`
+      mais jamais côté JSON) pour lever l'ambiguïté sans toucher à l'enum
+
+**Constats de calibration confirmés sur données réelles (suites dans TODO.md)**
+
+- [x] `jointProbability` des coupons se dégrade avec la confiance affichée
+      (bucket ~44% annoncé → 20% réel sur n=30) — pas de correction de
+      corrélation entre jambes dans le calcul actuel
+- [x] `LONGSHOT_WEEKEND/MIDWEEK` : premier déclenchement réel (11/08, 3 jours
+      après activation) confirmé à 0 coupon généré — cause identifiée :
+      `MAX_POOL_SIZE=25` + règle anti-corrélation (1 leg/canal+marché)
+      starvent `composeGreedy` avant `minLegs`, pas un bug de câblage
+- [x] 7 canaux sur 10 (DOMINANT, BTTS, DRAW, GOALS, CONSENSUS, CLEAN_SHEET,
+      WIN_EITHER_HALF) n'ont jamais placé une seule jambe dans un coupon,
+      abonnement ou pari réel sur toute l'historique — DOMINANT exclu à
+      raison (ROI backtesté −2.1%), BTTS/DRAW trop récemment promus (whitelist
+      par ligue du 09/08) pour juger, les 4 autres jamais évalués du tout
+- [x] Seuil DOMINANT symétrique alors que le biais mesuré ne l'est pas : legs
+      HOME refusées sous-estimées (49.0% réel vs ~45.5% annoncé), legs
+      AWAY/DRAW refusées surestimées (37.1%/28.0% réel vs ~44-45% annoncé)
+- [x] CORRECT_SCORE et WIN_EITHER_HALF (Corée) confirment le même biais que
+      `jointProbability` : la calibration casse précisément quand le modèle
+      affiche une confiance inhabituellement haute — motif transversal, pas
+      local à un canal
+- [x] Classement par ligue de CORRECT_SCORE (35 ligues n≥20) et des 4 canaux
+      jamais évalués — signal net et exploitable par ligue sur plusieurs
+      (CORRECT_SCORE : USA2/UCL/KOR2 ; CONSENSUS : L1/F2/SUI1/FIN1 ; GOALS :
+      BRA2 ; CLEAN_SHEET : USA2/UCL) alors que l'agrégat global masquait ce
+      signal ou le donnait pour mauvais
+
+**Bug ETL corrigé le 2026-08-13 — dates de saison locales fausses sur
+transition de format (J1) et trou d'intersaison (AUS1)**
+
+> Repéré en observant les logs ETL en direct : `season: 2026` dans les logs
+> se lisait comme "saison passée", ce qui a mené à vérifier le mécanisme de
+> résolution de saison complet plutôt que juste corriger l'affichage.
+
+- [x] Diagnostic confirmé en direct contre l'API-FOOTBALL (`/leagues?id=`)
+      pour les 68 compétitions actives — un seul vrai décalage structurel
+      (J1) + un trou d'intersaison mineur (AUS1, cf. TODO.md), tout le reste
+      sain. `apiSeasonOverride=2027` pour J1 est confirmé **correct**
+      (l'API elle-même déclare `current: true` sur l'année 2027) — le bug
+      n'était pas le numéro de saison utilisé pour interroger l'API, mais la
+      plage de dates calculée localement pour le `Season` record
+      (`seasonFallbackStartDate/EndDate`), qui suppose toujours que le
+      numéro de saison égale l'année de démarrage réelle — hypothèse cassée
+      par la bascule de J1 d'un format annuel civil vers un format
+      août→juin façon Europe (première saison à cheval sur deux années dans
+      l'histoire du championnat)
+- [x] `apps/backend/src/modules/etl/schemas/leagues.schema.ts` +
+      `league-season-dates.ts` (nouveau) — `fetchLeagueSeasonDates()`
+      récupère les vraies dates `start`/`end` de la saison en cours depuis
+      `/leagues`, best-effort (ne bloque jamais un sync, retombe sur
+      l'heuristique `seasonStartMonth` en cas d'échec réseau/Zod/saison non
+      trouvée) — remplace le calcul local dans `fixtures-sync.worker.ts`,
+      `injuries-sync.worker.ts` et `stats-sync.worker.ts` (les trois
+      appellent `upsertSeason` et doivent s'accorder, sinon l'un écrase les
+      bonnes dates que l'autre vient d'écrire)
+- [x] Logs de sync (`fixtures-sync-worker`/`injuries-sync-worker`/
+      `stats-sync-worker`) enrichis avec `seasonName` (ex. `"2026-27"`) en
+      plus de l'entier brut `season`, pour éviter la confusion "ça a l'air
+      de pointer sur la saison passée" qui a déclenché cette investigation
+- [x] Tests : `league-season-dates.spec.ts` (nouveau) + mocks `execFile`
+      des 3 workers mis à jour pour dispatcher par URL (`/leagues` vs
+      l'endpoint principal) plutôt qu'une file FIFO unique — 827 tests verts
+- [x] `AVOID.offenders` dans l'export JSON portait la même ambiguïté de pick
+      que `selectedPicks` (pas de `label` résolu) — harmonisé avec le même
+      champ `label` via `pickLabel()` ; le rendu `.txt` réutilise maintenant
+      ce champ au lieu de le recalculer
+
+---
+
 ### Web UI
 
 - [x] Page 404 (`not-found.tsx`) — layout centré, animation CSS, tokens bento

@@ -35,6 +35,7 @@ import {
 } from './etl-worker.utils';
 import type { LeagueSyncJobData } from './league-sync.worker';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import { fetchLeagueSeasonDates } from '../league-season-dates';
 
 export type FixturesSyncJobData = {
   season: number;
@@ -84,6 +85,19 @@ export class FixturesSyncWorker {
       return;
     }
 
+    // Computed early (and reused below for the Season upsert) so every log
+    // line in this job carries the human-readable season label, not just
+    // the raw start-year integer — `season: 2026` alone reads as "last
+    // season" for anyone unfamiliar with the start-year convention (mixed
+    // up for real on 2026-08-12; see TODO.md).
+    const seasonStartMonth =
+      competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
+    const seasonName = seasonNameFromYear(
+      season,
+      seasonStartMonth,
+      competitionCode,
+    );
+
     const url = buildFixturesUrl({
       leagueId,
       season,
@@ -92,7 +106,7 @@ export class FixturesSyncWorker {
     });
 
     logger.info(
-      { competitionCode, season, syncScope, url },
+      { competitionCode, season, seasonName, syncScope, url },
       'Fetching fixtures from API-FOOTBALL',
     );
 
@@ -137,18 +151,32 @@ export class FixturesSyncWorker {
       toUpsertCompetitionInput(competitionMeta),
     );
 
-    // API-FOOTBALL does not return season dates on the fixtures endpoint — use fallback
-    const seasonStartMonth =
-      competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
+    // API-FOOTBALL's /fixtures endpoint doesn't return season dates, but
+    // /leagues does (per season, with its own `start`/`end`) — prefer that
+    // authoritative range over the seasonStartMonth heuristic, which breaks
+    // whenever a competition's season `year` label doesn't equal its real
+    // start year (J1's 2026-27 season is labeled `2027` despite starting in
+    // August 2026) or during long off-season gaps (AUS1: API-FOOTBALL flips
+    // `current` to next season before the month-based heuristic does).
+    // Best-effort — falls back to the heuristic if the lookup fails.
+    const apiSeasonDates = await fetchLeagueSeasonDates(
+      this.apiFootball,
+      leagueId,
+      season,
+    );
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
-      startDate: seasonFallbackStartDate(season, seasonStartMonth),
-      endDate: seasonFallbackEndDate(season, seasonStartMonth),
+      name: seasonName,
+      startDate:
+        apiSeasonDates?.startDate ??
+        seasonFallbackStartDate(season, seasonStartMonth),
+      endDate:
+        apiSeasonDates?.endDate ??
+        seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     logger.info(
-      { season, fixtureCount: data.response.length },
+      { season, seasonName, fixtureCount: data.response.length },
       'Upserting fixtures',
     );
 
@@ -168,7 +196,7 @@ export class FixturesSyncWorker {
     }
 
     logger.info(
-      { season, fixtureCount: data.response.length },
+      { season, seasonName, fixtureCount: data.response.length },
       'Fixtures sync complete',
     );
 
