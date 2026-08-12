@@ -255,6 +255,7 @@ describe('buildJsonSheet', () => {
           channel: 'SAFE',
           market: 'OVER_UNDER',
           pick: 'UNDER_3_5',
+          label: 'Moins de 3.5 buts',
           edge: 0.3119,
         },
       ],

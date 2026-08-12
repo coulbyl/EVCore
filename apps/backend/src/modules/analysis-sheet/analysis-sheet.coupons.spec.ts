@@ -13,6 +13,7 @@ function pick(
     channel: 'SAFE',
     market: 'ONE_X_TWO',
     pick: 'HOME',
+    label: 'Victoire domicile',
     probability: 0.9,
     odds: 1.5,
     ev: 0.35,

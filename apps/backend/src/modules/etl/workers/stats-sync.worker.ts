@@ -21,6 +21,7 @@ import {
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
+import { fetchLeagueSeasonDates } from '../league-season-dates';
 
 export type StatsSyncJobData = {
   season: number;
@@ -43,7 +44,13 @@ export class StatsSyncWorker {
   ) {}
 
   async process(job: Job<StatsSyncJobData>): Promise<void> {
-    const { season, competitionCode, syncScope = 'routine' } = job.data;
+    const {
+      season,
+      competitionCode,
+      leagueId: leagueIdNum,
+      syncScope = 'routine',
+    } = job.data;
+    const leagueId = String(leagueIdNum);
 
     logger.info({ competitionCode, season }, 'Starting stats sync');
 
@@ -60,17 +67,34 @@ export class StatsSyncWorker {
       return;
     }
 
-    // Resolve the internal seasonId (idempotent — same as fixtures-sync)
+    // Resolve the internal seasonId (idempotent — same as fixtures-sync).
+    // Authoritative-dates-first, heuristic-fallback — must agree with
+    // fixtures-sync.worker.ts or it clobbers the dates that worker wrote
+    // (see league-season-dates.ts).
     const competition = await this.fixtureService.upsertCompetition(
       toUpsertCompetitionInput(competitionMeta),
     );
     const seasonStartMonth =
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
+    const seasonName = seasonNameFromYear(
+      season,
+      seasonStartMonth,
+      competitionCode,
+    );
+    const apiSeasonDates = await fetchLeagueSeasonDates(
+      this.apiFootball,
+      leagueId,
+      season,
+    );
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competition.id,
-      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
-      startDate: seasonFallbackStartDate(season, seasonStartMonth),
-      endDate: seasonFallbackEndDate(season, seasonStartMonth),
+      name: seasonName,
+      startDate:
+        apiSeasonDates?.startDate ??
+        seasonFallbackStartDate(season, seasonStartMonth),
+      endDate:
+        apiSeasonDates?.endDate ??
+        seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     const fixtures = await this.fixtureService.findFinishedWithoutXg(
@@ -147,7 +171,10 @@ export class StatsSyncWorker {
       await sleep(ETL_CONSTANTS.STATS_RATE_LIMIT_MS);
     }
 
-    logger.info({ season, updated, skipped }, 'Stats sync complete');
+    logger.info(
+      { season, seasonName, updated, skipped },
+      'Stats sync complete',
+    );
 
     if (updated > 0) {
       await this.rollingStatsService.refreshSeason(seasonRecord.id);

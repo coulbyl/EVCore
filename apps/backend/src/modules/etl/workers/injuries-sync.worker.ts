@@ -18,6 +18,7 @@ import {
   loadActiveCompetition,
   toUpsertCompetitionInput,
 } from './etl-worker.utils';
+import { fetchLeagueSeasonDates } from '../league-season-dates';
 
 export type InjuriesSyncJobData = {
   season: number;
@@ -42,7 +43,8 @@ export class InjuriesSyncWorker {
   ) {}
 
   async process(job: Job<InjuriesSyncJobData>): Promise<void> {
-    const { season, competitionCode } = job.data;
+    const { season, competitionCode, leagueId: leagueIdNum } = job.data;
+    const leagueId = String(leagueIdNum);
 
     logger.info({ competitionCode, season }, 'Starting injuries sync');
 
@@ -63,11 +65,29 @@ export class InjuriesSyncWorker {
     );
     const seasonStartMonth =
       competitionMeta.seasonStartMonth ?? DEFAULT_SEASON_START_MONTH;
+    const seasonName = seasonNameFromYear(
+      season,
+      seasonStartMonth,
+      competitionCode,
+    );
+    // Same authoritative-dates-first, heuristic-fallback approach as
+    // fixtures-sync.worker.ts — this worker also upserts the Season row and
+    // runs right after it, so it must agree or it clobbers the good dates
+    // fixtures-sync just wrote (see league-season-dates.ts).
+    const apiSeasonDates = await fetchLeagueSeasonDates(
+      this.apiFootball,
+      leagueId,
+      season,
+    );
     const seasonRecord = await this.fixtureService.upsertSeason({
       competitionId: competitionRecord.id,
-      name: seasonNameFromYear(season, seasonStartMonth, competitionCode),
-      startDate: seasonFallbackStartDate(season, seasonStartMonth),
-      endDate: seasonFallbackEndDate(season, seasonStartMonth),
+      name: seasonName,
+      startDate:
+        apiSeasonDates?.startDate ??
+        seasonFallbackStartDate(season, seasonStartMonth),
+      endDate:
+        apiSeasonDates?.endDate ??
+        seasonFallbackEndDate(season, seasonStartMonth),
     });
 
     const fixtures = await this.fixtureService.findScheduledBySeason(
@@ -138,6 +158,7 @@ export class InjuriesSyncWorker {
       {
         competitionCode,
         season,
+        seasonName,
         fixtures: targetFixtures.length,
         updated,
         skipped,

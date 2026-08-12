@@ -92,9 +92,39 @@ function buildCurlStdout(body: unknown, status = 200) {
   return `${JSON.stringify(body)}\n__EVCORE_HTTP_CODE__:${status}`;
 }
 
+// FixturesSyncWorker also calls /leagues (fetchLeagueSeasonDates, best-effort
+// season date lookup) alongside the main /fixtures call. Dispatch execFile by
+// URL rather than a single FIFO queue, so the two independent call sequences
+// (the /leagues lookup, always answered with a safe empty default here; and
+// the /fixtures call each test configures) don't shift into each other.
+const DEFAULT_LEAGUES_STDOUT = buildCurlStdout({
+  get: 'leagues',
+  parameters: {},
+  errors: [],
+  results: 0,
+  response: [],
+});
+
+const mainCallQueue: string[] = [];
+
 function mockCurlStdoutOnce(stdout: string) {
-  vi.mocked(execFile).mockImplementationOnce(((_file, _args, cb) => {
-    cb(null, stdout, '');
+  mainCallQueue.push(stdout);
+}
+
+function isLeaguesUrl(args: readonly string[]): boolean {
+  const url = args[args.length - 1];
+  return typeof url === 'string' && url.includes('/leagues?id=');
+}
+
+function installExecFileDispatcher() {
+  mainCallQueue.length = 0;
+  vi.mocked(execFile).mockImplementation(((_file, args, cb) => {
+    if (isLeaguesUrl(args as string[])) {
+      cb(null, DEFAULT_LEAGUES_STDOUT, '');
+    } else {
+      const next = mainCallQueue.shift();
+      cb(null, next ?? buildCurlStdout({}, 500), '');
+    }
     return {} as never;
   }) as unknown as typeof execFile);
 }
@@ -165,6 +195,7 @@ describe('FixturesSyncWorker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    installExecFileDispatcher();
     vi.useFakeTimers();
     vi.setSystemTime(MOCK_NOW);
     fixtureService.upsertCompetition.mockResolvedValue({

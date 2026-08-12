@@ -249,12 +249,26 @@ describe('StatsSyncWorker', () => {
 
   it('skips all fixtures when findFinishedWithoutXg returns empty list', async () => {
     fixtureService.findFinishedWithoutXg.mockResolvedValue([]);
+    // The worker still calls /leagues once to resolve the Season's date
+    // range (fetchLeagueSeasonDates) before checking for xg-missing
+    // fixtures — answer it with a harmless empty leagues response.
+    execFileMock.mockImplementation((...args) => {
+      const callback = args[args.length - 1] as (
+        error: Error | null,
+        stdout: string,
+      ) => void;
+      callback(
+        null,
+        `${JSON.stringify({ get: 'leagues', parameters: {}, errors: [], results: 0, response: [] })}\n__EVCORE_HTTP_CODE__:200`,
+      );
+      return {} as never;
+    });
 
     await worker.process({
       data: { season: 2022, competitionCode: 'PL', leagueId: 39 },
     } as Job<{ season: number; competitionCode: string; leagueId: number }>);
 
-    expect(execFileMock).not.toHaveBeenCalled();
+    expect(execFileMock).toHaveBeenCalledTimes(1);
     expect(fixtureService.updateXg).not.toHaveBeenCalled();
     expect(rollingStatsService.refreshSeason).not.toHaveBeenCalled();
   });

@@ -27,6 +27,17 @@
 - `[~]` **LONGSHOT_WEEKEND/MIDWEEK en observation** — généré en vrai chaque
   weekend/mardi-jeudi, badge "Expérimental" côté UI, jamais staké comme une
   recommandation validée.
+  - `[x]` **Cause du 0 coupon confirmée (audit 2026-08-12)** — premier
+    déclenchement réel le 11/08 (LONGSHOT_MIDWEEK, 3 jours après activation) :
+    0 ligne générée, pas un bug de câblage. `MAX_POOL_SIZE=25` (tronqué sur
+    toute la fenêtre multi-jours) + règle anti-corrélation (1 leg par
+    canal+marché) starvent `composeGreedy` avant d'atteindre `minLegs`
+    (6-12) — le pool n'a simplement pas assez de combinaisons canal+marché
+    distinctes un jour donné.
+  - `[ ]` Desserrer `MAX_POOL_SIZE`/la règle anti-corrélation spécifiquement
+    pour le profil LONGSHOT (pool dédié plus large, ou anti-corrélation
+    assouplie pour `composeGreedy` seul), sinon le profil restera
+    structurellement à 0 coupon même après plusieurs semaines d'observation.
   - `[ ]` Laisser accumuler quelques semaines de règlements réels avant
     d'envisager un backtest (`composeGreedy` n'avait jamais tourné en prod
     avant cette session — pas d'historique multi-jours à rejouer).
@@ -35,6 +46,18 @@
     coupon complet vs cote, pas juste par jambe.
   - `[ ]` Ne retirer le badge "Expérimental" / n'activer au même niveau que
     le profil par défaut qu'après un backtest vert avec split train/valid.
+
+- `[ ]` **`jointProbability` surconfiant, et de plus en plus avec la
+  confiance affichée** (audit 2026-08-12, 409 `CouponProposal` réglés) —
+  bucket ~27.5% annoncé → 30.2% réel (bien calibré) ; bucket ~43.9% annoncé
+  (n=30) → **20.0% réel** (-23.9 pts). Le calcul actuel multiplie des
+  probabilités par jambe sans corriger la corrélation entre elles (même
+  match, même round de qualif, même type de scénario incertain) — c'est ce
+  qui a fait perdre le coupon manuel du 11/08 (48% de proba jointe réelle,
+  présenté comme "sécurisé"). Corriger le calcul (facteur de corrélation)
+  ou au minimum appliquer le même shrinkage bayésien que `calibrate()` à
+  `jointProbability` avant affichage, pour ne pas survendre la confiance
+  des combinés à haute probabilité annoncée.
 
 - `[ ]` **Pondération des signaux leg-level dans `signalScore`** (A4, pas
   fait volontairement) — `priorAnalysisCount`, `offensiveBalance`,
@@ -130,13 +153,101 @@
 - **`[~]` GOALS** (`OVER_UNDER`) — ligne **2.5** activée en observation
   (segments candidats, jamais staké). Verdict : pas d'edge cross-saison
   confirmé (ROI 2025-26 = artefact de saison, pas un vrai décalage de buts).
-  - `[ ]` **[ETL]** Densifier les cotes `OVER_UNDER` 1.5/3.5/4.5 — prérequis
-    dur avant d'activer ces lignes (aujourd'hui seule la 2.5 est cotée à ~100%).
+  - `[x]` **[ETL]** Densifier les cotes `OVER_UNDER` 1.5/3.5/4.5 — résolu.
+    Vérifié le 2026-08-12 : le trou (20 683 legs sans cote, concentré sur la
+    semaine du 29/06) s'est résorbé progressivement et **0 cas sans cote
+    depuis le 27/07** sur toutes les lignes. Plus un prérequis bloquant.
+  - `[ ]` **Jamais évalué pour promotion staking** (audit 2026-08-12,
+    classement par ligue n≥20) — signal positif net et volumineux sur
+    **Série B Brésil (BRA2, n=245, ROI +30.5%)**, cluster nordique/balte
+    cohérent (IRL1 +45.3% n=76, DEN1 +32% n=43, ISL1 +28.3% n=74, LAT1
+    +26.3% n=37, à corréler avec les corrections `LAMBDA_SCALE` déjà
+    appliquées). Négatif à surveiller : CHN2 (-37.6%, n=85), NOR2 (-21.3%,
+    n=104). Sur les grosses ligues européennes établies (EL1/EL2/CH/SP2/I2/
+    SA/F2), ROI proche de l'équilibre (-13% à +0.6%) — marché déjà efficient,
+    pas de promotion à chercher là. Étendre `calibratedCanalLeagueHitRates`
+    (signal-window.service.ts) à GOALS une fois le pilote BRA2 validé.
 
 - **`[~]` CORRECT_SCORE** — collecte forward démarrée (worker + canal + front
-  livrés, observation-only). Reste : purge + rebuild une fois la collecte
-  forward des cotes accumulée, pour voir des décisions peuplées en base.
+  livrés, observation-only). Collecte désormais suffisante (audit
+  2026-08-12 : 4 250 legs réglées avec cote, 35 ligues avec n≥20).
+  - `[x]` Calibration globale mesurée : 10.3% de réussite réelle vs 14.2%
+    de probabilité annoncée en moyenne — surconfiant, et l'écart **s'aggrave
+    avec la confiance affichée** (bucket ~12.5%, le cas modal : bien
+    calibré ; bucket ~21.5% : -16 pts ; bucket ~42.2% : -33.9 pts). Motif
+    identique à `jointProbability` ci-dessus — biais transversal, pas local
+    à ce canal.
+  - `[ ]` **Aucun mécanisme de promotion n'existe pour ce canal**
+    (contrairement à `DRAW_STAKED_LEAGUES`/`BTTS_STAKED_LEAGUES`) alors que
+    le classement par ligue montre un signal net et exploitable : **USA2
+    (n=271, ROI +19.2%), Champions League UCL (n=220, +9.3%), K League 2
+    KOR2 (n=206, +4.6%)** sont les candidats les plus solides (grand n,
+    ROI positif net). Créer `CORRECT_SCORE_STAKED_LEAGUES` sur le même
+    modèle, amorcé sur ces 3 ligues.
+  - `[ ]` **Cluster à risque identifié, à ne pas promouvoir** — Argentine
+    (ARG1 n=315 ROI -60.5%, ARG2 n=451 ROI -64.9% — les deux plus gros
+    échantillons du classement), Chili (CHI1 n=134 -68.7%), Brésil Série A
+    (BRA1 n=101 -48.0%), Russie (RUS1 n=101 -70.2%), Suède (SWE1 n=106
+    -63.7%). Cotes moyennes basses (5.4-8.5) sur ce cluster — le modèle
+    sous-estime probablement la variance des scores dans ces ligues
+    (distribution de buts plus chaotique que ce que capture le λ Poisson).
+    À creuser avant toute promotion, séparément du reste.
+  - `[ ]` Ligues à n<30 avec 0% de réussite (SUI1, POL1, POL2, CZE1, MX1,
+    SVN1) — pas encore une preuve de biais (un 0/25 reste plausible par
+    hasard sur un marché à ~12% de proba attendue), laisser accumuler avant
+    de classer.
+  - `[ ]` Une fois le pilote validé, étendre `calibratedCanalLeagueHitRates`
+    à CORRECT_SCORE comme les autres canaux promus.
 
+- **`[ ]` CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF — jamais évalués pour
+  promotion, aucune mention nulle part dans `signal-window.service.ts` ni
+  `coupon.constants.ts`** (audit 2026-08-12). Différent de DOMINANT (jugé et
+  exclu après backtest, ROI -2.1%) : ces trois n'ont jamais été jugés du
+  tout, pas de décision documentée.
+  - `[ ]` **CONSENSUS** — signal le plus net des trois : 5 ligues positives
+    sur 7 testées (n≥20), Ligue 1 (+31.1%, n=23), Ligue 2 (+32.7%, n=21),
+    Super League Suisse (+20.4%, n=25), Veikkausliiga (+11.1%, n=47, le plus
+    gros échantillon), Champions League (+7.4%, n=37). Volume global encore
+    faible (375 legs avec cote au total) — candidat prioritaire pour un
+    pilote de promotion dès que le volume aura grossi.
+  - `[ ]` **CLEAN_SHEET** — le spread par ligue le plus large de tout
+    l'audit : Ykkösliiga +75.0% (n=60), Virsliga +68.6% (n=22), USL
+    Championship **+38.0% (n=175, volume solide)**, Champions League
+    **+23.7% (n=97, volume solide)** ; à l'inverse Super Liga Serbie -52.8%
+    (n=29), Primera Nacional Argentine **-37.2% (n=265, plus gros
+    échantillon du classement)**. Le taux agrégé (35.1%) masquait
+    complètement cet écart — ne rien activer sans découpage par ligue.
+  - `[ ]` **WIN_EITHER_HALF** — mitigé partout (ARG1/UECL/UCL/USA2/CHI1
+    tous légèrement négatifs sur gros n), **sauf un vrai trou identifié en
+    Corée** : K League 1 à 17.1% de réussite réelle contre 61.3% annoncé
+    (ROI -70.3%, n=35), K League 2 à -40.9% (n=37) — surconfiance massive et
+    spécifique à ce pays sur ce marché. À isoler/recalibrer avant toute
+    promotion plus large du canal.
+  - `[ ]` Une fois un premier pilote validé sur l'un des trois, même
+    mécanisme que DRAW/BTTS/TEAM_TOTAL : whitelist par ligue +
+    `calibratedCanalLeagueHitRates`.
+
+- **`[ ]` Seuil DOMINANT symétrique alors que le biais mesuré ne l'est pas**
+  (audit 2026-08-12, 18 041 legs `below_threshold` reconstruites via
+  `model_run.features.probabilities`) — legs **HOME** refusées : 49.0% de
+  réussite réelle contre ~45.5% annoncé (sous-estimées) ; legs
+  **AWAY**/**DRAW** refusées : 37.1%/28.0% réel contre ~44-45% annoncé
+  (surestimées). Biais favori-longshot classique du foot, déjà traité côté
+  EV (`ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR`/`ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR`)
+  mais absent du seuil de sélection DOMINANT lui-même (`below_threshold`,
+  seuil unique quel que soit le côté). Appliquer un seuil différencié par
+  côté sur le même principe.
+
+- **`[ ]` Observabilité : `reasonDetails` de SAFE/VALUE trop pauvre pour
+  l'audit "qu'a-t-on raté"** (audit 2026-08-12) — leur rejet
+  `score_below_threshold`/`no_safe_candidate`/`no_viable_pick` ne stocke
+  qu'un score agrégé au niveau fixture (identique pour SAFE et VALUE,
+  17 141 fois), pas le marché/pick précis qui aurait été choisi.
+  Contrairement à DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET (dont
+  `reasonDetails` porte les probabilités par côté, permettant de reconstruire
+  et vérifier le pick refusé contre le score réel), SAFE/VALUE sont
+  impossibles à auditer de cette façon aujourd'hui. Enrichir `reasonDetails`
+  pour ces deux canaux avec le candidat presque-sélectionné.
 - **`[~]` Lambda scale (λScale)** — correction appliquée sur 11 ligues
   (biais structurel de niveau de buts). Reste : re-mesurer
   `/backtest/calibration` après le prochain rebuild, étendre si d'autres
@@ -167,6 +278,17 @@
   nouvelle conversation, plan ordonné dans la doc.
 - `[ ]` **[optionnel]** Exposer un backfill par fenêtre de dates, seulement si
   le rebuild par saisons via `ml-backfill` s'avère insuffisant.
+- `[ ]` **[ETL] AUS1 — trou d'intersaison, heuristique locale en retard d'un
+  cran vs API-FOOTBALL** (mesuré en direct 2026-08-13 via `/leagues?id=188`) —
+  API-FOOTBALL a déjà basculé son flag `current` sur la saison 2026-27
+  (démarre 2026-10-16) alors que l'heuristique locale (mois courant <
+  `seasonStartMonth`) reste sur 2025 jusqu'en octobre. Impact faible (se
+  corrige seul en octobre, aucun match A-League d'ici là), mais même famille
+  que le bug J1 résolu ci-dessus (Bloc 10 ROADMAP) — `fetchLeagueSeasonDates`
+  corrige déjà les _dates_ de la saison correcte une fois `apiSeasonOverride`
+  ou l'heuristique alignés sur le bon numéro, mais ne corrige pas le _choix_
+  du numéro de saison lui-même pendant ce trou. Décider si ça vaut un
+  `apiSeasonOverride` temporaire ou si on laisse courir (gain marginal).
 
 ---
 

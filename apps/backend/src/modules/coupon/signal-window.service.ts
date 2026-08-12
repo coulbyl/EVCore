@@ -525,7 +525,14 @@ export class SignalWindowService {
       });
     }
 
-    const canals: Canal[] = ['VALUE', 'SAFE', 'BTTS', 'DRAW', 'DOMINANT'];
+    const canals: Canal[] = [
+      'VALUE',
+      'SAFE',
+      'BTTS',
+      'DRAW',
+      'DOMINANT',
+      'TEAM_TOTAL',
+    ];
 
     const calibratedCanalHitRates = Object.fromEntries(
       canals.map((c) => {

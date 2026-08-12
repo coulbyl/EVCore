@@ -42,6 +42,12 @@ export type AnalysisSheetJsonPick = {
   channel: string;
   market: string;
   pick: string;
+  // Human-readable French label (e.g. "Plus de 2.5 buts" for market
+  // OVER_UNDER / pick "OVER") — the 2.5 goals line keeps a bare OVER/UNDER
+  // enum for historical reasons (goals.strategy.ts), so a bare pick string
+  // reads as ambiguous to anyone consuming the raw JSON without that
+  // knowledge. This resolves it without changing the pick enum itself.
+  label: string;
   probability: number;
   odds: number | null;
   ev: number;
@@ -79,6 +85,7 @@ export type AnalysisSheetAvoidOffender = {
   channel: string;
   market: string;
   pick: string;
+  label: string;
   edge: number;
 };
 
@@ -202,6 +209,7 @@ function toJsonFixture(
       channel: s.channel,
       market: s.market!,
       pick: s.pick!,
+      label: pickLabel({ market: s.market!, pick: s.pick! }),
       probability: s.probability ?? 0,
       odds: s.odds,
       ev: s.ev ?? 0,
@@ -387,6 +395,7 @@ function buildAvoidFlag(
             channel: raw.channel,
             market: raw.market,
             pick: raw.pick,
+            label: pickLabel({ market: raw.market, pick: raw.pick }),
             edge: raw.edge,
           },
         ];
@@ -740,12 +749,8 @@ export function buildTxtSheet(
         `  ⚠ AVOID${f.avoidFlag.reasonCode ? ` [${f.avoidFlag.reasonCode}]` : ''} — divergence modèle/marché implausible${cap} ; picks exclus du staking`,
       );
       for (const o of f.avoidFlag.offenders) {
-        const label = pickLabel({
-          market: o.market,
-          pick: o.pick,
-        });
         w(
-          `    Offender [${o.channel}]  ${label}  edge ${fmtSigned(o.edge, 3)}`,
+          `    Offender [${o.channel}]  ${o.label}  edge ${fmtSigned(o.edge, 3)}`,
         );
       }
     }
