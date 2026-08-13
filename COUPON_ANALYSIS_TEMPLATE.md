@@ -10,6 +10,49 @@
 
 ---
 
+## Étape 0 — Balayage actif, pas seulement réactif aux `selectedPicks`
+
+Constat du 2026-08-13 (revue du 13/08, 39 fixtures) : se contenter de lire
+`selectedPicks` revient à ne voir qu'**un pick par canal**, déjà filtré par
+les seuils propres à ce canal (EV/odds/probabilité). Ces seuils servent à
+décider si le système auto-stake une jambe **seule** — ils sont **hors-sujet**
+pour juger si une jambe est fiable dans un combiné construit à la main (cf.
+discussion PAOK `TEAM_TOTAL_AWAY OVER_0_5`, rejeté `ev_below_threshold` mais
+avec une probabilité modèle correcte de 57%). S'arrêter à `selectedPicks`
+fait disparaître de vue des matchs entiers (Vaduz–Turku BTTS/Over 0.5,
+Nordsjaelland Over 2.5...) alors que la donnée existe.
+
+**Le bon réflexe : deux étages, pas un filtre unique.**
+
+1. **Tri quantitatif (déterministe, tous les marchés de tous les matchs)**
+   — pour chaque fixture du jour, ne pas se limiter à `selectedPicks` :
+   parcourir `evaluatedPicks` en entier (viable **et** rejected — un rejet
+   EV/odds n'est pas un rejet de fiabilité, voir étape 5) et, quand un
+   marché en est absent (bug bookmaker-par-marché, cf. TODO.md), aller
+   chercher la cote dans `odds_snapshot` et calculer la probabilité à
+   partir de `lambda`. Retenir un candidat comme fiable si :
+   - `probability` (calibrée) ≥ ~55-60% ;
+   - **accord raw/calibré** : si `|calibré − rawPoissonProbability| > ~0.15-0.20`,
+     marquer "à vérifier" plutôt qu'exclure d'office (ni l'un ni l'autre
+     n'a automatiquement raison, cf. l'étape 7 du bug Nordsjaelland) ;
+   - pour tout pick `UNDER_*` du marché `OVER_UNDER` (**toutes lignes**,
+     pas juste 2,5) : `lambdaHome + lambdaAway < 2.3` — le garde-fou système
+     `under_high_lambda` ne couvre que la ligne 2,5 (cf. TODO.md) ;
+   - `dataCoverage` pondère la confiance globale sans disqualifier seul.
+   Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
+   réduit (~30-50) — et documente explicitement les fixtures qui n'ont
+   produit aucun candidat fiable, pour ne rien faire disparaître en silence.
+2. **Synthèse qualitative (jugement, sur le pool réduit seulement)** — sur
+   ce pool, appliquer les étapes 1 à 9 de ce document (contexte
+   aller-retour, cohérence narrative, clusters de risque corrélé, tier des
+   canaux comme signal additionnel) pour construire le ou les coupons.
+
+**Prérequis outillage** (suivi dans [TODO.md](TODO.md), section Générateur
+de coupon) : ce balayage suppose d'avoir `evaluatedPicks` complet par
+fixture sans dépendre d'un accès DB live à chaque fois (tunnel SSH
+instable en pratique) — l'export "fiche EVCore" doit être enrichi en
+conséquence avant que ce process soit praticable au quotidien.
+
 ## Étape 1 — Lire la fiche EVCore sans la prendre pour argent comptant
 
 - Utiliser le champ `label` de chaque pick (ajouté le 2026-08-12) plutôt que
@@ -152,6 +195,51 @@ Pour tout coupon qui casse, ne pas s'arrêter à "cette jambe a perdu" :
    marché), le documenter dans [TODO.md](TODO.md) plutôt que de le laisser
    dans l'historique de conversation.
 
+## Étape 9 — Post-mortem pick par pick, y compris les matchs/marchés écartés
+
+Ne pas se contenter de vérifier si la jambe choisie a gagné. Pour chaque
+match du lot initial (retenu **ou écarté** du coupon final), une fois le
+match terminé :
+
+1. Relire `evaluatedPicks` complet (pas juste `candidatePicks`, qui ne garde
+   que le top 5 par EV) — regarder tous les marchés `status: "rejected"` et
+   leur `rejectionReason`. Un marché rejeté par le système n'est pas
+   forcément un mauvais marché pour un usage différent (voir point 3).
+2. Comparer le classement `candidatePicks` (meilleur EV brut) au résultat
+   réel. **Confirmé le 2026-08-13** sur Omonia–Lincoln (1-0) : les 5
+   meilleurs `candidatePicks` par EV étaient tous des marchés directionnels
+   secondaires (BTTS Yes, Clean Sheet Home No, Win To Nil Home No, Team
+   Total Away Over 0.5, Team Total Home Under 2.5) — **4 sur 5 auraient
+   perdu** sur ce score. Le seul gagnant était `TEAM_TOTAL_HOME UNDER_2_5`.
+   La jambe qu'on a réellement jouée (`OVER_UNDER UNDER_4_5`, cote 1.24)
+   n'apparaissait même pas dans ce top 5 et a gagné proprement. **Le
+   classement EV du système favorise des marchés à probabilité modérée
+   (50-70%) à variance de match élevée — ne pas le lire comme "les
+   meilleurs picks", juste comme "les picks à plus haute EV brute théorique",
+   deux choses différentes pour un usage combo/sécurisant.**
+3. Si la jambe jouée était `status: "rejected"` côté système (ex. Omonia
+   `UNDER_4_5` : `ev=0.072`, rejetée `ev_below_threshold` — sous le plancher
+   `EV_THRESHOLD=0.08`), **le dire explicitement dans l'analyse**. On a le
+   droit d'inclure une jambe à très haute probabilité que le système
+   rejette pour un seul pari (le plancher d'EV est calibré pour un pari
+   isolé, pas pour réduire la variance d'un combiné) — mais ce n'est pas la
+   même chose que "le système valide cette jambe", et le lecteur du coupon
+   doit le savoir.
+4. Vérifier `lambdaHome + lambdaAway` (lambda total) sur toute jambe
+   `UNDER_X_5` (X ≠ 2.5, càd `UNDER_1_5`/`UNDER_3_5`/`UNDER_4_5`) contre
+   `UNDER_HIGH_LAMBDA_THRESHOLD=2.3` **à la main** — le garde-fou système
+   `under_high_lambda` (`pick-validation.ts:48-54`) ne se déclenche que sur
+   le pick littéral `"UNDER"` (ligne 2,5), jamais sur les lignes 1,5/3,5/4,5.
+   **Confirmé le 2026-08-13** : la jambe cassée Nordsjaelland–Valur
+   (`UNDER_3_5`, busté 5-0) avait `lambdaTotal≈3.74`, largement au-dessus du
+   seuil 2.3 qui aurait bloqué un simple "Under 2,5" sur ce match — mais
+   comme c'était la ligne 3,5, aucune garde-fou ne s'est déclenchée. Même
+   famille de bug que `calibration_alert` (étape 7/ROADMAP Bloc 10) : un
+   garde-fou construit pour un marché précis ne protège pas les marchés
+   adjacents, et personne ne l'a remarqué avant que ça casse en vrai.
+5. Documenter tout motif réutilisable trouvé ici dans [TODO.md](TODO.md)
+   (garde-fous/code), pas seulement dans ce template (méthode).
+
 ---
 
 ## Checklist rapide avant de proposer un coupon
@@ -166,3 +254,5 @@ Pour tout coupon qui casse, ne pas s'arrêter à "cette jambe a perdu" :
 - [ ] Chaque jambe : les autres canaux du même match relus, pas seulement celui choisi
 - [ ] Aucune jambe choisie uniquement parce que la confiance affichée est spectaculairement haute
 - [ ] Si doute persistant : vérifié en DB plutôt que tranché à l'intuition
+- [ ] Toute jambe `UNDER_1_5`/`UNDER_3_5`/`UNDER_4_5` : `lambdaHome+lambdaAway` vérifié à la main contre 2.3 (le garde-fou système ne couvre que la ligne 2,5)
+- [ ] Si une jambe jouée était `rejected` côté système (EV/odds/probabilité) : je le dis explicitement, je ne laisse pas croire que le système l'a validée

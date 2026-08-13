@@ -233,10 +233,12 @@ describe('FixtureRepository.upsertFixture', () => {
 
 describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', () => {
   const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const findFirst = vi.fn().mockResolvedValue(null);
   const prisma = {
     client: {
       oddsSnapshot: {
         create,
+        findFirst,
       },
     },
   } as unknown as PrismaService;
@@ -247,6 +249,7 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
   beforeEach(() => {
     vi.clearAllMocks();
     create.mockResolvedValue({ id: 'snap-id' });
+    findFirst.mockResolvedValue(null);
   });
 
   it('upserts DRAW_NO_BET rows for both picks when odds are present', async () => {
@@ -370,10 +373,12 @@ describe('FixtureRepository.upsertOddsSnapshot — Draw No Bet / Team Total', ()
 
 describe('FixtureRepository.upsertOddsSnapshot — Clean Sheet / Win to Nil / To Win Either Half', () => {
   const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const findFirst = vi.fn().mockResolvedValue(null);
   const prisma = {
     client: {
       oddsSnapshot: {
         create,
+        findFirst,
       },
     },
   } as unknown as PrismaService;
@@ -406,6 +411,7 @@ describe('FixtureRepository.upsertOddsSnapshot — Clean Sheet / Win to Nil / To
   beforeEach(() => {
     vi.clearAllMocks();
     create.mockResolvedValue({ id: 'snap-id' });
+    findFirst.mockResolvedValue(null);
   });
 
   it('upserts CLEAN_SHEET_HOME/AWAY rows (Yes/No) when odds are present', async () => {
@@ -512,10 +518,12 @@ describe('FixtureRepository.upsertOddsSnapshot — Clean Sheet / Win to Nil / To
 
 describe('FixtureRepository.upsertOddsSnapshot — Result/Total Goals / Result/BTTS', () => {
   const create = vi.fn().mockResolvedValue({ id: 'snap-id' });
+  const findFirst = vi.fn().mockResolvedValue(null);
   const prisma = {
     client: {
       oddsSnapshot: {
         create,
+        findFirst,
       },
     },
   } as unknown as PrismaService;
@@ -551,6 +559,7 @@ describe('FixtureRepository.upsertOddsSnapshot — Result/Total Goals / Result/B
   beforeEach(() => {
     vi.clearAllMocks();
     create.mockResolvedValue({ id: 'snap-id' });
+    findFirst.mockResolvedValue(null);
   });
 
   it('upserts sparse RESULT_TOTAL_GOALS rows keyed by side+line', async () => {

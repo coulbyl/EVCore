@@ -95,7 +95,7 @@ export function selectSafeValuePick(
       (p): p is ViablePick =>
         p.rejectionReason === undefined &&
         p.market === Market.OVER_UNDER &&
-        (p.pick === "OVER" || p.pick === "OVER_3_5") &&
+        (p.pick === "OVER" || p.pick === "OVER_3_5" || p.pick === "OVER_4_5") &&
         p.ev.greaterThanOrEqualTo(SAFE_VALUE_MIN_EV) &&
         p.ev.lessThanOrEqualTo(EV_HARD_CAP) &&
         // Per-league floor (svMinOdds), like the main eligibility check —

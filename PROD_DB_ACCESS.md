@@ -18,7 +18,7 @@ L'IP interne du conteneur **peut changer** si le conteneur redémarre — à rev
 Sur le serveur, dans un `psql` connecté à la base (`docker exec -it evcore-postgres psql -U postgres -d evcore`, ou `docker ps | grep postgres` d'abord pour confirmer le nom du conteneur) :
 
 ```sql
-CREATE ROLE evcore_analyst WITH LOGIN PASSWORD '<MOT_DE_PASSE_FORT_UNIQUEMENT_TOI>';
+CREATE ROLE evcore_analyst WITH LOGIN PASSWORD '<CHOISIS_UN_MOT_DE_PASSE_FORT>';
 ALTER ROLE evcore_analyst SET statement_timeout = '30s';
 ALTER ROLE evcore_analyst SET default_transaction_read_only = on;
 

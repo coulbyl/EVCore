@@ -200,6 +200,55 @@ describe('buildJsonSheet', () => {
     expect(f?.model.shadowSignals).toBeNull();
   });
 
+  it('surfaces the full evaluatedPicks pool (viable and rejected), not just selectedPicks', () => {
+    const f = fixture({
+      features: {
+        evaluatedPicks: [
+          {
+            market: 'OVER_UNDER',
+            pick: 'UNDER_3_5',
+            probability: 0.6757,
+            odds: 2.15,
+            ev: 0.4527,
+            status: 'viable',
+          },
+          {
+            market: 'TEAM_TOTAL_AWAY',
+            pick: 'OVER_0_5',
+            probability: 0.5731,
+            odds: 1.24,
+            ev: -0.2894,
+            status: 'rejected',
+            rejectionReason: 'ev_below_threshold',
+          },
+        ],
+        rawPoissonProbability: { under35: 0.4856 },
+      },
+    });
+
+    const sheet = buildJsonSheet([f], meta);
+    const picks = sheet.fixtures[0]?.evaluatedPicks;
+
+    expect(picks).toHaveLength(2);
+    expect(picks?.[0]).toMatchObject({
+      market: 'OVER_UNDER',
+      pick: 'UNDER_3_5',
+      status: 'viable',
+      rejectionReason: null,
+      // 0.6757 (calibrated) - 0.4856 (raw Poisson) — the same divergence
+      // discussed in COUPON_ANALYSIS_TEMPLATE.md étape 0.
+      adjustmentDelta: expect.closeTo(0.1901, 4),
+    });
+    expect(picks?.[1]).toMatchObject({
+      market: 'TEAM_TOTAL_AWAY',
+      pick: 'OVER_0_5',
+      status: 'rejected',
+      rejectionReason: 'ev_below_threshold',
+      // TEAM_TOTAL isn't covered by the raw-probability export.
+      adjustmentDelta: null,
+    });
+  });
+
   it('surfaces a triggered AVOID as a fixture-level flag (it appears in neither selectedPicks nor rejectionSummary)', () => {
     const f = fixture({
       selections: [

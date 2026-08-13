@@ -523,6 +523,63 @@ transition de format (J1) et trou d'intersaison (AUS1)**
       champ `label` via `pickLabel()` ; le rendu `.txt` réutilise maintenant
       ce champ au lieu de le recalculer
 
+**Bug confirmé le 2026-08-13 — `calibration_alert` n'a aucune couverture sur
+OVER_UNDER/marchés de buts**
+
+> Repéré en post-mortem d'une jambe cassée du coupon longshot 13-14/08
+> (FC Nordsjaelland–Valur, Under 3,5 buts, terminé 5-0+). Détail dans
+> [TODO.md](TODO.md).
+
+- [x] `assessMarketCoherence()` (`market-coherence.ts`), seule source de
+      `calibration_alert`, ne compare que le 1X2 (home/draw/away) contre les
+      cotes bookmaker — jamais invoquée avec des probabilités OVER_UNDER.
+      Un swing de calibration goals aussi grand soit-il (ici ~19pp entre
+      Poisson brut et proba finale, via le shrinkage ligue de
+      `ou-shrinkage.ts`) ne peut structurellement jamais déclencher d'alerte
+      ni d'exclusion du staking, contrairement aux picks 1X2 (seuils
+      `MAX_DIVERGENCE=0.30`/`FAVORITE_FLIP_MIN_GAP=0.15` dans `ev.constants.ts`)
+
+**Décision du 2026-08-13 — passer d'une analyse coupon réactive à active**
+
+> Constat post-mortem : l'analyse manuelle de coupon se limitait à lire
+> `selectedPicks` (un pick par canal, filtré par les seuils propres à
+> chaque canal — EV/odds/probabilité — qui n'ont pas de sens pour
+> construire un combiné à la main) plutôt que balayer tous les marchés
+> cotés de tous les matchs du jour. Détail et mécanique dans
+> [COUPON_ANALYSIS_TEMPLATE.md](COUPON_ANALYSIS_TEMPLATE.md) (étape 0) et
+> [TODO.md](TODO.md) (section Générateur de coupon).
+
+- `[x]` Enrichir l'export "fiche EVCore"
+      (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
+      avec `evaluatedPicks` complet par fixture (tous statuts) au lieu du
+      seul `selectedPicks` par canal — préalable pour que l'analyse balaie
+      tous les marchés sans dépendre d'un accès DB live par fixture.
+
+**Audit systémique 2026-08-13 — recherche ciblée du même motif de bug**
+
+> Le produit tourne en argent réel (dépassé le stade MVP) — décision de
+> systématiquement chercher et noter, pas corriger à la volée en session,
+> toute occurrence du motif "garde-fou/résolution de données écrit pour un
+> cas précis (1X2, ligne 2,5, marché entier) qui ne généralise pas
+> silencieusement aux cas voisins soumis au même risque". 9 occurrences
+> supplémentaires trouvées en plus des 3 du post-mortem initial — dont la
+> cause racine des doublons `odds_snapshot` (upsert qui ne se déclenche
+> jamais, clé jamais réellement `@@unique`). Détail complet dans
+> [TODO.md](TODO.md), section "Audit systémique 2026-08-13".
+
+**PR "sûrs uniquement" du 2026-08-13** — 4 correctifs sans impact sur le
+comportement de staking, livrés dans la foulée de l'audit plutôt que
+remis à plus tard : fiche EVCore enrichie (`evaluatedPicks` complet,
+ci-dessus) ; `brierScore` du rapport hebdo calculé pour de vrai au lieu
+d'un `0` en dur ; `selectSafeValuePick` complété avec la contrepartie
+`OVER_4_5` manquante ; upsert `odds_snapshot` réparé côté code (le
+find-then-create/update remplace le try/catch qui ne se déclenchait
+jamais — la contrainte `@@unique` en DB reste une migration à faire par
+l'utilisateur). Le reste de l'audit (calibration_alert étendu,
+under_high_lambda généralisé, seuils DRAW/longshot/htftCalibrated,
+shrinkage TEAM_TOTAL) demande un backtest avant merge — laissé dans
+TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
+
 ---
 
 ### Web UI
