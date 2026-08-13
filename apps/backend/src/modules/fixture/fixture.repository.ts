@@ -691,6 +691,21 @@ export class FixtureRepository {
       snapshotAt: data.snapshotAt,
     } as const;
 
+    // Not a real Prisma `upsert()`: [fixtureId, bookmaker, market, pick,
+    // snapshotAt] is only a plain @@index in schema.prisma, never @@unique
+    // (tracked in TODO.md), so `create()` never throws a unique-constraint
+    // error to catch — find-then-create/update explicitly instead.
+    const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      where,
+      select: { id: true },
+    });
+    if (existing) {
+      await this.prisma.client.oddsSnapshot.update({
+        where: { id: existing.id },
+        data: { odds },
+      });
+      return;
+    }
     try {
       await this.prisma.client.oddsSnapshot.create({
         data: {
@@ -705,13 +720,13 @@ export class FixtureRepository {
       });
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;
-      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      const raceWinner = await this.prisma.client.oddsSnapshot.findFirst({
         where,
         select: { id: true },
       });
-      if (!existing) throw error;
+      if (!raceWinner) throw error;
       await this.prisma.client.oddsSnapshot.update({
-        where: { id: existing.id },
+        where: { id: raceWinner.id },
         data: { odds },
       });
     }
@@ -1103,6 +1118,26 @@ export class FixtureRepository {
       snapshotAt: data.snapshotAt,
     };
 
+    // Not a real Prisma `upsert()`: [fixtureId, bookmaker, market, pick,
+    // snapshotAt] is only a plain @@index in schema.prisma, never @@unique
+    // (tracked in TODO.md), so `create()` never throws a unique-constraint
+    // error to catch — find-then-create/update explicitly instead.
+    const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      where,
+      select: { id: true },
+    });
+    if (existing) {
+      return this.prisma.client.oddsSnapshot.update({
+        where: { id: existing.id },
+        data: {
+          homeOdds: data.homeOdds,
+          drawOdds: data.drawOdds,
+          awayOdds: data.awayOdds,
+        },
+        select: { id: true },
+      });
+    }
+
     try {
       return await this.prisma.client.oddsSnapshot.create({
         data: {
@@ -1120,15 +1155,15 @@ export class FixtureRepository {
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;
 
-      const existing = await this.prisma.client.oddsSnapshot.findFirst({
+      const raceWinner = await this.prisma.client.oddsSnapshot.findFirst({
         where,
         select: { id: true },
       });
 
-      if (!existing) throw error;
+      if (!raceWinner) throw error;
 
       return this.prisma.client.oddsSnapshot.update({
-        where: { id: existing.id },
+        where: { id: raceWinner.id },
         data: {
           homeOdds: data.homeOdds,
           drawOdds: data.drawOdds,

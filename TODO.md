@@ -24,6 +24,36 @@
 > Historique complet : Bloc 9 de [ROADMAP.md](ROADMAP.md). Rien ici n'est
 > bloquant pour merger la branche — ce sont des suites, pas des prérequis.
 
+- `[x]` **Enrichir l'export "fiche EVCore" avec `evaluatedPicks` complet
+  (décidé et livré le 2026-08-13, PR en cours)** — post-mortem du coupon 13-14/08 :
+  [COUPON_ANALYSIS_TEMPLATE.md](COUPON_ANALYSIS_TEMPLATE.md) ne doit plus se
+  limiter à lire `selectedPicks` (un seul pick par canal, filtré par les
+  seuils EV/odds/probabilité propres à chaque canal — hors-sujet pour
+  construire un coupon à la main, cf. discussion sur PAOK `TEAM_TOTAL_AWAY
+  OVER_0_5` rejeté `ev_below_threshold` mais parfaitement valable comme
+  jambe de combo). Aujourd'hui, obtenir cette vue complète nécessite une
+  requête DB par fixture (`model_run.features.evaluatedPicks` +
+  `odds_snapshot` en repli quand un marché est absent d'`evaluatedPicks`,
+  cf. bug bookmaker-par-marché ci-dessous) — pas praticable à 39 fixtures/
+  jour avec un tunnel SSH instable. Décision : étendre
+  `apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`
+  (type `AnalysisSheetJsonFixture`, ligne ~116 ; construction de
+  `selectedPicks`, ligne ~206) pour inclure `evaluatedPicks` en entier
+  (tous statuts, viable et rejected) par fixture dans l'export JSON, plus
+  `rawPoissonProbability`/`lambda` déjà dans `model_run.features` pour
+  permettre la comparaison brut/calibré sans requête DB séparée. Objectif :
+  un process d'analyse **actif** (balayer tous les marchés de tous les
+  matchs du jour, filtrer par fiabilité — probabilité + accord brut/calibré
+  + `lambdaTotal` sur les picks `UNDER_*` — puis construire le coupon sur ce
+  pool réduit) plutôt que **réactif** (ne réagir qu'aux `selectedPicks` déjà
+  filtrés par le système).
+  - `[x]` **Livré** — nouveau champ `evaluatedPicks:
+    AnalysisSheetJsonEvaluatedPick[]` par fixture (market, pick, label,
+    probability, odds, ev, status, rejectionReason, adjustmentDelta vs
+    raw Poisson), réutilisant l'extraction déjà faite par
+    `extractEvaContextFromFeatures` (`model-run.utils.ts`) — pas de nouvelle
+    logique de parsing. Testé (`analysis-sheet.render.spec.ts`).
+
 - `[~]` **LONGSHOT_WEEKEND/MIDWEEK en observation** — généré en vrai chaque
   weekend/mardi-jeudi, badge "Expérimental" côté UI, jamais staké comme une
   recommandation validée.
@@ -278,6 +308,250 @@
   nouvelle conversation, plan ordonné dans la doc.
 - `[ ]` **[optionnel]** Exposer un backfill par fenêtre de dates, seulement si
   le rebuild par saisons via `ml-backfill` s'avère insuffisant.
+- `[x]` **[ML] `ALL`/`BTTS:BTTS` actifs mais sans fichier `.pkl` exploitable —
+  corrigé manuellement (2026-08-12)** — le reset "repartir de zéro" du 01/07
+  (`docs/ml-worker-sync.md`) a recréé le volume `evcore_ml_models` sans
+  désactiver ces 2 `ml_model_version` : ils sont restés `isActive=true` avec
+  le meilleur Brier historique (donc jamais remplacés par le gate d'auto-
+  switch à 5%, cf `ML_MIN_BRIER_IMPROVEMENT`), mais leur fichier avait
+  disparu avec l'ancien volume — correction shadow silencieusement absente
+  pour ces 2 segments depuis ~6 semaines, sans impact argent (shadow only)
+  mais sans alerte non plus. Réactivés manuellement sur le meilleur candidat
+  avec fichier présent (`ALL`→08/08, `BTTS:BTTS`→03/08) via la même
+  transaction que `MlRepository.activate()`, puis `/reload` déclenché —
+  confirmé en direct : 15/15 segments chargés sans warning.
+  - `[ ]` **Garde-fou manquant** : rien ne vérifie qu'un modèle `isActive` a
+    un fichier réellement présent sur le volume — un modèle "meilleur sur le
+    papier" mais mort peut bloquer indéfiniment la promotion d'un modèle
+    moins bon mais fonctionnel. Ajouter un health-check (ml-worker au
+    démarrage/reload, ou cron backend) qui alerte si `isActive=true` sans
+    fichier chargé.
+  - `[ ]` **Anomalie non résolue** : 4 cycles d'entraînement `BTTS:BTTS`
+    consécutifs (11/06→29/06) ont un `brierScore`/`sampleSize` strictement
+    identiques (0.24129788209047515, n=1185) — l'extract n'a probablement pas
+    vu de nouvelles données pendant 3 semaines, cohérent avec le bug
+    d'extract SQL corrigé le 01/07 mais pas vérifié formellement. À creuser
+    si le motif se reproduit.
+
+- `[ ]` **[ML] Backtest de validation shadow vs baseline — potentiel très
+  localisé, pas généralisable (2026-08-12)** — script
+  `db:backtest:ml-shadow-correction` (nouveau, comparaison Brier walk-forward
+  sur 9820 sélections rang 1 réglées, 06/07→11/08, sans re-fit). Sur 7
+  segments avec n≥100 : **ML dégrade le Brier sur 5** (GOALS:OVER_UNDER,
+  WIN_EITHER_HALF, TEAM_TOTAL_HOME, CLEAN_SHEET_HOME, TEAM_TOTAL_AWAY — ce
+  dernier trio nettement, +0.03 à +0.055), **améliore sur 1 seul**
+  (`DOMINANT:ONE_X_TWO`, n=825, Brier 0.277→0.232, confirmé stable sur les 30
+  derniers jours). `CLEAN_SHEET:CLEAN_SHEET_AWAY` améliore mais gain
+  négligeable (quasi bruit). `VALUE:ONE_X_TWO`/`VALUE:BTTS` prometteurs sur
+  le papier mais n=67/n=8, non concluant. **`BTTS:BTTS` et `DRAW:ONE_X_TWO`
+  absents du rapport** — zéro sélection réglée avec correction valide sur
+  toute la période, confirmation directe de l'incident fichier manquant
+  ci-dessus (pas juste suspect, réellement mort en pratique tout du long).
+  - Conclusion : ne pas généraliser une promotion ML. Seul
+    `DOMINANT:ONE_X_TWO` est un candidat sérieux, et encore : le ROI simulé
+    n'a pas été vérifié (le script ne fait que Brier/calibration) — à faire
+    avant toute activation réelle, plus définir un mécanisme de gouvernance
+    (cap de poids façon OpenClaw ≤30%, pas un remplacement total) avant de
+    brancher quoi que ce soit sur une vraie décision.
+  - `[ ]` **Re-vérifier dans 2 semaines (~2026-08-26)** — surtout
+    `BTTS:BTTS`/`DRAW:ONE_X_TWO` maintenant que leurs modèles sont réactivés
+    (voir item ci-dessus) : voir si un historique de correction valide
+    recommence à s'accumuler, et si `DOMINANT:ONE_X_TWO` reste stable une
+    fois plus de données post-fix incluses.
+
+- `[ ]` **`calibration_alert` : angle mort total sur OVER_UNDER/marchés de
+  buts** (trouvé en post-mortem de coupon, 2026-08-13) — sur FC
+  Nordsjaelland–Valur (Under 3,5 buts, coupon longshot 13-14/08, cassé 5-0+),
+  `model_run.features` montrait `rawPoissonProbability.under35=0.486` vs
+  `probabilities.under35=0.676` (calibré) : un écart de +19pp, du même ordre
+  que les écarts de 0.25/0.225 qui ont fait exclure deux autres jambes du
+  même coupon via `calibration_alert` (`favorite_flip`). Mais
+  `assessMarketCoherence()` (`apps/backend/src/modules/betting-engine/
+  market-coherence.ts`), seule source de `calibration_alert` (appelée une
+  fois dans `betting-engine.service.ts:850-875`), ne prend en entrée que les
+  probabilités 1X2 (home/draw/away) contre les cotes bookmaker — jamais les
+  probabilités OVER_UNDER. Le shrinkage lui-même (`ou-shrinkage.ts`,
+  `shrinkOverUnderProbabilities()`, config `OU_SHRINKAGE_CONFIG` par
+  compétition) est volontaire et backtesté (shrinkage vers un taux de base
+  ligue quand `factor` est bas, cf. `docs/data-poor-leagues-calibration.md`)
+  — le bug n'est pas dans le calcul, il est dans l'absence totale de garde-
+  fou : un swing de calibration goals, même énorme, ne peut jamais produire
+  d'alerte ni d'exclusion du staking. Étendre `assessMarketCoherence`
+  (ou un équivalent dédié) aux marchés OVER_UNDER avant de considérer ces
+  picks aussi fiables que les picks 1X2 dans un coupon combiné.
+- `[ ]` **`under_high_lambda` ne couvre que la ligne 2,5, pas 1,5/3,5/4,5**
+  (même post-mortem, 2026-08-13) — `getPickRejectionReason()`
+  (`packages/analysis-core/src/selection/pick-validation.ts:48-54`) ne
+  rejette que le pick littéral `"UNDER"` (convention = ligne 2,5) quand
+  `lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD` (2.3, `selection/
+  constants.ts:42`). Sur Nordsjaelland–Valur, `lambdaTotal≈3.74` (largement
+  au-dessus du seuil) mais le pick joué était `UNDER_3_5`, qui n'entre
+  jamais dans cette branche — la garde-fou n'a donc jamais pu s'appliquer,
+  alors que le raisonnement (surdispersion Poisson à λ élevé) est encore
+  plus valable sur une ligne haute que sur la ligne 2,5. Généraliser la
+  condition à tout pick `UNDER_*` du marché `OVER_UNDER` (avec un seuil de
+  λ probablement à recalibrer par ligne — 2.3 a été calibré spécifiquement
+  pour la ligne 2,5, cf. commentaire `ev.constants.ts:368`) avant de
+  considérer ces lignes hautes aussi sûres que la 2,5 dans un coupon.
+- `[ ]` **Résolution du bookmaker OVER_UNDER par marché entier, pas par
+  ligne — perte silencieuse de candidats** (même post-mortem, 2026-08-13) —
+  sur Nordsjaelland–Valur, la ligne 2,5 (`OVER`/`UNDER`) n'apparaît **dans
+  aucun** `evaluatedPicks` (ni `viable` ni `rejected`), alors que
+  `odds_snapshot` contenait bien des cotes fraîches pour cette ligne
+  (`OVER` 1.25 Unibet/1.28 Bet365, `UNDER` 3.40/3.42). Cause : `pickBestBookmaker`
+  (`apps/backend/src/modules/betting-engine/pricing/odds-snapshot.loader.ts:108-123`)
+  choisit **un seul bookmaker pour tout le marché OVER_UNDER** (dernier
+  timestamp toutes lignes confondues + meilleur rang bookmaker), puis
+  `assembleFullOddsSnapshot` (lignes 143-322) ne retient que les lignes que
+  CE bookmaker a effectivement soumises. Si le bookmaker choisi n'avait
+  coté que 3,5/4,5 à ce moment précis (mais pas 2,5, coté par un autre
+  bookmaker), `overUnderOdds["OVER"]`/`["UNDER"]` valent `undefined` et le
+  candidat est skippé silencieusement (`pick-evaluation.ts:357`, `if
+  (candidate.odds === null || candidate.odds === undefined) continue`) —
+  **avant** d'atteindre `getPickRejectionReason` et le garde-fou
+  `under_high_lambda` ci-dessus, qui n'a donc jamais eu la chance de se
+  déclencher sur cette ligne. Sur Omonia (même jour), le bookmaker retenu
+  couvrait bien la ligne 2,5, d'où la différence de comportement entre les
+  deux fixtures. Corriger en résolvant le meilleur bookmaker **par ligne**
+  (ou en repliant sur un autre bookmaker quand celui choisi n'a pas coté
+  une ligne donnée) plutôt que par marché entier — sans quoi des lignes
+  entières peuvent disparaître silencieusement de l'évaluation malgré des
+  cotes disponibles. Les doublons observés dans `odds_snapshot` pour ce
+  fixture sont un problème d'ingestion ETL séparé (cause racine trouvée et
+  documentée ci-dessous), sans lien direct avec ce bug de résolution.
+
+## Audit systémique 2026-08-13 — même motif de bug, cherché et confirmé ailleurs
+
+> Suite au post-mortem ci-dessus, on a explicitement cherché la même
+> classe de bug (garde-fou/résolution de données écrit pour un cas précis,
+> qui ne généralise pas silencieusement aux cas voisins soumis au même
+> risque) dans tout `packages/analysis-core/src/selection`+`probability`
+> et `apps/backend/src/modules/betting-engine`. Nous sommes en production
+> réelle (pas au stade MVP) — ces éléments sont notés ici pour être
+> traités proprement plutôt que corrigés à la volée dans cette session.
+
+- `[~]` **Cause racine des doublons `odds_snapshot` trouvée — l'upsert ne
+  fonctionne jamais** — `fixture.repository.ts` (`upsertNonOneXTwo:684-716`,
+  `upsertOneXTwoOddsSnapshot:1095-1140`) font `prisma.oddsSnapshot.create()`
+  et ne se rabattent sur find+update que si `isUniqueConstraintError`
+  se déclenche. Mais la clé `[fixtureId, bookmaker, market, pick,
+  snapshotAt]` (`packages/db/prisma/schema.prisma:816-817`) n'est définie
+  qu'en `@@index`, jamais en `@@unique` — Postgres n'a donc jamais de
+  raison de rejeter l'insert, l'erreur ne se déclenche jamais, et chaque
+  resync ETL insère une ligne en double au lieu de mettre à jour l'existante.
+  - `[x]` **Côté code, livré le 2026-08-13 (PR en cours)** — les deux
+    fonctions font maintenant un vrai find-then-create/update explicite
+    avant de tenter `create()` (le try/catch reste en repli pour la
+    course critique). Corrige le flux applicatif immédiatement, sans
+    attendre la migration.
+  - `[ ]` **Reste à faire, côté toi** : ajouter la contrainte `@@unique`
+    réelle sur cette clé en DB (migration Prisma — **jamais lancée
+    directement dans cette session**, cf. mémoire migrations) pour fermer
+    la fenêtre de course et empêcher tout futur doublon même en écriture
+    concurrente.
+- `[ ]` **Le bug "bookmaker par marché entier" existe en double, dans un
+  chemin séparé** — `findBestBookmakerForMarket`
+  (`odds-snapshot.loader.ts:346-369`) reproduit exactement la même
+  granularité "marché entier, pas par ligne" que `pickBestBookmaker`
+  (item ci-dessus), mais dans le chemin non-batché
+  (`findLatestOddsSnapshot:371-491`) plutôt que le chemin batché
+  (`assembleFullOddsSnapshot`). Corriger `pickBestBookmaker` sans corriger
+  ce jumeau laisse le bug vivant sur toute la voie d'appel single-fixture.
+- `[ ]` **`findLatestBestOneXTwoOddsSnapshot` fabrique une cohérence 1X2
+  qui n'existe pas** (`odds-snapshot.loader.ts:938-1053`) — construit un
+  faux bookmaker `'MarketBest'` en piochant `bestHome`/`bestDraw`/`bestAway`
+  chez des bookmakers potentiellement différents (donc à des instants
+  différents dans la fenêtre de requête), puis renvoie ça comme un seul
+  snapshot cohérent. Risque inverse du bug de résolution ci-dessus :
+  au lieu de perdre une donnée silencieusement, on fabrique une donnée qui
+  n'a jamais existé telle quelle chez aucun bookmaker. À vérifier : est-ce
+  qu'un appelant (calcul EV, overround) traite ce triplet comme une cote
+  réelle d'un bookmaker unique ?
+- `[~]` **Rapport hebdomadaire de risque limité au 1X2, `brierScore`
+  hardcodé à 0** — `risk.service.ts:164-191` (`generateWeeklyReport`,
+  le rapport humain envoyé par `sendWeeklyReport`) : `market:
+  Market.ONE_X_TWO` en dur (ligne 170), `brierScore: 0` en dur (ligne 184).
+  `checkMarketRoi`/`isMarketSuspended` (lignes 38-113) sont eux
+  correctement génériques sur `Market` — seul le rapport de synthèse ne
+  l'est pas. Tous les marchés non-1X2 (OVER_UNDER, BTTS, TEAM_TOTAL...)
+  sont donc invisibles dans le seul rapport de risque humain, alors qu'on
+  parie réellement dessus. Même angle mort "1X2-only" que
+  `calibration_alert`, mais côté reporting cette fois.
+  - `[x]` **`brierScore` corrigé le 2026-08-13 (PR en cours)** — calculé
+    réellement sur les paris 1X2 réglés de la période (`computeBrierScore`,
+    nouvelle fonction), au lieu du `0` en dur qui faisait croire à une
+    calibration parfaite chaque semaine.
+  - `[ ]` **Reste ouvert** : le rapport reste 1X2-only (`roiOneXTwo`,
+    filtre `market: Market.ONE_X_TWO`) — étendre à tous les marchés
+    demande de changer la forme de `WeeklyReportPayload` (impacte
+    `notification.service.ts`, `mail.service.ts` et le template
+    `@evcore/transactional`), volontairement laissé hors du fix "sûr"
+    du 2026-08-13 vu l'ampleur du changement de contrat.
+- `[ ]` **Seuil de probabilité DRAW jamais appliqué en 1X2** —
+  `getPickRejectionReason` (`pick-validation.ts:62-75`) ne teste
+  `minDirectionProbability` que pour `pick === "HOME"`/`"AWAY"` ; `DRAW`
+  n'a aucune branche équivalente alors que
+  `config.pickDirectionProbabilityThreshold` supporte déjà ce cas
+  (commentaire `config.ts:26`, "and DRAW combos"). Un pick DRAW peut donc
+  passer avec une probabilité arbitrairement basse là où HOME/AWAY à la
+  même probabilité seraient rejetés.
+- `[ ]` **Pénalité longshot limitée au 1X2** — `getOneXTwoLongshotPenalty`
+  (`pick-validation.ts:127-153`) renvoie `1` (aucune pénalité) pour tout
+  marché autre que `ONE_X_TWO` (ligne 132). Le raisonnement (la
+  surestimation de probabilité gonfle l'EV à cote longue) n'est pourtant
+  pas spécifique au 1X2 — `OVER_4_5`, les combos `RESULT_TOTAL_GOALS`
+  (ex. `AWAY_UNDER_1_5`), `RESULT_BTTS`, `HALF_TIME_FULL_TIME` peuvent
+  atteindre des cotes tout aussi longues sans aucun amortissement
+  équivalent.
+- `[ ]` **`htftCalibrated` ne couvre pas `OVER_UNDER_HT`** — le garde-fou
+  (`pick-validation.ts:37-43`) suspend `HALF_TIME_FULL_TIME`/
+  `FIRST_HALF_WINNER` dans les ligues sans historique de décomposition
+  mi-temps (risque de surestimation Poisson bivariée). `OVER_UNDER_HT`
+  est construit à partir de la même décomposition mi-temps
+  (`probability/markets.ts`) et porte donc le même risque, mais n'est
+  jamais vérifié contre `config.htftCalibrated` — évalué sans condition
+  dans `pick-evaluation.ts:461-501`.
+- `[ ]` **Le shrinkage O/U ne s'étend jamais à `TEAM_TOTAL_HOME/AWAY` ni
+  `RESULT_TOTAL_GOALS`** — `OU_SHRINKAGE_CONFIG` (`ou-shrinkage.ts:28-49,
+  59-309`) couvre O/U pleine durée, BTTS, O/U mi-temps par ligue (HT/FT et
+  First-Half-Winner sont explicitement exclus par commentaire, volontaire).
+  Mais `TEAM_TOTAL_HOME`/`TEAM_TOTAL_AWAY` (`pick-evaluation.ts:582-620`)
+  et `RESULT_TOTAL_GOALS` (`pick-evaluation.ts:722-744`) dérivent des
+  mêmes distributions Poisson par équipe que l'O/U — même surdispersion
+  attendue en ligue pauvre en données — sans qu'aucun bloc de config, type
+  de shrinkage ou commentaire ne les mentionne : ils ne sont pas exclus
+  volontairement, juste absents. Ces marchés sortent donc en Poisson brut
+  non-shrinké sur exactement les ligues où l'O/U reçoit un shrinkage
+  agressif.
+  - `[x]` **Impact confirmé en DB (2026-08-13)** sur `TEAM_TOTAL` pick
+    `UNDER_1_5`, tout l'historique réglé : `TEAM_TOTAL_HOME` (n=1282) —
+    taux de réussite réel 59,9% vs 70,2% de probabilité affichée
+    (**-10,3pp**), EV moyen affiché +27,1%, **ROI réel mesuré +6,46%** ;
+    `TEAM_TOTAL_AWAY` (n=880) — taux réel 65,6% vs 77,6% affiché
+    (**-12,0pp**), EV moyen affiché +22,4%, **ROI réel mesuré +0,75%**
+    (quasi nul malgré un EV affiché à +22%). Même motif que VALUE
+    (probabilités surconfiantes) mais sans aucun garde-fou de shrinkage
+    pour l'atténuer — cohérent avec l'absence totale de correction
+    documentée ci-dessus. `TEAM_TOTAL_AWAY UNDER_1_5` est le candidat le
+    plus urgent à corriger : c'est le marché qui casse le plus de coupons
+    combinés récemment tout en semblant le plus fiable sur le papier.
+- `[x]` **`selectSafeValuePick` : comparaison Over incomplète — corrigé le
+  2026-08-13 (PR en cours)** — quand le pick SV gagnant est `UNDER_4_5` à
+  λ élevé, les contreparties Over comparées (`pick-evaluation.ts:94-98`)
+  ne couvraient que `"OVER"`/`"OVER_3_5"` (lignes plus basses) —
+  `OVER_4_5`, la contrepartie la plus directement comparable à
+  `UNDER_4_5`, n'était jamais incluse dans `overCounterparts` et
+  disparaissait silencieusement de la comparaison. `OVER_4_5` ajouté à la
+  liste des contreparties.
+
+**Décision de scope à revisiter, pas un bug** — `adjustment.service.ts:19`
+définit `CALIBRATION_MARKET = Market.ONE_X_TWO`, commenté explicitement
+dans le code comme un choix de scope MVP intentionnel. Maintenant que le
+produit tourne en argent réel (pas au stade MVP), cette limitation
+volontaire mérite d'être réévaluée au même titre que les autres éléments
+`ONE_X_TWO`-only trouvés ci-dessus — à traiter comme une décision produit,
+pas comme une correction de bug.
+
 - `[ ]` **[ETL] `model_run.features.injuries` semble non alimenté** (trouvé en
   analyse manuelle de coupon, 2026-08-14) — sur Heart of Midlothian–Benfica
   (Europa League, 3e tour qualif retour), `features.injuries` vaut

@@ -38,6 +38,28 @@ export type AnalysisSheetPickHistoryEntry = {
   ev: number;
 };
 
+// Every candidate the betting engine considered for this fixture — viable
+// AND rejected — straight from ModelRun.features.evaluatedPicks. Unlike
+// `selectedPicks` (one pick per channel, already filtered by that channel's
+// own EV/odds/probability gates), this is the full pool a manual coupon
+// analysis needs: a `rejected` status here means the pick failed a
+// single-bet EV/odds floor, not that it's unreliable for a combo leg
+// (COUPON_ANALYSIS_TEMPLATE.md, étape 0).
+export type AnalysisSheetJsonEvaluatedPick = {
+  market: string;
+  pick: string;
+  label: string;
+  probability: number;
+  odds: number;
+  ev: number;
+  status: 'viable' | 'rejected';
+  rejectionReason: string | null;
+  // Same meaning as AnalysisSheetJsonPick.adjustmentDelta — how far the
+  // published probability moved from the raw Poisson output for this
+  // (market, pick). Null when the market isn't covered by the raw export.
+  adjustmentDelta: number | null;
+};
+
 export type AnalysisSheetJsonPick = {
   channel: string;
   market: string;
@@ -160,6 +182,7 @@ export type AnalysisSheetJsonFixture = {
   calibrationAlert: AnalysisSheetCalibrationAlert | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
+  evaluatedPicks: AnalysisSheetJsonEvaluatedPick[];
 };
 
 export type AnalysisSheetJson = {
@@ -238,6 +261,23 @@ function toJsonFixture(
   const rejectionSummary = buildRejectionSummary(fixture.selections);
   const avoidFlag = buildAvoidFlag(fixture.selections);
   const calibrationAlert = buildCalibrationAlert(fixture.features);
+  const evaluatedPicks: AnalysisSheetJsonEvaluatedPick[] =
+    context.evaluatedPicks.map((p) => ({
+      market: p.market,
+      pick: p.pick,
+      label: pickLabel({ market: p.market, pick: p.pick }),
+      probability: p.probability,
+      odds: p.odds,
+      ev: p.ev,
+      status: p.status,
+      rejectionReason: p.rejectionReason,
+      adjustmentDelta: computeAdjustmentDelta({
+        raw: context.rawPoissonProbability,
+        market: p.market,
+        pick: p.pick,
+        finalProbability: p.probability,
+      }),
+    }));
 
   return {
     fixtureId: fixture.fixtureId,
@@ -277,6 +317,7 @@ function toJsonFixture(
     calibrationAlert,
     selectedPicks,
     rejectionSummary,
+    evaluatedPicks,
   };
 }
 

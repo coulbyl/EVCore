@@ -171,17 +171,22 @@ export class RiskService {
         status: { not: 'VOID' },
         createdAt: { gte: periodStart },
       },
-      select: { status: true, oddsSnapshot: true },
+      select: { status: true, oddsSnapshot: true, probEstimated: true },
     });
 
     const roiOneXTwo = bets.length > 0 ? computeRoi(bets).toNumber() : 0;
+    const settledBets = bets.filter(
+      (bet) => bet.status === 'WON' || bet.status === 'LOST',
+    );
+    const brierScore =
+      settledBets.length > 0 ? computeBrierScore(settledBets) : 0;
 
     const result: WeeklyReportResult = {
       periodStart,
       periodEnd,
       roiOneXTwo,
       betsPlaced: bets.length,
-      brierScore: 0,
+      brierScore,
     };
 
     await this.notification.sendWeeklyReport(result);
@@ -207,4 +212,21 @@ function computeRoi(bets: BetRow[]): Decimal {
     }
   }
   return profit.div(bets.length);
+}
+
+type SettledBetRow = {
+  status: string;
+  probEstimated: { toString(): string };
+};
+
+// Brier score = mean((probEstimated - outcome)^2), outcome = 1 if WON else 0.
+// Was previously hardcoded to 0 in generateWeeklyReport, silently claiming
+// perfect calibration every week.
+function computeBrierScore(bets: SettledBetRow[]): number {
+  const sumSquaredError = bets.reduce((sum, bet) => {
+    const prob = new Decimal(bet.probEstimated.toString());
+    const outcome = bet.status === 'WON' ? 1 : 0;
+    return sum + prob.minus(outcome).pow(2).toNumber();
+  }, 0);
+  return sumSquaredError / bets.length;
 }
