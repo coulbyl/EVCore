@@ -137,16 +137,27 @@
   vu ce résultat — sans biais de calibration, peu de raison d'attendre un
   delta ROI.
 
-- `[ ]` **H2H v2.1 (pondération domicile/extérieur ×3) et v2.3a (continuité
+- **H2H v2.1 (pondération domicile/extérieur ×3) et v2.3a (continuité
   entraîneur)** — v2.0 (`computeH2HScore`, seuil n≥3, decay=0.8, nul=0.5) et
   v2.2 (signaux H2H par marché) sont **déjà en production** (`FEATURE_FLAGS.
 SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
-  shadow). Reste :
-  - `[ ]` v2.1 — backtest de comparaison avant tout code définitif
-    (`backtest-h2h-venue-weighting.ts` existe déjà, pas encore concluant).
-  - `[ ]` v2.3a — faisabilité API-Football vérifiée (`/coachs`), mais aucun
-    modèle Prisma `Coach`/`CoachTenure` n'existe encore. Worker ETL + backtest
-    avant activation.
+  shadow).
+  - `[ ]` v2.1 — re-vérifié 2026-08-15 (`db:backtest:h2h-venue-weighting`,
+    vrai rejeu TeamStats point-in-time) : gain de corrélation hors
+    échantillon toujours négligeable (0.0713→0.0715, +0.0002) — pas un signal
+    réel malgré le verdict brut du script, complexité non justifiée. Rester
+    sur v2.0 (IMPROVED).
+  - `[x]` v2.3a — **TODO périmé, déjà fait** (vérifié 2026-08-15) : le
+    modèle `CoachTenure` existe (17 309 lignes), l'ETL tourne
+    (`coachs-sync.worker.ts`), et la continuité entraîneur est backtestée
+    (`db:coach-bounce-backtest`, 2026-07-25 : +0.08 pt/match sur les 5
+    premiers matchs sous un nouveau coach, positif dans tous les strata
+    domicile/extérieur × force adverse) et **active en prod** — implémentée
+    différemment de ce que ce TODO envisageait : pas un nouveau facteur H2H,
+    mais une correction du décalage de `recentForm` (reset de fenêtre à
+    chaque changement d'entraîneur, `rolling-stats.service.ts`). Le "new
+    coach window" (`coach-continuity.constants.ts`) reste aussi affiché en
+    UI (cartes Décisions/Investir), informationnel seulement.
   - `[-]` v2.3b (turnover effectif complet) — reporté, pas de point-in-time
     squad snapshot exploitable.
 
