@@ -219,12 +219,21 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 - `[ ]` **`LIVE_VALUE`** — nouveau canal, pipeline live isolé des analyses J-/JT.
 
-- `[ ]` **Ligues pauvres en données** (diagnostic 2026-07-01, doc
+- `[~]` **Ligues pauvres en données** (diagnostic 2026-07-01, doc
   [docs/data-poor-leagues-calibration.md](docs/data-poor-leagues-calibration.md)) —
-  le modèle 1X2 est miscalibré sur les ligues pauvres en données (WCQ\*, UNL,
-  ISL1, POL, LAT1, FRI, WC, NOR2, FIN1). Étape 1 : récupérer plus de données
-  (xG international/petites ligues). Étape 2 : shrinkage proba→marché pondéré
-  par la fiabilité des données, au-delà du 1X2.
+  le 1X2 lui-même reste miscalibré sur les ligues pauvres en données (WCQ\*,
+  UNL, ISL1, POL, LAT1, FRI, WC, NOR2, FIN1). **Étape 2 (shrinkage proba→marché
+  au-delà du 1X2) largement faite depuis** (corrigé 2026-08-15, TODO périmé
+  sur ce point) : `ou-shrinkage.ts` shrink désormais O/U plein temps, BTTS,
+  O/U mi-temps, TEAM_TOTAL_HOME/AWAY et RESULT_TOTAL_GOALS vers le taux de
+  base ligue, sur 49 ligues. Reste :
+  - `[ ]` **Étape 1 (récupérer plus de données xG)** — toujours pas fait,
+    aucune source xG supplémentaire ajoutée pour les compétitions
+    internationales/petites ligues.
+  - `[ ]` **Le 1X2 lui-même** (`rebalanceThreeWayProbabilities`) n'a pas
+    reçu le même traitement que les marchés dérivés — reste sur son blend
+    empirique existant, pas le shrinkage par ligue mesuré pour l'O/U/
+    TEAM_TOTAL/RESULT_TOTAL_GOALS.
 
 - `[ ]` **ML — garde-fou manquant : `isActive` sans fichier chargé** —
   `registry.py` détecte maintenant un fichier de modèle manquant au chargement
