@@ -76,6 +76,23 @@
   appliqué (compromis réactivité vs stabilité). À reconsidérer seulement si ces
   valeurs semblent un jour concrètement mauvaises en usage.
 
+- `[ ]` **Une même jambe réutilisée entre les coupons classés du même jour fait
+  perdre plusieurs coupons d'un coup** (2e occurrence, 2026-08-15) — les rank
+  1/2/3 d'un même profil (`forDate`/`signalWindowDays`/`targetOddsMin/Max`)
+  peuvent partager une jambe identique ; si elle perd, tous les coupons qui la
+  contiennent perdent ensemble. Vu le 2026-08-15 : Chrobry Głogów–Podbeskidzie
+  TEAM_TOTAL_HOME OVER_1_5 (VALUE, prob. 76.96% déjà shrinkée POL2, 1-1 réel)
+  présente dans rank 1 ET rank 2 (tous deux LOST) ; rank 3 (sans cette jambe)
+  WON. Pas un bug de calibration — le shrinkage POL2 HOME 1_5 est validé en
+  forward le jour même (`backtest-team-total-shrinkage-calibration-2026-08-15.txt`,
+  ΔBrier test=-0.0014, n=261) ; une proba à 77% qui perd une fois sur un essai
+  est de la variance normale. Précédent identique documenté dans le code
+  (`coupon-composer.service.ts:73-76`, 2026-07-29 : un pick HT à 0.76 perdu
+  sur les 3 coupons classés) — corrigé à l'époque par une calibration
+  (meanError), pas par une règle empêchant le partage de jambe entre rangs.
+  À étudier : faut-il une règle anti-corrélation "pas de jambe partagée entre
+  rank 1/2/3 du même profil" dans `composeExhaustive`/`composeGreedy` ?
+
 ---
 
 ## Canaux en observation (pas encore staking-grade)
