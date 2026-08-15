@@ -1,6 +1,7 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { EvaluatedPick, ViablePick } from "../selection/types";
+import { bestQualityPickDetails } from "../selection";
 import {
   FALLBACK_MIN_QUALITY_SCORE,
   LINE_MOVEMENT_THRESHOLD,
@@ -76,6 +77,13 @@ export class ValueStrategy implements ChannelStrategy {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
         reasonCode: "no_viable_pick",
+        // Unlike DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET, VALUE's rejection
+        // used to carry no market/pick detail at all — auditing "what would
+        // VALUE have picked" required re-deriving selectBestEvPick's ranking
+        // externally from evaluatedPicks. Logging the pool's own top-quality
+        // candidate (even though it didn't clear the edge floor / was
+        // rejected upstream) closes that gap.
+        reasonDetails: bestQualityPickDetails(allPicks),
         selections: [],
       };
     }

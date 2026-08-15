@@ -16,6 +16,7 @@ export {
   selectBestViablePick,
   listEvaluatedOneXTwoPicks,
   listEvaluatedPicks,
+  bestQualityPickDetails,
 } from "./pick-evaluation";
 export {
   buildBetPickKey,

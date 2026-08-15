@@ -207,11 +207,14 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   proprement — nécessite une analyse dédiée à l'effet de sélection avant
   d'implémenter quoi que ce soit.
 
-- `[ ]` **`reasonDetails` de SAFE/VALUE trop pauvre pour l'audit** — leurs
-  rejets (`score_below_threshold`/`no_safe_candidate`/`no_viable_pick`) ne
-  stockent qu'un score agrégé fixture, pas le marché/pick précis qui aurait
-  été choisi. Contrairement à DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET,
-  impossible à auditer de cette façon aujourd'hui.
+- `[x]` **`reasonDetails` de SAFE/VALUE trop pauvre pour l'audit** (résolu
+  2026-08-15) — `score_below_threshold` reste fixture-level à raison (gate
+  en amont de l'évaluation par marché, rien de plus précis à logger à ce
+  stade). `no_viable_pick` (VALUE) et `no_safe_candidate` (SAFE) exposent
+  désormais le meilleur candidat du pool par `qualityScore` (viable ou non)
+  via le nouveau `bestQualityPickDetails()` (`selection/pick-evaluation.ts`) :
+  market/pick/probability/odds/ev/edge/rejectionReason — même niveau de
+  détail que DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET.
 
 - `[~]` **Lambda scale (λScale)** — correction appliquée sur 11 ligues
   (dernière modif 2026-07-28, FIN1/BL1). Reste : re-mesurer

@@ -1,6 +1,10 @@
 import { Market } from "../types";
 import { CHANNEL_DECISION_STATUS, STRATEGY_CHANNEL } from "../types";
-import { buildBetPickKey, selectSafeValuePick } from "../selection";
+import {
+  bestQualityPickDetails,
+  buildBetPickKey,
+  selectSafeValuePick,
+} from "../selection";
 import { LINE_MOVEMENT_THRESHOLD } from "../selection/constants";
 import type {
   ChannelStrategy,
@@ -63,6 +67,7 @@ export class SafeStrategy implements ChannelStrategy {
         channel: ch,
         status: CHANNEL_DECISION_STATUS.REJECTED,
         reasonCode: "no_safe_candidate",
+        reasonDetails: bestQualityPickDetails(allPicks),
         selections: [],
       };
     }
