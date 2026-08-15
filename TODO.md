@@ -66,12 +66,22 @@
   `FRI`, `KOR1`, `KOR2`, `BRA2`, `WC`, `CHN2` restent à `train n=0` — toujours
   pas assez d'historique, à revisiter plus tard.
 
-- `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`** —
-  `coupon-summary.service.ts`, `coupon-indices.service.ts` et `coupon.repository.ts`
-  filtrent uniquement `WON`/`LOST`. `PARTIAL` est atteignable depuis le 2026-08-09
-  (legs voidées sur fixture `POSTPONED`/`CANCELLED`) — ces vues l'excluent
-  silencieusement au lieu de le compter explicitement (VOID : correct de
-  l'exclure ; PARTIAL : probablement à inclure comme gain partiel).
+- `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`**
+  (vérifié 2026-08-15) — `coupon-summary.service.ts`, `coupon-indices.service.ts`
+  et `coupon.repository.ts` filtrent uniquement `WON`/`LOST`. Confirmé en DB :
+  **0 ligne `PARTIAL`/`VOID` à ce jour** (uniquement 120 WON / 296 LOST / 8
+  en attente) — le code de settlement gère bien les deux cas
+  (`coupon-settlement.service.ts:206-226`, PARTIAL = tous les legs gradés
+  gagnés mais ≥1 leg voidée en route) mais ça n'a encore jamais été déclenché
+  en prod. **Piège trouvé en creusant** : `combinedOdds` n'est jamais
+  recalculé au settlement — il reste la cote pleine (N legs d'origine) même
+  quand des legs sont voidées. Inclure PARTIAL dans le ROI en l'état
+  surestimerait le gain réel (le vrai payout se fait sur les legs
+  survivantes, à une cote plus basse). Fix complet = recalculer la cote
+  réalisée sur les legs non-voidées au moment du settlement, PUIS inclure
+  PARTIAL dans les 3 vues avec cette cote corrigée — pas juste élargir les
+  filtres `IN (WON, LOST)`. VOID reste correctement exclu (aucun gain,
+  aucune perte).
 
 - `[ ]` **Calibration `k`/`decayHalfLifeDays`/`windowDays`** — mesurée
   (`db:backtest:signal-window-calibration`), gain réel mais marginal et pas
