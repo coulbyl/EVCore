@@ -162,8 +162,17 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
     squad snapshot exploitable.
 
 - `[~]` **BTTS NO** — activé en observation par ligue (`SA·BRA1·FRI @0.58`,
-  `EL1·CH·EL2·LL @0.55`), jamais staké. Aucun edge cross-saison confirmé.
-  Re-run `/backtest/tuning` chaque saison.
+  `EL1·CH·EL2·LL @0.55`, vérifié 2026-08-15 : config toujours exacte). Jamais
+  staké, aucun edge cross-saison confirmé. **Re-run `/backtest/tuning`
+  chaque saison** — vérifié : `ChannelTuningService` lit `model_run.features`
+  déjà enregistrés ("value-driven replacement... reads from the DB instead
+  of re-running the engine"), même limite méthodologique que
+  `backtest-channel-league-whitelist.ts` (mémoire
+  `feedback_backtest_definition`) — un run maintenant mesurerait
+  surtout l'ancien modèle (avant homeAdvFactor 07-19/H2H v2.2). Par
+  ailleurs la nouvelle saison 2026-27 vient tout juste de démarrer (mi-août)
+  — pas encore assez de matchs pour un vrai re-tuning saisonnier de toute
+  façon. Reporter à plus tard dans la saison.
 
 - `[~]` **GOALS** (`OVER_UNDER` ligne 2.5) — activé en observation, jamais
   staké. Re-vérifié 2026-08-15 : **BRA2 (n=245 cité) était un artefact de
@@ -248,10 +257,19 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   market/pick/probability/odds/ev/edge/rejectionReason — même niveau de
   détail que DOMINANT/BTTS/WIN_EITHER_HALF/CLEAN_SHEET.
 
-- `[~]` **Lambda scale (λScale)** — correction appliquée sur 11 ligues
-  (dernière modif 2026-07-28, FIN1/BL1). Reste : re-mesurer
-  `/backtest/calibration` après le prochain rebuild, étendre si d'autres biais
-  stables apparaissent.
+- `[~]` **Lambda scale (λScale)** — correction appliquée sur 13 ligues
+  (vérifié 2026-08-15 : `LAMBDA_SCALE_MAP` — MLS/TUR1/NOR1/NOR2/SUI2/CSL/
+  ISL1/SWE2/SP2/MX1/J1 + FIN1/BL1 ajoutées le 07-28). Reste : re-mesurer
+  `/backtest/calibration` après le prochain rebuild, étendre si d'autres
+  biais stables apparaissent. **Attention en le relançant** :
+  `ModelCalibrationService` lit `model_run.features` déjà enregistrés
+  ("never re-runs the engine") — même limite que
+  `backtest-channel-league-whitelist.ts` (mémoire
+  `feedback_backtest_definition`), le résultat reflétera surtout l'ancien
+  modèle tant que pas assez de volume post-correction (homeAdvFactor 07-19,
+  H2H v2.2) n'est accumulé. `backtest-lambda-scale-calibration.ts` en
+  revanche est un vrai rejeu (TeamStats point-in-time) — fiable à relancer
+  n'importe quand.
 
 ---
 
