@@ -25,6 +25,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
   computeCorrectScoreMatrix,
+  computePoissonMarkets,
   type TeamStatsInput,
 } from "@evcore/analysis-core";
 import { prisma } from "../src/client";
@@ -39,6 +40,14 @@ const H2H_LIMIT = 5;
 const H2H_MIN_SAMPLE = 3;
 const H2H_DECAY = 0.8;
 const MIN_SAMPLE = 200;
+// Same H2H lambda correction already active in prod (H2H v2.0,
+// h2h.utils.ts adjustLambdaForH2H + ev.constants.ts H2H_GAMMA) — replicated
+// here so this script can test whether the scoreline signal still adds
+// value ONCE the lambda already reflects H2H history, or whether it's just
+// re-detecting the same correlated result-based signal (double-counting
+// concern flagged in memory project-correct-score-immature).
+const H2H_GAMMA = 0.2;
+const H2H_NEUTRAL = 0.5;
 
 type FixtureRow = {
   id: string;
@@ -153,6 +162,54 @@ function weightedTopScoreline(
     }
   }
   return { scoreline: topScoreline, confidence: topWeight / weightTotal };
+}
+
+// Mirrors H2HService.computeH2HScore: decay-weighted favorite-win rate
+// over the same H2H legs pool (draws score 0.5), gated on the same n>=3.
+function computeH2HFavoriteScore(
+  legs: H2HLeg[],
+  favoriteTeamId: string,
+): number | null {
+  if (legs.length < H2H_MIN_SAMPLE) return null;
+  let weightedSum = 0;
+  let weightTotal = 0;
+  legs.forEach((leg, i) => {
+    const weight = H2H_DECAY ** i;
+    const winnerTeamId =
+      leg.homeScore > leg.awayScore
+        ? leg.homeTeamId
+        : leg.awayScore > leg.homeScore
+          ? leg.awayTeamId
+          : null;
+    const outcomeScore =
+      winnerTeamId === null ? 0.5 : winnerTeamId === favoriteTeamId ? 1 : 0;
+    weightedSum += weight * outcomeScore;
+    weightTotal += weight;
+  });
+  return weightedSum / weightTotal;
+}
+
+// Mirrors h2h.utils.ts adjustLambdaForH2H exactly (same gamma, same formula).
+function adjustLambdaForH2H(input: {
+  lambdaHome: number;
+  lambdaAway: number;
+  favoriteIsHome: boolean;
+  h2hScore: number;
+}): { lambdaHome: number; lambdaAway: number } {
+  const { lambdaHome, lambdaAway, favoriteIsHome, h2hScore } = input;
+  const signal = h2hScore - H2H_NEUTRAL;
+  const favorFactor = 1 + H2H_GAMMA * signal;
+  const underdogFactor = 1 - H2H_GAMMA * signal;
+  const home = favoriteIsHome
+    ? lambdaHome * favorFactor
+    : lambdaHome * underdogFactor;
+  const away = favoriteIsHome
+    ? lambdaAway * underdogFactor
+    : lambdaAway * favorFactor;
+  return {
+    lambdaHome: clamp(home, 0.05, 5),
+    lambdaAway: clamp(away, 0.05, 5),
+  };
 }
 
 function argmaxScoreline(lambdaHome: number, lambdaAway: number): string {
@@ -309,6 +366,14 @@ async function main() {
   let disagreeN = 0;
   let highConfHits = 0;
   let highConfN = 0;
+  // Same agree/disagree split, but the argmax is computed from the lambda
+  // ALREADY adjusted for H2H (mirrors the live pipeline) — if the lift
+  // shrinks to noise here, the scoreline signal is double-counting the
+  // lambda correction rather than adding new information.
+  let h2hAdjAgreeHits = 0;
+  let h2hAdjAgreeN = 0;
+  let h2hAdjDisagreeHits = 0;
+  let h2hAdjDisagreeN = 0;
 
   for (const fixture of fixtures) {
     const home = findPriorStats(
@@ -362,6 +427,35 @@ async function main() {
       disagreeN++;
       disagreeHits += hit;
     }
+
+    // Same favorite definition as prod (betting-engine.service.ts): from the
+    // pre-H2H 1X2 probabilities, no circularity.
+    const baseline = computePoissonMarkets(lambdaHome, lambdaAway);
+    const favoriteIsHome = baseline.home.greaterThanOrEqualTo(baseline.away);
+    const favoriteTeamId = favoriteIsHome
+      ? fixture.homeTeamId
+      : fixture.awayTeamId;
+    const h2hScore = computeH2HFavoriteScore(legs, favoriteTeamId);
+    if (h2hScore !== null) {
+      const adjusted = adjustLambdaForH2H({
+        lambdaHome,
+        lambdaAway,
+        favoriteIsHome,
+        h2hScore,
+      });
+      const adjustedArgmax = argmaxScoreline(
+        adjusted.lambdaHome,
+        adjusted.lambdaAway,
+      );
+      const adjustedHit = adjustedArgmax === actual ? 1 : 0;
+      if (adjustedArgmax === h2hTop.scoreline) {
+        h2hAdjAgreeN++;
+        h2hAdjAgreeHits += adjustedHit;
+      } else {
+        h2hAdjDisagreeN++;
+        h2hAdjDisagreeHits += adjustedHit;
+      }
+    }
   }
 
   out(
@@ -408,6 +502,39 @@ async function main() {
         ? "significatif au seuil 0.05 — candidat à investigation d'activation"
         : "pas encore significatif — rester en shadow, recalculer avec plus de volume";
     out(`  Verdict : ${verdict}`);
+  }
+
+  out();
+  out("═══════════════════════════════════════════════════════");
+  out("  Contrôle double-comptage : même split, lambda DÉJÀ ajusté H2H (v2.0)");
+  out("═══════════════════════════════════════════════════════");
+  if (h2hAdjAgreeN < MIN_SAMPLE || h2hAdjDisagreeN < MIN_SAMPLE) {
+    out(
+      `  n insuffisant (agree=${h2hAdjAgreeN}, disagree=${h2hAdjDisagreeN}, seuil ${MIN_SAMPLE}) — non concluant.`,
+    );
+  } else {
+    const adjAgreeRate = h2hAdjAgreeHits / h2hAdjAgreeN;
+    const adjDisagreeRate = h2hAdjDisagreeHits / h2hAdjDisagreeN;
+    const pAdj = zTestGreater(
+      h2hAdjAgreeHits,
+      h2hAdjAgreeN,
+      h2hAdjDisagreeHits,
+      h2hAdjDisagreeN,
+    );
+    out(
+      `  Argmax(lambda H2H-ajusté) == top H2H scoreline : n=${h2hAdjAgreeN}, hit rate=${(100 * adjAgreeRate).toFixed(2)}%`,
+    );
+    out(
+      `  Argmax(lambda H2H-ajusté) != top H2H scoreline : n=${h2hAdjDisagreeN}, hit rate=${(100 * adjDisagreeRate).toFixed(2)}%`,
+    );
+    out(
+      `  Écart : ${((adjAgreeRate - adjDisagreeRate) * 100).toFixed(2)}pp, test z unilatéral p=${pAdj.toFixed(4)}`,
+    );
+    out(
+      pAdj < 0.05
+        ? "  → L'écart persiste une fois le lambda déjà corrigé H2H : le signal scoreline apporte une information distincte, pas un doublon."
+        : "  → L'écart s'effondre une fois le lambda déjà corrigé H2H : signe de double-comptage, le signal scoreline ne fait que re-détecter la même correction déjà appliquée.",
+    );
   }
 
   const report = lines.join("\n");

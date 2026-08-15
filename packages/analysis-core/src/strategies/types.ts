@@ -32,6 +32,15 @@ export type ContextSignals = {
   lineMovement: number | null;
   h2h: number | null;
   congestion: number | null;
+  // Shadow signal (memory project-correct-score-immature): decay-weighted
+  // most frequent H2H scoreline between the two teams (n>=3 legs), oriented
+  // to this fixture's home/away sides. Validated 2026-08-15 — a genuine
+  // lift over the lambda-adjusted argmax (not double-counting), not an
+  // override policy: CORRECT_SCORE surfaces agreement as a confidence
+  // signal, never changes which scoreline gets picked. Optional: absent in
+  // legacy/test contexts that don't set it.
+  h2hScoreline?: string | null;
+  h2hScorelineConfidence?: number | null;
 };
 
 export type StrategyContext = {

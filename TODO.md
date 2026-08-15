@@ -168,18 +168,24 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   un `CouponChannel` éligible (limité à VALUE/SAFE/BTTS/DRAW/DOMINANT/
   TEAM_TOTAL) — ne rien câbler tant que ce point n'est pas réglé.
 
-- `[~]` **CORRECT_SCORE** — collecte forward suffisante (4 250 legs réglées,
-  35 ligues n≥20). Calibration globale surconfiante, s'aggrave avec la
-  confiance affichée (motif transversal, pas local).
-  - `[ ]` **Aucun mécanisme de promotion** — créer `CORRECT_SCORE_STAKED_LEAGUES`
-    amorcé sur les candidats les plus solides : **USA2 (n=271, +19.2%)**,
-    **UCL (n=220, +9.3%)**, **KOR2 (n=206, +4.6%)**.
-  - `[ ]` **Cluster à risque à ne pas promouvoir** — Argentine (ARG1/ARG2,
-    -60.5%/-64.9%), Chili, Brésil Série A, Russie, Suède — cotes moyennes
-    basses (5.4-8.5), le modèle sous-estime probablement la variance des
-    scores dans ces ligues.
-  - `[ ]` Ligues à n<30 avec 0% de réussite (SUI1, POL1, POL2, CZE1, MX1,
-    SVN1) — laisser accumuler avant de classer.
+- `[~]` **CORRECT_SCORE** — reste en observation, jamais staké. Re-cadré
+  2026-08-15 : la piste "whitelist par ligue" (USA2/UCL/KOR2, chiffres
+  cités de l'audit 2026-08-12) a été écartée après discussion — l'objectif
+  n'est pas de trouver des ligues où le biais de surconfiance échappe par
+  chance sur un petit échantillon (n=28-48 même restreint à la fenêtre
+  post-07-19), mais de comprendre la cause du biais (mémoire
+  `project_correct_score_immature`). Diagnostic déjà fait avant cette
+  session : le produit Poisson indépendant n'a **aucun signal prédictif
+  démontrable** (AUC=0.51, quasi hasard) — 4 pistes de correction directe
+  testées et invalidées (recalibration, features, pénalité anti-nul,
+  rééquilibrage empirique 1X2). **Résolu ce jour** : la 5e piste (signal H2H
+  scoreline) re-vérifiée avec un vrai backtest par rejeu — stable (n=2158,
+  p=0.0021) et confirmé **sans double-comptage** avec la correction lambda
+  H2H déjà active (l'écart se renforce même une fois le lambda déjà
+  ajusté : 2.46pp, p=0.0003). Activé dans `correct-score.strategy.ts`
+  (`ContextSignals.h2hScoreline`, `reasonDetails.h2hScorelineAgreement`) —
+  signal de confiance uniquement, ne change jamais le pick sélectionné,
+  aucun risque vu que le canal reste jamais misé.
 
 - `[x]` **CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF — cause racine trouvée et
   corrigée** (2026-08-15, corrige le cadrage trop optimiste de l'audit

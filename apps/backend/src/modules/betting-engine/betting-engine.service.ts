@@ -1106,6 +1106,8 @@ export class BettingEngineService {
       lineMovement: shadowLineMovement,
       h2h: shadowH2h,
       congestion: shadowCongestion,
+      h2hScoreline: shadowH2hScoreline.scoreline,
+      h2hScorelineConfidence: shadowH2hScoreline.confidence,
     };
     const persistedChannelDecisions =
       (await this.channelDecisionService?.recordRunDecisions(
