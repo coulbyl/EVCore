@@ -58,11 +58,13 @@
   (train +18%/valid +20%) mais n=15-17 à peine au-dessus du seuil minimal.
   Revalider avec plus de données avant d'activer.
 
-- `[ ]` **DRAW — ligues supplémentaires non confirmées** — `FRI`, `KOR1`,
-  `KOR2`, `CSL`, `BRA2`, `WC`, `CHN2` montrent un ROI agrégé positif (jusqu'à
-  +41%) mais `train n=0` sur `db:backtest:channel-league-whitelist` — pas assez
-  d'historique pour un split. Ne pas ajouter à `DRAW_STAKED_LEAGUES` sur le
-  seul agrégat ; relancer le script périodiquement.
+- `[x]` **DRAW — CSL confirmée, ajoutée à `DRAW_STAKED_LEAGUES`** (résolu
+  2026-08-15) — re-lancé `db:backtest:channel-league-whitelist` : CSL a
+  désormais un échantillon train (n=82, ROI +26.5%) et valid (n=21, ROI
+  +0.1%), les deux positifs, n≥20 — critère d'activation rempli.
+  `DRAW_STAKED_LEAGUES` passe de `['I2','POR','BL1']` à `[..., 'CSL']`.
+  `FRI`, `KOR1`, `KOR2`, `BRA2`, `WC`, `CHN2` restent à `train n=0` — toujours
+  pas assez d'historique, à revisiter plus tard.
 
 - `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`** —
   `coupon-summary.service.ts`, `coupon-indices.service.ts` et `coupon.repository.ts`

@@ -44,12 +44,13 @@ export const BTTS_STAKED_LEAGUES = ['PL', 'BL1'] as const;
 // globally off a single low CANAL_BASE_WEIGHT.DRAW=0.2 prior, which hid a
 // per-league ROI spread from +41% to -45%. db:backtest:channel-league-
 // whitelist (60/40 split by day, confirmed only if both halves clear n>=20
-// AND stay positive) confirms exactly these 3: I2 +6.7%, POR +10.5%,
-// BL1 +15.8%, train and valid both positive. Several other leagues look
-// promising in the aggregate (FRI, KOR1/2, CSL, BRA2, WC, CHN2) but have no
+// AND stay positive) confirms exactly these 4: I2 +6.7%, POR +10.5%,
+// BL1 +15.8%, CSL +26.5%/+0.1% (added 2026-08-15, train n=82/valid n=21 — a
+// train-period sample finally accumulated). Several other leagues still look
+// promising in the aggregate (FRI, KOR1/2, BRA2, WC, CHN2) but have no
 // train-period sample yet (too little settled history) — revisit once they
 // do, don't add them off the aggregate alone.
-export const DRAW_STAKED_LEAGUES = ['I2', 'POR', 'BL1'] as const;
+export const DRAW_STAKED_LEAGUES = ['I2', 'POR', 'BL1', 'CSL'] as const;
 
 export type VirtualCouponChannel =
   | 'SAFE_HT_OVER05'
