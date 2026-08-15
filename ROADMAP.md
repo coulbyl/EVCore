@@ -640,10 +640,32 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
         recalibration à l'aveugle, pas une simple extension de garde-fou —
         contrairement aux deux items ci-dessus qui ne font que suspendre
         davantage sans jamais rien assouplir.
+- [~] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — mécanisme câblé,
+      backtest à faire avant activation** — `TEAM_TOTAL_AWAY UNDER_1_5` est
+      le candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV
+      affiché +22,4%, même motif de surconfiance que l'O/U). Ajouté
+      `teamTotalHome`/`teamTotalAway` à `OverUnderShrinkageConfig`
+      (`ou-shrinkage.ts`) — blocs sparse par ligne (0.5 à 4.5), même forme
+      que `ouHt` — et branché dans `shrinkOverUnderProbabilities`.
+      `OU_SHRINKAGE_CONFIG` n'a encore aucune entrée remplie pour ces
+      blocs : **behavior no-op tant qu'aucune ligue n'a de facteur/base
+      mesuré** — même discipline que le reste de ce fichier (jamais de
+      nombre sans backtest de calibration derrière).
+  - [ ] **Prochaine étape (backtest, avant la PR)** : reproduire le
+        protocole `docs/data-poor-leagues-calibration.md` (slope +
+        base rate récente par ligue) sur `TEAM_TOTAL_HOME`/`AWAY`, en
+        priorité `UNDER_1_5`, puis remplir `OU_SHRINKAGE_CONFIG`.
+  - [ ] **`RESULT_TOTAL_GOALS` non traité** — son complément Over/Under
+        n'est pas `1 − under` comme O/U/TEAM_TOTAL (`over(side) =
+        oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
+        sparse actuel ne s'applique pas tel quel, nécessite une fonction de
+        shrinkage dédiée. Pas d'impact DB confirmé sur ce marché
+        spécifiquement (contrairement à TEAM_TOTAL) — traité séparément.
 - 840 tests verts (+12 vs Bloc 10 : 2 régression bookmaker-par-ligne + 10
   nouveaux tests ciblés sur les 3 garde-fous dans
-  `pick-rejection-guards.spec.ts`), typecheck et lint (`--max-warnings 0`)
-  propres sur backend et `analysis-core`.
+  `pick-rejection-guards.spec.ts`), +2 tests TEAM_TOTAL shrinkage dans
+  `ou-shrinkage.spec.ts` (100 tests `analysis-core`), typecheck et lint
+  (`--max-warnings 0`) propres sur backend et `analysis-core`.
 
 ---
 

@@ -531,30 +531,48 @@
   branche — extension dans le sens "plus prudent" uniquement (suspend
   davantage, n'autorise jamais rien de nouveau), donc pas de backtest requis
   avant merge contrairement aux changements de seuil.
-- `[ ]` **Le shrinkage O/U ne s'étend jamais à `TEAM_TOTAL_HOME/AWAY` ni
-  `RESULT_TOTAL_GOALS`** — `OU_SHRINKAGE_CONFIG` (`ou-shrinkage.ts:28-49,
-  59-309`) couvre O/U pleine durée, BTTS, O/U mi-temps par ligue (HT/FT et
-  First-Half-Winner sont explicitement exclus par commentaire, volontaire).
-  Mais `TEAM_TOTAL_HOME`/`TEAM_TOTAL_AWAY` (`pick-evaluation.ts:582-620`)
-  et `RESULT_TOTAL_GOALS` (`pick-evaluation.ts:722-744`) dérivent des
+- `[~]` **Le shrinkage O/U ne s'étend jamais à `TEAM_TOTAL_HOME/AWAY` ni
+  `RESULT_TOTAL_GOALS`** — `OU_SHRINKAGE_CONFIG` couvre O/U pleine durée,
+  BTTS, O/U mi-temps par ligue (HT/FT et First-Half-Winner sont
+  explicitement exclus par commentaire, volontaire). Mais
+  `TEAM_TOTAL_HOME`/`TEAM_TOTAL_AWAY` et `RESULT_TOTAL_GOALS` dérivent des
   mêmes distributions Poisson par équipe que l'O/U — même surdispersion
-  attendue en ligue pauvre en données — sans qu'aucun bloc de config, type
-  de shrinkage ou commentaire ne les mentionne : ils ne sont pas exclus
-  volontairement, juste absents. Ces marchés sortent donc en Poisson brut
-  non-shrinké sur exactement les ligues où l'O/U reçoit un shrinkage
-  agressif.
+  attendue en ligue pauvre en données — sans qu'aucun bloc de config ne les
+  mentionne : pas exclus volontairement, juste absents.
   - `[x]` **Impact confirmé en DB (2026-08-13)** sur `TEAM_TOTAL` pick
     `UNDER_1_5`, tout l'historique réglé : `TEAM_TOTAL_HOME` (n=1282) —
     taux de réussite réel 59,9% vs 70,2% de probabilité affichée
     (**-10,3pp**), EV moyen affiché +27,1%, **ROI réel mesuré +6,46%** ;
     `TEAM_TOTAL_AWAY` (n=880) — taux réel 65,6% vs 77,6% affiché
     (**-12,0pp**), EV moyen affiché +22,4%, **ROI réel mesuré +0,75%**
-    (quasi nul malgré un EV affiché à +22%). Même motif que VALUE
-    (probabilités surconfiantes) mais sans aucun garde-fou de shrinkage
-    pour l'atténuer — cohérent avec l'absence totale de correction
-    documentée ci-dessus. `TEAM_TOTAL_AWAY UNDER_1_5` est le candidat le
-    plus urgent à corriger : c'est le marché qui casse le plus de coupons
-    combinés récemment tout en semblant le plus fiable sur le papier.
+    (quasi nul malgré un EV affiché à +22%). `TEAM_TOTAL_AWAY UNDER_1_5`
+    est le candidat le plus urgent : c'est le marché qui casse le plus de
+    coupons combinés récemment tout en semblant le plus fiable sur le papier.
+  - `[x]` **Mécanisme câblé le 2026-08-15 (branche
+    `fix/systemic-audit-market-guards`), sans nombres — backtest à faire
+    avant la PR** — `OverUnderShrinkageConfig` étendu avec des blocs
+    optionnels `teamTotalHome`/`teamTotalAway` (`ou-shrinkage.ts`), un par
+    ligne (0.5 à 4.5), sur le même modèle sparse que `ouHt`.
+    `shrinkOverUnderProbabilities` applique le shrinkage indépendamment par
+    côté quand un bloc est présent ; `OU_SHRINKAGE_CONFIG` n'a **aucune**
+    entrée `teamTotalHome`/`teamTotalAway` remplie pour l'instant — pas de
+    changement de comportement tant qu'aucune ligue n'a de facteur/base
+    mesuré. Tests dans `ou-shrinkage.spec.ts` couvrant le mécanisme avec une
+    config synthétique. **Reste à faire avant activation** : lancer le même
+    protocole de backtest que pour l'O/U (slope de calibration +
+    base rate récente par ligue, `docs/data-poor-leagues-calibration.md`)
+    spécifiquement sur `TEAM_TOTAL_HOME`/`AWAY`, en priorité la ligne
+    `UNDER_1_5` (le candidat confirmé ci-dessus), puis remplir
+    `OU_SHRINKAGE_CONFIG` avec les facteurs mesurés.
+  - `[ ]` **`RESULT_TOTAL_GOALS` non traité dans cette passe** — son
+    complément Over/Under n'est *pas* `1 − under` comme O/U ou TEAM_TOTAL :
+    `over(side) = oneXTwo[side] − under(side)` (masse jointe du côté, pas
+    la probabilité totale — voir commentaire `poisson.ts:231-236`), donc le
+    même mécanisme sparse ne s'applique pas tel quel. Nécessite une fonction
+    de shrinkage dédiée qui shrink `under` puis recalcule `over` par rapport
+    à la masse du côté, pas par rapport à 1. Pas de DB confirmée mesurant un
+    impact direct sur ce marché (contrairement à `TEAM_TOTAL`) — à traiter
+    séparément.
 - `[x]` **`selectSafeValuePick` : comparaison Over incomplète — corrigé le
   2026-08-13 (PR en cours)** — quand le pick SV gagnant est `UNDER_4_5` à
   λ élevé, les contreparties Over comparées (`pick-evaluation.ts:94-98`)

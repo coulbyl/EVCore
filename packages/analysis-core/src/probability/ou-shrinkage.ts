@@ -1,5 +1,9 @@
 import Decimal from "decimal.js";
-import type { DerivedMarketsProba, ThreeWayProba } from "./markets";
+import type {
+  DerivedMarketsProba,
+  TeamTotalProba,
+  ThreeWayProba,
+} from "./markets";
 
 // Over/Under probability shrinkage for data-poor leagues.
 //
@@ -46,7 +50,24 @@ export type OverUnderShrinkageConfig = {
     factor15: number;
     base15: number;
   };
+  // TEAM_TOTAL_HOME/AWAY derive from the same per-side Poisson marginal as
+  // full-time O/U (computeTeamTotalProba) — same data-poor-league
+  // overdispersion risk, but never had a shrinkage path (audit 2026-08-13:
+  // confirmed in DB — TEAM_TOTAL_AWAY UNDER_1_5 measured ROI +0.75% despite
+  // a displayed EV of +22.4%, the same overconfidence pattern O/U shrinkage
+  // exists to correct). Sparse per-line, same shape as ouHt: only lines with
+  // a measured factor/base are shrunk, `home`/`away` are independent blocks
+  // since each side's Poisson marginal is calibrated separately.
+  teamTotalHome?: TeamTotalShrinkageBlock;
+  teamTotalAway?: TeamTotalShrinkageBlock;
 };
+
+// Sparse per-line shrinkage for one side's TEAM_TOTAL — mirrors `ouHt`
+// (factor/base pair per line) generalized to every line the strategy layer
+// actually evaluates (getTeamTotalLineConfigs: 0.5 through 4.5).
+export type TeamTotalShrinkageBlock = Partial<
+  Record<"05" | "15" | "25" | "35" | "45", { factor: number; base: number }>
+>;
 
 // Per-league config — GENERATED from the forward-validated batch backtest
 // (2026-07-03, see docs/data-poor-leagues-calibration.md). Shipping rule per
@@ -387,6 +408,53 @@ export function shrinkOverUnderProbabilities<T extends OverUnderProbabilities>(
     result.ouHT = shrunkOuHt;
   }
 
+  if (config.teamTotalHome) {
+    result.teamTotalHome = shrinkTeamTotal(
+      probabilities.teamTotalHome,
+      config.teamTotalHome,
+    );
+  }
+
+  if (config.teamTotalAway) {
+    result.teamTotalAway = shrinkTeamTotal(
+      probabilities.teamTotalAway,
+      config.teamTotalAway,
+    );
+  }
+
+  return result;
+}
+
+const TEAM_TOTAL_LINE_KEYS: Record<
+  keyof TeamTotalShrinkageBlock,
+  { over: keyof TeamTotalProba; under: keyof TeamTotalProba }
+> = {
+  "05": { over: "OVER_0_5", under: "UNDER_0_5" },
+  "15": { over: "OVER_1_5", under: "UNDER_1_5" },
+  "25": { over: "OVER_2_5", under: "UNDER_2_5" },
+  "35": { over: "OVER_3_5", under: "UNDER_3_5" },
+  "45": { over: "OVER_4_5", under: "UNDER_4_5" },
+};
+
+function shrinkTeamTotal(
+  proba: TeamTotalProba,
+  block: TeamTotalShrinkageBlock,
+): TeamTotalProba {
+  const result: TeamTotalProba = { ...proba };
+  for (const lineKey of Object.keys(TEAM_TOTAL_LINE_KEYS) as Array<
+    keyof TeamTotalShrinkageBlock
+  >) {
+    const lineConfig = block[lineKey];
+    if (!lineConfig) continue;
+    const { over: overKey, under: underKey } = TEAM_TOTAL_LINE_KEYS[lineKey];
+    const over = proba[overKey];
+    if (over === undefined) continue;
+    const shrunk = shrinkWith(over, lineConfig.base, lineConfig.factor);
+    result[overKey] = shrunk;
+    if (proba[underKey] !== undefined) {
+      result[underKey] = new Decimal(1).minus(shrunk);
+    }
+  }
   return result;
 }
 

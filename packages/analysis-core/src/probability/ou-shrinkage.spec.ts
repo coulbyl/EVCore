@@ -81,6 +81,54 @@ describe("shrinkOverUnderProbabilities", () => {
     ).toBeCloseTo(1, 12);
   });
 
+  it("shrinks TEAM_TOTAL_HOME/AWAY independently per side when configured", () => {
+    // NOR2 has no teamTotal block yet (pending the calibration backtest) —
+    // this exercises the mechanism with a synthetic config, same shape a
+    // future backtest-derived entry would have.
+    const probabilities = computePoissonMarkets(1.9, 0.7);
+    const config = {
+      ...NOR2,
+      teamTotalHome: { "15": { factor: 0.3, base: 0.55 } },
+      teamTotalAway: { "15": { factor: 0.5, base: 0.3 } },
+    };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+
+    const rawHomeOver15 = probabilities.teamTotalHome.OVER_1_5!;
+    const expectedHomeOver15 = new Decimal(0.55).plus(
+      new Decimal(0.3).times(rawHomeOver15.minus(0.55)),
+    );
+    expect(shrunk.teamTotalHome.OVER_1_5!.toNumber()).toBeCloseTo(
+      expectedHomeOver15.toNumber(),
+      12,
+    );
+    expect(
+      shrunk.teamTotalHome
+        .OVER_1_5!.plus(shrunk.teamTotalHome.UNDER_1_5!)
+        .toNumber(),
+    ).toBeCloseTo(1, 12);
+
+    const rawAwayOver15 = probabilities.teamTotalAway.OVER_1_5!;
+    const expectedAwayOver15 = new Decimal(0.3).plus(
+      new Decimal(0.5).times(rawAwayOver15.minus(0.3)),
+    );
+    expect(shrunk.teamTotalAway.OVER_1_5!.toNumber()).toBeCloseTo(
+      expectedAwayOver15.toNumber(),
+      12,
+    );
+
+    // Lines without a config entry (e.g. 2.5) are left untouched.
+    expect(shrunk.teamTotalHome.OVER_2_5).toBe(
+      probabilities.teamTotalHome.OVER_2_5,
+    );
+  });
+
+  it("does not touch teamTotal when the config has no teamTotal block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
+    expect(shrunk.teamTotalHome).toBe(probabilities.teamTotalHome);
+    expect(shrunk.teamTotalAway).toBe(probabilities.teamTotalAway);
+  });
+
   it("leaves 1X2, HT/FT and First-Half Winner untouched (not measured)", () => {
     const probabilities = computePoissonMarkets(1.4, 1.2);
     const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
