@@ -209,6 +209,161 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshotsBatch', () => {
 
     expect(results.get('f1')).toBeNull();
   });
+
+  it('resolves TEAM_TOTAL_HOME per line too — the OVER_UNDER fix generalizes to every sparse-pick market', async () => {
+    // Same shape as the OVER_UNDER regression above, generalized (audit
+    // 2026-08-13 "reste ouvert"): TEAM_TOTAL_HOME/AWAY, RESULT_TOTAL_GOALS,
+    // RESULT_BTTS, CORRECT_SCORE and OVER_UNDER_HT all had the same
+    // market-wide bookmaker bug, just never confirmed by a live incident the
+    // way OVER_UNDER was.
+    const earlier = new Date('2026-08-09T06:00:00.000Z');
+    const latest = new Date('2026-08-09T08:00:00.000Z');
+    const { loader } = makeBatchLoader([
+      oneXTwoRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        snapshotAt: latest,
+        homeOdds: 1.9,
+        drawOdds: 3.3,
+        awayOdds: 4.0,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.TEAM_TOTAL_HOME,
+        pick: 'OVER_2_5',
+        odds: 2.2,
+        snapshotAt: latest,
+      }),
+      // Unibet only quotes the 1.5 line, at an earlier snapshot — must not
+      // be dropped just because Bet365 is the market-wide latest bookmaker.
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Unibet',
+        market: Market.TEAM_TOTAL_HOME,
+        pick: 'OVER_1_5',
+        odds: 1.5,
+        snapshotAt: earlier,
+      }),
+    ]);
+
+    const results = await loader.findLatestOddsSnapshotsBatch([
+      { fixtureId: 'f1', cutoff: CUTOFF },
+    ]);
+
+    expect(results.get('f1')?.teamTotalHomeOdds.OVER_2_5?.toNumber()).toBe(2.2);
+    expect(results.get('f1')?.teamTotalHomeOdds.OVER_1_5?.toNumber()).toBe(1.5);
+  });
+});
+
+describe('OddsSnapshotLoader.findLatestOddsSnapshot — TEAM_TOTAL_HOME per-line resolution (single-fixture path)', () => {
+  it('resolves TEAM_TOTAL_HOME per line instead of one bookmaker for the whole market', async () => {
+    const earlier = new Date('2026-08-09T06:00:00.000Z');
+    const latest = new Date('2026-08-09T08:00:00.000Z');
+
+    const findMany = vi.fn((args: { where?: { market?: Market } }) => {
+      const market = args.where?.market;
+      if (market === Market.ONE_X_TWO) {
+        return [
+          {
+            bookmaker: 'Bet365',
+            snapshotAt: latest,
+            homeOdds: 1.9,
+            drawOdds: 3.3,
+            awayOdds: 4.0,
+          },
+        ];
+      }
+      if (market === Market.TEAM_TOTAL_HOME) {
+        return [
+          {
+            bookmaker: 'Bet365',
+            pick: 'OVER_2_5',
+            odds: 2.2,
+            snapshotAt: latest,
+          },
+          {
+            bookmaker: 'Unibet',
+            pick: 'OVER_1_5',
+            odds: 1.5,
+            snapshotAt: earlier,
+          },
+        ];
+      }
+      return [];
+    });
+    const prismaMock = {
+      client: {
+        oddsSnapshot: { findMany, findFirst: vi.fn().mockResolvedValue(null) },
+      },
+    } as unknown as PrismaService;
+
+    const loader = new OddsSnapshotLoader(prismaMock);
+    const snapshot = await loader.findLatestOddsSnapshot('f1', CUTOFF);
+
+    expect(snapshot?.teamTotalHomeOdds.OVER_2_5?.toNumber()).toBe(2.2);
+    expect(snapshot?.teamTotalHomeOdds.OVER_1_5?.toNumber()).toBe(1.5);
+  });
+});
+
+describe('OddsSnapshotLoader.findLatestBestOneXTwoOddsSnapshot', () => {
+  it('returns one real bookmaker triplet instead of fabricating a mix of each side’s best price', () => {
+    // Regression for the 2026-08-13 audit finding: the old algorithm picked
+    // the highest home odds, highest draw odds and highest away odds
+    // independently across bookmakers and labeled the result "MarketBest" —
+    // a triplet no real bookmaker ever offered, with an overround lower than
+    // any single book's, which inflated every EV computed against it in the
+    // FRI channel. Bookmaker B has the single best (lowest) overround here
+    // even though A has a higher home price and C a higher away price —
+    // the fix must return B's real triplet, not a mix of A/B/C.
+    const snapshotAt = new Date('2026-08-09T08:00:00.000Z');
+    const { loader } = makeBatchLoader([
+      {
+        bookmaker: 'A',
+        snapshotAt,
+        homeOdds: 2.1,
+        drawOdds: 3.0,
+        awayOdds: 3.2,
+      },
+      {
+        bookmaker: 'B',
+        snapshotAt,
+        homeOdds: 2.0,
+        drawOdds: 3.4,
+        awayOdds: 3.4,
+      },
+      {
+        bookmaker: 'C',
+        snapshotAt,
+        homeOdds: 1.95,
+        drawOdds: 3.1,
+        awayOdds: 3.6,
+      },
+    ]);
+
+    return loader
+      .findLatestBestOneXTwoOddsSnapshot('f1', CUTOFF)
+      .then((result) => {
+        expect(result?.snapshot.bookmaker).toBe('B');
+        expect(result?.snapshot.homeOdds.toNumber()).toBe(2.0);
+        expect(result?.snapshot.drawOdds.toNumber()).toBe(3.4);
+        expect(result?.snapshot.awayOdds.toNumber()).toBe(3.4);
+        expect(result?.offeredBy).toEqual({
+          home: 'B',
+          draw: 'B',
+          away: 'B',
+        });
+      });
+  });
+
+  it('returns null when no bookmaker has a complete triplet', () => {
+    const { loader } = makeBatchLoader([]);
+    return loader
+      .findLatestBestOneXTwoOddsSnapshot('f1', CUTOFF)
+      .then((result) => {
+        expect(result).toBeNull();
+      });
+  });
 });
 
 describe('OddsSnapshotLoader.findLatestOddsSnapshot — OVER_UNDER per-line resolution', () => {

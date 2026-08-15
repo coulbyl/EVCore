@@ -30,7 +30,7 @@
   limiter à lire `selectedPicks` (un seul pick par canal, filtré par les
   seuils EV/odds/probabilité propres à chaque canal — hors-sujet pour
   construire un coupon à la main, cf. discussion sur PAOK `TEAM_TOTAL_AWAY
-  OVER_0_5` rejeté `ev_below_threshold` mais parfaitement valable comme
+OVER_0_5` rejeté `ev_below_threshold` mais parfaitement valable comme
   jambe de combo). Aujourd'hui, obtenir cette vue complète nécessite une
   requête DB par fixture (`model_run.features.evaluatedPicks` +
   `odds_snapshot` en repli quand un marché est absent d'`evaluatedPicks`,
@@ -44,11 +44,11 @@
   permettre la comparaison brut/calibré sans requête DB séparée. Objectif :
   un process d'analyse **actif** (balayer tous les marchés de tous les
   matchs du jour, filtrer par fiabilité — probabilité + accord brut/calibré
-  + `lambdaTotal` sur les picks `UNDER_*` — puis construire le coupon sur ce
-  pool réduit) plutôt que **réactif** (ne réagir qu'aux `selectedPicks` déjà
-  filtrés par le système).
-  - `[x]` **Livré** — nouveau champ `evaluatedPicks:
-    AnalysisSheetJsonEvaluatedPick[]` par fixture (market, pick, label,
+  - `lambdaTotal` sur les picks `UNDER_*` — puis construire le coupon sur ce
+    pool réduit) plutôt que **réactif** (ne réagir qu'aux `selectedPicks` déjà
+    filtrés par le système).
+  * `[x]` **Livré** — nouveau champ `evaluatedPicks:
+AnalysisSheetJsonEvaluatedPick[]` par fixture (market, pick, label,
     probability, odds, ev, status, rejectionReason, adjustmentDelta vs
     raw Poisson), réutilisant l'extraction déjà faite par
     `extractEvaContextFromFeatures` (`model-run.utils.ts`) — pas de nouvelle
@@ -382,7 +382,7 @@
   que les écarts de 0.25/0.225 qui ont fait exclure deux autres jambes du
   même coupon via `calibration_alert` (`favorite_flip`). Mais
   `assessMarketCoherence()` (`apps/backend/src/modules/betting-engine/
-  market-coherence.ts`), seule source de `calibration_alert` (appelée une
+market-coherence.ts`), seule source de `calibration_alert` (appelée une
   fois dans `betting-engine.service.ts:850-875`), ne prend en entrée que les
   probabilités 1X2 (home/draw/away) contre les cotes bookmaker — jamais les
   probabilités OVER_UNDER. Le shrinkage lui-même (`ou-shrinkage.ts`,
@@ -394,12 +394,24 @@
   d'alerte ni d'exclusion du staking. Étendre `assessMarketCoherence`
   (ou un équivalent dédié) aux marchés OVER_UNDER avant de considérer ces
   picks aussi fiables que les picks 1X2 dans un coupon combiné.
+  - `[ ]` **Décision (2026-08-15) : reporté, pas tenté dans cette passe** —
+    contrairement aux fixes de résolution bookmaker ci-dessus (mécaniques,
+    ne peuvent que récupérer des candidats déjà perdus, jamais en fabriquer),
+    étendre ce gate est une vraie fonctionnalité neuve : `MAX_DIVERGENCE`
+    (0.30) et `FAVORITE_FLIP_MIN_GAP` (0.15) sont calibrés sur la variance
+    d'un marché 1X2 à 3 issues — les réutiliser tels quels sur un marché O/U
+    à 2 issues serait une recalibration à l'aveugle (même risque que la
+    pénalité longshot ci-dessous). `calibration_alert` gate aussi
+    l'inclusion réelle en coupon (`signal-window.service.ts:380-383`) — un
+    mauvais seuil ne fait pas qu'ajouter du bruit, il peut exclure des picks
+    sains. Nécessite : ses propres seuils mesurés par backtest avant tout
+    code, comme le shrinkage TEAM_TOTAL ci-dessous.
 - `[x]` **`under_high_lambda` ne couvrait que la ligne 2,5, pas 1,5/3,5/4,5 —
   corrigé le 2026-08-15** (post-mortem 2026-08-13) — `getPickRejectionReason()`
   (`packages/analysis-core/src/selection/pick-validation.ts`) ne rejetait que
   le pick littéral `"UNDER"` (convention = ligne 2,5) quand `lambdaTotal >=
-  UNDER_HIGH_LAMBDA_THRESHOLD` (2.3). Sur Nordsjaelland–Valur, `lambdaTotal≈
-  3.74` (largement au-dessus du seuil) mais le pick joué était `UNDER_3_5`,
+UNDER_HIGH_LAMBDA_THRESHOLD` (2.3). Sur Nordsjaelland–Valur, `lambdaTotal≈
+3.74` (largement au-dessus du seuil) mais le pick joué était `UNDER_3_5`,
   qui n'entrait jamais dans cette branche. Condition généralisée à tout pick
   `UNDER_*` du marché `OVER_UNDER` (`pick.pick.startsWith("UNDER")`). Seuil λ
   (2.3) laissé inchangé — une recalibration par ligne reste une piste séparée,
@@ -424,16 +436,12 @@
   deux. Les doublons observés dans `odds_snapshot` pour ce fixture sont un
   problème d'ingestion ETL séparé (cause racine trouvée et documentée
   ci-dessous), sans lien direct avec ce bug de résolution.
-  - `[ ]` **Reste ouvert** : `findBestBookmakerForMarket` reproduit toujours
-    la même granularité "marché entier" pour les autres marchés à lignes
-    éparses (`TEAM_TOTAL_HOME/AWAY`, `RESULT_TOTAL_GOALS`, `RESULT_BTTS`,
-    `CORRECT_SCORE`, `OVER_UNDER_HT`) — non corrigé dans cette passe, scope
-    limité à `OVER_UNDER` (seul marché avec un incident confirmé en prod).
-    À étendre si un incident similaire est confirmé sur l'un de ces marchés.
+  - `[x]` **`findBestBookmakerForMarket` généralisé le 2026-08-15** — voir
+    plus bas, section "Audit systémique" : étendu à `TEAM_TOTAL_HOME/AWAY`,
+    `RESULT_TOTAL_GOALS`, `RESULT_BTTS`, `CORRECT_SCORE`, `OVER_UNDER_HT`.
   - `[ ]` **`calibration_alert` reste sans garde-fou sur OVER_UNDER** —
-    `assessMarketCoherence()` ne prend toujours en entrée que les probabilités
-    1X2 ; non traité dans cette passe (extension de `assessMarketCoherence`
-    à un nouveau marché, portée plus large qu'un fix de résolution de données).
+    reporté (backtest requis, cf. section "Audit systémique" plus bas pour
+    le raisonnement complet).
 
 ## Audit systémique 2026-08-13 — même motif de bug, cherché et confirmé ailleurs
 
@@ -450,7 +458,7 @@
   `upsertOneXTwoOddsSnapshot:1095-1140`) font `prisma.oddsSnapshot.create()`
   et ne se rabattent sur find+update que si `isUniqueConstraintError`
   se déclenche. Mais la clé `[fixtureId, bookmaker, market, pick,
-  snapshotAt]` (`packages/db/prisma/schema.prisma:816-817`) n'est définie
+snapshotAt]` (`packages/db/prisma/schema.prisma:816-817`) n'est définie
   qu'en `@@index`, jamais en `@@unique` — Postgres n'a donc jamais de
   raison de rejeter l'insert, l'erreur ne se déclenche jamais, et chaque
   resync ETL insère une ligne en double au lieu de mettre à jour l'existante.
@@ -464,28 +472,40 @@
     directement dans cette session**, cf. mémoire migrations) pour fermer
     la fenêtre de course et empêcher tout futur doublon même en écriture
     concurrente.
-- `[ ]` **Le bug "bookmaker par marché entier" existe en double, dans un
-  chemin séparé** — `findBestBookmakerForMarket`
-  (`odds-snapshot.loader.ts:346-369`) reproduit exactement la même
-  granularité "marché entier, pas par ligne" que `pickBestBookmaker`
-  (item ci-dessus), mais dans le chemin non-batché
-  (`findLatestOddsSnapshot:371-491`) plutôt que le chemin batché
-  (`assembleFullOddsSnapshot`). Corriger `pickBestBookmaker` sans corriger
-  ce jumeau laisse le bug vivant sur toute la voie d'appel single-fixture.
-- `[ ]` **`findLatestBestOneXTwoOddsSnapshot` fabrique une cohérence 1X2
-  qui n'existe pas** (`odds-snapshot.loader.ts:938-1053`) — construit un
-  faux bookmaker `'MarketBest'` en piochant `bestHome`/`bestDraw`/`bestAway`
-  chez des bookmakers potentiellement différents (donc à des instants
-  différents dans la fenêtre de requête), puis renvoie ça comme un seul
-  snapshot cohérent. Risque inverse du bug de résolution ci-dessus :
-  au lieu de perdre une donnée silencieusement, on fabrique une donnée qui
-  n'a jamais existé telle quelle chez aucun bookmaker. À vérifier : est-ce
-  qu'un appelant (calcul EV, overround) traite ce triplet comme une cote
-  réelle d'un bookmaker unique ?
+- `[x]` **Le bug "bookmaker par marché entier" existait en double, dans un
+  chemin séparé — corrigé le 2026-08-15, généralisé à tous les marchés à
+  lignes éparses** — `findBestBookmakerForMarket` reproduisait la même
+  granularité "marché entier, pas par ligne" que `pickBestBookmaker`, mais
+  dans le chemin non-batché (`findLatestOddsSnapshot`) plutôt que le chemin
+  batché (`assembleFullOddsSnapshot`). Au lieu de ne corriger que le jumeau
+  OVER_UNDER, généralisé le mécanisme (`resolvePerPickOddsPerLine` /
+  `findPerPickOddsPerLine`) à **tous** les marchés à picks indépendants sur
+  les deux chemins : `TEAM_TOTAL_HOME/AWAY`, `RESULT_TOTAL_GOALS`,
+  `RESULT_BTTS`, `CORRECT_SCORE`, `OVER_UNDER_HT`. Volontairement **pas**
+  appliqué aux marchés dont les issues partagent un seul événement cohérent
+  (`ONE_X_TWO`, `FIRST_HALF_WINNER`, `DOUBLE_CHANCE`, `HALF_TIME_FULL_TIME`)
+  — mélanger les bookmakers là recréerait le risque de triplet fabriqué
+  ci-dessous. Tests de régression ajoutés (`odds-snapshot.loader.spec.ts`,
+  cas TEAM_TOTAL_HOME sur les deux chemins).
+- `[x]` **`findLatestBestOneXTwoOddsSnapshot` fabriquait une cohérence 1X2
+  qui n'existait pas — corrigé le 2026-08-15, impact confirmé réel** —
+  construisait un faux bookmaker `'MarketBest'` en piochant
+  `bestHome`/`bestDraw`/`bestAway` chez des bookmakers potentiellement
+  différents, avec un overround artificiellement bas qu'aucun bookmaker réel
+  n'offre jamais. Vérification faite : oui, un appelant traite ce triplet
+  comme une cote réelle — `analyzeFriFixture` (`betting-engine.service.ts`)
+  passe `marketOdds.snapshot` directement à `listEvaluatedPicks`/
+  `listEvaluatedOneXTwoPicks` pour calculer l'EV de chaque pick du canal FRI.
+  Un overround fabriqué trop bas gonflait donc l'EV de **tous** les picks FRI
+  simultanément. Corrigé : sélectionne maintenant le bookmaker réel avec le
+  plus bas overround parmi ceux offrant un triplet complet (au lieu de
+  maximiser chaque côté indépendamment) — garde l'intention "chercher la
+  meilleure cote réelle" sans fabriquer de triplet inexistant. Tests de
+  régression ajoutés.
 - `[~]` **Rapport hebdomadaire de risque limité au 1X2, `brierScore`
   hardcodé à 0** — `risk.service.ts:164-191` (`generateWeeklyReport`,
   le rapport humain envoyé par `sendWeeklyReport`) : `market:
-  Market.ONE_X_TWO` en dur (ligne 170), `brierScore: 0` en dur (ligne 184).
+Market.ONE_X_TWO` en dur (ligne 170), `brierScore: 0` en dur (ligne 184).
   `checkMarketRoi`/`isMarketSuspended` (lignes 38-113) sont eux
   correctement génériques sur `Market` — seul le rapport de synthèse ne
   l'est pas. Tous les marchés non-1X2 (OVER_UNDER, BTTS, TEAM_TOTAL...)
@@ -507,7 +527,7 @@
   que pour `pick === "HOME"`/`"AWAY"` ; branche `DRAW` ajoutée (teste
   `probabilities.draw`, même pattern que HOME/AWAY). Défaut app-side
   volontairement séparé du défaut HOME/AWAY (0.45) : `MIN_DRAW_DIRECTION_
-  PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
+PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
   `EV_MIN_PROBABILITY_THRESHOLD` déjà appliqué à tous les picks — **behavior
   no-op aujourd'hui** (840 tests inchangés), le seul changement réel est que
   le hook par ligue (`PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP`) peut
@@ -565,7 +585,7 @@
     `UNDER_1_5` (le candidat confirmé ci-dessus), puis remplir
     `OU_SHRINKAGE_CONFIG` avec les facteurs mesurés.
   - `[ ]` **`RESULT_TOTAL_GOALS` non traité dans cette passe** — son
-    complément Over/Under n'est *pas* `1 − under` comme O/U ou TEAM_TOTAL :
+    complément Over/Under n'est _pas_ `1 − under` comme O/U ou TEAM_TOTAL :
     `over(side) = oneXTwo[side] − under(side)` (masse jointe du côté, pas
     la probabilité totale — voir commentaire `poisson.ts:231-236`), donc le
     même mécanisme sparse ne s'applique pas tel quel. Nécessite une fonction
@@ -573,6 +593,27 @@
     à la masse du côté, pas par rapport à 1. Pas de DB confirmée mesurant un
     impact direct sur ce marché (contrairement à `TEAM_TOTAL`) — à traiter
     séparément.
+
+> **Audit systémique 2026-08-13 — statut au 2026-08-15 : entièrement trié.**
+> Chaque motif de bug trouvé pendant l'audit est maintenant soit corrigé soit
+> explicitement reporté (jamais simplement oublié) :
+>
+> - **Corrigés (branche `fix/systemic-audit-market-guards`)** : résolution
+>   bookmaker OVER*UNDER par ligne + généralisée à tous les marchés à lignes
+>   éparses (TEAM_TOTAL, RESULT_TOTAL_GOALS, RESULT_BTTS, CORRECT_SCORE,
+>   OVER_UNDER_HT) ; `under_high_lambda` généralisé à tout `UNDER*\*`; seuil
+directionnel DRAW câblé ;`htftCalibrated`étendu à`OVER_UNDER_HT`;`findLatestBestOneXTwoOddsSnapshot`ne fabrique plus de triplet
+inexistant (impact réel confirmé sur le canal FRI) ; mécanisme de
+shrinkage câblé pour`TEAM_TOTAL_HOME/AWAY` (sans facteurs).
+> - **Reportés par décision, pas par oubli** (chacun nécessite ses propres
+>   seuils mesurés par backtest avant tout code de production, même
+>   discipline que chaque nombre déjà présent dans `ev.constants.ts`) :
+>   pénalité longshot 1X2-only, `calibration_alert` sur OVER_UNDER,
+>   shrinkage `RESULT_TOTAL_GOALS` (complément Over/Under structurellement
+>   différent, nécessite sa propre fonction).
+> - 844 tests backend + 100 tests `analysis-core` verts, typecheck et lint
+>   propres.
+
 - `[x]` **`selectSafeValuePick` : comparaison Over incomplète — corrigé le
   2026-08-13 (PR en cours)** — quand le pick SV gagnant est `UNDER_4_5` à
   λ élevé, les contreparties Over comparées (`pick-evaluation.ts:94-98`)

@@ -550,10 +550,10 @@ OVER_UNDER/marchés de buts**
 > [TODO.md](TODO.md) (section Générateur de coupon).
 
 - `[x]` Enrichir l'export "fiche EVCore"
-      (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
-      avec `evaluatedPicks` complet par fixture (tous statuts) au lieu du
-      seul `selectedPicks` par canal — préalable pour que l'analyse balaie
-      tous les marchés sans dépendre d'un accès DB live par fixture.
+  (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
+  avec `evaluatedPicks` complet par fixture (tous statuts) au lieu du
+  seul `selectedPicks` par canal — préalable pour que l'analyse balaie
+  tous les marchés sans dépendre d'un accès DB live par fixture.
 
 **Audit systémique 2026-08-13 — recherche ciblée du même motif de bug**
 
@@ -641,29 +641,54 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
         contrairement aux deux items ci-dessus qui ne font que suspendre
         davantage sans jamais rien assouplir.
 - [~] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — mécanisme câblé,
-      backtest à faire avant activation** — `TEAM_TOTAL_AWAY UNDER_1_5` est
-      le candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV
-      affiché +22,4%, même motif de surconfiance que l'O/U). Ajouté
-      `teamTotalHome`/`teamTotalAway` à `OverUnderShrinkageConfig`
-      (`ou-shrinkage.ts`) — blocs sparse par ligne (0.5 à 4.5), même forme
-      que `ouHt` — et branché dans `shrinkOverUnderProbabilities`.
-      `OU_SHRINKAGE_CONFIG` n'a encore aucune entrée remplie pour ces
-      blocs : **behavior no-op tant qu'aucune ligue n'a de facteur/base
-      mesuré** — même discipline que le reste de ce fichier (jamais de
-      nombre sans backtest de calibration derrière).
+  backtest à faire avant activation** — `TEAM_TOTAL_AWAY UNDER_1_5` est
+  le candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV
+  affiché +22,4%, même motif de surconfiance que l'O/U). Ajouté
+  `teamTotalHome`/`teamTotalAway` à `OverUnderShrinkageConfig`
+  (`ou-shrinkage.ts`) — blocs sparse par ligne (0.5 à 4.5), même forme
+  que `ouHt` — et branché dans `shrinkOverUnderProbabilities`.
+  `OU_SHRINKAGE_CONFIG` n'a encore aucune entrée remplie pour ces
+  blocs : **behavior no-op tant qu'aucune ligue n'a de facteur/base
+  mesuré** — même discipline que le reste de ce fichier (jamais de
+  nombre sans backtest de calibration derrière).
   - [ ] **Prochaine étape (backtest, avant la PR)** : reproduire le
         protocole `docs/data-poor-leagues-calibration.md` (slope +
         base rate récente par ligue) sur `TEAM_TOTAL_HOME`/`AWAY`, en
         priorité `UNDER_1_5`, puis remplir `OU_SHRINKAGE_CONFIG`.
   - [ ] **`RESULT_TOTAL_GOALS` non traité** — son complément Over/Under
         n'est pas `1 − under` comme O/U/TEAM_TOTAL (`over(side) =
-        oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
+    oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
         sparse actuel ne s'applique pas tel quel, nécessite une fonction de
         shrinkage dédiée. Pas d'impact DB confirmé sur ce marché
         spécifiquement (contrairement à TEAM_TOTAL) — traité séparément.
-- 840 tests verts (+12 vs Bloc 10 : 2 régression bookmaker-par-ligne + 10
-  nouveaux tests ciblés sur les 3 garde-fous dans
-  `pick-rejection-guards.spec.ts`), +2 tests TEAM_TOTAL shrinkage dans
+- [x] **Bookmaker par ligne généralisé à tous les marchés à picks
+      indépendants** — le jumeau non-batché de `pickBestBookmaker`
+      (`findBestBookmakerForMarket`) avait le même bug "marché entier". Au
+      lieu de ne réparer que son instance OVER_UNDER, généralisé
+      (`resolvePerPickOddsPerLine`/`findPerPickOddsPerLine`) à
+      `TEAM_TOTAL_HOME/AWAY`, `RESULT_TOTAL_GOALS`, `RESULT_BTTS`,
+      `CORRECT_SCORE`, `OVER_UNDER_HT` sur les deux chemins (batché et
+      single-fixture) — volontairement **pas** appliqué aux marchés à
+      événement unique cohérent (ONE_X_TWO, First-Half Winner, Double
+      Chance, HT/FT) où mélanger les bookmakers recréerait le risque de
+      triplet fabriqué ci-dessous.
+- [x] **`findLatestBestOneXTwoOddsSnapshot` ne fabrique plus de cohérence
+      1X2 inexistante — impact réel confirmé** — construisait un faux
+      bookmaker `'MarketBest'` en maximisant home/draw/away indépendamment
+      à travers différents bookmakers, avec un overround plus bas
+      qu'aucun bookmaker réel n'offre. Vérifié : `analyzeFriFixture`
+      (canal FRI) utilise ce triplet directement pour calculer l'EV de
+      chaque pick — un overround fabriqué gonflait donc l'EV de tout le
+      canal simultanément. Corrigé pour sélectionner le vrai bookmaker au
+      plus bas overround parmi ceux avec un triplet complet, au lieu de
+      fabriquer un mix.
+- **Audit systémique 2026-08-13 : statut final** — entièrement trié.
+  Chaque motif de bug trouvé est corrigé ou explicitement reporté (jamais
+  oublié) ; détail complet dans [TODO.md](TODO.md). Reportés par décision
+  (nécessitent leurs propres seuils mesurés par backtest, même discipline
+  que chaque nombre de `ev.constants.ts`) : pénalité longshot 1X2-only,
+  `calibration_alert` sur OVER_UNDER, shrinkage `RESULT_TOTAL_GOALS`.
+- 844 tests verts (+16 vs Bloc 10), +2 tests TEAM_TOTAL shrinkage dans
   `ou-shrinkage.spec.ts` (100 tests `analysis-core`), typecheck et lint
   (`--max-warnings 0`) propres sur backend et `analysis-core`.
 
