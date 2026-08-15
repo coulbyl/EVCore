@@ -35,6 +35,7 @@ const CHANNELS = [
   StrategyChannel.CONSENSUS,
   StrategyChannel.CLEAN_SHEET,
   StrategyChannel.WIN_EITHER_HALF,
+  StrategyChannel.GOALS,
 ] as const;
 
 type Row = {

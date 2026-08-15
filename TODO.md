@@ -65,6 +65,14 @@
   `DRAW_STAKED_LEAGUES` passe de `['I2','POR','BL1']` à `[..., 'CSL']`.
   `FRI`, `KOR1`, `KOR2`, `BRA2`, `WC`, `CHN2` restent à `train n=0` — toujours
   pas assez d'historique, à revisiter plus tard.
+  **Réserve méthodologique découverte après coup** (voir
+  `feedback_backtest_definition` en mémoire) : ce backtest lit des
+  `channel_selection` déjà enregistrées, pas un rejeu du modèle actuel — I2
+  0/1035, BL1 0/213, CSL 5/98, POR 5/543 matchs seulement datent d'après le
+  changement homeAdvFactor du 07-19. Pas annulé (homeAdvFactor est
+  re-confirmé stable sur tout l'historique ET sur une tranche récente tenue
+  à l'écart — risque limité), mais à re-vérifier une fois assez de données
+  post-07-19 accumulées.
 
 - `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`**
   (vérifié 2026-08-15) — `coupon-summary.service.ts`, `coupon-indices.service.ts`
@@ -147,11 +155,18 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   Re-run `/backtest/tuning` chaque saison.
 
 - `[~]` **GOALS** (`OVER_UNDER` ligne 2.5) — activé en observation, jamais
-  staké. **Jamais évalué pour promotion staking** (audit 2026-08-12) — signal
-  net sur **BRA2 (n=245, ROI +30.5%)** et cluster nordique/balte (IRL1/DEN1/
-  ISL1/LAT1). Négatif à surveiller : CHN2 (-37.6%), NOR2 (-21.3%). Pas de
-  `GOALS_STAKED_LEAGUES` (ou équivalent) — à créer sur le modèle
-  `DRAW_STAKED_LEAGUES`/`BTTS_STAKED_LEAGUES`, amorcé sur BRA2.
+  staké. Re-vérifié 2026-08-15 : **BRA2 (n=245 cité) était un artefact de
+  comptage** — 263 lignes `channel_selection` brutes mais seulement 49 vrais
+  matchs après dédup par fixture (chaque match ré-analysé ~5× avant le coup
+  d'envoi comptait comme 5 observations), aucun échantillon train. Le seul
+  candidat qui passe le split train/valid est **PL** (train n=202 ROI+4.8%,
+  valid n=113 ROI+12.3%) — mais **0 des 315 matchs PL utilisés ne datent
+  d'après le changement homeAdvFactor du 2026-07-19** (voir
+  `feedback_backtest_definition`/`project_channel_whitelist_replay_gap` en
+  mémoire) : ce signal ne prouve rien sur le modèle actuel. Pas assez de
+  volume post-07-19 pour retrancher. `GOALS` n'est de toute façon pas encore
+  un `CouponChannel` éligible (limité à VALUE/SAFE/BTTS/DRAW/DOMINANT/
+  TEAM_TOTAL) — ne rien câbler tant que ce point n'est pas réglé.
 
 - `[~]` **CORRECT_SCORE** — collecte forward suffisante (4 250 legs réglées,
   35 ligues n≥20). Calibration globale surconfiante, s'aggrave avec la
@@ -252,6 +267,26 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   Aucun risque de crash : les deux `create()` (`upsertOneXTwoOddsSnapshot`,
   `upsertNonOneXTwo` dans `fixture.repository.ts`) catchent déjà `P2002` via
   `isUniqueConstraintError` et retombent sur un `update()`.
+
+- `[ ]` **`backtest-channel-league-whitelist.ts` n'est pas un vrai backtest —
+  lit l'historique au lieu de rejouer le modèle actuel** (découvert
+  2026-08-15, voir mémoire `feedback_backtest_definition`/
+  `project_channel_whitelist_replay_gap`) — contrairement à
+  `backtest-team-total-shrinkage-calibration.ts` et
+  `backtest-clean-sheet-win-either-half-shrinkage-calibration.ts` (qui
+  recalculent `deriveLambdas`/`computePoissonMarkets` d'aujourd'hui sur les
+  TeamStats point-in-time), ce script lit les `channel_selection` déjà
+  enregistrées — donc la config qui était en vigueur au moment de chaque
+  décision historique, pas la config actuelle. Impact concret : la quasi
+  totalité du volume utilisé pour confirmer DRAW/CSL et GOALS/PL date
+  d'avant le changement homeAdvFactor du 07-19 (I2 0/1035, BL1 0/213, CSL
+  5/98, POR 5/543, PL 0/315 après cette date). À corriger : soit réécrire ce
+  script en vrai rejeu du pipeline complet (deriveLambdas →
+  rebalanceThreeWayProbabilities → shrinkOverUnderProbabilities → H2H →
+  logique de sélection par canal), soit accepter de restreindre les futures
+  confirmations à la fenêtre post-dernière-correction majeure une fois le
+  volume suffisant. Ne pas utiliser ce script seul pour justifier une
+  nouvelle activation de staking tant que ce n'est pas réglé.
 
 - `[ ]` **Rapport hebdomadaire de risque reste 1X2-only** — `risk.service.ts`
   (`generateWeeklyReport`) hardcode toujours `market: Market.ONE_X_TWO`
