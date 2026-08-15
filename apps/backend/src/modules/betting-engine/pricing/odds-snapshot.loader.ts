@@ -1043,4 +1043,54 @@ export class OddsSnapshotLoader {
       ];
     });
   }
+
+  // Latest OVER_UNDER odds per bookmaker, resolved PER PICK (not per market —
+  // see resolvePerPickOddsPerLine's comment) so a bookmaker's coverage gap on
+  // one line doesn't drop its odds for lines it does quote. Feeds the O/U
+  // model↔market coherence gate's per-line median implied probability
+  // (audit 2026-08-13/15 — assessOverUnderMarketCoherence in
+  // market-coherence.ts).
+  async findLatestOverUnderOddsPerBookmaker(
+    fixtureId: string,
+  ): Promise<{ bookmaker: string; odds: FullOddsSnapshot['overUnderOdds'] }[]> {
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId,
+        market: Market.OVER_UNDER,
+        odds: { not: null },
+      },
+      select: { bookmaker: true, pick: true, odds: true, snapshotAt: true },
+    });
+
+    const latestByBookmakerPick = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      if (!row.pick) continue;
+      const key = `${row.bookmaker}::${row.pick}`;
+      const current = latestByBookmakerPick.get(key);
+      if (!current || row.snapshotAt.getTime() > current.snapshotAt.getTime()) {
+        latestByBookmakerPick.set(key, row);
+      }
+    }
+
+    const oddsByBookmaker = new Map<
+      string,
+      FullOddsSnapshot['overUnderOdds']
+    >();
+    for (const row of latestByBookmakerPick.values()) {
+      if (!row.pick || !row.odds) continue;
+      if (!(OVER_UNDER_PICKS as readonly string[]).includes(row.pick)) continue;
+      const odds =
+        oddsByBookmaker.get(row.bookmaker) ??
+        ({} as FullOddsSnapshot['overUnderOdds']);
+      odds[row.pick as keyof FullOddsSnapshot['overUnderOdds']] = new Decimal(
+        row.odds.toString(),
+      );
+      oddsByBookmaker.set(row.bookmaker, odds);
+    }
+
+    return Array.from(oddsByBookmaker.entries()).map(([bookmaker, odds]) => ({
+      bookmaker,
+      odds,
+    }));
+  }
 }

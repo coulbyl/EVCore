@@ -71,14 +71,20 @@ export function extractEvaContextFromFeatures(
 }
 
 // A ModelRun flagged by the model↔market coherence gate carries a non-null
-// features.calibration_alert object (see betting-engine market-coherence.ts).
+// features.calibration_alert (1X2) or features.calibration_alert_over_under
+// (OVER_UNDER, added 2026-08-15 — see betting-engine market-coherence.ts).
 // Single source of truth for the existence check — signal-window.service.ts
 // and analysis-sheet.render.ts (buildCalibrationAlert, for the full object)
-// both read the same underlying key.
+// both read the same underlying keys.
 export function hasCalibrationAlert(features: unknown): boolean {
   if (!features || typeof features !== 'object') return false;
-  const alert = (features as Record<string, unknown>)['calibration_alert'];
-  return typeof alert === 'object' && alert !== null;
+  const record = features as Record<string, unknown>;
+  const alert = record['calibration_alert'];
+  const alertOverUnder = record['calibration_alert_over_under'];
+  return (
+    (typeof alert === 'object' && alert !== null) ||
+    (Array.isArray(alertOverUnder) && alertOverUnder.length > 0)
+  );
 }
 
 // ModelRun.features.shadow_predictions.conflict — true when API-Football's

@@ -435,3 +435,49 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshot — OVER_UNDER per-line reso
     expect(snapshot?.overUnderOdds.UNDER?.toNumber()).toBe(3.4);
   });
 });
+
+describe('OddsSnapshotLoader.findLatestOverUnderOddsPerBookmaker', () => {
+  it('resolves each bookmaker’s odds per line independently, not per market', async () => {
+    // Feeds the OVER_UNDER calibration_alert gate — a bookmaker's latest
+    // snapshot for one line must not hide odds it quoted for another line
+    // at an earlier time (same fix as the OVER_UNDER per-line resolution
+    // bug, applied to the per-bookmaker accessor).
+    const earlier = new Date('2026-08-09T06:00:00.000Z');
+    const latest = new Date('2026-08-09T08:00:00.000Z');
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        bookmaker: 'Bet365',
+        pick: 'OVER_3_5',
+        odds: 2.5,
+        snapshotAt: latest,
+      },
+      {
+        bookmaker: 'Bet365',
+        pick: 'UNDER_3_5',
+        odds: 1.55,
+        snapshotAt: latest,
+      },
+      { bookmaker: 'Bet365', pick: 'OVER', odds: 1.9, snapshotAt: earlier },
+      { bookmaker: 'Bet365', pick: 'UNDER', odds: 1.9, snapshotAt: earlier },
+      { bookmaker: 'Unibet', pick: 'OVER', odds: 1.85, snapshotAt: latest },
+      { bookmaker: 'Unibet', pick: 'UNDER', odds: 1.95, snapshotAt: latest },
+    ]);
+    const prismaMock = {
+      client: { oddsSnapshot: { findMany } },
+    } as unknown as PrismaService;
+
+    const loader = new OddsSnapshotLoader(prismaMock);
+    const books = await loader.findLatestOverUnderOddsPerBookmaker('f1');
+
+    const bet365 = books.find((b) => b.bookmaker === 'Bet365');
+    expect(bet365?.odds.OVER_3_5?.toNumber()).toBe(2.5);
+    expect(bet365?.odds.UNDER_3_5?.toNumber()).toBe(1.55);
+    // Bet365's 2.5-line quote from earlier must still be present.
+    expect(bet365?.odds.OVER?.toNumber()).toBe(1.9);
+    expect(bet365?.odds.UNDER?.toNumber()).toBe(1.9);
+
+    const unibet = books.find((b) => b.bookmaker === 'Unibet');
+    expect(unibet?.odds.OVER?.toNumber()).toBe(1.85);
+    expect(unibet?.odds.UNDER?.toNumber()).toBe(1.95);
+  });
+});

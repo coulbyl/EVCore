@@ -374,38 +374,39 @@ AnalysisSheetJsonEvaluatedPick[]` par fixture (market, pick, label,
     recommence à s'accumuler, et si `DOMINANT:ONE_X_TWO` reste stable une
     fois plus de données post-fix incluses.
 
-- `[ ]` **`calibration_alert` : angle mort total sur OVER_UNDER/marchés de
-  buts** (trouvé en post-mortem de coupon, 2026-08-13) — sur FC
-  Nordsjaelland–Valur (Under 3,5 buts, coupon longshot 13-14/08, cassé 5-0+),
-  `model_run.features` montrait `rawPoissonProbability.under35=0.486` vs
-  `probabilities.under35=0.676` (calibré) : un écart de +19pp, du même ordre
-  que les écarts de 0.25/0.225 qui ont fait exclure deux autres jambes du
-  même coupon via `calibration_alert` (`favorite_flip`). Mais
-  `assessMarketCoherence()` (`apps/backend/src/modules/betting-engine/
-market-coherence.ts`), seule source de `calibration_alert` (appelée une
-  fois dans `betting-engine.service.ts:850-875`), ne prend en entrée que les
-  probabilités 1X2 (home/draw/away) contre les cotes bookmaker — jamais les
-  probabilités OVER_UNDER. Le shrinkage lui-même (`ou-shrinkage.ts`,
-  `shrinkOverUnderProbabilities()`, config `OU_SHRINKAGE_CONFIG` par
-  compétition) est volontaire et backtesté (shrinkage vers un taux de base
-  ligue quand `factor` est bas, cf. `docs/data-poor-leagues-calibration.md`)
-  — le bug n'est pas dans le calcul, il est dans l'absence totale de garde-
-  fou : un swing de calibration goals, même énorme, ne peut jamais produire
-  d'alerte ni d'exclusion du staking. Étendre `assessMarketCoherence`
-  (ou un équivalent dédié) aux marchés OVER_UNDER avant de considérer ces
-  picks aussi fiables que les picks 1X2 dans un coupon combiné.
-  - `[ ]` **Décision (2026-08-15) : reporté, pas tenté dans cette passe** —
-    contrairement aux fixes de résolution bookmaker ci-dessus (mécaniques,
-    ne peuvent que récupérer des candidats déjà perdus, jamais en fabriquer),
-    étendre ce gate est une vraie fonctionnalité neuve : `MAX_DIVERGENCE`
-    (0.30) et `FAVORITE_FLIP_MIN_GAP` (0.15) sont calibrés sur la variance
-    d'un marché 1X2 à 3 issues — les réutiliser tels quels sur un marché O/U
-    à 2 issues serait une recalibration à l'aveugle (même risque que la
-    pénalité longshot ci-dessous). `calibration_alert` gate aussi
-    l'inclusion réelle en coupon (`signal-window.service.ts:380-383`) — un
-    mauvais seuil ne fait pas qu'ajouter du bruit, il peut exclure des picks
-    sains. Nécessite : ses propres seuils mesurés par backtest avant tout
-    code, comme le shrinkage TEAM_TOTAL ci-dessous.
+- `[x]` **`calibration_alert` : angle mort total sur OVER_UNDER/marchés de
+  buts — étendu et activé le 2026-08-15** (trouvé en post-mortem de coupon,
+  2026-08-13) — sur FC Nordsjaelland–Valur (Under 3,5 buts, coupon longshot
+  13-14/08, cassé 5-0+), `model_run.features` montrait
+  `rawPoissonProbability.under35=0.486` vs `probabilities.under35=0.676`
+  (calibré) : un écart de +19pp, du même ordre que les écarts qui ont fait
+  exclure deux autres jambes du même coupon via `calibration_alert`. Mais
+  `assessMarketCoherence()` ne prenait en entrée que les probabilités 1X2 —
+  jamais OVER_UNDER.
+  - `[x]` **Étude dédiée (`db:backtest:calibration-alert-over-under`,
+    nouveau script, 408 paris OVER_UNDER réels réglés, `probEstimated` vs
+    médiane implicite bookmaker)** — pas assez de volume au-delà de
+    divergence 0.20 pour calibrer un seuil `extreme_divergence` autonome
+    (n=10 à 0.30-0.39, 0 au-delà ; la tranche 0.20-0.29 est même positive,
+    n=33, bruit). En revanche, `favorite_flip` (modèle et marché pas
+    d'accord sur OVER vs UNDER favori) **à divergence ≥ 0.10** est un
+    signal net et contrôlé pour le confondant "proche de 50/50" : taux de
+    réussite 37,0% (n=46, ROI -12,2%) contre une base ~65-71% ; sous ce
+    seuil un "flip" n'est que du bruit (n=27, ROI +5,8%).
+  - `[x]` **Gate câblé et activé** — `assessOverUnderMarketCoherence`
+    (`market-coherence.ts`, `favorite_flip` uniquement, pas
+    d'`extreme_divergence` — volume insuffisant) ; `OVER_UNDER_CALIBRATION_GATE`
+    (`ev.constants.ts`, `FAVORITE_FLIP_MIN_GAP=0.10`) ; nouvel accesseur
+    `findLatestOverUnderOddsPerBookmaker` (résolution par ligne, pas par
+    marché entier — même fix que le bug bookmaker plus haut) ; vérifié
+    indépendamment sur les 4 lignes (1.5/2.5/3.5/4.5), pas seulement 2.5 —
+    l'incident d'origine était sur Under 3.5, une vérification limitée à
+    2.5 l'aurait encore raté. Stocké dans
+    `ModelRun.features.calibration_alert_over_under` (array, une entrée par
+    ligne déclenchée) ; `hasCalibrationAlert` (utilisé par
+    `channel-decision.repository.ts` et `signal-window.service.ts` pour
+    l'exclusion coupon) étendu pour vérifier les deux clés ; surfacé sur la
+    fiche d'analyse (`analysis-sheet.render.ts`).
 - `[x]` **`under_high_lambda` ne couvrait que la ligne 2,5, pas 1,5/3,5/4,5 —
   corrigé le 2026-08-15** (post-mortem 2026-08-13) — `getPickRejectionReason()`
   (`packages/analysis-core/src/selection/pick-validation.ts`) ne rejetait que

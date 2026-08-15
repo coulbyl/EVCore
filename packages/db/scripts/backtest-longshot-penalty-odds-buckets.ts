@@ -120,7 +120,10 @@ function findPriorStats(
   return { stats: arr[lastIdx]!.stats, priorCount: lastIdx + 1 };
 }
 
-function outcomeFromScores(home: number, away: number): "HOME" | "DRAW" | "AWAY" {
+function outcomeFromScores(
+  home: number,
+  away: number,
+): "HOME" | "DRAW" | "AWAY" {
   if (home > away) return "HOME";
   if (home < away) return "AWAY";
   return "DRAW";
@@ -318,8 +321,7 @@ async function main() {
     const outcome = outcomeFromScores(fixture.homeScore, fixture.awayScore);
     const totalGoals = fixture.homeScore + fixture.awayScore;
     const btts = fixture.homeScore > 0 && fixture.awayScore > 0;
-    const hasHt =
-      fixture.homeHtScore !== null && fixture.awayHtScore !== null;
+    const hasHt = fixture.homeHtScore !== null && fixture.awayHtScore !== null;
     const htOutcome = hasHt
       ? outcomeFromScores(fixture.homeHtScore!, fixture.awayHtScore!)
       : null;
@@ -370,8 +372,7 @@ async function main() {
         if (!hasHt || !isHalfTimeFullTimePick(row.pick)) continue;
         const prob = markets.htft[row.pick as HalfTimeFullTimePick];
         if (prob === undefined) continue;
-        const actual: 0 | 1 =
-          row.pick === `${htOutcome}_${outcome}` ? 1 : 0;
+        const actual: 0 | 1 = row.pick === `${htOutcome}_${outcome}` ? 1 : 0;
         points.push({
           market: "HALF_TIME_FULL_TIME",
           pick: row.pick,
@@ -386,7 +387,11 @@ async function main() {
         const key = row.pick as "HOME" | "DRAW" | "AWAY";
         const proba = markets.firstHalfWinner;
         const prob =
-          key === "HOME" ? proba.home : key === "AWAY" ? proba.away : proba.draw;
+          key === "HOME"
+            ? proba.home
+            : key === "AWAY"
+              ? proba.away
+              : proba.draw;
         if (prob === undefined) continue;
         const actual: 0 | 1 = htOutcome === key ? 1 : 0;
         points.push({
@@ -400,8 +405,7 @@ async function main() {
         // Only the 4.5 line — the case flagged in TODO.md as reaching
         // longshot odds with no equivalent dampening.
         if (row.pick !== "OVER_4_5" && row.pick !== "UNDER_4_5") continue;
-        const prob =
-          row.pick === "OVER_4_5" ? markets.over45 : markets.under45;
+        const prob = row.pick === "OVER_4_5" ? markets.over45 : markets.under45;
         const actual: 0 | 1 =
           row.pick === "OVER_4_5"
             ? totalGoals > 4.5
@@ -436,8 +440,12 @@ async function main() {
 
   out();
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Pénalité longshot hors 1X2 : calibration/ROI par tranche de cote");
-  out(`  ${dateLabel} — cotes bookmaker réelles, probabilité Poisson brute rejouée`);
+  out(
+    "  EVCore — Pénalité longshot hors 1X2 : calibration/ROI par tranche de cote",
+  );
+  out(
+    `  ${dateLabel} — cotes bookmaker réelles, probabilité Poisson brute rejouée`,
+  );
   out("═══════════════════════════════════════════════════════");
   out();
 
@@ -470,8 +478,7 @@ async function main() {
       // Naive ROI: flat 1-unit stake on every pick in the bucket, using its
       // own real odds. Not a claimed-EV filter — a pure "what if we always
       // bet this bucket" simulation, same spirit as the original 1X2 audits.
-      const roi =
-        pts.reduce((s, p) => s + (p.actual ? p.odds - 1 : -1), 0) / n;
+      const roi = pts.reduce((s, p) => s + (p.actual ? p.odds - 1 : -1), 0) / n;
       out(
         `  ${bucket.label.padEnd(12)} n=${String(n).padEnd(5)} avgOdds=${avgOdds.toFixed(2).padEnd(6)} ` +
           `P(modèle)=${(100 * avgProb).toFixed(1)}%  P(implicite cote)=${(100 * avgImplied).toFixed(1)}%  ` +

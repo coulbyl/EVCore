@@ -156,7 +156,9 @@ async function main() {
       awayTeamId: true,
       homeScore: true,
       awayScore: true,
-      season: { select: { name: true, competition: { select: { code: true } } } },
+      season: {
+        select: { name: true, competition: { select: { code: true } } },
+      },
     },
     orderBy: { scheduledAt: "asc" },
   });
@@ -248,7 +250,10 @@ async function main() {
     const markets = computePoissonMarkets(lambda.home, lambda.away);
     processed++;
 
-    const actualOutcome = outcomeFromScores(fixture.homeScore, fixture.awayScore);
+    const actualOutcome = outcomeFromScores(
+      fixture.homeScore,
+      fixture.awayScore,
+    );
     const totalGoals = fixture.homeScore + fixture.awayScore;
 
     for (const side of ["HOME", "DRAW", "AWAY"] as const) {
@@ -263,8 +268,7 @@ async function main() {
           side,
           line,
           prob: under.toNumber(),
-          actualUnder:
-            actualOutcome === side && totalGoals < lineValue ? 1 : 0,
+          actualUnder: actualOutcome === side && totalGoals < lineValue ? 1 : 0,
         });
       }
     }
@@ -378,7 +382,9 @@ async function main() {
   out();
   out("═══════════════════════════════════════════════════════");
   out("  EVCore — Calibration walk-forward RESULT_TOTAL_GOALS");
-  out(`  ${dateLabel} — train=toutes saisons sauf la + récente, test=la + récente`);
+  out(
+    `  ${dateLabel} — train=toutes saisons sauf la + récente, test=la + récente`,
+  );
   out("═══════════════════════════════════════════════════════");
   out();
   out(
@@ -404,7 +410,9 @@ async function main() {
   }
 
   out();
-  out("--- Config générée (à coller/fusionner dans OU_SHRINKAGE_CONFIG.resultTotalGoals) ---");
+  out(
+    "--- Config générée (à coller/fusionner dans OU_SHRINKAGE_CONFIG.resultTotalGoals) ---",
+  );
   out();
   const byCompetition = new Map<string, ShippedRow[]>();
   for (const r of shipped) {
@@ -412,8 +420,8 @@ async function main() {
     arr.push(r);
     byCompetition.set(r.competitionCode, arr);
   }
-  for (const [code, rows] of Array.from(byCompetition.entries()).sort(
-    (a, b) => a[0].localeCompare(b[0]),
+  for (const [code, rows] of Array.from(byCompetition.entries()).sort((a, b) =>
+    a[0].localeCompare(b[0]),
   )) {
     out(`// ${code}:`);
     out(`//   resultTotalGoals: {`);

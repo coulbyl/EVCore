@@ -704,17 +704,36 @@ oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
       canal simultanément. Corrigé pour sélectionner le vrai bookmaker au
       plus bas overround parmi ceux avec un triplet complet, au lieu de
       fabriquer un mix.
-- **Audit systémique 2026-08-13 : statut final** — entièrement trié.
-  Chaque motif de bug trouvé est corrigé ou explicitement reporté (jamais
-  oublié) ; détail complet dans [TODO.md](TODO.md). Tous les items qui
-  restaient "backtest à faire" ont depuis été mesurés (DB locale, sync prod
-  2026-08-15 16h48) : shrinkage `TEAM_TOTAL` (activé), shrinkage
-  `RESULT_TOTAL_GOALS` (activé), pénalité longshot (activée sur
-  `RESULT_TOTAL_GOALS`/`HALF_TIME_FULL_TIME`, différée sur les 3 marchés au
-  signal trop bruité). Seul reste ouvert : **`calibration_alert` sur
-  OVER_UNDER** — pas encore étudié, même discipline à appliquer (seuils
-  propres, pas de réutilisation aveugle des seuils 1X2).
-- 848 tests backend (+20 vs Bloc 10), 104 tests `analysis-core` (+6),
+- [x] **`calibration_alert` étendu à OVER_UNDER — étude dédiée + activation
+      (2026-08-15)** — le gate de cohérence modèle↔marché ne couvrait que le
+      1X2 ; le post-mortem du 13-14/08 avait trouvé un écart de +19pp sur
+      une jambe Under 3.5 sans aucun garde-fou pour la voir. Nouveau script
+      `db:backtest:calibration-alert-over-under` (408 paris OVER_UNDER
+      réels réglés, `probEstimated` vs médiane implicite bookmaker) :
+      pas assez de volume pour calibrer un seuil `extreme_divergence`
+      autonome (n=10 au-delà de 0.30), mais `favorite_flip` à divergence
+      ≥ 0.10 est un signal net contrôlé pour le confondant "proche de
+      50/50" — taux de réussite 37,0% (n=46, ROI -12,2%) contre une base
+      ~65-71% ; sous ce seuil un "flip" n'est que du bruit (n=27, ROI
+      +5,8%). `assessOverUnderMarketCoherence` activé (`favorite_flip`
+      seul, `FAVORITE_FLIP_MIN_GAP=0.10`), vérifié indépendamment sur les 4
+      lignes (1.5/2.5/3.5/4.5 — l'incident d'origine était sur 3.5, pas
+      2.5), nouvel accesseur `findLatestOverUnderOddsPerBookmaker` (résolu
+      par ligne, même discipline que le fix bookmaker plus haut), stocké
+      dans `calibration_alert_over_under` et branché sur la même exclusion
+      coupon que le gate 1X2.
+- **Audit systémique 2026-08-13 : statut final** — **entièrement trié et
+  clos**. Chaque motif de bug trouvé est corrigé, activé après backtest, ou
+  explicitement reporté (jamais oublié) ; détail complet dans
+  [TODO.md](TODO.md). Tous les items "backtest à faire" ont été mesurés (DB
+  locale, sync prod 2026-08-15 16h48) et activés : shrinkage `TEAM_TOTAL`,
+  shrinkage `RESULT_TOTAL_GOALS`, pénalité longshot
+  (`RESULT_TOTAL_GOALS`/`HALF_TIME_FULL_TIME`), `calibration_alert` sur
+  OVER_UNDER (`favorite_flip`). Restent différés par décision documentée
+  (signal trop bruité ou volume insuffisant, jamais par oubli) : pénalité
+  longshot sur RESULT_BTTS/FIRST_HALF_WINNER/OVER_UNDER 4.5, seuil
+  `extreme_divergence` pour OVER_UNDER.
+- 855 tests backend (+27 vs Bloc 10), 104 tests `analysis-core` (+6),
   typecheck et lint (`--max-warnings 0`) propres sur backend et
   `analysis-core`.
 

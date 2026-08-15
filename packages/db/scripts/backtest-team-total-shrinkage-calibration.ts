@@ -153,7 +153,9 @@ async function main() {
       awayTeamId: true,
       homeScore: true,
       awayScore: true,
-      season: { select: { name: true, competition: { select: { code: true } } } },
+      season: {
+        select: { name: true, competition: { select: { code: true } } },
+      },
     },
     orderBy: { scheduledAt: "asc" },
   });
@@ -339,7 +341,8 @@ async function main() {
       train.map((p) => p.prob),
       train.map((p) => p.actualOver),
     );
-    const trainBase = train.reduce((s, p) => s + p.actualOver, 0) / train.length;
+    const trainBase =
+      train.reduce((s, p) => s + p.actualOver, 0) / train.length;
 
     const testIdentity = test.map((p) => ({
       prob: p.prob,
@@ -391,7 +394,9 @@ async function main() {
   out();
   out("═══════════════════════════════════════════════════════");
   out("  EVCore — Calibration walk-forward TEAM_TOTAL_HOME/AWAY");
-  out(`  ${dateLabel} — train=toutes saisons sauf la + récente, test=la + récente`);
+  out(
+    `  ${dateLabel} — train=toutes saisons sauf la + récente, test=la + récente`,
+  );
   out("═══════════════════════════════════════════════════════");
   out();
   out(
@@ -425,8 +430,8 @@ async function main() {
     arr.push(r);
     byCompetition.set(r.competitionCode, arr);
   }
-  for (const [code, rows] of Array.from(byCompetition.entries()).sort(
-    (a, b) => a[0].localeCompare(b[0]),
+  for (const [code, rows] of Array.from(byCompetition.entries()).sort((a, b) =>
+    a[0].localeCompare(b[0]),
   )) {
     const homeLines = rows.filter((r) => r.side === "HOME");
     const awayLines = rows.filter((r) => r.side === "AWAY");
