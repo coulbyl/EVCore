@@ -23,9 +23,9 @@ describe("shrinkOverUnderProbabilities", () => {
     const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
 
     // over' = base + factor × (over − base), checked on the 2.5 line.
-    const expected = new Decimal(NOR2.baseRates.over25).plus(
-      new Decimal(NOR2.factor).times(
-        probabilities.over25.minus(NOR2.baseRates.over25),
+    const expected = new Decimal(NOR2.baseRates!.over25).plus(
+      new Decimal(NOR2.factor!).times(
+        probabilities.over25.minus(NOR2.baseRates!.over25),
       ),
     );
     expect(shrunk.over25.toNumber()).toBeCloseTo(expected.toNumber(), 12);
@@ -124,9 +124,44 @@ describe("shrinkOverUnderProbabilities", () => {
 
   it("does not touch teamTotal when the config has no teamTotal block", () => {
     const probabilities = computePoissonMarkets(1.4, 1.2);
-    const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);
+    // A minimal config with only the full O/U fields, no teamTotal block —
+    // NOR2 itself now ships one (2026-08-15 calibration pass), so it can't
+    // be reused here to exercise the "no teamTotal block" path.
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
     expect(shrunk.teamTotalHome).toBe(probabilities.teamTotalHome);
     expect(shrunk.teamTotalAway).toBe(probabilities.teamTotalAway);
+  });
+
+  it("leaves full-time O/U untouched for a league with only a teamTotal block (no factor/baseRates)", () => {
+    // 2026-08-15 TEAM_TOTAL calibration pass added leagues with no prior
+    // full O/U measurement — factor/baseRates are optional precisely for
+    // this case.
+    const probabilities = computePoissonMarkets(1.6, 0.9);
+    const config = {
+      teamTotalHome: { "15": { factor: 0.4, base: 0.5 } },
+    };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+
+    expect(shrunk.over25).toBe(probabilities.over25);
+    expect(shrunk.under25).toBe(probabilities.under25);
+    expect(shrunk.teamTotalHome.OVER_1_5).not.toBe(
+      probabilities.teamTotalHome.OVER_1_5,
+    );
+  });
+
+  it("never mutates the input probabilities object", () => {
+    // Regression: an earlier draft of the optional factor/baseRates guard
+    // aliased `result` to the input `probabilities` when no full O/U block
+    // was configured, so the btts/ouHt/teamTotal writes below it mutated the
+    // caller's object in place.
+    const probabilities = computePoissonMarkets(1.6, 0.9);
+    const snapshotBefore = probabilities.teamTotalHome.OVER_1_5;
+    const config = {
+      teamTotalHome: { "15": { factor: 0.4, base: 0.5 } },
+    };
+    shrinkOverUnderProbabilities(probabilities, config);
+    expect(probabilities.teamTotalHome.OVER_1_5).toBe(snapshotBefore);
   });
 
   it("leaves 1X2, HT/FT and First-Half Winner untouched (not measured)", () => {

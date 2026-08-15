@@ -568,22 +568,40 @@ PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
     (quasi nul malgré un EV affiché à +22%). `TEAM_TOTAL_AWAY UNDER_1_5`
     est le candidat le plus urgent : c'est le marché qui casse le plus de
     coupons combinés récemment tout en semblant le plus fiable sur le papier.
-  - `[x]` **Mécanisme câblé le 2026-08-15 (branche
-    `fix/systemic-audit-market-guards`), sans nombres — backtest à faire
-    avant la PR** — `OverUnderShrinkageConfig` étendu avec des blocs
-    optionnels `teamTotalHome`/`teamTotalAway` (`ou-shrinkage.ts`), un par
-    ligne (0.5 à 4.5), sur le même modèle sparse que `ouHt`.
-    `shrinkOverUnderProbabilities` applique le shrinkage indépendamment par
-    côté quand un bloc est présent ; `OU_SHRINKAGE_CONFIG` n'a **aucune**
-    entrée `teamTotalHome`/`teamTotalAway` remplie pour l'instant — pas de
-    changement de comportement tant qu'aucune ligue n'a de facteur/base
-    mesuré. Tests dans `ou-shrinkage.spec.ts` couvrant le mécanisme avec une
-    config synthétique. **Reste à faire avant activation** : lancer le même
-    protocole de backtest que pour l'O/U (slope de calibration +
-    base rate récente par ligue, `docs/data-poor-leagues-calibration.md`)
-    spécifiquement sur `TEAM_TOTAL_HOME`/`AWAY`, en priorité la ligne
-    `UNDER_1_5` (le candidat confirmé ci-dessus), puis remplir
-    `OU_SHRINKAGE_CONFIG` avec les facteurs mesurés.
+  - `[x]` **Mécanisme câblé le 2026-08-15** — `OverUnderShrinkageConfig`
+    étendu avec des blocs optionnels `teamTotalHome`/`teamTotalAway`
+    (`ou-shrinkage.ts`), un par ligne (0.5 à 4.5), sur le même modèle sparse
+    que `ouHt`. `factor`/`baseRates` (jusque-là obligatoires) rendus
+    optionnels pour permettre à une ligue de n'avoir qu'un bloc TEAM_TOTAL
+    sans couverture O/U plein temps.
+  - `[x]` **Backtest walk-forward exécuté le 2026-08-15 (DB locale, sync
+    prod 16h48) — config générée et fusionnée dans `OU_SHRINKAGE_CONFIG`** —
+    nouveau script `db:backtest:team-total-shrinkage-calibration`, même
+    protocole que l'O/U (train = toutes saisons sauf la plus récente par
+    ligue, test = la plus récente, critère de livraison : Brier tenu-à-l'écart
+    amélioré d'au moins 0.001 vs l'identité). 47 258 fixtures rejouées avec
+    TeamStats point-in-time (12 864 exclues cold-start), 660 combinaisons
+    ligue×côté×ligne observées, **178 blocs livrés sur 49 ligues** (27 fusionnées
+    dans des entrées existantes, 22 nouvelles ligues sans couverture O/U plein
+    temps — ex. ARG1/ARG2/BEL1/CHI1/CHI2/DEN1/KOR2/LL/USA2). Facteurs mesurés
+    entre 0.02 et 1.00 selon ligue/ligne (médiane ~0.5, cohérent avec les
+    facteurs O/U existants 0.02–1.0). Rapport complet :
+    `packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt`.
+    - **Garde-fou paris réels réglés — inconclusif, volume trop faible** :
+      seulement 69 paris `TEAM_TOTAL_HOME/AWAY` réglés (WON/LOST) tombent sur
+      une ligne désormais couverte (152 réglés au total, historique récent).
+      Le groupe où le shrinkage aurait réduit la conviction sur le côté staké
+      (n=54, ROI −9.1%) contre le reste (n=15, ROI −37.3%) — sens inverse de
+      ce qu'un guard propre confirmerait, mais n trop faible des deux côtés
+      pour trancher (contrairement au guard O/U original sur 910 paris). Les
+      deux groupes restent négatifs, cohérent avec le motif de surconfiance
+      déjà documenté (`TEAM_TOTAL_AWAY` ROI réel ~0% malgré EV affiché +22%).
+      La preuve principale reste le Brier walk-forward sur 47k fixtures, pas
+      ce guard.
+    - **Prêt pour la PR** — mécanisme + config activés (plus un no-op :
+      TEAM_TOTAL_HOME/AWAY seront réellement shrinkés en prod sur les 49
+      ligues listées une fois mergé). 844 tests backend + 102 tests
+      `analysis-core` verts, typecheck/lint propres.
   - `[ ]` **`RESULT_TOTAL_GOALS` non traité dans cette passe** — son
     complément Over/Under n'est _pas_ `1 − under` comme O/U ou TEAM_TOTAL :
     `over(side) = oneXTwo[side] − under(side)` (masse jointe du côté, pas

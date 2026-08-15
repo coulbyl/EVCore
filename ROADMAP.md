@@ -640,21 +640,33 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
         recalibration à l'aveugle, pas une simple extension de garde-fou —
         contrairement aux deux items ci-dessus qui ne font que suspendre
         davantage sans jamais rien assouplir.
-- [~] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — mécanisme câblé,
-  backtest à faire avant activation** — `TEAM_TOTAL_AWAY UNDER_1_5` est
-  le candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV
-  affiché +22,4%, même motif de surconfiance que l'O/U). Ajouté
-  `teamTotalHome`/`teamTotalAway` à `OverUnderShrinkageConfig`
-  (`ou-shrinkage.ts`) — blocs sparse par ligne (0.5 à 4.5), même forme
-  que `ouHt` — et branché dans `shrinkOverUnderProbabilities`.
-  `OU_SHRINKAGE_CONFIG` n'a encore aucune entrée remplie pour ces
-  blocs : **behavior no-op tant qu'aucune ligue n'a de facteur/base
-  mesuré** — même discipline que le reste de ce fichier (jamais de
-  nombre sans backtest de calibration derrière).
-  - [ ] **Prochaine étape (backtest, avant la PR)** : reproduire le
-        protocole `docs/data-poor-leagues-calibration.md` (slope +
-        base rate récente par ligue) sur `TEAM_TOTAL_HOME`/`AWAY`, en
-        priorité `UNDER_1_5`, puis remplir `OU_SHRINKAGE_CONFIG`.
+- [x] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — backtest exécuté,
+      config activée (2026-08-15)** — `TEAM_TOTAL_AWAY UNDER_1_5` est le
+      candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV affiché
+      +22,4%, même motif de surconfiance que l'O/U). Mécanisme câblé
+      (`teamTotalHome`/`teamTotalAway` sur `OverUnderShrinkageConfig`, sparse
+      par ligne 0.5–4.5, même forme que `ouHt` ; `factor`/`baseRates` rendus
+      optionnels pour permettre une ligue sans couverture O/U plein temps).
+      **Backtest walk-forward exécuté contre la DB locale** (sync prod du jour,
+      16h48) avec le nouveau script `db:backtest:team-total-shrinkage-calibration`
+      — même protocole que l'O/U original (train = toutes saisons sauf la plus
+      récente par ligue, test = la plus récente, seuil de livraison : ΔBrier
+      tenu-à-l'écart ≥ 0.001). 47 258 fixtures rejouées (TeamStats point-in-time),
+      **178 blocs livrés sur 49 ligues** — 27 fusionnées dans des entrées
+      `OU_SHRINKAGE_CONFIG` existantes, 22 nouvelles ligues (ARG1/ARG2/AUS1/
+      AUT1/BEL1/BRA2/CH/CHI1/CHI2/CHN2/D3/DEN1/FIN2/GRE1/IRL1/KOR2/KSA1/LL/
+      POL2/RUS1/SCO1/USA2) sans couverture O/U plein temps. Rapport complet :
+      `packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt`.
+  - [x] **Garde-fou paris réels réglés — inconclusif, pas bloquant** :
+        seulement 69 paris `TEAM_TOTAL_*` réglés tombent sur une ligne
+        désormais couverte (152 réglés au total) — trop peu pour trancher
+        dans un sens ou l'autre (le guard O/U original portait sur 910
+        paris). Les deux groupes testés restent négatifs, cohérent avec le
+        motif de surconfiance déjà documenté. La preuve porteuse reste le
+        Brier walk-forward sur 47k fixtures rejouées, pas ce guard.
+  - [x] **Activé, plus un no-op** : TEAM_TOTAL_HOME/AWAY seront réellement
+        shrinkés en prod sur les 49 ligues listées une fois cette branche
+        mergée.
   - [ ] **`RESULT_TOTAL_GOALS` non traité** — son complément Over/Under
         n'est pas `1 − under` comme O/U/TEAM_TOTAL (`over(side) =
     oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
@@ -687,10 +699,13 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
   oublié) ; détail complet dans [TODO.md](TODO.md). Reportés par décision
   (nécessitent leurs propres seuils mesurés par backtest, même discipline
   que chaque nombre de `ev.constants.ts`) : pénalité longshot 1X2-only,
-  `calibration_alert` sur OVER_UNDER, shrinkage `RESULT_TOTAL_GOALS`.
-- 844 tests verts (+16 vs Bloc 10), +2 tests TEAM_TOTAL shrinkage dans
-  `ou-shrinkage.spec.ts` (100 tests `analysis-core`), typecheck et lint
-  (`--max-warnings 0`) propres sur backend et `analysis-core`.
+  `calibration_alert` sur OVER_UNDER, shrinkage `RESULT_TOTAL_GOALS`. Le
+  shrinkage `TEAM_TOTAL` (seul item qui restait "backtest à faire") a depuis
+  été mesuré et activé — voir ci-dessus.
+- 844 tests verts (+16 vs Bloc 10), 102 tests `analysis-core` (+4 : 2 pour
+  le mécanisme TEAM_TOTAL, 2 pour le guard `factor`/`baseRates` optionnels),
+  typecheck et lint (`--max-warnings 0`) propres sur backend et
+  `analysis-core`.
 
 ---
 
