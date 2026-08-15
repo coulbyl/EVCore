@@ -118,10 +118,14 @@
 ## Canaux en observation (pas encore staking-grade)
 
 - `[~]` **Nouveaux marchés (DNB/TEAM_TOTAL/CLEAN_SHEET/WIN_TO_NIL/
-  WIN_EITHER_HALF/RESULT_TOTAL_GOALS/RESULT_BTTS)** — wired dans VALUE/SAFE,
-  3 canaux observation-only (`CLEAN_SHEET`, `TEAM_TOTAL`, `WIN_EITHER_HALF`)
-  activés. Extension SAFE/VALUE reste bloquée tant que les cotes forward ne
-  sont pas accumulées (`CouponChannel` toujours limité à
+  WIN_EITHER_HALF/RESULT_TOTAL_GOALS/RESULT_BTTS)** — wired dans VALUE/SAFE.
+  **Correction 2026-08-15** : TEAM_TOTAL n'est plus observation-only comme
+  écrit ici — il est **staké en coupon** depuis le 07-28 (`coupon.constants.ts` :
+  `CANAL_BASE_WEIGHT.TEAM_TOTAL=0.15`, `MAX_COUPON_SELECTIONS.TEAM_TOTAL=3`,
+  backtesté +3.40% ROI n=845). Seuls `CLEAN_SHEET`/`WIN_EITHER_HALF` restent
+  observation-only à raison (confirmé plus haut : 0 ligue confirmée en
+  whitelist). Extension SAFE/VALUE reste bloquée tant que les cotes forward
+  ne sont pas accumulées (`CouponChannel` toujours limité à
   `VALUE/SAFE/BTTS/DRAW/DOMINANT/TEAM_TOTAL`) — ne pas activer de pick `AWAY_*`
   sur ces marchés avant, le biais AWAY reste net-négatif même après
   recalibration homeAdvFactor.
