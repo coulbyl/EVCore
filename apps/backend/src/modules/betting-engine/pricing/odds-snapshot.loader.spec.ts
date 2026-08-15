@@ -126,6 +126,71 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshotsBatch', () => {
     expect(results.get('f3')).toBeNull();
   });
 
+  it('resolves each OVER_UNDER line independently instead of picking one bookmaker for the whole market', async () => {
+    // Regression test for the 2026-08-13 audit finding: a bookmaker that only
+    // quotes the 3.5/4.5 lines at the latest snapshot must not make the 2.5
+    // line (quoted earlier by a different bookmaker) disappear from
+    // evaluatedPicks.
+    const earlier = new Date('2026-08-09T06:00:00.000Z');
+    const latest = new Date('2026-08-09T08:00:00.000Z');
+    const { loader } = makeBatchLoader([
+      oneXTwoRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        snapshotAt: latest,
+        homeOdds: 1.9,
+        drawOdds: 3.3,
+        awayOdds: 4.0,
+      }),
+      // Bet365 is the market-wide "best bookmaker" (latest snapshot, highest
+      // rank) but only quotes the 3.5/4.5 lines at that snapshot.
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.OVER_UNDER,
+        pick: 'OVER_3_5',
+        odds: 2.5,
+        snapshotAt: latest,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Bet365',
+        market: Market.OVER_UNDER,
+        pick: 'UNDER_3_5',
+        odds: 1.55,
+        snapshotAt: latest,
+      }),
+      // Unibet only quotes the 2.5 line, and only at an earlier snapshot.
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Unibet',
+        market: Market.OVER_UNDER,
+        pick: 'OVER',
+        odds: 1.28,
+        snapshotAt: earlier,
+      }),
+      pickRow({
+        fixtureId: 'f1',
+        bookmaker: 'Unibet',
+        market: Market.OVER_UNDER,
+        pick: 'UNDER',
+        odds: 3.4,
+        snapshotAt: earlier,
+      }),
+    ]);
+
+    const results = await loader.findLatestOddsSnapshotsBatch([
+      { fixtureId: 'f1', cutoff: CUTOFF },
+    ]);
+
+    const overUnderOdds = results.get('f1')?.overUnderOdds;
+    expect(overUnderOdds?.OVER_3_5?.toNumber()).toBe(2.5);
+    expect(overUnderOdds?.UNDER_3_5?.toNumber()).toBe(1.55);
+    // The 2.5 line must still be present, sourced from Unibet.
+    expect(overUnderOdds?.OVER?.toNumber()).toBe(1.28);
+    expect(overUnderOdds?.UNDER?.toNumber()).toBe(3.4);
+  });
+
   it('applies the cutoff to ONE_X_TWO rows per fixture', async () => {
     const { loader } = makeBatchLoader([
       oneXTwoRow({
@@ -143,5 +208,75 @@ describe('OddsSnapshotLoader.findLatestOddsSnapshotsBatch', () => {
     ]);
 
     expect(results.get('f1')).toBeNull();
+  });
+});
+
+describe('OddsSnapshotLoader.findLatestOddsSnapshot — OVER_UNDER per-line resolution', () => {
+  it('resolves each OVER_UNDER line independently instead of picking one bookmaker for the whole market (single-fixture path)', async () => {
+    // Same regression as the batch-path test above, but for the
+    // non-batched query path (findBestBookmakerForMarket used to be reused
+    // for OVER_UNDER too, reproducing the market-wide bug there as well).
+    const earlier = new Date('2026-08-09T06:00:00.000Z');
+    const latest = new Date('2026-08-09T08:00:00.000Z');
+
+    const findMany = vi.fn((args: { where?: { market?: Market } }) => {
+      const market = args.where?.market;
+      if (market === Market.ONE_X_TWO) {
+        return [
+          {
+            bookmaker: 'Bet365',
+            snapshotAt: latest,
+            homeOdds: 1.9,
+            drawOdds: 3.3,
+            awayOdds: 4.0,
+          },
+        ];
+      }
+      if (market === Market.OVER_UNDER) {
+        return [
+          {
+            bookmaker: 'Bet365',
+            pick: 'OVER_3_5',
+            odds: 2.5,
+            snapshotAt: latest,
+          },
+          {
+            bookmaker: 'Bet365',
+            pick: 'UNDER_3_5',
+            odds: 1.55,
+            snapshotAt: latest,
+          },
+          {
+            bookmaker: 'Unibet',
+            pick: 'OVER',
+            odds: 1.28,
+            snapshotAt: earlier,
+          },
+          {
+            bookmaker: 'Unibet',
+            pick: 'UNDER',
+            odds: 3.4,
+            snapshotAt: earlier,
+          },
+        ];
+      }
+      return [];
+    });
+    const prismaMock = {
+      client: {
+        oddsSnapshot: { findMany, findFirst: vi.fn().mockResolvedValue(null) },
+      },
+    } as unknown as PrismaService;
+
+    const loader = new OddsSnapshotLoader(prismaMock);
+    const snapshot = await loader.findLatestOddsSnapshot('f1', CUTOFF);
+
+    expect(snapshot?.overUnderOdds.OVER_3_5?.toNumber()).toBe(2.5);
+    expect(snapshot?.overUnderOdds.UNDER_3_5?.toNumber()).toBe(1.55);
+    // The 2.5 line, quoted only by Unibet at an earlier snapshot, must
+    // survive instead of being dropped in favor of Bet365 (the market-wide
+    // latest/highest-rank bookmaker, which never quoted this line).
+    expect(snapshot?.overUnderOdds.OVER?.toNumber()).toBe(1.28);
+    expect(snapshot?.overUnderOdds.UNDER?.toNumber()).toBe(3.4);
   });
 });

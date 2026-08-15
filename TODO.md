@@ -287,6 +287,21 @@
 
 ## À faire
 
+- `[ ]` **Étiquetage de compétition erroné — collision de nom** (trouvé en
+  revue qualitative du 2026-08-15, coupon multi-continents) — dans la fiche
+  EVCore du 15/08, 3 matchs chinois (Yanbian Longding–Dalian Huayi, Guangxi
+  Hengchen–Meizhou Kejia, Wuxi Wugou–Guangzhou E-Power) apparaissent avec
+  `competition: "League One"` — le même nom affiché que la vraie League One
+  anglaise, ce qui les a fait atterrir dans le mauvais lot lors d'un tri par
+  zone géographique. Collision similaire repérée entre la Bundesliga
+  allemande et la Bundesliga autrichienne (Sturm Graz, Austria Lustenau),
+  toutes deux affichées sous `competition: "Bundesliga"`. Risque réel au-delà
+  de la confusion d'analyse manuelle : si un calibrage ou seuil par ligue lit
+  ce nom affiché plutôt qu'un code de compétition unique, les deux ligues
+  homonymes pourraient se faire écraser mutuellement leurs stats. À vérifier :
+  d'où vient `competition` dans l'export fiche (`analysis-sheet.render.ts`)
+  — nom API-Football brut vs code interne — et si un identifiant unique
+  (competitionCode) est disponible pour désambiguïser à l'affichage.
 - `[ ]` **`MARKET_MOVE`** — nouveau canal, à démarrer quand l'historique de
   cotes est assez dense.
 - `[ ]` **`LIVE_VALUE`** — nouveau canal, pipeline live isolé des analyses J-/JT.
@@ -379,46 +394,46 @@
   d'alerte ni d'exclusion du staking. Étendre `assessMarketCoherence`
   (ou un équivalent dédié) aux marchés OVER_UNDER avant de considérer ces
   picks aussi fiables que les picks 1X2 dans un coupon combiné.
-- `[ ]` **`under_high_lambda` ne couvre que la ligne 2,5, pas 1,5/3,5/4,5**
-  (même post-mortem, 2026-08-13) — `getPickRejectionReason()`
-  (`packages/analysis-core/src/selection/pick-validation.ts:48-54`) ne
-  rejette que le pick littéral `"UNDER"` (convention = ligne 2,5) quand
-  `lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD` (2.3, `selection/
-  constants.ts:42`). Sur Nordsjaelland–Valur, `lambdaTotal≈3.74` (largement
-  au-dessus du seuil) mais le pick joué était `UNDER_3_5`, qui n'entre
-  jamais dans cette branche — la garde-fou n'a donc jamais pu s'appliquer,
-  alors que le raisonnement (surdispersion Poisson à λ élevé) est encore
-  plus valable sur une ligne haute que sur la ligne 2,5. Généraliser la
-  condition à tout pick `UNDER_*` du marché `OVER_UNDER` (avec un seuil de
-  λ probablement à recalibrer par ligne — 2.3 a été calibré spécifiquement
-  pour la ligne 2,5, cf. commentaire `ev.constants.ts:368`) avant de
-  considérer ces lignes hautes aussi sûres que la 2,5 dans un coupon.
-- `[ ]` **Résolution du bookmaker OVER_UNDER par marché entier, pas par
-  ligne — perte silencieuse de candidats** (même post-mortem, 2026-08-13) —
-  sur Nordsjaelland–Valur, la ligne 2,5 (`OVER`/`UNDER`) n'apparaît **dans
-  aucun** `evaluatedPicks` (ni `viable` ni `rejected`), alors que
-  `odds_snapshot` contenait bien des cotes fraîches pour cette ligne
+- `[x]` **`under_high_lambda` ne couvrait que la ligne 2,5, pas 1,5/3,5/4,5 —
+  corrigé le 2026-08-15** (post-mortem 2026-08-13) — `getPickRejectionReason()`
+  (`packages/analysis-core/src/selection/pick-validation.ts`) ne rejetait que
+  le pick littéral `"UNDER"` (convention = ligne 2,5) quand `lambdaTotal >=
+  UNDER_HIGH_LAMBDA_THRESHOLD` (2.3). Sur Nordsjaelland–Valur, `lambdaTotal≈
+  3.74` (largement au-dessus du seuil) mais le pick joué était `UNDER_3_5`,
+  qui n'entrait jamais dans cette branche. Condition généralisée à tout pick
+  `UNDER_*` du marché `OVER_UNDER` (`pick.pick.startsWith("UNDER")`). Seuil λ
+  (2.3) laissé inchangé — une recalibration par ligne reste une piste séparée,
+  pas un prérequis pour fermer ce trou de garde-fou.
+- `[x]` **Résolution du bookmaker OVER_UNDER par marché entier, pas par
+  ligne — perte silencieuse de candidats — corrigé le 2026-08-15** (post-mortem
+  2026-08-13) — sur Nordsjaelland–Valur, la ligne 2,5 (`OVER`/`UNDER`)
+  n'apparaissait **dans aucun** `evaluatedPicks` (ni `viable` ni `rejected`),
+  alors que `odds_snapshot` contenait bien des cotes fraîches pour cette ligne
   (`OVER` 1.25 Unibet/1.28 Bet365, `UNDER` 3.40/3.42). Cause : `pickBestBookmaker`
-  (`apps/backend/src/modules/betting-engine/pricing/odds-snapshot.loader.ts:108-123`)
-  choisit **un seul bookmaker pour tout le marché OVER_UNDER** (dernier
+  choisissait **un seul bookmaker pour tout le marché OVER_UNDER** (dernier
   timestamp toutes lignes confondues + meilleur rang bookmaker), puis
-  `assembleFullOddsSnapshot` (lignes 143-322) ne retient que les lignes que
-  CE bookmaker a effectivement soumises. Si le bookmaker choisi n'avait
-  coté que 3,5/4,5 à ce moment précis (mais pas 2,5, coté par un autre
-  bookmaker), `overUnderOdds["OVER"]`/`["UNDER"]` valent `undefined` et le
-  candidat est skippé silencieusement (`pick-evaluation.ts:357`, `if
-  (candidate.odds === null || candidate.odds === undefined) continue`) —
-  **avant** d'atteindre `getPickRejectionReason` et le garde-fou
-  `under_high_lambda` ci-dessus, qui n'a donc jamais eu la chance de se
-  déclencher sur cette ligne. Sur Omonia (même jour), le bookmaker retenu
-  couvrait bien la ligne 2,5, d'où la différence de comportement entre les
-  deux fixtures. Corriger en résolvant le meilleur bookmaker **par ligne**
-  (ou en repliant sur un autre bookmaker quand celui choisi n'a pas coté
-  une ligne donnée) plutôt que par marché entier — sans quoi des lignes
-  entières peuvent disparaître silencieusement de l'évaluation malgré des
-  cotes disponibles. Les doublons observés dans `odds_snapshot` pour ce
-  fixture sont un problème d'ingestion ETL séparé (cause racine trouvée et
-  documentée ci-dessous), sans lien direct avec ce bug de résolution.
+  `assembleFullOddsSnapshot` ne retenait que les lignes que CE bookmaker avait
+  effectivement soumises — si le bookmaker choisi n'avait coté que 3,5/4,5 à
+  ce moment précis (mais pas 2,5, coté par un autre bookmaker),
+  `overUnderOdds["OVER"]`/`["UNDER"]` valaient `undefined` et le candidat
+  était skippé silencieusement, **avant** d'atteindre `getPickRejectionReason`
+  et le garde-fou `under_high_lambda` ci-dessus. Corrigé en résolvant le
+  meilleur bookmaker **par ligne** (`resolveOverUnderOddsPerLine` /
+  `findOverUnderOddsPerLine` dans `odds-snapshot.loader.ts`, appliqué aux deux
+  chemins batché et single-fixture), avec tests de régression couvrant les
+  deux. Les doublons observés dans `odds_snapshot` pour ce fixture sont un
+  problème d'ingestion ETL séparé (cause racine trouvée et documentée
+  ci-dessous), sans lien direct avec ce bug de résolution.
+  - `[ ]` **Reste ouvert** : `findBestBookmakerForMarket` reproduit toujours
+    la même granularité "marché entier" pour les autres marchés à lignes
+    éparses (`TEAM_TOTAL_HOME/AWAY`, `RESULT_TOTAL_GOALS`, `RESULT_BTTS`,
+    `CORRECT_SCORE`, `OVER_UNDER_HT`) — non corrigé dans cette passe, scope
+    limité à `OVER_UNDER` (seul marché avec un incident confirmé en prod).
+    À étendre si un incident similaire est confirmé sur l'un de ces marchés.
+  - `[ ]` **`calibration_alert` reste sans garde-fou sur OVER_UNDER** —
+    `assessMarketCoherence()` ne prend toujours en entrée que les probabilités
+    1X2 ; non traité dans cette passe (extension de `assessMarketCoherence`
+    à un nouveau marché, portée plus large qu'un fix de résolution de données).
 
 ## Audit systémique 2026-08-13 — même motif de bug, cherché et confirmé ailleurs
 

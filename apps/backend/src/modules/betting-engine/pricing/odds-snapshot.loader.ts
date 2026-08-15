@@ -18,6 +18,50 @@ function bookmakerRank(bookmaker: string): number {
   return 6;
 }
 
+// The 8 sparse OVER_UNDER lines (bare 2.5 + 1.5/3.5/4.5), each an independent
+// binary market — unlike ONE_X_TWO's correlated home/draw/away triplet, a
+// bookmaker covering one line says nothing about whether it covers another.
+const OVER_UNDER_PICKS = [
+  'OVER_1_5',
+  'UNDER_1_5',
+  'OVER',
+  'UNDER',
+  'OVER_3_5',
+  'UNDER_3_5',
+  'OVER_4_5',
+  'UNDER_4_5',
+] as const;
+
+// Resolves the best bookmaker independently PER LINE instead of once for the
+// whole OVER_UNDER market. Fixes a silent data-loss bug (audit 2026-08-13):
+// picking one bookmaker for the entire market meant a line that bookmaker
+// didn't quote at the latest snapshot (e.g. 2.5) disappeared from
+// evaluatedPicks entirely, even when another bookmaker had fresh odds for it
+// (confirmed on Nordsjaelland–Valur — OVER/UNDER 2.5 had live Unibet/Bet365
+// odds but never made it into evaluatedPicks because the market-wide best
+// bookmaker at that snapshot had only quoted 3.5/4.5).
+function resolveOverUnderOddsPerLine(
+  rows: RawOddsRow[],
+): FullOddsSnapshot['overUnderOdds'] {
+  const result = {} as FullOddsSnapshot['overUnderOdds'];
+  for (const pick of OVER_UNDER_PICKS) {
+    const pickRows = rows.filter(
+      (r) =>
+        r.market === Market.OVER_UNDER && r.pick === pick && r.odds !== null,
+    );
+    if (pickRows.length === 0) continue;
+    const latestTs = Math.max(...pickRows.map((r) => r.snapshotAt.getTime()));
+    const atLatest = pickRows.filter(
+      (r) => r.snapshotAt.getTime() === latestTs,
+    );
+    const best = atLatest.reduce((a, b) =>
+      bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
+    );
+    result[pick] = new Decimal(best.odds!.toString());
+  }
+  return result;
+}
+
 const TEAM_TOTAL_PICKS = [
   'OVER_0_5',
   'UNDER_0_5',
@@ -174,7 +218,6 @@ function assembleFullOddsSnapshot(
   const rowsFor = (market: Market) =>
     rowsForMarketBookmaker(rows, market, pickBestBookmaker(rows, market));
 
-  const ouRows = rowsFor(Market.OVER_UNDER);
   const htftRows = rowsFor(Market.HALF_TIME_FULL_TIME);
   const ouHtRows = rowsFor(Market.OVER_UNDER_HT);
   const fhwRows = rowsFor(Market.FIRST_HALF_WINNER);
@@ -196,27 +239,11 @@ function assembleFullOddsSnapshot(
   const bttsNoRow = bttsRows.find((r) => r.pick === 'NO') ?? null;
 
   const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
-  const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
+  const overUnderOdds = resolveOverUnderOddsPerLine(rows);
   const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
   let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
   let doubleChanceOdds: FullOddsSnapshot['doubleChanceOdds'] = null;
 
-  for (const row of ouRows) {
-    if (!row.pick || !row.odds) continue;
-    if (
-      !(row.pick in overUnderOdds) &&
-      (row.pick === 'OVER_1_5' ||
-        row.pick === 'UNDER_1_5' ||
-        row.pick === 'OVER' ||
-        row.pick === 'UNDER' ||
-        row.pick === 'OVER_3_5' ||
-        row.pick === 'UNDER_3_5' ||
-        row.pick === 'OVER_4_5' ||
-        row.pick === 'UNDER_4_5')
-    ) {
-      overUnderOdds[row.pick] = new Decimal(row.odds.toString());
-    }
-  }
   for (const row of htftRows) {
     if (!row.pick || !row.odds) continue;
     if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {
@@ -368,6 +395,39 @@ export class OddsSnapshotLoader {
     ).bookmaker;
   }
 
+  // Same fix as resolveOverUnderOddsPerLine (batch path) applied to the
+  // single-fixture query path: resolves the best bookmaker independently per
+  // OVER_UNDER line instead of once for the whole market, so a line quoted
+  // only by a non-"best" bookmaker at the latest snapshot isn't silently
+  // dropped from evaluatedPicks.
+  private async findOverUnderOddsPerLine(
+    fixtureId: string,
+  ): Promise<FullOddsSnapshot['overUnderOdds']> {
+    const rows = await this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId,
+        market: Market.OVER_UNDER,
+        odds: { not: null },
+      },
+      select: { bookmaker: true, pick: true, odds: true, snapshotAt: true },
+    });
+
+    const result = {} as FullOddsSnapshot['overUnderOdds'];
+    for (const pick of OVER_UNDER_PICKS) {
+      const pickRows = rows.filter((r) => r.pick === pick && r.odds !== null);
+      if (pickRows.length === 0) continue;
+      const latestTs = Math.max(...pickRows.map((r) => r.snapshotAt.getTime()));
+      const atLatest = pickRows.filter(
+        (r) => r.snapshotAt.getTime() === latestTs,
+      );
+      const best = atLatest.reduce((a, b) =>
+        bookmakerRank(a.bookmaker) <= bookmakerRank(b.bookmaker) ? a : b,
+      );
+      result[pick] = new Decimal(best.odds!.toString());
+    }
+    return result;
+  }
+
   async findLatestOddsSnapshot(
     fixtureId: string,
     cutoff: Date,
@@ -413,7 +473,7 @@ export class OddsSnapshotLoader {
     // independently — their coverage differs from 1X2 (e.g. Pinnacle covers
     // OVER_UNDER while Bet365 may not).
     const [
-      ouBookmaker,
+      overUnderOdds,
       bttsBookmaker,
       htftBookmaker,
       ouHtBookmaker,
@@ -431,7 +491,7 @@ export class OddsSnapshotLoader {
       resultTotalGoalsBookmaker,
       resultBttsBookmaker,
     ] = await Promise.all([
-      this.findBestBookmakerForMarket(fixtureId, Market.OVER_UNDER, cutoff),
+      this.findOverUnderOddsPerLine(fixtureId),
       this.findBestBookmakerForMarket(fixtureId, Market.BTTS, cutoff),
       this.findBestBookmakerForMarket(
         fixtureId,
@@ -491,7 +551,6 @@ export class OddsSnapshotLoader {
     ]);
 
     const [
-      ouRows,
       bttsYesRow,
       bttsNoRow,
       htftRows,
@@ -510,17 +569,6 @@ export class OddsSnapshotLoader {
       resultTotalGoalsRows,
       resultBttsRows,
     ] = await Promise.all([
-      ouBookmaker
-        ? this.prisma.client.oddsSnapshot.findMany({
-            where: {
-              fixtureId,
-              bookmaker: ouBookmaker,
-              market: Market.OVER_UNDER,
-            },
-            select: { pick: true, odds: true },
-            orderBy: { snapshotAt: 'desc' },
-          })
-        : null,
       bttsBookmaker
         ? this.prisma.client.oddsSnapshot.findFirst({
             where: {
@@ -713,27 +761,10 @@ export class OddsSnapshotLoader {
     ]);
 
     const htftOdds = {} as Partial<Record<HalfTimeFullTimePick, Decimal>>;
-    const overUnderOdds = {} as FullOddsSnapshot['overUnderOdds'];
     const ouHtOdds = {} as FullOddsSnapshot['ouHtOdds'];
     let firstHalfWinnerOdds: FullOddsSnapshot['firstHalfWinnerOdds'] = null;
     let doubleChanceOdds: FullOddsSnapshot['doubleChanceOdds'] = null;
 
-    for (const row of ouRows ?? []) {
-      if (!row.pick || !row.odds) continue;
-      if (
-        !(row.pick in overUnderOdds) &&
-        (row.pick === 'OVER_1_5' ||
-          row.pick === 'UNDER_1_5' ||
-          row.pick === 'OVER' ||
-          row.pick === 'UNDER' ||
-          row.pick === 'OVER_3_5' ||
-          row.pick === 'UNDER_3_5' ||
-          row.pick === 'OVER_4_5' ||
-          row.pick === 'UNDER_4_5')
-      ) {
-        overUnderOdds[row.pick] = new Decimal(row.odds.toString());
-      }
-    }
     for (const row of htftRows) {
       if (!row.pick || !row.odds) continue;
       if (!(row.pick in htftOdds) && isHalfTimeFullTimePick(row.pick)) {

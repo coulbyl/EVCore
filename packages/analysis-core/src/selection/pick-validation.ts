@@ -42,12 +42,16 @@ export function getPickRejectionReason(
     return "market_suspended";
   }
 
-  // Under-2.5 bets at high expected-goal totals: the independent Poisson model
+  // Under bets at high expected-goal totals: the independent Poisson model
   // overestimates P(Under) due to real-match overdispersion. Reject outright when
   // λ ≥ 2.3 — lowered from 2.5 after May 2026 live diagnostic (losses at λ 2.30–2.80).
+  // Applies to every UNDER_* line (not just the 2.5 line the threshold was
+  // originally calibrated on) — the overdispersion risk is at least as strong
+  // on higher lines (audit 2026-08-13: UNDER_3_5 at λ≈3.74 slipped through
+  // before this generalization).
   if (
     pick.market === Market.OVER_UNDER &&
-    pick.pick === "UNDER" &&
+    pick.pick.startsWith("UNDER") &&
     lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD
   ) {
     return "under_high_lambda";

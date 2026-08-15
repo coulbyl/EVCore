@@ -582,6 +582,44 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
+### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne + garde-fou λ élevé (2026-08-15, branche `fix/systemic-audit-market-guards`)
+
+> Reprise du reste de l'audit systémique du Bloc 10 (post-mortem
+> Nordsjaelland–Valur, [TODO.md](TODO.md) section "Audit systémique
+> 2026-08-13"), laissé de côté de la PR "sûrs uniquement" du 2026-08-13 car
+> ces deux-là touchent directement à quelles cotes/picks atteignent
+> `evaluatedPicks` — corrigés en premier dans ce chantier plus large.
+
+- [x] **`under_high_lambda` généralisé à tout pick `UNDER_*`** —
+      `getPickRejectionReason()` (`pick-validation.ts`) ne rejetait que le
+      pick littéral `"UNDER"` (ligne 2,5) quand `lambdaTotal ≥ 2.3` ;
+      `UNDER_3_5`/`UNDER_4_5`/`UNDER_1_5` n'entraient jamais dans cette
+      branche (confirmé : Nordsjaelland–Valur avait `lambdaTotal≈3.74` sur
+      `UNDER_3_5`, jamais rejeté). Seuil λ laissé inchangé — une
+      recalibration par ligne reste une piste séparée.
+- [x] **Résolution du bookmaker OVER_UNDER par ligne au lieu de par marché
+      entier** — cause racine confirmée du trou Nordsjaelland–Valur : un
+      seul bookmaker était choisi pour tout le marché (dernier snapshot +
+      meilleur rang), et une ligne qu'il n'avait pas cotée à cet instant
+      disparaissait silencieusement même si un autre bookmaker l'avait
+      cotée. `resolveOverUnderOddsPerLine`/`findOverUnderOddsPerLine`
+      (`odds-snapshot.loader.ts`) résolvent maintenant le meilleur
+      bookmaker indépendamment par ligne (8 picks), sur les deux chemins
+      (batché et single-fixture). Tests de régression reproduisant le
+      scénario exact ajoutés dans `odds-snapshot.loader.spec.ts`.
+  - [ ] **Reste ouvert** : `findBestBookmakerForMarket` garde la même
+        granularité "marché entier" pour les autres marchés à lignes
+        éparses (TEAM_TOTAL_HOME/AWAY, RESULT_TOTAL_GOALS, RESULT_BTTS,
+        CORRECT_SCORE, OVER_UNDER_HT) — non traité ici, scope limité à
+        OVER_UNDER (seul marché avec incident confirmé en prod).
+  - [ ] **Reste ouvert** : `calibration_alert` (`assessMarketCoherence`)
+        toujours sans garde-fou sur OVER_UNDER — extension à un nouveau
+        marché, portée plus large qu'un fix de résolution de données.
+- 830 tests verts (+2 vs Bloc 10), typecheck et lint (`--max-warnings 0`)
+  propres sur backend et `analysis-core`.
+
+---
+
 ### Web UI
 
 - [x] Page 404 (`not-found.tsx`) — layout centré, animation CSS, tokens bento
