@@ -164,6 +164,56 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(probabilities.teamTotalHome.OVER_1_5).toBe(snapshotBefore);
   });
 
+  it("shrinks RESULT_TOTAL_GOALS by shrinking the UNDER joint probability, deriving OVER from the side mass", () => {
+    // RESULT_TOTAL_GOALS's complement is over(side) = oneXTwo[side] -
+    // under(side), NOT 1 - under — unlike full O/U and TEAM_TOTAL. This test
+    // pins that behavior down explicitly.
+    const probabilities = computePoissonMarkets(1.5, 1.0);
+    const config = {
+      resultTotalGoals: {
+        HOME: { "15": { factor: 0.4, base: 0.15 } },
+      },
+    };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+
+    const rawUnder = probabilities.resultTotalGoals.HOME_UNDER_1_5!;
+    const expectedUnder = new Decimal(0.15).plus(
+      new Decimal(0.4).times(rawUnder.minus(0.15)),
+    );
+    expect(shrunk.resultTotalGoals.HOME_UNDER_1_5!.toNumber()).toBeCloseTo(
+      expectedUnder.toNumber(),
+      12,
+    );
+
+    const expectedOver = probabilities.home.minus(expectedUnder);
+    expect(shrunk.resultTotalGoals.HOME_OVER_1_5!.toNumber()).toBeCloseTo(
+      expectedOver.toNumber(),
+      12,
+    );
+    // Under + over for this side/line must still sum to that side's own win
+    // probability, not to 1.
+    expect(
+      shrunk.resultTotalGoals
+        .HOME_UNDER_1_5!.plus(shrunk.resultTotalGoals.HOME_OVER_1_5!)
+        .toNumber(),
+    ).toBeCloseTo(probabilities.home.toNumber(), 12);
+
+    // DRAW/AWAY and other lines are untouched.
+    expect(shrunk.resultTotalGoals.HOME_OVER_2_5).toBe(
+      probabilities.resultTotalGoals.HOME_OVER_2_5,
+    );
+    expect(shrunk.resultTotalGoals.AWAY_UNDER_1_5).toBe(
+      probabilities.resultTotalGoals.AWAY_UNDER_1_5,
+    );
+  });
+
+  it("does not touch resultTotalGoals when the config has no resultTotalGoals block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+    expect(shrunk.resultTotalGoals).toBe(probabilities.resultTotalGoals);
+  });
+
   it("leaves 1X2, HT/FT and First-Half Winner untouched (not measured)", () => {
     const probabilities = computePoissonMarkets(1.4, 1.2);
     const shrunk = shrinkOverUnderProbabilities(probabilities, NOR2);

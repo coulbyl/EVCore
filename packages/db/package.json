@@ -53,6 +53,7 @@
     "db:backtest:signal-window-calibration": "tsx scripts/backtest-signal-window-calibration.ts",
     "db:backtest:ml-shadow-correction": "tsx scripts/backtest-ml-shadow-correction.ts",
     "db:backtest:team-total-shrinkage-calibration": "tsx scripts/backtest-team-total-shrinkage-calibration.ts",
+    "db:backtest:result-total-goals-shrinkage-calibration": "tsx scripts/backtest-result-total-goals-shrinkage-calibration.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

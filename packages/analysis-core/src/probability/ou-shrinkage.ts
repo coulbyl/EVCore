@@ -1,6 +1,7 @@
 import Decimal from "decimal.js";
 import type {
   DerivedMarketsProba,
+  ResultTotalGoalsProba,
   TeamTotalProba,
   ThreeWayProba,
 } from "./markets";
@@ -66,6 +67,16 @@ export type OverUnderShrinkageConfig = {
   // since each side's Poisson marginal is calibrated separately.
   teamTotalHome?: TeamTotalShrinkageBlock;
   teamTotalAway?: TeamTotalShrinkageBlock;
+  // RESULT_TOTAL_GOALS (e.g. "HOME_OVER_2_5") is a genuine joint price — the
+  // UNDER pick is a direct joint-distribution sum (P(side wins AND under
+  // line)), and OVER = oneXTwo[side] − UNDER (see computeResultTotalGoalsProba
+  // and rebalanceThreeWayProbabilities' comment). Unlike full O/U/TEAM_TOTAL,
+  // the complement is NOT `1 − under` — it's bounded by that side's own win
+  // probability, not by 1. Shrinking has to preserve that: shrink the UNDER
+  // joint probability toward its own measured base rate, then recompute OVER
+  // against the (already 1X2-rebalanced) side mass, exactly like
+  // rebalanceThreeWayProbabilities already does when home/draw/away move.
+  resultTotalGoals?: ResultTotalGoalsShrinkageBlock;
 };
 
 // Sparse per-line shrinkage for one side's TEAM_TOTAL — mirrors `ouHt`
@@ -73,6 +84,17 @@ export type OverUnderShrinkageConfig = {
 // actually evaluates (getTeamTotalLineConfigs: 0.5 through 4.5).
 export type TeamTotalShrinkageBlock = Partial<
   Record<"05" | "15" | "25" | "35" | "45", { factor: number; base: number }>
+>;
+
+// Sparse per-(side, line) shrinkage for RESULT_TOTAL_GOALS. `base` here is
+// the measured base rate of the UNDER joint probability (P(side wins AND
+// under line)), not a conditional/normalized rate — same units as the raw
+// Poisson UNDER value being shrunk.
+export type ResultTotalGoalsShrinkageBlock = Partial<
+  Record<
+    "HOME" | "DRAW" | "AWAY",
+    Partial<Record<"15" | "25" | "35" | "45", { factor: number; base: number }>>
+  >
 >;
 
 // Per-league config — GENERATED from the forward-validated batch backtest
@@ -116,6 +138,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.56, base: 0.82 },
       "15": { factor: 0.51, base: 0.5 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "25": { factor: 0.52, base: 0.08 },
+        "45": { factor: 0.62, base: 0.226 },
+      },
     },
   },
   // EL1: full-sample slopes o15 0.22 · o25 0.31 · o35 0.57 · o45 0.50; forward ΔBrier OU -0.0021 (4/4).
@@ -162,6 +191,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.39, base: 0.32 },
       "25": { factor: 0.11, base: 0.11 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: {
+        "15": { factor: 0.0, base: 0.09 },
+        "45": { factor: 0.0, base: 0.258 },
+      },
+    },
   },
   // FIN1: full-sample slopes o15 0.11 · o25 0.13 · o35 0.47 · o45 0.40; forward ΔBrier OU -0.0009 (2/4).
   FIN1: {
@@ -180,6 +216,12 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.58, base: 0.46 },
       "25": { factor: 0.61, base: 0.19 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "45": { factor: 0.82, base: 0.292 } },
+      DRAW: { "15": { factor: 0.08, base: 0.059 } },
+      AWAY: { "15": { factor: 0.37, base: 0.065 } },
+    },
   },
   // I2: full-sample slopes o15 -0.25 · o25 -0.02 · o35 0.24 · o45 0.42; forward ΔBrier OU +0.0008 (3/4).
   I2: {
@@ -191,6 +233,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.58, base: 0.31 },
       "25": { factor: 0.34, base: 0.09 },
       "35": { factor: 0.16, base: 0.01 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: { "45": { factor: 0.5, base: 0.307 } },
+      AWAY: {
+        "25": { factor: 0.13, base: 0.107 },
+        "45": { factor: 0.78, base: 0.231 },
+      },
     },
   },
   // ISL1: full-sample slopes o15 0.53 · o25 0.39 · o35 0.23 · o45 0.23; forward ΔBrier OU +0.0037 (1/4).
@@ -209,6 +259,23 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.6, base: 0.16 },
       "35": { factor: 0.35, base: 0.08 },
       "45": { factor: 0.52, base: 0.04 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.063 },
+        "35": { factor: 0.61, base: 0.27 },
+        "45": { factor: 0.72, base: 0.308 },
+      },
+      DRAW: {
+        "25": { factor: 0.37, base: 0.164 },
+        "35": { factor: 0.37, base: 0.164 },
+      },
+      AWAY: {
+        "25": { factor: 0.73, base: 0.075 },
+        "35": { factor: 0.66, base: 0.138 },
+        "45": { factor: 0.74, base: 0.157 },
+      },
     },
   },
   // J1: full-sample slopes o15 0.36 · o25 0.35 · o35 0.62 · o45 0.49; forward ΔBrier OU -0.0047 (4/4).
@@ -229,6 +296,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.67, base: 0.67 },
       "15": { factor: 0.34, base: 0.31 },
       "25": { factor: 0.36, base: 0.12 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: {
+        "25": { factor: 0.26, base: 0.202 },
+        "35": { factor: 0.26, base: 0.202 },
+        "45": { factor: 0.0, base: 0.248 },
+      },
+      AWAY: {
+        "25": { factor: 0.37, base: 0.128 },
+        "35": { factor: 0.47, base: 0.235 },
+        "45": { factor: 0.41, base: 0.265 },
+      },
     },
   },
   // KOR1: full-sample slopes o15 -0.21 · o25 0.15 · o35 -0.06 · o45 0.18; forward ΔBrier OU -0.0058 (4/4).
@@ -255,6 +335,15 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     baseRates: { over15: 0.78, over25: 0.57, over35: 0.36, over45: 0.23 },
     btts: { factor: 0.32, baseYes: 0.52 },
     ouHt: { factor05: 0.0, base05: 0.74, factor15: 0.72, base15: 0.38 },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "15": { factor: 0.54, base: 0.081 } },
+      DRAW: {
+        "25": { factor: 0.67, base: 0.151 },
+        "35": { factor: 0.67, base: 0.151 },
+      },
+      AWAY: { "15": { factor: 0.38, base: 0.108 } },
+    },
   },
   // MLS: full-sample slopes o15 0.24 · o25 0.34 · o35 0.41 · o45 0.20; forward ΔBrier OU -0.0077 (4/4).
   MLS: {
@@ -268,6 +357,18 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.82, base: 0.25 },
     },
     teamTotalAway: { "05": { factor: 0.18, base: 0.74 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.51, base: 0.074 },
+        "25": { factor: 0.53, base: 0.133 },
+        "45": { factor: 0.63, base: 0.351 },
+      },
+      AWAY: {
+        "15": { factor: 0.5, base: 0.066 },
+        "35": { factor: 0.47, base: 0.177 },
+      },
+    },
   },
   // MX1: full-sample slopes o15 0.12 · o25 0.29 · o35 0.07 · o45 0.04; forward ΔBrier OU -0.0017 (4/4).
   MX1: {
@@ -277,6 +378,8 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     ouHt: { factor05: 0.0, base05: 0.72, factor15: 1, base15: 0.39 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalAway: { "25": { factor: 0.62, base: 0.11 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: { AWAY: { "45": { factor: 0.76, base: 0.208 } } },
   },
   // NOR1: full-sample slopes o15 0.13 · o25 0.33 · o35 0.31 · o45 0.30; forward ΔBrier OU -0.0047 (4/4).
   NOR1: {
@@ -286,6 +389,15 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     ouHt: { factor05: 0.03, base05: 0.77, factor15: 0.0, base15: 0.42 },
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: { "15": { factor: 0.55, base: 0.5 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: {
+        "15": { factor: 0.0, base: 0.034 },
+        "25": { factor: 0.0, base: 0.13 },
+        "35": { factor: 0.0, base: 0.13 },
+        "45": { factor: 0.0, base: 0.176 },
+      },
+    },
   },
   // NOR2: full-sample slopes o15 0.22 · o25 0.22 · o35 0.28 · o45 0.26; forward ΔBrier OU -0.0067 (4/4).
   NOR2: {
@@ -297,6 +409,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.55, base: 0.84 },
       "15": { factor: 0.6, base: 0.53 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "35": { factor: 0.74, base: 0.163 },
+        "45": { factor: 0.74, base: 0.203 },
+      },
     },
   },
   // POL1: full-sample slopes o15 0.21 · o25 0.29 · o35 0.43 · o45 0.45; forward ΔBrier OU -0.0012 (4/4).
@@ -315,6 +434,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.24, base: 0.11 },
       "35": { factor: 0.3, base: 0.03 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "35": { factor: 0.26, base: 0.297 },
+        "45": { factor: 0.28, base: 0.366 },
+      },
+      DRAW: { "45": { factor: 0.0, base: 0.25 } },
+      AWAY: {
+        "25": { factor: 0.16, base: 0.118 },
+        "35": { factor: 0.17, base: 0.209 },
+        "45": { factor: 0.19, base: 0.244 },
+      },
+    },
   },
   // SP2: full-sample slopes o15 0.38 · o25 0.17 · o35 0.02 · o45 0.45; forward ΔBrier OU +0.0023 (1/4).
   SP2: {
@@ -325,6 +457,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "15": { factor: 0.35, base: 0.3 },
       "25": { factor: 0.33, base: 0.1 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: {
+        "25": { factor: 0.0, base: 0.206 },
+        "35": { factor: 0.0, base: 0.206 },
+      },
     },
   },
   // SRB1: full-sample slopes o15 0.29 · o25 0.40 · o35 0.27 · o45 0.39; forward ΔBrier OU -0.0019 (2/4).
@@ -339,6 +478,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.64, base: 0.68 },
       "15": { factor: 0.63, base: 0.35 },
       "25": { factor: 0.71, base: 0.15 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "35": { factor: 0.74, base: 0.271 },
+        "45": { factor: 0.8, base: 0.329 },
+      },
+      AWAY: { "45": { factor: 0.79, base: 0.267 } },
     },
   },
   // SUI1: full-sample slopes o15 -0.01 · o25 0.16 · o35 0.26 · o45 0.07; forward ΔBrier OU +0.0005 (2/4).
@@ -363,6 +510,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.47, base: 0.75 },
       "15": { factor: 0.54, base: 0.44 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "15": { factor: 0.1, base: 0.049 },
+        "25": { factor: 0.02, base: 0.11 },
+      },
+    },
   },
   // SVN1: full-sample slopes o15 -0.06 · o25 0.27 · o35 0.32 · o45 0.05; forward ΔBrier OU -0.0038 (3/4).
   SVN1: {
@@ -374,6 +528,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "05": { factor: 0.79, base: 0.71 },
       "15": { factor: 0.75, base: 0.35 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.08 },
+        "25": { factor: 0.28, base: 0.15 },
+      },
     },
   },
   // SWE1: full-sample slopes o15 0.20 · o25 0.16 · o35 0.11 · o45 0.18; forward ΔBrier OU -0.0054 (4/4).
@@ -409,6 +570,20 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.25, base: 0.12 },
       "35": { factor: 0.25, base: 0.04 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.063 },
+        "25": { factor: 0.57, base: 0.119 },
+      },
+      DRAW: {
+        "15": { factor: 0.2, base: 0.087 },
+        "25": { factor: 0.0, base: 0.182 },
+        "35": { factor: 0.0, base: 0.182 },
+        "45": { factor: 0.0, base: 0.253 },
+      },
+      AWAY: { "15": { factor: 0.26, base: 0.071 } },
+    },
   },
   // TUR1: full-sample slopes o15 -0.04 · o25 0.29 · o35 0.40 · o45 0.52; forward ΔBrier OU -0.0004 (2/4).
   TUR1: {
@@ -418,6 +593,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     // TEAM_TOTAL_HOME/AWAY (2026-08-15, walk-forward validated): see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
     teamTotalHome: { "05": { factor: 0.67, base: 0.8 } },
     teamTotalAway: { "05": { factor: 0.56, base: 0.69 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.49, base: 0.161 },
+        "35": { factor: 0.74, base: 0.301 },
+        "45": { factor: 0.78, base: 0.368 },
+      },
+      AWAY: {
+        "15": { factor: 0.55, base: 0.053 },
+        "25": { factor: 0.77, base: 0.092 },
+        "35": { factor: 0.88, base: 0.179 },
+      },
+    },
   },
   // TUR2: full-sample slopes o15 0.30 · o25 0.47 · o35 0.57 · o45 0.85; forward ΔBrier OU -0.0016 (4/4).
   TUR2: {
@@ -429,6 +617,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.73, base: 0.76 },
       "15": { factor: 0.79, base: 0.43 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.58, base: 0.191 },
+        "35": { factor: 0.64, base: 0.299 },
+        "45": { factor: 0.78, base: 0.38 },
+      },
+      AWAY: {
+        "25": { factor: 0.58, base: 0.115 },
+        "35": { factor: 0.66, base: 0.197 },
+        "45": { factor: 0.69, base: 0.235 },
+      },
     },
   },
   // UCL: full-sample slopes o15 -0.02 · o25 0.03 · o35 0.23 · o45 0.16; forward ΔBrier OU -0.0013 (4/4).
@@ -449,6 +650,20 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.29, base: 0.14 },
       "35": { factor: 0.24, base: 0.06 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.112 },
+        "25": { factor: 0.0, base: 0.197 },
+        "45": { factor: 0.77, base: 0.394 },
+      },
+      DRAW: {
+        "25": { factor: 0.25, base: 0.144 },
+        "35": { factor: 0.25, base: 0.144 },
+        "45": { factor: 0.41, base: 0.191 },
+      },
+      AWAY: { "25": { factor: 0.55, base: 0.128 } },
+    },
   },
   // UEL: full-sample slopes o15 0.00 · o25 0.02 · o35 0.38 · o45 0.38; forward ΔBrier OU -0.0036 (4/4).
   UEL: {
@@ -461,6 +676,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.02, base: 0.69 },
       "15": { factor: 0.1, base: 0.34 },
       "35": { factor: 0.08, base: 0.03 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.123 },
+        "25": { factor: 0.0, base: 0.198 },
+      },
+      DRAW: {
+        "15": { factor: 0.28, base: 0.028 },
+        "25": { factor: 1.0, base: 0.123 },
+        "35": { factor: 1.0, base: 0.123 },
+        "45": { factor: 1.0, base: 0.17 },
+      },
     },
   },
   // WC: full-sample slopes o15 0.18 · o25 0.36 · o35 0.54 · o45 0.31; forward ΔBrier OU +0.0058 (2/4).
@@ -495,6 +723,11 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     baseRates: { over15: 0.81, over25: 0.56, over35: 0.4, over45: 0.21 },
     btts: { factor: 0.12, baseYes: 0.42 },
     ouHt: { factor05: 0.11, base05: 0.74, factor15: 0.33, base15: 0.37 },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "35": { factor: 0.73, base: 0.221 } },
+      DRAW: { "15": { factor: 0.0, base: 0.039 } },
+    },
   },
   // WCQSA: full-sample slopes o15 0.79 · o25 0.64 · o35 0.39 · o45 0.57; forward ΔBrier OU -0.0012 (4/4).
   WCQSA: {
@@ -508,6 +741,8 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "35": { factor: 0.6, base: 0.11 },
     },
     teamTotalAway: { "15": { factor: 0.66, base: 0.15 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: { AWAY: { "35": { factor: 0.73, base: 0.155 } } },
   },
   // ARG1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -520,6 +755,15 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.41, base: 0.59 },
       "15": { factor: 0.37, base: 0.23 },
       "25": { factor: 0.22, base: 0.06 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.33, base: 0.228 },
+        "35": { factor: 0.12, base: 0.333 },
+        "45": { factor: 0.25, base: 0.369 },
+      },
+      AWAY: { "15": { factor: 0.0, base: 0.102 } },
     },
   },
   // ARG2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -535,6 +779,24 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.39, base: 0.16 },
       "25": { factor: 0.31, base: 0.04 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.43, base: 0.175 },
+        "25": { factor: 0.28, base: 0.281 },
+        "35": { factor: 0.41, base: 0.407 },
+        "45": { factor: 0.43, base: 0.443 },
+      },
+      DRAW: {
+        "25": { factor: 0.56, base: 0.298 },
+        "35": { factor: 0.56, base: 0.298 },
+      },
+      AWAY: {
+        "25": { factor: 0.58, base: 0.126 },
+        "35": { factor: 0.56, base: 0.186 },
+        "45": { factor: 0.49, base: 0.203 },
+      },
+    },
   },
   // AUS1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -548,6 +810,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "05": { factor: 0.41, base: 0.79 },
       "15": { factor: 0.61, base: 0.46 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "35": { factor: 0.55, base: 0.229 },
+        "45": { factor: 0.45, base: 0.298 },
+      },
     },
   },
   // AUT1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -563,6 +832,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.53, base: 0.34 },
       "25": { factor: 0.55, base: 0.14 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "45": { factor: 0.68, base: 0.372 } },
+      DRAW: {
+        "25": { factor: 0.0, base: 0.201 },
+        "35": { factor: 0.0, base: 0.201 },
+      },
+      AWAY: {
+        "25": { factor: 0.41, base: 0.104 },
+        "35": { factor: 0.57, base: 0.207 },
+        "45": { factor: 0.58, base: 0.25 },
+      },
+    },
   },
   // BEL1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -572,6 +854,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.65, base: 0.68 },
       "15": { factor: 0.59, base: 0.36 },
       "25": { factor: 0.55, base: 0.12 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "25": { factor: 0.45, base: 0.116 },
+        "35": { factor: 0.64, base: 0.223 },
+      },
     },
   },
   // BRA2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -584,6 +873,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "15": { factor: 0.22, base: 0.24 },
       "25": { factor: 0.12, base: 0.07 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.15, base: 0.146 },
+        "35": { factor: 0.21, base: 0.389 },
+        "45": { factor: 0.29, base: 0.422 },
+      },
+      AWAY: {
+        "25": { factor: 0.45, base: 0.12 },
+        "35": { factor: 0.53, base: 0.197 },
+        "45": { factor: 0.52, base: 0.223 },
+      },
     },
   },
   // CH: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -599,6 +901,23 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.72, base: 0.49 },
     },
     teamTotalAway: { "05": { factor: 0.3, base: 0.69 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "15": { factor: 0.0, base: 0.132 },
+        "25": { factor: 0.46, base: 0.202 },
+        "35": { factor: 0.61, base: 0.344 },
+        "45": { factor: 0.71, base: 0.404 },
+      },
+      DRAW: {
+        "25": { factor: 0.28, base: 0.123 },
+        "35": { factor: 0.28, base: 0.123 },
+      },
+      AWAY: {
+        "35": { factor: 0.78, base: 0.232 },
+        "45": { factor: 0.69, base: 0.248 },
+      },
+    },
   },
   // CHI2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -612,6 +931,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.41, base: 0.7 },
       "15": { factor: 0.55, base: 0.35 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "35": { factor: 0.65, base: 0.261 },
+        "45": { factor: 0.56, base: 0.307 },
+      },
+      AWAY: {
+        "15": { factor: 0.0, base: 0.114 },
+        "25": { factor: 0.0, base: 0.148 },
+        "35": { factor: 0.05, base: 0.239 },
+        "45": { factor: 0.1, base: 0.267 },
+      },
+    },
   },
   // CHN2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -619,6 +951,11 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.54, base: 0.78 },
       "15": { factor: 0.8, base: 0.46 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: { "15": { factor: 0.04, base: 0.069 } },
+      AWAY: { "25": { factor: 0.84, base: 0.119 } },
     },
   },
   // D3: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -633,6 +970,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "15": { factor: 0.49, base: 0.36 },
       "35": { factor: 0.27, base: 0.07 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "45": { factor: 0.49, base: 0.367 } },
+      AWAY: {
+        "35": { factor: 0.81, base: 0.167 },
+        "45": { factor: 0.67, base: 0.214 },
+      },
+    },
   },
   // DEN1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -642,11 +987,29 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.47, base: 0.75 },
       "15": { factor: 0.74, base: 0.43 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.43, base: 0.144 },
+        "35": { factor: 0.52, base: 0.267 },
+        "45": { factor: 0.64, base: 0.322 },
+      },
+      AWAY: { "25": { factor: 0.35, base: 0.077 } },
+    },
   },
   // FIN2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
   FIN2: {
     teamTotalAway: { "05": { factor: 0.5, base: 0.8 } },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "25": { factor: 0.67, base: 0.119 } },
+      DRAW: {
+        "15": { factor: 0.25, base: 0.04 },
+        "25": { factor: 0.21, base: 0.159 },
+        "35": { factor: 0.21, base: 0.159 },
+      },
+    },
   },
   // GRE1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -662,6 +1025,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.44, base: 0.1 },
       "35": { factor: 0.3, base: 0.03 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: { "45": { factor: 0.53, base: 0.35 } },
+      AWAY: {
+        "35": { factor: 0.66, base: 0.202 },
+        "45": { factor: 0.69, base: 0.228 },
+      },
+    },
   },
   // KOR2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -675,6 +1046,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalAway: {
       "05": { factor: 0.66, base: 0.72 },
       "15": { factor: 0.76, base: 0.36 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.53, base: 0.128 },
+        "35": { factor: 0.64, base: 0.226 },
+        "45": { factor: 0.62, base: 0.256 },
+      },
+      DRAW: {
+        "25": { factor: 0.24, base: 0.218 },
+        "35": { factor: 0.24, base: 0.218 },
+        "45": { factor: 0.56, base: 0.308 },
+      },
     },
   },
   // KSA1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -703,6 +1087,14 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.57, base: 0.14 },
       "35": { factor: 0.51, base: 0.04 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.5, base: 0.116 },
+        "45": { factor: 0.73, base: 0.326 },
+      },
+      DRAW: { "45": { factor: 0.06, base: 0.254 } },
+    },
   },
   // RUS1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -713,6 +1105,13 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "25": { factor: 0.64, base: 0.11 },
       "35": { factor: 0.31, base: 0.03 },
     },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      AWAY: {
+        "35": { factor: 0.8, base: 0.205 },
+        "45": { factor: 0.73, base: 0.233 },
+      },
+    },
   },
   // SCO1: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
   // walk-forward validated 2026-08-15, see packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt.
@@ -720,6 +1119,18 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
     teamTotalHome: {
       "05": { factor: 0.76, base: 0.81 },
       "15": { factor: 0.84, base: 0.49 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      DRAW: {
+        "15": { factor: 0.0, base: 0.051 },
+        "25": { factor: 0.13, base: 0.141 },
+        "35": { factor: 0.13, base: 0.141 },
+      },
+      AWAY: {
+        "25": { factor: 0.52, base: 0.096 },
+        "45": { factor: 0.71, base: 0.242 },
+      },
     },
   },
   // USA2: no full-time O/U measurement yet — TEAM_TOTAL_HOME/AWAY only,
@@ -734,6 +1145,19 @@ export const OU_SHRINKAGE_CONFIG: Record<string, OverUnderShrinkageConfig> = {
       "05": { factor: 0.51, base: 0.68 },
       "15": { factor: 0.43, base: 0.31 },
       "25": { factor: 0.35, base: 0.12 },
+    },
+    // RESULT_TOTAL_GOALS (2026-08-15, walk-forward validated): see packages/db/reports/backtest-result-total-goals-shrinkage-calibration-2026-08-15.txt.
+    resultTotalGoals: {
+      HOME: {
+        "25": { factor: 0.23, base: 0.175 },
+        "35": { factor: 0.35, base: 0.295 },
+        "45": { factor: 0.39, base: 0.346 },
+      },
+      AWAY: {
+        "25": { factor: 0.35, base: 0.141 },
+        "35": { factor: 0.42, base: 0.209 },
+        "45": { factor: 0.43, base: 0.229 },
+      },
     },
   },
 };
@@ -822,6 +1246,18 @@ export function shrinkOverUnderProbabilities<T extends OverUnderProbabilities>(
     );
   }
 
+  if (config.resultTotalGoals) {
+    result.resultTotalGoals = shrinkResultTotalGoals(
+      probabilities.resultTotalGoals,
+      {
+        HOME: probabilities.home,
+        DRAW: probabilities.draw,
+        AWAY: probabilities.away,
+      },
+      config.resultTotalGoals,
+    );
+  }
+
   return result;
 }
 
@@ -853,6 +1289,52 @@ function shrinkTeamTotal(
     result[overKey] = shrunk;
     if (proba[underKey] !== undefined) {
       result[underKey] = new Decimal(1).minus(shrunk);
+    }
+  }
+  return result;
+}
+
+const RESULT_TOTAL_GOALS_LINES = ["15", "25", "35", "45"] as const;
+
+// Shrinks the UNDER joint probability (the pure joint-distribution sum,
+// unaffected by 1X2 rebalancing) toward its own measured base rate, then
+// recomputes OVER = sideMass − shrunkUnder — the same relationship
+// rebalanceThreeWayProbabilities already maintains when home/draw/away move.
+// Clamped to [0, sideMass], not [0, 1]: OVER can never exceed the side's own
+// win probability.
+function shrinkResultTotalGoals(
+  proba: ResultTotalGoalsProba,
+  sideProbability: { HOME: Decimal; DRAW: Decimal; AWAY: Decimal },
+  block: ResultTotalGoalsShrinkageBlock,
+): ResultTotalGoalsProba {
+  const result: ResultTotalGoalsProba = { ...proba };
+  for (const side of ["HOME", "DRAW", "AWAY"] as const) {
+    const sideBlock = block[side];
+    if (!sideBlock) continue;
+    for (const lineKey of RESULT_TOTAL_GOALS_LINES) {
+      const lineConfig = sideBlock[lineKey];
+      if (!lineConfig) continue;
+      const line = `${lineKey[0]}_${lineKey[1]}` as
+        | "1_5"
+        | "2_5"
+        | "3_5"
+        | "4_5";
+      const underKey = `${side}_UNDER_${line}` as keyof ResultTotalGoalsProba;
+      const overKey = `${side}_OVER_${line}` as keyof ResultTotalGoalsProba;
+      const rawUnder = proba[underKey];
+      if (rawUnder === undefined) continue;
+      const shrunkUnder = shrinkWith(
+        rawUnder,
+        lineConfig.base,
+        lineConfig.factor,
+      );
+      result[underKey] = shrunkUnder;
+      if (proba[overKey] !== undefined) {
+        result[overKey] = Decimal.max(
+          0,
+          sideProbability[side].minus(shrunkUnder),
+        );
+      }
     }
   }
   return result;

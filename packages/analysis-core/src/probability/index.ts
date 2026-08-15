@@ -19,6 +19,7 @@ export {
 export {
   type OverUnderShrinkageConfig,
   type TeamTotalShrinkageBlock,
+  type ResultTotalGoalsShrinkageBlock,
   OU_SHRINKAGE_CONFIG,
   getOverUnderShrinkageConfig,
   shrinkOverUnderProbabilities,
