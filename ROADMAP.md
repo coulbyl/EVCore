@@ -582,7 +582,7 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
-### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne + garde-fou λ élevé (2026-08-15, branche `fix/systemic-audit-market-guards`)
+### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne, garde-fous 1X2-only (2026-08-15, branche `fix/systemic-audit-market-guards`)
 
 > Reprise du reste de l'audit systémique du Bloc 10 (post-mortem
 > Nordsjaelland–Valur, [TODO.md](TODO.md) section "Audit systémique
@@ -615,7 +615,34 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
   - [ ] **Reste ouvert** : `calibration_alert` (`assessMarketCoherence`)
         toujours sans garde-fou sur OVER_UNDER — extension à un nouveau
         marché, portée plus large qu'un fix de résolution de données.
-- 830 tests verts (+2 vs Bloc 10), typecheck et lint (`--max-warnings 0`)
+- [x] **Seuil de probabilité DRAW jamais appliqué en 1X2 — branche ajoutée**
+      — `getPickRejectionReason` ne testait `minDirectionProbability` que
+      pour HOME/AWAY. Branche `DRAW` ajoutée (teste `probabilities.draw`),
+      mais avec un défaut app-side **délibérément distinct** de HOME/AWAY :
+      `MIN_DRAW_DIRECTION_PROBABILITY = 0.40` (= plancher générique déjà
+      appliqué à tous les picks) plutôt que réutiliser le défaut HOME/AWAY
+      (0.45), qui aurait quasiment suspendu le canal DRAW entier du jour au
+      lendemain sans aucun backtest — comportement volontairement inchangé
+      aujourd'hui, seul le hook de calibration par ligue est maintenant
+      câblé pour `ONE_X_TWO|DRAW`.
+- [x] **`htftCalibrated` étendu à `OVER_UNDER_HT`** — dérive de la même
+      décomposition mi-temps que `HALF_TIME_FULL_TIME`/`FIRST_HALF_WINNER`
+      (même risque de surestimation Poisson bivariée en ligue non
+      calibrée) mais n'était jamais vérifié contre ce garde-fou. Extension
+      dans le sens "plus prudent" uniquement (suspend davantage, n'autorise
+      jamais rien de nouveau) — pas de backtest requis avant merge,
+      contrairement à un changement de seuil.
+  - [ ] **Laissé de côté, nécessite un backtest** : pénalité longshot
+        limitée au 1X2 (`getOneXTwoLongshotPenalty`) — les seuils/planchers
+        (`ONE_X_TWO_AWAY_MAX_ODDS`, floors 0.12/0.20) sont calibrés
+        spécifiquement sur la distribution de cotes 1X2 ; les réutiliser tels
+        quels sur `RESULT_TOTAL_GOALS`/`RESULT_BTTS`/`OVER_4_5` serait une
+        recalibration à l'aveugle, pas une simple extension de garde-fou —
+        contrairement aux deux items ci-dessus qui ne font que suspendre
+        davantage sans jamais rien assouplir.
+- 840 tests verts (+12 vs Bloc 10 : 2 régression bookmaker-par-ligne + 10
+  nouveaux tests ciblés sur les 3 garde-fous dans
+  `pick-rejection-guards.spec.ts`), typecheck et lint (`--max-warnings 0`)
   propres sur backend et `analysis-core`.
 
 ---

@@ -77,6 +77,16 @@ export const CALIBRATION_GATE = {
 // considers unlikely to win (e.g. Guingamp V1 at P=36%).
 export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
 
+// DRAW's own default, kept separate from HOME/AWAY's 0.45 (audit 2026-08-13:
+// the DRAW branch of this gate was never wired at all — see pick-validation.ts).
+// P(draw) is structurally much lower than P(home)/P(away) (rarely > 35-40%), so
+// reusing 0.45 as a blanket default would reject nearly every DRAW pick with no
+// backtest behind that cutoff. Set equal to EV_MIN_PROBABILITY_THRESHOLD (the
+// generic cross-market floor already enforced upstream) so wiring this branch is
+// a behavior no-op until a per-league value is calibrated the same way every
+// other entry in PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP was.
+const MIN_DRAW_DIRECTION_PROBABILITY = new Decimal('0.40');
+
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
   MIN_PICK_DIRECTION_PROBABILITY;
 
@@ -121,10 +131,11 @@ export function getPickDirectionProbabilityThreshold(
   pick: string,
 ): Decimal {
   const key = `${competitionCode}|${market}|${pick}`;
-  return (
-    PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP[key] ??
-    PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT
-  );
+  const override = PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP[key];
+  if (override) return override;
+  return pick === 'DRAW'
+    ? MIN_DRAW_DIRECTION_PROBABILITY
+    : PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT;
 }
 
 // Per-league minimum selection odds. Each league has a different bookmaker

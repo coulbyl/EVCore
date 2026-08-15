@@ -34,9 +34,14 @@ export function getPickRejectionReason(
 
   // HT/FT markets require calibrated leagues — secondary leagues lack the
   // half-time decomposition history to avoid bivariate Poisson overestimation.
+  // OVER_UNDER_HT is derived from the same half-time decomposition
+  // (probability/markets.ts) and carries the identical risk, but was never
+  // checked against this gate (audit 2026-08-13) — added here rather than left
+  // to evaluate unconditionally in uncalibrated leagues.
   if (
     (pick.market === Market.HALF_TIME_FULL_TIME ||
-      pick.market === Market.FIRST_HALF_WINNER) &&
+      pick.market === Market.FIRST_HALF_WINNER ||
+      pick.market === Market.OVER_UNDER_HT) &&
     !config.htftCalibrated
   ) {
     return "market_suspended";
@@ -73,6 +78,16 @@ export function getPickRejectionReason(
     if (
       pick.pick === "AWAY" &&
       probabilities.away.lessThan(minDirectionProbability)
+    ) {
+      return "probability_too_low";
+    }
+    // DRAW was missing this branch entirely — config.pickDirectionProbabilityThreshold
+    // already supports a "DRAW" pick key (config.ts comment "and DRAW combos"), but
+    // nothing ever called it, letting a DRAW pick through at an arbitrarily low
+    // probability where a HOME/AWAY pick at the same probability would be rejected.
+    if (
+      pick.pick === "DRAW" &&
+      probabilities.draw.lessThan(minDirectionProbability)
     ) {
       return "probability_too_low";
     }

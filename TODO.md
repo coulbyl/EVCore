@@ -502,14 +502,18 @@
     `notification.service.ts`, `mail.service.ts` et le template
     `@evcore/transactional`), volontairement laissé hors du fix "sûr"
     du 2026-08-13 vu l'ampleur du changement de contrat.
-- `[ ]` **Seuil de probabilité DRAW jamais appliqué en 1X2** —
-  `getPickRejectionReason` (`pick-validation.ts:62-75`) ne teste
-  `minDirectionProbability` que pour `pick === "HOME"`/`"AWAY"` ; `DRAW`
-  n'a aucune branche équivalente alors que
-  `config.pickDirectionProbabilityThreshold` supporte déjà ce cas
-  (commentaire `config.ts:26`, "and DRAW combos"). Un pick DRAW peut donc
-  passer avec une probabilité arbitrairement basse là où HOME/AWAY à la
-  même probabilité seraient rejetés.
+- `[x]` **Seuil de probabilité DRAW jamais appliqué en 1X2 — corrigé le
+  2026-08-15** — `getPickRejectionReason` ne testait `minDirectionProbability`
+  que pour `pick === "HOME"`/`"AWAY"` ; branche `DRAW` ajoutée (teste
+  `probabilities.draw`, même pattern que HOME/AWAY). Défaut app-side
+  volontairement séparé du défaut HOME/AWAY (0.45) : `MIN_DRAW_DIRECTION_
+  PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
+  `EV_MIN_PROBABILITY_THRESHOLD` déjà appliqué à tous les picks — **behavior
+  no-op aujourd'hui** (840 tests inchangés), le seul changement réel est que
+  le hook par ligue (`PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP`) peut
+  désormais cibler `ONE_X_TWO|DRAW` comme les autres entrées. Réutiliser le
+  défaut HOME/AWAY (0.45) aurait quasiment suspendu le canal DRAW entier sans
+  backtest (P(draw) dépasse rarement 35-40%) — délibérément évité.
 - `[ ]` **Pénalité longshot limitée au 1X2** — `getOneXTwoLongshotPenalty`
   (`pick-validation.ts:127-153`) renvoie `1` (aucune pénalité) pour tout
   marché autre que `ONE_X_TWO` (ligne 132). Le raisonnement (la
@@ -518,14 +522,15 @@
   (ex. `AWAY_UNDER_1_5`), `RESULT_BTTS`, `HALF_TIME_FULL_TIME` peuvent
   atteindre des cotes tout aussi longues sans aucun amortissement
   équivalent.
-- `[ ]` **`htftCalibrated` ne couvre pas `OVER_UNDER_HT`** — le garde-fou
-  (`pick-validation.ts:37-43`) suspend `HALF_TIME_FULL_TIME`/
+- `[x]` **`htftCalibrated` ne couvrait pas `OVER_UNDER_HT` — corrigé le
+  2026-08-15** — le garde-fou suspendait `HALF_TIME_FULL_TIME`/
   `FIRST_HALF_WINNER` dans les ligues sans historique de décomposition
-  mi-temps (risque de surestimation Poisson bivariée). `OVER_UNDER_HT`
-  est construit à partir de la même décomposition mi-temps
-  (`probability/markets.ts`) et porte donc le même risque, mais n'est
-  jamais vérifié contre `config.htftCalibrated` — évalué sans condition
-  dans `pick-evaluation.ts:461-501`.
+  mi-temps (risque de surestimation Poisson bivariée) ; `OVER_UNDER_HT`,
+  construit à partir de la même décomposition (`probability/markets.ts`),
+  n'était jamais vérifié contre `config.htftCalibrated`. Ajouté à la même
+  branche — extension dans le sens "plus prudent" uniquement (suspend
+  davantage, n'autorise jamais rien de nouveau), donc pas de backtest requis
+  avant merge contrairement aux changements de seuil.
 - `[ ]` **Le shrinkage O/U ne s'étend jamais à `TEAM_TOTAL_HOME/AWAY` ni
   `RESULT_TOTAL_GOALS`** — `OU_SHRINKAGE_CONFIG` (`ou-shrinkage.ts:28-49,
   59-309`) couvre O/U pleine durée, BTTS, O/U mi-temps par ligue (HT/FT et
