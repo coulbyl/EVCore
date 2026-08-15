@@ -407,6 +407,12 @@ AnalysisSheetJsonEvaluatedPick[]` par fixture (market, pick, label,
     `channel-decision.repository.ts` et `signal-window.service.ts` pour
     l'exclusion coupon) étendu pour vérifier les deux clés ; surfacé sur la
     fiche d'analyse (`analysis-sheet.render.ts`).
+  - `[ ]` **Même limite connue que la pénalité longshot (plus bas dans ce
+    fichier) : `FAVORITE_FLIP_MIN_GAP=0.10` est global, pas par ligue** — 408
+    paris au total toutes ligues confondues, largement insuffisant pour
+    découper par ligue en plus de la tranche de divergence. Cohérent avec le
+    gate 1X2 existant (également global). À revisiter avec plus de volume,
+    en même temps que la pénalité longshot.
 - `[x]` **`under_high_lambda` ne couvrait que la ligne 2,5, pas 1,5/3,5/4,5 —
   corrigé le 2026-08-15** (post-mortem 2026-08-13) — `getPickRejectionReason()`
   (`packages/analysis-core/src/selection/pick-validation.ts`) ne rejetait que
@@ -567,6 +573,23 @@ PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
     (partagée entre marchés). Tests dans `pick-rejection-guards.spec.ts`
     (dampening RESULT_TOTAL_GOALS/HALF_TIME_FULL_TIME, non-dampening des 3
     marchés différés).
+  - `[ ]` **Limite connue (2026-08-15) : seuil/plancher globaux, pas par
+    ligue** — contrairement au shrinkage (`OU_SHRINKAGE_CONFIG`, un facteur
+    par ligue), le seuil 5.0 et les planchers 0.12/0.15 sont uniques pour
+    toutes les ligues — cohérent avec le gate 1X2 existant
+    (`ONE_X_TWO_AWAY_MAX_ODDS` etc. sont eux aussi globaux), donc pas une
+    régression. Vérifié après coup : sur la tranche RESULT_TOTAL_GOALS 15+
+    (n=265), le signal négatif est réparti sur ~18 ligues (pas porté par une
+    seule qui fausserait la moyenne — ARG1 n=67, BRA2 n=26, etc.), donc un
+    seuil global n'est pas un artefact statistique. Mais **ARG1 (n=67,
+    ROI -20.9%) et ARG2 (n=60, ROI +1.7%)** divergent nettement à volume
+    comparable — indice d'une vraie hétérogénéité par ligue, comme pour le
+    shrinkage, qu'on ne peut pas calibrer proprement ici : le volume par
+    ligue à cote longue (3 à 67 paris selon la ligue) est trop faible pour
+    un seuil par ligue fiable (même contrainte que celle qui a fait différer
+    RESULT_BTTS/FIRST_HALF_WINNER dans leur ensemble). À revisiter quand le
+    volume aura grossi, en particulier pour ARG1/ARG2 qui ont déjà assez de
+    paris réglés pour être suspects.
 - `[x]` **`htftCalibrated` ne couvrait pas `OVER_UNDER_HT` — corrigé le
   2026-08-15** — le garde-fou suspendait `HALF_TIME_FULL_TIME`/
   `FIRST_HALF_WINNER` dans les ligues sans historique de décomposition

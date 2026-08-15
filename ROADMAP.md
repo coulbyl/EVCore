@@ -733,6 +733,17 @@ oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
   (signal trop bruité ou volume insuffisant, jamais par oubli) : pénalité
   longshot sur RESULT_BTTS/FIRST_HALF_WINNER/OVER_UNDER 4.5, seuil
   `extreme_divergence` pour OVER_UNDER.
+  - [ ] **Limite connue sur les deux items activés cette session (pénalité
+        longshot, `calibration_alert` O/U) : seuils globaux, pas par
+        ligue** — contrairement au shrinkage (per-league). Vérifié après
+        coup sur RESULT_TOTAL_GOALS 15+ (n=265) : le signal est réparti sur
+        ~18 ligues, pas porté par une seule (un seuil global n'est donc pas
+        un artefact), mais ARG1 (n=67, ROI -20.9%) et ARG2 (n=60, ROI
+        +1.7%) divergent nettement à volume comparable — indice d'une vraie
+        hétérogénéité par ligue qu'on ne peut pas calibrer ici (volume par
+        ligue à cote longue : 3 à 67 paris, trop faible). Cohérent avec le
+        gate 1X2 existant (également global), donc pas une régression — à
+        revisiter avec plus de volume, voir TODO.md.
 - 855 tests backend (+27 vs Bloc 10), 104 tests `analysis-core` (+6),
   typecheck et lint (`--max-warnings 0`) propres sur backend et
   `analysis-core`.
