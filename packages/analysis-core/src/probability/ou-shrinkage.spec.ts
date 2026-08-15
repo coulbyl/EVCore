@@ -223,4 +223,57 @@ describe("shrinkOverUnderProbabilities", () => {
     expect(shrunk.htft).toBe(probabilities.htft);
     expect(shrunk.firstHalfWinner).toBe(probabilities.firstHalfWinner);
   });
+
+  it("shrinks CLEAN_SHEET/WIN_EITHER_HALF independently per side, home and away are not complements", () => {
+    const ARG1 = getOverUnderShrinkageConfig("ARG1")!;
+    expect(ARG1.cleanSheetAway).toBeUndefined();
+
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const shrunk = shrinkOverUnderProbabilities(probabilities, ARG1);
+
+    const expectedCleanSheetHome = new Decimal(ARG1.cleanSheetHome!.base).plus(
+      new Decimal(ARG1.cleanSheetHome!.factor).times(
+        probabilities.cleanSheetHome.minus(ARG1.cleanSheetHome!.base),
+      ),
+    );
+    expect(shrunk.cleanSheetHome.toNumber()).toBeCloseTo(
+      expectedCleanSheetHome.toNumber(),
+      12,
+    );
+    // No cleanSheetAway block for ARG1 — left untouched.
+    expect(shrunk.cleanSheetAway).toBe(probabilities.cleanSheetAway);
+
+    const expectedWinEitherHalfHome = new Decimal(
+      ARG1.winEitherHalfHome!.base,
+    ).plus(
+      new Decimal(ARG1.winEitherHalfHome!.factor).times(
+        probabilities.winEitherHalfHome.minus(ARG1.winEitherHalfHome!.base),
+      ),
+    );
+    const expectedWinEitherHalfAway = new Decimal(
+      ARG1.winEitherHalfAway!.base,
+    ).plus(
+      new Decimal(ARG1.winEitherHalfAway!.factor).times(
+        probabilities.winEitherHalfAway.minus(ARG1.winEitherHalfAway!.base),
+      ),
+    );
+    expect(shrunk.winEitherHalfHome.toNumber()).toBeCloseTo(
+      expectedWinEitherHalfHome.toNumber(),
+      12,
+    );
+    expect(shrunk.winEitherHalfAway.toNumber()).toBeCloseTo(
+      expectedWinEitherHalfAway.toNumber(),
+      12,
+    );
+  });
+
+  it("does not touch cleanSheet/winEitherHalf when the config has no such block", () => {
+    const probabilities = computePoissonMarkets(1.4, 1.2);
+    const config = { factor: NOR2.factor, baseRates: NOR2.baseRates };
+    const shrunk = shrinkOverUnderProbabilities(probabilities, config);
+    expect(shrunk.cleanSheetHome).toBe(probabilities.cleanSheetHome);
+    expect(shrunk.cleanSheetAway).toBe(probabilities.cleanSheetAway);
+    expect(shrunk.winEitherHalfHome).toBe(probabilities.winEitherHalfHome);
+    expect(shrunk.winEitherHalfAway).toBe(probabilities.winEitherHalfAway);
+  });
 });

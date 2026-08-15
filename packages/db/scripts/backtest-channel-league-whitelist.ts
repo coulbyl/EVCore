@@ -29,7 +29,13 @@ import { prisma } from "../src/client";
 
 const TRAIN_SPLIT = 0.6;
 const MIN_SPLIT_SAMPLE = 20;
-const CHANNELS = [StrategyChannel.DRAW, StrategyChannel.BTTS] as const;
+const CHANNELS = [
+  StrategyChannel.DRAW,
+  StrategyChannel.BTTS,
+  StrategyChannel.CONSENSUS,
+  StrategyChannel.CLEAN_SHEET,
+  StrategyChannel.WIN_EITHER_HALF,
+] as const;
 
 type Row = {
   competitionCode: string;

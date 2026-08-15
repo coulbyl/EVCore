@@ -161,20 +161,29 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   - `[ ]` Ligues à n<30 avec 0% de réussite (SUI1, POL1, POL2, CZE1, MX1,
     SVN1) — laisser accumuler avant de classer.
 
-- `[ ]` **CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF — jamais évalués pour
-  promotion** (audit 2026-08-12) — aucune mention dans `signal-window.service.ts`
-  ni `coupon.constants.ts`. Différent de DOMINANT (jugé et exclu, ROI -2.1%) :
-  ces trois n'ont jamais été jugés du tout.
-  - **CONSENSUS** : signal le plus net — 5 ligues positives sur 7 (n≥20),
-    Ligue 1 (+31.1%), Ligue 2 (+32.7%), Suisse (+20.4%), Veikkausliiga (+11.1%,
-    n=47), UCL (+7.4%). Volume global faible (375 legs) — candidat prioritaire.
-  - **CLEAN_SHEET** : spread par ligue le plus large — Ykkösliiga +75%,
-    USL Championship +38% (n=175), UCL +23.7% (n=97) ; à l'inverse Serbie
-    -52.8%, Argentine -37.2% (n=265). L'agrégat (35.1%) masquait tout ça.
-  - **WIN_EITHER_HALF** : mitigé partout sauf un vrai trou en Corée (K League 1
-    -70.3% ROI n=35, K League 2 -40.9% n=37) — à isoler/recalibrer.
-  - Une fois un premier pilote validé : whitelist par ligue +
-    `calibratedCanalLeagueHitRates`, même mécanisme que DRAW/BTTS/TEAM_TOTAL.
+- `[x]` **CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF — cause racine trouvée et
+  corrigée** (2026-08-15, corrige le cadrage trop optimiste de l'audit
+  2026-08-12) — re-vérifié avec `db:backtest:channel-league-whitelist`
+  (train/valid, même méthode que DRAW/BTTS) : **0 ligue confirmée pour les
+  3 canaux**, contrairement au cadrage précédent ("candidat prioritaire")
+  qui citait des splits par ligue cueillis dans un agrégat déjà négatif
+  (CONSENSUS ROI global +1.0% mais -40.8% sur les 14 derniers jours ;
+  CLEAN_SHEET -17.7% all-time ; WIN_EITHER_HALF -16.9% all-time). Cause
+  racine : contrairement à O/U, BTTS, TEAM_TOTAL et RESULT_TOTAL_GOALS,
+  `CLEAN_SHEET_HOME/AWAY` et `TO_WIN_EITHER_HALF` n'avaient **jamais reçu de
+  shrinkage** — probabilité Poisson brute jamais recalibrée. Walk-forward
+  lancé (`db:backtest:clean-sheet-win-either-half-shrinkage-calibration`,
+  nouveau script) : **104 blocs livrés sur 264** (compétition×côté), pentes
+  0.2–0.9 (surconfiance nette), câblés dans `OU_SHRINKAGE_CONFIG` via
+  `ou-shrinkage.ts` (nouveaux champs `cleanSheetHome/Away`,
+  `winEitherHalfHome/Away`, mêmes garanties que les blocs existants —
+  shrink indépendant par côté, pas de complément 1-x). Reste : laisser
+  tourner avec la proba recalibrée, puis relancer
+  `channel-league-whitelist` dans quelques semaines pour voir si des ligues
+  se confirment enfin avant d'envisager une whitelist de staking (même
+  mécanisme que `DRAW_STAKED_LEAGUES`/`BTTS_STAKED_LEAGUES`). CONSENSUS
+  reste en plus limité par le volume (n=316 total sur 2+ ans) — pas assez
+  de données par ligue pour trancher indépendamment du fix de calibration.
 
 - `[ ]` **Seuil DOMINANT symétrique alors que le biais mesuré ne l'est pas**
   (audit 2026-08-12, 18 041 legs `below_threshold`) — legs **HOME** refusées

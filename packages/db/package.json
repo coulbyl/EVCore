@@ -53,6 +53,7 @@
     "db:backtest:signal-window-calibration": "tsx scripts/backtest-signal-window-calibration.ts",
     "db:backtest:ml-shadow-correction": "tsx scripts/backtest-ml-shadow-correction.ts",
     "db:backtest:team-total-shrinkage-calibration": "tsx scripts/backtest-team-total-shrinkage-calibration.ts",
+    "db:backtest:clean-sheet-win-either-half-shrinkage-calibration": "tsx scripts/backtest-clean-sheet-win-either-half-shrinkage-calibration.ts",
     "db:backtest:result-total-goals-shrinkage-calibration": "tsx scripts/backtest-result-total-goals-shrinkage-calibration.ts",
     "db:backtest:longshot-penalty-odds-buckets": "tsx scripts/backtest-longshot-penalty-odds-buckets.ts",
     "db:backtest:calibration-alert-over-under": "tsx scripts/backtest-calibration-alert-over-under.ts",
