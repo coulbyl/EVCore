@@ -3,13 +3,17 @@ import { Market } from "../types";
 import {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,
+  HALF_TIME_FULL_TIME_LONGSHOT_PENALTY_FLOOR,
+  HALF_TIME_FULL_TIME_MAX_ODDS,
   MAX_SELECTION_ODDS,
   MIN_QUALITY_SCORE,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_AWAY_MAX_ODDS,
   ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_MAX_ODDS,
-  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  LONGSHOT_PENALTY_EXPONENT,
+  RESULT_TOTAL_GOALS_LONGSHOT_PENALTY_FLOOR,
+  RESULT_TOTAL_GOALS_MAX_ODDS,
   UNDER_HIGH_LAMBDA_THRESHOLD,
 } from "./constants";
 import type { SelectionConfig } from "./config";
@@ -34,20 +38,29 @@ export function getPickRejectionReason(
 
   // HT/FT markets require calibrated leagues — secondary leagues lack the
   // half-time decomposition history to avoid bivariate Poisson overestimation.
+  // OVER_UNDER_HT is derived from the same half-time decomposition
+  // (probability/markets.ts) and carries the identical risk, but was never
+  // checked against this gate (audit 2026-08-13) — added here rather than left
+  // to evaluate unconditionally in uncalibrated leagues.
   if (
     (pick.market === Market.HALF_TIME_FULL_TIME ||
-      pick.market === Market.FIRST_HALF_WINNER) &&
+      pick.market === Market.FIRST_HALF_WINNER ||
+      pick.market === Market.OVER_UNDER_HT) &&
     !config.htftCalibrated
   ) {
     return "market_suspended";
   }
 
-  // Under-2.5 bets at high expected-goal totals: the independent Poisson model
+  // Under bets at high expected-goal totals: the independent Poisson model
   // overestimates P(Under) due to real-match overdispersion. Reject outright when
   // λ ≥ 2.3 — lowered from 2.5 after May 2026 live diagnostic (losses at λ 2.30–2.80).
+  // Applies to every UNDER_* line (not just the 2.5 line the threshold was
+  // originally calibrated on) — the overdispersion risk is at least as strong
+  // on higher lines (audit 2026-08-13: UNDER_3_5 at λ≈3.74 slipped through
+  // before this generalization).
   if (
     pick.market === Market.OVER_UNDER &&
-    pick.pick === "UNDER" &&
+    pick.pick.startsWith("UNDER") &&
     lambdaTotal >= UNDER_HIGH_LAMBDA_THRESHOLD
   ) {
     return "under_high_lambda";
@@ -69,6 +82,16 @@ export function getPickRejectionReason(
     if (
       pick.pick === "AWAY" &&
       probabilities.away.lessThan(minDirectionProbability)
+    ) {
+      return "probability_too_low";
+    }
+    // DRAW was missing this branch entirely — config.pickDirectionProbabilityThreshold
+    // already supports a "DRAW" pick key (config.ts comment "and DRAW combos"), but
+    // nothing ever called it, letting a DRAW pick through at an arbitrarily low
+    // probability where a HOME/AWAY pick at the same probability would be rejected.
+    if (
+      pick.pick === "DRAW" &&
+      probabilities.draw.lessThan(minDirectionProbability)
     ) {
       return "probability_too_low";
     }
@@ -121,31 +144,60 @@ export function buildQualityScore(
 ): Decimal {
   return ev
     .mul(deterministicScore)
-    .mul(getOneXTwoLongshotPenalty(market, pick, odds ?? new Decimal(0)));
+    .mul(getLongshotPenalty(market, pick, odds ?? new Decimal(0)));
 }
 
-function getOneXTwoLongshotPenalty(
+// Dampens the quality score at long odds, where probability overestimation
+// inflates EV — 1X2 differentiates AWAY/DRAW (the two outcomes that reach
+// long odds there); RESULT_TOTAL_GOALS and HALF_TIME_FULL_TIME have no
+// single "underdog side" (any combo pick can reach long odds), so the
+// penalty applies uniformly by odds instead of by pick (audit 2026-08-13/15,
+// backtest-longshot-penalty-odds-buckets.ts — see constants.ts for the
+// per-market evidence). RESULT_BTTS/FIRST_HALF_WINNER/OVER_UNDER showed the
+// same direction of signal but too noisy at long odds (n<300) to set a
+// floor confidently — deliberately left untouched pending more data.
+function getLongshotPenalty(
   market: Market,
   pick: string,
   odds: Decimal,
 ): Decimal {
-  if (market !== Market.ONE_X_TWO) {
+  if (market === Market.ONE_X_TWO) {
+    if (pick === "AWAY" && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+      return progressiveLongshotPenalty({
+        threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+        odds,
+        floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+      });
+    }
+    if (pick === "DRAW" && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+      return progressiveLongshotPenalty({
+        threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+        odds,
+        floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+      });
+    }
     return new Decimal(1);
   }
 
-  if (pick === "AWAY" && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+  if (
+    market === Market.RESULT_TOTAL_GOALS &&
+    odds.greaterThanOrEqualTo(RESULT_TOTAL_GOALS_MAX_ODDS)
+  ) {
     return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+      threshold: RESULT_TOTAL_GOALS_MAX_ODDS,
       odds,
-      floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+      floor: RESULT_TOTAL_GOALS_LONGSHOT_PENALTY_FLOOR,
     });
   }
 
-  if (pick === "DRAW" && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+  if (
+    market === Market.HALF_TIME_FULL_TIME &&
+    odds.greaterThanOrEqualTo(HALF_TIME_FULL_TIME_MAX_ODDS)
+  ) {
     return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+      threshold: HALF_TIME_FULL_TIME_MAX_ODDS,
       odds,
-      floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+      floor: HALF_TIME_FULL_TIME_LONGSHOT_PENALTY_FLOOR,
     });
   }
 
@@ -163,6 +215,6 @@ function progressiveLongshotPenalty(input: {
   }
 
   const ratio = threshold.div(odds);
-  const progressive = ratio.pow(ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT);
+  const progressive = ratio.pow(LONGSHOT_PENALTY_EXPONENT);
   return Decimal.max(floor, Decimal.min(new Decimal(1), progressive));
 }

@@ -13,12 +13,14 @@ import {
   renderWeeklyReport,
   renderXgUnavailableReport,
   renderMlModelActivated,
+  renderMlModelMissing,
   renderSupportMessage,
   type BrierAlertProps,
   type EmailVerificationProps,
   type EtlFailureProps,
   type MarketSuspensionProps,
   type MlModelActivatedProps,
+  type MlModelMissingProps,
   type PasswordResetProps,
   type RoiAlertProps,
   type SupportMessageProps,
@@ -113,6 +115,15 @@ export class MailService implements OnModuleInit {
     const action = props.isRollback ? 'Rollback' : 'Auto-Activé';
     const { html, text } = await renderMlModelActivated(props);
     await this.sendToAdmin(`ML Model ${action} — ${props.segment}`, html, text);
+  }
+
+  async sendMlModelMissing(props: MlModelMissingProps): Promise<void> {
+    const { html, text } = await renderMlModelMissing(props);
+    await this.sendToAdmin(
+      `ML Model Missing — ${props.segments.length} segment(s)`,
+      html,
+      text,
+    );
   }
 
   async sendXgUnavailableReport(

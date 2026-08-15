@@ -14,6 +14,14 @@ export class MlRepository {
     });
   }
 
+  async findActiveSegments(): Promise<string[]> {
+    const rows = await this.prisma.client.mlModelVersion.findMany({
+      where: { isActive: true },
+      select: { segment: true },
+    });
+    return rows.map((row) => row.segment);
+  }
+
   async findAll(): Promise<MlModelVersion[]> {
     return this.prisma.client.mlModelVersion.findMany({
       orderBy: { createdAt: 'desc' },

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import Decimal from 'decimal.js';
 import {
   assessMarketCoherence,
+  assessOverUnderMarketCoherence,
   computeMedianImpliedProbabilities,
+  computeMedianImpliedOverUnderProbabilities,
   type BookmakerOneXTwoOdds,
+  type BookmakerOverUnderOdds,
 } from './market-coherence';
 
 function book(
@@ -103,6 +106,90 @@ describe('assessMarketCoherence', () => {
     const alert = assessMarketCoherence({
       modelProbabilities: probs(0.9, 0.06, 0.04),
       books: [book('A', [1.62, 4.33, 4.1]), book('B', [1.6, 4.4, 4.2])],
+    });
+    expect(alert).toBeNull();
+  });
+});
+
+function ouBook(
+  name: string,
+  overOdds: number,
+  underOdds: number,
+): BookmakerOverUnderOdds {
+  return {
+    bookmaker: name,
+    overOdds: new Decimal(overOdds),
+    underOdds: new Decimal(underOdds),
+  };
+}
+
+function ouProbs(over: number) {
+  return { over: new Decimal(over), under: new Decimal(1 - over) };
+}
+
+describe('computeMedianImpliedOverUnderProbabilities', () => {
+  it('takes the per-side median of raw 1/odds', () => {
+    const result = computeMedianImpliedOverUnderProbabilities([
+      ouBook('A', 2.0, 1.9),
+      ouBook('B', 2.1, 1.85),
+      ouBook('C', 1.9, 2.0),
+    ]);
+    expect(result).not.toBeNull();
+    expect(result!.over.toNumber()).toBeCloseTo(0.5, 6);
+  });
+
+  it('ignores books with odds ≤ 1 and returns null when none are usable', () => {
+    expect(
+      computeMedianImpliedOverUnderProbabilities([ouBook('A', 1, 2)]),
+    ).toBe(null);
+  });
+});
+
+describe('assessOverUnderMarketCoherence', () => {
+  // Calibrated 2026-08-15 (backtest-calibration-alert-over-under.ts, 408
+  // settled OVER_UNDER bets) — FAVORITE_FLIP_MIN_GAP=0.10, no
+  // extreme_divergence reason (insufficient real-bet volume beyond
+  // divergence 0.20 to calibrate one).
+  it('flags favorite_flip when model and market disagree by at least the min gap', () => {
+    // Market implies OVER favorite (~59%); model backs UNDER at 70%
+    // (divergence on model's favorite, UNDER, vs market's UNDER ~41%: 0.29).
+    const alert = assessOverUnderMarketCoherence({
+      line: '3_5',
+      modelProbabilities: ouProbs(0.3),
+      books: [ouBook('A', 1.7, 2.2), ouBook('B', 1.68, 2.25)],
+    });
+    expect(alert).not.toBeNull();
+    expect(alert!.reasons).toContain('favorite_flip');
+    expect(alert!.modelFavorite).toBe('UNDER');
+    expect(alert!.marketFavorite).toBe('OVER');
+    expect(alert!.line).toBe('3_5');
+  });
+
+  it('stays silent when model and market agree on the favorite', () => {
+    const alert = assessOverUnderMarketCoherence({
+      line: '2_5',
+      modelProbabilities: ouProbs(0.65),
+      books: [ouBook('A', 1.7, 2.2), ouBook('B', 1.68, 2.25)],
+    });
+    expect(alert).toBeNull();
+  });
+
+  it('does not flag a flip below the min gap (near-50/50 noise)', () => {
+    // Both sides sit just barely on opposite sides of 50% — real audit
+    // finding: this is noise, not signal (n=27, ROI +5.8% in that bucket).
+    const alert = assessOverUnderMarketCoherence({
+      line: '2_5',
+      modelProbabilities: ouProbs(0.51),
+      books: [ouBook('A', 2.04, 1.96), ouBook('B', 2.06, 1.94)],
+    });
+    expect(alert).toBeNull();
+  });
+
+  it('does not alert below MIN_BOOKMAKERS (median not meaningful)', () => {
+    const alert = assessOverUnderMarketCoherence({
+      line: '3_5',
+      modelProbabilities: ouProbs(0.3),
+      books: [ouBook('A', 1.7, 2.2)],
     });
     expect(alert).toBeNull();
   });

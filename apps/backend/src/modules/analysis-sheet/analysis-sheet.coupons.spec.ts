@@ -73,6 +73,7 @@ function fixture(
     },
     avoidFlag: null,
     calibrationAlert: null,
+    calibrationAlertOverUnder: null,
     selectedPicks: [pick()],
     rejectionSummary: [],
     evaluatedPicks: [],

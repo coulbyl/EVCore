@@ -427,14 +427,20 @@ export class ChannelDecisionRepository {
   }
 }
 
-// Non-null features.calibration_alert = model↔market coherence gate triggered
-// (see betting-engine/market-coherence.ts).
+// Non-null features.calibration_alert (1X2) or non-empty
+// features.calibration_alert_over_under (OVER_UNDER, added 2026-08-15) =
+// model↔market coherence gate triggered (see betting-engine/market-coherence.ts).
 function hasCalibrationAlert(features: Prisma.JsonValue | null): boolean {
   if (!features || typeof features !== 'object' || Array.isArray(features)) {
     return false;
   }
-  const alert = (features as Record<string, unknown>)['calibration_alert'];
-  return typeof alert === 'object' && alert !== null;
+  const record = features as Record<string, unknown>;
+  const alert = record['calibration_alert'];
+  const alertOverUnder = record['calibration_alert_over_under'];
+  return (
+    (typeof alert === 'object' && alert !== null) ||
+    (Array.isArray(alertOverUnder) && alertOverUnder.length > 0)
+  );
 }
 
 function toJson(

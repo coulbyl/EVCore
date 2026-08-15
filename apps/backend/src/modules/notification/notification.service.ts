@@ -211,6 +211,18 @@ export class NotificationService {
     await this.mail.sendMlModelActivated(payload);
   }
 
+  async sendMlModelMissingAlert(segments: string[]): Promise<void> {
+    const title = `ML Model Missing — ${segments.length} segment(s)`;
+    const body = `isActive=true en DB mais absent des active_segments ml-worker : ${segments.join(', ')}`;
+    await this.save({
+      type: NotificationType.ML_MODEL_MISSING,
+      title,
+      body,
+      payload: { segments },
+    });
+    await this.mail.sendMlModelMissing({ segments });
+  }
+
   // Broadcast (userId null) — mirrors AnnouncementsService's existing push
   // notification, doesn't replace it: this is what makes a published
   // announcement show up in the bell / `/dashboard/notifications` too,

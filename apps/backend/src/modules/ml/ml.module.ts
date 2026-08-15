@@ -53,5 +53,10 @@ export class MlModule implements OnApplicationBootstrap {
       { pattern: ML_CRON_SCHEDULES.CATCH_UP_SWITCH },
       { name: 'ml-catch-up-switch', data: {}, opts: ML_TRAINING_JOB_OPTIONS },
     );
+    await this.schedulerQueue.upsertJobScheduler(
+      ML_SCHEDULER_KEYS.HEALTH_CHECK,
+      { pattern: ML_CRON_SCHEDULES.HEALTH_CHECK },
+      { name: 'ml-health-check', data: {}, opts: ML_TRAINING_JOB_OPTIONS },
+    );
   }
 }

@@ -21,7 +21,7 @@ import {
   ONE_X_TWO_DRAW_MAX_ODDS,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
-  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  LONGSHOT_PENALTY_EXPONENT,
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
@@ -37,7 +37,7 @@ export {
   ONE_X_TWO_DRAW_MAX_ODDS,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
-  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  LONGSHOT_PENALTY_EXPONENT,
   SAFE_VALUE_MIN_EV,
   SAFE_VALUE_MAX_ODDS,
   SV_UNDER_LAMBDA_COMPARISON_THRESHOLD,
@@ -71,11 +71,37 @@ export const CALIBRATION_GATE = {
   MIN_BOOKMAKERS: 2,
 } as const;
 
+// Same model↔market coherence gate, extended to OVER_UNDER (audit
+// 2026-08-13/15 — post-mortem found a +19pp rawPoisson-vs-calibrated swing
+// on an Under 3.5 leg with no equivalent gate to catch it).
+// backtest-calibration-alert-over-under.ts (408 settled OVER_UNDER bets)
+// found real-bet volume too thin beyond divergence 0.20 to calibrate a
+// standalone MAX_DIVERGENCE (n=10 at 0.30-0.39, 0 beyond) — no such key
+// here, deliberately. FAVORITE_FLIP_MIN_GAP=0.10 (lower than 1X2's 0.15)
+// IS well supported: at divergence >= 0.10, a favorite flip drops hit rate
+// from a ~65-71% baseline to 37.0% (n=46, ROI -12.2%); below 0.10 a "flip"
+// is just noise from both sides sitting near 50/50 (n=27, ROI +5.8%).
+export const OVER_UNDER_CALIBRATION_GATE = {
+  ENABLED: true,
+  FAVORITE_FLIP_MIN_GAP: new Decimal('0.10'),
+  MIN_BOOKMAKERS: 2,
+} as const;
+
 // Minimum directional probability for 1X2 HOME and AWAY picks.
 // Prevents selecting V1 when P(home win) < threshold and V2 when
 // P(away win) < threshold — avoids backing the team the model itself
 // considers unlikely to win (e.g. Guingamp V1 at P=36%).
 export const MIN_PICK_DIRECTION_PROBABILITY = new Decimal('0.45');
+
+// DRAW's own default, kept separate from HOME/AWAY's 0.45 (audit 2026-08-13:
+// the DRAW branch of this gate was never wired at all — see pick-validation.ts).
+// P(draw) is structurally much lower than P(home)/P(away) (rarely > 35-40%), so
+// reusing 0.45 as a blanket default would reject nearly every DRAW pick with no
+// backtest behind that cutoff. Set equal to EV_MIN_PROBABILITY_THRESHOLD (the
+// generic cross-market floor already enforced upstream) so wiring this branch is
+// a behavior no-op until a per-league value is calibrated the same way every
+// other entry in PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP was.
+const MIN_DRAW_DIRECTION_PROBABILITY = new Decimal('0.40');
 
 const PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT =
   MIN_PICK_DIRECTION_PROBABILITY;
@@ -121,10 +147,11 @@ export function getPickDirectionProbabilityThreshold(
   pick: string,
 ): Decimal {
   const key = `${competitionCode}|${market}|${pick}`;
-  return (
-    PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP[key] ??
-    PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT
-  );
+  const override = PICK_DIRECTION_PROBABILITY_THRESHOLD_MAP[key];
+  if (override) return override;
+  return pick === 'DRAW'
+    ? MIN_DRAW_DIRECTION_PROBABILITY
+    : PICK_DIRECTION_PROBABILITY_THRESHOLD_DEFAULT;
 }
 
 // Per-league minimum selection odds. Each league has a different bookmaker

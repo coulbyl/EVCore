@@ -3,7 +3,13 @@
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
 > Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
-**Statut actuel : Phase 3 — Étape 2 en cours (mise à jour le 4 juin 2026)**
+**Statut actuel : Phase 2 en production (argent réel) + Phase 3 ML en shadow — mise à jour le 2026-08-15 (Bloc 11)**
+
+> Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
+> tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
+> corrigés en `[x]` car déjà faits mais jamais mis à jour ici (Refactor
+> Domaine canaux, multi-ligues) — voir TODO.md pour ce qui reste réellement
+> ouvert.
 
 ---
 
@@ -16,141 +22,19 @@
 
 ---
 
-## MVP — Phase 1 (3 mois)
+## MVP — Phase 1 (3 mois) ✅ terminé — Go Phase 2 le 2 mars 2026
 
-### Fondations (avant Mois 1)
-
-- [~] Cahier des charges (EVCORE.md)
-- [~] Conventions IA (CLAUDE.md, copilot-instructions.md)
-- [~] Roadmap (ROADMAP.md)
-- [x] Guide d'écriture backend (`apps/backend/CODE_GUIDE.md`)
-- [x] Initialisation monorepo `apps/backend` (NestJS)
-- [x] Docker Compose (PostgreSQL + Redis + Mailpit)
-- [x] Schéma Prisma initial (Competition, Season, Team, Fixture, ModelRun, Bet, AdjustmentProposal)
-- [x] Configuration CI/CD (GitHub Actions — lint + type-check + test)
-- [x] Setup Nodemailer + Mailpit (Email)
-
----
-
-### Mois 1 — Import, modèle probabiliste, backtest
-
-**Semaine 1 — ETL historique**
-
-- [x] Worker `fixtures_sync` — API-FOOTBALL (3 saisons EPL : 2022, 2023, 2024)
-- [x] Worker `results_sync` — API-FOOTBALL (statuts FT/AET/PEN/AWD)
-- [x] Worker `stats_sync` — API-FOOTBALL `/fixtures/statistics` (proxy xG : shots_on_target × 0.35)
-- [x] Worker `odds_csv_import` — football-data.co.uk CSV (Pinnacle + Bet365 closing odds, 4 saisons)
-- [x] Validation Zod sur chaque ingestion
-- [x] Tests unitaires des schémas Zod
-- [x] Tests unitaires métier ETL (`mapStatus`, dispatch BullMQ + delays)
-- [x] Migration API — abandon football-data.org + Understat + FBref → API-FOOTBALL single key
-
-**Semaine 2 — Stats rolling**
-
-- [x] Calcul forme récente (5 matchs, decay 0.8)
-- [x] Calcul xG rolling (10 matchs)
-- [x] Calcul performance domicile/extérieur (saison)
-- [x] Calcul volatilité ligue (écart-type Poisson)
-- [x] Stockage des stats dans la DB (`TeamStats` via upsert)
-- [x] Trigger manuel backend pour backfill (`POST /rolling-stats/backfill/:season`, `POST /rolling-stats/backfill-all`)
-- [x] Helpers rolling-stats extraits dans un util dédié (`rolling-stats.utils.ts`)
-- [x] Source de vérité dates (`date.utils.ts`) + standardisation des conversions Date
-
-**Semaine 3 — Modèle probabiliste**
-
-- [x] Modèle de Poisson pour prédire buts domicile/extérieur
-- [x] Génération probabilités 1X2
-- [x] Dérivation Over/Under 2.5, BTTS, Double Chance depuis les probabilités 1X2
-- [x] Score déterministe pondéré (Forme 30% / xG 30% / Dom-Ext 25% / Volatilité 15%)
-- [x] Tests unitaires avec inputs/outputs connus
-- [x] Intégration applicative: analyse fixture/saison + persistance `ModelRun`
-
-**Semaine 4 — Backtest & calibration**
-
-- [x] Pipeline backtest sur 3 saisons historiques (exécution par saison)
-- [x] Calcul Brier Score par saison
-- [x] Calcul Calibration Error par marché
-- [x] Rapport de performance (JSON + log Pino)
-
----
-
-### Mois 2 — Odds, EV, simulation
-
-**Semaine 5 — Intégration odds historiques**
-
-- [x] Worker `odds_csv_import` — football-data.co.uk (Pinnacle + Bet365 closing odds, 4 saisons)
-- [x] Stockage `OddsSnapshot` avec timestamp dans la DB (marché ONE_X_TWO)
-- [x] Validation Zod CSV row (Date DD/MM/YYYY, odds positifs, FTR enum)
-- [x] Endpoints manuels ETL (`POST /etl/sync/full`, `POST /etl/sync/:type`, `POST /etl/sync/:type/:competitionCode`)
-- [x] Migration clé unique API-FOOTBALL (abandon The Odds API)
-
-**Semaine 6 — Calcul EV**
-
-- [x] Implémentation `calculateEV()` avec `decimal.js`
-- [x] Application du seuil EV ≥ 8% (depuis config)
-- [x] Génération `ModelRun` complet (features + score + decision)
-- [x] Tests unitaires EV avec cas limites (EV exactement 8%, en dessous, au dessus)
-
-**Semaine 7 — Simulation value bets**
-
-- [x] Simulation de placement sur données historiques
-- [x] Calcul ROI simulé par marché
-- [x] Calcul drawdown max simulé
-- [x] Calcul EV moyen simulé
-
-**Semaine 8 — Tracking & contraintes**
-
-- [x] Implémentation seuil alerte ROI < -10% (30 derniers paris)
-- [x] Implémentation suspension automatique ROI < -15% (50+ paris)
-- [x] Alerte notification si Brier Score > seuil acceptable
-- [x] Alerte notification sur suspension marché
-- [x] Rapport hebdomadaire ROI/Brier Score par endpoint (`POST /risk/report/weekly`)
-
----
-
-### Mois 3 — Automatisation, apprentissage, stabilisation
-
-**Semaine 9 — Automatisation quotidienne**
-
-- [x] BullMQ repeatable jobs (`upsertJobScheduler`) — crons quotidiens/hebdo pour les 4 workers ETL
-- [x] `ETL_CRON_SCHEDULES` + `ETL_SCHEDULER_KEYS` dans `etl.constants.ts` (configurables)
-- [x] `EtlService.onApplicationBootstrap()` — registration idempotente au démarrage
-- [x] `ETL_SCHEDULING_ENABLED` — flag pour désactiver le scheduling en dev/test
-- [x] `@OnWorkerEvent('failed')` sur les 4 workers — alerte notification uniquement sur échec définitif (après 3 tentatives)
-- [x] `sendEtlFailureAlert()` dans `NotificationService`
-- [x] Gestion `POSTPONED` fixtures — déjà couverte par le statut pipeline existant
-- [-] Setup Kestra — abandonné au profit de BullMQ natif (infra simplifiée pour MVP)
-
-**Semaine 10 — Boucle d'apprentissage**
-
-- [x] `BettingEngineService.settleOpenBets()` — résolution WON/LOST/VOID post-match
-- [x] `BettingEngineService.getEffectiveWeights()` — charge le dernier `AdjustmentProposal` APPLIED
-- [x] `CalibrationService.compute()` — Brier score + meanError déterministe
-- [x] `AdjustmentService.settleAndCheck()` — settle → calibrate → auto-apply si déclenché
-- [x] Auto-apply : brierScore > 0.25 ET betCount ≥ 50 ET cooldown 7 jours
-- [x] `AdjustmentService.rollback()` — nouveau proposal APPLIED avec poids inversés (audit complet)
-- [x] `AdjustmentController` : 3 endpoints (settle-and-check, list, rollback)
-- [x] `sendWeightAdjustmentAlert()` — alerte notification sur auto-apply + rollback
-
-**Semaine 11 — Stabilisation**
-
-- [x] Tests E2E Testcontainers (`vitest.config.e2e.ts`, `global-e2e.ts`, `prisma-test.ts`)
-- [x] `test/adjustment.e2e-spec.ts` — 3 tests intégration (settle, weights, auto-apply)
-- [x] Revue Zod schemas : `paging.total` fix, `response.length(2)` stats, 22 tests créés
-- [x] Revue logs Pino : dead code retiré, log CSV épuré, niveau debug pour "SMTP disabled"
-- [x] Docker Compose : `start_period` postgres (10s) + redis (5s)
-
-**Semaine 12 — Validation MVP** ✅ Go Phase 2 (2 mars 2026)
-
-- [x] Cold-start guard `MIN_PRIOR_TEAM_STATS = 5` — fixtures ignorées si ≤ 5 stats par équipe
-- [x] xG proxy fallback `shots_on_goal × 0.35` — 2022-23 première moitié (API sans expected_goals)
-- [x] `extractXg()` : priorité native → proxy si champ absent, 0 si null
-- [x] `BRIER_SCORE_PASS_THRESHOLD` recalibré à 0.65 (battre le classifieur aléatoire 0.667)
-- [x] Brier Score de référence mesuré : **0.592** (3 saisons agrégées, 2 mars 2026)
-- [x] Calibration Error de référence : **2.5%** (PASS ≤ 5%)
-- [x] ROI simulé de référence : **+2.28%** (PASS ≥ -5%)
-- [x] Go/No-Go : **GO Phase 2** — modèle bat le hasard sur 3 saisons EPL
-- [x] Mise à jour ROADMAP.md avec résultats de validation
+> Condensé le 2026-08-15 (détail semaine par semaine plus utile, tout est
+> `[x]` depuis mars). Fondations (monorepo NestJS, Docker Compose, Prisma,
+> CI/CD) ; Mois 1 — ETL historique 3 saisons EPL, stats rolling, modèle
+> Poisson, backtest 3 saisons ; Mois 2 — odds historiques, calcul EV
+> (`decimal.js`), simulation value bets, tracking ROI/Brier + suspension
+> auto ; Mois 3 — automatisation BullMQ, boucle d'apprentissage
+> (`AdjustmentService` auto-apply/rollback), stabilisation E2E.
+>
+> **Validation MVP (2 mars 2026)** : Brier Score **0.592** (3 saisons
+> agrégées, seuil ≤0.65), Calibration Error **2.5%** (seuil ≤5%), ROI simulé
+> **+2.28%** (seuil ≥-5%) — modèle bat le hasard sur 3 saisons EPL. **GO Phase 2.**
 
 ---
 
@@ -168,7 +52,9 @@
 - [x] `odds-csv-import` incrémental : snapshots closing déjà présents skippés sans upsert
 - [x] Pipeline live validé en prod : `synced: 4, skipped: 0` sur 4 fixtures EPL (2 mars 2026)
 - [x] Kelly fractionnelle (0.25) — config flag `KELLY_ENABLED`
-- [~] Multi-ligues (Serie A, La Liga, Bundesliga configurées, activation progressive)
+- [x] Multi-ligues — bien au-delà de SA/LL/BL1 : 26 compétitions actives en
+      production (`packages/db/src/seed.ts`), item corrigé le 2026-08-15
+      (marqué à tort "activation progressive")
 
 ### Bloc 3 — Daily Picks Generator ✅ (2 mars 2026)
 
@@ -550,10 +436,10 @@ OVER_UNDER/marchés de buts**
 > [TODO.md](TODO.md) (section Générateur de coupon).
 
 - `[x]` Enrichir l'export "fiche EVCore"
-      (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
-      avec `evaluatedPicks` complet par fixture (tous statuts) au lieu du
-      seul `selectedPicks` par canal — préalable pour que l'analyse balaie
-      tous les marchés sans dépendre d'un accès DB live par fixture.
+  (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
+  avec `evaluatedPicks` complet par fixture (tous statuts) au lieu du
+  seul `selectedPicks` par canal — préalable pour que l'analyse balaie
+  tous les marchés sans dépendre d'un accès DB live par fixture.
 
 **Audit systémique 2026-08-13 — recherche ciblée du même motif de bug**
 
@@ -579,6 +465,174 @@ l'utilisateur). Le reste de l'audit (calibration_alert étendu,
 under_high_lambda généralisé, seuils DRAW/longshot/htftCalibrated,
 shrinkage TEAM_TOTAL) demande un backtest avant merge — laissé dans
 TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
+
+---
+
+### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne, garde-fous 1X2-only (2026-08-15, branche `fix/systemic-audit-market-guards`)
+
+> Reprise du reste de l'audit systémique du Bloc 10 (post-mortem
+> Nordsjaelland–Valur, [TODO.md](TODO.md) section "Audit systémique
+> 2026-08-13"), laissé de côté de la PR "sûrs uniquement" du 2026-08-13 car
+> ces deux-là touchent directement à quelles cotes/picks atteignent
+> `evaluatedPicks` — corrigés en premier dans ce chantier plus large.
+
+- [x] **`under_high_lambda` généralisé à tout pick `UNDER_*`** —
+      `getPickRejectionReason()` (`pick-validation.ts`) ne rejetait que le
+      pick littéral `"UNDER"` (ligne 2,5) quand `lambdaTotal ≥ 2.3` ;
+      `UNDER_3_5`/`UNDER_4_5`/`UNDER_1_5` n'entraient jamais dans cette
+      branche (confirmé : Nordsjaelland–Valur avait `lambdaTotal≈3.74` sur
+      `UNDER_3_5`, jamais rejeté). Seuil λ laissé inchangé — une
+      recalibration par ligne reste une piste séparée.
+- [x] **Résolution du bookmaker OVER_UNDER par ligne au lieu de par marché
+      entier** — cause racine confirmée du trou Nordsjaelland–Valur : un
+      seul bookmaker était choisi pour tout le marché (dernier snapshot +
+      meilleur rang), et une ligne qu'il n'avait pas cotée à cet instant
+      disparaissait silencieusement même si un autre bookmaker l'avait
+      cotée. `resolveOverUnderOddsPerLine`/`findOverUnderOddsPerLine`
+      (`odds-snapshot.loader.ts`) résolvent maintenant le meilleur
+      bookmaker indépendamment par ligne (8 picks), sur les deux chemins
+      (batché et single-fixture). Tests de régression reproduisant le
+      scénario exact ajoutés dans `odds-snapshot.loader.spec.ts`. (Les deux
+      "reste ouvert" notés ici initialement — généraliser à d'autres marchés,
+      étendre `calibration_alert` à OVER_UNDER — ont été traités plus tard
+      dans ce même Bloc, voir plus bas.)
+- [x] **Seuil de probabilité DRAW jamais appliqué en 1X2 — branche ajoutée**
+      — `getPickRejectionReason` ne testait `minDirectionProbability` que
+      pour HOME/AWAY. Branche `DRAW` ajoutée (teste `probabilities.draw`),
+      mais avec un défaut app-side **délibérément distinct** de HOME/AWAY :
+      `MIN_DRAW_DIRECTION_PROBABILITY = 0.40` (= plancher générique déjà
+      appliqué à tous les picks) plutôt que réutiliser le défaut HOME/AWAY
+      (0.45), qui aurait quasiment suspendu le canal DRAW entier du jour au
+      lendemain sans aucun backtest — comportement volontairement inchangé
+      aujourd'hui, seul le hook de calibration par ligue est maintenant
+      câblé pour `ONE_X_TWO|DRAW`.
+- [x] **`htftCalibrated` étendu à `OVER_UNDER_HT`** — dérive de la même
+      décomposition mi-temps que `HALF_TIME_FULL_TIME`/`FIRST_HALF_WINNER`
+      (même risque de surestimation Poisson bivariée en ligue non
+      calibrée) mais n'était jamais vérifié contre ce garde-fou. Extension
+      dans le sens "plus prudent" uniquement (suspend davantage, n'autorise
+      jamais rien de nouveau) — pas de backtest requis avant merge,
+      contrairement à un changement de seuil.
+- [x] **Pénalité longshot étendue au-delà du 1X2 — étude dédiée + activation
+      partielle (2026-08-15)** — `getOneXTwoLongshotPenalty` renommée
+      `getLongshotPenalty`. Nouveau script
+      `db:backtest:longshot-penalty-odds-buckets` (~24 500 fixtures, cotes
+      bookmaker réelles + proba Poisson brute rejouée, par tranche de cote)
+      sur `RESULT_TOTAL_GOALS`/`RESULT_BTTS`/`HALF_TIME_FULL_TIME`/
+      `FIRST_HALF_WINNER`/`OVER_UNDER` (ligne 4.5) :
+  - [x] **`RESULT_TOTAL_GOALS`** : signal le plus net — EV annoncée +26% sur
+        15+ vs ROI réel -21.6% (motif "fausse valeur" identique au 1X2).
+        Pénalité activée (seuil 5.0, plancher 0.12).
+  - [x] **`HALF_TIME_FULL_TIME`** : ROI simulé en déclin monotone (-3.5% →
+        -32% de <2.0 à 15+). Pénalité activée (seuil 5.0, plancher 0.15).
+  - [ ] **`RESULT_BTTS`/`FIRST_HALF_WINNER`/`OVER_UNDER` (ligne 4.5)** :
+        même direction de signal mais trop bruité aux cotes longues (n<300,
+        tranche 15+ parfois positive des deux côtés) — laissés sans
+        pénalité, à revisiter avec plus de données.
+  - Pénalité appliquée uniformément par cote (pas par pick AWAY/DRAW comme
+    en 1X2) — ces marchés n'ont pas de "côté outsider" unique.
+- [x] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — backtest exécuté,
+      config activée (2026-08-15)** — `TEAM_TOTAL_AWAY UNDER_1_5` est le
+      candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV affiché
+      +22,4%, même motif de surconfiance que l'O/U). Mécanisme câblé
+      (`teamTotalHome`/`teamTotalAway` sur `OverUnderShrinkageConfig`, sparse
+      par ligne 0.5–4.5, même forme que `ouHt` ; `factor`/`baseRates` rendus
+      optionnels pour permettre une ligue sans couverture O/U plein temps).
+      **Backtest walk-forward exécuté contre la DB locale** (sync prod du jour,
+      16h48) avec le nouveau script `db:backtest:team-total-shrinkage-calibration`
+      — même protocole que l'O/U original (train = toutes saisons sauf la plus
+      récente par ligue, test = la plus récente, seuil de livraison : ΔBrier
+      tenu-à-l'écart ≥ 0.001). 47 258 fixtures rejouées (TeamStats point-in-time),
+      **178 blocs livrés sur 49 ligues** — 27 fusionnées dans des entrées
+      `OU_SHRINKAGE_CONFIG` existantes, 22 nouvelles ligues (ARG1/ARG2/AUS1/
+      AUT1/BEL1/BRA2/CH/CHI1/CHI2/CHN2/D3/DEN1/FIN2/GRE1/IRL1/KOR2/KSA1/LL/
+      POL2/RUS1/SCO1/USA2) sans couverture O/U plein temps. Rapport complet :
+      `packages/db/reports/backtest-team-total-shrinkage-calibration-2026-08-15.txt`.
+  - [x] **Garde-fou paris réels réglés — inconclusif, pas bloquant** :
+        seulement 69 paris `TEAM_TOTAL_*` réglés tombent sur une ligne
+        désormais couverte (152 réglés au total) — trop peu pour trancher
+        dans un sens ou l'autre (le guard O/U original portait sur 910
+        paris). Les deux groupes testés restent négatifs, cohérent avec le
+        motif de surconfiance déjà documenté. La preuve porteuse reste le
+        Brier walk-forward sur 47k fixtures rejouées, pas ce guard.
+  - [x] **Activé, plus un no-op** : TEAM_TOTAL_HOME/AWAY seront réellement
+        shrinkés en prod sur les 49 ligues listées une fois cette branche
+        mergée.
+  - [x] **`RESULT_TOTAL_GOALS` traité séparément, plus tard le même jour** —
+        son complément Over/Under n'est pas `1 − under` comme O/U/TEAM_TOTAL
+        (`over(side) = oneXTwo[side] − under(side)`, masse jointe du côté),
+        donc le mécanisme sparse ne s'appliquait pas tel quel : nouvelle
+        fonction `shrinkResultTotalGoals` dédiée (`ou-shrinkage.ts`) qui
+        shrink la proba jointe `UNDER` puis recalcule `OVER` par rapport à la
+        masse du côté (même logique que `rebalanceThreeWayProbabilities`).
+        Nouveau script `db:backtest:result-total-goals-shrinkage-calibration`,
+        même protocole walk-forward — **171 blocs livrés sur 41 ligues**,
+        toutes déjà présentes dans `OU_SHRINKAGE_CONFIG` (fusion pure, aucune
+        nouvelle entrée de ligue). Activé, plus un no-op.
+- [x] **Bookmaker par ligne généralisé à tous les marchés à picks
+      indépendants** — le jumeau non-batché de `pickBestBookmaker`
+      (`findBestBookmakerForMarket`) avait le même bug "marché entier". Au
+      lieu de ne réparer que son instance OVER_UNDER, généralisé
+      (`resolvePerPickOddsPerLine`/`findPerPickOddsPerLine`) à
+      `TEAM_TOTAL_HOME/AWAY`, `RESULT_TOTAL_GOALS`, `RESULT_BTTS`,
+      `CORRECT_SCORE`, `OVER_UNDER_HT` sur les deux chemins (batché et
+      single-fixture) — volontairement **pas** appliqué aux marchés à
+      événement unique cohérent (ONE_X_TWO, First-Half Winner, Double
+      Chance, HT/FT) où mélanger les bookmakers recréerait le risque de
+      triplet fabriqué ci-dessous.
+- [x] **`findLatestBestOneXTwoOddsSnapshot` ne fabrique plus de cohérence
+      1X2 inexistante — impact réel confirmé** — construisait un faux
+      bookmaker `'MarketBest'` en maximisant home/draw/away indépendamment
+      à travers différents bookmakers, avec un overround plus bas
+      qu'aucun bookmaker réel n'offre. Vérifié : `analyzeFriFixture`
+      (canal FRI) utilise ce triplet directement pour calculer l'EV de
+      chaque pick — un overround fabriqué gonflait donc l'EV de tout le
+      canal simultanément. Corrigé pour sélectionner le vrai bookmaker au
+      plus bas overround parmi ceux avec un triplet complet, au lieu de
+      fabriquer un mix.
+- [x] **`calibration_alert` étendu à OVER_UNDER — étude dédiée + activation
+      (2026-08-15)** — le gate de cohérence modèle↔marché ne couvrait que le
+      1X2 ; le post-mortem du 13-14/08 avait trouvé un écart de +19pp sur
+      une jambe Under 3.5 sans aucun garde-fou pour la voir. Nouveau script
+      `db:backtest:calibration-alert-over-under` (408 paris OVER_UNDER
+      réels réglés, `probEstimated` vs médiane implicite bookmaker) :
+      pas assez de volume pour calibrer un seuil `extreme_divergence`
+      autonome (n=10 au-delà de 0.30), mais `favorite_flip` à divergence
+      ≥ 0.10 est un signal net contrôlé pour le confondant "proche de
+      50/50" — taux de réussite 37,0% (n=46, ROI -12,2%) contre une base
+      ~65-71% ; sous ce seuil un "flip" n'est que du bruit (n=27, ROI
+      +5,8%). `assessOverUnderMarketCoherence` activé (`favorite_flip`
+      seul, `FAVORITE_FLIP_MIN_GAP=0.10`), vérifié indépendamment sur les 4
+      lignes (1.5/2.5/3.5/4.5 — l'incident d'origine était sur 3.5, pas
+      2.5), nouvel accesseur `findLatestOverUnderOddsPerBookmaker` (résolu
+      par ligne, même discipline que le fix bookmaker plus haut), stocké
+      dans `calibration_alert_over_under` et branché sur la même exclusion
+      coupon que le gate 1X2.
+- **Audit systémique 2026-08-13 : statut final** — **entièrement trié et
+  clos**. Chaque motif de bug trouvé est corrigé, activé après backtest, ou
+  explicitement reporté (jamais oublié) ; détail complet dans
+  [TODO.md](TODO.md). Tous les items "backtest à faire" ont été mesurés (DB
+  locale, sync prod 2026-08-15 16h48) et activés : shrinkage `TEAM_TOTAL`,
+  shrinkage `RESULT_TOTAL_GOALS`, pénalité longshot
+  (`RESULT_TOTAL_GOALS`/`HALF_TIME_FULL_TIME`), `calibration_alert` sur
+  OVER_UNDER (`favorite_flip`). Restent différés par décision documentée
+  (signal trop bruité ou volume insuffisant, jamais par oubli) : pénalité
+  longshot sur RESULT_BTTS/FIRST_HALF_WINNER/OVER_UNDER 4.5, seuil
+  `extreme_divergence` pour OVER_UNDER.
+  - [ ] **Limite connue sur les deux items activés cette session (pénalité
+        longshot, `calibration_alert` O/U) : seuils globaux, pas par
+        ligue** — contrairement au shrinkage (per-league). Vérifié après
+        coup sur RESULT_TOTAL_GOALS 15+ (n=265) : le signal est réparti sur
+        ~18 ligues, pas porté par une seule (un seuil global n'est donc pas
+        un artefact), mais ARG1 (n=67, ROI -20.9%) et ARG2 (n=60, ROI
+        +1.7%) divergent nettement à volume comparable — indice d'une vraie
+        hétérogénéité par ligue qu'on ne peut pas calibrer ici (volume par
+        ligue à cote longue : 3 à 67 paris, trop faible). Cohérent avec le
+        gate 1X2 existant (également global), donc pas une régression — à
+        revisiter avec plus de volume, voir TODO.md.
+- 855 tests backend (+27 vs Bloc 10), 104 tests `analysis-core` (+6),
+  typecheck et lint (`--max-warnings 0`) propres sur backend et
+  `analysis-core`.
 
 ---
 
@@ -656,30 +710,39 @@ Docs de cadrage Phase 3:
 
 ---
 
-## Refactor Domaine — Architecture des canaux de stratégie
+## Refactor Domaine — Architecture des canaux de stratégie ✅ fait (corrigé le 2026-08-15)
 
 > Cadrage : [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
-> · Plan d'exécution détaillé : [TODO.md](TODO.md)
+> · Suites/canaux restants : [TODO.md](TODO.md)
 >
-> Refactor **transverse** (schéma, betting engine, settlement, API, frontend) qui
-> remplace les trois vocabulaires de canal concurrents (`PredictionChannel`,
-> `CouponLegCanal`, `isSafeValue`) par un enum unique `StrategyChannel`, et
-> représente chaque run comme **multi-canal** au lieu d'un `BET`/`NO_BET` global.
-> Bascule unique et propre : legacy supprimé uniquement **après gate de parité vert**.
-> Aucun nouveau canal activé sans backtest séparé par ligue / marché / saison.
+> Toute la checklist ci-dessous était encore marquée `[ ]` alors que le
+> refactor est en production depuis des semaines (`channel-decision.service.ts`
+> est le chemin live utilisé par le betting engine, le settlement, les
+> abonnements et l'investissement) — jamais mis à jour après coup. Vérifié
+> le 2026-08-15 :
 
-- [ ] Cadrage & gel du design : schéma cible, enum `StrategyChannel` v1 (canaux réels
-      uniquement), grain `ModelRun` (1-à-N), mapping legacy → cible
-- [ ] Contrat & registre de stratégies (`StrategyContext`, `allowedMarkets`, une stratégie
-      par canal) derrière les tables cibles, calculs probabilistes inchangés
-- [ ] Migration schéma : enums + tables `channel_decision` / `channel_selection` + `Bet.channelSelectionId`
-- [ ] Backfill idempotent + transactionnel de l'historique matérialisé
-- [ ] Gate de vérification (réconciliation + parité ancien/nouveau rapport) **avant tout DROP**
-- [ ] Bascule des consommateurs (engine, settlement, API, frontend) dans la même release
-- [ ] Suppression du legacy (`Prediction`, `PredictionChannel`, `CouponLegCanal`,
-      `Bet.isSafeValue`, `ModelRun.decision`) — rollback testé
-- [ ] Nouveaux canaux phasés, backtest avant activation : `BB` côté `NO`, `GOALS`,
-      `CONSENSUS`, `AVOID`, `UNDERDOG`/`FAVORITE`, `MARKET_MOVE`, `FIRST_HALF`, `LIVE_VALUE`
+- [x] Cadrage & gel du design — `StrategyChannel` v1 figé (19 valeurs,
+      `packages/db/prisma/schema.prisma`), `ChannelDecision` 1-ModelRun-à-N
+- [x] Contrat & registre de stratégies — une stratégie par canal
+      (`packages/analysis-core/src/strategies/*.strategy.ts`) + orchestrateur
+- [x] Migration schéma — `channel_decision`/`channel_selection` +
+      `Bet.channelSelectionId` en place
+- [x] Backfill idempotent — `@@unique([channelDecisionId, rank])` +
+      `backfill-selection-odds.ts`
+- [x] Bascule des consommateurs — engine, settlement, abonnements,
+      investissement et frontend (`apps/web/domains/channel-decision`)
+      consomment tous les nouvelles tables
+- [x] Suppression du legacy — `Prediction`/`PredictionChannel`/
+      `CouponLegCanal`/`Bet.isSafeValue`/`ModelRun.decision` supprimés
+      (migrations `20260618005222_remove_legacy`,
+      `20260618010535_remove_is_safe_value`), zéro référence restante
+- [~] Gate de vérification (parité ancien/nouveau) — probablement fait avant
+  le DROP legacy (cohérent avec la règle "jamais avant gate vert") mais
+  aucun artefact de réconciliation formel retrouvé dans le code
+- [~] Nouveaux canaux phasés — la plupart existent déjà et ont une stratégie
+  (`GOALS`, `CONSENSUS`, `AVOID`, `UNDERDOG`, `FAVORITE`, `MARKET_MOVE`,
+  `FIRST_HALF`, `LIVE_VALUE`) ; seul `BB` côté `NO` (BTTS NO) reste en
+  observation avant activation — voir TODO.md
 
 ---
 

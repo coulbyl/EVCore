@@ -47,7 +47,26 @@ export const ONE_X_TWO_AWAY_MAX_ODDS = new Decimal("5.0");
 export const ONE_X_TWO_DRAW_MAX_ODDS = new Decimal("6.0");
 export const ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR = new Decimal("0.12");
 export const ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR = new Decimal("0.20");
-export const ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT = 2;
+export const LONGSHOT_PENALTY_EXPONENT = 2;
+
+// Longshot penalty generalized beyond 1X2 (audit 2026-08-13/15,
+// backtest-longshot-penalty-odds-buckets.ts against real bookmaker odds +
+// replayed raw Poisson probability, ~24.5k fixtures). Unlike 1X2, these
+// markets have no single "underdog side" — any pick can reach long odds —
+// so the penalty applies uniformly by odds, not by pick.
+//
+// RESULT_TOTAL_GOALS: the clearest signal — claimed EV (model prob × real
+// odds) flips positive (+26%) in the 15+ bucket while real simulated ROI
+// stays at -21.6%, the same "false value" pattern 1X2's penalty exists to
+// catch. ROI degrades from ~-7% (< 3.0) to -20/-36% beyond 4.0.
+export const RESULT_TOTAL_GOALS_MAX_ODDS = new Decimal("5.0");
+export const RESULT_TOTAL_GOALS_LONGSHOT_PENALTY_FLOOR = new Decimal("0.12");
+
+// HALF_TIME_FULL_TIME: consistent, monotonic ROI decline with odds (-3.5%
+// under 2.0 down to -32% at 15+) — less of a sharp claimed-EV "flip" than
+// RESULT_TOTAL_GOALS but a steadier one, floor set slightly less aggressive.
+export const HALF_TIME_FULL_TIME_MAX_ODDS = new Decimal("5.0");
+export const HALF_TIME_FULL_TIME_LONGSHOT_PENALTY_FLOOR = new Decimal("0.15");
 
 // Minimum model edge (probability − 1/odds) for a VALUE pick. The EV gate alone
 // is not enough: EV = odds × edge, so an EV floor lets high-odds picks through on

@@ -137,6 +137,7 @@ enum NotificationType {
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
   ML_MODEL_ACTIVATED
+  ML_MODEL_MISSING
   // Personnelles (Notification.userId non-null) — voir commentaire sur le
   // modèle Notification.
   SUBSCRIPTION_EVENTS_ADDED
@@ -814,7 +815,13 @@ model OddsSnapshot {
   createdAt  DateTime           @default(now())
 
   @@index([fixtureId, snapshotAt])
-  @@index([fixtureId, bookmaker, market, pick, snapshotAt])
+  // DB-level constraint is UNIQUE NULLS NOT DISTINCT (hand-written in
+  // migration 20260815130000): `pick` is NULL for ONE_X_TWO, and a plain
+  // unique index treats every NULL as distinct, silently letting ONE_X_TWO
+  // duplicates back in. Prisma's own model below doesn't express the NULLS
+  // NOT DISTINCT clause — do not let `prisma migrate dev` regenerate this
+  // constraint as a plain UNIQUE, it would reopen the ONE_X_TWO race.
+  @@unique([fixtureId, bookmaker, market, pick, snapshotAt])
   @@index([snapshotAt])
   @@map("odds_snapshot")
   @@schema("public")

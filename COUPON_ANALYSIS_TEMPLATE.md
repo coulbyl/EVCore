@@ -39,9 +39,37 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
      pas juste 2,5) : `lambdaHome + lambdaAway < 2.3` — le garde-fou système
      `under_high_lambda` ne couvre que la ligne 2,5 (cf. TODO.md) ;
    - `dataCoverage` pondère la confiance globale sans disqualifier seul.
-   Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
-   réduit (~30-50) — et documente explicitement les fixtures qui n'ont
-   produit aucun candidat fiable, pour ne rien faire disparaître en silence.
+     Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
+     réduit (~30-50) — et documente explicitement les fixtures qui n'ont
+     produit aucun candidat fiable, pour ne rien faire disparaître en silence.
+
+   **Piège confirmé le 2026-08-14 : ne pas classer ce pool par un seul
+   critère.** Deux modes de tri existent, et aucun des deux seul ne suffit :
+   - **Mode Fiabilité** — classer par probabilité (corrigée) décroissante,
+     un seul candidat par fixture. Fait mécaniquement remonter des cotes
+     très courtes (probabilité haute = cote courte, par construction) :
+     un coupon construit uniquement comme ça a une bonne chance de tenir,
+     mais une cote combinée plate et aucune vraie valeur captée (cas réel :
+     9 jambes à cote 1.16-1.37, cote combinée 5.85).
+   - **Mode Valeur (EV)** — classer par EV corrigé décroissant sur **tout**
+     le pool (pas un seul candidat par fixture — sinon on ne voit jamais
+     les cotes plus intéressantes disponibles sur le même match). Deux
+     garde-fous obligatoires ici : **exclure entièrement toute fixture
+     `avoidFlag`** (un EV corrigé énorme dessus n'est pas une pépite, c'est
+     le signal classique d'un problème de données/modèle — même logique
+     que `EV_HARD_CAP` dans le code) et **plafonner l'EV corrigé** (~0.35)
+     pour la même raison. Seul, ce mode empile des probabilités trop
+     proches de la limite basse et écrase la probabilité jointe (cas réel :
+     9 jambes ~60-72%, cote combinée 436, proba jointe 1.9% — un profil
+     longshot, pas un coupon principal).
+   - **Mode recommandé pour un coupon principal : le merge des deux** —
+     quelques jambes du mode Fiabilité comme ancres (70-90%+, portent la
+     probabilité jointe) + quelques jambes du mode Valeur (60-75%, cote
+     plus intéressante, portent la cote combinée). Diversifier par
+     championnat dans les deux modes avant de merger. Cas réel (14/08) :
+     3 ancres + 4 jambes EV → cote combinée 27.6, proba jointe 13.0% —
+     un vrai compromis, ni plat ni longshot.
+
 2. **Synthèse qualitative (jugement, sur le pool réduit seulement)** — sur
    ce pool, appliquer les étapes 1 à 9 de ce document (contexte
    aller-retour, cohérence narrative, clusters de risque corrélé, tier des
@@ -52,6 +80,37 @@ de coupon) : ce balayage suppose d'avoir `evaluatedPicks` complet par
 fixture sans dépendre d'un accès DB live à chaque fois (tunnel SSH
 instable en pratique) — l'export "fiche EVCore" doit être enrichi en
 conséquence avant que ce process soit praticable au quotidien.
+
+**Trou confirmé le 2026-08-14 : les vérifications quantitatives (λ,
+`calibration_alert`, delta brut/calibré) ne remplacent pas la connaissance
+métier d'une ligue.** Sur Wolves–Blackburn (Championship anglais), tous
+les signaux internes étaient propres (λ=2.17 sous le seuil, `offensiveBalance:
+BALANCED`, proba calibrée = Poisson brut exactement) — rien dans les
+données ne disqualifiait le pick. Mais un analyste pro sait que :
+
+- **Certaines ligues ont une réputation connue de volume de buts élevé**
+  (Championship anglais, 2. Bundesliga, Eredivisie sont classiquement
+  citées — rythme haut, calendrier chargé, jeu direct) — à traiter avec
+  méfiance renforcée sur les marchés O/U même quand les chiffres internes
+  sont propres, le modèle n'a pas ce savoir stylistique dans son λ.
+- **Over/Under 2.5 est le marché le plus parié et le plus efficacement
+  pricé au monde**, encore plus sur une ligue à forte couverture bookmaker.
+  Un edge apparent dessus mérite structurellement plus de méfiance qu'un
+  edge similaire sur un marché fin/peu couvert (TEAM_TOTAL sur une petite
+  ligue) — pas parce que les chiffres clochent, mais parce que c'est le
+  marché le plus dur à battre par construction.
+
+**Corollaire découvert le même jour — ne jamais substituer une ligne sûre
+gagnante par une ligne plus risquée sur le même match pour chasser un
+meilleur EV, sans justification forte.** Le 14/08, le coupon "mode
+Fiabilité" pur jouait Wolves–Blackburn en Under 4,5 (a gagné, 4 buts au
+final). Le merge avec le mode Valeur a remplacé cette jambe par Under 2,5
+sur le même match pour un meilleur EV affiché — et c'est précisément cette
+substitution qui a cassé le coupon combiné (le reste du coupon sûr, 9/9,
+est passé sans encombre). Un saut de ligne important (4,5 → 2,5) sur une
+ligue à réputation de gros volume de buts est un changement de risque bien
+plus grand qu'un saut équivalent sur une ligue plus fermée — à peser
+explicitement avant de faire le swap, pas seulement comparer l'EV affiché.
 
 ## Étape 1 — Lire la fiche EVCore sans la prendre pour argent comptant
 

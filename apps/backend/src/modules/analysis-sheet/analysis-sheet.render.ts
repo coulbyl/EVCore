@@ -24,6 +24,17 @@ export type SheetMeta = {
   filters: { competitionCode: string | null; channel: string | null };
 };
 
+// Competition `name` alone is not unique (e.g. two "League One" — England and
+// China — or two "Bundesliga" — Germany and Austria). Suffixing the country
+// disambiguates every display/aggregation use without touching the unique
+// `competitionCode`, which calibration/threshold lookups already key on.
+function formatCompetitionLabel(fixture: {
+  competitionName: string;
+  competitionCountry: string;
+}): string {
+  return `${fixture.competitionName} (${fixture.competitionCountry})`;
+}
+
 // One earlier rolling-horizon pass where this channel also had a SELECTED
 // pick — oldest first. Lets Eva see line movement (probability/odds/pick
 // drift across ADVANCE → PRE_KICKOFF → LIVE re-analyses of the same fixture)
@@ -135,6 +146,13 @@ export type AnalysisSheetCalibrationAlert = {
   bookmakerCount: number;
 };
 
+// Same gate extended to OVER_UNDER (ModelRun.features.calibration_alert_over_under,
+// added 2026-08-15) — one entry per line (1.5/2.5/3.5/4.5) that triggered,
+// since the incident that motivated this was on Under 3.5, not the default
+// 2.5 line.
+export type AnalysisSheetOverUnderCalibrationAlert =
+  AnalysisSheetCalibrationAlert & { line: string };
+
 export type AnalysisSheetJsonFixture = {
   fixtureId: string;
   match: string;
@@ -180,6 +198,7 @@ export type AnalysisSheetJsonFixture = {
   };
   avoidFlag: AnalysisSheetAvoidFlag | null;
   calibrationAlert: AnalysisSheetCalibrationAlert | null;
+  calibrationAlertOverUnder: AnalysisSheetOverUnderCalibrationAlert[] | null;
   selectedPicks: AnalysisSheetJsonPick[];
   rejectionSummary: AnalysisSheetRejectionSummary[];
   evaluatedPicks: AnalysisSheetJsonEvaluatedPick[];
@@ -261,6 +280,9 @@ function toJsonFixture(
   const rejectionSummary = buildRejectionSummary(fixture.selections);
   const avoidFlag = buildAvoidFlag(fixture.selections);
   const calibrationAlert = buildCalibrationAlert(fixture.features);
+  const calibrationAlertOverUnder = buildOverUnderCalibrationAlert(
+    fixture.features,
+  );
   const evaluatedPicks: AnalysisSheetJsonEvaluatedPick[] =
     context.evaluatedPicks.map((p) => ({
       market: p.market,
@@ -282,7 +304,7 @@ function toJsonFixture(
   return {
     fixtureId: fixture.fixtureId,
     match: `${fixture.homeTeam} - ${fixture.awayTeam}`,
-    competition: fixture.competitionName,
+    competition: formatCompetitionLabel(fixture),
     kickoff: fixture.scheduledAt.toISOString(),
     status: fixture.status,
     score:
@@ -315,6 +337,7 @@ function toJsonFixture(
     },
     avoidFlag,
     calibrationAlert,
+    calibrationAlertOverUnder,
     selectedPicks,
     rejectionSummary,
     evaluatedPicks,
@@ -396,6 +419,55 @@ function buildCalibrationAlert(
     divergence: alert.divergence,
     bookmakerCount: alert.bookmakerCount,
   };
+}
+
+// Parses ModelRun.features.calibration_alert_over_under (added 2026-08-15) —
+// an array with one entry per OVER_UNDER line (1.5/2.5/3.5/4.5) that
+// triggered the gate. Defensive: malformed payloads/entries yield null/are
+// skipped rather than throwing.
+function buildOverUnderCalibrationAlert(
+  features: unknown,
+): AnalysisSheetOverUnderCalibrationAlert[] | null {
+  if (!features || typeof features !== 'object') return null;
+  const raw = (features as Record<string, unknown>)[
+    'calibration_alert_over_under'
+  ];
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+
+  const alerts = raw.flatMap(
+    (entry): AnalysisSheetOverUnderCalibrationAlert[] => {
+      if (!entry || typeof entry !== 'object') return [];
+      const alert = entry as Record<string, unknown>;
+      if (
+        typeof alert.line !== 'string' ||
+        !Array.isArray(alert.reasons) ||
+        typeof alert.modelFavorite !== 'string' ||
+        typeof alert.marketFavorite !== 'string' ||
+        typeof alert.modelProbability !== 'number' ||
+        typeof alert.medianImplied !== 'number' ||
+        typeof alert.divergence !== 'number' ||
+        typeof alert.bookmakerCount !== 'number'
+      ) {
+        return [];
+      }
+      return [
+        {
+          line: alert.line,
+          reasons: alert.reasons.filter(
+            (r): r is string => typeof r === 'string',
+          ),
+          modelFavorite: alert.modelFavorite,
+          marketFavorite: alert.marketFavorite,
+          modelProbability: alert.modelProbability,
+          medianImplied: alert.medianImplied,
+          divergence: alert.divergence,
+          bookmakerCount: alert.bookmakerCount,
+        },
+      ];
+    },
+  );
+
+  return alerts.length > 0 ? alerts : null;
 }
 
 // AVOID SELECTED = the fixture is flagged (the "selection" is the avoidance
@@ -653,7 +725,8 @@ export function buildJsonSheet(
       avoidedFixtureCount: jsonFixtures.filter((f) => f.avoidFlag !== null)
         .length,
       calibrationAlertCount: jsonFixtures.filter(
-        (f) => f.calibrationAlert !== null,
+        (f) =>
+          f.calibrationAlert !== null || f.calibrationAlertOverUnder !== null,
       ).length,
       byCompetition,
       byChannel,
@@ -718,7 +791,10 @@ export function buildTxtSheet(
   w('=== Vigilance (liste exhaustive calculée par le moteur) ===');
   const flaggedUpcoming = sheet.fixtures.filter(
     (f) =>
-      f.score === null && (f.avoidFlag !== null || f.calibrationAlert !== null),
+      f.score === null &&
+      (f.avoidFlag !== null ||
+        f.calibrationAlert !== null ||
+        f.calibrationAlertOverUnder !== null),
   );
   if (flaggedUpcoming.length === 0) {
     w('Aucune fixture à jouer flaguée sur la période.');
@@ -732,6 +808,10 @@ export function buildTxtSheet(
     }
     if (f.calibrationAlert) {
       tags.push(`Calibration [${f.calibrationAlert.reasons.join(', ')}]`);
+    }
+    if (f.calibrationAlertOverUnder) {
+      const lines = f.calibrationAlertOverUnder.map((a) => a.line).join(', ');
+      tags.push(`Calibration O/U [${lines}]`);
     }
     w(
       `⚠ ${f.match} (${f.competition}, ${f.kickoff.slice(0, 10)}) — ${tags.join(' + ')}`,
@@ -809,6 +889,14 @@ export function buildTxtSheet(
       w(
         `  ⚠ Calibration [${a.reasons.join(', ')}] — favori modèle ${a.modelFavorite} (${fmtPct(a.modelProbability)}) vs marché ${a.marketFavorite} (implied ${fmtPct(a.medianImplied)}, ${a.bookmakerCount} books) ; données suspectes, picks exclus du staking`,
       );
+    }
+
+    if (f.calibrationAlertOverUnder) {
+      for (const a of f.calibrationAlertOverUnder) {
+        w(
+          `  ⚠ Calibration O/U ${a.line} [${a.reasons.join(', ')}] — favori modèle ${a.modelFavorite} (${fmtPct(a.modelProbability)}) vs marché ${a.marketFavorite} (implied ${fmtPct(a.medianImplied)}, ${a.bookmakerCount} books) ; données suspectes, picks exclus du staking`,
+        );
+      }
     }
 
     if (f.selectedPicks.length === 0) {

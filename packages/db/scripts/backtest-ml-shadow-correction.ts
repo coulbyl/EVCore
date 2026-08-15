@@ -71,7 +71,10 @@ function brierScore(points: Point[], probFn: (p: Point) => number): number {
   return sum / points.length;
 }
 
-function calibrationError(points: Point[], probFn: (p: Point) => number): number {
+function calibrationError(
+  points: Point[],
+  probFn: (p: Point) => number,
+): number {
   // |moyenne(prob prédite) - taux de réussite réel|, diagnostic simple de biais
   // directionnel (sur- ou sous-confiance globale), en plus du Brier.
   const meanProb = points.reduce((s, p) => s + probFn(p), 0) / points.length;
@@ -155,8 +158,12 @@ async function main() {
   };
 
   out("═══════════════════════════════════════════════════════");
-  out("  EVCore — Validation de la correction ML shadow vs baseline déterministe");
-  out(`  ${dateLabel} — évaluation walk-forward (aucun paramètre ré-entraîné ici)`);
+  out(
+    "  EVCore — Validation de la correction ML shadow vs baseline déterministe",
+  );
+  out(
+    `  ${dateLabel} — évaluation walk-forward (aucun paramètre ré-entraîné ici)`,
+  );
   out("═══════════════════════════════════════════════════════");
   out();
 
@@ -191,7 +198,9 @@ async function main() {
       AND cd.channel::text = ANY(${[...ML_SHADOW_CHANNELS]})
       AND mr.features -> 'shadow_ml_by_channel' -> cd.channel::text ->> 'correctedP' IS NOT NULL
   `;
-  out(`  ${rows.length} sélections rang 1 réglées avec une correction ML présente.`);
+  out(
+    `  ${rows.length} sélections rang 1 réglées avec une correction ML présente.`,
+  );
 
   const points: Point[] = [];
   let skippedNoShadow = 0;

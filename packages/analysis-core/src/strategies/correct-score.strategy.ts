@@ -94,9 +94,25 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
     };
   }
 
+  // H2H scoreline signal (memory project-correct-score-immature, validated
+  // 2026-08-15): when the pick agrees with the decay-weighted most frequent
+  // H2H scoreline (n>=3 legs), hit rate is measurably higher — confirmed
+  // even against the lambda already adjusted for H2H (v2.0), so this is not
+  // double-counting. Surfaced as a confidence signal only: CORRECT_SCORE
+  // stays a pure argmax prediction, this never changes which scoreline is
+  // picked, only how much to trust it once picked.
+  const h2hScoreline = context.signals.h2hScoreline ?? null;
+  const h2hScorelineAgreement =
+    h2hScoreline !== null && h2hScoreline === best.scoreline;
+
   return {
     channel: ch,
     status: CHANNEL_DECISION_STATUS.SELECTED,
+    reasonDetails: {
+      h2hScorelineAgreement,
+      h2hScoreline,
+      h2hScorelineConfidence: context.signals.h2hScorelineConfidence ?? null,
+    },
     selections: [
       {
         market: Market.CORRECT_SCORE,

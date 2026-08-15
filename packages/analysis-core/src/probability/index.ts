@@ -18,6 +18,8 @@ export {
 } from "./poisson";
 export {
   type OverUnderShrinkageConfig,
+  type TeamTotalShrinkageBlock,
+  type ResultTotalGoalsShrinkageBlock,
   OU_SHRINKAGE_CONFIG,
   getOverUnderShrinkageConfig,
   shrinkOverUnderProbabilities,

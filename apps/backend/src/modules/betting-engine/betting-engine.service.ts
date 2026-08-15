@@ -28,7 +28,10 @@ import { toPrismaDecimal } from '@utils/prisma.utils';
 import { createLogger } from '@utils/logger';
 import {
   assessMarketCoherence,
+  assessOverUnderMarketCoherence,
+  type BookmakerOverUnderOdds,
   type CalibrationAlert,
+  type OverUnderCalibrationAlert,
 } from './market-coherence';
 import {
   ShadowPredictionsService,
@@ -37,6 +40,7 @@ import {
 } from './shadow-predictions.service';
 import {
   CALIBRATION_GATE,
+  OVER_UNDER_CALIBRATION_GATE,
   DEFAULT_STAKE_PCT,
   EV_MAX_SOFT_ALERT,
   FEATURE_WEIGHTS,
@@ -874,6 +878,85 @@ export class BettingEngineService {
       }
     }
 
+    // Same coherence gate, extended to OVER_UNDER (audit 2026-08-13/15 —
+    // post-mortem found a +19pp rawPoisson-vs-calibrated swing on an Under
+    // 3.5 leg with no equivalent gate). Checked independently per line
+    // (1.5/2.5/3.5/4.5) — the incident that motivated this was NOT on the
+    // 2.5 line, so checking only "the" default line would have missed it
+    // again. favorite_flip only (see OVER_UNDER_CALIBRATION_GATE for why no
+    // extreme_divergence threshold — insufficient real-bet volume to
+    // calibrate one).
+    let calibrationAlertOverUnder: OverUnderCalibrationAlert[] | null = null;
+    if (OVER_UNDER_CALIBRATION_GATE.ENABLED) {
+      const overUnderBooks =
+        await this.oddsLoader.findLatestOverUnderOddsPerBookmaker(fixtureId);
+      const lineChecks: Array<{
+        line: string;
+        overPick: keyof FullOddsSnapshot['overUnderOdds'];
+        underPick: keyof FullOddsSnapshot['overUnderOdds'];
+        overProbability: Decimal;
+      }> = [
+        {
+          line: '1_5',
+          overPick: 'OVER_1_5',
+          underPick: 'UNDER_1_5',
+          overProbability: probabilities.over15,
+        },
+        {
+          line: '2_5',
+          overPick: 'OVER',
+          underPick: 'UNDER',
+          overProbability: probabilities.over25,
+        },
+        {
+          line: '3_5',
+          overPick: 'OVER_3_5',
+          underPick: 'UNDER_3_5',
+          overProbability: probabilities.over35,
+        },
+        {
+          line: '4_5',
+          overPick: 'OVER_4_5',
+          underPick: 'UNDER_4_5',
+          overProbability: probabilities.over45,
+        },
+      ];
+
+      const alerts: OverUnderCalibrationAlert[] = [];
+      for (const check of lineChecks) {
+        const books: BookmakerOverUnderOdds[] = overUnderBooks.flatMap((b) => {
+          const overOdds = b.odds[check.overPick];
+          const underOdds = b.odds[check.underPick];
+          if (overOdds === undefined || underOdds === undefined) return [];
+          return [{ bookmaker: b.bookmaker, overOdds, underOdds }];
+        });
+        const alert = assessOverUnderMarketCoherence({
+          line: check.line,
+          modelProbabilities: {
+            over: check.overProbability,
+            under: new Decimal(1).minus(check.overProbability),
+          },
+          books,
+        });
+        if (alert !== null) alerts.push(alert);
+      }
+      calibrationAlertOverUnder = alerts.length > 0 ? alerts : null;
+
+      if (calibrationAlertOverUnder !== null) {
+        logger.warn(
+          {
+            fixtureId,
+            scheduledAt,
+            competitionCode: getFixtureCompetitionCode(fixture),
+            homeTeam: getFixtureHomeTeamName(fixture),
+            awayTeam: getFixtureAwayTeamName(fixture),
+            calibrationAlertOverUnder,
+          },
+          'Calibration alert: OVER_UNDER model↔market coherence gate triggered — fixture will be excluded from the staking pool',
+        );
+      }
+    }
+
     // Shadow /predictions cross-check — independent second model (API-Football).
     // Stored + logged only; a directional conflict with our λ is the strongest
     // corrupted-input tell but never changes a decision by itself.
@@ -971,6 +1054,7 @@ export class BettingEngineService {
       lambdaFloorHit,
       shadow_lineMovement: shadowLineMovement,
       calibration_alert: calibrationAlert,
+      calibration_alert_over_under: calibrationAlertOverUnder,
       shadow_predictions: shadowPredictions,
       shadow_h2h: shadowH2h,
       h2h_correction_applied: h2hCorrectionApplied,
@@ -1022,6 +1106,8 @@ export class BettingEngineService {
       lineMovement: shadowLineMovement,
       h2h: shadowH2h,
       congestion: shadowCongestion,
+      h2hScoreline: shadowH2hScoreline.scoreline,
+      h2hScorelineConfidence: shadowH2hScoreline.confidence,
     };
     const persistedChannelDecisions =
       (await this.channelDecisionService?.recordRunDecisions(

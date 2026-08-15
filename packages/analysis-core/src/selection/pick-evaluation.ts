@@ -780,3 +780,31 @@ export function listEvaluatedPicks(
 
   return evaluated.sort((a, b) => b.qualityScore.comparedTo(a.qualityScore));
 }
+
+// Diagnostic detail for a channel rejection with no selectable pick (VALUE's
+// no_viable_pick, SAFE's no_safe_candidate): unlike DOMINANT/BTTS/
+// WIN_EITHER_HALF/CLEAN_SHEET, these rejections used to carry only a
+// fixture-level score, not which market/pick would have been chosen — this
+// surfaces the pool's own top-quality candidate (highest qualityScore across
+// every evaluated market, viable or not) so the rejection is auditable
+// without re-deriving the channel's ranking logic externally.
+export function bestQualityPickDetails(
+  picks: EvaluatedPick[],
+): Record<string, unknown> | undefined {
+  const top = picks.reduce<EvaluatedPick | null>(
+    (best, p) =>
+      best === null || p.qualityScore.greaterThan(best.qualityScore) ? p : best,
+    null,
+  );
+  if (top === null) return undefined;
+  return {
+    market: top.market,
+    pick: top.pick,
+    probability: top.probability.toNumber(),
+    odds: top.odds.toNumber(),
+    ev: top.ev.toNumber(),
+    qualityScore: top.qualityScore.toNumber(),
+    edge: top.probability.minus(new Decimal(1).div(top.odds)).toNumber(),
+    rejectionReason: top.rejectionReason ?? null,
+  };
+}

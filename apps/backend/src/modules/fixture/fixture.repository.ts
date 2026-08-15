@@ -691,10 +691,11 @@ export class FixtureRepository {
       snapshotAt: data.snapshotAt,
     } as const;
 
-    // Not a real Prisma `upsert()`: [fixtureId, bookmaker, market, pick,
-    // snapshotAt] is only a plain @@index in schema.prisma, never @@unique
-    // (tracked in TODO.md), so `create()` never throws a unique-constraint
-    // error to catch — find-then-create/update explicitly instead.
+    // Not a real Prisma `upsert()`: findFirst-then-create leaves a TOCTOU
+    // race window under concurrent writers for the same key. The @@unique
+    // constraint (added 2026-08-15) closes that race at the DB level for
+    // this market (pick is always set here) — the catch below turns the
+    // resulting P2002 into an update instead of letting it crash the caller.
     const existing = await this.prisma.client.oddsSnapshot.findFirst({
       where,
       select: { id: true },
@@ -1118,10 +1119,12 @@ export class FixtureRepository {
       snapshotAt: data.snapshotAt,
     };
 
-    // Not a real Prisma `upsert()`: [fixtureId, bookmaker, market, pick,
-    // snapshotAt] is only a plain @@index in schema.prisma, never @@unique
-    // (tracked in TODO.md), so `create()` never throws a unique-constraint
-    // error to catch — find-then-create/update explicitly instead.
+    // Not a real Prisma `upsert()`: findFirst-then-create leaves a TOCTOU
+    // race window under concurrent writers for the same key. The @@unique
+    // constraint (added 2026-08-15, UNIQUE NULLS NOT DISTINCT so ONE_X_TWO's
+    // always-null `pick` still collides correctly) closes that race at the
+    // DB level — the catch below turns the resulting P2002 into an update
+    // instead of letting it crash the caller.
     const existing = await this.prisma.client.oddsSnapshot.findFirst({
       where,
       select: { id: true },

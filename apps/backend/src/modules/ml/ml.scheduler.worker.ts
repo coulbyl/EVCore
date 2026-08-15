@@ -22,6 +22,9 @@ export class MlSchedulerWorker extends WorkerHost {
     } else if (job.name === 'ml-catch-up-switch') {
       await this.ml.catchUpAutoSwitch();
       logger.info('ML catch-up auto-switch complete');
+    } else if (job.name === 'ml-health-check') {
+      const result = await this.ml.checkModelHealthAlignment();
+      logger.info(result, 'ML health check complete');
     }
   }
 }

@@ -33,6 +33,7 @@ function makeMail(): MailService {
     sendEtlFailure: vi.fn().mockResolvedValue(undefined),
     sendWeightAdjustment: vi.fn().mockResolvedValue(undefined),
     sendWeeklyReport: vi.fn().mockResolvedValue(undefined),
+    sendMlModelMissing: vi.fn().mockResolvedValue(undefined),
   } as unknown as MailService;
 }
 
@@ -80,6 +81,21 @@ describe('NotificationService — persistence', () => {
       data: expect.objectContaining({
         type: NotificationType.ETL_FAILURE,
         body: expect.stringContaining('timeout'),
+      }),
+    });
+  });
+
+  it('persists an ML model missing alert to the database', async () => {
+    const prisma = makePrisma();
+    const service = new NotificationService(prisma, makeMail());
+
+    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO', 'SAFE:BTTS']);
+
+    expect(prisma.client.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: NotificationType.ML_MODEL_MISSING,
+        body: expect.stringContaining('CONF:ONE_X_TWO'),
+        payload: { segments: ['CONF:ONE_X_TWO', 'SAFE:BTTS'] },
       }),
     });
   });
@@ -165,6 +181,14 @@ describe('NotificationService — mail delegation', () => {
         periodEnd: end.toISOString(),
       }),
     );
+  });
+
+  it('delegates to mail.sendMlModelMissing', async () => {
+    await service.sendMlModelMissingAlert(['CONF:ONE_X_TWO']);
+
+    expect(mail.sendMlModelMissing).toHaveBeenCalledWith({
+      segments: ['CONF:ONE_X_TWO'],
+    });
   });
 });
 

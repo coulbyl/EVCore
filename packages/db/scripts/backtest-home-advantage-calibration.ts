@@ -42,8 +42,10 @@ import { prisma } from "../src/client";
 const MIN_PRIOR_TEAM_STATS = 5;
 const MEAN_LAMBDA = 1.4; // LEAGUE_MEAN_LAMBDA_DEFAULT
 const SHRINKAGE_FACTOR = 0.7; // LAMBDA_SHRINKAGE_FACTOR (analysis-core + ev.constants.ts, identiques aujourd'hui)
-const CURRENT_HOME_FACTOR = 1.05;
-const CURRENT_AWAY_FACTOR = 0.95;
+// Live config as of 2026-07-19 (ev.constants.ts HOME_ADVANTAGE_LAMBDA_FACTOR /
+// AWAY_DISADVANTAGE_LAMBDA_FACTOR) — was 1.05/0.95 before that recalibration.
+const CURRENT_HOME_FACTOR = 1.0;
+const CURRENT_AWAY_FACTOR = 0.75;
 
 type FixtureRow = {
   scheduledAt: Date;

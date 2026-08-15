@@ -41,6 +41,8 @@ function makeContext(opts: {
   lambdaHome?: number;
   lambdaAway?: number;
   correctScoreOdds?: Record<string, Decimal>;
+  h2hScoreline?: string | null;
+  h2hScorelineConfidence?: number | null;
 }): StrategyContext {
   return {
     fixture: {
@@ -67,6 +69,8 @@ function makeContext(opts: {
       lineMovement: null,
       h2h: null,
       congestion: null,
+      h2hScoreline: opts.h2hScoreline ?? null,
+      h2hScorelineConfidence: opts.h2hScorelineConfidence ?? null,
     },
     selectionConfig: {
       leagueEvThreshold: new Decimal('0.08'),
@@ -128,6 +132,63 @@ describe('CorrectScoreStrategy', () => {
     expect(d.selections[0]?.pick).toBe('1:1');
     // EV is still recorded (price attached) so the bettor can judge it.
     expect(d.selections[0]?.odds).toBeDefined();
+  });
+
+  it('flags h2hScorelineAgreement true when the pick matches the H2H signal, without changing the pick', () => {
+    const matrix = computeCorrectScoreMatrix(1.5, 1.1);
+    const p11 = matrix['1:1'].toNumber();
+    const odds = { '1:1': new Decimal((1 / p11).toFixed(2)) };
+    const d = strategy.evaluate(
+      makeContext({
+        lambdaHome: 1.5,
+        lambdaAway: 1.1,
+        correctScoreOdds: odds,
+        h2hScoreline: '1:1',
+        h2hScorelineConfidence: 0.55,
+      }),
+    );
+    expect(d.status).toBe(CHANNEL_DECISION_STATUS.SELECTED);
+    expect(d.selections[0]?.pick).toBe('1:1');
+    expect(d.reasonDetails).toEqual({
+      h2hScorelineAgreement: true,
+      h2hScoreline: '1:1',
+      h2hScorelineConfidence: 0.55,
+    });
+  });
+
+  it('flags h2hScorelineAgreement false when the H2H signal disagrees with the pick', () => {
+    const matrix = computeCorrectScoreMatrix(1.5, 1.1);
+    const p11 = matrix['1:1'].toNumber();
+    const odds = { '1:1': new Decimal((1 / p11).toFixed(2)) };
+    const d = strategy.evaluate(
+      makeContext({
+        lambdaHome: 1.5,
+        lambdaAway: 1.1,
+        correctScoreOdds: odds,
+        h2hScoreline: '2:0',
+        h2hScorelineConfidence: 0.4,
+      }),
+    );
+    expect(d.selections[0]?.pick).toBe('1:1');
+    expect(d.reasonDetails).toEqual({
+      h2hScorelineAgreement: false,
+      h2hScoreline: '2:0',
+      h2hScorelineConfidence: 0.4,
+    });
+  });
+
+  it('reports no H2H signal (null) when there is not enough H2H history', () => {
+    const matrix = computeCorrectScoreMatrix(1.5, 1.1);
+    const p11 = matrix['1:1'].toNumber();
+    const odds = { '1:1': new Decimal((1 / p11).toFixed(2)) };
+    const d = strategy.evaluate(
+      makeContext({ lambdaHome: 1.5, lambdaAway: 1.1, correctScoreOdds: odds }),
+    );
+    expect(d.reasonDetails).toEqual({
+      h2hScorelineAgreement: false,
+      h2hScoreline: null,
+      h2hScorelineConfidence: null,
+    });
   });
 
   it('REJECTED (below_conviction) when even the modal scoreline is too unlikely', () => {
