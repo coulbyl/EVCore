@@ -115,6 +115,40 @@
 
 ---
 
+## Couverture stratégie par marché (nouveau chantier, 2026-08-15)
+
+> Objectif produit : EVCore doit avoir une **bonne stratégie sur chaque
+> marché**, pas seulement sur ceux qui ont un canal dédié — être la
+> meilleure plateforme d'analyse de stratégie, pas juste sur une poignée de
+> marchés porteurs.
+
+- `[ ]` **Marchés dormants — jamais vus sur les interfaces, aucun canal
+  dédié** — audit rapide du `Market` enum (17 valeurs) vs les fichiers
+  `*.strategy.ts` existants (`packages/analysis-core/src/strategies/`) :
+  seuls ONE_X_TWO (DOMINANT/DRAW), OVER_UNDER (GOALS), BTTS (BTTS/NO),
+  TEAM_TOTAL_HOME/AWAY (TEAM_TOTAL), CLEAN_SHEET_HOME/AWAY (CLEAN_SHEET),
+  TO_WIN_EITHER_HALF (WIN_EITHER_HALF) et CORRECT_SCORE ont un canal dédié.
+  Les autres ne sont atteignables que si VALUE les choisit opportunément
+  (meilleur EV du pool, `ALL_MARKETS` dans `value.strategy.ts`) — jamais de
+  stratégie propre, jamais de canal observation dédié, jamais visibles sur
+  les interfaces :
+  - **DOUBLE_CHANCE**
+  - **HALF_TIME_FULL_TIME**
+  - **OVER_UNDER_HT**
+  - **FIRST_HALF_WINNER**
+  - **DRAW_NO_BET**
+  - **WIN_TO_NIL_HOME/AWAY**
+  - **RESULT_TOTAL_GOALS**
+  - **RESULT_BTTS**
+  À faire : revue complète de chaque `*.strategy.ts` existant (cohérence,
+  dette), puis évaluer marché par marché s'il mérite un canal dédié
+  (hypothèse → backtest séparé → observation → whitelist par ligue →
+  staking, même méthode que le "Checklist par nouveau canal" en bas de ce
+  fichier) plutôt que de rester une sélection opportuniste sans stratégie
+  propre.
+
+---
+
 ## Canaux en observation (pas encore staking-grade)
 
 - `[~]` **Nouveaux marchés (DNB/TEAM_TOTAL/CLEAN_SHEET/WIN_TO_NIL/
