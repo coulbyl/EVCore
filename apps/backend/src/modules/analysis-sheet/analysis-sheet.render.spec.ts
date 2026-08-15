@@ -25,6 +25,7 @@ function fixture(
     awayTeam: 'Chelsea',
     competitionCode: 'PL',
     competitionName: 'Premier League',
+    competitionCountry: 'England',
     modelRunId: 'mr-1',
     analyzedAt: new Date('2026-06-20T10:00:00.000Z'),
     deterministicScore: 0.71,
@@ -92,7 +93,9 @@ describe('buildJsonSheet', () => {
     const sheet = buildJsonSheet([f], meta);
 
     expect(sheet.summary.fixtureCount).toBe(1);
-    expect(sheet.summary.byCompetition).toEqual({ 'Premier League': 1 });
+    expect(sheet.summary.byCompetition).toEqual({
+      'Premier League (England)': 1,
+    });
     expect(sheet.summary.byChannel).toEqual({ VALUE: 1, SAFE: 1 });
     expect(sheet.summary.settledRecord).toEqual({
       playable: { won: 1, lost: 1, pending: 0, void: 0 },
@@ -451,7 +454,7 @@ describe('buildTxtSheet', () => {
     const txt = buildTxtSheet([f], meta);
 
     expect(txt).toContain("FICHE D'ANALYSE EVCORE — 2026-06-20 -> 2026-06-27");
-    expect(txt).toContain('Arsenal - Chelsea (Premier League)');
+    expect(txt).toContain('Arsenal - Chelsea (Premier League (England))');
     expect(txt).toContain('Pick [VALUE]');
     expect(txt).toContain('Victoire domicile');
     expect(txt).toContain('GAGNÉ');
@@ -513,6 +516,7 @@ describe('buildTxtSheet', () => {
       awayTeam: 'Cape Verde Islands',
       competitionCode: 'WC',
       competitionName: 'FIFA World Cup 2026',
+      competitionCountry: 'International',
       features: {
         predictionSource: 'POISSON_MAIN',
         calibration_alert: {
@@ -555,7 +559,7 @@ describe('buildTxtSheet', () => {
       '=== Vigilance (liste exhaustive calculée par le moteur) ===',
     );
     expect(txt).toContain(
-      '⚠ Argentina - Cape Verde Islands (FIFA World Cup 2026, 2026-06-20) — AVOID [extreme_divergence] + Calibration [extreme_divergence, favorite_flip]',
+      '⚠ Argentina - Cape Verde Islands (FIFA World Cup 2026 (International), 2026-06-20) — AVOID [extreme_divergence] + Calibration [extreme_divergence, favorite_flip]',
     );
     expect(txt).toContain(
       "Toute fixture à jouer absente de cette liste n'est ni flaguée ni à surveiller.",

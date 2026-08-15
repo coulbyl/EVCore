@@ -169,21 +169,33 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ## Bugs & dette technique
 
-- `[ ]` **Étiquetage de compétition erroné — collision de nom** (2026-08-15) —
-  `analysis-sheet.render.ts:296` utilise `fixture.competitionName` (nom brut
-  API-Football) plutôt qu'un `competitionCode` unique. 3 matchs chinois
-  affichés `competition: "League One"` (collision avec la vraie League One
-  anglaise) ; collision similaire Bundesliga DE/AT. Risque réel : si un
-  calibrage/seuil par ligue lit ce nom plutôt qu'un code, deux ligues
-  homonymes pourraient s'écraser mutuellement leurs stats.
+- `[x]` **Étiquetage de compétition erroné — collision de nom** (résolu
+  2026-08-15) — vérifié : aucun calibrage/seuil ne lit le nom brut (tout est
+  `groupBy competitionCode` — `model-calibration.service.ts`,
+  `channel-tuning.service.ts`, `dashboard.service.ts` — le risque de
+  contamination croisée entre ligues homonymes n'existait donc que dans le
+  rapport `analysis-sheet`, pas dans le moteur. Fix : `competitionCountry`
+  ajouté à `AnalysisSheetFixture`/la requête SQL
+  (`analysis-sheet.repository.ts`), `formatCompetitionLabel()` dans
+  `analysis-sheet.render.ts` affiche désormais `"League One (China)"` /
+  `"League One (England)"` au lieu du nom brut ambigu — utilisé à la fois
+  dans le JSON par-fixture et l'agrégat `byCompetition` (qui fusionnait
+  silencieusement les deux ligues avant ce fix).
 
-- `[ ]` **Doublons `odds_snapshot` — contrainte `@@unique` manquante en DB** —
-  cause racine confirmée (2026-08-13) : l'upsert ne se déclenche jamais car
-  `[fixtureId, bookmaker, market, pick, snapshotAt]` n'est qu'un `@@index`,
-  jamais un `@@unique`. Le fix applicatif (find-then-create/update) est livré ;
-  reste la migration Prisma réelle — **côté utilisateur, jamais lancée
-  directement dans une session Claude** (cf. mémoire migrations) — pour fermer
-  la fenêtre de course en écriture concurrente.
+- `[x]` **Doublons `odds_snapshot` — contrainte `@@unique` manquante en DB** —
+  résolu en 2 migrations (2026-08-15, lancées par l'utilisateur).
+  `20260815120000_dedupe_and_add_unique_odds_snapshot` : 797 844 lignes
+  dupliquées supprimées (3 202 638 → 2 404 794), `@@unique([fixtureId,
+  bookmaker, market, pick, snapshotAt])` posé, ancien `@@index` redondant
+  supprimé. Gap trouvé le jour même : `pick` est `NULL` pour ONE_X_TWO, et un
+  `@@unique` standard traite chaque `NULL` comme distinct — deux lignes
+  ONE_X_TWO strictement identiques s'inséraient sans erreur (vérifié
+  empiriquement). `20260815130000_odds_snapshot_unique_nulls_not_distinct` a
+  basculé la contrainte en `UNIQUE NULLS NOT DISTINCT` ; re-testé en
+  transaction annulée, le second insert échoue désormais bien avec `P2002`.
+  Aucun risque de crash : les deux `create()` (`upsertOneXTwoOddsSnapshot`,
+  `upsertNonOneXTwo` dans `fixture.repository.ts`) catchent déjà `P2002` via
+  `isUniqueConstraintError` et retombent sur un `update()`.
 
 - `[ ]` **Rapport hebdomadaire de risque reste 1X2-only** — `risk.service.ts`
   (`generateWeeklyReport`) hardcode toujours `market: Market.ONE_X_TWO`

@@ -24,6 +24,17 @@ export type SheetMeta = {
   filters: { competitionCode: string | null; channel: string | null };
 };
 
+// Competition `name` alone is not unique (e.g. two "League One" — England and
+// China — or two "Bundesliga" — Germany and Austria). Suffixing the country
+// disambiguates every display/aggregation use without touching the unique
+// `competitionCode`, which calibration/threshold lookups already key on.
+function formatCompetitionLabel(fixture: {
+  competitionName: string;
+  competitionCountry: string;
+}): string {
+  return `${fixture.competitionName} (${fixture.competitionCountry})`;
+}
+
 // One earlier rolling-horizon pass where this channel also had a SELECTED
 // pick — oldest first. Lets Eva see line movement (probability/odds/pick
 // drift across ADVANCE → PRE_KICKOFF → LIVE re-analyses of the same fixture)
@@ -293,7 +304,7 @@ function toJsonFixture(
   return {
     fixtureId: fixture.fixtureId,
     match: `${fixture.homeTeam} - ${fixture.awayTeam}`,
-    competition: fixture.competitionName,
+    competition: formatCompetitionLabel(fixture),
     kickoff: fixture.scheduledAt.toISOString(),
     status: fixture.status,
     score:

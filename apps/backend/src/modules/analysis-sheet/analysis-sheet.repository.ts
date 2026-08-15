@@ -39,6 +39,7 @@ export type AnalysisSheetFixture = {
   awayTeam: string;
   competitionCode: string;
   competitionName: string;
+  competitionCountry: string;
   modelRunId: string;
   analyzedAt: Date;
   deterministicScore: number;
@@ -79,6 +80,7 @@ type AnalysisSheetRow = {
   away_team: string;
   competition_code: string;
   competition_name: string;
+  competition_country: string;
   model_run_id: string;
   analyzed_at: Date;
   phase: string;
@@ -148,6 +150,7 @@ export class AnalysisSheetRepository {
         at.name                           AS away_team,
         c.code                            AS competition_code,
         c.name                            AS competition_name,
+        c.country                         AS competition_country,
         mr.id                             AS model_run_id,
         mr."analyzedAt"                  AS analyzed_at,
         mr.phase                          AS phase,
@@ -184,7 +187,7 @@ export class AnalysisSheetRepository {
       LEFT JOIN channel_decision cd  ON cd."modelRunId" = mr.id
       LEFT JOIN channel_selection cs ON cs."channelDecisionId" = cd.id
       GROUP BY f.id, f."scheduledAt", f.status, f."homeScore", f."awayScore",
-               ht.name, at.name, c.code, c.name,
+               ht.name, at.name, c.code, c.name, c.country,
                mr.id, mr."analyzedAt", mr.phase, mr."deterministicScore", mr."finalScore", mr.features
       ORDER BY f."scheduledAt" ASC, mr."analyzedAt" ASC
     `;
@@ -227,6 +230,7 @@ function groupRowsByFixture(rows: AnalysisSheetRow[]): AnalysisSheetFixture[] {
       awayTeam: latest.away_team,
       competitionCode: latest.competition_code,
       competitionName: latest.competition_name,
+      competitionCountry: latest.competition_country,
       modelRunId: latest.model_run_id,
       analyzedAt: latest.analyzed_at,
       deterministicScore: round(latest.deterministic_score),
