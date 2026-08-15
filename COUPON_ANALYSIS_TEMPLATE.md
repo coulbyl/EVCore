@@ -39,9 +39,9 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
      pas juste 2,5) : `lambdaHome + lambdaAway < 2.3` — le garde-fou système
      `under_high_lambda` ne couvre que la ligne 2,5 (cf. TODO.md) ;
    - `dataCoverage` pondère la confiance globale sans disqualifier seul.
-   Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
-   réduit (~30-50) — et documente explicitement les fixtures qui n'ont
-   produit aucun candidat fiable, pour ne rien faire disparaître en silence.
+     Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
+     réduit (~30-50) — et documente explicitement les fixtures qui n'ont
+     produit aucun candidat fiable, pour ne rien faire disparaître en silence.
 
    **Piège confirmé le 2026-08-14 : ne pas classer ce pool par un seul
    critère.** Deux modes de tri existent, et aucun des deux seul ne suffit :
@@ -69,6 +69,7 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
      championnat dans les deux modes avant de merger. Cas réel (14/08) :
      3 ancres + 4 jambes EV → cote combinée 27.6, proba jointe 13.0% —
      un vrai compromis, ni plat ni longshot.
+
 2. **Synthèse qualitative (jugement, sur le pool réduit seulement)** — sur
    ce pool, appliquer les étapes 1 à 9 de ce document (contexte
    aller-retour, cohérence narrative, clusters de risque corrélé, tier des
