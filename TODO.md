@@ -118,11 +118,16 @@
   sur ces marchés avant, le biais AWAY reste net-négatif même après
   recalibration homeAdvFactor.
 
-- `[ ]` **homeAdvFactor/awayDisadvFactor — ROI impact non re-testé** —
-  recalibrés le 2026-07-19 (1.05/0.95 → 1.00/0.75). Reste à faire : relancer
-  `backtest-home-advantage-roi-impact.ts` en y ajoutant le plancher d'edge
-  VALUE existant (`getValueMinEdge`, edge≥0.10, toujours pas dans ce script)
-  pour voir si les deux garde-fous sont redondants ou complémentaires.
+- `[x]` **homeAdvFactor/awayDisadvFactor — recalibration re-testée, confirmée
+  optimale** (2026-08-15) — `db:backtest:home-advantage` relancé (le script
+  avait une valeur "actuelle" périmée en dur, 1.05/0.95 au lieu de 1.00/0.75 ;
+  corrigée avant de lancer). Résultat : `1.00/0.75` reste le meilleur candidat
+  sur grid-search (Brier=0.6206, HOME 44.0% annoncé/44.4% réel, AWAY 29.5%/
+  30.0%), confirmé par validation chronologique anti-overfit (train 70%/test
+  30%, aucun candidat ne bat la config actuelle hors-échantillon). Rien à
+  changer. `backtest-home-advantage-roi-impact.ts` (édge VALUE) pas relancé
+  vu ce résultat — sans biais de calibration, peu de raison d'attendre un
+  delta ROI.
 
 - `[ ]` **H2H v2.1 (pondération domicile/extérieur ×3) et v2.3a (continuité
   entraîneur)** — v2.0 (`computeH2HScore`, seuil n≥3, decay=0.8, nul=0.5) et
@@ -185,12 +190,22 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   reste en plus limité par le volume (n=316 total sur 2+ ans) — pas assez
   de données par ligue pour trancher indépendamment du fix de calibration.
 
-- `[ ]` **Seuil DOMINANT symétrique alors que le biais mesuré ne l'est pas**
-  (audit 2026-08-12, 18 041 legs `below_threshold`) — legs **HOME** refusées
-  sous-estimées (49.0% réel vs ~45.5% annoncé) ; **AWAY**/**DRAW** surestimées
-  (37.1%/28.0% réel vs ~44-45%). Biais favori-longshot déjà traité côté EV mais
-  absent du seuil `below_threshold` (`dominant.strategy.ts`, seuil unique quel
-  que soit le côté). Appliquer un seuil différencié par côté.
+- `[ ]` **Seuil DOMINANT symétrique — biais confirmé mais cause plus subtile
+  que prévu** (re-vérifié 2026-08-15) — l'écart HOME sous-estimé / AWAY-DRAW
+  surestimé sur les rejets `below_threshold` était en grande partie un
+  artefact : 17 250 des ~21 000 rejets viennent d'un seul lot de backfill
+  historique (`analyzedAt`='2026-06-30'). Après exclusion de ce jour, le
+  biais persiste mais réduit (n=3 905) : HOME 50.1% réel/47.5% annoncé,
+  AWAY 34.4%/44.4%, DRAW 20.6%/41.9%. **Mais homeAdvFactor/awayDisadvFactor
+  viennent d'être re-confirmés bien calibrés globalement** (voir item
+  ci-dessus) — donc ce n'est pas un biais 1X2 général qui fuit dans
+  DOMINANT. Hypothèse la plus probable : effet de sélection sur l'argmax de
+  3 probabilités bruitées et corrélées (dans les matchs serrés/incertains,
+  le camp choisi comme favori est plus susceptible d'être une surestimation
+  ponctuelle — "winner's curse" sur la sélection, pas un biais structurel
+  par côté). Un seuil différencié par côté ne réglerait pas forcément ça
+  proprement — nécessite une analyse dédiée à l'effet de sélection avant
+  d'implémenter quoi que ce soit.
 
 - `[ ]` **`reasonDetails` de SAFE/VALUE trop pauvre pour l'audit** — leurs
   rejets (`score_below_threshold`/`no_safe_candidate`/`no_viable_pick`) ne
