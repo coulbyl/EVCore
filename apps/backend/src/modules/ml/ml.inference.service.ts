@@ -15,7 +15,10 @@ export type MlShadowResult = {
 const ML_INFER_TIMEOUT_MS = 500;
 // Reload deserializes model files (joblib) — allow more than the infer budget.
 const ML_RELOAD_TIMEOUT_MS = 5000;
+const ML_HEALTH_TIMEOUT_MS = 2000;
 const logger = createLogger('ml-inference-service');
+
+export type MlHealth = { status: string; active_segments: string[] };
 
 @Injectable()
 export class MlInferenceService {
@@ -73,6 +76,28 @@ export class MlInferenceService {
     } catch (err) {
       logger.warn({ err }, 'ML worker reload unreachable');
       return false;
+    }
+  }
+
+  async getHealth(): Promise<MlHealth | null> {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(
+        () => controller.abort(),
+        ML_HEALTH_TIMEOUT_MS,
+      );
+      const res = await fetch(`${this.mlWorkerUrl}/health`, {
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
+
+      if (!res.ok) {
+        logger.warn({ status: res.status }, 'ML worker health check failed');
+        return null;
+      }
+      return (await res.json()) as MlHealth;
+    } catch (err) {
+      logger.warn({ err }, 'ML worker health check unreachable');
+      return null;
     }
   }
 }

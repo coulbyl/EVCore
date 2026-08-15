@@ -9,6 +9,7 @@ export type { XgUnavailableReportProps } from "./types";
 export type { EmailVerificationProps } from "./types";
 export type { PasswordResetProps } from "./types";
 export type { MlModelActivatedProps } from "./types";
+export type { MlModelMissingProps } from "./types";
 export type { SupportMessageProps } from "./types";
 
 export { renderRoiAlert } from "./emails/roi-alert";
@@ -21,4 +22,5 @@ export { renderXgUnavailableReport } from "./emails/xg-unavailable-report";
 export { renderEmailVerification } from "./emails/email-verification";
 export { renderPasswordReset } from "./emails/password-reset";
 export { renderMlModelActivated } from "./emails/ml-model-activated";
+export { renderMlModelMissing } from "./emails/ml-model-missing";
 export { renderSupportMessage } from "./emails/support-message";

@@ -137,6 +137,7 @@ enum NotificationType {
   WEIGHT_ADJUSTMENT
   XG_UNAVAILABLE_REPORT
   ML_MODEL_ACTIVATED
+  ML_MODEL_MISSING
   // Personnelles (Notification.userId non-null) — voir commentaire sur le
   // modèle Notification.
   SUBSCRIPTION_EVENTS_ADDED

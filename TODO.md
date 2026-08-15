@@ -247,12 +247,18 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
     empirique existant, pas le shrinkage par ligue mesuré pour l'O/U/
     TEAM_TOTAL/RESULT_TOTAL_GOALS.
 
-- `[ ]` **ML — garde-fou manquant : `isActive` sans fichier chargé** —
-  `registry.py` détecte maintenant un fichier de modèle manquant au chargement
-  (log warning, skip) mais **aucune alerte** n'existe si un modèle `isActive=true`
-  en DB n'est jamais réellement chargé (le `/health` ml-worker ne liste que les
-  segments actifs, pas les manquants). Ajouter un health-check qui compare les
-  deux et alerte.
+- `[x]` **ML — garde-fou manquant : `isActive` sans fichier chargé** (résolu
+  2026-08-15) — `MlService.checkModelHealthAlignment()` compare
+  `MlRepository.findActiveSegments()` (DB) vs `MlInferenceService.getHealth()`
+  (`/health` ml-worker) et alerte via `NotificationService.sendMlModelMissingAlert`
+  (nouveau `NotificationType.ML_MODEL_MISSING`, template email dédié) sur tout
+  écart. Câblé en cron toutes les 15 min (`ml-scheduler-worker`, job
+  `ml-health-check`). Ml-worker injoignable → skip silencieux, jamais de faux
+  positif. Migration `20260815140000_add_ml_model_missing_notification_type`
+  (nouvelle valeur d'enum) rédigée, **reste à lancer côté utilisateur**.
+  Découverte annexe (non corrigée, hors scope) : le type `NotificationType`
+  front (`apps/web/domains/notification/types/notification.ts`) était déjà
+  désynchronisé avant ce fix — `ML_MODEL_ACTIVATED` n'y figure pas.
 
 - `[ ]` **ML — re-vérifier le backtest shadow vs baseline (~2026-08-26)** —
   seul `DOMINANT:ONE_X_TWO` est un candidat sérieux à la promotion (Brier

@@ -72,6 +72,10 @@ export type MlModelActivatedProps = {
   rolledBackVersionId?: string;
 };
 
+export type MlModelMissingProps = {
+  segments: string[];
+};
+
 export type SupportMessageProps = {
   // Who this email is addressed to.
   recipientKind: "ADMIN" | "USER";

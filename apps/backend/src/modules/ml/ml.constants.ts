@@ -77,9 +77,11 @@ export const ML_TRAINING_JOB_OPTIONS = {
 export const ML_CRON_SCHEDULES = {
   RETRAIN_CHECK: '0 3 * * 1', // 03:00 UTC every Monday
   CATCH_UP_SWITCH: '0 * * * *', // every hour — catches models trained while QueueEvents was offline
+  HEALTH_CHECK: '*/15 * * * *', // every 15 minutes
 } as const;
 
 export const ML_SCHEDULER_KEYS = {
   RETRAIN_CHECK: 'cron:ml-retrain-check',
   CATCH_UP_SWITCH: 'cron:ml-catch-up-switch',
+  HEALTH_CHECK: 'cron:ml-health-check',
 } as const;

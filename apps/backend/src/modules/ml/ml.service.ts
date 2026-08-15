@@ -174,6 +174,35 @@ export class MlService {
     }
   }
 
+  // isActive=true in DB doesn't guarantee the ml-worker actually has the
+  // model loaded in memory (missing file, bad path, deserialization error —
+  // registry.py logs a warning but never surfaces it anywhere queryable).
+  // Compares DB state against the worker's own /health report and alerts on
+  // any segment present in one but not the other.
+  async checkModelHealthAlignment(): Promise<{ missing: string[] }> {
+    const health = await this.inference.getHealth();
+    if (health === null) {
+      logger.warn('ML health check skipped — ml-worker unreachable');
+      return { missing: [] };
+    }
+
+    const dbActiveSegments = new Set(await this.repo.findActiveSegments());
+    const loadedSegments = new Set(health.active_segments);
+    const missing = [...dbActiveSegments].filter(
+      (segment) => !loadedSegments.has(segment),
+    );
+
+    if (missing.length > 0) {
+      logger.error(
+        { missing },
+        'ML segments active in DB but not loaded by ml-worker',
+      );
+      await this.notifications.sendMlModelMissingAlert(missing);
+    }
+
+    return { missing };
+  }
+
   async deleteModel(id: string): Promise<void> {
     await this.repo.deleteInactive(id);
     logger.info({ id }, 'ML model deleted');
