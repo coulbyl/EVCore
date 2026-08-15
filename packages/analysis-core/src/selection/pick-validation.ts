@@ -3,13 +3,17 @@ import { Market } from "../types";
 import {
   EV_HARD_CAP,
   EV_MIN_PROBABILITY_THRESHOLD,
+  HALF_TIME_FULL_TIME_LONGSHOT_PENALTY_FLOOR,
+  HALF_TIME_FULL_TIME_MAX_ODDS,
   MAX_SELECTION_ODDS,
   MIN_QUALITY_SCORE,
   ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_AWAY_MAX_ODDS,
   ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
   ONE_X_TWO_DRAW_MAX_ODDS,
-  ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT,
+  LONGSHOT_PENALTY_EXPONENT,
+  RESULT_TOTAL_GOALS_LONGSHOT_PENALTY_FLOOR,
+  RESULT_TOTAL_GOALS_MAX_ODDS,
   UNDER_HIGH_LAMBDA_THRESHOLD,
 } from "./constants";
 import type { SelectionConfig } from "./config";
@@ -140,31 +144,60 @@ export function buildQualityScore(
 ): Decimal {
   return ev
     .mul(deterministicScore)
-    .mul(getOneXTwoLongshotPenalty(market, pick, odds ?? new Decimal(0)));
+    .mul(getLongshotPenalty(market, pick, odds ?? new Decimal(0)));
 }
 
-function getOneXTwoLongshotPenalty(
+// Dampens the quality score at long odds, where probability overestimation
+// inflates EV — 1X2 differentiates AWAY/DRAW (the two outcomes that reach
+// long odds there); RESULT_TOTAL_GOALS and HALF_TIME_FULL_TIME have no
+// single "underdog side" (any combo pick can reach long odds), so the
+// penalty applies uniformly by odds instead of by pick (audit 2026-08-13/15,
+// backtest-longshot-penalty-odds-buckets.ts — see constants.ts for the
+// per-market evidence). RESULT_BTTS/FIRST_HALF_WINNER/OVER_UNDER showed the
+// same direction of signal but too noisy at long odds (n<300) to set a
+// floor confidently — deliberately left untouched pending more data.
+function getLongshotPenalty(
   market: Market,
   pick: string,
   odds: Decimal,
 ): Decimal {
-  if (market !== Market.ONE_X_TWO) {
+  if (market === Market.ONE_X_TWO) {
+    if (pick === "AWAY" && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+      return progressiveLongshotPenalty({
+        threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+        odds,
+        floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+      });
+    }
+    if (pick === "DRAW" && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+      return progressiveLongshotPenalty({
+        threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+        odds,
+        floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+      });
+    }
     return new Decimal(1);
   }
 
-  if (pick === "AWAY" && odds.greaterThanOrEqualTo(ONE_X_TWO_AWAY_MAX_ODDS)) {
+  if (
+    market === Market.RESULT_TOTAL_GOALS &&
+    odds.greaterThanOrEqualTo(RESULT_TOTAL_GOALS_MAX_ODDS)
+  ) {
     return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_AWAY_MAX_ODDS,
+      threshold: RESULT_TOTAL_GOALS_MAX_ODDS,
       odds,
-      floor: ONE_X_TWO_AWAY_LONGSHOT_PENALTY_FLOOR,
+      floor: RESULT_TOTAL_GOALS_LONGSHOT_PENALTY_FLOOR,
     });
   }
 
-  if (pick === "DRAW" && odds.greaterThanOrEqualTo(ONE_X_TWO_DRAW_MAX_ODDS)) {
+  if (
+    market === Market.HALF_TIME_FULL_TIME &&
+    odds.greaterThanOrEqualTo(HALF_TIME_FULL_TIME_MAX_ODDS)
+  ) {
     return progressiveLongshotPenalty({
-      threshold: ONE_X_TWO_DRAW_MAX_ODDS,
+      threshold: HALF_TIME_FULL_TIME_MAX_ODDS,
       odds,
-      floor: ONE_X_TWO_DRAW_LONGSHOT_PENALTY_FLOOR,
+      floor: HALF_TIME_FULL_TIME_LONGSHOT_PENALTY_FLOOR,
     });
   }
 
@@ -182,6 +215,6 @@ function progressiveLongshotPenalty(input: {
   }
 
   const ratio = threshold.div(odds);
-  const progressive = ratio.pow(ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT);
+  const progressive = ratio.pow(LONGSHOT_PENALTY_EXPONENT);
   return Decimal.max(floor, Decimal.min(new Decimal(1), progressive));
 }

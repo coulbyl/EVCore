@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import Decimal from 'decimal.js';
 import {
   getPickRejectionReason,
+  buildQualityScore,
   computePoissonMarkets,
   Market,
   type SelectionConfig,
@@ -177,5 +178,91 @@ describe('getPickRejectionReason — under_high_lambda generalized to every UNDE
     );
 
     expect(reason).toBeUndefined();
+  });
+});
+
+describe('buildQualityScore — longshot penalty generalized beyond 1X2 (2026-08-15)', () => {
+  // Backtest (backtest-longshot-penalty-odds-buckets.ts, ~24.5k fixtures,
+  // real bookmaker odds) found the same "claimed EV inflates at long odds"
+  // pattern on RESULT_TOTAL_GOALS and HALF_TIME_FULL_TIME as on 1X2
+  // AWAY/DRAW — dampen those two the same way. RESULT_BTTS/FIRST_HALF_WINNER/
+  // OVER_UNDER showed the same direction but too noisy (n<300 at long odds)
+  // to set a floor confidently, so they must stay undampened.
+  const EV = new Decimal('0.30');
+  const DETERMINISTIC_SCORE = new Decimal('0.60');
+  const baseline = buildQualityScore(
+    EV,
+    DETERMINISTIC_SCORE,
+    Market.RESULT_TOTAL_GOALS,
+    'HOME_OVER_2_5',
+    new Decimal('2.00'),
+  );
+
+  it('dampens RESULT_TOTAL_GOALS at long odds regardless of which pick', () => {
+    const longshot = buildQualityScore(
+      EV,
+      DETERMINISTIC_SCORE,
+      Market.RESULT_TOTAL_GOALS,
+      'AWAY_UNDER_1_5',
+      new Decimal('20.00'),
+    );
+    expect(longshot.lessThan(baseline)).toBe(true);
+    // Never below the measured floor (0.12), regardless of how long the odds go.
+    expect(
+      longshot.dividedBy(EV.mul(DETERMINISTIC_SCORE)).toNumber(),
+    ).toBeGreaterThanOrEqual(0.12);
+  });
+
+  it('does not dampen RESULT_TOTAL_GOALS below its odds threshold', () => {
+    const shortOdds = buildQualityScore(
+      EV,
+      DETERMINISTIC_SCORE,
+      Market.RESULT_TOTAL_GOALS,
+      'HOME_OVER_2_5',
+      new Decimal('3.50'),
+    );
+    expect(shortOdds.toNumber()).toBeCloseTo(baseline.toNumber(), 12);
+  });
+
+  it('dampens HALF_TIME_FULL_TIME at long odds regardless of which pick', () => {
+    const normal = buildQualityScore(
+      EV,
+      DETERMINISTIC_SCORE,
+      Market.HALF_TIME_FULL_TIME,
+      'HOME_HOME',
+      new Decimal('2.00'),
+    );
+    const longshot = buildQualityScore(
+      EV,
+      DETERMINISTIC_SCORE,
+      Market.HALF_TIME_FULL_TIME,
+      'AWAY_DRAW',
+      new Decimal('20.00'),
+    );
+    expect(longshot.lessThan(normal)).toBe(true);
+    expect(
+      longshot.dividedBy(EV.mul(DETERMINISTIC_SCORE)).toNumber(),
+    ).toBeGreaterThanOrEqual(0.15);
+  });
+
+  it('leaves RESULT_BTTS, FIRST_HALF_WINNER and OVER_UNDER undampened at long odds (noisy signal, deferred)', () => {
+    const noPenaltyMarkets: Array<[Market, string]> = [
+      [Market.RESULT_BTTS, 'AWAY_YES'],
+      [Market.FIRST_HALF_WINNER, 'AWAY'],
+      [Market.OVER_UNDER, 'OVER_4_5'],
+    ];
+    for (const [market, pick] of noPenaltyMarkets) {
+      const longshot = buildQualityScore(
+        EV,
+        DETERMINISTIC_SCORE,
+        market,
+        pick,
+        new Decimal('20.00'),
+      );
+      expect(longshot.toNumber()).toBeCloseTo(
+        EV.mul(DETERMINISTIC_SCORE).toNumber(),
+        12,
+      );
+    }
   });
 });

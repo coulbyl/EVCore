@@ -534,14 +534,38 @@ PROBABILITY = 0.40` dans `ev.constants.ts`, identique au plancher générique
   désormais cibler `ONE_X_TWO|DRAW` comme les autres entrées. Réutiliser le
   défaut HOME/AWAY (0.45) aurait quasiment suspendu le canal DRAW entier sans
   backtest (P(draw) dépasse rarement 35-40%) — délibérément évité.
-- `[ ]` **Pénalité longshot limitée au 1X2** — `getOneXTwoLongshotPenalty`
-  (`pick-validation.ts:127-153`) renvoie `1` (aucune pénalité) pour tout
-  marché autre que `ONE_X_TWO` (ligne 132). Le raisonnement (la
-  surestimation de probabilité gonfle l'EV à cote longue) n'est pourtant
-  pas spécifique au 1X2 — `OVER_4_5`, les combos `RESULT_TOTAL_GOALS`
-  (ex. `AWAY_UNDER_1_5`), `RESULT_BTTS`, `HALF_TIME_FULL_TIME` peuvent
-  atteindre des cotes tout aussi longues sans aucun amortissement
-  équivalent.
+- `[x]` **Pénalité longshot limitée au 1X2 — étendue le 2026-08-15 sur les 2
+  marchés au signal net** — `getOneXTwoLongshotPenalty` renvoyait `1`
+  (aucune pénalité) pour tout marché autre que `ONE_X_TWO`. Le raisonnement
+  (la surestimation de probabilité gonfle l'EV à cote longue) n'est pourtant
+  pas spécifique au 1X2. Étude dédiée (`db:backtest:longshot-penalty-odds-buckets`,
+  nouveau script, ~24 500 fixtures, cotes bookmaker réelles + proba Poisson
+  brute rejouée, group par tranche de cote) sur `RESULT_TOTAL_GOALS`,
+  `RESULT_BTTS`, `HALF_TIME_FULL_TIME`, `FIRST_HALF_WINNER`, `OVER_UNDER`
+  (ligne 4.5) :
+  - **`RESULT_TOTAL_GOALS`** : signal le plus net — l'EV annoncée (proba
+    modèle × cote réelle) passe à **+26%** sur la tranche 15+ alors que le
+    ROI simulé réel y est à **-21.6%** (exactement le motif "fausse valeur"
+    que la pénalité 1X2 existe pour intercepter), dégradation quasi
+    monotone dès 4.0 (-7% à -36%). **Pénalité ajoutée** : seuil 5.0, plancher
+    0.12 (même ordre que 1X2 AWAY).
+  - **`HALF_TIME_FULL_TIME`** : dégradation monotone claire du ROI simulé
+    (-3.5% sous 2.0 → -32% au-delà de 15) sans flip d'EV aussi net que
+    RESULT_TOTAL_GOALS mais un déclin régulier. **Pénalité ajoutée** : seuil
+    5.0, plancher 0.15 (légèrement moins agressif).
+  - **`RESULT_BTTS`/`FIRST_HALF_WINNER`/`OVER_UNDER` (ligne 4.5)** : même
+    direction de signal (flip EV/ROI visible sur au moins une tranche) mais
+    trop bruité aux cotes longues (n<300, tranche 15+ parfois positive des
+    deux côtés) pour fixer un plancher avec confiance — **laissés sans
+    pénalité**, à revisiter avec plus de données.
+  - Pénalité désormais appliquée uniformément par cote (pas par pick
+    spécifique comme AWAY/DRAW en 1X2) car ces marchés n'ont pas un seul
+    "côté outsider" — n'importe quel pick peut atteindre une cote longue.
+    `getOneXTwoLongshotPenalty` renommée `getLongshotPenalty`,
+    `ONE_X_TWO_LONGSHOT_PENALTY_EXPONENT` renommée `LONGSHOT_PENALTY_EXPONENT`
+    (partagée entre marchés). Tests dans `pick-rejection-guards.spec.ts`
+    (dampening RESULT_TOTAL_GOALS/HALF_TIME_FULL_TIME, non-dampening des 3
+    marchés différés).
 - `[x]` **`htftCalibrated` ne couvrait pas `OVER_UNDER_HT` — corrigé le
   2026-08-15** — le garde-fou suspendait `HALF_TIME_FULL_TIME`/
   `FIRST_HALF_WINNER` dans les ligues sans historique de décomposition

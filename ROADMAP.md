@@ -632,14 +632,24 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
       dans le sens "plus prudent" uniquement (suspend davantage, n'autorise
       jamais rien de nouveau) — pas de backtest requis avant merge,
       contrairement à un changement de seuil.
-  - [ ] **Laissé de côté, nécessite un backtest** : pénalité longshot
-        limitée au 1X2 (`getOneXTwoLongshotPenalty`) — les seuils/planchers
-        (`ONE_X_TWO_AWAY_MAX_ODDS`, floors 0.12/0.20) sont calibrés
-        spécifiquement sur la distribution de cotes 1X2 ; les réutiliser tels
-        quels sur `RESULT_TOTAL_GOALS`/`RESULT_BTTS`/`OVER_4_5` serait une
-        recalibration à l'aveugle, pas une simple extension de garde-fou —
-        contrairement aux deux items ci-dessus qui ne font que suspendre
-        davantage sans jamais rien assouplir.
+- [x] **Pénalité longshot étendue au-delà du 1X2 — étude dédiée + activation
+      partielle (2026-08-15)** — `getOneXTwoLongshotPenalty` renommée
+      `getLongshotPenalty`. Nouveau script
+      `db:backtest:longshot-penalty-odds-buckets` (~24 500 fixtures, cotes
+      bookmaker réelles + proba Poisson brute rejouée, par tranche de cote)
+      sur `RESULT_TOTAL_GOALS`/`RESULT_BTTS`/`HALF_TIME_FULL_TIME`/
+      `FIRST_HALF_WINNER`/`OVER_UNDER` (ligne 4.5) :
+  - [x] **`RESULT_TOTAL_GOALS`** : signal le plus net — EV annoncée +26% sur
+        15+ vs ROI réel -21.6% (motif "fausse valeur" identique au 1X2).
+        Pénalité activée (seuil 5.0, plancher 0.12).
+  - [x] **`HALF_TIME_FULL_TIME`** : ROI simulé en déclin monotone (-3.5% →
+        -32% de <2.0 à 15+). Pénalité activée (seuil 5.0, plancher 0.15).
+  - [ ] **`RESULT_BTTS`/`FIRST_HALF_WINNER`/`OVER_UNDER` (ligne 4.5)** :
+        même direction de signal mais trop bruité aux cotes longues (n<300,
+        tranche 15+ parfois positive des deux côtés) — laissés sans
+        pénalité, à revisiter avec plus de données.
+  - Pénalité appliquée uniformément par cote (pas par pick AWAY/DRAW comme
+    en 1X2) — ces marchés n'ont pas de "côté outsider" unique.
 - [x] **Shrinkage O/U étendu à `TEAM_TOTAL_HOME/AWAY` — backtest exécuté,
       config activée (2026-08-15)** — `TEAM_TOTAL_AWAY UNDER_1_5` est le
       candidat confirmé en DB (Bloc 10 : ROI réel +0,75% malgré un EV affiché
@@ -669,7 +679,7 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
         mergée.
   - [ ] **`RESULT_TOTAL_GOALS` non traité** — son complément Over/Under
         n'est pas `1 − under` comme O/U/TEAM_TOTAL (`over(side) =
-    oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
+oneXTwo[side] − under(side)`, masse jointe du côté) — le mécanisme
         sparse actuel ne s'applique pas tel quel, nécessite une fonction de
         shrinkage dédiée. Pas d'impact DB confirmé sur ce marché
         spécifiquement (contrairement à TEAM_TOTAL) — traité séparément.
@@ -696,14 +706,15 @@ TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
       fabriquer un mix.
 - **Audit systémique 2026-08-13 : statut final** — entièrement trié.
   Chaque motif de bug trouvé est corrigé ou explicitement reporté (jamais
-  oublié) ; détail complet dans [TODO.md](TODO.md). Reportés par décision
-  (nécessitent leurs propres seuils mesurés par backtest, même discipline
-  que chaque nombre de `ev.constants.ts`) : pénalité longshot 1X2-only,
-  `calibration_alert` sur OVER_UNDER, shrinkage `RESULT_TOTAL_GOALS`. Le
-  shrinkage `TEAM_TOTAL` (seul item qui restait "backtest à faire") a depuis
-  été mesuré et activé — voir ci-dessus.
-- 844 tests verts (+16 vs Bloc 10), 102 tests `analysis-core` (+4 : 2 pour
-  le mécanisme TEAM_TOTAL, 2 pour le guard `factor`/`baseRates` optionnels),
+  oublié) ; détail complet dans [TODO.md](TODO.md). Tous les items qui
+  restaient "backtest à faire" ont depuis été mesurés (DB locale, sync prod
+  2026-08-15 16h48) : shrinkage `TEAM_TOTAL` (activé), shrinkage
+  `RESULT_TOTAL_GOALS` (activé), pénalité longshot (activée sur
+  `RESULT_TOTAL_GOALS`/`HALF_TIME_FULL_TIME`, différée sur les 3 marchés au
+  signal trop bruité). Seul reste ouvert : **`calibration_alert` sur
+  OVER_UNDER** — pas encore étudié, même discipline à appliquer (seuils
+  propres, pas de réutilisation aveugle des seuils 1X2).
+- 848 tests backend (+20 vs Bloc 10), 104 tests `analysis-core` (+6),
   typecheck et lint (`--max-warnings 0`) propres sur backend et
   `analysis-core`.
 
