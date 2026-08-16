@@ -41,4 +41,7 @@ export {
   type ResultBttsOutcome,
   type ResultBttsPickConfig,
   type ResultBttsLeagueConfig,
+  getDrawNoBetConfig,
+  DRAW_NO_BET_CONFIG,
+  DRAW_NO_BET_DEFAULT,
 } from '@evcore/analysis-core';

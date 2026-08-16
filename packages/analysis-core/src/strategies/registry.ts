@@ -15,6 +15,7 @@ import { CorrectScoreStrategy } from "./correct-score.strategy";
 import { ResultTotalGoalsStrategy } from "./result-total-goals.strategy";
 import { OverUnderHtStrategy } from "./over-under-ht.strategy";
 import { ResultBttsStrategy } from "./result-btts.strategy";
+import { DrawNoBetStrategy } from "./draw-no-bet.strategy";
 
 export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new ValueStrategy(),
@@ -30,6 +31,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new ResultTotalGoalsStrategy(),
   new OverUnderHtStrategy(),
   new ResultBttsStrategy(),
+  new DrawNoBetStrategy(),
   new ConsensusStrategy(),
   new AvoidStrategy(),
 ];

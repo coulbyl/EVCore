@@ -92,6 +92,10 @@ function makeContext(
       ouHT: {},
       resultTotalGoals: {},
       resultBtts: {},
+      // Below BL1's DRAW_NO_BET_CONFIG threshold (0.5125) so DRAW_NO_BET is
+      // REJECTED here, not exercised beyond the probability read.
+      dnbHome: new Decimal('0.5'),
+      dnbAway: new Decimal('0.35'),
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.

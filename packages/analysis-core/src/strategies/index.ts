@@ -40,6 +40,7 @@ export {
   decideOverUnderHt,
 } from "./over-under-ht.strategy";
 export { ResultBttsStrategy, decideResultBtts } from "./result-btts.strategy";
+export { DrawNoBetStrategy, decideDrawNoBet } from "./draw-no-bet.strategy";
 export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
@@ -81,4 +82,7 @@ export {
   type ResultBttsOutcome,
   type ResultBttsPickConfig,
   type ResultBttsLeagueConfig,
+  getDrawNoBetConfig,
+  DRAW_NO_BET_CONFIG,
+  DRAW_NO_BET_DEFAULT,
 } from "./config";

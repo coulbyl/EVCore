@@ -370,9 +370,9 @@
   `prisma generate` relancé, `domain-enums.conformance.spec.ts` échoue de
   façon attendue (garde anti-drift compile-time/runtime entre l'enum domaine
   et l'enum Prisma généré) — le reste de la suite est vert (892/893).
-  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
-    `pnpm --filter backend test` pour confirmer `domain-enums.conformance`
-    repasse au vert.
+  - `[x]` Migration lancée + `db generate` régénéré côté utilisateur
+    (2026-08-16) — `domain-enums.conformance.spec.ts` repasse au vert, suite
+    complète 922/922.
   - `[ ]` Laisser accumuler des décisions RESULT_TOTAL_GOALS réglées avant tout
     backtest ROI dédié ou wiring coupon/invest — même séquence que TEAM_TOTAL
     (observation d'abord, ROI ensuite).
@@ -399,9 +399,8 @@
   (`20260816130000_add_over_under_ht_channel`), **pas lancée**. Suite verte
   hors `domain-enums.conformance.spec.ts` (attendu, même garde anti-drift
   — 902/903).
-  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
-    `pnpm --filter backend test` (les deux migrations RESULT_TOTAL_GOALS +
-    OVER_UNDER_HT doivent passer ensemble).
+  - `[x]` Migration lancée + `db generate` régénéré côté utilisateur
+    (2026-08-16) — suite complète 922/922.
   - `[ ]` Même séquence que TEAM_TOTAL/RESULT_TOTAL_GOALS : observer avant
     tout backtest ROI ou wiring coupon/invest.
 
@@ -440,18 +439,55 @@
   config BL1, donc le trou ne s'était jamais révélé) ; fixtures corrigées,
   pas de garde défensive ajoutée dans le code prod (le type garantit déjà le
   contrat). Suite verte hors `domain-enums.conformance.spec.ts` (attendu —
-  911/912).
-  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
-    `pnpm --filter backend test` (les 3 migrations RESULT_TOTAL_GOALS +
-    OVER_UNDER_HT + RESULT_BTTS doivent passer ensemble).
+  911/912 à l'écriture, 922/922 après migration).
+  - `[x]` Migration lancée + `db generate` régénéré côté utilisateur
+    (2026-08-16) — les 3 migrations (RESULT_TOTAL_GOALS + OVER_UNDER_HT +
+    RESULT_BTTS) passent ensemble, suite complète verte.
   - `[ ]` Même séquence que les canaux précédents : observer avant tout
     backtest ROI ou wiring coupon/invest. Vu l'absence de calibration
     walk-forward ici, envisager un script `backtest-result-btts-shrinkage-
     calibration.ts` (même modèle que TEAM_TOTAL) une fois assez de volume
     RESULT_BTTS réglé pour un vrai split train/test.
+
+- `[~]` **DRAW_NO_BET — quatrième marché orphelin sorti de VALUE, canal
+  dédié en OBSERVATION** (2026-08-16) — marché dérivé à deux issues (nul
+  remboursé), sans dimension de ligne, purement dérivé du 1X2 déjà calibré
+  (`dnbHome`/`dnbAway`, complémentaires). Comme RESULT_BTTS, aucune
+  calibration walk-forward n'existe — taux de base dérivés directement des
+  scores réglés (`docker exec evcore-postgres psql`) : parmi les fixtures
+  `FINISHED` décisives (hors nul), taux de victoire domicile = compte(victoire
+  domicile) / compte(décisives) par ligue. **Avantage domicile universel** —
+  67 ligues avec n≥50 fixtures décisives, taux minimum observé 0.51, jamais
+  en dessous : l'issue AWAY ne dépasse jamais une marge informative dans ce
+  jeu de données (constat réel, pas un choix arbitraire). Seuil retenu : 64
+  ligues avec taux≥0.55 (0.45–0.55 ignoré comme non informatif — AUS1, EST1,
+  KOR2 exclues), `threshold = taux − 0.05` (marge plate façon TEAM_TOTAL, pas
+  la marge relative de RESULT_TOTAL_GOALS/RESULT_BTTS : `dnbHome`/`dnbAway`
+  sont de vraies marginales ~0.5-0.7, pas des probabilités jointes).
+  Architecture différente des 3 canaux précédents : pas de config par
+  (side, line) façon TEAM_TOTAL — `decideDrawNoBet` réutilise directement le
+  schéma `decideCleanSheet` (évalue les deux côtés contre un seuil unique
+  partagé, argmax) puisque `dnbHome`+`dnbAway`=1 rend la pré-sélection de
+  côté par ligue inutile : quel que soit le côté qui dépasse un seuil >0.5,
+  c'est sans ambiguïté le bon. Table de config gardée séparée de
+  `CHANNEL_STRATEGY_CONFIG` (réutilisé par DOMINANT/DRAW/BTTS/CLEAN_SHEET/
+  WIN_EITHER_HALF) plutôt que fusionnée dedans : ces entrées sont de vrais
+  seuils **backtestés ROI**, alors que DRAW_NO_BET est un lancement
+  OBSERVATION sur taux de base brut — mélanger les deux aurait dilué le
+  niveau de confiance de la table existante. OBSERVATION stricte, même
+  périmètre que les 3 canaux précédents. `StrategyChannel` (Prisma) gagne
+  `DRAW_NO_BET` ; migration écrite
+  (`20260816150000_add_draw_no_bet_channel`), **lancée + `db generate`
+  régénéré le jour même** — suite complète verte (922/922), aucune migration
+  en attente à ce stade.
+  - `[ ]` Même séquence que les canaux précédents : observer avant tout
+    backtest ROI ou wiring coupon/invest.
   - `[ ]` Marchés orphelins restants : DOUBLE_CHANCE, HALF_TIME_FULL_TIME,
-    FIRST_HALF_WINNER, DRAW_NO_BET, WIN_TO_NIL_HOME/AWAY — aucun n'a de
-    calibration prête, même méthode base-rate-DB à répéter marché par marché.
+    FIRST_HALF_WINNER, WIN_TO_NIL_HOME/AWAY — aucun n'a de calibration prête,
+    même méthode base-rate-DB à répéter marché par marché. WIN_TO_NIL est le
+    candidat le plus proche en forme (probabilité fermée par côté, comme
+    CLEAN_SHEET déjà en canal) ; DOUBLE_CHANCE/HALF_TIME_FULL_TIME restent les
+    plus complexes (marchés composés, pas de signal à isoler simplement).
 
 ---
 
