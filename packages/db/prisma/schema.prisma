@@ -185,6 +185,7 @@ enum StrategyChannel {
   CORRECT_SCORE
   RESULT_TOTAL_GOALS
   OVER_UNDER_HT
+  RESULT_BTTS
 
   @@schema("public")
 }

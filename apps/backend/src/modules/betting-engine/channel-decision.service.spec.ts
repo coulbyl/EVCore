@@ -81,6 +81,9 @@ function richContext(): StrategyContext {
       winEitherHalfAway: new Decimal('0.45'),
       teamTotalHome: {},
       teamTotalAway: {},
+      ouHT: {},
+      resultTotalGoals: {},
+      resultBtts: {},
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -109,9 +112,9 @@ describe('ChannelDecisionService', () => {
     expect(runId).toBe('run-1');
 
     // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
-    // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS, OVER_UNDER_HT) + the
-    // CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(14);
+    // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS, OVER_UNDER_HT,
+    // RESULT_BTTS) + the CONSENSUS & AVOID meta-strategies.
+    expect(evaluated).toHaveLength(15);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.

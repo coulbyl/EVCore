@@ -405,6 +405,54 @@
   - `[ ]` Même séquence que TEAM_TOTAL/RESULT_TOTAL_GOALS : observer avant
     tout backtest ROI ou wiring coupon/invest.
 
+- `[~]` **RESULT_BTTS — troisième marché orphelin sorti de VALUE, canal
+  dédié en OBSERVATION** (2026-08-16) — cité explicitement plus haut
+  (section Générateur de coupon) comme preuve concrète de dommage (jambe
+  Ljungskile-Osters RESULT_BTTS HOME_NO à 43.4%, PERDU). Contrairement à
+  RESULT_TOTAL_GOALS/OVER_UNDER_HT, **aucune calibration walk-forward
+  n'existe pour ce marché** — même situation que TEAM_TOTAL à son lancement
+  du 2026-07-18, donc même méthode : taux de base dérivés directement des
+  scores réglés (`docker exec evcore-postgres psql`, règle CLAUDE.md), pas de
+  `OU_SHRINKAGE_CONFIG` à réutiliser. Requête : pour chaque fixture
+  `FINISHED`, taux joint = compte(résultat×BTTS) / compte(total fixtures
+  réglées de la ligue). 67 ligues avec n≥50 fixtures ; 381 combos
+  (side×outcome) retenus sur 402 possibles après un plancher **par pick**
+  n≥30 (une combinaison précise comme DRAW+YES peut être bien plus rare que
+  le total de la ligue). `threshold = base × 0.85` — réutilise la règle
+  RESULT_TOTAL_GOALS (marge relative), pas celle de TEAM_TOTAL, car ce sont
+  des probabilités jointes (~0.03–0.37) comme RESULT_TOTAL_GOALS, pas des
+  marginales. Contrairement à TEAM_TOTAL (split OVER/UNDER, un seul retenu),
+  les 6 combos (side×YES/NO) sont tous inclus par ligue : chaque combo est un
+  marché bookmaker distinct et indépendamment pricé, pas de bande
+  "non-informative" à exclure comme le 0.45–0.55 de TEAM_TOTAL.
+  `ResultBttsStrategy` mirrors `ResultTotalGoalsStrategy` (1 sélection max,
+  tri EV décroissant). OBSERVATION stricte, même périmètre que les deux
+  précédents (aucun wiring coupon/invest/frontend). `StrategyChannel` (Prisma)
+  gagne `RESULT_BTTS` ; migration écrite
+  (`20260816140000_add_result_btts_channel`), **pas lancée**. En creusant les
+  tests existants : deux fixtures partagées (`channel-decision.service.spec.ts`,
+  `channel-strategy.orchestrator.spec.ts`) construisaient un objet
+  `MatchProbabilities` synthétique incomplet (sans `resultBtts`/`ouHT`/
+  `resultTotalGoals`, alors que ces champs sont non-optionnels en prod,
+  toujours peuplés par `computeResultBttsProba`/Poisson) — RESULT_BTTS est le
+  premier des 3 nouveaux canaux à réellement lire ces champs sur la ligue
+  `BL1` de ces fixtures (les deux précédents y étaient `DISABLED` faute de
+  config BL1, donc le trou ne s'était jamais révélé) ; fixtures corrigées,
+  pas de garde défensive ajoutée dans le code prod (le type garantit déjà le
+  contrat). Suite verte hors `domain-enums.conformance.spec.ts` (attendu —
+  911/912).
+  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
+    `pnpm --filter backend test` (les 3 migrations RESULT_TOTAL_GOALS +
+    OVER_UNDER_HT + RESULT_BTTS doivent passer ensemble).
+  - `[ ]` Même séquence que les canaux précédents : observer avant tout
+    backtest ROI ou wiring coupon/invest. Vu l'absence de calibration
+    walk-forward ici, envisager un script `backtest-result-btts-shrinkage-
+    calibration.ts` (même modèle que TEAM_TOTAL) une fois assez de volume
+    RESULT_BTTS réglé pour un vrai split train/test.
+  - `[ ]` Marchés orphelins restants : DOUBLE_CHANCE, HALF_TIME_FULL_TIME,
+    FIRST_HALF_WINNER, DRAW_NO_BET, WIN_TO_NIL_HOME/AWAY — aucun n'a de
+    calibration prête, même méthode base-rate-DB à répéter marché par marché.
+
 ---
 
 ## Canaux en observation (pas encore staking-grade)

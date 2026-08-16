@@ -89,6 +89,9 @@ function makeContext(
       winEitherHalfAway: new Decimal('0.45'),
       teamTotalHome: {},
       teamTotalAway: {},
+      ouHT: {},
+      resultTotalGoals: {},
+      resultBtts: {},
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.

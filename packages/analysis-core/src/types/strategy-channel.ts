@@ -24,6 +24,7 @@ export const STRATEGY_CHANNEL = {
   CORRECT_SCORE: "CORRECT_SCORE",
   RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS",
   OVER_UNDER_HT: "OVER_UNDER_HT",
+  RESULT_BTTS: "RESULT_BTTS",
 } as const;
 
 export type StrategyChannel =

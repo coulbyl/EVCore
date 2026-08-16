@@ -39,6 +39,7 @@ export {
   OverUnderHtStrategy,
   decideOverUnderHt,
 } from "./over-under-ht.strategy";
+export { ResultBttsStrategy, decideResultBtts } from "./result-btts.strategy";
 export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
@@ -75,4 +76,9 @@ export {
   type OverUnderHtLine,
   type OverUnderHtSide,
   type OverUnderHtLineConfig,
+  getResultBttsPickConfigs,
+  type ResultBttsSide,
+  type ResultBttsOutcome,
+  type ResultBttsPickConfig,
+  type ResultBttsLeagueConfig,
 } from "./config";

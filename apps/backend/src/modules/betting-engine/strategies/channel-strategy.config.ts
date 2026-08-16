@@ -36,4 +36,9 @@ export {
   type OverUnderHtLine,
   type OverUnderHtSide,
   type OverUnderHtLineConfig,
+  getResultBttsPickConfigs,
+  type ResultBttsSide,
+  type ResultBttsOutcome,
+  type ResultBttsPickConfig,
+  type ResultBttsLeagueConfig,
 } from '@evcore/analysis-core';
