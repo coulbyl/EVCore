@@ -36,6 +36,10 @@ export {
   decideResultTotalGoals,
 } from "./result-total-goals.strategy";
 export {
+  OverUnderHtStrategy,
+  decideOverUnderHt,
+} from "./over-under-ht.strategy";
+export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
   getBttsNoConfig,
@@ -67,4 +71,8 @@ export {
   type ResultTotalGoalsSide,
   type ResultTotalGoalsLine,
   type ResultTotalGoalsLineConfig,
+  getOverUnderHtLineConfigs,
+  type OverUnderHtLine,
+  type OverUnderHtSide,
+  type OverUnderHtLineConfig,
 } from "./config";

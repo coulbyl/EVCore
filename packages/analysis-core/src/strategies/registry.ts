@@ -13,6 +13,7 @@ import { ConsensusStrategy } from "./consensus.strategy";
 import { AvoidStrategy } from "./avoid.strategy";
 import { CorrectScoreStrategy } from "./correct-score.strategy";
 import { ResultTotalGoalsStrategy } from "./result-total-goals.strategy";
+import { OverUnderHtStrategy } from "./over-under-ht.strategy";
 
 export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new ValueStrategy(),
@@ -26,6 +27,7 @@ export const V1_STRATEGIES: readonly ChannelStrategy[] = [
   new WinEitherHalfStrategy(),
   new CorrectScoreStrategy(),
   new ResultTotalGoalsStrategy(),
+  new OverUnderHtStrategy(),
   new ConsensusStrategy(),
   new AvoidStrategy(),
 ];

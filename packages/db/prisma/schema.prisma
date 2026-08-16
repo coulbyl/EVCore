@@ -184,6 +184,7 @@ enum StrategyChannel {
   AVOID
   CORRECT_SCORE
   RESULT_TOTAL_GOALS
+  OVER_UNDER_HT
 
   @@schema("public")
 }

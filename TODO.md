@@ -376,9 +376,34 @@
   - `[ ]` Laisser accumuler des décisions RESULT_TOTAL_GOALS réglées avant tout
     backtest ROI dédié ou wiring coupon/invest — même séquence que TEAM_TOTAL
     (observation d'abord, ROI ensuite).
-  - `[ ]` Une fois ce marché validé/observé, traiter les 7 autres marchés
-    orphelins un par un avec la même méthode (celui qui a déjà le plus de
+  - `[ ]` Une fois ce marché validé/observé, traiter les marchés orphelins
+    restants un par un avec la même méthode (celui qui a déjà le plus de
     plomberie calibrée en premier).
+
+- `[~]` **OVER_UNDER_HT — deuxième marché orphelin sorti de VALUE, canal
+  dédié en OBSERVATION** (2026-08-16) — deuxième candidat traité : déjà
+  partiellement exposé via `SafeStrategy.allowedMarkets` (filtre secondaire),
+  jamais de canal propre jusqu'ici. Comme RESULT_TOTAL_GOALS, aucun nouveau
+  modèle de probabilité : `OU_SHRINKAGE_CONFIG[code].ouHt` est déjà
+  walk-forward Brier-validé et en prod. Contrairement à RESULT_TOTAL_GOALS
+  (probabilité jointe), les bases `ouHt` sont des probabilités marginales
+  (OVER/UNDER complémentaires, même grandeur que GOALS/TEAM_TOTAL) — donc
+  `getOverUnderHtLineConfigs()` réutilise exactement la règle de curation de
+  TEAM_TOTAL (pas celle de RESULT_TOTAL_GOALS) : side=OVER si base≥0.55,
+  UNDER si base≤0.45, bande 0.45–0.55 ignorée (non informative), threshold =
+  (base du côté choisi) − 0.05. `OverUnderHtStrategy` mirrors `GoalsStrategy`/
+  `TeamTotalStrategy` (1 sélection max, tri EV décroissant, `REJECTED
+  reasonCode: below_threshold`). OBSERVATION stricte, même périmètre que
+  RESULT_TOTAL_GOALS (aucun wiring coupon/invest/frontend). `StrategyChannel`
+  (Prisma) gagne `OVER_UNDER_HT` ; migration écrite
+  (`20260816130000_add_over_under_ht_channel`), **pas lancée**. Suite verte
+  hors `domain-enums.conformance.spec.ts` (attendu, même garde anti-drift
+  — 902/903).
+  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
+    `pnpm --filter backend test` (les deux migrations RESULT_TOTAL_GOALS +
+    OVER_UNDER_HT doivent passer ensemble).
+  - `[ ]` Même séquence que TEAM_TOTAL/RESULT_TOTAL_GOALS : observer avant
+    tout backtest ROI ou wiring coupon/invest.
 
 ---
 

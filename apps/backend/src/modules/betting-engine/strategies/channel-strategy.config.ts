@@ -32,4 +32,8 @@ export {
   type ResultTotalGoalsSide,
   type ResultTotalGoalsLine,
   type ResultTotalGoalsLineConfig,
+  getOverUnderHtLineConfigs,
+  type OverUnderHtLine,
+  type OverUnderHtSide,
+  type OverUnderHtLineConfig,
 } from '@evcore/analysis-core';
