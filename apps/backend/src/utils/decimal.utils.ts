@@ -14,3 +14,12 @@ export function toDecimal(value: DecimalLike): Decimal {
 export function round(value: DecimalLike): number {
   return toDecimal(value).toDecimalPlaces(4).toNumber();
 }
+
+// Product of odds (or any decimal-like values) via decimal.js — per the
+// project's arithmetic rules, never native `number` multiplication for odds.
+export function productDecimal(values: DecimalLike[]): Decimal {
+  return values.reduce(
+    (acc: Decimal, v) => acc.mul(toDecimal(v)),
+    new Decimal(1),
+  );
+}

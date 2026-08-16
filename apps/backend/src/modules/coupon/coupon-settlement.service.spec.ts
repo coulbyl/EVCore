@@ -10,6 +10,7 @@ function makeLeg(overrides: {
   market?: Market;
   pick?: string;
   isCorrect?: boolean | null;
+  oddsSnapshot?: number | null;
 }) {
   return {
     id: overrides.id,
@@ -17,6 +18,7 @@ function makeLeg(overrides: {
     market: overrides.market ?? Market.OVER_UNDER,
     pick: overrides.pick ?? 'OVER',
     isCorrect: overrides.isCorrect ?? null,
+    oddsSnapshot: overrides.oddsSnapshot ?? 2.0,
   };
 }
 
@@ -87,11 +89,16 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     expect(updateResult).toHaveBeenCalledWith('proposal-1', CouponResult.VOID);
   });
 
-  it('marks the coupon PARTIAL when a voided leg sits alongside winning legs', async () => {
+  it('marks the coupon PARTIAL when a voided leg sits alongside winning legs, with realizedOdds on the surviving leg only', async () => {
     const { service, updateResult } = makeHarness({
       legs: [
-        makeLeg({ id: 'leg-1', fixtureId: 'f1' }), // voided
-        makeLeg({ id: 'leg-2', fixtureId: 'f2', pick: 'OVER' }), // wins
+        makeLeg({ id: 'leg-1', fixtureId: 'f1', oddsSnapshot: 3.5 }), // voided — its odds must not count
+        makeLeg({
+          id: 'leg-2',
+          fixtureId: 'f2',
+          pick: 'OVER',
+          oddsSnapshot: 2.2,
+        }), // wins
       ],
       fixtures: [
         makeFixture({ id: 'f1', status: FixtureStatus.POSTPONED }),
@@ -109,6 +116,7 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     expect(updateResult).toHaveBeenCalledWith(
       'proposal-1',
       CouponResult.PARTIAL,
+      2.2,
     );
   });
 
@@ -143,5 +151,36 @@ describe('CouponSettlementService.settleProposal — postponed/cancelled legs', 
     await service.settleProposal('proposal-1');
 
     expect(settleLeg).toHaveBeenCalledWith('leg-1', null);
+  });
+
+  it("sets realizedOdds equal to the product of every leg's odds on a clean WON (no void)", async () => {
+    const { service, updateResult } = makeHarness({
+      legs: [
+        makeLeg({ id: 'leg-1', fixtureId: 'f1', oddsSnapshot: 1.8 }),
+        makeLeg({ id: 'leg-2', fixtureId: 'f2', oddsSnapshot: 2.5 }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+        }),
+        makeFixture({
+          id: 'f2',
+          status: FixtureStatus.FINISHED,
+          homeScore: 2,
+          awayScore: 1,
+        }),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      CouponResult.WON,
+      4.5,
+    );
   });
 });

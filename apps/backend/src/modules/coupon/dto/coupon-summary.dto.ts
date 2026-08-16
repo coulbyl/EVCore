@@ -47,8 +47,11 @@ export type CouponSummaryRow = {
   forDate: string;
   rank: number;
   combinedOdds: number;
+  /** Cote réellement payée au settlement (voir CouponSettlementService) —
+   * égale à `combinedOdds` sur un WON sans void ; `null` tant que non réglé. */
+  realizedOdds: number | null;
   jointProbability: number;
-  result: 'WON' | 'LOST';
+  result: 'WON' | 'LOST' | 'PARTIAL';
   legs: CouponSummaryLeg[];
 };
 

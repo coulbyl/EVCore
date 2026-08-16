@@ -177,9 +177,15 @@ export class CouponIndicesService {
       );
       items = coupons.map((c) => ({
         prob: Number(c.jointProbability),
-        won: c.result === 'WON',
+        // PARTIAL = tous les legs gradés gagnés (une jambe seulement a été
+        // voidée en route) — c'est un gain, pas une perte ; le calibrage
+        // hitRate/ROI le compte comme un win, sur la cote réellement payée.
+        won: c.result === 'WON' || c.result === 'PARTIAL',
         market: 'COUPON',
-        odds: Number(c.combinedOdds),
+        odds:
+          c.realizedOdds !== null
+            ? Number(c.realizedOdds)
+            : Number(c.combinedOdds),
       }));
     }
 

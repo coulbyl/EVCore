@@ -101,7 +101,16 @@ export const COUPON_PARAMS = {
   // signe, non retenus.
   minCouponEV: 0.15,
   maxLegs: 3,
-  maxCoupons: 3,
+  // Plafond de garde-fou, PAS un objectif de compte fixe (revu 2026-08-15,
+  // TODO.md "jambe partagée entre rank 1/2/3") — depuis l'incident du 08-15
+  // (une même jambe TEAM_TOTAL_HOME présente en rank 1 ET rank 2, tous deux
+  // perdus ensemble), `selectDiverseCoupons` n'accepte plus AUCUNE jambe
+  // partagée entre coupons publiés (avant : un ratio ≤50% laissait passer une
+  // jambe partagée dès qu'un coupon avait ≥3 jambes). Le nombre de coupons
+  // publiés dépend donc désormais du pool réel (autant de combinaisons
+  // disjointes que le pool le permet) — ce plafond borne juste le haut, pas
+  // un nombre à atteindre coûte que coûte.
+  maxCoupons: 10,
   maxCombinedOdds: 6.0,
   recencyWeighting: 'exponential_decay_14d' as const,
   decayHalfLifeDays: 14,
@@ -116,6 +125,149 @@ export const COUPON_PARAMS = {
     DRAW: 20,
     TEAM_TOTAL: 20,
   } as Record<CouponChannel, number>,
+} as const;
+
+/**
+ * Correction de la surconfiance de `jointProbability` (audit 2026-08-12, 409
+ * `CouponProposal` réglés) — le produit brut des probas par jambe ne corrige
+ * pas la corrélation entre jambes (même jour, même round, même scénario
+ * incertain) : le bucket ~44% annoncé s'est réglé à ~20% réel sur un seul
+ * bucket, n=30, cause du coupon manuel perdu du 2026-08-11.
+ *
+ * Mécanique choisie délibérément : facteur multiplicatif plutôt que le
+ * shrinkage bayésien de `calibrate()` — `calibrate()` shrink un TAUX déjà
+ * mesuré sur un vrai échantillon pondéré (dizaines d'observations), un
+ * `jointProbability` de coupon n'a pas cet équivalent ; le traiter comme "1
+ * observation" face au même `k` l'écraserait vers `prior` quel que soit le
+ * raw, recréant le bug dégénéré que `LEG_PROBABILITY_MODEL_WEIGHT` avait déjà
+ * corrigé. Le facteur multiplicatif préserve l'ordre et la granularité
+ * pick-spécifique.
+ *
+ * `factor` = 1.0 (neutre, PAS de correction actuellement appliquée) — revu
+ * 2026-08-15 après `db:backtest:joint-probability-calibration` sur les 410
+ * `CouponProposal` réglés (train/valid 60/40 par jour, comme
+ * `coupon-params-validation.ts`) :
+ *   - factor=1.0 (système historique, sans correction) : train ROI +30.0%,
+ *     valid ROI +22.9%, les deux positifs, n≥20 des deux côtés.
+ *   - factor=0.8 : train ROI -18.2%, valid ROI +74.3% — signe qui s'inverse,
+ *     non actionnable.
+ *   - factor=0.7 : même inversion de signe, et n<20 des deux côtés.
+ *   - factor=0.4545 (valeur initialement retenue après l'audit) : n=0 des
+ *     deux côtés — élimine tout l'historique des seuils actuels, confirmé
+ *     indépendamment par un replay du 08-13→08-16 avec le moteur actuel.
+ * Conclusion : le biais du bucket ~44%→20% (n=30) ne se généralise PAS en un
+ * facteur global — l'appliquer partout sur-corrige et élimine un historique
+ * par ailleurs rentable. Facteur remis à 1.0 (no-op) en attendant une
+ * calibration PAR BUCKET de probabilité (le bucket 44% peut rester
+ * spécifiquement biaisé sans que ça généralise). Le mécanisme
+ * (`calibrateJointProbability`, appliqué partout — filtre, EV, Kelly,
+ * persistance) reste en place pour recevoir cette calibration par bucket une
+ * fois construite ; seule la valeur du facteur est neutralisée ici.
+ */
+export const JOINT_PROBABILITY_CORRELATION_FACTOR = {
+  factor: 1.0,
+  capMin: 0.01,
+  capMax: 0.8,
+} as const;
+
+/**
+ * Plancher de probabilité calibrée par jambe, toutes canaux confondus —
+ * trouvé 2026-08-15 en creusant un coupon perdu du replay 08-13→08-16 :
+ * `Kashima OVER_0_5 HT` (SAFE, 77.2%, GAGNÉ) associée à `Ljungskile-Osters
+ * RESULT_BTTS HOME_NO` (VALUE, 43.4% — sous 50%, PERDU) — la jambe VALUE
+ * passait déjà `clearsValueEdgeFloor` (edge=0.167≥0.10) grâce à un EV apparent
+ * énorme (+62.7%, cote 3.75), sans qu'aucun garde-fou ne vérifie que la jambe
+ * elle-même est plus probable qu'improbable. `clearsValueEdgeFloor` ne
+ * protège que sur l'edge (VALUE only) ; ceci protège sur la probabilité brute
+ * (tous canaux) — une jambe à fort EV mais sous ~50% reste un coin-flip
+ * défavorable qui peut casser un coupon par ailleurs solide.
+ *
+ * Valeur initiale = seuil déjà utilisé par le processus d'analyse manuel
+ * (COUPON_ANALYSIS_TEMPLATE.md, Étape 0 : "probability (calibrée) ≥ ~55-60%"
+ * pour qu'une jambe soit dite fiable) — pas un chiffre backtesté pour le
+ * composeur automatique, à affiner par un futur backtest dédié une fois
+ * l'effet sur le volume/ROI de coupon mesurable.
+ */
+export const MIN_LEG_PROBABILITY = 0.55;
+
+/**
+ * Plancher de probabilité calibrée pour qu'une jambe soit une "ancre" (porte
+ * la probabilité jointe du coupon) plutôt qu'une jambe "valeur" (porte la
+ * cote combinée) — trouvé 2026-08-15, même incident/discussion que
+ * `MIN_LEG_PROBABILITY`. Le composeur automatique ne triait le pool candidat
+ * QUE par `signalScore` (moyenne canal×jour×ligue, identique pour toutes les
+ * jambes d'un même canal/ligue/jour) puis par EV sous contraintes — jamais
+ * de mix délibéré ancre/valeur. `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0)
+ * documente que la méthode manuelle qui marche mélange TOUJOURS quelques
+ * jambes-ancres (70-90%+) et quelques jambes-valeur (60-75%, meilleure cote)
+ * — jamais un seul mode. `ANCHOR_MIN_PROBABILITY=0.70` reprend le bas de
+ * cette fourchette documentée ; pas backtesté pour le composeur automatique.
+ */
+export const ANCHOR_MIN_PROBABILITY = 0.7;
+
+/**
+ * Plafond de jambes par compétition dans le POOL CANDIDAT (avant recherche
+ * combinatoire), par mode ancre/valeur — évite qu'une seule ligue domine un
+ * mode. Reprend le "2 par compétition" déjà utilisé comme plafond
+ * anti-corrélation DANS un coupon (`violatesAntiCorrelation`,
+ * coupon-composer.service.ts) pour rester cohérent, même si c'est un usage
+ * distinct (diversité du pool candidat, pas diversité intra-coupon).
+ */
+export const MAX_POOL_PER_COMPETITION = 2;
+
+/**
+ * Marché évalué (`ModelRun.features.evaluatedPicks`, `status: 'viable'`) →
+ * canal coupon — trouvé 2026-08-16 en creusant le biais suspecté dans
+ * `SignalWindowService` : `getPoolForRange` (le vrai pool de coupon) ne lit
+ * que les `Bet`/`channelDecision` déjà matérialisés, une seule jambe par
+ * canal par match — jamais les autres marchés évalués sur le même match,
+ * alors que `evaluatedPicks` existe déjà et est même déjà utilisé (par la
+ * fonction sœur `getTodayVirtualPool`, jamais pour le pool réel). Exactement
+ * le trou documenté par `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0) : "parcourir
+ * evaluatedPicks en entier, pas juste selectedPicks".
+ *
+ * Mapping délibérément simple — PAS une reproduction de la logique de
+ * sélection de chacun des 6 canaux (VALUE/SAFE/DOMINANT/BTTS/DRAW/TEAM_TOTAL,
+ * tous différents, certains inter-dépendants comme SAFE qui exclut le pick
+ * de VALUE) contre le snapshot persistée (`EvaluatedPickSnapshot`, lossy —
+ * `number` simple, pas de `Decimal`, pas de contexte ligue par jambe) :
+ * `status: 'viable'` a déjà passé les gates du système (probabilité
+ * plancher, cote dans la fourchette, marché non suspendu, EV dans une bande
+ * acceptable, pas de pénalité longshot) — ce n'est pas un rejet de fiabilité
+ * de ne pas avoir gagné l'arbitrage de son canal contre les autres marchés
+ * du même match. `MIN_LEG_PROBABILITY`/`clearsValueEdgeFloor` (déjà en place)
+ * suffisent en aval comme garde-fous coupon.
+ *
+ * - ONE_X_TWO → DOMINANT (son propre marché ; DOMINANT n'était jusqu'ici
+ *   JAMAIS lu dans le pool réel — ni `Bet` ni `channelDecision` promu —
+ *   confirmé : 0 jambe DOMINANT dans `coupon_proposal_leg` historiquement).
+ * - TEAM_TOTAL_HOME/AWAY → TEAM_TOTAL, BTTS → BTTS (marchés dédiés).
+ * - CORRECT_SCORE → exclu (absent de ce mapping) — signal immature confirmé
+ *   par plusieurs pistes invalidées (AUC=0.51, quasi hasard ; voir TODO.md/
+ *   mémoire `project_correct_score_immature`), jamais staké nulle part.
+ * - Tout le reste (OVER_UNDER, OVER_UNDER_HT, DOUBLE_CHANCE,
+ *   HALF_TIME_FULL_TIME, FIRST_HALF_WINNER, DRAW_NO_BET, CLEAN_SHEET_*,
+ *   WIN_TO_NIL_*, TO_WIN_EITHER_HALF, RESULT_TOTAL_GOALS, RESULT_BTTS) →
+ *   VALUE, le canal `ALL_MARKETS` déjà le plus large (value.strategy.ts).
+ */
+export const EVALUATED_MARKET_CANAL: Record<string, CouponChannel> = {
+  ONE_X_TWO: 'DOMINANT',
+  TEAM_TOTAL_HOME: 'TEAM_TOTAL',
+  TEAM_TOTAL_AWAY: 'TEAM_TOTAL',
+  BTTS: 'BTTS',
+  OVER_UNDER: 'VALUE',
+  OVER_UNDER_HT: 'VALUE',
+  DOUBLE_CHANCE: 'VALUE',
+  HALF_TIME_FULL_TIME: 'VALUE',
+  FIRST_HALF_WINNER: 'VALUE',
+  DRAW_NO_BET: 'VALUE',
+  CLEAN_SHEET_HOME: 'VALUE',
+  CLEAN_SHEET_AWAY: 'VALUE',
+  WIN_TO_NIL_HOME: 'VALUE',
+  WIN_TO_NIL_AWAY: 'VALUE',
+  TO_WIN_EITHER_HALF: 'VALUE',
+  RESULT_TOTAL_GOALS: 'VALUE',
+  RESULT_BTTS: 'VALUE',
 } as const;
 
 // ─────────────────────────────────────────────
@@ -148,6 +300,20 @@ export type CouponProfileBounds = {
    * actuels, comportement inchangé).
    */
   maxLegsPerDay?: number;
+  /**
+   * Override du pool de candidats (défaut : `MAX_POOL_SIZE` dans
+   * coupon-composer.service.ts, 25) avant `composeExhaustive`/`composeGreedy`.
+   * Nécessaire pour LONGSHOT (voir TODO.md "Générateur de coupon") : la règle
+   * anti-corrélation "1 leg/canal+marché" limite le nombre de jambes utilisables
+   * à peu près au nombre de combos canal×marché distincts du pool — avec
+   * `minLegs: 6`, un pool à 25 concentré sur peu de canaux (SAFE domine via
+   * `CANAL_BASE_WEIGHT`) starve `composeGreedy` avant d'atteindre `minLegs`,
+   * d'où 0 coupon LONGSHOT généré (confirmé par l'audit 2026-08-12 — pas un
+   * bug de câblage, un pool structurellement trop court pour ce profil).
+   * `undefined` = pas d'override (profils SAFE/BALANCED/AGGRESSIVE, comportement
+   * inchangé).
+   */
+  maxPoolSize?: number;
 };
 
 /**
@@ -214,6 +380,11 @@ export const COUPON_PROFILES: Record<CouponProfileName, CouponProfileBounds> = {
     minJointProbability: 0.01,
     minCouponEV: 0.2,
     maxLegsPerDay: 5,
+    // Pool dédié plus large (défaut 25) — voir maxPoolSize doc ci-dessus. Une
+    // fenêtre weekend couvre 3 jours de matchs (ven→dim) contre un seul pour
+    // les profils courts, donc un pool nettement plus large reste cohérent
+    // avec le volume de jambes réellement disponible sur la fenêtre.
+    maxPoolSize: 80,
   },
   LONGSHOT_MIDWEEK: {
     minLegs: 6,
@@ -223,6 +394,7 @@ export const COUPON_PROFILES: Record<CouponProfileName, CouponProfileBounds> = {
     minJointProbability: 0.01,
     minCouponEV: 0.2,
     maxLegsPerDay: 5,
+    maxPoolSize: 80,
   },
 } as const;
 

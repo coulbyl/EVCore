@@ -277,7 +277,12 @@ export class CouponRepository {
   ): Promise<CouponProposalWithLegs[]> {
     return this.prisma.client.couponProposal.findMany({
       where: {
-        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        // VOID reste exclu (aucun gain, aucune perte) ; PARTIAL est inclus —
+        // son ROI se calcule sur `realizedOdds`, pas `combinedOdds` (voir
+        // CouponSettlementService).
+        result: {
+          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
+        },
         forDate: { gte: from, lte: to },
       },
       include: WITH_LEGS,
@@ -324,19 +329,28 @@ export class CouponRepository {
       jointProbability: Prisma.Decimal;
       result: CouponResult;
       combinedOdds: Prisma.Decimal;
+      realizedOdds: Prisma.Decimal | null;
     }[]
   > {
     return this.prisma.client.couponProposal.findMany({
       where: {
-        result: { in: [CouponResult.WON, CouponResult.LOST] },
+        result: {
+          in: [CouponResult.WON, CouponResult.LOST, CouponResult.PARTIAL],
+        },
         forDate: { gte: from, lte: to },
       },
-      select: { jointProbability: true, result: true, combinedOdds: true },
+      select: {
+        jointProbability: true,
+        result: true,
+        combinedOdds: true,
+        realizedOdds: true,
+      },
     }) as unknown as Promise<
       {
         jointProbability: Prisma.Decimal;
         result: CouponResult;
         combinedOdds: Prisma.Decimal;
+        realizedOdds: Prisma.Decimal | null;
       }[]
     >;
   }
@@ -382,10 +396,20 @@ export class CouponRepository {
     }));
   }
 
-  async updateResult(id: string, result: CouponResult): Promise<void> {
+  async updateResult(
+    id: string,
+    result: CouponResult,
+    realizedOdds?: number,
+  ): Promise<void> {
     await this.prisma.client.couponProposal.update({
       where: { id },
-      data: { result, status: CouponProposalStatus.EXPIRED },
+      data: {
+        result,
+        status: CouponProposalStatus.EXPIRED,
+        ...(realizedOdds !== undefined
+          ? { realizedOdds: new Prisma.Decimal(realizedOdds) }
+          : {}),
+      },
     });
   }
 

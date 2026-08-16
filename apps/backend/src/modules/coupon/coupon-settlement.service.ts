@@ -9,6 +9,7 @@ import {
 } from '../betting-engine/betting-engine.utils';
 import { CouponRepository } from './coupon.repository';
 import { createLogger } from '@utils/logger';
+import { productDecimal, type DecimalLike } from '@utils/decimal.utils';
 
 const logger = createLogger('coupon-settlement');
 
@@ -108,6 +109,10 @@ export class CouponSettlementService {
     let allResolved = true;
     let voidedLegs = 0;
     const legResults: boolean[] = [];
+    // Odds of every non-voided leg — the cote réellement payable au
+    // settlement (a voided leg never enters the combinatorics, so its odds
+    // must never inflate the payout either).
+    const survivingOdds: DecimalLike[] = [];
 
     for (const leg of proposal.legs) {
       const fixture = fixtureMap.get(leg.fixtureId);
@@ -131,6 +136,10 @@ export class CouponSettlementService {
         await this.repo.settleLeg(leg.id, null);
         voidedLegs++;
         continue;
+      }
+
+      if (leg.oddsSnapshot !== null) {
+        survivingOdds.push(leg.oddsSnapshot);
       }
 
       // HT markets only need half-time scores — don't wait for full-time
@@ -225,9 +234,22 @@ export class CouponSettlementService {
           : CouponResult.WON
         : CouponResult.PARTIAL;
 
-    await this.repo.updateResult(proposalId, result);
+    // Cote réellement payée : produit des cotes des jambes non-voidées
+    // uniquement. Sur un WON sans void, égale à combinedOdds (toutes les
+    // jambes ont survécu) ; sur un PARTIAL, strictement inférieure — sans ce
+    // recalcul, le ROI agrégé surestimerait le gain réel du coupon.
+    const realizedOdds = productDecimal(survivingOdds).toNumber();
+
+    await this.repo.updateResult(proposalId, result, realizedOdds);
     logger.info(
-      { proposalId, result, correct, total: legResults.length, voidedLegs },
+      {
+        proposalId,
+        result,
+        correct,
+        total: legResults.length,
+        voidedLegs,
+        realizedOdds,
+      },
       'Proposal settled',
     );
   }

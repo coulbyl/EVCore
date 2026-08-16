@@ -50,6 +50,7 @@
     "db:backtest:coupon-quality-signals": "tsx scripts/backtest-coupon-quality-signals.ts",
     "db:backtest:channel-league-whitelist": "tsx scripts/backtest-channel-league-whitelist.ts",
     "db:backtest:coupon-params-validation": "tsx scripts/backtest-coupon-params-validation.ts",
+    "db:backtest:joint-probability-calibration": "tsx scripts/backtest-joint-probability-calibration.ts",
     "db:backtest:signal-window-calibration": "tsx scripts/backtest-signal-window-calibration.ts",
     "db:backtest:ml-shadow-correction": "tsx scripts/backtest-ml-shadow-correction.ts",
     "db:backtest:team-total-shrinkage-calibration": "tsx scripts/backtest-team-total-shrinkage-calibration.ts",

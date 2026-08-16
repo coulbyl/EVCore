@@ -25,13 +25,15 @@
 
 ## Générateur de coupon
 
-- `[~]` **LONGSHOT_WEEKEND/MIDWEEK** — généré en vrai chaque weekend/mardi-jeudi,
-  badge "Expérimental", jamais staké. Cause du 0 coupon confirmée (audit
-  2026-08-12) : `MAX_POOL_SIZE=25` + règle anti-corrélation (1 leg/canal+marché)
-  starvent `composeGreedy` avant `minLegs` — non structurel, pas un bug de câblage.
-  - `[ ]` Desserrer `MAX_POOL_SIZE`/anti-corrélation spécifiquement pour le
-    profil LONGSHOT (pool dédié plus large), sinon le profil reste
-    structurellement à 0 coupon.
+- `[x]` **LONGSHOT_WEEKEND/MIDWEEK — pool dédié desserré** (résolu 2026-08-15) —
+  `MAX_POOL_SIZE` était un module-level constant figé à 25, partagé par tous
+  les profils ; nouveau champ optionnel `CouponProfileBounds.maxPoolSize`
+  (`coupon.constants.ts`), utilisé dans `compose()` en override
+  (`profile.maxPoolSize ?? MAX_POOL_SIZE`). `LONGSHOT_WEEKEND`/`MIDWEEK` passent
+  à `maxPoolSize: 80` — cohérent avec leur fenêtre multi-jours (3 jours de
+  matchs vs 1 pour les profils courts). Ne règle pas encore la starvation
+  structurelle par anti-corrélation elle-même (hors scope, non signalée comme
+  buggée) ; laisse toujours ouverts :
   - `[ ]` Laisser accumuler des règlements réels avant d'envisager un backtest
     (`composeGreedy` n'a jamais tourné en prod avant le 2026-08-09).
   - `[ ]` Écrire `db:backtest:coupon-longshot` une fois assez de coupons réglés
@@ -39,24 +41,223 @@
   - `[ ]` Ne retirer le badge "Expérimental" qu'après un backtest vert
     (split train/valid).
 
-- `[ ]` **`jointProbability` surconfiant** (audit 2026-08-12, 409 `CouponProposal`
-  réglés) — bucket ~44% annoncé → 20% réel sur n=30. Le calcul multiplie des
-  probabilités par jambe sans corriger la corrélation entre elles (même match,
-  même round, même scénario incertain) — cause du coupon manuel perdu du 11/08.
-  Corriger le calcul (facteur de corrélation) ou au minimum appliquer le même
-  shrinkage bayésien que `calibrate()`.
+- `[~]` **`jointProbability` surconfiant — mécanique posée, facteur neutralisé
+  après backtest** (2026-08-15) — audit 2026-08-12 (409 `CouponProposal`
+  réglés) : bucket ~44% annoncé → 20% réel sur **un seul bucket**, n=30. Le
+  produit brut des probas par jambe (`buildCoupon`) ne corrige pas la
+  corrélation entre jambes. `calibrateJointProbability()`
+  (`coupon-composer.service.ts`) applique un facteur multiplicatif
+  (`JOINT_PROBABILITY_CORRELATION_FACTOR`, `coupon.constants.ts`) PARTOUT
+  (filtre de viabilité + EV + Kelly + persistance) — un shrinkage bayésien
+  façon `calibrate()` a été écarté (traiter un coupon comme "1 observation"
+  face à un `k` calibré sur de vrais échantillons pondérés l'aurait écrasé
+  vers le prior, recréant le bug dégénéré déjà corrigé par
+  `LEG_PROBABILITY_MODEL_WEIGHT`).
+  **Recalibré le jour même** : nouveau script
+  `db:backtest:joint-probability-calibration` (410 `CouponProposal` réglés,
+  train/valid 60/40 par jour) — verdict net : `factor=1.0` (système
+  historique, sans correction) est le SEUL testé qui reste positif des deux
+  côtés (train +30.0%, valid +22.9%, n≥20) ; `0.8`/`0.7` inversent de signe
+  entre train et valid (non actionnable) ; le facteur initialement choisi
+  (0.4545, ratio direct de l'audit) élimine **tout** l'historique des seuils
+  actuels (n=0 des deux côtés) — confirmé indépendamment par un replay complet
+  08-13→08-16 avec le moteur actuel (reanalyze-scope.ts + regénération), qui
+  donnait déjà 0 coupon viable sur les 4 jours avec ce facteur. **Conclusion :
+  le biais du bucket ~44% ne généralise pas** — appliquer un facteur global
+  sur-corrige et élimine un historique par ailleurs rentable. `factor` remis à
+  `1.0` (no-op) le temps qu'une calibration par bucket existe ; le mécanisme
+  (fonction, branchement filtre/EV/Kelly/persistance, champ
+  `rawJointProbability` tracé séparément) reste en place pour la recevoir.
+  - `[ ]` Construire une vraie calibration **par bucket de probabilité** (pas
+    un facteur global) — le bucket ~44% peut rester spécifiquement biaisé sans
+    que ça généralise à tout le reste.
+  - `[ ]` Étendre `db:backtest:joint-probability-calibration` à un vrai rejeu
+    (limite documentée en tête du script : `calibratedProbability` par jambe
+    reflète le modèle en vigueur à la génération de CHAQUE coupon historique,
+    pas le modèle actuel).
+
+- `[x]` **Jambe partagée entre coupons classés (rank 1/2/3+) — zéro tolérance**
+  (résolu 2026-08-15, trouvé en creusant le fix PARTIAL/VOID ci-dessous) — la
+  règle de diversité inter-coupons (`selectDiverseCoupons`) tolérait jusqu'à
+  50% de jambes partagées, ce qui laissait passer une jambe partagée dès
+  qu'un coupon avait ≥3 jambes (1/3≈0.33<0.5) — cause directe de l'incident
+  du 08-15 (jambe TEAM_TOTAL_HOME dans rank 1 ET rank 2, tous deux LOST).
+  Fix : `sharesAnyLeg()` remplace le ratio par une tolérance zéro (tout
+  partage rejette), et le backfill qui réintroduisait une jambe partagée pour
+  toujours publier `maxCoupons` a été supprimé — décision utilisateur : ne
+  plus garantir un compte fixe, publier autant de coupons disjoints que le
+  pool le permet réellement, plafonné par un `maxCoupons` relevé de 3 à 10
+  (garde-fou haut, pas un objectif).
 
 - `[ ]` **Pondération des signaux leg-level dans `signalScore`** —
   `priorAnalysisCount`, `offensiveBalance`, `shadowConflict` sont exposés mais
   n'influencent rien (`coupon-composer.service.ts:310` : formule limitée à
-  `windowRate`/`dowRate`/`leagueRate`). `db:backtest:coupon-quality-signals`
-  (2026-08-09) a montré `train n=0` — trop récemment enrichis pour un vrai split.
-  Relancer le script périodiquement ; ne pondérer que si train ET valid confirment.
+  `windowRate`/`dowRate`/`leagueRate`). Re-vérifié 2026-08-15
+  (`db:backtest:coupon-quality-signals`) : toujours `train n=0` sur les 3
+  signaux (seul le valid period a du volume, 45-406 selon le signal) — pas
+  assez de recul depuis leur ajout, inchangé depuis le 08-09. Relancer le
+  script périodiquement ; ne pondérer que si train ET valid confirment.
 
 - `[ ]` **FADE (pick inverse sur divergence extrême)** —
   `COUPON_ENFORCE_AVOID_FADE=false`, signal le mieux corroboré du backtest qualité
   (train +18%/valid +20%) mais n=15-17 à peine au-dessus du seuil minimal.
   Revalider avec plus de données avant d'activer.
+
+- `[ ]` **VALUE — hit-rate en dégradation dans les coupons, à instruire par
+  backtest dédié** (trouvé 2026-08-15, suite à un replay 08-13→08-16 montrant
+  beaucoup de LOST) — sur 483 jambes VALUE réglées en coupon (split temporel
+  60/40 par jour) : train n=288 hit=50.3%/ROI jambe seule +16.5%, valid n=195
+  hit=**39.0%**/ROI +6.7%. Dégradation nette du hit-rate dans le temps, ROI
+  jambe-seule toujours positif mais en baisse. Pas un signal "VALUE est
+  mauvais" — VALUE reste rentable pris isolément (l'edge compense un
+  hit-rate plus bas par construction) — mais un hit-rate qui se dégrade pèse
+  disproportionnellement sur la probabilité JOINTE d'un coupon (toutes les
+  jambes doivent gagner). `CANAL_BASE_WEIGHT.VALUE=0.36` est déjà le plus bas
+  des canaux coupon, mais aucun backtest dédié n'a testé si c'est encore
+  assez bas vu cette dérive. Comparaison : SAFE stable en hit-rate (61.8%
+  train et valid) mais ROI jambe seule devenu négatif en valid (+2.6%→-9.8%,
+  cotes trop courtes pour compenser le vig même à haute probabilité).
+  - `[ ]` Backtest dédié : `CANAL_BASE_WEIGHT.VALUE` réduit et/ou un plancher
+    d'edge plus strict spécifiquement pour VALUE-en-coupon (distinct du
+    `VALUE_MIN_EDGE` standalone déjà appliqué via `clearsValueEdgeFloor`) —
+    mesurer l'effet sur le ROI de coupon complet, pas juste par jambe.
+  - `[ ]` Vérifier si la dégradation du hit-rate VALUE coïncide avec une
+    période/changement identifiable (nouveau marché, config, ligue) plutôt
+    que de la traiter comme une dérive générique.
+
+- `[x]` **Jambe coin-flip glissée dans un coupon via un EV gonflé — plancher de
+  probabilité ajouté** (résolu 2026-08-15, trouvé en creusant le point
+  VALUE ci-dessus sur le replay 08-13→08-16) — rank 3 du 08-15 associait
+  `Kashima OVER_0_5 HT` (SAFE, 77.2%, GAGNÉ) à `Ljungskile-Osters RESULT_BTTS
+  HOME_NO` (VALUE, **43.4%** — sous 50%, PERDU). La jambe VALUE passait déjà
+  `clearsValueEdgeFloor` (edge=0.167≥0.10) grâce à un EV apparent énorme
+  (+62.7%, cote 3.75) — rien ne vérifiait que la jambe elle-même était plus
+  probable que défavorable. Fix : nouveau `clearsMinLegProbability()`
+  (`coupon-composer.service.ts`), plancher `MIN_LEG_PROBABILITY=0.55`
+  (`coupon.constants.ts`) sur TOUTES les jambes (pas seulement VALUE) —
+  valeur reprise du seuil déjà utilisé par le processus d'analyse manuel
+  (`COUPON_ANALYSIS_TEMPLATE.md`, Étape 0 : "probability ≥ ~55-60%"), pas
+  backtestée pour le composeur automatique. Effet vérifié en replay : plus
+  aucune jambe sous 50% dans les coupons régénérés, volume réduit (7 coupons
+  sur la plage contre 18 avant ce fix précis). **Le taux de réussite global
+  sur cette fenêtre reste dominé par du LOST** — normal sur un échantillon de
+  5 coupons réglés (variance), pas un signal que le fix ne marche pas ; ce
+  fix corrige un mécanisme précis (jambe coin-flip masquée par un EV gonflé),
+  pas une garantie de coupon gagnant.
+  - `[ ]` Backtester la valeur exacte de `MIN_LEG_PROBABILITY` (55% choisi par
+    précédent documentaire, pas par backtest composer) une fois assez de
+    coupons réglés sous ce nouveau plancher.
+
+- `[x]` **Pool candidat construit sur un tri à plat (signalScore canal×jour×ligue)
+  — mix ancre/valeur ajouté** (2026-08-16, suite directe du point ci-dessus)
+  — `signalScore` est une moyenne canal×jour-de-semaine×ligue : deux jambes
+  du même (canal, ligue, jour) ont EXACTEMENT le même score, aucune ne
+  regarde le match précis. `priorAnalysisCount`/`offensiveBalance`/
+  `shadowConflict` existent sur `ScoredPick` mais n'influençaient ni le tri ni
+  la sélection. Confirmé structurel : aucun plafond par canal n'existait avant
+  `MAX_POOL_SIZE=25` — un canal à fort `CANAL_BASE_WEIGHT` (SAFE) peut noyer
+  tous les autres avant même la recherche combinatoire.
+  `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0) documente la méthode manuelle qui
+  marche : ne jamais trier par un seul critère, mélanger des jambes-**ancres**
+  (70-90%+, portent la proba jointe) et des jambes-**valeur** (60-75%,
+  meilleure cote, portent la cote combinée), diversifiées par championnat
+  avant de merger. Le composeur automatique n'implémentait que le mode valeur
+  seul.
+  Fix (`coupon-composer.service.ts`, `coupon.constants.ts`) : `buildCandidatePool()`
+  remplace le tri à plat — partition ancre (`legProbability≥ANCHOR_MIN_PROBABILITY=0.70`)
+  / valeur, EV plafonné à `EV_MAX_SOFT_ALERT` (réutilisé de `betting-engine/
+  ev.constants.ts`, pas un nouveau chiffre) pour le tri du mode valeur
+  uniquement (pas un rejet), diversification par compétition
+  (`MAX_POOL_PER_COMPETITION=2`, même chiffre que le plafond anti-corrélation
+  intra-coupon existant), allocation ~50/50 ancre/valeur avec backfill
+  (jamais de slot de pool gâché). `depthRank()` (nouveau) sert de tie-break
+  sur les 3 signaux de profondeur — PAS un poids/seuil (toujours bloqué par
+  `train n=0`), juste un ordre de préférence, même catégorie "no backtest
+  needed" que `comparePicksBySignalThenProbability`/la règle zéro-partage.
+  Ne touche à aucun seuil de viabilité (EV/cote/proba jointe) déjà backtestés.
+  **Vérifié en replay** sur les 2 seuls jours 100% réglés de la fenêtre
+  08-13→08-16 (les autres ont des résultats incomplets dans cette base
+  locale) : 2 coupons GAGNÉS sur 3 (mix SAFE+TEAM_TOTAL, SAFE+VALUE,
+  SAFE+TEAM_TOTAL sur des ligues distinctes) — première fois de la session
+  qu'un replay produit un coupon gagnant avec le nouveau code. n=3, encore
+  trop petit pour conclure statistiquement, mais un vrai changement de motif
+  vs le tout-LOST observé avant ce fix.
+  - `[ ]` Backtester les poids exacts de `depthRank` et `ANCHOR_MIN_PROBABILITY=0.70`
+    une fois assez de coupons réglés sous ce nouveau mécanisme.
+  - `[ ]` Élargir la fenêtre de replay (au-delà de 08-13/08-14, seuls jours
+    100% réglés dans cette base locale) pour un vrai signal statistique sur
+    le taux de réussite.
+
+- `[x]` **Pool de coupon élargi à `evaluatedPicks` — cause racine du "surface
+  pas profondeur"** (2026-08-16, en creusant le biais suspecté dans
+  `SignalWindowService`) — `getPoolForRange()` (le VRAI pool du générateur de
+  coupon) ne lisait que les `Bet`/`channelDecision` déjà matérialisés : une
+  seule jambe par canal par match, celle que l'algorithme de sélection
+  standalone du canal a déjà choisie. Jamais les autres marchés évalués sur
+  le même match. Or `model_run.features.evaluatedPicks` (tous les marchés
+  évalués, viables ET rejetés) existe déjà et est même déjà utilisé — mais
+  seulement par la fonction sœur `getTodayVirtualPool` (pool jamais staké),
+  jamais par le vrai pool. Exactement le trou documenté par
+  `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0).
+  Confirmé : `status: 'viable'` a déjà passé les gates du système (proba
+  plancher, cote dans la fourchette, marché non suspendu, EV correct, pas de
+  pénalité longshot) — ne pas avoir gagné l'arbitrage de son canal contre un
+  autre marché du même match n'est pas un rejet de fiabilité. Pas besoin de
+  re-dériver la logique de sélection des 6 canaux (certains inter-dépendants,
+  ex. SAFE exclut le pick de VALUE) contre le snapshot persisté.
+  Fix : `resolveEvaluatedMarketLeg()` (`signal-window.service.ts`, fonction
+  pure testée isolément) + `EVALUATED_MARKET_CANAL` (`coupon.constants.ts` —
+  ONE_X_TWO→DOMINANT, TEAM_TOTAL_HOME/AWAY→TEAM_TOTAL, BTTS→BTTS, le reste→
+  VALUE, CORRECT_SCORE exclu car signal immature). Dédupliqué contre les
+  jambes déjà stakées, AVOID appliqué (FADE traité comme DROP ici, pas de
+  construction de jambe opposée pour un marché arbitraire). Nouveau champ
+  `ScoredPick.pickSource: 'STAKED'|'EVALUATED'` (traçabilité, **pas encore
+  persisté en DB** — à faire si un futur backtest STAKED vs EVALUATED en a
+  besoin).
+  Effet de bord : **DOMINANT** (canal réel, jamais lu dans le vrai pool
+  jusqu'ici — confirmé 0 jambe DOMINANT dans tout l'historique
+  `coupon_proposal_leg`) peut désormais y contribuer via ONE_X_TWO.
+  **Décision produit (2026-08-16)** : pas de flag caché — contrairement au
+  plan initial (`COUPON_INCLUDE_EVALUATED_MARKETS`, défaut off), le
+  mécanisme est activé directement dans `CouponService` sans variable
+  d'environnement. Philosophie explicite de l'utilisateur : ne pas gater
+  les fonctionnalités derrière des flags qu'il n'a pas le temps de suivre
+  activement — les laisser vivre et améliorer selon le résultat observé.
+  Même décision appliquée rétroactivement à `stakeDraw`/`stakeTeamTotal`/
+  `stakeBtts`/`enforceAvoid`/`enableAvoidFade` (retirés des flags
+  `ConfigService`, hardcodés actifs) — seul `KELLY_ENABLED` reste un vrai
+  flag (frontière de phase produit explicite, `CLAUDE.md`).
+  Vérifié en replay 08-13/08-14 avec un diagnostic temporaire (fichier de log,
+  retiré après coup) : le mécanisme s'exécute bien — **88 nouvelles jambes**
+  entrées dans le pool, dont **23 avec probabilité brute ≥55%** sur des
+  marchés jusqu'ici jamais candidats (RESULT_TOTAL_GOALS, DOUBLE_CHANCE,
+  WIN_TO_NIL, DRAW_NO_BET, BTTS NO, CLEAN_SHEET...). Mais **0 jambe
+  `EVALUATED` n'a fini dans un coupon publié** sur ces 2 jours — creusé plus
+  loin, cause identifiée et **pas anecdotique** :
+  **Cause racine trouvée** : la plupart des marchés empruntés sont mappés
+  vers le canal VALUE (`EVALUATED_MARKET_CANAL`), qui applique la même
+  formule de mélange 50/50 (`calibratedLegProbability`) que les jambes
+  VALUE stakées normalement — `probability×0.5 + windowRate_VALUE×0.5`. Or
+  `windowRate_VALUE` est actuellement bas (~0.365-0.369, mesuré directement
+  sur les jambes VALUE stakées de cette période) à cause de la dégradation
+  VALUE déjà trouvée plus haut (50.3%→39.0%). Résultat concret : `Omonia
+  Nicosia–Lincoln CLEAN_SHEET_HOME NO` (68.7% de proba brute, EV=0.80,
+  `viable`, jamais stakée) se retrouve calibrée à **0.527 — sous le plancher
+  `MIN_LEG_PROBABILITY=0.55`** malgré un signal brut fort. Ce n'est pas un
+  bug isolé du nouveau mécanisme : c'est la dégradation VALUE (item
+  ci-dessus) qui se propage à toutes les jambes "empruntées" routées vers ce
+  canal, qu'elles aient ou non un bon signal sur leur match précis.
+  - `[ ]` **Reconsidérer le mapping/la formule pour les marchés empruntés** —
+    router tout vers VALUE leur fait hériter du blend dégradé de VALUE même
+    quand leur propre fiabilité (calibration marché, pas canal) serait
+    meilleure. Piste : un blend spécifique aux marchés evaluated (pas la
+    moyenne canal VALUE), ou un mapping plus fin que "tout le reste → VALUE".
+  - `[ ]` Persister `pickSource` en DB si un futur backtest STAKED vs
+    EVALUATED en a besoin.
+  - `[ ]` Mesurer le ROI réel des jambes `EVALUATED` une fois assez de
+    coupons réglés avec ce mécanisme actif — mais résoudre d'abord le point
+    ci-dessus, sinon la mesure restera artificiellement à ~0 (jambes toujours
+    filtrées avant même d'entrer en compétition).
 
 - `[x]` **DRAW — CSL confirmée, ajoutée à `DRAW_STAKED_LEAGUES`** (résolu
   2026-08-15) — re-lancé `db:backtest:channel-league-whitelist` : CSL a
@@ -74,44 +275,30 @@
   à l'écart — risque limité), mais à re-vérifier une fois assez de données
   post-07-19 accumulées.
 
-- `[ ]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID`**
-  (vérifié 2026-08-15) — `coupon-summary.service.ts`, `coupon-indices.service.ts`
-  et `coupon.repository.ts` filtrent uniquement `WON`/`LOST`. Confirmé en DB :
-  **0 ligne `PARTIAL`/`VOID` à ce jour** (uniquement 120 WON / 296 LOST / 8
-  en attente) — le code de settlement gère bien les deux cas
-  (`coupon-settlement.service.ts:206-226`, PARTIAL = tous les legs gradés
-  gagnés mais ≥1 leg voidée en route) mais ça n'a encore jamais été déclenché
-  en prod. **Piège trouvé en creusant** : `combinedOdds` n'est jamais
-  recalculé au settlement — il reste la cote pleine (N legs d'origine) même
-  quand des legs sont voidées. Inclure PARTIAL dans le ROI en l'état
-  surestimerait le gain réel (le vrai payout se fait sur les legs
-  survivantes, à une cote plus basse). Fix complet = recalculer la cote
-  réalisée sur les legs non-voidées au moment du settlement, PUIS inclure
-  PARTIAL dans les 3 vues avec cette cote corrigée — pas juste élargir les
-  filtres `IN (WON, LOST)`. VOID reste correctement exclu (aucun gain,
-  aucune perte).
+- `[x]` **Agrégats ROI/summary ignorent silencieusement `PARTIAL`/`VOID` —
+  corrigé** (résolu 2026-08-15) — `coupon-summary.service.ts`,
+  `coupon-indices.service.ts` et `coupon.repository.ts` ne filtraient que
+  `WON`/`LOST`. Fix en 2 parties :
+  1. Nouveau champ `CouponProposal.realizedOdds` (Decimal nullable, migration
+     `20260815150000_add_coupon_proposal_realized_odds` — **écrite, pas
+     lancée, à exécuter côté utilisateur** comme les migrations précédentes) —
+     recalculé par `CouponSettlementService.settleProposal` comme le produit
+     des cotes des seules jambes NON voidées (`productDecimal`, nouveau
+     helper decimal.js dans `decimal.utils.ts`) ; égal à `combinedOdds` sur un
+     WON sans void, strictement inférieur sur un PARTIAL. `combinedOdds`
+     lui-même n'est jamais modifié (reste la cote proposée à l'origine).
+  2. Les 3 vues incluent désormais `PARTIAL` (`IN (WON, LOST, PARTIAL)`,
+     `VOID` reste exclu) et calculent le gain sur `realizedOdds ?? combinedOdds`
+     — jamais la cote pleine d'origine pour un coupon partiellement voidé.
+  **Reste à faire** : lancer la migration côté utilisateur (`prisma migrate` +
+  `db generate`, cf. règle mémoire) — en attendant, `realizedOdds` cause 2
+  erreurs de typecheck attendues sur le type Prisma généré (pas encore
+  régénéré).
 
 - `[ ]` **Calibration `k`/`decayHalfLifeDays`/`windowDays`** — mesurée
   (`db:backtest:signal-window-calibration`), gain réel mais marginal et pas
   appliqué (compromis réactivité vs stabilité). À reconsidérer seulement si ces
   valeurs semblent un jour concrètement mauvaises en usage.
-
-- `[ ]` **Une même jambe réutilisée entre les coupons classés du même jour fait
-  perdre plusieurs coupons d'un coup** (2e occurrence, 2026-08-15) — les rank
-  1/2/3 d'un même profil (`forDate`/`signalWindowDays`/`targetOddsMin/Max`)
-  peuvent partager une jambe identique ; si elle perd, tous les coupons qui la
-  contiennent perdent ensemble. Vu le 2026-08-15 : Chrobry Głogów–Podbeskidzie
-  TEAM_TOTAL_HOME OVER_1_5 (VALUE, prob. 76.96% déjà shrinkée POL2, 1-1 réel)
-  présente dans rank 1 ET rank 2 (tous deux LOST) ; rank 3 (sans cette jambe)
-  WON. Pas un bug de calibration — le shrinkage POL2 HOME 1_5 est validé en
-  forward le jour même (`backtest-team-total-shrinkage-calibration-2026-08-15.txt`,
-  ΔBrier test=-0.0014, n=261) ; une proba à 77% qui perd une fois sur un essai
-  est de la variance normale. Précédent identique documenté dans le code
-  (`coupon-composer.service.ts:73-76`, 2026-07-29 : un pick HT à 0.76 perdu
-  sur les 3 coupons classés) — corrigé à l'époque par une calibration
-  (meanError), pas par une règle empêchant le partage de jambe entre rangs.
-  À étudier : faut-il une règle anti-corrélation "pas de jambe partagée entre
-  rank 1/2/3 du même profil" dans `composeExhaustive`/`composeGreedy` ?
 
 ---
 
@@ -146,6 +333,17 @@
   staking, même méthode que le "Checklist par nouveau canal" en bas de ce
   fichier) plutôt que de rester une sélection opportuniste sans stratégie
   propre.
+  **Connexion trouvée 2026-08-16** (élargissement du pool de coupon à
+  `evaluatedPicks`, section Générateur de coupon) : router tous ces marchés
+  "orphelins" vers le canal VALUE pour le pool de coupon leur fait hériter
+  du blend de calibration dégradé de VALUE (`windowRate≈0.37` actuellement)
+  — écrasant des jambes à signal individuellement fort (ex.
+  `CLEAN_SHEET_HOME NO` à 68.7% de proba brute calibré à 0.527, sous le
+  plancher). Direction proposée par l'utilisateur : ériger chaque marché
+  orphelin en canal/stratégie propre (sa propre calibration, pas celle de
+  VALUE) plutôt que de continuer à les faire dépendre du blend d'un canal
+  qui ne leur correspond pas — réglerait ce point ET le chantier ci-dessus
+  en même temps.
 
 ---
 

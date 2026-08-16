@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { VALUE_MIN_EDGE } from '@evcore/analysis-core';
+import { productDecimal } from '@utils/decimal.utils';
 import { MIN_BET_COUNT } from '@modules/adjustment/adjustment.constants';
 import {
   calculateEV,
@@ -8,6 +9,7 @@ import {
 } from '@modules/betting-engine/betting-engine.utils';
 import {
   DEFAULT_STAKE_PCT,
+  EV_MAX_SOFT_ALERT,
   KELLY_FRACTION,
   KELLY_MAX_STAKE_PCT,
   getValueMinEdge,
@@ -18,6 +20,10 @@ import {
   DEFAULT_COUPON_PROFILE,
   EXHAUSTIVE_LEG_THRESHOLD,
   GREEDY_START_VARIANTS,
+  JOINT_PROBABILITY_CORRELATION_FACTOR,
+  MIN_LEG_PROBABILITY,
+  ANCHOR_MIN_PROBABILITY,
+  MAX_POOL_PER_COMPETITION,
   type CouponProfileBounds,
 } from './coupon.constants';
 import type {
@@ -35,6 +41,8 @@ export type ComposedCoupon = {
   rank: number;
   legs: ScoredPick[];
   combinedOdds: number;
+  /** Produit brut des probas par jambe, avant shrinkage (voir `jointProbability`). */
+  rawJointProbability: number;
   jointProbability: number;
   /** EV du coupon : `P_coupon × Odd_coupon − 1` (cf. DESIGN.md Étape 1). */
   couponEV: number;
@@ -119,6 +127,15 @@ export function legProbability(leg: {
   return leg.calibratedProbability ?? calibratedLegProbability(leg);
 }
 
+// Corrects the raw product-of-legs jointProbability for the coupon-level
+// overconfidence found in the 2026-08-12 audit — a flat multiplicative factor
+// (not a Bayesian shrink-to-prior) so pick-specific differentiation between
+// coupons is preserved (see JOINT_PROBABILITY_CORRELATION_FACTOR doc for why).
+export function calibrateJointProbability(rawJointProbability: number): number {
+  const { factor, capMin, capMax } = JOINT_PROBABILITY_CORRELATION_FACTOR;
+  return Math.min(capMax, Math.max(capMin, rawJointProbability * factor));
+}
+
 // signalScore is a (canal, dow, league) environment rate — within one canal on
 // one day it is constant across picks, so a sort on signalScore alone leaves
 // same-canal picks in arbitrary (insertion) order. Tie-break on the blended
@@ -140,6 +157,131 @@ export function comparePicksBySignalThenProbability(
 ): number {
   if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
   return legProbability(b) - legProbability(a);
+}
+
+// Depth tie-break — NOT a probability/EV weight (db:backtest:coupon-quality-
+// signals still shows train n=0 on these three signals as of 2026-08-15, so
+// they can't be calibrated into signalScore yet). Used only to order
+// otherwise-similar picks — same "pure ordering policy, no backtest needed"
+// category as comparePicksBySignalThenProbability itself. Higher is better:
+// offensiveBalance BALANCED > unknown (null) > ASYMMETRIC > STRONGLY_ASYMMETRIC;
+// shadowConflict false (no conflict) > unknown (null) > true; more prior
+// analyses of this exact (market, pick) preferred, capped so it can't dominate
+// the other two components.
+export function depthRank(pick: {
+  offensiveBalance: 'BALANCED' | 'ASYMMETRIC' | 'STRONGLY_ASYMMETRIC' | null;
+  shadowConflict: boolean | null;
+  priorAnalysisCount: number;
+}): number {
+  const offensiveBalanceRank =
+    pick.offensiveBalance === 'BALANCED'
+      ? 2
+      : pick.offensiveBalance === null
+        ? 1
+        : pick.offensiveBalance === 'ASYMMETRIC'
+          ? 0
+          : -1; // STRONGLY_ASYMMETRIC
+  const shadowConflictRank =
+    pick.shadowConflict === false ? 1 : pick.shadowConflict === null ? 0 : -1;
+  return (
+    offensiveBalanceRank * 4 +
+    shadowConflictRank * 2 +
+    Math.min(pick.priorAnalysisCount, 5) * 0.1
+  );
+}
+
+// Anchor+value mix, diversified by competition per mode — replaces the old
+// flat "sort everything by signalScore, slice to MAX_POOL_SIZE" pool cut.
+// That flat sort let a single dominant canal (high CANAL_BASE_WEIGHT, e.g.
+// SAFE) crowd out every other canal before the combinatorial search even
+// starts, and never distinguished a genuinely reliable pick from a merely
+// high-EV one — exactly the gap COUPON_ANALYSIS_TEMPLATE.md (Étape 0)
+// documents from real manual-analysis incidents: the method that works
+// deliberately blends a few high-probability ANCHOR legs (70-90%+, carry the
+// joint probability) with a few moderate-probability VALUE legs (better
+// odds, carry the combined odds) — never a single EV-only ranking. This is a
+// pool-construction policy (like sharesAnyLeg's zero-tolerance rule below),
+// not a viability threshold — no backtest gate needed, unlike EV/odds/
+// probability bounds.
+function buildCandidatePool(
+  pricedPicks: ScoredPick[],
+  poolSize: number,
+): ScoredPick[] {
+  const isAnchor = (p: ScoredPick) =>
+    legProbability(p) >= ANCHOR_MIN_PROBABILITY;
+  const anchors = pricedPicks.filter(isAnchor);
+  const value = pricedPicks.filter((p) => !isAnchor(p));
+
+  // Within the value bucket only, cap the EV used for ranking at the same
+  // threshold the betting engine already uses to flag "may indicate
+  // calibration anomaly" (EV_MAX_SOFT_ALERT) — a leg isn't rejected for
+  // having a huge EV, it just can't use that EV to jump the value queue.
+  const evMaxSoftAlert = EV_MAX_SOFT_ALERT.toNumber();
+  const rankedValueEV = (p: ScoredPick) =>
+    Math.min(p.legEV ?? 0, evMaxSoftAlert);
+
+  const byDepthThenSignal = (a: ScoredPick, b: ScoredPick): number => {
+    if (b.signalScore !== a.signalScore) return b.signalScore - a.signalScore;
+    const depthDiff = depthRank(b) - depthRank(a);
+    if (depthDiff !== 0) return depthDiff;
+    return legProbability(b) - legProbability(a);
+  };
+
+  // Shared across anchor selection, value selection, AND the backfill pass
+  // below — a per-competition cap that resets between phases isn't a cap at
+  // all (the backfill would just readmit whatever the diversify step
+  // rejected).
+  const perCompetition = new Map<string, number>();
+  const diversifyByCompetition = (
+    picks: ScoredPick[],
+    limit: number,
+  ): ScoredPick[] => {
+    const kept: ScoredPick[] = [];
+    for (const pick of picks) {
+      if (kept.length >= limit) break;
+      const count = perCompetition.get(pick.competition) ?? 0;
+      if (count >= MAX_POOL_PER_COMPETITION) continue;
+      perCompetition.set(pick.competition, count + 1);
+      kept.push(pick);
+    }
+    return kept;
+  };
+
+  const anchorShare = Math.ceil(poolSize / 2);
+  const valueShare = poolSize - anchorShare;
+
+  const sortedAnchors = [...anchors].sort(byDepthThenSignal);
+  const sortedValue = [...value].sort(
+    (a, b) => byDepthThenSignal(a, b) || rankedValueEV(b) - rankedValueEV(a),
+  );
+
+  const keptAnchors = diversifyByCompetition(sortedAnchors, anchorShare);
+  const keptValue = diversifyByCompetition(sortedValue, valueShare);
+
+  // Never waste real pool capacity: if one mode came up short (not enough
+  // anchors, or not enough value legs, after the per-competition cap),
+  // backfill from the other mode's remaining candidates rather than
+  // shrinking the pool — same no-forcing spirit as selectDiverseCoupons,
+  // applied to filling capacity rather than to diversity. Still respects
+  // the shared per-competition cap (see above) — this only recovers pool
+  // slots left empty by an under-supplied mode, it doesn't reopen a
+  // competition that already hit its cap.
+  const usedKeys = new Set(
+    [...keptAnchors, ...keptValue].map((p) => legKey(p)),
+  );
+  const remaining = [...sortedAnchors, ...sortedValue]
+    .filter((p) => !usedKeys.has(legKey(p)))
+    .sort(byDepthThenSignal);
+  const merged = [...keptAnchors, ...keptValue];
+  for (const pick of remaining) {
+    if (merged.length >= poolSize) break;
+    const count = perCompetition.get(pick.competition) ?? 0;
+    if (count >= MAX_POOL_PER_COMPETITION) continue;
+    perCompetition.set(pick.competition, count + 1);
+    merged.push(pick);
+  }
+
+  return merged;
 }
 
 // VALUE-only edge floor, mirroring the standalone VALUE channel's own gate
@@ -172,6 +314,19 @@ export function clearsValueEdgeFloor(
     new Decimal(1).div(leg.oddsSnapshot),
   );
   return edge.greaterThanOrEqualTo(minEdge);
+}
+
+// All-canal probability floor — a high-EV leg is not automatically a safe
+// coupon leg: it can still be more likely to lose than win. Distinct from
+// clearsValueEdgeFloor (VALUE-only, edge-based) — this checks the leg's own
+// calibrated probability, whatever canal it came from. See MIN_LEG_PROBABILITY
+// doc (coupon.constants.ts) for the incident that motivated it.
+export function clearsMinLegProbability(leg: {
+  calibratedProbability: number | null;
+  probability: number;
+  calibratedHitRate: number;
+}): boolean {
+  return legProbability(leg) >= MIN_LEG_PROBABILITY;
 }
 
 // Shared anti-correlation bookkeeping — used identically by composeExhaustive
@@ -240,32 +395,30 @@ function legKey(leg: ScoredPick): string {
   return `${leg.fixtureId}:${leg.canal}:${leg.market}:${leg.pick}`;
 }
 
-// Above this fraction of a candidate's legs already appearing in a coupon
-// we've already selected, it reads as "the same bet again" rather than a
-// genuinely different option — the exact complaint that motivated this
-// (plan 2026-08-09): the strongest leg in the pool would ride into nearly
-// every one of the top-N coupons by EV alone, since removing it barely moves
-// the ranking. This is a presentation/diversity policy, not a probability
-// threshold — no backtest gate needed, unlike EV/odds/probability bounds.
-const MAX_SHARED_LEG_RATIO = 0.5;
-
-function sharedLegRatio(
+// Any leg shared between two published coupons means a single result can
+// make both lose together — exactly what happened 2026-08-15 (a POL2
+// TEAM_TOTAL_HOME leg present in both rank 1 and rank 2, both LOST; rank 3,
+// without it, WON). The previous rule tolerated up to 50% leg overlap, which
+// let a single shared leg through on any coupon with ≥3 legs (1/3 ≈ 0.33 <
+// 0.5) — not a fluke, the ratio math always allows exactly one shared leg
+// once a coupon has 3+ legs. Zero tolerance now: a candidate is rejected the
+// moment it shares even one leg with an already-selected coupon. This is a
+// presentation/diversity policy, not a probability threshold — no backtest
+// gate needed, unlike EV/odds/probability bounds.
+function sharesAnyLeg(
   candidate: ComposedCoupon,
   against: ComposedCoupon,
-): number {
+): boolean {
   const againstKeys = new Set(against.legs.map(legKey));
-  const shared = candidate.legs.filter((l) =>
-    againstKeys.has(legKey(l)),
-  ).length;
-  return shared / candidate.legs.length;
+  return candidate.legs.some((l) => againstKeys.has(legKey(l)));
 }
 
 // Greedy selection from the EV-sorted viable list: take the best coupon,
-// then keep taking the next-best one that doesn't overlap too heavily with
-// what's already picked — same EV-first ranking, but the top-N no longer
-// collapse into near-duplicates of each other. Backfills with the best
-// remaining candidates (ignoring overlap) if the pool is too thin to fill
-// `maxCoupons` diversely, so this never returns fewer coupons than before.
+// then keep taking the next-best one that shares no leg at all with what's
+// already picked. No backfill — unlike the previous ratio-based version,
+// this never reintroduces a shared leg just to hit `maxCoupons`: the number
+// of coupons actually published depends on how many leg-disjoint
+// combinations the pool supports, up to `maxCoupons` as an upper bound only.
 function selectDiverseCoupons(
   viableSortedByEV: ComposedCoupon[],
   maxCoupons: number,
@@ -273,16 +426,8 @@ function selectDiverseCoupons(
   const selected: ComposedCoupon[] = [];
   for (const candidate of viableSortedByEV) {
     if (selected.length >= maxCoupons) break;
-    const tooSimilar = selected.some(
-      (s) => sharedLegRatio(candidate, s) >= MAX_SHARED_LEG_RATIO,
-    );
-    if (!tooSimilar) selected.push(candidate);
-  }
-  if (selected.length < maxCoupons) {
-    for (const candidate of viableSortedByEV) {
-      if (selected.length >= maxCoupons) break;
-      if (!selected.includes(candidate)) selected.push(candidate);
-    }
+    const overlaps = selected.some((s) => sharesAnyLeg(candidate, s));
+    if (!overlaps) selected.push(candidate);
   }
   return selected;
 }
@@ -371,14 +516,16 @@ export class CouponComposerService {
     // cote RÉELLE (B2 — plus de FALLBACK_ODDS). Une jambe sans cote n'a pas d'EV.
     const pricedPicks = scoredPicks
       .filter((p) => p.oddsSnapshot !== null)
-      .filter((p) => clearsValueEdgeFloor(p));
+      .filter((p) => clearsValueEdgeFloor(p))
+      .filter((p) => clearsMinLegProbability(p));
 
     const distinctFixtures = new Set(pricedPicks.map((p) => p.fixtureId));
     if (distinctFixtures.size < MIN_DISTINCT_FIXTURES) return [];
 
-    const pool = [...pricedPicks]
-      .sort(comparePicksBySignalThenProbability)
-      .slice(0, MAX_POOL_SIZE);
+    const pool = buildCandidatePool(
+      pricedPicks,
+      profile.maxPoolSize ?? MAX_POOL_SIZE,
+    );
 
     // Exhaustive DFS stays exact and cheap up to EXHAUSTIVE_LEG_THRESHOLD legs
     // (C(25,5)≈2300 combinations); beyond that (longshot profiles, 8-12 legs)
@@ -505,23 +652,29 @@ export class CouponComposerService {
   }
 
   private computeCombinedOdds(legs: ScoredPick[]): number {
-    return legs.reduce((acc, leg) => {
-      // Invariant compose() : seules des jambes à cote réelle arrivent ici.
+    // Invariant compose() : seules des jambes à cote réelle arrivent ici.
+    for (const leg of legs) {
       if (leg.oddsSnapshot === null) {
         throw new Error('compose: leg without real odds reached combinedOdds');
       }
-      return acc * leg.oddsSnapshot;
-    }, 1);
+    }
+    return productDecimal(
+      legs.map((leg) => leg.oddsSnapshot as number),
+    ).toNumber();
   }
 
   private buildCoupon(
     legs: ScoredPick[],
     combinedOdds: number,
   ): ComposedCoupon {
-    const jointProbability = legs.reduce(
+    const rawJointProbability = legs.reduce(
       (acc, leg) => acc * legProbability(leg),
       1,
     );
+    // Correction de surconfiance (cf. JOINT_PROBABILITY_CORRELATION_FACTOR) —
+    // appliquée avant toute consommation (EV, filtre de viabilité, Kelly) pour
+    // qu'il n'existe qu'une seule valeur "officielle" persistée.
+    const jointProbability = calibrateJointProbability(rawJointProbability);
     // couponEV = P_coupon × Odd_coupon − 1 (source unique calculateEV).
     const couponEV = calculateEV(jointProbability, combinedOdds).toNumber();
     const signalScore =
@@ -541,6 +694,7 @@ export class CouponComposerService {
           null,
       })),
       combinedOdds,
+      rawJointProbability,
       jointProbability,
       couponEV,
       signalScore,
@@ -550,6 +704,7 @@ export class CouponComposerService {
       rank: 0,
       legs,
       combinedOdds,
+      rawJointProbability,
       jointProbability,
       couponEV,
       signalScore,

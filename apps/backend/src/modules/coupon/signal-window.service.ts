@@ -6,6 +6,7 @@ import { CalibrationService } from '@modules/adjustment/calibration.service';
 import { OddsSnapshotLoader } from '@modules/betting-engine/pricing/odds-snapshot.loader';
 import {
   bookmakerMargin as computeBookmakerMargin,
+  calculateEV,
   removeOverround,
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
@@ -17,6 +18,7 @@ import {
   extractModelRunFeatureDiagnostics,
   hasCalibrationAlert,
   readShadowConflict,
+  type EvaluatedPickSnapshot,
 } from '@utils/model-run.utils';
 import {
   MAX_VIRTUAL_COUPON_SELECTIONS,
@@ -26,6 +28,7 @@ import {
   DRAW_STAKED_LEAGUES,
   CANAL_BASE_WEIGHT,
   COUPON_PARAMS,
+  EVALUATED_MARKET_CANAL,
   VIRTUAL_COUPON_RULES,
   VIRTUAL_COUPON_TOP_LIMITS,
   type VirtualCouponRule,
@@ -97,6 +100,15 @@ export type GetPoolOpts = {
    * settled data confirms it.
    */
   enableAvoidFade?: boolean;
+  /**
+   * Widen the real coupon pool with `ModelRun.features.evaluatedPicks`
+   * ('viable' entries not already staked as a Bet/promoted channelDecision)
+   * — see `EVALUATED_MARKET_CANAL` doc (coupon.constants.ts) for why this is
+   * a legitimate coupon candidate, not a reliability rejection. Default off
+   * — these legs have never appeared in a real coupon before; requires a
+   * dedicated backtest (STAKED vs EVALUATED ROI) before flipping to true.
+   */
+  includeEvaluatedMarkets?: boolean;
 };
 
 export type ScoredPick = {
@@ -160,6 +172,14 @@ export type ScoredPick = {
   priorAnalysisCount: number;
   isCorrect: boolean | null;
   signalScore: number;
+  /**
+   * `STAKED` = déjà matérialisé comme `Bet`/`channelDecision` promu (chemin
+   * historique). `EVALUATED` = trouvé dans `evaluatedPicks` (`status:
+   * 'viable'`) mais jamais officiellement retenu par son canal — n'a jamais
+   * existé en coupon avant `opts.includeEvaluatedMarkets` (2026-08-16),
+   * traçabilité pour un futur backtest dédié comparant les deux.
+   */
+  pickSource: 'STAKED' | 'EVALUATED';
   featureSnapshot: Record<string, unknown>;
   homeLogo: string | null;
   awayLogo: string | null;
@@ -453,6 +473,47 @@ export function computeMarketFair(
     // Invalid decimal odds (≤ 1) — skip fair-prob rather than fail the pool.
     return null;
   }
+}
+
+// Decides whether one ModelRun.features.evaluatedPicks entry becomes an
+// extra coupon-eligible candidate (opts.includeEvaluatedMarkets) — pulled out
+// as a pure function so the gating logic (dedup, canal mapping, AVOID) is
+// unit-testable without mocking the whole Prisma/odds-loader pipeline that
+// getPoolForRange runs inside. See EVALUATED_MARKET_CANAL doc
+// (coupon.constants.ts) for why 'viable'-but-not-staked is a legitimate
+// candidate, not a reliability rejection.
+export function resolveEvaluatedMarketLeg(
+  evaluated: Pick<
+    EvaluatedPickSnapshot,
+    'market' | 'pick' | 'status' | 'probability' | 'odds'
+  >,
+  opts: {
+    stakedKeys: ReadonlySet<string>;
+    enforceAvoid: boolean;
+    calibrationAlert: boolean;
+  },
+): { canal: Canal; probability: number; oddsSnapshot: number } | null {
+  if (evaluated.status !== 'viable') return null;
+  const canal = EVALUATED_MARKET_CANAL[evaluated.market];
+  if (!canal) return null; // CORRECT_SCORE and anything unmapped — excluded
+  if (opts.stakedKeys.has(`${evaluated.market}:${evaluated.pick}`)) return null;
+
+  const probability = readSnapshotNumber(evaluated.probability);
+  const oddsSnapshot = readSnapshotNumber(evaluated.odds);
+  if (probability === null || oddsSnapshot === null) return null;
+
+  if (opts.enforceAvoid) {
+    const regime = classifyAvoidSignal(
+      isExtremeDivergence(probability, oddsSnapshot),
+      opts.calibrationAlert,
+    );
+    // FADE has no dedicated opposite-leg construction here (unlike the Bet
+    // loop, which can look up the opposite pick's fresh odds from the live
+    // snapshot) — treated like DROP, same as pushChannelSelectionPick above.
+    if (regime === 'DROP' || regime === 'FADE') return null;
+  }
+
+  return { canal: canal, probability, oddsSnapshot };
 }
 
 @Injectable()
@@ -841,6 +902,10 @@ export class SignalWindowService {
         // Full market odds (as-of kickoff) — needed to remove the overround and
         // compute each leg's fair market probability + bookmaker margin.
         const snapshot = oddsSnapshots.get(f.id) ?? null;
+        // Every (market, pick) already staked for this fixture (Bet or
+        // promoted channelDecision) — dedupe against when expanding into
+        // evaluatedPicks below (opts.includeEvaluatedMarkets).
+        const stakedKeys = new Set<string>();
 
         for (const bet of run.bets) {
           const betOdds = bet.oddsSnapshot ? Number(bet.oddsSnapshot) : null;
@@ -911,7 +976,9 @@ export class SignalWindowService {
             signalScore: 0,
             betId: bet.id,
             modelRunId: null,
+            pickSource: 'STAKED',
           });
+          stakedKeys.add(`${market}:${pick}`);
         }
 
         // DRAW/TEAM_TOTAL/BTTS staking (B7 promotions) — these channels' selections
@@ -954,7 +1021,9 @@ export class SignalWindowService {
             signalScore: 0,
             betId: null,
             modelRunId: run.id,
+            pickSource: 'STAKED',
           });
+          stakedKeys.add(`${sel.market}:${sel.pick}`);
         };
 
         // Restricted to DRAW_STAKED_LEAGUES — see that constant's doc comment.
@@ -975,6 +1044,56 @@ export class SignalWindowService {
           (BTTS_STAKED_LEAGUES as readonly string[]).includes(comp)
         ) {
           pushChannelSelectionPick(StrategyChannel.BTTS);
+        }
+
+        // Widen the real pool with viable-but-not-officially-staked
+        // evaluatedPicks (opts.includeEvaluatedMarkets) — see
+        // EVALUATED_MARKET_CANAL doc (coupon.constants.ts) for why a
+        // 'viable' entry is a legitimate coupon candidate even though its own
+        // channel didn't select it as the winner among this fixture's markets.
+        if (opts.includeEvaluatedMarkets) {
+          const evaluatedPicks = extractModelRunFeatureDiagnostics(
+            run.features,
+          ).evaluatedPicks;
+          for (const evaluated of evaluatedPicks) {
+            const resolved = resolveEvaluatedMarketLeg(evaluated, {
+              stakedKeys,
+              enforceAvoid: opts.enforceAvoid ?? false,
+              calibrationAlert: calibAlert,
+            });
+            if (!resolved) continue;
+            const { canal, probability, oddsSnapshot: legOdds } = resolved;
+            const fair = snapshot
+              ? computeMarketFair(
+                  evaluated.market as Market,
+                  evaluated.pick,
+                  snapshot,
+                )
+              : null;
+            picks.push({
+              ...base,
+              canal,
+              market: evaluated.market,
+              pick: evaluated.pick,
+              probability,
+              calibratedHitRate: 0,
+              calibratedProbability: null,
+              oddsSnapshot: legOdds,
+              legEV: calculateEV(probability, legOdds).toNumber(),
+              pMarketFair: fair?.pMarketFair ?? null,
+              bookmakerMargin: fair?.bookmakerMargin ?? null,
+              priorAnalysisCount: countPriorAnalyses(
+                priorRuns,
+                evaluated.market as Market,
+                evaluated.pick,
+              ),
+              isCorrect: null,
+              signalScore: 0,
+              betId: null,
+              modelRunId: run.id,
+              pickSource: 'EVALUATED',
+            });
+          }
         }
       }
     }
@@ -1139,6 +1258,7 @@ export class SignalWindowService {
           signalScore,
           betId: null,
           modelRunId: run.id,
+          pickSource: 'STAKED', // virtual pool — never gated by pickSource anyway
         });
       }
     }

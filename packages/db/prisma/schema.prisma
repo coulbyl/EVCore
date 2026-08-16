@@ -911,6 +911,12 @@ model CouponProposal {
   targetOddsMin          Decimal              @db.Decimal(6, 2)
   targetOddsMax          Decimal              @db.Decimal(6, 2)
   combinedOdds           Decimal              @db.Decimal(8, 3)
+  // Cote réellement payée au settlement, calculée sur les seules jambes NON
+  // voidées. `null` tant que non réglé ; égale à `combinedOdds` sur un WON sans
+  // void. Distincte de `combinedOdds` (cote proposée à l'origine, affichée
+  // ailleurs) pour ne jamais perdre la valeur initialement annoncée. Voir
+  // TODO.md "Agrégats ROI/summary ignorent silencieusement PARTIAL/VOID".
+  realizedOdds           Decimal?             @db.Decimal(8, 3)
   jointProbability       Decimal              @db.Decimal(5, 4)
   signalScore            Decimal              @db.Decimal(5, 4)
   status                 CouponProposalStatus @default(PENDING)

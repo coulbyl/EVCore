@@ -21,11 +21,35 @@ const logger = createLogger('coupon');
 @Injectable()
 export class CouponService {
   private readonly kellyEnabled: boolean;
-  private readonly stakeDraw: boolean;
-  private readonly stakeTeamTotal: boolean;
-  private readonly stakeBtts: boolean;
-  private readonly enforceAvoid: boolean;
-  private readonly enableAvoidFade: boolean;
+  // DRAW/TEAM_TOTAL/BTTS staking, AVOID enforcement, evaluated-markets pool
+  // widening — all default-on, no env kill-switch. Project philosophy: ship
+  // as the real default behaviour and observe/iterate on real results,
+  // rather than gate behind a flag nobody has bandwidth to actively manage
+  // (2026-08-16 — a dormant COUPON_INCLUDE_EVALUATED_MARKETS flag would have
+  // repeated the exact "surface not depth" problem this feature fixes).
+  //
+  // - DRAW: backtested +9.9% ROI, product-approved (B7).
+  // - TEAM_TOTAL: backtested +3.40% ROI, n=845, all leagues (2026-07-28).
+  // - BTTS: restricted to BTTS_STAKED_LEAGUES inside getPoolForRange
+  //   (per-league split shows a real edge/loss divide, not a uniform +0.76%).
+  // - AVOID: drops picks whose model↔market divergence is implausible
+  //   (≥ AVOID_CONFIG.maxEdge) — validated -20% ROI on those picks over 3
+  //   seasons.
+  // - FADE regime (stake the opposite pick on extreme-divergence-alone):
+  //   backtested +18%/+20% ROI train/valid (2026-08-09,
+  //   backtest-coupon-quality-signals) but n=15-17 barely clears MIN_SAMPLE —
+  //   let it live and revisit once more settled data accumulates, rather than
+  //   leave it dormant behind a flag.
+  // - Evaluated-markets widening: 'viable' evaluatedPicks already pass the
+  //   same probability/EV/odds/suspension gates as officially-staked
+  //   picks (see EVALUATED_MARKET_CANAL doc, coupon.constants.ts) — losing
+  //   their own channel's internal arbitration isn't a reliability rejection.
+  private readonly stakeDraw = true;
+  private readonly stakeTeamTotal = true;
+  private readonly stakeBtts = true;
+  private readonly enforceAvoid = true;
+  private readonly enableAvoidFade = true;
+  private readonly includeEvaluatedMarkets = true;
 
   // eslint-disable-next-line max-params -- Explicit NestJS service injection.
   constructor(
@@ -35,30 +59,6 @@ export class CouponService {
     config: ConfigService,
   ) {
     this.kellyEnabled = config.get<string>('KELLY_ENABLED', 'false') === 'true';
-    // DRAW staking (B7) — on by default: backtested +9.9% ROI, product-approved.
-    // Kept env-toggleable (COUPON_STAKE_DRAW=false) as a kill-switch.
-    this.stakeDraw =
-      config.get<string>('COUPON_STAKE_DRAW', 'true') !== 'false';
-    // TEAM_TOTAL staking (B7 promotion, 2026-07-28) — backtested +3.40% ROI
-    // (n=845, all leagues). Kill-switch: COUPON_STAKE_TEAM_TOTAL=false.
-    this.stakeTeamTotal =
-      config.get<string>('COUPON_STAKE_TEAM_TOTAL', 'true') !== 'false';
-    // BTTS staking (B7 promotion, 2026-07-28) — restricted to
-    // BTTS_STAKED_LEAGUES inside getTodayPool (per-league split shows a real
-    // edge/loss divide, not a uniform +0.76%). Kill-switch: COUPON_STAKE_BTTS=false.
-    this.stakeBtts =
-      config.get<string>('COUPON_STAKE_BTTS', 'true') !== 'false';
-    // AVOID enforcement — on by default: drops staking picks whose model↔market
-    // divergence is implausible (≥ AVOID_CONFIG.maxEdge); validated -20% ROI on
-    // those picks over 3 seasons. Kill-switch: COUPON_ENFORCE_AVOID=false.
-    this.enforceAvoid =
-      config.get<string>('COUPON_ENFORCE_AVOID', 'true') !== 'false';
-    // FADE regime (stake the opposite pick on extreme-divergence-alone) —
-    // backtested +18%/+20% ROI train/valid (2026-08-09,
-    // backtest-coupon-quality-signals), but n=15-17 barely clears the
-    // MIN_SAMPLE floor — off by default until more settled data confirms it.
-    this.enableAvoidFade =
-      config.get<string>('COUPON_ENFORCE_AVOID_FADE', 'false') === 'true';
   }
 
   async generateCoupons(
@@ -101,6 +101,7 @@ export class CouponService {
         includeBtts: this.stakeBtts,
         enforceAvoid: this.enforceAvoid,
         enableAvoidFade: this.enableAvoidFade,
+        includeEvaluatedMarkets: this.includeEvaluatedMarkets,
       }),
     ]);
 
