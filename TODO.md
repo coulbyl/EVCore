@@ -480,14 +480,51 @@
   (`20260816150000_add_draw_no_bet_channel`), **lancée + `db generate`
   régénéré le jour même** — suite complète verte (922/922), aucune migration
   en attente à ce stade.
+  - `[x]` Migration lancée + `db generate` régénéré côté utilisateur
+    (2026-08-16) — suite complète verte.
+  - `[ ]` Même séquence que les canaux précédents : observer avant tout
+    backtest ROI ou wiring coupon/invest.
+
+- `[~]` **WIN_TO_NIL_HOME/AWAY — cinquième marché orphelin sorti de VALUE,
+  canal dédié en OBSERVATION** (2026-08-16) — side gagne ET l'adversaire ne
+  marque pas ; indépendant par côté (pas complémentaire comme dnbHome/dnbAway
+  — les deux peuvent être faux à la fois, ex. match nul ou les deux équipes
+  marquent), exactement la même forme que CLEAN_SHEET déjà en canal. Aucune
+  calibration walk-forward — lancement OBSERVATION dérivé des scores réglés
+  (`docker exec evcore-postgres psql`) : taux = compte(side gagne ET
+  adversaire à 0) / compte(fixtures réglées) par ligue, 67 ligues n≥50,
+  `threshold = taux domicile − 0.05` (marge plate, même règle que
+  `CLEAN_SHEET_CONFIG` — domicile structurellement le signal le plus fiable,
+  observé sur chaque ligue du jeu de données). `decideWinToNil` = copie
+  quasi-exacte de `decideCleanSheet` (deux marchés indépendants HOME/AWAY,
+  argmax au-dessus d'un seuil partagé). Contrairement aux 4 canaux
+  précédents : réutilise le mécanisme existant `getChannelStrategyConfig`
+  (dispatcher partagé avec CLEAN_SHEET/WIN_EITHER_HALF) en ajoutant
+  `"WIN_TO_NIL"` à l'union `ChannelStrategyConfigChannel` plutôt que de créer
+  un nouveau getter dédié comme RESULT_BTTS/DRAW_NO_BET — la table
+  `WIN_TO_NIL_CONFIG` reste séparée de `CHANNEL_STRATEGY_CONFIG`
+  (DOMINANT/DRAW/BTTS, eux réellement backtestés ROI), même distinction que
+  CLEAN_SHEET/WIN_EITHER_HALF. **Effet de bord trouvé en creusant le
+  typecheck** : `apps/backend/src/modules/backtest/tuning.constants.ts`
+  indexe `Record<ChannelStrategyConfigChannel, ...>` de façon exhaustive
+  (`TUNING_THRESHOLD_GRID`, `CHANNEL_PROMOTION_RULE`, `TUNING_CHANNELS`) —
+  étendre l'union sans mettre à jour ce fichier cassait le build (pas un
+  problème de migration Prisma, une vraie erreur de compilation) ; complété
+  avec une grille placeholder (même méthodologie que CLEAN_SHEET/
+  WIN_EITHER_HALF à leur lancement, pas encore backtestée). OBSERVATION
+  stricte, même périmètre que les 4 canaux précédents. `StrategyChannel`
+  (Prisma) gagne `WIN_TO_NIL` ; migration écrite
+  (`20260816160000_add_win_to_nil_channel`), **pas lancée**. Suite verte hors
+  `domain-enums.conformance.spec.ts` (attendu — 931/932).
+  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
+    `pnpm --filter backend test`.
   - `[ ]` Même séquence que les canaux précédents : observer avant tout
     backtest ROI ou wiring coupon/invest.
   - `[ ]` Marchés orphelins restants : DOUBLE_CHANCE, HALF_TIME_FULL_TIME,
-    FIRST_HALF_WINNER, WIN_TO_NIL_HOME/AWAY — aucun n'a de calibration prête,
-    même méthode base-rate-DB à répéter marché par marché. WIN_TO_NIL est le
-    candidat le plus proche en forme (probabilité fermée par côté, comme
-    CLEAN_SHEET déjà en canal) ; DOUBLE_CHANCE/HALF_TIME_FULL_TIME restent les
-    plus complexes (marchés composés, pas de signal à isoler simplement).
+    FIRST_HALF_WINNER — aucun n'a de calibration prête ; tous trois sont des
+    marchés composés (pas de signal à isoler aussi simplement qu'un
+    side×issue), plus proches en complexité d'un vrai chantier de conception
+    que d'une répétition mécanique de la méthode base-rate-DB.
 
 ---
 

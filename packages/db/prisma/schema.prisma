@@ -187,6 +187,7 @@ enum StrategyChannel {
   OVER_UNDER_HT
   RESULT_BTTS
   DRAW_NO_BET
+  WIN_TO_NIL
 
   @@schema("public")
 }

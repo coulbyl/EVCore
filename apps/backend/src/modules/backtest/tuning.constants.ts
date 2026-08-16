@@ -33,6 +33,10 @@ export const TUNING_THRESHOLD_GRID: Record<
   // comment), so the grid reaches higher than BTTS/CLEAN_SHEET. Placeholder
   // grid (2026-07-18, no backtest yet).
   WIN_EITHER_HALF: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75],
+  // WIN_TO_NIL signal = model P(side wins AND opponent scores 0). Placeholder
+  // grid (2026-08-16, no backtest yet) — same scale as CLEAN_SHEET (both are
+  // defensive+result combo signals derived from settled base rates ~0.15-0.4).
+  WIN_TO_NIL: [0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
 };
 
 /**
@@ -60,6 +64,7 @@ export const CHANNEL_PROMOTION_RULE: Record<
   // candidates), to be confirmed once real settled data accumulates.
   CLEAN_SHEET: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   WIN_EITHER_HALF: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
+  WIN_TO_NIL: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
 };
 
 export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
@@ -68,6 +73,7 @@ export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
   'BTTS',
   'CLEAN_SHEET',
   'WIN_EITHER_HALF',
+  'WIN_TO_NIL',
 ];
 
 /**

@@ -26,6 +26,7 @@ export const STRATEGY_CHANNEL = {
   OVER_UNDER_HT: "OVER_UNDER_HT",
   RESULT_BTTS: "RESULT_BTTS",
   DRAW_NO_BET: "DRAW_NO_BET",
+  WIN_TO_NIL: "WIN_TO_NIL",
 } as const;
 
 export type StrategyChannel =

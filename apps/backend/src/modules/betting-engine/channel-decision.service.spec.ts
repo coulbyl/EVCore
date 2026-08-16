@@ -88,6 +88,10 @@ function richContext(): StrategyContext {
       // REJECTED here, not exercised beyond the probability read.
       dnbHome: new Decimal('0.5'),
       dnbAway: new Decimal('0.35'),
+      // Below BL1's WIN_TO_NIL_CONFIG threshold (0.15) so WIN_TO_NIL is
+      // REJECTED here, not exercised beyond the probability read.
+      winToNilHome: new Decimal('0.1'),
+      winToNilAway: new Decimal('0.08'),
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -117,8 +121,9 @@ describe('ChannelDecisionService', () => {
 
     // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
     // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS, OVER_UNDER_HT,
-    // RESULT_BTTS, DRAW_NO_BET) + the CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(16);
+    // RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL) + the CONSENSUS & AVOID
+    // meta-strategies.
+    expect(evaluated).toHaveLength(17);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.

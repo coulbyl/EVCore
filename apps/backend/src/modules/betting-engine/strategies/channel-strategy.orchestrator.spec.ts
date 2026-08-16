@@ -96,6 +96,10 @@ function makeContext(
       // REJECTED here, not exercised beyond the probability read.
       dnbHome: new Decimal('0.5'),
       dnbAway: new Decimal('0.35'),
+      // Below BL1's WIN_TO_NIL_CONFIG threshold (0.15) so WIN_TO_NIL is
+      // REJECTED here, not exercised beyond the probability read.
+      winToNilHome: new Decimal('0.1'),
+      winToNilAway: new Decimal('0.08'),
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.
