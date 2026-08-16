@@ -6,7 +6,7 @@ Construire un moteur autonome de sélection de paris sportifs basé sur :
 
 - 📊 Probabilités estimées
 - 📈 Expected Value (EV)
-- 🎯 Architecture multi-canal (EV, SV, Confiance, BTTS, Nul)
+- 🎯 Architecture multi-canal — canaux pilotés par la cote (EV, SV) et canaux de prédiction pure par marché (voir §3.3, une vingtaine de canaux au 2026-08-16, en croissance à mesure que chaque marché du domaine reçoit son propre canal — ceci n'est plus une liste figée à 5)
 - 🔁 Auto-évaluation et calibration
 - 🧠 Apprentissage progressif contrôlé
 - ⚖️ Équilibre mathématique + gestion du risque
@@ -35,7 +35,7 @@ Le système ne sera **pas un chatbot**, mais un moteur décisionnel autonome.
 - ❌ Pas de dépendance LLM pour les données brutes
 - ✅ Données déterministes obligatoires
 - ✅ Apprentissage validé par backend (Option B)
-- ✅ EV prioritaire sur taux de réussite (canaux EV/SV) — hit rate prioritaire sur les canaux Confiance/BTTS/Nul
+- ✅ EV prioritaire sur taux de réussite (canaux basés sur la cote : EV/SV) — hit rate/conviction prioritaire sur les canaux de prédiction pure (argmax par marché, indépendants des cotes — voir §3.3)
 - ✅ Volume modéré, variance contrôlée
 - ✅ “No Bet” autorisé
 
@@ -100,7 +100,7 @@ Le moteur expose deux familles de canaux :
 
 | Canal             | Critère           | Marché                                                                                                                | Pick                                    |
 | ----------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
+| **EV**            | EV ≥ 8%           | 1X2, O/U, BTTS, DC, HT/FT, O/U HT, First Half Winner, DNB, Team Total, Clean Sheet, Win to Nil, Win Either Half, RESULT_TOTAL_GOALS, RESULT_BTTS | HOME / DRAW / AWAY / OVER / UNDER / YES |
 | **SV** (Sécurité) | P ≥ 68% + EV ≥ 0% | 1X2, O/U, BTTS, DC                                                                                                    | HOME / DRAW / AWAY / OVER / UNDER / YES |
 
 **Canaux de prédiction pure (PredictionChannel — indépendants des cotes)**
@@ -114,8 +114,19 @@ Le moteur expose deux familles de canaux :
 | **CLEAN_SHEET**      | P(clean sheet) ≥ seuil ligue | CLEAN_SHEET_HOME/AWAY        | argmax(HOME, AWAY), YES uniquement |
 | **TEAM_TOTAL**       | P(side) ≥ seuil ligne/ligue  | TEAM_TOTAL_HOME/AWAY         | meilleur (équipe × ligne × side)   |
 | **WIN_EITHER_HALF**  | P(side) ≥ seuil ligue        | TO_WIN_EITHER_HALF           | argmax(HOME, AWAY)                 |
+| **CORRECT_SCORE**    | P(score) ≥ seuil global      | CORRECT_SCORE                | argmax probabilité (pas EV — évite le bruit longshot) |
+| **RESULT_TOTAL_GOALS** | P(side×ligne UNDER) ≥ seuil ligue | RESULT_TOTAL_GOALS      | meilleur (side × ligne) par EV     |
+| **OVER_UNDER_HT**    | P(side) ≥ seuil ligue        | OVER_UNDER_HT                 | meilleur (ligne × side) par EV     |
+| **RESULT_BTTS**      | P(side×issue) ≥ seuil ligue  | RESULT_BTTS                  | meilleur (side × YES/NO) par EV    |
+| **DRAW_NO_BET**      | P(side) ≥ seuil ligue        | DRAW_NO_BET                   | argmax(HOME, AWAY)                 |
+| **WIN_TO_NIL**       | P(side) ≥ seuil ligue        | WIN_TO_NIL_HOME/AWAY         | argmax(HOME, AWAY), YES uniquement |
+| **DOUBLE_CHANCE**    | P(combo) ≥ seuil global      | DOUBLE_CHANCE                 | meilleur (1X/X2/12) par EV         |
+| **FIRST_HALF_WINNER**| P_max HT ≥ seuil ligue       | FIRST_HALF_WINNER             | argmax(HOME, DRAW, AWAY) à la mi-temps |
+| **HALF_TIME_FULL_TIME** | P(combo) ≥ seuil global   | HALF_TIME_FULL_TIME           | argmax probabilité sur la grille 9 cases HT×FT |
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
+
+CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. Tous tournent en **OBSERVATION** (décision enregistrée + réglée analytiquement, jamais misée) ; seuls **EV, SV, BTTS, DRAW, CONF (DOMINANT) et TEAM_TOTAL** sont aujourd'hui staké dans le générateur de coupon (`CouponChannel`). Le passage OBSERVATION → staking suit toujours le même parcours : hypothèse → backtest séparé → observation → whitelist par ligue → staking (voir TODO.md, "Checklist par nouveau canal").
 
 ---
 
@@ -424,7 +435,7 @@ Ce projet n’est pas :
 C’est :
 
 > Un moteur probabiliste discipliné,
-> Multi-canal (EV, SV, Confiance, BTTS, Nul),
+> Multi-canal (cotes : EV, SV — prédiction par marché : voir §3.3),
 > Mesurable,
 > Auto-calibré,
 > Construit pour survivre à la variance.
@@ -601,7 +612,7 @@ Domaine : **evcore.live**
 - **EV** → _Expected Value_, concept fondateur — le moteur ne génère un pick que lorsqu'il y a un avantage mathématique mesurable
 - **Core** → moteur central, discipline, fondation structurelle
 
-Le système a évolué au-delà du seul canal EV : il opère sur 5 canaux (EV, SV, Confiance, BTTS, Nul), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
+Le système a évolué au-delà du seul canal EV : il opère désormais sur une vingtaine de canaux (voir §3.3 pour la liste complète et le statut staké/observation de chacun), mais l'Expected Value reste le critère primaire pour les canaux basés sur les cotes (EV/SV).
 
 Le nom reflète :
 

@@ -755,6 +755,96 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ## Bugs & dette technique
 
+- `[x]` **Jambe partagée entre coupons classés — angle mort cross-canal**
+  (résolu 2026-08-16) — le fix zéro-tolérance du 08-15 (`sharesAnyLeg`)
+  comparait sur `legKey` (`fixtureId:canal:market:pick`), donc VALUE et
+  DOMINANT choisissant tous les deux `ONE_X_TWO/HOME` sur le même match
+  passaient comme des jambes "différentes" — deux coupons publiés auraient
+  pu porter le même pari sous-jacent sans jamais être détectés comme
+  partagés, exactement le risque que le fix du 08-15 devait fermer, entré
+  par le côté cross-canal plutôt que même-canal. Fix : nouvelle fonction
+  `sharedBetKey` (`fixtureId:market:pick`, sans canal) utilisée uniquement
+  par `sharesAnyLeg` — les autres usages de `legKey` (dédup de pool, dédup de
+  coupons générés) gardent le canal, légitime là où deux canaux sur le même
+  marché sont des candidats réellement distincts (cote/probabilité/EV
+  différentes). Nouveau test de régression
+  (`coupon-composer.service.spec.ts`). Trouvé en analysant la cohérence
+  produit globale des canaux à la demande de l'utilisateur, pas un incident
+  observé en prod.
+
+- `[x]` **EVCORE.md périmé — "5 canaux" alors qu'il y en a 24** (résolu
+  2026-08-16) — le doc produit n'avait jamais suivi la croissance du système
+  au-delà du MVP (EV/SV/Confiance/BTTS/Nul). Mis à jour : tableau des canaux
+  de prédiction complété (CORRECT_SCORE + les 8 canaux du 08-16), mention
+  explicite du statut staké (EV/SV/BTTS/DRAW/CONF/TEAM_TOTAL) vs observation
+  (tout le reste), framing "5 canaux" remplacé par un renvoi à la liste
+  réelle en §3.3 partout où il apparaissait (vision, signification, "no
+  bet").
+
+- `[x]` **OVER_UNDER_HT structurellement bloqué dans ses 7 seules ligues
+  autorisées** (résolu 2026-08-16) — `OverUnderHtStrategy` gate sur
+  `SelectionConfig.htftCalibrated` (7 ligues : BL1/CH/L1/LL/PL/SA/EL1,
+  `ev.constants.ts`), mais **aucune** de ces 7 ligues n'avait de bloc `ouHt`
+  dans `OU_SHRINKAGE_CONFIG` — `getOverUnderHtLineConfigs` retournait donc
+  toujours `[]` (DISABLED) pour les seules ligues où le canal a le droit de
+  tourner, malgré 2+ ans de vraies cotes OVER_UNDER_HT depuis 2023 (trouvé en
+  auditant pourquoi un rejeu historique donnait 0 sélection OVER_UNDER_HT).
+  Nouveau script `db:backtest:over-under-ht-shrinkage-calibration`
+  (walk-forward, même protocole que TEAM_TOTAL/RESULT_TOTAL_GOALS) : verdict
+  net — **les 7 ligues échouent toutes au test ΔBrier**, mais pas par
+  manque de données : le Poisson brut y est déjà bien calibré pour le total
+  de buts en 1ère mi-temps (ΔBrier≈0.0000 partout, contrairement à la vraie
+  sur-confiance mesurée pour TEAM_TOTAL/RESULT_TOTAL_GOALS à leur lancement).
+  Fix : 7 blocs `ouHt: { factor: 1, base: <taux réel mesuré> }` ajoutés
+  (`factor=1` = identité, pas une correction — le taux de base sert
+  seulement à dériver le seuil `getOverUnderHtLineConfigs`, TEAM_TOTAL's
+  rule `base − 0.05`). Vérifié : les 7 ligues produisent maintenant des
+  configs réelles (précédemment `[]` partout).
+  - `[ ]` Laisser le canal accumuler de l'observation réelle dans ses 7
+    ligues maintenant qu'il peut effectivement tourner, avant tout backtest
+    ROI ou wiring coupon/invest.
+
+- `[~]` **Rejeu historique complet pour calibrer les 8 nouveaux canaux —
+  hypothèse de départ invalidée en cours de route** (2026-08-16) —
+  l'utilisateur a demandé de rejouer l'historique (`reanalyze-scope.ts`) vu
+  qu'"on a déjà assez de data" pour backtester les 8 canaux du 08-16 sans
+  attendre l'observation forward. Un premier check de faisabilité (comptage
+  brut de lignes `odds_snapshot` par marché, 12k-292k lignes chacun) avait
+  conclu par erreur que c'était jouable — **sans vérifier la répartition
+  temporelle**, seulement le total. Un rejeu complet (60122 fixtures) a été
+  lancé, ralenti à tort par un bug (`ML_WORKER_URL=http://ml-worker:8000` ne
+  se résout pas depuis un process lancé sur l'hôte — corrigé en pointant
+  `http://localhost:8001`), puis interrompu par l'utilisateur à ~37% (22516
+  fixtures) une fois le volume jugé excessif pour la session. Le backtest
+  par ligue (`db:backtest:channel-league-whitelist`, étendu aux 8 canaux)
+  sur ce sous-ensemble a révélé la vraie contrainte : **5 des 8 canaux ont
+  des cotes historiques réelles depuis moins d'un mois** (`DRAW_NO_BET`,
+  `WIN_TO_NIL_HOME/AWAY`, `RESULT_TOTAL_GOALS`, `RESULT_BTTS` — toutes
+  depuis 2026-07-19 exactement) et 2 autres depuis 3-4 mois seulement
+  (`DOUBLE_CHANCE` 2026-05-16, `HALF_TIME_FULL_TIME` 2026-04-06) — peu
+  importe combien de fixtures historiques on rejoue, les cotes n'existaient
+  simplement pas à ces dates : les sélections `SELECTED` de ces canaux dans
+  le rejeu portent bien une décision mais **aucune cote** (100% `odds IS
+  NULL`), donc aucun ROI mesurable. Seuls `OVER_UNDER_HT` et
+  `FIRST_HALF_WINNER` ont une vraie profondeur (cotes depuis 2023) — 
+  `FIRST_HALF_WINNER` a d'ailleurs produit un vrai résultat exploitable dans
+  ce rejeu partiel (n=1326, **PL et BL1 confirmés positifs** train+valid,
+  voir rapport `backtest-channel-league-whitelist-2026-08-16.txt`).
+  **Conclusion actée avec l'utilisateur** : revenir au plan initial
+  (observation forward) pour les 6 canaux à cotes récentes — aucun raccourci
+  par rejeu ne peut compenser l'absence réelle de données historiques.
+  - `[ ]` `FIRST_HALF_WINNER` : PL/BL1 confirmés par ce rejeu partiel — à
+    reconfirmer sur le rejeu complet ou plus d'observation forward avant
+    d'envisager un wiring coupon (toujours hors périmètre pour l'instant).
+  - `[ ]` Finir le rejeu complet (60122 fixtures, ~37% fait) si on veut
+    affiner `OVER_UNDER_HT`/`FIRST_HALF_WINNER` davantage — pas utile pour
+    les 6 autres canaux, dont les cotes réelles ne remontent pas assez loin
+    quel que soit le volume rejoué.
+  - `[ ]` Laisser `DRAW_NO_BET`/`WIN_TO_NIL`/`RESULT_TOTAL_GOALS`/
+    `RESULT_BTTS`/`DOUBLE_CHANCE`/`HALF_TIME_FULL_TIME` accumuler des
+    semaines/mois d'observation forward réelle avant tout backtest —
+    exactement le plan d'origine, confirmé être le seul chemin valide.
+
 - `[x]` **Étiquetage de compétition erroné — collision de nom** (résolu
   2026-08-15) — vérifié : aucun calibrage/seuil ne lit le nom brut (tout est
   `groupBy competitionCode` — `model-calibration.service.ts`,

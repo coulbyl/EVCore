@@ -930,6 +930,57 @@ describe('CouponComposerService.compose — cross-coupon diversity', () => {
       }
     }
   });
+
+  // Regression 2026-08-16: VALUE and DOMINANT can both independently pick
+  // ONE_X_TWO/HOME on the same fixture — the same underlying bet under two
+  // different channel labels. Before the fix, sharesAnyLeg compared on a
+  // canal-inclusive key, so these two ScoredPicks registered as "different"
+  // legs and could ride into two separately-published coupons, both losing
+  // together on the same result — the exact correlation the 08-15 fix was
+  // meant to close, just entered from the cross-canal side.
+  it('never publishes two coupons that both carry the same (fixture, market, pick) under different canals', () => {
+    const valueHome = makePick({
+      fixtureId: 'crosscanal',
+      canal: 'VALUE',
+      market: 'ONE_X_TWO',
+      probability: 0.6,
+      calibratedHitRate: 0.6,
+      oddsSnapshot: 1.7,
+      signalScore: 0.9,
+      competition: 'Cross Canal League',
+    });
+    const dominantHome = makePick({
+      fixtureId: 'crosscanal',
+      canal: 'DOMINANT',
+      market: 'ONE_X_TWO',
+      probability: 0.6,
+      calibratedHitRate: 0.6,
+      oddsSnapshot: 1.7,
+      signalScore: 0.85,
+      competition: 'Cross Canal League',
+    });
+    const partners = ['q1', 'q2', 'q3', 'q4'].map((id, i) =>
+      makePick({
+        fixtureId: id,
+        canal: 'SAFE',
+        market: `MARKET_${id}`,
+        probability: 0.55,
+        calibratedHitRate: 0.55,
+        oddsSnapshot: 2.0,
+        signalScore: 0.8 - i * 0.01,
+        competition: `League ${id}`,
+      }),
+    );
+
+    const coupons = service.compose(
+      [valueHome, dominantHome, ...partners],
+      DIVERSITY_TEST_PROFILE,
+    );
+    const withCrossCanal = coupons.filter((c) =>
+      c.legs.some((l) => l.fixtureId === 'crosscanal'),
+    );
+    expect(withCrossCanal.length).toBeLessThanOrEqual(1);
+  });
 });
 
 describe('recommendedCouponStakePct', () => {

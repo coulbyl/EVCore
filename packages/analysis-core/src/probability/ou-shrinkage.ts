@@ -1367,6 +1367,36 @@ for (const [code, block] of Object.entries(
   OU_SHRINKAGE_CONFIG[code] = { ...(OU_SHRINKAGE_CONFIG[code] ?? {}), ...block };
 }
 
+// ouHt for the 7 htftCalibrated leagues (ev.constants.ts
+// HTFT_CALIBRATED_LEAGUES) — the only leagues OverUnderHtStrategy/
+// FirstHalfWinnerStrategy/HalfTimeFullTimeStrategy are allowed to run in.
+// Found 2026-08-16: none of them had an ouHt block, so getOverUnderHtLineConfigs
+// returned empty and the channel could never select anything in its only
+// allowed leagues, despite 2+ years of real OVER_UNDER_HT odds since 2023.
+// Unlike every other shrinkage block here, factor=1 (identity, no
+// correction) is the CORRECT value, not a placeholder: the walk-forward
+// backtest (db:backtest:over-under-ht-shrinkage-calibration, 2026-08-16)
+// found the raw Poisson HT-total probability is already well-calibrated in
+// all 7 leagues (ΔBrier ≈ 0.0000 — shrinking would not improve it, unlike
+// the genuine overconfidence TEAM_TOTAL/RESULT_TOTAL_GOALS had at their own
+// launch). `base` is the real settled HT-total-over rate (all finished
+// fixtures with a known HT score), only used as the identity floor when
+// factor=1 makes it a no-op on the shrink itself, but getOverUnderHtLineConfigs
+// still needs it to derive a threshold (base − 0.05, TEAM_TOTAL's rule).
+const OVER_UNDER_HT_UNSHRUNK_BASE: Record<string, OverUnderShrinkageConfig> = {
+  BL1: { ouHt: { factor05: 1, base05: 0.78, factor15: 1, base15: 0.45 } },
+  CH: { ouHt: { factor05: 1, base05: 0.69, factor15: 1, base15: 0.33 } },
+  EL1: { ouHt: { factor05: 1, base05: 0.7, factor15: 1, base15: 0.32 } },
+  L1: { ouHt: { factor05: 1, base05: 0.71, factor15: 1, base15: 0.35 } },
+  LL: { ouHt: { factor05: 1, base05: 0.69, factor15: 1, base15: 0.32 } },
+  PL: { ouHt: { factor05: 1, base05: 0.74, factor15: 1, base15: 0.37 } },
+  SA: { ouHt: { factor05: 1, base05: 0.68, factor15: 1, base15: 0.31 } },
+};
+
+for (const [code, block] of Object.entries(OVER_UNDER_HT_UNSHRUNK_BASE)) {
+  OU_SHRINKAGE_CONFIG[code] = { ...(OU_SHRINKAGE_CONFIG[code] ?? {}), ...block };
+}
+
 export function getOverUnderShrinkageConfig(
   competitionCode: string | null | undefined,
 ): OverUnderShrinkageConfig | null {

@@ -395,6 +395,19 @@ function legKey(leg: ScoredPick): string {
   return `${leg.fixtureId}:${leg.canal}:${leg.market}:${leg.pick}`;
 }
 
+// Canal-agnostic variant of legKey, used ONLY by sharesAnyLeg below. Two
+// different channels landing the identical (fixture, market, pick) — e.g.
+// VALUE picks ONE_X_TWO/HOME and DOMINANT also picks ONE_X_TWO/HOME on the
+// same fixture — are the same underlying bet: if that result goes the wrong
+// way, both legs lose together regardless of which channel originally
+// proposed the pick. legKey's canal component is deliberately kept for
+// every OTHER caller (pool dedup, coupon dedup) — there, two picks from
+// different canals on the same market genuinely are distinct candidates
+// (different odds/probability/EV) worth keeping separate in the pool.
+function sharedBetKey(leg: ScoredPick): string {
+  return `${leg.fixtureId}:${leg.market}:${leg.pick}`;
+}
+
 // Any leg shared between two published coupons means a single result can
 // make both lose together — exactly what happened 2026-08-15 (a POL2
 // TEAM_TOTAL_HOME leg present in both rank 1 and rank 2, both LOST; rank 3,
@@ -405,12 +418,19 @@ function legKey(leg: ScoredPick): string {
 // moment it shares even one leg with an already-selected coupon. This is a
 // presentation/diversity policy, not a probability threshold — no backtest
 // gate needed, unlike EV/odds/probability bounds.
+//
+// Compares on sharedBetKey (fixture+market+pick), not the canal-inclusive
+// legKey (found 2026-08-16): otherwise VALUE and DOMINANT both landing
+// ONE_X_TWO/HOME on the same fixture would register as "different" legs and
+// two coupons could both publish riding the identical underlying bet — the
+// exact correlation this rule exists to close, just entered from the
+// cross-canal side instead of the same-canal side the 08-15 incident came from.
 function sharesAnyLeg(
   candidate: ComposedCoupon,
   against: ComposedCoupon,
 ): boolean {
-  const againstKeys = new Set(against.legs.map(legKey));
-  return candidate.legs.some((l) => againstKeys.has(legKey(l)));
+  const againstKeys = new Set(against.legs.map(sharedBetKey));
+  return candidate.legs.some((l) => againstKeys.has(sharedBetKey(l)));
 }
 
 // Greedy selection from the EV-sorted viable list: take the best coupon,
