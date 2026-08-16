@@ -516,15 +516,78 @@
   (Prisma) gagne `WIN_TO_NIL` ; migration écrite
   (`20260816160000_add_win_to_nil_channel`), **pas lancée**. Suite verte hors
   `domain-enums.conformance.spec.ts` (attendu — 931/932).
-  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
-    `pnpm --filter backend test`.
+  - `[x]` Migration lancée + `db generate` régénéré côté utilisateur
+    (2026-08-16) — suite complète verte.
   - `[ ]` Même séquence que les canaux précédents : observer avant tout
     backtest ROI ou wiring coupon/invest.
-  - `[ ]` Marchés orphelins restants : DOUBLE_CHANCE, HALF_TIME_FULL_TIME,
-    FIRST_HALF_WINNER — aucun n'a de calibration prête ; tous trois sont des
-    marchés composés (pas de signal à isoler aussi simplement qu'un
-    side×issue), plus proches en complexité d'un vrai chantier de conception
-    que d'une répétition mécanique de la méthode base-rate-DB.
+
+- `[~]` **DOUBLE_CHANCE / FIRST_HALF_WINNER / HALF_TIME_FULL_TIME — les 3
+  derniers marchés orphelins, chacun un pattern différent** (2026-08-16) —
+  contrairement aux 5 canaux précédents (tous "un côté × une issue", même
+  méthode base-rate-DB mécanique), l'utilisateur a explicitement demandé de
+  ne pas les traiter comme "trop dur, on saute" : ce sont des marchés à part
+  entière, qui méritent la même rigueur. L'analyse confirme qu'ils ont
+  besoin de 3 patterns **différents** (et pas d'un 6ème copier-coller) :
+  - **DOUBLE_CHANCE** (`dc1X`/`dcX2`/`dc12`) : dérivation linéaire pure du
+    1X2 déjà calibré (`dc1X = home+draw`) — rien de nouveau à auditer par
+    ligue. Relation identique à SAFE vis-à-vis de VALUE (mêmes probabilités,
+    point différent sur la courbe risque/cote — couvrir 2 issues sur 3 à
+    cote plus courte), **pas un clone de DOMINANT/DRAW**. `DoubleChanceStrategy`
+    (config globale, pas de table par ligue) : 3 candidats statiques
+    (1X/X2/12), seuil de conviction global `DOUBLE_CHANCE_CONFIG.minProbability
+    = 0.75` (structurel, non backtesté, même statut que `CORRECT_SCORE_CONFIG`
+    à son lancement), tri EV décroissant façon GOALS. Aucune migration
+    (`STRATEGY_CHANNEL.DOUBLE_CHANCE` déjà réservé dans le schéma Prisma
+    depuis le début).
+  - **FIRST_HALF_WINNER** : même forme que DOMINANT (argmax HOME/DRAW/AWAY)
+    mais un signal réellement différent — requête sur les 7 ligues
+    `HTFT_CALIBRATED_LEAGUES` (BL1/CH/L1/LL/PL/SA/EL1) : **le NUL est l'issue
+    modale en mi-temps dans 6 des 7 ligues** (ex. SA home 30.2%/nul 42.8%/away
+    27.0%), l'inverse du temps plein où DOMINANT ne prend quasiment jamais le
+    nul — preuve concrète que ce canal n'est pas redondant avec DOMINANT.
+    `FirstHalfWinnerStrategy` mirrors `decideDominant` (argmax + marge
+    `FIRST_HALF_WINNER_MIN_MARGIN=0.05`, sans les garde-fous spécifiques au
+    staking de DOMINANT — canal OBSERVATION, aucune exposition). Table dédiée
+    `FIRST_HALF_CONFIG` (seulement 7 entrées, pas 60+ comme CLEAN_SHEET/
+    WIN_TO_NIL) via le dispatcher `getChannelStrategyConfig` existant,
+    seuil = taux d'argmax HT réel de la ligue − 0.05. Aucune migration
+    (`STRATEGY_CHANNEL.FIRST_HALF` déjà réservé).
+  - **HALF_TIME_FULL_TIME** (grille jointe 9 cases HT×FT) : seul gabarit
+    compatible = `CorrectScoreStrategy` (argmax de probabilité, PAS d'EV —
+    même raisonnement anti-bruit-longshot que l'audit CORRECT_SCORE du
+    2026-07-01). `HalfTimeFullTimeStrategy` : `HALF_TIME_FULL_TIME_CONFIG.
+    minProbability=0.20` (global, mis à l'échelle du `0.05` de CORRECT_SCORE
+    ~20-30 cases vs les 9 cases ici, même position relative au-dessus de
+    l'uniforme). `StrategyChannel` (Prisma) gagne cette valeur (aucun
+    placeholder préexistant ici) ; migration écrite
+    (`20260816170000_add_half_time_full_time_channel`), **lancée + `db
+    generate` régénéré le jour même**.
+  - **Gate partagé, déjà existant** : `SelectionConfig.htftCalibrated`
+    restreint HALF_TIME_FULL_TIME/FIRST_HALF_WINNER (et OVER_UNDER_HT depuis
+    une correction du 2026-08-13) aux 7 ligues calibrées — "les ligues
+    secondaires manquent d'historique de décomposition mi-temps pour éviter
+    la surestimation du Poisson bivarié". Ce garde-fou n'était appliqué que
+    dans le chemin générique VALUE (`getPickRejectionReason`), jamais par
+    aucun canal dédié.
+  - **Bug trouvé en creusant** : `OverUnderHtStrategy` (livré plus tôt cette
+    session, avant cette découverte) ne vérifiait jamais
+    `context.selectionConfig.htftCalibrated` — pouvait sélectionner un pick
+    dans une ligue non calibrée, contournant silencieusement ce garde-fou.
+    Son propre fichier de test avait déjà `htftCalibrated: false` en
+    fixture (anticipant apparemment le problème) sans que le code prod ne le
+    lise jamais. Corrigé dans le même passage (gate ajouté, test flippé à
+    `true` par défaut + nouveau cas `market_suspended`).
+  - Suite complète verte (954/954, y compris `domain-enums.conformance.spec.ts`
+    — migration + `db generate` déjà faits par l'utilisateur).
+  - `[ ]` Même séquence que les canaux précédents : observer avant tout
+    backtest ROI ou wiring coupon/invest pour les 3 nouveaux canaux.
+  - `[ ]` Backtester `DOUBLE_CHANCE_CONFIG.minProbability` (0.75),
+    `HALF_TIME_FULL_TIME_CONFIG.minProbability` (0.20) et les seuils
+    `FIRST_HALF_CONFIG` par ligue une fois assez de décisions réglées.
+  - `[ ]` Tous les marchés du `Market` enum ont maintenant un canal dédié —
+    chantier "Couverture stratégie par marché" terminé pour la couverture ;
+    reste l'observation → backtest → staking de chacun des 8 nouveaux
+    canaux, dans l'ordre déjà noté ci-dessus.
 
 ---
 

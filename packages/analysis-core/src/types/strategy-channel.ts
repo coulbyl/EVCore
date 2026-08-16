@@ -27,6 +27,7 @@ export const STRATEGY_CHANNEL = {
   RESULT_BTTS: "RESULT_BTTS",
   DRAW_NO_BET: "DRAW_NO_BET",
   WIN_TO_NIL: "WIN_TO_NIL",
+  HALF_TIME_FULL_TIME: "HALF_TIME_FULL_TIME",
 } as const;
 
 export type StrategyChannel =

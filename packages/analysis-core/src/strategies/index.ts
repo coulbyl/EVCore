@@ -43,7 +43,20 @@ export { ResultBttsStrategy, decideResultBtts } from "./result-btts.strategy";
 export { DrawNoBetStrategy, decideDrawNoBet } from "./draw-no-bet.strategy";
 export { WinToNilStrategy, decideWinToNil } from "./win-to-nil.strategy";
 export {
+  DoubleChanceStrategy,
+  decideDoubleChance,
+} from "./double-chance.strategy";
+export {
+  FirstHalfWinnerStrategy,
+  decideFirstHalfWinner,
+} from "./first-half-winner.strategy";
+export {
+  HalfTimeFullTimeStrategy,
+  decideHalfTimeFullTime,
+} from "./half-time-full-time.strategy";
+export {
   DOMINANT_MIN_MARGIN,
+  FIRST_HALF_WINNER_MIN_MARGIN,
   BTTS_NO_CONFIG,
   getBttsNoConfig,
   CHANNEL_STRATEGY_CONFIG_CHANNELS,
@@ -51,6 +64,9 @@ export {
   CLEAN_SHEET_CONFIG,
   WIN_EITHER_HALF_CONFIG,
   WIN_TO_NIL_CONFIG,
+  FIRST_HALF_CONFIG,
+  DOUBLE_CHANCE_CONFIG,
+  HALF_TIME_FULL_TIME_CONFIG,
   GOALS_CONFIG,
   getGoalsLineConfigs,
   TEAM_TOTAL_CONFIG,

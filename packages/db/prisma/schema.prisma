@@ -188,6 +188,7 @@ enum StrategyChannel {
   RESULT_BTTS
   DRAW_NO_BET
   WIN_TO_NIL
+  HALF_TIME_FULL_TIME
 
   @@schema("public")
 }

@@ -92,6 +92,32 @@ function richContext(): StrategyContext {
       // REJECTED here, not exercised beyond the probability read.
       winToNilHome: new Decimal('0.1'),
       winToNilAway: new Decimal('0.08'),
+      // Below DOUBLE_CHANCE_CONFIG.minProbability (0.75) so DOUBLE_CHANCE is
+      // REJECTED here, not exercised beyond the probability read.
+      dc1X: new Decimal('0.5'),
+      dcX2: new Decimal('0.5'),
+      dc12: new Decimal('0.5'),
+      // Below BL1's FIRST_HALF_CONFIG threshold (0.31) so FIRST_HALF_WINNER
+      // is REJECTED here, not exercised beyond the probability read.
+      firstHalfWinner: {
+        home: new Decimal('0.3'),
+        draw: new Decimal('0.3'),
+        away: new Decimal('0.3'),
+      },
+      // htftOdds is empty in this fixture's ODDS, so every HALF_TIME_FULL_TIME
+      // pick resolves to no price and is skipped before its probability is
+      // read — populated anyway for completeness/defensiveness.
+      htft: {
+        HOME_HOME: new Decimal('0'),
+        HOME_DRAW: new Decimal('0'),
+        HOME_AWAY: new Decimal('0'),
+        DRAW_HOME: new Decimal('0'),
+        DRAW_DRAW: new Decimal('0'),
+        DRAW_AWAY: new Decimal('0'),
+        AWAY_HOME: new Decimal('0'),
+        AWAY_DRAW: new Decimal('0'),
+        AWAY_AWAY: new Decimal('0'),
+      },
     } as unknown as MatchProbabilities,
     evaluatedPicks: [evPick],
     odds: ODDS,
@@ -121,9 +147,10 @@ describe('ChannelDecisionService', () => {
 
     // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
     // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS, OVER_UNDER_HT,
-    // RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL) + the CONSENSUS & AVOID
+    // RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, FIRST_HALF_WINNER,
+    // HALF_TIME_FULL_TIME, DOUBLE_CHANCE) + the CONSENSUS & AVOID
     // meta-strategies.
-    expect(evaluated).toHaveLength(17);
+    expect(evaluated).toHaveLength(20);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.

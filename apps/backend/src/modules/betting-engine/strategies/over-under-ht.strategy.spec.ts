@@ -52,7 +52,11 @@ function toDecimalMap(
 
 function makeContext(
   probs: ProbInput,
-  options: { competitionCode?: string; odds?: FullOddsSnapshot } = {},
+  options: {
+    competitionCode?: string;
+    odds?: FullOddsSnapshot;
+    htftCalibrated?: boolean;
+  } = {},
 ): StrategyContext {
   return {
     fixture: {
@@ -82,7 +86,7 @@ function makeContext(
       leagueEvThreshold: new Decimal('0.08'),
       svMinProbability: new Decimal('0.68'),
       svMinOdds: new Decimal('1.15'),
-      htftCalibrated: false,
+      htftCalibrated: options.htftCalibrated ?? true,
       pickDirectionProbabilityThreshold: () => new Decimal('0'),
       pickEvFloor: (_m: unknown, _p: unknown, leagueFloor: Decimal) =>
         leagueFloor,
@@ -213,5 +217,16 @@ describe('OverUnderHtStrategy (class, prod config)', () => {
 
   it('allowedMarkets contains OVER_UNDER_HT', () => {
     expect(strategy.allowedMarkets).toEqual([Market.OVER_UNDER_HT]);
+  });
+
+  it('is REJECTED market_suspended when the league is not HT/FT-calibrated, even with a clearing pick', () => {
+    const decision = strategy.evaluate(
+      makeContext(
+        { ouHT: { OVER_0_5: 0.95 } },
+        { competitionCode: 'CSL', htftCalibrated: false },
+      ),
+    );
+    expect(decision.status).toBe(CHANNEL_DECISION_STATUS.REJECTED);
+    expect(decision.reasonCode).toBe('market_suspended');
   });
 });

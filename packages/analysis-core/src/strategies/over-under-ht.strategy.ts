@@ -58,6 +58,22 @@ export function decideOverUnderHt(
   lineConfigs: readonly OverUnderHtLineConfig[],
 ): StrategyDecision {
   const channel = STRATEGY_CHANNEL.OVER_UNDER_HT;
+  // OVER_UNDER_HT is derived from the same half-time decomposition as
+  // HALF_TIME_FULL_TIME/FIRST_HALF_WINNER (bivariate Poisson split) and
+  // carries the identical overestimation risk in leagues without enough HT
+  // history — see SelectionConfig.htftCalibrated and pick-validation.ts'
+  // getPickRejectionReason (audit 2026-08-13). VALUE's opportunistic path
+  // already enforces this gate; this dedicated channel didn't (found
+  // 2026-08-16 while designing FIRST_HALF_WINNER/HALF_TIME_FULL_TIME, which
+  // need the identical check).
+  if (!context.selectionConfig.htftCalibrated) {
+    return {
+      channel,
+      status: CHANNEL_DECISION_STATUS.REJECTED,
+      reasonCode: "market_suspended",
+      selections: [],
+    };
+  }
   if (lineConfigs.length === 0) {
     return {
       channel,

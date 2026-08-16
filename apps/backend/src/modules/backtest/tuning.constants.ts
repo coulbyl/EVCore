@@ -37,6 +37,12 @@ export const TUNING_THRESHOLD_GRID: Record<
   // grid (2026-08-16, no backtest yet) — same scale as CLEAN_SHEET (both are
   // defensive+result combo signals derived from settled base rates ~0.15-0.4).
   WIN_TO_NIL: [0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+  // FIRST_HALF signal = argmax(HOME/DRAW/AWAY) probability at half-time.
+  // Placeholder grid (2026-08-16, no backtest yet) — shifted well below
+  // DOMINANT's full-time range: DRAW is the modal HT outcome in most
+  // htft-calibrated leagues (~0.30-0.43), a 3-way split with much less
+  // separation than full-time favorites.
+  FIRST_HALF: [0.3, 0.35, 0.4, 0.45, 0.5, 0.55],
 };
 
 /**
@@ -65,6 +71,10 @@ export const CHANNEL_PROMOTION_RULE: Record<
   CLEAN_SHEET: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   WIN_EITHER_HALF: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
   WIN_TO_NIL: { minSample: 20, hitRateFloor: 0.55, roiFloor: 0 },
+  // Lower floor than DOMINANT/BTTS (0.55): DRAW is the modal HT outcome at
+  // only ~30-43% base rate in htft-calibrated leagues, so a 0.55 floor would
+  // be unreachable by construction, not a real quality bar.
+  FIRST_HALF: { minSample: 20, hitRateFloor: 0.4, roiFloor: 0 },
 };
 
 export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
@@ -74,6 +84,7 @@ export const TUNING_CHANNELS: ChannelStrategyConfigChannel[] = [
   'CLEAN_SHEET',
   'WIN_EITHER_HALF',
   'WIN_TO_NIL',
+  'FIRST_HALF',
 ];
 
 /**

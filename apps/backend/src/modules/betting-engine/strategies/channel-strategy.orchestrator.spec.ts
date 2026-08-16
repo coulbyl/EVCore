@@ -100,6 +100,30 @@ function makeContext(
       // REJECTED here, not exercised beyond the probability read.
       winToNilHome: new Decimal('0.1'),
       winToNilAway: new Decimal('0.08'),
+      // Below DOUBLE_CHANCE_CONFIG.minProbability (0.75) so DOUBLE_CHANCE is
+      // REJECTED here, not exercised beyond the probability read.
+      dc1X: new Decimal('0.5'),
+      dcX2: new Decimal('0.5'),
+      dc12: new Decimal('0.5'),
+      // htftCalibrated is false in this fixture (see below), so
+      // FIRST_HALF_WINNER/HALF_TIME_FULL_TIME never read these — populated
+      // anyway for completeness/defensiveness.
+      firstHalfWinner: {
+        home: new Decimal('0.3'),
+        draw: new Decimal('0.3'),
+        away: new Decimal('0.3'),
+      },
+      htft: {
+        HOME_HOME: new Decimal('0'),
+        HOME_DRAW: new Decimal('0'),
+        HOME_AWAY: new Decimal('0'),
+        DRAW_HOME: new Decimal('0'),
+        DRAW_DRAW: new Decimal('0'),
+        DRAW_AWAY: new Decimal('0'),
+        AWAY_HOME: new Decimal('0'),
+        AWAY_DRAW: new Decimal('0'),
+        AWAY_AWAY: new Decimal('0'),
+      },
     } as unknown as MatchProbabilities,
     evaluatedMarkets: [
       // EV picks this (highest qualityScore); too low prob for SAFE.
