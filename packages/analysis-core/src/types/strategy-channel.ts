@@ -22,6 +22,7 @@ export const STRATEGY_CHANNEL = {
   CONTRARIAN: "CONTRARIAN",
   AVOID: "AVOID",
   CORRECT_SCORE: "CORRECT_SCORE",
+  RESULT_TOTAL_GOALS: "RESULT_TOTAL_GOALS",
 } as const;
 
 export type StrategyChannel =

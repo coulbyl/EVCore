@@ -28,4 +28,8 @@ export {
   type TeamTotalSide,
   type TeamTotalLineConfig,
   type TeamTotalLeagueConfig,
+  getResultTotalGoalsLineConfigs,
+  type ResultTotalGoalsSide,
+  type ResultTotalGoalsLine,
+  type ResultTotalGoalsLineConfig,
 } from '@evcore/analysis-core';

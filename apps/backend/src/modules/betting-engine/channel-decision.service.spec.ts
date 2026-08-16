@@ -109,8 +109,9 @@ describe('ChannelDecisionService', () => {
     expect(runId).toBe('run-1');
 
     // Orchestrator ran every primary strategy (incl. CORRECT_SCORE, CLEAN_SHEET,
-    // TEAM_TOTAL, WIN_EITHER_HALF) + the CONSENSUS & AVOID meta-strategies.
-    expect(evaluated).toHaveLength(12);
+    // TEAM_TOTAL, WIN_EITHER_HALF, RESULT_TOTAL_GOALS) + the CONSENSUS & AVOID
+    // meta-strategies.
+    expect(evaluated).toHaveLength(13);
 
     // CORRECT_SCORE: this context carries no lambdas → the strategy can't build
     // the score matrix → REJECTED (no_model), still recorded as a decision.

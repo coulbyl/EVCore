@@ -183,6 +183,7 @@ enum StrategyChannel {
   CONTRARIAN
   AVOID
   CORRECT_SCORE
+  RESULT_TOTAL_GOALS
 
   @@schema("public")
 }

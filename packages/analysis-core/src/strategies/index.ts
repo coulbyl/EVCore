@@ -32,6 +32,10 @@ export {
   decideCorrectScore,
 } from "./correct-score.strategy";
 export {
+  ResultTotalGoalsStrategy,
+  decideResultTotalGoals,
+} from "./result-total-goals.strategy";
+export {
   DOMINANT_MIN_MARGIN,
   BTTS_NO_CONFIG,
   getBttsNoConfig,
@@ -59,4 +63,8 @@ export {
   type TeamTotalSide,
   type TeamTotalLineConfig,
   type TeamTotalLeagueConfig,
+  getResultTotalGoalsLineConfigs,
+  type ResultTotalGoalsSide,
+  type ResultTotalGoalsLine,
+  type ResultTotalGoalsLineConfig,
 } from "./config";

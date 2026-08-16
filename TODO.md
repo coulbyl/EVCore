@@ -345,6 +345,41 @@
   qui ne leur correspond pas — réglerait ce point ET le chantier ci-dessus
   en même temps.
 
+- `[~]` **RESULT_TOTAL_GOALS — premier marché orphelin sorti de VALUE, canal
+  dédié en OBSERVATION** (2026-08-16) — premier candidat traité parmi les 8
+  ci-dessus : le seul qui avait déjà une calibration walk-forward Brier-validée
+  en prod (`backtest-result-total-goals-shrinkage-calibration.ts`,
+  `OU_SHRINKAGE_CONFIG[code].resultTotalGoals`), donc aucun nouveau modèle de
+  probabilité à construire — seulement un canal autour d'une donnée déjà
+  fiable. Ne couvre que le pick UNDER (seule probabilité jointe directement
+  régressée ; OVER = `oneXTwo[side] − shrunkUnder`, dérivé, pas validé
+  indépendamment). `getResultTotalGoalsLineConfigs()`
+  (`packages/analysis-core/src/strategies/config.ts`) dérive mécaniquement sa
+  table par ligue depuis `OU_SHRINKAGE_CONFIG` (pas d'audit manuel séparé comme
+  TEAM_TOTAL à son lancement) : `threshold = base × 0.85` (marge relative
+  15%, la soustraction plate de TEAM_TOTAL `base − 0.05` ne transpose pas ici —
+  bases joint ~0.03–0.44 vs marginales ~0.5). `ResultTotalGoalsStrategy`
+  (`result-total-goals.strategy.ts`) mirrors exactement `TeamTotalStrategy` :
+  1 sélection max, tri par EV décroissant, `REJECTED reasonCode:
+  below_threshold` sinon. **OBSERVATION mode strict, comme TEAM_TOTAL à son
+  lancement** : aucun wiring `CouponChannel`/`CANAL_BASE_WEIGHT`/invest/
+  frontend — seulement stratégie + config + enregistrement channel + tests.
+  `StrategyChannel` (Prisma `schema.prisma`) gagne une valeur `RESULT_TOTAL_GOALS` ;
+  migration écrite (`20260816120000_add_result_total_goals_channel`), **pas
+  lancée** (règle projet : CLI utilisateur). Tant qu'elle n'est pas appliquée +
+  `prisma generate` relancé, `domain-enums.conformance.spec.ts` échoue de
+  façon attendue (garde anti-drift compile-time/runtime entre l'enum domaine
+  et l'enum Prisma généré) — le reste de la suite est vert (892/893).
+  - `[ ]` Après migration + `db generate` côté utilisateur : relancer
+    `pnpm --filter backend test` pour confirmer `domain-enums.conformance`
+    repasse au vert.
+  - `[ ]` Laisser accumuler des décisions RESULT_TOTAL_GOALS réglées avant tout
+    backtest ROI dédié ou wiring coupon/invest — même séquence que TEAM_TOTAL
+    (observation d'abord, ROI ensuite).
+  - `[ ]` Une fois ce marché validé/observé, traiter les 7 autres marchés
+    orphelins un par un avec la même méthode (celui qui a déjà le plus de
+    plomberie calibrée en premier).
+
 ---
 
 ## Canaux en observation (pas encore staking-grade)
