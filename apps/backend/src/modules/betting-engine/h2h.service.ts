@@ -1,7 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { FixtureStatus } from '@evcore/db';
-import Decimal from 'decimal.js';
+import {
+  computeH2HScoreFromLegs,
+  computeH2HMarketSignalsFromLegs,
+  computeH2HScorelineSignalFromLegs,
+  H2H_LIMIT_DEFAULT,
+  type H2HLeg,
+  type H2HMarketSignals,
+  type H2HScorelineSignal,
+} from '@evcore/analysis-core';
 import { PrismaService } from '@/prisma.service';
+
+export type { H2HMarketSignals, H2HScorelineSignal };
 
 type FetchLegsInput = {
   homeTeamId: string;
@@ -14,170 +24,33 @@ type ComputeH2HScoreInput = FetchLegsInput & {
   favoriteTeamId: string;
 };
 
-type H2HLeg = {
-  homeTeamId: string;
-  awayTeamId: string;
-  homeScore: number;
-  awayScore: number;
-};
-
-// docs/h2h-service-v2-plan.md §3.3 (v2.2) — per-market signals computed on
-// the same H2H legs pool as computeH2HScore. Shadow only: logged in
-// ModelRun.features, never read by decision logic (backtest-h2h-market-
-// signals.ts, 2026-07-23 — 5/6 markets show a real out-of-sample Brier
-// gain, BTTS is noise-level; activation needs a combined backtest against
-// the already-active lambda correction to rule out double-counting the
-// correlated result-based H2H signal before any of these feed a decision).
-export type H2HMarketSignals = {
-  btts: number | null;
-  over25: number | null;
-  cleanSheetHome: number | null;
-  cleanSheetAway: number | null;
-  winToNilHome: number | null;
-  winToNilAway: number | null;
-  sampleSize: number;
-};
-
-// Shadow-only, CORRECT_SCORE-specific — never read by decision logic (see
-// memory project-correct-score-immature, 2026-07-28 diagnostic). The
-// decay-weighted most-frequent H2H scoreline (oriented to the target
-// fixture's home/away sides), logged so `packages/db/scripts/
-// backtest-h2h-scoreline-signal.ts` can evaluate it against settled results
-// as volume accumulates — argmax==H2H-top showed a +1.1-1.5pp lift over
-// disagreement on a 39.5k-fixture backtest (p=0.06-0.08, not yet
-// significant).
-export type H2HScorelineSignal = {
-  scoreline: string | null;
-  confidence: number | null;
-  sampleSize: number;
-};
-
-const H2H_LIMIT_DEFAULT = 5;
-// docs/h2h-service-v2-plan.md §3.1 — n<3 is as "confident" as n=5, so gate it like TeamStats cold-start.
-const H2H_MIN_SAMPLE = 3;
-// Same decay convention as recentForm (rolling-stats.utils.ts) — most recent match weighted heaviest.
-const H2H_DECAY = new Decimal('0.8');
-const H2H_DRAW_SCORE = new Decimal('0.5');
-
+// The H2H computations (decay-weighted score, per-market signals, top
+// scoreline) now live in @evcore/analysis-core (extracted 2026-08-18 —
+// same pattern as odds-assembly and team-stats-resolution) so the backtest
+// harness replays the exact same signals as this live engine. This service
+// keeps only the Prisma I/O: fetching legs, point-in-time-safe by
+// construction (`scheduledAt < fixtureDate`).
 @Injectable()
 export class H2HService {
   constructor(private readonly prisma: PrismaService) {}
 
   async computeH2HScore(input: ComputeH2HScoreInput): Promise<number | null> {
-    const { favoriteTeamId } = input;
     const legs = await this.fetchLegs(input);
-
-    if (legs.length < H2H_MIN_SAMPLE) return null;
-
-    let weightedSum = new Decimal(0);
-    let weightTotal = new Decimal(0);
-    legs.forEach((leg, i) => {
-      const weight = H2H_DECAY.pow(i);
-      const winnerTeamId =
-        leg.homeScore > leg.awayScore
-          ? leg.homeTeamId
-          : leg.awayScore > leg.homeScore
-            ? leg.awayTeamId
-            : null;
-      const outcomeScore =
-        winnerTeamId === null
-          ? H2H_DRAW_SCORE
-          : new Decimal(winnerTeamId === favoriteTeamId ? 1 : 0);
-
-      weightedSum = weightedSum.plus(weight.times(outcomeScore));
-      weightTotal = weightTotal.plus(weight);
-    });
-
-    return weightedSum.div(weightTotal).toNumber();
+    return computeH2HScoreFromLegs(legs, input.favoriteTeamId);
   }
 
   async computeH2HMarketSignals(
     input: FetchLegsInput,
   ): Promise<H2HMarketSignals> {
-    const { homeTeamId, awayTeamId } = input;
     const legs = await this.fetchLegs(input);
-
-    if (legs.length < H2H_MIN_SAMPLE) {
-      return {
-        btts: null,
-        over25: null,
-        cleanSheetHome: null,
-        cleanSheetAway: null,
-        winToNilHome: null,
-        winToNilAway: null,
-        sampleSize: legs.length,
-      };
-    }
-
-    const weightedRate = (indicator: (leg: H2HLeg) => Decimal): number => {
-      let weightedSum = new Decimal(0);
-      let weightTotal = new Decimal(0);
-      legs.forEach((leg, i) => {
-        const weight = H2H_DECAY.pow(i);
-        weightedSum = weightedSum.plus(weight.times(indicator(leg)));
-        weightTotal = weightTotal.plus(weight);
-      });
-      return weightedSum.div(weightTotal).toNumber();
-    };
-
-    return {
-      btts: weightedRate(
-        (leg) => new Decimal(leg.homeScore > 0 && leg.awayScore > 0 ? 1 : 0),
-      ),
-      over25: weightedRate(
-        (leg) => new Decimal(leg.homeScore + leg.awayScore >= 3 ? 1 : 0),
-      ),
-      cleanSheetHome: weightedRate((leg) =>
-        teamCleanSheetInLeg(leg, homeTeamId),
-      ),
-      cleanSheetAway: weightedRate((leg) =>
-        teamCleanSheetInLeg(leg, awayTeamId),
-      ),
-      winToNilHome: weightedRate((leg) => teamWinToNilInLeg(leg, homeTeamId)),
-      winToNilAway: weightedRate((leg) => teamWinToNilInLeg(leg, awayTeamId)),
-      sampleSize: legs.length,
-    };
+    return computeH2HMarketSignalsFromLegs(legs, input);
   }
 
   async computeH2HScorelineSignal(
     input: FetchLegsInput,
   ): Promise<H2HScorelineSignal> {
-    const { homeTeamId } = input;
     const legs = await this.fetchLegs(input);
-
-    if (legs.length < H2H_MIN_SAMPLE) {
-      return { scoreline: null, confidence: null, sampleSize: legs.length };
-    }
-
-    const weights = new Map<string, Decimal>();
-    let weightTotal = new Decimal(0);
-    legs.forEach((leg, i) => {
-      const weight = H2H_DECAY.pow(i);
-      // Orient the past leg's score to the target fixture's home/away sides —
-      // a leg where today's home team played away still counts, flipped.
-      const [orientedHome, orientedAway] =
-        leg.homeTeamId === homeTeamId
-          ? [leg.homeScore, leg.awayScore]
-          : [leg.awayScore, leg.homeScore];
-      const key = `${orientedHome}:${orientedAway}`;
-      weights.set(key, (weights.get(key) ?? new Decimal(0)).plus(weight));
-      weightTotal = weightTotal.plus(weight);
-    });
-
-    let topScoreline: string | null = null;
-    let topWeight = new Decimal(-1);
-    for (const [scoreline, weight] of weights) {
-      if (weight.greaterThan(topWeight)) {
-        topScoreline = scoreline;
-        topWeight = weight;
-      }
-    }
-
-    return {
-      scoreline: topScoreline,
-      confidence: topWeight.div(weightTotal).toNumber(),
-      sampleSize: legs.length,
-    };
+    return computeH2HScorelineSignalFromLegs(legs, input);
   }
 
   private async fetchLegs(input: FetchLegsInput): Promise<H2HLeg[]> {
@@ -218,20 +91,4 @@ export class H2HService {
         awayScore: fixture.awayScore as number,
       }));
   }
-}
-
-// "Clean sheet for teamId in this leg" — teamId's opponent scored 0,
-// regardless of which side (home/away) teamId occupied in that past leg.
-function teamCleanSheetInLeg(leg: H2HLeg, teamId: string): Decimal {
-  const kept =
-    leg.homeTeamId === teamId ? leg.awayScore === 0 : leg.homeScore === 0;
-  return new Decimal(kept ? 1 : 0);
-}
-
-function teamWinToNilInLeg(leg: H2HLeg, teamId: string): Decimal {
-  const won =
-    leg.homeTeamId === teamId
-      ? leg.homeScore > leg.awayScore && leg.awayScore === 0
-      : leg.awayScore > leg.homeScore && leg.homeScore === 0;
-  return new Decimal(won ? 1 : 0);
 }

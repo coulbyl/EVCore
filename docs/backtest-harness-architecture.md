@@ -190,6 +190,33 @@ besoin de reconstruire le λ Poisson lui-même (donc la probabilité moteur)
 le sont désormais aussi, pour le cas majoritaire (compétitions domestiques
 à échantillon établi, Europe, sélections nationales).
 
+### H2H et congestion — même patron, extraits le 18/08
+
+`H2HService` (`computeH2HScore`, `computeH2HMarketSignals`,
+`computeH2HScorelineSignal`) et `CongestionService` étaient déjà
+structurés comme le futur `resolveEffectiveTeamStats` : une requête Prisma
+déjà point-in-time-safe par construction (`scheduledAt: { lt: fixtureDate }`)
+suivie d'un calcul pur. Extraction identique : le calcul pur part dans
+`packages/analysis-core/src/probability/h2h.ts` et `congestion.ts`, les deux
+services backend deviennent de purs appelants Prisma, et
+`PointInTimeLoader` gagne `loadH2HLegs`/`loadH2HScore`/
+`loadH2HMarketSignals`/`loadH2HScorelineSignal` et `loadCongestionScore`.
+
+Note sur `loadCongestionScore` : la moitié "fixtures à venir" de son calcul
+lit des fixtures `SCHEDULED` **après** `asOf` — ce n'est pas une fuite de
+futur au sens où on l'entend ici (aucun résultat n'est lu, seulement le
+calendrier, une donnée légitimement connue à l'avance).
+
+### Ce qui reste pour un replay complet
+
+**Elo FRI** (`fri-model.service.ts`/`fri-model.utils.ts`, canal FRI —
+sélections nationales hors tournoi majeur) n'est pas encore extrait. Déjà
+structuré pareil (utils purs + service I/O, avec ses propres tests), donc
+le même patron s'applique — reporté : c'est un canal de niche (V1 limitée à
+`ONE_X_TWO`, fallback hors pipeline Poisson principal), pas nécessaire pour
+que le harnais couvre le cas majoritaire des compétitions domestiques/
+européennes/sélections nationales en tournoi. Voir TODO.md.
+
 ## 6. Migration des 27 scripts (plus tard, pas ce soir)
 
 Les scripts `packages/db/scripts/backtest-*.ts` deviendront de fins

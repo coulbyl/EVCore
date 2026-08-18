@@ -753,6 +753,31 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ---
 
+## Harnais de backtest partagé
+
+> Suivi détaillé : [ROADMAP.md](ROADMAP.md) "Harnais de backtest partagé" ·
+> Cadrage : [docs/backtest-harness-architecture.md](docs/backtest-harness-architecture.md)
+>
+> `@evcore/backtest-core` couvre à ce stade : énumération de fixtures,
+> cotes, team stats (repli cross-compétition), H2H, congestion — tous
+> point-in-time-safe, calcul pur partagé avec la prod via
+> `@evcore/analysis-core`, jamais dupliqué.
+
+- `[ ]` **Elo FRI non extrait** — `fri-model.service.ts`/`fri-model.utils.ts`
+  (canal FRI, sélections nationales hors tournoi majeur) suit déjà le même
+  patron (utils purs + service I/O, tests propres), donc l'extraction vers
+  `analysis-core` + `PointInTimeLoader.loadFriEloSnapshot` serait mécanique.
+  Reporté : canal de niche (V1 limitée à `ONE_X_TWO`, fallback hors pipeline
+  Poisson principal), pas nécessaire pour couvrir le cas majoritaire
+  (domestique/Europe/sélections nationales en tournoi).
+- `[ ]` **`backtest-runner.ts` (façade CLI)** — assembler
+  `ReplayEngine`/`PointInTimeLoader` en une façade que les scripts peuvent
+  appeler, puis migrer les 27 scripts `packages/db/scripts/backtest-*.ts`
+  (priorité aux 10 identifiés à risque, voir
+  `docs/backtest-harness-architecture.md` §1) vers de fins wrappers CLI.
+
+---
+
 ## Bugs & dette technique
 
 - `[x]` **`cutoff` ignoré pour 16 marchés sur 17 dans `OddsSnapshotLoader`**

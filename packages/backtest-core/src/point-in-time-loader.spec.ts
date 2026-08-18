@@ -109,3 +109,96 @@ describe("PointInTimeLoader.loadTeamStats", () => {
     expect(result).toEqual(cross);
   });
 });
+
+describe("PointInTimeLoader.loadH2HLegs / loadH2HScore", () => {
+  function makeFixtureClient(rows: unknown[]): PrismaClient {
+    const findMany = vi.fn().mockResolvedValue(rows);
+    return { fixture: { findMany } } as unknown as PrismaClient;
+  }
+
+  it("drops legs with a null score (unsettled/void fixtures slipping through the status filter)", async () => {
+    const loader = new PointInTimeLoader(
+      makeFixtureClient([
+        {
+          homeTeamId: "h",
+          awayTeamId: "a",
+          homeScore: 2,
+          awayScore: 1,
+        },
+        {
+          homeTeamId: "h",
+          awayTeamId: "a",
+          homeScore: null,
+          awayScore: null,
+        },
+      ]),
+    );
+
+    const legs = await loader.loadH2HLegs({
+      homeTeamId: "h",
+      awayTeamId: "a",
+      asOf: ASOF,
+    });
+
+    expect(legs).toHaveLength(1);
+  });
+
+  it("loadH2HScore returns null below the minimum sample, same as computeH2HScoreFromLegs", async () => {
+    const loader = new PointInTimeLoader(
+      makeFixtureClient([{ homeTeamId: "h", awayTeamId: "a", homeScore: 1, awayScore: 0 }]),
+    );
+
+    const score = await loader.loadH2HScore({
+      homeTeamId: "h",
+      awayTeamId: "a",
+      favoriteTeamId: "h",
+      asOf: ASOF,
+    });
+
+    expect(score).toBeNull();
+  });
+});
+
+describe("PointInTimeLoader.loadCongestionScore", () => {
+  it("scores 0 for two fully rested teams with no upcoming fixtures", async () => {
+    const findFirst = vi.fn().mockResolvedValue(null); // no last-played fixture
+    const count = vi.fn().mockResolvedValue(0); // no upcoming fixtures
+    const loader = new PointInTimeLoader(
+      { fixture: { findFirst, count } } as unknown as PrismaClient,
+    );
+
+    const score = await loader.loadCongestionScore({
+      homeTeamId: "h",
+      awayTeamId: "a",
+      asOf: ASOF,
+    });
+
+    expect(score).toBe(0);
+    // One findFirst + one count per side.
+    expect(findFirst).toHaveBeenCalledTimes(2);
+    expect(count).toHaveBeenCalledTimes(2);
+  });
+
+  it("scores higher for a team that played same-day and has 3+ upcoming fixtures", async () => {
+    const findFirst = vi
+      .fn()
+      .mockResolvedValueOnce({ scheduledAt: ASOF }) // home: played same day
+      .mockResolvedValueOnce(null); // away: fully rested
+    const count = vi
+      .fn()
+      .mockResolvedValueOnce(3) // home: congested schedule
+      .mockResolvedValueOnce(0); // away: nothing upcoming
+    const loader = new PointInTimeLoader(
+      { fixture: { findFirst, count } } as unknown as PrismaClient,
+    );
+
+    const score = await loader.loadCongestionScore({
+      homeTeamId: "h",
+      awayTeamId: "a",
+      asOf: ASOF,
+    });
+
+    // home = 1 (max congestion), away = 0 → average 0.5.
+    expect(score).toBeCloseTo(0.5, 10);
+  });
+});

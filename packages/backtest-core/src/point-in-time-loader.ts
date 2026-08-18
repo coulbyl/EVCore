@@ -1,10 +1,23 @@
-import type { FullOddsSnapshot, TeamStatsInput } from "@evcore/analysis-core";
+import type {
+  FullOddsSnapshot,
+  TeamStatsInput,
+  H2HLeg,
+  H2HMarketSignals,
+  H2HScorelineSignal,
+  TeamCongestionInputs,
+} from "@evcore/analysis-core";
 import {
   assembleFullOddsSnapshot,
   isEuropeanCompetition,
   isNationalTeamCompetition,
   resolveEffectiveTeamStats,
   DOMESTIC_SEASON_ROLLOVER_MIN_GAMES,
+  computeH2HScoreFromLegs,
+  computeH2HMarketSignalsFromLegs,
+  computeH2HScorelineSignalFromLegs,
+  H2H_LIMIT_DEFAULT,
+  computeCongestionScoreFromTeams,
+  CONGESTION_UPCOMING_WINDOW_MS,
 } from "@evcore/analysis-core";
 import { prisma, FixtureStatus, type PrismaClient } from "@evcore/db";
 
@@ -154,6 +167,129 @@ export class PointInTimeLoader {
       crossCompStats,
       gamesPlayedThisSeason,
     });
+  }
+
+  // Finished head-to-head legs strictly before `asOf`, newest first — point-
+  // in-time-safe by construction (`scheduledAt: { lt: asOf }`), same query
+  // as H2HService.fetchLegs.
+  async loadH2HLegs(input: {
+    homeTeamId: string;
+    awayTeamId: string;
+    asOf: Date;
+    limit?: number;
+  }): Promise<H2HLeg[]> {
+    const { homeTeamId, awayTeamId, asOf, limit = H2H_LIMIT_DEFAULT } = input;
+
+    const fixtures = await this.client.fixture.findMany({
+      where: {
+        status: FixtureStatus.FINISHED,
+        scheduledAt: { lt: asOf },
+        OR: [
+          { homeTeamId, awayTeamId },
+          { homeTeamId: awayTeamId, awayTeamId: homeTeamId },
+        ],
+      },
+      select: {
+        homeTeamId: true,
+        awayTeamId: true,
+        homeScore: true,
+        awayScore: true,
+      },
+      orderBy: { scheduledAt: "desc" },
+      take: limit,
+    });
+
+    return fixtures
+      .filter(
+        (fixture) => fixture.homeScore !== null && fixture.awayScore !== null,
+      )
+      .map((fixture) => ({
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        homeScore: fixture.homeScore as number,
+        awayScore: fixture.awayScore as number,
+      }));
+  }
+
+  // Convenience wrappers — fetch + compute in one call, mirroring
+  // H2HService's public methods so a replay script reads the same shape
+  // whether it's driving the live engine or the harness.
+  async loadH2HScore(input: {
+    homeTeamId: string;
+    awayTeamId: string;
+    favoriteTeamId: string;
+    asOf: Date;
+  }): Promise<number | null> {
+    const legs = await this.loadH2HLegs(input);
+    return computeH2HScoreFromLegs(legs, input.favoriteTeamId);
+  }
+
+  async loadH2HMarketSignals(input: {
+    homeTeamId: string;
+    awayTeamId: string;
+    asOf: Date;
+  }): Promise<H2HMarketSignals> {
+    const legs = await this.loadH2HLegs(input);
+    return computeH2HMarketSignalsFromLegs(legs, input);
+  }
+
+  async loadH2HScorelineSignal(input: {
+    homeTeamId: string;
+    awayTeamId: string;
+    asOf: Date;
+  }): Promise<H2HScorelineSignal> {
+    const legs = await this.loadH2HLegs(input);
+    return computeH2HScorelineSignalFromLegs(legs, input);
+  }
+
+  // Rest + upcoming-schedule-density congestion score as of `asOf` — same
+  // query shape as CongestionService.fetchTeamCongestionInputs. The
+  // "upcoming fixtures" side reads SCHEDULED calendar entries after `asOf`,
+  // which is legitimate pre-match knowledge (a fixture list), never a
+  // result — it doesn't violate the point-in-time guarantee.
+  async loadCongestionScore(input: {
+    homeTeamId: string;
+    awayTeamId: string;
+    asOf: Date;
+  }): Promise<number> {
+    const [homeInputs, awayInputs] = await Promise.all([
+      this.fetchTeamCongestionInputs(input.homeTeamId, input.asOf),
+      this.fetchTeamCongestionInputs(input.awayTeamId, input.asOf),
+    ]);
+    return computeCongestionScoreFromTeams(homeInputs, awayInputs);
+  }
+
+  private async fetchTeamCongestionInputs(
+    teamId: string,
+    asOf: Date,
+  ): Promise<TeamCongestionInputs> {
+    const [lastPlayedFixture, upcomingFixtureCount] = await Promise.all([
+      this.client.fixture.findFirst({
+        where: {
+          status: FixtureStatus.FINISHED,
+          scheduledAt: { lt: asOf },
+          OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+        },
+        select: { scheduledAt: true },
+        orderBy: { scheduledAt: "desc" },
+      }),
+      this.client.fixture.count({
+        where: {
+          status: FixtureStatus.SCHEDULED,
+          scheduledAt: {
+            gt: asOf,
+            lte: new Date(asOf.getTime() + CONGESTION_UPCOMING_WINDOW_MS),
+          },
+          OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+        },
+      }),
+    ]);
+
+    return {
+      lastPlayedAt: lastPlayedFixture?.scheduledAt ?? null,
+      upcomingFixtureCount,
+      fixtureDate: asOf,
+    };
   }
 
   // Cotes telles qu'elles existaient à `asOf`, tous marchés — réutilise

@@ -811,8 +811,17 @@ Docs de cadrage Phase 3:
       extraite en fonction pure `resolveEffectiveTeamStats`
       (`packages/analysis-core/src/probability/team-stats-resolution.ts`) ;
       `ev.constants.ts` ré-exporte au lieu de dupliquer
-- [ ] `PointInTimeLoader` — étendre à H2H, congestion, Elo FRI pour un
-      replay complet du score déterministe
+- [x] `PointInTimeLoader.loadH2HLegs`/`loadH2HScore`/`loadH2HMarketSignals`/
+      `loadH2HScorelineSignal` — calcul pur extrait
+      (`packages/analysis-core/src/probability/h2h.ts`), `H2HService`
+      devient un pur appelant Prisma
+- [x] `PointInTimeLoader.loadCongestionScore` — calcul pur extrait
+      (`packages/analysis-core/src/probability/congestion.ts`),
+      `CongestionService` devient un pur appelant Prisma
+- [ ] Elo FRI (`fri-model.service.ts`/`fri-model.utils.ts`, canal FRI) — pas
+      encore extrait, même patron déjà applicable (utils déjà purs avec
+      leurs propres tests) ; reporté, canal de niche (V1 `ONE_X_TWO`
+      uniquement), voir TODO.md
 - [ ] `backtest-runner.ts` — façade CLI
 - [ ] Migration des 27 scripts existants vers le harnais, en commençant par
       les 10 identifiés à risque

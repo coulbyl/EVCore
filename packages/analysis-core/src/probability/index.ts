@@ -46,6 +46,25 @@ export {
   applyH2HMarketSignalCorrection,
 } from "./h2h-market-signal-correction";
 export {
+  type H2HLeg,
+  type H2HMarketSignals,
+  type H2HScorelineSignal,
+  H2H_LIMIT_DEFAULT,
+  H2H_MIN_SAMPLE,
+  H2H_DECAY,
+  H2H_DRAW_SCORE,
+  computeH2HScoreFromLegs,
+  computeH2HMarketSignalsFromLegs,
+  computeH2HScorelineSignalFromLegs,
+} from "./h2h";
+export {
+  type TeamCongestionInputs,
+  CONGESTION_UPCOMING_WINDOW_MS,
+  computeRestPenalty,
+  computeTeamCongestionScore,
+  computeCongestionScoreFromTeams,
+} from "./congestion";
+export {
   type ResolveEffectiveTeamStatsInput,
   EUROPEAN_COMPETITION_CODE_SET,
   isEuropeanCompetition,
