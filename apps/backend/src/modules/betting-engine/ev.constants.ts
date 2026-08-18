@@ -802,85 +802,27 @@ export function getValueMinEdge(
   return undefined;
 }
 
-// ─── European competitions ───────────────────────────────────────────────────
-
-// All competition codes treated as European (UCL/UEL/UECL + legacy alias LDC).
-const EUROPEAN_COMPETITION_CODE_SET = new Set(['UCL', 'UEL', 'UECL', 'LDC']);
-
-export function isEuropeanCompetition(
-  code: string | null | undefined,
-): boolean {
-  return code != null && EUROPEAN_COMPETITION_CODE_SET.has(code);
-}
-
-// Cross-competition form blending weights for European fixture analysis.
-// European recentForm is weighted higher (direct competitive context).
-// Domestic xg is weighted higher (30+ match sample vs 5-8 European matches).
-export const EUROPEAN_CROSS_COMP_FORM_WEIGHT = 0.6;
-export const EUROPEAN_CROSS_COMP_XG_WEIGHT = 0.4;
-
-// ─── National team competitions ──────────────────────────────────────────────
-
-// Competitions involving national teams. These have no prior in-tournament stats
-// at the start of the event, so cross-comp fallback (qualifiers, Nations League)
-// is required to produce any analysis at all.
-const NATIONAL_TEAM_COMPETITION_CODE_SET = new Set([
-  'WC',
-  'WCQE',
-  'WCQCA',
-  'WCQSA',
-  'WCQAS',
-  'WCQAF',
-  'WCQOC',
-  'UNL',
-  'CAN',
-  'COPA',
-]);
-
-export function isNationalTeamCompetition(
-  code: string | null | undefined,
-): boolean {
-  return code != null && NATIONAL_TEAM_COMPETITION_CODE_SET.has(code);
-}
-
-// Cross-competition form blending weights for national team fixture analysis.
-// xG weight is 0: non-European qualifying competitions (WCQCA/WCQSA/WCQAS/WCQAF/WCQOC)
-// do not provide reliable xG data, so blending it in adds noise.
-// Calibration scan 2026-06-02 on WC 2022 (64 fixtures): Brier monotonically improves
-// as xG weight decreases — (0.65/0.35)→0.658, (0.80/0.20)→0.657, (1.0/0.0)→0.654.
-export const NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT = 1.0;
-export const NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT = 0.0;
-
-// ─── Domestic season rollover ────────────────────────────────────────────────
-
-// Every other competition (domestic leagues, not European club comps or
-// national team competitions above): at the start of a new season, teamStats
-// scoped to the current season is empty for every fixture until enough
-// matchdays accumulate — analyzeFixture skips the whole opening stretch with
-// reason 'missing_team_stats'. Found 2026-08-07 across F2/ERD/POR/D2/D3/
-// BEL1/TUR2/SUI2/SVN1 (all rolled over their 2026-27 season with zero
-// ModelRun). Cross-season fallback via findCrossCompStats mirrors the pattern
-// already used above for European/national-team competitions.
+// ─── Cross-competition team-stats fallback policy ──────────────────────────
 //
-// Brier scan 2026-08-07 (scripts/backtest-domestic-rollover-weights.ts,
-// read-only, 54155 historical domestic fixtures, 3313 in the fallback's
-// scope): brier improves as xG weight moves toward the fallback and peaks
-// at 0.35 — (1.0/1.0)→0.678 [no fallback at all], (1.0/0.0)→0.656 [pure
-// fallback xG], (1.0/0.35)→0.647 [best]. FORM_WEIGHT is NOT Brier-
-// discriminable at any value tested (0-1, step 0.15, all identical): unlike
-// xgFor/xgAgainst, recentForm never reaches deriveLambdas or
-// rebalanceThreeWayProbabilities — it only feeds calculateDeterministicScore
-// (bet quality gating, not the probability estimate), same reason the WC
-// 2022 scan above never varied it either. Kept at 1.0 (trust the current
-// season's own recent form once any exists), matching that precedent.
-export const DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT = 1.0;
-export const DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT = 0.35;
-
-// Below this many current-season matches, a team's teamStats sample is
-// considered thin enough to stabilise against the prior-season snapshot.
-// Also unvalidated — chosen to roughly cover "first couple of matchdays",
-// not backtested.
-export const DOMESTIC_SEASON_ROLLOVER_MIN_GAMES = 3;
+// isEuropeanCompetition/isNationalTeamCompetition, the blend weights, and
+// DOMESTIC_SEASON_ROLLOVER_MIN_GAMES now live in @evcore/analysis-core
+// (packages/analysis-core/src/probability/team-stats-resolution.ts),
+// extracted 2026-08-18 alongside resolveEffectiveTeamStats so the backtest
+// harness (@evcore/backtest-core) replays the exact same fallback decision
+// as analyzeFixture instead of a second guess at it. Re-exported here so
+// existing `./ev.constants` imports (season.utils.ts, betting-engine.service.ts)
+// keep resolving unchanged.
+export {
+  isEuropeanCompetition,
+  isNationalTeamCompetition,
+  EUROPEAN_CROSS_COMP_FORM_WEIGHT,
+  EUROPEAN_CROSS_COMP_XG_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_FORM_WEIGHT,
+  NATIONAL_TEAM_CROSS_COMP_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_FORM_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_XG_WEIGHT,
+  DOMESTIC_SEASON_ROLLOVER_MIN_GAMES,
+} from '@evcore/analysis-core';
 
 // Combo picks (multi-leg accumulators) are disabled during the single-pick
 // calibration phase. The backtest tracks combos under their primary market

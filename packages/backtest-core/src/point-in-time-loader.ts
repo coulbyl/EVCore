@@ -1,5 +1,11 @@
-import type { FullOddsSnapshot } from "@evcore/analysis-core";
-import { assembleFullOddsSnapshot } from "@evcore/analysis-core";
+import type { FullOddsSnapshot, TeamStatsInput } from "@evcore/analysis-core";
+import {
+  assembleFullOddsSnapshot,
+  isEuropeanCompetition,
+  isNationalTeamCompetition,
+  resolveEffectiveTeamStats,
+  DOMESTIC_SEASON_ROLLOVER_MIN_GAMES,
+} from "@evcore/analysis-core";
 import { prisma, FixtureStatus, type PrismaClient } from "@evcore/db";
 
 // The structural fix behind docs/backtest-harness-architecture.md: instead
@@ -27,6 +33,7 @@ export type PointInTimeContext = {
 // point-in-time guarantee as filtering odds by `asOf`.
 export type ReplayFixture = {
   id: string;
+  seasonId: string;
   scheduledAt: Date;
   competitionCode: string;
   homeTeamId: string;
@@ -68,6 +75,7 @@ export class PointInTimeLoader {
       },
       select: {
         id: true,
+        seasonId: true,
         scheduledAt: true,
         homeTeamId: true,
         awayTeamId: true,
@@ -80,6 +88,7 @@ export class PointInTimeLoader {
 
     return rows.map((row) => ({
       id: row.id,
+      seasonId: row.seasonId,
       scheduledAt: row.scheduledAt,
       competitionCode: row.season.competition.code,
       homeTeamId: row.homeTeamId,
@@ -88,6 +97,63 @@ export class PointInTimeLoader {
       homeScore: row.homeScore!,
       awayScore: row.awayScore!,
     }));
+  }
+
+  // One team's effective rolling stats as of `asOf`, applying the exact same
+  // cross-competition fallback policy as BettingEngineService.analyzeFixture
+  // (resolveEffectiveTeamStats, @evcore/analysis-core) — European and
+  // national-team competitions always blend in cross-comp form when
+  // available; domestic leagues only while the current-season sample is
+  // thin. `seasonId` scopes the primary lookup; cross-comp explicitly
+  // excludes it.
+  async loadTeamStats(input: {
+    teamId: string;
+    seasonId: string;
+    competitionCode: string | null;
+    asOf: Date;
+  }): Promise<TeamStatsInput | null> {
+    const { teamId, seasonId, competitionCode, asOf } = input;
+
+    const [primaryStats, gamesPlayedThisSeason] = await Promise.all([
+      this.client.teamStats.findFirst({
+        where: {
+          teamId,
+          afterFixture: { seasonId, scheduledAt: { lt: asOf } },
+        },
+        orderBy: { afterFixture: { scheduledAt: "desc" } },
+      }),
+      this.client.teamStats.count({
+        where: {
+          teamId,
+          afterFixture: { seasonId, scheduledAt: { lt: asOf } },
+        },
+      }),
+    ]);
+
+    // Only fetch cross-comp stats when they could actually change the
+    // outcome — same fetch-avoidance as the live engine (European/
+    // national-team always try; domestic only while thin).
+    const mayNeedCrossComp =
+      isEuropeanCompetition(competitionCode) ||
+      isNationalTeamCompetition(competitionCode) ||
+      gamesPlayedThisSeason < DOMESTIC_SEASON_ROLLOVER_MIN_GAMES;
+
+    const crossCompStats = mayNeedCrossComp
+      ? await this.client.teamStats.findFirst({
+          where: {
+            teamId,
+            afterFixture: { scheduledAt: { lt: asOf }, seasonId: { not: seasonId } },
+          },
+          orderBy: { afterFixture: { scheduledAt: "desc" } },
+        })
+      : null;
+
+    return resolveEffectiveTeamStats({
+      competitionCode,
+      primaryStats,
+      crossCompStats,
+      gamesPlayedThisSeason,
+    });
   }
 
   // Cotes telles qu'elles existaient à `asOf`, tous marchés — réutilise

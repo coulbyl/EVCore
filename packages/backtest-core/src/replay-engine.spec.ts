@@ -5,6 +5,7 @@ import type { PointInTimeLoader, ReplayFixture } from "./point-in-time-loader";
 function fixture(overrides: Partial<ReplayFixture> = {}): ReplayFixture {
   return {
     id: "f1",
+    seasonId: "season-1",
     scheduledAt: new Date("2026-08-01T15:00:00.000Z"),
     competitionCode: "PL",
     homeTeamId: "home",

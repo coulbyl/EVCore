@@ -161,13 +161,34 @@ que tableau : un replay sur une saison complète, c'est des milliers de
 fixtures : le script appelant consomme un `ReplayStep` à la fois au lieu de
 tout charger en mémoire.
 
-Portée actuelle : uniquement les cotes. Un replay complet (reconstruire le
-score déterministe exact que le moteur live aurait produit) a aussi besoin
-de team stats point-in-time, H2H, congestion, Elo — chacune une future
-méthode sur `PointInTimeLoader`, branchée dans `ReplayStep` de la même
-façon. Les cas d'usage qui n'ont besoin que "à quoi ressemblait le marché
-au coup d'envoi" (audits de calibration comparant la probabilité moteur à
-la cote de clôture, par ex.) sont déjà entièrement servis.
+Portée actuelle : cotes + team stats. Un replay complet du score
+déterministe a aussi besoin de H2H, congestion, Elo FRI — chacune une
+future méthode sur `PointInTimeLoader`, branchée dans `ReplayStep` de la
+même façon.
+
+### Team stats — politique de repli cross-compétition extraite
+
+`PointInTimeLoader.loadTeamStats()` reproduit exactement la logique de
+`BettingEngineService.analyzeFixture` (stats saison courante avant `asOf`,
+repli cross-compétition pour l'Europe/sélections nationales/rollover
+domestique). La politique de décision (`resolveEffectiveTeamStats` — quand
+blender, avec quels poids) a été extraite en fonction pure dans
+`packages/analysis-core/src/probability/team-stats-resolution.ts`
+(2026-08-18), aux côtés des constantes (`isEuropeanCompetition`,
+`isNationalTeamCompetition`, poids de blend, `DOMESTIC_SEASON_ROLLOVER_MIN_GAMES`).
+`apps/backend/.../ev.constants.ts` les ré-exporte désormais au lieu de les
+dupliquer. Comme pour les cotes : une seule implémentation de la politique,
+partagée par la prod et le harnais — seule la logique de *fetch* (quelles
+lignes aller chercher, avec quel `asOf`) reste distincte entre
+`BettingEngineService` (Prisma direct, requêtes "maintenant") et
+`PointInTimeLoader` (Prisma direct, requêtes bornées par `asOf`).
+
+Les cas d'usage qui n'ont besoin que "à quoi ressemblait le marché au coup
+d'envoi" (audits de calibration comparant la probabilité moteur à la cote
+de clôture, par ex.) étaient déjà servis par les cotes seules ; ceux qui ont
+besoin de reconstruire le λ Poisson lui-même (donc la probabilité moteur)
+le sont désormais aussi, pour le cas majoritaire (compétitions domestiques
+à échantillon établi, Europe, sélections nationales).
 
 ## 6. Migration des 27 scripts (plus tard, pas ce soir)
 

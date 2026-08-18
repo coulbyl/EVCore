@@ -805,10 +805,14 @@ Docs de cadrage Phase 3:
       chronologique, `FINISHED` uniquement, respecte
       `Competition.includeInBacktest`)
 - [x] `replay-engine.ts` — boucle chronologique (générateur async, un
-      `PointInTimeContext` propre par fixture) ; portée actuelle : cotes
-      uniquement
-- [ ] `PointInTimeLoader` — étendre aux autres sources (team stats rolling,
-      H2H, Elo FRI) pour un replay complet du score déterministe
+      `PointInTimeContext` propre par fixture)
+- [x] `PointInTimeLoader.loadTeamStats` — politique de repli
+      cross-compétition (Europe/sélections nationales/rollover domestique)
+      extraite en fonction pure `resolveEffectiveTeamStats`
+      (`packages/analysis-core/src/probability/team-stats-resolution.ts`) ;
+      `ev.constants.ts` ré-exporte au lieu de dupliquer
+- [ ] `PointInTimeLoader` — étendre à H2H, congestion, Elo FRI pour un
+      replay complet du score déterministe
 - [ ] `backtest-runner.ts` — façade CLI
 - [ ] Migration des 27 scripts existants vers le harnais, en commençant par
       les 10 identifiés à risque
