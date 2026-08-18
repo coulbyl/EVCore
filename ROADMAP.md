@@ -798,10 +798,17 @@ Docs de cadrage Phase 3:
       `packages/analysis-core/src/pricing/odds-assembly.ts`) — une seule
       implémentation partagée par la prod et le futur harnais, plus de
       copie qui pouvait diverger silencieusement
-- [~] `packages/backtest-core` — scaffold en cours ; `point-in-time-loader.ts`
-      (cotes, via `assembleFullOddsSnapshot`) premier morceau
-- [ ] `replay-engine.ts` — boucle chronologique sur les autres sources
-      (team stats rolling, H2H, Elo FRI)
+- [x] `packages/backtest-core` — scaffold + garde-fou d'architecture testé
+      (seul `point-in-time-loader.ts` a le droit d'importer `@evcore/db`)
+- [x] `point-in-time-loader.ts` — cotes (`loadOdds`/`loadOddsBatch`, via
+      `assembleFullOddsSnapshot`) + énumération fixtures (`listFixtures`,
+      chronologique, `FINISHED` uniquement, respecte
+      `Competition.includeInBacktest`)
+- [x] `replay-engine.ts` — boucle chronologique (générateur async, un
+      `PointInTimeContext` propre par fixture) ; portée actuelle : cotes
+      uniquement
+- [ ] `PointInTimeLoader` — étendre aux autres sources (team stats rolling,
+      H2H, Elo FRI) pour un replay complet du score déterministe
 - [ ] `backtest-runner.ts` — façade CLI
 - [ ] Migration des 27 scripts existants vers le harnais, en commençant par
       les 10 identifiés à risque

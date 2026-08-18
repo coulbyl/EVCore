@@ -114,8 +114,11 @@ backtests pré-match actuels.
 packages/backtest-core/
   src/
     point-in-time-loader.ts   ← correctif structurel : impossible de lire
-                                 une donnée postérieure à `asOf`
-    replay-engine.ts          ← boucle chronologique (à venir)
+                                 une donnée postérieure à `asOf` — SEUL
+                                 fichier du package qui a le droit de
+                                 toucher @evcore/db (garde-fou testé)
+    replay-engine.ts          ← boucle chronologique (fixtures = événements,
+                                 walk strict par scheduledAt)
     backtest-runner.ts        ← façade CLI (à venir)
     architecture.guard.spec.ts
 ```
@@ -138,11 +141,33 @@ une stat rolling, un Elo, tous filtrés par leur propre horodatage
 d'enregistrement `<= asOf`, pas seulement `scheduledAt <= asOf` sur la
 fixture.
 
-Première capacité : cotes, en réutilisant `assembleFullOddsSnapshot` de
-`@evcore/analysis-core` (donc garanti identique au comportement prod
-post-fix). Les autres sources (team stats rolling, H2H, Elo FRI…) suivront
-le même patron — un point d'entrée par source, jamais de Prisma brut ailleurs
-dans le package.
+Première capacité : cotes (`loadOdds`/`loadOddsBatch`), en réutilisant
+`assembleFullOddsSnapshot` de `@evcore/analysis-core` (donc garanti
+identique au comportement prod post-fix), et énumération des fixtures
+(`listFixtures` — chronologique, `FixtureStatus.FINISHED` uniquement avec
+score non nul, filtré par `Competition.includeInBacktest`). Les autres
+sources (team stats rolling, H2H, Elo FRI…) suivront le même patron — une
+méthode de plus sur `PointInTimeLoader`, jamais de Prisma brut ailleurs dans
+le package.
+
+### `replay-engine.ts` — la boucle chronologique
+
+`ReplayEngine.replay(options)` est un générateur async : il énumère les
+fixtures via `PointInTimeLoader.listFixtures` (déjà triées par
+`scheduledAt`), puis pour chacune construit son propre
+`PointInTimeContext { asOf: fixture.scheduledAt }` et résout les cotes avec
+**ce** cutoff — jamais un cutoff partagé pour tout le run. Générateur plutôt
+que tableau : un replay sur une saison complète, c'est des milliers de
+fixtures : le script appelant consomme un `ReplayStep` à la fois au lieu de
+tout charger en mémoire.
+
+Portée actuelle : uniquement les cotes. Un replay complet (reconstruire le
+score déterministe exact que le moteur live aurait produit) a aussi besoin
+de team stats point-in-time, H2H, congestion, Elo — chacune une future
+méthode sur `PointInTimeLoader`, branchée dans `ReplayStep` de la même
+façon. Les cas d'usage qui n'ont besoin que "à quoi ressemblait le marché
+au coup d'envoi" (audits de calibration comparant la probabilité moteur à
+la cote de clôture, par ex.) sont déjà entièrement servis.
 
 ## 6. Migration des 27 scripts (plus tard, pas ce soir)
 

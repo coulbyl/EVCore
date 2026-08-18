@@ -1,6 +1,6 @@
 import type { FullOddsSnapshot } from "@evcore/analysis-core";
 import { assembleFullOddsSnapshot } from "@evcore/analysis-core";
-import { prisma, type PrismaClient } from "@evcore/db";
+import { prisma, FixtureStatus, type PrismaClient } from "@evcore/db";
 
 // The structural fix behind docs/backtest-harness-architecture.md: instead
 // of trusting every backtest script to remember "don't read the future",
@@ -20,8 +20,75 @@ export type PointInTimeContext = {
   readonly asOf: Date;
 };
 
+// A finished fixture with a known result — the unit the replay engine walks
+// chronologically. Ground truth (homeScore/awayScore) only exists once the
+// fixture is FINISHED, which is itself a point-in-time fact: listing only
+// FINISHED fixtures with a non-null score is as much a part of the
+// point-in-time guarantee as filtering odds by `asOf`.
+export type ReplayFixture = {
+  id: string;
+  scheduledAt: Date;
+  competitionCode: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore: number;
+  awayScore: number;
+};
+
+export type ListFixturesOptions = {
+  from: Date;
+  to: Date;
+  // Defaults to every Competition with includeInBacktest=true (the same
+  // flag the rest of the codebase already uses to exclude thin/noisy
+  // competitions from backtests).
+  competitionCodes?: readonly string[];
+};
+
 export class PointInTimeLoader {
   constructor(private readonly client: PrismaClient = prisma) {}
+
+  // Chronologically ordered, finished fixtures with a settled score — the
+  // replay universe. Never returns SCHEDULED/IN_PROGRESS/POSTPONED/CANCELLED
+  // fixtures: a backtest replays what happened, not what's still pending.
+  async listFixtures(options: ListFixturesOptions): Promise<ReplayFixture[]> {
+    const rows = await this.client.fixture.findMany({
+      where: {
+        scheduledAt: { gte: options.from, lte: options.to },
+        status: FixtureStatus.FINISHED,
+        homeScore: { not: null },
+        awayScore: { not: null },
+        season: {
+          competition: {
+            includeInBacktest: true,
+            ...(options.competitionCodes
+              ? { code: { in: [...options.competitionCodes] } }
+              : {}),
+          },
+        },
+      },
+      select: {
+        id: true,
+        scheduledAt: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeScore: true,
+        awayScore: true,
+        season: { select: { competition: { select: { code: true } } } },
+      },
+      orderBy: { scheduledAt: "asc" },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      scheduledAt: row.scheduledAt,
+      competitionCode: row.season.competition.code,
+      homeTeamId: row.homeTeamId,
+      awayTeamId: row.awayTeamId,
+      // Non-null guaranteed by the where clause above.
+      homeScore: row.homeScore!,
+      awayScore: row.awayScore!,
+    }));
+  }
 
   // Cotes telles qu'elles existaient à `asOf`, tous marchés — réutilise
   // assembleFullOddsSnapshot d'@evcore/analysis-core, la même fonction pure

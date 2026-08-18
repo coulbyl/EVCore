@@ -5,3 +5,4 @@
 // the future" is a compile-time-impossible mistake, not a review discipline.
 // Enforced by architecture.guard.spec.ts.
 export * from "./point-in-time-loader";
+export * from "./replay-engine";
