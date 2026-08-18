@@ -833,6 +833,12 @@ Docs de cadrage Phase 3:
       script). Voir docs/backtest-harness-architecture.md §6.
 - [ ] Migration des 27 scripts existants vers le harnais, en commençant par
       les 10 identifiés à risque
+- [ ] Composition finale : `deriveLambdas` + détermination du côté favori
+      (aujourd'hui inline dans `BettingEngineService.analyzeFixture`, pas
+      extraite) pour transformer les inputs assemblés par `BacktestRunner`
+      (cotes, team stats, H2H, congestion) en la probabilité/λ que le
+      moteur live aurait réellement produite — `BacktestRunner` fournit les
+      inputs point-in-time, pas encore la prédiction finale
 
 ---
 

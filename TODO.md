@@ -777,6 +777,12 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
   `packages/backtest-core/scripts/` (pas `packages/db/scripts` — cycle de
   dépendance de package, voir `docs/backtest-harness-architecture.md` §6),
   priorité aux 10 identifiés à risque (§1 du même doc).
+- `[ ]` **`BacktestRunner` n'assemble que les inputs, pas la prédiction
+  finale** — reconstruire le λ/probabilité exact du moteur live demande
+  `deriveLambdas` + la détermination du côté favori (aujourd'hui inline
+  dans `BettingEngineService.analyzeFixture`, jamais extraite). Sans ça, le
+  harnais peut auditer la couverture des données mais pas encore rejouer
+  une vraie décision de canal.
 
 ---
 
