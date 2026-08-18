@@ -755,6 +755,31 @@ SCORING.H2H`/`H2H_MARKET_SIGNALS = true`, actifs depuis fin juillet — pas du
 
 ## Bugs & dette technique
 
+- `[x]` **`cutoff` ignoré pour 16 marchés sur 17 dans `OddsSnapshotLoader`**
+  (résolu 2026-08-17, trouvé en cadrant le harnais de backtest — voir
+  `docs/backtest-harness-architecture.md`) — `findLatestOddsSnapshot(fixtureId,
+  cutoff)` n'appliquait le paramètre `cutoff` qu'à la jambe `ONE_X_TWO` ;
+  `findBestBookmakerForMarket` recevait `_cutoff` (paramètre explicitement
+  inutilisé) pour BTTS/HT-FT/First Half Winner/Double Chance/Draw No
+  Bet/Clean Sheet ×2/Win to Nil ×2/Win Either Half, et `findPerPickOddsPerLine`
+  n'avait même pas de paramètre `cutoff` pour Over/Under, Over/Under HT, Team
+  Total ×2, Result Total Goals, Result BTTS, Correct Score — toujours la cote
+  la plus récente en base, quel que soit l'instant demandé. Un commentaire
+  du refactor précédent documentait le défaut sans le corriger ("preserved
+  as-is rather than silently changed while refactoring"). Impact réel, pas
+  seulement backtest : `analyzeFixture()` appelle cette fonction avec
+  `cutoff7d` pour son filtre de mouvement de cote — inopérant en prod sur 16
+  marchés sur 17. `findLatestOddsSnapshotsBatch`/`assembleFullOddsSnapshot`
+  partageaient le même défaut (utilisé par `SignalWindowService`).
+  `findLatestOneXTwoOddsSnapshotByBookmaker`/`findLatestBestOneXTwoOddsSnapshot`
+  (canal FRI) avaient aussi un `_cutoff` inutilisé. Fix : `cutoff` filtré
+  systématiquement (`pickBestBookmaker`, `rowsForMarketBookmaker`,
+  `resolvePerPickOddsPerLine`, requêtes Prisma des méthodes de classe) ;
+  paramètres regroupés en objet options pour respecter `max-params: 3`.
+  Nouveau test de régression (`odds-snapshot.loader.spec.ts`) prouvant que
+  OVER_UNDER/BTTS respectent maintenant `cutoff`. Suite complète backend
+  956/956 verte après fix.
+
 - `[x]` **Jambe partagée entre coupons classés — angle mort cross-canal**
   (résolu 2026-08-16) — le fix zéro-tolérance du 08-15 (`sharesAnyLeg`)
   comparait sur `legKey` (`fixtureId:canal:market:pick`), donc VALUE et

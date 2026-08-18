@@ -746,6 +746,68 @@ Docs de cadrage Phase 3:
 
 ---
 
+## Refactor Domaine — Familles de moteurs prédictifs (cadrage 2026-08-17, non implémenté)
+
+> Cadrage : [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
+> (§0, portée football actuelle) · orchestration mise à jour en conséquence
+> dans [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
+> (§5, §6.1, §11).
+>
+> Constat qui déclenche ce refactor : `EV`/`SAFE` ne filtrent pas les
+> meilleures prédictions déjà validées par les 18 autres canaux — ils
+> re-scannent tout `evaluatedMarkets` en parallèle, indépendamment des
+> canaux de marché (`value.strategy.ts`, `safe.strategy.ts`). Et les marchés
+> de mi-temps (`OVER_UNDER_HT`, `FIRST_HALF_WINNER`, `HALF_TIME_FULL_TIME`,
+> `WIN_EITHER_HALF`) sont dérivés du λ plein-match par une constante fixe
+> `FIRST_HALF_GOAL_FRACTION = 0.44` (`poisson.ts`) — pas un moteur calibré
+> par ligue, cause probable du HT Over désactivé (recalibration WC
+> 2026-07-01). Portée : football et marchés déjà en scope uniquement, aucun
+> nouveau marché ni sport.
+
+- [ ] **Famille A'** — remplacer `FIRST_HALF_GOAL_FRACTION` (constante
+      globale 0.44) par un ratio buts-1ère-mi-temps calibré par ligue
+      (équipe si le volume le permet), sur données historiques réelles
+- [ ] **VALUE/SAFE en Phase 2** — `value.strategy.ts`/`safe.strategy.ts`
+      cessent de lire `context.evaluatedMarkets`, lisent
+      `context.previousDecisions` (décisions des 16 canaux de marché de
+      Phase 1) ; déplacement hors de la boucle Phase 1 de l'orchestrateur
+      (`orchestrator.ts`), aux côtés de `CONSENSUS`/`AVOID`
+- [ ] **Audit de calibration par (marché × ligue)** — une fois les deux
+      chantiers ci-dessus faits, établir lesquels des 16 canaux de marché
+      méritent réellement d'alimenter VALUE/SAFE
+
+---
+
+## Harnais de backtest partagé (cadrage + démarré 2026-08-17, non fini)
+
+> Cadrage : [docs/backtest-harness-architecture.md](docs/backtest-harness-architecture.md).
+> Déclenché par le même chantier que les familles ci-dessus : 27 scripts
+> `packages/db/scripts/backtest-*.ts` (11 338 lignes), aucun harnais
+> partagé — 17 rejouent le pipeline chacun à sa façon, 10 lisent Prisma
+> directement (même risque que `project_channel_whitelist_replay_gap`,
+> jamais audité sur les 9 autres).
+
+- [x] Bug trouvé et corrigé : `OddsSnapshotLoader.findLatestOddsSnapshot`
+      n'appliquait `cutoff` qu'au marché `ONE_X_TWO` — 16 marchés sur 17
+      retournaient toujours la cote la plus récente en base, cutoff ignoré
+      (impactait déjà le filtre de mouvement de cote en prod). Fix +
+      régression test, suite backend 956/956 verte (voir TODO.md "Bugs &
+      dette technique")
+- [x] Extraction `assembleFullOddsSnapshot` et dépendances pures
+      (`apps/backend/.../odds-snapshot.loader.ts` →
+      `packages/analysis-core/src/pricing/odds-assembly.ts`) — une seule
+      implémentation partagée par la prod et le futur harnais, plus de
+      copie qui pouvait diverger silencieusement
+- [~] `packages/backtest-core` — scaffold en cours ; `point-in-time-loader.ts`
+      (cotes, via `assembleFullOddsSnapshot`) premier morceau
+- [ ] `replay-engine.ts` — boucle chronologique sur les autres sources
+      (team stats rolling, H2H, Elo FRI)
+- [ ] `backtest-runner.ts` — façade CLI
+- [ ] Migration des 27 scripts existants vers le harnais, en commençant par
+      les 10 identifiés à risque
+
+---
+
 ## Phase 4
 
 > **EVA** (Expected Value Analyst) — d'abord construite (2026-06) comme assistant
@@ -777,7 +839,12 @@ Docs de cadrage Phase 3:
 
 ## Au-delà — Extension multi-sport (différé, non planifié)
 
-> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md)
+> Cadrage : [docs/multi-sport-extension.md](docs/multi-sport-extension.md),
+> nuancé par [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
+> §1 : pas « un socle par sport » mais **un moteur par famille de processus
+> générateur**, réutilisé par tous les sports qui la partagent (ex. basket et
+> foot US partageraient une famille marge/total, tennis et volleyball une
+> famille hiérarchique point→jeu→set).
 >
 > Le cœur probabiliste (Poisson) est spécifique au football ; « ajouter un sport »
 > = écrire un **second socle** derrière la même colonne stratégie/décision, pas une

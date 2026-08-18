@@ -128,6 +128,17 @@ Les seuils des canaux de prédiction sont configurés par ligue dans `prediction
 
 CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. Tous tournent en **OBSERVATION** (décision enregistrée + réglée analytiquement, jamais misée) ; seuls **EV, SV, BTTS, DRAW, CONF (DOMINANT) et TEAM_TOTAL** sont aujourd'hui staké dans le générateur de coupon (`CouponChannel`). Le passage OBSERVATION → staking suit toujours le même parcours : hypothèse → backtest séparé → observation → whitelist par ligue → staking (voir TODO.md, "Checklist par nouveau canal").
 
+> **Redéfinition architecturale (2026-08-17, en cours, non implémentée)** :
+> un canal n'est plus un consommateur direct et indépendant du socle Poisson
+> unique — c'est un lecteur de **famille de moteur prédictif** (un processus
+> générateur par famille, plusieurs canaux/marchés peuvent partager la même
+> famille). EV et SV cessent d'être des chercheurs de valeur indépendants
+> scannant tous les marchés ; ils deviennent des **filtres** appliqués aux
+> décisions déjà prises par les canaux de marché. Voir
+> `docs/prediction-engine-families.md` (cadrage, portée football actuelle en
+> §0) et `docs/channel-strategy-architecture.md` (orchestration, phases mises
+> à jour en conséquence).
+
 ---
 
 ### Marchés pré-combinés (RESULT_TOTAL_GOALS, RESULT_BTTS)
