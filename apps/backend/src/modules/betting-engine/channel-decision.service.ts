@@ -12,8 +12,10 @@ import {
   type ChannelSelectionReadRow,
   type PersistedChannelDecision,
 } from './channel-decision.repository';
-import { ChannelStrategyOrchestrator } from './strategies/channel-strategy.orchestrator';
-import { createChannelStrategyOrchestrator } from './strategies/registry';
+import {
+  ChannelStrategyOrchestrator,
+  createChannelStrategyOrchestrator,
+} from '@evcore/analysis-core';
 import type {
   ChannelDecisionStatus,
   StrategyChannel,

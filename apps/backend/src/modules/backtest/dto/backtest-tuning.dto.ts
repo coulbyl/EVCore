@@ -3,7 +3,7 @@ import type {
   GoalsLine,
   TeamTotalLine,
   TeamTotalTeam,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
+} from '@evcore/analysis-core';
 import type {
   ThresholdPoint,
   ThresholdRecommendation,

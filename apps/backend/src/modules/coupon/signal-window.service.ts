@@ -10,7 +10,7 @@ import {
   removeOverround,
 } from '@modules/betting-engine/betting-engine.utils';
 import { getPickOddsFromSnapshot } from '@modules/betting-engine/pricing/odds-mapping';
-import { AVOID_CONFIG } from '@modules/betting-engine/strategies/channel-strategy.config';
+import { AVOID_CONFIG } from '@evcore/analysis-core';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 import {
   computeDataCoverage,

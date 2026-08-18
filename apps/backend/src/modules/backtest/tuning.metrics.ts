@@ -2,8 +2,13 @@
 // no Prisma — every channel's selection is reconstructed from the stored
 // signals + odds at each candidate threshold, then scored flat-stake.
 
-import { DOMINANT_MIN_MARGIN } from '@modules/betting-engine/strategies/channel-strategy.config';
-import type { ChannelStrategyConfigChannel } from '@modules/betting-engine/strategies/channel-strategy.config';
+import { DOMINANT_MIN_MARGIN } from '@evcore/analysis-core';
+import type {
+  ChannelStrategyConfigChannel,
+  GoalsLine,
+  TeamTotalLine,
+  TeamTotalTeam,
+} from '@evcore/analysis-core';
 import { getOneXTwoOutcome } from './backtest.report';
 import { flatRoi } from './backtest.metrics';
 import type { ChannelTuningRow } from './backtest.repository';
@@ -19,11 +24,6 @@ import {
   type ChannelPromotionRule,
   type GoalsTuningSide,
 } from './tuning.constants';
-import type {
-  GoalsLine,
-  TeamTotalLine,
-  TeamTotalTeam,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
 
 const DOMINANT_MARGIN = DOMINANT_MIN_MARGIN.toNumber();
 

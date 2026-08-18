@@ -2,7 +2,8 @@
  * Backfill odds / impliedProbability / EV on historical channel_selection rows.
  *
  * Why: BTTS and DOMINANT strategies used to emit selections WITHOUT attaching
- * the market price (fixed going-forward — see strategies/selection-odds.ts), so
+ * the market price (fixed going-forward — see priceForSelection in
+ * @evcore/analysis-core's selection/odds.ts), so
  * their existing channel_selection rows have odds = NULL and EV is unmeasurable.
  * This recomputes those fields from OddsSnapshot using the engine's own odds
  * resolver (loadFullOddsSnapshot) + the shared priceForSelection helper, so the
@@ -30,10 +31,7 @@ import { PrismaModule } from '@/prisma.module';
 import { PrismaService } from '@/prisma.service';
 import { BettingEngineModule } from '@modules/betting-engine/betting-engine.module';
 import { BettingEngineService } from '@modules/betting-engine/betting-engine.service';
-import {
-  priceSelection,
-  resolveSelectionOdds,
-} from '@modules/betting-engine/strategies/selection-odds';
+import { priceSelection, resolveSelectionOdds } from '@evcore/analysis-core';
 import type { FullOddsSnapshot } from '@modules/betting-engine/betting-engine.types';
 
 type ScriptArgs = { limit: number | null; dryRun: boolean };

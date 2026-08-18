@@ -4,7 +4,7 @@ import {
   getChannelStrategyConfig,
   getTeamTotalLineConfigs,
   GOALS_CONFIG,
-} from '@modules/betting-engine/strategies/channel-strategy.config';
+} from '@evcore/analysis-core';
 import { parseIsoDate, startOfUtcDay, endOfUtcDay } from '@utils/date.utils';
 import {
   BacktestRepository,
